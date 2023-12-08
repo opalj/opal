@@ -25,14 +25,9 @@ object DomainValues {
 
     def apply(
         theDomain: Domain
-    )(
-        domainValues: Iterable[theDomain.DomainValue]
-    ): DomainValues { val domain: theDomain.type } = {
-
-        new DomainValues {
-            val domain: theDomain.type = theDomain
-            val values: Iterable[domain.DomainValue] = domainValues
-        }
+      )(domainValues: Iterable[theDomain.DomainValue]): DomainValues { val domain: theDomain.type } = new DomainValues {
+        val domain: theDomain.type               = theDomain
+        val values: Iterable[domain.DomainValue] = domainValues
     }
 
 }

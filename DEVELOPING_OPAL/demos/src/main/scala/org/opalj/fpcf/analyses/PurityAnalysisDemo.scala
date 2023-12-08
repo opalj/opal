@@ -44,8 +44,8 @@ object PurityAnalysisDemo extends ProjectAnalysisApplication {
     private[this] var performanceData: Map[Nanoseconds, List[Nanoseconds]] = Map.empty
 
     override def doAnalyze(
-        project:       Project[URL],
-        parameters:    Seq[String],
+        project: Project[URL],
+        parameters: Seq[String],
         isInterrupted: () => Boolean
     ): BasicReport = {
 
@@ -62,11 +62,10 @@ object PurityAnalysisDemo extends ProjectAnalysisApplication {
             println(s"\nRunning analysis with $parallelismLevel thread(s):")
             r = time[() => String](5, 10, 5, analyze(project, parallelismLevel))(handleResults)
             println(
-                s"Results with $parallelismLevel threads:\n"+
-                    performanceData.values.
-                    map(v => v.map(_.toSeconds.toString(false))).
-                    map(v => List("setup\t", "analysis\t").zip(v).map(e => e._1 + e._2).mkString("", "\n", "\n")).
-                    mkString("\n")
+                s"Results with $parallelismLevel threads:\n" +
+                    performanceData.values.map(v => v.map(_.toSeconds.toString(false))).map(v =>
+                        List("setup\t", "analysis\t").zip(v).map(e => e._1 + e._2).mkString("", "\n", "\n")
+                    ).mkString("\n")
             )
 
             gc()
@@ -102,30 +101,27 @@ object PurityAnalysisDemo extends ProjectAnalysisApplication {
             val effectivelyFinalFields: Iterator[(Field, Property)] =
                 effectivelyFinalEntities.map(ep => (ep.e.asInstanceOf[Field], ep.ub))
 
-            val effectivelyFinalFieldsAsStrings =
-                effectivelyFinalFields.map(f => s"${f._2} >> ${f._1.toJava}")
+            val effectivelyFinalFieldsAsStrings = effectivelyFinalFields.map(f => s"${f._2} >> ${f._1.toJava}")
 
             val pureEntities: Iterator[EPS[Entity, Purity]] = propertyStore.entities(Purity.key)
             val pureMethods: Iterator[(DefinedMethod, Property)] =
                 pureEntities.map(eps => (eps.e.asInstanceOf[DefinedMethod], eps.ub))
             val pureMethodsAsStrings = pureMethods.map(m => s"${m._2} >> ${m._1.toJava}")
 
-            val fieldInfo =
-                effectivelyFinalFieldsAsStrings.toList.sorted.mkString(
-                    "\nImmutability of private static non-final fields:\n",
-                    "\n",
-                    s"\nTotal: ${effectivelyFinalFields.size}\n"
-                )
+            val fieldInfo = effectivelyFinalFieldsAsStrings.toList.sorted.mkString(
+                "\nImmutability of private static non-final fields:\n",
+                "\n",
+                s"\nTotal: ${effectivelyFinalFields.size}\n"
+            )
 
-            val methodInfo =
-                pureMethodsAsStrings.toList.sorted.mkString(
-                    "\nPure methods:\n",
-                    "\n",
-                    s"\nTotal: ${pureMethods.size}\n"
-                )
+            val methodInfo = pureMethodsAsStrings.toList.sorted.mkString(
+                "\nPure methods:\n",
+                "\n",
+                s"\nTotal: ${pureMethods.size}\n"
+            )
 
-            fieldInfo + methodInfo + propertyStore.toString(false)+
-                "\nPure methods: "+pureMethods.filter(m => m._2 == Pure).size
+            fieldInfo + methodInfo + propertyStore.toString(false) +
+                "\nPure methods: " + pureMethods.filter(m => m._2 == Pure).size
         }
     }
 }

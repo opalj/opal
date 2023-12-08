@@ -5,6 +5,20 @@ package fpcf
 package analyses
 package escape
 
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.DefinedMethod
+import org.opalj.br.analyses.VirtualFormalParameter
+import org.opalj.br.fpcf.properties.AtMost
+import org.opalj.br.fpcf.properties.Context
+import org.opalj.br.fpcf.properties.EscapeInCallee
+import org.opalj.br.fpcf.properties.EscapeProperty
+import org.opalj.br.fpcf.properties.EscapeViaHeapObject
+import org.opalj.br.fpcf.properties.EscapeViaReturn
+import org.opalj.br.fpcf.properties.EscapeViaStaticField
+import org.opalj.br.fpcf.properties.GlobalEscape
+import org.opalj.br.fpcf.properties.NoEscape
+import org.opalj.br.fpcf.properties.VirtualMethodEscapeProperty
+import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPS
@@ -15,20 +29,6 @@ import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.SomeInterimEP
-import org.opalj.br.fpcf.properties.AtMost
-import org.opalj.br.fpcf.properties.EscapeInCallee
-import org.opalj.br.fpcf.properties.EscapeProperty
-import org.opalj.br.fpcf.properties.EscapeViaHeapObject
-import org.opalj.br.fpcf.properties.EscapeViaReturn
-import org.opalj.br.fpcf.properties.EscapeViaStaticField
-import org.opalj.br.fpcf.properties.GlobalEscape
-import org.opalj.br.fpcf.properties.NoEscape
-import org.opalj.br.fpcf.properties.VirtualMethodEscapeProperty
-import org.opalj.br.DeclaredMethod
-import org.opalj.br.DefinedMethod
-import org.opalj.br.analyses.VirtualFormalParameter
-import org.opalj.br.fpcf.properties.Context
-import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.tac.fpcf.analyses.cg.uVarForDefSites
 
 /**
@@ -45,85 +45,59 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
 
     override type AnalysisState <: AbstractEscapeAnalysisState with ReturnValueUseSites
 
-    protected[this] override def handleStaticMethodCall(
+    override protected[this] def handleStaticMethodCall(
         call: StaticMethodCall[V]
-    )(
-        implicit
+      )(implicit
         context: AnalysisContext,
-        state:   AnalysisState
-    ): Unit = {
-        checkCall(call.pc, None, call.params, hasAssignment = false)
-    }
+        state:   AnalysisState): Unit = checkCall(call.pc, None, call.params, hasAssignment = false)
 
-    protected[this] override def handleStaticFunctionCall(
+    override protected[this] def handleStaticFunctionCall(
         call:          StaticFunctionCall[V],
         hasAssignment: Boolean
-    )(
-        implicit
+      )(implicit
         context: AnalysisContext,
-        state:   AnalysisState
-    ): Unit = {
-        checkCall(call.pc, None, call.params, hasAssignment)
-    }
+        state:   AnalysisState): Unit = checkCall(call.pc, None, call.params, hasAssignment)
 
-    protected[this] override def handleVirtualMethodCall(
+    override protected[this] def handleVirtualMethodCall(
         call: VirtualMethodCall[V]
-    )(
-        implicit
+      )(implicit
         context: AnalysisContext,
-        state:   AnalysisState
-    ): Unit = {
-        checkCall(call.pc, Some(call.receiver), call.params, hasAssignment = false)
-    }
+        state:   AnalysisState): Unit = checkCall(call.pc, Some(call.receiver), call.params, hasAssignment = false)
 
-    protected[this] override def handleVirtualFunctionCall(
+    override protected[this] def handleVirtualFunctionCall(
         call:          VirtualFunctionCall[V],
         hasAssignment: Boolean
-    )(
-        implicit
+      )(implicit
         context: AnalysisContext,
-        state:   AnalysisState
-    ): Unit = {
-        checkCall(call.pc, Some(call.receiver), call.params, hasAssignment)
-    }
+        state:   AnalysisState): Unit = checkCall(call.pc, Some(call.receiver), call.params, hasAssignment)
 
-    protected[this] override def handleParameterOfConstructor(
+    override protected[this] def handleParameterOfConstructor(
         call: NonVirtualMethodCall[V]
-    )(
-        implicit
+      )(implicit
         context: AnalysisContext,
-        state:   AnalysisState
-    ): Unit = {
-        checkCall(call.pc, None, call.params, hasAssignment = false)
-    }
+        state:   AnalysisState): Unit = checkCall(call.pc, None, call.params, hasAssignment = false)
 
-    protected[this] override def handleNonVirtualAndNonConstructorCall(
+    override protected[this] def handleNonVirtualAndNonConstructorCall(
         call: NonVirtualMethodCall[V]
-    )(
-        implicit
+      )(implicit
         context: AnalysisContext,
-        state:   AnalysisState
-    ): Unit = {
-        checkCall(call.pc, Some(call.receiver), call.params, hasAssignment = false)
-    }
+        state:   AnalysisState): Unit = checkCall(call.pc, Some(call.receiver), call.params, hasAssignment = false)
 
-    protected[this] override def handleNonVirtualFunctionCall(
+    override protected[this] def handleNonVirtualFunctionCall(
         call:          NonVirtualFunctionCall[V],
         hasAssignment: Boolean
-    )(
-        implicit
+      )(implicit
         context: AnalysisContext,
-        state:   AnalysisState
-    ): Unit = {
-        checkCall(call.pc, Some(call.receiver), call.params, hasAssignment)
-    }
+        state:   AnalysisState): Unit = checkCall(call.pc, Some(call.receiver), call.params, hasAssignment)
 
     private[this] def checkCall(
         pc:            Int,
         receiver:      Option[Expr[V]],
         params:        Seq[Expr[V]],
         hasAssignment: Boolean
-    )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
+      )(implicit
+        context: AnalysisContext,
+        state:   AnalysisState): Unit = {
         if (receiver.isDefined && state.usesDefSite(receiver.get)) {
             handleCallForParameter(pc, parameter = 0, hasAssignment)
         }
@@ -139,7 +113,9 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
         pc:            Int,
         parameter:     Int,
         hasAssignment: Boolean
-    )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
+      )(implicit
+        context: AnalysisContext,
+        state:   AnalysisState): Unit = {
         state.meetMostRestrictive(EscapeInCallee)
         val dm = declaredMethods(context.targetMethod)
 
@@ -168,17 +144,16 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
                 if (fps == null) {
                     state.meetMostRestrictive(AtMost(EscapeInCallee))
                 } else if (project.isSignaturePolymorphic(
-                    callee.method.definedMethod.classFile.thisType,
-                    callee.method.definedMethod
-                )) {
+                               callee.method.definedMethod.classFile.thisType,
+                               callee.method.definedMethod
+                           )) {
                     // IMPROVE: Signature polymorphic methods like invoke(Exact) do not escape their
                     // parameters directly and indirect effects are handled by the indirect callees
                     // code below
                     state.meetMostRestrictive(AtMost(EscapeInCallee))
                 } else {
                     val fp = fps(parameter)
-                    if (fp != context.entity._2)
-                        handleEscapeState((callee, fp), hasAssignment)
+                    if (fp != context.entity._2) handleEscapeState((callee, fp), hasAssignment)
                 }
             }
 
@@ -189,22 +164,20 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
              * support any array or field, and handle them conservatively.
              */
             for {
-                indirectCallee <- callees.indirectCallees(context.entity._1, pc)
+                indirectCallee      <- callees.indirectCallees(context.entity._1, pc)
                 indirectCallReceiver = callees.indirectCallReceiver(context.entity._1, pc, indirectCallee)
-                indirectCallParams = callees.indirectCallParameters(context.entity._1, pc, indirectCallee)
-                (Some(uvar), i) <- (indirectCallReceiver +: indirectCallParams).zipWithIndex
-                indirectCallParam = uVarForDefSites(uvar, state.tacai.get.pcToIndex)
+                indirectCallParams   = callees.indirectCallParameters(context.entity._1, pc, indirectCallee)
+                (Some(uvar), i)     <- (indirectCallReceiver +: indirectCallParams).zipWithIndex
+                indirectCallParam    = uVarForDefSites(uvar, state.tacai.get.pcToIndex)
                 if state.usesDefSite(indirectCallParam)
             } {
                 val fps = context.virtualFormalParameters(indirectCallee.method)
                 // there is a call to a method out of the analysis' scope
-                if (fps == null)
-                    state.meetMostRestrictive(AtMost(EscapeInCallee))
+                if (fps == null) state.meetMostRestrictive(AtMost(EscapeInCallee))
                 else {
                     val fp = fps(i)
                     // fp may be null if the indirect method is static and the parameter is this
-                    if (fp != null && fp != context.entity._2)
-                        handleEscapeState((indirectCallee, fp), hasAssignment)
+                    if (fp != null && fp != context.entity._2) handleEscapeState((indirectCallee, fp), hasAssignment)
                 }
             }
 
@@ -214,17 +187,14 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
     private[this] def handleEscapeState(
         fp:            (Context, VirtualFormalParameter),
         hasAssignment: Boolean
-    )(
-        implicit
-        state: AnalysisState
-    ): Unit = {
+      )(implicit
+        state: AnalysisState): Unit = {
         /*
          * Handling a escape state twice, does not affect the escape state
          */
         val escapeState = propertyStore(fp, EscapeProperty.key)
         if (state.containsDependency(escapeState)) {
-            if (hasAssignment && !(state.hasReturnValueUseSites contains fp))
-                state.hasReturnValueUseSites += fp
+            if (hasAssignment && !(state.hasReturnValueUseSites contains fp)) state.hasReturnValueUseSites += fp
         } else {
             handleEscapeState(escapeState, hasAssignment)
         }
@@ -233,14 +203,11 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
     private[this] def caseConditionalNoEscape(
         ep:            EOptionP[Entity, Property],
         hasAssignment: Boolean
-    )(
-        implicit
-        state: AnalysisState
-    ): Unit = {
+      )(implicit
+        state: AnalysisState): Unit = {
         state.meetMostRestrictive(EscapeInCallee)
 
-        if (hasAssignment)
-            state.hasReturnValueUseSites += ep.e.asInstanceOf[(Context, VirtualFormalParameter)]
+        if (hasAssignment) state.hasReturnValueUseSites += ep.e.asInstanceOf[(Context, VirtualFormalParameter)]
 
         state.addDependency(ep)
     }
@@ -248,14 +215,11 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
     private[this] def handleEscapeState(
         escapeState:   EOptionP[Entity, Property],
         hasAssignment: Boolean
-    )(
-        implicit
-        state: AnalysisState
-    ): Unit = {
+      )(implicit
+        state: AnalysisState): Unit = {
         val e = escapeState.e.asInstanceOf[(Context, VirtualFormalParameter)]
         escapeState match {
-            case FinalP(NoEscape | VirtualMethodEscapeProperty(NoEscape)) =>
-                state.meetMostRestrictive(EscapeInCallee)
+            case FinalP(NoEscape | VirtualMethodEscapeProperty(NoEscape)) => state.meetMostRestrictive(EscapeInCallee)
 
             case FinalP(EscapeInCallee | VirtualMethodEscapeProperty(EscapeInCallee)) =>
                 state.meetMostRestrictive(EscapeInCallee)
@@ -276,14 +240,12 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
                 state.meetMostRestrictive(EscapeInCallee)
 
             // we do not track parameters or exceptions in the callee side
-            case FinalP(p) if !p.isInstanceOf[AtMost] =>
-                state.meetMostRestrictive(AtMost(EscapeInCallee))
+            case FinalP(p) if !p.isInstanceOf[AtMost] => state.meetMostRestrictive(AtMost(EscapeInCallee))
 
             case FinalP(AtMost(_) | VirtualMethodEscapeProperty(AtMost(_))) =>
                 state.meetMostRestrictive(AtMost(EscapeInCallee))
 
-            case FinalP(p) =>
-                throw new UnknownError(s"unexpected escape property ($p) for $e")
+            case FinalP(p) => throw new UnknownError(s"unexpected escape property ($p) for $e")
 
             case ep @ InterimUBP(AtMost(_) | VirtualMethodEscapeProperty(AtMost(_))) =>
                 state.meetMostRestrictive(AtMost(EscapeInCallee))
@@ -293,8 +255,7 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
                 if (hasAssignment) {
                     state.meetMostRestrictive(AtMost(EscapeInCallee))
                     state.hasReturnValueUseSites += e
-                } else
-                    state.meetMostRestrictive(EscapeInCallee)
+                } else state.meetMostRestrictive(EscapeInCallee)
 
                 state.addDependency(ep)
 
@@ -306,45 +267,39 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
 
             case ep: SomeInterimEP =>
                 state.meetMostRestrictive(AtMost(EscapeInCallee))
-                if (hasAssignment)
-                    state.hasReturnValueUseSites += e
+                if (hasAssignment) state.hasReturnValueUseSites += e
 
                 state.addDependency(ep)
 
-            case epk =>
-                caseConditionalNoEscape(epk, hasAssignment)
+            case epk => caseConditionalNoEscape(epk, hasAssignment)
         }
     }
 
     abstract override protected[this] def c(
         someEPS: SomeEPS
-    )(
-        implicit
+      )(implicit
         context: AnalysisContext,
-        state:   AnalysisState
-    ): ProperPropertyComputationResult = {
-        someEPS match {
-            case EUBPS(_: DeclaredMethod, _: Callees, isFinal) =>
-                state.removeDependency(someEPS)
-                if (!isFinal) {
-                    state.addDependency(someEPS)
-                }
-                analyzeTAC()
+        state:   AnalysisState): ProperPropertyComputationResult = someEPS match {
+        case EUBPS(_: DeclaredMethod, _: Callees, isFinal) =>
+            state.removeDependency(someEPS)
+            if (!isFinal) {
+                state.addDependency(someEPS)
+            }
+            analyzeTAC()
 
-            case EPS((_: Context, VirtualFormalParameter(dm: DefinedMethod, -1))) if dm.definedMethod.isConstructor =>
-                throw new RuntimeException("can't handle the this-reference of the constructor")
+        case EPS((_: Context, VirtualFormalParameter(dm: DefinedMethod, -1))) if dm.definedMethod.isConstructor =>
+            throw new RuntimeException("can't handle the this-reference of the constructor")
 
-            case EPS(other: (_, _)) if other._2.isInstanceOf[VirtualFormalParameter] =>
-                state.removeDependency(someEPS)
-                handleEscapeState(
-                    someEPS,
-                    state.hasReturnValueUseSites contains
-                        other.asInstanceOf[(Context, VirtualFormalParameter)]
-                )
-                returnResult
+        case EPS(other: (_, _)) if other._2.isInstanceOf[VirtualFormalParameter] =>
+            state.removeDependency(someEPS)
+            handleEscapeState(
+                someEPS,
+                state.hasReturnValueUseSites contains
+                    other.asInstanceOf[(Context, VirtualFormalParameter)]
+            )
+            returnResult
 
-            case _ => super.c(someEPS)
+        case _ => super.c(someEPS)
 
-        }
     }
 }

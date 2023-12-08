@@ -20,15 +20,12 @@ import org.opalj.tac.fpcf.analyses.cg.TypesBasedPointsToTypeIterator
  */
 object CFA_1_0_CallGraphKey extends CallGraphKey {
 
-    override def requirements(project: SomeProject): ProjectInformationKeys = {
+    override def requirements(project: SomeProject): ProjectInformationKeys =
         TypeBasedPointsToCallGraphKey.requirements(project)
-    }
 
     override protected def callGraphSchedulers(
-        project: SomeProject
-    ): Iterable[FPCFAnalysisScheduler] = {
+        project: SomeProject): Iterable[FPCFAnalysisScheduler] =
         TypeBasedPointsToCallGraphKey.callGraphSchedulers(project)
-    }
 
     override def getTypeIterator(project: SomeProject): TypeIterator =
         new TypeIterator(project) with TypesBasedPointsToTypeIterator with CallStringContextProvider { val k = 1 }

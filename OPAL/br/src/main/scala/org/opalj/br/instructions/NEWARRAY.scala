@@ -22,7 +22,7 @@ sealed abstract class NEWARRAY extends CreateNewOneDimensionalArrayInstruction {
 
     final override def length: Int = 2
 
-    final override def toString: String = "NEWARRAY("+elementType.toJava+"[])"
+    final override def toString: String = "NEWARRAY(" + elementType.toJava + "[])"
 
 }
 
@@ -64,29 +64,25 @@ object NEWARRAY extends InstructionMetaInformation {
 
     def unapply(newarray: NEWARRAY): Some[BaseType] = Some(newarray.elementType)
 
-    def apply(atype: Int): NEWARRAY = {
-        (atype: @annotation.switch) match {
-            case BooleanType.atype => NEWARRAY_Boolean
-            case CharType.atype    => NEWARRAY_Char
-            case FloatType.atype   => NEWARRAY_Float
-            case DoubleType.atype  => NEWARRAY_Double
-            case ByteType.atype    => NEWARRAY_Byte
-            case ShortType.atype   => NEWARRAY_Short
-            case IntegerType.atype => NEWARRAY_Integer
-            case LongType.atype    => NEWARRAY_Long
-        }
+    def apply(atype: Int): NEWARRAY = (atype: @annotation.switch) match {
+        case BooleanType.atype => NEWARRAY_Boolean
+        case CharType.atype    => NEWARRAY_Char
+        case FloatType.atype   => NEWARRAY_Float
+        case DoubleType.atype  => NEWARRAY_Double
+        case ByteType.atype    => NEWARRAY_Byte
+        case ShortType.atype   => NEWARRAY_Short
+        case IntegerType.atype => NEWARRAY_Integer
+        case LongType.atype    => NEWARRAY_Long
     }
 
-    def getType(atype: Int): BaseType = {
-        (atype: @annotation.switch) match {
-            case BooleanType.atype => BooleanType
-            case CharType.atype    => CharType
-            case FloatType.atype   => FloatType
-            case DoubleType.atype  => DoubleType
-            case ByteType.atype    => ByteType
-            case ShortType.atype   => ShortType
-            case IntegerType.atype => IntegerType
-            case LongType.atype    => LongType
-        }
+    def getType(atype: Int): BaseType = (atype: @annotation.switch) match {
+        case BooleanType.atype => BooleanType
+        case CharType.atype    => CharType
+        case FloatType.atype   => FloatType
+        case DoubleType.atype  => DoubleType
+        case ByteType.atype    => ByteType
+        case ShortType.atype   => ShortType
+        case IntegerType.atype => IntegerType
+        case LongType.atype    => LongType
     }
 }

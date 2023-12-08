@@ -4,23 +4,23 @@ package ai
 package fpcf
 package analyses
 
-import org.opalj.log.LogContext
-import org.opalj.log.OPALLogger.error
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.ProperPropertyComputationResult
-import org.opalj.fpcf.PropertyBounds
-import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.Result
+import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
+import org.opalj.ai.fpcf.properties.AnAIResult
+import org.opalj.ai.fpcf.properties.BaseAIResult
+import org.opalj.ai.fpcf.properties.ProjectSpecificAIExecutor
 import org.opalj.br.Method
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.BasicFPCFLazyAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
-import org.opalj.ai.fpcf.properties.AnAIResult
-import org.opalj.ai.fpcf.properties.BaseAIResult
-import org.opalj.ai.fpcf.properties.ProjectSpecificAIExecutor
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.PropertyBounds
+import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.Result
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger.error
 
 /**
  * Performs an abstract interpretation of a method using a project's AIDomainFactoryKey.
@@ -29,13 +29,11 @@ import org.opalj.ai.fpcf.properties.ProjectSpecificAIExecutor
  */
 class L0BaseAIResultAnalysis private[analyses] (val project: SomeProject) extends FPCFAnalysis {
 
-    final implicit val aiFactory: ProjectSpecificAIExecutor = project.get(AIDomainFactoryKey)
+    implicit final val aiFactory: ProjectSpecificAIExecutor = project.get(AIDomainFactoryKey)
 
-    def performAI(entity: Entity): ProperPropertyComputationResult = {
-        entity match {
-            case m: Method => Result(m, AnAIResult(L0BaseAIResultAnalysis.performAI(m)))
-            case e         => throw new IllegalArgumentException(s"$e is not a method")
-        }
+    def performAI(entity: Entity): ProperPropertyComputationResult = entity match {
+        case m: Method => Result(m, AnAIResult(L0BaseAIResultAnalysis.performAI(m)))
+        case e         => throw new IllegalArgumentException(s"$e is not a method")
     }
 }
 
@@ -51,25 +49,22 @@ object L0BaseAIResultAnalysis {
      */
     def performAI(
         m: Method
-    )(
-        implicit
+      )(implicit
         aiFactory:  ProjectSpecificAIExecutor,
-        logContext: LogContext
-    ): AIResult = {
+        logContext: LogContext): AIResult =
         try {
             aiFactory(m)
         } catch {
             case t: Throwable =>
                 error(
                     "project configuration",
-                    s"interpretation of ${m.toJava} failed; "+
+                    s"interpretation of ${m.toJava} failed; " +
                         " replacing method body with a generic error throwing body",
                     t
                 )
-                val reason = Some("replaced due to invalid bytecode\n"+t.getMessage)
+                val reason = Some("replaced due to invalid bytecode\n" + t.getMessage)
                 performAI(m.invalidBytecode(reason))
         }
-    }
 }
 
 sealed trait L0BaseAIResultAnalysisScheduler extends DomainBasedFPCFAnalysisScheduler {
@@ -82,7 +77,7 @@ sealed trait L0BaseAIResultAnalysisScheduler extends DomainBasedFPCFAnalysisSche
 
 object EagerL0BaseAIAnalysis
     extends L0BaseAIResultAnalysisScheduler
-    with BasicFPCFEagerAnalysisScheduler {
+        with BasicFPCFEagerAnalysisScheduler {
 
     override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
 
@@ -90,7 +85,7 @@ object EagerL0BaseAIAnalysis
 
     override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new L0BaseAIResultAnalysis(p) // <= NOT TO BE CREATED IN INIT!
-        val methods = p.allMethodsWithBody
+        val methods  = p.allMethodsWithBody
         ps.scheduleEagerComputationsForEntities(methods)(analysis.performAI)
         analysis
     }
@@ -98,7 +93,7 @@ object EagerL0BaseAIAnalysis
 
 object LazyL0BaseAIAnalysis
     extends L0BaseAIResultAnalysisScheduler
-    with BasicFPCFLazyAnalysisScheduler {
+        with BasicFPCFLazyAnalysisScheduler {
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 

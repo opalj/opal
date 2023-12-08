@@ -5,17 +5,17 @@ package reader
 
 import scala.language.existentials
 
+import java.util.concurrent.ConcurrentLinkedQueue
 import scala.jdk.CollectionConverters._
 
-import org.scalatest.funsuite.AnyFunSuite
-import java.util.concurrent.ConcurrentLinkedQueue
-
-import org.opalj.log.StandardLogContext
-import org.opalj.log.OPALLogger
 import org.opalj.br.analyses.Project
-import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.reader.InvokedynamicRewriting.TargetMethodNameRegEx
+import org.opalj.log.OPALLogger
+import org.opalj.log.StandardLogContext
+
+import org.scalatest.funsuite.AnyFunSuite
 
 /**
  * Infrastructure to load a project containing Jars.
@@ -25,13 +25,11 @@ import org.opalj.br.reader.InvokedynamicRewriting.TargetMethodNameRegEx
  */
 abstract class InvokedynamicRewritingTest extends AnyFunSuite {
 
-    protected def isProxyFactoryCall(instruction: INVOKESTATIC): Boolean = {
+    protected def isProxyFactoryCall(instruction: INVOKESTATIC): Boolean =
         isProxyFactoryCall(instruction.declaringClass.fqn)
-    }
 
-    protected def isProxyFactoryCall(declaringClassFQN: String): Boolean = {
+    protected def isProxyFactoryCall(declaringClassFQN: String): Boolean =
         declaringClassFQN.matches(InvokedynamicRewriting.LambdaNameRegEx)
-    }
 
     protected def proxyFactoryCalls(project: SomeProject): Iterable[INVOKESTATIC] = {
         val factoryCalls = new ConcurrentLinkedQueue[INVOKESTATIC]()
@@ -48,7 +46,7 @@ abstract class InvokedynamicRewritingTest extends AnyFunSuite {
             } {
                 factoryCalls.add(i)
             }
-            */
+             */
         }
         info(s"found ${factoryCalls.size} lambda proxy factory method calls")
         factoryCalls.asScala
@@ -77,7 +75,7 @@ abstract class InvokedynamicRewritingTest extends AnyFunSuite {
 
         val logContext = new StandardLogContext
         OPALLogger.register(logContext)
-        val project = Project(libraryPath, logContext, config)
+        val project           = Project(libraryPath, logContext, config)
         val proxyFactoryCalls = this.proxyFactoryCalls(project)
         assert(proxyFactoryCalls.nonEmpty, "there should be calls to the proxy factories")
 
@@ -88,11 +86,10 @@ abstract class InvokedynamicRewritingTest extends AnyFunSuite {
 
     protected def checkForMissingProxyClassFiles(
         project:           SomeProject,
-        proxyFactoryCalls: Iterable[INVOKESTATIC]
-    ): Unit = {
+        proxyFactoryCalls: Iterable[INVOKESTATIC]): Unit = {
         val missingProxyClassFiles = for {
             proxyFactoryCall <- proxyFactoryCalls
-            proxy = project.classFile(proxyFactoryCall.declaringClass)
+            proxy             = project.classFile(proxyFactoryCall.declaringClass)
             if proxy.isEmpty
         } yield {
             (proxy, proxyFactoryCall)
@@ -101,10 +98,12 @@ abstract class InvokedynamicRewritingTest extends AnyFunSuite {
         if (missingProxyClassFiles.nonEmpty) {
             val failures = missingProxyClassFiles.size
             val data = missingProxyClassFiles.mkString(
-                "missing proxy ClassFiles for the following instructions:\n\t", "\n\t", "\n"
+                "missing proxy ClassFiles for the following instructions:\n\t",
+                "\n\t",
+                "\n"
             )
             val logFile = io.writeAndOpen(data, "MissingProxyClassFiles", ".txt")
-            val msg = s"missing $failures proxy ClassFiles for lambdas; see $logFile for details"
+            val msg     = s"missing $failures proxy ClassFiles for lambdas; see $logFile for details"
             fail(msg)
         }
     }

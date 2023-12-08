@@ -20,7 +20,7 @@ trait IFICMPInstructionLike extends SimpleConditionalBranchInstructionLike {
 
 trait IFICMPInstruction[T <: IFICMPInstruction[T]]
     extends SimpleConditionalBranchInstruction[T]
-    with IFICMPInstructionLike {
+        with IFICMPInstructionLike {
 
     final override def asIFICMPInstruction: this.type = this
 
@@ -28,11 +28,9 @@ trait IFICMPInstruction[T <: IFICMPInstruction[T]]
 
 object IFICMPInstruction {
 
-    def unapply(i: Instruction): Option[(RelationalOperator, Int /*Branchoffset*/ )] = {
-        i match {
-            case i: IFICMPInstruction[_] => Some((i.condition, i.branchoffset))
-            case _                       => None
-        }
+    def unapply(i: Instruction): Option[(RelationalOperator, Int /*Branchoffset*/ )] = i match {
+        case i: IFICMPInstruction[_] => Some((i.condition, i.branchoffset))
+        case _                       => None
     }
 
 }

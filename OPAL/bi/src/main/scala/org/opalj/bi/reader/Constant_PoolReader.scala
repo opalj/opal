@@ -3,8 +3,8 @@ package org.opalj
 package bi
 package reader
 
-import java.io.DataInputStream
 import java.io.ByteArrayInputStream
+import java.io.DataInputStream
 
 import org.opalj.bytecode.BytecodeProcessingFailedException
 
@@ -42,7 +42,8 @@ trait Constant_PoolReader extends Constant_PoolAbstractions {
     protected def CONSTANT_Class_info(i: Int): CONSTANT_Class_info
     protected def CONSTANT_Fieldref_info(class_index: Int, name_and_type_index: Int): CONSTANT_Fieldref_info
     protected def CONSTANT_Methodref_info(class_index: Int, name_and_type_index: Int): CONSTANT_Methodref_info
-    protected def CONSTANT_InterfaceMethodref_info(class_index: Int, name_and_type_index: Int): CONSTANT_InterfaceMethodref_info
+    protected def CONSTANT_InterfaceMethodref_info(class_index: Int, name_and_type_index: Int)
+        : CONSTANT_InterfaceMethodref_info
     protected def CONSTANT_String_info(i: Int): CONSTANT_String_info
     protected def CONSTANT_Integer_info(i: Int): CONSTANT_Integer_info
     protected def CONSTANT_Float_info(f: Float): CONSTANT_Float_info
@@ -53,12 +54,14 @@ trait Constant_PoolReader extends Constant_PoolAbstractions {
     // JAVA 7 Constant Pool Entries
     protected def CONSTANT_MethodHandle_info(reference_kind: Int, reference_index: Int): CONSTANT_MethodHandle_info
     protected def CONSTANT_MethodType_info(descriptor_index: Int): CONSTANT_MethodType_info
-    protected def CONSTANT_InvokeDynamic_info(bootstrap_method_attr_index: Int, name_and_type_index: Int): CONSTANT_InvokeDynamic_info
+    protected def CONSTANT_InvokeDynamic_info(bootstrap_method_attr_index: Int, name_and_type_index: Int)
+        : CONSTANT_InvokeDynamic_info
     // JAVA 9 Constant Pool Entries
     protected def CONSTANT_Module_info(name_index: Int): CONSTANT_Module_info
     protected def CONSTANT_Package_info(name_index: Int): CONSTANT_Package_info
     // JAVA 11 Constant Pool Entries
-    protected def CONSTANT_Dynamic_info(bootstrap_method_attr_index: Int, name_and_type_index: Int): CONSTANT_Dynamic_info
+    protected def CONSTANT_Dynamic_info(bootstrap_method_attr_index: Int, name_and_type_index: Int)
+        : CONSTANT_Dynamic_info
 
     /**
      * Creates a storage area for functions that will be called after the class file was
@@ -80,7 +83,7 @@ trait Constant_PoolReader extends Constant_PoolAbstractions {
 
     override def applyDeferredActions(cp: Constant_Pool, classFile: ClassFile): ClassFile = {
         var transformedClassFile = classFile
-        val das = cp(0).asInstanceOf[DeferredActionsStore]
+        val das                  = cp(0).asInstanceOf[DeferredActionsStore]
         das.foreach { deferredAction => transformedClassFile = deferredAction(transformedClassFile) }
         das.clear()
         transformedClassFile
@@ -153,14 +156,14 @@ trait Constant_PoolReader extends Constant_PoolAbstractions {
                     if (in.markSupported()) {
                         in.mark(UShort.MaxValue + 2)
                         val length = in.readUnsignedShort
-                        val raw = new Array[Byte](length)
+                        val raw    = new Array[Byte](length)
                         in.readFully(raw)
                         in.reset()
                         val value = in.readUTF()
                         CONSTANT_Utf8_info(raw, value)
                     } else {
                         val size = in.readUnsignedShort
-                        val raw = new Array[Byte](size)
+                        val raw  = new Array[Byte](size)
                         in.readFully(raw)
                         val data = new Array[Byte](size + 2)
                         data(0) = (0xff & (size >> 8)).toByte
@@ -193,9 +196,10 @@ trait Constant_PoolReader extends Constant_PoolAbstractions {
 
                 case _ =>
                     val header = s"wrong constant pool tag: $tag (entry: $i/$constant_pool_count); "
-                    val message =
-                        constant_pool_entries.iterator.zipWithIndex.slice(1, i).map(_.swap).
-                            mkString(header+"previous entries:\n\t", "\n\t", "\n")
+                    val message = constant_pool_entries.iterator.zipWithIndex.slice(1, i).map(_.swap).mkString(
+                        header + "previous entries:\n\t",
+                        "\n\t",
+                        "\n")
                     throw new BytecodeProcessingFailedException(message)
             }
         }

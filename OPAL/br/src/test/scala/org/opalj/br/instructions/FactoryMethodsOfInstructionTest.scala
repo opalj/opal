@@ -19,12 +19,12 @@ class FactoryMethodsOfInstructionTest extends AnyFlatSpec {
 
     val declaringClass = "my/invoke/Class"
 
-    val methodName = "myMythod"
+    val methodName       = "myMythod"
     val methodDescriptor = "()V"
 
-    val fieldName = "myField"
-    val fieldTypeObject = "Ljava/lang/Object"
-    val fieldTypeBoolean = "Z"
+    val fieldName             = "myField"
+    val fieldTypeObject       = "Ljava/lang/Object"
+    val fieldTypeBoolean      = "Z"
     val fieldTypeBooleanArray = "[Z"
 
     "INVOKEINTERFACE's factory method" should "return an INVOKEINTERFACE instruction" in {

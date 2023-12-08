@@ -4,16 +4,16 @@ package ai
 package fpcf
 package properties
 
+import org.opalj.br.ClassHierarchy
+import org.opalj.br.Field
+import org.opalj.br.FieldType
+import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.FallbackReason
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStore
 import org.opalj.value.ValueInformation
-import org.opalj.br.Field
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.ClassHierarchy
-import org.opalj.br.FieldType
 
 sealed trait FieldValueMetaInformation extends PropertyMetaInformation {
 
@@ -42,9 +42,8 @@ case class ValueBasedFieldValueInformation(theValue: ValueInformation) extends F
 }
 
 case class TypeBasedFieldValueInformation(fieldType: FieldType) extends FieldValue {
-    override def value(implicit classHierarchy: ClassHierarchy): ValueInformation = {
+    override def value(implicit classHierarchy: ClassHierarchy): ValueInformation =
         ValueInformation.forProperValue(fieldType)
-    }
 }
 
 object FieldValue extends FieldValueMetaInformation {
@@ -56,7 +55,7 @@ object FieldValue extends FieldValueMetaInformation {
         "opalj.FieldValue",
         // fallback property computation...
         (ps: PropertyStore, r: FallbackReason, f: Field) => {
-            val p = ps.context(classOf[SomeProject])
+            val p  = ps.context(classOf[SomeProject])
             val vi = ValueInformation.forProperValue(f.fieldType)(p.classHierarchy)
             ValueBasedFieldValueInformation(vi)
         }

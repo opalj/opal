@@ -1,11 +1,12 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 
-import scala.language.experimental.macros
 import scala.annotation.tailrec
-import scala.reflect.macros.blackbox.Context
-import scala.collection.immutable.ArraySeq
+import scala.language.experimental.macros
 import scala.reflect.ClassTag
+import scala.reflect.macros.blackbox.Context
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Defines common control abstractions.
@@ -22,9 +23,7 @@ package object control {
      */
     final def foreachNonNullValue[T <: AnyRef](
         a: Array[T]
-    )(
-        f: (Int, T) => Unit
-    ): Unit = macro ControlAbstractionsImplementation.foreachNonNullValue[T]
+      )(f: (Int, T) => Unit): Unit = macro ControlAbstractionsImplementation.foreachNonNullValue[T]
 
     /**
      * Allocation free, local iteration over all elements of an array.
@@ -33,9 +32,7 @@ package object control {
      */
     final def foreachWithIndex[T <: AnyRef](
         a: Array[T]
-    )(
-        f: (T, Int) => Unit
-    ): Unit = macro ControlAbstractionsImplementation.foreachWithIndex[T]
+      )(f: (T, Int) => Unit): Unit = macro ControlAbstractionsImplementation.foreachWithIndex[T]
 
     /**
      * Executes the given function `f` for the first `n` values of the given list.
@@ -44,10 +41,9 @@ package object control {
      * @note '''This is a macro.'''
      */
     final def forFirstN[T <: AnyRef](
-        l: List[T], n: Int
-    )(
-        f: T => Unit
-    ): Unit = macro ControlAbstractionsImplementation.forFirstN[T]
+        l: List[T],
+        n: Int
+      )(f: T => Unit): Unit = macro ControlAbstractionsImplementation.forFirstN[T]
 
     /**
      * Evaluates the given expression `f` with type `T` the given number of
@@ -73,9 +69,8 @@ package object control {
      */
     def fillArraySeq[T <: AnyRef](
         times: Int
-    )(
-        f: => T
-    )(implicit classTag: ClassTag[T]): ArraySeq[T] = ArraySeq.fill(times)(f)
+      )(f:     => T
+      )(implicit classTag: ClassTag[T]): ArraySeq[T] = ArraySeq.fill(times)(f)
 
     // macro ControlAbstractionsImplementation.fillRefArray[T]
     // OLD IMPLEMENTATION USING HIGHER-ORDER FUNCTIONS
@@ -115,15 +110,11 @@ package object control {
      */
     def fillIntArray(
         times: Int
-    )(
-        f: Int
-    ): ArraySeq[Int] = macro ControlAbstractionsImplementation.fillIntArray
+      )(f: Int): ArraySeq[Int] = macro ControlAbstractionsImplementation.fillIntArray
 
     def fillArrayOfInt(
         times: Int
-    )(
-        f: Int
-    ): Array[Int] = macro ControlAbstractionsImplementation.fillArrayOfInt
+      )(f: Int): Array[Int] = macro ControlAbstractionsImplementation.fillArrayOfInt
 
     /**
      * Iterates over the given range of integer values `[from,to]` and calls the given
@@ -134,10 +125,9 @@ package object control {
      * @note '''This is a macro.'''
      */
     def iterateTo(
-        from: Int, to: Int
-    )(
-        f: Int => Unit
-    ): Unit = macro ControlAbstractionsImplementation.iterateTo
+        from: Int,
+        to:   Int
+      )(f: Int => Unit): Unit = macro ControlAbstractionsImplementation.iterateTo
 
     /**
      * Iterates over the given range of integer values `[from,until)` and calls the given
@@ -146,10 +136,9 @@ package object control {
      * If `from` is smaller than `until`, `f` will not be called.
      */
     def iterateUntil(
-        from: Int, until: Int
-    )(
-        f: Int => Unit
-    ): Unit = macro ControlAbstractionsImplementation.iterateUntil
+        from:  Int,
+        until: Int
+      )(f: Int => Unit): Unit = macro ControlAbstractionsImplementation.iterateUntil
 
     /**
      * Runs the given function f the given number of times.
@@ -171,18 +160,15 @@ package object control {
      *          precisely specified.
      */
     // TODO Rename: binarySearch
-    def find[T <: AnyRef](data: ArraySeq[T], comparable: Comparable[T]): Option[T] = {
-        find(data)(comparable.compareTo)
-    }
+    def find[T <: AnyRef](data: ArraySeq[T], comparable: Comparable[T]): Option[T] = find(data)(comparable.compareTo)
 
     // TODO Rename: binarySearch
     def find[T <: AnyRef](data: ArraySeq[T])(compareTo: T => Int): Option[T] = {
         @tailrec @inline def find(low: Int, high: Int): Option[T] = {
-            if (high < low)
-                return None;
+            if (high < low) return None;
 
-            val mid = (low + high) / 2 // <= will never overflow...(by constraint...)
-            val e = data(mid)
+            val mid         = (low + high) / 2 // <= will never overflow...(by constraint...)
+            val e           = data(mid)
             val eComparison = compareTo(e)
             if (eComparison == 0) {
                 Some(e)
@@ -208,17 +194,14 @@ package control {
 
         def foreachNonNullValue[T <: AnyRef: c.WeakTypeTag](
             c: Context
-        )(
-            a: c.Expr[Array[T]]
-        )(
-            f: c.Expr[(Int, T) => Unit]
-        ): c.Expr[Unit] = {
+          )(a: c.Expr[Array[T]]
+          )(f: c.Expr[(Int, T) => Unit]): c.Expr[Unit] = {
             import c.universe._
 
             reify {
-                val array = a.splice // evaluate only once!
+                val array       = a.splice // evaluate only once!
                 val arrayLength = array.length
-                var i = 0
+                var i           = 0
                 while (i < arrayLength) {
                     val arrayEntry = array(i)
                     if (arrayEntry ne null) f.splice(i, arrayEntry)
@@ -229,17 +212,14 @@ package control {
 
         def foreachWithIndex[T <: AnyRef: c.WeakTypeTag](
             c: Context
-        )(
-            a: c.Expr[Array[T]]
-        )(
-            f: c.Expr[(T, Int) => Unit]
-        ): c.Expr[Unit] = {
+          )(a: c.Expr[Array[T]]
+          )(f: c.Expr[(T, Int) => Unit]): c.Expr[Unit] = {
             import c.universe._
 
             reify {
-                val array = a.splice // evaluate only once!
+                val array       = a.splice // evaluate only once!
                 val arrayLength = array.length
-                var i = 0
+                var i           = 0
                 while (i < arrayLength) {
                     val arrayEntry = array(i)
                     f.splice(arrayEntry, i)
@@ -250,17 +230,15 @@ package control {
 
         def forFirstN[T <: AnyRef: c.WeakTypeTag](
             c: Context
-        )(
-            l: c.Expr[List[T]], n: c.Expr[Int]
-        )(
-            f: c.Expr[T => Unit]
-        ): c.Expr[Unit] = {
+          )(l: c.Expr[List[T]],
+            n: c.Expr[Int]
+          )(f: c.Expr[T => Unit]): c.Expr[Unit] = {
             import c.universe._
 
             reify {
                 var remainingList = l.splice
-                val max = n.splice
-                var i = 0
+                val max           = n.splice
+                var i             = 0
                 while (i < max) {
                     val head = remainingList.head
                     remainingList = remainingList.tail
@@ -271,12 +249,9 @@ package control {
         }
 
         def fillRefArray[T <: AnyRef: ClassTag](
-            c: Context
-        )(
-            times: c.Expr[Int]
-        )(
-            f: c.Expr[T]
-        ): c.Expr[ArraySeq[T]] = {
+            c:     Context
+          )(times: c.Expr[Int]
+          )(f: c.Expr[T]): c.Expr[ArraySeq[T]] = {
             import c.universe._
 
             reify {
@@ -285,7 +260,7 @@ package control {
                     ArraySeq.empty[T]
                 } else {
                     val array = new Array[AnyRef](size)
-                    var i = 0
+                    var i     = 0
                     while (i < size) {
                         val value = f.splice // => we evaluate f the given number of times
                         array(i) = value
@@ -305,7 +280,7 @@ package control {
                     ArraySeq.empty[Int]
                 } else {
                     val array = new Array[Int](size)
-                    var i = 0
+                    var i     = 0
                     while (i < size) {
                         val value = f.splice // => we evaluate f the given number of times
                         array(i) = value
@@ -325,7 +300,7 @@ package control {
                     Array.empty
                 } else {
                     val array = new Array[Int](size)
-                    var i = 0
+                    var i     = 0
                     while (i < size) {
                         val value = f.splice // => we evaluate f the given number of times
                         array(i) = value
@@ -337,17 +312,14 @@ package control {
         }
 
         def iterateTo(
-            c: Context
-        )(
-            from: c.Expr[Int],
+            c:    Context
+          )(from: c.Expr[Int],
             to:   c.Expr[Int]
-        )(
-            f: c.Expr[(Int) => Unit]
-        ): c.Expr[Unit] = {
+          )(f: c.Expr[(Int) => Unit]): c.Expr[Unit] = {
             import c.universe._
 
             reify {
-                var i = from.splice
+                var i   = from.splice
                 val max = to.splice // => to is evaluated only once
                 while (i <= max) {
                     f.splice(i) // => we evaluate f the given number of times
@@ -357,17 +329,14 @@ package control {
         }
 
         def iterateUntil(
-            c: Context
-        )(
-            from:  c.Expr[Int],
+            c:     Context
+          )(from:  c.Expr[Int],
             until: c.Expr[Int]
-        )(
-            f: c.Expr[(Int) => Unit]
-        ): c.Expr[Unit] = {
+          )(f: c.Expr[(Int) => Unit]): c.Expr[Unit] = {
             import c.universe._
 
             reify {
-                var i = from.splice
+                var i   = from.splice
                 val max = until.splice // => until is evaluated only once
                 while (i < max) {
                     f.splice(i) // => we evaluate f the given number of times

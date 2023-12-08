@@ -5,13 +5,13 @@ package analyses
 
 import scala.language.implicitConversions
 
-import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.matchers.should.Matchers
-
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.log.GlobalLogContext
+
+import org.junit.runner.RunWith
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * @author Tobias Becker
@@ -20,79 +20,66 @@ import org.opalj.log.GlobalLogContext
 class JoinObjectTypesTest extends AnyFunSpec with Matchers {
 
     final val classhierachy = {
-        //val thisClass = classOf[org.opalj.br.analyses.JoinObjectTypesTest]
+        // val thisClass = classOf[org.opalj.br.analyses.JoinObjectTypesTest]
         val thisClass = this.getClass()
-        val in = thisClass.getResourceAsStream("ClassHierarchyUpperBounds.ths")
-        if (in == null)
-            throw new UnknownError("class hierarchy could not be loaded")
+        val in        = thisClass.getResourceAsStream("ClassHierarchyUpperBounds.ths")
+        if (in == null) throw new UnknownError("class hierarchy could not be loaded")
         ClassHierarchy(
             Iterable.empty,
             List(() => in)
         )(GlobalLogContext)
     }
 
-    implicit def stringToUIDSetObjectType(str: String): UIDSet[ObjectType] = UIDSet(ObjectType(str))
-    implicit def stringToObjectType(str: String): ObjectType = ObjectType(str)
-    implicit def setToUIDSet(s: Set[String]): UIDSet[ObjectType] = {
-        UIDSet.empty[ObjectType] ++ s.map(ObjectType.apply)
-    }
+    implicit def stringToUIDSetObjectType(str: String): UIDSet[ObjectType]      = UIDSet(ObjectType(str))
+    implicit def stringToObjectType(str:       String): ObjectType              = ObjectType(str)
+    implicit def setToUIDSet(s:                Set[String]): UIDSet[ObjectType] = UIDSet.empty[ObjectType] ++ s.map(ObjectType.apply)
 
-    def mkString(param: UIDSet[ObjectType]) = {
-        param.toSeq.map(_.toJava).mkString("{", ",", "}")
-    }
+    def mkString(param: UIDSet[ObjectType]) = param.toSeq.map(_.toJava).mkString("{", ",", "}")
 
     def testJoinOfTwoObjectTypes(
         param1:    ObjectType,
         param2:    ObjectType,
         reflexive: Boolean,
-        expected:  UIDSet[ObjectType]
-    ) = {
+        expected:  UIDSet[ObjectType]) = {
         val result = classhierachy.joinObjectTypes(param1, param2, reflexive)
-        if (result != expected)
-            fail(
-                s"${param1} join${if (reflexive) "(reflexive)" else ""}"+
-                    s" ${param2} is ${mkString(result)};"+
-                    s" expected ${mkString(expected)}"
-            )
+        if (result != expected) fail(
+            s"${param1} join${if (reflexive) "(reflexive)" else ""}" +
+                s" ${param2} is ${mkString(result)};" +
+                s" expected ${mkString(expected)}"
+        )
     }
 
     def testJoinOfObjectTypesWithUpperBound(
         param1:    ObjectType,
         param2:    UIDSet[ObjectType],
         reflexive: Boolean,
-        expected:  UIDSet[ObjectType]
-    ) = {
+        expected:  UIDSet[ObjectType]) = {
         val result = classhierachy.joinObjectTypes(param1, param2, reflexive)
-        if (result != expected)
-            fail(
-                s"$param1 join${if (reflexive) "(reflexive)" else ""}"+
-                    s" ${mkString(param2)} is ${mkString(result)};"+
-                    s" expected ${mkString(expected)}"
-            )
+        if (result != expected) fail(
+            s"$param1 join${if (reflexive) "(reflexive)" else ""}" +
+                s" ${mkString(param2)} is ${mkString(result)};" +
+                s" expected ${mkString(expected)}"
+        )
     }
 
     def testJoinObjectTypesUntilSingleUpperBound(
         param1:    ObjectType,
         param2:    ObjectType,
         reflexive: Boolean,
-        expected:  ObjectType
-    ) = {
+        expected:  ObjectType) = {
         val result = classhierachy.joinObjectTypesUntilSingleUpperBound(param1, param2, reflexive)
-        if (result != expected)
-            fail(s"$param1 join $param2 ${if (reflexive) "(reflexive)" else ""}"+
-                s" with joinObjectTypesUntilSingleUpperBound(ObjectType, ObjectType, Boolean) is ${result};"+
-                s" expected ${expected}")
+        if (result != expected) fail(s"$param1 join $param2 ${if (reflexive) "(reflexive)" else ""}" +
+            s" with joinObjectTypesUntilSingleUpperBound(ObjectType, ObjectType, Boolean) is ${result};" +
+            s" expected ${expected}")
     }
 
     def testJoinObjectTypesUntilSingleUpperBound(
         param:    UIDSet[ObjectType],
-        expected: ObjectType
-    ) = {
+        expected: ObjectType) = {
         val result = classhierachy.joinObjectTypesUntilSingleUpperBound(param)
-        if (result != expected)
-            fail(s"join of ${mkString(param)}"+
-                s" using joinObjectTypesUntilSingleUpperBound(UIDSet[ObjectType]) is ${result};"+
-                s" expected ${expected}")
+        if (result != expected) fail(s"join of ${mkString(param)}" +
+            s" using joinObjectTypesUntilSingleUpperBound(UIDSet[ObjectType]) is ${result};" +
+            s" expected ${expected}")
 
     }
 
@@ -744,7 +731,10 @@ class JoinObjectTypesTest extends AnyFunSpec with Matchers {
                 }
 
                 it("join of interfaces with same direct superinterface and another common superinterface should result in java/lang/Object (non-reflexive)") {
-                    testJoinObjectTypesUntilSingleUpperBound("SubSubIDSubIA", "SubSubIDSubIA2", false, "java/lang/Object")
+                    testJoinObjectTypesUntilSingleUpperBound("SubSubIDSubIA",
+                                                             "SubSubIDSubIA2",
+                                                             false,
+                                                             "java/lang/Object")
                 }
 
                 it("join of interfaces with same indirect superinterface and a different superinterface should result in their common superinterface (reflexive)") {
@@ -802,15 +792,18 @@ class JoinObjectTypesTest extends AnyFunSpec with Matchers {
                 }
 
                 it("join of several interfaces with the same direct superinterface and another common superinterface should result in their common superinterface (reflexive)") {
-                    testJoinObjectTypesUntilSingleUpperBound(Set("SubID2", "SubSubIDSubIA", "SubID3", "SubSubIDSubIA2"), "ID")
+                    testJoinObjectTypesUntilSingleUpperBound(Set("SubID2", "SubSubIDSubIA", "SubID3", "SubSubIDSubIA2"),
+                                                             "ID")
                 }
 
                 it("join of several interfaces with same indirect superinterface and a different superinterface should result in java/lang/Object (reflexive)") {
-                    testJoinObjectTypesUntilSingleUpperBound(Set("SubSubID2", "SubSubIDSubIA", "SubID3", "SubIB"), "java/lang/Object")
+                    testJoinObjectTypesUntilSingleUpperBound(Set("SubSubID2", "SubSubIDSubIA", "SubID3", "SubIB"),
+                                                             "java/lang/Object")
                 }
 
                 it("join of several interfaces with same indirect superinterface and another common superinterface should result in indirect superinterface (reflexive)") {
-                    testJoinObjectTypesUntilSingleUpperBound(Set("SubSubID2", "SubSubIDSubIA", "SubID3", "SubIDSubIA"), "ID")
+                    testJoinObjectTypesUntilSingleUpperBound(Set("SubSubID2", "SubSubIDSubIA", "SubID3", "SubIDSubIA"),
+                                                             "ID")
                 }
 
                 it("join of several interfaces with different superinterfaces should result in java/lang/Object (reflexive)") {

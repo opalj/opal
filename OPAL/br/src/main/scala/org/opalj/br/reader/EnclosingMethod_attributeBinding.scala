@@ -6,13 +6,12 @@ package reader
 import org.opalj.bi.reader.EnclosingMethod_attributeReader
 
 /**
- *
  * @author Michael Eichberg
  */
 trait EnclosingMethod_attributeBinding
     extends EnclosingMethod_attributeReader
-    with ConstantPoolBinding
-    with AttributeBinding {
+        with ConstantPoolBinding
+        with AttributeBinding {
 
     type EnclosingMethod_attribute = br.EnclosingMethod
 
@@ -22,11 +21,8 @@ trait EnclosingMethod_attributeBinding
         ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         class_index:          Constant_Pool_Index,
-        method_index:         Constant_Pool_Index
-    ): EnclosingMethod_attribute = {
-
-        if (method_index == 0)
-            new EnclosingMethod_attribute(cp(class_index).asObjectType(cp), None, None)
+        method_index:         Constant_Pool_Index): EnclosingMethod_attribute =
+        if (method_index == 0) new EnclosingMethod_attribute(cp(class_index).asObjectType(cp), None, None)
         else {
             val nameAndType = cp(method_index).asNameAndType
             new EnclosingMethod_attribute(
@@ -35,6 +31,4 @@ trait EnclosingMethod_attributeBinding
                 Some(nameAndType.methodDescriptor(cp))
             )
         }
-    }
 }
-

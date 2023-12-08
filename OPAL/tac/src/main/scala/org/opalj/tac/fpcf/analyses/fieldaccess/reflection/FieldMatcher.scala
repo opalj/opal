@@ -6,14 +6,14 @@ package analyses
 package fieldaccess
 package reflection
 
+import scala.collection.immutable.ArraySeq
+
+import org.opalj.br.Field
+import org.opalj.br.FieldType
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.ProjectIndexKey
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.Field
-import org.opalj.br.FieldType
 import org.opalj.value.IsReferenceValue
-
-import scala.collection.immutable.ArraySeq
 
 /**
  * Used to determine whether a certain field should be considered as a target for a reflective access.
@@ -38,9 +38,8 @@ final class NameBasedFieldMatcher(val possibleNames: Set[String]) extends FieldM
 }
 
 class ClassBasedFieldMatcher(
-        val possibleClasses:          Set[ObjectType],
-        val onlyFieldsExactlyInClass: Boolean
-) extends FieldMatcher {
+        val possibleClasses: Set[ObjectType],
+        val onlyFieldsExactlyInClass: Boolean) extends FieldMatcher {
 
     // IMPROVE use a ProjectInformationKey or WeakHashMap to cache fields per class per project (for the contains check)
     private[this] def fields(implicit p: SomeProject): Set[Field] = possibleClasses.flatMap { c =>
@@ -49,7 +48,7 @@ class ClassBasedFieldMatcher(
     }
 
     override def initialFields(implicit p: SomeProject): Iterator[Field] = fields.iterator
-    override def contains(f: Field)(implicit p: SomeProject): Boolean = fields.contains(f)
+    override def contains(f:               Field)(implicit p: SomeProject): Boolean = fields.contains(f)
     override def priority: Int = 1
 }
 
@@ -60,7 +59,8 @@ class ClassBasedFieldMatcher(
 class UBTypeBasedFieldMatcher(val fieldType: FieldType) extends FieldMatcher {
 
     override def initialFields(implicit p: SomeProject): Iterator[Field] = p.allFields.iterator.filter(contains)
-    override def contains(f: Field)(implicit p: SomeProject): Boolean = isTypeCompatible(fieldType, f.fieldType)(p.classHierarchy)
+    override def contains(f: Field)(implicit p: SomeProject): Boolean =
+        isTypeCompatible(fieldType, f.fieldType)(p.classHierarchy)
     override def priority: Int = 3
 }
 
@@ -71,7 +71,8 @@ class UBTypeBasedFieldMatcher(val fieldType: FieldType) extends FieldMatcher {
 class LBTypeBasedFieldMatcher(val fieldType: FieldType) extends FieldMatcher {
 
     override def initialFields(implicit p: SomeProject): Iterator[Field] = p.allFields.iterator.filter(contains)
-    override def contains(f: Field)(implicit p: SomeProject): Boolean = isTypeCompatible(f.fieldType, fieldType)(p.classHierarchy)
+    override def contains(f: Field)(implicit p: SomeProject): Boolean =
+        isTypeCompatible(f.fieldType, fieldType)(p.classHierarchy)
     override def priority: Int = 3
 }
 
@@ -89,7 +90,7 @@ class ActualReceiverBasedFieldMatcher(val receiver: IsReferenceValue) extends Fi
     override def contains(f: Field)(implicit p: SomeProject): Boolean = {
         val isNull = receiver.isNull
         (isNull.isNoOrUnknown && receiver.isValueASubtypeOf(f.classFile.thisType)(p.classHierarchy).isYesOrUnknown) ||
-            (isNull.isYesOrUnknown && f.isStatic)
+        (isNull.isYesOrUnknown && f.isStatic)
     }
 
     override def priority: Int = 3
@@ -110,7 +111,7 @@ class ActualParameterBasedFieldMatcher(val actualParam: V) extends FieldMatcher 
 
 sealed trait PropertyBasedFieldMatcher extends FieldMatcher {
 
-    override final def initialFields(implicit p: SomeProject): Iterator[Field] = p.allFields.iterator.filter(contains)
+    final override def initialFields(implicit p: SomeProject): Iterator[Field] = p.allFields.iterator.filter(contains)
     override def priority: Int = 4
 }
 
@@ -132,25 +133,24 @@ object PublicFieldMatcher extends PropertyBasedFieldMatcher {
 object AllFieldsMatcher extends FieldMatcher {
 
     override def initialFields(implicit p: SomeProject): Iterator[Field] = p.allFields.iterator
-    override def contains(f: Field)(implicit p: SomeProject): Boolean = true
+    override def contains(f:               Field)(implicit p: SomeProject): Boolean = true
     override def priority: Int = 5
 }
 
 object NoFieldsMatcher extends FieldMatcher {
 
     override def initialFields(implicit p: SomeProject): Iterator[Field] = Iterator.empty
-    override def contains(f: Field)(implicit p: SomeProject): Boolean = false
+    override def contains(f:               Field)(implicit p: SomeProject): Boolean = false
     override def priority: Int = 0
 }
 
 object FieldMatching {
 
-    def getPossibleFields(filters: Seq[FieldMatcher])(implicit p: SomeProject): Iterator[Field] = {
+    def getPossibleFields(filters: Seq[FieldMatcher])(implicit p: SomeProject): Iterator[Field] =
         if (filters.isEmpty) {
             Iterator.empty
         } else {
             val sortedMatchers = filters.sortBy(_.priority)
             sortedMatchers.head.initialFields.filter(f => sortedMatchers.tail.forall(_.contains(f)))
         }
-    }
 }

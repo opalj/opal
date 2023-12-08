@@ -49,30 +49,26 @@ trait DeferredDynamicConstantResolution extends ConstantPoolBinding with CodeBin
         ap_descriptor_index: Constant_Pool_Index,
         dynamicInfo:         CONSTANT_Dynamic_info,
         instructions:        Array[Instruction],
-        pc:                  PC
-    ): ClassFile = {
+        pc:                  PC): ClassFile = {
 
         val bootstrapMethods = classFile.attributes collectFirst {
             case BootstrapMethodTable(bms) => bms
         }
 
         val ldc = instructions(pc) match {
-            case INCOMPLETE_LDC =>
-                LoadDynamic(
+            case INCOMPLETE_LDC => LoadDynamic(
                     bootstrapMethods.get(dynamicInfo.bootstrapMethodAttributeIndex),
                     dynamicInfo.name(cp),
                     dynamicInfo.descriptor(cp)
                 )
 
-            case INCOMPLETE_LDC_W =>
-                LoadDynamic_W(
+            case INCOMPLETE_LDC_W => LoadDynamic_W(
                     bootstrapMethods.get(dynamicInfo.bootstrapMethodAttributeIndex),
                     dynamicInfo.name(cp),
                     dynamicInfo.descriptor(cp)
                 )
 
-            case INCOMPLETE_LDC2_W =>
-                LoadDynamic2_W(
+            case INCOMPLETE_LDC2_W => LoadDynamic2_W(
                     bootstrapMethods.get(dynamicInfo.bootstrapMethodAttributeIndex),
                     dynamicInfo.name(cp),
                     dynamicInfo.descriptor(cp)

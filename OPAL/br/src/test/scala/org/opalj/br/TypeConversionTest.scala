@@ -2,11 +2,12 @@
 package org.opalj
 package br
 
+import org.opalj.br.instructions._
+
+import org.junit.runner.RunWith
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
-import org.junit.runner.RunWith
-import org.opalj.br.instructions._
 
 /**
  * Tests the factory methods for [[NumericConversionInstruction]]s.
@@ -21,19 +22,19 @@ class TypeConversionTest extends AnyFunSpec with Matchers {
         describe("converting primitive types") {
 
             it("should return an empty array if source and target types are identical") {
-                ByteType.convertTo(ByteType) should have size (0)
-                CharType.convertTo(CharType) should have size (0)
-                ShortType.convertTo(ShortType) should have size (0)
-                IntegerType.convertTo(IntegerType) should have size (0)
-                LongType.convertTo(LongType) should have size (0)
-                FloatType.convertTo(FloatType) should have size (0)
-                DoubleType.convertTo(DoubleType) should have size (0)
+                ByteType.convertTo(ByteType) should have size 0
+                CharType.convertTo(CharType) should have size 0
+                ShortType.convertTo(ShortType) should have size 0
+                IntegerType.convertTo(IntegerType) should have size 0
+                LongType.convertTo(LongType) should have size 0
+                FloatType.convertTo(FloatType) should have size 0
+                DoubleType.convertTo(DoubleType) should have size 0
             }
 
             it("conversion of int like values to int values requires no code") {
-                ByteType.convertTo(IntegerType) should have size (0)
-                CharType.convertTo(IntegerType) should have size (0)
-                ShortType.convertTo(IntegerType) should have size (0)
+                ByteType.convertTo(IntegerType) should have size 0
+                CharType.convertTo(IntegerType) should have size 0
+                ShortType.convertTo(IntegerType) should have size 0
             }
 
             it("should be able to convert from int to other integer types") {
@@ -49,7 +50,7 @@ class TypeConversionTest extends AnyFunSpec with Matchers {
             }
 
             it("should be able to convert from byte to other integer types") {
-                ByteType.convertTo(ShortType) should have size (0)
+                ByteType.convertTo(ShortType) should have size 0
                 ByteType.convertTo(CharType) should be(Array(I2C))
                 ByteType.convertTo(LongType) should be(Array(I2L))
             }
@@ -119,7 +120,7 @@ class TypeConversionTest extends AnyFunSpec with Matchers {
             BaseType.baseTypes foreach { t =>
                 it(s"should convert ${t.toJava} to ${t.WrapperType.toJava}") {
                     val instructions = t.boxValue
-                    val descriptor = MethodDescriptor(t, t.WrapperType)
+                    val descriptor   = MethodDescriptor(t, t.WrapperType)
                     instructions should be(Array(
                         INVOKESTATIC(t.WrapperType, false, "valueOf", descriptor),
                         null,
@@ -135,8 +136,7 @@ class TypeConversionTest extends AnyFunSpec with Matchers {
                 it(s"should convert ${t.WrapperType.toJava} to ${t.toJava}") {
                     val instructions = t.WrapperType.unboxValue
                     instructions should be(Array(
-                        INVOKEVIRTUAL(t.WrapperType, s"${t.toJava}Value",
-                            MethodDescriptor(NoFieldTypes, t)),
+                        INVOKEVIRTUAL(t.WrapperType, s"${t.toJava}Value", MethodDescriptor(NoFieldTypes, t)),
                         null,
                         null
                     ))

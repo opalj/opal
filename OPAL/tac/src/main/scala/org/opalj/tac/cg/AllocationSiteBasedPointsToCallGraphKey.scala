@@ -32,17 +32,14 @@ import org.opalj.tac.fpcf.analyses.pointsto.ReflectionAllocationsAnalysisSchedul
  */
 object AllocationSiteBasedPointsToCallGraphKey extends CallGraphKey {
 
-    override def requirements(project: SomeProject): ProjectInformationKeys = {
+    override def requirements(project: SomeProject): ProjectInformationKeys =
         Seq(DefinitionSitesKey, VirtualFormalParametersKey, SimpleContextsKey) ++:
             super.requirements(project)
-    }
 
     override protected[cg] def callGraphSchedulers(
-        project: SomeProject
-    ): Iterable[FPCFAnalysisScheduler] = {
-        val isLibrary =
-            project.config.getString("org.opalj.br.analyses.cg.InitialEntryPointsKey.analysis") ==
-                "org.opalj.br.analyses.cg.LibraryEntryPointsFinder"
+        project: SomeProject): Iterable[FPCFAnalysisScheduler] = {
+        val isLibrary = project.config.getString("org.opalj.br.analyses.cg.InitialEntryPointsKey.analysis") ==
+            "org.opalj.br.analyses.cg.LibraryEntryPointsFinder"
         List(
             AllocationSiteBasedPointsToAnalysisScheduler,
             AllocationSiteBasedConfiguredMethodsPointsToAnalysisScheduler,
@@ -56,6 +53,5 @@ object AllocationSiteBasedPointsToCallGraphKey extends CallGraphKey {
             ReflectionRelatedFieldAccessesAnalysisScheduler
         ) ::: (if (isLibrary) List(AllocationSiteBasedLibraryPointsToAnalysisScheduler) else Nil)
     }
-    override def getTypeIterator(project: SomeProject) =
-        new AllocationSitesPointsToTypeIterator(project)
+    override def getTypeIterator(project: SomeProject) = new AllocationSitesPointsToTypeIterator(project)
 }

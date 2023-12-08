@@ -12,9 +12,8 @@ sealed abstract class VerificationTypeInfo {
     def tag: Int
 
     def isObjectVariableInfo: Boolean = false
-    def asObjectVariableInfo: ObjectVariableInfo = {
+    def asObjectVariableInfo: ObjectVariableInfo =
         throw new ClassCastException(s"$this cannot be cast to ObjectVariableInfo");
-    }
 }
 
 case object TopVariableInfo extends VerificationTypeInfo {
@@ -48,7 +47,7 @@ case object UninitializedThisVariableInfo extends VerificationTypeInfo {
 case class ObjectVariableInfo(clazz: ReferenceType) extends VerificationTypeInfo {
     final val tag: Int = 7
 
-    override def isObjectVariableInfo: Boolean = true
+    override def isObjectVariableInfo: Boolean   = true
     override def asObjectVariableInfo: this.type = this
 }
 

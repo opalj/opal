@@ -2,9 +2,9 @@
 package org.opalj
 package br
 
-import org.opalj.bi.ACC_SYNTHETIC
-import org.opalj.bi.ACC_MANDATED
 import org.opalj.bi.ACC_FINAL
+import org.opalj.bi.ACC_MANDATED
+import org.opalj.bi.ACC_SYNTHETIC
 
 /**
  * The description of a method parameter. If `name` is `None` a formal parameter is described.
@@ -12,9 +12,8 @@ import org.opalj.bi.ACC_FINAL
  * @author Michael Eichberg
  */
 case class MethodParameter(
-        name:        Option[String],
-        accessFlags: Int
-) {
+        name: Option[String],
+        accessFlags: Int) {
 
     final def isSynthetic: Boolean = (ACC_SYNTHETIC.mask & accessFlags) != 0
 

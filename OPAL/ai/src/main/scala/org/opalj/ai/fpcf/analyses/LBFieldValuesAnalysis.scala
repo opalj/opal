@@ -5,7 +5,32 @@ package fpcf
 package analyses
 
 import scala.collection.mutable
-import org.opalj.log.OPALLogger
+
+import org.opalj.ai.domain
+import org.opalj.ai.fpcf.analyses.FieldValuesAnalysis.ignoredFields
+import org.opalj.ai.fpcf.domain.RefinedTypeLevelFieldAccessInstructions
+//import org.opalj.ai.fpcf.domain.RefinedTypeLevelInvokeInstructions
+import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
+import org.opalj.ai.fpcf.properties.FieldValue
+import org.opalj.ai.fpcf.properties.TypeBasedFieldValueInformation
+import org.opalj.ai.fpcf.properties.ValueBasedFieldValueInformation
+import org.opalj.br.ClassFile
+import org.opalj.br.Code
+import org.opalj.br.Field
+import org.opalj.br.FieldType
+import org.opalj.br.Method
+import org.opalj.br.ObjectType
+import org.opalj.br.PC
+import org.opalj.br.analyses.DeclaredFields
+import org.opalj.br.analyses.DeclaredFieldsKey
+import org.opalj.br.analyses.DeclaredMethods
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.FieldAccessInformationKey
+import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
+import org.opalj.br.fpcf.ContextProviderKey
+import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EOptionPSet
@@ -22,31 +47,7 @@ import org.opalj.fpcf.Result
 import org.opalj.fpcf.Results
 import org.opalj.fpcf.SinglePropertiesBoundType
 import org.opalj.fpcf.SomeEPS
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.ClassFile
-import org.opalj.br.Code
-import org.opalj.br.FieldType
-import org.opalj.br.Method
-import org.opalj.br.ObjectType
-import org.opalj.br.PC
-import org.opalj.br.analyses.FieldAccessInformationKey
-import org.opalj.br.Field
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.ai.domain
-import org.opalj.ai.fpcf.analyses.FieldValuesAnalysis.ignoredFields
-import org.opalj.ai.fpcf.domain.RefinedTypeLevelFieldAccessInstructions
-import org.opalj.br.analyses.DeclaredFields
-import org.opalj.br.analyses.DeclaredFieldsKey
-import org.opalj.br.analyses.DeclaredMethods
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.fpcf.ContextProviderKey
-//import org.opalj.ai.fpcf.domain.RefinedTypeLevelInvokeInstructions
-import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
-import org.opalj.ai.fpcf.properties.FieldValue
-import org.opalj.ai.fpcf.properties.TypeBasedFieldValueInformation
-import org.opalj.ai.fpcf.properties.ValueBasedFieldValueInformation
+import org.opalj.log.OPALLogger
 
 /**
  * Computes for each private field an approximation of the type of values stored in the field.
@@ -102,13 +103,12 @@ import org.opalj.ai.fpcf.properties.ValueBasedFieldValueInformation
  * @author Michael Eichberg
  */
 class LBFieldValuesAnalysis private[analyses] (
-        val project: SomeProject
-) extends FPCFAnalysis { analysis =>
+        val project: SomeProject) extends FPCFAnalysis { analysis =>
 
-    final val fieldAccessInformation = project.get(FieldAccessInformationKey)
-    final val contextProvider = project.get(ContextProviderKey)
+    final val fieldAccessInformation                    = project.get(FieldAccessInformationKey)
+    final val contextProvider                           = project.get(ContextProviderKey)
     implicit final val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
-    implicit final val declaredFields: DeclaredFields = project.get(DeclaredFieldsKey)
+    implicit final val declaredFields: DeclaredFields   = project.get(DeclaredFieldsKey)
 
     /**
      * Computes the set of the fields which are potentially refinable w.r.t. type information.
@@ -148,29 +148,28 @@ class LBFieldValuesAnalysis private[analyses] (
      */
     class FieldValuesAnalysisDomain private (
             val classFile: ClassFile,
-            val dependees: EOptionPSet[Entity, Property]
-    ) extends CorrelationalDomain
-        with domain.TheProject
-        with domain.TheCode
-        with domain.DefaultSpecialDomainValuesBinding
-        with domain.ThrowAllPotentialExceptionsConfiguration
-        // We don't use: "domain.l0.DefaultTypeLevelIntegerValues" because we want constant
-        // propagation which helps in case of "ifs" related to type tests etc.::
-        with domain.l1.DefaultIntegerValues
-        with domain.l0.DefaultTypeLevelLongValues
-        with domain.l0.DefaultTypeLevelFloatValues
-        with domain.l0.DefaultTypeLevelDoubleValues
-        with domain.l0.TypeLevelPrimitiveValuesConversions
-        with domain.l0.TypeLevelLongValuesShiftOperators
-        with domain.l0.TypeLevelFieldAccessInstructions
-        with domain.l0.TypeLevelInvokeInstructions
-        with domain.l0.TypeLevelDynamicLoads
-        // IT HAST TO BE L0 - we can't deal with "null" values!
-        with domain.l0.DefaultReferenceValuesBinding
-        with domain.DefaultHandlingOfMethodResults
-        with domain.IgnoreSynchronization
-        //with RefinedTypeLevelInvokeInstructions
-        with RefinedTypeLevelFieldAccessInstructions {
+            val dependees: EOptionPSet[Entity, Property]) extends CorrelationalDomain
+            with domain.TheProject
+            with domain.TheCode
+            with domain.DefaultSpecialDomainValuesBinding
+            with domain.ThrowAllPotentialExceptionsConfiguration
+            // We don't use: "domain.l0.DefaultTypeLevelIntegerValues" because we want constant
+            // propagation which helps in case of "ifs" related to type tests etc.::
+            with domain.l1.DefaultIntegerValues
+            with domain.l0.DefaultTypeLevelLongValues
+            with domain.l0.DefaultTypeLevelFloatValues
+            with domain.l0.DefaultTypeLevelDoubleValues
+            with domain.l0.TypeLevelPrimitiveValuesConversions
+            with domain.l0.TypeLevelLongValuesShiftOperators
+            with domain.l0.TypeLevelFieldAccessInstructions
+            with domain.l0.TypeLevelInvokeInstructions
+            with domain.l0.TypeLevelDynamicLoads
+            // IT HAST TO BE L0 - we can't deal with "null" values!
+            with domain.l0.DefaultReferenceValuesBinding
+            with domain.DefaultHandlingOfMethodResults
+            with domain.IgnoreSynchronization
+            // with RefinedTypeLevelInvokeInstructions
+            with RefinedTypeLevelFieldAccessInstructions {
 
         final val thisClassType: ObjectType = classFile.thisType
 
@@ -182,23 +181,22 @@ class LBFieldValuesAnalysis private[analyses] (
         val calledMethods: mutable.Map[Method, mutable.Set[Method]] = mutable.Map.empty
 
         def this(
-            classFile:      ClassFile,
-            relevantFields: IterableOnce[Field],
-            dependees:      EOptionPSet[Entity, Property] = EOptionPSet.empty
-        ) = {
+                classFile: ClassFile,
+                relevantFields: IterableOnce[Field],
+                dependees: EOptionPSet[Entity, Property] = EOptionPSet.empty) = {
             this(classFile, dependees)
             fieldInformation = relevantFields.iterator.map[(Field, Option[DomainValue])](_ -> None).toMap
         }
 
         final override val UsedPropertiesBound: SinglePropertiesBoundType = LBProperties
 
-        final override implicit def project: SomeProject = analysis.project
+        implicit final override def project: SomeProject = analysis.project
 
-        def hasCandidateFields: Boolean = fieldInformation.nonEmpty
+        def hasCandidateFields: Boolean      = fieldInformation.nonEmpty
         def candidateFields: Iterable[Field] = fieldInformation.keys
 
         private[this] var currentMethod: Method = null
-        private[this] var currentCode: Code = null
+        private[this] var currentCode: Code     = null
 
         /**
          * Sets the method that is currently analyzed. This method '''must not be called'''
@@ -221,22 +219,19 @@ class LBFieldValuesAnalysis private[analyses] (
             calledMethods.getOrElseUpdate(currentMethod, mutable.Set.empty) += calledMethod
             super.doInvokeWithRefinedReturnValue(calledMethod, result)
         }
-        */
+         */
 
         private def updateFieldInformation(
             value:              DomainValue,
             declaringClassType: ObjectType,
             name:               String,
-            fieldType:          FieldType
-        ): Unit = {
-            if (declaringClassType ne thisClassType)
-                return ;
+            fieldType:          FieldType): Unit = {
+            if (declaringClassType ne thisClassType) return;
 
             classFile.findField(name, fieldType).foreach { field =>
                 if (fieldInformation.contains(field)) {
                     fieldInformation(field) match {
-                        case Some(previousValue) =>
-                            if (previousValue ne value) {
+                        case Some(previousValue) => if (previousValue ne value) {
                                 previousValue.join(Int.MinValue, value) match {
                                     case SomeUpdate(newValue) =>
                                         // IMPROVE Remove "irrelevant fields" to check if we can stop the overall process...
@@ -244,8 +239,7 @@ class LBFieldValuesAnalysis private[analyses] (
                                     case NoUpdate => /*nothing to do*/
                                 }
                             }
-                        case None =>
-                            fieldInformation += (field -> Some(value))
+                        case None => fieldInformation += (field -> Some(value))
                     }
                 }
             }
@@ -257,8 +251,7 @@ class LBFieldValuesAnalysis private[analyses] (
             value:              DomainValue,
             declaringClassType: ObjectType,
             name:               String,
-            fieldType:          FieldType
-        ): Computation[Nothing, ExceptionValue] = {
+            fieldType:          FieldType): Computation[Nothing, ExceptionValue] = {
             updateFieldInformation(value, declaringClassType, name, fieldType)
             super.putfield(pc, objectref, value, declaringClassType, name, fieldType)
         }
@@ -268,8 +261,7 @@ class LBFieldValuesAnalysis private[analyses] (
             value:              DomainValue,
             declaringClassType: ObjectType,
             name:               String,
-            fieldType:          FieldType
-        ): Computation[Nothing, Nothing] = {
+            fieldType:          FieldType): Computation[Nothing, Nothing] = {
             updateFieldInformation(value, declaringClassType, name, fieldType)
             super.putstatic(pc, value, declaringClassType, name, fieldType)
         }
@@ -277,14 +269,13 @@ class LBFieldValuesAnalysis private[analyses] (
 
     private[this] def analyzeRelevantMethods(
         classFile: ClassFile,
-        domain:    FieldValuesAnalysisDomain
-    ): Unit = {
-        val relevantMethods =
-            domain.fieldInformation.keys.foldLeft(Set.empty[Method]) { (ms, field) =>
-                // IMPROVE: This requires that the key was computed in a previous FPCF phase as it internally uses an
-                // analysis.
-                ms ++ fieldAccessInformation.writeAccesses(field).map(wa => contextProvider.contextFromId(wa._1).method.definedMethod)
-            }
+        domain:    FieldValuesAnalysisDomain): Unit = {
+        val relevantMethods = domain.fieldInformation.keys.foldLeft(Set.empty[Method]) { (ms, field) =>
+            // IMPROVE: This requires that the key was computed in a previous FPCF phase as it internally uses an
+            // analysis.
+            ms ++ fieldAccessInformation.writeAccesses(field).map(wa =>
+                contextProvider.contextFromId(wa._1).method.definedMethod)
+        }
         relevantMethods.foreach { method =>
             domain.setMethodContext(method)
             BaseAI(method, domain)
@@ -297,9 +288,7 @@ class LBFieldValuesAnalysis private[analyses] (
         val relevantFields = relevantFieldsIterable(classFile)
         if (relevantFields.isEmpty) {
             return MultiResult(
-                classFile.fields.iterator map { f =>
-                    FinalEP(f, TypeBasedFieldValueInformation(f.fieldType))
-                }
+                classFile.fields.iterator map { f => FinalEP(f, TypeBasedFieldValueInformation(f.fieldType)) }
             )
         }
         val domain = new FieldValuesAnalysisDomain(classFile, relevantFields)
@@ -316,7 +305,8 @@ class LBFieldValuesAnalysis private[analyses] (
                     Result(FinalEP(f, fv))
 
                 case Some(Some(domain.DomainReferenceValueTag(dv))) =>
-                    if ( /* ultimate refinements => */ dv.isNull.isYes || classHierarchy.isKnownToBeFinal(dv.leastUpperType.get)) {
+                    if (/* ultimate refinements => */ dv.isNull.isYes || classHierarchy.isKnownToBeFinal(
+                            dv.leastUpperType.get)) {
                         val vi = ValueBasedFieldValueInformation(dv.toCanonicalForm)
                         // println(f.toJava+"!!!!!!>>>>>> "+vi)
                         Result(FinalEP(f, vi))
@@ -327,8 +317,8 @@ class LBFieldValuesAnalysis private[analyses] (
                         //    methods that also write the field for which we compute more
                         //    precise information or methods called by the methods that
                         //    write the field.
-                        val methodsWithFieldWrites =
-                            fieldAccessInformation.writeAccesses(f).map(wa => contextProvider.contextFromId(wa._1).method).toSet
+                        val methodsWithFieldWrites = fieldAccessInformation.writeAccesses(f).map(wa =>
+                            contextProvider.contextFromId(wa._1).method).toSet
                         val relevantDependees = domain.dependees.filter { eOptionP =>
                             eOptionP match {
                                 case EOptionP(readField: Field, _) =>
@@ -351,7 +341,7 @@ class LBFieldValuesAnalysis private[analyses] (
                                     methodsWithFieldWrites.exists { m =>
                                         val methodsCalledByM = domain.calledMethods.get(m.definedMethod)
                                         methodsCalledByM.nonEmpty &&
-                                            methodsCalledByM.get.contains(calledMethod)
+                                        methodsCalledByM.get.contains(calledMethod)
                                     }
                                 case _ => throw new MatchError(eOptionP)
                             }
@@ -373,7 +363,7 @@ class LBFieldValuesAnalysis private[analyses] (
                                 )(project.logContext)
                             }
                             val domain.DomainReferenceValueTag(dv) = dvOption.get
-                            val vi = ValueBasedFieldValueInformation(dv.toCanonicalForm)
+                            val vi                                 = ValueBasedFieldValueInformation(dv.toCanonicalForm)
                             // println("======>>>>>>\n\t\t"+vi+"\n\t\t"+relevantDependees)
                             if (newDependees.isEmpty ||
                                 dv.isNull.isYes ||
@@ -394,8 +384,7 @@ class LBFieldValuesAnalysis private[analyses] (
                         }
                     }
 
-                case _ =>
-                    Result(FinalEP(f, TypeBasedFieldValueInformation(f.fieldType)))
+                case _ => Result(FinalEP(f, TypeBasedFieldValueInformation(f.fieldType)))
             }
         }
 
@@ -414,7 +403,7 @@ class LBFieldValuesAnalysis private[analyses] (
                     }
                 }
             }
-            */
+         */
         Results(results)
     }
 
@@ -429,10 +418,10 @@ object FieldValuesAnalysis {
      */
     // IMPROVE Move to configuration file.
     final val ignoredFields: Map[ObjectType, Set[String]] = Map(
-        ObjectType.System -> Set("in", "out", "err"),
-        ObjectType("java/net/InterfaceAddress") -> Set("address"),
+        ObjectType.System                             -> Set("in", "out", "err"),
+        ObjectType("java/net/InterfaceAddress")       -> Set("address"),
         ObjectType("java/util/concurrent/FutureTask") -> Set("runner"),
-        ObjectType("java/nio/channels/SelectionKey") -> Set("attachment")
+        ObjectType("java/nio/channels/SelectionKey")  -> Set("attachment")
     )
 
 }
@@ -450,9 +439,8 @@ object EagerLBFieldValuesAnalysis extends BasicFPCFEagerAnalysisScheduler {
         // To ensure that subsequent analyses are able to pick-up the results of this
         // analysis, we state that the domain that has to be used when computing
         // the AIResult has to use the (partial) domain: RefinedTypeLevelFieldAccessInstructions.
-        p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey)(
-            i => i.getOrElse(Set.empty) + classOf[RefinedTypeLevelFieldAccessInstructions]
-        )
+        p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey)(i =>
+            i.getOrElse(Set.empty) + classOf[RefinedTypeLevelFieldAccessInstructions])
         null
     }
 
@@ -467,10 +455,8 @@ object EagerLBFieldValuesAnalysis extends BasicFPCFEagerAnalysisScheduler {
     override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new LBFieldValuesAnalysis(p)
         val classFiles =
-            if (!p.libraryClassFilesAreInterfacesOnly)
-                p.allClassFiles
-            else
-                p.allProjectClassFiles
+            if (!p.libraryClassFilesAreInterfacesOnly) p.allClassFiles
+            else p.allProjectClassFiles
         ps.scheduleEagerComputationsForEntities(classFiles)(analysis.analyze)
         analysis
     }

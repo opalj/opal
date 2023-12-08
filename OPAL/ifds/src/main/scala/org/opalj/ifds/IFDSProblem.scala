@@ -62,10 +62,9 @@ abstract class IFDSProblem[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement
      *         executed next.
      */
     def normalFlow(
-        statement:   S,
-        in:          Fact,
-        predecessor: Option[S]
-    ): Set[Fact]
+        statement: S,
+        in: Fact,
+        predecessor: Option[S]): Set[Fact]
 
     /**
      * Computes the data flow for a call to start edge. The start node depends on the analysis
@@ -105,11 +104,10 @@ abstract class IFDSProblem[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement
      *         under the assumption that `in` held before `call`.
      */
     def callToReturnFlow(
-        call:         S,
-        in:           Fact,
-        successor:    Option[S],
-        unbCallChain: Seq[Callable]
-    ): Set[Fact]
+        call: S,
+        in: Fact,
+        successor: Option[S],
+        unbCallChain: Seq[Callable]): Set[Fact]
 
     /**
      * Called, when new FlowFacts are found at the analysis exit of a method.
@@ -133,7 +131,8 @@ abstract class IFDSProblem[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement
     def createCallable(callable: C): Callable
 
     type OutsideAnalysisContextCallHandler = ((S, Option[S], Fact, Seq[Callable], Getter) => Set[Fact]) {
-        def apply(call: S, successor: Option[S], in: Fact, unbCallChain: Seq[Callable], dependeesGetter: Getter): Set[Fact]
+        def apply(call: S, successor: Option[S], in: Fact, unbCallChain: Seq[Callable], dependeesGetter: Getter)
+            : Set[Fact]
     }
 
     /**
@@ -168,4 +167,3 @@ abstract class IFDSProblem[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement
      */
     def outsideAnalysisContextUnbReturn(callee: C): Option[OutsideAnalysisContextUnbReturnHandler]
 }
-

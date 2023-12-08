@@ -37,9 +37,8 @@ object PropertyKey {
      * @note [[PropertyKey]]s of simple properties don't have fallback property computations.
      *       This fact is also used to distinguish these two property kinds.
      */
-    private[this] val fallbackPropertyComputations = {
+    private[this] val fallbackPropertyComputations =
         new Array[(PropertyStore, FallbackReason, Entity) => Property](SupportedPropertyKinds)
-    }
 
     private[this] val lastKeyId = new AtomicInteger(-1)
 
@@ -47,7 +46,7 @@ object PropertyKey {
         val nextKeyId = this.lastKeyId.incrementAndGet()
         if (nextKeyId >= PropertyKind.SupportedPropertyKinds) {
             throw new IllegalStateException(
-                s"maximum number of property keys ($SupportedPropertyKinds) "+
+                s"maximum number of property keys ($SupportedPropertyKinds) " +
                     "exceeded; increase PropertyKind.SupportedPropertyKinds"
             );
         }
@@ -85,8 +84,7 @@ object PropertyKey {
      */
     def create[E <: Entity, P <: Property](
         name:                        String,
-        fallbackPropertyComputation: FallbackPropertyComputation[E, P]
-    ): PropertyKey[P] = {
+        fallbackPropertyComputation: FallbackPropertyComputation[E, P]): PropertyKey[P] = {
         val thisKeyId = nextKeyId()
         setKeyName(thisKeyId, name)
 
@@ -99,14 +97,12 @@ object PropertyKey {
         pk
     }
 
-    def create[E <: Entity, P <: Property](name: String): PropertyKey[P] = {
+    def create[E <: Entity, P <: Property](name: String): PropertyKey[P] =
         create(name, fallbackPropertyComputation = null)
-    }
 
     def create[E <: Entity, P <: Property](
         name:             String,
-        fallbackProperty: P
-    ): PropertyKey[P] = {
+        fallbackProperty: P): PropertyKey[P] = {
         val fpc = (_: PropertyStore, _: FallbackReason, _: Entity) => fallbackProperty
         create(name, fpc)
     }
@@ -127,13 +123,9 @@ object PropertyKey {
 
     final def name(eOptionP: SomeEOptionP): String = name(eOptionP.pk.id)
 
-    final def hasFallback(propertyKind: PropertyKind): Boolean = {
-        hasFallbackBasedOnPKId(propertyKind.id)
-    }
+    final def hasFallback(propertyKind: PropertyKind): Boolean = hasFallbackBasedOnPKId(propertyKind.id)
 
-    final def hasFallbackBasedOnPKId(pkId: Int): Boolean = {
-        fallbackPropertyComputations(pkId) != null
-    }
+    final def hasFallbackBasedOnPKId(pkId: Int): Boolean = fallbackPropertyComputations(pkId) != null
 
     /**
      * @note This method is intended to be called by the framework.
@@ -142,20 +134,16 @@ object PropertyKey {
         ps: PropertyStore,
         fr: FallbackReason,
         e:  Entity,
-        pk: PropertyKey[P]
-    ): P = {
-        fallbackPropertyBasedOnPKId(ps, fr, e, pk.id).asInstanceOf[P]
-    }
+        pk: PropertyKey[P]): P = fallbackPropertyBasedOnPKId(ps, fr, e, pk.id).asInstanceOf[P]
 
     private[fpcf] def fallbackPropertyBasedOnPKId(
         ps:   PropertyStore,
         fr:   FallbackReason,
         e:    Entity,
-        pkId: Int
-    ): Property = {
+        pkId: Int): Property = {
         val fallbackComputation = fallbackPropertyComputations(pkId)
         if (fallbackComputation == null)
-            throw new IllegalArgumentException("no fallback computation exists: "+name(pkId))
+            throw new IllegalArgumentException("no fallback computation exists: " + name(pkId))
         fallbackComputation(ps, fr, e)
     }
 

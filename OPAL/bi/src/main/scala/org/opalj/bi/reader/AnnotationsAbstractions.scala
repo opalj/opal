@@ -3,8 +3,9 @@ package org.opalj
 package bi
 package reader
 
-import java.io.DataInputStream
 import scala.reflect.ClassTag
+
+import java.io.DataInputStream
 
 /**
  * Annotation related definitions.
@@ -22,10 +23,9 @@ trait AnnotationsAbstractions extends Constant_PoolAbstractions {
     type ElementValuePairs
 
     def Annotation(
-        constant_pool:       Constant_Pool,
-        type_index:          Constant_Pool_Index,
-        element_value_pairs: ElementValuePairs
-    ): Annotation
+        constant_pool: Constant_Pool,
+        type_index: Constant_Pool_Index,
+        element_value_pairs: ElementValuePairs): Annotation
 
     def ElementValuePairs(cp: Constant_Pool, in: DataInputStream): ElementValuePairs
 
@@ -33,7 +33,6 @@ trait AnnotationsAbstractions extends Constant_PoolAbstractions {
     // IMPLEMENTATION
     //
 
-    def Annotation(cp: Constant_Pool, in: DataInputStream): Annotation = {
+    def Annotation(cp: Constant_Pool, in: DataInputStream): Annotation =
         Annotation(cp, in.readUnsignedShort, ElementValuePairs(cp, in))
-    }
 }

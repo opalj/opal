@@ -14,11 +14,10 @@ case class LLOAD(lvIndex: Int) extends LLoadInstruction with ExplicitLocalVariab
 
     final def mnemonic: String = "lload"
 
-    override def equals(other: Any): Boolean =
-        other match {
-            case that: LLOAD => that.lvIndex == this.lvIndex
-            case _           => false
-        }
+    override def equals(other: Any): Boolean = other match {
+        case that: LLOAD => that.lvIndex == this.lvIndex
+        case _           => false
+    }
 
     override def hashCode: Int = LLOAD.opcode * 233 + lvIndex
 

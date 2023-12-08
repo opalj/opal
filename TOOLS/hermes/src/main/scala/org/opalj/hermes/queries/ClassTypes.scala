@@ -12,26 +12,23 @@ import org.opalj.br.analyses.Project
  */
 class ClassTypes(implicit hermes: HermesConfig) extends FeatureQuery {
 
-    override val featureIDs: List[String] = {
-        List(
-            /*0*/ "(concrete) classes",
-            /*1*/ "abstract classes",
-            /*2*/ "annotations",
-            /*3*/ "enumerations",
-            /*4*/ "marker interfaces",
-            /*5*/ "simple functional interfaces\n(single abstract method (SAM) interface)",
-            /*6*/ "non-functional interface\nwith default methods (Java >8)",
-            /*7*/ "non-functional interface\nwith static methods (Java >8)",
-            /*8*/ "(standard) interface",
-            /*9*/ "module (Java >9)"
-        )
-    }
+    override val featureIDs: List[String] = List(
+        /*0*/ "(concrete) classes",
+        /*1*/ "abstract classes",
+        /*2*/ "annotations",
+        /*3*/ "enumerations",
+        /*4*/ "marker interfaces",
+        /*5*/ "simple functional interfaces\n(single abstract method (SAM) interface)",
+        /*6*/ "non-functional interface\nwith default methods (Java >8)",
+        /*7*/ "non-functional interface\nwith static methods (Java >8)",
+        /*8*/ "(standard) interface",
+        /*9*/ "module (Java >9)"
+    )
 
     override def apply[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Iterable[(da.ClassFile, S)]
-    ): IterableOnce[Feature[S]] = {
+        rawClassFiles:        Iterable[(da.ClassFile, S)]): IterableOnce[Feature[S]] = {
 
         val classTypesLocations = Array.fill(10)(new LocationsContainer[S])
 

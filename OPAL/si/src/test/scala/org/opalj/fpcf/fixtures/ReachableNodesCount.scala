@@ -10,21 +10,18 @@ package fixtures
  */
 object ReachableNodesCount {
 
-    val Key: PropertyKey[ReachableNodesCount] =
-        PropertyKey.create[Node, ReachableNodesCount](
-            s"ReachableNodesCount",
-            (_: PropertyStore, _: FallbackReason, _: Node) => TooManyNodesReachable
-        )
+    val Key: PropertyKey[ReachableNodesCount] = PropertyKey.create[Node, ReachableNodesCount](
+        s"ReachableNodesCount",
+        (_: PropertyStore, _: FallbackReason, _: Node) => TooManyNodesReachable
+    )
 }
 
 case class ReachableNodesCount(value: Int) extends OrderedProperty {
     type Self = ReachableNodesCount
     def key: PropertyKey[ReachableNodesCount] = ReachableNodesCount.Key
 
-    def checkIsEqualOrBetterThan(e: Entity, other: ReachableNodesCount): Unit = {
-        if (this.value > other.value) {
-            throw new IllegalArgumentException(s"$e: $this is not equal or better than $other")
-        }
+    def checkIsEqualOrBetterThan(e: Entity, other: ReachableNodesCount): Unit = if (this.value > other.value) {
+        throw new IllegalArgumentException(s"$e: $this is not equal or better than $other")
     }
 }
 

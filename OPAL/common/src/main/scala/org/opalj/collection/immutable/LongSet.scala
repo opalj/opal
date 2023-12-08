@@ -50,8 +50,8 @@ trait LongSet extends AnyRef {
     def +(i: Long): ThisSet
 
     final def mkString(pre: String, in: String, post: String): String = {
-        val sb = new StringBuilder(pre)
-        val it = iterator
+        val sb      = new StringBuilder(pre)
+        val it      = iterator
         var hasNext = it.hasNext
         while (hasNext) {
             sb.append(it.next().toString)
@@ -74,7 +74,7 @@ object LongSet {
 
     final val BitMasks: Array[Long] = {
         val bitMasks = new Array[Long](64)
-        var i = 1
+        var i        = 1
         while (i < 64) {
             bitMasks(i) = (1L << i) - 1L
             i += 1

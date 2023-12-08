@@ -22,14 +22,10 @@ trait DefaultStringValuesBinding extends DefaultReferenceValuesBinding with Stri
     protected case class DefaultStringValue(
             origin: ValueOrigin,
             value:  String,
-            refId:  RefId
-    ) extends StringValue
+            refId: RefId) extends StringValue
 
     override def StringValue(
         origin: ValueOrigin,
         value:  String,
-        refId:  RefId
-    ): DomainStringValue = {
-        DefaultStringValue(origin, value, refId)
-    }
+        refId:  RefId): DomainStringValue = DefaultStringValue(origin, value, refId)
 }

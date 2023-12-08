@@ -3,6 +3,7 @@ package org.opalj
 package ba
 
 import scala.language.implicitConversions
+
 import org.opalj.br.instructions.LabeledInstruction
 
 /**
@@ -19,9 +20,7 @@ import org.opalj.br.instructions.LabeledInstruction
 trait CodeElement[+T] {
 
     def isPseudoInstruction: Boolean
-    def asPseudoInstruction: PseudoInstruction = {
-        throw new ClassCastException(s"$this is not a PseudoInstruction")
-    }
+    def asPseudoInstruction: PseudoInstruction = throw new ClassCastException(s"$this is not a PseudoInstruction")
 
     def isInstructionLikeElement: Boolean
 
@@ -46,20 +45,14 @@ object CodeElement {
      * [[org.opalj.ba.InstructionElement]]s.
      */
     implicit def instructionToInstructionElement(
-        instruction: LabeledInstruction
-    ): InstructionElement = {
-        new InstructionElement(instruction)
-    }
+        instruction: LabeledInstruction): InstructionElement = new InstructionElement(instruction)
 
     /**
      * Converts a tuple of [[org.opalj.br.instructions.LabeledInstruction]] and `scala.AnyRef`
      * (an annotated instruction) to [[org.opalj.ba.AnnotatedInstructionElement]].
      */
     implicit def annotatedInstructionToAnnotatedInstructionElement[T](
-        ia: (LabeledInstruction, T)
-    ): AnnotatedInstructionElement[T] = {
-        AnnotatedInstructionElement(ia)
-    }
+        ia: (LabeledInstruction, T)): AnnotatedInstructionElement[T] = AnnotatedInstructionElement(ia)
 
     /**
      * Converts a `Symbol` (label) to [[org.opalj.ba.LabelElement]].

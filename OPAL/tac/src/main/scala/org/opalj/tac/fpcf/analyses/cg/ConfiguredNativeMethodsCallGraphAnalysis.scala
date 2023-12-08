@@ -5,6 +5,18 @@ package fpcf
 package analyses
 package cg
 
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.analyses.DeclaredMethods
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
+import org.opalj.br.fpcf.ContextProviderKey
+import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.analyses.ContextProvider
+import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.cg.NoCallers
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPS
 import org.opalj.fpcf.FinalP
@@ -19,18 +31,6 @@ import org.opalj.fpcf.PropertyKind
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.DeclaredMethod
-import org.opalj.br.analyses.DeclaredMethods
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
-import org.opalj.br.fpcf.analyses.ContextProvider
-import org.opalj.br.fpcf.properties.cg.Callees
-import org.opalj.br.fpcf.properties.cg.Callers
-import org.opalj.br.fpcf.properties.cg.NoCallers
-import org.opalj.br.fpcf.ContextProviderKey
 
 /**
  * Add calls from configured native methods to the call graph.
@@ -49,19 +49,18 @@ import org.opalj.br.fpcf.ContextProviderKey
  * @author Florian Kuebler
  */
 class ConfiguredNativeMethodsCallGraphAnalysis private[analyses] (
-        final val project: SomeProject
-) extends FPCFAnalysis {
+        final val project: SomeProject) extends FPCFAnalysis {
 
     val configKey = "org.opalj.fpcf.analyses.ConfiguredNativeMethodsAnalysis"
 
-    private[this] implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
-    private[this] implicit val contextProvider: ContextProvider = project.get(ContextProviderKey)
+    implicit private[this] val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
+    implicit private[this] val contextProvider: ContextProvider = project.get(ContextProviderKey)
 
-    private[this] val nativeMethodData: Map[DeclaredMethod, Option[Array[MethodDescription]]] = {
+    private[this] val nativeMethodData: Map[DeclaredMethod, Option[Array[MethodDescription]]] =
         ConfiguredMethods.reader.read(
-            p.config, configKey
+            p.config,
+            configKey
         ).nativeMethods.map { v => (v.method, v.methodInvocations) }.toMap
-    }
 
     def analyze(dm: DeclaredMethod): PropertyComputationResult = {
         val callers = propertyStore(dm, Callers.key)
@@ -70,8 +69,7 @@ class ConfiguredNativeMethodsCallGraphAnalysis private[analyses] (
                 // nothing to do, since there is no caller
                 return NoResult;
 
-            case eps: EPS[_, _] =>
-                if (eps.ub eq NoCallers) {
+            case eps: EPS[_, _] => if (eps.ub eq NoCallers) {
                     // we can not create a dependency here, so the analysis is not allowed to create
                     // such a result
                     throw new IllegalStateException("illegal immediate result for callers")
@@ -98,17 +96,16 @@ class ConfiguredNativeMethodsCallGraphAnalysis private[analyses] (
 
     def c(
         oldCallers: Callers
-    )(
-        update: SomeEPS
-    ): ProperPropertyComputationResult = {
+      )(update: SomeEPS): ProperPropertyComputationResult = {
         val newCallers = update.asInstanceOf[EPS[DeclaredMethod, Callers]]
-        val tgtsOpt = nativeMethodData(newCallers.e)
+        val tgtsOpt    = nativeMethodData(newCallers.e)
         returnResults(newCallers, oldCallers, tgtsOpt.get)
     }
 
     def returnResults(
-        eOptP: EOptionP[DeclaredMethod, Callers], seen: Callers, tgts: Array[MethodDescription]
-    ): ProperPropertyComputationResult = {
+        eOptP: EOptionP[DeclaredMethod, Callers],
+        seen:  Callers,
+        tgts:  Array[MethodDescription]): ProperPropertyComputationResult = {
         val callers = eOptP.ub
 
         var results: Iterator[PartialResult[_, _ >: Null <: Property]] = Iterator.empty
@@ -120,7 +117,9 @@ class ConfiguredNativeMethodsCallGraphAnalysis private[analyses] (
                     calls.addVMReachableMethod(tgtMethod);
                 } else {
                     calls.addCall(
-                        calleeContext, 0, contextProvider.expandContext(calleeContext, tgtMethod, 0)
+                        calleeContext,
+                        0,
+                        contextProvider.expandContext(calleeContext, tgtMethod, 0)
                     )
                 }
             }
@@ -132,8 +131,7 @@ class ConfiguredNativeMethodsCallGraphAnalysis private[analyses] (
 }
 
 object ConfiguredNativeMethodsCallGraphAnalysisScheduler extends BasicFPCFTriggeredAnalysisScheduler {
-    override def requiredProjectInformation: ProjectInformationKeys =
-        Seq(DeclaredMethodsKey, ContextProviderKey)
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey, ContextProviderKey)
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(Callers)
 
@@ -142,8 +140,9 @@ object ConfiguredNativeMethodsCallGraphAnalysisScheduler extends BasicFPCFTrigge
     override def derivesEagerly: Set[PropertyBounds] = Set.empty
 
     override def register(
-        p: SomeProject, ps: PropertyStore, unused: Null
-    ): ConfiguredNativeMethodsCallGraphAnalysis = {
+        p:      SomeProject,
+        ps:     PropertyStore,
+        unused: Null): ConfiguredNativeMethodsCallGraphAnalysis = {
         val analysis = new ConfiguredNativeMethodsCallGraphAnalysis(p)
         // register the analysis for initial values for callers (i.e. methods becoming reachable)
         ps.registerTriggeredComputation(Callers.key, analysis.analyze)

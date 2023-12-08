@@ -4,12 +4,14 @@ package ai
 package domain
 package l1
 
-import org.junit.runner.RunWith
 import scala.collection.immutable.SortedSet
-import org.scalatestplus.junit.JUnitRunner
+
+import org.opalj.br.ObjectType
+
+import org.junit.runner.RunWith
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
-import org.opalj.br.ObjectType
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests the LongSets Domain.
@@ -21,27 +23,26 @@ import org.opalj.br.ObjectType
 class DefaultLongSetsTest extends AnyFunSpec with Matchers {
 
     final val IrrelevantPC = Int.MinValue
-    final val SomePC = 100000
+    final val SomePC       = 100000
 
     class LongSetsTestDomain(
-            override val maxCardinalityOfLongSets: Int = Int.MaxValue
-    ) extends CorrelationalDomain
-        with DefaultSpecialDomainValuesBinding
-        with ThrowAllPotentialExceptionsConfiguration
-        with l0.DefaultTypeLevelFloatValues
-        with l1.DefaultIntegerRangeValues // <---- Required to test the shift operators
-        with l0.DefaultTypeLevelDoubleValues
-        with l0.DefaultReferenceValuesBinding
-        with l0.TypeLevelFieldAccessInstructions
-        with l0.SimpleTypeLevelInvokeInstructions
-        with l0.TypeLevelDynamicLoads
-        with l1.DefaultLongSetValues // <----- Test target
-        with l1.LongSetValuesShiftOperators // <----- Test target
-        with l0.TypeLevelPrimitiveValuesConversions
-        with DefaultHandlingOfMethodResults
-        with IgnoreSynchronization
-        with PredefinedClassHierarchy
-        with RecordLastReturnedValues
+            override val maxCardinalityOfLongSets: Int = Int.MaxValue) extends CorrelationalDomain
+            with DefaultSpecialDomainValuesBinding
+            with ThrowAllPotentialExceptionsConfiguration
+            with l0.DefaultTypeLevelFloatValues
+            with l1.DefaultIntegerRangeValues // <---- Required to test the shift operators
+            with l0.DefaultTypeLevelDoubleValues
+            with l0.DefaultReferenceValuesBinding
+            with l0.TypeLevelFieldAccessInstructions
+            with l0.SimpleTypeLevelInvokeInstructions
+            with l0.TypeLevelDynamicLoads
+            with l1.DefaultLongSetValues        // <----- Test target
+            with l1.LongSetValuesShiftOperators // <----- Test target
+            with l0.TypeLevelPrimitiveValuesConversions
+            with DefaultHandlingOfMethodResults
+            with IgnoreSynchronization
+            with PredefinedClassHierarchy
+            with RecordLastReturnedValues
 
     describe("central properties of domains that use LongSet values") {
 
@@ -69,8 +70,8 @@ class DefaultLongSetsTest extends AnyFunSpec with Matchers {
             }
 
             it("(join of two sets with positive values that do not exceed the cardinality); i1 join i2 => \"StructuralUpdate(LongSet(0, 1, 2, 3, 4, 5, 6, 9))\"") {
-                val v1 = LongSet(SortedSet(0L, 2L, 4L, 6L, 9L))
-                val v2 = LongSet(SortedSet(1L, 3L, 5L, 6L))
+                val v1       = LongSet(SortedSet(0L, 2L, 4L, 6L, 9L))
+                val v2       = LongSet(SortedSet(1L, 3L, 5L, 6L))
                 val expected = LongSet(SortedSet(0L, 1L, 2L, 3L, 4L, 5L, 6L, 9L))
                 v1.join(-1, v2) should be(StructuralUpdate(expected))
                 v2.join(-1, v1) should be(StructuralUpdate(expected))
@@ -84,8 +85,8 @@ class DefaultLongSetsTest extends AnyFunSpec with Matchers {
             }
 
             it("(join of two sets with positive and negative values that do not exceed the cardinality); i1 join i2 => \"StructuralUpdate(LongSet(-10, -7, -3, -1, 0, 5, 6, 9))\"") {
-                val v1 = LongSet(SortedSet(-7L, -3L, 0L, 6L, 9L))
-                val v2 = LongSet(SortedSet(-10L, -1L, 5L, 6L))
+                val v1       = LongSet(SortedSet(-7L, -3L, 0L, 6L, 9L))
+                val v2       = LongSet(SortedSet(-10L, -1L, 5L, 6L))
                 val expected = LongSet(SortedSet(-10L, -7L, -3L, -1L, 0L, 5L, 6L, 9L))
                 v1.join(-1, v2) should be(StructuralUpdate(expected))
                 v2.join(-1, v1) should be(StructuralUpdate(expected))
@@ -154,16 +155,16 @@ class DefaultLongSetsTest extends AnyFunSpec with Matchers {
             }
 
             it("should calculate the correct summary if Long.MaxValue is involved") {
-                val v1 = LongSet(SortedSet(-3L, Long.MaxValue))
-                val v2 = LongSet(SortedSet(-2L, Long.MaxValue))
+                val v1       = LongSet(SortedSet(-3L, Long.MaxValue))
+                val v2       = LongSet(SortedSet(-2L, Long.MaxValue))
                 val expected = LongSet(SortedSet(-3L, -2L, Long.MaxValue))
                 summarize(-1, Iterable(v1, v2)) should be(expected)
                 summarize(-1, Iterable(v2, v1)) should be(expected)
             }
 
             it("should calculate the correct summary if Long.MinValue is involved") {
-                val v1 = LongSet(SortedSet(Long.MinValue, 0L))
-                val v2 = LongSet(SortedSet(Long.MinValue, 0L))
+                val v1       = LongSet(SortedSet(Long.MinValue, 0L))
+                val v2       = LongSet(SortedSet(Long.MinValue, 0L))
                 val expected = LongSet(SortedSet(Long.MinValue, 0L))
                 summarize(-1, Iterable(v1, v2)) should be(expected)
                 summarize(-1, Iterable(v2, v1)) should be(expected)
@@ -237,8 +238,8 @@ class DefaultLongSetsTest extends AnyFunSpec with Matchers {
             }
 
             it("{0,Long.MaxValue} * {Long.MinValue,0} => {Long.MaxValue*Long.MinValue,0}") {
-                val v1 = LongSet(SortedSet(0L, Long.MaxValue))
-                val v2 = LongSet(SortedSet(Long.MinValue, 0L))
+                val v1       = LongSet(SortedSet(0L, Long.MaxValue))
+                val v2       = LongSet(SortedSet(Long.MinValue, 0L))
                 val expected = SortedSet(Long.MaxValue * Long.MinValue, 0L)
                 lmul(-1, v1, v2) should be(LongSet(expected))
                 lmul(-1, v2, v1) should be(LongSet(expected))
@@ -375,11 +376,12 @@ class DefaultLongSetsTest extends AnyFunSpec with Matchers {
             it("{Long.MinValue,Long.MaxValue} ^ {8,19} => {Long.MinValue+8,Long.MinValue+19,Long.MaxValue-19,Long.MaxValue-8}") {
                 val v1 = LongSet(SortedSet(Long.MinValue, Long.MaxValue))
                 val v2 = LongSet(SortedSet(8L, 19L))
-                val expected =
-                    SortedSet(
-                        Long.MinValue + 8L, Long.MinValue + 19L,
-                        Long.MaxValue - 19L, Long.MaxValue - 8L
-                    )
+                val expected = SortedSet(
+                    Long.MinValue + 8L,
+                    Long.MinValue + 19L,
+                    Long.MaxValue - 19L,
+                    Long.MaxValue - 8L
+                )
                 lxor(-1, v1, v2) should be(LongSet(expected))
                 lxor(-1, v2, v1) should be(LongSet(expected))
             }

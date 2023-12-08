@@ -45,8 +45,7 @@ package object collection {
      * that contains the prefix is returned. Hence, if `l1===l2` then l1 is returned.
      */
     def commonPrefix[T](l1: List[T], l2: List[T]): List[T] = {
-        if (l1 eq l2)
-            return l1;
+        if (l1 eq l2) return l1;
 
         val prefix = List.newBuilder[T]
         var l1Tail = l1
@@ -56,12 +55,9 @@ package object collection {
             l1Tail = l1Tail.tail
             l2Tail = l2Tail.tail
         }
-        if (l1Tail.isEmpty)
-            l1
-        else if (l2Tail.isEmpty)
-            l2
-        else
-            prefix.result()
+        if (l1Tail.isEmpty) l1
+        else if (l2Tail.isEmpty) l2
+        else prefix.result()
     }
 
     //
@@ -79,11 +75,9 @@ package object collection {
      * }}}
      */
     def asScala[K, SubK, V](
-        map: ConcurrentHashMap[K, ConcurrentHashMap[SubK, V]]
-    ): Map[K, Map[SubK, V]] = {
-
+        map: ConcurrentHashMap[K, ConcurrentHashMap[SubK, V]]): Map[K, Map[SubK, V]] =
         map.entrySet.asScala.foldLeft(HashMap.empty[K, Map[SubK, V]]) { (c, n) =>
-            val key = n.getKey
+            val key    = n.getKey
             val values = n.getValue.entrySet.asScala
             val entry = (
                 key,
@@ -91,7 +85,6 @@ package object collection {
             )
             c + entry
         }
-    }
 
     def binarySearch[T, X >: T <: Comparable[X]](array: ArraySeq[T], key: X): Int = {
         val data = array.unsafeArray.asInstanceOf[Array[Object]]
@@ -99,7 +92,7 @@ package object collection {
     }
 
     def insertedAt[T, X >: T <: AnyRef](array: ArraySeq[T], insertionPoint: Int, e: X): ArraySeq[X] = {
-        val data = array.unsafeArray.asInstanceOf[Array[Object]]
+        val data    = array.unsafeArray.asInstanceOf[Array[Object]]
         val newData = JArrays.copyOf(data, data.length + 1)
         newData(insertionPoint) = e
         System.arraycopy(data, insertionPoint, newData, insertionPoint + 1, data.length - insertionPoint)

@@ -10,14 +10,14 @@ package br
  */
 trait SourceElement extends CommonSourceElementAttributes {
 
-    def isClass = false
+    def isClass  = false
     def isMethod = false
-    def isField = false
+    def isField  = false
 
     def isVirtual = false
 
     def asClassFile: ClassFile = throw new UnsupportedOperationException
-    def asMethod: Method = throw new UnsupportedOperationException
-    def asField: Field = throw new UnsupportedOperationException
+    def asMethod: Method       = throw new UnsupportedOperationException
+    def asField: Field         = throw new UnsupportedOperationException
 
 }

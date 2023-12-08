@@ -19,14 +19,11 @@ trait RecordLastReturnedValues extends RecordReturnedValues {
 
     protected[this] def recordReturnedValue(
         pc:    Int,
-        value: DomainValue
-    ): ReturnedValue = value
+        value: DomainValue): ReturnedValue = value
 
     protected[this] def joinReturnedValues(
         pc:                      Int,
         previouslyReturnedValue: ReturnedValue,
-        value:                   DomainValue
-    ): ReturnedValue = value
+        value:                   DomainValue): ReturnedValue = value
 
 }
-

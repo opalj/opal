@@ -25,22 +25,19 @@ trait UnconditionalBranchInstructionLike extends SimpleBranchInstructionLike {
 
 trait UnconditionalBranchInstruction
     extends SimpleBranchInstruction
-    with UnconditionalBranchInstructionLike {
+        with UnconditionalBranchInstructionLike {
 
     final override def nextInstructions(
         currentPC:             PC,
         regularSuccessorsOnly: Boolean
-    )(
-        implicit
+      )(implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
-    ): List[PC] = {
+        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy): List[PC] =
         List(currentPC + branchoffset)
-    }
 
     override def toString(currentPC: Int): String = {
         val direction = if (branchoffset >= 0) "↓" else "↑"
-        getClass.getSimpleName+" "+(currentPC + branchoffset) + direction
+        getClass.getSimpleName + " " + (currentPC + branchoffset) + direction
     }
 
 }

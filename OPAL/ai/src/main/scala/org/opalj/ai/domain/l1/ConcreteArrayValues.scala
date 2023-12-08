@@ -6,10 +6,10 @@ package l1
 
 import scala.reflect.ClassTag
 
-import org.opalj.log.OPALLogger
-import org.opalj.log.Warn
 import org.opalj.br.ArrayType
 import org.opalj.br.ObjectType
+import org.opalj.log.OPALLogger
+import org.opalj.log.Warn
 
 /**
  * Enables the tracking of various properties related to arrays.
@@ -37,8 +37,8 @@ import org.opalj.br.ObjectType
  */
 trait ConcreteArrayValues
     extends l1.ArrayValues
-    with PerInstructionPostProcessing
-    with PostEvaluationMemoryManagement {
+        with PerInstructionPostProcessing
+        with PostEvaluationMemoryManagement {
     domain: CorrelationalDomain with ConcreteIntegerValues with LogContextProvider =>
 
     private[this] val debug: Boolean = false
@@ -62,11 +62,9 @@ trait ConcreteArrayValues
      *          for arrays which store non-primitive values.
      *          It can be overridden by subclasses to plug-in more advanced analyses.
      */
-    protected def isEffectivelyImmutable(objectType: ObjectType): Boolean = {
-        objectType.id match {
-            case ObjectType.ObjectId | ObjectType.StringId | ObjectType.ClassId => true
-            case _ => false
-        }
+    protected def isEffectivelyImmutable(objectType: ObjectType): Boolean = objectType.id match {
+        case ObjectType.ObjectId | ObjectType.StringId | ObjectType.ClassId => true
+        case _                                                              => false
     }
 
     /**
@@ -92,15 +90,14 @@ trait ConcreteArrayValues
      *          possible to track those arrays.
      */
     protected def reifyArray(pc: Int, count: Int, arrayType: ArrayType): Boolean = {
-        if (debug)
-            OPALLogger.info("array values", s"$pc: reify ${arrayType.toJava} $count dimension(s)?")
+        if (debug) OPALLogger.info("array values", s"$pc: reify ${arrayType.toJava} $count dimension(s)?")
 
         count <= maxTrackedArraySize && (
             arrayType.componentType.isBaseType ||
-            (
-                arrayType.componentType.isObjectType &&
-                isEffectivelyImmutable(arrayType.componentType.asObjectType)
-            )
+                (
+                    arrayType.componentType.isObjectType &&
+                        isEffectivelyImmutable(arrayType.componentType.asObjectType)
+                )
         )
     }
 
@@ -131,7 +128,7 @@ trait ConcreteArrayValues
             val values: Array[DomainValue],
             refId:      RefId
     ) extends ArrayValue(origin, isNull = No, isPrecise = true, theType, refId) { ... }
-    */
+     */
 
     protected trait ConcreteArrayValue extends ArrayValue { this: DomainConcreteArrayValue =>
 
@@ -146,8 +143,7 @@ trait ConcreteArrayValues
         override def doLoad(
             loadPC:              Int,
             index:               DomainValue,
-            potentialExceptions: ExceptionValues
-        ): ArrayLoadResult = {
+            potentialExceptions: ExceptionValues): ArrayLoadResult = {
             if (potentialExceptions.nonEmpty) {
                 // - a "NullPointerException" is not possible
                 // - if an ArrayIndexOutOfBoundsException may be thrown then we certainly
@@ -158,9 +154,7 @@ trait ConcreteArrayValues
                 );
             }
 
-            intValue[ArrayLoadResult](index) { index =>
-                ComputedValue(values(index))
-            } {
+            intValue[ArrayLoadResult](index) { index => ComputedValue(values(index)) } {
                 // This handles the case that we know that the index is not precise
                 // but it is still known to be valid.
                 super.doLoad(loadPC, index, potentialExceptions)
@@ -171,8 +165,7 @@ trait ConcreteArrayValues
             storePC:             Int,
             value:               DomainValue,
             index:               DomainValue,
-            potentialExceptions: ExceptionValues
-        ): ArrayStoreResult = {
+            potentialExceptions: ExceptionValues): ArrayStoreResult = {
             // Here, a "NullPointerException" is not possible
 
             if (potentialExceptions.nonEmpty) {
@@ -210,105 +203,89 @@ trait ConcreteArrayValues
 
         override def doJoinWithNonNullValueWithSameOrigin(
             joinPC: Int,
-            other:  DomainSingleOriginReferenceValue
-        ): Update[DomainSingleOriginReferenceValue] = {
-
-            other match {
-                case DomainConcreteArrayValueTag(that) if this.refId == that.refId =>
-                    var update: UpdateType = NoUpdateType
-                    var isOther: Boolean = true
-                    val allValues = this.values.view.zip(that.values)
-                    val newValues =
-                        (allValues map { (v) =>
-                            val (v1, v2) = v
-                            if (v1 ne v2) {
-                                val joinResult = v1.join(joinPC, v2)
-                                joinResult match {
-                                    case NoUpdate =>
-                                        v1
-                                    case SomeUpdate(newValue) =>
-                                        if (v2 ne newValue) {
-                                            isOther = false
-                                        }
-                                        update = joinResult &: update
-                                        newValue
+            other:  DomainSingleOriginReferenceValue): Update[DomainSingleOriginReferenceValue] = other match {
+            case DomainConcreteArrayValueTag(that) if this.refId == that.refId =>
+                var update: UpdateType = NoUpdateType
+                var isOther: Boolean   = true
+                val allValues          = this.values.view.zip(that.values)
+                val newValues = (allValues map { v =>
+                    val (v1, v2) = v
+                    if (v1 ne v2) {
+                        val joinResult = v1.join(joinPC, v2)
+                        joinResult match {
+                            case NoUpdate => v1
+                            case SomeUpdate(newValue) =>
+                                if (v2 ne newValue) {
+                                    isOther = false
                                 }
-                            } else
-                                v1
-                        }).toArray // <= forces the evaluation - WHICH IS REQUIRED
-                    update match {
-                        case NoUpdateType => NoUpdate
-                        case _ =>
-                            if (isOther) {
-                                update(other)
-                            } else {
-                                update(ArrayValue(origin, theUpperTypeBound, newValues))
-                            }
-                    }
+                                update = joinResult &: update
+                                newValue
+                        }
+                    } else v1
+                }).toArray // <= forces the evaluation - WHICH IS REQUIRED
+                update match {
+                    case NoUpdateType => NoUpdate
+                    case _ =>
+                        if (isOther) {
+                            update(other)
+                        } else {
+                            update(ArrayValue(origin, theUpperTypeBound, newValues))
+                        }
+                }
 
-                // case DomainInitializedArrayValueTag(that) =>
+            // case DomainInitializedArrayValueTag(that) =>
 
-                case _ =>
-                    val answer = super.doJoinWithNonNullValueWithSameOrigin(joinPC, other)
-                    if (answer == NoUpdate) {
-                        // => This array and the other array have a corresponding
-                        //    abstract representation (w.r.t. the next abstraction level!)
-                        //    but we still need to drop the concrete information
-                        val abstractValue = ArrayValue(origin, No, true, theUpperTypeBound, nextRefId())
-                        StructuralUpdate(abstractValue)
-                    } else {
-                        answer
-                    }
-            }
+            case _ =>
+                val answer = super.doJoinWithNonNullValueWithSameOrigin(joinPC, other)
+                if (answer == NoUpdate) {
+                    // => This array and the other array have a corresponding
+                    //    abstract representation (w.r.t. the next abstraction level!)
+                    //    but we still need to drop the concrete information
+                    val abstractValue = ArrayValue(origin, No, true, theUpperTypeBound, nextRefId())
+                    StructuralUpdate(abstractValue)
+                } else {
+                    answer
+                }
         }
 
         /**
          * @note After adaptation of the array value, the array is usually passed to another
          *       method - in this case it is the responsibility of the caller to
          *       ensure that the (abstraction of the) contents of the array remains valid.
-         *
          */
         override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue = {
             val adaptedValue = target match {
 
                 case thatDomain: l1.ConcreteArrayValues =>
                     // Is this the right adaptation scheme???
-                    val adaptedValues =
-                        values.map(_.adapt(target, vo).asInstanceOf[thatDomain.DomainValue])
+                    val adaptedValues = values.map(_.adapt(target, vo).asInstanceOf[thatDomain.DomainValue])
                     thatDomain.ArrayValue(vo, theUpperTypeBound, adaptedValues)
 
-                case thatDomain: l1.ArrayValues =>
-                    thatDomain.InitializedArrayValue(vo, theUpperTypeBound, values.length)
+                case thatDomain: l1.ArrayValues => thatDomain.InitializedArrayValue(vo, theUpperTypeBound, values.length)
 
                 case thatDomain: l1.ReferenceValues =>
                     thatDomain.ArrayValue(vo, No, true, theUpperTypeBound, thatDomain.nextRefId())
 
-                case thatDomain: l0.TypeLevelReferenceValues =>
-                    thatDomain.ReferenceValue(vo, theUpperTypeBound)
+                case thatDomain: l0.TypeLevelReferenceValues => thatDomain.ReferenceValue(vo, theUpperTypeBound)
 
                 case _ => super.adapt(target, vo)
             }
             adaptedValue.asInstanceOf[target.DomainValue]
         }
 
-        override def equals(other: Any): Boolean = {
-            other match {
-                case DomainConcreteArrayValueTag(that) =>
-                    (that eq this) ||
-                        (
-                            (that canEqual this) &&
-                            this.origin == that.origin &&
-                            (this.theUpperTypeBound eq that.theUpperTypeBound) &&
-                            this.values == that.values
-                        )
+        override def equals(other: Any): Boolean = other match {
+            case DomainConcreteArrayValueTag(that) => (that eq this) ||
+                (
+                    (that canEqual this) &&
+                        this.origin == that.origin &&
+                        (this.theUpperTypeBound eq that.theUpperTypeBound) &&
+                        this.values == that.values
+                )
 
-                case _ => false
-            }
+            case _ => false
         }
 
-        override protected def canEqual(other: ArrayValue): Boolean = {
-            other.isInstanceOf[ConcreteArrayValue]
-        }
+        override protected def canEqual(other: ArrayValue): Boolean = other.isInstanceOf[ConcreteArrayValue]
 
         override def hashCode: Int = origin * 79 + upperTypeBound.hashCode
 
@@ -321,15 +298,12 @@ trait ConcreteArrayValues
     override def NewArray(
         pc:        Int,
         count:     DomainValue,
-        arrayType: ArrayType
-    ): DomainArrayValue = {
+        arrayType: ArrayType): DomainArrayValue = {
 
         val sizeOption = this.intValueOption(count)
-        if (sizeOption.isEmpty)
-            return ArrayValue(pc, No, isPrecise = true, arrayType, nextRefId()); // <= early return
+        if (sizeOption.isEmpty) return ArrayValue(pc, No, isPrecise = true, arrayType, nextRefId()); // <= early return
         val size: Int = sizeOption.get
-        if (!reifyArray(pc, size, arrayType))
-            return InitializedArrayValue(pc, arrayType, size);
+        if (!reifyArray(pc, size, arrayType)) return InitializedArrayValue(pc, arrayType, size);
 
         assert(
             size <= ConcreteArrayValues.MaxPossibleArraySize,
@@ -337,18 +311,17 @@ trait ConcreteArrayValues
         )
 
         if (size >= 256) {
-            val message = s"tracking very large arrays (${arrayType.toJava}) "+
-                "usually incurrs significant overhead without increasing "+
+            val message = s"tracking very large arrays (${arrayType.toJava}) " +
+                "usually incurrs significant overhead without increasing " +
                 "the precision of the analysis"
             OPALLogger.logOnce(Warn("analysis configuration", message))
         }
 
-        val virtualOrigin = {
-            ConcreteArrayValues.FirstVirtualOriginAddressOfDefaultArrayValues +
-                pc * ConcreteArrayValues.MaxPossibleArraySize
-        }
+        val virtualOrigin = ConcreteArrayValues.FirstVirtualOriginAddressOfDefaultArrayValues +
+            pc * ConcreteArrayValues.MaxPossibleArraySize
         val array: Array[DomainValue] = new Array[DomainValue](size)
-        var i = 0; while (i < size) {
+        var i                         = 0;
+        while (i < size) {
             // We initialize each element with a new instance and also
             // assign each value with a unique PC.
             array(i) = DefaultValue(virtualOrigin + i, arrayType.componentType)
@@ -361,13 +334,10 @@ trait ConcreteArrayValues
     override def NewArray(
         origin:    ValueOrigin,
         counts:    Operands,
-        arrayType: ArrayType
-    ): DomainArrayValue = {
-        intValue(counts.last) { length =>
-            InitializedArrayValue(origin, arrayType, length)
-        } {
-            super.NewArray(origin, counts, arrayType)
-        }
+        arrayType: ArrayType): DomainArrayValue = intValue(counts.last) { length =>
+        InitializedArrayValue(origin, arrayType, length)
+    } {
+        super.NewArray(origin, counts, arrayType)
     }
 
     //
@@ -377,17 +347,13 @@ trait ConcreteArrayValues
     def ArrayValue( // for ArrayValue
         origin:            ValueOrigin,
         theUpperTypeBound: ArrayType,
-        values:            Array[DomainValue]
-    ): DomainArrayValue = {
-        ArrayValue(origin, theUpperTypeBound, values, nextRefId())
-    }
+        values:            Array[DomainValue]): DomainArrayValue = ArrayValue(origin, theUpperTypeBound, values, nextRefId())
 
     def ArrayValue( // for ArrayValue
-        origin:            ValueOrigin,
+        origin: ValueOrigin,
         theUpperTypeBound: ArrayType,
-        values:            Array[DomainValue],
-        refId:             RefId
-    ): DomainArrayValue
+        values: Array[DomainValue],
+        refId: RefId): DomainArrayValue
 
 }
 
@@ -400,7 +366,7 @@ object ConcreteArrayValues {
     //        FirstVirtualOriginAddressOfDefaultArrayValues+pc*UShort.MaxValue,
     //        FirstVirtualOriginAddressOfDefaultArrayValues+(pc+1)*UShort.MaxValue
     // ]
-    final val FirstVirtualOriginAddressOfDefaultArrayValues = (Int.MaxValue / 2) // FIXME TODO XXX <= needs to be killed...
-    final val MaxPossibleArraySize = (Int.MaxValue / 2) / UShort.MaxValue /*<=> max PC per method*/
+    final val FirstVirtualOriginAddressOfDefaultArrayValues = Int.MaxValue / 2                     // FIXME TODO XXX <= needs to be killed...
+    final val MaxPossibleArraySize                          = (Int.MaxValue / 2) / UShort.MaxValue /*<=> max PC per method*/
 
 }

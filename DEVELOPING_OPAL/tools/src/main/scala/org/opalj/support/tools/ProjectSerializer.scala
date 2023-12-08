@@ -3,16 +3,16 @@ package org.opalj
 package support
 package tools
 
+import java.io.BufferedOutputStream
 import java.io.File
 import java.io.FileOutputStream
-import java.io.BufferedOutputStream
-import java.util.zip.ZipOutputStream
 import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 
-import org.opalj.io.process
-import org.opalj.br.analyses.Project
 import org.opalj.bc.Assembler
+import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
+import org.opalj.io.process
 
 /**
  * Exports the class files belonging to the project part of a loaded
@@ -42,9 +42,9 @@ object ProjectSerializer {
     }
 
     def main(args: Array[String]): Unit = {
-        var in: String = null
+        var in: String  = null
         var out: String = null
-        var i = 0
+        var i           = 0
         while (i < args.length) {
             args(i) match {
                 case "-in"  => { i += 1; in = args(i) }
@@ -69,16 +69,15 @@ object ProjectSerializer {
             System.exit(1)
         }
 
-        def checkOrCreateOutputFolder(outFolder: File): Unit = {
+        def checkOrCreateOutputFolder(outFolder: File): Unit =
             if ((!outFolder.exists() && !outFolder.mkdirs()) ||
                 (outFolder.exists() && !outFolder.isDirectory)) {
                 Console.err.println(s"$out could not be created or is not a folder.")
                 System.exit(1)
             }
-        }
         val outFolder = new File(out)
         checkOrCreateOutputFolder(outFolder)
-        val classesFolder = new File(outFolder.getPath + File.separator+"classes")
+        val classesFolder = new File(outFolder.getPath + File.separator + "classes")
         checkOrCreateOutputFolder(classesFolder)
 
         val p = Project(inFile /* actually, we don't need the RTJar */ )
@@ -87,14 +86,14 @@ object ProjectSerializer {
     }
 
     def serialize(p: SomeProject, targetFolder: File): Unit = {
-        val zipFile = new File(targetFolder.getAbsolutePath + File.separator+"project.zip")
-        val zipOut = new ZipOutputStream(new FileOutputStream(zipFile))
+        val zipFile = new File(targetFolder.getAbsolutePath + File.separator + "project.zip")
+        val zipOut  = new ZipOutputStream(new FileOutputStream(zipFile))
         p.parForeachProjectClassFile() { cf =>
             val classFileFolderName = s"${targetFolder.getAbsolutePath}/${cf.thisType.packageName}"
-            val classFileFolder = new File(classFileFolderName)
+            val classFileFolder     = new File(classFileFolderName)
             classFileFolder.mkdirs()
             val classFileName = s"${cf.fqn}.class"
-            val targetFile = new File(s"${targetFolder.getAbsolutePath}/$classFileName")
+            val targetFile    = new File(s"${targetFolder.getAbsolutePath}/$classFileName")
 
             val b = Assembler(ba.toDA(cf))
             process(new BufferedOutputStream(new FileOutputStream(targetFile))) {

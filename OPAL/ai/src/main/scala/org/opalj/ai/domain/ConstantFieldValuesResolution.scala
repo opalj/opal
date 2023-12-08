@@ -21,19 +21,16 @@ trait ConstantFieldValuesResolution extends Domain { domain: TheProject =>
         pc:        Int,
         classType: ObjectType,
         fieldName: String,
-        fieldType: FieldType
-    ): Computation[DomainValue, Nothing] = {
-
+        fieldType: FieldType): Computation[DomainValue, Nothing] =
         project.resolveFieldReference(classType, fieldName, fieldType) match {
-            case Some(field) if field.isFinal && field.isStatic &&
-                (field.fieldType.isBaseType || (field.fieldType eq ObjectType.String)) =>
+            case Some(field)
+                if field.isFinal && field.isStatic &&
+                    (field.fieldType.isBaseType || (field.fieldType eq ObjectType.String)) =>
                 field.constantFieldValue.map(cv =>
                     ComputedValue(ConstantFieldValue(pc, cv))).getOrElse(
                     super.getstatic(pc, classType, fieldName, fieldType)
                 )
 
-            case _ =>
-                super.getstatic(pc, classType, fieldName, fieldType)
+            case _ => super.getstatic(pc, classType, fieldName, fieldType)
         }
-    }
 }

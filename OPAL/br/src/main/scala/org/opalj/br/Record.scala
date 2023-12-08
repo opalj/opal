@@ -9,13 +9,11 @@ package br
  */
 case class Record(components: RecordComponents)
     extends Attribute
-    with (Int => RecordComponent) {
+        with (Int => RecordComponent) {
 
     override def kindId: Int = Record.KindId
 
-    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = {
-        this == other
-    }
+    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = this == other
 
     final override def apply(componentIndex: Int): RecordComponent = components(componentIndex)
 

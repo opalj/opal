@@ -6,9 +6,9 @@ package domain
 import scala.collection.Set
 import scala.collection.immutable
 
+import org.opalj.br.ObjectType
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.immutable.UIDSet1
-import org.opalj.br.ObjectType
 
 /**
  * Records the results of the evaluation of the `current` method such that the results
@@ -26,8 +26,8 @@ import org.opalj.br.ObjectType
  */
 trait RecordMethodCallResults
     extends MethodCallResults
-    with RecordReturnedValues
-    with RecordThrownExceptions {
+        with RecordReturnedValues
+        with RecordThrownExceptions {
     this: Domain =>
 
     type ThrownException <: Set[this.ExceptionValue]
@@ -43,13 +43,11 @@ trait RecordMethodCallResults
 
     override def returnedNormally: Boolean = hasReturnedNormally || allReturnedValues.nonEmpty
 
-    override def returnedValue(target: TargetDomain, callerPC: Int): Option[target.DomainValue] = {
-        if (allReturnedValues.isEmpty)
-            None
+    override def returnedValue(target: TargetDomain, callerPC: Int): Option[target.DomainValue] =
+        if (allReturnedValues.isEmpty) None
         else {
             Some(summarize(callerPC, allReturnedValues.values).adapt(target, callerPC))
         }
-    }
 
     /**
      * Remaps the returned value to the domain value used by the calling domain.
@@ -71,15 +69,11 @@ trait RecordMethodCallResults
      *       l1.DefaultReferenceValuesDomain which we do not assume here.
      */
     override def returnedValueRemapped(
-        callerDomain: TargetDomain,
-        callerPC:     Int
-    )(
-        originalOperands: callerDomain.Operands,
-        passedParameters: Locals
-    ): Option[callerDomain.DomainValue] = {
-
-        if (allReturnedValues.isEmpty)
-            None
+        callerDomain:     TargetDomain,
+        callerPC:         Int
+      )(originalOperands: callerDomain.Operands,
+        passedParameters: Locals): Option[callerDomain.DomainValue] =
+        if (allReturnedValues.isEmpty) None
         else {
             /* THE FOLLOWING IS THE MOST BASIC HANDLING WHICH ONLY SUPPORTS IDENTITY FUNCTIONS:
             val summarizedValue = summarize(callerPC, allReturnedValues.values)
@@ -92,20 +86,17 @@ trait RecordMethodCallResults
                 val mappedBackValue = originalOperands.reverse(nthParameter)
                 Some(mappedBackValue)
             }
-            */
+             */
 
             // If we have multiple return sites where some refer to parameters and
             // some to local variables, we map back the information regarding
             // the parameters and summarize only w.r.t. the local variables.
-            val (returnedParameters, returnedLocals) =
-                allReturnedValues.values.partition(passedParameters.contains)
+            val (returnedParameters, returnedLocals) = allReturnedValues.values.partition(passedParameters.contains)
             var summarizedValue: callerDomain.DomainValue = // <= summarized in the target domain!
-                if (returnedLocals.nonEmpty)
-                    summarize(callerPC, returnedLocals).adapt(callerDomain, callerPC)
-                else
-                    null
+                if (returnedLocals.nonEmpty) summarize(callerPC, returnedLocals).adapt(callerDomain, callerPC)
+                else null
             returnedParameters foreach { p =>
-                val nthParameter = passedParameters.nthValue { _ == p }
+                val nthParameter      = passedParameters.nthValue { _ == p }
                 val originalParameter = originalOperands.reverse(nthParameter)
                 if (summarizedValue == null || summarizedValue == originalParameter) {
                     summarizedValue = originalParameter
@@ -118,51 +109,48 @@ trait RecordMethodCallResults
             }
             Some(summarizedValue)
         }
-    }
 
     // IMPROVE Remap returned exceptions
     def thrownExceptions(target: TargetDomain, callerPC: Int): target.ExceptionValues = {
 
-        val allThrownExceptions = this.allThrownExceptions //: Map[PC, ThrownException]
+        val allThrownExceptions = this.allThrownExceptions // : Map[PC, ThrownException]
         if (allThrownExceptions.isEmpty) {
             Iterable.empty
         } else {
             var exceptionValuesPerType: Map[ObjectType, immutable.Set[ExceptionValue]] = Map.empty
 
-            def handleExceptionValue(exceptionValue: ExceptionValue): Unit = {
-                exceptionValue.upperTypeBound match {
-                    case EmptyUpperTypeBound =>
-                        exceptionValuesPerType = exceptionValuesPerType.updated(
+            def handleExceptionValue(exceptionValue: ExceptionValue): Unit = exceptionValue.upperTypeBound match {
+                case EmptyUpperTypeBound => exceptionValuesPerType = exceptionValuesPerType.updated(
+                        ObjectType.Throwable,
+                        exceptionValuesPerType.getOrElse(
                             ObjectType.Throwable,
-                            exceptionValuesPerType.getOrElse(
-                                ObjectType.Throwable, immutable.Set.empty
-                            ) + exceptionValue
-                        )
-                    case UIDSet1(exceptionType: ObjectType) =>
-                        exceptionValuesPerType = exceptionValuesPerType.updated(
+                            immutable.Set.empty
+                        ) + exceptionValue
+                    )
+                case UIDSet1(exceptionType: ObjectType) => exceptionValuesPerType = exceptionValuesPerType.updated(
+                        exceptionType,
+                        exceptionValuesPerType.getOrElse(
                             exceptionType,
-                            exceptionValuesPerType.getOrElse(
-                                exceptionType, immutable.Set.empty
-                            ) + exceptionValue
-                        )
-                    case utb =>
-                        val exceptionType =
-                            classHierarchy.joinObjectTypesUntilSingleUpperBound(
-                                utb.asInstanceOf[UIDSet[ObjectType]]
-                            )
-                        exceptionValuesPerType = exceptionValuesPerType.updated(
+                            immutable.Set.empty
+                        ) + exceptionValue
+                    )
+                case utb =>
+                    val exceptionType = classHierarchy.joinObjectTypesUntilSingleUpperBound(
+                        utb.asInstanceOf[UIDSet[ObjectType]]
+                    )
+                    exceptionValuesPerType = exceptionValuesPerType.updated(
+                        exceptionType,
+                        exceptionValuesPerType.getOrElse(
                             exceptionType,
-                            exceptionValuesPerType.getOrElse(
-                                exceptionType, immutable.Set.empty
-                            ) + exceptionValue
-                        )
-                }
+                            immutable.Set.empty
+                        ) + exceptionValue
+                    )
             }
 
             for {
                 exceptionValuesPerInstruction <- allThrownExceptions.values
-                exceptionValues <- exceptionValuesPerInstruction
-                exceptionValue <- exceptionValues.allValues
+                exceptionValues               <- exceptionValuesPerInstruction
+                exceptionValue                <- exceptionValues.allValues
             } {
                 handleExceptionValue(exceptionValue)
             }

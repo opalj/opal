@@ -66,34 +66,25 @@ case class DependentlyImmutableClass(parameters: SortedSet[String]) extends Clas
 
     override def isDependentlyImmutable: Boolean = true
     def meet(that: ClassImmutability): ClassImmutability =
-        if (that == MutableClass || that == NonTransitivelyImmutableClass)
-            that
-        else
-            this
+        if (that == MutableClass || that == NonTransitivelyImmutableClass) that
+        else this
 
-    override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
-        if (other == TransitivelyImmutableClass) {
-            throw new IllegalArgumentException(s"$e: impossible refinement: $other => $this")
-        }
+    override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = if (other == TransitivelyImmutableClass) {
+        throw new IllegalArgumentException(s"$e: impossible refinement: $other => $this")
     }
 }
 
 case object NonTransitivelyImmutableClass extends ClassImmutability {
     override def correspondingTypeImmutability: TypeImmutability = NonTransitivelyImmutableType
 
-    def meet(that: ClassImmutability): ClassImmutability = {
-        if (that == MutableClass)
-            that
-        else
-            this
-    }
+    def meet(that: ClassImmutability): ClassImmutability =
+        if (that == MutableClass) that
+        else this
 
-    override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
-        other match {
-            case TransitivelyImmutableClass | DependentlyImmutableClass(_) =>
-                throw new IllegalArgumentException(s"$e: impossible refinement: $other => $this")
-            case _ =>
-        }
+    override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = other match {
+        case TransitivelyImmutableClass | DependentlyImmutableClass(_) =>
+            throw new IllegalArgumentException(s"$e: impossible refinement: $other => $this")
+        case _ =>
     }
 }
 
@@ -103,9 +94,7 @@ case object MutableClass extends ClassImmutability {
 
     def meet(other: ClassImmutability): ClassImmutability = this
 
-    override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
-        if (other != MutableClass) {
-            throw new IllegalArgumentException(s"$e: impossible refinement: $other => $this")
-        }
+    override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = if (other != MutableClass) {
+        throw new IllegalArgumentException(s"$e: impossible refinement: $other => $this")
     }
 }

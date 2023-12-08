@@ -3,11 +3,12 @@ package org.opalj
 package bi
 package reader
 
-import java.io.DataInputStream
-import org.opalj.control.fillArraySeq
-
-import scala.collection.immutable.ArraySeq
 import scala.reflect.ClassTag
+
+import java.io.DataInputStream
+import scala.collection.immutable.ArraySeq
+
+import org.opalj.control.fillArraySeq
 
 /**
  * Generic parser for an annotation's element-value pairs.
@@ -27,90 +28,74 @@ trait ElementValuePairsReader extends AnnotationsAbstractions {
     type ElementValuePairs = ArraySeq[ElementValuePair]
 
     def ElementValuePair(
-        constant_pool:      Constant_Pool,
+        constant_pool: Constant_Pool,
         element_name_index: Constant_Pool_Index,
-        element_value:      ElementValue
-    ): ElementValuePair
+        element_value: ElementValue): ElementValuePair
 
     def ByteValue(
-        constant_pool:     Constant_Pool,
-        const_value_index: Constant_Pool_Index
-    ): ElementValue
+        constant_pool: Constant_Pool,
+        const_value_index: Constant_Pool_Index): ElementValue
 
     def CharValue(
-        constant_pool:     Constant_Pool,
-        const_value_index: Constant_Pool_Index
-    ): ElementValue
+        constant_pool: Constant_Pool,
+        const_value_index: Constant_Pool_Index): ElementValue
 
     def DoubleValue(
-        constant_pool:     Constant_Pool,
-        const_value_index: Constant_Pool_Index
-    ): ElementValue
+        constant_pool: Constant_Pool,
+        const_value_index: Constant_Pool_Index): ElementValue
 
     def FloatValue(
-        constant_pool:     Constant_Pool,
-        const_value_index: Constant_Pool_Index
-    ): ElementValue
+        constant_pool: Constant_Pool,
+        const_value_index: Constant_Pool_Index): ElementValue
 
     def IntValue(
-        constant_pool:     Constant_Pool,
-        const_value_index: Constant_Pool_Index
-    ): ElementValue
+        constant_pool: Constant_Pool,
+        const_value_index: Constant_Pool_Index): ElementValue
 
     def LongValue(
-        constant_pool:     Constant_Pool,
-        const_value_index: Constant_Pool_Index
-    ): ElementValue
+        constant_pool: Constant_Pool,
+        const_value_index: Constant_Pool_Index): ElementValue
 
     def ShortValue(
-        constant_pool:     Constant_Pool,
-        const_value_index: Constant_Pool_Index
-    ): ElementValue
+        constant_pool: Constant_Pool,
+        const_value_index: Constant_Pool_Index): ElementValue
 
     def BooleanValue(
-        constant_pool:     Constant_Pool,
-        const_value_index: Constant_Pool_Index
-    ): ElementValue
+        constant_pool: Constant_Pool,
+        const_value_index: Constant_Pool_Index): ElementValue
 
     def StringValue(
-        constant_pool:     Constant_Pool,
-        const_value_index: Constant_Pool_Index
-    ): ElementValue
+        constant_pool: Constant_Pool,
+        const_value_index: Constant_Pool_Index): ElementValue
 
     def ClassValue(
-        constant_pool:     Constant_Pool,
-        const_value_index: Constant_Pool_Index
-    ): ElementValue
+        constant_pool: Constant_Pool,
+        const_value_index: Constant_Pool_Index): ElementValue
 
     def EnumValue(
-        constant_pool:    Constant_Pool,
-        type_name_index:  Constant_Pool_Index,
-        const_name_index: Constant_Pool_Index
-    ): ElementValue
+        constant_pool: Constant_Pool,
+        type_name_index: Constant_Pool_Index,
+        const_name_index: Constant_Pool_Index): ElementValue
 
     def AnnotationValue(
         constant_pool: Constant_Pool,
-        annotation:    Annotation
-    ): ElementValue
+        annotation: Annotation): ElementValue
 
     def ArrayValue(
         constant_pool: Constant_Pool,
-        values:        ElementValues
-    ): ElementValue
+        values: ElementValues): ElementValue
 
     //
     // IMPLEMENTATION
     //
 
-    def ElementValuePairs(cp: Constant_Pool, in: DataInputStream): ElementValuePairs = {
+    def ElementValuePairs(cp: Constant_Pool, in: DataInputStream): ElementValuePairs =
         fillArraySeq(in.readUnsignedShort) {
             ElementValuePair(cp, in)
         }
-    }
 
-    def ElementValuePair(cp: Constant_Pool, in: DataInputStream): ElementValuePair = {
+    def ElementValuePair(cp: Constant_Pool, in: DataInputStream): ElementValuePair =
         ElementValuePair(cp, in.readUnsignedShort, ElementValue(cp, in))
-    }
 
     /**
      * Parses an element value.

@@ -3,6 +3,7 @@ package org.opalj
 package br
 
 import scala.annotation.switch
+
 import scala.collection.Seq
 import scala.collection.immutable.ArraySeq
 import scala.math.Ordered
@@ -19,14 +20,12 @@ import scala.math.Ordered
  */
 sealed abstract class MethodDescriptor
     extends ConstantValue[MethodDescriptor]
-    with (Int => FieldType)
-    with Ordered[MethodDescriptor] {
+        with (Int => FieldType)
+        with Ordered[MethodDescriptor] {
 
     def parameterTypes: FieldTypes
 
-    def apply(parameterIndex: Int): FieldType = {
-        parameterTypes(parameterIndex)
-    }
+    def apply(parameterIndex: Int): FieldType = parameterTypes(parameterIndex)
 
     def parameterType(index: Int): FieldType
 
@@ -34,10 +33,7 @@ sealed abstract class MethodDescriptor
 
     final def copy(
         parameterTypes: FieldTypes = this.parameterTypes,
-        returnType:     Type       = this.returnType
-    ): MethodDescriptor = {
-        MethodDescriptor(parameterTypes, returnType)
-    }
+        returnType:     Type = this.returnType): MethodDescriptor = MethodDescriptor(parameterTypes, returnType)
 
     /**
      * The number of registers required to store the method parameters.
@@ -49,11 +45,9 @@ sealed abstract class MethodDescriptor
 
     def returnType: Type
 
-    def toJVMDescriptor: String = {
-        parameterTypes.iterator
-            .map[String](_.toJVMTypeName)
-            .mkString("(", "", ")"+returnType.toJVMTypeName)
-    }
+    def toJVMDescriptor: String = parameterTypes.iterator
+        .map[String](_.toJVMTypeName)
+        .mkString("(", "", ")" + returnType.toJVMTypeName)
 
     def value: this.type = this
 
@@ -65,8 +59,7 @@ sealed abstract class MethodDescriptor
      * Returns a Java like view when a MethodDescriptor is used as a [[BootstrapArgument]].
      */
     def toJava: String = {
-        val parameterTypes =
-            this.parameterTypes.iterator.map[String](_.toJava).mkString("(", ",", ")")
+        val parameterTypes = this.parameterTypes.iterator.map[String](_.toJava).mkString("(", ",", ")")
         s"MethodDescriptor(${returnType.toJava},$parameterTypes)"
     }
 
@@ -79,8 +72,8 @@ sealed abstract class MethodDescriptor
      *      the origin of value (a parameter passed to a method).
      */
     def selectParameter(f: FieldType => Boolean): Seq[Int] = {
-        var i = 0
-        val max = parametersCount
+        var i                 = 0
+        val max               = parametersCount
         var indexes: Seq[Int] = Nil
         while (i < max) {
             if (f(parameterType(i))) {
@@ -95,7 +88,6 @@ sealed abstract class MethodDescriptor
      * @return `true` iff a parameter – except of the last one – is a computational type category
      *        2 value; i.e., is a long or double value. If all values are category 1 values, then
      *        the parameters are store in the first n registers/local variables.
-     *
      */
     def hasComputationalTypeCategory2ValueInInit: Boolean
 
@@ -105,37 +97,27 @@ sealed abstract class MethodDescriptor
     //
     //
 
-    def toJava(methodName: String): String = {
+    def toJava(methodName: String): String =
         parameterTypes.view.map(_.toJava).mkString(s"${returnType.toJava} $methodName(", ",", ")")
-    }
 
-    def toJava(declaringClassName: String, methodName: String): String = {
-        s"$declaringClassName{ ${toJava(methodName)} }"
-    }
+    def toJava(declaringClassName: String, methodName: String): String = s"$declaringClassName{ ${toJava(methodName)} }"
 
-    def toUMLNotation: String = {
-        "("+{
-            if (parameterTypes.isEmpty)
-                ""
-            else
-                parameterTypes.tail.foldLeft(parameterTypes.head.toJava)(_+", "+_.toJava)
-        }+"): "+returnType.toJava
-    }
+    def toUMLNotation: String = "(" + {
+        if (parameterTypes.isEmpty) ""
+        else parameterTypes.tail.foldLeft(parameterTypes.head.toJava)(_ + ", " + _.toJava)
+    } + "): " + returnType.toJava
 
     override def <(other: MethodDescriptor): Boolean = {
-        val thisParametersCount = this.parametersCount
+        val thisParametersCount  = this.parametersCount
         val otherParametersCount = other.parametersCount
 
         (thisParametersCount < otherParametersCount) || (
-            thisParametersCount == otherParametersCount &&
-            {
-                var i = 0
+            thisParametersCount == otherParametersCount && {
+                var i    = 0
                 val iMax = this.parametersCount
                 while (i < iMax) {
-                    if (this.parameterTypes(i) < other.parameterTypes(i))
-                        return true;
-                    else if (other.parameterTypes(i) < this.parameterTypes(i))
-                        return false;
+                    if (this.parameterTypes(i) < other.parameterTypes(i)) return true;
+                    else if (other.parameterTypes(i) < this.parameterTypes(i)) return false;
                     else // the types are identical
                         i += 1
                 }
@@ -144,7 +126,7 @@ sealed abstract class MethodDescriptor
         )
     }
 
-    override def toString: String = "MethodDescriptor("+toUMLNotation+")"
+    override def toString: String = "MethodDescriptor(" + toUMLNotation + ")"
 }
 
 //
@@ -165,21 +147,16 @@ private object NoArgumentAndNoReturnValueMethodDescriptor extends MethodDescript
 
     override def hasComputationalTypeCategory2ValueInInit: Boolean = false
 
-    override def equalParameters(other: MethodDescriptor): Boolean = {
-        other.parametersCount == 0
-    }
+    override def equalParameters(other: MethodDescriptor): Boolean = other.parametersCount == 0
 
-    override def compare(other: MethodDescriptor): Int = {
-        if (other == NoArgumentAndNoReturnValueMethodDescriptor)
-            0
-        else
-            -1
-    }
+    override def compare(other: MethodDescriptor): Int =
+        if (other == NoArgumentAndNoReturnValueMethodDescriptor) 0
+        else -1
 
     // the default equals and hashCode implementations are a perfect fit
 }
 
-private final class NoArgumentMethodDescriptor(val returnType: Type) extends MethodDescriptor {
+final private class NoArgumentMethodDescriptor(val returnType: Type) extends MethodDescriptor {
 
     override def parameterTypes: FieldTypes = NoFieldTypes
 
@@ -189,154 +166,120 @@ private final class NoArgumentMethodDescriptor(val returnType: Type) extends Met
 
     override def hasComputationalTypeCategory2ValueInInit: Boolean = false
 
-    override def equalParameters(other: MethodDescriptor): Boolean =
-        other.parametersCount == 0
+    override def equalParameters(other: MethodDescriptor): Boolean = other.parametersCount == 0
 
     override def hashCode: Int = returnType.hashCode
 
-    override def equals(other: Any): Boolean = {
-        other match {
-            case that: NoArgumentMethodDescriptor => that.returnType eq this.returnType
-            case _                                => false
-        }
+    override def equals(other: Any): Boolean = other match {
+        case that: NoArgumentMethodDescriptor => that.returnType eq this.returnType
+        case _                                => false
     }
 
-    override def compare(other: MethodDescriptor): Int = {
-        (other.parametersCount: @switch) match {
-            case 0 => this.returnType.compare(other.returnType)
-            case _ => -1
-        }
+    override def compare(other: MethodDescriptor): Int = (other.parametersCount: @switch) match {
+        case 0 => this.returnType.compare(other.returnType)
+        case _ => -1
     }
 
 }
 
-private final class SingleArgumentMethodDescriptor(
+final private class SingleArgumentMethodDescriptor(
         val parameterType: FieldType,
-        val returnType:    Type
-) extends MethodDescriptor {
+        val returnType: Type) extends MethodDescriptor {
 
     override def parameterTypes: FieldTypes = ArraySeq(parameterType)
 
-    override def parameterType(index: Int): FieldType = {
-        if (index == 0)
-            parameterType
-        else
-            throw new IndexOutOfBoundsException()
-    }
+    override def parameterType(index: Int): FieldType =
+        if (index == 0) parameterType
+        else throw new IndexOutOfBoundsException()
 
     override def parametersCount: Int = 1
 
     override def hasComputationalTypeCategory2ValueInInit: Boolean = false
 
-    override def equalParameters(other: MethodDescriptor): Boolean = {
+    override def equalParameters(other: MethodDescriptor): Boolean =
         (other.parametersCount == 1) && (other.parameterType(0) == parameterType)
-    }
 
     override lazy val hashCode: Int = (returnType.hashCode() * 61) + parameterType.hashCode
 
-    override def equals(other: Any): Boolean = {
-        other match {
-            case that: SingleArgumentMethodDescriptor =>
-                (that.parameterType eq this.parameterType) && (that.returnType eq this.returnType)
-            case _ =>
-                false
-        }
+    override def equals(other: Any): Boolean = other match {
+        case that: SingleArgumentMethodDescriptor =>
+            (that.parameterType eq this.parameterType) && (that.returnType eq this.returnType)
+        case _ => false
     }
 
-    override def compare(other: MethodDescriptor): Int = {
-        (other.parametersCount: @switch) match {
-            case 0 => 1
-            case 1 =>
-                val c = parameterType compare other.parameterType(0)
-                if (c != 0)
-                    c
-                else
-                    this.returnType.compare(other.returnType)
-            case _ => -1
-        }
+    override def compare(other: MethodDescriptor): Int = (other.parametersCount: @switch) match {
+        case 0 => 1
+        case 1 =>
+            val c = parameterType compare other.parameterType(0)
+            if (c != 0) c
+            else this.returnType.compare(other.returnType)
+        case _ => -1
     }
 
 }
 
-private final class TwoArgumentsMethodDescriptor(
+final private class TwoArgumentsMethodDescriptor(
         val firstParameterType:  FieldType,
         val secondParameterType: FieldType,
-        val returnType:          Type
-) extends MethodDescriptor {
+        val returnType: Type) extends MethodDescriptor {
 
     override def parameterTypes: FieldTypes = ArraySeq(firstParameterType, secondParameterType)
 
-    override def parameterType(index: Int): FieldType = {
-        (index: @switch) match {
-            case 0 => firstParameterType
-            case 1 => secondParameterType
-            case _ => throw new IndexOutOfBoundsException()
-        }
+    override def parameterType(index: Int): FieldType = (index: @switch) match {
+        case 0 => firstParameterType
+        case 1 => secondParameterType
+        case _ => throw new IndexOutOfBoundsException()
     }
 
     override def parametersCount: Int = 2
 
-    override def hasComputationalTypeCategory2ValueInInit: Boolean = {
+    override def hasComputationalTypeCategory2ValueInInit: Boolean =
         firstParameterType.computationalType.categoryId == 2
-    }
 
-    override def compare(other: MethodDescriptor): Int = {
-        (other.parametersCount: @switch) match {
-            case 0 | 1 => 1
-            case 2 =>
-                var c = firstParameterType compare other.parameterType(0)
-                if (c != 0)
+    override def compare(other: MethodDescriptor): Int = (other.parametersCount: @switch) match {
+        case 0 | 1 => 1
+        case 2 =>
+            var c = firstParameterType compare other.parameterType(0)
+            if (c != 0) c
+            else {
+                c = secondParameterType compare other.parameterType(1)
+                if (c != 0) {
                     c
-                else {
-                    c = secondParameterType compare other.parameterType(1)
-                    if (c != 0) {
-                        c
-                    } else {
-                        this.returnType.compare(other.returnType)
-                    }
+                } else {
+                    this.returnType.compare(other.returnType)
                 }
-            case _ => -1
-        }
+            }
+        case _ => -1
     }
 
-    override def equalParameters(other: MethodDescriptor): Boolean = {
-        (other.parametersCount == 2) &&
-            (other.parameterType(0) == firstParameterType) &&
-            (other.parameterType(1) == secondParameterType)
-    }
+    override def equalParameters(other: MethodDescriptor): Boolean = (other.parametersCount == 2) &&
+        (other.parameterType(0) == firstParameterType) &&
+        (other.parameterType(1) == secondParameterType)
 
-    override lazy val hashCode: Int = {
-        (firstParameterType.hashCode * 13 + secondParameterType.hashCode) * 61 +
-            returnType.hashCode()
-    }
+    override lazy val hashCode: Int = (firstParameterType.hashCode * 13 + secondParameterType.hashCode) * 61 +
+        returnType.hashCode()
 
-    override def equals(other: Any): Boolean = {
-        other match {
-            case that: TwoArgumentsMethodDescriptor =>
-                (that.firstParameterType eq this.firstParameterType) &&
-                    (that.secondParameterType eq this.secondParameterType) &&
-                    (that.returnType eq this.returnType)
-            case _ =>
-                false
-        }
+    override def equals(other: Any): Boolean = other match {
+        case that: TwoArgumentsMethodDescriptor => (that.firstParameterType eq this.firstParameterType) &&
+            (that.secondParameterType eq this.secondParameterType) &&
+            (that.returnType eq this.returnType)
+        case _ => false
     }
 }
 
-private final class MultiArgumentsMethodDescriptor(
+final private class MultiArgumentsMethodDescriptor(
         val parameterTypes: FieldTypes,
-        val returnType:     Type
-) extends MethodDescriptor {
+        val returnType: Type) extends MethodDescriptor {
 
     override def parameterType(index: Int): FieldType = parameterTypes(index)
 
     override def parametersCount: Int = parameterTypes.size
 
     override def hasComputationalTypeCategory2ValueInInit: Boolean = {
-        var i = 0
+        var i   = 0
         val max = parameterTypes.size - 1
         while (i < max) {
-            if (parameterTypes(i).computationalType.categoryId == 2)
-                return true;
+            if (parameterTypes(i).computationalType.categoryId == 2) return true;
             i += 1
         }
         false
@@ -344,18 +287,15 @@ private final class MultiArgumentsMethodDescriptor(
     }
 
     override def compare(other: MethodDescriptor): Int = {
-        val thisParametersCount = this.parametersCount
+        val thisParametersCount  = this.parametersCount
         val otherParametersCount = other.parametersCount
-        if (thisParametersCount < otherParametersCount)
-            -1
-        else if (thisParametersCount > otherParametersCount)
-            1
+        if (thisParametersCount < otherParametersCount) -1
+        else if (thisParametersCount > otherParametersCount) 1
         else {
             var i = 0
             while (i < thisParametersCount) {
                 val comparisonResult = this.parameterTypes(i).compare(other.parameterTypes(i))
-                if (comparisonResult != 0)
-                    return comparisonResult;
+                if (comparisonResult != 0) return comparisonResult;
                 else // the types are identical
                     i += 1
             }
@@ -363,49 +303,37 @@ private final class MultiArgumentsMethodDescriptor(
         }
     }
 
-    override def equalParameters(other: MethodDescriptor): Boolean = {
-        other.parameterTypes == this.parameterTypes
-    }
+    override def equalParameters(other: MethodDescriptor): Boolean = other.parameterTypes == this.parameterTypes
 
     override lazy val hashCode: Int = (returnType.hashCode * 13) + parameterTypes.hashCode
 
-    override def equals(other: Any): Boolean = {
-        other match {
-            case that: MethodDescriptor =>
-                (this.returnType eq that.returnType) &&
-                    this.parametersCount == that.parametersCount &&
-                    {
-                        var i = parametersCount
-                        while (i > 0) {
-                            i = i - 1
-                            if (this.parameterTypes(i) ne that.parameterTypes(i))
-                                return false;
-                        }
-                        true
-                    }
-            case _ =>
-                false
-        }
+    override def equals(other: Any): Boolean = other match {
+        case that: MethodDescriptor => (this.returnType eq that.returnType) &&
+            this.parametersCount == that.parametersCount && {
+                var i = parametersCount
+                while (i > 0) {
+                    i = i - 1
+                    if (this.parameterTypes(i) ne that.parameterTypes(i)) return false;
+                }
+                true
+            }
+        case _ => false
     }
 }
 
 object HasNoArgsAndReturnsVoid {
 
-    def unapply(md: MethodDescriptor): Boolean = {
-        md match {
-            case NoArgumentAndNoReturnValueMethodDescriptor => true
-            case _                                          => false
-        }
+    def unapply(md: MethodDescriptor): Boolean = md match {
+        case NoArgumentAndNoReturnValueMethodDescriptor => true
+        case _                                          => false
     }
 }
 
 object NoArgumentMethodDescriptor {
 
-    def unapply(md: MethodDescriptor): Option[Type] = {
-        md match {
-            case md: NoArgumentMethodDescriptor => Some(md.returnType)
-            case _                              => None
-        }
+    def unapply(md: MethodDescriptor): Option[Type] = md match {
+        case md: NoArgumentMethodDescriptor => Some(md.returnType)
+        case _                              => None
     }
 }
 
@@ -416,15 +344,12 @@ object NoArgumentMethodDescriptor {
  */
 object SingleArgumentMethodDescriptor {
 
-    def apply(parameterType: FieldType, returnType: Type = VoidType): MethodDescriptor = {
+    def apply(parameterType: FieldType, returnType: Type = VoidType): MethodDescriptor =
         new SingleArgumentMethodDescriptor(parameterType, returnType)
-    }
 
-    def unapply(md: MethodDescriptor): Option[(FieldType, Type)] = {
-        md match {
-            case md: SingleArgumentMethodDescriptor => Some((md.parameterType, md.returnType))
-            case _                                  => None
-        }
+    def unapply(md: MethodDescriptor): Option[(FieldType, Type)] = md match {
+        case md: SingleArgumentMethodDescriptor => Some((md.parameterType, md.returnType))
+        case _                                  => None
     }
 }
 
@@ -441,25 +366,20 @@ object TheArgument {
      *
      * @author Michael Eichberg
      */
-    def unapply(md: MethodDescriptor): Option[FieldType] = {
+    def unapply(md: MethodDescriptor): Option[FieldType] =
         if (md.parametersCount == 1) {
             Some(md.parameterType(0))
         } else {
             None
         }
-    }
 
 }
 
 object TwoArgumentsMethodDescriptor {
 
-    def unapply(md: MethodDescriptor): Option[(FieldType, FieldType, Type)] = {
-        md match {
-            case md: TwoArgumentsMethodDescriptor =>
-                Some((md.firstParameterType, md.secondParameterType, md.returnType))
-            case _ =>
-                None
-        }
+    def unapply(md: MethodDescriptor): Option[(FieldType, FieldType, Type)] = md match {
+        case md: TwoArgumentsMethodDescriptor => Some((md.firstParameterType, md.secondParameterType, md.returnType))
+        case _                                => None
     }
 }
 
@@ -470,15 +390,11 @@ object TwoArgumentsMethodDescriptor {
  */
 object MethodDescriptor {
 
-    def unapply(md: MethodDescriptor): Option[(FieldTypes, Type)] = {
-        Some((md.parameterTypes, md.returnType))
-    }
+    def unapply(md: MethodDescriptor): Option[(FieldTypes, Type)] = Some((md.parameterTypes, md.returnType))
 
     final val NoArgsAndReturnVoid: MethodDescriptor = NoArgumentAndNoReturnValueMethodDescriptor
 
-    final def DefaultConstructorDescriptor: MethodDescriptor = {
-        NoArgumentAndNoReturnValueMethodDescriptor
-    }
+    final def DefaultConstructorDescriptor: MethodDescriptor = NoArgumentAndNoReturnValueMethodDescriptor
 
     /**
      * The signatures of a signature polymorphic method.
@@ -489,17 +405,14 @@ object MethodDescriptor {
      *      (params: Object[]) : boolean
      * }}}
      */
-    final val SignaturePolymorphicMethodObject: MethodDescriptor = {
+    final val SignaturePolymorphicMethodObject: MethodDescriptor =
         new SingleArgumentMethodDescriptor(ArrayType.ArrayOfObject, ObjectType.Object)
-    }
 
-    final val SignaturePolymorphicMethodVoid: MethodDescriptor = {
+    final val SignaturePolymorphicMethodVoid: MethodDescriptor =
         new SingleArgumentMethodDescriptor(ArrayType.ArrayOfObject, VoidType)
-    }
 
-    final val SignaturePolymorphicMethodBoolean: MethodDescriptor = {
+    final val SignaturePolymorphicMethodBoolean: MethodDescriptor =
         new SingleArgumentMethodDescriptor(ArrayType.ArrayOfObject, BooleanType)
-    }
 
     final val JustReturnsBoolean: MethodDescriptor = new NoArgumentMethodDescriptor(BooleanType)
 
@@ -517,183 +430,146 @@ object MethodDescriptor {
 
     final val JustReturnsLong: MethodDescriptor = new NoArgumentMethodDescriptor(LongType)
 
-    final val JustReturnsObject: MethodDescriptor = {
-        new NoArgumentMethodDescriptor(ObjectType.Object)
-    }
+    final val JustReturnsObject: MethodDescriptor = new NoArgumentMethodDescriptor(ObjectType.Object)
 
-    final val JustReturnsClass: MethodDescriptor = {
-        new NoArgumentMethodDescriptor(ObjectType.Class)
-    }
+    final val JustReturnsClass: MethodDescriptor = new NoArgumentMethodDescriptor(ObjectType.Class)
 
-    final val JustReturnsString: MethodDescriptor = {
-        new NoArgumentMethodDescriptor(ObjectType.String)
-    }
+    final val JustReturnsString: MethodDescriptor = new NoArgumentMethodDescriptor(ObjectType.String)
 
     final val JustTakesObject: MethodDescriptor = apply(ObjectType.Object, VoidType)
 
-    def JustTakes(parameterType: FieldType): MethodDescriptor = {
+    def JustTakes(parameterType: FieldType): MethodDescriptor =
         new SingleArgumentMethodDescriptor(parameterType, VoidType)
-    }
 
-    final val ReadObjectDescriptor = {
-        MethodDescriptor(ObjectType("java/io/ObjectInputStream"), VoidType)
-    }
+    final val ReadObjectDescriptor = MethodDescriptor(ObjectType("java/io/ObjectInputStream"), VoidType)
 
-    final val WriteObjectDescriptor = {
-        MethodDescriptor(ObjectType("java/io/ObjectOutputStream"), VoidType)
-    }
+    final val WriteObjectDescriptor = MethodDescriptor(ObjectType("java/io/ObjectOutputStream"), VoidType)
 
-    final val ReadObjectInputDescriptor = {
-        MethodDescriptor(ObjectType("java/io/ObjectInput"), VoidType)
-    }
+    final val ReadObjectInputDescriptor = MethodDescriptor(ObjectType("java/io/ObjectInput"), VoidType)
 
-    final val WriteObjectOutputDescriptor = {
-        MethodDescriptor(ObjectType("java/io/ObjectOutput"), VoidType)
-    }
+    final val WriteObjectOutputDescriptor = MethodDescriptor(ObjectType("java/io/ObjectOutput"), VoidType)
 
     /**
      * Descriptor of the method `java.lang.invoke.LambdaMetafactory.metafactory`.
      */
-    final val LambdaMetafactoryDescriptor = {
-        MethodDescriptor(
-            ArraySeq(
-                ObjectType.MethodHandles$Lookup,
-                ObjectType.String,
-                ObjectType.MethodType,
-                ObjectType.MethodType,
-                ObjectType.MethodHandle,
-                ObjectType.MethodType
-            ),
-            ObjectType.CallSite
-        )
-    }
+    final val LambdaMetafactoryDescriptor = MethodDescriptor(
+        ArraySeq(
+            ObjectType.MethodHandles$Lookup,
+            ObjectType.String,
+            ObjectType.MethodType,
+            ObjectType.MethodType,
+            ObjectType.MethodHandle,
+            ObjectType.MethodType
+        ),
+        ObjectType.CallSite
+    )
 
     /**
      * Descriptor of the method `java.lang.invoke.LambdaMetafactory.altMetafactory`.
      */
-    final val LambdaAltMetafactoryDescriptor = {
-        MethodDescriptor(
-            ArraySeq(
-                ObjectType.MethodHandles$Lookup,
-                ObjectType.String,
-                ObjectType.MethodType,
-                ArrayType.ArrayOfObject
-            ),
-            ObjectType.CallSite
-        )
-    }
+    final val LambdaAltMetafactoryDescriptor = MethodDescriptor(
+        ArraySeq(
+            ObjectType.MethodHandles$Lookup,
+            ObjectType.String,
+            ObjectType.MethodType,
+            ArrayType.ArrayOfObject
+        ),
+        ObjectType.CallSite
+    )
 
     /**
      * Descriptor of the method `scala.runtime.LambdaDeserializer.bootstrap`.
      */
-    final val ScalaLambdaDeserializeDescriptor = {
-        MethodDescriptor(
-            ArraySeq(
-                ObjectType.MethodHandles$Lookup,
-                ObjectType.String,
-                ObjectType.MethodType,
-                ArrayType.ArrayOfMethodHandle
-            ),
-            ObjectType.CallSite
-        )
-    }
+    final val ScalaLambdaDeserializeDescriptor = MethodDescriptor(
+        ArraySeq(
+            ObjectType.MethodHandles$Lookup,
+            ObjectType.String,
+            ObjectType.MethodType,
+            ArrayType.ArrayOfMethodHandle
+        ),
+        ObjectType.CallSite
+    )
 
     /**
      * Descriptor of the method `scala.runtime.SymbolLiteral.bootstrap`.
      */
-    final val ScalaSymbolLiteralDescriptor = {
-        MethodDescriptor(
-            ArraySeq(
-                ObjectType.MethodHandles$Lookup,
-                ObjectType.String,
-                ObjectType.MethodType,
-                ObjectType.String
-            ),
-            ObjectType.CallSite
-        )
-    }
+    final val ScalaSymbolLiteralDescriptor = MethodDescriptor(
+        ArraySeq(
+            ObjectType.MethodHandles$Lookup,
+            ObjectType.String,
+            ObjectType.MethodType,
+            ObjectType.String
+        ),
+        ObjectType.CallSite
+    )
 
     /**
      * Descriptor of the method `scala.runtime.StructuralCallSite.bootstrap`.
      */
-    final val ScalaStructuralCallSiteDescriptor = {
-        MethodDescriptor(
-            ArraySeq(
-                ObjectType.MethodHandles$Lookup,
-                ObjectType.String,
-                ObjectType.MethodType,
-                ObjectType.MethodType
-            ),
-            ObjectType.CallSite
-        )
-    }
+    final val ScalaStructuralCallSiteDescriptor = MethodDescriptor(
+        ArraySeq(
+            ObjectType.MethodHandles$Lookup,
+            ObjectType.String,
+            ObjectType.MethodType,
+            ObjectType.MethodType
+        ),
+        ObjectType.CallSite
+    )
 
     /**
      * Descriptor of the method `java.lang.invoke.ConstantBootstraps.primitiveClass`.
      */
-    final val ConstantBootstrapsPrimitiveClassDescriptor = {
-        MethodDescriptor(
-            ArraySeq(
-                ObjectType.MethodHandles$Lookup,
-                ObjectType.String,
-                ObjectType.Class
-            ),
+    final val ConstantBootstrapsPrimitiveClassDescriptor = MethodDescriptor(
+        ArraySeq(
+            ObjectType.MethodHandles$Lookup,
+            ObjectType.String,
             ObjectType.Class
-        )
-    }
+        ),
+        ObjectType.Class
+    )
 
     /**
      * Descriptor of the methods `java.lang.invoke.MethodHandles$Lookup.findVarHandle` and
      * `java.lang.invoke.MethodHandles$Lookup.findStaticVarHandle`.
      */
-    final val FindVarHandleDescriptor = {
-        MethodDescriptor(
-            ArraySeq(
-                ObjectType.Class,
-                ObjectType.String,
-                ObjectType.Class
-            ),
-            ObjectType.VarHandle
-        )
+    final val FindVarHandleDescriptor = MethodDescriptor(
+        ArraySeq(
+            ObjectType.Class,
+            ObjectType.String,
+            ObjectType.Class
+        ),
+        ObjectType.VarHandle
+    )
+
+    def withNoArgs(returnType: Type): MethodDescriptor = (returnType.id: @scala.annotation.switch) match {
+        case VoidType.id         => NoArgumentAndNoReturnValueMethodDescriptor
+        case BooleanType.id      => JustReturnsBoolean
+        case ByteType.id         => JustReturnsByte
+        case ShortType.id        => JustReturnsShort
+        case CharType.id         => JustReturnsChar
+        case IntegerType.id      => JustReturnsInteger
+        case LongType.id         => JustReturnsLong
+        case FloatType.id        => JustReturnsFloat
+        case DoubleType.id       => JustReturnsDouble
+        case ObjectType.ObjectId => JustReturnsObject
+        case ObjectType.StringId => JustReturnsString
+        case ObjectType.ClassId  => JustReturnsClass
+        case _                   => new NoArgumentMethodDescriptor(returnType)
     }
 
-    def withNoArgs(returnType: Type): MethodDescriptor = {
-        (returnType.id: @scala.annotation.switch) match {
-            case VoidType.id         => NoArgumentAndNoReturnValueMethodDescriptor
-            case BooleanType.id      => JustReturnsBoolean
-            case ByteType.id         => JustReturnsByte
-            case ShortType.id        => JustReturnsShort
-            case CharType.id         => JustReturnsChar
-            case IntegerType.id      => JustReturnsInteger
-            case LongType.id         => JustReturnsLong
-            case FloatType.id        => JustReturnsFloat
-            case DoubleType.id       => JustReturnsDouble
-            case ObjectType.ObjectId => JustReturnsObject
-            case ObjectType.StringId => JustReturnsString
-            case ObjectType.ClassId  => JustReturnsClass
-            case _                   => new NoArgumentMethodDescriptor(returnType)
-        }
-    }
-
-    def apply(parameterType: FieldType, returnType: Type): MethodDescriptor = {
+    def apply(parameterType: FieldType, returnType: Type): MethodDescriptor =
         new SingleArgumentMethodDescriptor(parameterType, returnType)
-    }
 
-    def apply(parameterTypes: FieldTypes, returnType: Type): MethodDescriptor = {
+    def apply(parameterTypes: FieldTypes, returnType: Type): MethodDescriptor =
         (parameterTypes.size: @annotation.switch) match {
-            case 0 =>
-                withNoArgs(returnType)
-            case 1 =>
-                new SingleArgumentMethodDescriptor(parameterTypes(0), returnType)
-            case 2 =>
-                new TwoArgumentsMethodDescriptor(parameterTypes(0), parameterTypes(1), returnType)
-            case _ =>
-                new MultiArgumentsMethodDescriptor(parameterTypes, returnType)
+            case 0 => withNoArgs(returnType)
+            case 1 => new SingleArgumentMethodDescriptor(parameterTypes(0), returnType)
+            case 2 => new TwoArgumentsMethodDescriptor(parameterTypes(0), parameterTypes(1), returnType)
+            case _ => new MultiArgumentsMethodDescriptor(parameterTypes, returnType)
         }
-    }
 
     def apply(md: String): MethodDescriptor = {
-        var index = 1 // we are not interested in the leading '('
+        var index                 = 1 // we are not interested in the leading '('
         val parameterTypesBuilder = newFieldTypesBuilder()
         while (md.charAt(index) != ')') {
             val (ft, nextIndex) = parseParameterType(md, index)
@@ -713,19 +589,15 @@ object MethodDescriptor {
                 val endIndex = md.indexOf(';', startIndex + 1)
                 ( // this is the return tuple
                     ObjectType(md.substring(startIndex + 1, endIndex)),
-                    endIndex + 1
-                )
+                    endIndex + 1)
             case '[' =>
                 val (ft, index) = parseParameterType(md, startIndex + 1)
                 ( // this is the return tuple
                     ArrayType(ft),
-                    index
-                )
-            case _ =>
-                ( // this is the return tuple
+                    index)
+            case _ => ( // this is the return tuple
                     FieldType(td.toString),
-                    startIndex + 1
-                )
+                    startIndex + 1)
         }
     }
 }

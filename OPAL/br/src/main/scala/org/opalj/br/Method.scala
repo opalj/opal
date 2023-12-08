@@ -3,25 +3,25 @@ package org.opalj
 package br
 
 import scala.collection.{Map => SomeMap}
+import scala.collection.immutable.ArraySeq
 import scala.math.Ordered
+
 import org.opalj.bi.ACC_ABSTRACT
-import org.opalj.bi.ACC_STRICT
-import org.opalj.bi.ACC_NATIVE
 import org.opalj.bi.ACC_BRIDGE
-import org.opalj.bi.ACC_VARARGS
-import org.opalj.bi.ACC_SYNCHRONIZED
-import org.opalj.bi.ACC_PUBLIC
+import org.opalj.bi.ACC_NATIVE
 import org.opalj.bi.ACC_PRIVATE
 import org.opalj.bi.ACC_PROTECTED
-import org.opalj.bi.AccessFlagsContexts
+import org.opalj.bi.ACC_PUBLIC
+import org.opalj.bi.ACC_STRICT
+import org.opalj.bi.ACC_SYNCHRONIZED
+import org.opalj.bi.ACC_VARARGS
 import org.opalj.bi.AccessFlags
+import org.opalj.bi.AccessFlagsContexts
 import org.opalj.bi.VisibilityModifier
 import org.opalj.br.instructions.ALOAD_0
+import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.RETURN
-import org.opalj.br.instructions.Instruction
-
-import scala.collection.immutable.ArraySeq
 
 /**
  * Represents a single method.
@@ -40,8 +40,8 @@ import scala.collection.immutable.ArraySeq
  */
 sealed abstract class JVMMethod
     extends ClassMember
-    with Ordered[JVMMethod]
-    with InstructionsContainer {
+        with Ordered[JVMMethod]
+        with InstructionsContainer {
 
     //
     //
@@ -78,23 +78,24 @@ sealed abstract class JVMMethod
 
     // This method is only to be called by ..br.ClassFile to associate this method
     // with the respective class file.
-    private[br] def prepareClassFileAttachement(): Method = {
-        new Method(
-            null /*will be set by class file*/ ,
-            accessFlags, name, descriptor, body, attributes
-        )
-    }
+    private[br] def prepareClassFileAttachement(): Method = new Method(
+        null /*will be set by class file*/,
+        accessFlags,
+        name,
+        descriptor,
+        body,
+        attributes
+    )
 
     /**
      * Creates a copy of this method object which is not associated with any class file.
      */
     def copy(
-        accessFlags: Int              = this.accessFlags,
-        name:        String           = this.name,
+        accessFlags: Int = this.accessFlags,
+        name:        String = this.name,
         descriptor:  MethodDescriptor = this.descriptor,
-        body:        Option[Code]     = this.body,
-        attributes:  Attributes       = this.attributes
-    ): MethodTemplate = {
+        body:        Option[Code] = this.body,
+        attributes:  Attributes = this.attributes): MethodTemplate = {
         // ensure invariant that the code attribute is explicitly extracted...
         assert(attributes.forall { a => a.kindId != Code.KindId })
 
@@ -127,12 +128,12 @@ sealed abstract class JVMMethod
 
         val (thisBody, otherBody) = config.compareCode(this, this.body, other.body)
         if (!(
-            (thisBody.isEmpty && otherBody.isEmpty) ||
-            (
-                thisBody.nonEmpty && otherBody.nonEmpty &&
-                thisBody.get.similar(otherBody.get, config)
-            )
-        )) {
+                (thisBody.isEmpty && otherBody.isEmpty) ||
+                    (
+                        thisBody.nonEmpty && otherBody.nonEmpty &&
+                            thisBody.get.similar(otherBody.get, config)
+                    )
+            )) {
             return false;
         }
 
@@ -148,9 +149,7 @@ sealed abstract class JVMMethod
      * Basically, `MethodDescriptor.requiredRegisters` adapted by the required parameter for
      * `this` in case of an instance method.
      */
-    def requiredRegisters: Int = {
-        descriptor.requiredRegisters + (if (isStatic) 0 else 1)
-    }
+    def requiredRegisters: Int = descriptor.requiredRegisters + (if (isStatic) 0 else 1)
 
     /**
      * Returns `true` if this method has the given name and descriptor.
@@ -162,14 +161,9 @@ sealed abstract class JVMMethod
     def hasSignature(
         name:             String,
         descriptor:       MethodDescriptor,
-        ignoreReturnType: Boolean
-    ): Boolean = {
-        this.name == name && {
-            if (ignoreReturnType)
-                this.descriptor.equalParameters(descriptor)
-            else
-                this.descriptor == descriptor
-        }
+        ignoreReturnType: Boolean): Boolean = this.name == name && {
+        if (ignoreReturnType) this.descriptor.equalParameters(descriptor)
+        else this.descriptor == descriptor
     }
 
     /**
@@ -182,54 +176,44 @@ sealed abstract class JVMMethod
      *      the given one, you may want to specify that you want to ignore the return type.
      *      (The Java compiler generates the appropriate methods.)
      */
-    def hasSignature(other: Method, ignoreReturnType: Boolean = false): Boolean = {
+    def hasSignature(other: Method, ignoreReturnType: Boolean = false): Boolean =
         this.hasSignature(other.name, other.descriptor, ignoreReturnType)
-    }
 
     /**
      * Returns `true` if this method has the given name and descriptor.
      *
      * @note When matching the descriptor the return type is also taken into consideration.
      */
-    def hasSignature(name: String, descriptor: MethodDescriptor): Boolean = {
-        this.hasSignature(name, descriptor, false)
-    }
+    def hasSignature(name: String, descriptor: MethodDescriptor): Boolean = this.hasSignature(name, descriptor, false)
 
     def signature: MethodSignature = new MethodSignature(name, descriptor)
 
-    def runtimeVisibleParameterAnnotations: ParameterAnnotations = {
+    def runtimeVisibleParameterAnnotations: ParameterAnnotations =
         attributes.collectFirst { case RuntimeVisibleParameterAnnotationTable(as) => as } match {
             case Some(annotations) => annotations
             case None              => NoParameterAnnotations
         }
-    }
 
-    def runtimeInvisibleParameterAnnotations: ParameterAnnotations = {
+    def runtimeInvisibleParameterAnnotations: ParameterAnnotations =
         attributes.collectFirst { case RuntimeInvisibleParameterAnnotationTable(as) => as } match {
             case Some(annotations) => annotations
             case None              => NoParameterAnnotations
         }
-    }
 
-    def parameterAnnotations: Iterator[Annotations] = {
+    def parameterAnnotations: Iterator[Annotations] =
         runtimeVisibleParameterAnnotations.iterator ++ runtimeInvisibleParameterAnnotations.iterator
-    }
 
     /**
      * If this method represents a method of an annotation that defines a default
      * value then this value is returned.
      */
-    def annotationDefault: Option[ElementValue] = {
-        attributes collectFirst { case ev: ElementValue => ev }
-    }
+    def annotationDefault: Option[ElementValue] = attributes collectFirst { case ev: ElementValue => ev }
 
     /**
      * If this method has extended method parameter information, the `MethodParameterTable` is
      * returned.
      */
-    def methodParameters: Option[MethodParameterTable] = {
-        attributes collectFirst { case mp: MethodParameterTable => mp }
-    }
+    def methodParameters: Option[MethodParameterTable] = attributes collectFirst { case mp: MethodParameterTable => mp }
 
     /**
      * Returns `Yes` if the parameter with the given index is synthetic; `No` if not and `Unknown`
@@ -238,8 +222,7 @@ sealed abstract class JVMMethod
      */
     def isSyntheticParameter(parameterIndex: Int): Answer = {
         val mpsOpt = methodParameters
-        if (mpsOpt.isEmpty)
-            return Unknown;
+        if (mpsOpt.isEmpty) return Unknown;
 
         val mps = mpsOpt.get
         Answer(mps(parameterIndex).isSynthetic)
@@ -252,8 +235,7 @@ sealed abstract class JVMMethod
      */
     def isMandatedParameter(parameterIndex: Int): Answer = {
         val mpsOpt = methodParameters
-        if (mpsOpt.isEmpty)
-            return Unknown;
+        if (mpsOpt.isEmpty) return Unknown;
 
         val mps = mpsOpt.get
         Answer(mps(parameterIndex).isMandated)
@@ -289,19 +271,15 @@ sealed abstract class JVMMethod
      * if the method is not an initializer, is not abstract, is not private
      * and is not static.
      */
-    final def isVirtualCallTarget: Boolean = {
-        isNotAbstract && !isPrivate && !isStatic && !isInitializer &&
-            !isStaticInitializer // before Java 8 <clinit> was not required to be static
-    }
+    final def isVirtualCallTarget: Boolean = isNotAbstract && !isPrivate && !isStatic && !isInitializer &&
+        !isStaticInitializer // before Java 8 <clinit> was not required to be static
 
     /**
      * Returns true if this method declares a virtual method. This method
      * may be abstract!
      */
-    final def isVirtualMethodDeclaration: Boolean = {
-        !isPrivate && !isStatic && !isInitializer &&
-            !isStaticInitializer // before Java 8 <clinit> was not required to be static
-    }
+    final def isVirtualMethodDeclaration: Boolean = !isPrivate && !isStatic && !isInitializer &&
+        !isStaticInitializer // before Java 8 <clinit> was not required to be static
 
     def returnType: Type = descriptor.returnType
 
@@ -316,13 +294,9 @@ sealed abstract class JVMMethod
     /**
      * Each method optionally defines a method type signature.
      */
-    def methodTypeSignature: Option[MethodTypeSignature] = {
-        attributes collectFirst { case s: MethodTypeSignature => s }
-    }
+    def methodTypeSignature: Option[MethodTypeSignature] = attributes collectFirst { case s: MethodTypeSignature => s }
 
-    def exceptionTable: Option[ExceptionTable] = {
-        attributes collectFirst { case et: ExceptionTable => et }
-    }
+    def exceptionTable: Option[ExceptionTable] = attributes collectFirst { case et: ExceptionTable => et }
 
     /**
      * Defines an absolute order on `Method` instances based on their method signatures.
@@ -331,26 +305,18 @@ sealed abstract class JVMMethod
      * and – in case that the names of both methods are identical – by comparing
      * their method descriptors.
      */
-    def compare(other: JVMMethod): Int = {
-        if (this.name == other.name)
-            this.descriptor.compare(other.descriptor)
-        else
-            this.name.compareTo(other.name)
-    }
+    def compare(other: JVMMethod): Int =
+        if (this.name == other.name) this.descriptor.compare(other.descriptor)
+        else this.name.compareTo(other.name)
 
-    def compare(otherName: String, otherDescriptor: MethodDescriptor): Int = {
-        if (this.name == otherName)
-            this.descriptor.compare(otherDescriptor)
-        else
-            this.name.compareTo(otherName)
-    }
+    def compare(otherName: String, otherDescriptor: MethodDescriptor): Int =
+        if (this.name == otherName) this.descriptor.compare(otherDescriptor)
+        else this.name.compareTo(otherName)
 
     def signatureToJava(withVisibility: Boolean = true): String = {
         val visibility =
-            if (withVisibility)
-                VisibilityModifier.get(accessFlags).map(_.javaName.get+" ").getOrElse("")
-            else
-                ""
+            if (withVisibility) VisibilityModifier.get(accessFlags).map(_.javaName.get + " ").getOrElse("")
+            else ""
         val static = if (isStatic) "static " else ""
         visibility + static + descriptor.toJava(name)
     }
@@ -365,15 +331,11 @@ sealed abstract class JVMMethod
         import AccessFlagsContexts.METHOD
         val jAccessFlags = AccessFlags.toStrings(accessFlags, METHOD).mkString(" ")
         val method =
-            if (jAccessFlags.nonEmpty)
-                jAccessFlags+" "+descriptor.toJava(name)
-            else
-                descriptor.toJava(name)
+            if (jAccessFlags.nonEmpty) jAccessFlags + " " + descriptor.toJava(name)
+            else descriptor.toJava(name)
 
-        if (attributes.nonEmpty)
-            method + attributes.map(_.getClass.getSimpleName).mkString("«", ", ", "»")
-        else
-            method
+        if (attributes.nonEmpty) method + attributes.map(_.getClass.getSimpleName).mkString("«", ", ", "»")
+        else method
 
     }
 
@@ -387,10 +349,9 @@ final class MethodTemplate private[br] (
         val name:        String,
         val descriptor:  MethodDescriptor,
         val body:        Option[Code],
-        val attributes:  Attributes
-) extends JVMMethod {
+        val attributes: Attributes) extends JVMMethod {
 
-    /** This template is not (yet) a [[Method]] which is a [[SourceElement]].  */
+    /** This template is not (yet) a [[Method]] which is a [[SourceElement]]. */
     override def isMethod: Boolean = false
 
 }
@@ -407,8 +368,7 @@ final class Method private[br] (
         val name:                           String,
         val descriptor:                     MethodDescriptor,
         val body:                           Option[Code],
-        val attributes:                     Attributes
-) extends JVMMethod {
+        val attributes: Attributes) extends JVMMethod {
 
     // see ClassFile._UNSAFE_replaceMethod for THE usage!
     private[br] def detach(): this.type = { declaringClassFile = null; this }
@@ -426,9 +386,8 @@ final class Method private[br] (
     /**
      * This method as a virtual method belonging to the given declaring class type.
      */
-    def asVirtualMethod(declaringClassType: ObjectType): VirtualMethod = {
+    def asVirtualMethod(declaringClassType: ObjectType): VirtualMethod =
         VirtualMethod(declaringClassType, name, descriptor)
-    }
 
     def toJava: String = s"${classFile.thisType.toJava}{ ${signatureToJava(true)} }"
 
@@ -440,24 +399,20 @@ final class Method private[br] (
      *
      * @param message A short descriptive method that states why the body was replaced.
      */
-    def invalidBytecode(message: Option[String]): Method = {
-        new Method(
-            declaringClassFile,
-            accessFlags,
-            name,
-            descriptor,
-            Some(Code.invalidBytecode(descriptor, !isStatic, message)),
-            attributes
-        )
-    }
+    def invalidBytecode(message: Option[String]): Method = new Method(
+        declaringClassFile,
+        accessFlags,
+        name,
+        descriptor,
+        Some(Code.invalidBytecode(descriptor, !isStatic, message)),
+        attributes
+    )
 
     /**
      * A Java-like representation of the signature of this method; "the body" will contain
      * the given `methodInfo` data.
      */
-    def toJava(methodInfo: String): String = {
-        s"${classFile.thisType.toJava}{ ${signatureToJava(true)}{ $methodInfo } }"
-    }
+    def toJava(methodInfo: String): String = s"${classFile.thisType.toJava}{ ${signatureToJava(true)}{ $methodInfo } }"
 
     /**
      * The fully qualified signature of this method.
@@ -469,35 +424,28 @@ final class Method private[br] (
     override def asMethod: this.type = this
 
     /**
-     *
      * @return wether this class is defined as strict. Starting from Java 17, this is true by default.
      *         Strict evaluation of float expressions was also required in Java 1.0 and 1.1.
      */
     override def isStrict: Boolean =
         if (this.classFile.version.major >= bi.Java17MajorVersion || this.classFile.version.major < bi.Java1_2MajorVersion)
             true
-        else
-            (ACC_STRICT.mask & accessFlags) != 0
+        else (ACC_STRICT.mask & accessFlags) != 0
 
     def isAccessibleBy(
         objectType: ObjectType,
         nests:      SomeMap[ObjectType, ObjectType]
-    )(
-        implicit
-        classHierarchy: ClassHierarchy
-    ): Boolean = {
-        visibilityModifier match {
-            // TODO Respect Java 9 modules
-            case Some(ACC_PUBLIC) => true
-            case Some(ACC_PROTECTED) =>
-                declaringClassFile.thisType.packageName == objectType.packageName ||
-                    objectType.isASubtypeOf(declaringClassFile.thisType).isNotNo
-            case Some(ACC_PRIVATE) =>
-                val thisType = declaringClassFile.thisType
-                thisType == objectType ||
-                    nests.getOrElse(thisType, thisType) == nests.getOrElse(objectType, objectType)
-            case None => declaringClassFile.thisType.packageName == objectType.packageName
-        }
+      )(implicit
+        classHierarchy: ClassHierarchy): Boolean = visibilityModifier match {
+        // TODO Respect Java 9 modules
+        case Some(ACC_PUBLIC) => true
+        case Some(ACC_PROTECTED) => declaringClassFile.thisType.packageName == objectType.packageName ||
+            objectType.isASubtypeOf(declaringClassFile.thisType).isNotNo
+        case Some(ACC_PRIVATE) =>
+            val thisType = declaringClassFile.thisType
+            thisType == objectType ||
+            nests.getOrElse(thisType, thisType) == nests.getOrElse(objectType, objectType)
+        case None => declaringClassFile.thisType.packageName == objectType.packageName
     }
 }
 
@@ -536,8 +484,7 @@ object Method {
     def isObjectSerializationRelated(
         method:                             Method,
         isInheritedBySerializableOnlyClass: => Answer,
-        isInheritedByExternalizableClass:   => Answer
-    ): Boolean = {
+        isInheritedByExternalizableClass:   => Answer): Boolean = {
         import MethodDescriptor.JustReturnsObject
         import MethodDescriptor.NoArgsAndReturnVoid
         import MethodDescriptor.ReadObjectDescriptor
@@ -545,25 +492,25 @@ object Method {
         import MethodDescriptor.ReadObjectInputDescriptor
         import MethodDescriptor.WriteObjectOutputDescriptor
 
-        val name = method.name
+        val name       = method.name
         val descriptor = method.descriptor
         /*The default constructor is used by the deserialization process*/
         (name == "<init>" && descriptor == NoArgsAndReturnVoid) ||
-            (name == "readObjectNoData" && descriptor == NoArgsAndReturnVoid) ||
-            (name == "readResolve" && descriptor == JustReturnsObject) ||
-            (name == "writeReplace" && descriptor == JustReturnsObject) ||
-            ((
-                (name == "readObject" && descriptor == ReadObjectDescriptor) ||
+        (name == "readObjectNoData" && descriptor == NoArgsAndReturnVoid) ||
+        (name == "readResolve" && descriptor == JustReturnsObject) ||
+        (name == "writeReplace" && descriptor == JustReturnsObject) ||
+        ((
+            (name == "readObject" && descriptor == ReadObjectDescriptor) ||
                 (name == "writeObject" && descriptor == WriteObjectDescriptor)
-            ) && isInheritedBySerializableOnlyClass.isYesOrUnknown) ||
+        ) && isInheritedBySerializableOnlyClass.isYesOrUnknown) ||
+        (
+            method.isPublic /*we are implementing an interface...*/ &&
                 (
-                    method.isPublic /*we are implementing an interface...*/ &&
-                    (
-                        (name == "readExternal" && descriptor == ReadObjectInputDescriptor) ||
+                    (name == "readExternal" && descriptor == ReadObjectInputDescriptor) ||
                         (name == "writeExternal" && descriptor == WriteObjectOutputDescriptor)
-                    ) &&
-                        isInheritedByExternalizableClass.isYesOrUnknown
-                )
+                ) &&
+                isInheritedByExternalizableClass.isYesOrUnknown
+        )
     }
 
     /**
@@ -574,15 +521,11 @@ object Method {
     def canDirectlyOverride(
         declaringPackageOfSubclassMethod:   String,
         superclassMethodVisibility:         Option[VisibilityModifier],
-        declaringPackageOfSuperclassMethod: String
-    ): Boolean = {
-        superclassMethodVisibility match {
-            case Some(ACC_PUBLIC) | Some(ACC_PROTECTED) => true
-            case Some(ACC_PRIVATE)                      => false
+        declaringPackageOfSuperclassMethod: String): Boolean = superclassMethodVisibility match {
+        case Some(ACC_PUBLIC) | Some(ACC_PROTECTED) => true
+        case Some(ACC_PRIVATE)                      => false
 
-            case None =>
-                declaringPackageOfSubclassMethod == declaringPackageOfSuperclassMethod
-        }
+        case None => declaringPackageOfSubclassMethod == declaringPackageOfSuperclassMethod
     }
 
     /**
@@ -594,11 +537,10 @@ object Method {
         accessFlags: Int,
         name:        String,
         descriptor:  MethodDescriptor,
-        attributes:  Attributes
-    ): MethodTemplate = {
+        attributes:  Attributes): MethodTemplate = {
 
         val (bodies, remainingAttributes) = partitionByType(attributes, classOf[Code])
-        val body = bodies.headOption
+        val body                          = bodies.headOption
 
         new MethodTemplate(
             accessFlags,
@@ -614,11 +556,10 @@ object Method {
         accessFlags: Int,
         name:        String,
         descriptor:  MethodDescriptor,
-        attributes:  Attributes
-    ): Method = {
+        attributes:  Attributes): Method = {
 
         val (bodies, remainingAttributes) = partitionByType(attributes, classOf[Code])
-        val body = bodies.headOption
+        val body                          = bodies.headOption
 
         new Method(
             null,
@@ -640,18 +581,15 @@ object Method {
      *          }}}
      */
     def apply(
-        accessFlags:    Int        = ACC_ABSTRACT.mask | ACC_PUBLIC.mask,
+        accessFlags:    Int = ACC_ABSTRACT.mask | ACC_PUBLIC.mask,
         name:           String,
         parameterTypes: FieldTypes = NoFieldTypes,
-        returnType:     Type       = VoidType,
-        attributes:     Attributes = ArraySeq.empty
-    ): MethodTemplate = {
+        returnType:     Type = VoidType,
+        attributes:     Attributes = ArraySeq.empty): MethodTemplate =
         Method(accessFlags, name, MethodDescriptor(parameterTypes, returnType), attributes)
-    }
 
-    def unapply(method: JVMMethod): Option[(Int, String, MethodDescriptor)] = {
+    def unapply(method: JVMMethod): Option[(Int, String, MethodDescriptor)] =
         Some((method.accessFlags, method.name, method.descriptor))
-    }
 
     def defaultConstructor(superclassType: ObjectType = ObjectType.Object): MethodTemplate = {
         import MethodDescriptor.NoArgsAndReturnVoid

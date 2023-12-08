@@ -20,7 +20,7 @@ trait ProjectBasedAnalysis {
     implicit final def p: SomeProject = project
 
     implicit final def classHierarchy: ClassHierarchy = project.classHierarchy
-    final def ch: ClassHierarchy = classHierarchy
+    final def ch: ClassHierarchy                      = classHierarchy
 
     implicit final def logContext: LogContext = project.logContext
 

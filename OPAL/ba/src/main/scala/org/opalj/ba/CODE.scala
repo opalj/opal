@@ -3,38 +3,36 @@ package org.opalj
 package ba
 
 import java.util.NoSuchElementException
-
 import scala.collection.mutable.ArrayBuffer
+
+import org.opalj.br.instructions.BranchoffsetOutOfBoundsException
+import org.opalj.br.instructions.Instruction
+import org.opalj.br.instructions.InstructionLabel
+import org.opalj.br.instructions.LabeledGOTO
+import org.opalj.br.instructions.LabeledGOTO_W
+import org.opalj.br.instructions.LabeledInstruction
+import org.opalj.br.instructions.LabeledJSR
+import org.opalj.br.instructions.LabeledJSR_W
+import org.opalj.br.instructions.LabeledLOOKUPSWITCH
+import org.opalj.br.instructions.LabeledSimpleConditionalBranchInstruction
+import org.opalj.br.instructions.LabeledTABLESWITCH
+import org.opalj.br.instructions.PCLabel
+import org.opalj.br.instructions.RewriteLabel
+import org.opalj.br.instructions.WIDE
+import org.opalj.collection.immutable.IntArraySet
+import org.opalj.collection.immutable.IntRefPair
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.collection.immutable.IntTrieSet1
+import org.opalj.control.iterateUntil
+import org.opalj.control.repeat
+import org.opalj.log.GlobalLogContext
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger.info
 
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
-
 import it.unimi.dsi.fastutil.ints.Int2IntArrayMap
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap
-
-import org.opalj.control.repeat
-import org.opalj.control.iterateUntil
-import org.opalj.log.LogContext
-import org.opalj.log.GlobalLogContext
-import org.opalj.log.OPALLogger.info
-import org.opalj.br.instructions.Instruction
-import org.opalj.br.instructions.WIDE
-import org.opalj.br.instructions.LabeledInstruction
-import org.opalj.br.instructions.InstructionLabel
-import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.collection.immutable.IntArraySet
-import org.opalj.collection.immutable.IntTrieSet1
-import org.opalj.br.instructions.LabeledJSR
-import org.opalj.br.instructions.LabeledJSR_W
-import org.opalj.br.instructions.LabeledSimpleConditionalBranchInstruction
-import org.opalj.br.instructions.PCLabel
-import org.opalj.br.instructions.BranchoffsetOutOfBoundsException
-import org.opalj.br.instructions.LabeledGOTO
-import org.opalj.br.instructions.LabeledGOTO_W
-import org.opalj.br.instructions.RewriteLabel
-import org.opalj.br.instructions.LabeledTABLESWITCH
-import org.opalj.br.instructions.LabeledLOOKUPSWITCH
-import org.opalj.collection.immutable.IntRefPair
 
 /**
  * Factory to create an initial [[CodeAttributeBuilder]].
@@ -46,14 +44,14 @@ object CODE {
 
     implicit def logContext: LogContext = GlobalLogContext
 
-    final val CodeConfigKeyPrefix = "org.opalj.ba.CODE."
-    final val LogDeadCodeRemovalConfigKey = CodeConfigKeyPrefix+"logDeadCodeRemoval"
-    final val LogDeadCodeConfigKey = CodeConfigKeyPrefix+"logDeadCode"
-    final val LogCodeRewritingConfigKey = CodeConfigKeyPrefix+"logCodeRewriting"
+    final val CodeConfigKeyPrefix         = "org.opalj.ba.CODE."
+    final val LogDeadCodeRemovalConfigKey = CodeConfigKeyPrefix + "logDeadCodeRemoval"
+    final val LogDeadCodeConfigKey        = CodeConfigKeyPrefix + "logDeadCode"
+    final val LogCodeRewritingConfigKey   = CodeConfigKeyPrefix + "logCodeRewriting"
 
     @volatile private[this] var logDeadCodeRemoval: Boolean = true
-    @volatile private[this] var logDeadCode: Boolean = true
-    @volatile private[this] var logCodeRewriting: Boolean = true
+    @volatile private[this] var logDeadCode: Boolean        = true
+    @volatile private[this] var logCodeRewriting: Boolean   = true
 
     def setBaseConfig(config: Config): Unit = {
         logDeadCodeRemoval = config.getBoolean(LogDeadCodeRemovalConfigKey)
@@ -80,10 +78,10 @@ object CODE {
      * @note The code element has to be valid bytecode; i.e., a verification of the code using
      *       the old, pre Java 7 (type-inference based) bytecode verified would succeed!
      */
-    def removeDeadCode[T](codeElements: scala.collection.IndexedSeq[CodeElement[T]]): scala.collection.IndexedSeq[CodeElement[T]] = {
+    def removeDeadCode[T](codeElements: scala.collection.IndexedSeq[CodeElement[T]])
+        : scala.collection.IndexedSeq[CodeElement[T]] = {
         val codeElementsSize = codeElements.size
-        if (codeElementsSize == 0)
-            return codeElements;
+        if (codeElementsSize == 0) return codeElements;
 
         // Basic idea - mark all code elements as live that are potentially executed. Throw away
         // the rest!
@@ -106,7 +104,7 @@ object CODE {
         var monitorInstructionIsUsed = false
 
         // A boolean array containing the information which elements are live.
-        val isLive = new Array[Boolean](codeElementsSize)
+        val isLive      = new Array[Boolean](codeElementsSize)
         var isLiveCount = 0
 
         val labelsToIndexes = new Object2IntOpenHashMap[InstructionLabel]()
@@ -172,7 +170,7 @@ object CODE {
                 isLive(catchIndex) = true
                 isLiveCount += 1
 
-                var indexOfFirstInstruction = (catchIndex + 1)
+                var indexOfFirstInstruction = catchIndex + 1
                 while (!codeElements(indexOfFirstInstruction).isInstructionLikeElement) {
                     indexOfFirstInstruction += 1
                 }
@@ -192,14 +190,14 @@ object CODE {
             // the code element "0" is already marked as live..
             while (currentIndex > 0) {
                 if (isLive(currentIndex) || markedAsLive.contains(currentIndex)) {
-                    return ; // nothing to do
+                    return; // nothing to do
                 }
 
                 val currentInstruction = codeElements(currentIndex)
                 if (currentInstruction.isInstructionLikeElement) {
                     // We basically only want to mark TRYs and Jump Labels belonging to
                     // the code element with the given `index` as live.
-                    return ;
+                    return;
                 } else if (!currentInstruction.isExceptionHandlerElement) {
                     // DEBUG: println(s"[markMetaInformationAsLive] scheduling $index")
                     markedAsLive += currentIndex
@@ -235,69 +233,66 @@ object CODE {
         }
 
         /* Returns `true` if any instruction was actually marked as live. */
-        def processMarkedAsLive(): Unit = {
-            while (markedAsLive.nonEmpty) {
-                // mark all code elements which can be executed subsequently as live
-                val IntRefPair(nextIndex, newMarkedAsLive) = markedAsLive.headAndTail
-                markedAsLive = newMarkedAsLive
+        def processMarkedAsLive(): Unit = while (markedAsLive.nonEmpty) {
+            // mark all code elements which can be executed subsequently as live
+            val IntRefPair(nextIndex, newMarkedAsLive) = markedAsLive.headAndTail
+            markedAsLive = newMarkedAsLive
 
-                var currentIndex = nextIndex
-                if (!isLive(currentIndex)) {
+            var currentIndex = nextIndex
+            if (!isLive(currentIndex)) {
 
-                    var currentInstruction: CodeElement[T] = codeElements(currentIndex)
-                    var continueIteration = true
-                    do {
-                        val isNotYetLive = !isLive(currentIndex)
-                        if (isNotYetLive && !currentInstruction.isExceptionHandlerElement) {
-                            // This check is primarily required due to the eager marking
-                            // of PCLabels as live.
-                            isLive(currentIndex) = true
-                            isLiveCount += 1
-                        }
+                var currentInstruction: CodeElement[T] = codeElements(currentIndex)
+                var continueIteration                  = true
+                do {
+                    val isNotYetLive = !isLive(currentIndex)
+                    if (isNotYetLive && !currentInstruction.isExceptionHandlerElement) {
+                        // This check is primarily required due to the eager marking
+                        // of PCLabels as live.
+                        isLive(currentIndex) = true
+                        isLiveCount += 1
+                    }
 
-                        // Currently, we make the assumption that the instruction following the
-                        // JSR is live... i.e., a RET exists (which should always be the case for
-                        // proper code!)
-                        continueIteration = currentInstruction match {
-                            case pi: PseudoInstruction =>
-                                true
+                    // Currently, we make the assumption that the instruction following the
+                    // JSR is live... i.e., a RET exists (which should always be the case for
+                    // proper code!)
+                    continueIteration = currentInstruction match {
+                        case pi: PseudoInstruction => true
 
-                            case InstructionLikeElement(li) =>
-                                if (li.isControlTransferInstruction) {
-                                    li.branchTargets.foreach(handleBranchTarget)
-                                    // let's check if we have a "fall-through"
-                                    li match {
-                                        case _: LabeledJSR | _: LabeledJSR_W |
-                                            _: LabeledSimpleConditionalBranchInstruction =>
-                                            // let's continue...
-                                            true
-                                        case _ =>
-                                            // ... we have a goto(_w) instruction, hence
-                                            // the next instruction like element is only live
-                                            // if we have an explicit jump to it, or if it is
-                                            // the start of an exception handler...
-                                            false
-                                    }
-                                } else if (li.isReturnInstruction || li.isAthrow) {
-                                    false
-                                } else {
-                                    if (li.isMonitorInstruction) {
-                                        monitorInstructionIsUsed = true
-                                    }
-                                    true
+                        case InstructionLikeElement(li) =>
+                            if (li.isControlTransferInstruction) {
+                                li.branchTargets.foreach(handleBranchTarget)
+                                // let's check if we have a "fall-through"
+                                li match {
+                                    case _: LabeledJSR | _: LabeledJSR_W |
+                                        _: LabeledSimpleConditionalBranchInstruction =>
+                                        // let's continue...
+                                        true
+                                    case _ =>
+                                        // ... we have a goto(_w) instruction, hence
+                                        // the next instruction like element is only live
+                                        // if we have an explicit jump to it, or if it is
+                                        // the start of an exception handler...
+                                        false
                                 }
-                        }
-                        currentIndex += 1
-                    } while (continueIteration
-                        && currentIndex < codeElementsSize
-                        && {
-                            currentInstruction = codeElements(currentIndex)
-                            // In the following we ignore pseudo instructions
-                            // (in particular PCLabels)
-                            // because they may have been set to live already!
-                            currentInstruction.isPseudoInstruction || !isLive(currentIndex)
-                        })
-                }
+                            } else if (li.isReturnInstruction || li.isAthrow) {
+                                false
+                            } else {
+                                if (li.isMonitorInstruction) {
+                                    monitorInstructionIsUsed = true
+                                }
+                                true
+                            }
+                    }
+                    currentIndex += 1
+                } while (continueIteration
+                    && currentIndex < codeElementsSize
+                    && {
+                        currentInstruction = codeElements(currentIndex)
+                        // In the following we ignore pseudo instructions
+                        // (in particular PCLabels)
+                        // because they may have been set to live already!
+                        currentInstruction.isPseudoInstruction || !isLive(currentIndex)
+                    })
             }
         }
 
@@ -305,7 +300,7 @@ object CODE {
          * Propagates liveness information in particular w.r.t. LINENUMBER and
          * TRY(END) pseudo instructions; updates isLiveCount if necessary.
          */
-        def propagateLiveInformation(): Unit = {
+        def propagateLiveInformation(): Unit =
             // Step 2.2 We now have to test for still required TRY-Block and LINENUMBER markers..
             //          (Basically, we just set them to "isLive".)
             //          A TRY/TRYEND marker is to be live if we have one or more live instructions
@@ -333,11 +328,9 @@ object CODE {
                                         isLiveCount += 1
                                         nextIndex = Int.MaxValue // <=> abort loop
 
-                                    case _: LINENUMBER =>
-                                        nextIndex = Int.MaxValue // <=> abort loop
+                                    case _: LINENUMBER => nextIndex = Int.MaxValue // <=> abort loop
 
-                                    case _ =>
-                                        nextIndex += 1
+                                    case _ => nextIndex += 1
                                 }
                             }
 
@@ -354,7 +347,7 @@ object CODE {
                                             instruction.mayThrowExceptions &&
                                             (
                                                 monitorInstructionIsUsed
-                                                || !instruction.isReturnInstruction
+                                                    || !instruction.isReturnInstruction
                                             )) {
                                             isLive(index) = true
                                             isLiveCount += 1
@@ -364,11 +357,9 @@ object CODE {
                                             nextIndex += 1
                                         }
 
-                                    case TRYEND(`label`) =>
-                                        nextIndex = Int.MaxValue // <=> abort loop (successful)
+                                    case TRYEND(`label`) => nextIndex = Int.MaxValue // <=> abort loop (successful)
 
-                                    case _ =>
-                                        nextIndex += 1
+                                    case _ => nextIndex += 1
                                 }
                             }
                             if (nextIndex == codeElementsSize) {
@@ -388,7 +379,6 @@ object CODE {
                     }
                 }
             }
-        }
 
         // The main loop processing the worklist data-structure.
         var continueProcessingCode = false
@@ -447,25 +437,23 @@ object CODE {
      *
      * @see [[CodeElement]] for possible arguments.
      */
-    def apply[T](codeElements: CodeElement[T]*): CodeAttributeBuilder[T] = {
-        this(codeElements.toIndexedSeq)
-    }
+    def apply[T](codeElements: CodeElement[T]*): CodeAttributeBuilder[T] = this(codeElements.toIndexedSeq)
 
     def apply[T](initialCodeElements: scala.collection.IndexedSeq[CodeElement[T]]): CodeAttributeBuilder[T] = {
-        val codeElements = removeDeadCode(initialCodeElements)
-        val codeElementsSize = codeElements.size
-        val instructionLikes = new ArrayBuffer[LabeledInstruction](codeElementsSize)
+        val codeElements         = removeDeadCode(initialCodeElements)
+        val codeElementsSize     = codeElements.size
+        val instructionLikes     = new ArrayBuffer[LabeledInstruction](codeElementsSize)
         val pcToCodeElementIndex = new Int2IntArrayMap(codeElementsSize)
 
-        var labels = Map.empty[InstructionLabel, br.PC]
-        var annotations = Map.empty[br.PC, T]
-        val exceptionHandlerTableBuilder = new ExceptionHandlerTableBuilder()
-        val lineNumberTableBuilder = new LineNumberTableBuilder()
+        var labels                         = Map.empty[InstructionLabel, br.PC]
+        var annotations                    = Map.empty[br.PC, T]
+        val exceptionHandlerTableBuilder   = new ExceptionHandlerTableBuilder()
+        val lineNumberTableBuilder         = new LineNumberTableBuilder()
         var hasControlTransferInstructions = false
-        val pcMapping = new PCMapping(initialSize = codeElements.length) // created based on `PCLabel`s
+        val pcMapping                      = new PCMapping(initialSize = codeElements.length) // created based on `PCLabel`s
 
-        var currentPC = 0
-        var nextPC = 0
+        var currentPC      = 0
+        var nextPC         = 0
         var modifiedByWide = false
         // fill the instructionLikes array with `null`s for PCs representing instruction arguments
         iterateUntil(0, codeElementsSize) { index =>
@@ -492,16 +480,16 @@ object CODE {
 
                 case e: ExceptionHandlerElement => exceptionHandlerTableBuilder.add(e, nextPC)
 
-                case l: LINENUMBER              => lineNumberTableBuilder.add(l, nextPC)
+                case l: LINENUMBER => lineNumberTableBuilder.add(l, nextPC)
             }
         }
 
         val codeSize = instructionLikes.size
         require(codeSize > 0, "no code found")
         val exceptionHandlers = exceptionHandlerTableBuilder.result()
-        val attributes = lineNumberTableBuilder.result()
+        val attributes        = lineNumberTableBuilder.result()
 
-        val instructions = new Array[Instruction](codeSize)
+        val instructions          = new Array[Instruction](codeSize)
         var codeElementsToRewrite = IntArraySet.empty
         iterateUntil(0, codeSize) { pc =>
             // Idea: first collect all instructions that definitively need to be rewritten;
@@ -537,7 +525,7 @@ object CODE {
                 i match {
                     case LabeledGOTO(label) => newCodeElements(index) = LabeledGOTO_W(label)
 
-                    case LabeledJSR(label)  => newCodeElements(index) = LabeledJSR_W(label)
+                    case LabeledJSR(label) => newCodeElements(index) = LabeledJSR_W(label)
 
                     case scbi: LabeledSimpleConditionalBranchInstruction =>
                         //          if_<cond> => y

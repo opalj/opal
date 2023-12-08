@@ -30,12 +30,12 @@ trait IntegerValuesDomain extends IntegerValuesFactory { domain =>
      * @param lowerBound The range's lower bound (inclusive).
      * @param upperBound The range's upper bound (inclusive).
      */
-    /*ABSTRACT*/ def intIsSomeValueInRange(
-        pc:         Int,
-        value:      DomainValue,
+    /*ABSTRACT*/
+    def intIsSomeValueInRange(
+        pc: Int,
+        value: DomainValue,
         lowerBound: Int,
-        upperBound: Int
-    ): Answer
+        upperBound: Int): Answer
 
     /**
      * Returns `Yes` iff at least one (possible) extension of a given value is
@@ -55,12 +55,12 @@ trait IntegerValuesDomain extends IntegerValuesFactory { domain =>
      * @param lowerBound The range's lower bound (inclusive).
      * @param upperBound The range's upper bound (inclusive).
      */
-    /*ABSTRACT*/ def intIsSomeValueNotInRange(
-        pc:         Int,
-        value:      DomainValue,
+    /*ABSTRACT*/
+    def intIsSomeValueNotInRange(
+        pc: Int,
+        value: DomainValue,
         lowerBound: Int,
-        upperBound: Int
-    ): Answer
+        upperBound: Int): Answer
 
     /**
      * Tests if the two given integer values are equal.
@@ -68,7 +68,8 @@ trait IntegerValuesDomain extends IntegerValuesFactory { domain =>
      * @param value1 A value with computational type integer.
      * @param value2 A value with computational type integer.
      */
-    /*ABSTRACT*/ def intAreEqual(pc: Int, value1: DomainValue, value2: DomainValue): Answer
+    /*ABSTRACT*/
+    def intAreEqual(pc: Int, value1: DomainValue, value2: DomainValue): Answer
 
     /**
      * Tests if the two given integer values are not equal.
@@ -76,9 +77,8 @@ trait IntegerValuesDomain extends IntegerValuesFactory { domain =>
      * @param value1 A value with computational type integer.
      * @param value2 A value with computational type integer.
      */
-    def intAreNotEqual(pc: Int, value1: DomainValue, value2: DomainValue): Answer = {
+    def intAreNotEqual(pc: Int, value1: DomainValue, value2: DomainValue): Answer =
         intAreEqual(pc, value1, value2).negate
-    }
 
     /**
      * Tests if the first integer value is smaller than the second value.
@@ -86,11 +86,11 @@ trait IntegerValuesDomain extends IntegerValuesFactory { domain =>
      * @param smallerValue A value with computational type integer.
      * @param largerValue A value with computational type integer.
      */
-    /*ABSTRACT*/ def intIsLessThan(
-        pc:           Int,
+    /*ABSTRACT*/
+    def intIsLessThan(
+        pc: Int,
         smallerValue: DomainValue,
-        largerValue:  DomainValue
-    ): Answer
+        largerValue: DomainValue): Answer
 
     /**
      * Tests if the first integer value is less than or equal to the second value.
@@ -98,11 +98,11 @@ trait IntegerValuesDomain extends IntegerValuesFactory { domain =>
      * @param smallerOrEqualValue A value with computational type integer.
      * @param equalOrLargerValue A value with computational type integer.
      */
-    /*ABSTRACT*/ def intIsLessThanOrEqualTo(
-        pc:                  Int,
+    /*ABSTRACT*/
+    def intIsLessThanOrEqualTo(
+        pc: Int,
         smallerOrEqualValue: DomainValue,
-        equalOrLargerValue:  DomainValue
-    ): Answer
+        equalOrLargerValue: DomainValue): Answer
 
     /**
      * Tests if the first integer value is larger than the second value.
@@ -113,10 +113,7 @@ trait IntegerValuesDomain extends IntegerValuesFactory { domain =>
     def intIsGreaterThan(
         pc:           Int,
         largerValue:  DomainValue,
-        smallerValue: DomainValue
-    ): Answer = {
-        intIsLessThan(pc, smallerValue, largerValue)
-    }
+        smallerValue: DomainValue): Answer = intIsLessThan(pc, smallerValue, largerValue)
 
     /**
      * Tests if the first integer value is larger than or equal to the second value.
@@ -127,10 +124,7 @@ trait IntegerValuesDomain extends IntegerValuesFactory { domain =>
     def intIsGreaterThanOrEqualTo(
         pc:                  Int,
         largerOrEqualValue:  DomainValue,
-        smallerOrEqualValue: DomainValue
-    ): Answer = {
-        intIsLessThanOrEqualTo(pc, smallerOrEqualValue, largerOrEqualValue)
-    }
+        smallerOrEqualValue: DomainValue): Answer = intIsLessThanOrEqualTo(pc, smallerOrEqualValue, largerOrEqualValue)
 
     /**
      * Tests if the given integer value is 0 or maybe 0.
@@ -151,9 +145,7 @@ trait IntegerValuesDomain extends IntegerValuesFactory { domain =>
      *
      * @param value A value with computational type integer.
      */
-    def intIsLessThan0(pc: Int, value: DomainValue): Answer = {
-        intIsLessThan(pc, value, IntegerConstant0)
-    }
+    def intIsLessThan0(pc: Int, value: DomainValue): Answer = intIsLessThan(pc, value, IntegerConstant0)
 
     /**
      * Tests if the given integer value is less than or equal to 0 or maybe
@@ -161,18 +153,15 @@ trait IntegerValuesDomain extends IntegerValuesFactory { domain =>
      *
      * @param value A value with computational type integer.
      */
-    def intIsLessThanOrEqualTo0(pc: Int, value: DomainValue): Answer = {
+    def intIsLessThanOrEqualTo0(pc: Int, value: DomainValue): Answer =
         intIsLessThanOrEqualTo(pc, value, IntegerConstant0)
-    }
 
     /**
      * Tests if the given integer value is &gt; 0 or maybe &gt; 0.
      *
      * @param value A value with computational type integer.
      */
-    def intIsGreaterThan0(pc: Int, value: DomainValue): Answer = {
-        intIsGreaterThan(pc, value, IntegerConstant0)
-    }
+    def intIsGreaterThan0(pc: Int, value: DomainValue): Answer = intIsGreaterThan(pc, value, IntegerConstant0)
 
     /**
      * Tests if the given value is greater than or equal to 0 or maybe greater
@@ -180,9 +169,8 @@ trait IntegerValuesDomain extends IntegerValuesFactory { domain =>
      *
      * @param value A value with computational type integer.
      */
-    def intIsGreaterThanOrEqualTo0(pc: Int, value: DomainValue): Answer = {
+    def intIsGreaterThanOrEqualTo0(pc: Int, value: DomainValue): Answer =
         intIsGreaterThanOrEqualTo(pc, value, IntegerConstant0)
-    }
 
     // -----------------------------------------------------------------------------------
     //
@@ -203,18 +191,15 @@ trait IntegerValuesDomain extends IntegerValuesFactory { domain =>
      *
      * @param value An integer domain value that does also, but not exclusively represents
      *      `theValue`.
-     *
      */
     def intEstablishValue(
         pc:       Int,
         theValue: Int,
         value:    DomainValue,
         operands: Operands,
-        locals:   Locals
-    ): (Operands, Locals) = (operands, locals)
+        locals:   Locals): (Operands, Locals) = (operands, locals)
 
     /**
-     *
      * @note This function is ONLY defined if a corresponding test (`value1 == value2`)
      *      returned [[org.opalj.Unknown]]. I.e., this method is only allowed to be
      *      called if there is something to establish!
@@ -226,8 +211,7 @@ trait IntegerValuesDomain extends IntegerValuesFactory { domain =>
         value1:   DomainValue,
         value2:   DomainValue,
         operands: Operands,
-        locals:   Locals
-    ): (Operands, Locals) = (operands, locals)
+        locals:   Locals): (Operands, Locals) = (operands, locals)
 
     /**
      * @note This function is ONLY defined if a corresponding test (`value1 != value2`)
@@ -241,8 +225,7 @@ trait IntegerValuesDomain extends IntegerValuesFactory { domain =>
         value1:   DomainValue,
         value2:   DomainValue,
         operands: Operands,
-        locals:   Locals
-    ): (Operands, Locals) = (operands, locals)
+        locals:   Locals): (Operands, Locals) = (operands, locals)
 
     /**
      * @note This function is ONLY defined if a corresponding test (`value1 < value2`)
@@ -256,8 +239,7 @@ trait IntegerValuesDomain extends IntegerValuesFactory { domain =>
         value1:   DomainValue,
         value2:   DomainValue,
         operands: Operands,
-        locals:   Locals
-    ): (Operands, Locals) = (operands, locals)
+        locals:   Locals): (Operands, Locals) = (operands, locals)
 
     /**
      * @note This function is ONLY defined if a corresponding test (`value1 <= value2`)
@@ -271,8 +253,7 @@ trait IntegerValuesDomain extends IntegerValuesFactory { domain =>
         value1:   DomainValue,
         value2:   DomainValue,
         operands: Operands,
-        locals:   Locals
-    ): (Operands, Locals) = (operands, locals)
+        locals:   Locals): (Operands, Locals) = (operands, locals)
 
     // -----------------------------------------------------------------------------------
     //

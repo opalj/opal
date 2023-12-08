@@ -11,7 +11,7 @@ import org.scalatest.funsuite.AnyFunSuite
 class ObjectTypeTest extends AnyFunSuite {
 
     test("FieldType factory method") {
-        val fieldType = FieldType("Ljava/lang/Object;")
+        val fieldType             = FieldType("Ljava/lang/Object;")
         val ObjectType(className) = fieldType
 
         assert(className === "java/lang/Object")
@@ -39,15 +39,15 @@ class ObjectTypeTest extends AnyFunSuite {
     test("primitiveTypeWrapperMatcher method") {
 
         val matcher = ObjectType.primitiveTypeWrapperMatcher[Int, (Int, Int)](
-            (id) => (id, BooleanType.WrapperType.id),
-            (id) => (id, ByteType.WrapperType.id),
-            (id) => (id, CharType.WrapperType.id),
-            (id) => (id, ShortType.WrapperType.id),
-            (id) => (id, IntegerType.WrapperType.id),
-            (id) => (id, LongType.WrapperType.id),
-            (id) => (id, FloatType.WrapperType.id),
-            (id) => (id, DoubleType.WrapperType.id),
-            (id) => (-1, id)
+            id => (id, BooleanType.WrapperType.id),
+            id => (id, ByteType.WrapperType.id),
+            id => (id, CharType.WrapperType.id),
+            id => (id, ShortType.WrapperType.id),
+            id => (id, IntegerType.WrapperType.id),
+            id => (id, LongType.WrapperType.id),
+            id => (id, FloatType.WrapperType.id),
+            id => (id, DoubleType.WrapperType.id),
+            id => (-1, id)
         )
         assert(matcher(BooleanType.WrapperType, 1) == ((1, BooleanType.WrapperType.id)))
         assert(matcher(ByteType.WrapperType, 2) == ((2, ByteType.WrapperType.id)))

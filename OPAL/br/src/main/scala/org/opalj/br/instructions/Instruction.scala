@@ -34,13 +34,11 @@ trait Instruction extends InstructionLike {
      *          at runtime.
      */
     def nextInstructions(
-        currentPC:             Int,
+        currentPC: Int,
         regularSuccessorsOnly: Boolean = false
-    )(
-        implicit
-        code:           Code,
-        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
-    ): List[Int /*PC*/ ]
+      )(implicit
+        code: Code,
+        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy): List[Int /*PC*/ ]
 
     /**
      * Checks for structural equality of two instructions.
@@ -64,57 +62,47 @@ trait Instruction extends InstructionLike {
     //
     // ---------------------------------------------------------------------------------------------
 
-    def isSimpleBranchInstruction: Boolean = false
-    def isSimpleConditionalBranchInstruction: Boolean = false
+    def isSimpleBranchInstruction: Boolean              = false
+    def isSimpleConditionalBranchInstruction: Boolean   = false
     def isCompoundConditionalBranchInstruction: Boolean = false
-    def isGotoInstruction: Boolean = false
-    def isStackManagementInstruction: Boolean = false
-    def isLoadLocalVariableInstruction: Boolean = false
-    def isStoreLocalVariableInstruction: Boolean = false
-    def isCheckcast: Boolean = false
-    def isInvocationInstruction: Boolean = false
-    def isMethodInvocationInstruction: Boolean = false
-    def isInvokeStatic: Boolean = false
-    def isIINC: Boolean = false
+    def isGotoInstruction: Boolean                      = false
+    def isStackManagementInstruction: Boolean           = false
+    def isLoadLocalVariableInstruction: Boolean         = false
+    def isStoreLocalVariableInstruction: Boolean        = false
+    def isCheckcast: Boolean                            = false
+    def isInvocationInstruction: Boolean                = false
+    def isMethodInvocationInstruction: Boolean          = false
+    def isInvokeStatic: Boolean                         = false
+    def isIINC: Boolean                                 = false
 
     def asReturnInstruction: ReturnInstruction = throw new ClassCastException();
 
     def asATHROW: ATHROW.type = throw new ClassCastException();
-    def asIINC: IINC = throw new ClassCastException();
+    def asIINC: IINC          = throw new ClassCastException();
 
-    def asNEW: NEW = throw new ClassCastException();
+    def asNEW: NEW                                             = throw new ClassCastException();
     def asCreateNewArrayInstruction: CreateNewArrayInstruction = throw new ClassCastException();
 
-    def asLoadLocalVariableInstruction: LoadLocalVariableInstruction = {
-        throw new ClassCastException();
-    }
-    def asStoreLocalVariableInstruction: StoreLocalVariableInstruction = {
-        throw new ClassCastException();
-    }
+    def asLoadLocalVariableInstruction: LoadLocalVariableInstruction   = throw new ClassCastException();
+    def asStoreLocalVariableInstruction: StoreLocalVariableInstruction = throw new ClassCastException();
 
     def asControlTransferInstruction: ControlTransferInstruction = throw new ClassCastException();
-    def asGotoInstruction: GotoInstruction = throw new ClassCastException();
+    def asGotoInstruction: GotoInstruction                       = throw new ClassCastException();
 
-    def asSimpleBranchInstruction: SimpleBranchInstruction = throw new ClassCastException();
-    def asSimpleConditionalBranchInstruction: SimpleConditionalBranchInstruction[_] = {
-        throw new ClassCastException();
-    }
-    def asCompoundConditionalBranchInstruction: CompoundConditionalBranchInstruction = {
-        throw new ClassCastException();
-    }
-    def asIFICMPInstruction: IFICMPInstruction[_] = throw new ClassCastException();
-    def asIF0Instruction: IF0Instruction[_] = throw new ClassCastException();
-    def asIFACMPInstruction: IFACMPInstruction[_] = throw new ClassCastException();
-    def asIFXNullInstruction: IFXNullInstruction[_] = throw new ClassCastException();
+    def asSimpleBranchInstruction: SimpleBranchInstruction                           = throw new ClassCastException();
+    def asSimpleConditionalBranchInstruction: SimpleConditionalBranchInstruction[_]  = throw new ClassCastException();
+    def asCompoundConditionalBranchInstruction: CompoundConditionalBranchInstruction = throw new ClassCastException();
+    def asIFICMPInstruction: IFICMPInstruction[_]                                    = throw new ClassCastException();
+    def asIF0Instruction: IF0Instruction[_]                                          = throw new ClassCastException();
+    def asIFACMPInstruction: IFACMPInstruction[_]                                    = throw new ClassCastException();
+    def asIFXNullInstruction: IFXNullInstruction[_]                                  = throw new ClassCastException();
 
-    def asInvocationInstruction: InvocationInstruction = throw new ClassCastException();
-    def asMethodInvocationInstruction: MethodInvocationInstruction = {
-        throw new ClassCastException();
-    }
+    def asInvocationInstruction: InvocationInstruction             = throw new ClassCastException();
+    def asMethodInvocationInstruction: MethodInvocationInstruction = throw new ClassCastException();
 
     def asArithmeticInstruction: ArithmeticInstruction = throw new ClassCastException();
 
-    def asTABLESWITCH: TABLESWITCH = throw new ClassCastException();
+    def asTABLESWITCH: TABLESWITCH   = throw new ClassCastException();
     def asLOOKUPSWITCH: LOOKUPSWITCH = throw new ClassCastException();
 }
 
@@ -132,9 +120,8 @@ object Instruction {
      *
      * @return Returns the triple `Some((opcode,mnemonic,list of jvm exceptions))`.
      */
-    def unapply(instruction: Instruction): Some[(Int, String, List[ObjectType])] = {
+    def unapply(instruction: Instruction): Some[(Int, String, List[ObjectType])] =
         Some((instruction.opcode, instruction.mnemonic, instruction.jvmExceptions))
-    }
 
     /**
      * Determines if the instructions with the pcs `aPC` and `bPC` are isomorphic.
@@ -151,11 +138,9 @@ object Instruction {
         instruction: Instruction,
         currentPC:   Int,
         exceptions:  List[ObjectType]
-    )(
-        implicit
+      )(implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
-    ): List[Int /*PC*/ ] = {
+        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy): List[Int /*PC*/ ] = {
         var pcs = List(instruction.indexOfNextInstruction(currentPC))
         exceptions foreach { exception =>
             pcs = (code.handlersForException(currentPC, exception).map(_.handlerPC)) ++: pcs
@@ -167,16 +152,12 @@ object Instruction {
         instruction: Instruction,
         currentPC:   Int,
         exception:   ObjectType
-    )(
-        implicit
+      )(implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
-    ): List[Int /*PC*/ ] = {
+        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy): List[Int /*PC*/ ] = {
         val nextInstruction = instruction.indexOfNextInstruction(currentPC)
         nextInstruction :: (code.handlersForException(currentPC, exception).map(_.handlerPC))
     }
 
-    final val justNullPointerException: List[org.opalj.br.ObjectType] = {
-        List(ObjectType.NullPointerException)
-    }
+    final val justNullPointerException: List[org.opalj.br.ObjectType] = List(ObjectType.NullPointerException)
 }

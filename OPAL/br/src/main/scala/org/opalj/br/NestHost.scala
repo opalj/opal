@@ -11,9 +11,7 @@ case class NestHost(hostClassType: ObjectType) extends Attribute {
 
     final override def kindId: Int = NestHost.KindId
 
-    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = {
-        this == other
-    }
+    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = this == other
 }
 
 object NestHost {

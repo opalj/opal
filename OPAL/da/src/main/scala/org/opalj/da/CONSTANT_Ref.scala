@@ -16,42 +16,37 @@ trait CONSTANT_Ref extends Constant_Pool_Entry {
 
     val name_and_type_index: Constant_Pool_Index
 
-    override def asCPNode(implicit cp: Constant_Pool): Node =
-        <div class="cp_entry">
-            { this.getClass().getSimpleName }
+    override def asCPNode(implicit cp: Constant_Pool): Node = <div class="cp_entry">
+            {this.getClass().getSimpleName}
             (<div class="cp_ref">
-                 class_index={ class_index }
+                 class_index={class_index}
                  &laquo;
-                 { cp(class_index).asCPNode }
+                 {cp(class_index).asCPNode}
                  &raquo;
              </div>
             <div class="cp_ref">
-                name_and_type_index={ name_and_type_index }
+                name_and_type_index={name_and_type_index}
                 &laquo;
-                { cp(name_and_type_index).asCPNode }
+                {cp(name_and_type_index).asCPNode}
                 &raquo;
             </div>
             )
         </div>
 
-    def asInstructionParameter(classType: Option[String])(implicit cp: Constant_Pool): NodeSeq = {
-        <span class="ref">
-            { if (classType.isDefined) <span>{ classType.get }&nbsp;</span> else NodeSeq.Empty }
-            { asJavaReferenceType(class_index).asSpan("") }
-            <span>{{ { cp(name_and_type_index).asInstructionParameter } }}</span>
+    def asInstructionParameter(classType: Option[String])(implicit cp: Constant_Pool): NodeSeq = <span class="ref">
+            {if (classType.isDefined) <span>{classType.get}&nbsp;</span> else NodeSeq.Empty}
+            {asJavaReferenceType(class_index).asSpan("")}
+            <span>{{ {cp(name_and_type_index).asInstructionParameter} }}</span>
         </span>
-    }
 
-    override def toString(implicit cp: Constant_Pool): String = {
-        cp(class_index).toString(cp)+"{ "+cp(name_and_type_index).toString(cp)+" }"
-    }
+    override def toString(implicit cp: Constant_Pool): String =
+        cp(class_index).toString(cp) + "{ " + cp(name_and_type_index).toString(cp) + " }"
 
 }
 
 object CONSTANT_Ref {
 
-    def unapply(ref: CONSTANT_Ref): Option[(Constant_Pool_Index, Constant_Pool_Index)] = {
+    def unapply(ref: CONSTANT_Ref): Option[(Constant_Pool_Index, Constant_Pool_Index)] =
         Some((ref.class_index, ref.name_and_type_index))
-    }
 
 }

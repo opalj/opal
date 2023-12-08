@@ -18,23 +18,20 @@ case class CONSTANT_Module_info(name_index: Constant_Pool_Index) extends Constan
 
     override def Constant_Type_Value: ConstantPoolTag = ConstantPoolTags.CONSTANT_Module
 
-    override def asCPNode(implicit cp: Constant_Pool): Node = {
-        <span class="cp_entry">
+    override def asCPNode(implicit cp: Constant_Pool): Node = <span class="cp_entry">
             CONSTANT_Module_info(name_index=
-            { name_index }
+            {name_index}
             &laquo;
             <span class="cp_ref">
-                { cp(name_index).asCPNode }
+                {cp(name_index).asCPNode}
             </span>
             &raquo;
             )
         </span>
-    }
 
     override def toString(implicit cp: Constant_Pool): String = cp(name_index).toString(cp)
 
-    override def asInstructionParameter(implicit cp: Constant_Pool): NodeSeq = {
+    override def asInstructionParameter(implicit cp: Constant_Pool): NodeSeq =
         throw new UnsupportedOperationException("unexpected usage in combination with instructions")
-    }
 
 }

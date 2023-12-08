@@ -19,26 +19,20 @@ import scala.collection.immutable.ArraySeq
  * @author Arne Lottmann
  */
 case class Annotation(
-        annotationType:    FieldType,
-        elementValuePairs: ElementValuePairs = NoElementValuePairs
-) extends AnnotationLike {
+        annotationType: FieldType,
+        elementValuePairs: ElementValuePairs = NoElementValuePairs) extends AnnotationLike {
 
-    def similar(other: Annotation): Boolean = {
-        (this.annotationType eq other.annotationType) &&
-            this.elementValuePairs.size == other.elementValuePairs.size &&
-            this.elementValuePairs.forall(other.elementValuePairs.contains)
-    }
+    def similar(other: Annotation): Boolean = (this.annotationType eq other.annotationType) &&
+        this.elementValuePairs.size == other.elementValuePairs.size &&
+        this.elementValuePairs.forall(other.elementValuePairs.contains)
 
     def toJava: String = {
         val name = annotationType.toJava
         val parameters =
-            if (elementValuePairs.isEmpty)
-                ""
-            else if (elementValuePairs.size == 1)
-                "("+elementValuePairs.head.toJava+")"
-            else
-                elementValuePairs.map[String](_.toJava).mkString("(\n\t", ",\n\t", "\n)")
-        "@"+name + parameters
+            if (elementValuePairs.isEmpty) ""
+            else if (elementValuePairs.size == 1) "(" + elementValuePairs.head.toJava + ")"
+            else elementValuePairs.map[String](_.toJava).mkString("(\n\t", ",\n\t", "\n)")
+        "@" + name + parameters
     }
 
 }
@@ -47,21 +41,16 @@ case class Annotation(
  */
 object Annotation {
 
-    def apply(annotationType: FieldType, elementValuePairs: ElementValuePair*): Annotation = {
-        new Annotation(
-            annotationType,
-            ArraySeq.unsafeWrapArray(elementValuePairs.toArray)
-        )
-    }
+    def apply(annotationType: FieldType, elementValuePairs: ElementValuePair*): Annotation = new Annotation(
+        annotationType,
+        ArraySeq.unsafeWrapArray(elementValuePairs.toArray)
+    )
 
     def build(
         annotationType:    FieldType,
-        elementValuePairs: (String, ElementValue)*
-    ): Annotation = {
-        new Annotation(
-            annotationType,
-            ArraySeq.from(elementValuePairs.map(ElementValuePair(_)))
-        )
-    }
+        elementValuePairs: (String, ElementValue)*): Annotation = new Annotation(
+        annotationType,
+        ArraySeq.from(elementValuePairs.map(ElementValuePair(_)))
+    )
 
 }

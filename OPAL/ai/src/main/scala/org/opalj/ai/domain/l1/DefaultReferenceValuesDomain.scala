@@ -17,28 +17,25 @@ import org.opalj.br.analyses.Project
  */
 class DefaultReferenceValuesDomain[Source](
         val project: Project[Source],
-        val method:  Method
-) extends CorrelationalDomain
-    with TheProject
-    with TheMethod
-    with DefaultSpecialDomainValuesBinding
-    with ThrowAllPotentialExceptionsConfiguration
-    with DefaultHandlingOfMethodResults
-    with IgnoreSynchronization
-    with l0.DefaultTypeLevelFloatValues
-    with l0.DefaultTypeLevelDoubleValues
-    with l0.TypeLevelFieldAccessInstructions
-    with l0.TypeLevelInvokeInstructions
-    with l0.TypeLevelDynamicLoads
-    with l1.DefaultReferenceValuesBinding
-    with l0.DefaultTypeLevelIntegerValues
-    with l0.DefaultTypeLevelLongValues
-    with l0.TypeLevelPrimitiveValuesConversions
-    with l0.TypeLevelLongValuesShiftOperators
+        val method: Method) extends CorrelationalDomain
+        with TheProject
+        with TheMethod
+        with DefaultSpecialDomainValuesBinding
+        with ThrowAllPotentialExceptionsConfiguration
+        with DefaultHandlingOfMethodResults
+        with IgnoreSynchronization
+        with l0.DefaultTypeLevelFloatValues
+        with l0.DefaultTypeLevelDoubleValues
+        with l0.TypeLevelFieldAccessInstructions
+        with l0.TypeLevelInvokeInstructions
+        with l0.TypeLevelDynamicLoads
+        with l1.DefaultReferenceValuesBinding
+        with l0.DefaultTypeLevelIntegerValues
+        with l0.DefaultTypeLevelLongValues
+        with l0.TypeLevelPrimitiveValuesConversions
+        with l0.TypeLevelLongValuesShiftOperators
 
 class DefaultReferenceValuesDomainWithCFGAndDefUse[Source](
         project: Project[Source],
-        method:  Method
-) extends DefaultReferenceValuesDomain(project, method)
-    with RefineDefUseUsingOrigins
-
+        method: Method) extends DefaultReferenceValuesDomain(project, method)
+        with RefineDefUseUsingOrigins

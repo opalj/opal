@@ -5,8 +5,10 @@ package analyses
 package cg
 
 import scala.collection.mutable
-import net.ceedubs.ficus.Ficus._
+
 import org.opalj.collection.mutable.ArrayMap
+
+import net.ceedubs.ficus.Ficus._
 
 /**
  * Determines whether a class or interface is '''directly extensible by a (yet unknown)
@@ -55,7 +57,7 @@ abstract class AbstractClassExtensibility extends ClassExtensibility {
      */
     protected[this] def parseSpecifiedClassesList(simpleKey: String): List[ObjectType] = {
         val completeKey = ClassExtensibilityKey.ConfigKeyPrefix + simpleKey
-        val fqns = project.config.as[Option[List[String]]](completeKey).getOrElse(List.empty)
+        val fqns        = project.config.as[Option[List[String]]](completeKey).getOrElse(List.empty)
 
         import project.classHierarchy
 
@@ -75,27 +77,24 @@ abstract class AbstractClassExtensibility extends ClassExtensibility {
 
         val isClosedPackage = project.get(ClosedPackagesKey)
 
-        val configuredTypes: mutable.LongMap[Answer] = mutable.LongMap.empty[Answer] ++ configuredExtensibleClasses.map { e =>
-            val (ot, answer) = e
-            (ot.id.toLong, answer)
-        }
+        val configuredTypes: mutable.LongMap[Answer] =
+            mutable.LongMap.empty[Answer] ++ configuredExtensibleClasses.map { e =>
+                val (ot, answer) = e
+                (ot.id.toLong, answer)
+            }
 
         val allClassFiles = project.allClassFiles
-        val entries = ObjectType.objectTypesCount
+        val entries       = ObjectType.objectTypesCount
         val extensibility = allClassFiles.foldLeft(ArrayMap[Answer](entries)) { (r, classFile) =>
             val objectType = classFile.thisType
             val isExtensible = {
                 val configured = configuredTypes.get(objectType.id.toLong)
-                if (configured.isDefined)
-                    configured.get
+                if (configured.isDefined) configured.get
                 else if (classFile.isEffectivelyFinal ||
-                    classFile.isEnumDeclaration ||
-                    classFile.isAnnotationDeclaration)
-                    No
-                else if (classFile.isPublic)
-                    Yes
-                else if (isClosedPackage(objectType.packageName))
-                    No
+                         classFile.isEnumDeclaration ||
+                         classFile.isAnnotationDeclaration) No
+                else if (classFile.isPublic) Yes
+                else if (isClosedPackage(objectType.packageName)) No
                 else // => non public class in an open package...
                     Yes
             }
@@ -136,9 +135,8 @@ class ConfiguredExtensibleClasses(val project: SomeProject) extends AbstractClas
     /**
      * Returns the types which are extensible.
      */
-    override def configuredExtensibleClasses: Iterator[(ObjectType, Yes.type)] = {
+    override def configuredExtensibleClasses: Iterator[(ObjectType, Yes.type)] =
         parseSpecifiedClassesList("extensibleClasses").iterator.map(t => (t, Yes))
-    }
 }
 
 /**
@@ -163,13 +161,11 @@ class ConfiguredFinalClasses(val project: SomeProject) extends AbstractClassExte
     /**
      * Returns the types which are not extensible/which are final.
      */
-    override def configuredExtensibleClasses: Iterator[(ObjectType, No.type)] = {
+    override def configuredExtensibleClasses: Iterator[(ObjectType, No.type)] =
         parseSpecifiedClassesList("finalClasses").iterator.map(t => (t, No))
-    }
 }
 
 class ClassHierarchyIsNotExtensible(val project: SomeProject) extends ClassExtensibility {
 
     def isClassExtensible(t: ObjectType): Answer = No
 }
-

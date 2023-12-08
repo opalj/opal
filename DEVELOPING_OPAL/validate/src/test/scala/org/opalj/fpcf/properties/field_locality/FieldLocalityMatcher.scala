@@ -33,17 +33,15 @@ class FieldLocalityMatcher(val property: FieldLocality) extends AbstractProperty
         as:         Set[ObjectType],
         entity:     scala.Any,
         a:          AnnotationLike,
-        properties: Iterable[Property]
-    ): Option[String] = {
+        properties: Iterable[Property]): Option[String] =
         if (!properties.exists {
-            case `property` => true
-            case _          => false
-        }) {
+                case `property` => true
+                case _          => false
+            }) {
             Some(a.elementValuePairs.head.value.asStringValue.value)
         } else {
             None
         }
-    }
 }
 
 class NoLocalFieldMatcher

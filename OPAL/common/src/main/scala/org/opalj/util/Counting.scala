@@ -2,9 +2,9 @@
 package org.opalj
 package util
 
-import org.opalj.concurrent.Locking
-
 import scala.collection.mutable
+
+import org.opalj.concurrent.Locking
 
 /**
  * A simple class that enables the counting of something.
@@ -22,9 +22,7 @@ trait Counting extends Locking {
 
     private[this] val count = mutable.Map.empty[Symbol, Long]
 
-    final def incrementCount(s: Symbol): Unit = {
-        withWriteLock { updateCount(s, 1L) }
-    }
+    final def incrementCount(s: Symbol): Unit = withWriteLock { updateCount(s, 1L) }
 
     /**
      * Updates the count related to the entity identified by the given symbol.
@@ -35,9 +33,7 @@ trait Counting extends Locking {
      * @param   s Symbol used to correlate values related to the same entity.
      * @param   value The value that will be added to the entity's current value.
      */
-    final def updateCount(s: Symbol, value: Long): Unit = {
-        withWriteLock { doUpdateCount(s, value) }
-    }
+    final def updateCount(s: Symbol, value: Long): Unit = withWriteLock { doUpdateCount(s, value) }
 
     /**
      * Called by the `updateCount(Symbol, Int)` method.

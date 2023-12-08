@@ -3,13 +3,13 @@ package org.opalj
 package br
 package analyses
 
-import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
-
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.reader.Java11Framework.ClassFiles
+
+import org.junit.runner.RunWith
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests the support for "project" related functionality.
@@ -81,13 +81,17 @@ class ProjectTest extends AnyFlatSpec with Matchers {
 
     it should "find a public method" in {
         resolveMethodReference(
-            SuperType, "publicMethod", MethodDescriptor("()V")
+            SuperType,
+            "publicMethod",
+            MethodDescriptor("()V")
         ) shouldBe defined
     }
 
     it should "find a private method" in {
         resolveMethodReference(
-            SuperType, "privateMethod", MethodDescriptor("()V")
+            SuperType,
+            "privateMethod",
+            MethodDescriptor("()V")
         ) shouldBe defined
     }
 
@@ -97,33 +101,43 @@ class ProjectTest extends AnyFlatSpec with Matchers {
 
     it should "find a method with default visibility" in {
         resolveMethodReference(
-            SuperType, "defaultVisibilityMethod", MethodDescriptor("()V")
+            SuperType,
+            "defaultVisibilityMethod",
+            MethodDescriptor("()V")
         ) shouldBe defined
     }
 
     it should "find the super class' static method staticDefaultVisibilityMethod" in {
         // let's make sure the method exists...
         resolveMethodReference(
-            SuperType, "staticDefaultVisibilityMethod", MethodDescriptor("()V")
+            SuperType,
+            "staticDefaultVisibilityMethod",
+            MethodDescriptor("()V")
         ) shouldBe defined
         // let's make sure the class is a super class
         project.classHierarchy.isSubtypeOf(DirectSub, SuperType) should be(true)
 
         // let's test the resolving
         resolveMethodReference(
-            DirectSub, "staticDefaultVisibilityMethod", MethodDescriptor("()V")
+            DirectSub,
+            "staticDefaultVisibilityMethod",
+            MethodDescriptor("()V")
         ) shouldBe defined
     }
 
     it should "not find Object's toString method, because we only have a partial view of the project" in {
         resolveMethodReference(
-            DirectSub, "toString", MethodDescriptor("()Ljava/lang/String;")
+            DirectSub,
+            "toString",
+            MethodDescriptor("()Ljava/lang/String;")
         ) shouldBe empty
     }
 
     it should "find a method declared by a directly implemented interface" in {
         val r = resolveMethodReference(
-            AbstractB, "someSubMethod", MethodDescriptor("()V"),
+            AbstractB,
+            "someSubMethod",
+            MethodDescriptor("()V"),
             forceLookupInSuperinterfacesOnFailure = true
         )
         r shouldBe defined
@@ -132,7 +146,9 @@ class ProjectTest extends AnyFlatSpec with Matchers {
 
     it should "find a method declared by an indirectly implemented interface" in {
         val r = resolveMethodReference(
-            AbstractB, "someMethod", MethodDescriptor("()V"),
+            AbstractB,
+            "someMethod",
+            MethodDescriptor("()V"),
             forceLookupInSuperinterfacesOnFailure = true
         )
         r shouldBe defined
@@ -163,7 +179,7 @@ class ProjectTest extends AnyFlatSpec with Matchers {
 
     it should "be able to compute some project wide information on demand" in {
         val pik = new TestProjectInformationKey
-        project.get(pik) should not be (null)
+        project.get(pik) should not be null
     }
 
     it should "always return the same information when we use the same ProjectInformation object" in {
@@ -195,7 +211,7 @@ class ProjectTest extends AnyFlatSpec with Matchers {
     }
 
     it should "be able to store a large amount of information" in {
-        val piks = for (i <- (0 until 100)) yield {
+        val piks = for (i <- 0 until 100) yield {
             val pik = new TestProjectInformationKey
             project.get(pik)
             pik.uniqueId should be >= i
@@ -220,13 +236,23 @@ class ProjectTest extends AnyFlatSpec with Matchers {
     it should "return all packages defined in the project" in {
 
         opalProject.projectPackages should be(Set(
-            "de/tud/cs/st/bat/generic/reader", "de/tud/cs/st/util/graphs",
-            "de/tud/cs/st/util/collection", "de/tud/cs/st/bat/resolved",
-            "de/tud/cs/st/util/perf", "de/tud/cs/st", "de/tud/cs/st/bat/prolog",
-            "de/tud/cs/st/bat/prolog/reader", "de/tud/cs/st/sae/parser", "de/tud/cs/st/sae",
-            "de/tud/cs/st/bat/native", "de/tud/cs/st/util/trees",
-            "de/tud/cs/st/bat/resolved/reader", "de/tud/cs/st/bat", "de/tud/cs/st/util",
-            "de/tud/cs/st/bat/native/reader", "de/tud/cs/st/prolog"
+            "de/tud/cs/st/bat/generic/reader",
+            "de/tud/cs/st/util/graphs",
+            "de/tud/cs/st/util/collection",
+            "de/tud/cs/st/bat/resolved",
+            "de/tud/cs/st/util/perf",
+            "de/tud/cs/st",
+            "de/tud/cs/st/bat/prolog",
+            "de/tud/cs/st/bat/prolog/reader",
+            "de/tud/cs/st/sae/parser",
+            "de/tud/cs/st/sae",
+            "de/tud/cs/st/bat/native",
+            "de/tud/cs/st/util/trees",
+            "de/tud/cs/st/bat/resolved/reader",
+            "de/tud/cs/st/bat",
+            "de/tud/cs/st/util",
+            "de/tud/cs/st/bat/native/reader",
+            "de/tud/cs/st/prolog"
         ))
 
     }
@@ -238,7 +264,7 @@ class ProjectTest extends AnyFlatSpec with Matchers {
     }
 
     it should "return the packages of the loaded libraries" in {
-        project.libraryPackages should not be (empty)
+        project.libraryPackages should not be empty
     }
 
     behavior of "a Project's packages methods"
@@ -253,7 +279,7 @@ class ProjectTest extends AnyFlatSpec with Matchers {
 
     behavior of "a Project's parForeachMethodWithBody method"
 
-    def testAllMethodsWithBodyWithContext(project: SomeProject, name: String): Unit = {
+    def testAllMethodsWithBodyWithContext(project: SomeProject, name: String): Unit =
         it should s"allMethodsWithBodyWithContext should return ALL concrete methods for $name" in {
             var allConcreteMethods = project.allMethodsWithBodyWithContext.map(_.method).toSet
             val missedMethods: Iterable[Method] = (for {
@@ -270,15 +296,14 @@ class ProjectTest extends AnyFlatSpec with Matchers {
             }).flatten
             missedMethods should be(Symbol("Empty"))
         }
-    }
     testAllMethodsWithBodyWithContext(project, "Methods.jar")
     testAllMethodsWithBodyWithContext(overallProject, "Code.jar")
     testAllMethodsWithBodyWithContext(opalProject, "OPAL")
     testAllMethodsWithBodyWithContext(java11nestsProject, "Java11Nests.jar")
 
-    def testParForeachMethodWithBody(project: SomeProject, name: String): Unit = {
+    def testParForeachMethodWithBody(project: SomeProject, name: String): Unit =
         it should s"return that same methods for $name as a manual search" in {
-            val mutex = new Object
+            val mutex   = new Object
             var methods = List.empty[Method]
             project.parForeachMethodWithBody()(mi => mutex.synchronized { methods ::= mi.method })
             val missedMethods = for {
@@ -290,23 +315,21 @@ class ProjectTest extends AnyFlatSpec with Matchers {
                 (c, m)
             }
             assert(
-                missedMethods.isEmpty, {
-                    s"; missed ${missedMethods.size} methods: "+
-                        missedMethods.map { mm =>
-                            val (c, m) = mm
-                            val belongsToProject = project.isProjectType(c.thisType)
-                            m.toJava(
-                                m.body.get.instructions.length.toString+
-                                    "; belongs to project = "+belongsToProject
-                            )
-                        }.mkString("\n\t", "\n\t", "\n")
-                }
+                missedMethods.isEmpty,
+                s"; missed ${missedMethods.size} methods: " +
+                    missedMethods.map { mm =>
+                        val (c, m)           = mm
+                        val belongsToProject = project.isProjectType(c.thisType)
+                        m.toJava(
+                            m.body.get.instructions.length.toString +
+                                "; belongs to project = " + belongsToProject
+                        )
+                    }.mkString("\n\t", "\n\t", "\n")
             )
             val methodsCount = methods.size
             info(s"parForeachMethodWithBody iterated over $methodsCount methods")
             assert(methodsCount == methods.toSet.size)
         }
-    }
     testParForeachMethodWithBody(project, "Methods.jar")
     testParForeachMethodWithBody(overallProject, "Code.jar")
     testParForeachMethodWithBody(opalProject, "OPAL")
@@ -326,20 +349,20 @@ class ProjectTest extends AnyFlatSpec with Matchers {
         import fieldsProject.classFile
         import fieldsProject.resolveFieldReference
 
-        val SuperSuperType = ObjectType("fields/SuperSuper")
+        val SuperSuperType  = ObjectType("fields/SuperSuper")
         val SuperSuperClass = classFile(SuperSuperType).get
-        val SuperType = ObjectType("fields/Super")
-        val SuperClass = classFile(SuperType).get
+        val SuperType       = ObjectType("fields/Super")
+        val SuperClass      = classFile(SuperType).get
 
-        val SuperIType = ObjectType("fields/SuperI")
+        val SuperIType  = ObjectType("fields/SuperI")
         val SuperIClass = classFile(SuperIType).get
-        val SubIType = ObjectType("fields/SubI")
-        val SubIClass = classFile(SubIType).get
+        val SubIType    = ObjectType("fields/SubI")
+        val SubIClass   = classFile(SubIType).get
 
-        val SubType = ObjectType("fields/Sub")
-        val SubClass = classFile(SubType).get
+        val SubType    = ObjectType("fields/Sub")
+        val SubClass   = classFile(SubType).get
         val SubSubType = ObjectType("fields/SubSub")
-        //val SubSubClass = classFile(SubSubType).get
+        // val SubSubClass = classFile(SubSubType).get
 
         behavior of "a Project's methods to resolve field references"
 
@@ -385,7 +408,9 @@ class ProjectTest extends AnyFlatSpec with Matchers {
 
         it should "not fail if the type cannot be found" in {
             resolveFieldReference(
-                ObjectType("NOT/DEFINED"), "NOT_DEFINED", IntegerType
+                ObjectType("NOT/DEFINED"),
+                "NOT_DEFINED",
+                IntegerType
             ) should be(None)
         }
     }
@@ -408,19 +433,23 @@ class ProjectTest extends AnyFlatSpec with Matchers {
         behavior of "a Project's methods to resolve method references"
 
         it should "handle the case if an interface has no implementing class" in {
-            val implementingMethods =
-                methodsProject.interfaceCall(
-                    superI, superI, "someMethod", MethodDescriptor.NoArgsAndReturnVoid
-                )
+            val implementingMethods = methodsProject.interfaceCall(
+                superI,
+                superI,
+                "someMethod",
+                MethodDescriptor.NoArgsAndReturnVoid
+            )
             implementingMethods.size should be(0)
         }
 
         it should "find a method in a super class" in {
             val classType = ObjectType("methods/b/B")
-            val implementingMethods =
-                methodsProject.virtualCall(
-                    classType, classType, "publicMethod", MethodDescriptor.NoArgsAndReturnVoid
-                )
+            val implementingMethods = methodsProject.virtualCall(
+                classType,
+                classType,
+                "publicMethod",
+                MethodDescriptor.NoArgsAndReturnVoid
+            )
 
             implementingMethods.size should be(1)
             implementingMethods.head should have(
@@ -432,13 +461,12 @@ class ProjectTest extends AnyFlatSpec with Matchers {
 
         it should "find private method for virtual calls" in {
             val classType = ObjectType("methods/c/Super")
-            val implementingMethods =
-                methodsProject.virtualCall(
-                    classType,
-                    classType,
-                    "originallyPrivateMethod",
-                    MethodDescriptor.NoArgsAndReturnVoid
-                )
+            val implementingMethods = methodsProject.virtualCall(
+                classType,
+                classType,
+                "originallyPrivateMethod",
+                MethodDescriptor.NoArgsAndReturnVoid
+            )
 
             implementingMethods.size should be(1)
             implementingMethods.head should have(
@@ -450,13 +478,12 @@ class ProjectTest extends AnyFlatSpec with Matchers {
 
         it should "not find private method for virtual calls on subclasses" in {
             val classType = ObjectType("methods/c/Sub1")
-            val implementingMethods =
-                methodsProject.virtualCall(
-                    classType,
-                    classType,
-                    "originallyPrivateMethod",
-                    MethodDescriptor.NoArgsAndReturnVoid
-                )
+            val implementingMethods = methodsProject.virtualCall(
+                classType,
+                classType,
+                "originallyPrivateMethod",
+                MethodDescriptor.NoArgsAndReturnVoid
+            )
 
             implementingMethods.size should be(1)
             implementingMethods.head should have(
@@ -468,26 +495,24 @@ class ProjectTest extends AnyFlatSpec with Matchers {
 
         it should "not find private method for virtual calls declared on subclasses" in {
             val classType = ObjectType("methods/c/Sub2")
-            val implementingMethods =
-                methodsProject.virtualCall(
-                    classType,
-                    classType,
-                    "originallyPrivateMethod",
-                    MethodDescriptor.NoArgsAndReturnVoid
-                )
+            val implementingMethods = methodsProject.virtualCall(
+                classType,
+                classType,
+                "originallyPrivateMethod",
+                MethodDescriptor.NoArgsAndReturnVoid
+            )
 
             implementingMethods.size should be(0)
         }
 
         it should "find private method for instance calls" in {
             val classType = ObjectType("methods/c/Super")
-            val implementingMethods =
-                methodsProject.instanceCall(
-                    classType,
-                    classType,
-                    "originallyPrivateMethod",
-                    MethodDescriptor.NoArgsAndReturnVoid
-                )
+            val implementingMethods = methodsProject.instanceCall(
+                classType,
+                classType,
+                "originallyPrivateMethod",
+                MethodDescriptor.NoArgsAndReturnVoid
+            )
 
             implementingMethods.hasValue should be(true)
             implementingMethods.value should have(
@@ -508,13 +533,12 @@ class ProjectTest extends AnyFlatSpec with Matchers {
         behavior of "instanceCall to resolve method references w.r.t. Java 11+ Nest Attributes"
 
         it should "resolve a private method in the NestHost" in {
-            val implementingMethods =
-                java11nestsProject.instanceCall(
-                    NestMember1Type,
-                    NestHost,
-                    "nestHostMethod",
-                    MethodDescriptor.NoArgsAndReturnVoid
-                )
+            val implementingMethods = java11nestsProject.instanceCall(
+                NestMember1Type,
+                NestHost,
+                "nestHostMethod",
+                MethodDescriptor.NoArgsAndReturnVoid
+            )
 
             implementingMethods.hasValue should be(true)
             implementingMethods.value should have(
@@ -524,13 +548,12 @@ class ProjectTest extends AnyFlatSpec with Matchers {
         }
 
         it should "resolve a private method in a NestMember" in {
-            val implementingMethods =
-                java11nestsProject.instanceCall(
-                    NestHost,
-                    NestMember1Type,
-                    "nestMember1Method",
-                    MethodDescriptor.NoArgsAndReturnVoid
-                )
+            val implementingMethods = java11nestsProject.instanceCall(
+                NestHost,
+                NestMember1Type,
+                "nestMember1Method",
+                MethodDescriptor.NoArgsAndReturnVoid
+            )
 
             implementingMethods.hasValue should be(true)
             implementingMethods.value should have(
@@ -540,13 +563,12 @@ class ProjectTest extends AnyFlatSpec with Matchers {
         }
 
         it should "resolve a private method in a NestMate" in {
-            val implementingMethods =
-                java11nestsProject.instanceCall(
-                    NestMember2Type,
-                    NestMember1Type,
-                    "nestMember1Method",
-                    MethodDescriptor.NoArgsAndReturnVoid
-                )
+            val implementingMethods = java11nestsProject.instanceCall(
+                NestMember2Type,
+                NestMember1Type,
+                "nestMember1Method",
+                MethodDescriptor.NoArgsAndReturnVoid
+            )
 
             implementingMethods.hasValue should be(true)
             implementingMethods.value should have(
@@ -556,49 +578,45 @@ class ProjectTest extends AnyFlatSpec with Matchers {
         }
 
         it should "not resolve a private method in an unrelated class from a NestHost" in {
-            val implementingMethods =
-                java11nestsProject.instanceCall(
-                    NestHost,
-                    NoNestMember,
-                    "noNestMemberMethod",
-                    MethodDescriptor.NoArgsAndReturnVoid
-                )
+            val implementingMethods = java11nestsProject.instanceCall(
+                NestHost,
+                NoNestMember,
+                "noNestMemberMethod",
+                MethodDescriptor.NoArgsAndReturnVoid
+            )
 
             implementingMethods.hasValue should be(false)
         }
 
         it should "not resolve a private method in an unrelated class from a NestMember" in {
-            val implementingMethods =
-                java11nestsProject.instanceCall(
-                    NestMember1Type,
-                    NoNestMember,
-                    "noNestMemberMethod",
-                    MethodDescriptor.NoArgsAndReturnVoid
-                )
+            val implementingMethods = java11nestsProject.instanceCall(
+                NestMember1Type,
+                NoNestMember,
+                "noNestMemberMethod",
+                MethodDescriptor.NoArgsAndReturnVoid
+            )
 
             implementingMethods.hasValue should be(false)
         }
 
         it should "not resolve a private method in a NestHost from an unrelated class" in {
-            val implementingMethods =
-                java11nestsProject.instanceCall(
-                    NoNestMember,
-                    NestMember1Type,
-                    "nestMember1Method",
-                    MethodDescriptor.NoArgsAndReturnVoid
-                )
+            val implementingMethods = java11nestsProject.instanceCall(
+                NoNestMember,
+                NestMember1Type,
+                "nestMember1Method",
+                MethodDescriptor.NoArgsAndReturnVoid
+            )
 
             implementingMethods.hasValue should be(false)
         }
 
         it should "not resolve a private method in a NestMember from an unrelated class" in {
-            val implementingMethods =
-                java11nestsProject.instanceCall(
-                    NoNestMember,
-                    NestHost,
-                    "nestHostMethod",
-                    MethodDescriptor.NoArgsAndReturnVoid
-                )
+            val implementingMethods = java11nestsProject.instanceCall(
+                NoNestMember,
+                NestHost,
+                "nestHostMethod",
+                MethodDescriptor.NoArgsAndReturnVoid
+            )
 
             implementingMethods.hasValue should be(false)
         }
@@ -606,13 +624,12 @@ class ProjectTest extends AnyFlatSpec with Matchers {
         behavior of "virtualCall to resolve method references w.r.t. Java 11+ Nest Attributes"
 
         it should "resolve a private method in the NestHost" in {
-            val implementingMethods =
-                java11nestsProject.virtualCall(
-                    NestMember1Type,
-                    NestHost,
-                    "nestHostMethod",
-                    MethodDescriptor.NoArgsAndReturnVoid
-                )
+            val implementingMethods = java11nestsProject.virtualCall(
+                NestMember1Type,
+                NestHost,
+                "nestHostMethod",
+                MethodDescriptor.NoArgsAndReturnVoid
+            )
 
             implementingMethods.size should be(1)
             implementingMethods.head should have(
@@ -622,13 +639,12 @@ class ProjectTest extends AnyFlatSpec with Matchers {
         }
 
         it should "resolve a private method in a NestMember" in {
-            val implementingMethods =
-                java11nestsProject.virtualCall(
-                    NestHost,
-                    NestMember1Type,
-                    "nestMember1Method",
-                    MethodDescriptor.NoArgsAndReturnVoid
-                )
+            val implementingMethods = java11nestsProject.virtualCall(
+                NestHost,
+                NestMember1Type,
+                "nestMember1Method",
+                MethodDescriptor.NoArgsAndReturnVoid
+            )
 
             implementingMethods.size should be(1)
             implementingMethods.head should have(
@@ -638,13 +654,12 @@ class ProjectTest extends AnyFlatSpec with Matchers {
         }
 
         it should "resolve a private method in a NestMate" in {
-            val implementingMethods =
-                java11nestsProject.virtualCall(
-                    NestMember2Type,
-                    NestMember1Type,
-                    "nestMember1Method",
-                    MethodDescriptor.NoArgsAndReturnVoid
-                )
+            val implementingMethods = java11nestsProject.virtualCall(
+                NestMember2Type,
+                NestMember1Type,
+                "nestMember1Method",
+                MethodDescriptor.NoArgsAndReturnVoid
+            )
 
             implementingMethods.size should be(1)
             implementingMethods.head should have(
@@ -654,49 +669,45 @@ class ProjectTest extends AnyFlatSpec with Matchers {
         }
 
         it should "not resolve a private method in an unrelated class from a NestHost" in {
-            val implementingMethods =
-                java11nestsProject.virtualCall(
-                    NestHost,
-                    NoNestMember,
-                    "noNestMemberMethod",
-                    MethodDescriptor.NoArgsAndReturnVoid
-                )
+            val implementingMethods = java11nestsProject.virtualCall(
+                NestHost,
+                NoNestMember,
+                "noNestMemberMethod",
+                MethodDescriptor.NoArgsAndReturnVoid
+            )
 
             implementingMethods.size should be(0)
         }
 
         it should "not resolve a private method in an unrelated class from a NestMember" in {
-            val implementingMethods =
-                java11nestsProject.virtualCall(
-                    NestMember1Type,
-                    NoNestMember,
-                    "noNestMemberMethod",
-                    MethodDescriptor.NoArgsAndReturnVoid
-                )
+            val implementingMethods = java11nestsProject.virtualCall(
+                NestMember1Type,
+                NoNestMember,
+                "noNestMemberMethod",
+                MethodDescriptor.NoArgsAndReturnVoid
+            )
 
             implementingMethods.size should be(0)
         }
 
         it should "not resolve a private method in a NestHost from an unrelated class" in {
-            val implementingMethods =
-                java11nestsProject.virtualCall(
-                    NoNestMember,
-                    NestMember1Type,
-                    "nestMember1Method",
-                    MethodDescriptor.NoArgsAndReturnVoid
-                )
+            val implementingMethods = java11nestsProject.virtualCall(
+                NoNestMember,
+                NestMember1Type,
+                "nestMember1Method",
+                MethodDescriptor.NoArgsAndReturnVoid
+            )
 
             implementingMethods.size should be(0)
         }
 
         it should "not resolve a private method in a NestMember from an unrelated class" in {
-            val implementingMethods =
-                java11nestsProject.virtualCall(
-                    NoNestMember,
-                    NestHost,
-                    "nestHostMethod",
-                    MethodDescriptor.NoArgsAndReturnVoid
-                )
+            val implementingMethods = java11nestsProject.virtualCall(
+                NoNestMember,
+                NestHost,
+                "nestHostMethod",
+                MethodDescriptor.NoArgsAndReturnVoid
+            )
 
             implementingMethods.size should be(0)
         }
@@ -732,18 +743,17 @@ private object ProjectTest {
     // Setup
     //
     //
-    val methodsArchive = locateTestResources("methods.jar", "bi")
+    val methodsArchive    = locateTestResources("methods.jar", "bi")
     val deprecatedArchive = locateTestResources("deprecated.jar", "bi")
-    val project = Project(ClassFiles(methodsArchive), ClassFiles(deprecatedArchive), false)
+    val project           = Project(ClassFiles(methodsArchive), ClassFiles(deprecatedArchive), false)
 
-    val codeJAR = locateTestResources("code.jar", "bi")
+    val codeJAR        = locateTestResources("code.jar", "bi")
     val overallProject = Project.extend(project, ClassFiles(codeJAR))
 
-    val opal = locateTestResources("classfiles/OPAL-SNAPSHOT-0.3.jar", "bi")
+    val opal        = locateTestResources("classfiles/OPAL-SNAPSHOT-0.3.jar", "bi")
     val opalProject = Project(ClassFiles(opal), Iterable.empty, true)
 
-    val java11nestsArchive =
-        locateTestResources("java11nests-g-11-parameters-genericsignature", "bi")
+    val java11nestsArchive = locateTestResources("java11nests-g-11-parameters-genericsignature", "bi")
     val java11nestsProject = Project(ClassFiles(java11nestsArchive), Iterable.empty, true)
 
     //
@@ -752,18 +762,18 @@ private object ProjectTest {
     //
     //
 
-    val SuperType = ObjectType("methods/a/Super")
-    val DirectSub = ObjectType("methods/a/DirectSub")
-    val AbstractB = ObjectType("methods/b/AbstractB")
+    val SuperType              = ObjectType("methods/a/Super")
+    val DirectSub              = ObjectType("methods/a/DirectSub")
+    val AbstractB              = ObjectType("methods/b/AbstractB")
     val DeprecatedByAnnotation = ObjectType("deprecated/DeprecatedByAnnotation")
 
-    val SubSub = ObjectType("interfaces/SubSub")
-    val SubSub2 = ObjectType("interfaces/SubSub2")
+    val SubSub    = ObjectType("interfaces/SubSub")
+    val SubSub2   = ObjectType("interfaces/SubSub2")
     val Subclass1 = ObjectType("interfaces/Subclass1")
     val Subclass2 = ObjectType("interfaces/Subclass2")
 
-    val NestHost = ObjectType("java11nests/NestHost")
+    val NestHost        = ObjectType("java11nests/NestHost")
     val NestMember1Type = ObjectType("""java11nests/NestHost$NestMember1""")
     val NestMember2Type = ObjectType("java11nests/NestHost$NestMember2")
-    val NoNestMember = ObjectType("java11nests/NoNestMember")
+    val NoNestMember    = ObjectType("java11nests/NoNestMember")
 }

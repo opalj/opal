@@ -22,11 +22,9 @@ trait VirtualCall[+V <: Var[V]] { this: Call[V] =>
      */
     def resolveCallTargets(
         callingContext: ObjectType
-    )(
-        implicit
+      )(implicit
         p:  ProjectLike,
-        ev: V <:< DUVar[ValueInformation]
-    ): Set[Method] = {
+        ev: V <:< DUVar[ValueInformation]): Set[Method] = {
         val receiverValue = receiver.asVar.value.asReferenceValue
 
         if (receiverValue.isNull.isYes) {

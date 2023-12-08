@@ -13,7 +13,7 @@ import org.opalj.log.OPALLogger
  */
 trait SkipUnknown_attributeReader
     extends Unknown_attributeAbstractions
-    with ClassFileReaderConfiguration {
+        with ClassFileReaderConfiguration {
     this: Constant_PoolReader =>
 
     //
@@ -32,14 +32,12 @@ trait SkipUnknown_attributeReader
         ap_name_index:        Constant_Pool_Index,
         ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
-        in:                   DataInputStream
-    ): Null = {
-        val size: Int = in.readInt
+        in:                   DataInputStream): Null = {
+        val size: Int    = in.readInt
         var skipped: Int = 0
         while (skipped < size) {
             val actuallySkipped = in skipBytes (size - skipped) // skip returns a long value...
-            if (actuallySkipped > 0)
-                skipped += actuallySkipped
+            if (actuallySkipped > 0) skipped += actuallySkipped
             else {
                 OPALLogger.error(
                     "class file reader",

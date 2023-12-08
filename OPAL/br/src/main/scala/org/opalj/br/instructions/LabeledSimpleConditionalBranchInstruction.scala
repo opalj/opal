@@ -11,10 +11,9 @@ package instructions
  */
 trait LabeledSimpleConditionalBranchInstruction
     extends LabeledInstruction
-    with SimpleConditionalBranchInstructionLike {
+        with SimpleConditionalBranchInstructionLike {
 
-    final def branchTargets: Iterator[InstructionLabel] =
-        Iterator(branchTarget)
+    final def branchTargets: Iterator[InstructionLabel] = Iterator(branchTarget)
 
     def branchTarget: InstructionLabel
 
@@ -25,13 +24,10 @@ trait LabeledSimpleConditionalBranchInstruction
      */
     @throws[BranchoffsetOutOfBoundsException]("if the branchoffset is invalid")
     override def resolveJumpTargets(
-        pc:  PC,
-        pcs: Map[InstructionLabel, PC]
-    ): SimpleConditionalBranchInstruction[_]
+        pc: PC,
+        pcs: Map[InstructionLabel, PC]): SimpleConditionalBranchInstruction[_]
 
-    override def toString(currentPC: Int): String = {
-        s"${getClass.getSimpleName}(true=$branchTarget, false=↓)"
-    }
+    override def toString(currentPC: Int): String = s"${getClass.getSimpleName}(true=$branchTarget, false=↓)"
 
     /**
      * Returns the negated if instruction. That is, an if_&lt;cond&GT; instruction is translated to

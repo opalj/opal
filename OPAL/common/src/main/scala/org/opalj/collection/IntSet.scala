@@ -55,12 +55,9 @@ trait IntSet[T <: IntSet[T]] { intSet: T =>
         r
     }
 
-    final def ++(that: T): T = {
-        if (this.size >= that.size)
-            that.foldLeft(this)(_ + _) // we expand `this` since `this` is larger
-        else
-            this.foldLeft(that)(_ + _) // we expand `that`
-    }
+    final def ++(that: T): T =
+        if (this.size >= that.size) that.foldLeft(this)(_ + _) // we expand `this` since `this` is larger
+        else this.foldLeft(that)(_ + _)                        // we expand `that`
 
     final def ++(that: IterableOnce[Int]): T = that.iterator.foldLeft(this)(_ + _)
 
@@ -78,8 +75,8 @@ trait IntSet[T <: IntSet[T]] { intSet: T =>
     def toArray: Array[Int] = {
         val size = this.size
         val data = new Array[Int](size)
-        val it = iterator
-        var i = 0
+        val it   = iterator
+        var i    = 0
         while (i < size) {
             data(i) = it.next()
             i += 1
@@ -88,8 +85,8 @@ trait IntSet[T <: IntSet[T]] { intSet: T =>
     }
 
     final def mkString(pre: String, in: String, post: String): String = {
-        val sb = new StringBuilder(pre)
-        val it = iterator
+        val sb      = new StringBuilder(pre)
+        val it      = iterator
         var hasNext = it.hasNext
         while (hasNext) {
             sb.append(it.next().toString)

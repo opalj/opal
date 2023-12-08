@@ -6,10 +6,10 @@ package l1
 
 import scala.reflect.ClassTag
 
-import org.opalj.collection.immutable.UIDSet
 import org.opalj.br.ArrayType
 import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
+import org.opalj.collection.immutable.UIDSet
 
 /**
  * @author Michael Eichberg
@@ -48,23 +48,20 @@ trait DefaultReferenceValuesBinding extends l1.ReferenceValues with DefaultExcep
             isNull:                 Answer,
             override val isPrecise: Boolean,
             theUpperTypeBound:      ObjectType,
-            refId:                  RefId
-    ) extends SObjectValue
+            refId: RefId) extends SObjectValue
 
     protected case class DefaultMObjectValue(
             origin:              ValueOrigin,
             override val isNull: Answer,
             upperTypeBound:      UIDSet[ObjectType],
-            refId:               RefId
-    ) extends MObjectValue
+            refId: RefId) extends MObjectValue
 
     private case class DefaultArrayValue(
             origin:                 ValueOrigin,
             isNull:                 Answer,
             override val isPrecise: Boolean,
             theUpperTypeBound:      ArrayType,
-            refId:                  RefId
-    ) extends ArrayValue
+            refId: RefId) extends ArrayValue
 
     override def NullValue(origin: ValueOrigin): DomainNullValue = new NullValue(origin)
 
@@ -73,49 +70,39 @@ trait DefaultReferenceValuesBinding extends l1.ReferenceValues with DefaultExcep
         isNull:            Answer,
         isPrecise:         Boolean,
         theUpperTypeBound: ObjectType,
-        refId:             RefId
-    ): SObjectValue = {
-        DefaultSObjectValue(
-            origin,
-            isNull,
-            isPrecise || classHierarchy.isKnownToBeFinal(theUpperTypeBound),
-            theUpperTypeBound, refId
-        )
-    }
+        refId:             RefId): SObjectValue = DefaultSObjectValue(
+        origin,
+        isNull,
+        isPrecise || classHierarchy.isKnownToBeFinal(theUpperTypeBound),
+        theUpperTypeBound,
+        refId
+    )
 
     override protected[domain] def ObjectValue(
         origin:         ValueOrigin,
         isNull:         Answer,
         upperTypeBound: UIDSet[ObjectType],
-        refId:          RefId
-    ): DomainObjectValue = {
+        refId:          RefId): DomainObjectValue =
         if (upperTypeBound.isSingletonSet) {
             ObjectValue(origin, isNull, false, upperTypeBound.head, refId)
-        } else
-            DefaultMObjectValue(origin, isNull, upperTypeBound, refId)
-    }
+        } else DefaultMObjectValue(origin, isNull, upperTypeBound, refId)
 
     override protected[domain] def ArrayValue(
         origin:            ValueOrigin,
         isNull:            Answer,
         isPrecise:         Boolean,
         theUpperTypeBound: ArrayType,
-        t:                 RefId
-    ): DomainArrayValue = {
-        DefaultArrayValue(
-            origin,
-            isNull,
-            isPrecise || classHierarchy.isKnownToBeFinal(theUpperTypeBound),
-            theUpperTypeBound,
-            t
-        )
-    }
+        t:                 RefId): DomainArrayValue = DefaultArrayValue(
+        origin,
+        isNull,
+        isPrecise || classHierarchy.isKnownToBeFinal(theUpperTypeBound),
+        theUpperTypeBound,
+        t
+    )
 
     override protected[domain] def MultipleReferenceValues(
-        values: UIDSet[DomainSingleOriginReferenceValue]
-    ): DomainMultipleReferenceValues = {
+        values: UIDSet[DomainSingleOriginReferenceValue]): DomainMultipleReferenceValues =
         new MultipleReferenceValues(values)
-    }
 
     override protected[domain] def MultipleReferenceValues(
         values:            UIDSet[DomainSingleOriginReferenceValue],
@@ -123,8 +110,6 @@ trait DefaultReferenceValuesBinding extends l1.ReferenceValues with DefaultExcep
         isNull:            Answer,
         isPrecise:         Boolean,
         theUpperTypeBound: UIDSet[_ <: ReferenceType],
-        refId:             RefId
-    ): DomainMultipleReferenceValues = {
+        refId:             RefId): DomainMultipleReferenceValues =
         new MultipleReferenceValues(values, origins, isNull, isPrecise, theUpperTypeBound, refId)
-    }
 }

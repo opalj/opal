@@ -7,19 +7,14 @@ import scala.xml.NodeSeq
 import org.opalj.bi.ConstantPoolTag
 
 /**
- *
  * @author Michael Eichberg
  */
 case class CONSTANT_Methodref_info(
-        class_index:         Constant_Pool_Index,
-        name_and_type_index: Constant_Pool_Index
-) extends CONSTANT_Ref {
+        class_index: Constant_Pool_Index,
+        name_and_type_index: Constant_Pool_Index) extends CONSTANT_Ref {
 
-    override def Constant_Type_Value: ConstantPoolTag = {
-        bi.ConstantPoolTags.CONSTANT_Methodref
-    }
+    override def Constant_Type_Value: ConstantPoolTag = bi.ConstantPoolTags.CONSTANT_Methodref
 
-    override def asInstructionParameter(implicit cp: Constant_Pool): NodeSeq = {
+    override def asInstructionParameter(implicit cp: Constant_Pool): NodeSeq =
         super.asInstructionParameter(Some("class"))
-    }
 }

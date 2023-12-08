@@ -11,12 +11,11 @@ package collection
 trait IntCollectionWithStableOrdering[T <: IntSet[T]] { intSet: T =>
 
     def subsetOf(other: T): Boolean = {
-        var thisSize = this.size
+        var thisSize  = this.size
         var otherSize = other.size
-        if (thisSize > otherSize)
-            return false;
+        if (thisSize > otherSize) return false;
 
-        val thisIt = this.iterator
+        val thisIt  = this.iterator
         val otherIt = other.iterator
         while (thisIt.hasNext && otherIt.hasNext) {
             val thisV = thisIt.next()
@@ -27,10 +26,8 @@ trait IntCollectionWithStableOrdering[T <: IntSet[T]] { intSet: T =>
                 otherV = otherIt.next()
                 otherSize -= 1
             }
-            if (thisSize > otherSize)
-                return false; // there are definitively not enough remaining elements
-            if (thisV != otherV)
-                return false; // ... we reach this point when we did not find a match for the last element
+            if (thisSize > otherSize) return false; // there are definitively not enough remaining elements
+            if (thisV != otherV) return false;      // ... we reach this point when we did not find a match for the last element
         }
         !thisIt.hasNext
     }

@@ -6,17 +6,17 @@ import scala.reflect.ClassTag
 
 import scala.collection.AbstractIterator
 
-import org.opalj.log.LogContext
-import org.opalj.log.GlobalLogContext
-import org.opalj.log.OPALLogger
-import org.opalj.util.AnyToAnyThis
-import org.opalj.collection.IntIterator
-import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.br.Code
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.Code
-import org.opalj.br.instructions.Instruction
 import org.opalj.br.PC
+import org.opalj.br.instructions.Instruction
+import org.opalj.collection.IntIterator
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.log.GlobalLogContext
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
+import org.opalj.util.AnyToAnyThis
 
 /**
  * Implementation of an abstract interpretation (ai) framework – also referred to as OPAL.
@@ -64,8 +64,10 @@ package object ai {
      */
     type SomeAI[D <: Domain] = AI[_ >: D]
 
-    type PrimitiveValuesFactory = IntegerValuesFactory with LongValuesFactory with FloatValuesFactory with DoubleValuesFactory
-    type ValuesFactory = PrimitiveValuesFactory with ReferenceValuesFactory with ExceptionsFactory with TypedValuesFactory
+    type PrimitiveValuesFactory =
+        IntegerValuesFactory with LongValuesFactory with FloatValuesFactory with DoubleValuesFactory
+    type ValuesFactory =
+        PrimitiveValuesFactory with ReferenceValuesFactory with ExceptionsFactory with TypedValuesFactory
     type TargetDomain = ValuesDomain with ValuesFactory
 
     final type PCs = org.opalj.br.PCs
@@ -131,9 +133,9 @@ package object ai {
      *      [[isMethodExternalExceptionOrigin]], [[ValueOriginForMethodExternalException]],
      *      [[pcOfMethodExternalException]]
      */
-    final type ValueOrigins = IntTrieSet
+    final type ValueOrigins         = IntTrieSet
     final type ValueOriginsIterator = IntIterator
-    type ValueOrigin = Int
+    type ValueOrigin                = Int
     @inline final def NoValueOrigins: ValueOrigins = IntTrieSet.empty
 
     /**
@@ -207,9 +209,8 @@ package object ai {
      *
      * @see [[ImmediateVMExceptionsOriginOffset]] for further information.
      */
-    final def isImmediateVMException(origin: ValueOrigin): Boolean = {
+    final def isImmediateVMException(origin: ValueOrigin): Boolean =
         ImmediateVMExceptionsOriginOffset >= origin && origin > MethodExternalExceptionsOriginOffset
-    }
 
     /**
      * Creates the origin information for a value (typically an exception) that
@@ -224,8 +225,8 @@ package object ai {
         val origin = ImmediateVMExceptionsOriginOffset - pc
         assert(
             origin <= ImmediateVMExceptionsOriginOffset,
-            s"[pc:$pc] "+
-                s"origin($origin) > "+
+            s"[pc:$pc] " +
+                s"origin($origin) > " +
                 s"ImmediateVMExceptionsOriginOffset($ImmediateVMExceptionsOriginOffset)"
         )
         assert(origin > MethodExternalExceptionsOriginOffset)
@@ -257,9 +258,8 @@ package object ai {
      *
      * @see [[MethodExternalExceptionsOriginOffset]] for further information.
      */
-    final def isMethodExternalExceptionOrigin(origin: ValueOrigin): Boolean = {
+    final def isMethodExternalExceptionOrigin(origin: ValueOrigin): Boolean =
         origin > SpecialValuesOriginOffset && origin <= MethodExternalExceptionsOriginOffset
-    }
 
     /**
      * Creates the origin information for a value (exception) that was created while evaluating the
@@ -273,8 +273,8 @@ package object ai {
         val origin = MethodExternalExceptionsOriginOffset - pc
         assert(
             origin <= MethodExternalExceptionsOriginOffset,
-            s"[pc:$pc] "+
-                s"origin($origin) > "+
+            s"[pc:$pc] " +
+                s"origin($origin) > " +
                 s"MethodExternalExceptionsOriginOffset($MethodExternalExceptionsOriginOffset)"
         )
         assert(SpecialValuesOriginOffset < origin)
@@ -292,22 +292,17 @@ package object ai {
         -valueOrigin + MethodExternalExceptionsOriginOffset
     }
 
-    final def isImplicitOrExternalException(valueOrigin: Int): Boolean = {
+    final def isImplicitOrExternalException(valueOrigin: Int): Boolean =
         valueOrigin <= ImmediateVMExceptionsOriginOffset
-    }
 
     /**
      * Returns the PC underlying the given value origin. If the value origin
      * identifies a parameter the value is returned as is.
      */
-    final def underlyingPC(valueOrigin: Int): ValueOrigin = {
-        if (valueOrigin > ImmediateVMExceptionsOriginOffset)
-            valueOrigin // <- it is a parameter or a valid pc
-        else if (valueOrigin > MethodExternalExceptionsOriginOffset)
-            pcOfImmediateVMException(valueOrigin)
-        else
-            pcOfMethodExternalException(valueOrigin)
-    }
+    final def underlyingPC(valueOrigin: Int): ValueOrigin =
+        if (valueOrigin > ImmediateVMExceptionsOriginOffset) valueOrigin // <- it is a parameter or a valid pc
+        else if (valueOrigin > MethodExternalExceptionsOriginOffset) pcOfImmediateVMException(valueOrigin)
+        else pcOfMethodExternalException(valueOrigin)
 
     /**
      * Maps `oldVo` to the value found at the location pcToIndex(oldVo) if `oldVO` actually
@@ -320,7 +315,7 @@ package object ai {
      *         - if it exists - should be remapped.
      * @return The mapped value origin.
      */
-    final def remapPC(pcToIndex: Array[Int])(oldValueOrigin: Int): Int /*PC*/ = {
+    final def remapPC(pcToIndex: Array[Int])(oldValueOrigin: Int): Int /*PC*/ =
         if (oldValueOrigin <= MethodExternalExceptionsOriginOffset) {
             val remappedPC = pcToIndex(pcOfMethodExternalException(oldValueOrigin))
             ValueOriginForMethodExternalException(remappedPC)
@@ -334,8 +329,6 @@ package object ai {
             pcToIndex(oldValueOrigin)
         }
 
-    }
-
     /**
      * Calculates the initial `ValueOrigin` associated with a method's explicit parameter.
      * The index of the first parameter is 0. If the method is not static the this reference
@@ -348,13 +341,12 @@ package object ai {
     def parameterIndexToValueOrigin(
         isStatic:       Boolean,
         descriptor:     MethodDescriptor,
-        parameterIndex: Int
-    ): Int /*ValueOrigin*/ = {
+        parameterIndex: Int): Int /*ValueOrigin*/ = {
         assert(descriptor.parametersCount > 0)
 
-        var origin = if (isStatic) -1 else -2 // this handles the case parameterIndex == 0
+        var origin         = if (isStatic) -1 else -2 // this handles the case parameterIndex == 0
         val parameterTypes = descriptor.parameterTypes
-        var currentIndex = 0
+        var currentIndex   = 0
         while (currentIndex < parameterIndex) {
             origin -= parameterTypes(currentIndex).computationalType.operandSize
             currentIndex += 1
@@ -362,35 +354,31 @@ package object ai {
         origin
     }
 
-    final type Operands[T >: Null <: ValuesDomain#DomainValue] = List[T]
-    final type AnOperandsArray[T >: Null <: ValuesDomain#DomainValue] = Array[Operands[T]]
+    final type Operands[T >: Null <: ValuesDomain#DomainValue]                           = List[T]
+    final type AnOperandsArray[T >: Null <: ValuesDomain#DomainValue]                    = Array[Operands[T]]
     final type TheOperandsArray[T >: Null <: d.Operands forSome { val d: ValuesDomain }] = Array[T]
 
-    final type Locals[T >: Null <: ValuesDomain#DomainValue] = org.opalj.collection.mutable.Locals[T]
-    final type ALocalsArray[T >: Null <: ValuesDomain#DomainValue] = Array[Locals[T]]
+    final type Locals[T >: Null <: ValuesDomain#DomainValue]                         = org.opalj.collection.mutable.Locals[T]
+    final type ALocalsArray[T >: Null <: ValuesDomain#DomainValue]                   = Array[Locals[T]]
     final type TheLocalsArray[T >: Null <: d.Locals forSome { val d: ValuesDomain }] = Array[T]
 
     /**
      * Creates a human-readable textual representation of the current memory layout.
      */
     def memoryLayoutToText(
-        domain: Domain
-    )(
-        operandsArray: domain.OperandsArray,
-        localsArray:   domain.LocalsArray
-    ): String = {
+        domain:        Domain
+      )(operandsArray: domain.OperandsArray,
+        localsArray:   domain.LocalsArray): String = {
         // THIS METHOD IS NOT PERFORMANCE SENSITIVE!
-        val operandsAndLocals =
-            for {
-                ((operands, locals), pc) <- operandsArray.zip(localsArray).zipWithIndex
-                if operands != null /*|| locals != null*/
-            } yield {
-                val localsWithIndex =
-                    for { (l, idx) <- locals.zipWithIndex if l ne null } yield { s"($idx:$l)" }
+        val operandsAndLocals = for {
+            ((operands, locals), pc) <- operandsArray.zip(localsArray).zipWithIndex
+            if operands != null /*|| locals != null*/
+        } yield {
+            val localsWithIndex = for { (l, idx) <- locals.zipWithIndex if l ne null } yield { s"($idx:$l)" }
 
-                operands.mkString(s"PC: $pc\n\tOperands: ", " <- ", "") +
-                    localsWithIndex.mkString("\n\tLocals: [", ",", "]")
-            }
+            operands.mkString(s"PC: $pc\n\tOperands: ", " <- ", "") +
+                localsWithIndex.mkString("\n\tLocals: [", ",", "]")
+        }
         operandsAndLocals.mkString("Operands and Locals:\n", "\n", "\n")
     }
 
@@ -426,16 +414,14 @@ package object ai {
      *         for further details.)
      */
     def parameterVariables(
-        aiResult: AIResult
-    )(
-        isStatic:   Boolean,
-        descriptor: MethodDescriptor
-    ): Array[aiResult.domain.DomainValue] = {
+        aiResult:   AIResult
+      )(isStatic:   Boolean,
+        descriptor: MethodDescriptor): Array[aiResult.domain.DomainValue] = {
         val locals: Locals[aiResult.domain.DomainValue] = aiResult.localsArray(0)
         // To enable uniform access, we always reserve space for the `this` parameter;
         // even if it is not used.
         val parametersCount = descriptor.parametersCount + 1
-        val params = aiResult.domain.DomainValueTag.newArray(parametersCount)
+        val params          = aiResult.domain.DomainValueTag.newArray(parametersCount)
 
         var localsIndex = 0
         if (!isStatic) {
@@ -458,22 +444,18 @@ package object ai {
      *                 performed is static.
      */
     def parameterVariablesIterator(
-        aiResult: AIResult
-    )(
-        isStatic:   Boolean,
-        descriptor: MethodDescriptor
-    ): Iterator[aiResult.domain.DomainValue] = {
+        aiResult:   AIResult
+      )(isStatic:   Boolean,
+        descriptor: MethodDescriptor): Iterator[aiResult.domain.DomainValue] =
         new AbstractIterator[aiResult.domain.DomainValue] {
 
-            private[this] var parameterIndex: Int = 0
-            private[this] val totalParameters: Int = {
-                descriptor.parametersCount + (if (isStatic) 0 else 1)
-            }
-            private[this] var localsIndex: Int = 0
+            private[this] var parameterIndex: Int  = 0
+            private[this] val totalParameters: Int = descriptor.parametersCount + (if (isStatic) 0 else 1)
+            private[this] var localsIndex: Int     = 0
 
             override def hasNext: Boolean = parameterIndex < totalParameters
 
-            override def next(): aiResult.domain.DomainValue = {
+            override def next(): aiResult.domain.DomainValue =
                 if (parameterIndex == 0 && !isStatic) {
                     parameterIndex = 1
                     localsIndex = 1
@@ -484,9 +466,7 @@ package object ai {
                     localsIndex += v.computationalType.operandSize
                     v
                 }
-            }
         }
-    }
 
     /**
      * Maps a list of operands (e.g., as passed to the `invokeXYZ` instructions) to
@@ -501,7 +481,7 @@ package object ai {
      *      {{{
      *      calledMethod.descriptor.parametersCount + { if (calledMethod.isStatic) 0 else 1 }
      *      }}}.
-     *      I.e., the list of operands must contain one value per parameter and – 
+     *      I.e., the list of operands must contain one value per parameter and –
      *      in case of instance methods – the receiver object. The list __must not
      *       contain additional values__. The latter is automatically ensured if this
      *      method is called (in)directly by [[AI]] and the operands were just passed
@@ -516,28 +496,27 @@ package object ai {
     def mapOperandsToParameters(
         operands:     Operands[_ <: ValuesDomain#DomainValue],
         calledMethod: Method,
-        targetDomain: ValuesDomain with ValuesFactory
-    ): Locals[targetDomain.DomainValue] = {
+        targetDomain: ValuesDomain with ValuesFactory): Locals[targetDomain.DomainValue] = {
 
         assert(
             operands.size == calledMethod.actualArgumentsCount,
             (if (calledMethod.isStatic) "static " else "/*virtual*/ ") +
-                s"${calledMethod.signatureToJava()}(Arguments: ${calledMethod.actualArgumentsCount}) "+
+                s"${calledMethod.signatureToJava()}(Arguments: ${calledMethod.actualArgumentsCount}) " +
                 s"${operands.mkString("Operands(", ",", ")")}"
         )
 
         import org.opalj.collection.mutable.Locals
         implicit val domainValueTag: ClassTag[targetDomain.DomainValue] = targetDomain.DomainValueTag
-        val parameters = Locals[targetDomain.DomainValue](calledMethod.body.get.maxLocals)
-        var localVariableIndex = 0
-        var processedOperands = 0
-        val operandsInParameterOrder = operands.reverse
+        val parameters                                                  = Locals[targetDomain.DomainValue](calledMethod.body.get.maxLocals)
+        var localVariableIndex                                          = 0
+        var processedOperands                                           = 0
+        val operandsInParameterOrder                                    = operands.reverse
         operandsInParameterOrder foreach { operand =>
             val parameter = {
                 // Was the same value (determined by "eq") already adapted?
                 // If so, we reuse it to facilitate correlation analyses
-                var pOperands = operandsInParameterOrder
-                var pOperandIndex = 0
+                var pOperands           = operandsInParameterOrder
+                var pOperandIndex       = 0
                 var pLocalVariableIndex = 0
                 while (pOperandIndex < processedOperands && (pOperands.head ne operand)) {
                     pOperandIndex += 1
@@ -565,32 +544,28 @@ package object ai {
      */
     def mapOperands(
         theOperands:  Operands[_ <: ValuesDomain#DomainValue],
-        targetDomain: ValuesDomain with ValuesFactory
-    ): Array[targetDomain.DomainValue] = {
-        //implicit val domainValueTag: ClassTag[targetDomain.DomainValue] = targetDomain.DomainValueTag
+        targetDomain: ValuesDomain with ValuesFactory): Array[targetDomain.DomainValue] = {
+        // implicit val domainValueTag: ClassTag[targetDomain.DomainValue] = targetDomain.DomainValueTag
         import targetDomain.DomainValueTag
-        val operandsCount = theOperands.size
-        val adaptedOperands = new Array[targetDomain.DomainValue](operandsCount)
+        val operandsCount     = theOperands.size
+        val adaptedOperands   = new Array[targetDomain.DomainValue](operandsCount)
         val processedOperands = new Array[Object](operandsCount)
         var remainingOperands = theOperands
-        var i = 0
+        var i                 = 0
         def getIndex(operand: Object): Int = {
             var ii = 0
             while (ii < i) {
-                if (processedOperands(i) eq operand)
-                    return i;
+                if (processedOperands(i) eq operand) return i;
                 ii += 1
             }
             -1 // not found
         }
 
         while (remainingOperands.nonEmpty) {
-            val nextOperand = remainingOperands.head
+            val nextOperand          = remainingOperands.head
             val previousOperandIndex = getIndex(nextOperand)
-            if (previousOperandIndex == -1)
-                adaptedOperands(i) = nextOperand.adapt(targetDomain, i)
-            else
-                adaptedOperands(i) = adaptedOperands(previousOperandIndex)
+            if (previousOperandIndex == -1) adaptedOperands(i) = nextOperand.adapt(targetDomain, i)
+            else adaptedOperands(i) = adaptedOperands(previousOperandIndex)
 
             i += 1
             remainingOperands = remainingOperands.tail
@@ -604,19 +579,18 @@ package object ai {
      * operands.
      */
     def collectPCWithOperands[B](
-        domain: ValuesDomain
-    )(
-        code: Code, operandsArray: domain.OperandsArray
-    )(
-        f: PartialFunction[(Int /*PC*/ , Instruction, domain.Operands), B] // IMPROVE Use specialized data-structure to avoid (un)boxing
-    ): Seq[B] = {
+        domain:        ValuesDomain
+      )(code:          Code,
+        operandsArray: domain.OperandsArray
+      )(f:             PartialFunction[(Int /*PC*/, Instruction, domain.Operands), B] // IMPROVE Use specialized data-structure to avoid (un)boxing
+      ): Seq[B] = {
         val instructions = code.instructions
-        val max_pc = instructions.length
-        var pc = 0
-        val result = List.newBuilder[B]
+        val max_pc       = instructions.length
+        var pc           = 0
+        val result       = List.newBuilder[B]
         while (pc < max_pc) {
             val instruction = instructions(pc)
-            val operands = operandsArray(pc)
+            val operands    = operandsArray(pc)
             if (operands ne null) {
                 val params = (pc, instruction, operands)
                 val r: Any = f.applyOrElse(params, AnyToAnyThis)
@@ -630,18 +604,16 @@ package object ai {
     }
 
     def foreachPCWithOperands[U](
-        domain: ValuesDomain
-    )(
-        code: Code, operandsArray: domain.OperandsArray
-    )(
-        f: (Int /*PC*/ , Instruction, domain.Operands) => U
-    ): Unit = {
+        domain:        ValuesDomain
+      )(code:          Code,
+        operandsArray: domain.OperandsArray
+      )(f: (Int /*PC*/, Instruction, domain.Operands) => U): Unit = {
         val instructions = code.instructions
-        val max_pc = instructions.size
-        var pc = 0
+        val max_pc       = instructions.size
+        var pc           = 0
         while (pc < max_pc) {
             val instruction = instructions(pc)
-            val operands = operandsArray(pc)
+            val operands    = operandsArray(pc)
             if (operands ne null) {
                 f(pc, instruction, operands)
             }

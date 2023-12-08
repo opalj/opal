@@ -20,28 +20,27 @@ sealed abstract class ComputationalType(val category: ComputationalTypeCategory)
 }
 case object ComputationalTypeInt extends ComputationalType(Category1ComputationalTypeCategory) {
     final override def isComputationalTypeReturnAddress: Boolean = false
-    final override def isCategory2: Boolean = false
+    final override def isCategory2: Boolean                      = false
 }
 case object ComputationalTypeFloat extends ComputationalType(Category1ComputationalTypeCategory) {
     final override def isComputationalTypeReturnAddress: Boolean = false
-    final override def isCategory2: Boolean = false
+    final override def isCategory2: Boolean                      = false
 }
 case object ComputationalTypeLong extends ComputationalType(Category2ComputationalTypeCategory) {
     final override def isComputationalTypeReturnAddress: Boolean = false
-    final override def isCategory2: Boolean = true
+    final override def isCategory2: Boolean                      = true
 }
 case object ComputationalTypeDouble extends ComputationalType(Category2ComputationalTypeCategory) {
     final override def isComputationalTypeReturnAddress: Boolean = false
-    final override def isCategory2: Boolean = true
+    final override def isCategory2: Boolean                      = true
 }
 case object ComputationalTypeReference
     extends ComputationalType(Category1ComputationalTypeCategory) {
     final override def isComputationalTypeReturnAddress: Boolean = false
-    final override def isCategory2: Boolean = false
+    final override def isCategory2: Boolean                      = false
 }
 case object ComputationalTypeReturnAddress
     extends ComputationalType(Category1ComputationalTypeCategory) {
     final override def isComputationalTypeReturnAddress: Boolean = true
-    final override def isCategory2: Boolean = false
+    final override def isCategory2: Boolean                      = false
 }
-

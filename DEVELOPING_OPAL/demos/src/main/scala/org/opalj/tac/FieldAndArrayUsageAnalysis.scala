@@ -4,14 +4,10 @@ package tac
 
 import java.net.URL
 
-import org.opalj.log.LogContext
-import org.opalj.log.OPALLogger.info
-import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.fpcf.FinalP
+import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.properties.AtMost
@@ -21,10 +17,14 @@ import org.opalj.br.fpcf.properties.EscapeViaAbnormalReturn
 import org.opalj.br.fpcf.properties.EscapeViaParameter
 import org.opalj.br.fpcf.properties.EscapeViaReturn
 import org.opalj.br.fpcf.properties.NoEscape
-import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.fpcf.FinalP
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger.info
 import org.opalj.tac.common.DefinitionSitesKey
-import org.opalj.tac.fpcf.analyses.escape.EagerSimpleEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.TACAITransformer
+import org.opalj.tac.fpcf.analyses.escape.EagerSimpleEscapeAnalysis
+import org.opalj.util.PerformanceEvaluation.time
 
 /**
  * An evaluation of the impact of field/array writes to the
@@ -40,31 +40,28 @@ object FieldAndArrayUsageAnalysis extends ProjectAnalysisApplication {
 
     override def title: String = "Field and array usage evaluation"
 
-    override def description: String = {
-        "Evaluates the impact of field and array usage to the escape analysis."
-    }
+    override def description: String = "Evaluates the impact of field and array usage to the escape analysis."
 
     override def doAnalyze(
         project:       Project[URL],
         parameters:    Seq[String],
-        isInterrupted: () => Boolean
-    ): BasicReport = {
+        isInterrupted: () => Boolean): BasicReport = {
 
-        var putFields = 0
-        var putFieldsOfAllocation = 0
-        var getFields = 0
-        var arrayStores = 0
+        var putFields               = 0
+        var putFieldsOfAllocation   = 0
+        var getFields               = 0
+        var arrayStores             = 0
         var arrayStoresOfAllocation = 0
-        var arrayLoads = 0
-        var maybeNoEscapingArrays = 0
-        var maybeInCalleeArrays = 0
-        var maybeInCallerArrays = 0
-        var maybeViaParamArrays = 0
-        var maybeViaReturn = 0
-        var maybeViaAbnormal = 0
-        var globalArrays = 0
-        var allocations = 0
-        var nonDeadAllocations = 0
+        var arrayLoads              = 0
+        var maybeNoEscapingArrays   = 0
+        var maybeInCalleeArrays     = 0
+        var maybeInCallerArrays     = 0
+        var maybeViaParamArrays     = 0
+        var maybeViaReturn          = 0
+        var maybeViaAbnormal        = 0
+        var globalArrays            = 0
+        var allocations             = 0
+        var nonDeadAllocations      = 0
 
         implicit val logContext: LogContext = project.logContext
 
@@ -84,14 +81,14 @@ object FieldAndArrayUsageAnalysis extends ProjectAnalysisApplication {
                 TACAITransformer /* LazyL0TACAIAnalysis */ )
         } { t => info("progress", s"escape analysis took ${t.toSeconds}") }
         for {
-            as <- ass
-            pc = as.pc
-            m = as.method
-            body = m.body.get
+            as           <- ass
+            pc            = as.pc
+            m             = as.method
+            body          = m.body.get
             FinalP(tacai) = propertyStore(m, org.opalj.tac.fpcf.properties.TACAI.key)
-            code = tacai.tac.get
-            stmts = code.stmts
-            index = stmts indexWhere { stmt => stmt.pc == pc }
+            code          = tacai.tac.get
+            stmts         = code.stmts
+            index         = stmts indexWhere { stmt => stmt.pc == pc }
             if index != -1
         } {
             allocations += 1
@@ -106,17 +103,18 @@ object FieldAndArrayUsageAnalysis extends ProjectAnalysisApplication {
                                     if (objRef.isVar && objRef.asVar.definedBy != IntTrieSet(-1)) {
                                         val defSitesOfObjRef = objRef.asVar.definedBy
                                         if (defSitesOfObjRef.exists { defSite =>
-                                            if (defSite > 0) {
-                                                stmts(defSite) match {
-                                                    case Assignment(_, _, New(_, _)) => true
-                                                    case _                           => false
-                                                }
-                                            } else false
-                                        }) {
+                                                if (defSite > 0) {
+                                                    stmts(defSite) match {
+                                                        case Assignment(_, _, New(_, _)) => true
+                                                        case _                           => false
+                                                    }
+                                                } else false
+                                            }) {
                                             putFieldsOfAllocation += 1
                                             for (stmt <- stmts) {
                                                 stmt match {
-                                                    case Assignment(_, DVar(_, _), GetField(_, _, `name`, _, objRef2)) if objRef2.isVar =>
+                                                    case Assignment(_, DVar(_, _), GetField(_, _, `name`, _, objRef2))
+                                                        if objRef2.isVar =>
                                                         if (objRef2.asVar.definedBy.exists(defSitesOfObjRef.contains)) {
                                                             getFields += 1
                                                         }
@@ -160,8 +158,8 @@ object FieldAndArrayUsageAnalysis extends ProjectAnalysisApplication {
                                                         maybeViaParamArrays += 1
                                                     case FinalP(EscapeViaReturn | AtMost(EscapeViaReturn)) =>
                                                         maybeViaReturn += 1
-                                                    case FinalP(EscapeViaAbnormalReturn | AtMost(EscapeViaAbnormalReturn)) =>
-                                                        maybeViaAbnormal += 1
+                                                    case FinalP(EscapeViaAbnormalReturn | AtMost(
+                                                            EscapeViaAbnormalReturn)) => maybeViaAbnormal += 1
                                                     case FinalP(p) if p.isBottom => globalArrays += 1
                                                     case _                       => maybeInCallerArrays += 1
                                                 }
@@ -176,8 +174,10 @@ object FieldAndArrayUsageAnalysis extends ProjectAnalysisApplication {
                                                 println(
                                                     s"""
                                                        |${m.toJava}:
-                                                       |  ${body.lineNumber(as.pc).map("line: "+_.toString).getOrElse("")} new $as
-                                                       |  ${body.lineNumber(pcOfStore).map("line: "+_.toString).getOrElse("")} $arrayStore}
+                                                       |  ${body.lineNumber(as.pc).map("line: " + _.toString).getOrElse(
+                                                                  "")} new $as
+                                                       |  ${body.lineNumber(pcOfStore).map(
+                                                                  "line: " + _.toString).getOrElse("")} $arrayStore}
                                                        |""".stripMargin
                                                 )
                                             }
@@ -191,8 +191,7 @@ object FieldAndArrayUsageAnalysis extends ProjectAnalysisApplication {
             }
         }
 
-        val message =
-            s"""
+        val message = s"""
                |# of allocations $allocations
                |# of non dead allocations: $nonDeadAllocations
                |# of putfields: $putFields

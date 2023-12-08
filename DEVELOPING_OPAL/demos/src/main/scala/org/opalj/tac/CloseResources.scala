@@ -3,7 +3,6 @@ package org.opalj
 package tac
 
 import java.net.URL
-
 import scala.jdk.CollectionConverters._
 
 // import org.opalj.log.OPALLogger.info
@@ -21,8 +20,7 @@ object CloseResources extends ProjectAnalysisApplication {
     override def doAnalyze(
         p:             Project[URL],
         params:        Seq[String],
-        isInterrupted: () => Boolean
-    ): BasicReport = {
+        isInterrupted: () => Boolean): BasicReport = {
         // implicit val logContext: LogContext = p.logContext
         // val tacaiKey = p.get(ComputeTACAIKey)
 
@@ -54,7 +52,7 @@ object CloseResources extends ProjectAnalysisApplication {
             val (stmtFacts, normalReturnFacts, abnormalReturnFacts) =
                 cfg.computeMOPSolution[Fs](seed, t, cfJoin)
         }
-        */
+         */
 
         issues.asScala.mkString("\n")
     }

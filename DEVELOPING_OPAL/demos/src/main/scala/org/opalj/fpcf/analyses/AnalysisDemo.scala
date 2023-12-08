@@ -16,8 +16,7 @@ trait AnalysisDemo extends ProjectAnalysisApplication {
     def entitiesByProperty[P <: Property](
         property: P
     )(
-        implicit
-        propertyStore: PropertyStore
+        implicit propertyStore: PropertyStore
     ): Iterator[Entity] = {
         propertyStore.entities(property, property)
     }
@@ -30,21 +29,20 @@ trait AnalysisDemo extends ProjectAnalysisApplication {
 trait MethodAnalysisDemo extends AnalysisDemo {
 
     def buildMethodInfo(
-        entities:    Iterable[SomeEPS],
-        withJarInfo: Boolean           = false
+        entities: Iterable[SomeEPS],
+        withJarInfo: Boolean = false
     )(
-        implicit
-        project: Project[URL]
+        implicit project: Project[URL]
     ): Iterable[String] = {
         entities map { eps =>
             val method = eps.e.asInstanceOf[Method]
-            val methodString = getVisibilityModifier(method)+" "+method.name
+            val methodString = getVisibilityModifier(method) + " " + method.name
             val classFile = method.classFile
-            val jarInfo = if (withJarInfo)
-                project.source(classFile.thisType)
-            else ""
+            val jarInfo =
+                if (withJarInfo) project.source(classFile.thisType)
+                else ""
             val classVisibility = if (classFile.isPublic) "public" else ""
-            s"$jarInfo\n\t $classVisibility "+classFile.thisType.toJava+" | "+methodString
+            s"$jarInfo\n\t $classVisibility " + classFile.thisType.toJava + " | " + methodString
         }
     }
 

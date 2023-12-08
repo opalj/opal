@@ -3,11 +3,12 @@ package org.opalj
 package bi
 package reader
 
-import java.io.DataInputStream
-import org.opalj.control.fillArraySeq
-
-import scala.collection.immutable.ArraySeq
 import scala.reflect.ClassTag
+
+import java.io.DataInputStream
+import scala.collection.immutable.ArraySeq
+
+import org.opalj.control.fillArraySeq
 
 trait FieldsReader extends Constant_PoolAbstractions {
 
@@ -22,20 +23,18 @@ trait FieldsReader extends Constant_PoolAbstractions {
     type Attributes
 
     protected def Attributes(
-        cp:                  Constant_Pool,
-        ap:                  AttributeParent,
-        ap_name_index:       Constant_Pool_Index,
+        cp: Constant_Pool,
+        ap: AttributeParent,
+        ap_name_index: Constant_Pool_Index,
         ap_descriptor_index: Constant_Pool_Index,
-        in:                  DataInputStream
-    ): Attributes
+        in: DataInputStream): Attributes
 
     def Field_Info(
-        cp:               Constant_Pool,
-        access_flags:     Int,
-        name_index:       Constant_Pool_Index,
+        cp: Constant_Pool,
+        access_flags: Int,
+        name_index: Constant_Pool_Index,
         descriptor_index: Constant_Pool_Index,
-        attributes:       Attributes
-    ): Field_Info
+        attributes: Attributes): Field_Info
 
     //
     // IMPLEMENTATION
@@ -50,8 +49,8 @@ trait FieldsReader extends Constant_PoolAbstractions {
     }
 
     private def Field_Info(cp: Constant_Pool, in: DataInputStream): Field_Info = {
-        val accessFlags = in.readUnsignedShort
-        val name_index = in.readUnsignedShort
+        val accessFlags      = in.readUnsignedShort
+        val name_index       = in.readUnsignedShort
         val descriptor_index = in.readUnsignedShort
         Field_Info(
             cp,

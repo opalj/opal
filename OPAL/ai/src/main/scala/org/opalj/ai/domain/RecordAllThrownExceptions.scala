@@ -25,14 +25,11 @@ trait RecordAllThrownExceptions extends RecordThrownExceptions {
 
     override protected[this] def recordThrownException(
         pc:    Int,
-        value: ExceptionValue
-    ): ThrownException = immutable.Set(value)
+        value: ExceptionValue): ThrownException = immutable.Set(value)
 
     override protected[this] def joinThrownExceptions(
         pc:                        Int,
         previouslyThrownException: ThrownException,
-        value:                     ExceptionValue
-    ): ThrownException = previouslyThrownException + value
+        value:                     ExceptionValue): ThrownException = previouslyThrownException + value
 
 }
-

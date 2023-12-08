@@ -3,8 +3,8 @@ package org.opalj
 package br
 package reader
 
-import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.DEFAULT_INVOKEDYNAMIC
+import org.opalj.br.instructions.Instruction
 
 /**
  * Mixin this trait to resolve links between [[org.opalj.br.instructions.INVOKEDYNAMIC]]
@@ -45,8 +45,7 @@ trait DeferredInvokedynamicResolution extends ConstantPoolBinding with CodeBindi
         ap_descriptor_index: Constant_Pool_Index,
         invokeDynamicInfo:   CONSTANT_InvokeDynamic_info,
         instructions:        Array[Instruction],
-        pc:                  PC
-    ): ClassFile = {
+        pc:                  PC): ClassFile = {
 
         val bootstrapMethods = classFile.attributes collectFirst {
             case BootstrapMethodTable(bms) => bms

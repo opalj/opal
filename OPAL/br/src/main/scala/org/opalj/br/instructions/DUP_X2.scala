@@ -15,13 +15,11 @@ case object DUP_X2 extends StackManagementInstruction {
 
     final val mnemonic = "dup_x2"
 
-    final def numberOfPoppedOperands(ctg: Int => ComputationalTypeCategory): Int = {
+    final def numberOfPoppedOperands(ctg: Int => ComputationalTypeCategory): Int =
         if (ctg(1) == Category2ComputationalTypeCategory) 2 else 3
-    }
 
-    final def numberOfPushedOperands(ctg: Int => ComputationalTypeCategory): Int = {
+    final def numberOfPushedOperands(ctg: Int => ComputationalTypeCategory): Int =
         if (ctg(1) == Category2ComputationalTypeCategory) 3 else 4
-    }
 
     final def stackSlotsChange: Int = 1
 }

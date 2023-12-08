@@ -4,8 +4,9 @@ package br
 package analyses
 package cg
 
-import com.typesafe.config.ConfigFactory
 import org.opalj.br.TestSupport.biProject
+
+import com.typesafe.config.ConfigFactory
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 
@@ -23,19 +24,19 @@ class ClassExtensibilityTest extends AnyFunSpec with Matchers {
 
     private def TypeFixture(simpleName: String) = ObjectType(testPackage + simpleName)
 
-    val PublicInterface = TypeFixture("PublicInterface")
-    val Interface = TypeFixture("Interface")
-    val Annotation = TypeFixture("Annotation")
-    val PublicAnnotation = TypeFixture("PublicAnnotation")
-    val FinalClass = TypeFixture("FinalClass")
-    val Class = TypeFixture("Class")
-    val PublicFinalClass = TypeFixture("PublicFinalClass")
-    val PublicClass = TypeFixture("PublicClass")
+    val PublicInterface                   = TypeFixture("PublicInterface")
+    val Interface                         = TypeFixture("Interface")
+    val Annotation                        = TypeFixture("Annotation")
+    val PublicAnnotation                  = TypeFixture("PublicAnnotation")
+    val FinalClass                        = TypeFixture("FinalClass")
+    val Class                             = TypeFixture("Class")
+    val PublicFinalClass                  = TypeFixture("PublicFinalClass")
+    val PublicClass                       = TypeFixture("PublicClass")
     val PublicClassWithPrivateConstructor = TypeFixture("PublicClassWithPrivateConstructor")
-    val PublicEnum = TypeFixture("PublicEnum")
-    val Enum = TypeFixture("Enum")
+    val PublicEnum                        = TypeFixture("PublicEnum")
+    val Enum                              = TypeFixture("Enum")
 
-    def mergeConfigString(extConf: String, pkgConf: String): String = extConf+"\n"+pkgConf
+    def mergeConfigString(extConf: String, pkgConf: String): String = extConf + "\n" + pkgConf
 
     describe("when a type is located in an open package") {
 
@@ -44,8 +45,8 @@ class ClassExtensibilityTest extends AnyFunSpec with Matchers {
             ClosedPackagesConfig.openCodeBase
         )
 
-        val config = ConfigFactory.parseString(configString)
-        val project = Project.recreate(testProject, config, true)
+        val config       = ConfigFactory.parseString(configString)
+        val project      = Project.recreate(testProject, config, true)
         val isExtensible = project.get(ClassExtensibilityKey)
 
         it("non-final types should be extensible") {
@@ -78,8 +79,8 @@ class ClassExtensibilityTest extends AnyFunSpec with Matchers {
             ClosedPackagesConfig.allPackagesClosed
         )
 
-        val config = ConfigFactory.parseString(configString)
-        val project = Project.recreate(testProject, config, true)
+        val config       = ConfigFactory.parseString(configString)
+        val project      = Project.recreate(testProject, config, true)
         val isExtensible = project.get(ClassExtensibilityKey)
 
         it("public non-final types should be extensible") {
@@ -107,16 +108,16 @@ class ClassExtensibilityTest extends AnyFunSpec with Matchers {
 
     describe("when a type is configured as extensible") {
 
-        val forcedExtensibleClasses = List(PublicFinalClass, PublicClassWithPrivateConstructor).
-            map(_.fqn.replaceAll("[.]", "/"))
+        val forcedExtensibleClasses =
+            List(PublicFinalClass, PublicClassWithPrivateConstructor).map(_.fqn.replaceAll("[.]", "/"))
 
         val confString = mergeConfigString(
             ClassExtensibilityConfig.configuredExtensibleClasses(forcedExtensibleClasses),
             ClosedPackagesConfig.openCodeBase
         )
 
-        val config = ConfigFactory.parseString(confString)
-        val project = Project.recreate(testProject, config, true)
+        val config       = ConfigFactory.parseString(confString)
+        val project      = Project.recreate(testProject, config, true)
         val isExtensible = project.get(ClassExtensibilityKey)
 
         it("it should be extensible, no matter what") {
@@ -127,16 +128,15 @@ class ClassExtensibilityTest extends AnyFunSpec with Matchers {
 
     describe("when a type is configured as final") {
 
-        val forcedExtensibleClasses = List(PublicClass, PublicInterface).
-            map(_.fqn.replaceAll("[.]", "/"))
+        val forcedExtensibleClasses = List(PublicClass, PublicInterface).map(_.fqn.replaceAll("[.]", "/"))
 
         val confString = mergeConfigString(
             ClassExtensibilityConfig.configuredFinalClasses(forcedExtensibleClasses),
             ClosedPackagesConfig.allPackagesClosed
         )
 
-        val config = ConfigFactory.parseString(confString)
-        val project = Project.recreate(testProject, config, true)
+        val config       = ConfigFactory.parseString(confString)
+        val project      = Project.recreate(testProject, config, true)
         val isExtensible = project.get(ClassExtensibilityKey)
 
         it("it should NOT be extensible, no matter what") {
@@ -148,18 +148,17 @@ class ClassExtensibilityTest extends AnyFunSpec with Matchers {
 
 object ClassExtensibilityConfig {
 
-    val classExtensibilityAnalysis =
-        """
-          |org.opalj.br.analyses.cg.ClassExtensibilityKey {
-          |    analysis = "org.opalj.br.analyses.cg.DefaultClassExtensibility"
-          |}
+    val classExtensibilityAnalysis = """
+                                       |org.opalj.br.analyses.cg.ClassExtensibilityKey {
+                                       |    analysis = "org.opalj.br.analyses.cg.DefaultClassExtensibility"
+                                       |}
         """.stripMargin
 
     def configuredExtensibleClasses(types: List[String] = List.empty) =
         s"""
            |org.opalj.br.analyses.cg.ClassExtensibilityKey {
            |    analysis = "org.opalj.br.analyses.cg.ConfiguredExtensibleClasses"
-           |    extensibleClasses = [${types.map("\""+_+"\"").mkString(",")}]
+           |    extensibleClasses = [${types.map("\"" + _ + "\"").mkString(",")}]
            |}
           """.stripMargin
 
@@ -167,7 +166,7 @@ object ClassExtensibilityConfig {
         s"""
            |org.opalj.br.analyses.cg.ClassExtensibilityKey {
            |    analysis = "org.opalj.br.analyses.cg.ConfiguredFinalClasses"
-           |    finalClasses = [${types.map("\""+_+"\"").mkString(",")}]
+           |    finalClasses = [${types.map("\"" + _ + "\"").mkString(",")}]
            |}
         """.stripMargin
 
@@ -175,18 +174,16 @@ object ClassExtensibilityConfig {
 
 object ClosedPackagesConfig {
 
-    val openCodeBase =
-        """
-          |org.opalj.br.analyses.cg.ClosedPackagesKey {
-          |    analysis = "org.opalj.br.analyses.cg.OpenCodeBase"
-          |}
+    val openCodeBase = """
+                         |org.opalj.br.analyses.cg.ClosedPackagesKey {
+                         |    analysis = "org.opalj.br.analyses.cg.OpenCodeBase"
+                         |}
         """.stripMargin
 
-    val allPackagesClosed =
-        """
-          |org.opalj.br.analyses.cg.ClosedPackagesKey {
-          |    analysis = "org.opalj.br.analyses.cg.AllPackagesClosed"
-          |}
+    val allPackagesClosed = """
+                              |org.opalj.br.analyses.cg.ClosedPackagesKey {
+                              |    analysis = "org.opalj.br.analyses.cg.AllPackagesClosed"
+                              |}
         """.stripMargin
 
     def configureClosedPackages(regex: String = "java(/.*)") =

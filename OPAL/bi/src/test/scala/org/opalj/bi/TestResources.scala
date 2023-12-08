@@ -3,10 +3,10 @@ package org.opalj
 package bi
 
 import java.io.File
+import scala.collection.immutable.ArraySeq
+
 import org.opalj.io.JARsFileFilter
 import org.opalj.util.ScalaMajorVersion
-
-import scala.collection.immutable.ArraySeq
 
 /**
  * Common functionality to find resources required by many tests.
@@ -16,28 +16,27 @@ import scala.collection.immutable.ArraySeq
 object TestResources {
 
     final val unmanagedResourcesFolder = "src/test/resources/"
-    final val managedResourcesFolder = s"target/scala-$ScalaMajorVersion/resource_managed/test/"
+    final val managedResourcesFolder   = s"target/scala-$ScalaMajorVersion/resource_managed/test/"
 
     private def pathPrefixCandidates(
-        subProjectFolder: String
-    ): ArraySeq[String => Option[String]] = ArraySeq(
+        subProjectFolder: String): ArraySeq[String => Option[String]] = ArraySeq(
         // if the current path is set to OPAL's root folder
-        resourceFile => { Some("OPAL/"+resourceFile) },
+        resourceFile => { Some("OPAL/" + resourceFile) },
         // if the current path is set to "<SUB-PROJECT>/<BIN>"
-        resourceFile => { Some("../../"+resourceFile) },
+        resourceFile => { Some("../../" + resourceFile) },
         // if the current path is set to "DEVELOPING_OPAL/<SUB-PROJECT>/<BIN>"
-        resourceFile => { Some("../../../OPAL/"+resourceFile) },
+        resourceFile => { Some("../../../OPAL/" + resourceFile) },
         // if we are in the sub-project's root folder
-        resourceFile => { Some("../"+subProjectFolder + resourceFile) },
+        resourceFile => { Some("../" + subProjectFolder + resourceFile) },
         // if we are in a "developing opal" sub-project's root folder
-        resourceFile => { Some("../../OPAL/"+resourceFile) },
+        resourceFile => { Some("../../OPAL/" + resourceFile) },
         // if the current path is set to "target/scala-.../classes"
-        resourceFile => { Some("./"+resourceFile) },
+        resourceFile => { Some("./" + resourceFile) },
         // Allow resources in Subprojects of DEVELOPING_OPAL by specifying their full path
         resourceFile => {
             val userDir = System.getProperty("user.dir")
             if ("""target/scala\-[\w\.]+/classes$""".r.findFirstIn(userDir).isDefined) {
-                Some("../../../src/test/resources/"+resourceFile)
+                Some("../../../src/test/resources/" + resourceFile)
             } else {
                 None
             }
@@ -70,31 +69,29 @@ object TestResources {
             }
         }
 
-        throw new IllegalArgumentException("cannot locate resource: "+resourceName)
+        throw new IllegalArgumentException("cannot locate resource: " + resourceName)
     }
 
     /**
      * Returns all JARs that are intended to be used by tests and which were compiled
      * using the test fixtures.
      */
-    def allManagedBITestJARs(): Seq[File] = {
-        for {
-            pathFunction <- pathPrefixCandidates("bi")
-            fCandidate = pathFunction(s"bi/$managedResourcesFolder")
-            if fCandidate.isDefined
-            f = new File(fCandidate.get)
-            if f.exists
-            if f.canRead
-            if f.isDirectory
-            jarFile <- f.listFiles(JARsFileFilter)
-        } yield {
-            jarFile
-        }
+    def allManagedBITestJARs(): Seq[File] = for {
+        pathFunction <- pathPrefixCandidates("bi")
+        fCandidate    = pathFunction(s"bi/$managedResourcesFolder")
+        if fCandidate.isDefined
+        f = new File(fCandidate.get)
+        if f.exists
+        if f.canRead
+        if f.isDirectory
+        jarFile <- f.listFiles(JARsFileFilter)
+    } yield {
+        jarFile
     }
 
     def allUnmanagedBITestJARs(): Seq[File] = {
         var allJARs: List[File] = Nil
-        val f = locateTestResources("classfiles", "bi")
+        val f                   = locateTestResources("classfiles", "bi")
         if (f.exists && f.isDirectory && f.canRead) {
             allJARs ++= f.listFiles(JARsFileFilter)
         }
@@ -107,8 +104,7 @@ object TestResources {
      */
     def allBITestProjectFolders(): Seq[File] = {
         val f = locateTestResources("classfiles", "bi")
-        if (!f.exists || !f.isDirectory)
-            return Nil;
+        if (!f.exists || !f.isDirectory) return Nil;
 
         for {
             file <- ArraySeq.unsafeWrapArray(f.listFiles())

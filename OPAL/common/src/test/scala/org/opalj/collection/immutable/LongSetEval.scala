@@ -7,9 +7,9 @@ import org.opalj.util.PerformanceEvaluation
 
 abstract class LongSetEval {
 
-    println("Please note that the evaluation code itself incurs some constant"+
-        " overhead; hence, if an evaluation of the data structure X is twice as fast"+
-        " as the evaluation of Y the underlying data structure is faster actually"+
+    println("Please note that the evaluation code itself incurs some constant" +
+        " overhead; hence, if an evaluation of the data structure X is twice as fast" +
+        " as the evaluation of Y the underlying data structure is faster actually" +
         " faster than just two times.")
 
     final val numberOfSetsWithSize3orLess = 10000000
@@ -21,18 +21,17 @@ abstract class LongSetEval {
         contains: (T) => Long => Boolean,
         foreach:  (T) => ((Long => Unit) => Unit),
         // forFirstN:  (T) => ((Int => (Long => Unit)) => Unit)
-        foldLeft: (T) => (Long => ((Long, Long) => Long) => Long)
-    ): Unit = {
+        foldLeft: (T) => (Long => ((Long, Long) => Long) => Long)): Unit = {
 
         def createSets(maxSize: Int, numberOfSets: Int): List[T] = {
             val rngSeed = 123456789L
-            val rngGen = new java.util.Random(rngSeed)
+            val rngGen  = new java.util.Random(rngSeed)
 
             println(s"$numberOfSets sets with $maxSize elements...")
             val allSets = PerformanceEvaluation.memory {
                 PerformanceEvaluation.time {
                     var allSets = List.empty[T]
-                    var i = 0
+                    var i       = 0
                     do {
                         var l = 0
                         var s = empty()
@@ -67,14 +66,14 @@ abstract class LongSetEval {
 
         def evalContains(l: List[T]): Unit = {
             val rngSeed = 123456789L
-            val rngGen = new java.util.Random(rngSeed)
+            val rngGen  = new java.util.Random(rngSeed)
             // RECALL that all sets contain unique values... there is no repetition!
 
             var containsInverse = true
             PerformanceEvaluation.time {
                 l.foreach { s =>
                     val max = size(s)
-                    var j = 0
+                    var j   = 0
                     while (j < max) {
                         val v = rngGen.nextLong
                         if (!contains(s)(v)) throw new UnknownError(s"$s doesn't contain $v")
@@ -428,6 +427,6 @@ abstract class LongSetEval {
             info(s"overall size: ${allSets.map(_.size).sum}; sum: $total")
         }
     }
-    */
+     */
 
 }

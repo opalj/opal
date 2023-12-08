@@ -8,16 +8,14 @@ package br
  * @author Michael Eichberg
  */
 case class RuntimeVisibleTypeAnnotationTable(
-        typeAnnotations: TypeAnnotations
-) extends TypeAnnotationTable {
+        typeAnnotations: TypeAnnotations) extends TypeAnnotationTable {
 
     final def isRuntimeVisible: Boolean = true
 
     override def kindId: Int = RuntimeVisibleTypeAnnotationTable.KindId
 
-    override def copy(typeAnnotations: TypeAnnotations): RuntimeVisibleTypeAnnotationTable = {
+    override def copy(typeAnnotations: TypeAnnotations): RuntimeVisibleTypeAnnotationTable =
         new RuntimeVisibleTypeAnnotationTable(typeAnnotations)
-    }
 
 }
 object RuntimeVisibleTypeAnnotationTable {

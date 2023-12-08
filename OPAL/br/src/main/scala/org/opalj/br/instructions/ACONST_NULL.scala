@@ -10,8 +10,8 @@ package instructions
  */
 case object ACONST_NULL
     extends LoadConstantInstruction[Null]
-    with ImplicitValue
-    with InstructionMetaInformation {
+        with ImplicitValue
+        with InstructionMetaInformation {
 
     final def computationalType = ComputationalTypeReference
 

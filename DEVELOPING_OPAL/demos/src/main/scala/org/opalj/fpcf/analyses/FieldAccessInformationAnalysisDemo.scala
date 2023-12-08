@@ -35,17 +35,29 @@ import java.net.URL
  */
 object FieldAccessInformationAnalysisDemo extends ProjectAnalysisApplication {
 
-    private val JDKPackages = List("java/", "javax", "javafx", "jdk", "sun", "oracle", "com/sun",
-        "netscape", "org/ietf/jgss", "org/jcp/xml/dsig/internal", "org/omg", "org/w3c/dom",
-        "org/xml/sax")
+    private val JDKPackages = List(
+        "java/",
+        "javax",
+        "javafx",
+        "jdk",
+        "sun",
+        "oracle",
+        "com/sun",
+        "netscape",
+        "org/ietf/jgss",
+        "org/jcp/xml/dsig/internal",
+        "org/omg",
+        "org/w3c/dom",
+        "org/xml/sax"
+    )
 
     override def title: String = "Determines field accesses"
 
     override def description: String = "Runs analyses for field accesses (field reads and writes) throughout a project"
 
     override def doAnalyze(
-        project:       Project[URL],
-        parameters:    Seq[String],
+        project: Project[URL],
+        parameters: Seq[String],
         isInterrupted: () => Boolean
     ): BasicReport = {
         val result = analyze(project)
@@ -55,7 +67,7 @@ object FieldAccessInformationAnalysisDemo extends ProjectAnalysisApplication {
     def analyze(project: Project[URL]): String = {
         val domain = classOf[DefaultPerformInvocationsDomainWithCFGAndDefUse[_]]
         project.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
-            case None               => Set(domain)
+            case None => Set(domain)
             case Some(requirements) => requirements + domain
         }
 
@@ -75,9 +87,7 @@ object FieldAccessInformationAnalysisDemo extends ProjectAnalysisApplication {
                         )
                 )
             propertyStore.waitOnPhaseCompletion()
-        } { t =>
-            analysisTime = t.toSeconds
-        }
+        } { t => analysisTime = t.toSeconds }
 
         val projectClassFiles = project.allProjectClassFiles.iterator.filter { cf =>
             !JDKPackages.exists(cf.thisType.packageName.startsWith)
@@ -86,14 +96,18 @@ object FieldAccessInformationAnalysisDemo extends ProjectAnalysisApplication {
 
         val readFields = propertyStore
             .entities(FieldReadAccessInformation.key)
-            .filter(ep => fields.contains(ep.e.asInstanceOf[DefinedField].definedField)
-                && ep.asFinal.p != NoFieldReadAccessInformation)
+            .filter(ep =>
+                fields.contains(ep.e.asInstanceOf[DefinedField].definedField)
+                    && ep.asFinal.p != NoFieldReadAccessInformation
+            )
             .map(_.e.asInstanceOf[DefinedField].definedField)
             .toSet
         val writtenFields = propertyStore
             .entities(FieldWriteAccessInformation.key)
-            .filter(ep => fields.contains(ep.e.asInstanceOf[DefinedField].definedField)
-                && ep.asFinal.p != NoFieldWriteAccessInformation)
+            .filter(ep =>
+                fields.contains(ep.e.asInstanceOf[DefinedField].definedField)
+                    && ep.asFinal.p != NoFieldWriteAccessInformation
+            )
             .map(_.e.asInstanceOf[DefinedField].definedField)
             .toSet
 

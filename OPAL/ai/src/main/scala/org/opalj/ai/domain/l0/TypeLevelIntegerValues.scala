@@ -4,17 +4,17 @@ package ai
 package domain
 package l0
 
-import org.opalj.value.IsBooleanValue
-import org.opalj.value.IsByteValue
-import org.opalj.value.IsCharValue
-import org.opalj.value.IsIntegerValue
-import org.opalj.value.IsShortValue
 import org.opalj.br.BooleanType
 import org.opalj.br.ByteType
 import org.opalj.br.CharType
 import org.opalj.br.CTIntType
 import org.opalj.br.IntegerType
 import org.opalj.br.ShortType
+import org.opalj.value.IsBooleanValue
+import org.opalj.value.IsByteValue
+import org.opalj.value.IsCharValue
+import org.opalj.value.IsIntegerValue
+import org.opalj.value.IsShortValue
 
 /**
  * Domain that performs computations related to integer values at the type level.
@@ -44,9 +44,7 @@ trait TypeLevelIntegerValues extends Domain { this: Configuration =>
 
         final override def leastUpperType: Option[BooleanType] = Some(BooleanType)
 
-        override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue = {
-            target.BooleanValue(vo)
-        }
+        override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue = target.BooleanValue(vo)
     }
 
     trait ByteValue extends ComputationalTypeIntegerValue[ByteType] with IsByteValue {
@@ -54,9 +52,7 @@ trait TypeLevelIntegerValues extends Domain { this: Configuration =>
 
         final override def leastUpperType: Option[ByteType] = Some(ByteType)
 
-        override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue = {
-            target.ByteValue(vo)
-        }
+        override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue = target.ByteValue(vo)
 
     }
 
@@ -65,9 +61,7 @@ trait TypeLevelIntegerValues extends Domain { this: Configuration =>
 
         final override def leastUpperType: Option[CharType] = Some(CharType)
 
-        override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue = {
-            target.CharValue(vo)
-        }
+        override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue = target.CharValue(vo)
 
     }
 
@@ -76,9 +70,7 @@ trait TypeLevelIntegerValues extends Domain { this: Configuration =>
 
         final override def leastUpperType: Option[ShortType] = Some(ShortType)
 
-        override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue = {
-            target.ShortValue(vo)
-        }
+        override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue = target.ShortValue(vo)
 
     }
 
@@ -90,9 +82,7 @@ trait TypeLevelIntegerValues extends Domain { this: Configuration =>
         final override def lowerBound: Int = Int.MinValue
         final override def upperBound: Int = Int.MaxValue
 
-        override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue = {
-            target.IntegerValue(vo)
-        }
+        override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue = target.IntegerValue(vo)
 
     }
 
@@ -100,38 +90,29 @@ trait TypeLevelIntegerValues extends Domain { this: Configuration =>
     // QUESTION'S ABOUT VALUES
     //
 
-    override def intAreEqual(pc: Int, value1: DomainValue, value2: DomainValue): Answer =
-        Unknown
+    override def intAreEqual(pc: Int, value1: DomainValue, value2: DomainValue): Answer = Unknown
 
     override def intIsSomeValueInRange(
         pc:         Int,
         value:      DomainValue,
         lowerBound: Int,
-        upperBound: Int
-    ): Answer =
-        Unknown
+        upperBound: Int): Answer = Unknown
 
     override def intIsSomeValueNotInRange(
         pc:         Int,
         value:      DomainValue,
         lowerBound: Int,
-        upperBound: Int
-    ): Answer =
-        Unknown
+        upperBound: Int): Answer = Unknown
 
     override def intIsLessThan(
         pc:    Int,
         left:  DomainValue,
-        right: DomainValue
-    ): Answer =
-        Unknown
+        right: DomainValue): Answer = Unknown
 
     override def intIsLessThanOrEqualTo(
         pc:    Int,
         left:  DomainValue,
-        right: DomainValue
-    ): Answer =
-        Unknown
+        right: DomainValue): Answer = Unknown
 
     // -----------------------------------------------------------------------------------
     //
@@ -149,57 +130,39 @@ trait TypeLevelIntegerValues extends Domain { this: Configuration =>
     // BINARY EXPRESSIONS
     //
 
-    override def iadd(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
-        IntegerValue(pc)
+    override def iadd(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = IntegerValue(pc)
 
-    override def iand(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
-        IntegerValue(pc)
+    override def iand(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = IntegerValue(pc)
 
     override def idiv(
         pc:    Int,
         left:  DomainValue,
-        right: DomainValue
-    ): IntegerValueOrArithmeticException = {
-        if (throwArithmeticExceptions)
-            ComputedValueOrException(IntegerValue(pc), VMArithmeticException(pc))
-        else
-            ComputedValue(IntegerValue(pc))
-    }
+        right: DomainValue): IntegerValueOrArithmeticException =
+        if (throwArithmeticExceptions) ComputedValueOrException(IntegerValue(pc), VMArithmeticException(pc))
+        else ComputedValue(IntegerValue(pc))
 
-    override def imul(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
-        IntegerValue(pc)
+    override def imul(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = IntegerValue(pc)
 
-    override def ior(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
-        IntegerValue(pc)
+    override def ior(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = IntegerValue(pc)
 
     override def irem(
         pc:    Int,
         left:  DomainValue,
-        right: DomainValue
-    ): IntegerValueOrArithmeticException = {
-        if (throwArithmeticExceptions)
-            ComputedValueOrException(IntegerValue(pc), VMArithmeticException(pc))
-        else
-            ComputedValue(IntegerValue(pc))
-    }
+        right: DomainValue): IntegerValueOrArithmeticException =
+        if (throwArithmeticExceptions) ComputedValueOrException(IntegerValue(pc), VMArithmeticException(pc))
+        else ComputedValue(IntegerValue(pc))
 
-    override def ishl(pc: Int, left: DomainValue, right: DomainValue): DomainValue =
-        IntegerValue(pc)
+    override def ishl(pc: Int, left: DomainValue, right: DomainValue): DomainValue = IntegerValue(pc)
 
-    override def ishr(pc: Int, left: DomainValue, right: DomainValue): DomainValue =
-        IntegerValue(pc)
+    override def ishr(pc: Int, left: DomainValue, right: DomainValue): DomainValue = IntegerValue(pc)
 
-    override def isub(pc: Int, left: DomainValue, right: DomainValue): DomainValue =
-        IntegerValue(pc)
+    override def isub(pc: Int, left: DomainValue, right: DomainValue): DomainValue = IntegerValue(pc)
 
-    override def iushr(pc: Int, left: DomainValue, right: DomainValue): DomainValue =
-        IntegerValue(pc)
+    override def iushr(pc: Int, left: DomainValue, right: DomainValue): DomainValue = IntegerValue(pc)
 
-    override def ixor(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
-        IntegerValue(pc)
+    override def ixor(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = IntegerValue(pc)
 
-    override def iinc(pc: Int, left: DomainValue, right: Int): DomainValue =
-        IntegerValue(pc)
+    override def iinc(pc: Int, left: DomainValue, right: Int): DomainValue = IntegerValue(pc)
 
     //
     // TYPE CONVERSION INSTRUCTIONS
@@ -211,4 +174,3 @@ trait TypeLevelIntegerValues extends Domain { this: Configuration =>
     override def i2s(pc: Int, value: DomainValue): DomainValue = ShortValue(pc)
 
 }
-

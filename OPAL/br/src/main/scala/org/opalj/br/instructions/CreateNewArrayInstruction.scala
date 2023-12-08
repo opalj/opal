@@ -10,8 +10,8 @@ package instructions
  */
 abstract class CreateNewArrayInstruction
     extends Instruction
-    with ConstantLengthInstruction
-    with NoLabels {
+        with ConstantLengthInstruction
+        with NoLabels {
 
     final override def asCreateNewArrayInstruction: this.type = this
 
@@ -20,27 +20,22 @@ abstract class CreateNewArrayInstruction
         (this eq other) || (this == other)
     }
 
-    final override def jvmExceptions: List[ObjectType] = {
-        CreateNewArrayInstruction.jvmExceptionsAndErrors
-    }
+    final override def jvmExceptions: List[ObjectType] = CreateNewArrayInstruction.jvmExceptionsAndErrors
 
     final def mayThrowExceptions: Boolean = true
 
     final override def nextInstructions(
         currentPC:             PC,
         regularSuccessorsOnly: Boolean
-    )(
-        implicit
+      )(implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
-    ): List[PC] = {
-        if (regularSuccessorsOnly)
-            List(indexOfNextInstruction(currentPC))
-        else
-            Instruction.nextInstructionOrExceptionHandlers(
-                this, currentPC, CreateNewArrayInstruction.jvmExceptionsAndErrors
-            )
-    }
+        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy): List[PC] =
+        if (regularSuccessorsOnly) List(indexOfNextInstruction(currentPC))
+        else Instruction.nextInstructionOrExceptionHandlers(
+            this,
+            currentPC,
+            CreateNewArrayInstruction.jvmExceptionsAndErrors
+        )
 
     final override def expressionResult: Stack.type = Stack
 

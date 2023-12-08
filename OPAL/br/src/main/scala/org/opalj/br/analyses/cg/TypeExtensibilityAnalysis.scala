@@ -5,6 +5,7 @@ package analyses
 package cg
 
 import scala.annotation.tailrec
+
 import scala.collection.mutable
 
 import org.opalj.collection.mutable.ArrayMap
@@ -35,12 +36,10 @@ class TypeExtensibilityAnalysis(val project: SomeProject) extends (ObjectType =>
         subtypeExtensibility: Array[Answer],
         isEnqueued:           Array[Boolean],
         typeExtensibility:    ArrayMap[Answer]
-    )(
-        implicit
-        isClassExtensible: ObjectType => Answer
-    ): ArrayMap[Answer] = {
+      )(implicit
+        isClassExtensible: ObjectType => Answer): ArrayMap[Answer] = {
         val objectType = typesToProcess.dequeue()
-        val oid = objectType.id
+        val oid        = objectType.id
 
         val thisSubtypeExtensibility = {
             val thisSubtypeExtensibility = subtypeExtensibility(oid)
@@ -90,11 +89,11 @@ class TypeExtensibilityAnalysis(val project: SomeProject) extends (ObjectType =>
     private[this] val typeExtensibility: ArrayMap[Answer] = {
         implicit val isClassExtensible: ClassExtensibility = project.get(ClassExtensibilityKey)
 
-        val leafTypes = classHierarchy.leafTypes
-        val objectTypesCount = ObjectType.objectTypesCount
-        val typeExtensibility = ArrayMap[Answer](objectTypesCount)
+        val leafTypes            = classHierarchy.leafTypes
+        val objectTypesCount     = ObjectType.objectTypesCount
+        val typeExtensibility    = ArrayMap[Answer](objectTypesCount)
         val subtypeExtensibility = new Array[Answer](objectTypesCount)
-        val isEnqueued = new Array[Boolean](objectTypesCount)
+        val isEnqueued           = new Array[Boolean](objectTypesCount)
 
         // We use a queue to ensure that we always first process all subtypes of a type. This
         // guarantees that we have final knowledge about the extensibility of all subtypes

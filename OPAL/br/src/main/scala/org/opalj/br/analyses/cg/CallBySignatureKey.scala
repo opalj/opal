@@ -30,29 +30,29 @@ object CallBySignatureKey extends ProjectInformationKey[CallBySignatureTargets, 
     )
 
     override def compute(p: SomeProject): CallBySignatureTargets = {
-        val cbsTargets = mutable.HashMap.empty[Method, ArraySeq[ObjectType]]
-        val index = p.get(ProjectIndexKey)
+        val cbsTargets          = mutable.HashMap.empty[Method, ArraySeq[ObjectType]]
+        val index               = p.get(ProjectIndexKey)
         val isOverridableMethod = p.get(IsOverridableMethodKey)
 
         for {
             classFile <- p.allClassFiles if classFile.isInterfaceDeclaration
-            method <- classFile.methods
+            method    <- classFile.methods
             if !method.isPrivate &&
                 !method.isStatic &&
                 (classFile.isPublic || isOverridableMethod(method).isYesOrUnknown)
         } {
             val descriptor = method.descriptor
             val methodName = method.name
-            val declType = classFile.thisType
+            val declType   = classFile.thisType
 
             import p.classHierarchy
             val potentialMethods = index.findMethods(methodName, descriptor)
 
-            var i = 0
+            var i       = 0
             val targets = ListBuffer.empty[ObjectType]
             while (i < potentialMethods.size) {
-                val m = potentialMethods(i)
-                val cf = m.classFile
+                val m          = potentialMethods(i)
+                val cf         = m.classFile
                 val targetType = cf.thisType
                 val qualified = cf.isClassDeclaration &&
                     isOverridableMethod(m).isYesOrUnknown &&
@@ -72,8 +72,7 @@ object CallBySignatureKey extends ProjectInformationKey[CallBySignatureTargets, 
 }
 
 class CallBySignatureTargets private[analyses] (
-        val data: scala.collection.Map[Method, ArraySeq[ObjectType]]
-) {
+        val data: scala.collection.Map[Method, ArraySeq[ObjectType]]) {
     /**
      * Returns all call-by-signature targets of the given method. If the method is not known,
      * `null` is returned. If the method is known a non-null (but potentially empty)

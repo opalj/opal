@@ -22,9 +22,7 @@ package l0
  */
 trait ZeroDomain
     extends TypeLevelDomain
-    with DefaultHandlingOfMethodResults
-    with IgnoreSynchronization
-    with TheProject
-    with TheCode { domain: Configuration =>
-
-}
+        with DefaultHandlingOfMethodResults
+        with IgnoreSynchronization
+        with TheProject
+        with TheCode { domain: Configuration => }

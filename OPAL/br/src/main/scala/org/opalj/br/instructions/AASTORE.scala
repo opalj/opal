@@ -24,15 +24,10 @@ case object AASTORE extends ArrayStoreInstruction with InstructionMetaInformatio
     final def nextInstructions(
         currentPC:             PC,
         regularSuccessorsOnly: Boolean
-    )(
-        implicit
+      )(implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
-    ): List[PC] = {
-        if (regularSuccessorsOnly)
-            List(indexOfNextInstruction(currentPC))
-        else
-            Instruction.nextInstructionOrExceptionHandlers(this, currentPC, jvmExceptions)
-    }
+        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy): List[PC] =
+        if (regularSuccessorsOnly) List(indexOfNextInstruction(currentPC))
+        else Instruction.nextInstructionOrExceptionHandlers(this, currentPC, jvmExceptions)
 
 }

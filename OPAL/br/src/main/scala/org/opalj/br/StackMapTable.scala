@@ -13,9 +13,7 @@ case class StackMapTable(stackMapFrames: StackMapFrames) extends Attribute {
 
     override def kindId: Int = StackMapTable.KindId
 
-    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = {
-        this == other
-    }
+    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = this == other
 
     /**
      * The pcs of instructions with a stack map frame.
@@ -24,7 +22,7 @@ case class StackMapTable(stackMapFrames: StackMapFrames) extends Attribute {
      *         frame.
      */
     def pcs: IntArraySet = {
-        var pcs = IntArraySet.empty
+        var pcs                 = IntArraySet.empty
         var previousOffset: Int = -1
         stackMapFrames.foreach { f =>
             previousOffset = f.offset(previousOffset)

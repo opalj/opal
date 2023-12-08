@@ -4,19 +4,17 @@ package hermes
 
 import java.io.File
 import java.net.URL
-
 import scala.collection.Map
 import scala.collection.immutable
 
 import org.opalj.br
-import org.opalj.da
-
-import org.opalj.log.GlobalLogContext
-import org.opalj.log.OPALLogger.error
-import org.opalj.log.OPALLogger.info
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.Project.JavaClassFileReader
 import org.opalj.br.analyses.Project.JavaLibraryClassFileReader
+import org.opalj.da
+import org.opalj.log.GlobalLogContext
+import org.opalj.log.OPALLogger.error
+import org.opalj.log.OPALLogger.info
 
 /**
  * Meta-information about a project that belongs to a corpus.
@@ -26,11 +24,10 @@ import org.opalj.br.analyses.Project.JavaLibraryClassFileReader
  * @author Michael Eichberg
  */
 case class ProjectConfiguration(
-        id:             String,
-        cp:             String,
-        libcp:          Option[String],
-        libcp_defaults: Option[String]
-) {
+        id:    String,
+        cp:    String,
+        libcp: Option[String],
+        libcp_defaults: Option[String]) {
 
     @volatile private[this] var theProjectStatistics: immutable.Map[String, Double] = immutable.Map.empty
 
@@ -40,21 +37,15 @@ case class ProjectConfiguration(
      *
      * @note This information is only available after instantiate was called.
      */
-    def statistics: Map[String, Double] = {
-        theProjectStatistics
-    }
+    def statistics: Map[String, Double] = theProjectStatistics
 
     /**
      * @param  key The unique name of the statistic. If the name is not unique an exception will
      *         be thrown.
      */
-    def addStatistic(key: String, value: Double) = {
-        this.synchronized {
-            if (theProjectStatistics.contains(key))
-                throw new IllegalArgumentException(s"$id - $key is already set")
-            else
-                theProjectStatistics += ((key, value))
-        }
+    def addStatistic(key: String, value: Double) = this.synchronized {
+        if (theProjectStatistics.contains(key)) throw new IllegalArgumentException(s"$id - $key is already set")
+        else theProjectStatistics += ((key, value))
     }
 
     /**
@@ -66,11 +57,11 @@ case class ProjectConfiguration(
     def instantiate: ProjectInstantiation = {
 
         // let's try to garbage collect previous projects
-        new Thread(new Runnable { def run: Unit = { System.gc() } }).start
+        new Thread(new Runnable { def run: Unit = System.gc() }).start
 
         info(
             "project setup",
-            s"creating new project: $id\n\t\t"+
+            s"creating new project: $id\n\t\t" +
                 s"cp=$cp\n\t\tlibcp=$libcp\n\t\tlibcp_defaults=$libcp_defaults"
         )(GlobalLogContext)
 
@@ -91,40 +82,35 @@ case class ProjectConfiguration(
         val brProjectClassFiles = cpJARs.foldLeft(noBRClassFiles) { (classFiles, cpJAR) =>
             classFiles ++ JavaClassFileReader().ClassFiles(cpJAR)
         }
-        val libcpJARs = {
-            libcp match {
-                case None =>
-                    noBRClassFiles
-                case Some(libs) =>
-                    val libcpJARs = libs.split(File.pathSeparatorChar)
-                    libcpJARs.foldLeft(noBRClassFiles) { (classFiles, libcpJAR) =>
-                        val libcpJARFile = new File(libcpJAR)
-                        if (!libcpJARFile.exists || !libcpJARFile.canRead()) {
-                            error(
-                                "project configuration", s"invalid library: $libcpJARFile"
-                            )(GlobalLogContext)
-                            classFiles
-                        } else
-                            classFiles ++ JavaLibraryClassFileReader.ClassFiles(libcpJARFile)
-                    }
-            }
+        val libcpJARs = libcp match {
+            case None => noBRClassFiles
+            case Some(libs) =>
+                val libcpJARs = libs.split(File.pathSeparatorChar)
+                libcpJARs.foldLeft(noBRClassFiles) { (classFiles, libcpJAR) =>
+                    val libcpJARFile = new File(libcpJAR)
+                    if (!libcpJARFile.exists || !libcpJARFile.canRead()) {
+                        error(
+                            "project configuration",
+                            s"invalid library: $libcpJARFile"
+                        )(GlobalLogContext)
+                        classFiles
+                    } else classFiles ++ JavaLibraryClassFileReader.ClassFiles(libcpJARFile)
+                }
         }
         val libraryClassFiles: Iterable[(br.ClassFile, URL)] = libcp_defaults match {
             case None => libcpJARs
             case Some(libraries) =>
                 var predefinedLibrariesClassFiles = Iterable.empty[(br.ClassFile, URL)]
-                var predefinedLibraries = libraries.split(File.pathSeparatorChar)
+                var predefinedLibraries           = libraries.split(File.pathSeparatorChar)
                 while (predefinedLibraries.nonEmpty) {
                     predefinedLibraries.head match {
-                        case "RTJar" =>
-                            predefinedLibrariesClassFiles ++=
+                        case "RTJar" => predefinedLibrariesClassFiles ++=
                                 br.reader.readRTJarClassFiles()(reader = JavaLibraryClassFileReader)
-                        case "JRE" =>
-                            predefinedLibrariesClassFiles ++=
+                        case "JRE" => predefinedLibrariesClassFiles ++=
                                 br.reader.readJREClassFiles()(reader = JavaLibraryClassFileReader)
-                        case unmatched =>
-                            error(
-                                "project configuration", s"unknown library: $unmatched"
+                        case unmatched => error(
+                                "project configuration",
+                                s"unknown library: $unmatched"
                             )(GlobalLogContext)
 
                     }
@@ -134,7 +120,9 @@ case class ProjectConfiguration(
         }
         val brProject = Project(brProjectClassFiles, libraryClassFiles, true)
         this.synchronized {
-            theProjectStatistics ++= brProject.statistics.map { kv => val (k, v) = kv; (k, v.toDouble) }
+            theProjectStatistics ++= brProject.statistics.map { kv =>
+                val (k, v) = kv; (k, v.toDouble)
+            }
         }
 
         //

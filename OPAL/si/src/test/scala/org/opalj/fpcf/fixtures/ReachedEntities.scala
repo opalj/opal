@@ -11,9 +11,7 @@ object ReachableEntities {
     /**
      * A collection of entities.
      */
-    final val ReachedEntitiesKey = {
-        PropertyKey.create[String, ReachedEntities]("ReachedEntities")
-    }
+    final val ReachedEntitiesKey = PropertyKey.create[String, ReachedEntities]("ReachedEntities")
 
     case class ReachedEntities(entities: Set[AnyRef]) extends Property {
         type Self = ReachedEntities

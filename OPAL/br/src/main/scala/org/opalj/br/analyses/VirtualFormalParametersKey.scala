@@ -17,8 +17,7 @@ import scala.collection.mutable
  * @author Florian Kuebler
  */
 class VirtualFormalParameters private[analyses] (
-        val data: scala.collection.Map[DeclaredMethod, ArraySeq[VirtualFormalParameter]]
-) {
+        val data: scala.collection.Map[DeclaredMethod, ArraySeq[VirtualFormalParameter]]) {
     /**
      * Returns the virtual formal parameters array for the given method. If the method is not known,
      * `null` is returned. If the method is known a non-null (but potentially empty)
@@ -26,10 +25,9 @@ class VirtualFormalParameters private[analyses] (
      */
     def apply(m: DeclaredMethod): ArraySeq[VirtualFormalParameter] = data.getOrElse(m, null)
 
-    def virtualFormalParameters: Iterable[VirtualFormalParameter] = {
+    def virtualFormalParameters: Iterable[VirtualFormalParameter] =
         // todo Why should it ever be null?
         data.values.flatten.filter(_ ne null)
-    }
 }
 
 /**
@@ -60,10 +58,10 @@ object VirtualFormalParametersKey extends ProjectInformationKey[VirtualFormalPar
 
         for {
             dm <- p.get(DeclaredMethodsKey).declaredMethods
-            if (dm.hasSingleDefinedMethod)
+            if dm.hasSingleDefinedMethod
         } {
-            val md = dm.descriptor
-            val parametersCount = md.parametersCount
+            val md               = dm.descriptor
+            val parametersCount  = md.parametersCount
             val formalParameters = new Array[VirtualFormalParameter](parametersCount + 1)
             if (dm.hasSingleDefinedMethod && !dm.definedMethod.isStatic)
                 formalParameters(0) = new VirtualFormalParameter(dm, -1)
@@ -86,10 +84,8 @@ object VirtualFormalParametersKey extends ProjectInformationKey[VirtualFormalPar
     //
     final val entityDerivationFunction: (SomeProject) => (Iterable[AnyRef], VirtualFormalParameters) = {
         (p: SomeProject) =>
-            {
-                // this will collect the formal parameters of the project if not yet collected...
-                val formalParameters = p.get(VirtualFormalParametersKey)
-                (formalParameters.virtualFormalParameters, formalParameters)
-            }
+            // this will collect the formal parameters of the project if not yet collected...
+            val formalParameters = p.get(VirtualFormalParametersKey)
+            (formalParameters.virtualFormalParameters, formalParameters)
     }
 }

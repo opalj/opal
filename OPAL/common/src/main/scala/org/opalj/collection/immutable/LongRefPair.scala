@@ -15,11 +15,11 @@ package immutable
 final case class LongRefPair[+T](_1: Long, _2: T) {
 
     def first: Long = _1
-    def second: T = _2
+    def second: T   = _2
 
     def key: Long = _1
-    def value: T = _2
+    def value: T  = _2
 
     def head: Long = _1
-    def rest: T = _2
+    def rest: T    = _2
 }

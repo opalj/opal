@@ -16,29 +16,28 @@ import org.opalj.br.ObjectType
  *
  * @author Michael Eichberg
  */
-class TypesSet( final val classHierarchy: ClassHierarchy) extends collection.TypesSet {
+class TypesSet(final val classHierarchy: ClassHierarchy) extends collection.TypesSet {
 
     import classHierarchy.isSubtypeOf
 
-    protected[this] var theConcreteTypes: Set[ObjectType] = Set.empty
+    protected[this] var theConcreteTypes: Set[ObjectType]   = Set.empty
     protected[this] var theUpperTypeBounds: Set[ObjectType] = Set.empty
 
     /**
      * The set of concrete types which are not subtypes of any type which
      * is returned by `upperTypeBounds`.
      */
-    final def concreteTypes: Set[ObjectType] = theConcreteTypes
+    final def concreteTypes: Set[ObjectType]   = theConcreteTypes
     final def upperTypeBounds: Set[ObjectType] = theUpperTypeBounds
 
     def toImmutableTypesSet: immutable.TypesSet =
         immutable.TypesSet(theConcreteTypes, theUpperTypeBounds)(classHierarchy)
 
-    def +=(tpe: ObjectType): Unit = {
+    def +=(tpe: ObjectType): Unit =
         if (!theConcreteTypes.contains(tpe) &&
             !theUpperTypeBounds.exists(utb => isSubtypeOf(tpe, utb))) {
             theConcreteTypes += tpe
         }
-    }
 
     def ++=(tpes: Iterable[ObjectType]): Unit = tpes.foreach { += }
 
@@ -50,11 +49,10 @@ class TypesSet( final val classHierarchy: ClassHierarchy) extends collection.Typ
      *
      * All subtypes – whether concrete or upper types bounds – are removed.
      */
-    def +<:=(tpe: ObjectType): Unit = {
+    def +<:=(tpe: ObjectType): Unit =
         if (theConcreteTypes.contains(tpe)) {
             theConcreteTypes -= tpe
-            theUpperTypeBounds =
-                theUpperTypeBounds.filter(utb => !isSubtypeOf(utb, tpe)) + tpe
+            theUpperTypeBounds = theUpperTypeBounds.filter(utb => !isSubtypeOf(utb, tpe)) + tpe
         } else {
             var doNotAddTPE: Boolean = false
             var newUpperTypeBounds = theUpperTypeBounds.filter { utb =>
@@ -68,5 +66,4 @@ class TypesSet( final val classHierarchy: ClassHierarchy) extends collection.Typ
             if (!doNotAddTPE) newUpperTypeBounds += tpe
             theUpperTypeBounds = newUpperTypeBounds
         }
-    }
 }

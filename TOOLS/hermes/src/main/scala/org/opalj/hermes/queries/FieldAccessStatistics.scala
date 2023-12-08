@@ -3,18 +3,18 @@ package org.opalj
 package hermes
 package queries
 
-import org.opalj.bi.ACC_PUBLIC
+import scala.collection.immutable.ArraySeq
+
 import org.opalj.bi.ACC_PRIVATE
 import org.opalj.bi.ACC_PROTECTED
+import org.opalj.bi.ACC_PUBLIC
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredFields
 import org.opalj.br.analyses.DeclaredFieldsKey
-import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.FieldAccessInformationKey
+import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.br.fpcf.analyses.ContextProvider
-
-import scala.collection.immutable.ArraySeq
 
 /**
  * Counts how often fields are accessed.
@@ -23,36 +23,33 @@ import scala.collection.immutable.ArraySeq
  */
 class FieldAccessStatistics(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
 
-    override def featureIDs: List[String] = {
-        List(
-            /*0*/ "unused private fields",
-            /*1*/ "unused package visible fields",
-            /*2*/ "unused protected fields",
-            /*3*/ "unused public fields",
-            /*4*/ "package visible fields\nonly used by defining type",
-            /*5*/ "protected fields\nonly used by defining type",
-            /*6*/ "public fields\nonly used by defininig type "
-        )
-    }
+    override def featureIDs: List[String] = List(
+        /*0*/ "unused private fields",
+        /*1*/ "unused package visible fields",
+        /*2*/ "unused protected fields",
+        /*3*/ "unused public fields",
+        /*4*/ "package visible fields\nonly used by defining type",
+        /*5*/ "protected fields\nonly used by defining type",
+        /*6*/ "public fields\nonly used by defininig type "
+    )
 
     override def evaluate[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Iterable[(da.ClassFile, S)]
-    ): IndexedSeq[LocationsContainer[S]] = {
+        rawClassFiles:        Iterable[(da.ClassFile, S)]): IndexedSeq[LocationsContainer[S]] = {
         val locations = Array.fill(featureIDs.size)(new LocationsContainer[S])
 
         implicit val declaredFields: DeclaredFields = project.get(DeclaredFieldsKey)
-        val contextProvider: ContextProvider = project.get(ContextProviderKey)
-        val fieldAccessInformation = project.get(FieldAccessInformationKey)
+        val contextProvider: ContextProvider        = project.get(ContextProviderKey)
+        val fieldAccessInformation                  = project.get(FieldAccessInformationKey)
         import fieldAccessInformation.isAccessed
         import fieldAccessInformation.allAccesses
 
         for {
-            cf <- project.allProjectClassFiles
+            cf               <- project.allProjectClassFiles
             classFileLocation = ClassFileLocation(project, cf)
-            field <- cf.fields
-            fieldType = field.fieldType
+            field            <- cf.fields
+            fieldType         = field.fieldType
             if !fieldType.isBaseType ||
                 (field.fieldType ne ObjectType.String) ||
                 !(field.isStatic && field.isFinal)
@@ -66,7 +63,7 @@ class FieldAccessStatistics(implicit hermes: HermesConfig) extends DefaultFeatur
                         case Some(ACC_PUBLIC)    => 3
                     }
                 } else if (!field.isPrivate && allAccesses(field).forall(ac =>
-                    contextProvider.contextFromId(ac._1).method.definedMethod.classFile eq cf)) {
+                               contextProvider.contextFromId(ac._1).method.definedMethod.classFile eq cf)) {
                     field.visibilityModifier match {
                         case None                => 4
                         case Some(ACC_PROTECTED) => 5

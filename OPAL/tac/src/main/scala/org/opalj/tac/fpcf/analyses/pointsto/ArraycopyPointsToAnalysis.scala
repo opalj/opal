@@ -5,15 +5,8 @@ package fpcf
 package analyses
 package pointsto
 
-import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.fpcf.FinalEP
-import org.opalj.fpcf.ProperPropertyComputationResult
-import org.opalj.fpcf.PropertyBounds
-import org.opalj.fpcf.PropertyComputationResult
-import org.opalj.fpcf.PropertyMetaInformation
-import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.Results
-import org.opalj.br.analyses.SomeProject
+import scala.collection.immutable.ArraySeq
+
 import org.opalj.br.ArrayType
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.IntegerType
@@ -22,14 +15,21 @@ import org.opalj.br.ObjectType
 import org.opalj.br.VoidType
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
 import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.fpcf.FinalEP
+import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.PropertyBounds
+import org.opalj.fpcf.PropertyComputationResult
+import org.opalj.fpcf.PropertyMetaInformation
+import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.Results
 import org.opalj.tac.fpcf.properties.TheTACAI
-
-import scala.collection.immutable.ArraySeq
 
 /**
  * Handles the effect of `java.lang.System.arraycopy*` to points-to sets.
@@ -37,11 +37,12 @@ import scala.collection.immutable.ArraySeq
  * @author Dominik Helm
  */
 abstract class ArraycopyPointsToAnalysis private[pointsto] (
-        final val project: SomeProject
-) extends PointsToAnalysisBase with TACAIBasedAPIBasedAnalysis {
+        final val project: SomeProject) extends PointsToAnalysisBase with TACAIBasedAPIBasedAnalysis {
 
     override val apiMethod: DeclaredMethod = declaredMethods(
-        ObjectType.System, "", ObjectType.System,
+        ObjectType.System,
+        "",
+        ObjectType.System,
         "arraycopy",
         MethodDescriptor(
             ArraySeq(ObjectType.Object, IntegerType, ObjectType.Object, IntegerType, IntegerType),
@@ -49,9 +50,7 @@ abstract class ArraycopyPointsToAnalysis private[pointsto] (
         )
     )
 
-    def process(p: SomeProject): PropertyComputationResult = {
-        registerAPIMethod()
-    }
+    def process(p: SomeProject): PropertyComputationResult = registerAPIMethod()
 
     def processNewCaller(
         calleeContext:   ContextType,
@@ -61,12 +60,11 @@ abstract class ArraycopyPointsToAnalysis private[pointsto] (
         receiverOption:  Option[Expr[V]],
         params:          Seq[Option[Expr[V]]],
         targetVarOption: Option[V],
-        isDirect:        Boolean
-    ): ProperPropertyComputationResult = {
-        implicit val state: State =
-            new PointsToAnalysisState[ElementType, PointsToSet, ContextType](
-                callerContext, FinalEP(callerContext.method.definedMethod, TheTACAI(tac))
-            )
+        isDirect:        Boolean): ProperPropertyComputationResult = {
+        implicit val state: State = new PointsToAnalysisState[ElementType, PointsToSet, ContextType](
+            callerContext,
+            FinalEP(callerContext.method.definedMethod, TheTACAI(tac))
+        )
 
         val sourceArr = params.head
         val targetArr = params(2)
@@ -75,10 +73,15 @@ abstract class ArraycopyPointsToAnalysis private[pointsto] (
             val index = tac.properStmtIndexForPC(pc)
 
             handleArrayLoad(
-                ArrayType.ArrayOfObject, pc, sourceArr.get.asVar.definedBy, checkForCast = false
+                ArrayType.ArrayOfObject,
+                pc,
+                sourceArr.get.asVar.definedBy,
+                checkForCast = false
             )
             handleArrayStore(
-                ArrayType.ArrayOfObject, targetArr.get.asVar.definedBy, IntTrieSet(index)
+                ArrayType.ArrayOfObject,
+                targetArr.get.asVar.definedBy,
+                IntTrieSet(index)
             )
         }
 

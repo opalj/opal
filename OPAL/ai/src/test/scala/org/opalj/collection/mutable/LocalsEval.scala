@@ -4,8 +4,9 @@ package collection
 package mutable
 
 import java.util.Random
-import org.opalj.util.PerformanceEvaluation.time
+
 import org.opalj.util.Nanoseconds
+import org.opalj.util.PerformanceEvaluation.time
 
 /**
  * Evaluates the effectiveness of the locals data structure when compared with an array.
@@ -13,40 +14,43 @@ import org.opalj.util.Nanoseconds
 object LocalsEval extends App {
 
     val REPETITIONS = 10000000
-    var lastAvg = 0.0d
-    val r = new Random
+    var lastAvg     = 0.0d
+    val r           = new Random
 
-    val e = 1
-    val eMax = 2
+    val e       = 1
+    val eMax    = 2
     val minRuns = 20
     println("Configuration")
-    println("REPETITIONS = "+REPETITIONS)
+    println("REPETITIONS = " + REPETITIONS)
     println("Timer Configuration")
-    println("e = "+e)
-    println("eMax = "+eMax)
-    println("minRuns = "+minRuns)
+    println("e = " + e)
+    println("eMax = " + eMax)
+    println("minRuns = " + minRuns)
 
     /////////
 
     def evalUsingLocals(elems: Int): Unit = {
         var lastAvg = 0L
         println(s"$elems elments stored in vector")
-        val data_v = time(e, eMax, minRuns, {
-            var data: Locals[Integer] = Locals(elems)
-            var i = 0
-            while (i < REPETITIONS) {
-                val index = r.nextInt(elems)
-                val value = r.nextInt(10)
-                val currentValue = data(index)
-                data = data.updated(
-                    index,
-                    if (currentValue == null)
-                        Integer.valueOf(value) else Integer.valueOf(currentValue + value)
-                )
-                i += 1
+        val data_v = time(
+            e,
+            eMax,
+            minRuns, {
+                var data: Locals[Integer] = Locals(elems)
+                var i                     = 0
+                while (i < REPETITIONS) {
+                    val index        = r.nextInt(elems)
+                    val value        = r.nextInt(10)
+                    val currentValue = data(index)
+                    data = data.updated(
+                        index,
+                        if (currentValue == null) Integer.valueOf(value) else Integer.valueOf(currentValue + value)
+                    )
+                    i += 1
+                }
+                data
             }
-            data
-        }) { (t, ts) =>
+        ) { (t, ts) =>
             val sTs = ts.map(_.toSeconds).mkString(", ")
             val avg = ts.map(_.timeSpan).sum / ts.size
             if (lastAvg != avg) {
@@ -62,23 +66,26 @@ object LocalsEval extends App {
     def evalUsingArray(elems: Int): Unit = {
         var lastAvg = 0L
         println(s"$elems elments stored in array")
-        val data_a = time(e, eMax, minRuns, {
-            var data = new Array[Integer](elems)
-            var i = 0
-            while (i < REPETITIONS) {
-                val index = r.nextInt(elems)
-                val value = r.nextInt(10)
-                val newData = new Array[Integer](elems)
-                System.arraycopy(data, 0, newData, 0, elems)
-                val currentValue = data(index)
-                newData(index) =
-                    if (currentValue == null)
-                        Integer.valueOf(value) else Integer.valueOf(currentValue + value)
-                data = newData
-                i += 1
+        val data_a = time(
+            e,
+            eMax,
+            minRuns, {
+                var data = new Array[Integer](elems)
+                var i    = 0
+                while (i < REPETITIONS) {
+                    val index   = r.nextInt(elems)
+                    val value   = r.nextInt(10)
+                    val newData = new Array[Integer](elems)
+                    System.arraycopy(data, 0, newData, 0, elems)
+                    val currentValue = data(index)
+                    newData(index) =
+                        if (currentValue == null) Integer.valueOf(value) else Integer.valueOf(currentValue + value)
+                    data = newData
+                    i += 1
+                }
+                data
             }
-            data
-        }) { (t, ts) =>
+        ) { (t, ts) =>
             val sTs = ts.mkString(", ")
             val avg = ts.map(_.timeSpan).sum / ts.size
             if (lastAvg != avg) {

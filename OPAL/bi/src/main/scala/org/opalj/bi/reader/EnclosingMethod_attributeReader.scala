@@ -17,13 +17,12 @@ trait EnclosingMethod_attributeReader extends AttributeReader {
     type EnclosingMethod_attribute <: Attribute
 
     def EnclosingMethod_attribute(
-        cp:                   Constant_Pool,
-        ap_name_index:        Constant_Pool_Index,
-        ap_descriptor_index:  Constant_Pool_Index,
+        cp: Constant_Pool,
+        ap_name_index: Constant_Pool_Index,
+        ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
-        class_index:          Constant_Pool_Index,
-        method_index:         Constant_Pool_Index
-    ): EnclosingMethod_attribute
+        class_index: Constant_Pool_Index,
+        method_index: Constant_Pool_Index): EnclosingMethod_attribute
 
     //
     // IMPLEMENTATION
@@ -45,9 +44,9 @@ trait EnclosingMethod_attributeReader extends AttributeReader {
         ap_name_index: Constant_Pool_Index,
         ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
-        in: DataInputStream
-    ) => {
-        /*val attribute_length =*/ in.readInt
+        in: DataInputStream) => {
+        /*val attribute_length =*/
+        in.readInt
         EnclosingMethod_attribute(
             cp,
             ap_name_index,

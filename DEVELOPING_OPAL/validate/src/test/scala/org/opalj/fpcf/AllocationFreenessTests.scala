@@ -13,9 +13,7 @@ import org.opalj.br.fpcf.analyses.EagerL0AllocationFreenessAnalysis
  */
 class AllocationFreenessTests extends PropertiesTest {
 
-    override def fixtureProjectPackage: List[String] = {
-        List("org/opalj/fpcf/fixtures/allocation_freeness")
-    }
+    override def fixtureProjectPackage: List[String] = List("org/opalj/fpcf/fixtures/allocation_freeness")
 
     describe("the org.opalj.fpcf.analyses.L0AllocationFreenessAnalysis is executed") {
         val as = executeAnalyses(

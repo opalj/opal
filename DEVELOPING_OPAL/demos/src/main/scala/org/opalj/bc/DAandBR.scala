@@ -2,30 +2,29 @@
 package org.opalj
 package bc
 
+import java.io.ByteArrayInputStream
 import java.nio.file.Files
 import java.nio.file.Paths
-import java.io.ByteArrayInputStream
-
-import org.opalj.bi.ACC_PUBLIC
-import org.opalj.bi.ACC_SUPER
-import org.opalj.bi.ACC_STATIC
-import org.opalj.br.MethodTemplate
-import org.opalj.da.ClassFile
-import org.opalj.da.Method_Info
-import org.opalj.da.Constant_Pool_Entry
-import org.opalj.da.SourceFile_attribute
-import org.opalj.da.CONSTANT_Class_info
-import org.opalj.da.CONSTANT_Utf8
-import org.opalj.da.CONSTANT_NameAndType_info
-import org.opalj.da.CONSTANT_Methodref_info
-import org.opalj.da.CONSTANT_Fieldref_info
-import org.opalj.da.CONSTANT_String_info
-import org.opalj.da.Code_attribute
-import org.opalj.da.Code
-import org.opalj.br.reader.Java8Framework
 import scala.collection.immutable.ArraySeq
 
+import org.opalj.bi.ACC_PUBLIC
+import org.opalj.bi.ACC_STATIC
+import org.opalj.bi.ACC_SUPER
+import org.opalj.br.MethodTemplate
+import org.opalj.br.reader.Java8Framework
+import org.opalj.da.ClassFile
+import org.opalj.da.Code
+import org.opalj.da.Code_attribute
+import org.opalj.da.CONSTANT_Class_info
+import org.opalj.da.CONSTANT_Fieldref_info
+import org.opalj.da.CONSTANT_Methodref_info
+import org.opalj.da.CONSTANT_NameAndType_info
 import org.opalj.da.Constant_Pool
+import org.opalj.da.Constant_Pool_Entry
+import org.opalj.da.CONSTANT_String_info
+import org.opalj.da.CONSTANT_Utf8
+import org.opalj.da.Method_Info
+import org.opalj.da.SourceFile_attribute
 
 /**
  * Demonstrates how to create a "HelloWorld" class and how
@@ -113,7 +112,7 @@ object DAandBR extends App {
         fields:        Fields,
         methods:       Methods,
         attributes:    Attributes
-        */
+     */
 
     val cf = ClassFile(
         Array[Constant_Pool_Entry](
@@ -155,8 +154,8 @@ object DAandBR extends App {
         minor_version = 0,
         major_version = 46,
         access_flags = ACC_PUBLIC.mask | ACC_SUPER.mask,
-        this_class = 1 /*Test*/ ,
-        super_class = 3 /*extends java.lang.Object*/ ,
+        this_class = 1 /*Test*/,
+        super_class = 3 /*extends java.lang.Object*/,
         // Interfaces.empty,
         // Fields.empty,
         methods = ArraySeq(
@@ -169,16 +168,15 @@ object DAandBR extends App {
                         attribute_name_index = 7,
                         max_stack = 1,
                         max_locals = 1,
-                        code =
-                            new Code(
-                                Array[Byte](
-                                    42, // aload_0
-                                    (0xff & 183).toByte, // invokespecial
-                                    0, //                    -> Methodref
-                                    8, //                       #8
-                                    (0xff & 177).toByte
-                                )
+                        code = new Code(
+                            Array[Byte](
+                                42,                  // aload_0
+                                (0xff & 183).toByte, // invokespecial
+                                0,                   //                    -> Methodref
+                                8,                   //                       #8
+                                (0xff & 177).toByte
                             )
+                        )
                     )
                 )
             ),
@@ -191,20 +189,19 @@ object DAandBR extends App {
                         attribute_name_index = 7,
                         max_stack = 2,
                         max_locals = 1,
-                        code =
-                            new Code(
-                                Array[Byte](
-                                    (0xff & 178).toByte, // getstatic
-                                    0,
-                                    16,
-                                    18, // ldc
-                                    22,
-                                    (0xff & 182).toByte, // invokevirtual
-                                    0,
-                                    24,
-                                    (0xff & 177).toByte // return
-                                )
+                        code = new Code(
+                            Array[Byte](
+                                (0xff & 178).toByte, // getstatic
+                                0,
+                                16,
+                                18, // ldc
+                                22,
+                                (0xff & 182).toByte, // invokevirtual
+                                0,
+                                24,
+                                (0xff & 177).toByte // return
                             )
+                        )
                     )
                 )
             )
@@ -216,17 +213,14 @@ object DAandBR extends App {
 
     val brClassFile = Java8Framework.ClassFile(() => new ByteArrayInputStream(assembledCF)).head
     val newBRMethods =
-        brClassFile.methods.
-            filter(m => /*due some sophisticated analysis...*/ m.name == "<init>").
-            map[MethodTemplate](m => m.copy())
+        brClassFile.methods.filter(m => /*due some sophisticated analysis...*/ m.name == "<init>").map[MethodTemplate](
+            m => m.copy())
     val newBRClassFile = brClassFile.copy(methods = newBRMethods)
 
     val newDAClassFile = cf.copy(methods = cf.methods.filter { daM =>
         implicit val cp: Constant_Pool = cf.constant_pool
-        brClassFile.methods.exists { brM =>
-            brM.name == daM.name && brM.descriptor.toJVMDescriptor == daM.descriptor
-        }
+        brClassFile.methods.exists { brM => brM.name == daM.name && brM.descriptor.toJVMDescriptor == daM.descriptor }
     })
 
-    println("Created class file: "+Files.write(Paths.get("Test.class"), assembledCF).toAbsolutePath)
+    println("Created class file: " + Files.write(Paths.get("Test.class"), assembledCF).toAbsolutePath)
 }

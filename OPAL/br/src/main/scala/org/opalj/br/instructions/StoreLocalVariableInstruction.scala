@@ -25,13 +25,10 @@ abstract class StoreLocalVariableInstruction extends Instruction with NoLabels {
     final def nextInstructions(
         currentPC:             PC,
         regularSuccessorsOnly: Boolean
-    )(
-        implicit
+      )(implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
-    ): List[PC] = {
+        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy): List[PC] =
         List(indexOfNextInstruction(currentPC))
-    }
 
     final def numberOfPoppedOperands(ctg: Int => ComputationalTypeCategory): Int = 1
 
@@ -78,7 +75,7 @@ object StoreLocalVariableInstruction {
      * Returns the `xStore` instruction that stores the variable at the top of the stack
      * of the specified computational type in the local variable at the given index.
      */
-    def apply(computationalType: ComputationalType, lvIndex: Int): StoreLocalVariableInstruction = {
+    def apply(computationalType: ComputationalType, lvIndex: Int): StoreLocalVariableInstruction =
         computationalType match {
             case ComputationalTypeInt           => ISTORE.canonicalRepresentation(lvIndex)
             case ComputationalTypeFloat         => FSTORE.canonicalRepresentation(lvIndex)
@@ -87,7 +84,6 @@ object StoreLocalVariableInstruction {
             case ComputationalTypeReference     => ASTORE.canonicalRepresentation(lvIndex)
             case ComputationalTypeReturnAddress => ASTORE.canonicalRepresentation(lvIndex)
         }
-    }
 
     /**
      * Extracts the index of the accessed local variable.

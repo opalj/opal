@@ -36,7 +36,7 @@ sealed trait TypeImmutability extends OrderedProperty with TypeImmutabilityPrope
     def isTransitivelyImmutable: Boolean
     def isNonTransitivelyImmutable: Boolean
     def isDependentlyImmutable: Boolean = false
-    def isMutable: Boolean = true
+    def isMutable: Boolean              = true
     def meet(other: TypeImmutability): TypeImmutability
 }
 
@@ -57,9 +57,9 @@ object TypeImmutability extends TypeImmutabilityPropertyMetaInformation {
  */
 case object TransitivelyImmutableType extends TypeImmutability {
 
-    override def isTransitivelyImmutable: Boolean = true
+    override def isTransitivelyImmutable: Boolean    = true
     override def isNonTransitivelyImmutable: Boolean = false
-    override def isMutable: Boolean = false
+    override def isMutable: Boolean                  = false
 
     override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {}
 
@@ -67,56 +67,46 @@ case object TransitivelyImmutableType extends TypeImmutability {
 }
 
 case class DependentlyImmutableType(parameters: SortedSet[String]) extends TypeImmutability {
-    override def isTransitivelyImmutable: Boolean = false
+    override def isTransitivelyImmutable: Boolean    = false
     override def isNonTransitivelyImmutable: Boolean = false
-    override def isMutable: Boolean = false
-    override def isDependentlyImmutable: Boolean = true
+    override def isMutable: Boolean                  = false
+    override def isDependentlyImmutable: Boolean     = true
 
     def meet(that: TypeImmutability): TypeImmutability =
-        if (that == MutableType || that == NonTransitivelyImmutableType)
-            that
-        else
-            this
+        if (that == MutableType || that == NonTransitivelyImmutableType) that
+        else this
 
-    override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
-        if (other == TransitivelyImmutableType) {
-            throw new IllegalArgumentException(s"$e: impossible refinement: $other => $this")
-        }
+    override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = if (other == TransitivelyImmutableType) {
+        throw new IllegalArgumentException(s"$e: impossible refinement: $other => $this")
     }
 }
 
 case object NonTransitivelyImmutableType extends TypeImmutability {
 
-    override def isTransitivelyImmutable: Boolean = false
+    override def isTransitivelyImmutable: Boolean    = false
     override def isNonTransitivelyImmutable: Boolean = true
-    override def isMutable: Boolean = false
+    override def isMutable: Boolean                  = false
 
     def meet(that: TypeImmutability): TypeImmutability =
-        if (that == MutableType)
-            that
-        else
-            this
+        if (that == MutableType) that
+        else this
 
-    override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
-        other match {
-            case TransitivelyImmutableType | DependentlyImmutableType(_) =>
-                throw new IllegalArgumentException(s"$e: impossible refinement: $other => $this")
-            case _ =>
-        }
+    override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = other match {
+        case TransitivelyImmutableType | DependentlyImmutableType(_) =>
+            throw new IllegalArgumentException(s"$e: impossible refinement: $other => $this")
+        case _ =>
     }
 }
 
 case object MutableType extends TypeImmutability {
 
-    override def isTransitivelyImmutable: Boolean = false
+    override def isTransitivelyImmutable: Boolean    = false
     override def isNonTransitivelyImmutable: Boolean = false
-    override def isMutable: Boolean = true
+    override def isMutable: Boolean                  = true
 
     def meet(other: TypeImmutability): TypeImmutability = this
 
-    override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
-        if (other != MutableType) {
-            throw new IllegalArgumentException(s"$e: impossible refinement: $other => $this")
-        }
+    override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = if (other != MutableType) {
+        throw new IllegalArgumentException(s"$e: impossible refinement: $other => $this")
     }
 }

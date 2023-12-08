@@ -11,9 +11,7 @@ case class ModuleMainClass(mainClassType: ObjectType) extends Attribute {
 
     final override def kindId: Int = ModuleMainClass.KindId
 
-    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = {
-        this == other
-    }
+    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = this == other
 }
 
 object ModuleMainClass {

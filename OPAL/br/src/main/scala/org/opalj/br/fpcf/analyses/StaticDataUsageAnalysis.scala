@@ -6,6 +6,18 @@ package analyses
 
 import scala.annotation.switch
 
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.properties.CompileTimeConstancy
+import org.opalj.br.fpcf.properties.CompileTimeConstantField
+import org.opalj.br.fpcf.properties.CompileTimeVaryingField
+import org.opalj.br.fpcf.properties.NoVaryingDataUse
+import org.opalj.br.fpcf.properties.StaticDataUsage
+import org.opalj.br.fpcf.properties.UsesConstantDataOnly
+import org.opalj.br.fpcf.properties.UsesNoStaticData
+import org.opalj.br.fpcf.properties.UsesVaryingData
+import org.opalj.br.instructions._
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPS
@@ -22,18 +34,6 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.SomeEPS
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.properties.CompileTimeConstancy
-import org.opalj.br.fpcf.properties.CompileTimeConstantField
-import org.opalj.br.fpcf.properties.CompileTimeVaryingField
-import org.opalj.br.fpcf.properties.NoVaryingDataUse
-import org.opalj.br.fpcf.properties.StaticDataUsage
-import org.opalj.br.fpcf.properties.UsesConstantDataOnly
-import org.opalj.br.fpcf.properties.UsesNoStaticData
-import org.opalj.br.fpcf.properties.UsesVaryingData
-import org.opalj.br.instructions._
 
 /**
  * A simple analysis that identifies methods that use global state that may vary during one or
@@ -41,7 +41,7 @@ import org.opalj.br.instructions._
  *
  * @author Dominik Helm
  */
-class StaticDataUsageAnalysis private[analyses] ( final val project: SomeProject)
+class StaticDataUsageAnalysis private[analyses] (final val project: SomeProject)
     extends FPCFAnalysis {
 
     import project.nonVirtualCall
@@ -56,11 +56,9 @@ class StaticDataUsageAnalysis private[analyses] ( final val project: SomeProject
     def baseMethodStaticDataUsage(dm: DefinedMethod): ProperPropertyComputationResult = {
 
         def c(eps: SomeEOptionP): ProperPropertyComputationResult = eps match {
-            case FinalP(sdu) => Result(dm, sdu)
-            case ep @ InterimLUBP(lb, ub) =>
-                InterimResult(dm, lb, ub, Set(ep), c)
-            case epk =>
-                InterimResult(dm, UsesVaryingData, UsesNoStaticData, Set(epk), c)
+            case FinalP(sdu)              => Result(dm, sdu)
+            case ep @ InterimLUBP(lb, ub) => InterimResult(dm, lb, ub, Set(ep), c)
+            case epk                      => InterimResult(dm, UsesVaryingData, UsesNoStaticData, Set(epk), c)
         }
 
         c(propertyStore(declaredMethods(dm.definedMethod), StaticDataUsage.key))
@@ -73,10 +71,9 @@ class StaticDataUsageAnalysis private[analyses] ( final val project: SomeProject
      */
     def determineUsage(definedMethod: DefinedMethod): ProperPropertyComputationResult = {
 
-        if (definedMethod.definedMethod.body.isEmpty)
-            return Result(definedMethod, UsesVaryingData);
+        if (definedMethod.definedMethod.body.isEmpty) return Result(definedMethod, UsesVaryingData);
 
-        val method = definedMethod.definedMethod
+        val method             = definedMethod.definedMethod
         val declaringClassType = method.classFile.thisType
 
         // If thhis is not the method's declaration, but a non-overwritten method in a subtype,
@@ -85,13 +82,13 @@ class StaticDataUsageAnalysis private[analyses] ( final val project: SomeProject
             return baseMethodStaticDataUsage(definedMethod.asDefinedMethod);
 
         val methodDescriptor = method.descriptor
-        val methodName = method.name
-        val body = method.body.get
-        val instructions = body.instructions
-        val maxPC = instructions.length
+        val methodName       = method.name
+        val body             = method.body.get
+        val instructions     = body.instructions
+        val maxPC            = instructions.length
 
         var dependees: Set[EOptionP[Entity, Property]] = Set.empty
-        var maxLevel: StaticDataUsage = UsesNoStaticData
+        var maxLevel: StaticDataUsage                  = UsesNoStaticData
 
         var currentPC = 0
         while (currentPC < maxPC) {
@@ -105,13 +102,10 @@ class StaticDataUsageAnalysis private[analyses] ( final val project: SomeProject
                     resolveFieldReference(declaringClass, fieldName, fieldType) match {
 
                         // ... we have no support for arrays at the moment
-                        case Some(field) =>
-                            propertyStore(field, CompileTimeConstancy.key) match {
+                        case Some(field) => propertyStore(field, CompileTimeConstancy.key) match {
                                 case FinalP(CompileTimeConstantField) =>
-                                case _: FinalEP[_, _] =>
-                                    return Result(definedMethod, UsesVaryingData);
-                                case ep =>
-                                    dependees += ep
+                                case _: FinalEP[_, _]                 => return Result(definedMethod, UsesVaryingData);
+                                case ep                               => dependees += ep
                             }
 
                         case _ =>
@@ -121,42 +115,35 @@ class StaticDataUsageAnalysis private[analyses] ( final val project: SomeProject
                     }
 
                 case INVOKESPECIAL.opcode | INVOKESTATIC.opcode => instruction match {
-                    case MethodInvocationInstruction(`declaringClassType`, _, `methodName`, `methodDescriptor`) =>
-                    // We have a self-recursive call; such calls do not influence the allocation
-                    // freeness and are ignored.
-                    // Let's continue with the evaluation of the next instruction.
+                        case MethodInvocationInstruction(`declaringClassType`, _, `methodName`, `methodDescriptor`) =>
+                        // We have a self-recursive call; such calls do not influence the allocation
+                        // freeness and are ignored.
+                        // Let's continue with the evaluation of the next instruction.
 
-                    case mii: NonVirtualMethodInvocationInstruction =>
-                        nonVirtualCall(declaringClassType, mii) match {
-                            case Success(callee) =>
-                                /* Recall that self-recursive calls are handled earlier! */
-                                val constantUsage =
-                                    propertyStore(declaredMethods(callee), StaticDataUsage.key)
+                        case mii: NonVirtualMethodInvocationInstruction => nonVirtualCall(declaringClassType, mii) match {
+                                case Success(callee) =>
+                                    /* Recall that self-recursive calls are handled earlier! */
+                                    val constantUsage = propertyStore(declaredMethods(callee), StaticDataUsage.key)
 
-                                constantUsage match {
-                                    case FinalP(UsesNoStaticData) => /* Nothing to do */
+                                    constantUsage match {
+                                        case FinalP(UsesNoStaticData)     => /* Nothing to do */
+                                        case FinalP(UsesConstantDataOnly) => maxLevel = UsesConstantDataOnly
 
-                                    case FinalP(UsesConstantDataOnly) =>
-                                        maxLevel = UsesConstantDataOnly
+                                        // Handling cyclic computations
+                                        case ep @ InterimUBP(_: NoVaryingDataUse) => dependees += ep
 
-                                    // Handling cyclic computations
-                                    case ep @ InterimUBP(_: NoVaryingDataUse) =>
-                                        dependees += ep
+                                        case _: EPS[_, _] => return Result(definedMethod, UsesVaryingData);
 
-                                    case _: EPS[_, _] =>
-                                        return Result(definedMethod, UsesVaryingData);
+                                        case epk => dependees += epk
+                                    }
 
-                                    case epk =>
-                                        dependees += epk
-                                }
+                                case _ /* Empty or Failure */ =>
+                                    // We know nothing about the target method (it is not
+                                    // found in the scope of the current project).
+                                    return Result(definedMethod, UsesVaryingData);
 
-                            case _ /* Empty or Failure */ =>
-                                // We know nothing about the target method (it is not
-                                // found in the scope of the current project).
-                                return Result(definedMethod, UsesVaryingData);
-
-                        }
-                }
+                            }
+                    }
 
                 case INVOKEDYNAMIC.opcode | INVOKEVIRTUAL.opcode | INVOKEINTERFACE.opcode =>
                     // We don't handle these calls here, just treat them as having allocations
@@ -168,8 +155,7 @@ class StaticDataUsageAnalysis private[analyses] ( final val project: SomeProject
             currentPC = body.pcOfNextInstruction(currentPC)
         }
 
-        if (dependees.isEmpty)
-            return Result(definedMethod, maxLevel);
+        if (dependees.isEmpty) return Result(definedMethod, maxLevel);
 
         // This function computes the “static data usage" for a method based on the usage of its
         // callees and the compile-time constancy of its static field reads
@@ -180,24 +166,28 @@ class StaticDataUsageAnalysis private[analyses] ( final val project: SomeProject
             (eps: @unchecked) match {
                 case FinalP(du: NoVaryingDataUse) =>
                     if (du eq UsesConstantDataOnly) maxLevel = UsesConstantDataOnly
-                    if (dependees.isEmpty)
-                        Result(definedMethod, maxLevel)
+                    if (dependees.isEmpty) Result(definedMethod, maxLevel)
                     else {
                         InterimResult(
-                            definedMethod, UsesVaryingData, maxLevel,
-                            dependees, c
+                            definedMethod,
+                            UsesVaryingData,
+                            maxLevel,
+                            dependees,
+                            c
                         )
                     }
 
                 case FinalP(UsesVaryingData) => Result(definedMethod, UsesVaryingData)
 
                 case FinalP(CompileTimeConstantField) =>
-                    if (dependees.isEmpty)
-                        Result(definedMethod, maxLevel)
+                    if (dependees.isEmpty) Result(definedMethod, maxLevel)
                     else {
                         InterimResult(
-                            definedMethod, UsesVaryingData, maxLevel,
-                            dependees, c
+                            definedMethod,
+                            UsesVaryingData,
+                            maxLevel,
+                            dependees,
+                            c
                         )
                     }
 
@@ -218,12 +208,10 @@ class StaticDataUsageAnalysis private[analyses] ( final val project: SomeProject
     }
 
     /** Called when the analysis is scheduled lazily. */
-    def doDetermineUsage(e: Entity): ProperPropertyComputationResult = {
-        e match {
-            case m: DefinedMethod  => determineUsage(m)
-            case m: DeclaredMethod => Result(m, UsesVaryingData)
-            case _                 => throw new UnknownError(s"$e is not a method")
-        }
+    def doDetermineUsage(e: Entity): ProperPropertyComputationResult = e match {
+        case m: DefinedMethod  => determineUsage(m)
+        case m: DeclaredMethod => Result(m, UsesVaryingData)
+        case _                 => throw new UnknownError(s"$e is not a method")
     }
 }
 
@@ -231,10 +219,9 @@ trait StaticDataUsageAnalysisScheduler extends FPCFAnalysisScheduler {
 
     override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
 
-    final def derivedProperty: PropertyBounds = {
+    final def derivedProperty: PropertyBounds =
         // FIXME Just seems to derive the upper bound...
         PropertyBounds.lub(StaticDataUsage)
-    }
 
     final override def uses: Set[PropertyBounds] = Set(
         PropertyBounds.lub(StaticDataUsage),
@@ -245,7 +232,7 @@ trait StaticDataUsageAnalysisScheduler extends FPCFAnalysisScheduler {
 
 object EagerStaticDataUsageAnalysis
     extends StaticDataUsageAnalysisScheduler
-    with BasicFPCFEagerAnalysisScheduler {
+        with BasicFPCFEagerAnalysisScheduler {
 
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 
@@ -263,7 +250,7 @@ object EagerStaticDataUsageAnalysis
 
 object LazyStaticDataUsageAnalysis
     extends StaticDataUsageAnalysisScheduler
-    with BasicFPCFLazyAnalysisScheduler {
+        with BasicFPCFLazyAnalysisScheduler {
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 

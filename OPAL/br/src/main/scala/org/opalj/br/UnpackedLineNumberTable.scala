@@ -22,7 +22,7 @@ case class UnpackedLineNumberTable(lineNumbers: LineNumbers) extends LineNumberT
         val breaks = new Breaks
         import breaks.{break, breakable}
 
-        val lnsIterator = lineNumbers.iterator
+        val lnsIterator                = lineNumbers.iterator
         var lastLineNumber: LineNumber = null
         breakable {
             while (lnsIterator.hasNext) {
@@ -35,18 +35,12 @@ case class UnpackedLineNumberTable(lineNumbers: LineNumbers) extends LineNumberT
             }
         }
 
-        if (lastLineNumber eq null)
-            None
-        else
-            Some(lastLineNumber.lineNumber)
+        if (lastLineNumber eq null) None
+        else Some(lastLineNumber.lineNumber)
     }
 
-    def firstLineNumber(): Option[Int] = {
-        if (lineNumbers.isEmpty)
-            None
-        else
-            Some(lineNumbers.view.map(_.lineNumber).min)
-    }
+    def firstLineNumber(): Option[Int] =
+        if (lineNumbers.isEmpty) None
+        else Some(lineNumbers.view.map(_.lineNumber).min)
 
 }
-

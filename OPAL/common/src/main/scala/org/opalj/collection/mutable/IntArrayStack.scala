@@ -17,28 +17,26 @@ import scala.collection.mutable
  * @author Michael Eichberg
  */
 final class IntArrayStack private (
-        private var data:  Array[Int],
-        private var size0: Int
-) extends mutable.IndexedSeq[Int]
-    with mutable.IndexedSeqOps[Int, mutable.Stack, IntArrayStack]
-    with mutable.Cloneable[IntArrayStack]
-    with Serializable { stack =>
+        private var data: Array[Int],
+        private var size0: Int) extends mutable.IndexedSeq[Int]
+        with mutable.IndexedSeqOps[Int, mutable.Stack, IntArrayStack]
+        with mutable.Cloneable[IntArrayStack]
+        with Serializable { stack =>
 
     def this(initialSize: Int = 4) = this(new Array[Int](initialSize), 0)
 
-    override def length: Int = size0
+    override def length: Int      = size0
     override def isEmpty: Boolean = size0 == 0
 
     override def apply(index: Int): Int = {
-        val size0 = this.size0
+        val size0      = this.size0
         val valueIndex = size0 - 1 - index
-        if (valueIndex < 0 || valueIndex >= size0)
-            throw new IndexOutOfBoundsException(s"$index (size: $size0)");
+        if (valueIndex < 0 || valueIndex >= size0) throw new IndexOutOfBoundsException(s"$index (size: $size0)");
 
         data(valueIndex)
     }
 
-    override def empty: IntArrayStack = IntArrayStack.empty
+    override def empty: IntArrayStack                       = IntArrayStack.empty
     override def iterableFactory: SeqFactory[mutable.Stack] = mutable.Stack(this).iterableFactory
     override def fromSpecific(coll: IterableOnce[Int]): IntArrayStack = IntArrayStack.fromSpecific(coll)
     override protected def newSpecificBuilder: mutable.Builder[Int, IntArrayStack] = IntArrayStack.newBuilder
@@ -47,8 +45,8 @@ final class IntArrayStack private (
 
     override def reverse: IntArrayStack = {
         val newData = new Array[Int](size0)
-        val max = size0 - 1
-        var i = 0
+        val max     = size0 - 1
+        var i       = 0
         while (i <= max) {
             newData(max - i) = data(i)
             i += 1
@@ -64,7 +62,7 @@ final class IntArrayStack private (
 
     def push(i: Int): Unit = {
         val size0 = this.size0
-        var data = this.data
+        var data  = this.data
         if (data.length == size0) {
             val newData = new Array[Int]((size0 + 1) * 2)
             System.arraycopy(data, 0, newData, 0, size0)
@@ -88,7 +86,7 @@ final class IntArrayStack private (
         val thatSize = that.size0
 
         if (thatSize == 0) {
-            return ;
+            return;
         }
 
         val thisSize = this.size0
@@ -114,8 +112,7 @@ final class IntArrayStack private (
      */
     def pop(): Int = {
         val index = this.size0 - 1
-        if (index < 0)
-            throw new NoSuchElementException("the stack is empty");
+        if (index < 0) throw new NoSuchElementException("the stack is empty");
 
         val i = this.data(index)
         this.size0 = index
@@ -129,8 +126,7 @@ final class IntArrayStack private (
      */
     def top(): Int = {
         val index = this.size0 - 1
-        if (index < 0)
-            throw new NoSuchElementException("the stack is empty");
+        if (index < 0) throw new NoSuchElementException("the stack is empty");
 
         this.data(index)
     }
@@ -142,15 +138,14 @@ final class IntArrayStack private (
     override /*TraversableLike*/ def head: Int = top()
 
     override /*TraversableLike*/ def last: Int = {
-        if (this.size0 == 0)
-            throw new NoSuchElementException("the stack is empty");
+        if (this.size0 == 0) throw new NoSuchElementException("the stack is empty");
 
         this.data(0)
     }
 
     override def foreach[U](f: Int => U): Unit = {
         val data = this.data
-        var i = this.size0 - 1
+        var i    = this.size0 - 1
         while (i >= 0) {
             f(data(i))
             i -= 1
@@ -159,8 +154,8 @@ final class IntArrayStack private (
 
     def foreachReverse[U](f: Int => U): Unit = {
         val data = this.data
-        val max = this.size0 - 1
-        var i = 0
+        val max  = this.size0 - 1
+        var i    = 0
         while (i <= max) {
             f(data(i))
             i += 1
@@ -169,8 +164,8 @@ final class IntArrayStack private (
 
     override def foldLeft[B](z: B)(f: (B, Int) => B): B = {
         val data = this.data
-        var v = z
-        var i = this.size0 - 1
+        var v    = z
+        var i    = this.size0 - 1
         while (i >= 0) {
             v = f(v, data(i))
             i -= 1
@@ -185,12 +180,12 @@ final class IntArrayStack private (
      *          when all elements are already returned.
      */
     override def iterator: IntIterator = new IntIterator {
-        var currentIndex = stack.size0 - 1
+        var currentIndex     = stack.size0 - 1
         def hasNext: Boolean = currentIndex >= 0
 
         def next(): Int = {
             val currentIndex = this.currentIndex
-            val r = stack.data(currentIndex)
+            val r            = stack.data(currentIndex)
             this.currentIndex = currentIndex - 1
             r
         }
@@ -201,9 +196,7 @@ final class IntArrayStack private (
 
     override def clone(): IntArrayStack = new IntArrayStack(data.clone(), size0)
 
-    override def toString: String = {
-        s"IntArrayStack(/*size=$size0;*/data=${data.take(size0).mkString("[", ",", "->")})"
-    }
+    override def toString: String = s"IntArrayStack(/*size=$size0;*/data=${data.take(size0).mkString("[", ",", "->")})"
 }
 
 /**
@@ -216,22 +209,20 @@ object IntArrayStack extends SpecificIterableFactory[Int, IntArrayStack] {
             stack += elem
             this
         }
-        override def clear(): Unit = stack = empty
+        override def clear(): Unit           = stack = empty
         override def result(): IntArrayStack = stack
     }
 
     override def empty: IntArrayStack = new IntArrayStack
 
     override def fromSpecific(it: IterableOnce[Int]): IntArrayStack = {
-        val builder = newBuilder
+        val builder  = newBuilder
         val iterator = it.iterator
-        while (iterator.hasNext)
-            builder.addOne(iterator.next())
+        while (iterator.hasNext) builder.addOne(iterator.next())
         builder.result()
     }
 
-    override def newBuilder =
-        new IntArrayStackBuilder(empty)
+    override def newBuilder = new IntArrayStackBuilder(empty)
 
     /**
      * Creates a new stack based on a given sequence. The last value of the sequence will

@@ -4,10 +4,10 @@ package br
 package fpcf
 package properties
 
+import org.opalj.collection.immutable.IntTrieSet
+
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-
-import org.opalj.collection.immutable.IntTrieSet
 
 /**
  * Tests the [[Purity]] property, especially correctness of the meet operator.
@@ -16,22 +16,37 @@ import org.opalj.collection.immutable.IntTrieSet
  */
 class PurityPropertyTest extends AnyFlatSpec with Matchers {
 
-    val contextuallyPure = ContextuallyPure(IntTrieSet(1))
-    val contextuallySideEffectFree = ContextuallySideEffectFree(IntTrieSet(1))
-    val dContextuallyPure = DContextuallyPure(IntTrieSet(1))
+    val contextuallyPure            = ContextuallyPure(IntTrieSet(1))
+    val contextuallySideEffectFree  = ContextuallySideEffectFree(IntTrieSet(1))
+    val dContextuallyPure           = DContextuallyPure(IntTrieSet(1))
     val dContextuallySideEffectFree = DContextuallySideEffectFree(IntTrieSet(1))
 
     val allPurities: List[Purity] = List(
-        CompileTimePure, Pure, SideEffectFree, DPure, DSideEffectFree,
-        contextuallyPure, contextuallySideEffectFree, ImpureByAnalysis, ImpureByLackOfInformation
+        CompileTimePure,
+        Pure,
+        SideEffectFree,
+        DPure,
+        DSideEffectFree,
+        contextuallyPure,
+        contextuallySideEffectFree,
+        ImpureByAnalysis,
+        ImpureByLackOfInformation
     )
 
     val doesntModifyReceiver: Set[Purity] = Set(
-        CompileTimePure, Pure, SideEffectFree, DPure, DSideEffectFree
+        CompileTimePure,
+        Pure,
+        SideEffectFree,
+        DPure,
+        DSideEffectFree
     )
 
     val doesntModifyParams: Set[Purity] = Set(
-        CompileTimePure, Pure, SideEffectFree, DPure, DSideEffectFree
+        CompileTimePure,
+        Pure,
+        SideEffectFree,
+        DPure,
+        DSideEffectFree
     )
 
     "purity levels" should "have the right properties" in {
@@ -43,7 +58,11 @@ class PurityPropertyTest extends AnyFlatSpec with Matchers {
         }
 
         val deterministic: Set[Purity] = Set(
-            CompileTimePure, Pure, contextuallyPure, DPure, dContextuallyPure
+            CompileTimePure,
+            Pure,
+            contextuallyPure,
+            DPure,
+            dContextuallyPure
         )
 
         for (prop <- allPurities) {
@@ -54,7 +73,11 @@ class PurityPropertyTest extends AnyFlatSpec with Matchers {
         }
 
         val doesntUseDomainSpecificActions: Set[Purity] = Set(
-            CompileTimePure, Pure, SideEffectFree, contextuallyPure, contextuallySideEffectFree
+            CompileTimePure,
+            Pure,
+            SideEffectFree,
+            contextuallyPure,
+            contextuallySideEffectFree
         )
 
         for (prop <- allPurities) {
@@ -67,16 +90,14 @@ class PurityPropertyTest extends AnyFlatSpec with Matchers {
 
     they should "be converted correctly" in {
         for { prop <- allPurities } {
-            if (doesntModifyParams.contains(prop) || prop.isInstanceOf[ClassifiedImpure])
-                assert(
-                    prop.withoutContextual == prop,
-                    s"$prop.withoutContextual modified $prop (was ${prop.withoutContextual})"
-                )
-            else
-                assert(
-                    prop.withoutContextual.flags == (prop.flags & ~Purity.ModifiesParameters),
-                    s"$prop.withoutContextual was incorrect (was ${prop.withoutContextual})"
-                )
+            if (doesntModifyParams.contains(prop) || prop.isInstanceOf[ClassifiedImpure]) assert(
+                prop.withoutContextual == prop,
+                s"$prop.withoutContextual modified $prop (was ${prop.withoutContextual})"
+            )
+            else assert(
+                prop.withoutContextual.flags == (prop.flags & ~Purity.ModifiesParameters),
+                s"$prop.withoutContextual was incorrect (was ${prop.withoutContextual})"
+            )
         }
     }
 
@@ -114,18 +135,18 @@ class PurityPropertyTest extends AnyFlatSpec with Matchers {
 
         assert(
             (DPure meet DSideEffectFree) == DSideEffectFree,
-            "LBDPure meet LBDSideEffectFree was not LBDSideEffectFree"+
+            "LBDPure meet LBDSideEffectFree was not LBDSideEffectFree" +
                 s" (was ${DPure meet DSideEffectFree})"
         )
         assert(
             (DPure meet ImpureByAnalysis) == ImpureByAnalysis,
-            "LBDPure meet LBImpure was not LBImpure"+
+            "LBDPure meet LBImpure was not LBImpure" +
                 s" (was ${DPure meet ImpureByAnalysis})"
         )
 
         assert(
             (DSideEffectFree meet ImpureByAnalysis) == ImpureByAnalysis,
-            "LBDSideEffectFree meet LBImpure was not LBImpure"+
+            "LBDSideEffectFree meet LBImpure was not LBImpure" +
                 s" (was ${DSideEffectFree meet ImpureByAnalysis})"
         )
 

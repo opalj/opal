@@ -11,9 +11,7 @@ package issues
  */
 object IssueCategory {
 
-    final val AllCategories = {
-        Set(Correctness, Performance, Comprehensibility)
-    }
+    final val AllCategories = Set(Correctness, Performance, Comprehensibility)
 
     /**
      * Code that may be incorrect.

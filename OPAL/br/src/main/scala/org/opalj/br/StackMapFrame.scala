@@ -30,16 +30,14 @@ final case class SameFrame(frameType: Int) extends StackMapFrame {
 }
 
 final case class SameLocals1StackItemFrame(
-        frameType:                     Int,
-        verificationTypeInfoStackItem: VerificationTypeInfo
-) extends StackMapFrame {
+        frameType: Int,
+        verificationTypeInfoStackItem: VerificationTypeInfo) extends StackMapFrame {
     final def offset(previousOffset: Int): Int = previousOffset + frameType - 64 + 1
 }
 
 final case class SameLocals1StackItemFrameExtended(
-        offsetDelta:                   Int,
-        verificationTypeInfoStackItem: VerificationTypeInfo
-) extends StackMapFrame {
+        offsetDelta: Int,
+        verificationTypeInfoStackItem: VerificationTypeInfo) extends StackMapFrame {
     final def frameType: Int = 247
     final def offset(previousOffset: Int): Int = previousOffset + offsetDelta + 1
 
@@ -51,12 +49,10 @@ sealed trait ChopFrame extends StackMapFrame {
 }
 object ChopFrame {
 
-    def apply(frameType: Int, offsetDelta: Int): ChopFrame = {
-        frameType match {
-            case 248 => new ChopFrame248(offsetDelta)
-            case 249 => new ChopFrame249(offsetDelta)
-            case 250 => new ChopFrame250(offsetDelta)
-        }
+    def apply(frameType: Int, offsetDelta: Int): ChopFrame = frameType match {
+        case 248 => new ChopFrame248(offsetDelta)
+        case 249 => new ChopFrame249(offsetDelta)
+        case 250 => new ChopFrame250(offsetDelta)
     }
 
     def unapply(cf: ChopFrame): Option[(Int, Int)] = Some((cf.frameType, cf.offsetDelta))
@@ -72,18 +68,16 @@ final case class SameFrameExtended(offsetDelta: Int) extends StackMapFrame {
 }
 
 final case class AppendFrame(
-        frameType:                  Int,
-        offsetDelta:                Int,
-        verificationTypeInfoLocals: VerificationTypeInfoLocals
-) extends StackMapFrame {
+        frameType:   Int,
+        offsetDelta: Int,
+        verificationTypeInfoLocals: VerificationTypeInfoLocals) extends StackMapFrame {
     final def offset(previousOffset: Int): Int = previousOffset + offsetDelta + 1
 }
 
 final case class FullFrame(
         offsetDelta:                Int,
         verificationTypeInfoLocals: VerificationTypeInfoLocals,
-        verificationTypeInfoStack:  VerificationTypeInfoStack
-) extends StackMapFrame {
+        verificationTypeInfoStack: VerificationTypeInfoStack) extends StackMapFrame {
     final def frameType: Int = 255
     final def offset(previousOffset: Int): Int = previousOffset + offsetDelta + 1
 }

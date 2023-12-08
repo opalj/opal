@@ -45,11 +45,9 @@ trait Node {
      */
     override def hashCode(): Int = nodeId
 
-    override def equals(other: Any): Boolean = {
-        other match {
-            case that: Node => this.nodeId == that.nodeId
-            case _          => false
-        }
+    override def equals(other: Any): Boolean = other match {
+        case that: Node => this.nodeId == that.nodeId
+        case _          => false
     }
 
 }

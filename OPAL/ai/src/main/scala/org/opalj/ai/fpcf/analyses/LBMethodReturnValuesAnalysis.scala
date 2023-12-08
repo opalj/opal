@@ -4,6 +4,18 @@ package ai
 package fpcf
 package analyses
 
+import org.opalj.ai.domain
+import org.opalj.ai.fpcf.domain.RefinedTypeLevelFieldAccessInstructions
+import org.opalj.ai.fpcf.domain.RefinedTypeLevelInvokeInstructions
+import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
+import org.opalj.ai.fpcf.properties.MethodReturnValue
+import org.opalj.ai.fpcf.properties.TheMethodReturnValue
+import org.opalj.br.Method
+import org.opalj.br.PC
+import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
+import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionPSet
 import org.opalj.fpcf.FinalEP
@@ -18,18 +30,6 @@ import org.opalj.fpcf.Result
 import org.opalj.fpcf.SinglePropertiesBoundType
 import org.opalj.fpcf.SomeEPS
 import org.opalj.value.ValueInformation
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.Method
-import org.opalj.br.PC
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.ai.domain
-import org.opalj.ai.fpcf.domain.RefinedTypeLevelFieldAccessInstructions
-import org.opalj.ai.fpcf.domain.RefinedTypeLevelInvokeInstructions
-import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
-import org.opalj.ai.fpcf.properties.MethodReturnValue
-import org.opalj.ai.fpcf.properties.TheMethodReturnValue
 
 /**
  * Computes for each method that returns object typed values general information about the
@@ -38,8 +38,7 @@ import org.opalj.ai.fpcf.properties.TheMethodReturnValue
  * @author Michael Eichberg
  */
 class LBMethodReturnValuesAnalysis private[analyses] (
-        val project: SomeProject
-) extends FPCFAnalysis { analysis =>
+        val project: SomeProject) extends FPCFAnalysis { analysis =>
 
     /**
      *  A very basic domain that we use for analyzing the values returned by a method.
@@ -47,33 +46,32 @@ class LBMethodReturnValuesAnalysis private[analyses] (
      * @author Michael Eichberg
      */
     class MethodReturnValuesAnalysisDomain(
-            val ai:        InterruptableAI[MethodReturnValuesAnalysisDomain],
-            val method:    Method,
-            val dependees: EOptionPSet[Entity, Property]
-    ) extends CorrelationalDomain
-        with domain.TheProject
-        with domain.TheMethod
-        with domain.DefaultSpecialDomainValuesBinding
-        with domain.ThrowAllPotentialExceptionsConfiguration
-        with domain.l1.DefaultIntegerValues // to enable constant tracking
-        with domain.l0.DefaultTypeLevelLongValues
-        with domain.l0.DefaultTypeLevelFloatValues
-        with domain.l0.DefaultTypeLevelDoubleValues
-        with domain.l0.TypeLevelPrimitiveValuesConversions
-        with domain.l0.TypeLevelLongValuesShiftOperators
-        with domain.l0.TypeLevelFieldAccessInstructions
-        with domain.l0.TypeLevelInvokeInstructions
-        with domain.l0.TypeLevelDynamicLoads
-        with domain.l1.DefaultReferenceValuesBinding
-        with domain.DefaultHandlingOfMethodResults
-        with domain.RecordReturnedValue
-        with domain.IgnoreSynchronization
-        with RefinedTypeLevelFieldAccessInstructions
-        with RefinedTypeLevelInvokeInstructions {
+            val ai:     InterruptableAI[MethodReturnValuesAnalysisDomain],
+            val method: Method,
+            val dependees: EOptionPSet[Entity, Property]) extends CorrelationalDomain
+            with domain.TheProject
+            with domain.TheMethod
+            with domain.DefaultSpecialDomainValuesBinding
+            with domain.ThrowAllPotentialExceptionsConfiguration
+            with domain.l1.DefaultIntegerValues // to enable constant tracking
+            with domain.l0.DefaultTypeLevelLongValues
+            with domain.l0.DefaultTypeLevelFloatValues
+            with domain.l0.DefaultTypeLevelDoubleValues
+            with domain.l0.TypeLevelPrimitiveValuesConversions
+            with domain.l0.TypeLevelLongValuesShiftOperators
+            with domain.l0.TypeLevelFieldAccessInstructions
+            with domain.l0.TypeLevelInvokeInstructions
+            with domain.l0.TypeLevelDynamicLoads
+            with domain.l1.DefaultReferenceValuesBinding
+            with domain.DefaultHandlingOfMethodResults
+            with domain.RecordReturnedValue
+            with domain.IgnoreSynchronization
+            with RefinedTypeLevelFieldAccessInstructions
+            with RefinedTypeLevelInvokeInstructions {
 
         final override val UsedPropertiesBound: SinglePropertiesBoundType = LBProperties
 
-        override implicit val project: SomeProject = analysis.project
+        implicit override val project: SomeProject = analysis.project
 
         override protected[this] def doRecordReturnedValue(pc: PC, value: Value): Boolean = {
             val isUpdated = super.doRecordReturnedValue(pc, value)
@@ -108,9 +106,9 @@ class LBMethodReturnValuesAnalysis private[analyses] (
                     // the type hierarchy is incomplete...
                     ai.interrupt()
                 } else if (returnedReferenceValue.isNull.isUnknown &&
-                    returnedValueUTB.isSingletonSet &&
-                    returnedValueUTB.head == methodReturnType &&
-                    !returnedReferenceValue.isPrecise) {
+                           returnedValueUTB.isSingletonSet &&
+                           returnedValueUTB.head == methodReturnType &&
+                           !returnedReferenceValue.isPrecise) {
                     // we don't get more precise information
                     ai.interrupt()
                 }
@@ -127,11 +125,10 @@ class LBMethodReturnValuesAnalysis private[analyses] (
     private[analyses] def analyze(
         ai:        InterruptableAI[MethodReturnValuesAnalysisDomain],
         method:    Method,
-        dependees: EOptionPSet[Entity, Property]
-    ): ProperPropertyComputationResult = {
+        dependees: EOptionPSet[Entity, Property]): ProperPropertyComputationResult = {
         dependees.updateAll() // <= doesn't hurt if dependees is empty
 
-        val domain = new MethodReturnValuesAnalysisDomain(ai, method, dependees)
+        val domain   = new MethodReturnValuesAnalysisDomain(ai, method, dependees)
         val aiResult = ai(method, domain) // the state is implicitly accumulated in the domain
 
         def c(eps: SomeEPS): ProperPropertyComputationResult = {
@@ -155,7 +152,7 @@ class LBMethodReturnValuesAnalysis private[analyses] (
                 // METHOD WILL ALWAYS THROW AN EXCEPTION!
                 // || vi.get.asReferenceValue.isNull.isYes
                 // || (vi.get.asReferenceValue.isPrecise && vi.get.asReferenceValue.isNull.isNo)
-                ) {
+            ) {
                 Result(method, MethodReturnValue(vi))
             } else {
                 // We have potentially relevant dependencies (please, recall that we are currently
@@ -163,7 +160,7 @@ class LBMethodReturnValuesAnalysis private[analyses] (
                 InterimResult.forLB(method, MethodReturnValue(vi), dependees.toSet, c)
             }
         } else {
-            //... in this run (!) no refinement was possible and therefore we had an early
+            // ... in this run (!) no refinement was possible and therefore we had an early
             // return (interrupt), but if we have dependencies, further refinements are still
             // possible, e.g., because some path(s) may be pruned by future refinements or
             // more precise type information becomes available.
@@ -186,9 +183,8 @@ object EagerLBMethodReturnValuesAnalysis extends BasicFPCFEagerAnalysisScheduler
         // To ensure that subsequent analyses are able to pick-up the results of this
         // analysis, we state that the domain that has to be used when computing
         // the AIResult has to use the (partial) domain: RefinedTypeLevelInvokeInstructions.
-        p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey)(
-            i => i.getOrElse(Set.empty) + classOf[RefinedTypeLevelInvokeInstructions]
-        )
+        p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey)(i =>
+            i.getOrElse(Set.empty) + classOf[RefinedTypeLevelInvokeInstructions])
         null
     }
 

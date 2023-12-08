@@ -30,7 +30,6 @@ sealed abstract class APIFeature {
 
 /**
  * Common trait that abstracts over all Class extension scenarios.
- *
  */
 sealed abstract class ClassExtension extends APIFeature {
 
@@ -68,15 +67,14 @@ sealed abstract class APIMethod(private val fID: Option[String] = None) extends 
      *
      * @note Feature ids have to be unique.
      */
-    override val featureID: String = {
+    override val featureID: String =
         if (customFeatureID.isDefined) {
             customFeatureID.get
         } else {
-            val methodName = descriptor.map(_.toJava(name)).getOrElse(name)
+            val methodName            = descriptor.map(_.toJava(name)).getOrElse(name)
             val abbreviatedMethodName = methodName.replaceAll("java.lang.Object", "Object")
             s"${declClass.toJava}\n$abbreviatedMethodName"
         }
-    }
 }
 
 /**
@@ -91,15 +89,12 @@ case class InstanceAPIMethod(
         declClass:  ObjectType,
         name:       String,
         descriptor: Option[MethodDescriptor],
-        fID:        Option[String]           = None
-) extends APIMethod(fID) {
+        fID: Option[String] = None) extends APIMethod(fID) {
 
-    def unapply(i: MethodInvocationInstruction): Boolean = {
-        i.isInstanceMethod &&
-            this.declClass == i.declaringClass &&
-            this.name == i.name &&
-            (this.descriptor.isEmpty || this.descriptor.get == i.methodDescriptor)
-    }
+    def unapply(i: MethodInvocationInstruction): Boolean = i.isInstanceMethod &&
+        this.declClass == i.declaringClass &&
+        this.name == i.name &&
+        (this.descriptor.isEmpty || this.descriptor.get == i.methodDescriptor)
 }
 
 /**
@@ -109,31 +104,21 @@ object InstanceAPIMethod {
 
     def apply(
         declClass: ObjectType,
-        name:      String
-    ): InstanceAPIMethod = {
-        InstanceAPIMethod(declClass, name, None)
-    }
+        name:      String): InstanceAPIMethod = InstanceAPIMethod(declClass, name, None)
 
     def apply(
         declClass: ObjectType,
         name:      String,
-        featureID: String
-    ): InstanceAPIMethod = {
-        InstanceAPIMethod(declClass, name, None, Some(featureID))
-    }
+        featureID: String): InstanceAPIMethod = InstanceAPIMethod(declClass, name, None, Some(featureID))
 
     def apply(
         declClass:  ObjectType,
         name:       String,
-        descriptor: MethodDescriptor
-    ): InstanceAPIMethod = {
-        InstanceAPIMethod(declClass, name, Some(descriptor))
-    }
+        descriptor: MethodDescriptor): InstanceAPIMethod = InstanceAPIMethod(declClass, name, Some(descriptor))
 }
 
 /**
  * Represents a static API call.
- *
  *
  * @param  declClass ObjectType of the receiver.
  * @param  name Name of the API method.
@@ -144,15 +129,12 @@ case class StaticAPIMethod(
         declClass:  ObjectType,
         name:       String,
         descriptor: Option[MethodDescriptor],
-        fID:        Option[String]           = None
-) extends APIMethod(fID) {
+        fID: Option[String] = None) extends APIMethod(fID) {
 
-    def unapply(i: MethodInvocationInstruction): Boolean = {
-        !i.isInstanceMethod &&
-            this.declClass == i.declaringClass &&
-            this.name == i.name &&
-            (this.descriptor.isEmpty || this.descriptor.get == i.methodDescriptor)
-    }
+    def unapply(i: MethodInvocationInstruction): Boolean = !i.isInstanceMethod &&
+        this.declClass == i.declaringClass &&
+        this.name == i.name &&
+        (this.descriptor.isEmpty || this.descriptor.get == i.methodDescriptor)
 }
 
 /**
@@ -160,21 +142,15 @@ case class StaticAPIMethod(
  */
 object StaticAPIMethod {
 
-    def apply(declClass: ObjectType, name: String): StaticAPIMethod = {
-        StaticAPIMethod(declClass, name, None)
-    }
+    def apply(declClass: ObjectType, name: String): StaticAPIMethod = StaticAPIMethod(declClass, name, None)
 
-    def apply(declClass: ObjectType, name: String, featureID: String): StaticAPIMethod = {
+    def apply(declClass: ObjectType, name: String, featureID: String): StaticAPIMethod =
         StaticAPIMethod(declClass, name, None, Some(featureID))
-    }
 
     def apply(
         declClass:  ObjectType,
         name:       String,
-        descriptor: MethodDescriptor
-    ): StaticAPIMethod = {
-        StaticAPIMethod(declClass, name, Some(descriptor))
-    }
+        descriptor: MethodDescriptor): StaticAPIMethod = StaticAPIMethod(declClass, name, Some(descriptor))
 }
 
 /**

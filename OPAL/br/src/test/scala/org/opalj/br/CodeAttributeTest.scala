@@ -2,16 +2,16 @@
 package org.opalj
 package br
 
-import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
-
-import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.br.reader.Java8Framework.ClassFiles
+import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions._
-import org.opalj.bi.TestResources.locateTestResources
+import org.opalj.br.reader.Java8Framework.ClassFiles
+import org.opalj.collection.immutable.IntTrieSet
+
+import org.junit.runner.RunWith
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests some of the core methods of the Code attribute.
@@ -38,15 +38,19 @@ class CodeAttributeTest extends AnyFlatSpec with Matchers {
     behavior of "the \"Code\" attribute's collect method"
 
     it should "be able to correctly collect all matching instructions" in {
-        codeOfPut collect ({ case DUP => DUP }: PartialFunction[Instruction, Instruction]) should equal(Seq(PCAndAnyRef(31, DUP)))
+        codeOfPut collect ({ case DUP => DUP }: PartialFunction[Instruction, Instruction]) should equal(Seq(PCAndAnyRef(
+            31,
+            DUP)))
 
         codeOfPut collect ({
             case ICONST_1 => ICONST_1
-        }: PartialFunction[Instruction, Instruction]) should equal(Seq(PCAndAnyRef(20, ICONST_1), PCAndAnyRef(35, ICONST_1)))
+        }: PartialFunction[Instruction, Instruction]) should equal(Seq(PCAndAnyRef(20, ICONST_1),
+                                                                       PCAndAnyRef(35, ICONST_1)))
 
         codeOfPut collect ({
             case GETFIELD(declaringClass, "last", _) => declaringClass
-        }: PartialFunction[Instruction, ObjectType]) should equal(Seq(PCAndAnyRef(17, boundedBufferClass), PCAndAnyRef(45, boundedBufferClass)))
+        }: PartialFunction[Instruction, ObjectType]) should equal(Seq(PCAndAnyRef(17, boundedBufferClass),
+                                                                      PCAndAnyRef(45, boundedBufferClass)))
 
         codeOfPut collect ({
             case RETURN => "The very last instruction."
@@ -63,11 +67,11 @@ class CodeAttributeTest extends AnyFlatSpec with Matchers {
     behavior of "the \"Code\" attribute's collectWithIndex method"
 
     it should "be able to collect all jump targets" in {
-        codeOfPut.collectWithIndex({
+        codeOfPut.collectWithIndex {
             case i: PCAndInstruction if i.instruction.isSimpleConditionalBranchInstruction =>
                 val cbi = i.instruction.asSimpleConditionalBranchInstruction
                 Seq(cbi.indexOfNextInstruction(i.pc)(codeOfPut), i.pc + cbi.branchoffset)
-        }).flatten should equal(Seq(11, 15))
+        }.flatten should equal(Seq(11, 15))
     }
 
     it should "be able to handle the case where no instruction is found" in {
@@ -97,21 +101,21 @@ class CodeAttributeTest extends AnyFlatSpec with Matchers {
     }
 
     it should "be able to find some consecutive instructions" in {
-        codeOfPut.slidingCollect(2)({
+        codeOfPut.slidingCollect(2) {
             case PCAndAnyRef(pc, Seq(ALOAD_0, ALOAD_0)) => Integer.valueOf(pc)
-        }) should be(Seq(15))
+        } should be(Seq(15))
     }
 
     it should "be able to find the last instructions" in {
-        codeOfPut.slidingCollect(2)({
+        codeOfPut.slidingCollect(2) {
             case PCAndAnyRef(pc, Seq(INVOKEVIRTUAL(_, _, _), RETURN)) => Integer.valueOf(pc)
-        }) should be(Seq(51))
+        } should be(Seq(51))
     }
 
     it should "be able to find multiple sequences of matching instructions" in {
-        codeOfPut.slidingCollect(2)({
+        codeOfPut.slidingCollect(2) {
             case PCAndAnyRef(pc, Seq(PUTFIELD(_, _, _), ALOAD_0)) => Integer.valueOf(pc)
-        }) should be(Seq(27, 37))
+        } should be(Seq(27, 37))
     }
 
     behavior of "the \"Code\" attribute's associateWithIndex method"
@@ -222,22 +226,19 @@ private object CodeAttributeTest {
     //
     //
 
-    val project =
-        Project(
-            ClassFiles(locateTestResources("code.jar", "bi")) ++
-                ClassFiles(locateTestResources("controlflow.jar", "bi")),
-            Iterable.empty,
-            true
-        )
+    val project = Project(
+        ClassFiles(locateTestResources("code.jar", "bi")) ++
+            ClassFiles(locateTestResources("controlflow.jar", "bi")),
+        Iterable.empty,
+        true
+    )
 
-    val nestedCatch =
-        project.
-            classFile(ObjectType("controlflow/ExceptionCode")).get.
-            methods.find(_.name == "nestedCatch").get.body.get
+    val nestedCatch = project.classFile(ObjectType("controlflow/ExceptionCode")).get.methods.find(
+        _.name == "nestedCatch").get.body.get
 
     val boundedBufferClass = ObjectType("code/BoundedBuffer")
-    val immutbleListClass = ObjectType("code/ImmutableList")
-    val quickSortClass = ObjectType("code/Quicksort")
+    val immutbleListClass  = ObjectType("code/ImmutableList")
+    val quickSortClass     = ObjectType("code/Quicksort")
 
     //
     //
@@ -245,32 +246,30 @@ private object CodeAttributeTest {
     //
     //
 
-    //PC  Line    Instruction
-    //0   41  aload_0
-    //1   |   invokespecial java.lang.Object{ <init> }
-    //4   39  aload_0
-    //5   |   iconst_0
-    //6   |   putfield code.BoundedBuffer{ numberInBuffer : int }
-    //9   43  aload_0
-    //10  |   iload_1
-    //11  |   putfield code.BoundedBuffer{ size : int }
-    //14  44  aload_0
-    //15  |   aload_0
-    //16  |   getfield code.BoundedBuffer{ size : int }
-    //19  |   newarray 10
-    //21  |   putfield code.BoundedBuffer{ buffer : int[] }
-    //24  45  aload_0
-    //25  |   aload_0
-    //26  |   iconst_0
-    //27  |   dup_x1
-    //28  |   putfield code.BoundedBuffer{ last : int }
-    //31  |   putfield code.BoundedBuffer{ first : int }
-    //44  46  return
-    val codeOfConstructor =
-        project.classFile(boundedBufferClass).get.methods.find(_.name == "<init>").get.body.get
+    // PC  Line    Instruction
+    // 0   41  aload_0
+    // 1   |   invokespecial java.lang.Object{ <init> }
+    // 4   39  aload_0
+    // 5   |   iconst_0
+    // 6   |   putfield code.BoundedBuffer{ numberInBuffer : int }
+    // 9   43  aload_0
+    // 10  |   iload_1
+    // 11  |   putfield code.BoundedBuffer{ size : int }
+    // 14  44  aload_0
+    // 15  |   aload_0
+    // 16  |   getfield code.BoundedBuffer{ size : int }
+    // 19  |   newarray 10
+    // 21  |   putfield code.BoundedBuffer{ buffer : int[] }
+    // 24  45  aload_0
+    // 25  |   aload_0
+    // 26  |   iconst_0
+    // 27  |   dup_x1
+    // 28  |   putfield code.BoundedBuffer{ last : int }
+    // 31  |   putfield code.BoundedBuffer{ first : int }
+    // 44  46  return
+    val codeOfConstructor = project.classFile(boundedBufferClass).get.methods.find(_.name == "<init>").get.body.get
 
-    val codeOfPut =
-        project.classFile(boundedBufferClass).get.methods.find(_.name == "put").get.body.get
+    val codeOfPut = project.classFile(boundedBufferClass).get.methods.find(_.name == "put").get.body.get
     // The code of the "put" method is excepted to have the following bytecode:
     // Method descriptor #13 (I)V
     // Stack: 3, Locals: 2
@@ -319,7 +318,7 @@ private object CodeAttributeTest {
     //        [pc: 0, pc: 55] local: item index: 1 type: int
     //      Stack map table: number of frames 1
     //        [pc: 15, same]
-    //}
+    // }
 
     val codeOfGet = project.classFile(immutbleListClass).get.methods.find(_.name == "get").get.body.get
     // The code of get is as follows:

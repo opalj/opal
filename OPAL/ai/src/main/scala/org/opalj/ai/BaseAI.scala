@@ -15,8 +15,7 @@ package ai
  */
 class BaseAI(
         IdentifyDeadVariables:           Boolean = true,
-        RegisterStoreMayThrowExceptions: Boolean = false
-)
+        RegisterStoreMayThrowExceptions: Boolean = false)
     extends AI[Domain](IdentifyDeadVariables, RegisterStoreMayThrowExceptions) {
 
     override def isInterrupted: Boolean = Thread.interrupted()

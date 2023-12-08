@@ -11,8 +11,8 @@ package instructions
  */
 abstract class InvocationInstruction
     extends Instruction
-    with ConstantLengthInstruction
-    with NoLabels {
+        with ConstantLengthInstruction
+        with NoLabels {
 
     final override def asInvocationInstruction: this.type = this
 
@@ -41,9 +41,8 @@ abstract class InvocationInstruction
      */
     def isInstanceMethod: Boolean
 
-    final def numberOfPushedOperands(ctg: Int => ComputationalTypeCategory): Int = {
+    final def numberOfPushedOperands(ctg: Int => ComputationalTypeCategory): Int =
         if (methodDescriptor.returnType.isVoidType) 0 else 1
-    }
 
     final def stackSlotsChange: Int = {
         val returnType = methodDescriptor.returnType
@@ -52,13 +51,10 @@ abstract class InvocationInstruction
             (if (returnType.isVoidType) 0 else returnType.computationalType.operandSize)
     }
 
-    final def expressionResult: ExpressionResultLocation = {
+    final def expressionResult: ExpressionResultLocation =
         if (methodDescriptor.returnType.isVoidType) NoExpression else Stack
-    }
 
-    final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
-        this == code.instructions(otherPC)
-    }
+    final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = this == code.instructions(otherPC)
 
     final def readsLocal: Boolean = false
 
@@ -82,18 +78,14 @@ abstract class InvocationInstruction
     final def nextInstructions(
         currentPC:             PC,
         regularSuccessorsOnly: Boolean
-    )(
-        implicit
+      )(implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
-    ): List[PC] = {
-        if (regularSuccessorsOnly)
-            List(indexOfNextInstruction(currentPC))
+        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy): List[PC] =
+        if (regularSuccessorsOnly) List(indexOfNextInstruction(currentPC))
         else {
             val exceptionHandlerPCs = code.handlerInstructionsFor(currentPC)
             indexOfNextInstruction(currentPC) :: exceptionHandlerPCs
         }
-    }
 
     final override def toString(currentPC: Int): String = toString()
 }

@@ -39,12 +39,10 @@ sealed trait FieldImmutability extends OrderedProperty with FieldImmutabilityPro
 object FieldImmutability extends FieldImmutabilityPropertyMetaInformation {
     final val PropertyKeyName = "opalj.FieldImmutability"
 
-    final val key: PropertyKey[FieldImmutability] = {
-        PropertyKey.create(
-            PropertyKeyName,
-            MutableField
-        )
-    }
+    final val key: PropertyKey[FieldImmutability] = PropertyKey.create(
+        PropertyKeyName,
+        MutableField
+    )
 }
 
 case object TransitivelyImmutableField extends FieldImmutability {
@@ -56,44 +54,35 @@ case object TransitivelyImmutableField extends FieldImmutability {
 
 case class DependentlyImmutableField(parameters: SortedSet[String]) extends FieldImmutability {
 
-    override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
-        if (other == TransitivelyImmutableField) {
-            throw new IllegalArgumentException(s"$e"+
-                s": impossible refinement: $other => $this");
-        }
+    override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = if (other == TransitivelyImmutableField) {
+        throw new IllegalArgumentException(s"$e" +
+            s": impossible refinement: $other => $this");
     }
 
     def meet(that: FieldImmutability): FieldImmutability = that match {
         case MutableField | NonTransitivelyImmutableField => that
-        case DependentlyImmutableField(thatParameters) =>
-            DependentlyImmutableField(parameters ++ thatParameters)
-        case _ => this
+        case DependentlyImmutableField(thatParameters)    => DependentlyImmutableField(parameters ++ thatParameters)
+        case _                                            => this
     }
 }
 
 case object NonTransitivelyImmutableField extends FieldImmutability {
 
-    def meet(that: FieldImmutability): FieldImmutability = {
-        if (that == MutableField)
-            that
-        else
-            this
-    }
+    def meet(that: FieldImmutability): FieldImmutability =
+        if (that == MutableField) that
+        else this
 
-    override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
+    override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit =
         if (other == TransitivelyImmutableField || other.isInstanceOf[DependentlyImmutableField]) {
             throw new IllegalArgumentException(s"$e: impossible refinement: $other => $this");
         }
-    }
 }
 
 case object MutableField extends FieldImmutability {
 
     def meet(other: FieldImmutability): this.type = this
 
-    override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
-        if (other != MutableField) {
-            throw new IllegalArgumentException(s"$e: impossible refinement: $other => $this")
-        }
+    override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = if (other != MutableField) {
+        throw new IllegalArgumentException(s"$e: impossible refinement: $other => $this")
     }
 }

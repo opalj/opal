@@ -20,12 +20,11 @@ trait SourceDebugExtension_attributeReader extends AttributeReader {
     type SourceDebugExtension_attribute <: Attribute
 
     def SourceDebugExtension_attribute(
-        cp:                   Constant_Pool,
-        ap_name_index:        Constant_Pool_Index,
-        ap_descriptor_index:  Constant_Pool_Index,
+        cp: Constant_Pool,
+        ap_name_index: Constant_Pool_Index,
+        ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
-        debug_extension:      Array[Byte]
-    ): SourceDebugExtension_attribute
+        debug_extension: Array[Byte]): SourceDebugExtension_attribute
 
     //
     // IMPLEMENTATION
@@ -52,14 +51,17 @@ trait SourceDebugExtension_attributeReader extends AttributeReader {
         ap_name_index: Constant_Pool_Index,
         ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
-        in: DataInputStream
-    ) => {
+        in: DataInputStream) => {
         val attribute_length = in.readInt
-        val data = new Array[Byte](attribute_length)
+        val data             = new Array[Byte](attribute_length)
         in.readFully(data)
 
         SourceDebugExtension_attribute(
-            cp, ap_name_index, ap_descriptor_index, attribute_name_index, data
+            cp,
+            ap_name_index,
+            ap_descriptor_index,
+            attribute_name_index,
+            data
         )
     }
 

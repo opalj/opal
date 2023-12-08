@@ -45,9 +45,7 @@ sealed abstract class FieldAccessMethodHandle extends MethodHandle {
 
     def asVirtualField = VirtualField(declaringClassType, name, fieldType)
 
-    override def toJava: String = {
-        s"${getClass.getSimpleName}: ${declaringClassType.toJava}.$name:${fieldType.toJava}"
-    }
+    override def toJava: String = s"${getClass.getSimpleName}: ${declaringClassType.toJava}.$name:${fieldType.toJava}"
 }
 
 sealed abstract class FieldReadAccessMethodHandle extends FieldAccessMethodHandle
@@ -61,32 +59,28 @@ sealed trait StaticFieldAccessMethodHandle extends FieldAccessMethodHandle
 case class GetFieldMethodHandle(
         declaringClassType: ObjectType,
         name:               String,
-        fieldType:          FieldType
-) extends FieldReadAccessMethodHandle with InstanceFieldAccessMethodHandle {
+        fieldType: FieldType) extends FieldReadAccessMethodHandle with InstanceFieldAccessMethodHandle {
     override def referenceKind: ReferenceKind = REF_getField
 }
 
 case class GetStaticMethodHandle(
         declaringClassType: ObjectType,
         name:               String,
-        fieldType:          FieldType
-) extends FieldReadAccessMethodHandle with StaticFieldAccessMethodHandle {
+        fieldType: FieldType) extends FieldReadAccessMethodHandle with StaticFieldAccessMethodHandle {
     override def referenceKind: ReferenceKind = REF_getStatic
 }
 
 case class PutFieldMethodHandle(
         declaringClassType: ObjectType,
         name:               String,
-        fieldType:          FieldType
-) extends FieldWriteAccessMethodHandle with InstanceFieldAccessMethodHandle {
+        fieldType: FieldType) extends FieldWriteAccessMethodHandle with InstanceFieldAccessMethodHandle {
     override def referenceKind: ReferenceKind = REF_putField
 }
 
 case class PutStaticMethodHandle(
         declaringClassType: ObjectType,
         name:               String,
-        fieldType:          FieldType
-) extends FieldWriteAccessMethodHandle with StaticFieldAccessMethodHandle {
+        fieldType: FieldType) extends FieldWriteAccessMethodHandle with StaticFieldAccessMethodHandle {
     override def referenceKind: ReferenceKind = REF_putStatic
 }
 
@@ -96,9 +90,7 @@ sealed abstract class MethodCallMethodHandle extends MethodHandle {
     def name: String
     def methodDescriptor: MethodDescriptor
 
-    override def toJava: String = {
-        s"${getClass.getSimpleName}: ${methodDescriptor.toJava(receiverType.toJava, name)}"
-    }
+    override def toJava: String = s"${getClass.getSimpleName}: ${methodDescriptor.toJava(receiverType.toJava, name)}"
 
     def opcodeOfUnderlyingInstruction: Opcode
 }
@@ -106,18 +98,15 @@ sealed abstract class MethodCallMethodHandle extends MethodHandle {
 object MethodCallMethodHandle {
 
     def unapply(
-        handle: MethodCallMethodHandle
-    ): Option[(ReferenceType, String, MethodDescriptor)] = {
+        handle: MethodCallMethodHandle): Option[(ReferenceType, String, MethodDescriptor)] =
         Some((handle.receiverType, handle.name, handle.methodDescriptor))
-    }
 
 }
 
 case class InvokeVirtualMethodHandle(
-        receiverType:     ReferenceType,
-        name:             String,
-        methodDescriptor: MethodDescriptor
-) extends MethodCallMethodHandle {
+        receiverType: ReferenceType,
+        name:         String,
+        methodDescriptor: MethodDescriptor) extends MethodCallMethodHandle {
 
     override def opcodeOfUnderlyingInstruction: Opcode = instructions.INVOKEVIRTUAL.opcode
 
@@ -125,11 +114,10 @@ case class InvokeVirtualMethodHandle(
 }
 
 case class InvokeStaticMethodHandle(
-        receiverType:     ReferenceType,
-        isInterface:      Boolean,
-        name:             String,
-        methodDescriptor: MethodDescriptor
-) extends MethodCallMethodHandle {
+        receiverType: ReferenceType,
+        isInterface:  Boolean,
+        name:         String,
+        methodDescriptor: MethodDescriptor) extends MethodCallMethodHandle {
 
     override def opcodeOfUnderlyingInstruction: Opcode = instructions.INVOKESTATIC.opcode
 
@@ -139,11 +127,10 @@ case class InvokeStaticMethodHandle(
 }
 
 case class InvokeSpecialMethodHandle(
-        receiverType:     ReferenceType,
-        isInterface:      Boolean,
-        name:             String,
-        methodDescriptor: MethodDescriptor
-) extends MethodCallMethodHandle {
+        receiverType: ReferenceType,
+        isInterface:  Boolean,
+        name:         String,
+        methodDescriptor: MethodDescriptor) extends MethodCallMethodHandle {
 
     override def opcodeOfUnderlyingInstruction: Opcode = instructions.INVOKESPECIAL.opcode
 
@@ -151,9 +138,8 @@ case class InvokeSpecialMethodHandle(
 }
 
 case class NewInvokeSpecialMethodHandle(
-        receiverType:     ObjectType,
-        methodDescriptor: MethodDescriptor
-) extends MethodCallMethodHandle {
+        receiverType: ObjectType,
+        methodDescriptor: MethodDescriptor) extends MethodCallMethodHandle {
 
     final override val name = "<init>"
 
@@ -163,10 +149,9 @@ case class NewInvokeSpecialMethodHandle(
 }
 
 case class InvokeInterfaceMethodHandle(
-        receiverType:     ReferenceType,
-        name:             String,
-        methodDescriptor: MethodDescriptor
-) extends MethodCallMethodHandle {
+        receiverType: ReferenceType,
+        name:         String,
+        methodDescriptor: MethodDescriptor) extends MethodCallMethodHandle {
 
     override def opcodeOfUnderlyingInstruction: Opcode = instructions.INVOKEINTERFACE.opcode
 

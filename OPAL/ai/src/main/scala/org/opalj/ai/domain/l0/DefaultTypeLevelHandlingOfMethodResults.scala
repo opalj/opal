@@ -15,9 +15,8 @@ package l0
  */
 trait DefaultTypeLevelHandlingOfMethodResults
     extends DefaultTypeLevelHandlingForThrownExceptions
-    with DefaultTypeLevelHandlingOfVoidReturns
-    with DefaultTypeLevelHandlingForReturnInstructions {
+        with DefaultTypeLevelHandlingOfVoidReturns
+        with DefaultTypeLevelHandlingForReturnInstructions {
     domain: ValuesDomain with ExceptionsFactory with Configuration =>
 
 }
-

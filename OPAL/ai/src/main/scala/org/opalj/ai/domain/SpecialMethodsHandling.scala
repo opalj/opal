@@ -3,15 +3,15 @@ package org.opalj
 package ai
 package domain
 
-import org.opalj.br.MethodDescriptor
-import org.opalj.br.ObjectType
-import org.opalj.br.VoidType
-import org.opalj.br.IntegerType
+import scala.collection.immutable.ArraySeq
+
 import org.opalj.ai.Configuration
 import org.opalj.ai.IntegerValuesDomain
 import org.opalj.ai.ReferenceValuesDomain
-
-import scala.collection.immutable.ArraySeq
+import org.opalj.br.IntegerType
+import org.opalj.br.MethodDescriptor
+import org.opalj.br.ObjectType
+import org.opalj.br.VoidType
 
 /**
  * Hard-codes some part of the semantics of some very high-profile (native) methods of the JDK
@@ -35,13 +35,12 @@ trait SpecialMethodsHandling extends MethodCallsHandling {
         isInterface:   Boolean,
         name:          String,
         descriptor:    MethodDescriptor,
-        operands:      Operands
-    ): MethodCallResult = {
+        operands:      Operands): MethodCallResult = {
 
         if (!(
-            (declaringType eq ObjectType.System) &&
-            name == "arraycopy" && descriptor == SystemArraycopyDescriptor
-        )) {
+                (declaringType eq ObjectType.System) &&
+                    name == "arraycopy" && descriptor == SystemArraycopyDescriptor
+            )) {
             return super.invokestatic(pc, declaringType, isInterface, name, descriptor, operands);
         }
 
@@ -52,15 +51,14 @@ trait SpecialMethodsHandling extends MethodCallsHandling {
         // initialized in a well-defined(fixed) manner.
 
         val length :: destPos :: dest :: sourcePos :: source :: _ = operands
-        val sourceIsNull = refIsNull(pc, source)
-        val destIsNull = refIsNull(pc, dest)
+        val sourceIsNull                                          = refIsNull(pc, source)
+        val destIsNull                                            = refIsNull(pc, dest)
         if (sourceIsNull.isYes || destIsNull.isYes) {
             return justThrows(VMNullPointerException(pc)); // <=== early return
         }
 
         var exceptions: List[ExceptionValue] = List.empty
-        if (sourceIsNull.isUnknown || destIsNull.isUnknown)
-            exceptions ::= VMNullPointerException(pc)
+        if (sourceIsNull.isUnknown || destIsNull.isUnknown) exceptions ::= VMNullPointerException(pc)
 
         // IMPROVE The support for identifying ArrayStoreExceptions for System.arraycopy methods
         exceptions ::= VMArrayStoreException(pc)
@@ -72,20 +70,16 @@ trait SpecialMethodsHandling extends MethodCallsHandling {
             )
         if (intIsSomeValueInRange(pc, sourcePos, 0, Int.MaxValue).isNo ||
             intIsSomeValueInRange(pc, destPos, 0, Int.MaxValue).isNo ||
-            intIsSomeValueInRange(pc, length, 0, Int.MaxValue).isNo)
-            ThrowsException(exceptions);
-        else
-            MethodCallResult(exceptions)
+            intIsSomeValueInRange(pc, length, 0, Int.MaxValue).isNo) ThrowsException(exceptions);
+        else MethodCallResult(exceptions)
     }
 }
 
 object SpecialMethodsHandling {
 
-    final val SystemArraycopyDescriptor = {
-        MethodDescriptor(
-            ArraySeq(ObjectType.Object, IntegerType, ObjectType.Object, IntegerType, IntegerType),
-            VoidType
-        )
-    }
+    final val SystemArraycopyDescriptor = MethodDescriptor(
+        ArraySeq(ObjectType.Object, IntegerType, ObjectType.Object, IntegerType, IntegerType),
+        VoidType
+    )
 
 }

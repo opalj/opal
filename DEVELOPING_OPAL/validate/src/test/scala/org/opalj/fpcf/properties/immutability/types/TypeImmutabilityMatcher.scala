@@ -16,8 +16,7 @@ import org.opalj.fpcf.Property
 import org.opalj.fpcf.properties.AbstractPropertyMatcher
 
 class TypeImmutabilityMatcher(
-        val property: TypeImmutability
-) extends AbstractPropertyMatcher {
+        val property: TypeImmutability) extends AbstractPropertyMatcher {
 
     import org.opalj.br.analyses.SomeProject
 
@@ -25,13 +24,11 @@ class TypeImmutabilityMatcher(
         p:      SomeProject,
         as:     Set[ObjectType],
         entity: Object,
-        a:      AnnotationLike
-    ): Boolean = {
+        a:      AnnotationLike): Boolean = {
         val annotationType = a.annotationType.asObjectType
 
-        val analysesElementValues =
-            getValue(p, annotationType, a.elementValuePairs, "analyses").asArrayValue.values
-        val analyses = analysesElementValues.map(ev => ev.asClassValue.value.asObjectType)
+        val analysesElementValues = getValue(p, annotationType, a.elementValuePairs, "analyses").asArrayValue.values
+        val analyses              = analysesElementValues.map(ev => ev.asClassValue.value.asObjectType)
 
         analyses.exists(as.contains)
     }
@@ -41,14 +38,12 @@ class TypeImmutabilityMatcher(
         as:         Set[ObjectType],
         entity:     scala.Any,
         a:          AnnotationLike,
-        properties: Iterable[Property]
-    ): Option[String] = {
+        properties: Iterable[Property]): Option[String] =
         if (!properties.exists(p => p == property)) {
             Some(a.elementValuePairs.head.value.asStringValue.value)
         } else {
             None
         }
-    }
 }
 
 class TransitiveImmutableTypeMatcher
@@ -60,10 +55,8 @@ class DependentlyImmutableTypeMatcher
         as:         Set[ObjectType],
         entity:     scala.Any,
         a:          AnnotationLike,
-        properties: Iterable[Property]
-    ): Option[String] = {
-        if (!properties.exists(
-            p =>
+        properties: Iterable[Property]): Option[String] =
+        if (!properties.exists(p =>
                 p match {
                     case DependentlyImmutableType(latticeParameters) =>
                         val annotationType = a.annotationType.asFieldType.asObjectType
@@ -72,13 +65,11 @@ class DependentlyImmutableTypeMatcher
                                 .map(x => x.asStringValue.value)
                         annotationParameters.toSet.equals(latticeParameters.toSet)
                     case _ => p == property
-                }
-        )) {
+                })) {
             Some(a.elementValuePairs.head.value.asStringValue.value)
         } else {
             None
         }
-    }
 
 }
 class NonTransitiveImmutableTypeMatcher

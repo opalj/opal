@@ -4,18 +4,18 @@ package tac
 package fpcf
 package analyses
 
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.analyses.DeclaredMethods
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.analyses.ContextProvider
+import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.EUBP
 import org.opalj.fpcf.InterimPartialResult
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEOptionP
-import org.opalj.br.DeclaredMethod
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.DeclaredMethods
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.analyses.ContextProvider
-import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.tac.fpcf.analyses.cg.ContextualAnalysis
 
 /**
@@ -40,8 +40,10 @@ trait APIBasedAnalysis extends FPCFAnalysis with ContextualAnalysis {
     implicit val declaredMethods: DeclaredMethods = p.get(DeclaredMethodsKey)
 
     def handleNewCaller(
-        calleeContext: ContextType, callerContext: ContextType, pc: Int, isDirect: Boolean
-    ): ProperPropertyComputationResult
+        calleeContext: ContextType,
+        callerContext: ContextType,
+        pc: Int,
+        isDirect: Boolean): ProperPropertyComputationResult
 
     final def registerAPIMethod(): ProperPropertyComputationResult = {
         val callersEOptP = ps(apiMethod, Callers.key)
@@ -50,37 +52,35 @@ trait APIBasedAnalysis extends FPCFAnalysis with ContextualAnalysis {
 
     private[this] def c(
         oldCallers: Callers
-    )(callersEOptP: SomeEOptionP): ProperPropertyComputationResult =
-        (callersEOptP: @unchecked) match {
-            case EUBP(dm: DeclaredMethod, callersUB: Callers) =>
-                var results: List[ProperPropertyComputationResult] = Nil
-                if (callersUB.nonEmpty) {
-                    callersUB.forNewCallerContexts(oldCallers, dm) {
-                        (calleeContext, callerContext, pc, isDirect) =>
-                            if (callerContext.hasContext) {
-                                val caller = callerContext.method
+      )(callersEOptP: SomeEOptionP): ProperPropertyComputationResult = (callersEOptP: @unchecked) match {
+        case EUBP(dm: DeclaredMethod, callersUB: Callers) =>
+            var results: List[ProperPropertyComputationResult] = Nil
+            if (callersUB.nonEmpty) {
+                callersUB.forNewCallerContexts(oldCallers, dm) {
+                    (calleeContext, callerContext, pc, isDirect) =>
+                        if (callerContext.hasContext) {
+                            val caller = callerContext.method
 
-                                // the call graph is only computed for virtual and single defined methods
-                                assert(caller.isVirtualOrHasSingleDefinedMethod)
+                            // the call graph is only computed for virtual and single defined methods
+                            assert(caller.isVirtualOrHasSingleDefinedMethod)
 
-                                // we can not analyze virtual methods, as we do not have their bytecode
-                                if (caller.hasSingleDefinedMethod) {
-                                    results ::= handleNewCaller(
-                                        calleeContext.asInstanceOf[ContextType],
-                                        callerContext.asInstanceOf[ContextType],
-                                        pc,
-                                        isDirect
-                                    )
-                                }
+                            // we can not analyze virtual methods, as we do not have their bytecode
+                            if (caller.hasSingleDefinedMethod) {
+                                results ::= handleNewCaller(
+                                    calleeContext.asInstanceOf[ContextType],
+                                    callerContext.asInstanceOf[ContextType],
+                                    pc,
+                                    isDirect
+                                )
                             }
-                    }
+                        }
                 }
+            }
 
-                if (callersEOptP.isRefinable)
-                    results ::= InterimPartialResult(Set(callersEOptP), c(callersUB))
+            if (callersEOptP.isRefinable) results ::= InterimPartialResult(Set(callersEOptP), c(callersUB))
 
-                Results(results)
+            Results(results)
 
-            case _: EPK[_, _] => InterimPartialResult(Set(callersEOptP), c(null))
-        }
+        case _: EPK[_, _] => InterimPartialResult(Set(callersEOptP), c(null))
+    }
 }

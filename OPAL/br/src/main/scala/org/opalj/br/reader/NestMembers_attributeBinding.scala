@@ -3,9 +3,9 @@ package org.opalj
 package br
 package reader
 
-import org.opalj.bi.reader.NestMembers_attributeReader
-
 import scala.collection.immutable.ArraySeq
+
+import org.opalj.bi.reader.NestMembers_attributeReader
 
 /**
  * The factory method to create the `NestMembers` attribute (Java 11).
@@ -14,8 +14,8 @@ import scala.collection.immutable.ArraySeq
  */
 trait NestMembers_attributeBinding
     extends NestMembers_attributeReader
-    with ConstantPoolBinding
-    with AttributeBinding {
+        with ConstantPoolBinding
+        with AttributeBinding {
 
     type NestMembers_attribute = NestMembers
 
@@ -25,11 +25,8 @@ trait NestMembers_attributeBinding
         ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         classes_array:        ClassesArray // CONSTANT_Class_info[]
-    ): NestMembers_attribute = {
-        new NestMembers(
-            ArraySeq.from(classes_array).map { p => cp(p).asObjectType(cp) }
-        )
-    }
+      ): NestMembers_attribute = new NestMembers(
+        ArraySeq.from(classes_array).map { p => cp(p).asObjectType(cp) }
+    )
 
 }
-

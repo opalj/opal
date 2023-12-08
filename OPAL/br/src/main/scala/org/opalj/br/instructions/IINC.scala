@@ -24,7 +24,7 @@ case class IINC(lvIndex: Int, constValue: Int) extends ArithmeticInstruction {
 
     final def computationalType: ComputationalType = ComputationalTypeInt
 
-    final def operator: String = "+ "+constValue
+    final def operator: String = "+ " + constValue
 
     final def isPrefixOperator: Boolean = false
 
@@ -44,31 +44,26 @@ case class IINC(lvIndex: Int, constValue: Int) extends ArithmeticInstruction {
 
     final def indexOfWrittenLocal: Int = lvIndex
 
-    final def indexOfNextInstruction(currentPC: PC)(implicit code: Code): PC = {
+    final def indexOfNextInstruction(currentPC: PC)(implicit code: Code): PC =
         indexOfNextInstruction(currentPC, code.isModifiedByWide(currentPC))
-    }
 
-    final def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean): PC = {
+    final def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean): PC =
         if (modifiedByWide) {
             currentPC + 1 + 4
         } else {
             currentPC + 1 + 2
         }
-    }
     override def nextInstructions(
         currentPC:             PC,
         regularSuccessorsOnly: Boolean
-    )(
-        implicit
+      )(implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
-    ): List[PC] = {
+        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy): List[PC] =
         List(indexOfNextInstruction(currentPC))
-    }
 
     final def expressionResult: Register = Register(lvIndex)
 
-    override def toString = "IINC(lvIndex="+lvIndex+", "+constValue+")"
+    override def toString = "IINC(lvIndex=" + lvIndex + ", " + constValue + ")"
 
 }
 object IINC extends InstructionMetaInformation {

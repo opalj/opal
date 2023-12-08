@@ -5,8 +5,43 @@ package fpcf
 package analyses
 package purity
 
-import net.ceedubs.ficus.Ficus._
-
+import org.opalj.ai.isImmediateVMException
+import org.opalj.br.ComputationalTypeReference
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.Field
+import org.opalj.br.Method
+import org.opalj.br.MethodDescriptor
+import org.opalj.br.ObjectType
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.cfg.CFG
+import org.opalj.br.fpcf.ContextProviderKey
+import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.FPCFAnalysisScheduler
+import org.opalj.br.fpcf.FPCFEagerAnalysisScheduler
+import org.opalj.br.fpcf.FPCFLazyAnalysisScheduler
+import org.opalj.br.fpcf.analyses.ConfiguredPurityKey
+import org.opalj.br.fpcf.properties.ClassifiedImpure
+import org.opalj.br.fpcf.properties.Context
+import org.opalj.br.fpcf.properties.ImpureByAnalysis
+import org.opalj.br.fpcf.properties.Pure
+import org.opalj.br.fpcf.properties.Purity
+import org.opalj.br.fpcf.properties.SideEffectFree
+import org.opalj.br.fpcf.properties.SimpleContext
+import org.opalj.br.fpcf.properties.SimpleContextsKey
+import org.opalj.br.fpcf.properties.VirtualMethodPurity
+import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.cg.NoCallers
+import org.opalj.br.fpcf.properties.immutability.ClassImmutability
+import org.opalj.br.fpcf.properties.immutability.EffectivelyNonAssignable
+import org.opalj.br.fpcf.properties.immutability.FieldAssignability
+import org.opalj.br.fpcf.properties.immutability.LazilyInitialized
+import org.opalj.br.fpcf.properties.immutability.NonAssignable
+import org.opalj.br.fpcf.properties.immutability.TransitivelyImmutableClass
+import org.opalj.br.fpcf.properties.immutability.TransitivelyImmutableType
+import org.opalj.br.fpcf.properties.immutability.TypeImmutability
 import org.opalj.collection.immutable.EmptyIntTrieSet
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.Entity
@@ -22,45 +57,10 @@ import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.SomeInterimEP
 import org.opalj.fpcf.UBP
-import org.opalj.br.ComputationalTypeReference
-import org.opalj.br.DeclaredMethod
-import org.opalj.br.Field
-import org.opalj.br.Method
-import org.opalj.br.ObjectType
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.cfg.CFG
-import org.opalj.br.fpcf.properties.ClassifiedImpure
-import org.opalj.br.fpcf.properties.ImpureByAnalysis
-import org.opalj.br.fpcf.properties.Pure
-import org.opalj.br.fpcf.properties.SideEffectFree
-import org.opalj.br.fpcf.properties.VirtualMethodPurity
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.properties.Purity
-import org.opalj.br.fpcf.FPCFEagerAnalysisScheduler
-import org.opalj.br.fpcf.FPCFAnalysisScheduler
-import org.opalj.br.fpcf.FPCFLazyAnalysisScheduler
-import org.opalj.br.fpcf.analyses.ConfiguredPurityKey
-import org.opalj.br.MethodDescriptor
-import org.opalj.br.fpcf.properties.Context
-import org.opalj.br.fpcf.properties.SimpleContext
-import org.opalj.br.fpcf.properties.SimpleContextsKey
-import org.opalj.br.fpcf.properties.cg.Callees
-import org.opalj.ai.isImmediateVMException
-import org.opalj.br.fpcf.properties.immutability.ClassImmutability
-import org.opalj.br.fpcf.properties.immutability.EffectivelyNonAssignable
-import org.opalj.br.fpcf.properties.immutability.FieldAssignability
-import org.opalj.br.fpcf.properties.immutability.LazilyInitialized
-import org.opalj.br.fpcf.properties.immutability.NonAssignable
-import org.opalj.br.fpcf.properties.immutability.TransitivelyImmutableClass
-import org.opalj.br.fpcf.properties.immutability.TransitivelyImmutableType
-import org.opalj.br.fpcf.properties.immutability.TypeImmutability
-import org.opalj.br.fpcf.properties.cg.Callers
-import org.opalj.br.fpcf.properties.cg.NoCallers
-import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.tac.cg.CallGraphKey
 import org.opalj.tac.fpcf.properties.TACAI
+
+import net.ceedubs.ficus.Ficus._
 
 /**
  * An inter-procedural analysis to determine a method's purity.
@@ -104,10 +104,9 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             val method:    Method,
             val context:   Context,
             val declClass: ObjectType,
-            var tac:       TACode[TACMethodParameter, V]   = null,
-            var lbPurity:  Purity                          = Pure,
-            var ubPurity:  Purity                          = Pure
-    ) extends AnalysisState
+            var tac:       TACode[TACMethodParameter, V] = null,
+            var lbPurity:  Purity = Pure,
+            var ubPurity: Purity = Pure) extends AnalysisState
 
     override type StateType = State
 
@@ -115,8 +114,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         "org.opalj.fpcf.analyses.L1PurityAnalysis.domainSpecificRater"
     )
 
-    val rater: DomainSpecificRater =
-        L1PurityAnalysis.rater.getOrElse(resolveDomainSpecificRater(raterFqn))
+    val rater: DomainSpecificRater = L1PurityAnalysis.rater.getOrElse(resolveDomainSpecificRater(raterFqn))
 
     /**
      * Checks if a reference was created locally, hence actions on it might not influence purity.
@@ -124,39 +122,41 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
      * @note Fresh references can be treated as non-escaping as the analysis result will be impure
      *       if anything escapes the method via parameters, static field assignments or calls.
      */
-    override def isLocal(expr: Expr[V], otherwise: Purity, excludedDefSites: IntTrieSet = EmptyIntTrieSet)(implicit state: State): Boolean = {
-        if (expr.isConst)
-            true
+    override def isLocal(
+        expr:             Expr[V],
+        otherwise:        Purity,
+        excludedDefSites: IntTrieSet = EmptyIntTrieSet
+      )(implicit state: State): Boolean =
+        if (expr.isConst) true
         else if (expr.asVar.value.computationalType ne ComputationalTypeReference) {
             // Primitive values are always local (required for parameters of contextually pure calls)
             true
         } else if (expr.isVar) {
             val defSites = expr.asVar.definedBy -- excludedDefSites
             if (defSites.forall { defSite =>
-                if (defSite >= 0) {
-                    val rhs = state.tac.stmts(defSite).asAssignment.expr
-                    if (rhs.isConst)
-                        true
-                    else {
-                        val astID = rhs.astID
-                        astID match {
-                            case New.ASTID | NewArray.ASTID => true
-                            case GetField.ASTID =>
-                                val objRef = rhs.asGetField.objRef
-                                isLocal(objRef, otherwise, excludedDefSites ++ defSites)
-                            case ArrayLoad.ASTID =>
-                                val arrayRef = rhs.asArrayLoad.arrayRef
-                                isLocal(arrayRef, otherwise, excludedDefSites ++ defSites)
-                            case _ => false
+                    if (defSite >= 0) {
+                        val rhs = state.tac.stmts(defSite).asAssignment.expr
+                        if (rhs.isConst) true
+                        else {
+                            val astID = rhs.astID
+                            astID match {
+                                case New.ASTID | NewArray.ASTID => true
+                                case GetField.ASTID =>
+                                    val objRef = rhs.asGetField.objRef
+                                    isLocal(objRef, otherwise, excludedDefSites ++ defSites)
+                                case ArrayLoad.ASTID =>
+                                    val arrayRef = rhs.asArrayLoad.arrayRef
+                                    isLocal(arrayRef, otherwise, excludedDefSites ++ defSites)
+                                case _ => false
+                            }
                         }
+                    } else if (isImmediateVMException(defSite)) {
+                        true // immediate VM exceptions are freshly created
+                    } else {
+                        // In initializers the self reference (this) is local
+                        state.method.isConstructor && defSite == OriginOfThis
                     }
-                } else if (isImmediateVMException(defSite)) {
-                    true // immediate VM exceptions are freshly created
-                } else {
-                    // In initializers the self reference (this) is local
-                    state.method.isConstructor && defSite == OriginOfThis
-                }
-            }) {
+                }) {
                 true
             } else {
                 atMost(otherwise)
@@ -171,7 +171,6 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             atMost(otherwise)
             false
         }
-    }
 
     /**
      * Examines the influence of the purity property of a method on the examined method's purity.
@@ -181,7 +180,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
     def checkMethodPurity(
         ep:     EOptionP[Context, Purity],
         params: Seq[Expr[V]]
-    )(implicit state: State): Boolean = ep match {
+      )(implicit state: State): Boolean = ep match {
         case UBP(_: ClassifiedImpure) =>
             atMost(ImpureByAnalysis)
             false
@@ -210,9 +209,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
     override def handleUnknownFieldAssignability(
         ep:     EOptionP[Field, FieldAssignability],
         objRef: Option[Expr[V]]
-    )(implicit state: State): Unit = {
-        if (objRef.isEmpty || !isLocal(objRef.get, Pure)) state.dependees += ep
-    }
+      )(implicit state: State): Unit = if (objRef.isEmpty || !isLocal(objRef.get, Pure)) state.dependees += ep
 
     /**
      * If the given expression is not local, adds the dependee necessary if the type mutability is
@@ -221,40 +218,34 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
     override def handleUnknownTypeImmutability(
         ep:   EOptionP[ObjectType, Property],
         expr: Expr[V]
-    )(implicit state: State): Unit = {
-        if (!isLocal(expr, Pure)) state.dependees += ep
-    }
+      )(implicit state: State): Unit = if (!isLocal(expr, Pure)) state.dependees += ep
 
     /**
      * If the callees property is not yet final, adds the necessary dependee.
      */
     override def handleCalleesUpdate(
         callees: EOptionP[DeclaredMethod, Callees]
-    )(implicit state: StateType): Unit = {
-        if (!callees.isFinal) state.dependees += callees
-    }
+      )(implicit state: StateType): Unit = if (!callees.isFinal) state.dependees += callees
 
     /**
      * Handles what to do if the TACAI is not yet final.
      */
     override def handleTACAI(ep: EOptionP[Method, TACAI])(implicit state: State): Unit = {
-        if (ep.isRefinable)
-            state.dependees += ep
+        if (ep.isRefinable) state.dependees += ep
         if (ep.hasUBP && ep.ub.tac.isDefined) {
             state.tac = ep.ub.tac.get
         }
     }
 
-    def cleanupDependees()(implicit state: State): Unit = {
+    def cleanupDependees()(implicit state: State): Unit =
         // Remove unnecessary dependees
         if (!state.ubPurity.isDeterministic) {
             state.dependees = state.dependees.filter { ep =>
                 ep.pk == Purity.key || ep.pk == VirtualMethodPurity.key || ep.pk == Callees.key ||
-                    ep.pk == TACAI.key
+                ep.pk == TACAI.key
             }
         }
-        //IMPROVE: We could filter Purity/VPurity dependees with an lb not less than maxPurity
-    }
+    // IMPROVE: We could filter Purity/VPurity dependees with an lb not less than maxPurity
 
     /**
      * Continuation to handle updates to properties of dependees.
@@ -269,8 +260,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         val oldPurity = state.ubPurity
 
         (eps: @unchecked) match {
-            case UBP(_: Callees) =>
-                if (!checkPurityOfCallees(eps.asInstanceOf[EOptionP[DeclaredMethod, Callees]]))
+            case UBP(_: Callees) => if (!checkPurityOfCallees(eps.asInstanceOf[EOptionP[DeclaredMethod, Callees]]))
                     return Result(state.context, ImpureByAnalysis)
 
             case UBP(tacai: TACAI) =>
@@ -278,8 +268,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 return determineMethodPurity(tacai.tac.get.cfg);
 
             // Cases dealing with other purity values
-            case UBP(_: Purity) =>
-                if (!checkMethodPurity(eps.asInstanceOf[EOptionP[Context, Purity]]))
+            case UBP(_: Purity) => if (!checkMethodPurity(eps.asInstanceOf[EOptionP[Context, Purity]]))
                     return Result(state.context, ImpureByAnalysis)
 
             // Cases that are pure
@@ -287,7 +276,6 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 LazilyInitialized) => // Reading not assignable fields
             case FinalP(TransitivelyImmutableType |
                 TransitivelyImmutableClass) => // Returning not assignable field
-
             // Cases resulting in side-effect freeness
             case FinalP(_: FieldAssignability | // Reading assignable field
                 _: TypeImmutability | _: ClassImmutability) => // Returning assignable field
@@ -296,8 +284,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             case _: SomeInterimEP => state.dependees += eps
         }
 
-        if (state.ubPurity ne oldPurity)
-            cleanupDependees()
+        if (state.ubPurity ne oldPurity) cleanupDependees()
 
         if (state.dependees.isEmpty || (state.lbPurity == state.ubPurity)) {
             Result(state.context, state.ubPurity)
@@ -317,7 +304,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
      */
     def determineMethodPurity(
         cfg: CFG[Stmt[V], TACStmts[V]]
-    )(implicit state: State): ProperPropertyComputationResult = {
+      )(implicit state: State): ProperPropertyComputationResult = {
         // Special case: The Throwable constructor is `LBSideEffectFree`, but subtype constructors
         // may not be because of overridable fillInStackTrace method
         if (state.method.isConstructor && state.declClass.isSubtypeOf(ObjectType.Throwable)) {
@@ -329,9 +316,9 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             }
             candidate foreach { mdc =>
                 if (mdc.method.classFile.thisType != ObjectType.Throwable) {
-                    val fISTMethod = declaredMethods(mdc.method)
+                    val fISTMethod  = declaredMethods(mdc.method)
                     val fISTContext = contextProvider.expandContext(state.context, fISTMethod, 0)
-                    val fISTPurity = propertyStore(fISTContext, Purity.key)
+                    val fISTPurity  = propertyStore(fISTContext, Purity.key)
                     if (!checkMethodPurity(fISTPurity, Seq.empty))
                         // Early return for impure fillInStackTrace
                         return Result(state.context, state.ubPurity);
@@ -340,7 +327,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         }
 
         val stmtCount = state.tac.stmts.length
-        var s = 0
+        var s         = 0
         while (s < stmtCount) {
             if (!checkPurityOfStmt(state.tac.stmts(s))) // Early return for impure statements
                 return Result(state.context, state.ubPurity)
@@ -348,19 +335,18 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         }
 
         val callees = propertyStore(state.context.method, Callees.key)
-        if (!checkPurityOfCallees(callees))
-            return Result(state.context, state.ubPurity)
+        if (!checkPurityOfCallees(callees)) return Result(state.context, state.ubPurity)
 
         // Creating implicit exceptions is side-effect free (because of fillInStackTrace)
         // but it may be ignored as domain-specific
         val bbsCausingExceptions = cfg.abnormalReturnNode.predecessors
         for {
             bb <- bbsCausingExceptions
-            pc = bb.asBasicBlock.endPC
+            pc  = bb.asBasicBlock.endPC
             if isSourceOfImmediateException(pc)
         } {
             val throwingStmt = state.tac.stmts(pc)
-            val ratedResult = rater.handleException(throwingStmt)
+            val ratedResult  = rater.handleException(throwingStmt)
             if (ratedResult.isDefined) atMost(ratedResult.get)
             else atMost(SideEffectFree)
         }
@@ -390,31 +376,28 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
      */
     def determinePurity(context: Context): ProperPropertyComputationResult = {
         val definedMethod = context.method
-        val method = definedMethod.definedMethod
-        val declClass = method.classFile.thisType
+        val method        = definedMethod.definedMethod
+        val declClass     = method.classFile.thisType
 
         // We treat all synchronized methods as impure
-        if (method.isSynchronized)
-            return Result(context, ImpureByAnalysis);
+        if (method.isSynchronized) return Result(context, ImpureByAnalysis);
 
         // If this is not the method's declaration, but a non-overwritten method in a subtype,
         // don't re-analyze the code
         if ((declClass ne definedMethod.declaringClassType) && context.isInstanceOf[SimpleContext])
             return baseMethodPurity(context);
 
-        implicit val state: State =
-            new State(Set.empty, method, context, declClass)
+        implicit val state: State = new State(Set.empty, method, context, declClass)
 
         val tacaiO = getTACAI(method)
 
-        if (tacaiO.isEmpty)
-            return InterimResult(
-                context,
-                ImpureByAnalysis,
-                Pure,
-                state.dependees,
-                continuation
-            );
+        if (tacaiO.isEmpty) return InterimResult(
+            context,
+            ImpureByAnalysis,
+            Pure,
+            state.dependees,
+            continuation
+        );
 
         determineMethodPurity(tacaiO.get.cfg)
     }
@@ -428,9 +411,7 @@ object L1PurityAnalysis {
      */
     var rater: Option[DomainSpecificRater] = None
 
-    def setRater(newRater: Option[DomainSpecificRater]): Unit = {
-        rater = newRater
-    }
+    def setRater(newRater: Option[DomainSpecificRater]): Unit = rater = newRater
 }
 
 trait L1PurityAnalysisScheduler extends FPCFAnalysisScheduler {
@@ -440,17 +421,14 @@ trait L1PurityAnalysisScheduler extends FPCFAnalysisScheduler {
     override def requiredProjectInformation: ProjectInformationKeys =
         Seq(DeclaredMethodsKey, SimpleContextsKey, ConfiguredPurityKey, ContextProviderKey)
 
-    override def uses: Set[PropertyBounds] = {
-
-        Set(
-            PropertyBounds.ub(TACAI),
-            PropertyBounds.ub(Callees),
-            PropertyBounds.lub(FieldAssignability),
-            PropertyBounds.lub(ClassImmutability),
-            PropertyBounds.lub(TypeImmutability),
-            PropertyBounds.lub(Purity)
-        )
-    }
+    override def uses: Set[PropertyBounds] = Set(
+        PropertyBounds.ub(TACAI),
+        PropertyBounds.ub(Callees),
+        PropertyBounds.lub(FieldAssignability),
+        PropertyBounds.lub(ClassImmutability),
+        PropertyBounds.lub(TypeImmutability),
+        PropertyBounds.lub(Purity)
+    )
 
     final override type InitializationData = L1PurityAnalysis
     final def init(p: SomeProject, ps: PropertyStore): InitializationData = new L1PurityAnalysis(p)
@@ -462,24 +440,23 @@ trait L1PurityAnalysisScheduler extends FPCFAnalysisScheduler {
     override def afterPhaseCompletion(
         p:        SomeProject,
         ps:       PropertyStore,
-        analysis: FPCFAnalysis
-    ): Unit = {}
+        analysis: FPCFAnalysis): Unit = {}
 
 }
 
 object EagerL1PurityAnalysis extends L1PurityAnalysisScheduler with FPCFEagerAnalysisScheduler {
 
-    override def requiredProjectInformation: ProjectInformationKeys =
-        super.requiredProjectInformation :+ CallGraphKey
+    override def requiredProjectInformation: ProjectInformationKeys = super.requiredProjectInformation :+ CallGraphKey
 
     override def start(
-        p: SomeProject, ps: PropertyStore, analysis: InitializationData
-    ): FPCFAnalysis = {
+        p:        SomeProject,
+        ps:       PropertyStore,
+        analysis: InitializationData): FPCFAnalysis = {
         val cg = p.get(CallGraphKey)
         val methods = cg.reachableMethods().collect {
-            case c @ Context(dm) if dm.hasSingleDefinedMethod && dm.definedMethod.body.isDefined &&
-                !analysis.configuredPurity.wasSet(dm) && ps(dm, Callers.key).ub != NoCallers =>
-                c
+            case c @ Context(dm)
+                if dm.hasSingleDefinedMethod && dm.definedMethod.body.isDefined &&
+                    !analysis.configuredPurity.wasSet(dm) && ps(dm, Callers.key).ub != NoCallers => c
         }
 
         ps.scheduleEagerComputationsForEntities(methods)(
@@ -498,8 +475,9 @@ object EagerL1PurityAnalysis extends L1PurityAnalysisScheduler with FPCFEagerAna
 object LazyL1PurityAnalysis extends L1PurityAnalysisScheduler with FPCFLazyAnalysisScheduler {
 
     override def register(
-        p: SomeProject, ps: PropertyStore, analysis: InitializationData
-    ): FPCFAnalysis = {
+        p:        SomeProject,
+        ps:       PropertyStore,
+        analysis: InitializationData): FPCFAnalysis = {
         ps.registerLazyPropertyComputation(Purity.key, analysis.doDeterminePurity)
         analysis
     }

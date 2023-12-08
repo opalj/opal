@@ -11,8 +11,8 @@ package instructions
  */
 abstract class NumericConversionInstruction
     extends ConstantLengthInstruction
-    with InstructionMetaInformation
-    with NoLabels {
+        with InstructionMetaInformation
+        with NoLabels {
 
     final def jvmExceptions: List[ObjectType] = Nil
 
@@ -27,21 +27,17 @@ abstract class NumericConversionInstruction
     final def nextInstructions(
         currentPC:             PC,
         regularSuccessorsOnly: Boolean
-    )(
-        implicit
+      )(implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
-    ): List[PC] = {
+        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy): List[PC] =
         List(indexOfNextInstruction(currentPC))
-    }
 
     final def numberOfPoppedOperands(ctg: Int => ComputationalTypeCategory): Int = 1
 
     final def numberOfPushedOperands(ctg: Int => ComputationalTypeCategory): Int = 1
 
-    final def stackSlotsChange: Int = {
+    final def stackSlotsChange: Int =
         -sourceType.computationalType.operandSize + targetType.computationalType.operandSize
-    }
 
     final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
         val other = code.instructions(otherPC)

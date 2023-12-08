@@ -2,8 +2,8 @@
 package org.opalj
 package log
 
-import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * A log context associates log messages with a specific context and logger.
@@ -47,21 +47,19 @@ trait LogContext {
      */
     def successor: LogContext = {
         val newLogContext = newInstance;
-        val logger = OPALLogger.logger(this)
+        val logger        = OPALLogger.logger(this)
         OPALLogger.register(newLogContext, logger)
         newLogContext
     }
 
-    private[this] final val messages = new ConcurrentHashMap[LogMessage, AtomicInteger]()
+    final private[this] val messages = new ConcurrentHashMap[LogMessage, AtomicInteger]()
 
     /**
      * Increments the counter for the given message and returns the new value.
      */
     final def incrementAndGetCount(message: LogMessage): Int = {
         val existingCounter = messages.putIfAbsent(message, new AtomicInteger(1))
-        if (existingCounter != null)
-            existingCounter.incrementAndGet()
-        else
-            1
+        if (existingCounter != null) existingCounter.incrementAndGet()
+        else 1
     }
 }

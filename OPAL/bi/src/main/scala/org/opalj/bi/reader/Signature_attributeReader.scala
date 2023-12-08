@@ -46,13 +46,12 @@ trait Signature_attributeReader extends AttributeReader with ClassFileReaderConf
      * or a field type signature otherwise.
      */
     def Signature_attribute(
-        constant_pool:        Constant_Pool,
-        ap:                   AttributeParent,
-        ap_name_index:        Constant_Pool_Index,
-        ap_descriptor_index:  Constant_Pool_Index,
+        constant_pool: Constant_Pool,
+        ap: AttributeParent,
+        ap_name_index: Constant_Pool_Index,
+        ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
-        signature_index:      Constant_Pool_Index
-    ): Signature_attribute
+        signature_index: Constant_Pool_Index): Signature_attribute
 
     //
     // IMPLEMENTATION
@@ -81,19 +80,24 @@ trait Signature_attributeReader extends AttributeReader with ClassFileReaderConf
         ap_name_index:        Constant_Pool_Index,
         ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
-        in:                   DataInputStream
-    ): Signature_attribute = {
-        /*val attribute_length =*/ in.readInt
+        in:                   DataInputStream): Signature_attribute = {
+        /*val attribute_length =*/
+        in.readInt
         val signature_index = in.readUnsignedShort
         try {
             Signature_attribute(
-                cp, ap, ap_name_index, ap_descriptor_index, attribute_name_index, signature_index
+                cp,
+                ap,
+                ap_name_index,
+                ap_descriptor_index,
+                attribute_name_index,
+                signature_index
             )
         } catch {
             case iae: IllegalArgumentException =>
                 OPALLogger.error(
                     "parsing bytecode",
-                    s"skipping ${ap.toString().toLowerCase()} signature: "+iae.getMessage
+                    s"skipping ${ap.toString().toLowerCase()} signature: " + iae.getMessage
                 )
                 if (throwIllegalArgumentException) throw iae else null
         }

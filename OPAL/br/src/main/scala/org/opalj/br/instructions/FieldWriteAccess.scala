@@ -22,6 +22,5 @@ abstract class FieldWriteAccess extends FieldAccess {
  */
 object FieldWriteAccess {
 
-    def unapply(fa: FieldWriteAccess): Option[(ObjectType, String, FieldType)] =
-        FieldAccess.unapply(fa)
+    def unapply(fa: FieldWriteAccess): Option[(ObjectType, String, FieldType)] = FieldAccess.unapply(fa)
 }

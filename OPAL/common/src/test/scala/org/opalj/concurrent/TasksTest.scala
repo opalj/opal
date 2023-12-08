@@ -2,17 +2,16 @@
 package org.opalj
 package concurrent
 
-import org.junit.runner.RunWith
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicIntegerArray
-
+import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContextExecutorService
-//import java.util.concurrent.ConcurrentLinkedQueue
-import org.scalatestplus.junit.JUnitRunner
+
+import org.junit.runner.RunWith
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
-
-import scala.concurrent.ExecutionContext
+//import java.util.concurrent.ConcurrentLinkedQueue
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests [[Tasks]].
@@ -47,9 +46,7 @@ class TasksTest extends AnyFunSpec with Matchers {
 
         it("it should be possible to reuse tasks after join") {
             val counter = new AtomicInteger(0)
-            val tasks = Tasks { (tasks: Tasks[Int], i: Int) =>
-                counter.incrementAndGet()
-            }
+            val tasks   = Tasks { (tasks: Tasks[Int], i: Int) => counter.incrementAndGet() }
             tasks.submit(1)
             while (tasks.currentTasksCount > 0) {
                 Thread.sleep(50);
@@ -111,9 +108,9 @@ class TasksTest extends AnyFunSpec with Matchers {
 
         it("it should be possible to create thousands of tasks in multiple steps multiple times") {
             for { r <- 1 to 3 } {
-                val processedValues = new AtomicInteger(0)
+                val processedValues       = new AtomicInteger(0)
                 val subsequentlyScheduled = new AtomicInteger(0)
-                val nextValue = new AtomicInteger(100000)
+                val nextValue             = new AtomicInteger(100000)
                 val tasks: Tasks[Int] = Tasks { (tasks: Tasks[Int], i: Int) =>
                     processedValues.incrementAndGet()
                     if ((i % 1000) == 0) {
@@ -133,9 +130,9 @@ class TasksTest extends AnyFunSpec with Matchers {
         }
 
         it("it should be possible to create thousands of tasks in multiple steps even if some exceptions are thrown") {
-            val processedValues = new AtomicInteger(0)
+            val processedValues       = new AtomicInteger(0)
             val subsequentlyScheduled = new AtomicInteger(0)
-            val aborted = new AtomicInteger(0)
+            val aborted               = new AtomicInteger(0)
 
             val nextValue = new AtomicInteger(100000)
             val tasks: Tasks[Int] = Tasks { (tasks: Tasks[Int], i: Int) =>
@@ -158,12 +155,11 @@ class TasksTest extends AnyFunSpec with Matchers {
             try {
                 tasks.join()
             } catch {
-                case ce: ConcurrentExceptions =>
-                    exceptions = ce.getSuppressed
+                case ce: ConcurrentExceptions => exceptions = ce.getSuppressed
             }
 
-            info("subsequently scheduled: "+subsequentlyScheduled.get)
-            info("number of caught exceptions: "+exceptions.size)
+            info("subsequently scheduled: " + subsequentlyScheduled.get)
+            info("number of caught exceptions: " + exceptions.size)
 
             exceptions.size should be(aborted.get)
             processedValues.get() should be(100000 + subsequentlyScheduled.get - aborted.get)

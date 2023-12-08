@@ -17,9 +17,7 @@ import java.io.IOException
  */
 class FailAfterByteArrayOutputStream(
         failAfter: Int
-)(
-        initialSize: Int = Math.min(32, failAfter)
-) extends ByteArrayOutputStream(initialSize) {
+      )(initialSize: Int = Math.min(32, failAfter)) extends ByteArrayOutputStream(initialSize) {
 
     /**
      * Writes the given byte value to the underlying array and then checks if the

@@ -10,10 +10,8 @@ case class LineNumber(startPC: PC, lineNumber: Int) {
 
     def remapPCs(codeSize: Int, f: PC => PC): Option[LineNumber] = {
         val newStartPC = f(startPC)
-        if (newStartPC < codeSize)
-            Some(LineNumber(newStartPC, lineNumber))
-        else
-            None
+        if (newStartPC < codeSize) Some(LineNumber(newStartPC, lineNumber))
+        else None
     }
 
 }

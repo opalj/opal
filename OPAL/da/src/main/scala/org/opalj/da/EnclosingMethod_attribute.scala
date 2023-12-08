@@ -13,18 +13,15 @@ import scala.xml.Node
 case class EnclosingMethod_attribute(
         attribute_name_index: Constant_Pool_Index,
         class_index:          Constant_Pool_Index,
-        method_index:         Constant_Pool_Index
-) extends Attribute {
+        method_index: Constant_Pool_Index) extends Attribute {
 
     final override def attribute_length = 2 + 2
 
-    override def toXHTML(implicit cp: Constant_Pool): Node = {
-        <div class="details enclosing_method_attribute">
+    override def toXHTML(implicit cp: Constant_Pool): Node = <div class="details enclosing_method_attribute">
             Enclosing method:
-            { asJavaObjectType(class_index).asSpan("") }
+            {asJavaObjectType(class_index).asSpan("")}
             {{
-            { if (method_index != 0) cp(method_index).toString else "<not immediately enclosed>" }
+            {if (method_index != 0) cp(method_index).toString else "<not immediately enclosed>"}
             }}
         </div>
-    }
 }

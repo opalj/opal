@@ -2,8 +2,8 @@
 package org.opalj
 package ai
 
-import org.opalj.br.instructions.Instruction
 import org.opalj.ai.util.containsInPrefix
+import org.opalj.br.instructions.Instruction
 import org.opalj.collection.mutable.IntArrayStack
 
 /**
@@ -31,13 +31,10 @@ trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { core
         oldValue: DomainValue,
         newValue: DomainValue,
         operands: Operands,
-        locals:   Locals
-    ): (Operands, Locals) = {
-        (
-            operands.mapConserve(o => if (o eq oldValue) newValue else o),
-            locals.mapConserve(l => if (l eq oldValue) newValue else l)
-        )
-    }
+        locals:   Locals): (Operands, Locals) = (
+        operands.mapConserve(o => if (o eq oldValue) newValue else o),
+        locals.mapConserve(l => if (l eq oldValue) newValue else l)
+    )
 
     /**
      * This methods is called after the evaluation of the instruction with
@@ -64,8 +61,7 @@ trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { core
         isExceptionalControlFlow: Boolean,
         forceJoin:                Boolean,
         newOperands:              Operands,
-        newLocals:                Locals
-    ): (Operands, Locals) = (newOperands, newLocals)
+        newLocals:                Locals): (Operands, Locals) = (newOperands, newLocals)
 
     /**
      * In case of a mutable value, we need to distinguish several cases:
@@ -121,8 +117,7 @@ trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { core
         thisOperands:  Operands,
         thisLocals:    Locals,
         otherOperands: Operands,
-        otherLocals:   Locals
-    ): Update[(Operands, Locals)] = {
+        otherLocals:   Locals): Update[(Operands, Locals)] = {
         beforeBaseJoin(pc)
 
         var operandsUpdated: UpdateType = NoUpdateType
@@ -130,9 +125,8 @@ trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { core
             if (thisOperands eq otherOperands) {
                 thisOperands
             } else {
-                def fuseOperands(thisValue: DomainValue, otherValue: DomainValue): DomainValue = {
-                    if (thisValue eq otherValue)
-                        thisValue
+                def fuseOperands(thisValue: DomainValue, otherValue: DomainValue): DomainValue =
+                    if (thisValue eq otherValue) thisValue
                     else {
                         val updatedOperand = joinValues(pc, thisValue, otherValue)
                         if (updatedOperand eq NoUpdate) {
@@ -142,7 +136,6 @@ trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { core
                             updatedOperand.value
                         }
                     }
-                }
                 thisOperands.zip(otherOperands).map { case (o1, o2) => fuseOperands(o1, o2) }
             }
 
@@ -151,7 +144,7 @@ trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { core
             if (thisLocals eq otherLocals) {
                 thisLocals
             } else {
-                def fuseLocals(thisValue: DomainValue, otherValue: DomainValue) = {
+                def fuseLocals(thisValue: DomainValue, otherValue: DomainValue) =
                     if ((thisValue eq null) || (otherValue eq null)) {
                         localsUpdated &:= MetaInformationUpdateType
                         TheIllegalValue
@@ -165,12 +158,9 @@ trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { core
                             value
                         }
                     }
-                }
                 val newLocals = thisLocals.fuse(otherLocals, fuseLocals)
-                if (localsUpdated.noUpdate)
-                    thisLocals
-                else
-                    newLocals
+                if (localsUpdated.noUpdate) thisLocals
+                else newLocals
             }
         val updateType = operandsUpdated &: localsUpdated
 
@@ -189,11 +179,9 @@ trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { core
     protected[this] def beforeBaseJoin(pc: Int): Unit = { /*empty*/ }
 
     protected[this] def joinValues(
-        pc:   Int,
-        left: DomainValue, right: DomainValue
-    ): Update[DomainValue] = {
-        left.join(pc, right)
-    }
+        pc:    Int,
+        left:  DomainValue,
+        right: DomainValue): Update[DomainValue] = left.join(pc, right)
 
     /**
      * This method is called after all values which differ have been joined, but before
@@ -223,10 +211,7 @@ trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { core
         oldOperands: Operands,
         oldLocals:   Locals,
         newOperands: Operands,
-        newLocals:   Locals
-    ): Update[(Operands, Locals)] = {
-        updateType((newOperands, newLocals))
-    }
+        newLocals:   Locals): Update[(Operands, Locals)] = updateType((newOperands, newLocals))
 
     /**
      * Called by the framework after performing a computation to inform the domain about the result.
@@ -375,8 +360,7 @@ trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { core
         worklist:                         List[Int /*PC*/ ],
         operandsArray:                    OperandsArray,
         localsArray:                      LocalsArray,
-        tracer:                           Option[AITracer]
-    ): List[Int /*PC*/ ] = worklist
+        tracer:                           Option[AITracer]): List[Int /*PC*/ ] = worklist
 
     /**
      * Called by the framework after evaluating the instruction with the given pc. I.e.,
@@ -391,8 +375,7 @@ trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { core
         evaluatedPCs:  IntArrayStack,
         operandsArray: OperandsArray,
         localsArray:   LocalsArray,
-        tracer:        Option[AITracer]
-    ): Unit = { /* does nothing by default */ }
+        tracer:        Option[AITracer]): Unit = { /* does nothing by default */ }
 
     /**
      * Called by the abstract interpreter when the abstract interpretation of a method
@@ -417,8 +400,7 @@ trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { core
     protected[this] def schedule(
         successorPC:                      Int,
         abruptSubroutineTerminationCount: Int,
-        worklist:                         List[Int /*PC*/ ]
-    ): List[Int /*PC*/ ] = {
+        worklist:                         List[Int /*PC*/ ]): List[Int /*PC*/ ] =
         if (abruptSubroutineTerminationCount > 0) {
             var header: List[Int /*PC*/ ] = Nil
             val relevantWorklist = {
@@ -450,5 +432,4 @@ trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { core
                 successorPC :: worklist
             }
         }
-    }
 }

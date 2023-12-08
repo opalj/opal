@@ -12,14 +12,12 @@ import scala.xml.Node
 case class NestHost_attribute(
         attribute_name_index: Constant_Pool_Index,
         host_class_index:     Constant_Pool_Index // CONSTANT_CLASS
-) extends Attribute {
+      ) extends Attribute {
 
     def attribute_length: Int = 2
 
-    override def toXHTML(implicit cp: Constant_Pool): Node = {
-        <div class="simple_attribute">
+    override def toXHTML(implicit cp: Constant_Pool): Node = <div class="simple_attribute">
             <span class="attribute_name">NestHost</span>
-            :&nbsp;{ cp(host_class_index).toString(cp) }
+            :&nbsp;{cp(host_class_index).toString(cp)}
         </div>
-    }
 }

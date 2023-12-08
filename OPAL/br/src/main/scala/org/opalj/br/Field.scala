@@ -2,14 +2,14 @@
 package org.opalj
 package br
 
-import scala.math.Ordered
-import org.opalj.bi.ACC_TRANSIENT
-import org.opalj.bi.ACC_PUBLIC
-import org.opalj.bi.ACC_VOLATILE
-import org.opalj.bi.AccessFlagsContexts
-import org.opalj.bi.AccessFlags
-
 import scala.collection.immutable.ArraySeq
+import scala.math.Ordered
+
+import org.opalj.bi.ACC_PUBLIC
+import org.opalj.bi.ACC_TRANSIENT
+import org.opalj.bi.ACC_VOLATILE
+import org.opalj.bi.AccessFlags
+import org.opalj.bi.AccessFlagsContexts
 
 /**
  * Represents a single field declaration/definition.
@@ -59,12 +59,13 @@ sealed abstract class JVMField extends ClassMember with Ordered[JVMField] {
 
     // This method is only to be called by ..br.ClassFile to associate this method
     // with the respective class file.
-    private[br] def prepareClassFileAttachement(): Field = {
-        new Field(
-            null /*will be set by class file*/ ,
-            accessFlags, name, fieldType, attributes
-        )
-    }
+    private[br] def prepareClassFileAttachement(): Field = new Field(
+        null /*will be set by class file*/,
+        accessFlags,
+        name,
+        fieldType,
+        attributes
+    )
 
     /**
      * Compares this field with the given one for structural equality.
@@ -72,29 +73,22 @@ sealed abstract class JVMField extends ClassMember with Ordered[JVMField] {
      * Two fields are structurally equal if they have the same names, flags, type and attributes.
      * In the latter case, the order doesn't matter!
      */
-    def similar(other: JVMField, config: SimilarityTestConfiguration): Boolean = {
+    def similar(other: JVMField, config: SimilarityTestConfiguration): Boolean =
         this.accessFlags == other.accessFlags &&
             (this.fieldType eq other.fieldType) &&
             this.name == other.name &&
             compareAttributes(other.attributes, config).isEmpty
-    }
 
     def copy(
-        accessFlags: Int        = this.accessFlags,
-        name:        String     = this.name,
-        fieldType:   FieldType  = this.fieldType,
-        attributes:  Attributes = this.attributes
-    ): FieldTemplate = {
+        accessFlags: Int = this.accessFlags,
+        name:        String = this.name,
+        fieldType:   FieldType = this.fieldType,
+        attributes:  Attributes = this.attributes): FieldTemplate =
         new FieldTemplate(accessFlags, name, fieldType, attributes)
-    }
 
-    final def asVirtualField(declaringClassFile: ClassFile): VirtualField = {
-        asVirtualField(declaringClassFile.thisType)
-    }
+    final def asVirtualField(declaringClassFile: ClassFile): VirtualField = asVirtualField(declaringClassFile.thisType)
 
-    def asVirtualField(declaringClassType: ObjectType): VirtualField = {
-        VirtualField(declaringClassType, name, fieldType)
-    }
+    def asVirtualField(declaringClassType: ObjectType): VirtualField = VirtualField(declaringClassType, name, fieldType)
 
     def isTransient: Boolean = (ACC_TRANSIENT.mask & accessFlags) != 0
 
@@ -103,26 +97,22 @@ sealed abstract class JVMField extends ClassMember with Ordered[JVMField] {
     /**
      * Returns this field's type signature.
      */
-    def fieldTypeSignature: Option[FieldTypeSignature] = {
-        attributes collectFirst { case s: FieldTypeSignature => s }
-    }
+    def fieldTypeSignature: Option[FieldTypeSignature] = attributes collectFirst { case s: FieldTypeSignature => s }
 
     /**
      * Returns this field's constant value.
      */
-    def constantFieldValue: Option[ConstantFieldValue[_]] = {
-        attributes collectFirst { case cv: ConstantFieldValue[_] => cv }
+    def constantFieldValue: Option[ConstantFieldValue[_]] = attributes collectFirst { case cv: ConstantFieldValue[_] =>
+        cv
     }
 
     def signatureToJava(withAccessFlags: Boolean = false): String = {
-        val javaSignature = fieldType.toJava+" "+name
+        val javaSignature = fieldType.toJava + " " + name
         if (withAccessFlags) {
             val rawAccessFlags = AccessFlags.toStrings(this.accessFlags, AccessFlagsContexts.FIELD)
-            val accessFlags =
-                if (rawAccessFlags.nonEmpty) rawAccessFlags.mkString("", " ", " ") else ""
+            val accessFlags    = if (rawAccessFlags.nonEmpty) rawAccessFlags.mkString("", " ", " ") else ""
             accessFlags + javaSignature
-        } else
-            javaSignature
+        } else javaSignature
 
     }
 
@@ -131,7 +121,7 @@ sealed abstract class JVMField extends ClassMember with Ordered[JVMField] {
      * The order is defined by first lexicographically comparing the names of the
      * fields and – if the names are identical – by comparing the types.
      */
-    def compare(other: JVMField): Int = {
+    def compare(other: JVMField): Int =
         if (this.name eq other.name) {
             this.fieldType compare other.fieldType
         } else if (this.name < other.name) {
@@ -139,7 +129,6 @@ sealed abstract class JVMField extends ClassMember with Ordered[JVMField] {
         } else {
             1
         }
-    }
 
     //
     //
@@ -150,10 +139,10 @@ sealed abstract class JVMField extends ClassMember with Ordered[JVMField] {
     override def toString(): String = {
         import AccessFlagsContexts.FIELD
         val jAccessFlags = AccessFlags.toStrings(accessFlags, FIELD).mkString(" ")
-        val jDescriptor = fieldType.toJava+" "+name
+        val jDescriptor  = fieldType.toJava + " " + name
         val field =
             if (jAccessFlags.nonEmpty) {
-                jAccessFlags+" "+jDescriptor
+                jAccessFlags + " " + jDescriptor
             } else {
                 jDescriptor
             }
@@ -170,8 +159,7 @@ final class FieldTemplate private[br] (
         val accessFlags: Int,
         val name:        String, // the name is interned to enable reference comparisons!
         val fieldType:   FieldType,
-        val attributes:  Attributes
-) extends JVMField {
+        val attributes: Attributes) extends JVMField {
 
     final override def isField: Boolean = false
 
@@ -180,10 +168,9 @@ final class FieldTemplate private[br] (
 final class Field private[br] (
         private[br] var declaringClassFile: ClassFile, // the back-link can be updated to enable efficient load-time transformations
         val accessFlags:                    Int,
-        val name:                           String, // the name is interned to enable reference comparisons!
+        val name:                           String,    // the name is interned to enable reference comparisons!
         val fieldType:                      FieldType,
-        val attributes:                     Attributes
-) extends JVMField {
+        val attributes: Attributes) extends JVMField {
 
     // see ClassFile.unsafeReplaceMethod for THE usage!
     private[br] def detach(): this.type = { declaringClassFile = null; this }
@@ -199,13 +186,9 @@ final class Field private[br] (
 
     def toJava: String = s"${declaringClassFile.thisType.toJava}{ ${signatureToJava(true)} }"
 
-    def toJava(message: String): String = {
-        s"${declaringClassFile.thisType.toJava}{ ${signatureToJava(true)} $message }"
-    }
+    def toJava(message: String): String = s"${declaringClassFile.thisType.toJava}{ ${signatureToJava(true)} $message }"
 
-    override def toString(): String = {
-        super.toString()+" // in "+declaringClassFile.thisType.toJava
-    }
+    override def toString(): String = super.toString() + " // in " + declaringClassFile.thisType.toJava
 }
 
 /**
@@ -217,34 +200,27 @@ object Field {
         accessFlags:           Int,
         name:                  String,
         fieldType:             FieldType,
-        fieldAttributeBuilder: FieldAttributeBuilder
-    ): FieldTemplate = {
-        this(
-            accessFlags, name, fieldType,
-            ArraySeq(fieldAttributeBuilder(accessFlags, name, fieldType))
-        )
-    }
+        fieldAttributeBuilder: FieldAttributeBuilder): FieldTemplate = this(
+        accessFlags,
+        name,
+        fieldType,
+        ArraySeq(fieldAttributeBuilder(accessFlags, name, fieldType))
+    )
 
     def apply(
-        accessFlags: Int        = ACC_PUBLIC.mask,
+        accessFlags: Int = ACC_PUBLIC.mask,
         name:        String,
         fieldType:   FieldType,
-        attributes:  Attributes = ArraySeq.empty
-    ): FieldTemplate = {
+        attributes:  Attributes = ArraySeq.empty): FieldTemplate =
         new FieldTemplate(accessFlags, name.intern(), fieldType, attributes)
-    }
 
     // Only to be called by the class file reader!
     protected[br] def unattached(
-        accessFlags: Int        = ACC_PUBLIC.mask,
+        accessFlags: Int = ACC_PUBLIC.mask,
         name:        String,
         fieldType:   FieldType,
-        attributes:  Attributes = ArraySeq.empty
-    ): Field = {
+        attributes:  Attributes = ArraySeq.empty): Field =
         new Field(null, accessFlags, name.intern(), fieldType, attributes)
-    }
 
-    def unapply(field: Field): Option[(Int, String, FieldType)] = {
-        Some((field.accessFlags, field.name, field.fieldType))
-    }
+    def unapply(field: Field): Option[(Int, String, FieldType)] = Some((field.accessFlags, field.name, field.fieldType))
 }

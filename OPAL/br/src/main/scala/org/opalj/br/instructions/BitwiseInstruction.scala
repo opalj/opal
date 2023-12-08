@@ -10,7 +10,7 @@ package instructions
  */
 abstract class BitwiseInstruction
     extends AlwaysSucceedingStackBasedBinaryArithmeticInstruction
-    with InstructionMetaInformation {
+        with InstructionMetaInformation {
 
     final override def jvmExceptions: List[ObjectType] = Nil
 

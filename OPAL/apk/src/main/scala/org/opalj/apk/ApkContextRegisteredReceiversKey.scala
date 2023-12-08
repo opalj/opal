@@ -21,7 +21,6 @@ object ApkContextRegisteredReceiversKey extends ProjectInformationKey[Seq[ApkCon
     /**
      * Computes the APK's context-registered Broadcast Receivers.
      */
-    override def compute(project: SomeProject): Seq[ApkContextRegisteredReceiver] = {
+    override def compute(project: SomeProject): Seq[ApkContextRegisteredReceiver] =
         ContextRegisteredReceiversAnalysis.analyze(project)
-    }
 }

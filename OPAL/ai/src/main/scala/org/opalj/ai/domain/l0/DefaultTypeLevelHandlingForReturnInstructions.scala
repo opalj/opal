@@ -16,29 +16,24 @@ package l0
 trait DefaultTypeLevelHandlingForReturnInstructions extends ReturnInstructionsDomain {
     domain: ValuesDomain with ExceptionsFactory with Configuration =>
 
-    def areturn(pc: Int, value: DomainValue): Computation[Nothing, ExceptionValue] = {
+    def areturn(pc: Int, value: DomainValue): Computation[Nothing, ExceptionValue] =
         /*base impl.*/
         handleReturn(pc)
-    }
 
-    def dreturn(pc: Int, value: DomainValue): Computation[Nothing, ExceptionValue] = {
+    def dreturn(pc: Int, value: DomainValue): Computation[Nothing, ExceptionValue] =
         /*base impl.*/
         handleReturn(pc)
-    }
 
-    def freturn(pc: Int, value: DomainValue): Computation[Nothing, ExceptionValue] = {
+    def freturn(pc: Int, value: DomainValue): Computation[Nothing, ExceptionValue] =
         /*base impl.*/
         handleReturn(pc)
-    }
 
-    def ireturn(pc: Int, value: DomainValue): Computation[Nothing, ExceptionValue] = {
+    def ireturn(pc: Int, value: DomainValue): Computation[Nothing, ExceptionValue] =
         /*base impl.*/
         handleReturn(pc)
-    }
 
-    def lreturn(pc: Int, value: DomainValue): Computation[Nothing, ExceptionValue] = {
+    def lreturn(pc: Int, value: DomainValue): Computation[Nothing, ExceptionValue] =
         /*base impl.*/
         handleReturn(pc)
-    }
 
 }

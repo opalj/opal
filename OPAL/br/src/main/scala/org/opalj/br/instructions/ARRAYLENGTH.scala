@@ -26,9 +26,7 @@ case object ARRAYLENGTH extends Instruction with ConstantLengthInstruction with 
 
     final def stackSlotsChange: Int = 0
 
-    final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
-        this eq code.instructions(otherPC)
-    }
+    final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = this eq code.instructions(otherPC)
 
     final val readsLocal = false
 
@@ -41,18 +39,15 @@ case object ARRAYLENGTH extends Instruction with ConstantLengthInstruction with 
     final def nextInstructions(
         currentPC:             PC,
         regularSuccessorsOnly: Boolean
-    )(
-        implicit
+      )(implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
-    ): List[PC] = {
-        if (regularSuccessorsOnly)
-            List(indexOfNextInstruction(currentPC))
-        else
-            Instruction.nextInstructionOrExceptionHandler(
-                this, currentPC, ObjectType.NullPointerException
-            )
-    }
+        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy): List[PC] =
+        if (regularSuccessorsOnly) List(indexOfNextInstruction(currentPC))
+        else Instruction.nextInstructionOrExceptionHandler(
+            this,
+            currentPC,
+            ObjectType.NullPointerException
+        )
 
     final def expressionResult: Stack.type = Stack
 

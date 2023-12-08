@@ -21,17 +21,14 @@ case object MONITORENTER extends SynchronizationInstruction with InstructionMeta
     final def nextInstructions(
         currentPC:             PC,
         regularSuccessorsOnly: Boolean
-    )(
-        implicit
+      )(implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
-    ): List[PC] = {
-        if (regularSuccessorsOnly)
-            List(indexOfNextInstruction(currentPC))
-        else
-            Instruction.nextInstructionOrExceptionHandler(
-                this, currentPC, ObjectType.NullPointerException
-            )
-    }
+        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy): List[PC] =
+        if (regularSuccessorsOnly) List(indexOfNextInstruction(currentPC))
+        else Instruction.nextInstructionOrExceptionHandler(
+            this,
+            currentPC,
+            ObjectType.NullPointerException
+        )
 
 }

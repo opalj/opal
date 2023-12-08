@@ -5,18 +5,18 @@ package immutable
 
 import scala.language.implicitConversions
 
-import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
-import org.scalacheck.Prop.classify
-import org.scalacheck.Prop.propBoolean
-import org.scalacheck.Gen
-import org.scalacheck.Arbitrary
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.matchers.should.Matchers
-import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
-
 import org.opalj.util.Nanoseconds
 import org.opalj.util.PerformanceEvaluation
+
+import org.junit.runner.RunWith
+import org.scalacheck.Arbitrary
+import org.scalacheck.Gen
+import org.scalacheck.Prop.classify
+import org.scalacheck.Prop.propBoolean
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
+import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 
 /**
  * Tests `UIDSets` by creating standard Sets and comparing
@@ -34,9 +34,7 @@ class UIDSetTest extends AnyFunSpec with Matchers with ScalaCheckDrivenPropertyC
 
         implicit def intToSUID(i: Int): SUID = SUID(i)
 
-        implicit def toSUIDSet(l: Iterable[Int]): UIDSet[SUID] = {
-            EmptyUIDSet ++ l.map(i => SUID(i))
-        }
+        implicit def toSUIDSet(l: Iterable[Int]): UIDSet[SUID] = EmptyUIDSet ++ l.map(i => SUID(i))
 
         val veryLargeListGen = for {
             i <- Gen.choose(30000, 100000)
@@ -50,7 +48,7 @@ class UIDSetTest extends AnyFunSpec with Matchers with ScalaCheckDrivenPropertyC
 
         it("create singleton set") {
             forAll { (i: Int) =>
-                val s = SUID(i)
+                val s   = SUID(i)
                 val fl1 = UIDSet[SUID](i)
                 val fl2 = (UIDSet.newBuilder[SUID] += i).result()
                 val fl3 = UIDSet.empty[SUID] + s
@@ -62,58 +60,58 @@ class UIDSetTest extends AnyFunSpec with Matchers with ScalaCheckDrivenPropertyC
             forAll { (i: Int, j: Int) =>
                 i != j ==> {
                     UIDSet[SUID](i, j).tail.isSingletonSet :| "tail" &&
-                        (UIDSet[SUID](i) + j).filter(_ == SUID(i)).isSingletonSet :| "filter first value" &&
-                        (UIDSet[SUID](i) + j).filter(_ == SUID(j)).isSingletonSet :| "filter second value"
+                    (UIDSet[SUID](i) + j).filter(_ == SUID(i)).isSingletonSet :| "filter first value" &&
+                    (UIDSet[SUID](i) + j).filter(_ == SUID(j)).isSingletonSet :| "filter second value"
                 }
             }
         }
 
         it("create set(++)") {
             forAll { (orig: Set[Int]) =>
-                val s = orig.map(SUID.apply)
+                val s  = orig.map(SUID.apply)
                 val us = EmptyUIDSet ++ s
                 (s.size == us.size) :| "size" &&
-                    s.forall(us.contains) :| "created set contains all values" &&
-                    us.forall(s.contains) :| "created set only contains added values"
+                s.forall(us.contains) :| "created set contains all values" &&
+                us.forall(s.contains) :| "created set only contains added values"
             }
         }
 
         it("create set(++ UIDSet)") {
             forAll { (a: Set[Int], b: Set[Int]) =>
-                val ab: Set[SUID] = a.map(SUID.apply) ++ b.map(SUID.apply)
+                val ab: Set[SUID]     = a.map(SUID.apply) ++ b.map(SUID.apply)
                 val usa: UIDSet[SUID] = EmptyUIDSet ++ a.map(SUID.apply)
                 val usb: UIDSet[SUID] = EmptyUIDSet ++ b.map(SUID.apply)
-                val usab = usa ++ usb
+                val usab              = usa ++ usb
                 (ab.size == usab.size) :| "size" &&
-                    ab.forall(usab.contains) :| "created set contains all values" &&
-                    usab.forall(ab.contains) :| "created set only contains added values"
+                ab.forall(usab.contains) :| "created set contains all values" &&
+                usab.forall(ab.contains) :| "created set only contains added values"
             }
         }
 
         it("create set(+)") {
             forAll { (orig: Set[Int]) =>
-                val s = orig.map(SUID(_))
+                val s  = orig.map(SUID(_))
                 var us = EmptyUIDSet
                 s.foreach {
                     us += _
                 }
                 s.size == us.size &&
-                    s.forall(us.contains) && us.forall(s.contains)
+                s.forall(us.contains) && us.forall(s.contains)
             }
         }
 
         it("remove element (-)") {
             forAll { (orig: Set[Int]) =>
                 val base = orig.map(SUID.apply)
-                var s = base
-                var us = EmptyUIDSet ++ s
+                var s    = base
+                var us   = EmptyUIDSet ++ s
                 base.forall { e =>
                     s -= e
                     us -= e
                     (s.size == us.size) && {
                         if (!s.forall(us.contains)) {
                             println(
-                                s"after removing $e s contains more elements: "+
+                                s"after removing $e s contains more elements: " +
                                     s"$s(${s.getClass}) <-> $us(#${us.size}; ${us.getClass})"
                             )
                             false
@@ -145,7 +143,7 @@ class UIDSetTest extends AnyFunSpec with Matchers with ScalaCheckDrivenPropertyC
                 val us2 = UIDSet.empty[SUID] ++ s2.map(SUID(_))
                 classify(s1 == s2, "both sets are equal") {
                     (s1 == s2) == (us1 == us2) &&
-                        (us1 != us2 || us1.hashCode() == us2.hashCode())
+                    (us1 != us2 || us1.hashCode() == us2.hashCode())
                 }
             }
         }
@@ -153,7 +151,7 @@ class UIDSetTest extends AnyFunSpec with Matchers with ScalaCheckDrivenPropertyC
         it("equals") {
             forAll { (l: Set[Int]) =>
                 l.size >= 3 ==> {
-                    val p = l.toList.permutations
+                    val p   = l.toList.permutations
                     val us1 = UIDSet.empty[SUID] ++ p.next().map(SUID.apply)
                     val us2 = UIDSet.empty[SUID] ++ p.next().map(SUID.apply)
                     val us3 = UIDSet.empty[SUID] ++ p.next().map(SUID.apply)
@@ -166,7 +164,7 @@ class UIDSetTest extends AnyFunSpec with Matchers with ScalaCheckDrivenPropertyC
         it("seq") {
             forAll { (l: List[Int]) =>
                 val fl = toSUIDSet(l)
-                (fl.toSeq eq fl)
+                fl.toSeq eq fl
             }
         }
 
@@ -181,8 +179,8 @@ class UIDSetTest extends AnyFunSpec with Matchers with ScalaCheckDrivenPropertyC
             forAll { (s: Set[Int]) =>
                 def test(suid: SUID): Boolean = suid.id < 0
 
-                val us = toSUIDSet(s)
-                val ssuid = s.map(SUID(_))
+                val us      = toSUIDSet(s)
+                val ssuid   = s.map(SUID(_))
                 val usFound = us.find(test)
                 val ssFound = ssuid.find(test)
                 usFound.isDefined == ssFound.isDefined
@@ -207,7 +205,7 @@ class UIDSetTest extends AnyFunSpec with Matchers with ScalaCheckDrivenPropertyC
 
         it("idIterator") {
             forAll { (s: Set[Int]) =>
-                val us = toSUIDSet(s)
+                val us      = toSUIDSet(s)
                 val usIdSet = us.idIterator.toSet
                 usIdSet.size == s.size && s.forall(usIdSet.contains)
             }
@@ -215,7 +213,7 @@ class UIDSetTest extends AnyFunSpec with Matchers with ScalaCheckDrivenPropertyC
 
         it("idSet") {
             forAll { (s: Set[Int]) =>
-                val us = toSUIDSet(s)
+                val us      = toSUIDSet(s)
                 val usIdSet = us.idSet
                 usIdSet.size == s.size && s.forall(usIdSet.contains)
             }
@@ -236,7 +234,7 @@ class UIDSetTest extends AnyFunSpec with Matchers with ScalaCheckDrivenPropertyC
                 classify(s.isEmpty, "the set is empty") {
                     (s.isEmpty && us.compare(EmptyUIDSet) == EqualSets) || (
                         (s.tail.inits.forall(init => toSUIDSet(init).compare(us) == StrictSubset)) &&
-                        (s.tail.inits.forall(init => us.compare(toSUIDSet(init)) == StrictSuperset))
+                            (s.tail.inits.forall(init => us.compare(toSUIDSet(init)) == StrictSuperset))
                     )
                 }
             }
@@ -244,20 +242,20 @@ class UIDSetTest extends AnyFunSpec with Matchers with ScalaCheckDrivenPropertyC
 
         it("compare(arbitrary sets)") {
             forAll { (s1: Set[Int], s2: Set[Int]) =>
-                val us1 = toSUIDSet(s1)
-                val us2 = toSUIDSet(s2)
+                val us1           = toSUIDSet(s1)
+                val us2           = toSUIDSet(s2)
                 val us1CompareUs2 = us1.compare(us2)
                 val us2CompareUs1 = us2.compare(us1)
                 (s1 == s2 && us1CompareUs2 == us2CompareUs1 && us1CompareUs2 == EqualSets) ||
-                    (s1.subsetOf(s2) && us1CompareUs2 == StrictSubset && us2CompareUs1 == StrictSuperset) ||
-                    (s2.subsetOf(s1) && us2CompareUs1 == StrictSubset && us1CompareUs2 == StrictSuperset) ||
-                    (us1CompareUs2 == us2CompareUs1 && us1CompareUs2 == UncomparableSets)
+                (s1.subsetOf(s2) && us1CompareUs2 == StrictSubset && us2CompareUs1 == StrictSuperset) ||
+                (s2.subsetOf(s1) && us2CompareUs1 == StrictSubset && us1CompareUs2 == StrictSuperset) ||
+                (us1CompareUs2 == us2CompareUs1 && us1CompareUs2 == UncomparableSets)
             }
         }
 
         it("head|tail") {
             forAll { (s: Set[Int]) =>
-                var us = toSUIDSet(s)
+                var us   = toSUIDSet(s)
                 var seen = Set.empty[SUID]
                 (0 until s.size).forall { i =>
                     val result = !seen.contains(us.head)
@@ -265,7 +263,7 @@ class UIDSetTest extends AnyFunSpec with Matchers with ScalaCheckDrivenPropertyC
                     us = us.tail
                     result
                 } :| "forall" &&
-                    (seen == s.map(SUID.apply)) :| "repetition of value"
+                (seen == s.map(SUID.apply)) :| "repetition of value"
             }
         }
 
@@ -273,11 +271,11 @@ class UIDSetTest extends AnyFunSpec with Matchers with ScalaCheckDrivenPropertyC
             forAll { (s: Set[Int], i: Int) =>
                 def test(s: SUID): Boolean = s.id < 0
 
-                val us = toSUIDSet(s).filter(test)
+                val us       = toSUIDSet(s).filter(test)
                 val expected = toSUIDSet(s.filter(i => test(SUID(i))))
                 (us.size == expected.size) :| "size" && {
                     if (expected != us) {
-                        println("expected: "+expected + expected.getClass+"; actual: "+us + us.getClass)
+                        println("expected: " + expected + expected.getClass + "; actual: " + us + us.getClass)
                         false
                     } else {
                         true
@@ -299,26 +297,24 @@ class UIDSetTest extends AnyFunSpec with Matchers with ScalaCheckDrivenPropertyC
             forAll { (s1: Set[Int], s2: Set[Int]) =>
                 val us1 = toSUIDSet(s1)
                 val us2 = toSUIDSet(s2)
-                val us = toSUIDSet(s1 intersect s2)
+                val us  = toSUIDSet(s1 intersect s2)
                 us == (us1 intersect us2)
             }
         }
 
         it("foldLeft") {
-            forAll { (s: Set[Int], i: Int) =>
-                toSUIDSet(s).foldLeft(0)(_ + _.id * 2) == s.foldLeft(0)(_ + _.id * 2)
-            }
+            forAll { (s: Set[Int], i: Int) => toSUIDSet(s).foldLeft(0)(_ + _.id * 2) == s.foldLeft(0)(_ + _.id * 2) }
         }
 
         it("map (check that the same type of collection is created)") {
             val orig = Set(1, -1, 0, -2)
             def f(s: SUID): SUID = SUID(s.id % 5)
 
-            val s = orig.map(SUID(_)).map(f)
-            val uidSet = toSUIDSet(orig)
+            val s           = orig.map(SUID(_)).map(f)
+            val uidSet      = toSUIDSet(orig)
             val us: SUIDSet = uidSet.mapUIDSet(f)
             (s.forall(us.contains) && us.forall(s.contains)) :| s"content $s vs. $us" &&
-                classOf[UIDSet[_]].isInstance(us) :| "unexpected type"
+            classOf[UIDSet[_]].isInstance(us) :| "unexpected type"
             //            forAll { (orig: Set[Int]) =>
             //
             //                def f(s: SUID): SUID = SUID(s.id % 5)
@@ -331,74 +327,64 @@ class UIDSetTest extends AnyFunSpec with Matchers with ScalaCheckDrivenPropertyC
         }
 
         it("can handle large sets") {
-            forAll(largeSetGen) { (v) =>
+            forAll(largeSetGen) { v =>
                 val (orig: Set[Int], i) = v
-                val us = toSUIDSet(orig)
+                val us                  = toSUIDSet(orig)
                 val usTransformed: UIDSet[SUID] =
-                    (us.
-                        mapUIDSet[SUID] { e => SUID(e.id % i) }.
-                        filter(_.id < i / 2).
-                        +(SUID(i)) + SUID(-i) + SUID(i + 100))
+                    us.mapUIDSet[SUID] { e => SUID(e.id % i) }.filter(_.id < i / 2).+(SUID(i)) + SUID(-i) + SUID(i + 100)
 
-                val s = (Set.empty[SUID] ++ orig.map(SUID(_)))
+                val s = Set.empty[SUID] ++ orig.map(SUID(_))
                 val sTransformed: Set[SUID] =
-                    (s.
-                        map[SUID] { e => SUID(e.id % i) }.
-                        filter(_.id < i / 2).
-                        +(SUID(i)) + SUID(-i) + SUID(i + 100))
+                    s.map[SUID] { e => SUID(e.id % i) }.filter(_.id < i / 2).+(SUID(i)) + SUID(-i) + SUID(i + 100)
 
                 classify(orig.size > 20, "original set is large") {
                     classify(sTransformed.size > 20, "transformed set is large") {
                         usTransformed.forall(sTransformed.contains) :| "us <= s" &&
-                            sTransformed.forall(usTransformed.contains) :| "s <= us"
+                        sTransformed.forall(usTransformed.contains) :| "s <= us"
                     }
                 }
             }
         }
 
         it("can efficiently create very large sets") {
-            forAll(veryLargeListGen) { (v) =>
+            forAll(veryLargeListGen) { v =>
                 val (orig: List[Int], _) = v
-                val base = orig.map(SUID.apply)
+                val base                 = orig.map(SUID.apply)
                 val s1 = /*org.opalj.util.PerformanceEvaluation.time*/ {
                     val s1b = UIDSet.newBuilder[SUID]
                     base.foreach(s1b.+=)
                     s1b.result()
-                } //{ t => println("Builder +!: "+t.toSeconds) }
+                } // { t => println("Builder +!: "+t.toSeconds) }
 
                 var s2 = UIDSet.empty[SUID]
-                //org.opalj.util.PerformanceEvaluation.time {
+                // org.opalj.util.PerformanceEvaluation.time {
                 base.foreach(e => s2 = s2 + e)
-                //} { t => println("Builder + : "+t.toSeconds) }
+                // } { t => println("Builder + : "+t.toSeconds) }
 
                 s1 == s2
             }
         }
 
         it("can handle very large sets") {
-            forAll(veryLargeListGen) { (v) =>
+            forAll(veryLargeListGen) { v =>
                 val (orig: List[Int], i) = v
-                val base = orig.map(SUID.apply)
+                val base                 = orig.map(SUID.apply)
                 val usTransformed = {
                     val us = UIDSet.empty[SUID] ++ base
-                    (us.
-                        map[SUID] { e => SUID(e.id % i) }.
-                        filter(_.id < i / 2).
-                        +(SUID(i)) + SUID(-i) + SUID(i + 100)) - SUID(1002)
+                    (us.map[SUID] { e => SUID(e.id % i) }.filter(_.id < i / 2).+(SUID(i)) + SUID(-i) + SUID(
+                        i + 100)) - SUID(1002)
                 }
 
                 val sTransformed = {
                     val s = Set.empty[SUID] ++ base
-                    (s.
-                        map[SUID] { e => SUID(e.id % i) }.
-                        filter(_.id < i / 2).
-                        +(SUID(i)) + SUID(-i) + SUID(i + 100)) - SUID(1002)
+                    (s.map[SUID] { e => SUID(e.id % i) }.filter(_.id < i / 2).+(SUID(i)) + SUID(-i) + SUID(
+                        i + 100)) - SUID(1002)
                 }
 
                 classify(base.size > 25000, s"original set is very large (>25000)") {
                     classify(sTransformed.size > 25000, "transformed set is still very large (>25000)") {
                         usTransformed.forall(sTransformed.contains) :| "us <= s" &&
-                            sTransformed.forall(usTransformed.contains) :| "s <= us"
+                        sTransformed.forall(usTransformed.contains) :| "s <= us"
                     }
                 }
             }
@@ -408,7 +394,7 @@ class UIDSetTest extends AnyFunSpec with Matchers with ScalaCheckDrivenPropertyC
 
         it("isSingletonSet") {
             forAll { (orig: Set[Int]) =>
-                val s = orig.map(SUID(_))
+                val s  = orig.map(SUID(_))
                 val us = EmptyUIDSet ++ s
                 (s.size == 1) == us.isSingletonSet
             }
@@ -416,14 +402,15 @@ class UIDSetTest extends AnyFunSpec with Matchers with ScalaCheckDrivenPropertyC
 
         it("add, remove, filter") {
             forAll { (a: Set[Int], b: Set[Int]) =>
-                val aus = UIDSet.empty[SUID] ++ a.map(SUID.apply)
+                val aus         = UIDSet.empty[SUID] ++ a.map(SUID.apply)
                 val toBeRemoved = b.size / 2
-                val newAUS = ((aus ++ b.map(SUID.apply)) -- b.slice(0, toBeRemoved).map(SUID.apply)).filter(i => b.contains(i.id))
+                val newAUS =
+                    ((aus ++ b.map(SUID.apply)) -- b.slice(0, toBeRemoved).map(SUID.apply)).filter(i => b.contains(i.id))
                 val newA = (a ++ b -- b.slice(0, toBeRemoved)).filter(b.contains)
                 classify(newA.size == 0, "new A is now empty") {
                     classify(newA.size < a.size, "new A is smaller than a") {
                         newAUS.size == newA.size &&
-                            newAUS.iterator.map[Int](_.id).toSet == newA
+                        newAUS.iterator.map[Int](_.id).toSet == newA
                     }
                 }
             }
@@ -434,10 +421,10 @@ class UIDSetTest extends AnyFunSpec with Matchers with ScalaCheckDrivenPropertyC
 
         it("foreach") {
             {
-                val seed = 123456789L
+                val seed   = 123456789L
                 val rngGen = new java.util.Random(seed)
 
-                var overallSum = 0
+                var overallSum  = 0
                 var overallTime = Nanoseconds.None
                 for { i <- 1 to 100000 } {
                     var s = UIDSet.empty[SUID]
@@ -456,10 +443,10 @@ class UIDSetTest extends AnyFunSpec with Matchers with ScalaCheckDrivenPropertyC
             }
 
             {
-                val seed = 123456789L
+                val seed   = 123456789L
                 val rngGen = new java.util.Random(seed)
 
-                var overallSum = 0
+                var overallSum  = 0
                 var overallTime = Nanoseconds.None
                 for { i <- 1 to 100000 } {
                     var s = Set.empty[SUID]
@@ -482,8 +469,8 @@ class UIDSetTest extends AnyFunSpec with Matchers with ScalaCheckDrivenPropertyC
             val opalS = {
                 var totalSize = 0
                 PerformanceEvaluation.time {
-                    val seed = 123456789L
-                    val rngGen = new java.util.Random(seed)
+                    val seed      = 123456789L
+                    val rngGen    = new java.util.Random(seed)
                     var lastOpalS = UIDSet.empty[SUID]
                     for { j <- 0 to 1000000 } {
                         var opalS = UIDSet.empty[SUID]
@@ -501,8 +488,8 @@ class UIDSetTest extends AnyFunSpec with Matchers with ScalaCheckDrivenPropertyC
             val scalaS = {
                 var totalSize = 0
                 PerformanceEvaluation.time {
-                    val seed = 123456789L
-                    val rngGen = new java.util.Random(seed)
+                    val seed       = 123456789L
+                    val rngGen     = new java.util.Random(seed)
                     var lastScalaS = Set.empty[SUID]
                     for { j <- 0 to 1000000 } {
                         var scalaS = Set.empty[SUID]
@@ -527,8 +514,8 @@ class UIDSetTest extends AnyFunSpec with Matchers with ScalaCheckDrivenPropertyC
         it("memory for creating the sets compared to Set[UID]") {
             val opalS = PerformanceEvaluation.memory {
                 PerformanceEvaluation.time {
-                    val seed = 123456789L
-                    val rngGen = new java.util.Random(seed)
+                    val seed    = 123456789L
+                    val rngGen  = new java.util.Random(seed)
                     var allSets = List.empty[UIDSet[SUID]]
                     for { j <- 0 to 1000000 } {
                         var opalS = UIDSet.empty[SUID]
@@ -544,8 +531,8 @@ class UIDSetTest extends AnyFunSpec with Matchers with ScalaCheckDrivenPropertyC
 
             val scalaS = PerformanceEvaluation.memory {
                 PerformanceEvaluation.time {
-                    val seed = 123456789L
-                    val rngGen = new java.util.Random(seed)
+                    val seed    = 123456789L
+                    val rngGen  = new java.util.Random(seed)
                     var allSets = List.empty[Set[SUID]]
                     for { j <- 0 to 1000000 } {
                         var scalaS = Set.empty[SUID]
@@ -559,7 +546,7 @@ class UIDSetTest extends AnyFunSpec with Matchers with ScalaCheckDrivenPropertyC
                 } { t => info(s"Set[UID] took ${t.toSeconds}") }
             } { mu => info(s"Set[UID] required $mu bytes") }
 
-            info(s"overall size of sets: "+scalaS.map(_.size).sum)
+            info(s"overall size of sets: " + scalaS.map(_.size).sum)
             assert(opalS.map(_.size).sum == scalaS.map(_.size).sum)
         }
     }

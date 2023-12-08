@@ -2,9 +2,9 @@
 package org.opalj
 package concurrent
 
-import java.util.concurrent.locks.ReentrantReadWriteLock
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.locks.ReentrantLock
+import java.util.concurrent.locks.ReentrantReadWriteLock
 import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock
 
 /**
@@ -17,19 +17,19 @@ import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock
  */
 trait Locking {
 
-    protected[this] final val rwLock = new ReentrantReadWriteLock()
+    final protected[this] val rwLock = new ReentrantReadWriteLock()
 
     /**
      * Acquires the write lock associated with this instance and then executes the function `f`.
      * Afterwards, the lock is released.
      */
-    @inline protected[this] final def withWriteLock[B](f: => B): B = Locking.withWriteLock(rwLock)(f)
+    @inline final protected[this] def withWriteLock[B](f: => B): B = Locking.withWriteLock(rwLock)(f)
 
     /**
      * Acquires the read lock associated with this instance and then executes the function `f`.
      * Afterwards, the lock is released.
      */
-    @inline protected[this] final def withReadLock[B](f: => B): B = Locking.withReadLock(rwLock)(f)
+    @inline final protected[this] def withReadLock[B](f: => B): B = Locking.withReadLock(rwLock)(f)
 }
 /**
  * Defines several convenience methods related to using `(Reentrant(ReadWrite))Lock`s.
@@ -41,7 +41,7 @@ object Locking {
      * Afterwards, the lock is released.
      */
     @inline final def withWriteLock[B](rwLock: ReentrantReadWriteLock)(f: => B): B = {
-        val lock = rwLock.writeLock()
+        val lock     = rwLock.writeLock()
         var isLocked = false
         try {
             lock.lock()
@@ -58,24 +58,21 @@ object Locking {
      */
     @inline final def withWriteLocks[T](
         rwLocks: IterableOnce[ReentrantReadWriteLock]
-    )(
-        f: => T
-    ): T = {
+      )(f: => T): T = {
         var acquiredRWLocks: List[WriteLock] = List.empty
-        var error: Throwable = null
-        val allLocked =
-            rwLocks.iterator.forall { rwLock =>
-                try {
-                    val l = rwLock.writeLock
-                    l.lock
-                    acquiredRWLocks ::= l
-                    true
-                } catch {
-                    case t: Throwable =>
-                        error = t
-                        false
-                }
+        var error: Throwable                 = null
+        val allLocked = rwLocks.iterator.forall { rwLock =>
+            try {
+                val l = rwLock.writeLock
+                l.lock
+                acquiredRWLocks ::= l
+                true
+            } catch {
+                case t: Throwable =>
+                    error = t
+                    false
             }
+        }
 
         assert(allLocked || (error ne null))
 
@@ -89,7 +86,8 @@ object Locking {
             }
         } finally {
             acquiredRWLocks foreach { rwLock =>
-                try { rwLock.unlock() } catch { case t: Throwable => if (error eq null) error = t }
+                try { rwLock.unlock() }
+                catch { case t: Throwable => if (error eq null) error = t }
             }
             if (error ne null) throw error;
         }
@@ -119,10 +117,8 @@ object Locking {
         var isLocked = false
         try {
             isLocked = rwLock.readLock().tryLock(100L, TimeUnit.MILLISECONDS)
-            if (isLocked)
-                Some(f)
-            else
-                None
+            if (isLocked) Some(f)
+            else None
         } finally {
             if (isLocked) rwLock.readLock().unlock()
         }
@@ -132,12 +128,11 @@ object Locking {
      * Acquires the lock and then executes the function `f`.
      * Before returning the lock is always released.
      */
-    @inline final def withLock[B](lock: ReentrantLock)(f: => B): B = {
+    @inline final def withLock[B](lock: ReentrantLock)(f: => B): B =
         try {
             lock.lock()
             f
         } finally {
             lock.unlock()
         }
-    }
 }

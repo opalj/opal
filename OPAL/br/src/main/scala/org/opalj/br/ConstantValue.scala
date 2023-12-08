@@ -32,55 +32,45 @@ trait ConstantValue[T >: Nothing] extends BootstrapArgument {
 
     private[this] def className: String = this.getClass.getSimpleName
 
-    def toBoolean: Boolean =
-        throw new BytecodeProcessingFailedException(
-            className+" cannot be converted to a boolean value"
-        )
+    def toBoolean: Boolean = throw new BytecodeProcessingFailedException(
+        className + " cannot be converted to a boolean value"
+    )
 
-    def toByte: Byte =
-        throw new BytecodeProcessingFailedException(
-            className+" cannot be converted to a byte value"
-        )
+    def toByte: Byte = throw new BytecodeProcessingFailedException(
+        className + " cannot be converted to a byte value"
+    )
 
-    def toChar: Char =
-        throw new BytecodeProcessingFailedException(
-            className+" cannot be converted to an char value"
-        )
+    def toChar: Char = throw new BytecodeProcessingFailedException(
+        className + " cannot be converted to an char value"
+    )
 
-    def toShort: Short =
-        throw new BytecodeProcessingFailedException(
-            className+" cannot be converted to a short value"
-        )
+    def toShort: Short = throw new BytecodeProcessingFailedException(
+        className + " cannot be converted to a short value"
+    )
 
-    def toInt: Int =
-        throw new BytecodeProcessingFailedException(
-            className+" cannot be converted to an int value"
-        )
+    def toInt: Int = throw new BytecodeProcessingFailedException(
+        className + " cannot be converted to an int value"
+    )
 
-    def toLong: Long =
-        throw new BytecodeProcessingFailedException(
-            className+" cannot be converted to a long value"
-        )
+    def toLong: Long = throw new BytecodeProcessingFailedException(
+        className + " cannot be converted to a long value"
+    )
 
-    def toFloat: Float =
-        throw new BytecodeProcessingFailedException(
-            className+" cannot be converted to a float value"
-        )
+    def toFloat: Float = throw new BytecodeProcessingFailedException(
+        className + " cannot be converted to a float value"
+    )
 
-    def toDouble: Double =
-        throw new BytecodeProcessingFailedException(
-            className+" cannot be converted to a double value"
-        )
+    def toDouble: Double = throw new BytecodeProcessingFailedException(
+        className + " cannot be converted to a double value"
+    )
 
-    def toUTF8: String =
-        throw new BytecodeProcessingFailedException(
-            className+" cannot be converted to a String(UTF8) value"
-        )
+    def toUTF8: String = throw new BytecodeProcessingFailedException(
+        className + " cannot be converted to a String(UTF8) value"
+    )
 
-    def toReferenceType: ReferenceType =
-        throw new BytecodeProcessingFailedException(
-            className+" cannot be converted to a reference type"
-        )
+    def toReferenceType: ReferenceType = throw new BytecodeProcessingFailedException(
+        className + " cannot be converted to a reference type"
+    )
 }
 
 /**
@@ -90,7 +80,6 @@ trait ConstantValue[T >: Nothing] extends BootstrapArgument {
  */
 object ConstantValue {
 
-    def unapply[T](constantValue: ConstantValue[T]): Some[(T, Type)] = {
+    def unapply[T](constantValue: ConstantValue[T]): Some[(T, Type)] =
         Some((constantValue.value, constantValue.runtimeValueType))
-    }
 }

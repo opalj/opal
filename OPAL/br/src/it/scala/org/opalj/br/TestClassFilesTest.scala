@@ -2,19 +2,21 @@
 package org.opalj
 package br
 
-import java.util.zip.ZipFile
-import java.io.DataInputStream
 import java.io.ByteArrayInputStream
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
-import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
-import org.opalj.io.process
-import org.opalj.br.reader._
+import java.io.DataInputStream
+import java.util.zip.ZipFile
+
 import org.opalj.bi.TestResources.allBITestJARs
+import org.opalj.br.reader._
 import org.opalj.bytecode.JRELibraryFolder
+import org.opalj.io.process
 
 import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParallelizable
+
+import org.junit.runner.RunWith
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * This test(suite) just loads a very large number of class files to make sure the library
@@ -36,29 +38,27 @@ class TestClassFilesTest extends AnyFlatSpec with Matchers /*INTENTIONALLY NOT P
     } {
         count += 1
         it should s"be able to parse the class files in $file" in {
-            val testedForBeingIsomorphicCount = new java.util.concurrent.atomic.AtomicInteger(0)
+            val testedForBeingIsomorphicCount    = new java.util.concurrent.atomic.AtomicInteger(0)
             val testedForBeingNotIsomorphicCount = new java.util.concurrent.atomic.AtomicInteger(0)
-            val testedMethods = new java.util.concurrent.atomic.AtomicBoolean(false)
+            val testedMethods                    = new java.util.concurrent.atomic.AtomicBoolean(false)
 
             def simpleValidator(classFilePair: (ClassFile, ClassFile)): Unit = {
                 val (classFile, classFileTwin) = classFilePair
                 assert(!(classFile.thisType.fqn eq null))
 
                 val selfDiff = classFile.findDissimilarity(classFile)
-                if (selfDiff.nonEmpty)
-                    fail(s"the $classFile is not jvm equal to itself: "+selfDiff.get)
+                if (selfDiff.nonEmpty) fail(s"the $classFile is not jvm equal to itself: " + selfDiff.get)
 
                 val twinDiff = classFile.findDissimilarity(classFileTwin)
-                if (twinDiff.nonEmpty)
-                    fail(s"the $classFile is not jvm equal to its twin: "+twinDiff.get)
+                if (twinDiff.nonEmpty) fail(s"the $classFile is not jvm equal to its twin: " + twinDiff.get)
 
                 for (MethodWithBody(body) <- classFile.methods.par) {
-                    body.belongsToSubroutine() should not be (null)
+                    body.belongsToSubroutine() should not be null
 
                     testedMethods.set(true)
-                    var isomorphicCount = 0
+                    var isomorphicCount    = 0
                     var notIsomorphicCount = 0
-                    var lastPC = -1
+                    var lastPC             = -1
                     body iterate { (pc, instruction) =>
                         assert(
                             instruction.isIsomorphic(pc, pc)(body),
@@ -86,12 +86,12 @@ class TestClassFilesTest extends AnyFlatSpec with Matchers /*INTENTIONALLY NOT P
             }
 
             var classFilesCount = 0
-            val jarFile = new ZipFile(file)
-            val jarEntries = jarFile.entries
+            val jarFile         = new ZipFile(file)
+            val jarEntries      = jarFile.entries
             while (jarEntries.hasMoreElements) {
                 val jarEntry = jarEntries.nextElement
                 if (!jarEntry.isDirectory && jarEntry.getName.endsWith(".class")) {
-                    val data = new Array[Byte](jarEntry.getSize.toInt)
+                    val data             = new Array[Byte](jarEntry.getSize.toInt)
                     val entryInputStream = jarFile.getInputStream(jarEntry)
                     process(new DataInputStream(entryInputStream))(_.readFully(data))
                     import Java9Framework.ClassFile

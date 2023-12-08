@@ -25,16 +25,12 @@ trait DefaultArrayValuesBinding extends DefaultReferenceValuesBinding with Array
             origin:            ValueOrigin,
             theUpperTypeBound: ArrayType,
             theLength:         Int,
-            refId:             RefId
-    ) extends InitializedArrayValue
+            refId: RefId) extends InitializedArrayValue
 
     override def InitializedArrayValue(
         origin:    ValueOrigin,
         arrayType: ArrayType,
         counts:    Int,
-        refId:     RefId
-    ): DomainInitializedArrayValue = {
-        DefaultInitializedArrayValue(origin, arrayType, counts, refId)
-    }
+        refId:     RefId): DomainInitializedArrayValue = DefaultInitializedArrayValue(origin, arrayType, counts, refId)
 
 }

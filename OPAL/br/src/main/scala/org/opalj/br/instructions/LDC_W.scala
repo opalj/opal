@@ -23,7 +23,7 @@ sealed abstract class LDC_W[T] extends LoadConstantInstruction[T] with Instructi
         val other = code.instructions(otherPC)
         (this eq other) || (
             LDC_W.opcode == other.opcode &&
-            this.value == other.asInstanceOf[LDC_W[_]].value
+                this.value == other.asInstanceOf[LDC_W[_]].value
         )
     }
 
@@ -45,22 +45,17 @@ final case class LoadFloat_W(value: Float) extends PrimitiveLDC_W[Float] {
         this.similar(other)
     }
 
-    override def similar(other: Instruction): Boolean = {
-        (this eq other) || (
-            LDC_W.opcode == other.opcode && other.isInstanceOf[LoadFloat_W] && {
-                val otherLoadFloat = other.asInstanceOf[LoadFloat_W]
-                (this.value.isNaN && otherLoadFloat.value.isNaN) ||
-                    (this.value == otherLoadFloat.value)
-            }
-        )
-    }
-
-    override def equals(other: Any): Boolean = {
-        other match {
-            case LoadFloat_W(thatValue) =>
-                thatValue == this.value || (thatValue.isNaN && this.value.isNaN)
-            case _ => false
+    override def similar(other: Instruction): Boolean = (this eq other) || (
+        LDC_W.opcode == other.opcode && other.isInstanceOf[LoadFloat_W] && {
+            val otherLoadFloat = other.asInstanceOf[LoadFloat_W]
+            (this.value.isNaN && otherLoadFloat.value.isNaN) ||
+            (this.value == otherLoadFloat.value)
         }
+    )
+
+    override def equals(other: Any): Boolean = other match {
+        case LoadFloat_W(thatValue) => thatValue == this.value || (thatValue.isNaN && this.value.isNaN)
+        case _                      => false
     }
 }
 
@@ -90,8 +85,7 @@ final case class LoadString_W(value: String) extends PrimitiveLDC_W[String] {
 final case class LoadDynamic_W(
         bootstrapMethod: BootstrapMethod,
         name:            String,
-        descriptor:      FieldType
-) extends LDC_W[Nothing] {
+        descriptor: FieldType) extends LDC_W[Nothing] {
     def value: Nothing = throw new UnsupportedOperationException("dynamic constant unknown")
 
     def computationalType: ComputationalType = descriptor.computationalType
@@ -125,16 +119,14 @@ object LDC_W {
 
     final val opcode = 19
 
-    def apply(constantValue: ConstantValue[_]): LDC_W[_] = {
-        constantValue.value match {
-            case i: Int               => LoadInt_W(i)
-            case f: Float             => LoadFloat_W(f)
-            case r: ReferenceType     => LoadClass_W(r)
-            case s: String            => LoadString_W(s)
-            case mh: MethodHandle     => LoadMethodHandle_W(mh)
-            case md: MethodDescriptor => LoadMethodType_W(md)
-            case _                    => throw BytecodeProcessingFailedException("unsupported value: "+constantValue)
-        }
+    def apply(constantValue: ConstantValue[_]): LDC_W[_] = constantValue.value match {
+        case i: Int               => LoadInt_W(i)
+        case f: Float             => LoadFloat_W(f)
+        case r: ReferenceType     => LoadClass_W(r)
+        case s: String            => LoadString_W(s)
+        case mh: MethodHandle     => LoadMethodHandle_W(mh)
+        case md: MethodDescriptor => LoadMethodType_W(md)
+        case _                    => throw BytecodeProcessingFailedException("unsupported value: " + constantValue)
     }
 
     def unapply[T](ldc: LDC_W[T]): Option[T] = Some(ldc.value)

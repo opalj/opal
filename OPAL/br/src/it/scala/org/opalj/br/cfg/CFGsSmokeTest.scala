@@ -33,14 +33,14 @@ package cfg
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 
-import org.opalj.concurrent.ConcurrentExceptions
-import org.opalj.util.PerformanceEvaluation._
-import org.opalj.util.Nanoseconds
-import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.bi.TestResources.allBITestJARs
-import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.SomeProject
+import org.opalj.bytecode.JRELibraryFolder
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.concurrent.ConcurrentExceptions
+import org.opalj.util.Nanoseconds
+import org.opalj.util.PerformanceEvaluation._
 
 /**
  * Just reads a lot of class files and computes CFGs related information for all methods
@@ -57,11 +57,11 @@ class CFGsSmokeTest extends AbstractCFGTest {
         implicit val classHierarchy: ClassHierarchy = project.classHierarchy
 
         val methodsWithBodyCount = project.allMethodsWithBody.size
-        val methodsCount = new AtomicInteger(0)
-        val executionTime = new AtomicLong(0L)
+        val methodsCount         = new AtomicInteger(0)
+        val executionTime        = new AtomicLong(0L)
 
         project.parForeachMethodWithBody() { mi =>
-            val method = mi.method
+            val method              = mi.method
             implicit val code: Code = method.body.get
 
             val cfg = time { CFGFactory(code) } { t => executionTime.addAndGet(t.timeSpan) }
@@ -79,22 +79,17 @@ class CFGsSmokeTest extends AbstractCFGTest {
 
             // check the boundaries
             var allStartPCs = Set.empty[Int]
-            var allEndPCs = Set.empty[Int]
+            var allEndPCs   = Set.empty[Int]
             cfg.allBBs.foreach { bb =>
-                if (bb.startPC > bb.endPC)
-                    fail(s"the startPC ${bb.startPC} is larger than the endPC ${bb.endPC}")
-                if (allStartPCs.contains(bb.startPC))
-                    fail(
-                        s"the startPC ${bb.startPC} is used by multiple basic blocks "+
-                            s" (${cfg.allBBs.mkString(", ")}"
-                    )
-                else
-                    allStartPCs += bb.startPC
+                if (bb.startPC > bb.endPC) fail(s"the startPC ${bb.startPC} is larger than the endPC ${bb.endPC}")
+                if (allStartPCs.contains(bb.startPC)) fail(
+                    s"the startPC ${bb.startPC} is used by multiple basic blocks " +
+                        s" (${cfg.allBBs.mkString(", ")}"
+                )
+                else allStartPCs += bb.startPC
 
-                if (allEndPCs.contains(bb.endPC))
-                    fail(s"the endPC ${bb.endPC} is used by multiple basic blocks")
-                else
-                    allEndPCs += bb.endPC
+                if (allEndPCs.contains(bb.endPC)) fail(s"the endPC ${bb.endPC} is used by multiple basic blocks")
+                else allEndPCs += bb.endPC
             }
             cfgNodesCheck(method, code, cfg)
 
@@ -110,7 +105,7 @@ class CFGsSmokeTest extends AbstractCFGTest {
                         fail(s"the bb $predecessorBB does not reference its successor $bb")
                 }
             }
-            cfg.reachableBBs should not be (empty)
+            cfg.reachableBBs should not be empty
 
             // check the correspondence of "instruction.nextInstruction" and the information
             // contained in the cfg
@@ -118,18 +113,17 @@ class CFGsSmokeTest extends AbstractCFGTest {
                 val nextInstructions = IntTrieSet(instruction.nextInstructions(pc))
                 if (nextInstructions.isEmpty) {
                     val successors = cfg.bb(pc).successors
-                    if (successors.exists(succBB => succBB.isBasicBlock))
-                        fail(
-                            s"the successor nodes of a return instruction $pc:($instruction)"+
-                                s"have to be catch|exit nodes; found: $successors"
-                        )
+                    if (successors.exists(succBB => succBB.isBasicBlock)) fail(
+                        s"the successor nodes of a return instruction $pc:($instruction)" +
+                            s"have to be catch|exit nodes; found: $successors"
+                    )
                 } else {
                     val cfgSuccessors = cfg.successors(pc)
                     if (nextInstructions != cfgSuccessors) {
-                        fail(s"the instruction ($instruction) with pc $pc has the following "+
-                            s"instruction successors:\n\t$nextInstructions and\n"+
-                            s"the following cfg successors:\n\t$cfgSuccessors\n"+
-                            s"the nodes are:\n\t${cfg.bb(pc)} =>\n\t\t"+
+                        fail(s"the instruction ($instruction) with pc $pc has the following " +
+                            s"instruction successors:\n\t$nextInstructions and\n" +
+                            s"the following cfg successors:\n\t$cfgSuccessors\n" +
+                            s"the nodes are:\n\t${cfg.bb(pc)} =>\n\t\t" +
                             cfg.bb(pc).successors.mkString("\n\t\t"))
                     }
                 }
@@ -138,8 +132,8 @@ class CFGsSmokeTest extends AbstractCFGTest {
             // check that cfg.successors and cfg.foreachSuccessor return the same sets
             code iterate { (pc, instruction) =>
                 {
-                    val cfgSuccessors = cfg.successors(pc)
-                    var cfgForeachSuccessors = IntTrieSet.empty
+                    val cfgSuccessors            = cfg.successors(pc)
+                    var cfgForeachSuccessors     = IntTrieSet.empty
                     var cfgForeachSuccessorCount = 0
                     cfg.foreachSuccessor(pc) { cfgForeachSuccessor =>
                         cfgForeachSuccessors += cfgForeachSuccessor
@@ -150,8 +144,8 @@ class CFGsSmokeTest extends AbstractCFGTest {
                 }
 
                 {
-                    val cfgPredecessors = cfg.predecessors(pc)
-                    var cfgForeachPredecessors = IntTrieSet.empty
+                    val cfgPredecessors            = cfg.predecessors(pc)
+                    var cfgForeachPredecessors     = IntTrieSet.empty
                     var cfgForeachPredecessorCount = 0
                     cfg.foreachPredecessor(pc) { cfgForeachPredecessor =>
                         cfgForeachPredecessors += cfgForeachPredecessor
@@ -165,18 +159,17 @@ class CFGsSmokeTest extends AbstractCFGTest {
             methodsCount.incrementAndGet()
         }
         info(
-            s"analyzed ${methodsCount.get}/$methodsWithBodyCount methods "+
+            s"analyzed ${methodsCount.get}/$methodsWithBodyCount methods " +
                 s"in ∑ ${Nanoseconds(executionTime.get).toSeconds}"
         )
     }
 
-    def analyzeProject(project: SomeProject): Unit = {
-        time {
-            try { doAnalyzeProject(project) } catch {
-                case ce: ConcurrentExceptions => ce.printStackTrace(Console.err)
-            }
-        } { t => info("the analysis took "+t.toSeconds) }
-    }
+    def analyzeProject(project: SomeProject): Unit = time {
+        try { doAnalyzeProject(project) }
+        catch {
+            case ce: ConcurrentExceptions => ce.printStackTrace(Console.err)
+        }
+    } { t => info("the analysis took " + t.toSeconds) }
 
     //
     // Configuration of the tested projects ...

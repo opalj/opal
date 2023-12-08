@@ -11,12 +11,10 @@ package instructions
  */
 object LocalVariableAccess {
 
-    def unapply(i: Instruction): Option[(Int, Boolean)] = {
-        i match {
-            case i: LoadLocalVariableInstruction  => Some((i.indexOfReadLocal, true))
-            case i: StoreLocalVariableInstruction => Some((i.indexOfWrittenLocal, false))
-            case _                                => None
-        }
+    def unapply(i: Instruction): Option[(Int, Boolean)] = i match {
+        case i: LoadLocalVariableInstruction  => Some((i.indexOfReadLocal, true))
+        case i: StoreLocalVariableInstruction => Some((i.indexOfWrittenLocal, false))
+        case _                                => None
     }
 
 }

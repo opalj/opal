@@ -33,11 +33,9 @@ trait UIDValue extends UID {
      * Two objects with a unique id are considered equal if they have the same unique id;
      * all other properties will be ignored!
      */
-    final override def equals(other: Any): Boolean = {
-        other match {
-            case that: UID => (this eq that) || this.id == that.id
-            case _         => false
-        }
+    final override def equals(other: Any): Boolean = other match {
+        case that: UID => (this eq that) || this.id == that.id
+        case _         => false
     }
 
     final def equals(that: UID): Boolean = (this eq that) || ((that ne null) && this.id == that.id)
@@ -63,7 +61,7 @@ object UID {
     @inline
     final def getOrElseUpdate[T <: AnyRef](array: Array[T], uid: UID, orElse: => T): T = {
         val id = uid.id
-        val t = array(id)
+        val t  = array(id)
         if (t eq null) {
             val result = orElse
             array(id) = result

@@ -9,19 +9,14 @@ package br
  * @author Michael Eichberg
  */
 final case class MethodSignature(
-        name:       String,
-        descriptor: MethodDescriptor
-) {
+        name: String,
+        descriptor: MethodDescriptor) {
 
     def toJava: String = descriptor.toJava(name)
 
-    override def equals(other: Any): Boolean = {
-        other match {
-            case that: MethodSignature =>
-                this.descriptor == that.descriptor && this.name == that.name
-            case _ =>
-                false
-        }
+    override def equals(other: Any): Boolean = other match {
+        case that: MethodSignature => this.descriptor == that.descriptor && this.name == that.name
+        case _                     => false
     }
     override val hashCode: Int = name.hashCode * 13 + descriptor.hashCode
 }

@@ -4,13 +4,13 @@ package fpcf
 
 import java.net.URL
 
-import org.opalj.br.analyses.Project
-import org.opalj.br.AnnotationLike
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.VirtualFormalParameter
-import org.opalj.br.fpcf.properties.SimpleContextsKey
 import org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
+import org.opalj.br.AnnotationLike
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.VirtualFormalParameter
+import org.opalj.br.fpcf.properties.SimpleContextsKey
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.fpcf.analyses.escape.EagerInterProceduralEscapeAnalysis
@@ -25,9 +25,7 @@ import org.opalj.tac.fpcf.analyses.escape.EagerSimpleEscapeAnalysis
  */
 class EscapeAnalysisTests extends PropertiesTest {
 
-    override def fixtureProjectPackage: List[String] = {
-        List("org/opalj/fpcf/fixtures/escape")
-    }
+    override def fixtureProjectPackage: List[String] = List("org/opalj/fpcf/fixtures/escape")
 
     override def init(p: Project[URL]): Unit = {
         val performInvocationsDomain = classOf[DefaultPerformInvocationsDomainWithCFGAndDefUse[_]]
@@ -41,10 +39,11 @@ class EscapeAnalysisTests extends PropertiesTest {
     }
 
     private[this] def mapEntities(
-        p: Project[URL], es: Iterable[(Entity, String => String, Iterable[AnnotationLike])]
-    ): Iterable[(Entity, String => String, Iterable[AnnotationLike])] = {
+        p:  Project[URL],
+        es: Iterable[(Entity, String => String, Iterable[AnnotationLike])])
+        : Iterable[(Entity, String => String, Iterable[AnnotationLike])] = {
         val declaredMethods = p.get(DeclaredMethodsKey)
-        val simpleContexts = p.get(SimpleContextsKey)
+        val simpleContexts  = p.get(SimpleContextsKey)
         es.map { tuple =>
             (
                 tuple._1 match {

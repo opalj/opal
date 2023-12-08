@@ -3,13 +3,13 @@ package org.opalj
 package tac
 package cg
 
-import org.opalj.fpcf.EUBP
-import org.opalj.fpcf.PropertyStore
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.cg.NoCallers
+import org.opalj.fpcf.EUBP
+import org.opalj.fpcf.PropertyStore
 import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 
 /**
@@ -36,9 +36,7 @@ class CallGraph private[cg] ()(implicit ps: PropertyStore, typeIterator: TypeIte
         callees.callerContexts.flatMap(callees.callSites(_).iterator)
     }
 
-    def calleesPropertyOf(m: DeclaredMethod): Callees = {
-        ps(m, Callees.key).ub
-    }
+    def calleesPropertyOf(m: DeclaredMethod): Callees = ps(m, Callees.key).ub
 
     def directCalleesOf(m: DeclaredMethod, pc: Int): Iterator[Context] = {
         val callees = ps(m, Callees.key).ub
@@ -64,21 +62,13 @@ class CallGraph private[cg] ()(implicit ps: PropertyStore, typeIterator: TypeIte
      * For the given method it returns all callers, including the pc of the call-site and a flag,
      * indicating whether the call was direct (true) or indirect (false).
      */
-    def callersOf(m: DeclaredMethod): IterableOnce[(DeclaredMethod, Int, Boolean)] = {
-        ps(m, Callers.key).ub.callers(m)
-    }
+    def callersOf(m: DeclaredMethod): IterableOnce[(DeclaredMethod, Int, Boolean)] = ps(m, Callers.key).ub.callers(m)
 
-    def callersPropertyOf(m: DeclaredMethod): Callers = {
-        ps(m, Callers.key).ub
-    }
+    def callersPropertyOf(m: DeclaredMethod): Callers = ps(m, Callers.key).ub
 
-    def hasVMLevelCaller(m: DeclaredMethod): Boolean = {
-        ps(m, Callers.key).ub.hasVMLevelCallers
-    }
+    def hasVMLevelCaller(m: DeclaredMethod): Boolean = ps(m, Callers.key).ub.hasVMLevelCallers
 
-    def hasCallersWithUnknownContext(m: DeclaredMethod): Boolean = {
-        ps(m, Callers.key).ub.hasCallersWithUnknownContext
-    }
+    def hasCallersWithUnknownContext(m: DeclaredMethod): Boolean = ps(m, Callers.key).ub.hasCallersWithUnknownContext
 
     def reachableMethods(): Iterator[Context] = {
         val callersProperties = ps.entities(Callers.key)
@@ -88,12 +78,11 @@ class CallGraph private[cg] ()(implicit ps: PropertyStore, typeIterator: TypeIte
                     if (context.hasContext) context
                     else typeIterator.newContext(m)
                 }
-            case _ =>
-                Iterator.empty
+            case _ => Iterator.empty
         }
     }
 
-    lazy val numEdges: Int = {
-        ps.entities(Callers.key).map { cs => cs.ub.callers(cs.e.asInstanceOf[DeclaredMethod]).iterator.size }.sum
-    }
+    lazy val numEdges: Int = ps.entities(Callers.key).map { cs =>
+        cs.ub.callers(cs.e.asInstanceOf[DeclaredMethod]).iterator.size
+    }.sum
 }

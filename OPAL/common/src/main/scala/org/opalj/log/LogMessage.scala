@@ -48,7 +48,7 @@ trait LogMessage {
             }
 
         message.split('\n').map { ln =>
-            var cr = ""
+            var cr    = ""
             var rawln = ln
             if (ln.length > 0 && ln.charAt(0) == '\r') {
                 cr = "\r"
@@ -62,12 +62,10 @@ trait LogMessage {
 object LogMessage {
 
     def plainInfo(info: String): LogMessage = new LogMessage {
-        override def level: Level = Info
+        override def level: Level             = Info
         override def category: Option[String] = None
-        override def message: String = info
-        override def toConsoleOutput(ansiColored: Boolean): String = {
-            info
-        }
+        override def message: String          = info
+        override def toConsoleOutput(ansiColored: Boolean): String = info
     }
 
 }

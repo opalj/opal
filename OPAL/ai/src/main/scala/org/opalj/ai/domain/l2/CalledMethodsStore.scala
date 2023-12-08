@@ -6,9 +6,9 @@ package l2
 
 import scala.util.control.ControlThrowable
 
-import org.opalj.log.OPALLogger
-import org.opalj.log.LogContext
 import org.opalj.br.Method
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
 
 /**
  * Stores information about how methods were called.
@@ -43,20 +43,17 @@ trait CalledMethodsStore { rootStore =>
 
     def updated(
         method:   Method,
-        operands: List[Array[domain.DomainValue]]
-    ): CalledMethodsStore { val domain: rootStore.domain.type } = {
+        operands: List[Array[domain.DomainValue]]): CalledMethodsStore { val domain: rootStore.domain.type } =
         new CalledMethodsStore {
-            val domain: rootStore.domain.type = rootStore.domain
-            val frequentEvaluationWarningLevel = rootStore.frequentEvaluationWarningLevel
-            val calledMethods = rootStore.calledMethods.updated(method, operands)
+            val domain: rootStore.domain.type   = rootStore.domain
+            val frequentEvaluationWarningLevel  = rootStore.frequentEvaluationWarningLevel
+            val calledMethods                   = rootStore.calledMethods.updated(method, operands)
             implicit val logContext: LogContext = rootStore.logContext
         }
-    }
 
     def testOrElseUpdated(
         method:   Method,
-        operands: ValuesDomain#Operands
-    ): Option[CalledMethodsStore { val domain: rootStore.domain.type }] = {
+        operands: ValuesDomain#Operands): Option[CalledMethodsStore { val domain: rootStore.domain.type }] = {
 
         val adaptedOperands = mapOperands(operands, domain)
         calledMethods.get(method) match {
@@ -65,11 +62,11 @@ trait CalledMethodsStore { rootStore =>
                 for (previousOperands <- previousOperandsList) {
                     try {
                         val previousOperandsIterator = previousOperands.iterator
-                        val operandsIterator = adaptedOperands.iterator
-                        var abstractsOver = true
+                        val operandsIterator         = adaptedOperands.iterator
+                        var abstractsOver            = true
                         while (previousOperandsIterator.hasNext && abstractsOver) {
                             val previousOperand = previousOperandsIterator.next()
-                            val operand = operandsIterator.next()
+                            val operand         = operandsIterator.next()
                             abstractsOver = previousOperand.abstractsOver(operand)
                         }
                         if (abstractsOver)
@@ -95,15 +92,13 @@ trait CalledMethodsStore { rootStore =>
         }
     }
 
-    def frequentEvaluation(method: Method, operandsSet: List[Array[domain.DomainValue]]): Unit = {
-        OPALLogger.info(
-            "analysis configuration",
-            method.toJava(
-                "is frequently evaluated using different operands ("+operandsSet.size+"): "+
-                    operandsSet.map(_.mkString("[", ",", "]")).mkString("( ", " ; ", " )")
-            )
+    def frequentEvaluation(method: Method, operandsSet: List[Array[domain.DomainValue]]): Unit = OPALLogger.info(
+        "analysis configuration",
+        method.toJava(
+            "is frequently evaluated using different operands (" + operandsSet.size + "): " +
+                operandsSet.map(_.mkString("[", ",", "]")).mkString("( ", " ; ", " )")
         )
-    }
+    )
 }
 
 object CalledMethodsStore {
@@ -112,34 +107,25 @@ object CalledMethodsStore {
 
     def empty(
         theDomain:                         BaseDomain,
-        theFrequentEvaluationWarningLevel: Int        = 10
-    )(
-        implicit
-        theLogContext: LogContext
-    ): CalledMethodsStore { val domain: theDomain.type } = {
-        new CalledMethodsStore {
-            val domain: theDomain.type = theDomain
-            val frequentEvaluationWarningLevel = theFrequentEvaluationWarningLevel
-            val calledMethods = Map.empty[Method, List[Array[theDomain.DomainValue]]]
-            implicit val logContext: LogContext = theLogContext
-        }
+        theFrequentEvaluationWarningLevel: Int = 10
+      )(implicit
+        theLogContext: LogContext): CalledMethodsStore { val domain: theDomain.type } = new CalledMethodsStore {
+        val domain: theDomain.type          = theDomain
+        val frequentEvaluationWarningLevel  = theFrequentEvaluationWarningLevel
+        val calledMethods                   = Map.empty[Method, List[Array[theDomain.DomainValue]]]
+        implicit val logContext: LogContext = theLogContext
     }
 
     def apply(
         theDomain:                         BaseDomain,
-        theFrequentEvaluationWarningLevel: Int        = 10
-    )(
-        method:   Method,
-        operands: Array[theDomain.DomainValue]
-    )(
-        implicit
-        theLogContext: LogContext
-    ): CalledMethodsStore { val domain: theDomain.type } = {
-        new CalledMethodsStore {
-            val domain: theDomain.type = theDomain
-            val frequentEvaluationWarningLevel = theFrequentEvaluationWarningLevel
-            val calledMethods = Map[Method, List[Array[theDomain.DomainValue]]]((method, List(operands)))
-            implicit val logContext: LogContext = theLogContext
-        }
+        theFrequentEvaluationWarningLevel: Int = 10
+      )(method:                            Method,
+        operands:                          Array[theDomain.DomainValue]
+      )(implicit
+        theLogContext: LogContext): CalledMethodsStore { val domain: theDomain.type } = new CalledMethodsStore {
+        val domain: theDomain.type          = theDomain
+        val frequentEvaluationWarningLevel  = theFrequentEvaluationWarningLevel
+        val calledMethods                   = Map[Method, List[Array[theDomain.DomainValue]]]((method, List(operands)))
+        implicit val logContext: LogContext = theLogContext
     }
 }

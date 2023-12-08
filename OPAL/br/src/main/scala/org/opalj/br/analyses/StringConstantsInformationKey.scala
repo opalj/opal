@@ -5,14 +5,14 @@ package analyses
 
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
-import scala.jdk.CollectionConverters._
-import org.opalj.br.instructions.LDCString
-import org.opalj.concurrent.defaultIsInterrupted
-import org.opalj.br.instructions.LDC
-import org.opalj.br.instructions.LDC_W
-
 import scala.collection.immutable.ArraySeq
 import scala.collection.mutable
+import scala.jdk.CollectionConverters._
+
+import org.opalj.br.instructions.LDC
+import org.opalj.br.instructions.LDC_W
+import org.opalj.br.instructions.LDCString
+import org.opalj.concurrent.defaultIsInterrupted
 
 /**
  * The ''key'' object to get information about all string constants found in the project's code.
@@ -40,13 +40,13 @@ object StringConstantsInformationKey
     override def compute(project: SomeProject): mutable.Map[String, ArraySeq[PCInMethod]] = {
 
         val estimatedSize = project.methodsCount
-        val map = new ConcurrentHashMap[String, ConcurrentLinkedQueue[PCInMethod]](estimatedSize)
+        val map           = new ConcurrentHashMap[String, ConcurrentLinkedQueue[PCInMethod]](estimatedSize)
 
         project.parForeachMethodWithBody(defaultIsInterrupted) { methodInfo =>
             val method = methodInfo.method
 
             method.body.get foreach { (i: PCAndInstruction) =>
-                val pc = i.pc
+                val pc          = i.pc
                 val instruction = i.instruction
                 if (instruction.opcode == LDC.opcode || instruction.opcode == LDC_W.opcode) {
                     instruction match {

@@ -31,4 +31,4 @@ trait ConditionalBranchInstructionLike extends ControlTransferInstructionLike {
 
 trait ConditionalBranchInstruction
     extends ControlTransferInstruction
-    with ConditionalBranchInstructionLike
+        with ConditionalBranchInstructionLike

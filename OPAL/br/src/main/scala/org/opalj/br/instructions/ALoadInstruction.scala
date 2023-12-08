@@ -26,5 +26,5 @@ object ALoadInstruction {
 
 trait ConstantALoadInstruction
     extends ALoadInstruction
-    with ImplicitLocalVariableIndex
-    with InstructionMetaInformation
+        with ImplicitLocalVariableIndex
+        with InstructionMetaInformation

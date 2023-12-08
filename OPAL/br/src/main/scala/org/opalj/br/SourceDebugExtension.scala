@@ -13,18 +13,15 @@ case class SourceDebugExtension(debug_extension: Array[Byte]) extends Attribute 
 
     override def kindId: Int = SourceDebugExtension.KindId
 
-    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = {
-        other match {
-            case that: SourceDebugExtension => this.similar(that)
-            case _                          => false
-        }
+    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = other match {
+        case that: SourceDebugExtension => this.similar(that)
+        case _                          => false
     }
 
-    def similar(other: SourceDebugExtension): Boolean = {
+    def similar(other: SourceDebugExtension): Boolean =
         // Since we have no further knowledge of the content, we make the assumption
         // that the order is relevant.
         java.util.Arrays.equals(this.debug_extension, other.debug_extension)
-    }
 
 }
 object SourceDebugExtension {

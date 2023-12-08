@@ -12,13 +12,11 @@ import scala.xml.Node
  */
 case class SourceDebugExtension_attribute(
         attribute_name_index: Constant_Pool_Index,
-        debug_extension:      Array[Byte]
-) extends Attribute {
+        debug_extension: Array[Byte]) extends Attribute {
 
     final override def attribute_length = debug_extension.length
 
-    override def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span><span class="attribute_name">SourceDebugExtension</span>:{ byteArrayToNode(debug_extension) }</span>
-    }
+    override def toXHTML(implicit cp: Constant_Pool): Node =
+        <span><span class="attribute_name">SourceDebugExtension</span>:{byteArrayToNode(debug_extension)}</span>
 
 }

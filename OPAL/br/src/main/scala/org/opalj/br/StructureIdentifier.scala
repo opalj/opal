@@ -33,39 +33,34 @@ case class TypeIdentifier(t: Type) extends StructureIdentifier {
 
     def toHRR: String = t.toJava
 
-    def declaringPackage: Option[String] =
-        t match {
-            case o: ObjectType => Some(o.packageName);
-            case _             => None
-        }
+    def declaringPackage: Option[String] = t match {
+        case o: ObjectType => Some(o.packageName);
+        case _             => None
+    }
 }
 
 case class MethodIdentifier(
         declaringReferenceType: ReferenceType,
         methodName:             String,
-        methodDescriptor:       MethodDescriptor
-)
+        methodDescriptor:       MethodDescriptor)
     extends StructureIdentifier {
 
-    def toHRR: String =
-        declaringReferenceType.toJava+"."+methodName+""+methodDescriptor.toUMLNotation
+    def toHRR: String = declaringReferenceType.toJava + "." + methodName + "" + methodDescriptor.toUMLNotation
 
-    def declaringPackage: Option[String] =
-        declaringReferenceType match {
-            case o: ObjectType            => Some(o.packageName);
-            case ArrayType(o: ObjectType) => Some(o.packageName);
-            case _: ArrayType             => Some("java/lang"); // handles Arrays of primitives
-            case _                        => None
-        }
+    def declaringPackage: Option[String] = declaringReferenceType match {
+        case o: ObjectType            => Some(o.packageName);
+        case ArrayType(o: ObjectType) => Some(o.packageName);
+        case _: ArrayType             => Some("java/lang"); // handles Arrays of primitives
+        case _                        => None
+    }
 }
 
 case class FieldIdentifier(
         declaringObjectType: ObjectType,
-        fieldName:           String
-)
+        fieldName:           String)
     extends StructureIdentifier {
 
-    def toHRR: String = declaringObjectType.toJava+"."+fieldName
+    def toHRR: String = declaringObjectType.toJava + "." + fieldName
 
     def declaringPackage = Some(declaringObjectType.packageName)
 }

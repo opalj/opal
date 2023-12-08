@@ -5,16 +5,16 @@ package domain
 
 import java.net.URL
 
-import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
-import org.scalatest.matchers.should.Matchers
-import org.scalatest.funspec.AnyFunSpec
-
-import org.opalj.concurrent.ConcurrentExceptions
 import org.opalj.br.Method
-import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.MethodInfo
 import org.opalj.br.TestSupport.createJREProject
+import org.opalj.br.analyses.MethodInfo
+import org.opalj.br.analyses.Project
+import org.opalj.concurrent.ConcurrentExceptions
+
+import org.junit.runner.RunWith
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * This integration test(suite) just loads a very large number of class files and performs
@@ -38,73 +38,73 @@ class PrecisionOfDomainsTest extends AnyFunSpec with Matchers {
             // We use this domain for the comparison of the values; it has a comparable
             // expressive power as the other domains.
             object ValuesDomain extends ValuesCoordinatingDomain
-                with l1.DefaultLongValues
-                with l0.DefaultTypeLevelFloatValues
-                with l0.DefaultTypeLevelDoubleValues
-                with l1.DefaultReferenceValuesBinding
-                with l1.DefaultIntegerRangeValues
-                with l0.TypeLevelDynamicLoads
-                with TheProject {
+                    with l1.DefaultLongValues
+                    with l0.DefaultTypeLevelFloatValues
+                    with l0.DefaultTypeLevelDoubleValues
+                    with l1.DefaultReferenceValuesBinding
+                    with l1.DefaultIntegerRangeValues
+                    with l0.TypeLevelDynamicLoads
+                    with TheProject {
                 override val project: Project[URL] = theProject
             }
 
             class TypeLevelDomain(val method: Method, val project: Project[URL])
                 extends Domain
-                with TheProject
-                with TheMethod
-                with DefaultHandlingOfMethodResults
-                with IgnoreSynchronization
-                with DefaultSpecialDomainValuesBinding
-                with ThrowAllPotentialExceptionsConfiguration
-                with l0.DefaultReferenceValuesBinding
-                with l0.DefaultTypeLevelIntegerValues
-                with l0.DefaultTypeLevelLongValues
-                with l0.DefaultTypeLevelFloatValues
-                with l0.DefaultTypeLevelDoubleValues
-                with l0.TypeLevelPrimitiveValuesConversions
-                with l0.TypeLevelFieldAccessInstructions
-                with l0.TypeLevelInvokeInstructions
-                with l0.TypeLevelDynamicLoads
-                with l0.TypeLevelLongValuesShiftOperators
+                    with TheProject
+                    with TheMethod
+                    with DefaultHandlingOfMethodResults
+                    with IgnoreSynchronization
+                    with DefaultSpecialDomainValuesBinding
+                    with ThrowAllPotentialExceptionsConfiguration
+                    with l0.DefaultReferenceValuesBinding
+                    with l0.DefaultTypeLevelIntegerValues
+                    with l0.DefaultTypeLevelLongValues
+                    with l0.DefaultTypeLevelFloatValues
+                    with l0.DefaultTypeLevelDoubleValues
+                    with l0.TypeLevelPrimitiveValuesConversions
+                    with l0.TypeLevelFieldAccessInstructions
+                    with l0.TypeLevelInvokeInstructions
+                    with l0.TypeLevelDynamicLoads
+                    with l0.TypeLevelLongValuesShiftOperators
 
             class L1RangesDomain[I](val method: Method, val project: Project[URL])
                 extends CorrelationalDomain
-                with TheProject
-                with TheMethod
-                with ThrowAllPotentialExceptionsConfiguration
-                with DefaultHandlingOfMethodResults
-                with IgnoreSynchronization
-                with l1.DefaultReferenceValuesBinding
-                with l1.NullPropertyRefinement
-                with l1.DefaultIntegerRangeValues
-                with l1.MaxArrayLengthRefinement
-                with l1.DefaultLongValues
-                with l1.LongValuesShiftOperators
-                with l0.DefaultTypeLevelFloatValues
-                with l0.DefaultTypeLevelDoubleValues
-                with l0.TypeLevelPrimitiveValuesConversions
-                with l0.TypeLevelInvokeInstructions
-                with l0.TypeLevelFieldAccessInstructions
-                with l0.TypeLevelDynamicLoads
+                    with TheProject
+                    with TheMethod
+                    with ThrowAllPotentialExceptionsConfiguration
+                    with DefaultHandlingOfMethodResults
+                    with IgnoreSynchronization
+                    with l1.DefaultReferenceValuesBinding
+                    with l1.NullPropertyRefinement
+                    with l1.DefaultIntegerRangeValues
+                    with l1.MaxArrayLengthRefinement
+                    with l1.DefaultLongValues
+                    with l1.LongValuesShiftOperators
+                    with l0.DefaultTypeLevelFloatValues
+                    with l0.DefaultTypeLevelDoubleValues
+                    with l0.TypeLevelPrimitiveValuesConversions
+                    with l0.TypeLevelInvokeInstructions
+                    with l0.TypeLevelFieldAccessInstructions
+                    with l0.TypeLevelDynamicLoads
 
             class L1SetsDomain[I](val method: Method, val project: Project[URL])
                 extends CorrelationalDomain
-                with TheProject
-                with TheMethod
-                with ThrowAllPotentialExceptionsConfiguration
-                with DefaultHandlingOfMethodResults
-                with IgnoreSynchronization
-                with l1.DefaultReferenceValuesBinding
-                with l1.NullPropertyRefinement
-                with l1.DefaultIntegerSetValues // SET
-                with l1.DefaultLongSetValues // SET
-                with l1.LongValuesShiftOperators
-                with l0.DefaultTypeLevelFloatValues
-                with l0.DefaultTypeLevelDoubleValues
-                with l0.TypeLevelPrimitiveValuesConversions
-                with l0.TypeLevelInvokeInstructions
-                with l0.TypeLevelFieldAccessInstructions
-                with l0.TypeLevelDynamicLoads
+                    with TheProject
+                    with TheMethod
+                    with ThrowAllPotentialExceptionsConfiguration
+                    with DefaultHandlingOfMethodResults
+                    with IgnoreSynchronization
+                    with l1.DefaultReferenceValuesBinding
+                    with l1.NullPropertyRefinement
+                    with l1.DefaultIntegerSetValues // SET
+                    with l1.DefaultLongSetValues    // SET
+                    with l1.LongValuesShiftOperators
+                    with l0.DefaultTypeLevelFloatValues
+                    with l0.DefaultTypeLevelDoubleValues
+                    with l0.TypeLevelPrimitiveValuesConversions
+                    with l0.TypeLevelInvokeInstructions
+                    with l0.TypeLevelFieldAccessInstructions
+                    with l0.TypeLevelDynamicLoads
 
             def checkAbstractsOver(r1: TheAIResult, r2: TheAIResult): Option[String] = {
                 var pc = -1
@@ -117,24 +117,22 @@ class PrecisionOfDomainsTest extends AnyFunSpec with Matchers {
                             val lVD = lValue.adapt(ValuesDomain, -1 /*Irrelevant*/ )
                             val rVD = rValue.adapt(ValuesDomain, -1 /*Irrelevant*/ )
                             if (!lVD.abstractsOver(rVD)) {
-                                val line =
-                                    r1.domain.code.lineNumber(pc).map(_.toString).getOrElse("N/A")
+                                val line = r1.domain.code.lineNumber(pc).map(_.toString).getOrElse("N/A")
                                 return Some(
-                                    s"$pc[line=$line]: the operand stack $op "+
-                                        s"value $lVD (${lVD.getClass.getName})"+
-                                        s" does not abstract over $rVD (${rVD.getClass.getName})"+
+                                    s"$pc[line=$line]: the operand stack $op " +
+                                        s"value $lVD (${lVD.getClass.getName})" +
+                                        s" does not abstract over $rVD (${rVD.getClass.getName})" +
                                         s" (original: $lValue join $rValue )"
                                 );
                             }
                             // this primarily tests the "isMorePreciseThan" method
                             if (lVD.isMorePreciseThan(rVD)) {
-                                val line =
-                                    r1.domain.code.lineNumber(pc).map(_.toString).getOrElse("N/A")
+                                val line = r1.domain.code.lineNumber(pc).map(_.toString).getOrElse("N/A")
                                 return Some(
-                                    s"$pc[line=$line]: the operand stack value $op "+
-                                        s"$lVD#${System.identityHashCode(lVD)} (${lVD.getClass.getName})"+
-                                        s" is more precise than "+
-                                        s"$rVD#${System.identityHashCode(rVD)} (${rVD.getClass.getName})"+
+                                    s"$pc[line=$line]: the operand stack value $op " +
+                                        s"$lVD#${System.identityHashCode(lVD)} (${lVD.getClass.getName})" +
+                                        s" is more precise than " +
+                                        s"$rVD#${System.identityHashCode(rVD)} (${rVD.getClass.getName})" +
                                         s" (original: $lValue join $rValue )"
                                 );
                             }
@@ -144,38 +142,34 @@ class PrecisionOfDomainsTest extends AnyFunSpec with Matchers {
                     }
 
                     (lOperands == null && rOperands == null) ||
-                        (lOperands != null && (rOperands == null || {
-                            val result = compareOperands()
-                            if (result.isDefined)
-                                return result;
-                            true
-                        }))
+                    (lOperands != null && (rOperands == null || {
+                        val result = compareOperands()
+                        if (result.isDefined) return result;
+                        true
+                    }))
                 }
                 None
             }
 
-            val failed = new java.util.concurrent.atomic.AtomicBoolean(false)
+            val failed          = new java.util.concurrent.atomic.AtomicBoolean(false)
             val comparisonCount = new java.util.concurrent.atomic.AtomicInteger(0)
 
             try {
                 theProject.parForeachMethodWithBody() { methodInfo =>
                     val MethodInfo(_, method) = methodInfo
-                    val r1 = BaseAI(method, new TypeLevelDomain(method, theProject))
-                    val r2_ranges = BaseAI(method, new L1RangesDomain(method, theProject))
-                    val r2_sets = BaseAI(method, new L1SetsDomain(method, theProject))
+                    val r1                    = BaseAI(method, new TypeLevelDomain(method, theProject))
+                    val r2_ranges             = BaseAI(method, new L1RangesDomain(method, theProject))
+                    val r2_sets               = BaseAI(method, new L1SetsDomain(method, theProject))
 
                     def handleAbstractsOverFailure(
                         lpDomain: String,
                         mpDomain: String
-                    )(
-                        m: String
-                    ): Unit = {
+                      )(m: String): Unit = {
                         failed.set(true)
-                        val bodyMessage =
-                            "\" /*Instructions "+method.body.get.instructions.size+"*/\n"+
-                                s"\tthe less precise domain ($lpDomain) did not abstract "+
-                                s"over the state of the more precise domain ($mpDomain)\n"+
-                                "\t"+Console.BOLD + m + Console.RESET+"\n"
+                        val bodyMessage = "\" /*Instructions " + method.body.get.instructions.size + "*/\n" +
+                            s"\tthe less precise domain ($lpDomain) did not abstract " +
+                            s"over the state of the more precise domain ($mpDomain)\n" +
+                            "\t" + Console.BOLD + m + Console.RESET + "\n"
                         println(method.toJava(bodyMessage))
                     }
 

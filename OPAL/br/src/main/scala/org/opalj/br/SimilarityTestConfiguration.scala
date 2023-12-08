@@ -14,9 +14,8 @@ abstract class SimilarityTestConfiguration {
      */
     def compareFields(
         leftContext: ClassFile,
-        left:        Iterable[JVMField],
-        right:       Iterable[JVMField]
-    ): (Iterable[JVMField], Iterable[JVMField])
+        left: Iterable[JVMField],
+        right: Iterable[JVMField]): (Iterable[JVMField], Iterable[JVMField])
 
     /**
      * Selects those methods which should be compared. By default all methods are selected.
@@ -27,24 +26,21 @@ abstract class SimilarityTestConfiguration {
      */
     def compareMethods(
         leftContext: ClassFile,
-        left:        Iterable[JVMMethod],
-        right:       Iterable[JVMMethod]
-    ): (Iterable[JVMMethod], Iterable[JVMMethod])
+        left: Iterable[JVMMethod],
+        right: Iterable[JVMMethod]): (Iterable[JVMMethod], Iterable[JVMMethod])
 
     /**
      * Selects the attributes which should be compared.
      */
     def compareAttributes(
         leftContext: CommonAttributes,
-        left:        Attributes,
-        right:       Attributes
-    ): (Attributes, Attributes)
+        left: Attributes,
+        right: Attributes): (Attributes, Attributes)
 
     def compareCode(
         leftContext: JVMMethod,
-        left:        Option[Code],
-        right:       Option[Code]
-    ): (Option[Code], Option[Code])
+        left: Option[Code],
+        right: Option[Code]): (Option[Code], Option[Code])
 
 }
 
@@ -53,18 +49,12 @@ class CompareAllConfiguration extends SimilarityTestConfiguration {
     override def compareFields(
         leftContext: ClassFile,
         left:        Iterable[JVMField],
-        right:       Iterable[JVMField]
-    ): (Iterable[JVMField], Iterable[JVMField]) = {
-        (left, right)
-    }
+        right:       Iterable[JVMField]): (Iterable[JVMField], Iterable[JVMField]) = (left, right)
 
     override def compareMethods(
         leftContext: ClassFile,
         left:        Iterable[JVMMethod],
-        right:       Iterable[JVMMethod]
-    ): (Iterable[JVMMethod], Iterable[JVMMethod]) = {
-        (left, right)
-    }
+        right:       Iterable[JVMMethod]): (Iterable[JVMMethod], Iterable[JVMMethod]) = (left, right)
 
     /**
      * Selects the attributes which should be compared. By default all attributes except
@@ -73,9 +63,8 @@ class CompareAllConfiguration extends SimilarityTestConfiguration {
     override def compareAttributes(
         leftContext: CommonAttributes,
         left:        Attributes,
-        right:       Attributes
-    ): (Attributes, Attributes) = {
-        val newLeft = left.filterNot(a => a.isInstanceOf[UnknownAttribute])
+        right:       Attributes): (Attributes, Attributes) = {
+        val newLeft  = left.filterNot(a => a.isInstanceOf[UnknownAttribute])
         val newRight = right.filterNot(a => a.isInstanceOf[UnknownAttribute])
         (newLeft, newRight)
     }
@@ -83,9 +72,6 @@ class CompareAllConfiguration extends SimilarityTestConfiguration {
     override def compareCode(
         leftContext: JVMMethod,
         left:        Option[Code],
-        right:       Option[Code]
-    ): (Option[Code], Option[Code]) = {
-        (left, right)
-    }
+        right:       Option[Code]): (Option[Code], Option[Code]) = (left, right)
 }
 object CompareAllConfiguration extends CompareAllConfiguration

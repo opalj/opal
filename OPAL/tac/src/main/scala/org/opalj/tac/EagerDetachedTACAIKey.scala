@@ -3,18 +3,17 @@ package org.opalj
 package tac
 
 import java.util.concurrent.ConcurrentLinkedQueue
-
-import scala.jdk.CollectionConverters._
 import scala.collection.mutable
+import scala.jdk.CollectionConverters._
 
-import org.opalj.value.ValueInformation
+import org.opalj.ai.BaseAI
+import org.opalj.ai.Domain
+import org.opalj.ai.domain.RecordDefUse
+import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
 import org.opalj.br.Method
 import org.opalj.br.analyses.ProjectInformationKey
 import org.opalj.br.analyses.SomeProject
-import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
-import org.opalj.ai.BaseAI
-import org.opalj.ai.domain.RecordDefUse
-import org.opalj.ai.Domain
+import org.opalj.value.ValueInformation
 
 /**
  * ''Key'' to get the 3-address based code of a method computed using the configured
@@ -41,20 +40,17 @@ object EagerDetachedTACAIKey extends TACAIKey[Method => Domain with RecordDefUse
      * before compute is called/this key is passed to a specific project.
      */
     override def compute(
-        project: SomeProject
-    ): Method => AITACode[TACMethodParameter, ValueInformation] = {
-        val domainFactory = project.
-            getProjectInformationKeyInitializationData(this).
-            getOrElse((m: Method) => new DefaultDomainWithCFGAndDefUse(project, m))
+        project: SomeProject): Method => AITACode[TACMethodParameter, ValueInformation] = {
+        val domainFactory = project.getProjectInformationKeyInitializationData(this).getOrElse((m: Method) =>
+            new DefaultDomainWithCFGAndDefUse(project, m))
 
-        val taCodes =
-            new ConcurrentLinkedQueue[(Method, AITACode[TACMethodParameter, ValueInformation])]()
+        val taCodes = new ConcurrentLinkedQueue[(Method, AITACode[TACMethodParameter, ValueInformation])]()
 
         project.parForeachMethodWithBody() { mi =>
-            val m = mi.method
-            val domain = domainFactory(m)
+            val m        = mi.method
+            val domain   = domainFactory(m)
             val aiResult = BaseAI(m, domain)
-            val code = TACAI(project, m, aiResult)
+            val code     = TACAI(project, m, aiResult)
             // well... the following cast safe is safe, because the underlying
             // data-structure is actually, conceptually immutable
             val taCode = code.asInstanceOf[AITACode[TACMethodParameter, ValueInformation]]

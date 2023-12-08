@@ -5,16 +5,16 @@ package analyses
 
 import java.net.URL
 
+import org.opalj.bi.TestResources.locateTestResources
+import org.opalj.br.MethodDescriptor.NoArgsAndReturnVoid
+import org.opalj.br.reader.Java8Framework.ClassFiles
+import org.opalj.collection.immutable.UIDSet
+import org.opalj.log.GlobalLogContext
+
 import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-
-import org.opalj.log.GlobalLogContext
-import org.opalj.collection.immutable.UIDSet
-import org.opalj.br.MethodDescriptor.NoArgsAndReturnVoid
-import org.opalj.bi.TestResources.locateTestResources
-import org.opalj.br.reader.Java8Framework.ClassFiles
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Basic tests of the class hierarchy.
@@ -34,69 +34,66 @@ class ClassHierarchyTest extends AnyFlatSpec with Matchers {
     //
     // Setup
     //
-    val jlsCHFile = "ClassHierarchyJLS.ths"
+    val jlsCHFile    = "ClassHierarchyJLS.ths"
     val jlsCHCreator = List(() => getClass.getResourceAsStream(jlsCHFile))
-    val jlsCH = ClassHierarchy(Iterable.empty, jlsCHCreator)(GlobalLogContext)
+    val jlsCH        = ClassHierarchy(Iterable.empty, jlsCHCreator)(GlobalLogContext)
 
     val preInitCH = ClassHierarchy.PreInitializedClassHierarchy
 
-    val javaLangCHFile = "JavaLangClassHierarchy.ths"
+    val javaLangCHFile    = "JavaLangClassHierarchy.ths"
     val javaLangCHCreator = List(() => getClass.getResourceAsStream(javaLangCHFile))
-    val javaLangCH = ClassHierarchy(Iterable.empty, javaLangCHCreator)(GlobalLogContext)
+    val javaLangCH        = ClassHierarchy(Iterable.empty, javaLangCHCreator)(GlobalLogContext)
 
-    val Object = ObjectType.Object
-    val Throwable = ObjectType.Throwable
-    val Exception = ObjectType.Exception
-    val Error = ObjectType.Error
-    val RuntimeException = ObjectType.RuntimeException
-    val ArithmeticException = ObjectType.ArithmeticException
-    val Cloneable = ObjectType.Cloneable
-    val Serializable = ObjectType.Serializable
-    val SeriablizableArray = ArrayType(Serializable)
+    val Object                    = ObjectType.Object
+    val Throwable                 = ObjectType.Throwable
+    val Exception                 = ObjectType.Exception
+    val Error                     = ObjectType.Error
+    val RuntimeException          = ObjectType.RuntimeException
+    val ArithmeticException       = ObjectType.ArithmeticException
+    val Cloneable                 = ObjectType.Cloneable
+    val Serializable              = ObjectType.Serializable
+    val SeriablizableArray        = ArrayType(Serializable)
     val SeriablizableArrayOfArray = ArrayType(SeriablizableArray)
-    val AnUnknownType = ObjectType("myTest/AnUnknownType")
-    val AnUnknownTypeArray = ArrayType(AnUnknownType)
-    val CloneableArray = ArrayType(Cloneable)
-    val ObjectArray = ArrayType.ArrayOfObject
-    val intArray = ArrayType(IntegerType)
-    val arrayOfIntArray = ArrayType(ArrayType(IntegerType))
-    val longArray = ArrayType(LongType)
+    val AnUnknownType             = ObjectType("myTest/AnUnknownType")
+    val AnUnknownTypeArray        = ArrayType(AnUnknownType)
+    val CloneableArray            = ArrayType(Cloneable)
+    val ObjectArray               = ArrayType.ArrayOfObject
+    val intArray                  = ArrayType(IntegerType)
+    val arrayOfIntArray           = ArrayType(ArrayType(IntegerType))
+    val longArray                 = ArrayType(LongType)
 
     // Commonly used package names
     val pgk = Some("generictypes/")
 
     val SimpleCTS = SimpleClassTypeSignature
-    val CTS = ClassTypeSignature
-    def CTS(cn: String, ptas: List[TypeArgument], suffix: List[SimpleClassTypeSignature] = Nil) = {
+    val CTS       = ClassTypeSignature
+    def CTS(cn: String, ptas: List[TypeArgument], suffix: List[SimpleClassTypeSignature] = Nil) =
         ClassTypeSignature(pgk, SimpleCTS(cn, ptas), suffix)
-    }
 
     def elementType(cts: ClassTypeSignature) = ProperTypeArgument(None, cts)
 
     def upperBoundType(cts: ClassTypeSignature) = ProperTypeArgument(Some(CovariantIndicator), cts)
 
-    def lowerBoundType(cts: ClassTypeSignature) =
-        ProperTypeArgument(Some(ContravariantIndicator), cts)
+    def lowerBoundType(cts: ClassTypeSignature) = ProperTypeArgument(Some(ContravariantIndicator), cts)
 
     /*SimpleClassTypeSignatures*/
-    val baseSCTS = SimpleCTS("Base", Nil)
-    val extBaseSCTS = SimpleCTS("ExtendedBase", Nil)
+    val baseSCTS       = SimpleCTS("Base", Nil)
+    val extBaseSCTS    = SimpleCTS("ExtendedBase", Nil)
     val lvlTwoBaseSCTS = SimpleCTS("lvlTwoBase", Nil)
-    val altBaseSCTS = SimpleCTS("AlternativeBase", Nil)
-    val genericSCTS = SimpleCTS("SimpleGeneric", Nil)
-    val unknownSCTS = SimpleCTS("Hidden", Nil)
+    val altBaseSCTS    = SimpleCTS("AlternativeBase", Nil)
+    val genericSCTS    = SimpleCTS("SimpleGeneric", Nil)
+    val unknownSCTS    = SimpleCTS("Hidden", Nil)
     /*Nested ClassTypeSignatures*/
-    val unknownCTS = CTS(pgk, unknownSCTS, Nil)
-    val baseCTS = CTS(pgk, baseSCTS, Nil)
-    val extBaseCTS = CTS(pgk, extBaseSCTS, Nil)
-    val lvlTwoBaseCTS = CTS(pgk, lvlTwoBaseSCTS, Nil)
-    val altBaseCTS = CTS(pgk, altBaseSCTS, Nil)
-    val genericCTS = CTS(pgk, genericSCTS, Nil)
+    val unknownCTS      = CTS(pgk, unknownSCTS, Nil)
+    val baseCTS         = CTS(pgk, baseSCTS, Nil)
+    val extBaseCTS      = CTS(pgk, extBaseSCTS, Nil)
+    val lvlTwoBaseCTS   = CTS(pgk, lvlTwoBaseSCTS, Nil)
+    val altBaseCTS      = CTS(pgk, altBaseSCTS, Nil)
+    val genericCTS      = CTS(pgk, genericSCTS, Nil)
     val altInterfaceCTS = CTS(pgk, SimpleCTS("AltInterface", Nil), Nil)
 
     /** UContainer<UnknownType> */
-    val unknownContainer =
-        CTS("UContainer", List(elementType(CTS(pgk, SimpleCTS("UnknownType", Nil), Nil))))
+    val unknownContainer = CTS("UContainer", List(elementType(CTS(pgk, SimpleCTS("UnknownType", Nil), Nil))))
 
     /** Interface<Base> */
     val iContainerWithBase = CTS("Interface", List(elementType(baseCTS)))
@@ -128,7 +125,7 @@ class ClassHierarchyTest extends AnyFlatSpec with Matchers {
     /** SimpleGeneric<AlternativeBase> */
     val altContainer = CTS("SimpleGeneric", List(elementType(altBaseCTS)))
 
-    /** SimpleGeneric<lvlTwoBase>*/
+    /** SimpleGeneric<lvlTwoBase> */
     val lvlTwoContainer = CTS("SimpleGeneric", List(elementType(lvlTwoBaseCTS)))
 
     /** SimpleGeneric<Base> */
@@ -140,35 +137,32 @@ class ClassHierarchyTest extends AnyFlatSpec with Matchers {
     /** SimpleGeneric<*> */
     val wildCardContainer = CTS("SimpleGeneric", List(Wildcard))
 
-    /**  SimpleGeneric<? extends Base>*/
+    /** SimpleGeneric<? extends Base> */
     val covariantContainer = CTS("SimpleGeneric", List(upperBoundType(baseCTS)))
 
-    /**  SimpleGeneric<? super Base>*/
+    /** SimpleGeneric<? super Base> */
     val contravariantContainer = CTS("SimpleGeneric", List(lowerBoundType(extBaseCTS)))
 
-    /**  SimpleGeneric<? super SimpleGenericBase>*/
+    /** SimpleGeneric<? super SimpleGenericBase> */
     val contravariantWithContainer = CTS("SimpleGeneric", List(lowerBoundType(baseContainer)))
 
-    /**  SimpleGeneric<? super Base> */
+    /** SimpleGeneric<? super Base> */
     val contravariantBaseContainer = CTS("SimpleGeneric", List(lowerBoundType(baseCTS)))
 
-    /** SubGenericET<SimpleGeneric<Base>, SimpleGeneric<ExtendedBase>>*/
+    /** SubGenericET<SimpleGeneric<Base>, SimpleGeneric<ExtendedBase>> */
     val doubleContainerET = CTS("SubGenericET", List(elementType(baseCTS), elementType(extBaseCTS)))
 
-    /** SubGenericTE<SimpleGeneric<ExtendedBaseBase>, SimpleGeneric<Base>>*/
+    /** SubGenericTE<SimpleGeneric<ExtendedBaseBase>, SimpleGeneric<Base>> */
     val doubleContainerTE = CTS("SubGenericTE", List(elementType(extBaseCTS), elementType(baseCTS)))
 
-    /** IndependentSubclass<SimpleGeneric<ExtendedBaseBase>, SimpleGeneric<Base>>*/
-    val doubleContainerBase =
-        CTS("IndependentSubclass", List(elementType(extBaseCTS), elementType(baseCTS)))
+    /** IndependentSubclass<SimpleGeneric<ExtendedBaseBase>, SimpleGeneric<Base>> */
+    val doubleContainerBase = CTS("IndependentSubclass", List(elementType(extBaseCTS), elementType(baseCTS)))
 
-    /** AltIndependentSubclass<SimpleGeneric<ExtendedBaseBase>, SimpleGeneric<Base>>*/
-    val doubleContainerAltBase =
-        CTS("AltIndependentSubclass", List(elementType(extBaseCTS), elementType(baseCTS)))
+    /** AltIndependentSubclass<SimpleGeneric<ExtendedBaseBase>, SimpleGeneric<Base>> */
+    val doubleContainerAltBase = CTS("AltIndependentSubclass", List(elementType(extBaseCTS), elementType(baseCTS)))
 
-    /** SubGenericET<SimpleGeneric<ExtendedBaseBase>, SimpleGeneric<Base>>*/
-    val wrongDoubleContainer =
-        CTS("SubGenericET", List(elementType(extBaseCTS), elementType(baseCTS)))
+    /** SubGenericET<SimpleGeneric<ExtendedBaseBase>, SimpleGeneric<Base>> */
+    val wrongDoubleContainer = CTS("SubGenericET", List(elementType(extBaseCTS), elementType(baseCTS)))
 
     /** SimpleGeneric<SimpleGeneric<Base>> */
     val nestedBase = CTS("SimpleGeneric", List(elementType(baseContainer)))
@@ -192,8 +186,7 @@ class ClassHierarchyTest extends AnyFlatSpec with Matchers {
     val nestedOutterCovariantContainer = CTS("SimpleGeneric", List(upperBoundType(baseContainer)))
 
     /** SimpleGeneric<? super SimpleGeneric<Base>> */
-    val nestedContravariantContainer =
-        CTS("SimpleGeneric", List(elementType(contravariantBaseContainer)))
+    val nestedContravariantContainer = CTS("SimpleGeneric", List(elementType(contravariantBaseContainer)))
 
     /**
      * GenericWithSuffix<Base>.Suffix1_1<Base>
@@ -203,78 +196,162 @@ class ClassHierarchyTest extends AnyFlatSpec with Matchers {
      * }
      * }}}
      */
-    val genericWithSuffix_publicSuffix1_1 = CTS("GenericWithSuffix", List(elementType(baseCTS)), List(SimpleCTS("Suffix1_1", List(elementType(baseCTS)))))
+    val genericWithSuffix_publicSuffix1_1 =
+        CTS("GenericWithSuffix", List(elementType(baseCTS)), List(SimpleCTS("Suffix1_1", List(elementType(baseCTS)))))
 
     /** GenericWithSuffix<Base>.Suffix1_1<Base>.Suffix1_2<Base> where Suffix1_2 does not implement interfaces or extend classes. */
-    val genericWithSuffix_publicSuffix1_2 = CTS("GenericWithSuffix", List(elementType(baseCTS)), List(SimpleCTS("Suffix1_1", List(elementType(baseCTS))), SimpleCTS("Suffix1_2", List(elementType(baseCTS)))))
+    val genericWithSuffix_publicSuffix1_2 = CTS(
+        "GenericWithSuffix",
+        List(elementType(baseCTS)),
+        List(SimpleCTS("Suffix1_1", List(elementType(baseCTS))), SimpleCTS("Suffix1_2", List(elementType(baseCTS))))
+    )
 
-    /** GenericWithSuffix<Base>.Suffix1_1<Base>.Suffix1_3 // Suffix1_3 extends Suffix1_2<E> where E is bound to the same type as GenericWithSuffix.*/
-    val genericWithSuffix_Suffix1_3 = CTS("GenericWithSuffix", List(elementType(baseCTS)), List(SimpleCTS("Suffix1_1", List(elementType(baseCTS))), SimpleCTS("Suffix1_3", Nil)))
+    /** GenericWithSuffix<Base>.Suffix1_1<Base>.Suffix1_3 // Suffix1_3 extends Suffix1_2<E> where E is bound to the same type as GenericWithSuffix. */
+    val genericWithSuffix_Suffix1_3 = CTS(
+        "GenericWithSuffix",
+        List(elementType(baseCTS)),
+        List(SimpleCTS("Suffix1_1", List(elementType(baseCTS))), SimpleCTS("Suffix1_3", Nil)))
 
-    /** GenericWithSuffix<AlternativeBase>.Suffix1_1<AlternativeBase>.Suffix1_3 // Suffix1_3 extends Suffix1_2<E> where E is bound to the same type as GenericWithSuffix.*/
-    val genericWithSuffix_altBase_Suffix1_3 = CTS("GenericWithSuffix", List(elementType(altBaseCTS)), List(SimpleCTS("Suffix1_1", List(elementType(altBaseCTS))), SimpleCTS("Suffix1_3", Nil)))
+    /** GenericWithSuffix<AlternativeBase>.Suffix1_1<AlternativeBase>.Suffix1_3 // Suffix1_3 extends Suffix1_2<E> where E is bound to the same type as GenericWithSuffix. */
+    val genericWithSuffix_altBase_Suffix1_3 = CTS(
+        "GenericWithSuffix",
+        List(elementType(altBaseCTS)),
+        List(SimpleCTS("Suffix1_1", List(elementType(altBaseCTS))), SimpleCTS("Suffix1_3", Nil)))
 
     /** GenericWithSuffix<Base>.Suffix1_1<Base>.Suffix1_4 // Suffix 1_4 implements Interface<Base> */
-    val genericWithSuffix_Suffix1_4 = CTS("GenericWithSuffix", List(elementType(baseCTS)), List(SimpleCTS("Suffix1_1", List(elementType(baseCTS))), SimpleCTS("Suffix1_4", Nil)))
+    val genericWithSuffix_Suffix1_4 = CTS(
+        "GenericWithSuffix",
+        List(elementType(baseCTS)),
+        List(SimpleCTS("Suffix1_1", List(elementType(baseCTS))), SimpleCTS("Suffix1_4", Nil)))
 
-    /** GenericWithSuffix<Base>.Suffix1_1<Base>.Suffix1_5<Base> // Suffix1_5<T> where T is not the FormalTypeParamter of the prefix of Suffix1_5.*/
-    val genericWithSuffix_Suffix1_5 = CTS("GenericWithSuffix", List(elementType(baseCTS)), List(SimpleCTS("Suffix1_1", List(elementType(baseCTS))), SimpleCTS("Suffix1_5", List(elementType(baseCTS)))))
+    /** GenericWithSuffix<Base>.Suffix1_1<Base>.Suffix1_5<Base> // Suffix1_5<T> where T is not the FormalTypeParamter of the prefix of Suffix1_5. */
+    val genericWithSuffix_Suffix1_5 = CTS(
+        "GenericWithSuffix",
+        List(elementType(baseCTS)),
+        List(SimpleCTS("Suffix1_1", List(elementType(baseCTS))), SimpleCTS("Suffix1_5", List(elementType(baseCTS))))
+    )
 
-    /** GenericWithSuffix<AlternativeBase>.Suffix1_1<AlternativeBase>.Suffix1_5<Base> // Suffix1_5<T> where T is not the FormalTypeParamter of the prefix of Suffix1_5.*/
-    val genericWithSuffix_altBase_Suffix1_5 = CTS("GenericWithSuffix", List(elementType(altBaseCTS)), List(SimpleCTS("Suffix1_1", List(elementType(altBaseCTS))), SimpleCTS("Suffix1_5", List(elementType(baseCTS)))))
+    /** GenericWithSuffix<AlternativeBase>.Suffix1_1<AlternativeBase>.Suffix1_5<Base> // Suffix1_5<T> where T is not the FormalTypeParamter of the prefix of Suffix1_5. */
+    val genericWithSuffix_altBase_Suffix1_5 = CTS(
+        "GenericWithSuffix",
+        List(elementType(altBaseCTS)),
+        List(SimpleCTS("Suffix1_1", List(elementType(altBaseCTS))), SimpleCTS("Suffix1_5", List(elementType(baseCTS))))
+    )
 
-    /** GenericWithSuffix<Base>.Suffix1_1<Base>.Suffix1_5<AlternativeBase> // Suffix1_5<T> where T is not the FormalTypeParamter of the prefix of Suffix1_5.*/
-    val genericWithSuffix_Suffix1_5_altBase = CTS("GenericWithSuffix", List(elementType(baseCTS)), List(SimpleCTS("Suffix1_1", List(elementType(baseCTS))), SimpleCTS("Suffix1_5", List(elementType(altBaseCTS)))))
+    /** GenericWithSuffix<Base>.Suffix1_1<Base>.Suffix1_5<AlternativeBase> // Suffix1_5<T> where T is not the FormalTypeParamter of the prefix of Suffix1_5. */
+    val genericWithSuffix_Suffix1_5_altBase = CTS(
+        "GenericWithSuffix",
+        List(elementType(baseCTS)),
+        List(SimpleCTS("Suffix1_1", List(elementType(baseCTS))), SimpleCTS("Suffix1_5", List(elementType(altBaseCTS))))
+    )
 
     /** GenericWithSuffix<Base>.Suffix1_1<Base>.Suffix1_6 // Suffix1_6 extends Suffix1_5<Base> */
-    val genericWithSuffix_Suffix1_6 = CTS("GenericWithSuffix", List(elementType(baseCTS)), List(SimpleCTS("Suffix1_1", List(elementType(baseCTS))), SimpleCTS("Suffix1_6", Nil)))
+    val genericWithSuffix_Suffix1_6 = CTS(
+        "GenericWithSuffix",
+        List(elementType(baseCTS)),
+        List(SimpleCTS("Suffix1_1", List(elementType(baseCTS))), SimpleCTS("Suffix1_6", Nil)))
 
     /** GenericWithSuffix<AlterantiveBase>.Suffix1_1<AlterantiveBase>.Suffix1_6 // Suffix1_6 extends Suffix1_5<Base> */
-    val genericWithSuffix_altBase_Suffix1_6 = CTS("GenericWithSuffix", List(elementType(altBaseCTS)), List(SimpleCTS("Suffix1_1", List(elementType(altBaseCTS))), SimpleCTS("Suffix1_6", Nil)))
+    val genericWithSuffix_altBase_Suffix1_6 = CTS(
+        "GenericWithSuffix",
+        List(elementType(altBaseCTS)),
+        List(SimpleCTS("Suffix1_1", List(elementType(altBaseCTS))), SimpleCTS("Suffix1_6", Nil)))
 
     /** GenericWithSuffix<Base>.Suffix1_1<Base>.Suffix1_7<T> // Suffix1_7 extends Base */
-    val genericWithSuffix_Suffix1_7 = CTS("GenericWithSuffix", List(elementType(baseCTS)), List(SimpleCTS("Suffix1_1", List(elementType(baseCTS))), SimpleCTS("Suffix1_7", List(elementType(baseCTS)))))
+    val genericWithSuffix_Suffix1_7 = CTS(
+        "GenericWithSuffix",
+        List(elementType(baseCTS)),
+        List(SimpleCTS("Suffix1_1", List(elementType(baseCTS))), SimpleCTS("Suffix1_7", List(elementType(baseCTS))))
+    )
 
     /** GenericWithSuffix<Base>.Suffix1_1<AlternativeBase> */
-    val genericWithSuffix_publicSuffix1_1_altBase = CTS("GenericWithSuffix", List(elementType(baseCTS)), List(SimpleCTS("Suffix1_1", List(elementType(altBaseCTS)))))
+    val genericWithSuffix_publicSuffix1_1_altBase =
+        CTS("GenericWithSuffix", List(elementType(baseCTS)), List(SimpleCTS("Suffix1_1", List(elementType(altBaseCTS)))))
     /** GenericWithSuffix<Base>.Suffix1_1<AlternativeBase> */
-    val genericWithSuffix_altBase_publicSuffix1_1 = CTS("GenericWithSuffix", List(elementType(altBaseCTS)), List(SimpleCTS("Suffix1_1", List(elementType(baseCTS)))))
+    val genericWithSuffix_altBase_publicSuffix1_1 =
+        CTS("GenericWithSuffix", List(elementType(altBaseCTS)), List(SimpleCTS("Suffix1_1", List(elementType(baseCTS)))))
 
     /** GenericWithSuffix<Base>.Suffix1_1<Base>.Suffix1_2<Base> */
-    val genericWithSuffix_publicSuffix1_1_Suffix1_2 = CTS("GenericWithSuffix", List(elementType(baseCTS)), List(SimpleCTS("Suffix1_1", List(elementType(baseCTS))), SimpleCTS("Suffix1_2", List(elementType(baseCTS)))))
+    val genericWithSuffix_publicSuffix1_1_Suffix1_2 = CTS(
+        "GenericWithSuffix",
+        List(elementType(baseCTS)),
+        List(SimpleCTS("Suffix1_1", List(elementType(baseCTS))), SimpleCTS("Suffix1_2", List(elementType(baseCTS))))
+    )
 
     /** GenericWithSuffix<Base>.Suffix4_1<Base> // Suffix4_1<E> extends Suffix1_1<E> */
-    val genericWithSuffix_publicSuffix4_1 = CTS("GenericWithSuffix", List(elementType(baseCTS)), List(SimpleCTS("Suffix4_1", List(elementType(baseCTS)))))
+    val genericWithSuffix_publicSuffix4_1 =
+        CTS("GenericWithSuffix", List(elementType(baseCTS)), List(SimpleCTS("Suffix4_1", List(elementType(baseCTS)))))
 
     /** GenericWithSuffix<Base>.Suffix1_1<AlternativeBase>.Suffix1_2 */
     val genericWithSuffix_publicSuffix1_1_Suffix1_2_altBase = CTS(
         "GenericWithSuffix",
-        List(elementType(baseCTS)), List(SimpleCTS("Suffix1_1", List(elementType(altBaseCTS))), SimpleCTS("Suffix1_1", List(elementType(baseCTS))))
+        List(elementType(baseCTS)),
+        List(SimpleCTS("Suffix1_1", List(elementType(altBaseCTS))), SimpleCTS("Suffix1_1", List(elementType(baseCTS))))
     )
 
     /** GenericWithSuffix<Base>.Suffix2_1<Base>.Suffix2_2<Base, AlternativeBase> */
-    val genericWithSuffix_Suffix2_2 = CTS("GenericWithSuffix", List(elementType(baseCTS)), List(SimpleCTS("Suffix2_1", List(elementType(baseCTS))), SimpleCTS("Suffix2_2", List(elementType(baseCTS), elementType(altBaseCTS)))))
+    val genericWithSuffix_Suffix2_2 = CTS(
+        "GenericWithSuffix",
+        List(elementType(baseCTS)),
+        List(SimpleCTS("Suffix2_1", List(elementType(baseCTS))),
+             SimpleCTS("Suffix2_2", List(elementType(baseCTS), elementType(altBaseCTS))))
+    )
 
     /** GenericWithSuffix<Base>.Suffix2_1<Base>.Suffix2_2<AlternativeBase, Base> */
-    val genericWithSuffix_Suffix2_2_l2altBase = CTS("GenericWithSuffix", List(elementType(baseCTS)), List(SimpleCTS("Suffix2_1", List(elementType(baseCTS))), SimpleCTS("Suffix2_2", List(elementType(altBaseCTS), elementType(altBaseCTS)))))
+    val genericWithSuffix_Suffix2_2_l2altBase = CTS(
+        "GenericWithSuffix",
+        List(elementType(baseCTS)),
+        List(SimpleCTS("Suffix2_1", List(elementType(baseCTS))),
+             SimpleCTS("Suffix2_2", List(elementType(altBaseCTS), elementType(altBaseCTS))))
+    )
 
     /** GenericWithSuffix<Base>.Suffix2_1<altBase>.Suffix2_2<Base, AlternativeBase> */
-    val genericWithSuffix_Suffix2_2_l1altBase = CTS("GenericWithSuffix", List(elementType(baseCTS)), List(SimpleCTS("Suffix2_1", List(elementType(altBaseCTS))), SimpleCTS("Suffix2_2", List(elementType(baseCTS), elementType(altBaseCTS)))))
+    val genericWithSuffix_Suffix2_2_l1altBase = CTS(
+        "GenericWithSuffix",
+        List(elementType(baseCTS)),
+        List(SimpleCTS("Suffix2_1", List(elementType(altBaseCTS))),
+             SimpleCTS("Suffix2_2", List(elementType(baseCTS), elementType(altBaseCTS))))
+    )
 
-    /** GenericWithSuffix<Base>.Suffix2_1<Base>.Suffix2_3<Base, AlternativeBase> // Suffix2_3<V,W> extends Suffix2_2<V,W>*/
-    val genericWithSuffix_Suffix2_3 = CTS("GenericWithSuffix", List(elementType(baseCTS)), List(SimpleCTS("Suffix2_1", List(elementType(baseCTS))), SimpleCTS("Suffix2_3", List(elementType(baseCTS), elementType(altBaseCTS)))))
+    /** GenericWithSuffix<Base>.Suffix2_1<Base>.Suffix2_3<Base, AlternativeBase> // Suffix2_3<V,W> extends Suffix2_2<V,W> */
+    val genericWithSuffix_Suffix2_3 = CTS(
+        "GenericWithSuffix",
+        List(elementType(baseCTS)),
+        List(SimpleCTS("Suffix2_1", List(elementType(baseCTS))),
+             SimpleCTS("Suffix2_3", List(elementType(baseCTS), elementType(altBaseCTS))))
+    )
 
-    /** GenericWithSuffix<Base>.Suffix2_1<Base>.Suffix2_3<AlternativeBase, AlternativeBase> // Suffix2_3<V,W> extends Suffix2_2<V,W>*/
-    val genericWithSuffix_Suffix2_3_l2altBase = CTS("GenericWithSuffix", List(elementType(baseCTS)), List(SimpleCTS("Suffix2_1", List(elementType(baseCTS))), SimpleCTS("Suffix2_3", List(elementType(altBaseCTS), elementType(altBaseCTS)))))
+    /** GenericWithSuffix<Base>.Suffix2_1<Base>.Suffix2_3<AlternativeBase, AlternativeBase> // Suffix2_3<V,W> extends Suffix2_2<V,W> */
+    val genericWithSuffix_Suffix2_3_l2altBase = CTS(
+        "GenericWithSuffix",
+        List(elementType(baseCTS)),
+        List(SimpleCTS("Suffix2_1", List(elementType(baseCTS))),
+             SimpleCTS("Suffix2_3", List(elementType(altBaseCTS), elementType(altBaseCTS))))
+    )
 
     /** GenericWithSuffix<Base>.Suffix2_1<Base>.Suffix2_3<AlternativeBase, AlternativeBase> // Suffix2_3<S1 extends E, S2 extends T> where E is bound to GenericWithSuffix and T is bound to Suffix2_1 */
-    val genericWithSuffix_Suffix2_4_base_altBase = CTS("GenericWithSuffix", List(elementType(baseCTS)), List(SimpleCTS("Suffix2_1", List(elementType(altBaseCTS))), SimpleCTS("Suffix2_4", List(elementType(baseCTS), elementType(altBaseCTS)))))
+    val genericWithSuffix_Suffix2_4_base_altBase = CTS(
+        "GenericWithSuffix",
+        List(elementType(baseCTS)),
+        List(SimpleCTS("Suffix2_1", List(elementType(altBaseCTS))),
+             SimpleCTS("Suffix2_4", List(elementType(baseCTS), elementType(altBaseCTS))))
+    )
 
     /** GenericWithSuffix<Base>.Suffix2_1<Base>.Suffix2_3<AlternativeBase, AlternativeBase> // Suffix2_3<S1 extends E, S2 extends T> where E is bound to GenericWithSuffix and T is bound to Suffix2_1 */
-    val genericWithSuffix_Suffix2_4_altBase_altBase = CTS("GenericWithSuffix", List(elementType(baseCTS)), List(SimpleCTS("Suffix2_1", List(elementType(altBaseCTS))), SimpleCTS("Suffix2_4", List(elementType(altBaseCTS), elementType(altBaseCTS)))))
+    val genericWithSuffix_Suffix2_4_altBase_altBase = CTS(
+        "GenericWithSuffix",
+        List(elementType(baseCTS)),
+        List(SimpleCTS("Suffix2_1", List(elementType(altBaseCTS))),
+             SimpleCTS("Suffix2_4", List(elementType(altBaseCTS), elementType(altBaseCTS))))
+    )
 
     /** GenericWithSuffix<Base>.Suffix2_1<Base>.Suffix2_3<AlternativeBase, Base> // Suffix2_3<S1 extends E, S2 extends T> where E is bound to GenericWithSuffix and T is bound to Suffix2_1 */
-    val genericWithSuffix_Suffix2_4_altBase_base = CTS("GenericWithSuffix", List(elementType(baseCTS)), List(SimpleCTS("Suffix2_1", List(elementType(altBaseCTS))), SimpleCTS("Suffix2_4", List(elementType(altBaseCTS), elementType(baseCTS)))))
+    val genericWithSuffix_Suffix2_4_altBase_base = CTS(
+        "GenericWithSuffix",
+        List(elementType(baseCTS)),
+        List(SimpleCTS("Suffix2_1", List(elementType(altBaseCTS))),
+             SimpleCTS("Suffix2_4", List(elementType(altBaseCTS), elementType(baseCTS))))
+    )
 
     //
     // Verify
@@ -285,7 +362,7 @@ class ClassHierarchyTest extends AnyFlatSpec with Matchers {
     it should "be upwards closed (complete)" in {
         if (preInitCH.rootTypes.size != 1) {
             fail(
-                "The default class hierarchy has unexpected root types: "+
+                "The default class hierarchy has unexpected root types: " +
                     preInitCH.rootTypes.mkString(", ")
             )
         }
@@ -491,20 +568,19 @@ class ClassHierarchyTest extends AnyFlatSpec with Matchers {
 
     behavior of "the ClassHierarchy's directSubtypesOf(UpperTypeBound) method"
 
-    val typesProject =
-        Project(
-            ClassFiles(locateTestResources("classhierarchy.jar", "bi")),
-            Iterable.empty,
-            true
-        )
+    val typesProject = Project(
+        ClassFiles(locateTestResources("classhierarchy.jar", "bi")),
+        Iterable.empty,
+        true
+    )
 
-    val cRootType = ObjectType("classhierarchy/CRoot")
-    val cRootAType = ObjectType("classhierarchy/CRootA")
-    val cRootAABType = ObjectType("classhierarchy/CRootAAB")
+    val cRootType       = ObjectType("classhierarchy/CRoot")
+    val cRootAType      = ObjectType("classhierarchy/CRootA")
+    val cRootAABType    = ObjectType("classhierarchy/CRootAAB")
     val cRootAAABBCType = ObjectType("classhierarchy/CRootAAABBC")
-    val iRootAType = ObjectType("classhierarchy/IRootA")
-    val iRootBType = ObjectType("classhierarchy/IRootB")
-    val iRootCType = ObjectType("classhierarchy/IRootC")
+    val iRootAType      = ObjectType("classhierarchy/IRootA")
+    val iRootBType      = ObjectType("classhierarchy/IRootB")
+    val iRootCType      = ObjectType("classhierarchy/IRootC")
 
     it should "return the given upper type bound if it just contains a single type" in {
         import typesProject.classHierarchy.directSubtypesOf
@@ -702,7 +778,8 @@ class ClassHierarchyTest extends AnyFlatSpec with Matchers {
         isASubtypeOf(genericWithSuffix_publicSuffix1_1, genericWithSuffix_publicSuffix1_1_altBase) should be(No)
         isASubtypeOf(genericWithSuffix_altBase_publicSuffix1_1, genericWithSuffix_publicSuffix1_1) should be(No)
         isASubtypeOf(genericWithSuffix_publicSuffix1_1_Suffix1_2, genericWithSuffix_publicSuffix1_1) should be(No)
-        isASubtypeOf(genericWithSuffix_publicSuffix1_1_Suffix1_2, genericWithSuffix_publicSuffix1_1_Suffix1_2_altBase) should be(No)
+        isASubtypeOf(genericWithSuffix_publicSuffix1_1_Suffix1_2,
+                     genericWithSuffix_publicSuffix1_1_Suffix1_2_altBase) should be(No)
         isASubtypeOf(genericWithSuffix_Suffix1_4, iContainerWithAltBase) should be(No)
         isASubtypeOf(genericWithSuffix_altBase_Suffix1_3, iContainerWithBase) should be(No)
         isASubtypeOf(genericWithSuffix_altBase_Suffix1_3, genericWithSuffix_publicSuffix1_2) should be(No)
@@ -720,17 +797,23 @@ class ClassHierarchyTest extends AnyFlatSpec with Matchers {
         implicit val genericProject: Project[URL] = ClassHierarchyTest.genericProject
         import genericProject.classHierarchy.isASubtypeOf
         isASubtypeOf(extBaseCTS, FormalTypeParameter("X", Some(baseCTS), Nil)) should be(Yes)
-        isASubtypeOf(subClassWithInterface, FormalTypeParameter("T", Some(concreteSubGeneric), List(iContainerWithAltBase))) should be(Yes)
+        isASubtypeOf(subClassWithInterface,
+                     FormalTypeParameter("T", Some(concreteSubGeneric), List(iContainerWithAltBase))) should be(Yes)
         isASubtypeOf(genericWithSuffix_Suffix1_7, FormalTypeParameter("T", Some(baseCTS), Nil)) should be(Yes)
-        isASubtypeOf(genericWithSuffix_Suffix1_4, FormalTypeParameter("T", None, List(iContainerWithBase))) should be(Yes)
+        isASubtypeOf(genericWithSuffix_Suffix1_4, FormalTypeParameter("T", None, List(iContainerWithBase))) should be(
+            Yes)
     }
 
     it should "return NO if the subtype doesn't extends the class and implements all declared interfaces of the FormalTypeParameter" in {
         implicit val genericProject: Project[URL] = ClassHierarchyTest.genericProject
         import genericProject.classHierarchy.isASubtypeOf
         isASubtypeOf(altBaseCTS, FormalTypeParameter("X", Some(baseCTS), Nil)) should be(No)
-        isASubtypeOf(subClassWithInterface, FormalTypeParameter("T", Some(concreteSubGeneric), List(iContainerWithAltBase, altInterfaceCTS))) should be(No)
-        isASubtypeOf(genericWithSuffix_Suffix1_4, FormalTypeParameter("T", None, List(iContainerWithAltBase))) should be(No)
+        isASubtypeOf(subClassWithInterface,
+                     FormalTypeParameter("T",
+                                         Some(concreteSubGeneric),
+                                         List(iContainerWithAltBase, altInterfaceCTS))) should be(No)
+        isASubtypeOf(genericWithSuffix_Suffix1_4,
+                     FormalTypeParameter("T", None, List(iContainerWithAltBase))) should be(No)
     }
 
     it should "return UNKNOWN if an unknown type is encountered" in {
@@ -745,11 +828,10 @@ class ClassHierarchyTest extends AnyFlatSpec with Matchers {
     //
     // -----------------------------------------------------------------------------------
 
-    val apacheANTCH =
-        ClassHierarchy(
-            Iterable.empty,
-            List(() => getClass.getResourceAsStream("ApacheANT1.7.1.ClassHierarchy.ths"))
-        )(GlobalLogContext)
+    val apacheANTCH = ClassHierarchy(
+        Iterable.empty,
+        List(() => getClass.getResourceAsStream("ApacheANT1.7.1.ClassHierarchy.ths"))
+    )(GlobalLogContext)
 
     it should "be possible to get all supertypes, even if not all information is available" in {
 
@@ -779,7 +861,7 @@ class ClassHierarchyTest extends AnyFlatSpec with Matchers {
     it should "correctly find all suptypes of an interface" in {
         import clusteringProject.classHierarchy
 
-        val window = ObjectType("pattern/decorator/example1/Window")
+        val window       = ObjectType("pattern/decorator/example1/Window")
         val simpleWindow = ObjectType("pattern/decorator/example1/SimpleWindow")
 
         classHierarchy.isKnown(window) should be(true)
@@ -791,11 +873,10 @@ class ClassHierarchyTest extends AnyFlatSpec with Matchers {
         // check if the SimpleWindow is in the set of all subtypes of Window
         var subtypes = Set.empty[ObjectType]
         classHierarchy.foreachSubtype(window) { subtypes += _ }
-        if (!subtypes.contains(simpleWindow))
-            fail(s"SimpleWindow is not among the subtypes: $subtypes; "+
-                s"SimpleWindow <: ${classHierarchy.allSupertypes(simpleWindow)}; "+
-                s"Window >: ${classHierarchy.allSubtypes(window, false)}\n"+
-                classHierarchy.asTSV)
+        if (!subtypes.contains(simpleWindow)) fail(s"SimpleWindow is not among the subtypes: $subtypes; " +
+            s"SimpleWindow <: ${classHierarchy.allSupertypes(simpleWindow)}; " +
+            s"Window >: ${classHierarchy.allSubtypes(window, false)}\n" +
+            classHierarchy.asTSV)
 
         clusteringProject.classFile(simpleWindow).get.methods find { method =>
             method.name == "draw" && method.descriptor == NoArgsAndReturnVoid
@@ -805,12 +886,11 @@ class ClassHierarchyTest extends AnyFlatSpec with Matchers {
         resolveInterfaceMethodReference(window, "draw", NoArgsAndReturnVoid) should be(Symbol("nonEmpty"))
     }
 
-    val jvmFeaturesProject =
-        Project(
-            ClassFiles(locateTestResources("jvm_features-1.8-g-parameters-genericsignature.jar", "bi")),
-            Iterable.empty,
-            true
-        )
+    val jvmFeaturesProject = Project(
+        ClassFiles(locateTestResources("jvm_features-1.8-g-parameters-genericsignature.jar", "bi")),
+        Iterable.empty,
+        true
+    )
 
     it should "correctly iterate over all suptypes of Object, even without the JDK included" in {
         var foundSomeEnumerationClass = false
@@ -819,8 +899,7 @@ class ClassHierarchyTest extends AnyFlatSpec with Matchers {
             if (subType == ObjectType("class_types/SomeEnumeration")) {
                 foundSomeEnumerationClass = true
                 false
-            } else
-                true
+            } else true
         }(jvmFeaturesProject)
 
         foundSomeEnumerationClass should be(true)
@@ -830,7 +909,7 @@ class ClassHierarchyTest extends AnyFlatSpec with Matchers {
 
 object ClassHierarchyTest {
 
-    val generics = locateTestResources("generictypes.jar", "bi")
+    val generics       = locateTestResources("generictypes.jar", "bi")
     val genericProject = Project(ClassFiles(generics), Iterable.empty, true)
 
 }

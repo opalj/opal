@@ -19,15 +19,14 @@ import org.opalj.br.instructions.Instruction
  */
 trait PostEvaluationMemoryManagement extends CoreDomainFunctionality {
 
-    private[this] var oldValue: DomainValue = null
+    private[this] var oldValue: DomainValue                = null
     private[this] var newValueAfterEvaluation: DomainValue = null
-    private[this] var newValueAfterException: DomainValue = null
+    private[this] var newValueAfterException: DomainValue  = null
 
     protected def updateAfterExecution(
         oldValue:                DomainValue,
         newValueAfterEvaluation: DomainValue,
-        newValueAfterException:  DomainValue
-    ): Unit = {
+        newValueAfterException:  DomainValue): Unit = {
         assert(this.oldValue eq null, "another update is already registered")
 
         assert(oldValue ne null)
@@ -40,13 +39,11 @@ trait PostEvaluationMemoryManagement extends CoreDomainFunctionality {
         this.newValueAfterException = newValueAfterException
     }
 
-    protected def updateAfterEvaluation(oldValue: DomainValue, newValue: DomainValue): Unit = {
+    protected def updateAfterEvaluation(oldValue: DomainValue, newValue: DomainValue): Unit =
         updateAfterExecution(oldValue, newValue, null)
-    }
 
-    protected def updateAfterException(oldValue: DomainValue, newValue: DomainValue): Unit = {
+    protected def updateAfterException(oldValue: DomainValue, newValue: DomainValue): Unit =
         updateAfterExecution(oldValue, null, newValue)
-    }
 
     abstract override def afterEvaluation(
         pc:                       Int,
@@ -57,27 +54,39 @@ trait PostEvaluationMemoryManagement extends CoreDomainFunctionality {
         isExceptionalControlFlow: Boolean,
         forceJoin:                Boolean,
         newOperands:              Operands,
-        newLocals:                Locals
-    ): (Operands, Locals) = {
+        newLocals:                Locals): (Operands, Locals) = {
         val oldValue = this.oldValue
         if (oldValue ne null) {
             val (operands1, locals1) =
                 if (isExceptionalControlFlow)
                     updateMemoryLayout(oldValue, newValueAfterException, newOperands, newLocals)
-                else
-                    updateMemoryLayout(oldValue, newValueAfterEvaluation, newOperands, newLocals)
+                else updateMemoryLayout(oldValue, newValueAfterEvaluation, newOperands, newLocals)
             this.oldValue = null
             this.newValueAfterEvaluation = null
             this.newValueAfterException = null
 
             super.afterEvaluation(
-                pc, instruction, oldOperands, oldLocals,
-                targetPC, isExceptionalControlFlow, forceJoin, operands1, locals1
+                pc,
+                instruction,
+                oldOperands,
+                oldLocals,
+                targetPC,
+                isExceptionalControlFlow,
+                forceJoin,
+                operands1,
+                locals1
             )
         } else {
             super.afterEvaluation(
-                pc, instruction, oldOperands, oldLocals,
-                targetPC, isExceptionalControlFlow, forceJoin, newOperands, newLocals
+                pc,
+                instruction,
+                oldOperands,
+                oldLocals,
+                targetPC,
+                isExceptionalControlFlow,
+                forceJoin,
+                newOperands,
+                newLocals
             )
         }
     }

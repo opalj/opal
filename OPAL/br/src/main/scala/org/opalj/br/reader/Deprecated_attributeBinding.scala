@@ -10,8 +10,8 @@ import org.opalj.bi.reader.Deprecated_attributeReader
  */
 trait Deprecated_attributeBinding
     extends Deprecated_attributeReader
-    with ConstantPoolBinding
-    with AttributeBinding {
+        with ConstantPoolBinding
+        with AttributeBinding {
 
     type Deprecated_attribute = br.Attribute
 
@@ -19,10 +19,6 @@ trait Deprecated_attributeBinding
         cp:                   Constant_Pool,
         ap_name_index:        Constant_Pool_Index,
         ap_descriptor_index:  Constant_Pool_Index,
-        attribute_name_index: Constant_Pool_Index
-    ): br.Attribute = {
-        br.Deprecated
-    }
+        attribute_name_index: Constant_Pool_Index): br.Attribute = br.Deprecated
 
 }
-

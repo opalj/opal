@@ -7,25 +7,25 @@ import scala.reflect.runtime.universe.runtimeMirror
 
 import scala.jdk.CollectionConverters._
 
-import org.opalj.log.LogContext
-import org.opalj.log.OPALLogger
-import org.opalj.log.OPALLogger.error
-import org.opalj.fpcf.PropertyStore
+import org.opalj.ai.domain.RecordCFG
+import org.opalj.ai.domain.RecordDefUse
+import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKey
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.CallBySignatureKey
+import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
 import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.analyses.ContextProvider
-import org.opalj.ai.domain.RecordCFG
-import org.opalj.ai.domain.RecordDefUse
-import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
+import org.opalj.fpcf.PropertyStore
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
+import org.opalj.log.OPALLogger.error
 import org.opalj.tac.fpcf.analyses.LazyTACAIProvider
 import org.opalj.tac.fpcf.analyses.cg.CallGraphAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.TypeIterator
@@ -49,8 +49,7 @@ trait CallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
      * graph.
      */
     protected def callGraphSchedulers(
-        project: SomeProject
-    ): Iterable[FPCFAnalysisScheduler]
+        project: SomeProject): Iterable[FPCFAnalysisScheduler]
 
     override def requirements(project: SomeProject): ProjectInformationKeys = {
         val requiredDomains: Set[Class[_ <: AnyRef]] = Set(classOf[RecordCFG], classOf[RecordDefUse])
@@ -95,7 +94,7 @@ trait CallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
 
     protected[this] def registeredAnalyses(project: SomeProject): scala.collection.Seq[FPCFAnalysisScheduler] = {
         implicit val logContext: LogContext = project.logContext
-        val config = project.config
+        val config                          = project.config
 
         // TODO use FPCFAnaylsesRegistry here
         config.getStringList(
@@ -105,10 +104,9 @@ trait CallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
 
     def allCallGraphAnalyses(project: SomeProject): Iterable[FPCFAnalysisScheduler] = {
         // TODO make TACAI analysis configurable
-        var analyses: List[FPCFAnalysisScheduler] =
-            List(
-                LazyTACAIProvider
-            )
+        var analyses: List[FPCFAnalysisScheduler] = List(
+            LazyTACAIProvider
+        )
 
         analyses ::= CallGraphAnalysisScheduler
         analyses ++= callGraphSchedulers(project)
@@ -128,7 +126,7 @@ trait CallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
         }
 
         implicit val typeIterator: TypeIterator = project.get(TypeIteratorKey)
-        implicit val ps: PropertyStore = project.get(PropertyStoreKey)
+        implicit val ps: PropertyStore          = project.get(PropertyStoreKey)
 
         runAnalyses(project, ps)
 
@@ -146,7 +144,7 @@ trait CallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
 
     private[this] def resolveAnalysisRunner(
         className: String
-    )(implicit logContext: LogContext): Option[FPCFAnalysisScheduler] = {
+      )(implicit logContext: LogContext): Option[FPCFAnalysisScheduler] = {
         val mirror = runtimeMirror(getClass.getClassLoader)
         try {
             val module = mirror.staticModule(className)
@@ -180,7 +178,7 @@ object CallGraphKey extends ProjectInformationKey[CallGraph, CallGraph] {
 
     override def requirements(project: SomeProject): ProjectInformationKeys = Seq(TypeIteratorKey)
 
-    override def compute(project: SomeProject): CallGraph = {
+    override def compute(project: SomeProject): CallGraph =
         if (cg.isDefined && project.availableProjectInformation.contains(cg.get)) {
             cg.get
         } else {
@@ -192,5 +190,4 @@ object CallGraphKey extends ProjectInformationKey[CallGraph, CallGraph] {
             cg = None
             throw new IllegalArgumentException()
         }
-    }
 }

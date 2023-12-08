@@ -19,24 +19,22 @@ sealed trait ElementValue extends Attribute {
      */
     def toJava: String
 
-    def asIntValue: IntValue = throw new ClassCastException();
-    def asBooleanValue: BooleanValue = throw new ClassCastException();
-    def asEnumValue: EnumValue = throw new ClassCastException();
+    def asIntValue: IntValue               = throw new ClassCastException();
+    def asBooleanValue: BooleanValue       = throw new ClassCastException();
+    def asEnumValue: EnumValue             = throw new ClassCastException();
     def asAnnotationValue: AnnotationValue = throw new ClassCastException();
-    def asStringValue: StringValue = throw new ClassCastException();
-    def asArrayValue: ArrayValue = throw new ClassCastException();
-    def asClassValue: ClassValue = throw new ClassCastException();
+    def asStringValue: StringValue         = throw new ClassCastException();
+    def asArrayValue: ArrayValue           = throw new ClassCastException();
+    def asClassValue: ClassValue           = throw new ClassCastException();
 
 }
 object ElementValue {
     final val minKindId = ByteValue.KindId
     final val maxKindId = AnnotationValue.KindId
 
-    def unapply(attribute: Attribute): Boolean = {
-        attribute match {
-            case _: ElementValue => true
-            case _               => false
-        }
+    def unapply(attribute: Attribute): Boolean = attribute match {
+        case _: ElementValue => true
+        case _               => false
     }
 }
 
@@ -182,13 +180,11 @@ case class StringValue(value: String) extends ElementValue {
 
     final override def valueType = ObjectType.String
 
-    override def toJava: String = "\""+value.toString+"\""
+    override def toJava: String = "\"" + value.toString + "\""
 
     override def kindId: Int = StringValue.KindId
 
-    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = {
-        this == other
-    }
+    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = this == other
 
     final override def asStringValue: StringValue = this
 
@@ -203,13 +199,11 @@ case class ClassValue(value: Type) extends ElementValue {
 
     final override def valueType = ObjectType.Class
 
-    override def toJava: String = value.toJava+".class"
+    override def toJava: String = value.toJava + ".class"
 
     override def kindId: Int = ClassValue.KindId
 
-    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = {
-        this == other
-    }
+    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = this == other
 
     final override def asClassValue: ClassValue = this
 
@@ -224,13 +218,11 @@ case class EnumValue(enumType: ObjectType, constName: String) extends ElementVal
 
     final override def valueType = enumType
 
-    override def toJava: String = enumType.toJava+"."+constName
+    override def toJava: String = enumType.toJava + "." + constName
 
     override def kindId: Int = EnumValue.KindId
 
-    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = {
-        this == other
-    }
+    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = this == other
 
     final override def asEnumValue: EnumValue = this
 
@@ -250,9 +242,7 @@ case class ArrayValue(values: ElementValues) extends ElementValue {
 
     override def kindId: Int = ArrayValue.KindId
 
-    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = {
-        this == other
-    }
+    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = this == other
 
     final override def asArrayValue: ArrayValue = this
 
@@ -271,11 +261,9 @@ case class AnnotationValue(annotation: Annotation) extends ElementValue {
 
     override def kindId: Int = AnnotationValue.KindId
 
-    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = {
-        other match {
-            case AnnotationValue(thatAnnotation) => this.annotation.similar(thatAnnotation)
-            case _                               => false
-        }
+    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = other match {
+        case AnnotationValue(thatAnnotation) => this.annotation.similar(thatAnnotation)
+        case _                               => false
     }
 
     final override def asAnnotationValue: AnnotationValue = this

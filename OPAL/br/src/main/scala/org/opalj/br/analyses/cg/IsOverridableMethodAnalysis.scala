@@ -26,50 +26,46 @@ import scala.collection.mutable
 private[analyses] class IsOverridableMethodAnalysis(
         project:           SomeProject,
         isClassExtensible: ObjectType => Answer,
-        isTypeExtensible:  ObjectType => Answer
-) extends (Method => Answer) {
+        isTypeExtensible: ObjectType => Answer) extends (Method => Answer) {
 
-    //private[this] val cache: ConcurrentHashMap[Method, Answer] = new ConcurrentHashMap()
+    // private[this] val cache: ConcurrentHashMap[Method, Answer] = new ConcurrentHashMap()
 
     private[this] def isAlwaysFinallyOverridden(objectType: ObjectType, method: Method): Answer = {
-        if (isClassExtensible(objectType).isYes && !method.isFinal)
-            return No;
+        if (isClassExtensible(objectType).isYes && !method.isFinal) return No;
 
         import project.classHierarchy
         import project.instanceMethods
-        val methodName = method.name
-        val methodDescriptor = method.descriptor
+        val methodName        = method.name
+        val methodDescriptor  = method.descriptor
         val methodPackageName = method.classFile.thisType.packageName
 
         val worklist = mutable.Queue.empty[ObjectType]
 
-        def addDirectSubclasses(ot: ObjectType): Unit = {
+        def addDirectSubclasses(ot: ObjectType): Unit =
             classHierarchy.directSubclassesOf(ot).foreach(worklist.enqueue(_))
-        }
 
         while (worklist.nonEmpty) {
             val ot = worklist.dequeue()
             if (isTypeExtensible(ot).isYesOrUnknown) {
-                val cf = project.classFile(ot)
+                val cf            = project.classFile(ot)
                 val subtypeMethod = cf.flatMap(_.findMethod(methodName, methodDescriptor))
                 if (subtypeMethod.isEmpty || !subtypeMethod.get.isFinal ||
                     subtypeMethod.get.isPrivate || // private methods don't override
                     (
                         // let's test if this "final override", is for a different method...
                         method.isPackagePrivate &&
-                        subtypeMethod.get.declaringClassFile.thisType.packageName !=
-                        objectType.packageName &&
-                        !subtypeMethod.get.isPackagePrivate /**/ &&
-                        {
-                            // ... the original method is package private
-                            // ... both methods are defined in different packages
-                            // ... the subtypeMethod is protected or public
-                            val candidateMethods = instanceMethods(ot).iterator.filter(mdc =>
-                                mdc.name == methodName && mdc.descriptor == methodDescriptor)
-                            // if we still have the original method in the list then this method
-                            // does not override that method...
-                            candidateMethods.exists(mdc => mdc.packageName == methodPackageName)
-                        }
+                            subtypeMethod.get.declaringClassFile.thisType.packageName !=
+                            objectType.packageName &&
+                            !subtypeMethod.get.isPackagePrivate /**/ && {
+                                // ... the original method is package private
+                                // ... both methods are defined in different packages
+                                // ... the subtypeMethod is protected or public
+                                val candidateMethods = instanceMethods(ot).iterator.filter(mdc =>
+                                    mdc.name == methodName && mdc.descriptor == methodDescriptor)
+                                // if we still have the original method in the list then this method
+                                // does not override that method...
+                                candidateMethods.exists(mdc => mdc.packageName == methodPackageName)
+                            }
                     )) {
                     // the type as a whole is extensible and
                     // the method is not (finally) overridden by this type...
@@ -88,10 +84,9 @@ private[analyses] class IsOverridableMethodAnalysis(
     }
 
     def apply(method: Method): Answer = {
-        if (method.isPrivate || method.isStatic || method.isInitializer || method.isFinal)
-            return No;
+        if (method.isPrivate || method.isStatic || method.isInitializer || method.isFinal) return No;
 
-        val ot = method.declaringClassFile.thisType
+        val ot               = method.declaringClassFile.thisType
         val isExtensibleType = isTypeExtensible(ot)
 
         if (isExtensibleType.isNoOrUnknown)

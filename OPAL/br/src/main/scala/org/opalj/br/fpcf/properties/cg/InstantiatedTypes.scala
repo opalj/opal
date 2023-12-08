@@ -32,9 +32,8 @@ sealed trait InstantiatedTypesPropertyMetaInformation extends PropertyMetaInform
 
 case class InstantiatedTypes private[properties] (
         private val orderedTypes: List[ReferenceType],
-        types:                    UIDSet[ReferenceType]
-) extends OrderedProperty
-    with InstantiatedTypesPropertyMetaInformation {
+        types: UIDSet[ReferenceType]) extends OrderedProperty
+        with InstantiatedTypesPropertyMetaInformation {
 
     assert(orderedTypes == null || orderedTypes.size == types.size)
 
@@ -42,10 +41,8 @@ case class InstantiatedTypes private[properties] (
 
     override def toString: String = s"InstantiatedTypes(size=${types.size})"
 
-    override def checkIsEqualOrBetterThan(e: Entity, other: InstantiatedTypes): Unit = {
-        if (!types.subsetOf(other.types)) {
-            throw new IllegalArgumentException(s"$e: illegal refinement of $other to $this")
-        }
+    override def checkIsEqualOrBetterThan(e: Entity, other: InstantiatedTypes): Unit = if (!types.subsetOf(other.types)) {
+        throw new IllegalArgumentException(s"$e: illegal refinement of $other to $this")
     }
 
     def updated(newTypes: IterableOnce[ReferenceType]): InstantiatedTypes = {
@@ -59,9 +56,7 @@ case class InstantiatedTypes private[properties] (
     /**
      * Will return the instantiated types added most recently, dropping the `num` oldest ones.
      */
-    def dropOldest(num: Int): Iterator[ReferenceType] = {
-        orderedTypes.iterator.take(types.size - num)
-    }
+    def dropOldest(num: Int): Iterator[ReferenceType] = orderedTypes.iterator.take(types.size - num)
 
     def numElements: Int = types.size
 }
@@ -69,23 +64,20 @@ case class InstantiatedTypes private[properties] (
 object InstantiatedTypes extends InstantiatedTypesPropertyMetaInformation {
 
     def apply(
-        initialInstantiatedTypes: UIDSet[ReferenceType]
-    ): InstantiatedTypes = {
-        new InstantiatedTypes(
-            initialInstantiatedTypes.toList,
-            initialInstantiatedTypes
-        )
-    }
+        initialInstantiatedTypes: UIDSet[ReferenceType]): InstantiatedTypes = new InstantiatedTypes(
+        initialInstantiatedTypes.toList,
+        initialInstantiatedTypes
+    )
 
     final val key: PropertyKey[InstantiatedTypes] = {
         val name = "opalj.InstantiatedTypes"
         PropertyKey.create(
             name,
-            (_: PropertyStore, reason: FallbackReason, _: Entity) => reason match {
-                case PropertyIsNotDerivedByPreviouslyExecutedAnalysis => NoInstantiatedTypes
-                case _ =>
-                    throw new IllegalStateException(s"No analysis is scheduled for property: $name")
-            }
+            (_: PropertyStore, reason: FallbackReason, _: Entity) =>
+                reason match {
+                    case PropertyIsNotDerivedByPreviouslyExecutedAnalysis => NoInstantiatedTypes
+                    case _                                                => throw new IllegalStateException(s"No analysis is scheduled for property: $name")
+                }
         )
     }
 
@@ -105,15 +97,11 @@ object InstantiatedTypes extends InstantiatedTypesPropertyMetaInformation {
     def update[E >: Null <: Entity](
         entity:               E,
         newInstantiatedTypes: UIDSet[ReferenceType]
-    )(
-        eop: EOptionP[E, InstantiatedTypes]
-    ): Option[InterimEP[E, InstantiatedTypes]] = eop match {
+      )(eop: EOptionP[E, InstantiatedTypes]): Option[InterimEP[E, InstantiatedTypes]] = eop match {
         case InterimUBP(ub: InstantiatedTypes) =>
             val newUB = ub.updated(newInstantiatedTypes)
-            if (newUB.types.size > ub.types.size)
-                Some(InterimEUBP(entity, newUB))
-            else
-                None
+            if (newUB.types.size > ub.types.size) Some(InterimEUBP(entity, newUB))
+            else None
 
         case _: EPK[_, _] =>
             val newUB = InstantiatedTypes.apply(newInstantiatedTypes)

@@ -17,12 +17,9 @@ abstract class FloatingPointRemainderInstruction extends RemainderInstruction {
     final def nextInstructions(
         currentPC:             PC,
         regularSuccessorsOnly: Boolean
-    )(
-        implicit
+      )(implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
-    ): List[PC] = {
+        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy): List[PC] =
         List(indexOfNextInstruction(currentPC))
-    }
 
 }

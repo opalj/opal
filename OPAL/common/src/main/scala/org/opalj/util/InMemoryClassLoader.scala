@@ -13,22 +13,18 @@ package util
  */
 class InMemoryClassLoader(
         private[this] var rawClasses: Map[String, Array[Byte]],
-        parent:                       ClassLoader              = ClassLoader.getSystemClassLoader
-) extends ClassLoader(parent) {
+        parent: ClassLoader = ClassLoader.getSystemClassLoader) extends ClassLoader(parent) {
 
     /**
      * @note Clients should call `loadClass`! Please, consult the documentation of
      *       `java.lang.ClassLoader` for further details!
      */
     @throws[ClassNotFoundException]
-    override def findClass(name: String): Class[_] = {
-        rawClasses.get(name) match {
-            case Some(data) =>
-                val clazz = defineClass(name, data, 0, data.length)
-                rawClasses -= name
-                clazz
-            case None =>
-                throw new ClassNotFoundException(name)
-        }
+    override def findClass(name: String): Class[_] = rawClasses.get(name) match {
+        case Some(data) =>
+            val clazz = defineClass(name, data, 0, data.length)
+            rawClasses -= name
+            clazz
+        case None => throw new ClassNotFoundException(name)
     }
 }

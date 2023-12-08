@@ -6,17 +6,17 @@ import java.io.File
 import java.math.RoundingMode
 import java.net.URL
 
-import com.typesafe.config.Config
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.matchers.should.Matchers
-
-import org.opalj.bytecode.RTJar
+import org.opalj.ba.ProjectBasedInMemoryClassLoader
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.bi.isCurrentJREAtLeastJava11
 import org.opalj.bi.isCurrentJREAtLeastJava15
 import org.opalj.br.analyses.Project
 import org.opalj.br.reader.DynamicConstantRewriting
-import org.opalj.ba.ProjectBasedInMemoryClassLoader
+import org.opalj.bytecode.RTJar
+
+import com.typesafe.config.Config
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
 /**
  * Tests if OPAL is able to rewrite dynamic constants and checks if the rewritten bytecode is
@@ -44,14 +44,14 @@ class DynamicConstantsRewritingExecutionTest extends AnyFunSpec with Matchers {
 
     if (isCurrentJREAtLeastJava11) {
         describe("behavior of rewritten dynamic constants test project") {
-            //TODO jdk 8 incompatibility import java.lang.invoke.VarHandle
+            // TODO jdk 8 incompatibility import java.lang.invoke.VarHandle
 
             // Note: The bytecode for this test project was created using
             // [[org.opalj.test.fixtures.dynamicConstants.DynamicConstantsCreationTest]]
             val dynamicConstantsJar = locateTestResources("classfiles/dynamic_constants.jar", "bi")
-            val project = JavaFixtureProject(dynamicConstantsJar)
+            val project             = JavaFixtureProject(dynamicConstantsJar)
             val inMemoryClassLoader = new ProjectBasedInMemoryClassLoader(project)
-            val testClass = inMemoryClassLoader.loadClass("Test")
+            val testClass           = inMemoryClassLoader.loadClass("Test")
 
             /* it("should get an array VarHandle correctly") {
                 val m = testClass.getMethod("arrayVarHandle")
@@ -62,7 +62,7 @@ class DynamicConstantsRewritingExecutionTest extends AnyFunSpec with Matchers {
             } */
 
             it("should get an enum constant correctly") {
-                val m = testClass.getMethod("enumConstant")
+                val m   = testClass.getMethod("enumConstant")
                 val res = m.invoke(null)
 
                 assert(res == RoundingMode.DOWN)
@@ -77,28 +77,28 @@ class DynamicConstantsRewritingExecutionTest extends AnyFunSpec with Matchers {
             } */
 
             it("should get a static final singleton field correctly") {
-                val m = testClass.getMethod("getStaticFinal1")
+                val m   = testClass.getMethod("getStaticFinal1")
                 val res = m.invoke(null)
 
                 assert(res eq testClass.getField("singletonField").get(null))
             }
 
             it("should get a static final field correctly") {
-                val m = testClass.getMethod("getStaticFinal2")
+                val m   = testClass.getMethod("getStaticFinal2")
                 val res = m.invoke(null)
 
                 assert(res == testClass.getField("staticField").get(null))
             }
 
             it("should perform an invocation correctly") {
-                val m = testClass.getMethod("invoke")
+                val m   = testClass.getMethod("invoke")
                 val res = m.invoke(null)
 
                 assert(res == 1337)
             }
 
             it("should get a null constant correctly") {
-                val m = testClass.getMethod("nullConstant")
+                val m   = testClass.getMethod("nullConstant")
                 val res = m.invoke(null)
 
                 assert(m.getReturnType == testClass)
@@ -106,7 +106,7 @@ class DynamicConstantsRewritingExecutionTest extends AnyFunSpec with Matchers {
             }
 
             it("should get a primitive class correctly") {
-                val m = testClass.getMethod("primitiveClass")
+                val m   = testClass.getMethod("primitiveClass")
                 val res = m.invoke(null)
 
                 assert(res eq classOf[Int])
@@ -121,7 +121,7 @@ class DynamicConstantsRewritingExecutionTest extends AnyFunSpec with Matchers {
             } */
 
             it("should work correctly with nested constants") {
-                val m = testClass.getMethod("nestedConstants1")
+                val m   = testClass.getMethod("nestedConstants1")
                 val res = m.invoke(null)
 
                 assert(res == 1337)
@@ -138,7 +138,7 @@ class DynamicConstantsRewritingExecutionTest extends AnyFunSpec with Matchers {
                 }
 
                 it("should work correctly with nested constants including explicitCast") {
-                    val m = testClass.getMethod("nestedConstants2")
+                    val m   = testClass.getMethod("nestedConstants2")
                     val res = m.invoke(null)
 
                     assert(m.getReturnType == classOf[Long])

@@ -9,11 +9,10 @@ package instructions
  * @author Michael Eichberg
  */
 case class INVOKESTATIC(
-        declaringClass:   ObjectType, // a class or interface (Java 8) type
-        isInterface:      Boolean,
-        name:             String,
-        methodDescriptor: MethodDescriptor
-) extends NonVirtualMethodInvocationInstruction {
+        declaringClass: ObjectType, // a class or interface (Java 8) type
+        isInterface:    Boolean,
+        name:           String,
+        methodDescriptor: MethodDescriptor) extends NonVirtualMethodInvocationInstruction {
 
     final override def isInvokeStatic: Boolean = true
 
@@ -33,18 +32,13 @@ case class INVOKESTATIC(
 
     final def isInstanceMethod: Boolean = false
 
-    final def numberOfPoppedOperands(ctg: Int => ComputationalTypeCategory): Int = {
-        methodDescriptor.parametersCount
-    }
+    final def numberOfPoppedOperands(ctg: Int => ComputationalTypeCategory): Int = methodDescriptor.parametersCount
 
     final def parametersCount: Int = methodDescriptor.parametersCount
 
-    override def toString: String = {
-        if (isInterface)
-            "/* interface */"+super.toString
-        else
-            super.toString
-    }
+    override def toString: String =
+        if (isInterface) "/* interface */" + super.toString
+        else super.toString
 
 }
 
@@ -71,8 +65,7 @@ object INVOKESTATIC extends InstructionMetaInformation {
         declaringClass:   String,
         isInterface:      Boolean,
         methodName:       String,
-        methodDescriptor: String
-    ): INVOKESTATIC = {
+        methodDescriptor: String): INVOKESTATIC = {
         val declaringClassType = ObjectType(declaringClass)
         INVOKESTATIC(declaringClassType, isInterface, methodName, MethodDescriptor(methodDescriptor))
     }

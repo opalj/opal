@@ -39,18 +39,18 @@ trait HermesConfig {
         import Console.err
         if (!configFile.exists || !configFile.canRead()) {
             err.println(s"The config file cannot be found or read: $configFile")
-            err.println("The current folder is: "+System.getProperty("user.dir"))
+            err.println("The current folder is: " + System.getProperty("user.dir"))
             System.exit(2)
         }
         try {
             val baseConfig = ConfigFactory.load("hermes.conf")
-            val config = ConfigFactory.parseFile(configFile).withFallback(baseConfig)
+            val config     = ConfigFactory.parseFile(configFile).withFallback(baseConfig)
             setConfig(config)
         } catch {
             case t: Throwable =>
                 err.println(s"Failed while reading: $configFile; ${t.getMessage()}")
                 System.exit(3)
-                //... if System.exit does not terminate the app; this will at least kill the
+                // ... if System.exit does not terminate the app; this will at least kill the
                 // the current call.
                 throw t;
         }
@@ -69,15 +69,11 @@ trait HermesConfig {
     }
 
     private[this] def validateInitialized[@specialized(Int, Boolean, Long, Double, Float) T](
-        f: => T
-    ): T = {
-        if (!isInitialized)
-            throw new IllegalStateException("configuration is not yet set")
-        else
-            f
-    }
+        f: => T): T =
+        if (!isInitialized) throw new IllegalStateException("configuration is not yet set")
+        else f
 
-    /** Textual representation of the configuration related to OPAL/Hermes.  */
+    /** Textual representation of the configuration related to OPAL/Hermes. */
     def renderConfig: String = {
         val rendererConfig = ConfigRenderOptions.defaults().setOriginComments(false)
         config.getObject("org.opalj").render(rendererConfig)

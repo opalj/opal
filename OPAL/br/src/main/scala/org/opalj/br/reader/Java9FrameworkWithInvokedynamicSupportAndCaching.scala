@@ -12,5 +12,5 @@ package reader
  * @author Michael Eichberg
  */
 class Java9FrameworkWithInvokedynamicSupportAndCaching(
-        cache: BytecodeInstructionsCache
-) extends Java8FrameworkWithInvokedynamicSupportAndCaching(cache) with Java9LibraryFramework
+        cache: BytecodeInstructionsCache) extends Java8FrameworkWithInvokedynamicSupportAndCaching(cache)
+        with Java9LibraryFramework

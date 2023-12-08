@@ -7,8 +7,8 @@ import org.opalj.br.MethodDescriptor
 import org.opalj.br.MethodDescriptor.JustReturnsObject
 import org.opalj.br.ObjectType
 import org.opalj.hermes.queries.util.APIFeature
-import org.opalj.hermes.queries.util.APIFeatureQuery
 import org.opalj.hermes.queries.util.APIFeatureGroup
+import org.opalj.hermes.queries.util.APIFeatureQuery
 import org.opalj.hermes.queries.util.InstanceAPIMethod
 import org.opalj.hermes.queries.util.StaticAPIMethod
 
@@ -21,18 +21,17 @@ class ReflectionAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery 
 
     override val apiFeatures: List[APIFeature] = {
 
-        val Class = ObjectType.Class
-        val Field = ObjectType("java/lang/reflect/Field")
+        val Class            = ObjectType.Class
+        val Field            = ObjectType("java/lang/reflect/Field")
         val AccessibleObject = ObjectType("java/lang/reflect/AccessibleObject")
-        val Constructor = ObjectType("java/lang/reflect/Constructor")
-        val Method = ObjectType("java/lang/reflect/Method")
-        val MethodHandle = ObjectType("java/lang/invoke/MethodHandle")
-        val MethodHandles = ObjectType("java/lang/invoke/MethodHandles")
+        val Constructor      = ObjectType("java/lang/reflect/Constructor")
+        val Method           = ObjectType("java/lang/reflect/Method")
+        val MethodHandle     = ObjectType("java/lang/invoke/MethodHandle")
+        val MethodHandles    = ObjectType("java/lang/invoke/MethodHandles")
         // TODO val MethodHandles_Lookup = ObjectType("java/lang/invoke/MethodHandles$Lookup")
         val Proxy = ObjectType("java/lang/reflect/Proxy")
 
         List(
-
             StaticAPIMethod(Class, "forName"),
 
             // reflective instance creation
@@ -80,7 +79,9 @@ class ReflectionAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery 
             APIFeatureGroup(
                 List(
                     InstanceAPIMethod(
-                        Field, "setAccessible", s"([${AccessibleObject.toJVMTypeName}Z)V"
+                        Field,
+                        "setAccessible",
+                        s"([${AccessibleObject.toJVMTypeName}Z)V"
                     ),
                     InstanceAPIMethod(Field, "setAccessible", "(Z)V")
                 ),
@@ -91,11 +92,15 @@ class ReflectionAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery 
             APIFeatureGroup(
                 List(
                     InstanceAPIMethod(
-                        Method, "setAccessible", s"([${AccessibleObject.toJVMTypeName}Z)V"
+                        Method,
+                        "setAccessible",
+                        s"([${AccessibleObject.toJVMTypeName}Z)V"
                     ),
                     InstanceAPIMethod(Method, "setAccessible", MethodDescriptor("(Z)V")),
                     InstanceAPIMethod(
-                        Constructor, "setAccessible", s"([${AccessibleObject.toJVMTypeName}Z)V"
+                        Constructor,
+                        "setAccessible",
+                        s"([${AccessibleObject.toJVMTypeName}Z)V"
                     ),
                     InstanceAPIMethod(Constructor, "setAccessible", MethodDescriptor("(Z)V"))
                 ),
@@ -106,7 +111,9 @@ class ReflectionAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery 
             APIFeatureGroup(
                 List(
                     InstanceAPIMethod(
-                        AccessibleObject, "setAccessible", s"([${AccessibleObject.toJVMTypeName}Z)V"
+                        AccessibleObject,
+                        "setAccessible",
+                        s"([${AccessibleObject.toJVMTypeName}Z)V"
                     ),
                     InstanceAPIMethod(AccessibleObject, "setAccessible", "(Z)V")
                 ),
@@ -126,7 +133,6 @@ class ReflectionAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery 
 
             StaticAPIMethod(MethodHandles, "lookup"),
             StaticAPIMethod(MethodHandles, "publicLookup"),
-
             APIFeatureGroup(
                 List(
                     InstanceAPIMethod(MethodHandle, "invokeExact"),
@@ -135,7 +141,6 @@ class ReflectionAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery 
                 ),
                 "method handle invocation"
             ),
-
             StaticAPIMethod(Proxy, "newProxyInstance")
         )
     }

@@ -16,10 +16,9 @@ trait DynamicLoadsDomain { this: ValuesDomain =>
      * Returns the dynamic constant's value.
      */
     def loadDynamic(
-        pc:              Int,
+        pc: Int,
         bootstrapMethod: BootstrapMethod,
-        name:            String,
-        descriptor:      FieldType
-    ): Computation[DomainValue, Nothing]
+        name: String,
+        descriptor: FieldType): Computation[DomainValue, Nothing]
 
 }

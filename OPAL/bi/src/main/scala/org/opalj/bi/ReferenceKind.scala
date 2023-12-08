@@ -38,47 +38,46 @@ object ReferenceKind {
 }
 
 case object REF_getField extends ReferenceKind {
-    final val referenceKind = 1
+    final val referenceKind     = 1
     final val referenceKindName = "REF_getField"
 }
 
 case object REF_getStatic extends ReferenceKind {
-    final val referenceKind = 2
+    final val referenceKind     = 2
     final val referenceKindName = "REF_getStatic"
 }
 
 case object REF_putField extends ReferenceKind {
-    final val referenceKind = 3
+    final val referenceKind     = 3
     final val referenceKindName = "REF_putField"
 }
 
 case object REF_putStatic extends ReferenceKind {
-    final val referenceKind = 4
+    final val referenceKind     = 4
     final val referenceKindName = "REF_putStatic"
 }
 
 case object REF_invokeVirtual extends ReferenceKind {
-    final val referenceKind = 5
+    final val referenceKind     = 5
     final val referenceKindName = "REF_invokeVirtual"
 }
 
 case object REF_invokeStatic extends ReferenceKind {
-    final val referenceKind = 6
+    final val referenceKind     = 6
     final val referenceKindName = "REF_invokeStatic"
 }
 
 case object REF_invokeSpecial extends ReferenceKind {
-    final val referenceKind = 7
+    final val referenceKind     = 7
     final val referenceKindName = "REF_invokeSpecial"
 }
 
 case object REF_newInvokeSpecial extends ReferenceKind {
-    final val referenceKind = 8
+    final val referenceKind     = 8
     final val referenceKindName = "REF_newInvokeSpecial"
 }
 
 case object REF_invokeInterface extends ReferenceKind {
-    final val referenceKind = 9
+    final val referenceKind     = 9
     final val referenceKindName = "REF_invokeInterface"
 }
-

@@ -21,9 +21,7 @@ trait GOTOLike extends GotoInstructionLike {
 
 case class GOTO(branchoffset: Int) extends GotoInstruction with GOTOLike {
 
-    def toLabeledInstruction(currentPC: PC): LabeledInstruction = {
-        LabeledGOTO(InstructionLabel(currentPC + branchoffset))
-    }
+    def toLabeledInstruction(currentPC: PC): LabeledInstruction = LabeledGOTO(InstructionLabel(currentPC + branchoffset))
 }
 
 /**
@@ -43,15 +41,11 @@ object GOTO extends InstructionMetaInformation {
 }
 
 case class LabeledGOTO(
-        branchTarget: InstructionLabel
-) extends LabeledUnconditionalBranchInstruction with GOTOLike {
+        branchTarget: InstructionLabel) extends LabeledUnconditionalBranchInstruction with GOTOLike {
 
     @throws[BranchoffsetOutOfBoundsException]("if the branchoffset is invalid")
     override def resolveJumpTargets(
         currentPC: PC,
-        pcs:       Map[InstructionLabel, PC]
-    ): GotoInstruction = {
-        GOTO(asShortBranchoffset(pcs(branchTarget) - currentPC))
-    }
+        pcs:       Map[InstructionLabel, PC]): GotoInstruction = GOTO(asShortBranchoffset(pcs(branchTarget) - currentPC))
 
 }

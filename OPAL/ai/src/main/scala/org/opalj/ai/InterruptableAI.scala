@@ -20,8 +20,8 @@ class InterruptableAI[D <: Domain] extends AI[D] {
      *
      * This functionality is appropriately synchronized to ensure a timely interruption.
      */
-    def interrupt(): Unit = { doInterrupt = true }
+    def interrupt(): Unit = doInterrupt = true
 
-    def resetInterrupt(): Unit = { doInterrupt = false }
+    def resetInterrupt(): Unit = doInterrupt = false
 
 }

@@ -2,26 +2,25 @@
 package org.opalj
 package fpcf
 
-import org.scalatest.funsuite.AnyFunSuite
-
 import org.opalj.fpcf.fixtures.NilProperty
 import org.opalj.fpcf.fixtures.Palindromes.NoPalindrome
 import org.opalj.fpcf.fixtures.Palindromes.Palindrome
 
+import org.scalatest.funsuite.AnyFunSuite
+
 class PropertyComputationResultsTest extends AnyFunSuite {
 
     test("the ids of the different types of results are different") {
-        val resultTypeIds =
-            List(
-                NoResult.id,
-                Result.id,
-                MultiResult.id,
-                IncrementalResult.id,
-                InterimResult.id,
-                Results.id,
-                PartialResult.id,
-                InterimPartialResult.id
-            )
+        val resultTypeIds = List(
+            NoResult.id,
+            Result.id,
+            MultiResult.id,
+            IncrementalResult.id,
+            InterimResult.id,
+            Results.id,
+            PartialResult.id,
+            InterimPartialResult.id
+        )
 
         assert(resultTypeIds.toSet.toList.sorted === resultTypeIds.sorted)
     }
@@ -88,55 +87,50 @@ class MultiResultTest extends AnyFunSuite {
 class InterimResultTest extends AnyFunSuite {
 
     test("an InterimResult with an upper bound is a proper result") {
-        val r: PropertyComputationResult =
-            InterimResult(
-                InterimEUBP(new Object, NilProperty),
-                Set(EPK(new Object, NilProperty.key)),
-                _ => ???
-            )
+        val r: PropertyComputationResult = InterimResult(
+            InterimEUBP(new Object, NilProperty),
+            Set(EPK(new Object, NilProperty.key)),
+            _ => ???
+        )
         assert(r.isInstanceOf[ProperPropertyComputationResult])
         assert(!r.isInstanceOf[FinalPropertyComputationResult])
     }
 
     test("an InterimResult with a lower bound is a proper result") {
-        val r: PropertyComputationResult =
-            InterimResult(
-                InterimELBP(new Object, NilProperty),
-                Set(EPK(new Object, NilProperty.key)),
-                _ => ???
-            )
+        val r: PropertyComputationResult = InterimResult(
+            InterimELBP(new Object, NilProperty),
+            Set(EPK(new Object, NilProperty.key)),
+            _ => ???
+        )
         assert(r.isInstanceOf[ProperPropertyComputationResult])
         assert(!r.isInstanceOf[FinalPropertyComputationResult])
     }
 
     test("an InterimResult with a lower and an upper bound is a proper result") {
-        val r: PropertyComputationResult =
-            InterimResult(
-                InterimELUBP("c", NoPalindrome, Palindrome),
-                Set(EPK(new Object, NilProperty.key)),
-                _ => ???
-            )
+        val r: PropertyComputationResult = InterimResult(
+            InterimELUBP("c", NoPalindrome, Palindrome),
+            Set(EPK(new Object, NilProperty.key)),
+            _ => ???
+        )
         assert(r.isInstanceOf[ProperPropertyComputationResult])
         assert(!r.isInstanceOf[FinalPropertyComputationResult])
     }
 
     test("an InterimResult is an InterimResult") {
-        val r: PropertyComputationResult =
-            InterimResult(
-                InterimELUBP("c", NoPalindrome, Palindrome),
-                Set(EPK(new Object, NilProperty.key)),
-                _ => ???
-            )
+        val r: PropertyComputationResult = InterimResult(
+            InterimELUBP("c", NoPalindrome, Palindrome),
+            Set(EPK(new Object, NilProperty.key)),
+            _ => ???
+        )
         assert(r.isInterimResult)
     }
 
     test("an InterimResult can be cast to an InterimResult using asInterimResult") {
-        val r: PropertyComputationResult =
-            InterimResult(
-                InterimELUBP("c", NoPalindrome, Palindrome),
-                Set(EPK(new Object, NilProperty.key)),
-                _ => ???
-            )
+        val r: PropertyComputationResult = InterimResult(
+            InterimELUBP("c", NoPalindrome, Palindrome),
+            Set(EPK(new Object, NilProperty.key)),
+            _ => ???
+        )
         assert(r.asInterimResult eq r)
     }
 
@@ -144,26 +138,21 @@ class InterimResultTest extends AnyFunSuite {
         val dependees: Set[SomeEOptionP] = Set(EPK(new Object, NilProperty.key))
         val r: PropertyComputationResult =
             InterimResult(InterimELUBP("c", NoPalindrome, Palindrome), dependees, _ => ???)
-        val rFactory: PropertyComputationResult =
-            InterimResult("c", NoPalindrome, Palindrome, dependees, _ => ???)
+        val rFactory: PropertyComputationResult = InterimResult("c", NoPalindrome, Palindrome, dependees, _ => ???)
         assert(r == rFactory)
     }
 
     test("two InterimResults for upper bounds are equal when property and dependency lists are equal") {
-        val dependees: Set[SomeEOptionP] = Set(EPK(new Object, NilProperty.key))
-        val r: PropertyComputationResult =
-            InterimResult(InterimEUBP("c", Palindrome), dependees, _ => ???)
-        val rFactory: PropertyComputationResult =
-            InterimResult.forUB("c", Palindrome, dependees, _ => ???)
+        val dependees: Set[SomeEOptionP]        = Set(EPK(new Object, NilProperty.key))
+        val r: PropertyComputationResult        = InterimResult(InterimEUBP("c", Palindrome), dependees, _ => ???)
+        val rFactory: PropertyComputationResult = InterimResult.forUB("c", Palindrome, dependees, _ => ???)
         assert(r == rFactory)
     }
 
     test("two InterimResults for lower bounds are equal when property and dependency lists are equal") {
-        val dependees: Set[SomeEOptionP] = Set(EPK(new Object, NilProperty.key))
-        val r: PropertyComputationResult =
-            InterimResult(InterimELBP("c", Palindrome), dependees, _ => ???)
-        val rFactory: PropertyComputationResult =
-            InterimResult.forLB("c", Palindrome, dependees, _ => ???)
+        val dependees: Set[SomeEOptionP]        = Set(EPK(new Object, NilProperty.key))
+        val r: PropertyComputationResult        = InterimResult(InterimELBP("c", Palindrome), dependees, _ => ???)
+        val rFactory: PropertyComputationResult = InterimResult.forLB("c", Palindrome, dependees, _ => ???)
         assert(r == rFactory)
     }
 

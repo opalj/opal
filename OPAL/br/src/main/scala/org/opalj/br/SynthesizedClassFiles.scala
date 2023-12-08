@@ -22,20 +22,17 @@ package br
  * @author  Michael Eichberg
  */
 case class SynthesizedClassFiles(
-        classFiles: List[( /*generated*/ ClassFile, /*reason*/ Option[AnyRef])]
-) extends Attribute {
+        classFiles: List[(/*generated*/ ClassFile, /*reason*/ Option[AnyRef])]) extends Attribute {
 
     final override val kindId = SynthesizedClassFiles.KindId
 
     // TODO needs to be reconsidered when we serialize this attribute!
     override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = this == other
 
-    override def toString: String = {
-        classFiles.map { cfAndReason =>
-            val (cf, reason) = cfAndReason
-            cf.thisType.toJava + (reason.map(r => s"/*$r*/").getOrElse(""))
-        }.mkString("SynthesizedClassFiles(", ", ", ")")
-    }
+    override def toString: String = classFiles.map { cfAndReason =>
+        val (cf, reason) = cfAndReason
+        cf.thisType.toJava + (reason.map(r => s"/*$r*/").getOrElse(""))
+    }.mkString("SynthesizedClassFiles(", ", ", ")")
 }
 
 object SynthesizedClassFiles {

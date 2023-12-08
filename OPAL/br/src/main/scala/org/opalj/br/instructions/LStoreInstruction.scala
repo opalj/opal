@@ -22,5 +22,5 @@ object LStoreInstruction {
 
 trait ConstantIndexLStoreInstruction
     extends LStoreInstruction
-    with ImplicitLocalVariableIndex
-    with InstructionMetaInformation
+        with ImplicitLocalVariableIndex
+        with InstructionMetaInformation

@@ -28,12 +28,11 @@ trait RuntimeInvisibleParameterAnnotations_attributeReader extends AttributeRead
      * `RuntimeInvisibleParameterAnnotations_attribute`.
      */
     protected def RuntimeInvisibleParameterAnnotations_attribute(
-        cp:                    Constant_Pool,
-        ap_name_index:         Constant_Pool_Index,
-        ap_descriptor_index:   Constant_Pool_Index,
-        attribute_name_index:  Constant_Pool_Index,
-        parameter_annotations: ParametersAnnotations
-    ): RuntimeInvisibleParameterAnnotations_attribute
+        cp: Constant_Pool,
+        ap_name_index: Constant_Pool_Index,
+        ap_descriptor_index: Constant_Pool_Index,
+        attribute_name_index: Constant_Pool_Index,
+        parameter_annotations: ParametersAnnotations): RuntimeInvisibleParameterAnnotations_attribute
 
     //
     // IMPLEMENTATION
@@ -58,9 +57,9 @@ trait RuntimeInvisibleParameterAnnotations_attributeReader extends AttributeRead
         ap_name_index: Constant_Pool_Index,
         ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
-        in: DataInputStream
-    ) => {
-        /*val attribute_length = */ in.readInt()
+        in: DataInputStream) => {
+        /*val attribute_length = */
+        in.readInt()
         val parameter_annotations = ParametersAnnotations(cp, in)
         if (parameter_annotations.nonEmpty || reifyEmptyAttributes) {
             RuntimeInvisibleParameterAnnotations_attribute(

@@ -19,8 +19,7 @@ trait ParameterAnnotationTable extends Attribute {
 
 object ParameterAnnotationTable {
 
-    def unapply(paa: ParameterAnnotationTable): Option[(Boolean, ParameterAnnotations)] = {
+    def unapply(paa: ParameterAnnotationTable): Option[(Boolean, ParameterAnnotations)] =
         Some((paa.isRuntimeVisible, paa.parameterAnnotations))
-    }
 
 }

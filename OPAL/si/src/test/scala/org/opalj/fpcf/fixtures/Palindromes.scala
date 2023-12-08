@@ -14,8 +14,7 @@ object Palindromes {
         def fallback(
             ps:     PropertyStore,
             reason: FallbackReason,
-            e:      Entity
-        ): PalindromeProperty = reason match {
+            e:      Entity): PalindromeProperty = reason match {
             case PropertyIsNotComputedByAnyAnalysis               => NoAnalysisForPalindromeProperty
             case PropertyIsNotDerivedByPreviouslyExecutedAnalysis => PalindromePropertyNotAnalyzed
         }
@@ -26,9 +25,9 @@ object Palindromes {
         type Self = PalindromeProperty
         def key: PropertyKey[PalindromeProperty] = PalindromeKey
     }
-    case object Palindrome extends PalindromeProperty
-    case object NoPalindrome extends PalindromeProperty
-    case object PalindromePropertyNotAnalyzed extends PalindromeProperty
+    case object Palindrome                      extends PalindromeProperty
+    case object NoPalindrome                    extends PalindromeProperty
+    case object PalindromePropertyNotAnalyzed   extends PalindromeProperty
     case object NoAnalysisForPalindromeProperty extends PalindromeProperty
 
     /**
@@ -39,23 +38,20 @@ object Palindromes {
      * @note This definition is totally arbitrary and only used for testing purposes; it is
      *       not a general definition.
      */
-    final val SuperPalindromeKey = {
+    final val SuperPalindromeKey =
         PropertyKey.create[Entity, SuperPalindromeProperty]("SuperPalindrome", NoSuperPalindrome)
-    }
 
     sealed trait SuperPalindromeProperty extends Property {
         type Self = SuperPalindromeProperty
         def key: PropertyKey[SuperPalindromeProperty] = SuperPalindromeKey
     }
-    case object SuperPalindrome extends SuperPalindromeProperty
+    case object SuperPalindrome   extends SuperPalindromeProperty
     case object NoSuperPalindrome extends SuperPalindromeProperty
 
     /**
      * A collection of the first halfs of palindromes.
      */
-    final val PalindromeFragmentsKey = {
-        PropertyKey.create[String, PalindromeFragments]("PalindromeFragments")
-    }
+    final val PalindromeFragmentsKey = PropertyKey.create[String, PalindromeFragments]("PalindromeFragments")
 
     case class PalindromeFragments(fragments: Set[String]) extends Property {
         type Self = PalindromeFragments

@@ -4,17 +4,6 @@ package br
 package fpcf
 package analyses
 
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.FinalP
-import org.opalj.fpcf.InterimResult
-import org.opalj.fpcf.ProperPropertyComputationResult
-import org.opalj.fpcf.Property
-import org.opalj.fpcf.PropertyBounds
-import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.Result
-import org.opalj.fpcf.SomeEPS
-import org.opalj.fpcf.SomeInterimEP
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.CompileTimeConstancy
@@ -25,7 +14,18 @@ import org.opalj.br.fpcf.properties.immutability.FieldAssignability
 import org.opalj.br.fpcf.properties.immutability.LazilyInitialized
 import org.opalj.br.fpcf.properties.immutability.NonAssignable
 import org.opalj.br.fpcf.properties.immutability.UnsafelyLazilyInitialized
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.FinalP
+import org.opalj.fpcf.InterimResult
 import org.opalj.fpcf.LBP
+import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.Property
+import org.opalj.fpcf.PropertyBounds
+import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.Result
+import org.opalj.fpcf.SomeEPS
+import org.opalj.fpcf.SomeInterimEP
 import org.opalj.fpcf.UBP
 
 /**
@@ -35,7 +35,7 @@ import org.opalj.fpcf.UBP
  *
  * @author Dominik Helm
  */
-class L0CompileTimeConstancyAnalysis private[analyses] ( final val project: SomeProject)
+class L0CompileTimeConstancyAnalysis private[analyses] (final val project: SomeProject)
     extends FPCFAnalysis {
 
     /**
@@ -44,51 +44,42 @@ class L0CompileTimeConstancyAnalysis private[analyses] ( final val project: Some
      * This function encapsulates the continuation.
      */
     def determineConstancy(field: Field): ProperPropertyComputationResult = {
-        if (!field.isStatic || field.constantFieldValue.isEmpty)
-            return Result(field, CompileTimeVaryingField);
+        if (!field.isStatic || field.constantFieldValue.isEmpty) return Result(field, CompileTimeVaryingField);
 
-        if (field.isFinal)
-            return Result(field, CompileTimeConstantField);
+        if (field.isFinal) return Result(field, CompileTimeConstantField);
 
-        var dependee: EOptionP[Entity, Property] = {
-            propertyStore(field, FieldAssignability.key) match {
-                case LBP(NonAssignable | EffectivelyNonAssignable)      => return Result(field, CompileTimeConstantField);
-                case UBP(UnsafelyLazilyInitialized | LazilyInitialized) => return Result(field, CompileTimeVaryingField);
-                case ep                                                 => ep
-            }
+        var dependee: EOptionP[Entity, Property] = propertyStore(field, FieldAssignability.key) match {
+            case LBP(NonAssignable | EffectivelyNonAssignable)      => return Result(field, CompileTimeConstantField);
+            case UBP(UnsafelyLazilyInitialized | LazilyInitialized) => return Result(field, CompileTimeVaryingField);
+            case ep                                                 => ep
         }
 
         // This function updates the compile-time constancy of the field when the field's
         // mutability is updated
-        def c(eps: SomeEPS): ProperPropertyComputationResult = {
-            (eps: @unchecked) match {
-                case _: SomeInterimEP =>
-                    dependee = eps
-                    InterimResult(
-                        field,
-                        CompileTimeVaryingField,
-                        CompileTimeConstantField,
-                        Set(dependee),
-                        c
-                    )
+        def c(eps: SomeEPS): ProperPropertyComputationResult = (eps: @unchecked) match {
+            case _: SomeInterimEP =>
+                dependee = eps
+                InterimResult(
+                    field,
+                    CompileTimeVaryingField,
+                    CompileTimeConstantField,
+                    Set(dependee),
+                    c
+                )
 
-                case FinalP(NonAssignable) => Result(field, CompileTimeConstantField);
-                case FinalP(EffectivelyNonAssignable |
-                    UnsafelyLazilyInitialized |
-                    LazilyInitialized) => Result(field, CompileTimeVaryingField);
-            }
+            case FinalP(NonAssignable) => Result(field, CompileTimeConstantField);
+            case FinalP(EffectivelyNonAssignable |
+                UnsafelyLazilyInitialized |
+                LazilyInitialized) => Result(field, CompileTimeVaryingField);
         }
 
         InterimResult(field, CompileTimeVaryingField, CompileTimeConstantField, Set(dependee), c)
     }
 
     /** Called when the analysis is scheduled lazily. */
-    def doDetermineConstancy(e: Entity): ProperPropertyComputationResult = {
-        e match {
-            case f: Field => determineConstancy(f)
-            case _ =>
-                throw new UnknownError("compile-time constancy is only defined for fields")
-        }
+    def doDetermineConstancy(e: Entity): ProperPropertyComputationResult = e match {
+        case f: Field => determineConstancy(f)
+        case _        => throw new UnknownError("compile-time constancy is only defined for fields")
     }
 }
 
@@ -104,7 +95,7 @@ trait L0CompileTimeConstancyAnalysisScheduler extends FPCFAnalysisScheduler {
 
 object EagerL0CompileTimeConstancyAnalysis
     extends L0CompileTimeConstancyAnalysisScheduler
-    with BasicFPCFEagerAnalysisScheduler {
+        with BasicFPCFEagerAnalysisScheduler {
 
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 
@@ -119,7 +110,7 @@ object EagerL0CompileTimeConstancyAnalysis
 
 object LazyL0CompileTimeConstancyAnalysis
     extends L0CompileTimeConstancyAnalysisScheduler
-    with BasicFPCFLazyAnalysisScheduler {
+        with BasicFPCFLazyAnalysisScheduler {
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 

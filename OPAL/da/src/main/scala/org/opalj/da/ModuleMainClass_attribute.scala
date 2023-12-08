@@ -12,14 +12,12 @@ import scala.xml.Node
 case class ModuleMainClass_attribute(
         attribute_name_index: Constant_Pool_Index,
         main_class_index:     Constant_Pool_Index // CONSTANT_CLASS
-) extends Attribute {
+      ) extends Attribute {
 
     def attribute_length: Int = 2
 
-    override def toXHTML(implicit cp: Constant_Pool): Node = {
-        <div class="simple_attribute">
+    override def toXHTML(implicit cp: Constant_Pool): Node = <div class="simple_attribute">
             <span class="attribute_name">MainClass</span>
-            :&nbsp;{ cp(main_class_index).toString(cp) }
+            :&nbsp;{cp(main_class_index).toString(cp)}
         </div>
-    }
 }

@@ -57,11 +57,9 @@ case class HasAnnotation(annotationType: FieldType) extends AnnotationPredicate 
      */
     def apply(other: Annotation): Boolean = other.annotationType eq this.annotationType
 
-    override def apply(sourceElement: ConcreteSourceElement): Boolean = {
-        sourceElement.annotations.exists(this(_))
-    }
+    override def apply(sourceElement: ConcreteSourceElement): Boolean = sourceElement.annotations.exists(this(_))
 
-    override def toDescription(): String = "@"+annotationType.toJava
+    override def toDescription(): String = "@" + annotationType.toJava
 
 }
 /**
@@ -69,9 +67,7 @@ case class HasAnnotation(annotationType: FieldType) extends AnnotationPredicate 
  */
 object HasAnnotation {
 
-    def apply(annotationType: String): HasAnnotation = {
-        new HasAnnotation(ObjectType(annotationType.replace('.', '/')))
-    }
+    def apply(annotationType: String): HasAnnotation = new HasAnnotation(ObjectType(annotationType.replace('.', '/')))
 }
 
 /**
@@ -104,8 +100,7 @@ object HasAnnotation {
  */
 case class AnnotatedWith(
         annotationType:    FieldType,
-        elementValuePairs: Seq[ElementValuePair]
-)
+        elementValuePairs: Seq[ElementValuePair])
     extends AnnotationPredicate {
 
     /**
@@ -126,25 +121,18 @@ case class AnnotatedWith(
      *      But it will not match if one or both of the two [[org.opalj.br.ElementValuePair]]s are missing or there is
      *      another [[org.opalj.br.ElementValuePair]] not defined by this predicate.
      */
-    override def apply(that: Annotation): Boolean = {
-        (that.annotationType eq this.annotationType) && {
-            val thisEVPs = this.elementValuePairs
-            val thatEVPs = that.elementValuePairs
+    override def apply(that: Annotation): Boolean = (that.annotationType eq this.annotationType) && {
+        val thisEVPs = this.elementValuePairs
+        val thatEVPs = that.elementValuePairs
 
-            thatEVPs.size == thisEVPs.size &&
-                thisEVPs.forall(thisEVP => thatEVPs.exists(_ == thisEVP))
-        }
+        thatEVPs.size == thisEVPs.size &&
+        thisEVPs.forall(thisEVP => thatEVPs.exists(_ == thisEVP))
     }
 
-    override def apply(sourceElement: ConcreteSourceElement): Boolean = {
-        sourceElement.annotations.exists(this(_))
-    }
+    override def apply(sourceElement: ConcreteSourceElement): Boolean = sourceElement.annotations.exists(this(_))
 
-    override def toDescription(): String = {
-        elementValuePairs.
-            map(_.toJava).
-            mkString("@"+annotationType.toJava+"(", ",", ")")
-    }
+    override def toDescription(): String =
+        elementValuePairs.map(_.toJava).mkString("@" + annotationType.toJava + "(", ",", ")")
 
 }
 
@@ -164,15 +152,12 @@ object AnnotatedWith {
      */
     def apply(
         annotationType:    SomeClass,
-        elementValuePairs: ElementValuePairs
-    ): AnnotatedWith = {
+        elementValuePairs: ElementValuePairs): AnnotatedWith =
         new AnnotatedWith(Type(annotationType).asFieldType, elementValuePairs)
-    }
 
     def apply(
         annotationTypeName: BinaryString,
-        elementValuePairs:  ElementValuePairs
-    ): AnnotatedWith = {
+        elementValuePairs:  ElementValuePairs): AnnotatedWith = {
 
         val annotationType = ObjectType(annotationTypeName.asString)
         new AnnotatedWith(annotationType, elementValuePairs)
@@ -180,20 +165,14 @@ object AnnotatedWith {
 
     def apply(
         annotationTypeName: BinaryString,
-        elementValuePairs:  Map[String, ElementValue]
-    ): AnnotatedWith = {
-        new AnnotatedWith(
-            ObjectType(annotationTypeName.asString),
-            elementValuePairs.map(kv => ElementValuePair(kv._1, kv._2)).toSeq
-        )
-    }
+        elementValuePairs:  Map[String, ElementValue]): AnnotatedWith = new AnnotatedWith(
+        ObjectType(annotationTypeName.asString),
+        elementValuePairs.map(kv => ElementValuePair(kv._1, kv._2)).toSeq
+    )
     def apply(
         annotationTypeName: BinaryString,
-        elementValuePairs:  (String, ElementValue)*
-    ): AnnotatedWith = {
-        new AnnotatedWith(
-            ObjectType(annotationTypeName.asString),
-            elementValuePairs.map(kv => ElementValuePair(kv._1, kv._2)).toSeq
-        )
-    }
+        elementValuePairs:  (String, ElementValue)*): AnnotatedWith = new AnnotatedWith(
+        ObjectType(annotationTypeName.asString),
+        elementValuePairs.map(kv => ElementValuePair(kv._1, kv._2)).toSeq
+    )
 }

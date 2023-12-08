@@ -18,17 +18,15 @@ import org.opalj.hermes.queries.util.StaticAPIMethod
 class JDBCAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery {
 
     override val apiFeatures: List[APIFeature] = {
-        val DriverManager = ObjectType("java/sql/DriverManager")
-        val Connection = ObjectType("java/sql/Connection")
-        val Statement = ObjectType("java/sql/Statement")
+        val DriverManager     = ObjectType("java/sql/DriverManager")
+        val Connection        = ObjectType("java/sql/Connection")
+        val Statement         = ObjectType("java/sql/Statement")
         val PreparedStatement = ObjectType("java/sql/PreparedStatement")
         val CallableStatement = ObjectType("java/sql/CallableStatement")
 
         List(
-
             StaticAPIMethod(DriverManager, "getConnection"),
             InstanceAPIMethod(Connection, "rollback"),
-
             APIFeatureGroup(
                 List(
                     InstanceAPIMethod(Connection, "createStatement"),
@@ -38,7 +36,6 @@ class JDBCAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery {
                 ),
                 "creation and execution of\njava.sql.Statement"
             ),
-
             APIFeatureGroup(
                 List(
                     InstanceAPIMethod(Connection, "prepareStatement"),
@@ -48,7 +45,6 @@ class JDBCAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery {
                 ),
                 "creation and execution of\njava.sql.PreparedStatement"
             ),
-
             APIFeatureGroup(
                 List(
                     InstanceAPIMethod(Connection, "prepareCall"),

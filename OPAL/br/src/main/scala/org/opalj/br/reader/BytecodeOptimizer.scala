@@ -6,39 +6,39 @@ package reader
 import scala.annotation.switch
 import scala.annotation.tailrec
 
-import net.ceedubs.ficus.Ficus._
-
-import org.opalj.collection.immutable.IntTrieSet1
-import org.opalj.log.OPALLogger.info
-import org.opalj.br.instructions.Instruction
-import org.opalj.br.instructions.GotoInstruction
 import org.opalj.br.instructions.GOTO
 import org.opalj.br.instructions.GOTO_W
-import org.opalj.br.instructions.WIDE
+import org.opalj.br.instructions.GotoInstruction
+import org.opalj.br.instructions.IF_ACMPEQ
+import org.opalj.br.instructions.IF_ACMPNE
+import org.opalj.br.instructions.IF_ICMPEQ
+import org.opalj.br.instructions.IF_ICMPGE
+import org.opalj.br.instructions.IF_ICMPGT
+import org.opalj.br.instructions.IF_ICMPLE
+import org.opalj.br.instructions.IF_ICMPLT
+import org.opalj.br.instructions.IF_ICMPNE
+import org.opalj.br.instructions.IFEQ
+import org.opalj.br.instructions.IFGE
+import org.opalj.br.instructions.IFGT
+import org.opalj.br.instructions.IFLE
+import org.opalj.br.instructions.IFLT
+import org.opalj.br.instructions.IFNE
+import org.opalj.br.instructions.IFNONNULL
+import org.opalj.br.instructions.IFNULL
+import org.opalj.br.instructions.Instruction
+import org.opalj.br.instructions.JSR
+import org.opalj.br.instructions.JSR_W
+import org.opalj.br.instructions.JSRInstruction
+import org.opalj.br.instructions.LOOKUPSWITCH
 import org.opalj.br.instructions.NOP
 import org.opalj.br.instructions.POP
 import org.opalj.br.instructions.POP2
 import org.opalj.br.instructions.TABLESWITCH
-import org.opalj.br.instructions.LOOKUPSWITCH
-import org.opalj.br.instructions.IF_ACMPNE
-import org.opalj.br.instructions.IF_ACMPEQ
-import org.opalj.br.instructions.IFNE
-import org.opalj.br.instructions.IFEQ
-import org.opalj.br.instructions.IFLT
-import org.opalj.br.instructions.IFGT
-import org.opalj.br.instructions.IFGE
-import org.opalj.br.instructions.IFLE
-import org.opalj.br.instructions.IF_ICMPNE
-import org.opalj.br.instructions.IF_ICMPEQ
-import org.opalj.br.instructions.IF_ICMPLT
-import org.opalj.br.instructions.IF_ICMPGT
-import org.opalj.br.instructions.IF_ICMPGE
-import org.opalj.br.instructions.IF_ICMPLE
-import org.opalj.br.instructions.IFNONNULL
-import org.opalj.br.instructions.IFNULL
-import org.opalj.br.instructions.JSRInstruction
-import org.opalj.br.instructions.JSR
-import org.opalj.br.instructions.JSR_W
+import org.opalj.br.instructions.WIDE
+import org.opalj.collection.immutable.IntTrieSet1
+import org.opalj.log.OPALLogger.info
+
+import net.ceedubs.ficus.Ficus._
 
 /**
  * Performs some very basic, in-place control-flow simplifications to make the code more regular.
@@ -73,7 +73,7 @@ trait BytecodeOptimizer extends MethodsBinding {
     this: ClassFileBinding with ConstantPoolBinding with AttributeBinding =>
 
     final val PerformControlFlowSimplifications: Boolean = {
-        val key = BytecodeOptimizer.SimplifyControlFlowKey
+        val key                          = BytecodeOptimizer.SimplifyControlFlowKey
         val simplifyControlFlow: Boolean = config.as[Option[Boolean]](key).getOrElse(true)
         if (simplifyControlFlow) {
             info("class file reader", "the control-flow is simplified")
@@ -84,7 +84,7 @@ trait BytecodeOptimizer extends MethodsBinding {
     }
 
     final val LogControlFlowSimplifications: Boolean = {
-        val key = BytecodeOptimizer.LogControlFlowSimplificationKey
+        val key                                   = BytecodeOptimizer.LogControlFlowSimplificationKey
         val logControlFlowSimplification: Boolean = config.as[Option[Boolean]](key).getOrElse(false)
         if (logControlFlowSimplification) {
             info("class file reader", "control flow simplifications are logged")
@@ -99,8 +99,7 @@ trait BytecodeOptimizer extends MethodsBinding {
         accessFlags:      Int,
         name_index:       Int,
         descriptor_index: Int,
-        attributes:       Attributes
-    ): Method_Info = {
+        attributes:       Attributes): Method_Info = {
         attributes collectFirst { case c: Code => c } foreach { code =>
             val isSimplified = optimizeInstructions(code.exceptionHandlers, code.instructions)
             if (isSimplified) {
@@ -115,18 +114,15 @@ trait BytecodeOptimizer extends MethodsBinding {
 
     def optimizeInstructions(
         exceptionsHandlers: ExceptionHandlers,
-        instructions:       Array[Instruction]
-    ): Boolean = {
+        instructions:       Array[Instruction]): Boolean = {
         var simplified: Boolean = false
 
-        if (!PerformControlFlowSimplifications)
-            return simplified;
+        if (!PerformControlFlowSimplifications) return simplified;
 
         // This is the set of instructions which are effectively jumped to by if, switch, goto, and
         // jsr/ret instructions and exception handlers.
         // It contains those instructions which are definitive jump targets AFTER simplification.
-        var jumpTargetInstructions =
-            exceptionsHandlers.foldLeft(NoPCs) { (c, eh) => c + eh.handlerPC }
+        var jumpTargetInstructions = exceptionsHandlers.foldLeft(NoPCs) { (c, eh) => c + eh.handlerPC }
 
         // CONFUSED IF
         // A "confused if" is an if statement where the next instruction
@@ -159,28 +155,24 @@ trait BytecodeOptimizer extends MethodsBinding {
         @tailrec def finalJumpTarget(
             visitedPCs:            PCs, // required to detect jump cycles... yes they exist!
             currentPC:             PC,
-            effectiveBranchoffset: Int
-        ): Int = {
-            instructions(currentPC) match {
-                case GotoInstruction(branchoffset) =>
-                    val nextPC = currentPC + branchoffset
-                    if (!visitedPCs.contains(nextPC)) {
-                        val nextBranchoffset = effectiveBranchoffset + branchoffset
-                        finalJumpTarget(visitedPCs + nextPC, nextPC, nextBranchoffset)
-                    } else {
-                        effectiveBranchoffset
-                    }
-
-                case _ =>
+            effectiveBranchoffset: Int): Int = instructions(currentPC) match {
+            case GotoInstruction(branchoffset) =>
+                val nextPC = currentPC + branchoffset
+                if (!visitedPCs.contains(nextPC)) {
+                    val nextBranchoffset = effectiveBranchoffset + branchoffset
+                    finalJumpTarget(visitedPCs + nextPC, nextPC, nextBranchoffset)
+                } else {
                     effectiveBranchoffset
-            }
+                }
+
+            case _ => effectiveBranchoffset
         }
 
         val max = instructions.length
-        var pc = 0
+        var pc  = 0
         while (pc < max) {
             var modifiedByWide = false
-            var instruction = instructions(pc)
+            var instruction    = instructions(pc)
             if (instruction.opcode == WIDE.opcode) {
                 modifiedByWide = true
                 pc += 1 // <= WIDE.length
@@ -197,33 +189,28 @@ trait BytecodeOptimizer extends MethodsBinding {
                     IF_ICMPLT.opcode | IF_ICMPGT.opcode | IF_ICMPGE.opcode | IF_ICMPLE.opcode |
                     IFNONNULL.opcode | IFNULL.opcode =>
                     val ifInstruction = instruction.asSimpleConditionalBranchInstruction
-                    val branchoffset = ifInstruction.branchoffset
-                    val jumpTargetPC = pc + branchoffset
+                    val branchoffset  = ifInstruction.branchoffset
+                    val jumpTargetPC  = pc + branchoffset
                     if (jumpTargetPC == nextPC) {
                         instructions(pc) =
-                            if (ifInstruction.numberOfPoppedOperands(NotRequired) == 1)
-                                POP
-                            else
-                                POP2
+                            if (ifInstruction.numberOfPoppedOperands(NotRequired) == 1) POP
+                            else POP2
                         instructions(pc + 1) = NOP
                         instructions(pc + 2) = NOP
                         simplified = true
                         // TODO log the removal of the totally USELESS IF instruction
                     } else {
                         val jumpTargetInstruction = instructions(jumpTargetPC)
-                        val nextInstruction = instructions(nextPC)
+                        val nextInstruction       = instructions(nextPC)
                         if (nextInstruction.isGotoInstruction && branchoffset == 6) {
-                            val nextGotoInstructionBranchoffset =
-                                nextInstruction.asGotoInstruction.branchoffset
+                            val nextGotoInstructionBranchoffset = nextInstruction.asGotoInstruction.branchoffset
                             if (nextGotoInstructionBranchoffset == 3) {
                                 // we have an if that - even when it falls through – indirectly
                                 // just jumps to the overnext instruction; hence, we can
                                 // "nop" both instructions right away...
                                 instructions(pc + 0) =
-                                    if (ifInstruction.numberOfPoppedOperands(NotRequired) == 1)
-                                        POP
-                                    else
-                                        POP2
+                                    if (ifInstruction.numberOfPoppedOperands(NotRequired) == 1) POP
+                                    else POP2
                                 instructions(pc + 1) = NOP
                                 instructions(pc + 2) = NOP
                                 instructions(pc + 3) = NOP
@@ -237,7 +224,7 @@ trait BytecodeOptimizer extends MethodsBinding {
                                 confusedIfs += pc
                             }
                         } else if (jumpTargetInstruction.isGotoInstruction) {
-                            val nextGoto = jumpTargetInstruction.asGotoInstruction
+                            val nextGoto        = jumpTargetInstruction.asGotoInstruction
                             val newBranchoffset = nextGoto.branchoffset + branchoffset
                             if (newBranchoffset >= Short.MinValue && newBranchoffset <= Short.MaxValue) {
                                 // Let's use the goto target as the if's target
@@ -251,7 +238,7 @@ trait BytecodeOptimizer extends MethodsBinding {
 
                 case GOTO.opcode =>
                     val GOTO(branchoffset) = instruction
-                    val jumpTargetPC = pc + branchoffset
+                    val jumpTargetPC       = pc + branchoffset
                     if (jumpTargetPC == nextPC) {
                         // let's replace the original jump
                         instructions(pc) = NOP
@@ -274,7 +261,7 @@ trait BytecodeOptimizer extends MethodsBinding {
 
                 case GOTO_W.opcode =>
                     val GOTO_W(branchoffset) = instruction
-                    val jumpTargetPC = pc + branchoffset
+                    val jumpTargetPC         = pc + branchoffset
                     if (jumpTargetPC == nextPC) {
                         // let's replace the original jump
                         instructions(pc) = NOP
@@ -305,12 +292,12 @@ trait BytecodeOptimizer extends MethodsBinding {
 
                 case TABLESWITCH.opcode | LOOKUPSWITCH.opcode =>
                     val switchInstruction = instruction.asCompoundConditionalBranchInstruction
-                    val defaultOffset = switchInstruction.defaultOffset
+                    val defaultOffset     = switchInstruction.defaultOffset
                     if (switchInstruction.jumpOffsets.forall(_ == defaultOffset)) {
                         var i = pc + 1
                         instructions(pc) = POP
-                        var newNextPC = -1
-                        val jumpTargetPC = pc + defaultOffset
+                        var newNextPC             = -1
+                        val jumpTargetPC          = pc + defaultOffset
                         val jumpTargetInstruction = instructions(jumpTargetPC)
                         if (jumpTargetPC == nextPC) {
                             // totally useless..
@@ -326,10 +313,9 @@ trait BytecodeOptimizer extends MethodsBinding {
                             if (jumpTargetInstruction.isGotoInstruction) {
                                 // actually... a kind of chain of gotos...
                                 val nextGoto = jumpTargetInstruction.asGotoInstruction
-                                val newBranchoffset =
-                                    nextGoto.branchoffset +
-                                        // defaultOffset corrected by the relocation of the goto
-                                        defaultOffset - ((nextPC - 3) - pc)
+                                val newBranchoffset = nextGoto.branchoffset +
+                                    // defaultOffset corrected by the relocation of the goto
+                                    defaultOffset - ((nextPC - 3) - pc)
                                 if (newBranchoffset >= Short.MinValue &&
                                     newBranchoffset <= Short.MaxValue) {
                                     newNextPC = nextPC - 3
@@ -405,7 +391,7 @@ trait BytecodeOptimizer extends MethodsBinding {
 
         totallyConfusedIfs.filter { cIfPC =>
             !jumpTargetInstructions.contains(cIfPC + 3) &&
-                !jumpTargetInstructions.contains(cIfPC + 6)
+            !jumpTargetInstructions.contains(cIfPC + 6)
         }.foreach { cIfPC =>
             // EXAMPLE:
             //
@@ -423,11 +409,11 @@ trait BytecodeOptimizer extends MethodsBinding {
             //      pc=347: IF_ICMPNE(6),GOTO(-79),GOTO(179)
             // =>   pc=347: IF_ICMPEQ(3-79), NOP*3, GOTO(179)
 
-            val ifInstruction = instructions(cIfPC).asSimpleConditionalBranchInstruction
-            val nextInstruction = instructions(cIfPC + 3)
+            val ifInstruction         = instructions(cIfPC).asSimpleConditionalBranchInstruction
+            val nextInstruction       = instructions(cIfPC + 3)
             val jumpTargetInstruction = instructions(cIfPC + 6)
             if (nextInstruction.isGotoInstruction && jumpTargetInstruction.isGotoInstruction) {
-                val firstGotoInstruction = nextInstruction.asGotoInstruction
+                val firstGotoInstruction  = nextInstruction.asGotoInstruction
                 val secondGotoInstruction = jumpTargetInstruction.asGotoInstruction
 
                 if (firstGotoInstruction.branchoffset == 6) {
@@ -444,7 +430,7 @@ trait BytecodeOptimizer extends MethodsBinding {
                     }
                 } else {
                     // 1. determine which jump target has a lower pc
-                    val firstAdjustedBranchoffset = firstGotoInstruction.branchoffset + 3
+                    val firstAdjustedBranchoffset  = firstGotoInstruction.branchoffset + 3
                     val secondAdjustedBranchoffset = secondGotoInstruction.branchoffset + 6
                     if (firstAdjustedBranchoffset < secondAdjustedBranchoffset) {
                         // ... CASE II
@@ -459,7 +445,7 @@ trait BytecodeOptimizer extends MethodsBinding {
 
                     } else {
                         // ... CASE I
-                        val newIfBranchoffset = secondAdjustedBranchoffset
+                        val newIfBranchoffset   = secondAdjustedBranchoffset
                         val newGotoBranchoffset = firstAdjustedBranchoffset - 6
                         if (newIfBranchoffset >= Short.MinValue &&
                             newIfBranchoffset <= Short.MaxValue &&
@@ -484,13 +470,9 @@ trait BytecodeOptimizer extends MethodsBinding {
 
 object BytecodeOptimizer {
 
-    final val BytecodeOptimizerConfigKeyPrefix = {
-        ClassFileReaderConfiguration.ConfigKeyPrefix+"BytecodeOptimizer."
-    }
+    final val BytecodeOptimizerConfigKeyPrefix = ClassFileReaderConfiguration.ConfigKeyPrefix + "BytecodeOptimizer."
 
-    final val SimplifyControlFlowKey = BytecodeOptimizerConfigKeyPrefix+"simplifyControlFlow"
+    final val SimplifyControlFlowKey = BytecodeOptimizerConfigKeyPrefix + "simplifyControlFlow"
 
-    final val LogControlFlowSimplificationKey = {
-        BytecodeOptimizerConfigKeyPrefix+"logControlFlowSimplification"
-    }
+    final val LogControlFlowSimplificationKey = BytecodeOptimizerConfigKeyPrefix + "logControlFlowSimplification"
 }

@@ -6,8 +6,8 @@ package tools
 import java.io.File
 
 import org.opalj.br.ClassFile
-import org.opalj.br.ObjectType
 import org.opalj.br.ClassHierarchy
+import org.opalj.br.ObjectType
 import org.opalj.log.GlobalLogContext
 
 /**
@@ -21,21 +21,17 @@ object ClassHierarchyExtractor {
 
     def deriveSpecification(
         types: Iterable[ObjectType]
-    )(
-        implicit
-        classHierarchy: ClassHierarchy
-    ): String = {
+      )(implicit
+        classHierarchy: ClassHierarchy): String = {
         val specLines = types.map { aType =>
             var specLine =
                 (
-                    if (classHierarchy.isInterface(aType).isYes)
-                        "interface "
-                    else
-                        "class "
+                    if (classHierarchy.isInterface(aType).isYes) "interface "
+                    else "class "
                 ) + aType.fqn
             val superclassType = classHierarchy.superclassType(aType)
             if (superclassType.isDefined) {
-                specLine += " extends "+superclassType.get.fqn
+                specLine += " extends " + superclassType.get.fqn
                 val superinterfaceTypes = classHierarchy.superinterfaceTypes(aType)
                 if (superinterfaceTypes.isDefined && superinterfaceTypes.get.nonEmpty) {
                     specLine += superinterfaceTypes.get.map(_.fqn).mkString(" implements ", ", ", "")
@@ -60,7 +56,7 @@ object ClassHierarchyExtractor {
         }
 
         val supertypeName = args(0).replace('.', '/')
-        val filterPrefix = args(1).replace('.', '/')
+        val filterPrefix  = args(1).replace('.', '/')
 
         val classFiles = args.foldLeft(Nil: List[ClassFile]) { (classFiles, filename) =>
             classFiles ++ ClassFiles(new File(filename)).iterator.map(_._1)
@@ -81,15 +77,14 @@ object ClassHierarchyExtractor {
         }
 
         println(
-            "# Class hierarchy for: "+
-                supertypeName+
-                " limited to subclasses that start with: "+
-                "\""+filterPrefix+"\""
+            "# Class hierarchy for: " +
+                supertypeName +
+                " limited to subclasses that start with: " +
+                "\"" + filterPrefix + "\""
         )
-        val allRelevantSubtypes =
-            classHierarchy.allSubtypes(supertype, true).filter { candidateType =>
-                candidateType.fqn.startsWith(filterPrefix)
-            }
+        val allRelevantSubtypes = classHierarchy.allSubtypes(supertype, true).filter { candidateType =>
+            candidateType.fqn.startsWith(filterPrefix)
+        }
         val spec = deriveSpecification(allRelevantSubtypes)
         println(spec)
     }

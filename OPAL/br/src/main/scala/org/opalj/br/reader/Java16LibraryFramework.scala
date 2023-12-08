@@ -12,7 +12,7 @@ package reader
  */
 trait Java16LibraryFramework
     extends Java11LibraryFramework
-    with Record_attributeBinding
+        with Record_attributeBinding
 
 object Java16LibraryFramework extends Java16LibraryFramework {
 

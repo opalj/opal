@@ -3,11 +3,12 @@ package org.opalj
 package bi
 package reader
 
-import java.io.DataInputStream
-import org.opalj.control.fillArraySeq
-
-import scala.collection.immutable.ArraySeq
 import scala.reflect.ClassTag
+
+import java.io.DataInputStream
+import scala.collection.immutable.ArraySeq
+
+import org.opalj.control.fillArraySeq
 
 /**
  * A generic reader for Java 8's `MethodParameters` attribute.
@@ -25,18 +26,16 @@ trait MethodParameters_attributeReader extends AttributeReader {
     type MethodParameters = ArraySeq[MethodParameter]
 
     def MethodParameters_attribute(
-        cp:                   Constant_Pool,
-        ap_name_index:        Constant_Pool_Index,
-        ap_descriptor_index:  Constant_Pool_Index,
+        cp: Constant_Pool,
+        ap_name_index: Constant_Pool_Index,
+        ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
-        parameters:           MethodParameters
-    ): MethodParameters_attribute
+        parameters: MethodParameters): MethodParameters_attribute
 
     def MethodParameter(
         constant_pool: Constant_Pool,
-        name_index:    Constant_Pool_Index,
-        access_flags:  Int
-    ): MethodParameter
+        name_index: Constant_Pool_Index,
+        access_flags: Int): MethodParameter
 
     //
     // IMPLEMENTATION
@@ -60,9 +59,9 @@ trait MethodParameters_attributeReader extends AttributeReader {
         ap_name_index: Constant_Pool_Index,
         ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
-        in: DataInputStream
-    ) => {
-        /*val attribute_length =*/ in.readInt()
+        in: DataInputStream) => {
+        /*val attribute_length =*/
+        in.readInt()
         val parameters_count = in.readUnsignedByte
         if (parameters_count > 0 || reifyEmptyAttributes) {
             MethodParameters_attribute(

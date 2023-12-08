@@ -45,8 +45,8 @@ object TypeImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
     override def description: String = "identifies transitively immutable types"
 
     override def doAnalyze(
-        project:       Project[URL],
-        parameters:    Seq[String],
+        project: Project[URL],
+        parameters: Seq[String],
         isInterrupted: () => Boolean
     ): BasicReport = {
         val result = analyze(project)
@@ -81,14 +81,13 @@ object TypeImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
 
             propertyStore.waitOnPhaseCompletion();
 
-        } { t =>
-            analysisTime = t.toSeconds
-        }
+        } { t => analysisTime = t.toSeconds }
 
         val allProjectClassTypes = project.allProjectClassFiles.map(_.thisType).toSet
 
-        val groupedResults = propertyStore.entities(TypeImmutability.key).
-            filter(x => allProjectClassTypes.contains(x.asInstanceOf[ObjectType])).iterator.to(Iterable).groupBy(_.e)
+        val groupedResults = propertyStore.entities(TypeImmutability.key).filter(x =>
+            allProjectClassTypes.contains(x.asInstanceOf[ObjectType])
+        ).iterator.to(Iterable).groupBy(_.e)
 
         val order = (eps1: EPS[Entity, TypeImmutability], eps2: EPS[Entity, TypeImmutability]) =>
             eps1.e.toString < eps2.e.toString
@@ -109,9 +108,9 @@ object TypeImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
            | Transitively Immutable Types: ${transitivelyImmutableTypes.size}
            |
            | total fields: ${
-            mutableTypes.size + nonTransitivelyImmutableTypes.size + dependentlyImmutableTypes.size +
-                transitivelyImmutableTypes.size
-        }
+                mutableTypes.size + nonTransitivelyImmutableTypes.size + dependentlyImmutableTypes.size +
+                    transitivelyImmutableTypes.size
+            }
            | took : $analysisTime seconds
            |""".stripMargin
     }

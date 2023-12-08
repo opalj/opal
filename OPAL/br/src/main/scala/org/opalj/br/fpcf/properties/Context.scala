@@ -6,13 +6,13 @@ package properties
 
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantReadWriteLock
+import scala.collection.mutable
+
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
-
-import scala.collection.mutable
 
 /**
  * Provides the context in which a method was invoked or an object was allocated.
@@ -30,10 +30,9 @@ trait Context {
 }
 
 object Context {
-    def unapply(context: Context): Option[DeclaredMethod] = {
+    def unapply(context: Context): Option[DeclaredMethod] =
         if (context.hasContext) Some(context.method)
         else None
-    }
 }
 
 /**
@@ -56,12 +55,9 @@ case class SimpleContext private[properties] (method: DeclaredMethod) extends Co
 
 object SimpleContextsKey extends ProjectInformationKey[SimpleContexts, Nothing] {
 
-    override def requirements(project: SomeProject): ProjectInformationKeys =
-        Seq(DeclaredMethodsKey)
+    override def requirements(project: SomeProject): ProjectInformationKeys = Seq(DeclaredMethodsKey)
 
-    override def compute(p: SomeProject): SimpleContexts = {
-        new SimpleContexts(p.get(DeclaredMethodsKey))
-    }
+    override def compute(p: SomeProject): SimpleContexts = new SimpleContexts(p.get(DeclaredMethodsKey))
 
 }
 
@@ -98,7 +94,8 @@ class SimpleContexts private[properties] (declaredMethods: DeclaredMethods) {
                 } else {
                     val newContext = SimpleContext(method)
                     val newMap = java.util.Arrays.copyOf(
-                        id2Context, Math.max(declaredMethods._UNSAFE_size, id + 1)
+                        id2Context,
+                        Math.max(declaredMethods._UNSAFE_size, id + 1)
                     )
                     newMap(id) = newContext
                     id2Context = newMap
@@ -113,42 +110,33 @@ class SimpleContexts private[properties] (declaredMethods: DeclaredMethods) {
  * A context that includes a call string
  */
 class CallStringContext private[properties] (
-        val id:         Int,
-        val method:     DeclaredMethod,
-        val callString: List[(DeclaredMethod, Int)]
-) extends Context {
-    override def toString: String = {
-        s"CallStringContext($method, $callString)"
-    }
+        val id:     Int,
+        val method: DeclaredMethod,
+        val callString: List[(DeclaredMethod, Int)]) extends Context {
+    override def toString: String = s"CallStringContext($method, $callString)"
 }
 
 object CallStringContextsKey extends ProjectInformationKey[CallStringContexts, Nothing] {
 
-    override def requirements(project: SomeProject): ProjectInformationKeys =
-        Seq(DeclaredMethodsKey)
+    override def requirements(project: SomeProject): ProjectInformationKeys = Seq(DeclaredMethodsKey)
 
-    override def compute(p: SomeProject): CallStringContexts = {
-        new CallStringContexts()
-    }
+    override def compute(p: SomeProject): CallStringContexts = new CallStringContexts()
 
 }
 
 class CallStringContexts {
 
     @volatile private var id2Context = new Array[CallStringContext](32768)
-    private val context2id = new mutable.HashMap[(DeclaredMethod, List[(DeclaredMethod, Int)]), CallStringContext]()
+    private val context2id           = new mutable.HashMap[(DeclaredMethod, List[(DeclaredMethod, Int)]), CallStringContext]()
 
     private val nextId = new AtomicInteger(1)
     private val rwLock = new ReentrantReadWriteLock()
 
-    def apply(id: Int): CallStringContext = {
-        id2Context(id)
-    }
+    def apply(id: Int): CallStringContext = id2Context(id)
 
     def apply(
         method:     DeclaredMethod,
-        callString: List[(DeclaredMethod, Int)]
-    ): CallStringContext = {
+        callString: List[(DeclaredMethod, Int)]): CallStringContext = {
         val key = (method, callString)
 
         val readLock = rwLock.readLock()

@@ -7,8 +7,6 @@ import java.io.FileFilter
 
 object JARsFileFilter extends FileFilter {
 
-    def accept(path: File): Boolean = {
-        path.isFile && path.getName.endsWith(".jar") && path.canRead
-    }
+    def accept(path: File): Boolean = path.isFile && path.getName.endsWith(".jar") && path.canRead
 
 }

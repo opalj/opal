@@ -42,12 +42,10 @@ object FieldAssignability extends FieldAssignabilityPropertyMetaInformation {
 
     final val PropertyKeyName = "opalj.FieldAssignability"
 
-    final val key: PropertyKey[FieldAssignability] = {
-        PropertyKey.create(
-            PropertyKeyName,
-            Assignable
-        )
-    }
+    final val key: PropertyKey[FieldAssignability] = PropertyKey.create(
+        PropertyKeyName,
+        Assignable
+    )
 }
 
 sealed trait NonAssignableField extends FieldAssignability
@@ -66,9 +64,8 @@ case object EffectivelyNonAssignable extends NonAssignableField {
     override def isImmutable = true
 
     override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = other match {
-        case NonAssignable =>
-            throw new IllegalArgumentException(s"$e: impossible refinement: $other => $this");
-        case _ =>
+        case NonAssignable => throw new IllegalArgumentException(s"$e: impossible refinement: $other => $this");
+        case _             =>
     }
 
     def meet(other: FieldAssignability): FieldAssignability =
@@ -97,20 +94,17 @@ case object LazilyInitialized extends NonAssignableField {
 
 case object UnsafelyLazilyInitialized extends FieldAssignability {
 
-    def meet(other: FieldAssignability): FieldAssignability = {
+    def meet(other: FieldAssignability): FieldAssignability =
         if (other == Assignable) {
             other
         } else {
             this
         }
-    }
 
-    override def checkIsEqualOrBetterThan(e: Entity, other: FieldAssignability): Unit = {
-        other match {
-            case NonAssignable | EffectivelyNonAssignable | LazilyInitialized =>
-                throw new IllegalArgumentException(s"$e: impossible refinement: $other => $this");
-            case _ =>
-        }
+    override def checkIsEqualOrBetterThan(e: Entity, other: FieldAssignability): Unit = other match {
+        case NonAssignable | EffectivelyNonAssignable | LazilyInitialized =>
+            throw new IllegalArgumentException(s"$e: impossible refinement: $other => $this");
+        case _ =>
     }
 }
 
@@ -118,9 +112,7 @@ case object Assignable extends FieldAssignability {
 
     def meet(other: FieldAssignability): FieldAssignability = this
 
-    override def checkIsEqualOrBetterThan(e: Entity, other: FieldAssignability): Unit = {
-        if (other != Assignable) {
-            throw new IllegalArgumentException(s"$e: impossible refinement: $other => $this")
-        }
+    override def checkIsEqualOrBetterThan(e: Entity, other: FieldAssignability): Unit = if (other != Assignable) {
+        throw new IllegalArgumentException(s"$e: impossible refinement: $other => $this")
     }
 }

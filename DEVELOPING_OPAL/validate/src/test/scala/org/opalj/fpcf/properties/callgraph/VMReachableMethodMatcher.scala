@@ -19,8 +19,7 @@ class VMReachableMethodMatcher extends AbstractPropertyMatcher {
         as:         Set[ObjectType],
         entity:     Any,
         a:          AnnotationLike,
-        properties: Iterable[Property]
-    ): Option[String] = {
+        properties: Iterable[Property]): Option[String] = {
         val annotationType = a.annotationType.asObjectType
 
         // Get call graph analyses for which this annotation applies.
@@ -31,14 +30,11 @@ class VMReachableMethodMatcher extends AbstractPropertyMatcher {
         // If none of the annotated analyses match the executed ones, return...
         // If the list of specified analyses is empty, we assume the annotation applies to all
         // call graph algorithms, so we don't exit early.
-        if (analyses.nonEmpty && !analyses.exists(as.contains))
-            return None
+        if (analyses.nonEmpty && !analyses.exists(as.contains)) return None
 
-        val callersP = {
-            properties.find(_.isInstanceOf[Callers]) match {
-                case Some(property) => property.asInstanceOf[Callers]
-                case None           => return Some("Callers property is missing.");
-            }
+        val callersP = properties.find(_.isInstanceOf[Callers]) match {
+            case Some(property) => property.asInstanceOf[Callers]
+            case None           => return Some("Callers property is missing.");
         }
         if (!callersP.hasVMLevelCallers) {
             Some(s"Method not VM Reachable")

@@ -14,6 +14,4 @@ package br
 case class CodeAnalysisFailedException(
         message: String,
         code:    Code,
-        pc:      PC
-) extends RuntimeException(message)
-
+        pc: PC) extends RuntimeException(message)

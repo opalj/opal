@@ -62,15 +62,12 @@ class BasePropertyStoreMockup extends PropertyStore {
     override def doPreInitialize[E <: Entity, P <: Property](
         e:  E,
         pk: PropertyKey[P]
-    )(
-        pc: EOptionP[E, P] => InterimEP[E, P]
-    ): Unit = ???
+      )(pc: EOptionP[E, P] => InterimEP[E, P]): Unit = ???
 
     override def doApply[E <: Entity, P <: Property](
         epk:  EPK[E, P],
         e:    E,
-        pkId: Int
-    ): EOptionP[E, P] = ???
+        pkId: Int): EOptionP[E, P] = ???
 
     override def force[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): Unit = ???
 
@@ -80,14 +77,11 @@ class BasePropertyStoreMockup extends PropertyStore {
 
     override def doRegisterTriggeredComputation[E <: Entity, P <: Property](
         pk: PropertyKey[P],
-        pc: PropertyComputation[E]
-    ): Unit = {}
+        pc: PropertyComputation[E]): Unit = {}
 
     override def doScheduleEagerComputationForEntity[E <: Entity](
         e: E
-    )(
-        pc: PropertyComputation[E]
-    ): Unit = {}
+      )(pc: PropertyComputation[E]): Unit = {}
 
     override def handleResult(r: PropertyComputationResult): Unit = {}
 
@@ -97,23 +91,17 @@ class BasePropertyStoreMockup extends PropertyStore {
         propertyKindsComputedInThisPhase:  Set[PropertyKind],
         propertyKindsComputedInLaterPhase: Set[PropertyKind],
         suppressInterimUpdates:            Map[PropertyKind, Set[PropertyKind]],
-        finalizationOrder:                 List[List[PropertyKind]]
-    ): Unit = {
-    }
+        finalizationOrder:                 List[List[PropertyKind]]): Unit = {}
 }
 
 /** A simple property store which will return the values when queried consecutively */
 class InitializedPropertyStore(
-        val data: IntMap[Map[Entity, mutable.Queue[EOptionP[Entity, Property]]]]
-) extends BasePropertyStoreMockup {
+        val data: IntMap[Map[Entity, mutable.Queue[EOptionP[Entity, Property]]]]) extends BasePropertyStoreMockup {
 
     override def doApply[E <: Entity, P <: Property](
         epk:  EPK[E, P],
         e:    E,
-        pkId: Int
-    ): EOptionP[E, P] = {
-        data(pkId)(e).dequeue().asInstanceOf[EOptionP[E, P]]
-    }
+        pkId: Int): EOptionP[E, P] = data(pkId)(e).dequeue().asInstanceOf[EOptionP[E, P]]
 }
 
 class PropertyStoreConfigurationRecorder extends BasePropertyStoreMockup {
@@ -122,19 +110,17 @@ class PropertyStoreConfigurationRecorder extends BasePropertyStoreMockup {
     // Methods containing test fixture related logic.
     //
 
-    var phaseConfigurations: List[(Set[PropertyKind], Set[PropertyKind], Map[PropertyKind, Set[PropertyKind]])] = List.empty
+    var phaseConfigurations: List[(Set[PropertyKind], Set[PropertyKind], Map[PropertyKind, Set[PropertyKind]])] =
+        List.empty
 
     override def newPhaseInitialized(
         propertyKindsComputedInThisPhase:  Set[PropertyKind],
         propertyKindsComputedInLaterPhase: Set[PropertyKind],
         suppressInterimUpdates:            Map[PropertyKind, Set[PropertyKind]],
-        finalizationOrder:                 List[List[PropertyKind]]
-    ): Unit = {
-        phaseConfigurations ::=
-            ((
-                propertyKindsComputedInThisPhase,
-                propertyKindsComputedInLaterPhase,
-                suppressInterimUpdates
-            ))
-    }
+        finalizationOrder:                 List[List[PropertyKind]]): Unit = phaseConfigurations ::=
+        ((
+            propertyKindsComputedInThisPhase,
+            propertyKindsComputedInLaterPhase,
+            suppressInterimUpdates
+        ))
 }

@@ -22,8 +22,7 @@ package instructions
 case class GETFIELD(
         declaringClass: ObjectType,
         name:           String,
-        fieldType:      FieldType
-) extends FieldReadAccess {
+        fieldType: FieldType) extends FieldReadAccess {
 
     final def opcode: Opcode = GETFIELD.opcode
 
@@ -40,20 +39,17 @@ case class GETFIELD(
     final def nextInstructions(
         currentPC:             PC,
         regularSuccessorsOnly: Boolean
-    )(
-        implicit
+      )(implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
-    ): List[PC] = {
-        if (regularSuccessorsOnly)
-            List(indexOfNextInstruction(currentPC))
-        else
-            Instruction.nextInstructionOrExceptionHandler(
-                this, currentPC, ObjectType.NullPointerException
-            )
-    }
+        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy): List[PC] =
+        if (regularSuccessorsOnly) List(indexOfNextInstruction(currentPC))
+        else Instruction.nextInstructionOrExceptionHandler(
+            this,
+            currentPC,
+            ObjectType.NullPointerException
+        )
 
-    override def toString = "get "+declaringClass.toJava+"."+name+" : "+fieldType.toJava
+    override def toString = "get " + declaringClass.toJava + "." + name + " : " + fieldType.toJava
 
 }
 
@@ -75,8 +71,7 @@ object GETFIELD extends InstructionMetaInformation {
      * @param   fieldTypeName The field's type; see [[org.opalj.br.FieldType$]] for the concrete
      *          syntax.
      */
-    def apply(declaringClassName: String, name: String, fieldTypeName: String): GETFIELD = {
+    def apply(declaringClassName: String, name: String, fieldTypeName: String): GETFIELD =
         GETFIELD(ObjectType(declaringClassName), name, FieldType(fieldTypeName))
-    }
 
 }

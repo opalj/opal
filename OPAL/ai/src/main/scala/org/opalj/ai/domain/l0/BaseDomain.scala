@@ -20,13 +20,12 @@ import org.opalj.br.analyses.Project
  */
 class BaseDomain[Source](
         val project: Project[Source],
-        val method:  Method
-) extends TypeLevelDomain
-    with ThrowAllPotentialExceptionsConfiguration
-    with IgnoreSynchronization
-    with DefaultTypeLevelHandlingOfMethodResults
-    with TheProject
-    with TheMethod
+        val method: Method) extends TypeLevelDomain
+        with ThrowAllPotentialExceptionsConfiguration
+        with IgnoreSynchronization
+        with DefaultTypeLevelHandlingOfMethodResults
+        with TheProject
+        with TheMethod
 
 object BaseDomain {
 
@@ -34,9 +33,7 @@ object BaseDomain {
      * @tparam Source The type of the underlying source files (e.g., java.net.URL)
      * @return A new instance of a `BaseDomain`.
      */
-    def apply[Source](project: Project[Source], method: Method): BaseDomain[Source] = {
-        new BaseDomain(project, method)
-    }
+    def apply[Source](project: Project[Source], method: Method): BaseDomain[Source] = new BaseDomain(project, method)
 
 }
 
@@ -48,5 +45,4 @@ object BaseDomain {
  */
 class BaseDomainWithDefUse[Source](
         project: Project[Source],
-        method:  Method
-) extends BaseDomain[Source](project, method) with RecordDefUse
+        method: Method) extends BaseDomain[Source](project, method) with RecordDefUse

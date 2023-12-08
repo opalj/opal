@@ -3,11 +3,12 @@ package org.opalj
 package bi
 package reader
 
-import java.io.DataInputStream
-import org.opalj.control.fillArraySeq
-
-import scala.collection.immutable.ArraySeq
 import scala.reflect.ClassTag
+
+import java.io.DataInputStream
+import scala.collection.immutable.ArraySeq
+
+import org.opalj.control.fillArraySeq
 
 /**
  * Generic parser for the ''inner classes'' attribute.
@@ -25,20 +26,18 @@ trait InnerClasses_attributeReader extends AttributeReader {
     type InnerClasses_attribute >: Null <: Attribute
 
     def InnerClasses_attribute(
-        cp:                   Constant_Pool,
-        ap_name_index:        Constant_Pool_Index,
-        ap_descriptor_index:  Constant_Pool_Index,
+        cp: Constant_Pool,
+        ap_name_index: Constant_Pool_Index,
+        ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
-        inner_classes:        InnerClasses
-    ): InnerClasses_attribute
+        inner_classes: InnerClasses): InnerClasses_attribute
 
     def InnerClassesEntry(
-        cp:                       Constant_Pool,
-        inner_class_info_index:   Constant_Pool_Index,
-        outer_class_info_index:   Constant_Pool_Index,
-        inner_name_index:         Constant_Pool_Index,
-        inner_class_access_flags: Int
-    ): InnerClassesEntry
+        cp: Constant_Pool,
+        inner_class_info_index: Constant_Pool_Index,
+        outer_class_info_index: Constant_Pool_Index,
+        inner_name_index: Constant_Pool_Index,
+        inner_class_access_flags: Int): InnerClassesEntry
 
     //
     // IMPLEMENTATION
@@ -64,9 +63,9 @@ trait InnerClasses_attributeReader extends AttributeReader {
         ap_name_index: Constant_Pool_Index,
         ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
-        in: DataInputStream
-    ) => {
-        /*val attribute_length =*/ in.readInt()
+        in: DataInputStream) => {
+        /*val attribute_length =*/
+        in.readInt()
         val number_of_classes = in.readUnsignedShort
         if (number_of_classes > 0 || reifyEmptyAttributes) {
             InnerClasses_attribute(
@@ -77,8 +76,10 @@ trait InnerClasses_attributeReader extends AttributeReader {
                 fillArraySeq(number_of_classes) {
                     InnerClassesEntry(
                         cp,
-                        in.readUnsignedShort, in.readUnsignedShort,
-                        in.readUnsignedShort, in.readUnsignedShort
+                        in.readUnsignedShort,
+                        in.readUnsignedShort,
+                        in.readUnsignedShort,
+                        in.readUnsignedShort
                     )
                 }
             )

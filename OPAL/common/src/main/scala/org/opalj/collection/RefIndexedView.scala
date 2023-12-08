@@ -20,7 +20,7 @@ object RefIndexedView {
 
     final val Empty = new RefIndexedView[Nothing] {
         override def isEmpty: Boolean = true
-        override def size: Int = 0
+        override def size: Int        = 0
         override def apply(index: Int): Nothing = throw new IndexOutOfBoundsException("empty view")
         override def iterator: Iterator[Nothing] = Iterator.empty
     }

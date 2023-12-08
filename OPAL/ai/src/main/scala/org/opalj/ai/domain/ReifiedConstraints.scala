@@ -26,7 +26,8 @@ trait ReifiedConstraints extends IntegerValuesDomain with ReferenceValuesDomain 
     /**
      * (Indirectly) called by OPAL for a new value-based constraint.
      */
-    /*abstract*/ def nextConstraint(constraint: ReifiedConstraint): Unit
+    /*abstract*/
+    def nextConstraint(constraint: ReifiedConstraint): Unit
 
     /**
      * Representation of a reified constraint.
@@ -49,26 +50,24 @@ trait ReifiedConstraints extends IntegerValuesDomain with ReferenceValuesDomain 
      * Representation of a constraint related to a single value.
      */
     case class ReifiedSingleValueConstraint(
-            pc:         Int,
-            value:      DomainValue,
-            constraint: String
-    ) extends ReifiedConstraint
+            pc:    Int,
+            value: DomainValue,
+            constraint: String) extends ReifiedConstraint
 
     /**
      * Representation of a constraint related to two values.
      */
     case class ReifiedTwoValuesConstraint(
             pc:     Int,
-            value1: DomainValue, value2: DomainValue,
-            constraint: String
-    ) extends ReifiedConstraint
+            value1: DomainValue,
+            value2: DomainValue,
+            constraint: String) extends ReifiedConstraint
 
     abstract override def refEstablishIsNull(
         pc:       Int,
         value:    DomainValue,
         operands: Operands,
-        locals:   Locals
-    ): (Operands, Locals) = {
+        locals:   Locals): (Operands, Locals) = {
 
         nextConstraint(ReifiedSingleValueConstraint(pc, value, "is null"))
         super.refEstablishIsNull(pc, value, operands, locals)
@@ -78,8 +77,7 @@ trait ReifiedConstraints extends IntegerValuesDomain with ReferenceValuesDomain 
         pc:       Int,
         value:    DomainValue,
         operands: Operands,
-        locals:   Locals
-    ): (Operands, Locals) = {
+        locals:   Locals): (Operands, Locals) = {
 
         nextConstraint(ReifiedSingleValueConstraint(pc, value, "is not null"))
         super.refEstablishIsNonNull(pc, value, operands, locals)
@@ -90,8 +88,7 @@ trait ReifiedConstraints extends IntegerValuesDomain with ReferenceValuesDomain 
         value1:   DomainValue,
         value2:   DomainValue,
         operands: Operands,
-        locals:   Locals
-    ): (Operands, Locals) = {
+        locals:   Locals): (Operands, Locals) = {
 
         nextConstraint(ReifiedTwoValuesConstraint(pc, value1, value2, "equals"))
         super.refEstablishAreEqual(pc, value1, value2, operands, locals)
@@ -102,8 +99,7 @@ trait ReifiedConstraints extends IntegerValuesDomain with ReferenceValuesDomain 
         value1:   DomainValue,
         value2:   DomainValue,
         operands: Operands,
-        locals:   Locals
-    ): (Operands, Locals) = {
+        locals:   Locals): (Operands, Locals) = {
 
         nextConstraint(ReifiedTwoValuesConstraint(pc, value1, value2, "is not equal to"))
         super.refEstablishAreNotEqual(pc, value1, value2, operands, locals)
@@ -113,11 +109,10 @@ trait ReifiedConstraints extends IntegerValuesDomain with ReferenceValuesDomain 
         pc:       Int,
         bound:    ReferenceType,
         operands: Operands,
-        locals:   Locals
-    ): (Operands, Locals) = {
+        locals:   Locals): (Operands, Locals) = {
 
         nextConstraint(
-            ReifiedSingleValueConstraint(pc, operands.head, "is subtype of "+bound.toJava)
+            ReifiedSingleValueConstraint(pc, operands.head, "is subtype of " + bound.toJava)
         )
         super.refSetUpperTypeBoundOfTopOperand(pc, bound, operands, locals)
     }
@@ -125,8 +120,7 @@ trait ReifiedConstraints extends IntegerValuesDomain with ReferenceValuesDomain 
     abstract override def refTopOperandIsNull(
         pc:       Int,
         operands: Operands,
-        locals:   Locals
-    ): (Operands, Locals) = {
+        locals:   Locals): (Operands, Locals) = {
         nextConstraint(
             ReifiedSingleValueConstraint(pc, operands.head, "is null")
         )
@@ -141,10 +135,9 @@ trait ReifiedConstraints extends IntegerValuesDomain with ReferenceValuesDomain 
         theValue: Int,
         value:    DomainValue,
         operands: Operands,
-        locals:   Locals
-    ): (Operands, Locals) = {
+        locals:   Locals): (Operands, Locals) = {
 
-        nextConstraint(ReifiedSingleValueConstraint(pc, value, "is "+theValue))
+        nextConstraint(ReifiedSingleValueConstraint(pc, value, "is " + theValue))
         super.intEstablishValue(pc, theValue, value, operands, locals)
     }
 
@@ -153,8 +146,7 @@ trait ReifiedConstraints extends IntegerValuesDomain with ReferenceValuesDomain 
         value1:   DomainValue,
         value2:   DomainValue,
         operands: Operands,
-        locals:   Locals
-    ): (Operands, Locals) = {
+        locals:   Locals): (Operands, Locals) = {
 
         nextConstraint(ReifiedTwoValuesConstraint(pc, value1, value2, " == "))
         super.intEstablishAreEqual(pc, value1, value2, operands, locals)
@@ -165,8 +157,7 @@ trait ReifiedConstraints extends IntegerValuesDomain with ReferenceValuesDomain 
         value1:   DomainValue,
         value2:   DomainValue,
         operands: Operands,
-        locals:   Locals
-    ): (Operands, Locals) = {
+        locals:   Locals): (Operands, Locals) = {
 
         nextConstraint(ReifiedTwoValuesConstraint(pc, value1, value2, " != "))
         super.intEstablishAreNotEqual(pc, value1, value2, operands, locals)
@@ -177,8 +168,7 @@ trait ReifiedConstraints extends IntegerValuesDomain with ReferenceValuesDomain 
         value1:   DomainValue,
         value2:   DomainValue,
         operands: Operands,
-        locals:   Locals
-    ): (Operands, Locals) = {
+        locals:   Locals): (Operands, Locals) = {
 
         nextConstraint(ReifiedTwoValuesConstraint(pc, value1, value2, " < "))
         super.intEstablishIsLessThan(pc, value1, value2, operands, locals)
@@ -189,11 +179,9 @@ trait ReifiedConstraints extends IntegerValuesDomain with ReferenceValuesDomain 
         value1:   DomainValue,
         value2:   DomainValue,
         operands: Operands,
-        locals:   Locals
-    ): (Operands, Locals) = {
+        locals:   Locals): (Operands, Locals) = {
 
         nextConstraint(ReifiedTwoValuesConstraint(pc, value1, value2, " <= "))
         super.intEstablishIsLessThanOrEqualTo(pc, value1, value2, operands, locals)
     }
 }
-

@@ -26,9 +26,7 @@ case object WIDE extends Instruction with ConstantLengthInstruction with NoLabel
 
     final def stackSlotsChange: Int = 0
 
-    final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
-        this eq code.instructions(otherPC)
-    }
+    final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = this eq code.instructions(otherPC)
 
     final def readsLocal: Boolean = false
 
@@ -41,13 +39,10 @@ case object WIDE extends Instruction with ConstantLengthInstruction with NoLabel
     final def nextInstructions(
         currentPC:             PC,
         regularSuccessorsOnly: Boolean
-    )(
-        implicit
+      )(implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
-    ): List[PC] = {
+        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy): List[PC] =
         List(indexOfNextInstruction(currentPC))
-    }
 
     final def expressionResult: NoExpression.type = NoExpression
 

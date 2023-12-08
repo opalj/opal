@@ -3,20 +3,6 @@ package org.opalj
 package apk
 package parser
 
-import com.typesafe.config.Config
-import net.dongliu.apk.parser.ApkFile
-import org.opalj.apk.ApkComponent
-import org.opalj.apk.ApkComponentType
-import org.opalj.apk.ApkComponentType.ApkComponentType
-import org.opalj.apk.ApkComponentsKey
-import org.opalj.apk.parser.DexParser.DexParser
-import org.opalj.br.analyses.Project
-import org.opalj.ll.LLVMProjectKey
-import org.opalj.log.GlobalLogContext
-import org.opalj.log.LogContext
-import org.opalj.log.OPALLogger
-import org.opalj.util.PerformanceEvaluation.time
-
 import java.io.File
 import java.io.StringWriter
 import java.net.URL
@@ -30,6 +16,21 @@ import scala.sys.process.ProcessLogger
 import scala.sys.process.stringToProcess
 import scala.xml.Node
 import scala.xml.XML
+
+import org.opalj.apk.ApkComponent
+import org.opalj.apk.ApkComponentsKey
+import org.opalj.apk.ApkComponentType
+import org.opalj.apk.ApkComponentType.ApkComponentType
+import org.opalj.apk.parser.DexParser.DexParser
+import org.opalj.br.analyses.Project
+import org.opalj.ll.LLVMProjectKey
+import org.opalj.log.GlobalLogContext
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
+import org.opalj.util.PerformanceEvaluation.time
+
+import com.typesafe.config.Config
+import net.dongliu.apk.parser.ApkFile
 /**
  * Parses an APK file and generates a [[Project]] for it.
  *
@@ -46,28 +47,28 @@ import scala.xml.XML
 class ApkParser(val apkPath: String)(implicit config: Config) {
 
     implicit private val LogContext: LogContext = GlobalLogContext
-    private val LogCategory = "APK parser"
+    private val LogCategory                     = "APK parser"
 
     private var tmpDir: Option[File] = None
-    private val ApkUnzippedDir = "/apk_unzipped"
-    private val logOutput = config.getBoolean(ConfigKeyPrefix+"logOutput")
+    private val ApkUnzippedDir       = "/apk_unzipped"
+    private val logOutput            = config.getBoolean(ConfigKeyPrefix + "logOutput")
     /**
      * Parses the components / static entry points of the APK from AndroidManifest.xml.
      *
      * @return a Seq of [[ApkComponent]].
      */
     def parseComponents: Seq[ApkComponent] = {
-        val apkFile = new ApkFile(apkPath)
+        val apkFile           = new ApkFile(apkPath)
         val manifestXmlString = apkFile.getManifestXml
-        val manifestXml = XML.loadString(manifestXmlString)
+        val manifestXml       = XML.loadString(manifestXmlString)
 
         val xmlns = "http://schemas.android.com/apk/res/android"
         val nodeToEntryPoint = (compType: ApkComponentType, n: Node) =>
             new ApkComponent(
                 compType,
-                (n \ ("@{"+xmlns+"}name")).text, // class
-                (n \\ "action" \\ ("@{"+xmlns+"}name")).map(_.text), // intents / triggers
-                (n \\ "category" \\ ("@{"+xmlns+"}name")).map(_.text) // intents / triggers
+                (n \ ("@{" + xmlns + "}name")).text,                      // class
+                (n \\ "action" \\ ("@{" + xmlns + "}name")).map(_.text),  // intents / triggers
+                (n \\ "category" \\ ("@{" + xmlns + "}name")).map(_.text) // intents / triggers
             )
         val entryPoints: ListBuffer[ApkComponent] = ListBuffer.empty
 
@@ -77,13 +78,9 @@ class ApkParser(val apkPath: String)(implicit config: Config) {
         val services = manifestXml \ "application" \ "service"
         services.foreach(s => entryPoints.append(nodeToEntryPoint(ApkComponentType.Service, s)))
         val receivers = manifestXml \ "application" \ "receiver"
-        receivers.foreach(
-            r => entryPoints.append(nodeToEntryPoint(ApkComponentType.BroadcastReceiver, r))
-        )
+        receivers.foreach(r => entryPoints.append(nodeToEntryPoint(ApkComponentType.BroadcastReceiver, r)))
         val providers = manifestXml \ "application" \ "provider"
-        providers.foreach(
-            p => entryPoints.append(nodeToEntryPoint(ApkComponentType.ContentProvider, p))
-        )
+        providers.foreach(p => entryPoints.append(nodeToEntryPoint(ApkComponentType.ContentProvider, p)))
 
         entryPoints.toSeq
     }
@@ -100,7 +97,7 @@ class ApkParser(val apkPath: String)(implicit config: Config) {
     def parseDexCode(dexParser: DexParser = DexParser.Enjarify): (Path, Seq[Path]) = {
         OPALLogger.info(LogCategory, "dex code parsing started")
 
-        var jarsDir: Path = null
+        var jarsDir: Path              = null
         val jarFiles: ListBuffer[Path] = ListBuffer.empty
         time {
             unzipApk()
@@ -109,17 +106,18 @@ class ApkParser(val apkPath: String)(implicit config: Config) {
                 .filter(_.isFile)
                 .filter(_.getName.endsWith(".dex"))
 
-            jarsDir = Files.createDirectory(Paths.get(tmpDir.get.toString+"/jars"))
+            jarsDir = Files.createDirectory(Paths.get(tmpDir.get.toString + "/jars"))
             val getCmd = (dex: File) => {
                 val dexBaseName = ApkParser.getFileBaseName(dex.toString)
-                val cmd = if (dexParser == DexParser.Enjarify) {
-                    s"enjarify.sh -o /jar/$dexBaseName.jar /dex/$dexBaseName.dex"
-                } else {
-                    s"d2j-dex2jar.sh -o /jar/$dexBaseName.jar /dex/$dexBaseName.dex"
-                }
-                s"docker run --rm "+
-                    s"-v ${dex.getParent}:/dex "+
-                    s"-v $jarsDir:/jar "+
+                val cmd =
+                    if (dexParser == DexParser.Enjarify) {
+                        s"enjarify.sh -o /jar/$dexBaseName.jar /dex/$dexBaseName.dex"
+                    } else {
+                        s"d2j-dex2jar.sh -o /jar/$dexBaseName.jar /dex/$dexBaseName.dex"
+                    }
+                s"docker run --rm " +
+                    s"-v ${dex.getParent}:/dex " +
+                    s"-v $jarsDir:/jar " +
                     s"opal-apk-parser $cmd"
             }
 
@@ -135,9 +133,7 @@ class ApkParser(val apkPath: String)(implicit config: Config) {
                     }
                     OPALLogger.info(LogCategory, s"${i + 1} of ${dexFiles.length} dex code files parsed")
             }
-        } { t =>
-            OPALLogger.info(LogCategory, s"dex code parsing finished, took ${t.toSeconds}")
-        }
+        } { t => OPALLogger.info(LogCategory, s"dex code parsing finished, took ${t.toSeconds}") }
         (jarsDir, jarFiles.toSeq)
     }
 
@@ -153,27 +149,26 @@ class ApkParser(val apkPath: String)(implicit config: Config) {
     def parseNativeCode: Option[(Path, Seq[Path])] = {
         OPALLogger.info(LogCategory, "native code parsing started")
 
-        var llvmDir: Path = null
+        var llvmDir: Path               = null
         val llvmFiles: ListBuffer[Path] = ListBuffer.empty
         time {
             unzipApk()
-            val apkLibPath = tmpDir.get.toString + ApkUnzippedDir+"/lib"
-            val archs = new File(apkLibPath).listFiles.filter(_.isDirectory).map(_.getName)
+            val apkLibPath = tmpDir.get.toString + ApkUnzippedDir + "/lib"
+            val archs      = new File(apkLibPath).listFiles.filter(_.isDirectory).map(_.getName)
             if (!Files.isDirectory(Paths.get(apkLibPath)) || archs.isEmpty) {
                 // APK does not contain native code
                 return None
             }
 
-            val soFilesPerArch = archs.map(arch => {
-                val archDir = new File(apkLibPath+"/"+arch)
+            val soFilesPerArch = archs.map { arch =>
+                val archDir = new File(apkLibPath + "/" + arch)
                 val soFiles = archDir.listFiles.filter(_.isFile).filter(_.getName.endsWith(".so"))
                 (archDir, soFiles)
-            })
+            }
 
             // prefer arm64, then arm, then anything else that comes first
             val selectedArchSoFiles = soFilesPerArch.find(t => t._1.getName.startsWith("arm64")) match {
-                case None =>
-                    soFilesPerArch.find(t => t._1.getName.startsWith("arm")) match {
+                case None => soFilesPerArch.find(t => t._1.getName.startsWith("arm")) match {
                         case None    => soFilesPerArch.head
                         case Some(t) => t
                     }
@@ -181,12 +176,12 @@ class ApkParser(val apkPath: String)(implicit config: Config) {
             }
 
             // generate .bc files from .so files, this can take some time ...
-            llvmDir = Files.createDirectory(Paths.get(tmpDir.get.toString+"/llvm"))
+            llvmDir = Files.createDirectory(Paths.get(tmpDir.get.toString + "/llvm"))
             val getCmd = (soBaseName: String) =>
-                s"docker run --rm "+
-                    s"-v ${selectedArchSoFiles._1}:/so "+
-                    s"-v $llvmDir:/llvm "+
-                    s"opal-apk-parser "+
+                s"docker run --rm " +
+                    s"-v ${selectedArchSoFiles._1}:/so " +
+                    s"-v $llvmDir:/llvm " +
+                    s"opal-apk-parser " +
                     s"retdec-decompiler -o /llvm/$soBaseName.c /so/$soBaseName.so"
             selectedArchSoFiles._2
                 .map(so => ApkParser.getFileBaseName(so.toString))
@@ -206,9 +201,7 @@ class ApkParser(val apkPath: String)(implicit config: Config) {
                         )
                 }
 
-        } { t =>
-            OPALLogger.info(LogCategory, s"native code parsing finished, took ${t.toSeconds}")
-        }
+        } { t => OPALLogger.info(LogCategory, s"native code parsing finished, took ${t.toSeconds}") }
         Some((llvmDir, llvmFiles.toSeq))
     }
 
@@ -220,7 +213,7 @@ class ApkParser(val apkPath: String)(implicit config: Config) {
      */
     def cleanUp(): Unit = tmpDir match {
         case Some(tmpDirPath) =>
-            ApkParser.runCmd("rm -r "+tmpDirPath, logOutput)
+            ApkParser.runCmd("rm -r " + tmpDirPath, logOutput)
             tmpDir = None
             OPALLogger.info(LogCategory, s"temporary unzip directory cleaned")
         case None =>
@@ -230,7 +223,7 @@ class ApkParser(val apkPath: String)(implicit config: Config) {
         case Some(_) =>
         case None =>
             val fileName = Paths.get(apkPath).getFileName
-            tmpDir = Some(Files.createTempDirectory("opal_apk_"+fileName).toFile)
+            tmpDir = Some(Files.createTempDirectory("opal_apk_" + fileName).toFile)
             val unzipDir = Files.createDirectory(Paths.get(tmpDir.get.getPath + ApkUnzippedDir))
             ApkParser.unzip(Paths.get(apkPath), unzipDir)
             OPALLogger.info(LogCategory, s"APK successfully unzipped")
@@ -254,29 +247,24 @@ object ApkParser {
     def createProject(
         apkPath:       String,
         projectConfig: Config,
-        dexParser:     DexParser = DexParser.Enjarify
-    ): Project[URL] = {
+        dexParser:     DexParser = DexParser.Enjarify): Project[URL] = {
         val apkParser = new ApkParser(apkPath)(BaseConfig)
 
         val jarDir = apkParser.parseDexCode(dexParser)._1
 
-        val project =
-            Project(
-                jarDir.toFile,
-                GlobalLogContext,
-                projectConfig
-            )
-
-        project.updateProjectInformationKeyInitializationData(ApkComponentsKey)(
-            _ => apkParser
+        val project = Project(
+            jarDir.toFile,
+            GlobalLogContext,
+            projectConfig
         )
+
+        project.updateProjectInformationKeyInitializationData(ApkComponentsKey)(_ => apkParser)
         project.get(ApkComponentsKey)
 
         apkParser.parseNativeCode match {
             case Some((_, llvmModules)) =>
-                project.updateProjectInformationKeyInitializationData(LLVMProjectKey)(
-                    _ => llvmModules.map(f => f.toString)
-                )
+                project.updateProjectInformationKeyInitializationData(LLVMProjectKey)(_ =>
+                    llvmModules.map(f => f.toString))
                 project.get(LLVMProjectKey)
             case None =>
         }
@@ -294,29 +282,29 @@ object ApkParser {
      */
     private def runCmd(
         cmd:       String,
-        logOutput: Boolean
-    ): (Int, StringWriter, StringWriter) = {
+        logOutput: Boolean): (Int, StringWriter, StringWriter) = {
         val logCategory = "APK parser - command"
         OPALLogger.info(logCategory, s"run:  $cmd")
         val cmd_stdout = new StringWriter()
         val cmd_stderr = new StringWriter()
-        val logger = if (logOutput) {
-            ProcessLogger(
-                o => {
-                    OPALLogger.info(s"$logCategory stdout", o)
-                    cmd_stdout.write(o + System.lineSeparator())
-                },
-                e => {
-                    OPALLogger.info(s"$logCategory stderr", e)
-                    cmd_stderr.write(e + System.lineSeparator())
-                }
-            )
-        } else {
-            ProcessLogger(
-                o => cmd_stdout.write(o + System.lineSeparator()),
-                e => cmd_stderr.write(e + System.lineSeparator())
-            )
-        }
+        val logger =
+            if (logOutput) {
+                ProcessLogger(
+                    o => {
+                        OPALLogger.info(s"$logCategory stdout", o)
+                        cmd_stdout.write(o + System.lineSeparator())
+                    },
+                    e => {
+                        OPALLogger.info(s"$logCategory stderr", e)
+                        cmd_stderr.write(e + System.lineSeparator())
+                    }
+                )
+            } else {
+                ProcessLogger(
+                    o => cmd_stdout.write(o + System.lineSeparator()),
+                    e => cmd_stderr.write(e + System.lineSeparator())
+                )
+            }
         val cmd_result = cmd ! logger
         (cmd_result, cmd_stdout, cmd_stderr)
     }
@@ -330,7 +318,7 @@ object ApkParser {
             } else {
                 Files.createDirectories(path.getParent)
                 while (Files.exists(path)) { // prepend _ since we can get clashes on case-insensitive filesystems
-                    path = path.resolveSibling("_"+path.getFileName.toString)
+                    path = path.resolveSibling("_" + path.getFileName.toString)
                     OPALLogger.info("APK", s"Renamed $entry to ${path.getFileName}")
                 }
                 Files.copy(zipFile.getInputStream(entry), path)
@@ -338,15 +326,13 @@ object ApkParser {
         }
     }
 
-    private def getFileBaseName(fileName: String): String = {
+    private def getFileBaseName(fileName: String): String =
         fileName.substring(fileName.lastIndexOf('/') + 1, fileName.lastIndexOf('.'))
-    }
 }
 
 case class ApkParserException(
         message: String,
-        cause:   Throwable = null
-) extends Exception(message, cause)
+        cause: Throwable = null) extends Exception(message, cause)
 
 object DexParser extends Enumeration {
     type DexParser = Value

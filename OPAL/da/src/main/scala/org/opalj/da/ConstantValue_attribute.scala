@@ -12,13 +12,11 @@ import scala.xml.Node
  */
 case class ConstantValue_attribute(
         attribute_name_index: Constant_Pool_Index,
-        constantValue_index:  Constant_Pool_Index
-) extends Attribute {
+        constantValue_index: Constant_Pool_Index) extends Attribute {
 
     final override def attribute_length = 2
 
-    override def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span>=<span class="constant_value"> { cp(constantValue_index).asInstructionParameter }</span></span>
-    }
+    override def toXHTML(implicit cp: Constant_Pool): Node =
+        <span>=<span class="constant_value"> {cp(constantValue_index).asInstructionParameter}</span></span>
 
 }

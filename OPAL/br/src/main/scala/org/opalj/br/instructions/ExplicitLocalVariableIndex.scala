@@ -18,20 +18,16 @@ trait ExplicitLocalVariableIndex extends Instruction {
 
         (this eq other) || (
             other.opcode == this.opcode &&
-            other.asInstanceOf[ExplicitLocalVariableIndex].lvIndex == this.lvIndex
+                other.asInstanceOf[ExplicitLocalVariableIndex].lvIndex == this.lvIndex
         )
     }
 
-    final def indexOfNextInstruction(currentPC: Int)(implicit code: Code): Int = {
+    final def indexOfNextInstruction(currentPC: Int)(implicit code: Code): Int =
         indexOfNextInstruction(currentPC, code.isModifiedByWide(currentPC))
-    }
 
-    final def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean): Int = {
-        if (modifiedByWide)
-            currentPC + 3
-        else
-            currentPC + 2
-    }
+    final def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean): Int =
+        if (modifiedByWide) currentPC + 3
+        else currentPC + 2
 
 }
 

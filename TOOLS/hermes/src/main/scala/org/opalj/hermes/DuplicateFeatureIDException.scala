@@ -12,5 +12,5 @@ package hermes
 case class DuplicateFeatureIDException(
         featureID:     String,
         featureQueryA: FeatureQuery,
-        featureQueryB: FeatureQuery
-) extends Exception(s"$featureID is derived by ${featureQueryA.id} and by ${featureQueryB.id}")
+        featureQueryB: FeatureQuery)
+    extends Exception(s"$featureID is derived by ${featureQueryA.id} and by ${featureQueryB.id}")

@@ -4,12 +4,12 @@ package ai
 package fpcf
 package analyses
 
-import org.opalj.fpcf.PropertyBounds
-import org.opalj.fpcf.PropertyStore
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.ai.fpcf.domain.PropertyStoreBased
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.FPCFAnalysisScheduler
+import org.opalj.fpcf.PropertyBounds
+import org.opalj.fpcf.PropertyStore
 
 /**
  * Scheduler that can be used by analyses which perform abstract interpretations and where
@@ -20,8 +20,7 @@ import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 trait DomainBasedFPCFAnalysisScheduler extends FPCFAnalysisScheduler {
 
     override def uses(p: SomeProject, ps: PropertyStore): Set[PropertyBounds] = {
-        if (p.allMethodsWithBody.isEmpty)
-            return Set.empty;
+        if (p.allMethodsWithBody.isEmpty) return Set.empty;
 
         // To get the domain's requirements, we simply instantiate it and query it...
         val domain = p.get(AIDomainFactoryKey).domainFactory(p, p.allMethodsWithBody.head)
@@ -31,9 +30,7 @@ trait DomainBasedFPCFAnalysisScheduler extends FPCFAnalysisScheduler {
         }
     }
 
-    override def uses: Set[PropertyBounds] = {
+    override def uses: Set[PropertyBounds] =
         // We don't have configuration independent usages:
         Set.empty
-    }
 }
-

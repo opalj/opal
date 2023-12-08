@@ -4,8 +4,8 @@ package ai
 package domain
 package l0
 
-import org.opalj.value.IsDoubleValue
 import org.opalj.br.DoubleType
+import org.opalj.value.IsDoubleValue
 
 /**
  * This partial `Domain` performs all computations related to primitive double
@@ -49,35 +49,21 @@ trait TypeLevelDoubleValues extends DoubleValuesDomain {
     //
     // RELATIONAL OPERATORS
     //
-    override def dcmpg(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = {
-        IntegerValue(pc)
-    }
+    override def dcmpg(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = IntegerValue(pc)
 
-    override def dcmpl(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = {
-        IntegerValue(pc)
-    }
+    override def dcmpl(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = IntegerValue(pc)
 
     //
     // BINARY EXPRESSIONS
     //
-    override def dadd(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = {
-        DoubleValue(pc)
-    }
+    override def dadd(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = DoubleValue(pc)
 
-    override def ddiv(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = {
-        DoubleValue(pc)
-    }
+    override def ddiv(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = DoubleValue(pc)
 
-    override def drem(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = {
-        DoubleValue(pc)
-    }
+    override def drem(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = DoubleValue(pc)
 
-    override def dmul(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = {
-        DoubleValue(pc)
-    }
+    override def dmul(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = DoubleValue(pc)
 
-    override def dsub(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = {
-        DoubleValue(pc)
-    }
+    override def dsub(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = DoubleValue(pc)
 
 }

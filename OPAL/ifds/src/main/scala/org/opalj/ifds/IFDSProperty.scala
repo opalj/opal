@@ -28,7 +28,7 @@ trait IFDSPropertyMetaInformation[S, Fact <: AbstractIFDSFact] extends PropertyM
  */
 abstract class IFDSProperty[S, Fact <: AbstractIFDSFact]
     extends Property
-    with IFDSPropertyMetaInformation[S, Fact] {
+        with IFDSPropertyMetaInformation[S, Fact] {
 
     /**
      * Maps exit statements to the data flow facts which hold before them.
@@ -46,8 +46,7 @@ abstract class IFDSProperty[S, Fact <: AbstractIFDSFact]
             // note that all properties are eventually added to some set and therefore
             // the hashCode is required anyway!
             (this eq that) || (this.hashCode == that.hashCode && this.flows == that.flows)
-        case _ =>
-            false
+        case _ => false
     }
 
     override lazy val hashCode: Int = flows.hashCode()

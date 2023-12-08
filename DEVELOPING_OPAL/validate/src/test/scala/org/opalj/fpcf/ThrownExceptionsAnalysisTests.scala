@@ -15,9 +15,8 @@ import org.opalj.br.fpcf.analyses.EagerVirtualMethodThrownExceptionsAnalysis
 class ThrownExceptionsAnalysisTests extends PropertiesTest {
 
     object DummyProperty {
-        final val Key: PropertyKey[DummyProperty] = {
+        final val Key: PropertyKey[DummyProperty] =
             PropertyKey.create[Entity, DummyProperty]("DummyProperty", new DummyProperty)
-        }
     }
 
     sealed class DummyProperty extends Property {
@@ -26,9 +25,7 @@ class ThrownExceptionsAnalysisTests extends PropertiesTest {
         override def key: PropertyKey[DummyProperty] = DummyProperty.Key
     }
 
-    override def fixtureProjectPackage: List[String] = {
-        List("org/opalj/fpcf/fixtures/thrown_exceptions")
-    }
+    override def fixtureProjectPackage: List[String] = List("org/opalj/fpcf/fixtures/thrown_exceptions")
 
     describe("L1ThrownExceptionsAnalysis and VirtualMethodThrownExceptionsAnalysis are executed") {
         val as = executeAnalyses(Set(

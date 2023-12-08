@@ -2,41 +2,40 @@
 package org.opalj
 package issues
 
-import scala.xml.Node
-import scala.xml.Group
-
 import play.api.libs.json.Json
 import play.api.libs.json.JsValue
+import scala.xml.Group
+import scala.xml.Node
 
-import org.opalj.br.Method
-import org.opalj.br.ClassFile
-import org.opalj.br.instructions.MethodInvocationInstruction
-import org.opalj.br.instructions.INVOKESTATIC
-import org.opalj.br.Code
 import org.opalj.ai.AIResult
+import org.opalj.br.ClassFile
+import org.opalj.br.Code
+import org.opalj.br.Method
 import org.opalj.br.PCAndAnyRef
+import org.opalj.br.instructions.INVOKESTATIC
+import org.opalj.br.instructions.MethodInvocationInstruction
 
 class MethodReturnValues(
         val method: Method,
-        val result: AIResult
-) extends IssueDetails with MethodComprehension {
+        val result: AIResult) extends IssueDetails with MethodComprehension {
 
     final def classFile: ClassFile = method.classFile
 
-    private[this] implicit def code: Code = result.code
+    implicit private[this] def code: Code = result.code
 
     private[this] def operandsArray = result.operandsArray
 
-    def collectMethodReturnValues: List[PCAndAnyRef[String]] = {
+    def collectMethodReturnValues: List[PCAndAnyRef[String]] =
         code.foldLeft(List.empty[PCAndAnyRef[String]]) { (returnValues, pc, instruction) =>
             instruction match {
-                case instr @ MethodInvocationInstruction(declaringClassType, _, name, descriptor) if !descriptor.returnType.isVoidType && {
-                    val nextPC = instr.indexOfNextInstruction(pc)
-                    val operands = operandsArray(nextPC)
-                    operands != null &&
+                case instr @ MethodInvocationInstruction(declaringClassType, _, name, descriptor)
+                    if !descriptor.returnType.isVoidType && {
+                        val nextPC   = instr.indexOfNextInstruction(pc)
+                        val operands = operandsArray(nextPC)
+                        operands != null &&
                         operands.head.isMorePreciseThan(result.domain.TypedValue(pc, descriptor.returnType))
-                } =>
-                    val modifier = if (instr.isInstanceOf[INVOKESTATIC]) "static " else ""
+                    } =>
+                    val modifier          = if (instr.isInstanceOf[INVOKESTATIC]) "static " else ""
                     val nextPCOperandHead = operandsArray(instr.indexOfNextInstruction(pc)).head
 
                     PCAndAnyRef(
@@ -48,29 +47,25 @@ class MethodReturnValues(
             }
 
         }
-    }
 
     def toXHTML(basicInfoOnly: Boolean): Node = {
         import PCLineComprehension.{pcNode, lineNode, line}
-        val methodReturnValues =
-            collectMethodReturnValues.map { methodData =>
-                val pc = methodData.pc
-                val details = methodData.value
-                <li>
-                    { pcNode(classFileFQN, methodJVMSignature, pc) }
+        val methodReturnValues = collectMethodReturnValues.map { methodData =>
+            val pc      = methodData.pc
+            val details = methodData.value
+            <li>
+                    {pcNode(classFileFQN, methodJVMSignature, pc)}
                     &nbsp;
-                    { lineNode(classFileFQN, methodJVMSignature, pc, line(pc)) }
-                    <span class="value">{ details }</span>
+                    {lineNode(classFileFQN, methodJVMSignature, pc, line(pc))}
+                    <span class="value">{details}</span>
                 </li>
-            }
+        }
 
-        if (methodReturnValues.nonEmpty)
-            <details class="method_return_values">
+        if (methodReturnValues.nonEmpty) <details class="method_return_values">
                 <summary>Method Return Values</summary>
-                <ul>{ methodReturnValues }</ul>
+                <ul>{methodReturnValues}</ul>
             </details>
-        else
-            Group(Nil)
+        else Group(Nil)
     }
 
     def toAnsiColoredString: String = "" // TODO Support a better representation
@@ -83,15 +78,15 @@ class MethodReturnValues(
         Json.obj(
             "type" -> "MethodReturnValues",
             "values" -> collectMethodReturnValues.map { methodData =>
-                val pc = methodData.pc
+                val pc      = methodData.pc
                 val details = methodData.value
 
                 Json.obj(
-                    "classFileFQN" -> classFileFQN,
+                    "classFileFQN"       -> classFileFQN,
                     "methodJVMSignature" -> methodJVMSignature,
-                    "pc" -> pc,
-                    "line" -> line(pc),
-                    "details" -> details
+                    "pc"                 -> pc,
+                    "line"               -> line(pc),
+                    "details"            -> details
                 )
             }
         )

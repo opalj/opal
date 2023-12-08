@@ -19,9 +19,8 @@ sealed trait VirtualMethodPurityPropertyMetaInformation extends PropertyMetaInfo
  * @author Dominik Helm
  */
 sealed case class VirtualMethodPurity(
-        individualProperty: Purity
-) extends AggregatedProperty[Purity, VirtualMethodPurity]
-    with VirtualMethodPurityPropertyMetaInformation {
+        individualProperty: Purity) extends AggregatedProperty[Purity, VirtualMethodPurity]
+        with VirtualMethodPurityPropertyMetaInformation {
 
     /**
      * The globally unique key of the [[VirtualMethodPurity]] property.
@@ -36,12 +35,12 @@ object VirtualMethodPurity extends VirtualMethodPurityPropertyMetaInformation {
     def apply(name: String): Option[VirtualMethodPurity] =
         if (name.charAt(0) == 'V') Purity(name.substring(1)).map(_.aggregatedProperty) else None
 
-    final val VCompileTimePure = CompileTimePure.aggregatedProperty
-    final val VPure = Pure.aggregatedProperty
-    final val VSideEffectFree = SideEffectFree.aggregatedProperty
-    final val VDPure = DPure.aggregatedProperty
-    final val VDSideEffectFree = DSideEffectFree.aggregatedProperty
-    final val VImpureByAnalysis = ImpureByAnalysis.aggregatedProperty
+    final val VCompileTimePure           = CompileTimePure.aggregatedProperty
+    final val VPure                      = Pure.aggregatedProperty
+    final val VSideEffectFree            = SideEffectFree.aggregatedProperty
+    final val VDPure                     = DPure.aggregatedProperty
+    final val VDSideEffectFree           = DSideEffectFree.aggregatedProperty
+    final val VImpureByAnalysis          = ImpureByAnalysis.aggregatedProperty
     final val VImpureByLackOfInformation = ImpureByLackOfInformation.aggregatedProperty
 
     /**

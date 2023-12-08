@@ -66,18 +66,17 @@ trait AbstractGraph[@specialized(Int) N] extends (N => IterableOnce[N]) {
     //
 
     override def toString: String = {
-        val vertices = this.vertices.iterator.map { v => this(v).iterator.mkString(v.toString()+" => {", ",", "}") }
+        val vertices = this.vertices.iterator.map { v => this(v).iterator.mkString(v.toString() + " => {", ",", "}") }
         vertices.mkString("Graph{\n\t", "\n\t", "\n}")
     }
 
     def toNodes: Iterable[Node] = {
 
-        val nodesMap: Map[N, DefaultMutableNode[String]] = {
+        val nodesMap: Map[N, DefaultMutableNode[String]] =
             vertices.iterator.map(v => (v, new DefaultMutableNode(v.toString()))).toMap
-        }
 
         vertices.iterator.foreach { v =>
-            val node = nodesMap(v)
+            val node       = nodesMap(v)
             val successors = this(v).iterator.map(v => nodesMap(v)).toList
             node.addChildren(successors)
         }
@@ -85,7 +84,6 @@ trait AbstractGraph[@specialized(Int) N] extends (N => IterableOnce[N]) {
         nodesMap.values
     }
 
-    def toDot(dir: String = "forward", ranksep: String = "1.0", rankdir: String = "TB"): String = {
+    def toDot(dir: String = "forward", ranksep: String = "1.0", rankdir: String = "TB"): String =
         org.opalj.graphs.toDot(toNodes, dir, ranksep, rankdir = rankdir)
-    }
 }

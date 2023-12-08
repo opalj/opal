@@ -3,9 +3,9 @@ package org.opalj
 package br
 
 import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests OPAL's support w.r.t. inner classes.
@@ -18,9 +18,9 @@ class IsInnerClassPropertyTest extends AnyFlatSpec with Matchers {
     val project = TestSupport.biProject("innerclasses-1.8-g-parameters-genericsignature")
 
     val myRootClass$Formatter = ObjectType("innerclasses/MyRootClass$Formatter")
-    val myRootClass = ObjectType("innerclasses/MyRootClass")
-    val myRootClass$1 = ObjectType("innerclasses/MyRootClass$1")
-    val myRootClass$1$1 = ObjectType("innerclasses/MyRootClass$1$1")
+    val myRootClass           = ObjectType("innerclasses/MyRootClass")
+    val myRootClass$1         = ObjectType("innerclasses/MyRootClass$1")
+    val myRootClass$1$1       = ObjectType("innerclasses/MyRootClass$1$1")
 
     behavior of "a named inner class"
 

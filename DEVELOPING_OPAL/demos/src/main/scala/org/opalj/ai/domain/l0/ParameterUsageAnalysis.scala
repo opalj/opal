@@ -6,14 +6,13 @@ package l0
 
 import java.net.URL
 import java.util.concurrent.ConcurrentLinkedQueue
-
 import scala.jdk.CollectionConverters._
 
 import org.opalj.ai.Domain
 import org.opalj.ai.InterruptableAI
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
 
@@ -27,32 +26,29 @@ object ParameterUsageAnalysis extends ProjectAnalysisApplication {
 
     override def title: String = "Identifies methods which return a given parameter"
 
-    override def description: String = {
-        "Identifies parameters that are - at least on some paths - directly returned"
-    }
+    override def description: String = "Identifies parameters that are - at least on some paths - directly returned"
 
     override def doAnalyze(
         theProject:    Project[URL],
         parameters:    Seq[String],
-        isInterrupted: () => Boolean
-    ): BasicReport = {
+        isInterrupted: () => Boolean): BasicReport = {
 
         var analysisTime: Seconds = Seconds.None
         val (returnedParameters, unusedParameters) = time {
 
-            val unusedParameters = new ConcurrentLinkedQueue[String]
+            val unusedParameters   = new ConcurrentLinkedQueue[String]
             val returnedParameters = new ConcurrentLinkedQueue[String]
-            val ai = new InterruptableAI[Domain]
+            val ai                 = new InterruptableAI[Domain]
 
             theProject.parForeachMethodWithBody() { m =>
-                val method = m.method
+                val method  = m.method
                 val psCount = method.actualArgumentsCount // includes "this" in case of instance methods
                 if (psCount > 0) {
-                    val isStatic = method.isStatic
-                    val descriptor = method.descriptor
-                    val domain = new BaseDomainWithDefUse(theProject, method)
-                    val result = ai(method, domain)
-                    val instructions = result.domain.code.instructions
+                    val isStatic        = method.isStatic
+                    val descriptor      = method.descriptor
+                    val domain          = new BaseDomainWithDefUse(theProject, method)
+                    val result          = ai(method, domain)
+                    val instructions    = result.domain.code.instructions
                     val methodSignature = method.toJava
                     def validateArgument(valueOrigin: ValueOrigin): Unit = {
                         val usedBy = result.domain.usedBy(valueOrigin)
@@ -90,7 +86,6 @@ object ParameterUsageAnalysis extends ProjectAnalysisApplication {
             returnedParameters.mkString("Directly returned parameters:\n", "\n", "\n\n") +
                 unusedParameters.mkString("Unused parameters:\n", "\n", "\n\n") +
                 s"\nThe analysis took $analysisTime and found $occurences direct returns"
-
         )
     }
 

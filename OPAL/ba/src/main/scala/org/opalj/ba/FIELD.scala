@@ -12,17 +12,16 @@ import scala.collection.immutable.ArraySeq
  * @author Michael Eichberg
  */
 case class FIELD(
-        accessModifiers:    AccessModifier,
-        name:               String,
-        descriptor:         String,
-        attributesBuilders: ArraySeq[br.FieldAttributeBuilder] = ArraySeq.empty
-) {
+        accessModifiers: AccessModifier,
+        name:            String,
+        descriptor:      String,
+        attributesBuilders: ArraySeq[br.FieldAttributeBuilder] = ArraySeq.empty) {
 
     /**
      * Returns the build [[org.opalj.br.Method]] and its annotations.
      */
     def result(): br.FieldTemplate = {
-        val fieldType = br.FieldType(descriptor)
+        val fieldType   = br.FieldType(descriptor)
         val accessFlags = accessModifiers.accessFlags
         val attributes = attributesBuilders.map[br.Attribute] { attributeBuilder =>
             attributeBuilder(accessFlags, name, fieldType)

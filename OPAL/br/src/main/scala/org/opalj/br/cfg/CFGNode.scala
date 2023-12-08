@@ -3,6 +3,7 @@ package org.opalj.br
 package cfg
 
 import scala.collection.mutable
+
 import org.opalj.graphs.Node
 
 /**
@@ -31,27 +32,18 @@ trait CFGNode extends Node {
 
     private[this] var _predecessors: Set[CFGNode] = Set.empty
 
-    def addPredecessor(predecessor: CFGNode): Unit = {
+    def addPredecessor(predecessor: CFGNode): Unit =
         //  if (predecessor eq this) throw new IllegalArgumentException()
         _predecessors += predecessor
-    }
-    def addPredecessors(predecessor: IterableOnce[CFGNode]): Unit = {
+    def addPredecessors(predecessor: IterableOnce[CFGNode]): Unit =
         //  if (predecessor eq this) throw new IllegalArgumentException()
         _predecessors ++= predecessor
-    }
-    private[cfg] def setPredecessors(predecessors: Set[CFGNode]): Unit = {
-        _predecessors = predecessors
-    }
-    def removePredecessor(predecessor: CFGNode): Unit = {
-        _predecessors -= predecessor
-    }
-    private[cfg] def clearPredecessors(): Unit = {
-        _predecessors = Set.empty
-    }
+    private[cfg] def setPredecessors(predecessors: Set[CFGNode]): Unit = _predecessors = predecessors
+    def removePredecessor(predecessor:             CFGNode): Unit      = _predecessors -= predecessor
+    private[cfg] def clearPredecessors(): Unit = _predecessors = Set.empty
 
-    private[cfg] def updatePredecessor(oldBB: CFGNode, newBB: CFGNode): Unit = {
+    private[cfg] def updatePredecessor(oldBB: CFGNode, newBB: CFGNode): Unit =
         _predecessors = _predecessors - oldBB + newBB
-    }
 
     def predecessors: Set[CFGNode] = _predecessors
 
@@ -65,24 +57,18 @@ trait CFGNode extends Node {
      * Returns `true` if the last instruction of this basic block throws/may throw an exception;
      * whether the exception is handled or not is not relevant!
      */
-    def mayThrowException: Boolean = {
+    def mayThrowException: Boolean =
         _successors.exists(successor => successor.isCatchNode || successor.isAbnormalReturnExitNode)
-    }
 
     final override def foreachSuccessor(f: Node => Unit): Unit = _successors foreach f
 
     private[this] var _successors: Set[CFGNode] = Set.empty
 
-    def addSuccessor(successor: CFGNode): Unit = {
+    def addSuccessor(successor: CFGNode): Unit =
         //  if (successor eq this) throw new IllegalArgumentException(s"$this => $successor")
         _successors = _successors + successor
-    }
-    private[cfg] def setSuccessors(successors: Set[CFGNode]): Unit = {
-        this._successors = successors
-    }
-    private[cfg] def clearSuccessors(): Unit = {
-        _successors = Set.empty
-    }
+    private[cfg] def setSuccessors(successors: Set[CFGNode]): Unit = this._successors = successors
+    private[cfg] def clearSuccessors(): Unit = _successors = Set.empty
 
     def successors: Set[CFGNode] = _successors
 
@@ -92,9 +78,9 @@ trait CFGNode extends Node {
 
     private[cfg] def reachable(reachable: mutable.Set[CFGNode]): Unit = {
         // the following
-        //_successors.
-        //filterNot(reachable.contains).
-        //foreach { d => reachable += d; d.reachable(reachable) }
+        // _successors.
+        // filterNot(reachable.contains).
+        // foreach { d => reachable += d; d.reachable(reachable) }
 
         var remainingSuccessors = this._successors
         while (remainingSuccessors.nonEmpty) {
@@ -137,7 +123,7 @@ trait CFGNode extends Node {
 
         var frontier: List[BasicBlock] = Nil
 
-        val seen = mutable.HashSet[CFGNode](this)
+        val seen                    = mutable.HashSet[CFGNode](this)
         var worklist: List[CFGNode] = List(this)
         while (worklist.nonEmpty) {
             val bb = worklist.head

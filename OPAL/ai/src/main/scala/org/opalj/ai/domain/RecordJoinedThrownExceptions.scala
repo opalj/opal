@@ -20,19 +20,14 @@ trait RecordJoinedThrownExceptions extends RecordThrownExceptions {
 
     override protected[this] def recordThrownException(
         pc:    Int,
-        value: ExceptionValue
-    ): ThrownException = {
-        value
-    }
+        value: ExceptionValue): ThrownException = value
 
     override protected[this] def joinThrownExceptions(
         pc:                        Int,
         previouslyThrownException: ThrownException,
-        thrownException:           ExceptionValue
-    ): ThrownException = {
+        thrownException:           ExceptionValue): ThrownException = {
 
-        if (previouslyThrownException eq thrownException)
-            return thrownException;
+        if (previouslyThrownException eq thrownException) return thrownException;
 
         previouslyThrownException.join(pc, thrownException) match {
             case NoUpdate                     => previouslyThrownException
@@ -41,4 +36,3 @@ trait RecordJoinedThrownExceptions extends RecordThrownExceptions {
         }
     }
 }
-

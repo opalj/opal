@@ -10,7 +10,7 @@ package instructions
  */
 abstract class NegateInstruction
     extends StackBasedArithmeticInstruction
-    with UnaryArithmeticInstruction {
+        with UnaryArithmeticInstruction {
 
     final def operator: String = "-"
 
@@ -31,11 +31,8 @@ abstract class NegateInstruction
     final def nextInstructions(
         currentPC:             PC,
         regularSuccessorsOnly: Boolean
-    )(
-        implicit
+      )(implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
-    ): List[PC] = {
+        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy): List[PC] =
         List(indexOfNextInstruction(currentPC))
-    }
 }

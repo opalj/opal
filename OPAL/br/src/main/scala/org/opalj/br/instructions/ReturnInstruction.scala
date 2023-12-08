@@ -4,6 +4,7 @@ package br
 package instructions
 
 import scala.annotation.switch
+
 import org.opalj.collection.immutable.IntTrieSet
 
 /**
@@ -13,9 +14,9 @@ import org.opalj.collection.immutable.IntTrieSet
  */
 abstract class ReturnInstruction
     extends Instruction
-    with InstructionMetaInformation
-    with ConstantLengthInstruction
-    with NoLabels {
+        with InstructionMetaInformation
+        with ConstantLengthInstruction
+        with NoLabels {
 
     final override def isReturnInstruction: Boolean = true
 
@@ -32,9 +33,7 @@ abstract class ReturnInstruction
 
     final def numberOfPushedOperands(ctg: Int => ComputationalTypeCategory): Int = 0
 
-    final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
-        this eq code.instructions(otherPC)
-    }
+    final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = this eq code.instructions(otherPC)
 
     final def readsLocal: Boolean = false
 
@@ -47,18 +46,14 @@ abstract class ReturnInstruction
     final def nextInstructions(
         currentPC:             PC,
         regularSuccessorsOnly: Boolean
-    )(
-        implicit
+      )(implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
-    ): List[PC] = {
-        if (regularSuccessorsOnly)
-            List.empty
+        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy): List[PC] =
+        if (regularSuccessorsOnly) List.empty
         else {
             val ehs = code.handlersForException(currentPC, ReturnInstruction.jvmExceptions.head)
             ehs.map(_.handlerPC)
         }
-    }
 
     final def expressionResult: NoExpression.type = NoExpression
 
@@ -76,33 +71,28 @@ object ReturnInstruction {
 
     val jvmExceptions = List(ObjectType.IllegalMonitorStateException)
 
-    def apply(theType: Type): ReturnInstruction = {
-        (theType.id: @switch) match {
-            case VoidType.id    => RETURN
-            case IntegerType.id => IRETURN
-            case ShortType.id   => IRETURN
-            case ByteType.id    => IRETURN
-            case CharType.id    => IRETURN
-            case BooleanType.id => IRETURN
-            case LongType.id    => LRETURN
-            case FloatType.id   => FRETURN
-            case DoubleType.id  => DRETURN
-            case _              => ARETURN
-        }
+    def apply(theType: Type): ReturnInstruction = (theType.id: @switch) match {
+        case VoidType.id    => RETURN
+        case IntegerType.id => IRETURN
+        case ShortType.id   => IRETURN
+        case ByteType.id    => IRETURN
+        case CharType.id    => IRETURN
+        case BooleanType.id => IRETURN
+        case LongType.id    => LRETURN
+        case FloatType.id   => FRETURN
+        case DoubleType.id  => DRETURN
+        case _              => ARETURN
     }
 
-    def unapply(instruction: Instruction): Option[ReturnInstruction] =
-        (instruction.opcode: @switch) match {
-            case RETURN.opcode
-                | IRETURN.opcode
-                | LRETURN.opcode
-                | FRETURN.opcode
-                | DRETURN.opcode
-                | ARETURN.opcode =>
-                Some(instruction.asInstanceOf[ReturnInstruction])
-            case _ =>
-                None
-        }
+    def unapply(instruction: Instruction): Option[ReturnInstruction] = (instruction.opcode: @switch) match {
+        case RETURN.opcode
+            | IRETURN.opcode
+            | LRETURN.opcode
+            | FRETURN.opcode
+            | DRETURN.opcode
+            | ARETURN.opcode => Some(instruction.asInstanceOf[ReturnInstruction])
+        case _ => None
+    }
 
 }
 /**
@@ -113,17 +103,15 @@ object ReturnInstruction {
 object ReturnInstructions {
 
     def unapply(code: Code): Option[PCs] = {
-        if (code eq null)
-            return None;
+        if (code eq null) return None;
 
         val instructions = code.instructions
-        val max = instructions.length
-        var pc = 0
-        var returnPCs = IntTrieSet.empty
+        val max          = instructions.length
+        var pc           = 0
+        var returnPCs    = IntTrieSet.empty
         while (pc < max) {
             val instruction = instructions(pc)
-            if (instruction.isReturnInstruction)
-                returnPCs += pc
+            if (instruction.isReturnInstruction) returnPCs += pc
             pc = instruction.indexOfNextInstruction(pc)(code)
         }
         Some(returnPCs)
@@ -132,16 +120,14 @@ object ReturnInstructions {
 
 object MethodCompletionInstruction {
 
-    def unapply(i: Instruction): Boolean = {
-        (i.opcode: @switch) match {
-            case ATHROW.opcode |
-                RETURN.opcode |
-                ARETURN.opcode |
-                IRETURN.opcode | LRETURN.opcode | FRETURN.opcode | DRETURN.opcode => true
-            case _ => false
-        }
-
+    def unapply(i: Instruction): Boolean = (i.opcode: @switch) match {
+        case ATHROW.opcode |
+            RETURN.opcode |
+            ARETURN.opcode |
+            IRETURN.opcode | LRETURN.opcode | FRETURN.opcode | DRETURN.opcode => true
+        case _ => false
     }
+
 }
 
 object NoMethodCompletionInstruction {

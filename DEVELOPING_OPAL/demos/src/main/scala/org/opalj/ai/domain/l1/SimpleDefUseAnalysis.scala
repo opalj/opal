@@ -6,20 +6,21 @@ package l1
 
 import java.net.URL
 import java.util.concurrent.ConcurrentLinkedQueue
+import scala.collection.immutable.ListSet
 import scala.jdk.CollectionConverters._
+
 import org.opalj.ai.Domain
 import org.opalj.ai.InterruptableAI
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.ProjectAnalysisApplication
+import org.opalj.br.instructions.INVOKEINTERFACE
+import org.opalj.br.instructions.INVOKESPECIAL
+import org.opalj.br.instructions.INVOKESTATIC
+import org.opalj.br.instructions.INVOKEVIRTUAL
+import org.opalj.br.instructions.MethodInvocationInstruction
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
-import scala.collection.immutable.ListSet
-import org.opalj.br.instructions.INVOKEVIRTUAL
-import org.opalj.br.instructions.INVOKEINTERFACE
-import org.opalj.br.instructions.INVOKESTATIC
-import org.opalj.br.instructions.INVOKESPECIAL
-import org.opalj.br.instructions.MethodInvocationInstruction
 
 /**
  * Simple analysis that takes the "unused"-Node from the def-use graph
@@ -30,33 +31,30 @@ import org.opalj.br.instructions.MethodInvocationInstruction
  */
 object SimpleDefUseAnalysis extends ProjectAnalysisApplication {
 
-    override def title: String =
-        "Identifies unused variables and unnecessary calculations"
+    override def title: String = "Identifies unused variables and unnecessary calculations"
 
-    override def description: String =
-        "Identifies variable declarations or assignments that are not used again locally"
+    override def description: String = "Identifies variable declarations or assignments that are not used again locally"
 
     override def doAnalyze(
         theProject:    Project[URL],
         parameters:    Seq[String],
-        isInterrupted: () => Boolean
-    ): BasicReport = {
+        isInterrupted: () => Boolean): BasicReport = {
 
         var analysisTime: Seconds = Seconds.None
         val unusedDefUseNodes = time {
 
             val results = new ConcurrentLinkedQueue[String]
-            val ai = new InterruptableAI[Domain]
+            val ai      = new InterruptableAI[Domain]
 
             theProject.parForeachMethodWithBody() { m =>
                 val method = m.method
                 if (!method.isSynthetic) {
-                    val domain = new DefaultDomainWithCFGAndDefUse(theProject, method)
-                    val result = ai(method, domain)
+                    val domain       = new DefaultDomainWithCFGAndDefUse(theProject, method)
+                    val result       = ai(method, domain)
                     val instructions = result.domain.code.instructions
-                    val unused = result.domain.unused
+                    val unused       = result.domain.unused
                     if (unused.nonEmpty) {
-                        var values = ListSet.empty[String]
+                        var values                  = ListSet.empty[String]
                         val implicitParameterOffset = if (!method.isStatic) 1 else 0
                         unused.foreach { vo =>
                             if (vo < 0) {
@@ -69,7 +67,7 @@ object SimpleDefUseAnalysis extends ProjectAnalysisApplication {
                                     if (vo == -1) {
                                         values += "this"
                                     } else {
-                                        values += "param:"+(-(vo + implicitParameterOffset))
+                                        values += "param:" + (-(vo + implicitParameterOffset))
                                     }
                                 }
                             } else {
@@ -79,19 +77,17 @@ object SimpleDefUseAnalysis extends ProjectAnalysisApplication {
                                         INVOKESTATIC.opcode | INVOKESPECIAL.opcode =>
                                         val invoke = instruction.asInstanceOf[MethodInvocationInstruction]
                                         values +=
-                                            vo.toString+": invoke "+invoke.declaringClass.toJava+
-                                            "{ "+
-                                            invoke.methodDescriptor.toJava(invoke.name)+
-                                            " }"
-                                    case _ =>
-                                        values += vo.toString+": "+instruction.toString(vo)
+                                            vo.toString + ": invoke " + invoke.declaringClass.toJava +
+                                                "{ " +
+                                                invoke.methodDescriptor.toJava(invoke.name) +
+                                                " }"
+                                    case _ => values += vo.toString + ": " + instruction.toString(vo)
                                 }
 
                             }
 
                         }
-                        if (values.nonEmpty)
-                            results.add(method.toJava(values.mkString("{", ",", "}")))
+                        if (values.nonEmpty) results.add(method.toJava(values.mkString("{", ",", "}")))
                     }
                 }
             }
@@ -100,8 +96,8 @@ object SimpleDefUseAnalysis extends ProjectAnalysisApplication {
         } { t => analysisTime = t.toSeconds }
 
         BasicReport(
-            unusedDefUseNodes.mkString("Methods with unused values:\n", "\n", "\n")+
-                "The analysis took "+analysisTime+" and found "+unusedDefUseNodes.size+" issues"
+            unusedDefUseNodes.mkString("Methods with unused values:\n", "\n", "\n") +
+                "The analysis took " + analysisTime + " and found " + unusedDefUseNodes.size + " issues"
         )
     }
 

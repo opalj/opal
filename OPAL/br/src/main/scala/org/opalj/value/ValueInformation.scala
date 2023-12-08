@@ -4,8 +4,6 @@ package value
 
 import scala.annotation.switch
 
-import org.opalj.collection.immutable.UIDSet
-import org.opalj.collection.immutable.UIDSet1
 import org.opalj.br.ArrayType
 import org.opalj.br.BaseType
 import org.opalj.br.BooleanType
@@ -32,6 +30,8 @@ import org.opalj.br.TopVariableInfo
 import org.opalj.br.Type
 import org.opalj.br.VerificationTypeInfo
 import org.opalj.br.VoidType
+import org.opalj.collection.immutable.UIDSet
+import org.opalj.collection.immutable.UIDSet1
 
 /**
  * Encapsulates the available type information about a `DomainValue`.
@@ -121,34 +121,32 @@ object ValueInformation {
      * the value is either null or a value that is properly initialized; i.e., it cannot be an
      * uninitialized this/value.
      */
-    def forProperValue(t: Type)(implicit classHierarchy: ClassHierarchy): ValueInformation = {
-        (t.id: @switch) match {
-            case VoidType.id    => TheVoidValue
-            case BooleanType.id => ABooleanValue
-            case ByteType.id    => AByteValue
-            case CharType.id    => ACharValue
-            case ShortType.id   => AShortValue
-            case IntegerType.id => AnIntegerValue
-            case LongType.id    => ALongValue
-            case FloatType.id   => AFloatValue
-            case DoubleType.id  => ADoubleValue
-            case _ /*referenceTypeId*/ =>
-                if (t.isObjectType) {
-                    val objectType = t.asObjectType
-                    AProperSObjectValue(
-                        Unknown,
-                        isPrecise = classHierarchy.isKnownToBeFinal(objectType),
-                        objectType
-                    )
-                } else {
-                    val arrayType = t.asArrayType
-                    ASArrayValue(
-                        Unknown,
-                        isPrecise = classHierarchy.isKnownToBeFinal(arrayType),
-                        arrayType
-                    )
-                }
-        }
+    def forProperValue(t: Type)(implicit classHierarchy: ClassHierarchy): ValueInformation = (t.id: @switch) match {
+        case VoidType.id    => TheVoidValue
+        case BooleanType.id => ABooleanValue
+        case ByteType.id    => AByteValue
+        case CharType.id    => ACharValue
+        case ShortType.id   => AShortValue
+        case IntegerType.id => AnIntegerValue
+        case LongType.id    => ALongValue
+        case FloatType.id   => AFloatValue
+        case DoubleType.id  => ADoubleValue
+        case _ /*referenceTypeId*/ =>
+            if (t.isObjectType) {
+                val objectType = t.asObjectType
+                AProperSObjectValue(
+                    Unknown,
+                    isPrecise = classHierarchy.isKnownToBeFinal(objectType),
+                    objectType
+                )
+            } else {
+                val arrayType = t.asArrayType
+                ASArrayValue(
+                    Unknown,
+                    isPrecise = classHierarchy.isKnownToBeFinal(arrayType),
+                    arrayType
+                )
+            }
     }
 }
 
@@ -164,9 +162,7 @@ trait IsIllegalValue extends ValueInformation {
 
     final override def isArrayValue: Answer = No
 
-    final override def computationalType: ComputationalType = {
-        throw new IllegalStateException("illegal value")
-    }
+    final override def computationalType: ComputationalType = throw new IllegalStateException("illegal value")
 
     final override def hasCategory2ComputationalType: Boolean = false
 
@@ -198,9 +194,7 @@ object TheVoidValue extends KnownValue {
 
     override def hasCategory2ComputationalType: Boolean = false
 
-    override def verificationTypeInfo: VerificationTypeInfo = {
-        throw new IllegalStateException("void")
-    }
+    override def verificationTypeInfo: VerificationTypeInfo = throw new IllegalStateException("void")
 
     override def toCanonicalForm: ValueInformation = this
 
@@ -227,9 +221,8 @@ trait IsReturnAddressValue extends KnownTypedValue {
 
     final override def hasCategory2ComputationalType: Boolean = false
 
-    final override def verificationTypeInfo: VerificationTypeInfo = {
+    final override def verificationTypeInfo: VerificationTypeInfo =
         throw new IllegalStateException("return address value - cf. JVM spec.: StackMapTableAttribute")
-    }
 
     override def toCanonicalForm: IsReturnAddressValue = AReturnAddressValue
 
@@ -250,13 +243,13 @@ trait ConstantValueInformationProvider[T] {
     def constantValue: Option[T]
 
     def asConstantBoolean: Boolean = throw new UnsupportedOperationException("not a boolean const")
-    def asConstantByte: Byte = throw new UnsupportedOperationException("not a byte const")
-    def asConstantShort: Short = throw new UnsupportedOperationException("not a short const")
-    def asConstantChar: Char = throw new UnsupportedOperationException("not a char const")
+    def asConstantByte: Byte       = throw new UnsupportedOperationException("not a byte const")
+    def asConstantShort: Short     = throw new UnsupportedOperationException("not a short const")
+    def asConstantChar: Char       = throw new UnsupportedOperationException("not a char const")
     def asConstantInteger: Integer = throw new UnsupportedOperationException("not a integer const")
-    def asConstantLong: Long = throw new UnsupportedOperationException("not a long const")
-    def asConstantFloat: Float = throw new UnsupportedOperationException("not a float const")
-    def asConstantDouble: Double = throw new UnsupportedOperationException("not a double const")
+    def asConstantLong: Long       = throw new UnsupportedOperationException("not a long const")
+    def asConstantFloat: Float     = throw new UnsupportedOperationException("not a float const")
+    def asConstantDouble: Double   = throw new UnsupportedOperationException("not a double const")
 
 }
 
@@ -265,7 +258,7 @@ trait ConstantValueInformationProvider[T] {
  */
 sealed trait IsPrimitiveValue[T <: BaseType]
     extends KnownTypedValue
-    with ConstantValueInformationProvider[T#JType] {
+        with ConstantValueInformationProvider[T#JType] {
 
     final override def isReferenceValue: Boolean = false
 
@@ -283,9 +276,7 @@ sealed trait IsPrimitiveValue[T <: BaseType]
 
 object IsPrimitiveValue {
 
-    def unapply[T <: BaseType](underlying: IsPrimitiveValue[T]): Some[T] = {
-        Some(underlying.primitiveType)
-    }
+    def unapply[T <: BaseType](underlying: IsPrimitiveValue[T]): Some[T] = Some(underlying.primitiveType)
 
 }
 
@@ -294,136 +285,136 @@ sealed trait IsIntegerLikeValue[T <: BaseType] extends IsPrimitiveValue[T] {
 }
 
 trait IsBooleanValue extends IsIntegerLikeValue[BooleanType] {
-    final override def primitiveType: BooleanType = BooleanType
+    final override def primitiveType: BooleanType             = BooleanType
     final override def hasCategory2ComputationalType: Boolean = false
-    override def toCanonicalForm: ValueInformation = ABooleanValue
-    override def asConstantBoolean: Boolean = constantValue.get // Expected to be overridden!
+    override def toCanonicalForm: ValueInformation            = ABooleanValue
+    override def asConstantBoolean: Boolean                   = constantValue.get // Expected to be overridden!
 }
 case object ABooleanValue extends IsBooleanValue {
     override def constantValue: Option[Boolean] = None
 }
 case object BooleanValueTrue extends IsBooleanValue {
-    override def constantValue: Option[Boolean] = Some(true)
-    override def asConstantBoolean: Boolean = true
+    override def constantValue: Option[Boolean]    = Some(true)
+    override def asConstantBoolean: Boolean        = true
     override def toCanonicalForm: ValueInformation = this
 }
 case object BooleanValueFalse extends IsBooleanValue {
-    override def constantValue: Option[Boolean] = Some(false)
-    override def asConstantBoolean: Boolean = false
+    override def constantValue: Option[Boolean]    = Some(false)
+    override def asConstantBoolean: Boolean        = false
     override def toCanonicalForm: ValueInformation = this
 }
 
 trait IsByteValue extends IsIntegerLikeValue[ByteType] {
-    final override def primitiveType: ByteType = ByteType
+    final override def primitiveType: ByteType                = ByteType
     final override def hasCategory2ComputationalType: Boolean = false
-    override def toCanonicalForm: ValueInformation = AByteValue
-    override def asConstantByte: Byte = constantValue.get // Expected to be overridden!
+    override def toCanonicalForm: ValueInformation            = AByteValue
+    override def asConstantByte: Byte                         = constantValue.get // Expected to be overridden!
 }
 case object AByteValue extends IsByteValue {
     override def constantValue: Option[Byte] = None
 }
 case class TheByteValue(value: Byte) extends IsByteValue {
-    override def constantValue: Option[Byte] = Some(value)
-    override def asConstantByte: Byte = value
+    override def constantValue: Option[Byte]       = Some(value)
+    override def asConstantByte: Byte              = value
     override def toCanonicalForm: ValueInformation = this
 }
 
 trait IsCharValue extends IsIntegerLikeValue[CharType] {
-    final override def primitiveType: CharType = CharType
+    final override def primitiveType: CharType                = CharType
     final override def hasCategory2ComputationalType: Boolean = false
-    override def toCanonicalForm: ValueInformation = ACharValue
-    override def asConstantChar: Char = constantValue.get // Expected to be overridden!
+    override def toCanonicalForm: ValueInformation            = ACharValue
+    override def asConstantChar: Char                         = constantValue.get // Expected to be overridden!
 }
 case object ACharValue extends IsCharValue {
     override def constantValue: Option[Char] = None
 }
 case class TheCharValue(value: Char) extends IsCharValue {
-    override def constantValue: Option[Char] = Some(value)
-    override def asConstantChar: Char = value
+    override def constantValue: Option[Char]       = Some(value)
+    override def asConstantChar: Char              = value
     override def toCanonicalForm: ValueInformation = this
 }
 
 trait IsShortValue extends IsIntegerLikeValue[ShortType] {
-    final override def primitiveType: ShortType = ShortType
+    final override def primitiveType: ShortType               = ShortType
     final override def hasCategory2ComputationalType: Boolean = false
-    override def toCanonicalForm: ValueInformation = AShortValue
-    override def asConstantShort: Short = constantValue.get // Expected to be overridden!
+    override def toCanonicalForm: ValueInformation            = AShortValue
+    override def asConstantShort: Short                       = constantValue.get // Expected to be overridden!
 }
 case object AShortValue extends IsShortValue {
     override def constantValue: Option[Short] = None
 }
 case class TheShortValue(value: Short) extends IsShortValue {
-    override def constantValue: Option[Short] = Some(value)
-    override def asConstantShort: Short = value
+    override def constantValue: Option[Short]      = Some(value)
+    override def asConstantShort: Short            = value
     override def toCanonicalForm: ValueInformation = this
 }
 
 trait IsIntegerValue extends IsIntegerLikeValue[IntegerType] {
-    final override def primitiveType: IntegerType = IntegerType
+    final override def primitiveType: IntegerType             = IntegerType
     final override def hasCategory2ComputationalType: Boolean = false
-    override def toCanonicalForm: ValueInformation = AnIntegerValue
-    override def asConstantInteger: Integer = constantValue.get // Expected to be overridden!
+    override def toCanonicalForm: ValueInformation            = AnIntegerValue
+    override def asConstantInteger: Integer                   = constantValue.get // Expected to be overridden!
     def lowerBound: Int
     def upperBound: Int
 }
 case object AnIntegerValue extends IsIntegerValue {
     final override def constantValue: Option[Int] = None
-    final override def lowerBound: Int = Int.MinValue
-    final override def upperBound: Int = Int.MaxValue
+    final override def lowerBound: Int            = Int.MinValue
+    final override def upperBound: Int            = Int.MaxValue
 }
 case class TheIntegerValue(value: Int) extends IsIntegerValue {
-    final override def constantValue: Option[Int] = Some(value)
-    override def asConstantInteger: Integer = value
-    final override def lowerBound: Int = value
-    final override def upperBound: Int = value
+    final override def constantValue: Option[Int]  = Some(value)
+    override def asConstantInteger: Integer        = value
+    final override def lowerBound: Int             = value
+    final override def upperBound: Int             = value
     override def toCanonicalForm: ValueInformation = this
 }
 
 trait IsFloatValue extends IsPrimitiveValue[FloatType] {
-    final override def primitiveType: FloatType = FloatType
-    final override def hasCategory2ComputationalType: Boolean = false
+    final override def primitiveType: FloatType                   = FloatType
+    final override def hasCategory2ComputationalType: Boolean     = false
     final override def verificationTypeInfo: VerificationTypeInfo = FloatVariableInfo
-    override def toCanonicalForm: ValueInformation = AFloatValue
-    override def asConstantFloat: Float = constantValue.get // Expected to be overridden!
+    override def toCanonicalForm: ValueInformation                = AFloatValue
+    override def asConstantFloat: Float                           = constantValue.get // Expected to be overridden!
 }
 case object AFloatValue extends IsFloatValue {
     override def constantValue: Option[Float] = None
 }
 case class TheFloatValue(value: Float) extends IsFloatValue {
-    override def constantValue: Option[Float] = Some(value)
-    override def asConstantFloat: Float = value
+    override def constantValue: Option[Float]      = Some(value)
+    override def asConstantFloat: Float            = value
     override def toCanonicalForm: ValueInformation = this
 }
 
 trait IsLongValue extends IsPrimitiveValue[LongType] {
-    final override def primitiveType: LongType = LongType
-    final override def hasCategory2ComputationalType: Boolean = true
+    final override def primitiveType: LongType                    = LongType
+    final override def hasCategory2ComputationalType: Boolean     = true
     final override def verificationTypeInfo: VerificationTypeInfo = LongVariableInfo
-    override def toCanonicalForm: ValueInformation = ALongValue
-    override def asConstantLong: Long = constantValue.get // Expected to be overridden!
+    override def toCanonicalForm: ValueInformation                = ALongValue
+    override def asConstantLong: Long                             = constantValue.get // Expected to be overridden!
 }
 case object ALongValue extends IsLongValue {
     override def constantValue: Option[Long] = None
 }
 case class TheLongValue(value: Long) extends IsLongValue {
-    override def constantValue: Option[Long] = Some(value)
-    override def asConstantLong: Long = value
+    override def constantValue: Option[Long]       = Some(value)
+    override def asConstantLong: Long              = value
     override def toCanonicalForm: ValueInformation = this
 }
 
 trait IsDoubleValue extends IsPrimitiveValue[DoubleType] {
-    final override def primitiveType: DoubleType = DoubleType
-    final override def hasCategory2ComputationalType: Boolean = true
+    final override def primitiveType: DoubleType                  = DoubleType
+    final override def hasCategory2ComputationalType: Boolean     = true
     final override def verificationTypeInfo: VerificationTypeInfo = DoubleVariableInfo
-    override def toCanonicalForm: ValueInformation = ADoubleValue
-    override def asConstantDouble: Double = constantValue.get // Expected to be overridden!
+    override def toCanonicalForm: ValueInformation                = ADoubleValue
+    override def asConstantDouble: Double                         = constantValue.get // Expected to be overridden!
 }
 case object ADoubleValue extends IsDoubleValue {
     override def constantValue: Option[Double] = None
 }
 case class TheDoubleValue(value: Double) extends IsDoubleValue {
-    override def constantValue: Option[Double] = Some(value)
-    override def asConstantDouble: Double = value
+    override def constantValue: Option[Double]     = Some(value)
+    override def asConstantDouble: Double          = value
     override def toCanonicalForm: ValueInformation = this
 }
 
@@ -446,7 +437,7 @@ trait IsReferenceValue extends KnownTypedValue {
 
     final override def isPrimitiveValue: Boolean = false
 
-    final override def isReferenceValue: Boolean = true
+    final override def isReferenceValue: Boolean          = true
     final override def asReferenceValue: IsReferenceValue = this
 
     final override def computationalType: ComputationalType = ComputationalTypeReference
@@ -522,7 +513,6 @@ trait IsReferenceValue extends KnownTypedValue {
      * it may be better to just return `Unknown` in case that this type and the
      * given type are not in a direct inheritance relationship.
      *
-     *
      * Basically, this method implements the same semantics as the `ClassHierarchy`'s
      * `isSubtypeOf` method, but it additionally checks if the type of this value
      * ''could be a subtype'' of the given supertype. I.e., if this value's type
@@ -548,10 +538,8 @@ trait IsReferenceValue extends KnownTypedValue {
      */
     def isValueASubtypeOf(
         referenceType: ReferenceType
-    )(
-        implicit
-        classHierarchy: ClassHierarchy
-    ): Answer
+      )(implicit
+        classHierarchy: ClassHierarchy): Answer
 
     /**
      * In general an `IsReferenceValue` abstracts over all potential values and this information is
@@ -594,7 +582,7 @@ trait IsReferenceValue extends KnownTypedValue {
 
 trait IsBaseReferenceValue extends IsReferenceValue {
     final override def baseValues: Iterable[this.type] = Nil
-    final override def allValues: Iterable[this.type] = List(this)
+    final override def allValues: Iterable[this.type]  = List(this)
     override def toCanonicalForm: IsBaseReferenceValue
 }
 
@@ -602,20 +590,16 @@ trait IsNullValue extends IsBaseReferenceValue {
 
     final override def isArrayValue: Answer = No
 
-    final override def isNull: Answer = Yes
-    final override def isPrecise: Boolean = true
+    final override def isNull: Answer                             = Yes
+    final override def isPrecise: Boolean                         = true
     final override def upperTypeBound: UIDSet[_ <: ReferenceType] = UIDSet.empty
-    final override def leastUpperType: None.type = None
+    final override def leastUpperType: None.type                  = None
     final override def verificationTypeInfo: VerificationTypeInfo = NullVariableInfo
 
     final override def isValueASubtypeOf(
         referenceType: ReferenceType
-    )(
-        implicit
-        classHierarchy: ClassHierarchy
-    ): Answer = {
-        throw new IllegalStateException("null value")
-    }
+      )(implicit
+        classHierarchy: ClassHierarchy): Answer = throw new IllegalStateException("null value")
 
     override def toCanonicalForm: IsNullValue = IsNullValue
 }
@@ -638,9 +622,7 @@ trait IsMObjectValue extends IsBaseReferenceValue {
 
     assert(upperTypeBound.size > 1)
 
-    final override def verificationTypeInfo: VerificationTypeInfo = {
-        ObjectVariableInfo(leastUpperType.get)
-    }
+    final override def verificationTypeInfo: VerificationTypeInfo = ObjectVariableInfo(leastUpperType.get)
 
     // Non-final to enable
     override def isPrecise: Boolean = false
@@ -656,16 +638,14 @@ trait IsMObjectValue extends IsBaseReferenceValue {
      */
     override def isValueASubtypeOf(
         supertype: ReferenceType
-    )(
-        implicit
-        classHierarchy: ClassHierarchy
-    ): Answer = {
+      )(implicit
+        classHierarchy: ClassHierarchy): Answer = {
         var isASubtypeOf: Answer = No
         upperTypeBound foreach { anUpperTypeBound =>
             classHierarchy.isASubtypeOf(anUpperTypeBound, supertype) match {
                 case Yes     => return Yes; // <= Shortcut evaluation
                 case Unknown => isASubtypeOf = Unknown
-                case No      => /*nothing to do*/
+                case No      =>             /*nothing to do*/
             }
         }
         /* No | Unknown*/
@@ -682,20 +662,17 @@ trait IsMObjectValue extends IsBaseReferenceValue {
         isASubtypeOf match {
             // Yes is not possible here!
 
-            case No if (
-                supertype.isArrayType && upperTypeBound != ObjectType.SerializableAndCloneable
-            ) =>
+            case No if
+                    supertype.isArrayType && upperTypeBound != ObjectType.SerializableAndCloneable =>
                 // even if the upper bound is not precise we are now 100% sure
                 // that this value is not a subtype of the given supertype
                 No
-            case _ =>
-                Unknown
+            case _ => Unknown
         }
     }
 
-    override def toCanonicalForm: IsBaseReferenceValue = {
+    override def toCanonicalForm: IsBaseReferenceValue =
         AProperMObjectValue(isNull, isPrecise, upperTypeBound, leastUpperType)
-    }
 }
 
 /**
@@ -706,13 +683,11 @@ case class AProperMObjectValue(
         override val isPrecise: Boolean,
         upperTypeBound:         UIDSet[ObjectType],
         leastUpperType:         Option[ReferenceType] // actually always Some[ObjectType]
-) extends IsMObjectValue {
+      ) extends IsMObjectValue {
     override def toCanonicalForm: IsMObjectValue = this
-    override def toString: String = {
-        "ProperMObjectValue("+
-            s"type=${upperTypeBound.map(_.toJava).toList.sorted.mkString(" with ")},"+
-            s"isNull=$isNull,isPrecise=$isPrecise)"
-    }
+    override def toString: String = "ProperMObjectValue(" +
+        s"type=${upperTypeBound.map(_.toJava).toList.sorted.mkString(" with ")}," +
+        s"isNull=$isNull,isPrecise=$isPrecise)"
 
 }
 
@@ -732,51 +707,43 @@ trait IsSObjectValue extends IsSReferenceValue[ObjectType] {
 
     override def isValueASubtypeOf(
         supertype: ReferenceType
-    )(
-        implicit
-        classHierarchy: ClassHierarchy
-    ): Answer = {
+      )(implicit
+        classHierarchy: ClassHierarchy): Answer = {
         val subtype = theUpperTypeBound
         classHierarchy.isASubtypeOf(subtype, supertype) match {
-            case Yes =>
-                Yes
-            case No if isPrecise
-                || (
-                    supertype.isArrayType &&
-                    // and it is impossible that this value is actually an array...
-                    (subtype ne ObjectType.Object) &&
-                    (subtype ne ObjectType.Serializable) &&
-                    (subtype ne ObjectType.Cloneable)
-                ) || (
+            case Yes => Yes
+            case No
+                if isPrecise
+                    || (
+                        supertype.isArrayType &&
+                            // and it is impossible that this value is actually an array...
+                            (subtype ne ObjectType.Object) &&
+                            (subtype ne ObjectType.Serializable) &&
+                            (subtype ne ObjectType.Cloneable)
+                    ) || (
                         // If both types represent class types and it is not
                         // possible that some value of this type may be a subtype
                         // of the given supertype, the answer "No" is correct.
                         supertype.isObjectType &&
-                        classHierarchy.isKnown(supertype.asObjectType) &&
-                        classHierarchy.isKnown(subtype) &&
-                        classHierarchy.isInterface(supertype.asObjectType).isNo &&
-                        classHierarchy.isInterface(subtype).isNo &&
-                        classHierarchy.isASubtypeOf(supertype, subtype).isNo
-                    ) =>
-                No
-            case _ if isPrecise &&
-                // Note "reflexivity" is already captured by the first isSubtypeOf call
-                classHierarchy.isSubtypeOf(supertype, subtype) =>
-                No
-            case _ =>
-                Unknown
+                            classHierarchy.isKnown(supertype.asObjectType) &&
+                            classHierarchy.isKnown(subtype) &&
+                            classHierarchy.isInterface(supertype.asObjectType).isNo &&
+                            classHierarchy.isInterface(subtype).isNo &&
+                            classHierarchy.isASubtypeOf(supertype, subtype).isNo
+                    ) => No
+            case _
+                if isPrecise &&
+                    // Note "reflexivity" is already captured by the first isSubtypeOf call
+                    classHierarchy.isSubtypeOf(supertype, subtype) => No
+            case _ => Unknown
         }
     }
 
     // Non-final to enable subclasses to identify cases of uninitializedThis/Variable cases.
-    override def verificationTypeInfo: VerificationTypeInfo = {
-        ObjectVariableInfo(theUpperTypeBound)
-    }
+    override def verificationTypeInfo: VerificationTypeInfo = ObjectVariableInfo(theUpperTypeBound)
 
     // Non-final to enable subclasses to provide more detailed information.
-    override def toCanonicalForm: IsBaseReferenceValue = {
-        ASObjectValue(isNull, isPrecise, theUpperTypeBound)
-    }
+    override def toCanonicalForm: IsBaseReferenceValue = ASObjectValue(isNull, isPrecise, theUpperTypeBound)
 }
 
 /**
@@ -785,12 +752,10 @@ trait IsSObjectValue extends IsSReferenceValue[ObjectType] {
 case class ASObjectValue(
         isNull:                 Answer,
         override val isPrecise: Boolean,
-        theUpperTypeBound:      ObjectType
-) extends IsSObjectValue {
+        theUpperTypeBound: ObjectType) extends IsSObjectValue {
     override def toCanonicalForm: IsSObjectValue = this
-    override def toString: String = {
+    override def toString: String =
         s"SObjectValue(type=${theUpperTypeBound.toJava},isNull=$isNull,isPrecise=$isPrecise)"
-    }
 
 }
 
@@ -800,12 +765,10 @@ case class ASObjectValue(
 case class AProperSObjectValue(
         isNull:                 Answer,
         override val isPrecise: Boolean,
-        theUpperTypeBound:      ObjectType
-) extends IsSObjectValue {
+        theUpperTypeBound: ObjectType) extends IsSObjectValue {
     override def toCanonicalForm: IsSObjectValue = this
-    override def toString: String = {
+    override def toString: String =
         s"ProperSObjectValue(type=${theUpperTypeBound.toJava},isNull=$isNull,isPrecise=$isPrecise)"
-    }
 }
 
 trait IsSArrayValue extends IsSReferenceValue[ArrayType] {
@@ -814,95 +777,77 @@ trait IsSArrayValue extends IsSReferenceValue[ArrayType] {
 
     override def isValueASubtypeOf(
         supertype: ReferenceType
-    )(
-        implicit
-        classHierarchy: ClassHierarchy
-    ): Answer = {
-        classHierarchy.isASubtypeOf(theUpperTypeBound, supertype) match {
-            case Yes => Yes
-            case No if isPrecise ||
+      )(implicit
+        classHierarchy: ClassHierarchy): Answer = classHierarchy.isASubtypeOf(theUpperTypeBound, supertype) match {
+        case Yes => Yes
+        case No
+            if isPrecise ||
                 // the array's supertypes: Object, Serializable and Cloneable
                 // are handled by domain.isASubtypeOf
                 supertype.isObjectType ||
                 theUpperTypeBound.elementType.isBaseType ||
                 (
                     supertype.isArrayType &&
-                    supertype.asArrayType.elementType.isBaseType &&
-                    (
-                        theUpperTypeBound.dimensions >= supertype.asArrayType.dimensions ||
-                        (theUpperTypeBound.componentType ne ObjectType.Object)
-                    )
+                        supertype.asArrayType.elementType.isBaseType &&
+                        (
+                            theUpperTypeBound.dimensions >= supertype.asArrayType.dimensions ||
+                                (theUpperTypeBound.componentType ne ObjectType.Object)
+                        )
                 ) => No
-            case _ => Unknown
-        }
+        case _ => Unknown
     }
 
     // Non-final to enable subclasses to identify cases of uninitializedThis/Variable cases.
-    final override def verificationTypeInfo: VerificationTypeInfo = {
-        ObjectVariableInfo(theUpperTypeBound)
-    }
+    final override def verificationTypeInfo: VerificationTypeInfo = ObjectVariableInfo(theUpperTypeBound)
 }
 
 case class ASArrayValue(
         override val isNull:    Answer,
         override val isPrecise: Boolean,
-        theUpperTypeBound:      ArrayType
-) extends IsSArrayValue {
+        theUpperTypeBound: ArrayType) extends IsSArrayValue {
     override def toCanonicalForm: IsSArrayValue = this
-    override def toString: String = {
-        "SArrayValue("+
-            s"type=${theUpperTypeBound.toJava},"+
-            s"isNull=$isNull,isPrecise=$isPrecise,length=<N/A>)"
-    }
+    override def toString: String = "SArrayValue(" +
+        s"type=${theUpperTypeBound.toJava}," +
+        s"isNull=$isNull,isPrecise=$isPrecise,length=<N/A>)"
 }
 
 case class ASArrayWithLengthValue(
-        length:            Int,
-        theUpperTypeBound: ArrayType
-) extends IsSArrayValue {
-    override def isNull: Answer = No
-    override def isPrecise: Boolean = true
+        length: Int,
+        theUpperTypeBound: ArrayType) extends IsSArrayValue {
+    override def isNull: Answer                 = No
+    override def isPrecise: Boolean             = true
     override def toCanonicalForm: IsSArrayValue = this
-    override def toString: String = {
-        s"SArrayValue("+
-            s"type=${theUpperTypeBound.toJava},"+
-            s"isNull=$isNull,isPrecise=$isPrecise,length=$length)"
-    }
+    override def toString: String = s"SArrayValue(" +
+        s"type=${theUpperTypeBound.toJava}," +
+        s"isNull=$isNull,isPrecise=$isPrecise,length=$length)"
 
 }
 
 private[value] trait IsPreciseNonNullReferenceValue extends IsSObjectValue {
-    override def isNull: No.type = No
+    override def isNull: No.type    = No
     override def isPrecise: Boolean = true
 }
 
 trait IsStringValue
     extends IsPreciseNonNullReferenceValue
-    with ConstantValueInformationProvider[String] {
+        with ConstantValueInformationProvider[String] {
 
     def value: String
 
     final override def theUpperTypeBound: ObjectType = ObjectType.String
 
-    final override def verificationTypeInfo: VerificationTypeInfo = {
-        ObjectVariableInfo(ObjectType.String)
-    }
+    final override def verificationTypeInfo: VerificationTypeInfo = ObjectVariableInfo(ObjectType.String)
 
     final override def isValueASubtypeOf(
         supertype: ReferenceType
-    )(
-        implicit
-        classHierarchy: ClassHierarchy
-    ): Answer = {
-        supertype.id match {
-            case ObjectType.ObjectId
-                | ObjectType.SerializableId
-                | ObjectType.CloneableId
-                | ObjectType.ComparableId
-                | ObjectType.StringId =>
-                Yes
-            case _ => No
-        }
+      )(implicit
+        classHierarchy: ClassHierarchy): Answer = supertype.id match {
+        case ObjectType.ObjectId
+            | ObjectType.SerializableId
+            | ObjectType.CloneableId
+            | ObjectType.ComparableId
+            | ObjectType.StringId => Yes
+        case _ => No
     }
     override def constantValue: Option[String] = Some(value)
 }
@@ -918,36 +863,29 @@ case class TheStringValue(value: String) extends IsStringValue {
 
 trait IsClassValue
     extends IsPreciseNonNullReferenceValue
-    with ConstantValueInformationProvider[Type] {
+        with ConstantValueInformationProvider[Type] {
 
     // We hard-code the type hierarchy related to "java.lang.Class".
-    val AnnotatedElement = ObjectType("java/lang/reflect/AnnotatedElement")
+    val AnnotatedElement   = ObjectType("java/lang/reflect/AnnotatedElement")
     val GenericDeclaration = ObjectType("java/lang/reflect/GenericDeclaration")
-    val Type = ObjectType("java/lang/reflect/Type")
+    val Type               = ObjectType("java/lang/reflect/Type")
 
     def value: Type
 
-    final override def theUpperTypeBound: ObjectType = ObjectType.Class
-    final override def verificationTypeInfo: VerificationTypeInfo = {
-        ObjectVariableInfo(ObjectType.Class)
-    }
+    final override def theUpperTypeBound: ObjectType              = ObjectType.Class
+    final override def verificationTypeInfo: VerificationTypeInfo = ObjectVariableInfo(ObjectType.Class)
 
     final override def isValueASubtypeOf(
         supertype: ReferenceType
-    )(
-        implicit
-        classHierarchy: ClassHierarchy
-    ): Answer = {
-        supertype.id match {
-            case ObjectType.ObjectId
-                | ObjectType.ClassId
-                | ObjectType.SerializableId
-                | AnnotatedElement.id
-                | Type.id
-                | GenericDeclaration.id =>
-                Yes
-            case _ => No
-        }
+      )(implicit
+        classHierarchy: ClassHierarchy): Answer = supertype.id match {
+        case ObjectType.ObjectId
+            | ObjectType.ClassId
+            | ObjectType.SerializableId
+            | AnnotatedElement.id
+            | Type.id
+            | GenericDeclaration.id => Yes
+        case _ => No
     }
 
     override def constantValue: Option[Type] = Some(value)
@@ -979,20 +917,17 @@ trait IsMultipleReferenceValue extends IsReferenceValue {
 
     override def allValues: Iterable[IsReferenceValue] = this.baseValues
 
-    override def verificationTypeInfo: VerificationTypeInfo = {
+    override def verificationTypeInfo: VerificationTypeInfo =
         if (isNull.isYes) {
             NullVariableInfo
         } else {
             ObjectVariableInfo(leastUpperType.get)
         }
-    }
 
     override def isValueASubtypeOf(
         supertype: ReferenceType
-    )(
-        implicit
-        classHierarchy: ClassHierarchy
-    ): Answer = {
+      )(implicit
+        classHierarchy: ClassHierarchy): Answer = {
         // Recall that the client has to make an "isNull" check before calling
         // isValueASubtypeOf. Hence, at least one of the possible reference values
         // has to be non null and this value's upper type bound has to be non-empty.
@@ -1001,18 +936,15 @@ trait IsMultipleReferenceValue extends IsReferenceValue {
         // when compared with supertype – is Unknown, but that the type of the
         // value as a whole is still known to be a subtype
         val isASubtypeOf = classHierarchy.isASubtypeOf(this.upperTypeBound, supertype)
-        if (isASubtypeOf eq Yes)
-            return Yes;
-        if ((isASubtypeOf eq No) && isPrecise)
-            return No;
+        if (isASubtypeOf eq Yes) return Yes;
+        if ((isASubtypeOf eq No) && isPrecise) return No;
 
         // Recall that the runtime type of this value can still be a subtype of supertype
         // even if this upperTypeBound is not a subtype of supertype.
-        val values = baseValues.iterator.filter(_.isNull.isNoOrUnknown)
+        val values         = baseValues.iterator.filter(_.isNull.isNoOrUnknown)
         var answer: Answer = values.next().isValueASubtypeOf(supertype)
-        values foreach { value => /* the first value is already removed */
-            if (answer eq Unknown)
-                return answer; //isSubtype
+        values foreach { value =>                 /* the first value is already removed */
+            if (answer eq Unknown) return answer; // isSubtype
 
             answer = answer join value.isValueASubtypeOf(supertype)
         }
@@ -1048,25 +980,21 @@ case class AMultipleReferenceValue(
         isPrecise:      Boolean,
         upperTypeBound: UIDSet[_ <: ReferenceType],
         leastUpperType: Option[ReferenceType] // None in case of "null"
-) extends IsMultipleReferenceValue {
+      ) extends IsMultipleReferenceValue {
 
     assert((isNull.isYes && leastUpperType.isEmpty) || (isNull.isNoOrUnknown && leastUpperType.isDefined))
-    assert(baseValues.forall(_.getClass.getPackage.getName == ("org.opalj.value")))
+    assert(baseValues.forall(_.getClass.getPackage.getName == "org.opalj.value"))
 
-    final override def isArrayValue: Answer = {
-        leastUpperType match {
-            case Some(_: ArrayType) => isNull.negate // isNull is either No or unknown
-            case _                  => No
-        }
+    final override def isArrayValue: Answer = leastUpperType match {
+        case Some(_: ArrayType) => isNull.negate // isNull is either No or unknown
+        case _                  => No
     }
 
     override def toCanonicalForm: IsReferenceValue = this
-    override def toString: String = {
-        "MultipleReferenceValue("+
-            s"type=${upperTypeBound.map(_.toJava).toList.sorted.mkString(" with ")},"+
-            s"isNull=$isNull,isPrecise=$isPrecise,"+
-            s"baseValues=${baseValues.map(_.toString).mkString("{ ", ", ", " }")})"
-    }
+    override def toString: String = "MultipleReferenceValue(" +
+        s"type=${upperTypeBound.map(_.toJava).toList.sorted.mkString(" with ")}," +
+        s"isNull=$isNull,isPrecise=$isPrecise," +
+        s"baseValues=${baseValues.map(_.toString).mkString("{ ", ", ", " }")})"
 }
 
 /**

@@ -2,9 +2,8 @@
 package org.opalj
 
 import java.io.File
-
-import scala.io.Source
 import scala.collection.immutable.BitSet
+import scala.io.Source
 
 import org.opalj.io.process
 
@@ -47,8 +46,7 @@ package object bytecode {
      */
     def commonPackage(fqnA: String, fqnB: String, pkgSeparatorChar: Int = '.'): Option[String] = {
         val pkgSeparatorIndex = fqnA.indexOf(pkgSeparatorChar) + 1
-        if (pkgSeparatorIndex <= 0)
-            return None;
+        if (pkgSeparatorIndex <= 0) return None;
 
         val rootPkg = fqnA.substring(0, pkgSeparatorIndex)
         if (pkgSeparatorIndex == fqnB.indexOf(pkgSeparatorChar) + 1 &&
@@ -90,23 +88,18 @@ package object bytecode {
     def abbreviateType(
         definingTypeFQN:  String,
         memberTypeFQN:    String,
-        pkgSeparatorChar: Int    = '.'
-    ): String = {
+        pkgSeparatorChar: Int = '.'): String = commonPackage(definingTypeFQN, memberTypeFQN) match {
 
-        commonPackage(definingTypeFQN, memberTypeFQN) match {
+        case Some(commonPkg) if commonPkg.indexOf(pkgSeparatorChar) < commonPkg.length - 1 =>
+            // we have more than one common package...
+            val beforeLastCommonPkgIndex = commonPkg.dropRight(1).lastIndexOf(pkgSeparatorChar)
+            val length                   = memberTypeFQN.length
+            val packagesCount            = commonPkg.count(_ == pkgSeparatorChar) - 1
+            val packageAbbreviation      = "." * packagesCount
+            packageAbbreviation +
+                memberTypeFQN.substring(beforeLastCommonPkgIndex + 1, length)
 
-            case Some(commonPkg) if commonPkg.indexOf(pkgSeparatorChar) < commonPkg.length - 1 =>
-                // we have more than one common package...
-                val beforeLastCommonPkgIndex = commonPkg.dropRight(1).lastIndexOf(pkgSeparatorChar)
-                val length = memberTypeFQN.length
-                val packagesCount = commonPkg.count(_ == pkgSeparatorChar) - 1
-                val packageAbbreviation = "." * packagesCount
-                packageAbbreviation +
-                    memberTypeFQN.substring(beforeLastCommonPkgIndex + 1, length)
-
-            case _ =>
-                memberTypeFQN
-        }
+        case _ => memberTypeFQN
     }
 
     /**
@@ -119,11 +112,10 @@ package object bytecode {
         val javaVersion = System.getProperty("java.version")
         if (javaVersion.startsWith("1.")) {
             val sunBootClassPath = System.getProperties().getProperty("sun.boot.class.path")
-            val paths = sunBootClassPath.split(File.pathSeparator)
+            val paths            = sunBootClassPath.split(File.pathSeparator)
             paths.find(_.endsWith("rt.jar")) match {
 
-                case Some(libPath) =>
-                    new File(libPath.substring(0, libPath.length() - 6))
+                case Some(libPath) => new File(libPath.substring(0, libPath.length() - 6))
 
                 case None =>
                     val sunBootLibraryPath = System.getProperty("sun.boot.library.path")
@@ -134,10 +126,9 @@ package object bytecode {
                     }
             }
         } else {
-            val javaJMods = System.getProperty("java.home")+"/jmods"
+            val javaJMods = System.getProperty("java.home") + "/jmods"
             val directory = new File(javaJMods)
-            if (!directory.exists())
-                throw new RuntimeException("cannot locate the JRE libraries")
+            if (!directory.exists()) throw new RuntimeException("cannot locate the JRE libraries")
             directory
         }
     }
@@ -150,17 +141,16 @@ package object bytecode {
         val javaVersion = System.getProperty("java.version")
         if (javaVersion.startsWith("1.")) {
             val sunBootClassPath = System.getProperties().getProperty("sun.boot.class.path")
-            val paths = sunBootClassPath.split(File.pathSeparator)
+            val paths            = sunBootClassPath.split(File.pathSeparator)
 
             paths.find(_.endsWith("rt.jar")) match {
                 case Some(rtJarPath) => new File(rtJarPath)
                 case None =>
-                    val rtJarCandidates =
-                        new File(System.getProperty("sun.boot.library.path")).listFiles(
-                            new java.io.FilenameFilter() {
-                                def accept(dir: File, name: String) = name == "rt.jar"
-                            }
-                        )
+                    val rtJarCandidates = new File(System.getProperty("sun.boot.library.path")).listFiles(
+                        new java.io.FilenameFilter() {
+                            def accept(dir: File, name: String) = name == "rt.jar"
+                        }
+                    )
                     if (rtJarCandidates.length != 1) {
                         throw new RuntimeException("cannot locate the JRE libraries")
                     } else {
@@ -168,10 +158,9 @@ package object bytecode {
                     }
             }
         } else {
-            val javaBaseJMod = System.getProperty("java.home")+"/jmods/java.base.jmod" // ~ rt.jar
-            val file = new File(javaBaseJMod)
-            if (!file.exists())
-                throw new RuntimeException("cannot locate the JRE libraries")
+            val javaBaseJMod = System.getProperty("java.home") + "/jmods/java.base.jmod" // ~ rt.jar
+            val file         = new File(javaBaseJMod)
+            if (!file.exists()) throw new RuntimeException("cannot locate the JRE libraries")
             file
         }
     }
@@ -179,16 +168,15 @@ package object bytecode {
     /**
      * The list of all JVM instructions in the format: "<OPCODE><MNEMONIC>NewLine".
      */
-    def JVMInstructions: List[(Int, String)] = {
+    def JVMInstructions: List[(Int, String)] =
         process(getClass.getClassLoader.getResourceAsStream("JVMInstructionsList.txt")) { stream =>
             val is = Source.fromInputStream(stream).getLines().toList.map(_.split(" ").map(_.trim))
             is.map { i =>
-                val opcode = i(0)
+                val opcode   = i(0)
                 val mnemonic = i(1)
                 (opcode.toInt, mnemonic)
             }.sorted
         }
-    }
 
     /** The set of all valid/used opcodes. */
     def JVMOpcodes = BitSet(JVMInstructions.map(_._1): _*)

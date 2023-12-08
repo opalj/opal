@@ -6,6 +6,8 @@ package analyses
 package cg
 package xta
 
+import scala.collection.mutable
+
 import org.opalj.br.ArrayType
 import org.opalj.br.Method
 import org.opalj.br.analyses.ProjectInformationKeys
@@ -26,8 +28,6 @@ import org.opalj.fpcf.Results
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.properties.TACAI
 
-import scala.collection.mutable
-
 /**
  * Updates InstantiatedTypes attached to a method's set for each array allocation
  * occurring within that method.
@@ -41,14 +41,12 @@ import scala.collection.mutable
  * @author Andreas Bauer
  */
 final class ArrayInstantiationsAnalysis(
-        val project:     SomeProject,
-        selectSetEntity: TypeSetEntitySelector
-) extends ReachableMethodAnalysis {
+        val project: SomeProject,
+        selectSetEntity: TypeSetEntitySelector) extends ReachableMethodAnalysis {
 
     override def processMethod(
         callContext: ContextType,
-        tacEP:       EPS[Method, TACAI]
-    ): ProperPropertyComputationResult = {
+        tacEP:       EPS[Method, TACAI]): ProperPropertyComputationResult = {
         val code = callContext.method.definedMethod.body.get
 
         val targetSetEntity = selectSetEntity(callContext.method)
@@ -88,19 +86,18 @@ final class ArrayInstantiationsAnalysis(
      * @return Partial results for the implicit assignments.
      */
     def multidimensionalArrayInitialAssignments(
-        arrays: Iterable[ArrayType]
-    ): Iterable[PartialResult[ArrayType, InstantiatedTypes]] = {
+        arrays: Iterable[ArrayType]): Iterable[PartialResult[ArrayType, InstantiatedTypes]] = {
 
         val buffer = mutable.Iterable.newBuilder[PartialResult[ArrayType, InstantiatedTypes]]
 
         // Note: Since 'until' is an exclusive range, all array types in 'arrays' with
         // dimension 1 are not processed here.
-        for (
-            at <- arrays;
+        for {
+            at  <- arrays
             dim <- 1 until at.dimensions
-        ) {
+        } {
 
-            val targetAT = ArrayType(dim + 1, at.elementType)
+            val targetAT   = ArrayType(dim + 1, at.elementType)
             val assignedAT = targetAT.componentType.asArrayType
             buffer += PartialResult(
                 targetAT,
@@ -114,20 +111,18 @@ final class ArrayInstantiationsAnalysis(
 }
 
 class ArrayInstantiationsAnalysisScheduler(
-        selectSetEntity: TypeSetEntitySelector
-) extends BasicFPCFTriggeredAnalysisScheduler {
+        selectSetEntity: TypeSetEntitySelector) extends BasicFPCFTriggeredAnalysisScheduler {
 
     override def requiredProjectInformation: ProjectInformationKeys = Seq(TypeIteratorKey)
 
     override def register(project: SomeProject, propertyStore: PropertyStore, i: Null): FPCFAnalysis = {
-        val analysis =
-            new ArrayInstantiationsAnalysis(project, selectSetEntity)
+        val analysis = new ArrayInstantiationsAnalysis(project, selectSetEntity)
         propertyStore.registerTriggeredComputation(Callers.key, analysis.analyze)
         analysis
     }
 
-    override def uses: Set[PropertyBounds] = PropertyBounds.ubs(TACAI)
-    override def derivesEagerly: Set[PropertyBounds] = Set.empty
+    override def uses: Set[PropertyBounds]                   = PropertyBounds.ubs(TACAI)
+    override def derivesEagerly: Set[PropertyBounds]         = Set.empty
     override def derivesCollaboratively: Set[PropertyBounds] = PropertyBounds.ubs(InstantiatedTypes)
-    override def triggeredBy: PropertyKind = Callers.key
+    override def triggeredBy: PropertyKind                   = Callers.key
 }

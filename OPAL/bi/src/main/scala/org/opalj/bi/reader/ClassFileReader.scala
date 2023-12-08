@@ -22,27 +22,26 @@ import java.util.jar.JarEntry
 import java.util.jar.JarInputStream
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
-
 import scala.collection.immutable.ArraySeq
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Await
-import scala.concurrent.duration.Duration
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.concurrent.duration.Duration
 import scala.jdk.CollectionConverters._
 import scala.util.control.ControlThrowable
 
-import org.apache.commons.text.similarity.LevenshteinDistance
-import org.opalj.control.fillArrayOfInt
-import org.opalj.io.process
-
-import org.opalj.log.OPALLogger.error
-import org.opalj.log.OPALLogger.info
+import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.concurrent.BoundedExecutionContext
 import org.opalj.concurrent.NumberOfThreadsForIOBoundTasks
-import org.opalj.concurrent.parForeachSeqElement
 import org.opalj.concurrent.Tasks
-import org.opalj.bytecode.BytecodeProcessingFailedException
+import org.opalj.concurrent.parForeachSeqElement
+import org.opalj.control.fillArrayOfInt
+import org.opalj.io.process
+import org.opalj.log.OPALLogger.error
+import org.opalj.log.OPALLogger.info
+
+import org.apache.commons.text.similarity.LevenshteinDistance
 
 /**
  * Implements the template method to read in a Java class file. Additionally,
@@ -141,12 +140,11 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
      * and RuntimeInvisibleTypeAnnotations attributes.
      */
     protected def Attributes(
-        cp:                  Constant_Pool,
-        ap:                  AttributeParent,
-        ap_name_index:       Constant_Pool_Index,
+        cp: Constant_Pool,
+        ap: AttributeParent,
+        ap_name_index: Constant_Pool_Index,
         ap_descriptor_index: Constant_Pool_Index,
-        in:                  DataInputStream
-    ): Attributes
+        in: DataInputStream): Attributes
 
     /**
      * Factory method to create the `ClassFile` object that represents the class
@@ -159,17 +157,16 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
      * be the result's first element.
      */
     protected def ClassFile(
-        cp:            Constant_Pool,
+        cp: Constant_Pool,
         minor_version: Int,
         major_version: Int,
-        access_flags:  Int,
-        this_class:    Constant_Pool_Index,
-        super_class:   Constant_Pool_Index,
-        interfaces:    Interfaces,
-        fields:        Fields,
-        methods:       Methods,
-        attributes:    Attributes
-    ): ClassFile
+        access_flags: Int,
+        this_class: Constant_Pool_Index,
+        super_class: Constant_Pool_Index,
+        interfaces: Interfaces,
+        fields: Fields,
+        methods: Methods,
+        attributes: Attributes): ClassFile
 
     //
     // IMPLEMENTATION
@@ -192,9 +189,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
      *
      * @note `PostProcessors` will be executed in last-in-first-out order.
      */
-    def registerClassFilePostProcessor(p: List[ClassFile] => List[ClassFile]): Unit = {
-        classFilePostProcessors :+= p
-    }
+    def registerClassFilePostProcessor(p: List[ClassFile] => List[ClassFile]): Unit = classFilePostProcessors :+= p
 
     /**
      * Template method that reads a Java class file from the given input stream.
@@ -239,42 +234,45 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
         val minor_version = in.readUnsignedShort
         val major_version = in.readUnsignedShort
 
-        def unsupportedVersion =
-            s"unsupported class file version: $major_version.$minor_version"+
-                " (Supported: 45(Java 1.1) <= version <= "+
-                s"$LatestSupportedJavaMajorVersion(${jdkVersion(LatestSupportedJavaMajorVersion)}))"
+        def unsupportedVersion = s"unsupported class file version: $major_version.$minor_version" +
+            " (Supported: 45(Java 1.1) <= version <= " +
+            s"$LatestSupportedJavaMajorVersion(${jdkVersion(LatestSupportedJavaMajorVersion)}))"
 
         // let's make sure that we support this class file's version
         if (major_version < 45) // at least JDK 1.1 or we back out
             throw BytecodeProcessingFailedException(unsupportedVersion)
 
         if (major_version > LatestSupportedJavaMajorVersion || (
-            major_version == LatestSupportedJavaMajorVersion
-            && minor_version > LatestSupportedJavaVersion.minor
-        )) {
+                major_version == LatestSupportedJavaMajorVersion
+                    && minor_version > LatestSupportedJavaVersion.minor
+            )) {
             // Just log an error message for newer version, we might still be able to handle the
             // class if it doesn't use any features introduced in an unsupported version
             error("class file reader", unsupportedVersion)
         }
 
-        val cp = Constant_Pool(in)
+        val cp           = Constant_Pool(in)
         val access_flags = in.readUnsignedShort
-        val this_class = in.readUnsignedShort
-        val super_class = in.readUnsignedShort
+        val this_class   = in.readUnsignedShort
+        val super_class  = in.readUnsignedShort
         val interfaces = {
             val interfaces_count = in.readUnsignedShort
             fillArrayOfInt(interfaces_count) { in.readUnsignedShort }
         }
-        val fields = Fields(cp, in)
-        val methods = Methods(cp, in)
+        val fields     = Fields(cp, in)
+        val methods    = Methods(cp, in)
         val attributes = Attributes(cp, AttributesParent.ClassFile, this_class, -1, in)
 
         var classFile = ClassFile(
             cp,
-            minor_version, major_version,
+            minor_version,
+            major_version,
             access_flags,
-            this_class, super_class, interfaces,
-            fields, methods,
+            this_class,
+            super_class,
+            interfaces,
+            fields,
+            methods,
             attributes
         )
 
@@ -283,9 +281,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
         classFile = applyDeferredActions(cp, classFile)
 
         // Perform general transformations on class files.
-        classFilePostProcessors.foldLeft(List(classFile)) { (classFiles, postProcessor) =>
-            postProcessor(classFiles)
-        }
+        classFilePostProcessors.foldLeft(List(classFile)) { (classFiles, postProcessor) => postProcessor(classFiles) }
     }
 
     //
@@ -304,17 +300,13 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
      *          The created input stream will automatically be wrapped by OPAL to enable
      *          efficient reading of the class file.
      */
-    def ClassFile(create: () => InputStream): List[ClassFile] = {
-        process(create()) {
-            case null =>
-                throw new IllegalArgumentException("the created stream is null")
+    def ClassFile(create: () => InputStream): List[ClassFile] = process(create()) {
+        case null => throw new IllegalArgumentException("the created stream is null")
 
-            case dis: DataInputStream      => ClassFile(dis)
-            case bis: BufferedInputStream  => ClassFile(new DataInputStream(bis))
-            case bas: ByteArrayInputStream => ClassFile(new DataInputStream(bas))
-            case is =>
-                ClassFile(new DataInputStream(new BufferedInputStream(is)))
-        }
+        case dis: DataInputStream      => ClassFile(dis)
+        case bis: BufferedInputStream  => ClassFile(new DataInputStream(bis))
+        case bas: ByteArrayInputStream => ClassFile(new DataInputStream(bas))
+        case is                        => ClassFile(new DataInputStream(new BufferedInputStream(is)))
     }
 
     def isClassFileRepository(filename: String, containerName: Option[String]): Boolean = {
@@ -330,15 +322,12 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
         filenameLength > 4 && {
             val ending = filename.substring(filenameLength - 4, filenameLength).toLowerCase
             (ending == "jmod" && filename.charAt(filenameLength - 5) == '.') ||
-                ending == ".jar" || ending == ".zip" || ending == ".war" || ending == ".ear"
+            ending == ".jar" || ending == ".zip" || ending == ".war" || ending == ".ear"
         }
     }
 
-    protected[this] def ClassFile(jarFile: ZipFile, jarEntry: ZipEntry): List[ClassFile] = {
-        process(jarFile.getInputStream(jarEntry)) { in =>
-            ClassFile(new DataInputStream(new BufferedInputStream(in)))
-        }
-    }
+    protected[this] def ClassFile(jarFile: ZipFile, jarEntry: ZipEntry): List[ClassFile] =
+        process(jarFile.getInputStream(jarEntry)) { in => ClassFile(new DataInputStream(new BufferedInputStream(in))) }
 
     /**
      * Reads in a single class file from a Jar file.
@@ -348,8 +337,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
      */
     @throws[java.io.IOException]("if the file is empty or the entry cannot be found")
     def ClassFile(jarFile: File, jarFileEntryName: String): List[ClassFile] = {
-        if (jarFile.length() == 0)
-            throw new IOException(s"the file $jarFile is empty");
+        if (jarFile.length() == 0) throw new IOException(s"the file $jarFile is empty");
 
         val levenshteinDistance = new LevenshteinDistance()
 
@@ -357,17 +345,17 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
             val jarEntry = zf.getEntry(jarFileEntryName)
             if (jarEntry == null) {
                 var names: List[(Int, String)] = Nil
-                val zfEntries = zf.entries()
+                val zfEntries                  = zf.entries()
                 while (zfEntries.hasMoreElements) {
-                    val zfEntry = zfEntries.nextElement()
+                    val zfEntry     = zfEntries.nextElement()
                     val zfEntryName = zfEntry.getName
-                    val distance = levenshteinDistance(zfEntryName, jarFileEntryName).intValue()
+                    val distance    = levenshteinDistance(zfEntryName, jarFileEntryName).intValue()
                     names = (distance, zfEntryName) :: names
                 }
                 val mostRelatedNames = names.sortWith((l, r) => l._1 < r._1).map(_._2).take(15)
-                val ending = if (mostRelatedNames.length > 15) ", ...)" else ")"
-                val messageHeader = s"the file $jarFile does not contain $jarFileEntryName"
-                val message = mostRelatedNames.mkString(s"$messageHeader (similar: ", ", ", ending)
+                val ending           = if (mostRelatedNames.length > 15) ", ...)" else ")"
+                val messageHeader    = s"the file $jarFile does not contain $jarFileEntryName"
+                val message          = mostRelatedNames.mkString(s"$messageHeader (similar: ", ", ", ending)
                 throw new IOException(message)
             }
             ClassFile(zf, jarEntry)
@@ -381,9 +369,8 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
      * @param jarFileEntryName the name of a class file stored in the specified ZIP/JAR file.
      */
     @throws[java.io.IOException]("if the file is empty or the entry cannot be found")
-    def ClassFile(jarFileName: String, jarFileEntryName: String): List[ClassFile] = {
+    def ClassFile(jarFileName: String, jarFileEntryName: String): List[ClassFile] =
         ClassFile(new File(jarFileName), jarFileEntryName)
-    }
 
     /**
      * Reads in parallel all class files stored in the given jar/zip file.
@@ -393,15 +380,12 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
      */
     def ClassFiles(
         jarFile:          ZipFile,
-        exceptionHandler: ExceptionHandler
-    ): List[(ClassFile, URL)] = {
-        val Lock = new Object
+        exceptionHandler: ExceptionHandler): List[(ClassFile, URL)] = {
+        val Lock                               = new Object
         var classFiles: List[(ClassFile, URL)] = Nil
 
-        def addClassFile(cf: ClassFile, url: URL): Unit = {
-            Lock.synchronized {
-                classFiles ::= ((cf, url))
-            }
+        def addClassFile(cf: ClassFile, url: URL): Unit = Lock.synchronized {
+            classFiles ::= ((cf, url))
         }
 
         ClassFiles(jarFile, addClassFile, exceptionHandler)
@@ -424,7 +408,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
             val entryName = je.getName
             if (entryName.endsWith(".class") || entryName.endsWith(".jar")) {
                 val entryBytes = {
-                    val baos = new ByteArrayOutputStream()
+                    val baos   = new ByteArrayOutputStream()
                     val buffer = new Array[Byte](32 * 1024)
 
                     LazyList.continually(in.read(buffer)).takeWhile(_ > 0).foreach { bytesRead =>
@@ -471,9 +455,8 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
     def ClassFiles(
         zipFile:          ZipFile,
         classFileHandler: (ClassFile, URL) => Unit,
-        exceptionHandler: ExceptionHandler
-    ): Unit = {
-        val zipFileURL = new File(zipFile.getName).toURI.toURL.toExternalForm
+        exceptionHandler: ExceptionHandler): Unit = {
+        val zipFileURL  = new File(zipFile.getName).toURI.toURL.toExternalForm
         val jarFileName = s"jar:$zipFileURL!/"
         ClassFiles(jarFileName, zipFile, classFileHandler, exceptionHandler)
     }
@@ -482,19 +465,18 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
         jarFileURL:       String, // the complete path to the given jar file.
         jarFile:          ZipFile,
         classFileHandler: (ClassFile, URL) => Unit,
-        exceptionHandler: ExceptionHandler
-    ): Unit = {
+        exceptionHandler: ExceptionHandler): Unit = {
 
         // First let's collect all inner Jar Entries, then do the processing.
         // Otherwise - if the OPALExecutionContextTaskSupport uses a fixed
         // sized thread pool - we may run out of threads... to process anything.
         val innerJarEntries = new ConcurrentLinkedQueue[ZipEntry]
 
-        val jarEntries: Array[ZipEntry] = jarFile.entries().asScala.toArray
-        val nextEntryIndex = new AtomicInteger(jarEntries.length - 1)
-        val parallelismLevel = NumberOfThreadsForIOBoundTasks
+        val jarEntries: Array[ZipEntry]  = jarFile.entries().asScala.toArray
+        val nextEntryIndex               = new AtomicInteger(jarEntries.length - 1)
+        val parallelismLevel             = NumberOfThreadsForIOBoundTasks
         val futures: Array[Future[Unit]] = new Array(parallelismLevel)
-        var futureIndex = 0
+        var futureIndex                  = 0
         while (futureIndex < parallelismLevel) {
             futures(futureIndex) = Future[Unit] {
                 var index = -1
@@ -504,7 +486,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
                         val jarEntryName = jarEntry.getName
                         if (jarEntryName.endsWith(".class")) {
                             try {
-                                val url = URI.create(jarFileURL + jarEntry.getName).toURL
+                                val url        = URI.create(jarFileURL + jarEntry.getName).toURL
                                 val classFiles = ClassFile(jarFile, jarEntry)
                                 classFiles foreach (classFile => classFileHandler(classFile, url))
                             } catch {
@@ -531,7 +513,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
             val nextJarFileURL = s"${jarFileURL}jar:${jarEntry.getName}!/"
             try {
                 val jarData = new Array[Byte](jarEntry.getSize.toInt)
-                val din = new DataInputStream(jarFile.getInputStream(jarEntry))
+                val din     = new DataInputStream(jarFile.getInputStream(jarEntry))
                 din.readFully(jarData)
                 din.close()
                 ClassFiles(nextJarFileURL, jarData, classFileHandler, exceptionHandler)
@@ -552,10 +534,9 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
         jarFileURL:       String,
         jarData:          Array[Byte],
         classFileHandler: (ClassFile, URL) => Unit,
-        exceptionHandler: ExceptionHandler
-    ): Unit = {
+        exceptionHandler: ExceptionHandler): Unit = {
         val pathToEntry = jarFileURL.substring(0, jarFileURL.length - 2)
-        val entry = pathToEntry.substring(pathToEntry.lastIndexOf('/') + 1 /* the '/' */ + 4 /* "jar:" */ )
+        val entry       = pathToEntry.substring(pathToEntry.lastIndexOf('/') + 1 /* the '/' */ + 4 /* "jar:" */ )
         try {
             val jarFile = File.createTempFile(entry, ".zip")
 
@@ -571,19 +552,16 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
 
     private[this] def processJar(
         file:             File,
-        exceptionHandler: ExceptionHandler = defaultExceptionHandler
-    ): List[(ClassFile, URL)] = {
+        exceptionHandler: ExceptionHandler = defaultExceptionHandler): List[(ClassFile, URL)] =
         try {
             process(new ZipFile(file)) { zf => ClassFiles(zf, exceptionHandler) }
         } catch {
             case e: Exception => { exceptionHandler(file, e); Nil }
         }
-    }
 
     private[this] def processClassFile(
         file:             File,
-        exceptionHandler: ExceptionHandler = defaultExceptionHandler
-    ): List[(ClassFile, URL)] = {
+        exceptionHandler: ExceptionHandler = defaultExceptionHandler): List[(ClassFile, URL)] =
         try {
             process(
                 new DataInputStream(new BufferedInputStream(new FileInputStream(file)))
@@ -591,7 +569,6 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
         } catch {
             case e: Exception => { exceptionHandler(file, e); Nil }
         }
-    }
 
     /**
      * Loads class files from the given file location.
@@ -606,9 +583,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
      */
     def ClassFiles(
         file:             File,
-        exceptionHandler: ExceptionHandler = defaultExceptionHandler
-    ): List[(ClassFile, URL)] = {
-
+        exceptionHandler: ExceptionHandler = defaultExceptionHandler): List[(ClassFile, URL)] =
         if (!file.exists()) {
             Nil
         } else if (file.isFile) {
@@ -618,11 +593,10 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
             else if (filename.endsWith(".class")) processClassFile(file)
             else Nil
         } else if (file.isDirectory) {
-            val jarFiles = ArrayBuffer.empty[File]
+            val jarFiles   = ArrayBuffer.empty[File]
             val classFiles = ArrayBuffer.empty[File]
             def collectFiles(files: Array[File]): Unit = {
-                if (files eq null)
-                    return ;
+                if (files eq null) return;
 
                 files foreach { file =>
                     val filename = file.getName
@@ -664,21 +638,18 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
         } else {
             throw new UnknownError(s"$file is neither a file nor a directory")
         }
-    }
 
     def AllClassFiles(
         files:            Iterable[File],
-        exceptionHandler: ExceptionHandler = defaultExceptionHandler
-    ): Iterable[(ClassFile, URL)] = {
+        exceptionHandler: ExceptionHandler = defaultExceptionHandler): Iterable[(ClassFile, URL)] =
         files.flatMap(file => ClassFiles(file, exceptionHandler))
-    }
 
     /** Returns the class files of the current Java Runtime Image grouped by module. */
     def JRTClassFiles: Iterable[(String, List[(ClassFile, URL)])] = {
         def traverseModule(module: Path): List[(ClassFile, URL)] = {
             var allClassFiles = List.empty[(ClassFile, URL)]
 
-            def traversePath(p: Path): Unit = {
+            def traversePath(p: Path): Unit =
                 if (Files.isDirectory(p)) {
                     try {
                         for (subPath <- Files.newDirectoryStream(p, "*").asScala) {
@@ -697,7 +668,6 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
                     val cf = ClassFile(() => Files.newInputStream(p))
                     allClassFiles = cf.map(c => (c, p.toUri.toURL)) ++: allClassFiles
                 }
-            }
             traversePath(module)
             allClassFiles
         }
@@ -718,8 +688,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
         files:              Iterable[File],
         progressReporter:   File => Unit,
         classFileProcessor: ((ClassFile, URL)) => Unit,
-        exceptionHandler:   ExceptionHandler           = defaultExceptionHandler
-    ): Unit = {
+        exceptionHandler:   ExceptionHandler = defaultExceptionHandler): Unit = {
         val ts = Tasks[File] { (tasks: Tasks[File], file: File) =>
             if (file.isFile && file.length() > 0) {
                 val filename = file.getName
@@ -764,8 +733,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
         progressReporter: File => Unit,
         classFileFilter:  ClassFile => Boolean,
         className:        ClassFile => String,
-        exceptionHandler: ExceptionHandler     = defaultExceptionHandler
-    ): Either[(ClassFile, URL), Set[String]] = {
+        exceptionHandler: ExceptionHandler = defaultExceptionHandler): Either[(ClassFile, URL), Set[String]] = {
         var classNames = Set.empty[String]
         files.filter(_.exists()) foreach { file =>
             if (file.isFile && file.length() > 0) {
@@ -786,23 +754,25 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
                         Nil
                     }
                 ) filter { cfSource =>
-                        val (cf, _) = cfSource
-                        classNames += className(cf)
-                        classFileFilter(cf)
-                    } foreach { e => return Left(e); }
+                    val (cf, _) = cfSource
+                    classNames += className(cf)
+                    classFileFilter(cf)
+                } foreach { e => return Left(e); }
             } else if (file.isDirectory) {
                 file.listFiles { (dir: File, name: String) =>
                     dir.isDirectory || isClassFileRepository(file.toString, None)
                 } foreach { f =>
                     findClassFile(
-                        List(f), progressReporter, classFileFilter, className, exceptionHandler
+                        List(f),
+                        progressReporter,
+                        classFileFilter,
+                        className,
+                        exceptionHandler
                     ) match {
-                            case Left(cf) =>
-                                return Left(cf);
-                            case Right(moreClassNames) =>
-                                classNames ++= moreClassNames
-                            /*nothing else to do... let's continue*/
-                        }
+                        case Left(cf)              => return Left(cf);
+                        case Right(moreClassNames) => classNames ++= moreClassNames
+                        /*nothing else to do... let's continue*/
+                    }
                 }
             }
         }

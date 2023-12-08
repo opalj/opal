@@ -4,11 +4,10 @@ package br
 
 import java.net.URL
 
-import org.opalj.br.analyses.OneStepAnalysis
-import org.opalj.br.analyses.Project
-
 import org.opalj.br.analyses.AnalysisApplication
 import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.OneStepAnalysis
+import org.opalj.br.analyses.Project
 import org.opalj.de.DependencyExtractor
 import org.opalj.de.DependencyProcessorAdapter
 import org.opalj.de.DependencyType
@@ -32,31 +31,25 @@ object TransitiveUsage extends AnalysisApplication {
     // record the concrete dependencies.
     object TypesCollector extends DependencyProcessorAdapter {
 
-        private def processType(t: Type): Unit =
-            if (t.isObjectType) {
-                val objectType = t.asObjectType
-                if (!visitedTypes.contains(objectType))
-                    extractedTypes += objectType
-            }
+        private def processType(t: Type): Unit = if (t.isObjectType) {
+            val objectType = t.asObjectType
+            if (!visitedTypes.contains(objectType)) extractedTypes += objectType
+        }
 
         override def processDependency(
             source: VirtualSourceElement,
             target: VirtualSourceElement,
-            dType:  DependencyType
-        ): Unit = {
-            def process(vse: VirtualSourceElement): Unit = {
-                vse match {
-                    case VirtualClass(declaringClassType) =>
-                        processType(declaringClassType)
-                    case VirtualField(declaringClassType, _, fieldType) =>
-                        processType(declaringClassType)
-                        processType(fieldType)
-                    case VirtualMethod(declaringClassType, _, descriptor) =>
-                        processType(declaringClassType)
-                        processType(descriptor.returnType)
-                        descriptor.parameterTypes.view foreach { processType(_) }
-                    case VirtualForwardingMethod(_, _, _, _) | _: VirtualMethod => throw new MatchError(vse)
-                }
+            dType:  DependencyType): Unit = {
+            def process(vse: VirtualSourceElement): Unit = vse match {
+                case VirtualClass(declaringClassType) => processType(declaringClassType)
+                case VirtualField(declaringClassType, _, fieldType) =>
+                    processType(declaringClassType)
+                    processType(fieldType)
+                case VirtualMethod(declaringClassType, _, descriptor) =>
+                    processType(declaringClassType)
+                    processType(descriptor.returnType)
+                    descriptor.parameterTypes.view foreach { processType(_) }
+                case VirtualForwardingMethod(_, _, _, _) | _: VirtualMethod => throw new MatchError(vse)
             }
             process(source)
             process(target)
@@ -65,28 +58,22 @@ object TransitiveUsage extends AnalysisApplication {
 
     val dependencyCollector = new DependencyExtractor(TypesCollector)
 
-    override def analysisSpecificParametersDescription: String = {
+    override def analysisSpecificParametersDescription: String =
         "-class=<The class for which the transitive closure of used classes is determined>"
-    }
 
-    override def checkAnalysisSpecificParameters(parameters: Seq[String]): Seq[String] = {
-        if (parameters.size == 1 && parameters.head.startsWith("-class="))
-            Seq.empty
-        else
-            parameters.filterNot(_.startsWith("-class=")).map("unknown parameter: "+_)
-    }
+    override def checkAnalysisSpecificParameters(parameters: Seq[String]): Seq[String] =
+        if (parameters.size == 1 && parameters.head.startsWith("-class=")) Seq.empty
+        else parameters.filterNot(_.startsWith("-class=")).map("unknown parameter: " + _)
 
     override val analysis = new OneStepAnalysis[URL, BasicReport] {
 
-        override val description: String =
-            "Calculates the transitive closure of all classes used by a specific class. "+
-                "(Does not take reflective usages into relation)."
+        override val description: String = "Calculates the transitive closure of all classes used by a specific class. " +
+            "(Does not take reflective usages into relation)."
 
         override def doAnalyze(
             project:       Project[URL],
             parameters:    Seq[String],
-            isInterrupted: () => Boolean
-        ) = {
+            isInterrupted: () => Boolean) = {
 
             val baseType = ObjectType(parameters.head.substring(7).replace('.', '/'))
             extractedTypes += baseType
@@ -99,8 +86,8 @@ object TransitiveUsage extends AnalysisApplication {
             }
 
             BasicReport(
-                "To compile: "+baseType.toJava+
-                    " the following "+visitedTypes.size+" classes are required:\n"+
+                "To compile: " + baseType.toJava +
+                    " the following " + visitedTypes.size + " classes are required:\n" +
                     visitedTypes.map(_.toJava).mkString("\n")
             )
         }

@@ -33,17 +33,13 @@ trait PerformInvocationsWithRecursionDetection extends PerformInvocations with T
         pc:       Int,
         method:   Method,
         operands: Operands,
-        fallback: () => MethodCallResult
-    ): MethodCallResult = {
-
+        fallback: () => MethodCallResult): MethodCallResult =
         callingDomain.calledMethodsStore.testOrElseUpdated(method, operands) match {
             case Some(newCalledMethodsStore) =>
                 childCalledMethodsStore = newCalledMethodsStore
                 super.doInvoke(pc, method, operands, fallback)
-            case None =>
-                fallback();
+            case None => fallback();
         }
-    }
 }
 
 trait ChildPerformInvocationsWithRecursionDetection extends PerformInvocationsWithRecursionDetection {
@@ -51,14 +47,11 @@ trait ChildPerformInvocationsWithRecursionDetection extends PerformInvocationsWi
 
     val callerDomain: PerformInvocationsWithRecursionDetection
 
-    final override val coordinatingDomain: callerDomain.coordinatingDomain.type = {
-        callerDomain.coordinatingDomain
-    }
+    final override val coordinatingDomain: callerDomain.coordinatingDomain.type = callerDomain.coordinatingDomain
 
     def frequentEvaluationWarningLevel: Int = callerDomain.frequentEvaluationWarningLevel
 
-    final def calledMethodsStore: CalledMethodsStore { val domain: coordinatingDomain.type } = {
+    final def calledMethodsStore: CalledMethodsStore { val domain: coordinatingDomain.type } =
         callerDomain.childCalledMethodsStore
-    }
 
 }

@@ -3,12 +3,12 @@ package org.opalj
 package ai
 package project
 
-import scala.collection.parallel.CollectionConverters.IterableIsParallelizable
-
-import org.opalj.br.analyses.BasicReport
 import org.opalj.br.Method
+import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ReportableAnalysisResult
+
+import scala.collection.parallel.CollectionConverters.IterableIsParallelizable
 
 /**
  * Template class for analyzing complete Java projects that use the abstract interpreter.
@@ -85,12 +85,10 @@ trait AIProject[Source, D <: Domain with OptionalReport] {
             throw new IllegalArgumentException("no entry points found")
         }
         val reports =
-            if (analyzeInParallel)
-                entryPoints.par.map(analyze).seq
-            else
-                entryPoints.map(analyze)
+            if (analyzeInParallel) entryPoints.par.map(analyze).seq
+            else entryPoints.map(analyze)
 
         val theReports = reports.collect { case Some(report) => report }
-        BasicReport("Number of reports: "+theReports.size+"\n"+theReports.mkString("\n"))
+        BasicReport("Number of reports: " + theReports.size + "\n" + theReports.mkString("\n"))
     }
 }

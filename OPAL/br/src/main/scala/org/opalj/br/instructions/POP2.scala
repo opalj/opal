@@ -15,12 +15,9 @@ case object POP2 extends PopInstruction {
 
     final val mnemonic = "pop2"
 
-    final def numberOfPoppedOperands(ctg: Int => ComputationalTypeCategory): Int = {
-        if (ctg(0).operandSize == 1)
-            2
-        else
-            1
-    }
+    final def numberOfPoppedOperands(ctg: Int => ComputationalTypeCategory): Int =
+        if (ctg(0).operandSize == 1) 2
+        else 1
 
     final def numberOfPushedOperands(ctg: Int => ComputationalTypeCategory): Int = 0
 

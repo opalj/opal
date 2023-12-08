@@ -17,20 +17,16 @@ import org.opalj.br.FieldType
 trait TypeLevelDynamicLoads extends DynamicLoadsDomain {
     domain: ReferenceValuesDomain with TypedValuesFactory with Configuration =>
 
-    /*override*/ def loadDynamic(
+    /*override*/
+    def loadDynamic(
         pc:              Int,
         bootstrapMethod: BootstrapMethod,
         fieldName:       String,
-        descriptor:      FieldType
-    ): Computation[DomainValue, Nothing] = {
-        doLoadDynamic(pc, TypedValue(pc, descriptor))
-    }
+        descriptor:      FieldType): Computation[DomainValue, Nothing] = doLoadDynamic(pc, TypedValue(pc, descriptor))
 
-    /*override*/ def doLoadDynamic(
+    /*override*/
+    def doLoadDynamic(
         pc:            Int,
-        constantValue: DomainValue
-    ): Computation[DomainValue, Nothing] = {
-        ComputedValue(constantValue)
-    }
+        constantValue: DomainValue): Computation[DomainValue, Nothing] = ComputedValue(constantValue)
 
 }

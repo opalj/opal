@@ -6,12 +6,6 @@ package properties
 
 import scala.annotation.switch
 
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.FallbackReason
-import org.opalj.fpcf.OrderedProperty
-import org.opalj.fpcf.PropertyKey
-import org.opalj.fpcf.PropertyMetaInformation
-import org.opalj.fpcf.PropertyStore
 import org.opalj.br.instructions.ALOAD_0
 import org.opalj.br.instructions.ANEWARRAY
 import org.opalj.br.instructions.ASTORE_0
@@ -25,6 +19,12 @@ import org.opalj.br.instructions.MULTIANEWARRAY
 import org.opalj.br.instructions.NEW
 import org.opalj.br.instructions.NEWARRAY
 import org.opalj.br.instructions.PUTFIELD
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.FallbackReason
+import org.opalj.fpcf.OrderedProperty
+import org.opalj.fpcf.PropertyKey
+import org.opalj.fpcf.PropertyMetaInformation
+import org.opalj.fpcf.PropertyStore
 
 sealed trait AllocationFreenessPropertyMetaInformation extends PropertyMetaInformation {
 
@@ -40,8 +40,8 @@ sealed trait AllocationFreenessPropertyMetaInformation extends PropertyMetaInfor
  */
 sealed abstract class AllocationFreeness
     extends OrderedProperty
-    with IndividualProperty[AllocationFreeness, VirtualMethodAllocationFreeness]
-    with AllocationFreenessPropertyMetaInformation {
+        with IndividualProperty[AllocationFreeness, VirtualMethodAllocationFreeness]
+        with AllocationFreenessPropertyMetaInformation {
 
     /**
      * The globally unique key of the [[AllocationFreeness]] property.
@@ -60,36 +60,31 @@ object AllocationFreeness extends AllocationFreenessPropertyMetaInformation {
         "AllocationFreeness",
         (_: PropertyStore, _: FallbackReason, dm: DeclaredMethod) => {
             if (dm.hasSingleDefinedMethod && dm.definedMethod.body.isDefined) {
-                val method = dm.definedMethod
-                val body = method.body.get
+                val method       = dm.definedMethod
+                val body         = method.body.get
                 val instructions = body.instructions
-                val maxPC = instructions.length
+                val maxPC        = instructions.length
 
-                var overwritesSelf = false
+                var overwritesSelf   = false
                 var mayOverwriteSelf = true
-                var hasAllocation = false
+                var hasAllocation    = false
 
                 var currentPC = 0
                 while (currentPC < maxPC && !hasAllocation) {
                     val instruction = instructions(currentPC)
                     (instruction.opcode: @switch) match {
                         case NEW.opcode | NEWARRAY.opcode |
-                            ANEWARRAY.opcode | MULTIANEWARRAY.opcode =>
-                            hasAllocation = true
+                            ANEWARRAY.opcode | MULTIANEWARRAY.opcode => hasAllocation = true
                         case INVOKESTATIC.opcode | INVOKESPECIAL.opcode | INVOKEVIRTUAL.opcode |
-                            INVOKEINTERFACE.opcode | INVOKEDYNAMIC.opcode =>
-                            hasAllocation = true
+                            INVOKEINTERFACE.opcode | INVOKEDYNAMIC.opcode => hasAllocation = true
                         case ASTORE_0.opcode if !method.isStatic =>
                             if (mayOverwriteSelf) overwritesSelf = true
                             else hasAllocation = true
                         case PUTFIELD.opcode | GETFIELD.opcode => // may allocate NPE on non-receiver
-                            if (method.isStatic || overwritesSelf)
-                                hasAllocation = true
+                            if (method.isStatic || overwritesSelf) hasAllocation = true
                             else if (instructions(body.pcOfPreviousInstruction(currentPC)).opcode !=
-                                ALOAD_0.opcode)
-                                hasAllocation = true
-                            else
-                                mayOverwriteSelf = false
+                                         ALOAD_0.opcode) hasAllocation = true
+                            else mayOverwriteSelf = false
                         case _ => hasAllocation = instruction.jvmExceptions.nonEmpty
                     }
                     currentPC = body.pcOfNextInstruction(currentPC)
@@ -115,10 +110,9 @@ case object AllocationFreeMethod extends AllocationFreeness {
  */
 case object MethodWithAllocations extends AllocationFreeness {
 
-    override def checkIsEqualOrBetterThan(e: Entity, other: AllocationFreeness): Unit = {
+    override def checkIsEqualOrBetterThan(e: Entity, other: AllocationFreeness): Unit =
         if (other ne MethodWithAllocations)
             throw new IllegalArgumentException(s"$e: impossible refinement: $other => $this")
-    }
 
     override def meet(other: AllocationFreeness): AllocationFreeness = this
 }

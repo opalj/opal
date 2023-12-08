@@ -2,13 +2,13 @@
 package org.opalj
 package issues
 
+import play.api.libs.json.JsNull
+import play.api.libs.json.Json
+
 import org.junit.runner.RunWith
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
-
-import play.api.libs.json.JsNull
-import play.api.libs.json.Json
 
 /**
  * Tests toIDL method of IssueLocation
@@ -28,13 +28,16 @@ class IssueLocationIDLTest extends AnyFlatSpec with Matchers {
 
     it should "return a valid issue description for a PackageLocation with details" in {
         val packageLocation = new PackageLocation(
-            Option("bar"), null, "baz", Seq(simpleOperands, simpleLocalVariables)
+            Option("bar"),
+            null,
+            "baz",
+            Seq(simpleOperands, simpleLocalVariables)
         )
 
         packageLocation.toIDL should be(Json.obj(
             "description" -> "bar",
-            "location" -> Json.obj("package" -> "baz"),
-            "details" -> Json.arr(simpleOperandsIDL, simpleLocalVariablesIDL)
+            "location"    -> Json.obj("package" -> "baz"),
+            "details"     -> Json.arr(simpleOperandsIDL, simpleLocalVariablesIDL)
         ))
     }
 
@@ -45,7 +48,7 @@ class IssueLocationIDLTest extends AnyFlatSpec with Matchers {
             "description" -> "baz",
             "location" -> Json.obj(
                 "package" -> "foo",
-                "class" -> classFileIDL
+                "class"   -> classFileIDL
             ),
             "details" -> Json.arr()
         ))
@@ -53,14 +56,17 @@ class IssueLocationIDLTest extends AnyFlatSpec with Matchers {
 
     it should "return a valid issue description for a ClassLocation with details" in {
         val classLocation = new ClassLocation(
-            Option("baz"), null, classFile, Seq(simpleOperands, simpleLocalVariables)
+            Option("baz"),
+            null,
+            classFile,
+            Seq(simpleOperands, simpleLocalVariables)
         )
 
         classLocation.toIDL should be(Json.obj(
             "description" -> "baz",
             "location" -> Json.obj(
                 "package" -> "foo",
-                "class" -> classFileIDL
+                "class"   -> classFileIDL
             ),
             "details" -> Json.arr(simpleOperandsIDL, simpleLocalVariablesIDL)
         ))
@@ -73,8 +79,8 @@ class IssueLocationIDLTest extends AnyFlatSpec with Matchers {
             "description" -> "baz",
             "location" -> Json.obj(
                 "package" -> "foo",
-                "class" -> classFileIDL,
-                "method" -> methodReturnVoidNoParametersIDL
+                "class"   -> classFileIDL,
+                "method"  -> methodReturnVoidNoParametersIDL
             ),
             "details" -> Json.arr()
         ))
@@ -87,8 +93,8 @@ class IssueLocationIDLTest extends AnyFlatSpec with Matchers {
             "description" -> "baz",
             "location" -> Json.obj(
                 "package" -> "foo",
-                "class" -> classFileIDL,
-                "method" -> methodReturnIntTwoParametersIDL
+                "class"   -> classFileIDL,
+                "method"  -> methodReturnIntTwoParametersIDL
             ),
             "details" -> Json.arr()
         ))
@@ -101,15 +107,15 @@ class IssueLocationIDLTest extends AnyFlatSpec with Matchers {
             "description" -> "baz",
             "location" -> Json.obj(
                 "package" -> "foo",
-                "class" -> classFileIDL,
+                "class"   -> classFileIDL,
                 "method" -> Json.obj(
                     "accessFlags" -> "public static",
-                    "name" -> "test1p",
+                    "name"        -> "test1p",
                     "returnType" -> Json.obj(
                         "bt" -> "int"
                     ),
                     "parameters" -> Json.arr(Json.obj(
-                        "ot" -> "foo.Bar",
+                        "ot"         -> "foo.Bar",
                         "simpleName" -> "Bar"
                     )),
                     "signature" -> "test1p(Lfoo/Bar;)I",
@@ -132,8 +138,8 @@ class IssueLocationIDLTest extends AnyFlatSpec with Matchers {
             "description" -> "baz",
             "location" -> Json.obj(
                 "package" -> "foo",
-                "class" -> classFileIDL,
-                "method" -> methodReturnIntTwoParametersIDL
+                "class"   -> classFileIDL,
+                "method"  -> methodReturnIntTwoParametersIDL
             ),
             "details" -> Json.arr(simpleOperandsIDL, simpleLocalVariablesIDL)
         ))
@@ -141,15 +147,18 @@ class IssueLocationIDLTest extends AnyFlatSpec with Matchers {
 
     it should "return a valid issue description for an InstructionLocation in a method without parameters which returns nothing" in {
         val instructionLocation = new InstructionLocation(
-            Option("baz"), null, methodReturnVoidNoParameters, 42
+            Option("baz"),
+            null,
+            methodReturnVoidNoParameters,
+            42
         )
 
         instructionLocation.toIDL should be(Json.obj(
             "description" -> "baz",
             "location" -> Json.obj(
-                "package" -> "foo",
-                "class" -> classFileIDL,
-                "method" -> methodReturnVoidNoParametersIDL,
+                "package"     -> "foo",
+                "class"       -> classFileIDL,
+                "method"      -> methodReturnVoidNoParametersIDL,
                 "instruction" -> Json.obj("pc" -> 42)
             ),
             "details" -> Json.arr()
@@ -158,15 +167,18 @@ class IssueLocationIDLTest extends AnyFlatSpec with Matchers {
 
     it should "return a valid issue description for InstructionLocation with int return and 2 parameters" in {
         val instructionLocation = new InstructionLocation(
-            Some("baz"), null, methodReturnIntTwoParameters, 42
+            Some("baz"),
+            null,
+            methodReturnIntTwoParameters,
+            42
         )
 
         instructionLocation.toIDL should be(Json.obj(
             "description" -> "baz",
             "location" -> Json.obj(
-                "package" -> "foo",
-                "class" -> classFileIDL,
-                "method" -> methodReturnIntTwoParametersIDL,
+                "package"     -> "foo",
+                "class"       -> classFileIDL,
+                "method"      -> methodReturnIntTwoParametersIDL,
                 "instruction" -> Json.obj("pc" -> 42, "line" -> 10)
             ),
             "details" -> Json.arr()
@@ -185,9 +197,9 @@ class IssueLocationIDLTest extends AnyFlatSpec with Matchers {
         instructionLocation.toIDL should be(Json.obj(
             "description" -> "baz",
             "location" -> Json.obj(
-                "package" -> "foo",
-                "class" -> classFileIDL,
-                "method" -> methodReturnIntTwoParametersIDL,
+                "package"     -> "foo",
+                "class"       -> classFileIDL,
+                "method"      -> methodReturnIntTwoParametersIDL,
                 "instruction" -> Json.obj("pc" -> 42, "line" -> 10)
             ),
             "details" -> Json.arr(simpleOperandsIDL, simpleLocalVariablesIDL)

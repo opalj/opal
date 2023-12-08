@@ -26,10 +26,10 @@ sealed trait TypeBasedPointsToSetPropertyMetaInformation extends PropertyMetaInf
 
 case class TypeBasedPointsToSet private[properties] (
         private val orderedTypes: List[ReferenceType],
-        override val types:       UIDSet[ReferenceType]
-) extends PointsToSetLike[ReferenceType, UIDSet[ReferenceType], TypeBasedPointsToSet]
-    with OrderedProperty
-    with TypeBasedPointsToSetPropertyMetaInformation {
+        override val types:       UIDSet[ReferenceType])
+    extends PointsToSetLike[ReferenceType, UIDSet[ReferenceType], TypeBasedPointsToSet]
+        with OrderedProperty
+        with TypeBasedPointsToSetPropertyMetaInformation {
 
     assert(orderedTypes == null || orderedTypes.size == types.size)
 
@@ -37,28 +37,21 @@ case class TypeBasedPointsToSet private[properties] (
 
     override def toString: String = s"PointsTo(size=${types.size})"
 
-    override def checkIsEqualOrBetterThan(e: Entity, other: TypeBasedPointsToSet): Unit = {
+    override def checkIsEqualOrBetterThan(e: Entity, other: TypeBasedPointsToSet): Unit =
         if (!types.subsetOf(other.types)) {
             throw new IllegalArgumentException(s"$e: illegal refinement of property $other to $this")
         }
-    }
 
     override def included(
-        other: TypeBasedPointsToSet
-    ): TypeBasedPointsToSet = {
-        included(other, 0)
-    }
+        other: TypeBasedPointsToSet): TypeBasedPointsToSet = included(other, 0)
 
     override def numTypes: Int = types.size
 
     override def elements: UIDSet[ReferenceType] = types
 
-    override def equals(obj: Any): Boolean = {
-        obj match {
-            case that: TypeBasedPointsToSet =>
-                that.numTypes == this.numTypes && that.orderedTypes == this.orderedTypes
-            case _ => false
-        }
+    override def equals(obj: Any): Boolean = obj match {
+        case that: TypeBasedPointsToSet => that.numTypes == this.numTypes && that.orderedTypes == this.orderedTypes
+        case _                          => false
     }
 
     override def hashCode: Int = types.hashCode() * 31
@@ -66,10 +59,10 @@ case class TypeBasedPointsToSet private[properties] (
     override def numElements: Int = types.size
 
     override def included(
-        other: TypeBasedPointsToSet, seenElements: Int
-    ): TypeBasedPointsToSet = {
+        other:        TypeBasedPointsToSet,
+        seenElements: Int): TypeBasedPointsToSet = {
         var newOrderedTypes = orderedTypes
-        var typesUnion = types
+        var typesUnion      = types
 
         other.orderedTypes.take(other.numElements - seenElements).map { t =>
             if (!types.contains(t)) {
@@ -78,37 +71,28 @@ case class TypeBasedPointsToSet private[properties] (
             }
         }
 
-        if (types eq typesUnion)
-            return this;
+        if (types eq typesUnion) return this;
 
         new TypeBasedPointsToSet(newOrderedTypes, typesUnion)
     }
 
-    override def forNewestNTypes[U](n: Int)(f: ReferenceType => U): Unit = {
-        orderedTypes.take(n).map(f)
-    }
+    override def forNewestNTypes[U](n: Int)(f: ReferenceType => U): Unit = orderedTypes.take(n).map(f)
 
     // here, the elements are the types
-    override def forNewestNElements[U](n: Int)(f: ReferenceType => U): Unit = {
-        orderedTypes.take(n).map(f)
-    }
+    override def forNewestNElements[U](n: Int)(f: ReferenceType => U): Unit = orderedTypes.take(n).map(f)
 
     override def included(
-        other: TypeBasedPointsToSet, typeFilter: ReferenceType => Boolean
-    ): TypeBasedPointsToSet = {
-        included(other, 0, typeFilter)
-    }
+        other:      TypeBasedPointsToSet,
+        typeFilter: ReferenceType => Boolean): TypeBasedPointsToSet = included(other, 0, typeFilter)
 
     override def included(
         other:        TypeBasedPointsToSet,
         seenElements: Int,
-        typeFilter:   ReferenceType => Boolean
-    ): TypeBasedPointsToSet = {
-        if (typeFilter eq PointsToSetLike.noFilter)
-            return included(other, seenElements);
+        typeFilter:   ReferenceType => Boolean): TypeBasedPointsToSet = {
+        if (typeFilter eq PointsToSetLike.noFilter) return included(other, seenElements);
 
         var newOrderedTypes = orderedTypes
-        var typesUnion = types
+        var typesUnion      = types
 
         other.orderedTypes.take(other.numElements - seenElements).map { t =>
             if (typeFilter(t) && !types.contains(t)) {
@@ -117,17 +101,14 @@ case class TypeBasedPointsToSet private[properties] (
             }
         }
 
-        if (types eq typesUnion)
-            return this;
+        if (types eq typesUnion) return this;
 
         new TypeBasedPointsToSet(newOrderedTypes, typesUnion)
     }
 
     override def filter(
-        typeFilter: ReferenceType => Boolean
-    ): TypeBasedPointsToSet = {
-        if (typeFilter eq PointsToSetLike.noFilter)
-            return this;
+        typeFilter: ReferenceType => Boolean): TypeBasedPointsToSet = {
+        if (typeFilter eq PointsToSetLike.noFilter) return this;
 
         var newTypes = UIDSet.empty[ReferenceType]
         val newOrderedTypes = orderedTypes.foldLeft(List.empty[ReferenceType]) { (r, t) =>
@@ -139,8 +120,7 @@ case class TypeBasedPointsToSet private[properties] (
             }
         }
 
-        if (newTypes.size == elements.size)
-            return this;
+        if (newTypes.size == elements.size) return this;
 
         TypeBasedPointsToSet(newOrderedTypes, newTypes)
     }
@@ -151,23 +131,20 @@ case class TypeBasedPointsToSet private[properties] (
 object TypeBasedPointsToSet extends TypeBasedPointsToSetPropertyMetaInformation {
 
     def apply(
-        initialPointsTo: UIDSet[ReferenceType]
-    ): TypeBasedPointsToSet = {
-        new TypeBasedPointsToSet(
-            initialPointsTo.foldLeft(List.empty[ReferenceType])((l, t) => t :: l),
-            initialPointsTo
-        )
-    }
+        initialPointsTo: UIDSet[ReferenceType]): TypeBasedPointsToSet = new TypeBasedPointsToSet(
+        initialPointsTo.foldLeft(List.empty[ReferenceType])((l, t) => t :: l),
+        initialPointsTo
+    )
 
     final val key: PropertyKey[TypeBasedPointsToSet] = {
         val name = "opalj.TypeBasedPointsToSet"
         PropertyKey.create(
             name,
-            (_: PropertyStore, reason: FallbackReason, _: Entity) => reason match {
-                case PropertyIsNotDerivedByPreviouslyExecutedAnalysis => NoTypes
-                case _ =>
-                    throw new IllegalStateException(s"no analysis is scheduled for property: $name")
-            }
+            (_: PropertyStore, reason: FallbackReason, _: Entity) =>
+                reason match {
+                    case PropertyIsNotDerivedByPreviouslyExecutedAnalysis => NoTypes
+                    case _                                                => throw new IllegalStateException(s"no analysis is scheduled for property: $name")
+                }
         )
     }
 }

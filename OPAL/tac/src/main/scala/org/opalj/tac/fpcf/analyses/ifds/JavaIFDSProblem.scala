@@ -9,18 +9,18 @@ import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.cfg.CFG
 import org.opalj.br.cfg.CFGNode
-import org.opalj.ifds.Dependees.Getter
 import org.opalj.ifds.AbstractIFDSFact
 import org.opalj.ifds.Callable
+import org.opalj.ifds.Dependees.Getter
 import org.opalj.ifds.IFDSProblem
 import org.opalj.ifds.Statement
-import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem.V
 import org.opalj.tac.Assignment
 import org.opalj.tac.Call
 import org.opalj.tac.DUVar
 import org.opalj.tac.ExprStmt
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACStmts
+import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem.V
 import org.opalj.value.ValueInformation
 
 /**
@@ -37,8 +37,7 @@ case class JavaStatement(
         method: Method,
         index:  Int,
         code:   Array[Stmt[V]],
-        cfg:    CFG[Stmt[V], TACStmts[V]]
-) extends Statement[Method, CFGNode] {
+        cfg: CFG[Stmt[V], TACStmts[V]]) extends Statement[Method, CFGNode] {
 
     override def hashCode(): Int = method.hashCode() * 31 + index
 
@@ -47,10 +46,10 @@ case class JavaStatement(
         case _                => false
     }
 
-    override def toString: String = s"${method.signatureToJava(false)}[${index}]\n\t${stmt}\n\t${method.toJava}"
-    override def callable: Method = method
+    override def toString: String    = s"${method.signatureToJava(false)}[${index}]\n\t${stmt}\n\t${method.toJava}"
+    override def callable: Method    = method
     override def basicBlock: CFGNode = cfg.bb(index)
-    def stmt: Stmt[V] = code(index)
+    def stmt: Stmt[V]                = code(index)
 }
 
 object JavaStatement {
@@ -73,7 +72,8 @@ abstract class JavaIFDSProblem[Fact <: AbstractIFDSFact](override val icfg: Java
 
     override def outsideAnalysisContextCall(callee: Method): Option[OutsideAnalysisContextCallHandler] =
         if (callee.body.isDefined) None
-        else Some((_: JavaStatement, _: Option[JavaStatement], in: Fact, unbCallChain: Seq[Callable], _: Getter) => Set(in))
+        else Some((_: JavaStatement, _: Option[JavaStatement], in: Fact, unbCallChain: Seq[Callable], _: Getter) =>
+            Set(in))
 
     override def outsideAnalysisContextUnbReturn(callee: Method): Option[OutsideAnalysisContextUnbReturnHandler] = None
 }
@@ -93,8 +93,7 @@ object JavaIFDSProblem {
      * @return A tac index if a parameter index was passed or a parameter index if a tac index was
      *         passed.
      */
-    def remapParamAndVariableIndex(index: Int, isStaticMethod: Boolean): Int =
-        (if (isStaticMethod) -2 else -1) - index
+    def remapParamAndVariableIndex(index: Int, isStaticMethod: Boolean): Int = (if (isStaticMethod) -2 else -1) - index
 
     /**
      * Gets the call object for a statement that contains a call.

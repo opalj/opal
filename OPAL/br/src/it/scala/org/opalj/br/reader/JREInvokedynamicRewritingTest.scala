@@ -3,11 +3,11 @@ package org.opalj
 package br
 package reader
 
-import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParallelizable
-
 import org.opalj.bi.isCurrentJREAtLeastJava8
-import org.opalj.br.instructions.INVOKEDYNAMIC
 import org.opalj.br.instructions.Instruction
+import org.opalj.br.instructions.INVOKEDYNAMIC
+
+import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParallelizable
 
 /**
  * This test loads all classes found in the JRE and verifies that all [[INVOKEDYNAMIC]]

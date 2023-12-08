@@ -4,9 +4,9 @@ package fpcf
 package properties
 package thrown_exceptions
 
-import org.opalj.br.analyses.SomeProject
 import org.opalj.br.AnnotationLike
 import org.opalj.br.ObjectType
+import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.ThrownExceptionsByOverridingMethods
 
 /**
@@ -17,29 +17,25 @@ import org.opalj.br.fpcf.properties.ThrownExceptionsByOverridingMethods
  */
 class ExpectedExceptionsByOverridingMethodsMatcher
     extends AbstractPropertyMatcher
-    with ExceptionTypeExtractor {
+        with ExceptionTypeExtractor {
 
     def validateProperty(
         p:          SomeProject,
         as:         Set[ObjectType],
         entity:     Entity,
         a:          AnnotationLike,
-        properties: Iterable[Property]
-    ): Option[String] = {
-        val (concreteTypeExceptions, upperBoundTypeExceptions) =
-            getConcreteAndUpperBoundExceptionAnnotations(p, a)
+        properties: Iterable[Property]): Option[String] = {
+        val (concreteTypeExceptions, upperBoundTypeExceptions) = getConcreteAndUpperBoundExceptionAnnotations(p, a)
 
-        val annotationType = a.annotationType.asObjectType
-        val analysesElementValues =
-            getValue(p, annotationType, a.elementValuePairs, "requires").asArrayValue.values
-        val requiredAnalysis = analysesElementValues.map(ev => ev.asClassValue.value.asObjectType)
+        val annotationType        = a.annotationType.asObjectType
+        val analysesElementValues = getValue(p, annotationType, a.elementValuePairs, "requires").asArrayValue.values
+        val requiredAnalysis      = analysesElementValues.map(ev => ev.asClassValue.value.asObjectType)
 
         val isPropertyValid = !requiredAnalysis.exists(as.contains) ||
             properties.forall {
-                case ate: ThrownExceptionsByOverridingMethods =>
-                    ate.exceptions.nonEmpty &&
-                        concreteTypeExceptions.forall(ate.exceptions.concreteTypes.contains(_)) &&
-                        upperBoundTypeExceptions.forall(ate.exceptions.upperTypeBounds.contains(_))
+                case ate: ThrownExceptionsByOverridingMethods => ate.exceptions.nonEmpty &&
+                    concreteTypeExceptions.forall(ate.exceptions.concreteTypes.contains(_)) &&
+                    upperBoundTypeExceptions.forall(ate.exceptions.upperTypeBounds.contains(_))
                 case _ => true
             }
 

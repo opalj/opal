@@ -24,8 +24,7 @@ trait RecordReturnedValue extends RecordReturnedValuesInfrastructure {
 
     protected[this] def doRecordReturnedValue(pc: Int, value: DomainValue): Boolean = {
         val oldReturnedValue = theReturnedValue
-        if (oldReturnedValue eq value)
-            return false;
+        if (oldReturnedValue eq value) return false;
 
         if (oldReturnedValue == null) {
             theReturnedValue = value
@@ -41,4 +40,3 @@ trait RecordReturnedValue extends RecordReturnedValuesInfrastructure {
         }
     }
 }
-

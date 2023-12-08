@@ -4,23 +4,24 @@ package br
 package reader
 
 import java.io.File
-import org.scalatest.matchers.should.Matchers
-import org.scalatest.funspec.AnyFunSpec
-import org.scalactic.Equality
+import scala.collection.immutable.ArraySeq
+
+import org.opalj.bi.TestResources.{locateTestResources => locate}
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.instructions.INVOKESTATIC
+import org.opalj.br.instructions.MethodInvocationInstruction
+import org.opalj.log.ConsoleOPALLogger
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
+import org.opalj.log.StandardLogContext
+
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory
-import org.opalj.log.LogContext
-import org.opalj.log.StandardLogContext
-import org.opalj.log.ConsoleOPALLogger
-import org.opalj.log.OPALLogger
-import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.SomeProject
-import org.opalj.bi.TestResources.{locateTestResources => locate}
-import org.opalj.br.instructions.INVOKESTATIC
-import org.opalj.br.instructions.MethodInvocationInstruction
-
-import scala.collection.immutable.ArraySeq
+import org.scalactic.Equality
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
 /**
  * Tests the rewriting of lambda expressions/method references using Java 8's infrastructure. I.e.,
@@ -44,19 +45,18 @@ class BasicLambdaExpressionsRewritingTest extends AnyFunSpec with Matchers {
         info(s"Testing $name")
         var successFull = false
         for {
-            method <- classFile.findMethod(name)
-            body <- method.body
+            method      <- classFile.findMethod(name)
+            body        <- method.body
             factoryCall <- body.instructionIterator.collect { case i: INVOKESTATIC => i }
             if factoryCall.declaringClass.fqn.matches(InvokedynamicRewriting.LambdaNameRegEx)
         } {
             val annotations = method.runtimeVisibleAnnotations
             successFull = true
-            implicit val MethodDeclarationEquality: Equality[Method] =
-                (a: Method, b: Any) => b match {
-                    case m: Method =>
-                        a.compare(m) == 0 /* <=> same name and descriptor */ &&
-                            a.visibilityModifier == m.visibilityModifier &&
-                            a.isStatic == m.isStatic
+            implicit val MethodDeclarationEquality: Equality[Method] = (a: Method, b: Any) =>
+                b match {
+                    case m: Method => a.compare(m) == 0 /* <=> same name and descriptor */ &&
+                        a.visibilityModifier == m.visibilityModifier &&
+                        a.isStatic == m.isStatic
                     case _ => false
                 }
 
@@ -64,12 +64,12 @@ class BasicLambdaExpressionsRewritingTest extends AnyFunSpec with Matchers {
                 val invokedTarget = for {
                     a <- annotations.iterator
                     if a.annotationType == InvokedMethods
-                    evp <- a.elementValuePairs
-                    ArrayValue(values) = evp.value
+                    evp                              <- a.elementValuePairs
+                    ArrayValue(values)                = evp.value
                     ev @ AnnotationValue(annotation) <- values
-                    innerAnnotation = ArraySeq(annotation)
-                    expectedTarget = getInvokedMethod(project, classFile, innerAnnotation)
-                    actualTarget = getCallTarget(project, factoryCall, expectedTarget.get.name)
+                    innerAnnotation                   = ArraySeq(annotation)
+                    expectedTarget                    = getInvokedMethod(project, classFile, innerAnnotation)
+                    actualTarget                      = getCallTarget(project, factoryCall, expectedTarget.get.name)
                     if MethodDeclarationEquality.areEqual(expectedTarget.get, actualTarget.get)
                 } yield {
                     ev
@@ -94,7 +94,7 @@ class BasicLambdaExpressionsRewritingTest extends AnyFunSpec with Matchers {
 
             } else {
                 val expectedTarget = getInvokedMethod(project, classFile, annotations)
-                val actualTarget = getCallTarget(project, factoryCall, expectedTarget.get.name)
+                val actualTarget   = getCallTarget(project, factoryCall, expectedTarget.get.name)
 
                 withClue { s"failed to resolve ${method.toJava(factoryCall.toString)}" }(
                     actualTarget.get should ===(expectedTarget.get)
@@ -108,8 +108,7 @@ class BasicLambdaExpressionsRewritingTest extends AnyFunSpec with Matchers {
     private def getCallTarget(
         project:            SomeProject,
         factoryCall:        INVOKESTATIC,
-        expectedTargetName: String
-    ): Option[Method] = {
+        expectedTargetName: String): Option[Method] = {
         val proxy = project.classFile(factoryCall.declaringClass).get
         val forwardingMethod = proxy.methods.find { m =>
             !m.isConstructor && m.name != factoryCall.name && !m.isBridge && !m.isSynthetic
@@ -128,7 +127,7 @@ class BasicLambdaExpressionsRewritingTest extends AnyFunSpec with Matchers {
 
         // declaringClass must be an ObjectType, since lambdas cannot be created on
         // array types, nor do arrays have methods that could be referenced
-        val declaringType = invocationInstruction.declaringClass.asObjectType
+        val declaringType    = invocationInstruction.declaringClass.asObjectType
         val targetMethodName = invocationInstruction.name
         val targetMethodDescriptor: MethodDescriptor =
             if (targetMethodName == "<init>") {
@@ -143,12 +142,11 @@ class BasicLambdaExpressionsRewritingTest extends AnyFunSpec with Matchers {
                 targetMethodName,
                 targetMethodDescriptor
             )
-        else
-            project.resolveMethodReference(
-                declaringType.asObjectType,
-                targetMethodName,
-                targetMethodDescriptor
-            )
+        else project.resolveMethodReference(
+            declaringType.asObjectType,
+            targetMethodName,
+            targetMethodDescriptor
+        )
     }
 
     /**
@@ -166,14 +164,13 @@ class BasicLambdaExpressionsRewritingTest extends AnyFunSpec with Matchers {
     private def getInvokedMethod(
         project:     SomeProject,
         classFile:   ClassFile,
-        annotations: Annotations
-    ): Option[Method] = {
+        annotations: Annotations): Option[Method] = {
         val method = for {
-            invokedMethod <- annotations.filter(_.annotationType == InvokedMethod)
-            pairs = invokedMethod.elementValuePairs
+            invokedMethod                                               <- annotations.filter(_.annotationType == InvokedMethod)
+            pairs                                                        = invokedMethod.elementValuePairs
             ElementValuePair("receiverType", StringValue(receiverType)) <- pairs
-            ElementValuePair("name", StringValue(methodName)) <- pairs
-            classFileOpt = project.classFile(ObjectType(receiverType))
+            ElementValuePair("name", StringValue(methodName))           <- pairs
+            classFileOpt                                                 = project.classFile(ObjectType(receiverType))
         } yield {
             if (classFileOpt.isEmpty) {
                 throw new IllegalStateException(s"the class file $receiverType cannot be found")
@@ -183,12 +180,9 @@ class BasicLambdaExpressionsRewritingTest extends AnyFunSpec with Matchers {
         }
 
         if (method.isEmpty) {
-            val message =
-                annotations.
-                    filter(_.annotationType == InvokedMethod).
-                    mkString("\n\t", "\n\t", "\n")
+            val message = annotations.filter(_.annotationType == InvokedMethod).mkString("\n\t", "\n\t", "\n")
             fail(
-                s"the specified invoked method $message is not defined "+
+                s"the specified invoked method $message is not defined " +
                     classFile.methods.map(_.name).mkString("; defined methods = {", ",", "}")
             )
         }
@@ -211,8 +205,7 @@ class BasicLambdaExpressionsRewritingTest extends AnyFunSpec with Matchers {
         classFile:      ClassFile,
         methodName:     String,
         receiverType:   String,
-        parameterTypes: Option[FieldTypes]
-    ): Method = {
+        parameterTypes: Option[FieldTypes]): Method = {
         /**
          * Get the method definition recursively -> if the method isn't implemented in `classFile`, check if
          * the super class has an implementation.
@@ -229,8 +222,8 @@ class BasicLambdaExpressionsRewritingTest extends AnyFunSpec with Matchers {
                 classFile.superclassType match {
                     case Some(superType) => findMethodRecursiveInner(project.classFile(superType).get)
                     case None => throw new IllegalStateException(
-                        s"$receiverType does not define $methodName"
-                    )
+                            s"$receiverType does not define $methodName"
+                        )
                 }
             } else {
                 methodOpt.head
@@ -239,7 +232,7 @@ class BasicLambdaExpressionsRewritingTest extends AnyFunSpec with Matchers {
         findMethodRecursiveInner(classFile)
     }
 
-    private def getParameterTypes(pairs: ElementValuePairs): Option[ArraySeq[FieldType]] = {
+    private def getParameterTypes(pairs: ElementValuePairs): Option[ArraySeq[FieldType]] =
         pairs.find(_.name == "parameterTypes").map { p =>
             p.value.asInstanceOf[ArrayValue].values.map[FieldType] {
                 case ClassValue(x: ArrayType)  => x
@@ -248,7 +241,6 @@ class BasicLambdaExpressionsRewritingTest extends AnyFunSpec with Matchers {
                 case x: ElementValue           => x.valueType
             }
         }
-    }
 
     def testProject(project: SomeProject): Unit = {
         def testAllMethodsWithInvokedMethodAnnotation(ot: String): Unit = {
@@ -312,13 +304,15 @@ class BasicLambdaExpressionsRewritingTest extends AnyFunSpec with Matchers {
         val rewritingConfigKey = InvokedynamicRewriting.InvokedynamicRewritingConfigKey
         val logLambdaConfigKey = InvokedynamicRewriting.LambdaExpressionsLogRewritingsConfigKey
         val logConcatConfigKey = InvokedynamicRewriting.StringConcatLogRewritingsConfigKey
-        val testConfig = baseConfig.
-            withValue(rewritingConfigKey, ConfigValueFactory.fromAnyRef(java.lang.Boolean.TRUE)).
-            withValue(logLambdaConfigKey, ConfigValueFactory.fromAnyRef(java.lang.Boolean.FALSE)).
-            withValue(logConcatConfigKey, ConfigValueFactory.fromAnyRef(java.lang.Boolean.FALSE))
+        val testConfig =
+            baseConfig.withValue(rewritingConfigKey, ConfigValueFactory.fromAnyRef(java.lang.Boolean.TRUE)).withValue(
+                logLambdaConfigKey,
+                ConfigValueFactory.fromAnyRef(java.lang.Boolean.FALSE)).withValue(
+                logConcatConfigKey,
+                ConfigValueFactory.fromAnyRef(java.lang.Boolean.FALSE))
         object Framework extends Java8FrameworkWithInvokedynamicSupportAndCaching(
-            new BytecodeInstructionsCache
-        ) {
+                new BytecodeInstructionsCache
+            ) {
             override def defaultConfig = testConfig
         }
 

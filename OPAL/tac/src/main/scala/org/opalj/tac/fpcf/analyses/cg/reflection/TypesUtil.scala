@@ -6,10 +6,7 @@ package analyses
 package cg
 package reflection
 
-import org.opalj.collection.immutable.UIDSet
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.EPS
-import org.opalj.fpcf.PropertyStore
+import org.opalj.br.ArrayType
 import org.opalj.br.BaseType
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
@@ -18,8 +15,11 @@ import org.opalj.br.Type
 import org.opalj.br.VoidType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.Context
-import org.opalj.br.ArrayType
 import org.opalj.br.fpcf.properties.cg.ForNameClasses
+import org.opalj.collection.immutable.UIDSet
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EPS
+import org.opalj.fpcf.PropertyStore
 
 object TypesUtil {
 
@@ -30,8 +30,7 @@ object TypesUtil {
         className:       Expr[V],
         stmts:           Array[Stmt[V]],
         project:         SomeProject,
-        onlyObjectTypes: Boolean
-    ): Option[Set[ObjectType]] = {
+        onlyObjectTypes: Boolean): Option[Set[ObjectType]] =
         StringUtil.getPossibleStrings(className, stmts).map(_.flatMap { cls =>
             val tpe = referenceTypeFromFQN(cls)
             if (tpe.isDefined && tpe.get.isArrayType)
@@ -39,7 +38,6 @@ object TypesUtil {
                 else Some(ObjectType.Object)
             else tpe.asInstanceOf[Option[ObjectType]]
         }.filter(project.classFile(_).isDefined))
-    }
 
     /**
      * Returns classes that may be loaded by an invocation of Class.forName.
@@ -53,22 +51,18 @@ object TypesUtil {
         stmts:     Array[Stmt[V]],
         project:   SomeProject,
         failure:   () => Unit
-    )(
-        implicit
+      )(implicit
         typeIterator: TypeIterator,
         state:        TypeIteratorState,
-        ps:           PropertyStore
-    ): Set[ReferenceType] = {
+        ps:           PropertyStore): Set[ReferenceType] =
         StringUtil.getPossibleStrings(className, context, depender, stmts, failure).flatMap { cls =>
             referenceTypeFromFQN(cls)
         }.filter {
             case at: ArrayType =>
                 val et = at.elementType
                 !et.isObjectType || project.classFile(et.asObjectType).isDefined
-            case ot: ObjectType =>
-                project.classFile(ot).isDefined
+            case ot: ObjectType => project.classFile(ot).isDefined
         }
-    }
 
     /**
      * Returns class that may be loaded by an invocation of Class.forName with the given String.
@@ -78,8 +72,7 @@ object TypesUtil {
         stmts:            Array[Stmt[V]],
         project:          SomeProject,
         failure:          () => Unit,
-        onlyObjectTypes:  Boolean
-    ): Option[ObjectType] = {
+        onlyObjectTypes:  Boolean): Option[ObjectType] = {
         val className = StringUtil.getString(classNameDefSite, stmts).flatMap { cls =>
             val tpe = referenceTypeFromFQN(cls)
             if (tpe.isDefined && tpe.get.isArrayType)
@@ -91,12 +84,10 @@ object TypesUtil {
         className.filter(project.classFile(_).isDefined)
     }
 
-    @inline private[this] def referenceTypeFromFQN(fqn: String): Option[ReferenceType] = {
+    @inline private[this] def referenceTypeFromFQN(fqn: String): Option[ReferenceType] =
         if (fqn.matches("(^\\[+[BCDFIJSZ]$)|(^[A-Za-z](\\w|\\$)*(\\.[A-Za-z](\\w|\\$)*)*$)|(^\\[+L[A-Za-z](\\w|\\$)*(\\.[A-Za-z](\\w|\\$)*)*;$)"))
             Some(ReferenceType(fqn.replace('.', '/')))
-        else
-            None
-    }
+        else None
 
     /**
      * Returns types that a given expression potentially evaluates to.
@@ -107,23 +98,20 @@ object TypesUtil {
         value:           Expr[V],
         stmts:           Array[Stmt[V]],
         project:         SomeProject,
-        onlyObjectTypes: Boolean        = false
-    ): Option[Iterator[Type]] = {
+        onlyObjectTypes: Boolean = false): Option[Iterator[Type]] = {
 
-        def isForName(expr: Expr[V]): Boolean = { // static call to Class.forName
+        def isForName(expr: Expr[V]): Boolean = // static call to Class.forName
             expr.isStaticFunctionCall &&
                 (expr.asStaticFunctionCall.declaringClass eq ObjectType.Class) &&
                 expr.asStaticFunctionCall.name == "forName"
-        }
 
-        def isGetClass(expr: Expr[V]): Boolean = { // virtual call to Object.getClass
+        def isGetClass(expr: Expr[V]): Boolean = // virtual call to Object.getClass
             expr.isVirtualFunctionCall && expr.asVirtualFunctionCall.name == "getClass" &&
                 expr.asVirtualFunctionCall.descriptor ==
                 MethodDescriptor.withNoArgs(ObjectType.Class)
-        }
 
         var possibleTypes: Set[Type] = Set.empty
-        val defSitesIterator = value.asVar.definedBy.iterator
+        val defSitesIterator         = value.asVar.definedBy.iterator
 
         while (defSitesIterator.hasNext) {
             val defSite = defSitesIterator.next()
@@ -133,23 +121,24 @@ object TypesUtil {
             val expr = stmts(defSite).asAssignment.expr
 
             if (!expr.isClassConst && !isForName(expr) && !isBaseTypeLoad(expr) &
-                !isGetClass(expr)) {
+                    !isGetClass(expr)) {
                 return None;
             }
 
             if (expr.isClassConst) {
                 val tpe = stmts(defSite).asAssignment.expr.asClassConst.value
-                if (tpe.isObjectType || !onlyObjectTypes)
-                    possibleTypes += tpe
+                if (tpe.isObjectType || !onlyObjectTypes) possibleTypes += tpe
             } else if (expr.isStaticFunctionCall) {
                 val className =
                     if (expr.asFunctionCall.descriptor.parameterTypes.head eq ObjectType.String)
                         expr.asStaticFunctionCall.params.head
-                    else
-                        expr.asStaticFunctionCall.params(1)
+                    else expr.asStaticFunctionCall.params(1)
 
                 val possibleClassesOpt = getPossibleForNameClasses(
-                    className, stmts, project, onlyObjectTypes
+                    className,
+                    stmts,
+                    project,
+                    onlyObjectTypes
                 )
                 if (possibleClassesOpt.isEmpty) {
                     return None;
@@ -162,9 +151,7 @@ object TypesUtil {
                     return None;
                 }
 
-                possibleTypes ++= typesOfVarOpt.get.filter { tpe =>
-                    tpe.isObjectType || !onlyObjectTypes
-                }
+                possibleTypes ++= typesOfVarOpt.get.filter { tpe => tpe.isObjectType || !onlyObjectTypes }
             } else if (!onlyObjectTypes) {
                 possibleTypes += getBaseType(expr)
             }
@@ -189,19 +176,27 @@ object TypesUtil {
         stmts:           Array[Stmt[V]],
         failure:         () => Unit,
         onlyObjectTypes: Boolean
-    )(
-        implicit
+      )(implicit
         typeIterator: TypeIterator,
         state:        TypeIteratorState,
-        ps:           PropertyStore
-    ): Set[Type] = {
+        ps:           PropertyStore): Set[Type] = {
         var possibleTypes: Set[Type] = Set.empty
 
         AllocationsUtil.handleAllocations(
-            value, context, depender, stmts, _ eq ObjectType.Class, failure
+            value,
+            context,
+            depender,
+            stmts,
+            _ eq ObjectType.Class,
+            failure
         ) { (allocationContext, defSite, _stmts) =>
             possibleTypes ++= getPossibleClasses(
-                allocationContext, defSite, depender, _stmts, failure, onlyObjectTypes
+                allocationContext,
+                defSite,
+                depender,
+                _stmts,
+                failure,
+                onlyObjectTypes
             )
         }
 
@@ -222,11 +217,9 @@ object TypesUtil {
         stmts:           Array[Stmt[V]],
         failure:         () => Unit,
         onlyObjectTypes: Boolean
-    )(
-        implicit
+      )(implicit
         state: TypeIteratorState,
-        ps:    PropertyStore
-    ): Set[Type] = {
+        ps:    PropertyStore): Set[Type] = {
         var possibleTypes: Set[Type] = Set.empty
 
         val stmt = stmts(defSite).asAssignment
@@ -234,33 +227,25 @@ object TypesUtil {
 
         if (expr.isClassConst) {
             val tpe = expr.asClassConst.value
-            if (tpe.isObjectType || !onlyObjectTypes)
-                possibleTypes += tpe
+            if (tpe.isObjectType || !onlyObjectTypes) possibleTypes += tpe
         } else if (isForName(expr)) {
 
             val forNameClasses = ps((context, stmt.pc), ForNameClasses.key) match {
                 case eps: EPS[_, _] =>
-                    if (eps.isRefinable)
-                        state.addDependency(depender, eps)
+                    if (eps.isRefinable) state.addDependency(depender, eps)
                     eps.ub.classes
                 case epk =>
                     state.addDependency(depender, epk)
                     UIDSet.empty
             }
 
-            if (onlyObjectTypes)
-                possibleTypes ++= forNameClasses.filter(_.isObjectType)
-            else
-                possibleTypes ++= forNameClasses
+            if (onlyObjectTypes) possibleTypes ++= forNameClasses.filter(_.isObjectType)
+            else possibleTypes ++= forNameClasses
 
         } else if (isGetClass(expr)) {
             val typesOfVarOpt = getTypesOfVar(expr.asVirtualFunctionCall.receiver.asVar)
-            if (typesOfVarOpt.isEmpty)
-                failure()
-            else
-                possibleTypes ++= typesOfVarOpt.get.filter { tpe =>
-                    tpe.isObjectType || !onlyObjectTypes
-                }
+            if (typesOfVarOpt.isEmpty) failure()
+            else possibleTypes ++= typesOfVarOpt.get.filter { tpe => tpe.isObjectType || !onlyObjectTypes }
         } else if (isBaseTypeLoad(expr) && !onlyObjectTypes) {
             possibleTypes += getBaseType(expr)
         } else {
@@ -271,28 +256,25 @@ object TypesUtil {
         possibleTypes
     }
 
-    private[this] def isForName(expr: Expr[V]): Boolean = { // static call to Class.forName
+    private[this] def isForName(expr: Expr[V]): Boolean = // static call to Class.forName
         expr.isStaticFunctionCall &&
             (expr.asStaticFunctionCall.declaringClass eq ObjectType.Class) &&
             expr.asStaticFunctionCall.name == "forName"
-    }
 
-    private[this] def isGetClass(expr: Expr[V]): Boolean = { // virtual call to Object.getClass
+    private[this] def isGetClass(expr: Expr[V]): Boolean = // virtual call to Object.getClass
         expr.isVirtualFunctionCall && expr.asVirtualFunctionCall.name == "getClass" &&
             expr.asVirtualFunctionCall.descriptor == MethodDescriptor.withNoArgs(ObjectType.Class)
-    }
 
     /**
      * Returns true if a given expression is a GetField instruction that retrieves the TYPE field of
      * a primitive types wrapper class, i.e. the class for the primitive type.
      */
-    private[reflection] def isBaseTypeLoad(expr: Expr[V]): Boolean = {
+    private[reflection] def isBaseTypeLoad(expr: Expr[V]): Boolean =
         expr.isGetStatic && expr.asGetStatic.name == "TYPE" && {
             val declClass = expr.asGetStatic.declaringClass
             declClass == VoidType.WrapperType ||
-                BaseType.baseTypes.iterator.map(_.WrapperType).contains(declClass)
+            BaseType.baseTypes.iterator.map(_.WrapperType).contains(declClass)
         }
-    }
 
     /**
      * Returns the [org.opalj.br.Type] for a primitive type where the given expression is a
@@ -309,12 +291,10 @@ object TypesUtil {
      * Otherwise, an empty Iterator is returned.
      */
     def getTypesOfVar(
-        uvar: V
-    ): Option[Iterator[ReferenceType]] = {
+        uvar: V): Option[Iterator[ReferenceType]] = {
         val value = uvar.value.asReferenceValue
         if (value.isPrecise) value.leastUpperType.map(Iterator(_))
-        else if (value.allValues.forall(_.isPrecise))
-            Some(value.allValues.iterator.flatMap(_.leastUpperType))
+        else if (value.allValues.forall(_.isPrecise)) Some(value.allValues.iterator.flatMap(_.leastUpperType))
         else {
             None
         }

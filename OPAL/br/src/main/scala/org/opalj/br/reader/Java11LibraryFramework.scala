@@ -12,8 +12,8 @@ package reader
  */
 trait Java11LibraryFramework
     extends Java9LibraryFramework
-    with NestHost_attributeBinding
-    with NestMembers_attributeBinding
+        with NestHost_attributeBinding
+        with NestMembers_attributeBinding
 
 object Java11LibraryFramework extends Java11LibraryFramework {
 

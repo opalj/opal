@@ -3,17 +3,17 @@ package org.opalj
 package br
 package fpcf
 
-import com.typesafe.config.Config
-
-import org.opalj.log.LogContext
-import org.opalj.log.OPALLogger.debug
-import org.opalj.util.PerformanceEvaluation._
 import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.AnalysisScenario
 import org.opalj.fpcf.ComputationSpecification
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Schedule
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger.debug
+import org.opalj.util.PerformanceEvaluation._
+
+import com.typesafe.config.Config
 
 /**
  * Enables the execution of a set of analyses.
@@ -26,10 +26,10 @@ import org.opalj.fpcf.Schedule
 class FPCFAnalysesManager private[fpcf] (val project: SomeProject) {
 
     // caching (by means of using local fields) is not necessary
-    private[this] implicit final def logContext: LogContext = project.logContext
-    private[this] final def config: Config = project.config
-    private[this] final def propertyStore: PropertyStore = project.get(PropertyStoreKey)
-    private[this] final def trace: Boolean = config.getBoolean(FPCFAnalysesManager.TraceConfigKey)
+    implicit final private[this] def logContext: LogContext = project.logContext
+    final private[this] def config: Config                  = project.config
+    final private[this] def propertyStore: PropertyStore    = project.get(PropertyStoreKey)
+    final private[this] def trace: Boolean                  = config.getBoolean(FPCFAnalysesManager.TraceConfigKey)
 
     private[this] var schedules: List[Schedule[FPCFAnalysis]] = Nil
 
@@ -39,22 +39,20 @@ class FPCFAnalysesManager private[fpcf] (val project: SomeProject) {
     def executedSchedules: List[Schedule[FPCFAnalysis]] = schedules
 
     final def runAll(
-        analyses: ComputationSpecification[FPCFAnalysis]*
-    ): (PropertyStore, List[(ComputationSpecification[FPCFAnalysis], FPCFAnalysis)]) = {
-        runAll(analyses.to(Iterable))
-    }
+        analyses: ComputationSpecification[FPCFAnalysis]*)
+        : (PropertyStore, List[(ComputationSpecification[FPCFAnalysis], FPCFAnalysis)]) = runAll(analyses.to(Iterable))
 
     final def runAll(
         analyses:             Iterable[ComputationSpecification[FPCFAnalysis]],
-        afterPhaseScheduling: List[ComputationSpecification[FPCFAnalysis]] => Unit = _ => ()
-    ): (PropertyStore, List[(ComputationSpecification[FPCFAnalysis], FPCFAnalysis)]) = this.synchronized {
+        afterPhaseScheduling: List[ComputationSpecification[FPCFAnalysis]] => Unit = _ => ())
+        : (PropertyStore, List[(ComputationSpecification[FPCFAnalysis], FPCFAnalysis)]) = this.synchronized {
 
         val scenario = AnalysisScenario(analyses, propertyStore)
 
         val schedule = scenario.computeSchedule(propertyStore, FPCFAnalysesRegistry.defaultAnalysis)
         schedules ::= schedule
 
-        if (trace) { debug("analysis progress", "executing "+schedule) }
+        if (trace) { debug("analysis progress", "executing " + schedule) }
         val as = time {
             schedule(propertyStore, trace, afterPhaseScheduling = afterPhaseScheduling)
         } { t =>
@@ -66,7 +64,9 @@ class FPCFAnalysesManager private[fpcf] (val project: SomeProject) {
             debug(
                 "analysis progress",
                 scenario.allProperties.map(p => PropertyKey.name(p.pk.id)).mkString(
-                    "used and derived properties = {", ", ", "}"
+                    "used and derived properties = {",
+                    ", ",
+                    "}"
                 )
             )
         }

@@ -4,9 +4,9 @@ package bi
 package reader
 
 import java.io.DataInputStream
-import org.opalj.control.fillArraySeq
-
 import scala.collection.immutable.ArraySeq
+
+import org.opalj.control.fillArraySeq
 
 /**
  * Trait that implements a template method to read in the attributes of
@@ -14,8 +14,8 @@ import scala.collection.immutable.ArraySeq
  */
 trait AttributesReader
     extends AttributesAbstractions
-    with Constant_PoolAbstractions
-    with Unknown_attributeAbstractions {
+        with Constant_PoolAbstractions
+        with Unknown_attributeAbstractions {
 
     //
     // TYPE DEFINITIONS AND FACTORY METHODS
@@ -30,13 +30,12 @@ trait AttributesReader
      * If `null` is returned all information regarding this attribute are thrown away.
      */
     def Unknown_attribute(
-        cp:                   Constant_Pool,
-        ap:                   AttributeParent,
-        ap_name_index:        Constant_Pool_Index,
-        ap_descriptor_index:  Constant_Pool_Index,
+        cp: Constant_Pool,
+        ap: AttributeParent,
+        ap_name_index: Constant_Pool_Index,
+        ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Int,
-        in:                   DataInputStream
-    ): Unknown_attribute
+        in: DataInputStream): Unknown_attribute
 
     //
     // IMPLEMENTATION
@@ -108,16 +107,26 @@ trait AttributesReader
      * The returned function is allowed to return null; in this case the attribute
      * will be discarded.
      */
-    private[this] var attributeReaders: Map[String, (Constant_Pool, AttributeParent, Constant_Pool_Index, Constant_Pool_Index, Constant_Pool_Index, DataInputStream) => Attribute] = Map()
+    private[this] var attributeReaders: Map[String,
+                                            (Constant_Pool,
+                                                AttributeParent,
+                                                Constant_Pool_Index,
+                                                Constant_Pool_Index,
+                                                Constant_Pool_Index,
+                                                DataInputStream) => Attribute] = Map()
 
     /**
      * See `AttributeReader.registerAttributeReader` for details.
      */
     def registerAttributeReader(
-        reader: (String, (Constant_Pool, AttributeParent, Constant_Pool_Index, Constant_Pool_Index, Constant_Pool_Index, DataInputStream) => Attribute)
-    ): Unit = {
-        attributeReaders += reader
-    }
+        reader: (
+            String,
+            (Constant_Pool,
+                AttributeParent,
+                Constant_Pool_Index,
+                Constant_Pool_Index,
+                Constant_Pool_Index,
+                DataInputStream) => Attribute)): Unit = attributeReaders += reader
 
     private[this] var attributesPostProcessors = ArraySeq.empty[Attributes => Attributes]
 
@@ -129,21 +138,17 @@ trait AttributesReader
      * `localvar_target` structure of the `Runtime(In)VisibleTypeAnnotations` attribute
      * has a reference in the local variable table attribute.
      */
-    def registerAttributesPostProcessor(p: Attributes => Attributes): Unit = {
-        attributesPostProcessors :+= p
-    }
+    def registerAttributesPostProcessor(p: Attributes => Attributes): Unit = attributesPostProcessors :+= p
 
     def Attributes(
         cp:                  Constant_Pool,
         ap:                  AttributeParent,
         ap_name_index:       Constant_Pool_Index,
         ap_descriptor_index: Constant_Pool_Index,
-        in:                  DataInputStream
-    ): Attributes = {
-        val attributes: Attributes =
-            fillArraySeq(in.readUnsignedShort) {
-                Attribute(cp, ap, ap_name_index, ap_descriptor_index, in)
-            }.filter(attr => attr != null) // lets remove the attributes we don't need or understand
+        in:                  DataInputStream): Attributes = {
+        val attributes: Attributes = fillArraySeq(in.readUnsignedShort) {
+            Attribute(cp, ap, ap_name_index, ap_descriptor_index, in)
+        }.filter(attr => attr != null) // lets remove the attributes we don't need or understand
 
         attributesPostProcessors.foldLeft(attributes)((a, p) => p(a))
     }
@@ -153,10 +158,9 @@ trait AttributesReader
         ap:                  AttributeParent,
         ap_name_index:       Constant_Pool_Index,
         ap_descriptor_index: Constant_Pool_Index,
-        in:                  DataInputStream
-    ): Attribute = {
+        in:                  DataInputStream): Attribute = {
         val attribute_name_index = in.readUnsignedShort()
-        val attribute_name = cp(attribute_name_index).asString
+        val attribute_name       = cp(attribute_name_index).asString
 
         attributeReaders.getOrElse(
             attribute_name,

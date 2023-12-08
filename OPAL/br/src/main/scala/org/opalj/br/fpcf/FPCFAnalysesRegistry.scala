@@ -5,17 +5,17 @@ package fpcf
 
 import scala.reflect.runtime.universe.runtimeMirror
 
-import com.typesafe.config.ConfigFactory
-import com.typesafe.config.ConfigObject
-import com.typesafe.config.ConfigValueFactory
-
+import org.opalj.fpcf.ComputationSpecification
+import org.opalj.fpcf.PropertyBounds
+import org.opalj.fpcf.PropertyKey
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.error
 import org.opalj.log.OPALLogger.info
-import org.opalj.fpcf.ComputationSpecification
-import org.opalj.fpcf.PropertyBounds
-import org.opalj.fpcf.PropertyKey
+
+import com.typesafe.config.ConfigFactory
+import com.typesafe.config.ConfigObject
+import com.typesafe.config.ConfigValueFactory
 
 /**
  * Registry for all factories for analyses that are implemented using the fixpoint computations
@@ -35,11 +35,11 @@ import org.opalj.fpcf.PropertyKey
  */
 object FPCFAnalysesRegistry {
 
-    private[this] implicit def logContext: LogContext = GlobalLogContext
+    implicit private[this] def logContext: LogContext = GlobalLogContext
 
-    private[this] var idToEagerScheduler: Map[String, FPCFEagerAnalysisScheduler] = Map.empty
-    private[this] var idToLazyScheduler: Map[String, FPCFLazyAnalysisScheduler] = Map.empty
-    private[this] var idToDescription: Map[String, String] = Map.empty
+    private[this] var idToEagerScheduler: Map[String, FPCFEagerAnalysisScheduler]            = Map.empty
+    private[this] var idToLazyScheduler: Map[String, FPCFLazyAnalysisScheduler]              = Map.empty
+    private[this] var idToDescription: Map[String, String]                                   = Map.empty
     private[this] var propertyToDefaultScheduler: Map[PropertyBounds, FPCFAnalysisScheduler] = Map.empty
 
     /**
@@ -56,8 +56,7 @@ object FPCFAnalysesRegistry {
         analysisDescription: String,
         analysisFactory:     String,
         lazyFactory:         Boolean,
-        default:             Boolean
-    ): Unit = this.synchronized {
+        default:             Boolean): Unit = this.synchronized {
         resolveAnalysisRunner(analysisFactory) match {
             case Some(analysisRunner) =>
                 if (lazyFactory) idToLazyScheduler +=
@@ -65,26 +64,23 @@ object FPCFAnalysesRegistry {
                 else idToEagerScheduler +=
                     ((analysisID, analysisRunner.asInstanceOf[FPCFEagerAnalysisScheduler]))
 
-                if (default)
-                    analysisRunner.derives.foreach { p =>
-                        if (propertyToDefaultScheduler.contains(p)) {
-                            val message = s"cannot register ${analysisRunner.name} "+
-                                s"as default analysis for ${PropertyKey.name(p.pk)}, "+
-                                s"${propertyToDefaultScheduler(p).name} was already registered"
-                            error("OPAL Setup", message)
-                        } else {
-                            propertyToDefaultScheduler += ((p, analysisRunner))
-                        }
+                if (default) analysisRunner.derives.foreach { p =>
+                    if (propertyToDefaultScheduler.contains(p)) {
+                        val message = s"cannot register ${analysisRunner.name} " +
+                            s"as default analysis for ${PropertyKey.name(p.pk)}, " +
+                            s"${propertyToDefaultScheduler(p).name} was already registered"
+                        error("OPAL Setup", message)
+                    } else {
+                        propertyToDefaultScheduler += ((p, analysisRunner))
                     }
+                }
 
                 idToDescription += ((analysisID, analysisDescription))
                 val analysisType = if (lazyFactory) "lazy" else "eager"
-                val message =
-                    s"registered $analysisType analysis: $analysisID ($analysisDescription)"
+                val message      = s"registered $analysisType analysis: $analysisID ($analysisDescription)"
                 info("OPAL Setup", message)
 
-            case None =>
-                error("OPAL Setup", s"unknown analysis implementation: $analysisFactory")
+            case None => error("OPAL Setup", s"unknown analysis implementation: $analysisFactory")
         }
     }
 
@@ -118,31 +114,30 @@ object FPCFAnalysesRegistry {
             registeredAnalyses foreach { a =>
                 register(a.id, a.description, a.factory)
             }
-            */
+             */
             val registeredAnalyses = config.getObject("org.opalj.fpcf.registry.analyses")
-            val entriesIterator = registeredAnalyses.entrySet.iterator
+            val entriesIterator    = registeredAnalyses.entrySet.iterator
             while (entriesIterator.hasNext) {
-                val entry = entriesIterator.next
-                val id = entry.getKey
-                val metaData = entry.getValue.asInstanceOf[ConfigObject]
+                val entry       = entriesIterator.next
+                val id          = entry.getKey
+                val metaData    = entry.getValue.asInstanceOf[ConfigObject]
                 val description = metaData.getOrDefault("description", null).unwrapped.toString
-                val default = metaData.getOrDefault("default", ConfigValueFactory.fromAnyRef(false)).unwrapped().asInstanceOf[Boolean]
+                val default = metaData.getOrDefault(
+                    "default",
+                    ConfigValueFactory.fromAnyRef(false)).unwrapped().asInstanceOf[Boolean]
                 val lazyFactory = metaData.getOrDefault("lazyFactory", null)
-                if (lazyFactory ne null)
-                    register(id, description, lazyFactory.unwrapped.toString, true, default)
+                if (lazyFactory ne null) register(id, description, lazyFactory.unwrapped.toString, true, default)
                 val eagerFactory = metaData.getOrDefault("eagerFactory", null)
-                if (eagerFactory ne null)
-                    register(
-                        id,
-                        description,
-                        eagerFactory.unwrapped.toString,
-                        false,
-                        default && (lazyFactory eq null)
-                    )
+                if (eagerFactory ne null) register(
+                    id,
+                    description,
+                    eagerFactory.unwrapped.toString,
+                    false,
+                    default && (lazyFactory eq null)
+                )
             }
         } catch {
-            case e: Exception =>
-                error("OPAL Setup", "registration of FPCF eager analyses failed", e)
+            case e: Exception => error("OPAL Setup", "registration of FPCF eager analyses failed", e)
         }
     }
 
@@ -189,9 +184,8 @@ object FPCFAnalysesRegistry {
         idToLazyScheduler(id)
     }
 
-    def defaultAnalysis(property: PropertyBounds): Option[ComputationSpecification[FPCFAnalysis]] = {
+    def defaultAnalysis(property: PropertyBounds): Option[ComputationSpecification[FPCFAnalysis]] =
         propertyToDefaultScheduler.get(property)
-    }
 
     registerFromConfig()
 

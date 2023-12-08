@@ -3,10 +3,8 @@ package org.opalj
 package br
 package reader
 
-import com.typesafe.config.Config
-import com.typesafe.config.ConfigValueFactory
-import org.opalj.log.OPALLogger.error
-import org.opalj.log.OPALLogger.info
+import scala.collection.immutable.ArraySeq
+
 import org.opalj.bi.ACC_PRIVATE
 import org.opalj.bi.ACC_STATIC
 import org.opalj.bi.ACC_SYNTHETIC
@@ -19,8 +17,11 @@ import org.opalj.br.instructions.LoadDynamic2_W
 import org.opalj.br.instructions.LoadDynamic_W
 import org.opalj.br.instructions.NOP
 import org.opalj.br.instructions.ReturnInstruction
+import org.opalj.log.OPALLogger.error
+import org.opalj.log.OPALLogger.info
 
-import scala.collection.immutable.ArraySeq
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigValueFactory
 
 /**
  * Provides support for rewriting Java 11 dynamic constant loading instructions.
@@ -42,7 +43,7 @@ import scala.collection.immutable.ArraySeq
  */
 trait DynamicConstantRewriting
     extends DeferredDynamicConstantResolution
-    with BootstrapArgumentLoading {
+        with BootstrapArgumentLoading {
 
     this: ClassFileBinding =>
 
@@ -88,7 +89,8 @@ trait DynamicConstantRewriting
                 case t: Throwable =>
                     error(
                         "class file reader",
-                        s"couldn't read: $LogUnknownDynamicConstantsConfigKey", t
+                        s"couldn't read: $LogUnknownDynamicConstantsConfigKey",
+                        t
                     )
                     false
             }
@@ -107,7 +109,8 @@ trait DynamicConstantRewriting
                 case t: Throwable =>
                     error(
                         "class file reader",
-                        s"couldn't read: $LogUnresolvedDynamicConstantsConfigKey", t
+                        s"couldn't read: $LogUnresolvedDynamicConstantsConfigKey",
+                        t
                     )
                     false
             }
@@ -125,26 +128,23 @@ trait DynamicConstantRewriting
         methodDescriptorIndex: Constant_Pool_Index,
         dynamicInfo:           CONSTANT_Dynamic_info,
         instructions:          Array[Instruction],
-        pc:                    PC
-    ): ClassFile = {
+        pc:                    PC): ClassFile = {
         // gather complete information about ldc/ldc(2)_w instruction from bootstrap method table
-        var updatedClassFile =
-            super.deferredDynamicConstantResolution(
-                classFile,
-                cp,
-                methodNameIndex,
-                methodDescriptorIndex,
-                dynamicInfo,
-                instructions,
-                pc
-            )
+        var updatedClassFile = super.deferredDynamicConstantResolution(
+            classFile,
+            cp,
+            methodNameIndex,
+            methodDescriptorIndex,
+            dynamicInfo,
+            instructions,
+            pc
+        )
 
-        if (!performRewriting)
-            return updatedClassFile;
+        if (!performRewriting) return updatedClassFile;
 
-        val load = instructions(pc)
+        val load                                          = instructions(pc)
         val LDCDynamic(bootstrapMethod, name, descriptor) = load
-        val instructionLength = if (load.opcode == LDC.opcode) 2 else 3
+        val instructionLength                             = if (load.opcode == LDC.opcode) 2 else 3
 
         // Generate instructions to load the constant and add matching return
         val instructionsBuilder = new InstructionsBuilder(3)
@@ -154,7 +154,7 @@ trait DynamicConstantRewriting
         instructionsBuilder ++= ReturnInstruction(descriptor)
 
         val newInstructions = instructionsBuilder.result()
-        val newLength = newInstructions.length - 1 // Don't count the return
+        val newLength       = newInstructions.length - 1 // Don't count the return
 
         val head = newInstructions.head
         if (newLength == 3 && // There might not be an actual replacement
@@ -172,11 +172,14 @@ trait DynamicConstantRewriting
                 instructions(pc + i) = if (i < newLength) newInstructions(i) else NOP
                 i += 1
             }
-            if (logRewrites)
-                info("rewriting dynamic constant", s"Java: $load => $head")
+            if (logRewrites) info("rewriting dynamic constant", s"Java: $load => $head")
         } else if (instructionLength == 3) { // Replace ldc(2)_w with invocation
             val newMethodName = newTargetMethodName(
-                cp, methodNameIndex, methodDescriptorIndex, pc, "load_dynamic_contstant"
+                cp,
+                methodNameIndex,
+                methodDescriptorIndex,
+                pc,
+                "load_dynamic_contstant"
             )
             val newMethod = Method(
                 ACC_SYNTHETIC.mask | ACC_PRIVATE.mask | ACC_STATIC.mask,
@@ -194,8 +197,7 @@ trait DynamicConstantRewriting
             )
             instructions(pc) = newInvoke
 
-            if (logRewrites)
-                info("rewriting dynamic constant", s"Java: $load => $newInvoke")
+            if (logRewrites) info("rewriting dynamic constant", s"Java: $load => $newInvoke")
         } else { // Can't replace ldc with invocation, it has only 2 bytes
             if (logUnresolvedDynamicConstants) {
                 val t = updatedClassFile.thisType.toJava
@@ -209,24 +211,19 @@ trait DynamicConstantRewriting
 
 object DynamicConstantRewriting {
 
-    final val DynamicConstantKeyPrefix = {
-        ClassFileReaderConfiguration.ConfigKeyPrefix+"DynamicConstants."
-    }
+    final val DynamicConstantKeyPrefix = ClassFileReaderConfiguration.ConfigKeyPrefix + "DynamicConstants."
 
-    final val RewritingConfigKey = DynamicConstantKeyPrefix+"rewrite"
-    final val LogRewritingsConfigKey = DynamicConstantKeyPrefix+"logRewrites"
-    final val LogUnknownDynamicConstantsConfigKey =
-        DynamicConstantKeyPrefix+"logUnknownDynamicConstants"
-    final val LogUnresolvedDynamicConstantsConfigKey =
-        DynamicConstantKeyPrefix+"logUnresolvedDynamicConstants"
+    final val RewritingConfigKey                     = DynamicConstantKeyPrefix + "rewrite"
+    final val LogRewritingsConfigKey                 = DynamicConstantKeyPrefix + "logRewrites"
+    final val LogUnknownDynamicConstantsConfigKey    = DynamicConstantKeyPrefix + "logUnknownDynamicConstants"
+    final val LogUnresolvedDynamicConstantsConfigKey = DynamicConstantKeyPrefix + "logUnresolvedDynamicConstants"
 
     /**
      * Returns the default config where the settings for rewriting and logging rewrites are
      * set to the specified values.
      */
-    def defaultConfig(rewrite: Boolean, logRewrites: Boolean): Config = {
-        BaseConfig.
-            withValue(RewritingConfigKey, ConfigValueFactory.fromAnyRef(rewrite)).
-            withValue(LogRewritingsConfigKey, ConfigValueFactory.fromAnyRef(logRewrites))
-    }
+    def defaultConfig(rewrite: Boolean, logRewrites: Boolean): Config =
+        BaseConfig.withValue(RewritingConfigKey, ConfigValueFactory.fromAnyRef(rewrite)).withValue(
+            LogRewritingsConfigKey,
+            ConfigValueFactory.fromAnyRef(logRewrites))
 }

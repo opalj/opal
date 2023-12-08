@@ -31,15 +31,12 @@ trait ExceptionsFactory extends ValuesDomain { domain =>
      */
     def ClassCastException(origin: ValueOrigin): ExceptionValue
 
-    final def VMClassCastException(pc: Int): ExceptionValue = {
-        ClassCastException(ValueOriginForImmediateVMException(pc))
-    }
+    final def VMClassCastException(pc: Int): ExceptionValue = ClassCastException(ValueOriginForImmediateVMException(pc))
 
     def ClassNotFoundException(origin: ValueOrigin): ExceptionValue
 
-    final def VMClassNotFoundException(pc: Int): ExceptionValue = {
+    final def VMClassNotFoundException(pc: Int): ExceptionValue =
         ClassNotFoundException(ValueOriginForImmediateVMException(pc))
-    }
 
     /**
      * Creates a non-null object that represent a `NullPointerException` and that has the
@@ -50,13 +47,11 @@ trait ExceptionsFactory extends ValuesDomain { domain =>
      */
     def NullPointerException(origin: ValueOrigin): ExceptionValue
 
-    final def VMNullPointerException(pc: Int): ExceptionValue = {
+    final def VMNullPointerException(pc: Int): ExceptionValue =
         NullPointerException(ValueOriginForImmediateVMException(pc))
-    }
 
-    final def MethodExternalNullPointerException(pc: Int): ExceptionValue = {
+    final def MethodExternalNullPointerException(pc: Int): ExceptionValue =
         NullPointerException(ValueOriginForMethodExternalException(pc))
-    }
 
     /**
      * Creates a non-null object that represent an `IllegalMonitorStateException` and that has the
@@ -67,9 +62,8 @@ trait ExceptionsFactory extends ValuesDomain { domain =>
      */
     def IllegalMonitorStateException(origin: ValueOrigin): ExceptionValue
 
-    final def VMIllegalMonitorStateException(pc: Int): ExceptionValue = {
+    final def VMIllegalMonitorStateException(pc: Int): ExceptionValue =
         IllegalMonitorStateException(ValueOriginForImmediateVMException(pc))
-    }
 
     /**
      * Creates a non-null object that represent a `NegativeArraySizeException` and that has the
@@ -80,9 +74,8 @@ trait ExceptionsFactory extends ValuesDomain { domain =>
      */
     def NegativeArraySizeException(origin: ValueOrigin): ExceptionValue
 
-    final def VMNegativeArraySizeException(pc: Int): ExceptionValue = {
+    final def VMNegativeArraySizeException(pc: Int): ExceptionValue =
         NegativeArraySizeException(ValueOriginForImmediateVMException(pc))
-    }
 
     /**
      * Creates a non-null object that represent a `ArrayIndexOutOfBoundsException` and that has the
@@ -93,9 +86,8 @@ trait ExceptionsFactory extends ValuesDomain { domain =>
      */
     def ArrayIndexOutOfBoundsException(origin: ValueOrigin): ExceptionValue
 
-    final def VMArrayIndexOutOfBoundsException(pc: Int): ExceptionValue = {
+    final def VMArrayIndexOutOfBoundsException(pc: Int): ExceptionValue =
         ArrayIndexOutOfBoundsException(ValueOriginForImmediateVMException(pc))
-    }
 
     /**
      * Creates a non-null object that represent a `ArrayStoreException` and that has the
@@ -106,9 +98,8 @@ trait ExceptionsFactory extends ValuesDomain { domain =>
      */
     def ArrayStoreException(origin: ValueOrigin): ExceptionValue
 
-    final def VMArrayStoreException(pc: Int): ExceptionValue = {
+    final def VMArrayStoreException(pc: Int): ExceptionValue =
         ArrayStoreException(ValueOriginForImmediateVMException(pc))
-    }
 
     /**
      * Creates a non-null object that represent a `ArithmeticException` and that has the
@@ -119,8 +110,7 @@ trait ExceptionsFactory extends ValuesDomain { domain =>
      */
     def ArithmeticException(origin: ValueOrigin): ExceptionValue
 
-    final def VMArithmeticException(pc: Int): ExceptionValue = {
+    final def VMArithmeticException(pc: Int): ExceptionValue =
         ArithmeticException(ValueOriginForImmediateVMException(pc))
-    }
 
 }

@@ -5,15 +5,13 @@ package immutable
 
 object LongLinkedTrieSetEval extends LongSetEval {
 
-    def main(args: Array[String]): Unit = {
-        eval[LongLinkedTrieSet](
-            () => LongLinkedTrieSet.empty,
-            (set: LongLinkedTrieSet) => set.size,
-            (set: LongLinkedTrieSet) => set.+,
-            (set: LongLinkedTrieSet) => set.contains,
-            (set: LongLinkedTrieSet) => set.foreach,
-            (set: LongLinkedTrieSet) => set.foldLeft[Long]
-        )
-    }
+    def main(args: Array[String]): Unit = eval[LongLinkedTrieSet](
+        () => LongLinkedTrieSet.empty,
+        (set: LongLinkedTrieSet) => set.size,
+        (set: LongLinkedTrieSet) => set.+,
+        (set: LongLinkedTrieSet) => set.contains,
+        (set: LongLinkedTrieSet) => set.foreach,
+        (set: LongLinkedTrieSet) => set.foldLeft[Long]
+    )
 
 }

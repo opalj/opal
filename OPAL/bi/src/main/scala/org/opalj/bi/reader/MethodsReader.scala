@@ -3,11 +3,12 @@ package org.opalj
 package bi
 package reader
 
-import java.io.DataInputStream
-import org.opalj.control.fillArraySeq
-
-import scala.collection.immutable.ArraySeq
 import scala.reflect.ClassTag
+
+import java.io.DataInputStream
+import scala.collection.immutable.ArraySeq
+
+import org.opalj.control.fillArraySeq
 
 /**
  * Defines a template method to read in a class file's Method_info structure.
@@ -25,20 +26,18 @@ trait MethodsReader extends Constant_PoolAbstractions {
     type Attributes
 
     protected def Attributes(
-        cp:                  Constant_Pool,
-        ap:                  AttributeParent,
-        ap_name_index:       Constant_Pool_Index,
+        cp: Constant_Pool,
+        ap: AttributeParent,
+        ap_name_index: Constant_Pool_Index,
         ap_descriptor_index: Constant_Pool_Index, // -1 if no descriptor is available; i.e., the parent is the class file
-        in:                  DataInputStream
-    ): Attributes
+        in: DataInputStream): Attributes
 
     def Method_Info(
-        constant_pool:    Constant_Pool,
-        accessFlags:      Int,
-        name_index:       Constant_Pool_Index,
+        constant_pool: Constant_Pool,
+        accessFlags: Int,
+        name_index: Constant_Pool_Index,
         descriptor_index: Constant_Pool_Index,
-        attributes:       Attributes
-    ): Method_Info
+        attributes: Attributes): Method_Info
 
     //
     // IMPLEMENTATION
@@ -52,8 +51,8 @@ trait MethodsReader extends Constant_PoolAbstractions {
     }
 
     private def Method_Info(cp: Constant_Pool, in: DataInputStream): Method_Info = {
-        val accessFlags = in.readUnsignedShort
-        val name_index = in.readUnsignedShort
+        val accessFlags      = in.readUnsignedShort
+        val name_index       = in.readUnsignedShort
         val descriptor_index = in.readUnsignedShort
         Method_Info(
             cp,

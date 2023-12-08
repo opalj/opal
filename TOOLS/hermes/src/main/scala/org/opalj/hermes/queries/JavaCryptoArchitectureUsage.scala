@@ -20,35 +20,33 @@ class JavaCryptoArchitectureUsage(implicit hermes: HermesConfig) extends APIFeat
     override val apiFeatures: List[APIFeature] = {
 
         // java.security
-        val SecureRandom = ObjectType("java/security/SecureRandom")
-        val MessageDigest = ObjectType("java/security/MessageDigest")
-        val Signature = ObjectType("java/security/Signature")
-        val KeyFactory = ObjectType("java/security/KeyFactory")
+        val SecureRandom     = ObjectType("java/security/SecureRandom")
+        val MessageDigest    = ObjectType("java/security/MessageDigest")
+        val Signature        = ObjectType("java/security/Signature")
+        val KeyFactory       = ObjectType("java/security/KeyFactory")
         val KeyPairGenerator = ObjectType("java/security/KeyPairGenerator")
-        val KeyStore = ObjectType("java/security/KeyStore")
+        val KeyStore         = ObjectType("java/security/KeyStore")
 
         // java.security.cert
 
         val CertificateFactory = ObjectType("java/security/cert/CertificateFactory")
-        val CertPathBuilder = ObjectType("java/security/cert/CertPathBuilder")
-        val CertPathValidator = ObjectType("java/security/cert/CertPathValidator")
-        val CertStore = ObjectType("java/security/cert/CertStore")
+        val CertPathBuilder    = ObjectType("java/security/cert/CertPathBuilder")
+        val CertPathValidator  = ObjectType("java/security/cert/CertPathValidator")
+        val CertStore          = ObjectType("java/security/cert/CertStore")
 
         // javax/crypto
-        val Cipher = ObjectType("javax/crypto/Cipher")
-        val Mac = ObjectType("javax/crypto/Mac")
+        val Cipher           = ObjectType("javax/crypto/Cipher")
+        val Mac              = ObjectType("javax/crypto/Mac")
         val SecretKeyFactory = ObjectType("javax/crypto/SecretKeyFactory")
-        val KeyGenerator = ObjectType("javax/crypto/KeyGenerator")
-        val KeyAgreement = ObjectType("javax/crypto/KeyAgreement")
+        val KeyGenerator     = ObjectType("javax/crypto/KeyGenerator")
+        val KeyAgreement     = ObjectType("javax/crypto/KeyAgreement")
 
         // common methods
-        val init = "<init>"
+        val init        = "<init>"
         val getInstance = "getInstance"
 
         List(
-
             StaticAPIMethod(Cipher, getInstance),
-
             APIFeatureGroup(
                 List(
                     InstanceAPIMethod(SecureRandom, init),
@@ -57,7 +55,6 @@ class JavaCryptoArchitectureUsage(implicit hermes: HermesConfig) extends APIFeat
                 ),
                 s"using SecureRandom"
             ),
-
             APIFeatureGroup(
                 List(
                     InstanceAPIMethod(MessageDigest, init),
@@ -65,7 +62,6 @@ class JavaCryptoArchitectureUsage(implicit hermes: HermesConfig) extends APIFeat
                 ),
                 s"using MessageDigest"
             ),
-
             APIFeatureGroup(
                 List(
                     InstanceAPIMethod(Signature, init),
@@ -73,7 +69,6 @@ class JavaCryptoArchitectureUsage(implicit hermes: HermesConfig) extends APIFeat
                 ),
                 s"using Signature"
             ),
-
             APIFeatureGroup(
                 List(
                     InstanceAPIMethod(Mac, init),
@@ -81,7 +76,6 @@ class JavaCryptoArchitectureUsage(implicit hermes: HermesConfig) extends APIFeat
                 ),
                 s"using Mac"
             ),
-
             APIFeatureGroup(
                 List(
                     InstanceAPIMethod(KeyFactory, init),
@@ -97,7 +91,6 @@ class JavaCryptoArchitectureUsage(implicit hermes: HermesConfig) extends APIFeat
                 ),
                 s"cryptographic key handling"
             ),
-
             APIFeatureGroup(
                 List(
                     InstanceAPIMethod(KeyStore, init),
@@ -105,7 +98,6 @@ class JavaCryptoArchitectureUsage(implicit hermes: HermesConfig) extends APIFeat
                 ),
                 s"using KeyStore"
             ),
-
             APIFeatureGroup(
                 List(
                     InstanceAPIMethod(CertificateFactory, init),

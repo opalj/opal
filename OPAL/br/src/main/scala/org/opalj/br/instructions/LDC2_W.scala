@@ -13,7 +13,7 @@ import org.opalj.bytecode.BytecodeProcessingFailedException
  */
 sealed abstract class LDC2_W[@specialized(Long, Double) T <: Any]
     extends LoadConstantInstruction[T]
-    with InstructionMetaInformation {
+        with InstructionMetaInformation {
 
     final def opcode: Opcode = LDC2_W.opcode
 
@@ -31,7 +31,7 @@ final case class LoadLong(value: Long) extends LDC2_W[Long] {
         val other = code.instructions(otherPC)
         (this eq other) || (
             LDC2_W.opcode == other.opcode && other.isInstanceOf[LoadLong] &&
-            this.value == other.asInstanceOf[LoadLong].value
+                this.value == other.asInstanceOf[LoadLong].value
         )
     }
 
@@ -46,22 +46,17 @@ final case class LoadDouble(value: Double) extends LDC2_W[Double] {
         this.similar(other)
     }
 
-    override def similar(other: Instruction): Boolean = {
-        (this eq other) || (
-            LDC2_W.opcode == other.opcode && other.isInstanceOf[LoadDouble] && {
-                val otherLoadDouble = other.asInstanceOf[LoadDouble]
-                (this.value.isNaN && otherLoadDouble.value.isNaN) ||
-                    (this.value == otherLoadDouble.value)
-            }
-        )
-    }
-
-    override def equals(other: Any): Boolean = {
-        other match {
-            case LoadDouble(thatValue) =>
-                thatValue == this.value || (thatValue.isNaN && this.value.isNaN)
-            case _ => false
+    override def similar(other: Instruction): Boolean = (this eq other) || (
+        LDC2_W.opcode == other.opcode && other.isInstanceOf[LoadDouble] && {
+            val otherLoadDouble = other.asInstanceOf[LoadDouble]
+            (this.value.isNaN && otherLoadDouble.value.isNaN) ||
+            (this.value == otherLoadDouble.value)
         }
+    )
+
+    override def equals(other: Any): Boolean = other match {
+        case LoadDouble(thatValue) => thatValue == this.value || (thatValue.isNaN && this.value.isNaN)
+        case _                     => false
     }
 
     // HashCode of "value.NaN" is stable and 0
@@ -75,8 +70,7 @@ final case class LoadDouble(value: Double) extends LDC2_W[Double] {
 final case class LoadDynamic2_W(
         bootstrapMethod: BootstrapMethod,
         name:            String,
-        descriptor:      FieldType
-) extends LDC2_W[Nothing] {
+        descriptor: FieldType) extends LDC2_W[Nothing] {
     def value: Nothing = throw new UnsupportedOperationException("dynamic constant unknown")
 
     def computationalType: ComputationalType = descriptor.computationalType
@@ -110,15 +104,12 @@ object LDC2_W {
 
     final val opcode = 20
 
-    def apply(constantValue: ConstantValue[_]): LDC2_W[_] = {
-        constantValue.value match {
-            case v: Long   => LoadLong(v)
-            case d: Double => LoadDouble(d)
-            case _ =>
-                throw BytecodeProcessingFailedException(
-                    "unsupported LDC2_W constant value: "+constantValue
-                )
-        }
+    def apply(constantValue: ConstantValue[_]): LDC2_W[_] = constantValue.value match {
+        case v: Long   => LoadLong(v)
+        case d: Double => LoadDouble(d)
+        case _ => throw BytecodeProcessingFailedException(
+                "unsupported LDC2_W constant value: " + constantValue
+            )
     }
 
     def unapply[T](ldc: LDC2_W[T]): Option[T] = Some(ldc.value)

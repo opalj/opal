@@ -28,7 +28,7 @@ sealed trait ReturnValueFreshnessPropertyMetaInformation extends PropertyMetaInf
  */
 sealed abstract class ReturnValueFreshness
     extends Property
-    with ReturnValueFreshnessPropertyMetaInformation {
+        with ReturnValueFreshnessPropertyMetaInformation {
 
     final def key: PropertyKey[ReturnValueFreshness] = ReturnValueFreshness.key
 
@@ -59,9 +59,7 @@ case object FreshReturnValue extends ReturnValueFreshness {
         case _                    => other
     }
 
-    override def asVirtualMethodReturnValueFreshness: VirtualMethodReturnValueFreshness = {
-        VFreshReturnValue
-    }
+    override def asVirtualMethodReturnValueFreshness: VirtualMethodReturnValueFreshness = VFreshReturnValue
 }
 
 /**
@@ -88,9 +86,7 @@ case object Getter extends ReturnValueFreshness {
  */
 case object ExtensibleGetter extends ReturnValueFreshness {
 
-    override def asVirtualMethodReturnValueFreshness: VirtualMethodReturnValueFreshness = {
-        VExtensibleGetter
-    }
+    override def asVirtualMethodReturnValueFreshness: VirtualMethodReturnValueFreshness = VExtensibleGetter
 
     override def meet(other: ReturnValueFreshness): ReturnValueFreshness = other match {
         case FreshReturnValue     => this
@@ -107,13 +103,9 @@ case object ExtensibleGetter extends ReturnValueFreshness {
  */
 case object PrimitiveReturnValue extends ReturnValueFreshness {
 
-    override def meet(other: ReturnValueFreshness): ReturnValueFreshness = {
-        throw new UnsupportedOperationException()
-    }
+    override def meet(other: ReturnValueFreshness): ReturnValueFreshness = throw new UnsupportedOperationException()
 
-    override def asVirtualMethodReturnValueFreshness: VirtualMethodReturnValueFreshness = {
-        VPrimitiveReturnValue
-    }
+    override def asVirtualMethodReturnValueFreshness: VirtualMethodReturnValueFreshness = VPrimitiveReturnValue
 }
 
 /**
@@ -127,7 +119,5 @@ case object NoFreshReturnValue extends ReturnValueFreshness {
         case _                    => this
     }
 
-    override def asVirtualMethodReturnValueFreshness: VirtualMethodReturnValueFreshness = {
-        VNoFreshReturnValue
-    }
+    override def asVirtualMethodReturnValueFreshness: VirtualMethodReturnValueFreshness = VNoFreshReturnValue
 }

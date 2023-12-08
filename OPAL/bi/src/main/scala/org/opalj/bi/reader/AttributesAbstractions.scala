@@ -3,8 +3,9 @@ package org.opalj
 package bi
 package reader
 
-import scala.collection.immutable.ArraySeq
 import scala.reflect.ClassTag
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Defines common abstractions over class file attributes.

@@ -12,7 +12,7 @@ case object F2I extends NumericConversionInstruction {
 
     final val opcode = 139
 
-    final val mnemonic = "f2i"
+    final val mnemonic       = "f2i"
     def sourceType: BaseType = FloatType
 
     def targetType: BaseType = IntegerType

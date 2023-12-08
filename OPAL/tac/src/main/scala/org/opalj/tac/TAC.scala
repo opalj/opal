@@ -4,23 +4,23 @@ package tac
 
 import java.io.File
 
-import com.typesafe.config.ConfigValueFactory
-
-import org.opalj.io.writeAndOpen
-import org.opalj.br.analyses.Project
-import org.opalj.ai.domain
 import org.opalj.ai.BaseAI
 import org.opalj.ai.Domain
+import org.opalj.ai.domain
 import org.opalj.ai.domain.RecordDefUse
-import org.opalj.br.Method
-import org.opalj.log.GlobalLogContext
-import org.opalj.log.ConsoleOPALLogger
-import org.opalj.log.OPALLogger
-import org.opalj.log.{Error => ErrorLogLevel}
-import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.br.BaseConfig
-import org.opalj.br.reader.InvokedynamicRewriting
+import org.opalj.br.Method
+import org.opalj.br.analyses.Project
 import org.opalj.br.reader.DynamicConstantRewriting
+import org.opalj.br.reader.InvokedynamicRewriting
+import org.opalj.bytecode.JRELibraryFolder
+import org.opalj.io.writeAndOpen
+import org.opalj.log.{Error => ErrorLogLevel}
+import org.opalj.log.ConsoleOPALLogger
+import org.opalj.log.GlobalLogContext
+import org.opalj.log.OPALLogger
+
+import com.typesafe.config.ConfigValueFactory
 
 /**
  * Creates the three-address representation for some method(s) and prints it to `std out` or writes
@@ -60,40 +60,38 @@ object TAC {
 
     def error(message: String): String = s"Error: $message \n$usage"
 
-    def usage: String = {
-        "Usage: java …TAC \n"+
-            "-cp <JAR file/Folder containing class files> OR -JDK\n"+
-            "[-libcp <JAR file/Folder containing library class files>]* (generally required to get precise/correct type information\n"+
-            "[-domainValueInformation] (prints detailed information about domain values)\n"+
-            "[-class <class file name>] (filters the set of classes)\n"+
-            "[-method <method name/signature using Java notation>] (filters the set of methods)\n"+
-            "[-naive] (the naive representation is generated)\n"+
-            "[-domain <class name of the domain>]\n"+
-            "[-cfg] (print control-flow graph)\n"+
-            "[-open] (the generated representations will be written to disk and opened)\n"+
-            "[-toString] (uses the \"toString\" method to print the object graph)\n"+
-            "[-performConstantPropagation] (performs constant propagation)\n"+
-            "[-rewriteInvokeDynamic] (rewrites InvokeDynamic bytecode instructions)\n"+
-            "[-rewriteDynamicConstants] (rewrites dynamic constants)\n+"+
-            "[-rewriteAll] (rewrites InvokeDynamicInstructions and dynamic constants)"+
-            "Example:\n\tjava …TAC -cp /Library/jre/lib/rt.jar -class java.util.ArrayList -method toString"
-    }
+    def usage: String = "Usage: java …TAC \n" +
+        "-cp <JAR file/Folder containing class files> OR -JDK\n" +
+        "[-libcp <JAR file/Folder containing library class files>]* (generally required to get precise/correct type information\n" +
+        "[-domainValueInformation] (prints detailed information about domain values)\n" +
+        "[-class <class file name>] (filters the set of classes)\n" +
+        "[-method <method name/signature using Java notation>] (filters the set of methods)\n" +
+        "[-naive] (the naive representation is generated)\n" +
+        "[-domain <class name of the domain>]\n" +
+        "[-cfg] (print control-flow graph)\n" +
+        "[-open] (the generated representations will be written to disk and opened)\n" +
+        "[-toString] (uses the \"toString\" method to print the object graph)\n" +
+        "[-performConstantPropagation] (performs constant propagation)\n" +
+        "[-rewriteInvokeDynamic] (rewrites InvokeDynamic bytecode instructions)\n" +
+        "[-rewriteDynamicConstants] (rewrites dynamic constants)\n+" +
+        "[-rewriteAll] (rewrites InvokeDynamicInstructions and dynamic constants)" +
+        "Example:\n\tjava …TAC -cp /Library/jre/lib/rt.jar -class java.util.ArrayList -method toString"
 
     def main(args: Array[String]): Unit = {
 
         // Parameters:
-        var cp: List[String] = Nil
-        var libcp: List[String] = Nil
-        var doOpen: Boolean = false
-        var className: Option[String] = None
-        var methodSignature: Option[String] = None
-        var naive: Boolean = false
-        var toString: Boolean = false
-        var domainName: Option[String] = None
-        var printCFG: Boolean = false
+        var cp: List[String]                    = Nil
+        var libcp: List[String]                 = Nil
+        var doOpen: Boolean                     = false
+        var className: Option[String]           = None
+        var methodSignature: Option[String]     = None
+        var naive: Boolean                      = false
+        var toString: Boolean                   = false
+        var domainName: Option[String]          = None
+        var printCFG: Boolean                   = false
         var performConstantPropagation: Boolean = false
-        var rewriteInvokeDynamic = false
-        var rewriteDynamicConstants = false
+        var rewriteInvokeDynamic                = false
+        var rewriteDynamicConstants             = false
 
         // PARSING PARAMETERS
         var i = 0
@@ -146,13 +144,13 @@ object TAC {
             InvokedynamicRewriting.InvokedynamicRewritingConfigKey,
             ConfigValueFactory.fromAnyRef(rewriteInvokeDynamic)
         ).withValue(
-                DynamicConstantRewriting.RewritingConfigKey,
-                ConfigValueFactory.fromAnyRef(rewriteDynamicConstants)
-            )
+            DynamicConstantRewriting.RewritingConfigKey,
+            ConfigValueFactory.fromAnyRef(rewriteDynamicConstants)
+        )
 
-        val sourceFiles = cp.map(new File(_)).toArray
+        val sourceFiles    = cp.map(new File(_)).toArray
         val sourceLibFiles = libcp.map(new File(_)).toArray
-        val project = Project(sourceFiles, sourceLibFiles, GlobalLogContext, config)
+        val project        = Project(sourceFiles, sourceLibFiles, GlobalLogContext, config)
         if (project.projectMethodsCount == 0) {
             handleError(s"no methods found: $cp")
         }
@@ -165,37 +163,35 @@ object TAC {
             val methodsAsTAC = new StringBuilder()
 
             for {
-                m <- cf.methods
+                m   <- cf.methods
                 mSig = (if (m.isStatic) "static " else "") + m.descriptor.toJava(m.name)
                 if methodSignature.isEmpty || mSig.contains(methodSignature.get)
                 code <- m.body
             } {
                 val (tac: String, cfg: String, ehs: Option[String]) =
                     if (naive) {
-                        val tac @ TACode(params, code, _, cfg, ehs) =
-                            TACNaive(m, ch, AllNaiveTACodeOptimizations)
+                        val tac @ TACode(params, code, _, cfg, ehs) = TACNaive(m, ch, AllNaiveTACodeOptimizations)
                         if (toString) Console.out.println(m.toJava(tac.toString))
 
                         (
                             ToTxt(params, code, cfg, skipParams = true, true, true).mkString("\n"),
                             tacToDot(code, cfg),
-                            if (ehs.nonEmpty)
-                                Some(ehs.mkString("\n\n      /*\n      ", "\n      ", "\n      */"))
-                            else
-                                None
+                            if (ehs.nonEmpty) Some(ehs.mkString("\n\n      /*\n      ", "\n      ", "\n      */"))
+                            else None
                         )
                     } else {
-                        val d: Domain with RecordDefUse = if (domainName.isEmpty) {
-                            new domain.l1.DefaultDomainWithCFGAndDefUse(project, m)
-                        } else {
-                            // ... "org.opalj.ai.domain.l0.BaseDomainWithDefUse"
-                            Class.
-                                forName(domainName.get).asInstanceOf[Class[Domain with RecordDefUse]].
-                                getConstructor(classOf[Project[_]], classOf[Method]).
-                                newInstance(project, m)
-                        }
+                        val d: Domain with RecordDefUse =
+                            if (domainName.isEmpty) {
+                                new domain.l1.DefaultDomainWithCFGAndDefUse(project, m)
+                            } else {
+                                // ... "org.opalj.ai.domain.l0.BaseDomainWithDefUse"
+                                Class.forName(domainName.get).asInstanceOf[
+                                    Class[Domain with RecordDefUse]].getConstructor(
+                                    classOf[Project[_]],
+                                    classOf[Method]).newInstance(project, m)
+                            }
                         // val d = new domain.l0.BaseDomainWithDefUse(project, classFile, method)
-                        val aiResult = BaseAI(m, d)
+                        val aiResult       = BaseAI(m, d)
                         val classHierarchy = project.classHierarchy
                         val tac @ TACode(params, code, _, cfg, ehs) =
                             TACAI(m, classHierarchy, aiResult, performConstantPropagation)(Nil)
@@ -204,10 +200,8 @@ object TAC {
                         (
                             ToTxt(params, code, cfg, skipParams = false, true, true).mkString("\n"),
                             tacToDot(code, cfg),
-                            if (ehs.nonEmpty)
-                                Some(ehs.mkString("\n\n      /*\n      ", "\n      ", "\n      */"))
-                            else
-                                None
+                            if (ehs.nonEmpty) Some(ehs.mkString("\n\n      /*\n      ", "\n      ", "\n      */"))
+                            else None
                         )
                     }
 
@@ -218,7 +212,7 @@ object TAC {
                 if (printCFG) {
                     if (doOpen) {
                         Console.println(
-                            "wrote cfg to: "+writeAndOpen(cfg, m.toJava, ".cfg.gv")
+                            "wrote cfg to: " + writeAndOpen(cfg, m.toJava, ".cfg.gv")
                         )
                     } else {
                         methodsAsTAC.append("\n/* - CFG")
@@ -230,10 +224,10 @@ object TAC {
             }
 
             if (doOpen) {
-                val prefix = cf.thisType.toJava
-                val suffix = if (naive) ".naive-tac.txt" else ".ai-tac.txt"
+                val prefix     = cf.thisType.toJava
+                val suffix     = if (naive) ".naive-tac.txt" else ".ai-tac.txt"
                 val targetFile = writeAndOpen(methodsAsTAC.toString(), prefix, suffix)
-                Console.println("wrote tac code to: "+targetFile)
+                Console.println("wrote tac code to: " + targetFile)
             } else {
                 Console.println(methodsAsTAC.toString())
             }

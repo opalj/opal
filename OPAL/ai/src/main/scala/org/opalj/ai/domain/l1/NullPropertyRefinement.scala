@@ -6,32 +6,32 @@ package l1
 
 import scala.annotation.switch
 
-import org.opalj.value.TypeOfReferenceValue
-import org.opalj.br.instructions.GETFIELD
-import org.opalj.br.instructions.PUTFIELD
-import org.opalj.br.instructions.VirtualMethodInvocationInstruction
-import org.opalj.br.instructions.INVOKEVIRTUAL
-import org.opalj.br.instructions.INVOKEINTERFACE
-import org.opalj.br.instructions.AALOAD
-import org.opalj.br.instructions.BALOAD
-import org.opalj.br.instructions.CALOAD
-import org.opalj.br.instructions.SALOAD
-import org.opalj.br.instructions.IALOAD
-import org.opalj.br.instructions.LALOAD
-import org.opalj.br.instructions.FALOAD
-import org.opalj.br.instructions.DALOAD
-import org.opalj.br.instructions.AASTORE
-import org.opalj.br.instructions.BASTORE
-import org.opalj.br.instructions.CASTORE
-import org.opalj.br.instructions.SASTORE
-import org.opalj.br.instructions.IASTORE
-import org.opalj.br.instructions.LASTORE
-import org.opalj.br.instructions.FASTORE
-import org.opalj.br.instructions.DASTORE
-import org.opalj.br.instructions.ARRAYLENGTH
-import org.opalj.br.instructions.MONITORENTER
-import org.opalj.br.instructions.Instruction
 import org.opalj.br.ObjectType
+import org.opalj.br.instructions.AALOAD
+import org.opalj.br.instructions.AASTORE
+import org.opalj.br.instructions.ARRAYLENGTH
+import org.opalj.br.instructions.BALOAD
+import org.opalj.br.instructions.BASTORE
+import org.opalj.br.instructions.CALOAD
+import org.opalj.br.instructions.CASTORE
+import org.opalj.br.instructions.DALOAD
+import org.opalj.br.instructions.DASTORE
+import org.opalj.br.instructions.FALOAD
+import org.opalj.br.instructions.FASTORE
+import org.opalj.br.instructions.GETFIELD
+import org.opalj.br.instructions.IALOAD
+import org.opalj.br.instructions.IASTORE
+import org.opalj.br.instructions.Instruction
+import org.opalj.br.instructions.INVOKEINTERFACE
+import org.opalj.br.instructions.INVOKEVIRTUAL
+import org.opalj.br.instructions.LALOAD
+import org.opalj.br.instructions.LASTORE
+import org.opalj.br.instructions.MONITORENTER
+import org.opalj.br.instructions.PUTFIELD
+import org.opalj.br.instructions.SALOAD
+import org.opalj.br.instructions.SASTORE
+import org.opalj.br.instructions.VirtualMethodInvocationInstruction
+import org.opalj.value.TypeOfReferenceValue
 
 /**
  * Refines a reference's null property if the reference value may be null and
@@ -51,51 +51,67 @@ trait NullPropertyRefinement extends CoreDomainFunctionality {
         isExceptionalControlFlow: Boolean,
         forceJoin:                Boolean,
         newOperands:              Operands,
-        newLocals:                Locals
-    ): (Operands, Locals) = {
+        newLocals:                Locals): (Operands, Locals) = {
 
-        @inline def default() =
-            super.afterEvaluation(
-                pc, instruction, oldOperands, oldLocals,
-                targetPC, isExceptionalControlFlow, forceJoin, newOperands, newLocals
-            )
+        @inline def default() = super.afterEvaluation(
+            pc,
+            instruction,
+            oldOperands,
+            oldLocals,
+            targetPC,
+            isExceptionalControlFlow,
+            forceJoin,
+            newOperands,
+            newLocals
+        )
 
-        def establishNullProperty(objectRef: DomainValue): (Operands, Locals) = {
+        def establishNullProperty(objectRef: DomainValue): (Operands, Locals) =
             if (refIsNull(pc, objectRef).isUnknown) {
                 if (isExceptionalControlFlow && {
-                    // the NullPointerException was created by the JVM, because
-                    // the objectRef is (assumed to be) null
-                    val exception = newOperands.head
-                    val TypeOfReferenceValue(utb) = exception
-                    (utb.head eq ObjectType.NullPointerException) && {
-                        val origins = originsIterator(exception)
-                        origins.nonEmpty && {
-                            val origin = origins.next()
-                            isImmediateVMException(origin) && pcOfImmediateVMException(origin) == pc &&
+                        // the NullPointerException was created by the JVM, because
+                        // the objectRef is (assumed to be) null
+                        val exception                 = newOperands.head
+                        val TypeOfReferenceValue(utb) = exception
+                        (utb.head eq ObjectType.NullPointerException) && {
+                            val origins = originsIterator(exception)
+                            origins.nonEmpty && {
+                                val origin = origins.next()
+                                isImmediateVMException(origin) && pcOfImmediateVMException(origin) == pc &&
                                 !origins.hasNext
+                            }
                         }
-                    }
-                }) {
-                    val (operands2, locals2) =
-                        refEstablishIsNull(targetPC, objectRef, newOperands, newLocals)
+                    }) {
+                    val (operands2, locals2) = refEstablishIsNull(targetPC, objectRef, newOperands, newLocals)
                     super.afterEvaluation(
-                        pc, instruction, oldOperands, oldLocals,
-                        targetPC, isExceptionalControlFlow, forceJoin, operands2, locals2
+                        pc,
+                        instruction,
+                        oldOperands,
+                        oldLocals,
+                        targetPC,
+                        isExceptionalControlFlow,
+                        forceJoin,
+                        operands2,
+                        locals2
                     )
                 } else {
                     // ... the value is not null... even if an exception was thrown,
                     // because the exception is not a VM-level `NullPointerException`
-                    val (operands2, locals2) =
-                        refEstablishIsNonNull(targetPC, objectRef, newOperands, newLocals)
+                    val (operands2, locals2) = refEstablishIsNonNull(targetPC, objectRef, newOperands, newLocals)
                     super.afterEvaluation(
-                        pc, instruction, oldOperands, oldLocals,
-                        targetPC, isExceptionalControlFlow, forceJoin, operands2, locals2
+                        pc,
+                        instruction,
+                        oldOperands,
+                        oldLocals,
+                        targetPC,
+                        isExceptionalControlFlow,
+                        forceJoin,
+                        operands2,
+                        locals2
                     )
                 }
             } else {
                 default()
             }
-        }
 
         (instruction.opcode: @switch) match {
             case AALOAD.opcode
@@ -138,12 +154,11 @@ trait NullPropertyRefinement extends CoreDomainFunctionality {
 
             // THE RECEIVER OF AN INVOKESPECIAL IS ALWAYS "THIS" AND, HENCE, IS IRRELEVANT!
             case INVOKEVIRTUAL.opcode | INVOKEINTERFACE.opcode =>
-                val invoke = instruction.asInstanceOf[VirtualMethodInvocationInstruction]
+                val invoke   = instruction.asInstanceOf[VirtualMethodInvocationInstruction]
                 val receiver = oldOperands(invoke.methodDescriptor.parametersCount)
                 establishNullProperty(receiver)
 
-            case _ =>
-                default()
+            case _ => default()
         }
     }
 }

@@ -4,8 +4,8 @@ package hermes
 package queries
 
 import org.opalj.br.analyses.Project
-import org.opalj.da.CONSTANT_Utf8_info
 import org.opalj.da.ClassFile
+import org.opalj.da.CONSTANT_Utf8_info
 
 /**
  * Scans a class file's constant pool to check whether it refers to packages that belong to an API
@@ -19,26 +19,23 @@ import org.opalj.da.ClassFile
  */
 class GUIAPIUsage(implicit hermes: HermesConfig) extends FeatureQuery {
 
-    override val featureIDs: List[String] = {
-        List(
-            /* 0 */ "JavaFX",
-            /* 1 */ "SWT",
-            /* 2 */ "Swing",
-            /* 3 */ "AWT"
-        )
-    }
+    override val featureIDs: List[String] = List(
+        /* 0 */ "JavaFX",
+        /* 1 */ "SWT",
+        /* 2 */ "Swing",
+        /* 3 */ "AWT"
+    )
 
     override def apply[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Iterable[(ClassFile, S)]
-    ): IterableOnce[Feature[S]] = {
+        rawClassFiles:        Iterable[(ClassFile, S)]): IterableOnce[Feature[S]] = {
 
         val locations = Array.fill(featureIDs.size)(new LocationsContainer[S])
 
         for {
-            (classFile, source) <- rawClassFiles
-            location = ClassFileLocation(Some(source), classFile.thisType.asJava)
+            (classFile, source)          <- rawClassFiles
+            location                      = ClassFileLocation(Some(source), classFile.thisType.asJava)
             CONSTANT_Utf8_info(_, entry) <- classFile.constant_pool
         } {
             if (entry.startsWith("javafx/")) {

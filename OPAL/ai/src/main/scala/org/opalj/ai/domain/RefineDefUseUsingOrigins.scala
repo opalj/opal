@@ -16,10 +16,8 @@ trait RefineDefUseUsingOrigins extends RecordDefUse {
     defUseDomain: Domain with TheCode with Origin =>
     import Origin._
 
-    override protected[this] def originsOf(domainValue: DomainValue): Option[ValueOrigins] = {
-        domainValue match {
-            case vo: ValueWithOriginInformation => Some(vo.origins)
-            case _                              => super.originsOf(domainValue)
-        }
+    override protected[this] def originsOf(domainValue: DomainValue): Option[ValueOrigins] = domainValue match {
+        case vo: ValueWithOriginInformation => Some(vo.origins)
+        case _                              => super.originsOf(domainValue)
     }
 }

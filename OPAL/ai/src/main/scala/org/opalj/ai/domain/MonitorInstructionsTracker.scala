@@ -24,8 +24,7 @@ trait MonitorInstructionsTracker extends MonitorInstructionsDomain with CustomIn
     abstract override def initProperties(
         code:          Code,
         cfJoins:       IntTrieSet,
-        initialLocals: Locals
-    ): Unit = {
+        initialLocals: Locals): Unit = {
         super.initProperties(code, cfJoins, initialLocals)
 
         this.usesMonitorInstruction = false
@@ -33,8 +32,7 @@ trait MonitorInstructionsTracker extends MonitorInstructionsDomain with CustomIn
 
     abstract override def monitorenter(
         pc:    Int,
-        value: DomainValue
-    ): Computation[Nothing, ExceptionValue] = {
+        value: DomainValue): Computation[Nothing, ExceptionValue] = {
         usesMonitorInstruction = true
 
         super.monitorenter(pc, value)
@@ -42,12 +40,10 @@ trait MonitorInstructionsTracker extends MonitorInstructionsDomain with CustomIn
 
     abstract override def monitorexit(
         pc:    Int,
-        value: DomainValue
-    ): Computation[Nothing, ExceptionValues] = {
+        value: DomainValue): Computation[Nothing, ExceptionValues] = {
         usesMonitorInstruction = true
 
         super.monitorexit(pc, value)
     }
 
 }
-

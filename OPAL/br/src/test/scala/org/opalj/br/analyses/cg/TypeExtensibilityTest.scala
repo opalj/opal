@@ -4,8 +4,9 @@ package br
 package analyses
 package cg
 
-import com.typesafe.config.ConfigFactory
 import org.opalj.br.TestSupport.biProject
+
+import com.typesafe.config.ConfigFactory
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 
@@ -27,7 +28,7 @@ class TypeExtensibilityTest extends AnyFunSpec with Matchers {
      */
     val testPackage = "extensible_classes/transitivity/"
 
-    def mergeConfigString(extConf: String, pkgConf: String): String = extConf+"\n"+pkgConf
+    def mergeConfigString(extConf: String, pkgConf: String): String = extConf + "\n" + pkgConf
 
     describe("all directly extensible types") {
 
@@ -48,20 +49,17 @@ class TypeExtensibilityTest extends AnyFunSpec with Matchers {
         it("should also be transitively extensible") {
 
             // open package
-            var project = Project.recreate(testProject, openConf, true)
+            var project              = Project.recreate(testProject, openConf, true)
             var isDirectlyExtensible = project.get(ClassExtensibilityKey)
-            var isExtensible = project.get(TypeExtensibilityKey)
+            var isExtensible         = project.get(TypeExtensibilityKey)
 
             var relevantTypes = for {
-                cf <- project.allClassFiles if (isDirectlyExtensible(cf.thisType).isYes)
+                cf <- project.allClassFiles if isDirectlyExtensible(cf.thisType).isYes
             } yield cf.thisType
 
-            if (relevantTypes.isEmpty)
-                fail("No directly extensible types found!")
+            if (relevantTypes.isEmpty) fail("No directly extensible types found!")
 
-            relevantTypes.foreach { objectType =>
-                isExtensible(objectType) should be(Yes)
-            }
+            relevantTypes.foreach { objectType => isExtensible(objectType) should be(Yes) }
 
             // closed package
             project = Project.recreate(project, closedConf, true)
@@ -69,11 +67,10 @@ class TypeExtensibilityTest extends AnyFunSpec with Matchers {
             isExtensible = project.get(TypeExtensibilityKey)
 
             relevantTypes = for {
-                cf <- project.allClassFiles if (isDirectlyExtensible(cf.thisType).isYes)
+                cf <- project.allClassFiles if isDirectlyExtensible(cf.thisType).isYes
             } yield cf.thisType
 
-            if (relevantTypes.isEmpty)
-                fail("No directly extensible types found!")
+            if (relevantTypes.isEmpty) fail("No directly extensible types found!")
 
             relevantTypes.foreach { objectType => isExtensible(objectType) should be(Yes) }
         }
@@ -86,8 +83,8 @@ class TypeExtensibilityTest extends AnyFunSpec with Matchers {
             ClosedPackagesConfig.allPackagesClosed
         )
 
-        val config = ConfigFactory.parseString(configString)
-        val project = Project.recreate(testProject, config, true)
+        val config       = ConfigFactory.parseString(configString)
+        val project      = Project.recreate(testProject, config, true)
         val isExtensible = project.get(TypeExtensibilityKey)
 
         it("a package visible class is transitively extensible when it has a public subclass") {
@@ -95,9 +92,9 @@ class TypeExtensibilityTest extends AnyFunSpec with Matchers {
             isExtensible(objectType) should be(Yes)
         }
 
-        it("a package visible class should NOT be transitively extensible when all subclasses"+
+        it("a package visible class should NOT be transitively extensible when all subclasses" +
             " are (effectively) final") {
-            val classOt = ObjectType(s"${testPackage}case2/Class")
+            val classOt     = ObjectType(s"${testPackage}case2/Class")
             val interfaceOt = ObjectType(s"${testPackage}case2/Interface")
 
             isExtensible(classOt) should be(No)
@@ -107,8 +104,8 @@ class TypeExtensibilityTest extends AnyFunSpec with Matchers {
         it("a non-final public class is transitively extensible even when all subclasses are NOT") {
             val pClassOt = ObjectType(s"${testPackage}case3/PublicClass")
 
-            val pfClassOt = ObjectType(s"${testPackage}case3/PublicFinalClass")
-            val classOt = ObjectType(s"${testPackage}case3/Class")
+            val pfClassOt  = ObjectType(s"${testPackage}case3/PublicFinalClass")
+            val classOt    = ObjectType(s"${testPackage}case3/Class")
             val pEfClassOt = ObjectType(s"${testPackage}case3/EffectivelyFinalClass")
 
             isExtensible(pClassOt) should be(Yes)
@@ -118,12 +115,12 @@ class TypeExtensibilityTest extends AnyFunSpec with Matchers {
             isExtensible(pEfClassOt) should be(No)
         }
 
-        it("a non-final package visible class must be transitively extensible even if only one subtype"+
+        it("a non-final package visible class must be transitively extensible even if only one subtype" +
             "is extensible") {
 
             val rootOt = ObjectType(s"${testPackage}case5/TransitivelyExtensible")
 
-            val pClassOt = ObjectType(s"${testPackage}case5/PublicClass")
+            val pClassOt  = ObjectType(s"${testPackage}case5/PublicClass")
             val pfClassOt = ObjectType(s"${testPackage}case5/PublicFinalClass")
 
             isExtensible(pClassOt) should be(Yes)
@@ -132,7 +129,7 @@ class TypeExtensibilityTest extends AnyFunSpec with Matchers {
             isExtensible(rootOt) should be(Yes)
         }
 
-        it("a non-final package visible class must be transitively extensible even if only one subtype"+
+        it("a non-final package visible class must be transitively extensible even if only one subtype" +
             "is extensible and the type hierarchy is large") {
 
             val rootOt = ObjectType(s"${testPackage}case6/TransitivelyExtensible")
@@ -154,14 +151,14 @@ class TypeExtensibilityTest extends AnyFunSpec with Matchers {
             ClosedPackagesConfig.openCodeBase
         )
 
-        val config = ConfigFactory.parseString(configString)
-        val project = Project.recreate(testProject, config, true)
-        val isExtensible = project.get(TypeExtensibilityKey)
+        val config            = ConfigFactory.parseString(configString)
+        val project           = Project.recreate(testProject, config, true)
+        val isExtensible      = project.get(TypeExtensibilityKey)
         val isClassExtensible = project.get(ClassExtensibilityKey)
 
         it("a package visible class should be transitively extensible") {
-            val case1_classOt = ObjectType(s"${testPackage}case1/Class")
-            val case2_classOt = ObjectType(s"${testPackage}case2/Class")
+            val case1_classOt     = ObjectType(s"${testPackage}case1/Class")
+            val case2_classOt     = ObjectType(s"${testPackage}case2/Class")
             val case2_interfaceOt = ObjectType(s"${testPackage}case2/Interface")
 
             isExtensible(case1_classOt) should be(Yes)

@@ -3,10 +3,10 @@ package org.opalj
 package fpcf
 package properties
 
-import org.opalj.br.ObjectType
 import org.opalj.br.ElementValue
 import org.opalj.br.ElementValuePair
 import org.opalj.br.ElementValuePairs
+import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
 
 /**
@@ -35,14 +35,11 @@ abstract class AbstractPropertyMatcher extends org.opalj.fpcf.properties.Propert
         p:              SomeProject,
         annotationType: ObjectType,
         evps:           ElementValuePairs,
-        elementName:    String
-    ): ElementValue = {
-        evps.collectFirst {
-            case ElementValuePair(`elementName`, value) => value
-        }.orElse {
-            // get default value ...
-            p.classFile(annotationType).get.findMethod(elementName).head.annotationDefault
-        }.get
-    }
+        elementName:    String): ElementValue = evps.collectFirst {
+        case ElementValuePair(`elementName`, value) => value
+    }.orElse {
+        // get default value ...
+        p.classFile(annotationType).get.findMethod(elementName).head.annotationDefault
+    }.get
 
 }

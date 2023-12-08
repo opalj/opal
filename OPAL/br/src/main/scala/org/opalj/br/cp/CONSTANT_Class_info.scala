@@ -17,13 +17,9 @@ case class CONSTANT_Class_info(name_index: Constant_Pool_Index) extends Constant
 
     override def asObjectType(cp: Constant_Pool): ObjectType = ObjectType(cp(name_index).asString)
 
-    override def asReferenceType(cp: Constant_Pool): ReferenceType = {
-        ReferenceType(cp(name_index).asString)
-    }
+    override def asReferenceType(cp: Constant_Pool): ReferenceType = ReferenceType(cp(name_index).asString)
 
-    override def asConstantValue(cp: Constant_Pool): ConstantClass = {
-        ConstantClass(asReferenceType(cp))
-    }
+    override def asConstantValue(cp: Constant_Pool): ConstantClass = ConstantClass(asReferenceType(cp))
 
     override def asBootstrapArgument(cp: Constant_Pool): BootstrapArgument = asConstantValue(cp)
 

@@ -4,15 +4,15 @@ package ai
 package domain
 package l1
 
-import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.matchers.should.Matchers
-
-import org.opalj.br.ObjectType
+import org.opalj.ai.domain.l1.IntegerRangeValues.AbsoluteMaxCardinalityOfIntegerRanges
 import org.opalj.br.ArrayType
 import org.opalj.br.IntegerType
-import org.opalj.ai.domain.l1.IntegerRangeValues.AbsoluteMaxCardinalityOfIntegerRanges
+import org.opalj.br.ObjectType
+
+import org.junit.runner.RunWith
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests the IntegerRanges Domain.
@@ -25,11 +25,11 @@ import org.opalj.ai.domain.l1.IntegerRangeValues.AbsoluteMaxCardinalityOfInteger
 class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
     final val IrrelevantPC = Int.MinValue
-    final val SomePC = 100000
+    final val SomePC       = 100000
 
     describe("central properties of domains that use IntegerRange values") {
 
-        val theDomain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
+        val theDomain = new DefaultIntegerRangesTestDomain(-Int.MinValue.toLong + Int.MaxValue)
         import theDomain._
 
         it("the representation of the integer value 0 should be an IntegerRange(0,0) value") {
@@ -119,7 +119,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
         describe("the behavior of the join operation if we do not exceed the max. spread") {
 
-            val theDomain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
+            val theDomain = new DefaultIntegerRangesTestDomain(-Int.MinValue.toLong + Int.MaxValue)
             import theDomain._
 
             it("(join with itself) val ir = IntegerRange(...); ir join ir => \"NoUpdate\"") {
@@ -170,7 +170,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
         describe("the behavior of the \"summarize\" function") {
 
-            val theDomain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
+            val theDomain = new DefaultIntegerRangesTestDomain(-Int.MinValue.toLong + Int.MaxValue)
             import theDomain._
 
             it("it should be able to handle overlapping values") {
@@ -214,7 +214,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
         describe("the behavior of imul") {
 
-            val theDomain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
+            val theDomain = new DefaultIntegerRangesTestDomain(-Int.MinValue.toLong + Int.MaxValue)
             import theDomain._
 
             it("[0,3] * [0,2] => [lb*lb=0,ub*ub=6]") {
@@ -276,16 +276,16 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
             it("The result of the multiplying a range r by [1,1] should be r itself; [2,4] * [1,1] => [2,4]") {
                 val v1 = IntegerRange(2, 4)
                 val v2 = IntegerRange(1, 1)
-                imul(-1, v1, v2) should be theSameInstanceAs (v1)
-                imul(-1, v2, v1) should be theSameInstanceAs (v1)
+                imul(-1, v1, v2) should be theSameInstanceAs v1
+                imul(-1, v2, v1) should be theSameInstanceAs v1
             }
 
             it("A specific (but unknown) value v1 * [1,1] should be v1 itself") {
                 val v1 = AnIntegerValue()
                 val v2 = IntegerRange(1, 1)
 
-                imul(-1, v1, v2) should be theSameInstanceAs (v1)
-                imul(-1, v2, v1) should be theSameInstanceAs (v1)
+                imul(-1, v1, v2) should be theSameInstanceAs v1
+                imul(-1, v2, v1) should be theSameInstanceAs v1
             }
 
             it("The result of multiplying a specific (but unknown) value v1 by a \"point\" range != [1,1] should be a specific (but unknown) value different from v1") {
@@ -308,22 +308,22 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val v1 = IntegerRange(2, 4)
                 val v2 = IntegerRange(0, 0)
 
-                imul(-1, v1, v2) should be theSameInstanceAs (v2)
-                imul(-1, v2, v1) should be theSameInstanceAs (v2)
+                imul(-1, v1, v2) should be theSameInstanceAs v2
+                imul(-1, v2, v1) should be theSameInstanceAs v2
             }
 
             it("A specific (but unknown) value * r@[0,0] should be r itself") {
                 val v1 = AnIntegerValue()
                 val v2 = IntegerRange(0, 0)
 
-                imul(-1, v1, v2) should be theSameInstanceAs (v2)
-                imul(-1, v2, v1) should be theSameInstanceAs (v2)
+                imul(-1, v1, v2) should be theSameInstanceAs v2
+                imul(-1, v2, v1) should be theSameInstanceAs v2
             }
         }
 
         describe("the behavior of ior") {
 
-            val theDomain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
+            val theDomain = new DefaultIntegerRangesTestDomain(-Int.MinValue.toLong + Int.MaxValue)
             import theDomain._
 
             it("AnIntegerValue | [8,19] => AnIntegerRange") {
@@ -337,7 +337,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val v = AnIntegerValue()
                 val s = IntegerRange(0, 0)
 
-                ior(-1, v, s) should be theSameInstanceAs (v)
+                ior(-1, v, s) should be theSameInstanceAs v
             }
 
             it("[Int.MinValue,Int.MaxValue] | [8,19] => [Int.MinValue, Int.MaxValue]") {
@@ -348,8 +348,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                     case (IntegerRangeLike(lb, ub)) =>
                         lb should ===(Int.MinValue)
                         ub should ===(Int.MaxValue)
-                    case v =>
-                        fail(s"expected [Int.MinValue, Int.MaxValue]; found $v")
+                    case v => fail(s"expected [Int.MinValue, Int.MaxValue]; found $v")
                 }
             }
 
@@ -361,8 +360,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                     case (IntegerRangeLike(lb, ub)) =>
                         lb should ===(Int.MaxValue)
                         ub should ===(Int.MaxValue)
-                    case v =>
-                        fail(s"expected [Int.MinValue, Int.MaxValue]; found $v")
+                    case v => fail(s"expected [Int.MinValue, Int.MaxValue]; found $v")
                 }
             }
 
@@ -374,8 +372,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                     case (IntegerRangeLike(lb, ub)) =>
                         lb should ===(Int.MaxValue - 32)
                         ub should ===(Int.MaxValue)
-                    case v =>
-                        fail(s"expected [Int.MinValue, Int.MaxValue]; found $v")
+                    case v => fail(s"expected [Int.MinValue, Int.MaxValue]; found $v")
                 }
             }
 
@@ -387,8 +384,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                     case (IntegerRangeLike(lb, ub)) =>
                         lb should ===(Int.MinValue)
                         ub should ===(Int.MaxValue)
-                    case v =>
-                        fail(s"expected [Int.MinValue, Int.MaxValue]; found $v")
+                    case v => fail(s"expected [Int.MinValue, Int.MaxValue]; found $v")
                 }
             }
 
@@ -400,8 +396,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                     case (IntegerRangeLike(lb, ub)) =>
                         lb should ===(Int.MinValue)
                         ub should ===(Int.MaxValue)
-                    case v =>
-                        fail(s"expected [Int.MinValue, Int.MaxValue]; found $v")
+                    case v => fail(s"expected [Int.MinValue, Int.MaxValue]; found $v")
                 }
             }
 
@@ -411,10 +406,9 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
                 ior(-1, v1, v2) match {
                     case (IntegerRangeLike(lb, ub)) =>
-                        lb should ===((Int.MinValue))
+                        lb should ===(Int.MinValue)
                         ub should be >= 19
-                    case v =>
-                        fail(s"expected [Int.MinValue, 19]; found $v")
+                    case v => fail(s"expected [Int.MinValue, 19]; found $v")
                 }
             }
 
@@ -426,8 +420,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                     case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= 11
                         ub should be >= 19
-                    case v =>
-                        fail(s"expected [11,19]; found $v")
+                    case v => fail(s"expected [11,19]; found $v")
                 }
             }
 
@@ -451,8 +444,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                     case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= 3
                         ub should be >= 19
-                    case v =>
-                        fail(s"expected [3,19]; found $v")
+                    case v => fail(s"expected [3,19]; found $v")
                 }
             }
 
@@ -464,8 +456,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                     case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= 1
                         ub should be >= 7
-                    case v =>
-                        fail(s"expected [1,7]; found $v")
+                    case v => fail(s"expected [1,7]; found $v")
                 }
             }
 
@@ -477,8 +468,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                     case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= 8
                         ub should be >= 30
-                    case v =>
-                        fail(s"expected [8,30]; found $v")
+                    case v => fail(s"expected [8,30]; found $v")
                 }
             }
 
@@ -490,8 +480,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                     case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= 0
                         ub should be >= 0
-                    case v =>
-                        fail(s"expected [0,0]; found $v")
+                    case v => fail(s"expected [0,0]; found $v")
                 }
             }
 
@@ -503,8 +492,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                     case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= -5
                         ub should be >= 19
-                    case v =>
-                        fail(s"expected [-5,19]; found $v")
+                    case v => fail(s"expected [-5,19]; found $v")
                 }
             }
 
@@ -516,8 +504,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                     case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= -5
                         ub should be >= -1
-                    case v =>
-                        fail(s"expected [-5,-1]; found $v")
+                    case v => fail(s"expected [-5,-1]; found $v")
                 }
             }
 
@@ -529,8 +516,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                     case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= -5
                         ub should be >= -1
-                    case v =>
-                        fail(s"expected [-5,-1]; found $v")
+                    case v => fail(s"expected [-5,-1]; found $v")
                 }
             }
 
@@ -542,8 +528,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                     case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= -5
                         ub should be >= -1
-                    case v =>
-                        fail(s"expected [-5,-1]; found $v")
+                    case v => fail(s"expected [-5,-1]; found $v")
                 }
             }
 
@@ -555,8 +540,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                     case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= -19
                         ub should be >= -1
-                    case v =>
-                        fail(s"expected [-19,-]; found $v")
+                    case v => fail(s"expected [-19,-]; found $v")
                 }
             }
 
@@ -568,8 +552,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                     case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= -5
                         ub should be >= -1
-                    case v =>
-                        fail(s"expected [-5,-1]; found $v")
+                    case v => fail(s"expected [-5,-1]; found $v")
                 }
             }
 
@@ -581,8 +564,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                     case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= -19
                         ub should be >= -1
-                    case v =>
-                        fail(s"expected [-19,-1]; found $v")
+                    case v => fail(s"expected [-19,-1]; found $v")
                 }
             }
 
@@ -594,8 +576,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                     case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= -19
                         ub should be >= 5
-                    case v =>
-                        fail(s"expected [-19,5]; found $v")
+                    case v => fail(s"expected [-19,5]; found $v")
                 }
             }
 
@@ -607,8 +588,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                     case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= -19
                         ub should be >= 5
-                    case v =>
-                        fail(s"expected [-19,5]; found $v")
+                    case v => fail(s"expected [-19,5]; found $v")
                 }
             }
 
@@ -620,8 +600,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                     case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= -1
                         ub should be >= 1
-                    case v =>
-                        fail(s"expected [-1,1]; found $v")
+                    case v => fail(s"expected [-1,1]; found $v")
                 }
             }
 
@@ -633,8 +612,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                     case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= -9
                         ub should be >= -9
-                    case v =>
-                        fail(s"expected [-9,-9]; found $v")
+                    case v => fail(s"expected [-9,-9]; found $v")
                 }
             }
 
@@ -646,8 +624,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                     case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= -10
                         ub should be >= -1
-                    case v =>
-                        fail(s"expected [-10,-1]; found $v")
+                    case v => fail(s"expected [-10,-1]; found $v")
                 }
             }
 
@@ -659,8 +636,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                     case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= -1
                         ub should be >= -1
-                    case v =>
-                        fail(s"expected [-1,-1]; found $v")
+                    case v => fail(s"expected [-1,-1]; found $v")
                 }
             }
 
@@ -668,16 +644,16 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val v1 = IntegerRange(2, 4)
                 val v2 = IntegerRange(0, 0)
 
-                ior(-1, v1, v2) should be theSameInstanceAs (v1)
-                ior(-1, v2, v1) should be theSameInstanceAs (v1)
+                ior(-1, v1, v2) should be theSameInstanceAs v1
+                ior(-1, v2, v1) should be theSameInstanceAs v1
             }
 
             it("A specific (but unknown) value v1 | [0,0] should be v1 itself") {
                 val v1 = AnIntegerValue()
                 val v2 = IntegerRange(0, 0)
 
-                ior(-1, v1, v2) should be theSameInstanceAs (v1)
-                ior(-1, v2, v1) should be theSameInstanceAs (v1)
+                ior(-1, v1, v2) should be theSameInstanceAs v1
+                ior(-1, v2, v1) should be theSameInstanceAs v1
             }
 
             it("The result of the or of a specific (but unknown) value v1 and a \"point\" range != [0,0] should be a specific (but unknown) value different from v1") {
@@ -700,22 +676,22 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val v1 = IntegerRange(2, 4)
                 val v2 = IntegerRange(-1, -1)
 
-                ior(-1, v1, v2) should be theSameInstanceAs (v2)
-                ior(-1, v2, v1) should be theSameInstanceAs (v2)
+                ior(-1, v1, v2) should be theSameInstanceAs v2
+                ior(-1, v2, v1) should be theSameInstanceAs v2
             }
 
             it("A specific (but unknown) value | r@[-1,-1] should be r itself") {
                 val v1 = AnIntegerValue()
                 val v2 = IntegerRange(-1, -1)
 
-                ior(-1, v1, v2) should be theSameInstanceAs (v2)
-                ior(-1, v2, v1) should be theSameInstanceAs (v2)
+                ior(-1, v1, v2) should be theSameInstanceAs v2
+                ior(-1, v2, v1) should be theSameInstanceAs v2
             }
         }
 
         describe("the behavior of ineg") {
 
-            val theDomain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
+            val theDomain = new DefaultIntegerRangesTestDomain(-Int.MinValue.toLong + Int.MaxValue)
             import theDomain._
 
             it("-[0,5] => [-5,0]") {
@@ -758,7 +734,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
         describe("the behavior of ishr") {
 
-            val theDomain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
+            val theDomain = new DefaultIntegerRangesTestDomain(-Int.MinValue.toLong + Int.MaxValue)
             import theDomain._
 
             it("[-100,-100] >> [4,4] => [-7, -7]") {
@@ -769,8 +745,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                     case (IntegerRangeLike(lb, ub)) =>
                         lb should ===(-7)
                         ub should ===(-7)
-                    case v =>
-                        fail(s"expected [-7,-7]; found $v")
+                    case v => fail(s"expected [-7,-7]; found $v")
                 }
             }
 
@@ -782,8 +757,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                     case (IntegerRangeLike(lb, ub)) =>
                         lb should ===(1)
                         ub should ===(1)
-                    case v =>
-                        fail(s"expected [1,1]; found $v")
+                    case v => fail(s"expected [1,1]; found $v")
                 }
             }
 
@@ -795,8 +769,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                     case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= -2
                         ub should be >= 0
-                    case v =>
-                        fail(s"expected lb <= -2 and ub >= 0; found $v")
+                    case v => fail(s"expected lb <= -2 and ub >= 0; found $v")
                 }
             }
 
@@ -808,8 +781,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                     case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= -2
                         ub should be >= 0
-                    case v =>
-                        fail(s"expected lb <= -2 and ub >= 0; found $v")
+                    case v => fail(s"expected lb <= -2 and ub >= 0; found $v")
                 }
             }
 
@@ -821,8 +793,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                     case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= -5
                         ub should be >= 2
-                    case v =>
-                        fail(s"expected lb <= -5 and ub >= 2; found $v")
+                    case v => fail(s"expected lb <= -5 and ub >= 2; found $v")
                 }
             }
 
@@ -832,10 +803,9 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
                 ishr(-1, v, s) match {
                     case (IntegerRangeLike(lb, ub)) =>
-                        lb should be <= (-1)
-                        ub should be >= (1)
-                    case v =>
-                        fail(s"expected lb <= -1 and ub >= 1; found $v")
+                        lb should be <= -1
+                        ub should be >= 1
+                    case v => fail(s"expected lb <= -1 and ub >= 1; found $v")
                 }
             }
 
@@ -845,10 +815,9 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
                 ishr(-1, v, s) match {
                     case (IntegerRangeLike(lb, ub)) =>
-                        lb should be <= (-5)
-                        ub should be >= (-1)
-                    case v =>
-                        fail(s"expected lb <= -5 and ub >= -1; found $v")
+                        lb should be <= -5
+                        ub should be >= -1
+                    case v => fail(s"expected lb <= -5 and ub >= -1; found $v")
                 }
             }
 
@@ -858,10 +827,9 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
                 ishr(-1, v, s) match {
                     case (IntegerRangeLike(lb, ub)) =>
-                        lb should be <= (-5)
-                        ub should be >= (-1)
-                    case v =>
-                        fail(s"expected lb <= -5 and ub >= -1; found $v")
+                        lb should be <= -5
+                        ub should be >= -1
+                    case v => fail(s"expected lb <= -5 and ub >= -1; found $v")
                 }
             }
 
@@ -871,10 +839,9 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
                 ishr(-1, v, s) match {
                     case (IntegerRangeLike(lb, ub)) =>
-                        lb should be <= (0)
-                        ub should be >= (25)
-                    case v =>
-                        fail(s"expected lb <= 0 and ub >= 25; found $v")
+                        lb should be <= 0
+                        ub should be >= 25
+                    case v => fail(s"expected lb <= 0 and ub >= 25; found $v")
                 }
             }
 
@@ -884,10 +851,9 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
                 ishr(-1, v, s) match {
                     case (IntegerRangeLike(lb, ub)) =>
-                        lb should be <= (0)
-                        ub should be >= (5)
-                    case v =>
-                        fail(s"expected lb <= 0 and ub >= 5; found $v")
+                        lb should be <= 0
+                        ub should be >= 5
+                    case v => fail(s"expected lb <= 0 and ub >= 5; found $v")
                 }
             }
 
@@ -897,10 +863,9 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
                 ishr(-1, v, s) match {
                     case (IntegerRangeLike(lb, ub)) =>
-                        lb should be <= (-2147483648)
-                        ub should be >= (-1)
-                    case v =>
-                        fail(s"expected lb <= -2147483648 and ub >= -1; found $v")
+                        lb should be <= -2147483648
+                        ub should be >= -1
+                    case v => fail(s"expected lb <= -2147483648 and ub >= -1; found $v")
                 }
             }
 
@@ -910,10 +875,9 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
                 ishr(-1, v, s) match {
                     case (IntegerRangeLike(lb, ub)) =>
-                        lb should be <= (524287)
-                        ub should be >= (2097151)
-                    case v =>
-                        fail(s"expected lb <= 524287 and ub >= 2097151; found $v")
+                        lb should be <= 524287
+                        ub should be >= 2097151
+                    case v => fail(s"expected lb <= 524287 and ub >= 2097151; found $v")
                 }
             }
 
@@ -923,10 +887,9 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
                 ishr(-1, v, s) match {
                     case (IntegerRangeLike(lb, ub)) =>
-                        lb should be <= (-1000)
-                        ub should be >= (-1)
-                    case v =>
-                        fail(s"expected lb <= -1000 and ub >= -1; found $v")
+                        lb should be <= -1000
+                        ub should be >= -1
+                    case v => fail(s"expected lb <= -1000 and ub >= -1; found $v")
                 }
             }
 
@@ -936,10 +899,9 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
                 ishr(-1, v, s) match {
                     case (IntegerRangeLike(lb, ub)) =>
-                        lb should be <= (-10)
-                        ub should be >= (1)
-                    case v =>
-                        fail(s"expected lb <= -10 and ub >= 1; found $v")
+                        lb should be <= -10
+                        ub should be >= 1
+                    case v => fail(s"expected lb <= -10 and ub >= 1; found $v")
                 }
             }
 
@@ -949,10 +911,9 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
                 ishr(-1, v, s) match {
                     case (IntegerRangeLike(lb, ub)) =>
-                        lb should be <= (0)
-                        ub should be >= (12)
-                    case v =>
-                        fail(s"expected lb <= 0 and ub >= 12; found $v")
+                        lb should be <= 0
+                        ub should be >= 12
+                    case v => fail(s"expected lb <= 0 and ub >= 12; found $v")
                 }
             }
 
@@ -964,8 +925,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                     case (IntegerRangeLike(lb, ub)) =>
                         lb should ===(-1)
                         ub should ===(-1)
-                    case v =>
-                        fail(s"expected [-1,-1]; found $v")
+                    case v => fail(s"expected [-1,-1]; found $v")
                 }
             }
 
@@ -977,8 +937,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                     case (IntegerRangeLike(lb, ub)) =>
                         lb should ===(-1)
                         ub should ===(0)
-                    case v =>
-                        fail(s"expected [-1,0]; found $v")
+                    case v => fail(s"expected [-1,0]; found $v")
                 }
             }
 
@@ -990,8 +949,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                     case (IntegerRangeLike(lb, ub)) =>
                         lb should ===(0)
                         ub should ===(0)
-                    case v =>
-                        fail(s"expected [0,0]; found $v")
+                    case v => fail(s"expected [0,0]; found $v")
                 }
             }
 
@@ -1003,8 +961,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                     case (IntegerRangeLike(lb, ub)) =>
                         lb should ===(0)
                         ub should ===(0)
-                    case v =>
-                        fail(s"expected [0,0]; found $v")
+                    case v => fail(s"expected [0,0]; found $v")
                 }
             }
 
@@ -1014,10 +971,9 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
                 ishr(-1, v, s) match {
                     case (IntegerRangeLike(lb, ub)) =>
-                        lb should be <= (0)
-                        ub should be >= (10)
-                    case v =>
-                        fail(s"expected lb <= 0 and ub >= 10; found $v")
+                        lb should be <= 0
+                        ub should be >= 10
+                    case v => fail(s"expected lb <= 0 and ub >= 10; found $v")
                 }
             }
 
@@ -1027,10 +983,9 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
                 ishr(-1, v, s) match {
                     case (IntegerRangeLike(lb, ub)) =>
-                        lb should be <= (0)
-                        ub should be >= (15)
-                    case v =>
-                        fail(s"expected lb <= 0 and ub >= 15; found $v")
+                        lb should be <= 0
+                        ub should be >= 15
+                    case v => fail(s"expected lb <= 0 and ub >= 15; found $v")
                 }
             }
 
@@ -1040,10 +995,9 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
                 ishr(-1, v, s) match {
                     case (IntegerRangeLike(lb, ub)) =>
-                        lb should be <= (-10)
-                        ub should be >= (-1)
-                    case v =>
-                        fail(s"expected lb <= -10 and ub >= -1; found $v")
+                        lb should be <= -10
+                        ub should be >= -1
+                    case v => fail(s"expected lb <= -10 and ub >= -1; found $v")
                 }
             }
 
@@ -1053,10 +1007,9 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
                 ishr(-1, v, s) match {
                     case (IntegerRangeLike(lb, ub)) =>
-                        lb should be <= (-10)
-                        ub should be >= (-1)
-                    case v =>
-                        fail(s"expected lb <= -10 and ub >= -1; found $v")
+                        lb should be <= -10
+                        ub should be >= -1
+                    case v => fail(s"expected lb <= -10 and ub >= -1; found $v")
                 }
             }
 
@@ -1066,10 +1019,9 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
                 ishr(-1, v, s) match {
                     case (IntegerRangeLike(lb, ub)) =>
-                        lb should be <= (-10)
-                        ub should be >= (5)
-                    case v =>
-                        fail(s"expected lb <= -10 and ub >= 5; found $v")
+                        lb should be <= -10
+                        ub should be >= 5
+                    case v => fail(s"expected lb <= -10 and ub >= 5; found $v")
                 }
             }
 
@@ -1081,8 +1033,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                     case (IntegerRangeLike(lb, ub)) =>
                         lb should ===(-1)
                         ub should ===(0)
-                    case v =>
-                        fail(s"expected [-1,0]; found $v")
+                    case v => fail(s"expected [-1,0]; found $v")
                 }
             }
 
@@ -1104,42 +1055,42 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val v = IntegerRange(-4, -2)
                 val s = IntegerRange(0, 0)
 
-                ishr(-1, v, s) should be theSameInstanceAs (v)
+                ishr(-1, v, s) should be theSameInstanceAs v
             }
 
             it("A specific (but unknown) value v1 right-shifted by [0,0] should be v1 itself") {
                 val v = AnIntegerValue()
                 val s = IntegerRange(0, 0)
 
-                ishr(-1, v, s) should be theSameInstanceAs (v)
+                ishr(-1, v, s) should be theSameInstanceAs v
             }
 
             it("r@[0,0] right-shifted by a specific (but unknown) IntegerValue should be r itself") {
                 val v = IntegerRange(0, 0)
                 val s = AnIntegerValue()
 
-                ishr(-1, v, s) should be theSameInstanceAs (v)
+                ishr(-1, v, s) should be theSameInstanceAs v
             }
 
             it("r@[0,0] right-shifted by a \"point\" range should be r itself") {
                 val v = IntegerRange(0, 0)
                 val s = IntegerRange(2, 2)
 
-                ishr(-1, v, s) should be theSameInstanceAs (v)
+                ishr(-1, v, s) should be theSameInstanceAs v
             }
 
             it("r@[0,0] right-shifted by [2,4] should be r itself") {
                 val v = IntegerRange(0, 0)
                 val s = IntegerRange(2, 4)
 
-                ishr(-1, v, s) should be theSameInstanceAs (v)
+                ishr(-1, v, s) should be theSameInstanceAs v
             }
 
             it("r@[-1,-1] right-shifted by a specific (but unknown) IntegerValue should be r itself") {
                 val v = IntegerRange(-1, -1)
                 val s = AnIntegerValue()
 
-                ishr(-1, v, s) should be theSameInstanceAs (v)
+                ishr(-1, v, s) should be theSameInstanceAs v
             }
 
             it("r@[-1,-1] right-shifted by a \"point\" range should be r itself") {
@@ -1147,14 +1098,14 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(2, 2)
 
                 ishr(-1, v, s) should be theSameInstanceAs v
-                ishr(-1, v, s) should be theSameInstanceAs (v)
+                ishr(-1, v, s) should be theSameInstanceAs v
             }
 
             it("r@[-1,-1] right-shifted by [2,4] should be r itself") {
                 val v = IntegerRange(-1, -1)
                 val s = IntegerRange(2, 4)
 
-                ishr(-1, v, s) should be theSameInstanceAs (v)
+                ishr(-1, v, s) should be theSameInstanceAs v
             }
 
             it("A specific (but unknown) value v1 right-shifted by a \"point\" range != [0,0] should be a specific (but unknown) value different from v1") {
@@ -1174,7 +1125,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
         describe("the behavior of iadd") {
 
-            val theDomain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
+            val theDomain = new DefaultIntegerRangesTestDomain(-Int.MinValue.toLong + Int.MaxValue)
             import theDomain._
 
             it("[0,3] + [0,2] => [0,5]") {
@@ -1233,15 +1184,15 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
             it("A specific (but unknown) value v1 + [0,0] should be v1 itself") {
                 val v1 = AnIntegerValue()
                 val v2 = IntegerRange(0, 0)
-                iadd(-1, v1, v2) should be theSameInstanceAs (v1)
-                iadd(-1, v1, v2) should be theSameInstanceAs (v1)
+                iadd(-1, v1, v2) should be theSameInstanceAs v1
+                iadd(-1, v1, v2) should be theSameInstanceAs v1
             }
 
             it("The result of adding [0,0] to a range r should be r itself; [2,4] + [0,0] => [2,4]") {
                 val v1 = IntegerRange(2, 4)
                 val v2 = IntegerRange(0, 0)
-                iadd(-1, v1, v2) should be theSameInstanceAs (v1)
-                iadd(-1, v2, v1) should be theSameInstanceAs (v1)
+                iadd(-1, v1, v2) should be theSameInstanceAs v1
+                iadd(-1, v2, v1) should be theSameInstanceAs v1
             }
 
             it("The result of adding a specific (but unknown) value v1 to a \"point\" range != [0,0] should be a specific (but unknown) value different from v1") {
@@ -1261,7 +1212,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
         describe("the behavior of isub") {
 
-            val theDomain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
+            val theDomain = new DefaultIntegerRangesTestDomain(-Int.MinValue.toLong + Int.MaxValue)
             import theDomain._
 
             it("[0,3] - [0,2] => [-2,3]") {
@@ -1296,7 +1247,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val v1 = IntegerRange(0, 0)
                 val v2 = AnIntegerValue()
 
-                isub(-1, v2, v1) should be theSameInstanceAs (v2)
+                isub(-1, v2, v1) should be theSameInstanceAs v2
             }
 
             it("[Int.MinValue,3] - [2,3] => AnIntegerValue") {
@@ -1337,14 +1288,14 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val v1 = AnIntegerValue()
                 val v2 = IntegerRange(0, 0)
 
-                isub(-1, v1, v2) should be theSameInstanceAs (v1)
+                isub(-1, v1, v2) should be theSameInstanceAs v1
             }
 
             it("The result of subtracting a range r by [0,0] should be r itself; [2,4] - [0,0] => [2,4]") {
                 val v1 = IntegerRange(2, 4)
                 val v2 = IntegerRange(0, 0)
 
-                isub(-1, v1, v2) should be theSameInstanceAs (v1)
+                isub(-1, v1, v2) should be theSameInstanceAs v1
             }
 
             it("The result of subtracting a \"point\" range != [0,0] by a specific (but unknown) value v1 should be a specific (but unknown) value different from v1") {
@@ -1365,7 +1316,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
         describe("the behavior of idiv") {
 
-            val theDomain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
+            val theDomain = new DefaultIntegerRangesTestDomain(-Int.MinValue.toLong + Int.MaxValue)
             import theDomain._
 
             it("[1,3] / [2,2] => [0,1]") {
@@ -1454,7 +1405,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
         describe("the behavior of irem") {
 
-            val theDomain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
+            val theDomain = new DefaultIntegerRangesTestDomain(-Int.MinValue.toLong + Int.MaxValue)
             import theDomain._
 
             it("AnIntegerValue % AnIntegerValue => AnIntegerValue + Exception") {
@@ -1542,7 +1493,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val v1 = IntegerRange(0, 3)
                 val v2 = IntegerRange(1, 2)
 
-                val result = irem(SomePC, v1, v2)
+                val result   = irem(SomePC, v1, v2)
                 val expected = ComputedValue(IntegerRange(0, 1))
                 result should be(expected)
             }
@@ -1551,7 +1502,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val v1 = IntegerRange(-10, -3)
                 val v2 = IntegerRange(-2, -1)
 
-                val result = irem(SomePC, v1, v2)
+                val result   = irem(SomePC, v1, v2)
                 val expected = ComputedValue(IntegerRange(-1, 0))
                 result should be(expected)
             }
@@ -1560,7 +1511,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val v1 = IntegerRange(-10, 3)
                 val v2 = IntegerRange(1, 2)
 
-                val result = irem(SomePC, v1, v2)
+                val result   = irem(SomePC, v1, v2)
                 val expected = ComputedValue(IntegerRange(-1, 1))
                 result should be(expected)
             }
@@ -1611,7 +1562,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
         }
 
         describe("the behavior of iand") {
-            val theDomain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
+            val theDomain = new DefaultIntegerRangesTestDomain(-Int.MinValue.toLong + Int.MaxValue)
             import theDomain._
 
             it("[3,3] & [255,255] => [0,0]") {
@@ -1681,16 +1632,16 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val v1 = IntegerRange(2, 4)
                 val v2 = IntegerRange(-1, -1)
 
-                iand(-1, v1, v2) should be theSameInstanceAs (v1)
-                iand(-1, v2, v1) should be theSameInstanceAs (v1)
+                iand(-1, v1, v2) should be theSameInstanceAs v1
+                iand(-1, v2, v1) should be theSameInstanceAs v1
             }
 
             it("A specific (but unknown) value v1 & [-1,-1] should be v1 itself") {
                 val v1 = AnIntegerValue()
                 val v2 = IntegerRange(-1, -1)
 
-                iand(-1, v1, v2) should be theSameInstanceAs (v1)
-                iand(-1, v2, v1) should be theSameInstanceAs (v1)
+                iand(-1, v1, v2) should be theSameInstanceAs v1
+                iand(-1, v2, v1) should be theSameInstanceAs v1
             }
 
             it("The result of the and of a specific (but unknown) value v1 and a \"point\" != [-1,-1] range should be a specific (but unknown) value different from v1") {
@@ -1713,48 +1664,48 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val v1 = IntegerRange(2, 4)
                 val v2 = IntegerRange(0, 0)
 
-                iand(-1, v1, v2) should be theSameInstanceAs (v2)
-                iand(-1, v2, v1) should be theSameInstanceAs (v2)
+                iand(-1, v1, v2) should be theSameInstanceAs v2
+                iand(-1, v2, v1) should be theSameInstanceAs v2
             }
 
             it("A specific (but unknown) value & r@[0,0] should be r itself") {
                 val v1 = AnIntegerValue()
                 val v2 = IntegerRange(0, 0)
 
-                iand(-1, v1, v2) should be theSameInstanceAs (v2)
-                iand(-1, v2, v1) should be theSameInstanceAs (v2)
+                iand(-1, v1, v2) should be theSameInstanceAs v2
+                iand(-1, v2, v1) should be theSameInstanceAs v2
             }
         }
 
         describe("the behavior of iushr") {
 
-            val theDomain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
+            val theDomain = new DefaultIntegerRangesTestDomain(-Int.MinValue.toLong + Int.MaxValue)
             import theDomain._
 
             it("""(two "point" ranges where both values are larger than zero) [7,7] >>> [2,2] => -1 >>> 2 === 1073741823""") {
-                val v = IntegerRange(7, 7)
-                val s = IntegerRange(2, 2)
+                val v        = IntegerRange(7, 7)
+                val s        = IntegerRange(2, 2)
                 val expected = 7 >>> 2
                 iushr(-1, v, s) should be(IntegerRange(expected, expected))
             }
 
             it("""(two "point" ranges where the value is smaller than zero) [-1,-1] >>> [2,2] => -1 >>> 2 === 1073741823""") {
-                val v = IntegerRange(-1, -1)
-                val s = IntegerRange(2, 2)
+                val v        = IntegerRange(-1, -1)
+                val s        = IntegerRange(2, 2)
                 val expected = -1 >>> 2
                 iushr(-1, v, s) should be(IntegerRange(expected, expected))
             }
 
             it("""(two "point" ranges which are both smaller than zero) [-5,-5] >>> [-2,-2] => -5 >>> -2 === 3""") {
-                val v = IntegerRange(-5, -5)
-                val s = IntegerRange(-2, -2)
+                val v        = IntegerRange(-5, -5)
+                val s        = IntegerRange(-2, -2)
                 val expected = -5 >>> -2
                 iushr(-1, v, s) should be(IntegerRange(expected, expected))
             }
 
             it("""(two "point" ranges where the shift value is smaller than zero) [5,5] >>> [-2,-2] => 5 >>> -2 === 0""") {
-                val v = IntegerRange(5, 5)
-                val s = IntegerRange(-2, -2)
+                val v        = IntegerRange(5, 5)
+                val s        = IntegerRange(-2, -2)
                 val expected = 5 >>> -2
                 iushr(-1, v, s) should be(IntegerRange(expected, expected))
             }
@@ -1968,7 +1919,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 iushr(-1, v, s) match {
                     case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= 0
-                        ub should be >= (134217727)
+                        ub should be >= 134217727
 
                     case v => fail(s"expected lb <= 0 and ub >=134217727; found $v")
                 }
@@ -2015,7 +1966,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
         }
 
         describe("the behavior of ixor") {
-            val theDomain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
+            val theDomain = new DefaultIntegerRangesTestDomain(-Int.MinValue.toLong + Int.MaxValue)
             import theDomain._
 
             it("AnIntegerValue ^ [-10,-10] => AnIntegerValue") {
@@ -2114,8 +2065,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                     case (IntegerRangeLike(lb, ub)) =>
                         lb should ===(0)
                         ub should ===(0)
-                    case v =>
-                        fail(s"expected lb == 0 and ub == 0; found $v")
+                    case v => fail(s"expected lb == 0 and ub == 0; found $v")
                 }
             }
 
@@ -2127,8 +2077,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                     case (IntegerRangeLike(lb, ub)) =>
                         lb should be(0)
                         ub should be(1)
-                    case v =>
-                        fail(s"expected lb = 0 and ub = 1; found $v")
+                    case v => fail(s"expected lb = 0 and ub = 1; found $v")
                 }
                 ixor(-1, v2, v1) should be(ixor(-1, v1, v2))
             }
@@ -2139,10 +2088,9 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
                 ixor(-1, v, s) match {
                     case (IntegerRangeLike(lb, ub)) =>
-                        lb should be <= (0)
-                        ub should be >= (7)
-                    case v =>
-                        fail(s"expected lb <= 0 and ub >= 7; found $v")
+                        lb should be <= 0
+                        ub should be >= 7
+                    case v => fail(s"expected lb <= 0 and ub >= 7; found $v")
                 }
             }
 
@@ -2152,10 +2100,9 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
                 ixor(-1, v, s) match {
                     case (IntegerRangeLike(lb, ub)) =>
-                        lb should be <= (-4)
-                        ub should be >= (7)
-                    case v =>
-                        fail(s"expected lb <= -4 and ub >= 7; found $v")
+                        lb should be <= -4
+                        ub should be >= 7
+                    case v => fail(s"expected lb <= -4 and ub >= 7; found $v")
                 }
             }
 
@@ -2165,10 +2112,9 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
                 ixor(-1, v, s) match {
                     case (IntegerRangeLike(lb, ub)) =>
-                        lb should be <= (-12)
-                        ub should be >= (-5)
-                    case v =>
-                        fail(s"expected lb <= -12 and ub >= -5; found $v")
+                        lb should be <= -12
+                        ub should be >= -5
+                    case v => fail(s"expected lb <= -12 and ub >= -5; found $v")
                 }
             }
 
@@ -2178,10 +2124,9 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
                 ixor(-1, v, s) match {
                     case (IntegerRangeLike(lb, ub)) =>
-                        lb should be <= (0)
-                        ub should be >= (63)
-                    case v =>
-                        fail(s"expected lb <= 0 and ub >= 63; found $v")
+                        lb should be <= 0
+                        ub should be >= 63
+                    case v => fail(s"expected lb <= 0 and ub >= 63; found $v")
                 }
             }
 
@@ -2191,10 +2136,9 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
                 ixor(-1, v, s) match {
                     case (IntegerRangeLike(lb, ub)) =>
-                        lb should be <= (-32)
-                        ub should be >= (63)
-                    case v =>
-                        fail(s"expected lb <= -32 and ub >= 63; found $v")
+                        lb should be <= -32
+                        ub should be >= 63
+                    case v => fail(s"expected lb <= -32 and ub >= 63; found $v")
                 }
             }
 
@@ -2204,10 +2148,9 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
                 ixor(-1, v, s) match {
                     case IntegerRangeLike(lb, ub) =>
-                        lb should be <= (1)
-                        ub should be >= (7)
-                    case v =>
-                        fail(s"expected lb <= 1 and ub >= 7; found $v")
+                        lb should be <= 1
+                        ub should be >= 7
+                    case v => fail(s"expected lb <= 1 and ub >= 7; found $v")
                 }
             }
 
@@ -2217,10 +2160,9 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
                 ixor(-1, v, s) match {
                     case IntegerRangeLike(lb, ub) =>
-                        lb should be <= (56)
-                        ub should be >= (79)
-                    case v =>
-                        fail(s"expected lb <= 56 and ub >= 79; found $v")
+                        lb should be <= 56
+                        ub should be >= 79
+                    case v => fail(s"expected lb <= 56 and ub >= 79; found $v")
                 }
             }
 
@@ -2230,10 +2172,9 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
                 ixor(-1, v, s) match {
                     case IntegerRangeLike(lb, ub) =>
-                        lb should be <= (0)
-                        ub should be >= (511)
-                    case v =>
-                        fail(s"expected lb <= 0 and ub >= 511; found $v")
+                        lb should be <= 0
+                        ub should be >= 511
+                    case v => fail(s"expected lb <= 0 and ub >= 511; found $v")
                 }
             }
 
@@ -2243,10 +2184,9 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
                 ixor(-1, v, s) match {
                     case (IntegerRangeLike(lb, ub)) =>
-                        lb should be <= (99)
-                        ub should be >= (119)
-                    case v =>
-                        fail(s"expected lb <= 99 and ub >= 119; found $v")
+                        lb should be <= 99
+                        ub should be >= 119
+                    case v => fail(s"expected lb <= 99 and ub >= 119; found $v")
                 }
             }
 
@@ -2256,10 +2196,9 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
                 ixor(-1, v, s) match {
                     case (IntegerRangeLike(lb, ub)) =>
-                        lb should be <= (-16)
-                        ub should be >= (-9)
-                    case v =>
-                        fail(s"expected lb <= -16 and ub >= -9; found $v")
+                        lb should be <= -16
+                        ub should be >= -9
+                    case v => fail(s"expected lb <= -16 and ub >= -9; found $v")
                 }
             }
 
@@ -2269,10 +2208,9 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
                 ixor(-1, v, s) match {
                     case (IntegerRangeLike(lb, ub)) =>
-                        lb should be <= (-64)
-                        ub should be >= (-1)
-                    case v =>
-                        fail(s"expected lb <= -64 and ub >= -1; found $v")
+                        lb should be <= -64
+                        ub should be >= -1
+                    case v => fail(s"expected lb <= -64 and ub >= -1; found $v")
                 }
             }
 
@@ -2282,10 +2220,9 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
                 ixor(-1, v, s) match {
                     case (IntegerRangeLike(lb, ub)) =>
-                        lb should be <= (-2147483648)
-                        ub should be >= (-2147483521)
-                    case v =>
-                        fail(s"expected lb <= -2147483648 and ub >= -2147483521; found $v")
+                        lb should be <= -2147483648
+                        ub should be >= -2147483521
+                    case v => fail(s"expected lb <= -2147483648 and ub >= -2147483521; found $v")
                 }
             }
 
@@ -2295,10 +2232,9 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
                 ixor(-1, v, s) match {
                     case (IntegerRangeLike(lb, ub)) =>
-                        lb should be <= (-2147483648)
-                        ub should be >= (-2147483521)
-                    case v =>
-                        fail(s"expected lb <= -2147483648 and ub >= -2147483521; found $v")
+                        lb should be <= -2147483648
+                        ub should be >= -2147483521
+                    case v => fail(s"expected lb <= -2147483648 and ub >= -2147483521; found $v")
                 }
             }
 
@@ -2308,10 +2244,9 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
                 ixor(-1, v, s) match {
                     case (IntegerRangeLike(lb, ub)) =>
-                        lb should be <= (-16)
-                        ub should be >= (-1)
-                    case v =>
-                        fail(s"expected lb <= -16 and ub >= -1; found $v")
+                        lb should be <= -16
+                        ub should be >= -1
+                    case v => fail(s"expected lb <= -16 and ub >= -1; found $v")
                 }
             }
 
@@ -2321,10 +2256,9 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
                 ixor(-1, v, s) match {
                     case (IntegerRangeLike(lb, ub)) =>
-                        lb should be <= (-2147483648)
-                        ub should be >= (-2147483521)
-                    case v =>
-                        fail(s"expected lb <= -2147483648 and ub >= -2147483521; found $v")
+                        lb should be <= -2147483648
+                        ub should be >= -2147483521
+                    case v => fail(s"expected lb <= -2147483648 and ub >= -2147483521; found $v")
                 }
             }
 
@@ -2334,10 +2268,9 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
                 ixor(-1, v, s) match {
                     case (IntegerRangeLike(lb, ub)) =>
-                        lb should be <= (-64)
-                        ub should be >= (-1)
-                    case v =>
-                        fail(s"expected lb <= -64 and ub >= -1; found $v")
+                        lb should be <= -64
+                        ub should be >= -1
+                    case v => fail(s"expected lb <= -64 and ub >= -1; found $v")
                 }
             }
 
@@ -2347,10 +2280,9 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
                 ixor(-1, v, s) match {
                     case (IntegerRangeLike(lb, ub)) =>
-                        lb should be <= (-13)
-                        ub should be >= (13)
-                    case v =>
-                        fail(s"expected lb <= -13 and ub >= 13; found $v")
+                        lb should be <= -13
+                        ub should be >= 13
+                    case v => fail(s"expected lb <= -13 and ub >= 13; found $v")
                 }
             }
 
@@ -2360,10 +2292,9 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
                 ixor(-1, v, s) match {
                     case (IntegerRangeLike(lb, ub)) =>
-                        lb should be <= (-19)
-                        ub should be >= (31)
-                    case v =>
-                        fail(s"expected lb <= -19 and ub >= 31; found $v")
+                        lb should be <= -19
+                        ub should be >= 31
+                    case v => fail(s"expected lb <= -19 and ub >= 31; found $v")
                 }
             }
 
@@ -2373,10 +2304,9 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
                 ixor(-1, v, s) match {
                     case (IntegerRangeLike(lb, ub)) =>
-                        lb should be <= (-32)
-                        ub should be >= (31)
-                    case v =>
-                        fail(s"expected lb <= -32 and ub >= 31; found $v")
+                        lb should be <= -32
+                        ub should be >= 31
+                    case v => fail(s"expected lb <= -32 and ub >= 31; found $v")
                 }
             }
 
@@ -2386,10 +2316,9 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
                 ixor(-1, v, s) match {
                     case (IntegerRangeLike(lb, ub)) =>
-                        lb should be <= (-2147483648)
-                        ub should be >= (2147483647)
-                    case v =>
-                        fail(s"expected lb <= -2147483648 and ub >= 2147483647; found $v")
+                        lb should be <= -2147483648
+                        ub should be >= 2147483647
+                    case v => fail(s"expected lb <= -2147483648 and ub >= 2147483647; found $v")
                 }
             }
 
@@ -2399,10 +2328,9 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
                 ixor(-1, v, s) match {
                     case (IntegerRangeLike(lb, ub)) =>
-                        lb should be <= (-2147483648)
-                        ub should be >= (2147483647)
-                    case v =>
-                        fail(s"expected lb <= -2147483648 and ub >= 2147483647; found $v")
+                        lb should be <= -2147483648
+                        ub should be >= 2147483647
+                    case v => fail(s"expected lb <= -2147483648 and ub >= 2147483647; found $v")
                 }
             }
 
@@ -2412,10 +2340,9 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
                 ixor(-1, v, s) match {
                     case (IntegerRangeLike(lb, ub)) =>
-                        lb should be <= (-32)
-                        ub should be >= (31)
-                    case v =>
-                        fail(s"expected lb <= -32 and ub >= 31; found $v")
+                        lb should be <= -32
+                        ub should be >= 31
+                    case v => fail(s"expected lb <= -32 and ub >= 31; found $v")
                 }
             }
 
@@ -2425,10 +2352,9 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
                 ixor(-1, v, s) match {
                     case (IntegerRangeLike(lb, ub)) =>
-                        lb should be <= (-24)
-                        ub should be >= (28)
-                    case v =>
-                        fail(s"expected lb <= -32 and ub >= 31; found $v")
+                        lb should be <= -24
+                        ub should be >= 28
+                    case v => fail(s"expected lb <= -32 and ub >= 31; found $v")
                 }
             }
 
@@ -2438,10 +2364,9 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
                 ixor(-1, v, s) match {
                     case (IntegerRangeLike(lb, ub)) =>
-                        lb should be <= (-24)
-                        ub should be >= (28)
-                    case v =>
-                        fail(s"expected lb <= -32 and ub >= 31; found $v")
+                        lb should be <= -24
+                        ub should be >= 28
+                    case v => fail(s"expected lb <= -32 and ub >= 31; found $v")
                 }
             }
 
@@ -2451,10 +2376,9 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
                 ixor(-1, v, s) match {
                     case (IntegerRangeLike(lb, ub)) =>
-                        lb should be <= (-2)
-                        ub should be >= (1)
-                    case v =>
-                        fail(s"expected lb <= -2 and ub >= 1; found $v")
+                        lb should be <= -2
+                        ub should be >= 1
+                    case v => fail(s"expected lb <= -2 and ub >= 1; found $v")
                 }
             }
 
@@ -2464,10 +2388,9 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
                 ixor(-1, v, s) match {
                     case (IntegerRangeLike(lb, ub)) =>
-                        lb should be <= (-48)
-                        ub should be >= (46)
-                    case v =>
-                        fail(s"expected lb <= -48 and ub >= 46; found $v")
+                        lb should be <= -48
+                        ub should be >= 46
+                    case v => fail(s"expected lb <= -48 and ub >= 46; found $v")
                 }
             }
 
@@ -2477,10 +2400,9 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
                 ixor(-1, v, s) match {
                     case (IntegerRangeLike(lb, ub)) =>
-                        lb should be <= (-1)
-                        ub should be >= (34)
-                    case v =>
-                        fail(s"expected lb <= -1 and ub >= 34; found $v")
+                        lb should be <= -1
+                        ub should be >= 34
+                    case v => fail(s"expected lb <= -1 and ub >= 34; found $v")
                 }
             }
 
@@ -2490,10 +2412,9 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
                 ixor(-1, v, s) match {
                     case (IntegerRangeLike(lb, ub)) =>
-                        lb should be <= (-35)
-                        ub should be >= (34)
-                    case v =>
-                        fail(s"expected lb <= -35 and ub >= 34; found $v")
+                        lb should be <= -35
+                        ub should be >= 34
+                    case v => fail(s"expected lb <= -35 and ub >= 34; found $v")
                 }
             }
 
@@ -2505,8 +2426,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                     case (IntegerRangeLike(lb, ub)) =>
                         lb should ===(34)
                         ub should ===(34)
-                    case v =>
-                        fail(s"expected lb <= 34 and ub >= 34; found $v")
+                    case v => fail(s"expected lb <= 34 and ub >= 34; found $v")
                 }
             }
 
@@ -2529,10 +2449,9 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
                 ixor(-1, v, s) match {
                     case (IntegerRangeLike(lb, ub)) =>
-                        lb should be <= (-58880)
-                        ub should be >= (-57857)
-                    case v =>
-                        fail(s"expected lb <= -58880 and ub >= -57857; found $v")
+                        lb should be <= -58880
+                        ub should be >= -57857
+                    case v => fail(s"expected lb <= -58880 and ub >= -57857; found $v")
                 }
             }
 
@@ -2542,10 +2461,9 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
                 ixor(-1, v, s) match {
                     case (IntegerRangeLike(lb, ub)) =>
-                        lb should be <= (8512)
-                        ub should be >= (12031)
-                    case v =>
-                        fail(s"expected lb <= 8512 and ub >= 12031; found $v")
+                        lb should be <= 8512
+                        ub should be >= 12031
+                    case v => fail(s"expected lb <= 8512 and ub >= 12031; found $v")
                 }
             }
 
@@ -2555,10 +2473,9 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
                 ixor(-1, v, s) match {
                     case (IntegerRangeLike(lb, ub)) =>
-                        lb should be <= (-103)
-                        ub should be >= (102)
-                    case v =>
-                        fail(s"expected lb <= -103 and ub >= 102; found $v")
+                        lb should be <= -103
+                        ub should be >= 102
+                    case v => fail(s"expected lb <= -103 and ub >= 102; found $v")
                 }
             }
 
@@ -2566,7 +2483,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
         describe("the behavior of ishl") {
 
-            val theDomain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
+            val theDomain = new DefaultIntegerRangesTestDomain(-Int.MinValue.toLong + Int.MaxValue)
             import theDomain._
 
             it("[10,22] << [12,31] => [-2147483648,2013265920]") {
@@ -2575,10 +2492,9 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
                 ishl(-1, v, s) match {
                     case (IntegerRangeLike(lb, ub)) =>
-                        lb should be <= (-2147483648)
-                        ub should be >= (2013265920)
-                    case v =>
-                        fail(s"expected lb <= -2147483648 and ub >= 2013265920; found $v")
+                        lb should be <= -2147483648
+                        ub should be >= 2013265920
+                    case v => fail(s"expected lb <= -2147483648 and ub >= 2013265920; found $v")
                 }
             }
 
@@ -2588,10 +2504,9 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
                 ishl(-1, v, s) match {
                     case (IntegerRangeLike(lb, ub)) =>
-                        lb should be <= (2)
-                        ub should be >= (352)
-                    case v =>
-                        fail(s"expected lb <= 2 and ub >= 352; found $v")
+                        lb should be <= 2
+                        ub should be >= 352
+                    case v => fail(s"expected lb <= 2 and ub >= 352; found $v")
                 }
             }
 
@@ -2601,10 +2516,9 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
                 ishl(-1, v, s) match {
                     case (IntegerRangeLike(lb, ub)) =>
-                        lb should be <= (0)
-                        ub should be >= (80)
-                    case v =>
-                        fail(s"expected lb <= 0 and ub >= 80; found $v")
+                        lb should be <= 0
+                        ub should be >= 80
+                    case v => fail(s"expected lb <= 0 and ub >= 80; found $v")
                 }
             }
 
@@ -2614,10 +2528,9 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
                 ishl(-1, v, s) match {
                     case (IntegerRangeLike(lb, ub)) =>
-                        lb should be <= (16)
-                        ub should be >= (80)
-                    case v =>
-                        fail(s"expected lb <= 16 and ub >= 80; found $v")
+                        lb should be <= 16
+                        ub should be >= 80
+                    case v => fail(s"expected lb <= 16 and ub >= 80; found $v")
                 }
             }
 
@@ -2627,10 +2540,9 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
                 ishl(-1, v, s) match {
                     case (IntegerRangeLike(lb, ub)) =>
-                        lb should be <= (1)
-                        ub should be >= (80)
-                    case v =>
-                        fail(s"expected lb <= 1 and ub >= 80; found $v")
+                        lb should be <= 1
+                        ub should be >= 80
+                    case v => fail(s"expected lb <= 1 and ub >= 80; found $v")
                 }
             }
 
@@ -2640,10 +2552,9 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
                 ishl(-1, v, s) match {
                     case (IntegerRangeLike(lb, ub)) =>
-                        lb should be <= (-2147483648)
-                        ub should be >= (1610612736)
-                    case v =>
-                        fail(s"expected lb <= -2147483648 and ub >= 1610612736; found $v")
+                        lb should be <= -2147483648
+                        ub should be >= 1610612736
+                    case v => fail(s"expected lb <= -2147483648 and ub >= 1610612736; found $v")
                 }
             }
 
@@ -2653,10 +2564,9 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
                 ishl(-1, v, s) match {
                     case (IntegerRangeLike(lb, ub)) =>
-                        lb should be <= (-2147483648)
-                        ub should be >= (1610612736)
-                    case v =>
-                        fail(s"expected lb <= -2147483648 and ub >= 1610612736; found $v")
+                        lb should be <= -2147483648
+                        ub should be >= 1610612736
+                    case v => fail(s"expected lb <= -2147483648 and ub >= 1610612736; found $v")
                 }
             }
 
@@ -2666,10 +2576,9 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
                 ishl(-1, v, s) match {
                     case (IntegerRangeLike(lb, ub)) =>
-                        lb should be <= (-2147483648)
-                        ub should be >= (1610612736)
-                    case v =>
-                        fail(s"expected lb <= -2147483648 and ub >= 1610612736; found $v")
+                        lb should be <= -2147483648
+                        ub should be >= 1610612736
+                    case v => fail(s"expected lb <= -2147483648 and ub >= 1610612736; found $v")
                 }
             }
 
@@ -2679,10 +2588,9 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
                 ishl(-1, v, s) match {
                     case (IntegerRangeLike(lb, ub)) =>
-                        lb should be <= (1)
-                        ub should be >= (5)
-                    case v =>
-                        fail(s"expected lb <= 1 and ub >= 5; found $v")
+                        lb should be <= 1
+                        ub should be >= 5
+                    case v => fail(s"expected lb <= 1 and ub >= 5; found $v")
                 }
             }
 
@@ -2692,10 +2600,9 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
                 ishl(-1, v, s) match {
                     case (IntegerRangeLike(lb, ub)) =>
-                        lb should be <= (-2147483648)
-                        ub should be >= (0)
-                    case v =>
-                        fail(s"expected lb <= -2147483648 and ub >= 0; found $v")
+                        lb should be <= -2147483648
+                        ub should be >= 0
+                    case v => fail(s"expected lb <= -2147483648 and ub >= 0; found $v")
                 }
             }
 
@@ -2705,10 +2612,9 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
                 ishl(-1, v, s) match {
                     case (IntegerRangeLike(lb, ub)) =>
-                        lb should be <= (-2147483648)
-                        ub should be >= (0)
-                    case v =>
-                        fail(s"expected lb <= -2147483648 and ub >= 0; found $v")
+                        lb should be <= -2147483648
+                        ub should be >= 0
+                    case v => fail(s"expected lb <= -2147483648 and ub >= 0; found $v")
                 }
             }
 
@@ -2718,10 +2624,9 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
                 ishl(-1, v, s) match {
                     case (IntegerRangeLike(lb, ub)) =>
-                        lb should be <= (-2147483648)
-                        ub should be >= (0)
-                    case v =>
-                        fail(s"expected lb <= -2147483648 and ub >= 0; found $v")
+                        lb should be <= -2147483648
+                        ub should be >= 0
+                    case v => fail(s"expected lb <= -2147483648 and ub >= 0; found $v")
                 }
             }
 
@@ -2731,10 +2636,9 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
                 ishl(-1, v, s) match {
                     case (IntegerRangeLike(lb, ub)) =>
-                        lb should be <= (-2147483648)
-                        ub should be >= (2080374784)
-                    case v =>
-                        fail(s"expected lb <= -2147483648 and ub >= 2080374784; found $v")
+                        lb should be <= -2147483648
+                        ub should be >= 2080374784
+                    case v => fail(s"expected lb <= -2147483648 and ub >= 2080374784; found $v")
                 }
             }
 
@@ -2744,10 +2648,9 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
                 ishl(-1, v, s) match {
                     case (IntegerRangeLike(lb, ub)) =>
-                        lb should be <= (-2147483648)
-                        ub should be >= (1879048192)
-                    case v =>
-                        fail(s"expected lb <= -2147483648 and ub >= 1879048192; found $v")
+                        lb should be <= -2147483648
+                        ub should be >= 1879048192
+                    case v => fail(s"expected lb <= -2147483648 and ub >= 1879048192; found $v")
                 }
             }
 
@@ -2757,10 +2660,9 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
                 ishl(-1, v, s) match {
                     case (IntegerRangeLike(lb, ub)) =>
-                        lb should be <= (-2147483648)
-                        ub should be >= (2080374784)
-                    case v =>
-                        fail(s"expected lb <= -2147483648 and ub >= 2080374784; found $v")
+                        lb should be <= -2147483648
+                        ub should be >= 2080374784
+                    case v => fail(s"expected lb <= -2147483648 and ub >= 2080374784; found $v")
                 }
             }
 
@@ -2770,10 +2672,9 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
                 ishl(-1, v, s) match {
                     case (IntegerRangeLike(lb, ub)) =>
-                        lb should be <= (-2147483648)
-                        ub should be >= (1879048192)
-                    case v =>
-                        fail(s"expected lb <= -2147483648 and ub >= 1879048192; found $v")
+                        lb should be <= -2147483648
+                        ub should be >= 1879048192
+                    case v => fail(s"expected lb <= -2147483648 and ub >= 1879048192; found $v")
                 }
             }
 
@@ -2783,10 +2684,9 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
                 ishl(-1, v, s) match {
                     case (IntegerRangeLike(lb, ub)) =>
-                        lb should be <= (-100)
-                        ub should be >= (-50)
-                    case v =>
-                        fail(s"expected lb <= -100 and ub >= -50; found $v")
+                        lb should be <= -100
+                        ub should be >= -50
+                    case v => fail(s"expected lb <= -100 and ub >= -50; found $v")
                 }
             }
 
@@ -2796,10 +2696,9 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
                 ishl(-1, v, s) match {
                     case (IntegerRangeLike(lb, ub)) =>
-                        lb should be <= (-1677721600)
-                        ub should be >= (-400)
-                    case v =>
-                        fail(s"expected lb <= -1677721600 and ub >= -400; found $v")
+                        lb should be <= -1677721600
+                        ub should be >= -400
+                    case v => fail(s"expected lb <= -1677721600 and ub >= -400; found $v")
                 }
             }
 
@@ -2809,10 +2708,9 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
                 ishl(-1, v, s) match {
                     case (IntegerRangeLike(lb, ub)) =>
-                        lb should be <= (-167772160)
-                        ub should be >= (-5)
-                    case v =>
-                        fail(s"expected lb <= -167772160 and ub >= -5; found $v")
+                        lb should be <= -167772160
+                        ub should be >= -5
+                    case v => fail(s"expected lb <= -167772160 and ub >= -5; found $v")
                 }
             }
 
@@ -2822,10 +2720,9 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
                 ishl(-1, v, s) match {
                     case (IntegerRangeLike(lb, ub)) =>
-                        lb should be <= (-40)
-                        ub should be >= (-20)
-                    case v =>
-                        fail(s"expected lb <= -40 and ub >= -20; found $v")
+                        lb should be <= -40
+                        ub should be >= -20
+                    case v => fail(s"expected lb <= -40 and ub >= -20; found $v")
                 }
             }
 
@@ -2835,10 +2732,9 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
                 ishl(-1, v, s) match {
                     case (IntegerRangeLike(lb, ub)) =>
-                        lb should be <= (-40)
-                        ub should be >= (-5)
-                    case v =>
-                        fail(s"expected lb <= -40 and ub >= -5; found $v")
+                        lb should be <= -40
+                        ub should be >= -5
+                    case v => fail(s"expected lb <= -40 and ub >= -5; found $v")
                 }
             }
 
@@ -2862,30 +2758,29 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
                 ishl(-1, v, s) match {
                     case (IntegerRangeLike(lb, ub)) =>
-                        lb should be <= (-4)
-                        ub should be >= (4)
-                    case v =>
-                        fail(s"expected lb <= -4 and ub >= 4; found $v")
+                        lb should be <= -4
+                        ub should be >= 4
+                    case v => fail(s"expected lb <= -4 and ub >= 4; found $v")
                 }
             }
 
             it("""(two "point" ranges where the value is smaller than zero) [-1,-1] << [2,2] => -1 << 2""") {
-                val v = IntegerRange(-1, -1)
-                val s = IntegerRange(2, 2)
+                val v        = IntegerRange(-1, -1)
+                val s        = IntegerRange(2, 2)
                 val expected = -1 << 2
                 ishl(-1, v, s) should be(IntegerRange(expected, expected))
             }
 
             it("""(two "point" ranges which are both smaller than zero) [-5,-5] << [-2,-2] => -5 << -2""") {
-                val v = IntegerRange(-5, -5)
-                val s = IntegerRange(-2, -2)
+                val v        = IntegerRange(-5, -5)
+                val s        = IntegerRange(-2, -2)
                 val expected = -5 << -2
                 ishl(-1, v, s) should be(IntegerRange(expected, expected))
             }
 
             it("""(two "point" ranges where the shift value is smaller than zero) [5,5] << [-2,-2] => 5 << -2""") {
-                val v = IntegerRange(5, 5)
-                val s = IntegerRange(-2, -2)
+                val v        = IntegerRange(5, 5)
+                val s        = IntegerRange(-2, -2)
                 val expected = 5 << -2
                 ishl(-1, v, s) should be(IntegerRange(expected, expected))
             }
@@ -2950,42 +2845,42 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val v = IntegerRange(2, 4)
                 val s = IntegerRange(0, 0)
 
-                ishl(-1, v, s) should be theSameInstanceAs (v)
+                ishl(-1, v, s) should be theSameInstanceAs v
             }
 
             it("The result of left-shifting a range r (negative values) by [0,0] should be r itself; [-4,-2] << [0,0] => [-4,-2]") {
                 val v = IntegerRange(-4, -2)
                 val s = IntegerRange(0, 0)
 
-                ishl(-1, v, s) should be theSameInstanceAs (v)
+                ishl(-1, v, s) should be theSameInstanceAs v
             }
 
             it("A specific (but unknown) value v1 left-shifted by [0,0] should be v1 itself") {
                 val v = AnIntegerValue()
                 val s = IntegerRange(0, 0)
 
-                ishl(-1, v, s) should be theSameInstanceAs (v)
+                ishl(-1, v, s) should be theSameInstanceAs v
             }
 
             it("r@[0,0] left-shifted by a specific (but unknown) IntegerValue should be r itself") {
                 val v = IntegerRange(0, 0)
                 val s = AnIntegerValue()
 
-                ishl(-1, v, s) should be theSameInstanceAs (v)
+                ishl(-1, v, s) should be theSameInstanceAs v
             }
 
             it("r@[0,0] left-shifted by a \"point\" range should be r itself") {
                 val v = IntegerRange(0, 0)
                 val s = IntegerRange(2, 2)
 
-                ishl(-1, v, s) should be theSameInstanceAs (v)
+                ishl(-1, v, s) should be theSameInstanceAs v
             }
 
             it("r@[0,0] left-shifted by [2,4] should be r itself") {
                 val v = IntegerRange(0, 0)
                 val s = IntegerRange(2, 4)
 
-                ishl(-1, v, s) should be theSameInstanceAs (v)
+                ishl(-1, v, s) should be theSameInstanceAs v
             }
 
             it("r@[-1,-1] left-shifted by a specific (but unknown) IntegerValue should be [Int.MinValue, -1]") {
@@ -3013,7 +2908,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
         describe("the behavior of the i2b cast operator") {
 
-            val theDomain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
+            val theDomain = new DefaultIntegerRangesTestDomain(-Int.MinValue.toLong + Int.MaxValue)
             import theDomain._
 
             it("(byte)AnIntegerValue => [-128,+127]") {
@@ -3034,7 +2929,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
         describe("the behavior of the i2s cast operator") {
 
-            val theDomain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
+            val theDomain = new DefaultIntegerRangesTestDomain(-Int.MinValue.toLong + Int.MaxValue)
             import theDomain._
 
             it("(short)AnIntegerValue => [-Short.MinValue,Short.MaxValue]") {
@@ -3055,7 +2950,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
         }
 
         describe("the behavior of the relational operators") {
-            val theDomain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
+            val theDomain = new DefaultIntegerRangesTestDomain(-Int.MinValue.toLong + Int.MaxValue)
             import theDomain._
 
             describe("the behavior of the greater or equal than (>=) operator") {
@@ -3294,7 +3189,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
     describe("using IntegerRangeValues") {
 
-        val aiProject = org.opalj.br.TestSupport.biProject("ai-9.jar")
+        val aiProject     = org.opalj.br.TestSupport.biProject("ai-9.jar")
         val IntegerValues = aiProject.classFile(ObjectType("ai/domain/IntegerValuesFrenzy")).get
 
         describe("when we have multiple loops that reuse the same local variable") {
@@ -3324,72 +3219,73 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
         describe("constraint propagation") {
 
             it("it should be able to adapt (<) the bounds of an IntegerRange value in the presences of aliasing and calculate the correct summary value") {
-                val domain = new JoinResultsIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
+                val domain = new JoinResultsIntegerRangesTestDomain(-Int.MinValue.toLong + Int.MaxValue)
                 val method = IntegerValues.findMethod("aliasingMax5").head
-                /*val result =*/ BaseAI(method, domain)
+                /*val result =*/
+                BaseAI(method, domain)
                 domain.returnedValue should be(Some(domain.IntegerRange(Int.MinValue, 5)))
             }
 
             it("it should be able to adapt (<) the bounds of an IntegerRange value in the presences of aliasing") {
-                val domain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
+                val domain = new DefaultIntegerRangesTestDomain(-Int.MinValue.toLong + Int.MaxValue)
                 val method = IntegerValues.findMethod("aliasingMax5").head
-                /*val result =*/ BaseAI(method, domain)
-                if (domain.allReturnedValues.size != 2)
-                    fail("expected two results; found: "+domain.allReturnedValues)
+                /*val result =*/
+                BaseAI(method, domain)
+                if (domain.allReturnedValues.size != 2) fail("expected two results; found: " + domain.allReturnedValues)
 
                 val summary = domain.summarize(-1, domain.allReturnedValues.values)
                 summary should be(domain.IntegerRange(Int.MinValue, 5))
             }
 
             it("it should be able to adapt (<=) the bounds of an IntegerRange value in the presences of aliasing") {
-                val domain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
+                val domain = new DefaultIntegerRangesTestDomain(-Int.MinValue.toLong + Int.MaxValue)
                 val method = IntegerValues.findMethod("aliasingMax6").head
-                /*val result =*/ BaseAI(method, domain)
-                if (domain.allReturnedValues.size != 2)
-                    fail("expected two results; found: "+domain.allReturnedValues)
+                /*val result =*/
+                BaseAI(method, domain)
+                if (domain.allReturnedValues.size != 2) fail("expected two results; found: " + domain.allReturnedValues)
 
                 val summary = domain.summarize(-1, domain.allReturnedValues.values)
                 summary should be(domain.IntegerRange(Int.MinValue, 6))
             }
 
             it("it should be able to adapt (>=) the bounds of an IntegerRange value in the presences of aliasing") {
-                val domain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
+                val domain = new DefaultIntegerRangesTestDomain(-Int.MinValue.toLong + Int.MaxValue)
                 val method = IntegerValues.findMethod("aliasingMinM1").head
-                /*val result =*/ BaseAI(method, domain)
-                if (domain.allReturnedValues.size != 2)
-                    fail("expected two results; found: "+domain.allReturnedValues)
+                /*val result =*/
+                BaseAI(method, domain)
+                if (domain.allReturnedValues.size != 2) fail("expected two results; found: " + domain.allReturnedValues)
 
                 val summary = domain.summarize(-1, domain.allReturnedValues.values)
                 summary should be(domain.IntegerRange(-1, Int.MaxValue))
             }
 
             it("it should be able to adapt (>) the bounds of an IntegerRange value in the presences of aliasing") {
-                val domain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
+                val domain = new DefaultIntegerRangesTestDomain(-Int.MinValue.toLong + Int.MaxValue)
                 val method = IntegerValues.findMethod("aliasingMin0").head
-                /*val result =*/ BaseAI(method, domain)
-                if (domain.allReturnedValues.size != 2)
-                    fail("expected two results; found: "+domain.allReturnedValues)
+                /*val result =*/
+                BaseAI(method, domain)
+                if (domain.allReturnedValues.size != 2) fail("expected two results; found: " + domain.allReturnedValues)
 
                 val summary = domain.summarize(-1, domain.allReturnedValues.values)
                 summary should be(domain.IntegerRange(0, Int.MaxValue))
             }
 
             it("it should be able to collect a switch statement's cases and use that information to calculate a result") {
-                val domain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
+                val domain = new DefaultIntegerRangesTestDomain(-Int.MinValue.toLong + Int.MaxValue)
                 val method = IntegerValues.findMethod("someSwitch").head
-                /*val result =*/ BaseAI(method, domain)
-                if (domain.allReturnedValues.size != 1)
-                    fail("expected one result; found: "+domain.allReturnedValues)
+                /*val result =*/
+                BaseAI(method, domain)
+                if (domain.allReturnedValues.size != 1) fail("expected one result; found: " + domain.allReturnedValues)
 
                 domain.allReturnedValues.head._2 should be(domain.IntegerRange(0, 8))
             }
 
             it("it should be able to detect contradicting conditions") {
-                val domain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
+                val domain = new DefaultIntegerRangesTestDomain(-Int.MinValue.toLong + Int.MaxValue)
                 val method = IntegerValues.findMethod("someComparisonThatReturns5").head
-                /*val result =*/ BaseAI(method, domain)
-                if (domain.allReturnedValues.size != 2)
-                    fail("expected one result; found: "+domain.allReturnedValues)
+                /*val result =*/
+                BaseAI(method, domain)
+                if (domain.allReturnedValues.size != 2) fail("expected one result; found: " + domain.allReturnedValues)
 
                 val summary = domain.summarize(-1, domain.allReturnedValues.values)
                 summary should be(domain.IntegerRange(5, 5))
@@ -3399,8 +3295,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val domain = new DefaultIntegerRangesTestDomain(20) // the array has a maximum size of 10
                 val method = IntegerValues.findMethod("array10").head
                 val result = BaseAI(method, domain)
-                if (domain.allReturnedValues.size != 1)
-                    fail("expected one result; found: "+domain.allReturnedValues)
+                if (domain.allReturnedValues.size != 1) fail("expected one result; found: " + domain.allReturnedValues)
 
                 // we don't know the size of the array
                 domain.allReturnedValues.head._2 abstractsOver (
@@ -3413,7 +3308,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
             }
 
             it("it should be possible to identify dead code - even for complex conditions") {
-                val domain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
+                val domain = new DefaultIntegerRangesTestDomain(-Int.MinValue.toLong + Int.MaxValue)
                 val method = IntegerValues.findMethod("deadCode").head
                 val result = BaseAI(method, domain)
                 result.operandsArray(47) should be(null)
@@ -3424,7 +3319,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 result.operandsArray(62) should be(null)
                 result.operandsArray(65) should be(null)
                 result.operandsArray(68) should be(null)
-                //...
+                // ...
                 result.operandsArray(89) should be(null)
 
             }
@@ -3563,8 +3458,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 result.operandsArray(46).head should be(domain.IntegerRange(2, 2))
                 result.operandsArray(50).head should be(domain.AnIntegerValue())
                 result.operandsArray(54).head should be(domain.AnIntegerValue())
-                if (result.operandsArray(50).head eq result.operandsArray(54).head)
-                    fail("unequal values are made equal")
+                if (result.operandsArray(50).head eq result.operandsArray(54).head) fail("unequal values are made equal")
             }
 
             it("it should not happen that a constraint (if...) affects a value that was created by the same instruction (pc), but at a different point in time (cfDependentValues5)") {
@@ -3629,43 +3523,41 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 }
 
 class DefaultIntegerRangesTestDomain(
-        override val maxCardinalityOfIntegerRanges: Long = -(Int.MinValue.toLong) + Int.MaxValue
-)
+        override val maxCardinalityOfIntegerRanges: Long = -Int.MinValue.toLong + Int.MaxValue)
     extends CorrelationalDomain
-    with DefaultSpecialDomainValuesBinding
-    with ThrowAllPotentialExceptionsConfiguration
-    with l0.DefaultTypeLevelLongValues
-    with l0.DefaultTypeLevelFloatValues
-    with l0.DefaultTypeLevelDoubleValues
-    with l1.DefaultArrayValuesBinding
-    with l0.TypeLevelFieldAccessInstructions
-    with l0.SimpleTypeLevelInvokeInstructions
-    with l0.TypeLevelDynamicLoads
-    with l1.DefaultIntegerRangeValues // <----- The one we are going to test
-    with l0.TypeLevelPrimitiveValuesConversions
-    with l0.TypeLevelLongValuesShiftOperators
-    with DefaultHandlingOfMethodResults
-    with IgnoreSynchronization
-    with PredefinedClassHierarchy
-    with RecordLastReturnedValues
+        with DefaultSpecialDomainValuesBinding
+        with ThrowAllPotentialExceptionsConfiguration
+        with l0.DefaultTypeLevelLongValues
+        with l0.DefaultTypeLevelFloatValues
+        with l0.DefaultTypeLevelDoubleValues
+        with l1.DefaultArrayValuesBinding
+        with l0.TypeLevelFieldAccessInstructions
+        with l0.SimpleTypeLevelInvokeInstructions
+        with l0.TypeLevelDynamicLoads
+        with l1.DefaultIntegerRangeValues // <----- The one we are going to test
+        with l0.TypeLevelPrimitiveValuesConversions
+        with l0.TypeLevelLongValuesShiftOperators
+        with DefaultHandlingOfMethodResults
+        with IgnoreSynchronization
+        with PredefinedClassHierarchy
+        with RecordLastReturnedValues
 
 class JoinResultsIntegerRangesTestDomain(
-        override val maxCardinalityOfIntegerRanges: Long = -(Int.MinValue.toLong) + Int.MaxValue
-)
+        override val maxCardinalityOfIntegerRanges: Long = -Int.MinValue.toLong + Int.MaxValue)
     extends CorrelationalDomain
-    with DefaultSpecialDomainValuesBinding
-    with ThrowAllPotentialExceptionsConfiguration
-    with l0.DefaultTypeLevelLongValues
-    with l0.DefaultTypeLevelFloatValues
-    with l0.DefaultTypeLevelDoubleValues
-    with l0.DefaultReferenceValuesBinding
-    with l0.TypeLevelFieldAccessInstructions
-    with l0.SimpleTypeLevelInvokeInstructions
-    with l0.TypeLevelDynamicLoads
-    with l1.DefaultIntegerRangeValues // <----- The one we are going to test
-    with l0.TypeLevelPrimitiveValuesConversions
-    with l0.TypeLevelLongValuesShiftOperators
-    with DefaultHandlingOfMethodResults
-    with IgnoreSynchronization
-    with PredefinedClassHierarchy
-    with RecordReturnedValue
+        with DefaultSpecialDomainValuesBinding
+        with ThrowAllPotentialExceptionsConfiguration
+        with l0.DefaultTypeLevelLongValues
+        with l0.DefaultTypeLevelFloatValues
+        with l0.DefaultTypeLevelDoubleValues
+        with l0.DefaultReferenceValuesBinding
+        with l0.TypeLevelFieldAccessInstructions
+        with l0.SimpleTypeLevelInvokeInstructions
+        with l0.TypeLevelDynamicLoads
+        with l1.DefaultIntegerRangeValues // <----- The one we are going to test
+        with l0.TypeLevelPrimitiveValuesConversions
+        with l0.TypeLevelLongValuesShiftOperators
+        with DefaultHandlingOfMethodResults
+        with IgnoreSynchronization
+        with PredefinedClassHierarchy
+        with RecordReturnedValue

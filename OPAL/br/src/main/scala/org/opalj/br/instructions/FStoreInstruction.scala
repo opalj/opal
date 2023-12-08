@@ -22,5 +22,5 @@ object FStoreInstruction {
 
 trait ConstantIndexFStoreInstruction
     extends FStoreInstruction
-    with ImplicitLocalVariableIndex
-    with InstructionMetaInformation
+        with ImplicitLocalVariableIndex
+        with InstructionMetaInformation

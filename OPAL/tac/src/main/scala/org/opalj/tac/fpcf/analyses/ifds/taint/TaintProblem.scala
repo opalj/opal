@@ -10,10 +10,10 @@ import org.opalj.br.ObjectType
 import org.opalj.ifds.AbstractIFDSFact
 import org.opalj.ifds.AbstractIFDSNullFact
 import org.opalj.ifds.Callable
-import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem.V
 import org.opalj.tac.Assignment
 import org.opalj.tac.Expr
 import org.opalj.tac.Stmt
+import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem.V
 
 trait TaintFact extends AbstractIFDSFact
 
@@ -107,12 +107,12 @@ object TaintProblem {
      * @return Some int, if this analysis is sure that `expression` always evaluates to the same int
      *         constant, None otherwise.
      */
-    def getIntConstant(expression: Expr[V], code: Array[Stmt[V]]): Option[Int] = {
+    def getIntConstant(expression: Expr[V], code: Array[Stmt[V]]): Option[Int] =
         if (expression.isIntConst) Some(expression.asIntConst.value)
         else if (expression.isVar) {
-            val definedByIterator = expression.asVar.definedBy.iterator
+            val definedByIterator        = expression.asVar.definedBy.iterator
             var allDefinedByWereConstant = true
-            var result = scala.collection.mutable.Seq.empty[Int]
+            var result                   = scala.collection.mutable.Seq.empty[Int]
             while (definedByIterator.hasNext && allDefinedByWereConstant) {
                 val definedBy = definedByIterator.next()
                 if (definedBy >= 0) {
@@ -122,9 +122,7 @@ object TaintProblem {
                     else allDefinedByWereConstant = false
                 } else allDefinedByWereConstant = false
             }
-            if (allDefinedByWereConstant && result.tail.forall(_ == result.head))
-                Some(result.head)
+            if (allDefinedByWereConstant && result.tail.forall(_ == result.head)) Some(result.head)
             else None
         } else None
-    }
 }

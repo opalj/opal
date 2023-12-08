@@ -12,8 +12,8 @@ package reader
  */
 trait Java8LibraryFramework
     extends Java7LibraryFramework
-    with MethodParameters_attributeBinding
-    with TypeAnnotationAttributesBinding
+        with MethodParameters_attributeBinding
+        with TypeAnnotationAttributesBinding
 
 object Java8LibraryFramework extends Java8LibraryFramework {
 

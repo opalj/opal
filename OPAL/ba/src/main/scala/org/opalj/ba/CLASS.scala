@@ -2,13 +2,13 @@
 package org.opalj
 package ba
 
-import org.opalj.collection.immutable.UShortPair
-import org.opalj.br.MethodSignature
-import org.opalj.br.ClassHierarchy
-import org.opalj.br.ObjectType
-import org.opalj.br.MethodTemplate
-
 import scala.collection.immutable.ArraySeq
+
+import org.opalj.br.ClassHierarchy
+import org.opalj.br.MethodSignature
+import org.opalj.br.MethodTemplate
+import org.opalj.br.ObjectType
+import org.opalj.collection.immutable.UShortPair
 
 /**
  * Builder for [[org.opalj.br.ClassFile]] objects.
@@ -24,8 +24,7 @@ class CLASS[T](
         interfaceTypes:  ArraySeq[String],
         fields:          FIELDS,
         methods:         METHODS[T],
-        attributes:      ArraySeq[br.ClassFileAttributeBuilder]
-) {
+        attributes: ArraySeq[br.ClassFileAttributeBuilder]) {
 
     /**
      * Builds the [[org.opalj.br.ClassFile]] given the current information.
@@ -40,30 +39,27 @@ class CLASS[T](
      * it is necessary that a class hierarchy is given which is '''complete'''; ''the default one
      * is not sufficient for any practical purposes''.
      *
-     *
      * @param classHierarchy The project's class hierarchy. Required if and only if stack map
      *                       table attributes need to be automatically computed.
      */
     def toBR(
         implicit
-        classHierarchy: ClassHierarchy = br.ClassHierarchy.PreInitializedClassHierarchy
-    ): (br.ClassFile, Map[br.Method, T]) = {
+        classHierarchy: ClassHierarchy = br.ClassHierarchy.PreInitializedClassHierarchy)
+        : (br.ClassFile, Map[br.Method, T]) = {
 
-        val accessFlags = accessModifiers.accessFlags
-        val thisType: ObjectType = br.ObjectType(this.thisType)
-        val superclassType: Option[ObjectType] = this.superclassType.map(br.ObjectType.apply)
+        val accessFlags                          = accessModifiers.accessFlags
+        val thisType: ObjectType                 = br.ObjectType(this.thisType)
+        val superclassType: Option[ObjectType]   = this.superclassType.map(br.ObjectType.apply)
         val interfaceTypes: ArraySeq[ObjectType] = this.interfaceTypes.map[br.ObjectType](br.ObjectType.apply)
-        val brFields = fields.result()
+        val brFields                             = fields.result()
 
-        val brAnnotatedMethods: ArraySeq[(br.MethodTemplate, Option[T])] = {
-            methods.result(version, thisType)
-        }
+        val brAnnotatedMethods: ArraySeq[(br.MethodTemplate, Option[T])] = methods.result(version, thisType)
         val annotationsMap: Map[MethodSignature, Option[T]] =
             /*
             Map.empty ++
                 brAnnotatedMethods.iterator.map[(MethodSignature, Option[T])](mt =>
                     { val (m, t) = mt; (m.signature, t) })
-            */
+             */
             brAnnotatedMethods.foldLeft(Map.empty[MethodSignature, Option[T]]) { (map, mt) =>
                 val (m, t) = mt
                 map + ((m.signature, t))
@@ -73,21 +69,24 @@ class CLASS[T](
 
         var brMethods = brAnnotatedMethods.map[MethodTemplate](m => m._1)
         if (!(
-            bi.ACC_INTERFACE.isSet(accessFlags) ||
-            brMethods.exists(_.isConstructor) ||
-            // If "only" the following partial condition holds,
-            // then the class file will be invalid; we can't
-            // generate a default constructor, because we don't
-            // know the target!
-            superclassType.isEmpty
-        )) {
+                bi.ACC_INTERFACE.isSet(accessFlags) ||
+                    brMethods.exists(_.isConstructor) ||
+                    // If "only" the following partial condition holds,
+                    // then the class file will be invalid; we can't
+                    // generate a default constructor, because we don't
+                    // know the target!
+                    superclassType.isEmpty
+            )) {
             brMethods :+= br.Method.defaultConstructor(superclassType.get)
         }
 
         val attributes = this.attributes.map[br.Attribute] { attributeBuilder =>
             attributeBuilder(
                 version,
-                accessFlags, thisType, superclassType, interfaceTypes,
+                accessFlags,
+                thisType,
+                superclassType,
+                interfaceTypes,
                 brFields,
                 brMethods
             )
@@ -105,13 +104,12 @@ class CLASS[T](
             attributes
         )
 
-        val brAnnotations: Seq[(br.Method, T)] =
-            for {
-                m <- classFile.methods
-                Some(a) <- annotationsMap.get(m.signature).toSeq
-            } yield {
-                (m, a: T @unchecked)
-            }
+        val brAnnotations: Seq[(br.Method, T)] = for {
+            m       <- classFile.methods
+            Some(a) <- annotationsMap.get(m.signature).toSeq
+        } yield {
+            (m, a: T @unchecked)
+        }
         val brAnnotationsMap = brAnnotations.toMap
 
         // if (annotationsMap.nonEmpty)
@@ -127,8 +125,8 @@ class CLASS[T](
      */
     def toDA(
         implicit
-        classHierarchy: ClassHierarchy = br.ClassHierarchy.PreInitializedClassHierarchy
-    ): (da.ClassFile, Map[br.Method, T]) = {
+        classHierarchy: ClassHierarchy = br.ClassHierarchy.PreInitializedClassHierarchy)
+        : (da.ClassFile, Map[br.Method, T]) = {
         val (brClassFile, annotations) = toBR(classHierarchy)
         (ba.toDA(brClassFile), annotations)
     }
@@ -144,21 +142,22 @@ object CLASS {
     final val DefaultVersion = UShortPair(DefaultMinorVersion, DefaultMajorVersion)
 
     def apply[T](
-        version:         UShortPair                             = CLASS.DefaultVersion,
-        accessModifiers: AccessModifier                         = SUPER,
+        version:         UShortPair = CLASS.DefaultVersion,
+        accessModifiers: AccessModifier = SUPER,
         thisType:        String,
-        superclassType:  Option[String]                         = Some("java/lang/Object"),
-        interfaceTypes:  ArraySeq[String]                       = ArraySeq.empty,
-        fields:          FIELDS                                 = FIELDS(),
-        methods:         METHODS[T]                             = METHODS[T](),
-        attributes:      ArraySeq[br.ClassFileAttributeBuilder] = ArraySeq.empty
-    ): CLASS[T] = {
-        new CLASS(
-            version, accessModifiers,
-            thisType, superclassType, interfaceTypes,
-            fields, methods,
-            attributes
-        )
-    }
+        superclassType:  Option[String] = Some("java/lang/Object"),
+        interfaceTypes:  ArraySeq[String] = ArraySeq.empty,
+        fields:          FIELDS = FIELDS(),
+        methods:         METHODS[T] = METHODS[T](),
+        attributes:      ArraySeq[br.ClassFileAttributeBuilder] = ArraySeq.empty): CLASS[T] = new CLASS(
+        version,
+        accessModifiers,
+        thisType,
+        superclassType,
+        interfaceTypes,
+        fields,
+        methods,
+        attributes
+    )
 
 }

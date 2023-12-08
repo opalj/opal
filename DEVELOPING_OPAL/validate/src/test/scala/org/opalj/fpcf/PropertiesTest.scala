@@ -5,26 +5,13 @@ package fpcf
 import java.io.File
 import java.net.URL
 
-import com.typesafe.config.Config
-import com.typesafe.config.ConfigValueFactory
-
 import org.opalj.bi.reader.ClassFileReader
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.matchers.should.Matchers
-
-import org.opalj.log.LogContext
-import org.opalj.util.ScalaMajorVersion
-import org.opalj.fpcf.properties.PropertyMatcher
-import org.opalj.fpcf.seq.PKESequentialPropertyStore
-import org.opalj.bytecode.RTJar
-import org.opalj.br.DefinedMethod
-import org.opalj.br.analyses.VirtualFormalParameter
-import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.Annotation
 import org.opalj.br.AnnotationLike
 import org.opalj.br.Annotations
 import org.opalj.br.ClassFile
 import org.opalj.br.ClassValue
+import org.opalj.br.DefinedMethod
 import org.opalj.br.ElementValuePair
 import org.opalj.br.Field
 import org.opalj.br.Method
@@ -35,6 +22,8 @@ import org.opalj.br.Type
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.VirtualFormalParameter
+import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
@@ -42,8 +31,18 @@ import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.SimpleContextsKey
+import org.opalj.bytecode.RTJar
+import org.opalj.fpcf.properties.PropertyMatcher
+import org.opalj.fpcf.seq.PKESequentialPropertyStore
+import org.opalj.log.LogContext
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.common.DefinitionSitesKey
+import org.opalj.util.ScalaMajorVersion
+
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigValueFactory
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
 /**
  * Framework to test if the properties specified in the test project (the classes in the
@@ -70,7 +69,7 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
         val classFileReader = Project.JavaClassFileReader()
         import classFileReader.ClassFiles
 
-        val fixtureClassFiles = getFixtureClassFiles(classFileReader) //AllClassFiles(List(annotationFiles, fixtureFiles))
+        val fixtureClassFiles = getFixtureClassFiles(classFileReader) // AllClassFiles(List(annotationFiles, fixtureFiles))
         if (fixtureClassFiles.isEmpty) fail(s"no class files at $testFilePath")
 
         val projectClassFiles = fixtureClassFiles.filter { cfSrc =>
@@ -121,21 +120,21 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
 
     def createConfig(): Config = {
         val configForEntryPoints = BaseConfig.withValue(
-            InitialEntryPointsKey.ConfigKeyPrefix+"analysis",
+            InitialEntryPointsKey.ConfigKeyPrefix + "analysis",
             ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.AllEntryPointsFinder")
         ).withValue(
-                InitialEntryPointsKey.ConfigKeyPrefix+"AllEntryPointsFinder.projectMethodsOnly",
-                ConfigValueFactory.fromAnyRef(true)
-            )
+            InitialEntryPointsKey.ConfigKeyPrefix + "AllEntryPointsFinder.projectMethodsOnly",
+            ConfigValueFactory.fromAnyRef(true)
+        )
 
         configForEntryPoints.withValue(
-            InitialInstantiatedTypesKey.ConfigKeyPrefix+"analysis",
+            InitialInstantiatedTypesKey.ConfigKeyPrefix + "analysis",
             ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.AllInstantiatedTypesFinder")
         ).withValue(
-                InitialInstantiatedTypesKey.ConfigKeyPrefix+
-                    "AllInstantiatedTypesFinder.projectClassesOnly",
-                ConfigValueFactory.fromAnyRef(true)
-            )
+            InitialInstantiatedTypesKey.ConfigKeyPrefix +
+                "AllInstantiatedTypesFinder.projectClassesOnly",
+            ConfigValueFactory.fromAnyRef(true)
+        )
     }
 
     final val PropertyValidatorType = ObjectType("org/opalj/fpcf/properties/PropertyValidator")
@@ -152,23 +151,19 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
     def getPropertyMatcher(
         p:             Project[URL],
         propertyKinds: Set[String]
-    )(
-        annotation: AnnotationLike
-    ): Option[(AnnotationLike, String, Type /* type of the matcher */ )] = {
-        if (!annotation.annotationType.isObjectType)
-            return None;
+      )(annotation: AnnotationLike): Option[(AnnotationLike, String, Type /* type of the matcher */ )] = {
+        if (!annotation.annotationType.isObjectType) return None;
 
         // Get the PropertyValidator meta-annotation of the given entity's annotation:
         val annotationClassFile = p.classFile(annotation.annotationType.asObjectType).get
         annotationClassFile.runtimeInvisibleAnnotations.collectFirst {
             case Annotation(
-                PropertyValidatorType,
-                Seq(
-                    ElementValuePair("key", StringValue(propertyKind)),
-                    ElementValuePair("validator", ClassValue(propertyMatcherType))
+                    PropertyValidatorType,
+                    Seq(
+                        ElementValuePair("key", StringValue(propertyKind)),
+                        ElementValuePair("validator", ClassValue(propertyMatcherType))
                     )
-                ) if propertyKinds.contains(propertyKind) =>
-                (annotation, propertyKind, propertyMatcherType)
+                ) if propertyKinds.contains(propertyKind) => (annotation, propertyKind, propertyMatcherType)
         }
     }
 
@@ -182,28 +177,28 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
      *         to be tested.
      */
     def validateProperties(
-        context:       TestContext,
-        eas:           IterableOnce[(Entity, /*the processed annotation*/ String => String /* a String identifying the entity */ , Iterable[AnnotationLike])],
-        propertyKinds: Set[String]
-    ): Unit = {
+        context: TestContext,
+        eas: IterableOnce[(
+            Entity, /*the processed annotation*/ String => String /* a String identifying the entity */,
+            Iterable[AnnotationLike])],
+        propertyKinds: Set[String]): Unit = {
         val TestContext(p: Project[URL], ps: PropertyStore, as: List[FPCFAnalysis]) = context
-        val ats =
-            as.map(a => ObjectType(a.getClass.getName.replace('.', '/'))).toSet
+        val ats                                                                     = as.map(a => ObjectType(a.getClass.getName.replace('.', '/'))).toSet
 
         for {
-            (e, entityIdentifier, annotations) <- eas.iterator
-            augmentedAnnotations = annotations.flatMap(getPropertyMatcher(p, propertyKinds))
+            (e, entityIdentifier, annotations)      <- eas.iterator
+            augmentedAnnotations                     = annotations.flatMap(getPropertyMatcher(p, propertyKinds))
             (annotation, propertyKind, matcherType) <- augmentedAnnotations
         } {
-            val annotationTypeName = annotation.annotationType.asObjectType.simpleName
-            val matcherClass = Class.forName(matcherType.toJava)
+            val annotationTypeName      = annotation.annotationType.asObjectType.simpleName
+            val matcherClass            = Class.forName(matcherType.toJava)
             val matcherClassConstructor = matcherClass.getDeclaredConstructor()
-            val matcher = matcherClassConstructor.newInstance().asInstanceOf[PropertyMatcher]
+            val matcher                 = matcherClassConstructor.newInstance().asInstanceOf[PropertyMatcher]
             if (matcher.isRelevant(p, ats, e, annotation)) {
 
                 it(entityIdentifier(s"$annotationTypeName")) {
-                    info(s"validator: "+matcherClass.toString.substring(32))
-                    val epss = ps.properties(e).toIndexedSeq
+                    info(s"validator: " + matcherClass.toString.substring(32))
+                    val epss        = ps.properties(e).toIndexedSeq
                     val nonFinalPSs = epss.filter(_.isRefinable)
                     assert(
                         nonFinalPSs.isEmpty,
@@ -216,11 +211,11 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
                             val m = propertiesAsStrings.mkString(
                                 "actual: ",
                                 ", ",
-                                "\nexpectation: "+error
+                                "\nexpectation: " + error
                             )
                             fail(m)
                         case None   => /* OK */
-                        case result => fail("matcher returned unexpected result: "+result)
+                        case result => fail("matcher returned unexpected result: " + result)
                     }
                 }
 
@@ -233,38 +228,31 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
     //
 
     def fieldsWithAnnotations(
-        recreatedFixtureProject: SomeProject
-    ): Iterable[(Field, String => String, Annotations)] = {
-        for {
-            f <- recreatedFixtureProject.allFields // cannot be parallelized; "it" is not thread safe
-            annotations = f.runtimeInvisibleAnnotations
-            if annotations.nonEmpty
-        } yield {
-            (f, (a: String) => f.toJava(s"@$a").substring(24), annotations)
-        }
+        recreatedFixtureProject: SomeProject): Iterable[(Field, String => String, Annotations)] = for {
+        f          <- recreatedFixtureProject.allFields // cannot be parallelized; "it" is not thread safe
+        annotations = f.runtimeInvisibleAnnotations
+        if annotations.nonEmpty
+    } yield {
+        (f, (a: String) => f.toJava(s"@$a").substring(24), annotations)
     }
 
     def methodsWithAnnotations(
-        recreatedFixtureProject: SomeProject
-    ): Iterable[(Method, String => String, Annotations)] = {
-        for {
-            // cannot be parallelized; "it" is not thread safe
-            m <- recreatedFixtureProject.allMethods
-            annotations = m.runtimeInvisibleAnnotations
-            if annotations.nonEmpty
-        } yield {
-            (m, (a: String) => m.toJava(s"@$a").substring(24), annotations)
-        }
+        recreatedFixtureProject: SomeProject): Iterable[(Method, String => String, Annotations)] = for {
+        // cannot be parallelized; "it" is not thread safe
+        m          <- recreatedFixtureProject.allMethods
+        annotations = m.runtimeInvisibleAnnotations
+        if annotations.nonEmpty
+    } yield {
+        (m, (a: String) => m.toJava(s"@$a").substring(24), annotations)
     }
 
     def declaredMethodsWithAnnotations(
-        recreatedFixtureProject: SomeProject
-    ): Iterable[(DefinedMethod, String => String, Annotations)] = {
+        recreatedFixtureProject: SomeProject): Iterable[(DefinedMethod, String => String, Annotations)] = {
         val declaredMethods = recreatedFixtureProject.get(DeclaredMethodsKey)
         for {
             // cannot be parallelized; "it" is not thread safe
-            m <- recreatedFixtureProject.allMethods
-            dm = declaredMethods(m)
+            m          <- recreatedFixtureProject.allMethods
+            dm          = declaredMethods(m)
             annotations = m.runtimeInvisibleAnnotations
             if annotations.nonEmpty
         } yield {
@@ -277,73 +265,68 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
     }
 
     def contextsWithAnnotations(
-        recreatedFixtureProject: SomeProject
-    ): Iterable[(Context, String => String, Annotations)] = {
+        recreatedFixtureProject: SomeProject): Iterable[(Context, String => String, Annotations)] = {
         val simpleContexts = recreatedFixtureProject.get(SimpleContextsKey)
-        declaredMethodsWithAnnotations(recreatedFixtureProject).map(
-            test => (simpleContexts(test._1), test._2, test._3)
-        )
+        declaredMethodsWithAnnotations(recreatedFixtureProject).map(test => (simpleContexts(test._1), test._2, test._3))
     }
 
     def classFilesWithAnnotations(
-        recreatedFixtureProject: SomeProject
-    ): Iterable[(ClassFile, String => String, Annotations)] = {
-        for {
-            // cannot be parallelized; "it" is not thread safe
-            cf <- recreatedFixtureProject.allClassFiles
-            annotations = cf.runtimeInvisibleAnnotations
-            if annotations.nonEmpty
-        } yield {
-            (cf, (a: String) => cf.thisType.toJava.substring(24) + s"@$a", annotations)
-        }
+        recreatedFixtureProject: SomeProject): Iterable[(ClassFile, String => String, Annotations)] = for {
+        // cannot be parallelized; "it" is not thread safe
+        cf         <- recreatedFixtureProject.allClassFiles
+        annotations = cf.runtimeInvisibleAnnotations
+        if annotations.nonEmpty
+    } yield {
+        (cf, (a: String) => cf.thisType.toJava.substring(24) + s"@$a", annotations)
     }
 
     // there can't be any annotations of the implicit "this" parameter...
     def explicitFormalParametersWithAnnotations(
-        recreatedFixtureProject: SomeProject
-    ): Iterable[(VirtualFormalParameter, String => String, Annotations)] = {
+        recreatedFixtureProject: SomeProject): Iterable[(VirtualFormalParameter, String => String, Annotations)] = {
         val formalParameters = recreatedFixtureProject.get(VirtualFormalParametersKey)
-        val declaredMethods = recreatedFixtureProject.get(DeclaredMethodsKey)
+        val declaredMethods  = recreatedFixtureProject.get(DeclaredMethodsKey)
         for {
             // cannot be parallelized; "it" is not thread safe
-            m <- recreatedFixtureProject.allMethods
+            m                   <- recreatedFixtureProject.allMethods
             parameterAnnotations = m.runtimeInvisibleParameterAnnotations
-            i <- parameterAnnotations.indices
-            annotations = parameterAnnotations(i)
+            i                   <- parameterAnnotations.indices
+            annotations          = parameterAnnotations(i)
             if annotations.nonEmpty
             dm = declaredMethods(m)
         } yield {
             val fp = formalParameters(dm)(i + 1)
             (
                 fp,
-                (a: String) => s"VirtualFormalParameter: (origin ${fp.origin} in "+
-                    s"${dm.declaringClassType}#${m.toJava(s"@$a")}",
+                (a: String) =>
+                    s"VirtualFormalParameter: (origin ${fp.origin} in " +
+                        s"${dm.declaringClassType}#${m.toJava(s"@$a")}",
                 annotations
             )
         }
     }
 
     def allocationSitesWithAnnotations(
-        recreatedFixtureProject: SomeProject
-    ): Iterable[(DefinitionSite, String => String, Iterable[AnnotationLike])] = {
+        recreatedFixtureProject: SomeProject)
+        : Iterable[(DefinitionSite, String => String, Iterable[AnnotationLike])] = {
         val allocationSites = recreatedFixtureProject.get(DefinitionSitesKey).getAllocationSites
         for {
-            as <- allocationSites
-            m = as.method
-            pc = as.pc
+            as  <- allocationSites
+            m    = as.method
+            pc   = as.pc
             code = m.body.get
             annotations = code.runtimeInvisibleTypeAnnotations filter { ta =>
-                ta.target match {
-                    case TAOfNew(`pc`) => true
-                    case _             => false
-                }
-            }
+                              ta.target match {
+                                  case TAOfNew(`pc`) => true
+                                  case _             => false
+                              }
+                          }
             if annotations.nonEmpty
         } yield {
             (
                 as,
-                (a: String) => s"AllocationSite: (pc ${as.pc} in "+
-                    s"${m.toJava(s"@$a").substring(24)})",
+                (a: String) =>
+                    s"AllocationSite: (pc ${as.pc} in " +
+                        s"${m.toJava(s"@$a").substring(24)})",
                 annotations
             )
         }
@@ -352,18 +335,12 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
     def init(p: Project[URL]): Unit = {}
 
     def executeAnalyses(
-        analysisRunners: ComputationSpecification[FPCFAnalysis]*
-    ): TestContext = {
-        executeAnalyses(analysisRunners)
-    }
+        analysisRunners: ComputationSpecification[FPCFAnalysis]*): TestContext = executeAnalyses(analysisRunners)
 
     def executeAnalyses(
-        analysisRunners: Iterable[ComputationSpecification[FPCFAnalysis]]
-    ): TestContext = {
+        analysisRunners: Iterable[ComputationSpecification[FPCFAnalysis]]): TestContext =
         try {
-            val p = FixtureProject.recreate { piKeyUnidueId =>
-                piKeyUnidueId != PropertyStoreKey.uniqueId
-            } // to ensure that this project is not "polluted"
+            val p                               = FixtureProject.recreate { piKeyUnidueId => piKeyUnidueId != PropertyStoreKey.uniqueId } // to ensure that this project is not "polluted"
             implicit val logContext: LogContext = p.logContext
             init(p)
 
@@ -377,7 +354,7 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
                     new RecordAllPropertyStoreTracer,
                     context.iterator.map(_.asTuple).toMap
                 )
-                */
+                     */
                     val ps = PKESequentialPropertyStore(context: _*)
                     ps
                 }
@@ -393,11 +370,9 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
                 t.getSuppressed.foreach(e => e.printStackTrace())
                 throw t;
         }
-    }
 
     private[this] def getFixtureClassFiles(
-        classFileReader: ClassFileReader
-    ): Iterable[(classFileReader.ClassFile, URL)] = {
+        classFileReader: ClassFileReader): Iterable[(classFileReader.ClassFile, URL)] = {
         import classFileReader.AllClassFiles
 
         var classFilePaths: List[File] = List.empty
@@ -419,5 +394,4 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
 case class TestContext(
         project:       Project[URL],
         propertyStore: PropertyStore,
-        analyses:      List[FPCFAnalysis]
-)
+        analyses:      List[FPCFAnalysis])

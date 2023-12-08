@@ -2,11 +2,12 @@
 package org.opalj
 
 import scala.reflect.ClassTag
-import org.opalj.collection.IntIterator
-import org.opalj.collection.mutable.IntArrayStack
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
+
+import org.opalj.collection.IntIterator
+import org.opalj.collection.mutable.IntArrayStack
 
 /**
  * This package defines graph algorithms as well as factory methods to describe and compute graphs
@@ -50,8 +51,8 @@ package object graphs {
         val columns = (maxNodeId + 1) * 2
         /* <=> nodes + (',' OR '\n') */
         val rows = maxNodeId + 1
-        val g = new Array[Byte](rows * columns) // pre-allocate final array for CSV data
-        var r = 0
+        val g    = new Array[Byte](rows * columns) // pre-allocate final array for CSV data
+        var r    = 0
         while (r <= maxNodeId) {
             val s = successors(r)
             var c = 0
@@ -75,18 +76,17 @@ package object graphs {
      */
     def toDot(
         rootNodes: Iterable[_ <: Node],
-        dir:       String              = "forward",
-        ranksep:   String              = "0.8",
-        fontname:  String              = "Helvetica",
-        rankdir:   String              = "TB"
-    ): String = {
+        dir:       String = "forward",
+        ranksep:   String = "0.8",
+        fontname:  String = "Helvetica",
+        rankdir:   String = "TB"): String = {
         var nodesToProcess = Set.empty[Node] ++ rootNodes
         var processedNodes = Set.empty[Node]
 
-        var s = "digraph G {\n"+
-            s"\tdir=$dir;\n"+
-            s"\tranksep=$ranksep;\n"+
-            s"\trankdir=$rankdir;\n"+
+        var s = "digraph G {\n" +
+            s"\tdir=$dir;\n" +
+            s"\tranksep=$ranksep;\n" +
+            s"\trankdir=$rankdir;\n" +
             s"\tnode [fontname=$fontname,shape=rectangle];\n"
 
         while (nodesToProcess.nonEmpty) {
@@ -101,14 +101,12 @@ package object graphs {
                     "label" -> nextNode.toHRR.get.replace("\"", "\\\"").replace("\n", "\\l")
                 )
                 s +=
-                    "\t"+nextNode.nodeId +
-                    visualProperties.map(e => "\""+e._1+"\"=\""+e._2+"\"").
-                    mkString("[", ",", "];\n")
+                    "\t" + nextNode.nodeId +
+                        visualProperties.map(e => "\"" + e._1 + "\"=\"" + e._2 + "\"").mkString("[", ",", "];\n")
             }
 
             val f: (Node => Unit) = sn => {
-                if (nextNode.toHRR.isDefined)
-                    s += "\t"+nextNode.nodeId+" -> "+sn.nodeId+" [dir="+dir+"];\n"
+                if (nextNode.toHRR.isDefined) s += "\t" + nextNode.nodeId + " -> " + sn.nodeId + " [dir=" + dir + "];\n"
 
                 if (!(processedNodes contains sn)) {
                     nodesToProcess += sn
@@ -141,17 +139,18 @@ package object graphs {
             "setup",
             "initialzing JavaScript engine for rendering dot graphics"
         )(GlobalLogContext)
-        val engineManager = new ScriptEngineManager()
+        val engineManager        = new ScriptEngineManager()
         val engine: ScriptEngine = engineManager.getEngineByName("nashorn")
-        var visJS: InputStream = null
-        val invocable: Invocable = try {
-            visJS = this.getClass.getResourceAsStream("viz-lite.js")
-            val reader = new BufferedReader(new InputStreamReader(visJS))
-            engine.eval(reader)
-            engine.asInstanceOf[Invocable]
-        } finally {
-            if (visJS ne null) visJS.close()
-        }
+        var visJS: InputStream   = null
+        val invocable: Invocable =
+            try {
+                visJS = this.getClass.getResourceAsStream("viz-lite.js")
+                val reader = new BufferedReader(new InputStreamReader(visJS))
+                engine.eval(reader)
+                engine.asInstanceOf[Invocable]
+            } finally {
+                if (visJS ne null) visJS.close()
+            }
         OPALLogger.info(
             "setup",
             "finished initialization of JavaScript engine for rendering dot graphics"
@@ -166,9 +165,8 @@ package object graphs {
     //
     // ---------------------------------------------------------------------------------------
 
-    final def closedSCCs[N >: Null <: AnyRef: ClassTag](g: Graph[N]): List[Iterable[N]] = {
+    final def closedSCCs[N >: Null <: AnyRef: ClassTag](g: Graph[N]): List[Iterable[N]] =
         closedSCCs(g.vertices, g.asIterable)
-    }
 
     /**
      * Identifies closed strongly connected components in directed (multi-)graphs.
@@ -191,19 +189,19 @@ package object graphs {
     def closedSCCs[N >: Null <: AnyRef: ClassTag](
         ns: Iterable[N],
         es: N => Iterable[N] // TODO Improve(?) N => Iterator[N]
-    ): List[Iterable[N]] = {
+      ): List[Iterable[N]] = {
 
         val nDFSNums = new it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap[N]()
         def setDFSNum(n: N, i: Int): Unit = nDFSNums.put(n, i)
         def hasDFSNum(n: N): Boolean = nDFSNums.containsKey(n)
-        def dfsNum(n: N): Int = nDFSNums.getInt(n)
+        def dfsNum(n:    N): Int = nDFSNums.getInt(n)
 
         // Core Idea: perform depth-first search
-        val ProcessedNodeNum: Int = -1
+        val ProcessedNodeNum: Int      = -1
         val PathSegmentSeparator: Null = null
 
         val workstack = new mutable.Stack[N](initialSize = 8)
-        val path = new ArrayBuffer[N](initialSize = 16)
+        val path      = new ArrayBuffer[N](initialSize = 16)
 
         var cSCCs = List.empty[Iterable[N]]
 
@@ -243,7 +241,7 @@ package object graphs {
                     // to the current candidate cSCC)
                     val n = workstack.pop()
                     if (path.nonEmpty) {
-                        val nDFSNum = dfsNum(n)
+                        val nDFSNum    = dfsNum(n)
                         val cSCCDFSNum = dfsNum(path.last)
                         assert(cSCCDFSNum != ProcessedNodeNum)
 
@@ -258,7 +256,7 @@ package object graphs {
                             // Test if we are done exploring all paths potentially related to
                             // the cSCC...
                             // ALTERNATIVE CHECK:
-                            //val cSCCandidate = path.iterator.drop(cSCCDFSNum - initialDFSNum)
+                            // val cSCCandidate = path.iterator.drop(cSCCDFSNum - initialDFSNum)
                             if (workstack.isEmpty ||
                                 path.iterator.drop(cSCCDFSNum - initialDFSNum).forall(n =>
                                     // ... for all cSCCandidates
@@ -285,7 +283,7 @@ package object graphs {
                         // We have found a new cycle; we now use the dfs num to mark
                         // all nodes as belonging to the cycle.
                         val startPathIndex = nDFSNum - initialDFSNum // the (start) index of the cycle
-                        var pathIndex = path.length - 1
+                        var pathIndex      = path.length - 1
                         if (dfsNum(path(pathIndex)) != nDFSNum) { // test if the node is already correctly marked
                             while (pathIndex >= startPathIndex) {
                                 setDFSNum(path(pathIndex), nDFSNum)
@@ -358,12 +356,12 @@ package object graphs {
         cSCCId:    (N) => Int
     ): List[Iterable[N]] = {
         /* The following is not a strict requirement, more an expectation (however, (c)sccs
-         * not reachable from a node in ns will not be detected!
+     * not reachable from a node in ns will not be detected!
         assert(
             { val allNodes = ns.toSet; allNodes.forall { n => es(n).forall(allNodes.contains) } },
             "the graph references nodes which are not in the set of all nodes"
         )
-        */
+     */
 
         // The algorithm used to compute the closed scc is loosely inspired by:
         // Information Processing Letters 74 (2000) 107–114
@@ -379,14 +377,14 @@ package object graphs {
         var cSCCs = List.empty[Iterable[N]]
 
         /*
-         * Performs a depth-first search to locate an initial strongly connected component.
-         * If we detect a connected component, we then check for every element belonging to
-         * the connected component whether it also depends on an element which is not a member
-         * of the strongly connected component. If Yes, we continue with the checking of the
-         * other elements. If No, we perform a depth-first search based on the successor of the
-         * node that does not belong to the SCC and try to determine if it is connected to some
-         * previous SCC. If so, we merge all nodes as they belong to the same SCC.
-         */
+     * Performs a depth-first search to locate an initial strongly connected component.
+     * If we detect a connected component, we then check for every element belonging to
+     * the connected component whether it also depends on an element which is not a member
+     * of the strongly connected component. If Yes, we continue with the checking of the
+     * other elements. If No, we perform a depth-first search based on the successor of the
+     * node that does not belong to the SCC and try to determine if it is connected to some
+     * previous SCC. If so, we merge all nodes as they belong to the same SCC.
+     */
         def dfs(initialDFSNum: Int, n: N): Int = {
             if (hasDFSNum(n))
                 return initialDFSNum;
@@ -514,7 +512,7 @@ package object graphs {
 
         cSCCs
     }
-    */
+     */
 
     /**
      * Implementation of Tarjan's algorithm for finding strongly connected components. Compared
@@ -551,66 +549,65 @@ package object graphs {
     def sccs(
         ns:               Int,
         es:               Int => IntIterator,
-        filterSingletons: Boolean            = false
-    ): List[List[Int]] = {
+        filterSingletons: Boolean = false): List[List[Int]] = {
 
         /* TEXTBOOK DESCRIPTION
-        * (cannot handle very large, degenerated graphs due to non-tail recursion)
-        *
-        * algorithm tarjan is
-        * input: graph G = (V, E)
-        * output: set of strongly connected components (sets of vertices)
-        *
-        * index := 0
-        * S := empty array
-        * for each v in V do
-        *   if (v.index is undefined) then strongconnect(v) end if
-        * end for
-        *
-        * function strongconnect(v)
-        *   // Set the depth index for v to the smallest unused index
-        *   v.index := index
-        *   v.lowlink := index
-        *    index := index + 1
-        *    S.push(v)
-        *    v.onStack := true
-        *
-        *    // Consider successors of v
-        *   for each (v, w) in E do
-        *    if (w.index is undefined) then
-        *        // Successor w has not yet been visited; recurse on it
-        *           strongconnect(w)
-        *           v.lowlink  := min(v.lowlink, w.lowlink)
-        *       else if (w.onStack) then
-        *           // Successor w is in stack S and hence in the current SCC
-        *           v.lowlink  := min(v.lowlink, w.lowlink)
-        *       end if
-        *   end for
-        *
-        *   // If v is a root node, pop the stack and generate an SCC
-        *   if (v.lowlink = v.index) then
-        *       start a new strongly connected component
-        *       repeat
-        *           w := S.pop()
-        *           w.onStack := false
-        *           add w to current strongly connected component
-        *       while (w != v)
-        *       output the current strongly connected component
-        *   end if
-        * end function
-        */
+         * (cannot handle very large, degenerated graphs due to non-tail recursion)
+         *
+         * algorithm tarjan is
+         * input: graph G = (V, E)
+         * output: set of strongly connected components (sets of vertices)
+         *
+         * index := 0
+         * S := empty array
+         * for each v in V do
+         *   if (v.index is undefined) then strongconnect(v) end if
+         * end for
+         *
+         * function strongconnect(v)
+         *   // Set the depth index for v to the smallest unused index
+         *   v.index := index
+         *   v.lowlink := index
+         *    index := index + 1
+         *    S.push(v)
+         *    v.onStack := true
+         *
+         *    // Consider successors of v
+         *   for each (v, w) in E do
+         *    if (w.index is undefined) then
+         *        // Successor w has not yet been visited; recurse on it
+         *           strongconnect(w)
+         *           v.lowlink  := min(v.lowlink, w.lowlink)
+         *       else if (w.onStack) then
+         *           // Successor w is in stack S and hence in the current SCC
+         *           v.lowlink  := min(v.lowlink, w.lowlink)
+         *       end if
+         *   end for
+         *
+         *   // If v is a root node, pop the stack and generate an SCC
+         *   if (v.lowlink = v.index) then
+         *       start a new strongly connected component
+         *       repeat
+         *           w := S.pop()
+         *           w.onStack := false
+         *           add w to current strongly connected component
+         *       while (w != v)
+         *       output the current strongly connected component
+         *   end if
+         * end function
+         */
 
         // output data structure
         var sccs: List[List[Int]] = List.empty
 
-        val nIndex = new Array[Int](ns + 1)
+        val nIndex   = new Array[Int](ns + 1)
         val nLowLink = new Array[Int](ns + 1)
         val nOnStack = new Array[Boolean](ns + 1)
 
         // we use the "index == 0" to identify the case that no index has been assigned
         val UndefinedIndex: Int = 0
-        var index: Int = 1
-        val s = new IntArrayStack(Math.max(8, ns / 4))
+        var index: Int          = 1
+        val s                   = new IntArrayStack(Math.max(8, ns / 4))
 
         /* RECURSIVE VERSION (FOLLOWING TEXTBOOK IMPLEMENTATION)
         var n = 0
@@ -645,7 +642,7 @@ package object graphs {
                 sccs :&:= nextSCC
             }
         }
-        */
+         */
 
         var n = 0
         while (n < ns) {
@@ -657,14 +654,14 @@ package object graphs {
                 //              processed successors unless the value is null; "null" is used to
                 //              signal that the node was not yet processed.
 
-                val ws = IntArrayStack(n)
+                val ws           = IntArrayStack(n)
                 val wsSuccessors = mutable.Stack[IntIterator](null)
                 // INVARIANT:
                 // If wsSuccessors(x) is not null then we have to pop the two values which identify
                 // the processed edge; if wsSuccessors is null, the stack just contains the id of
                 // the next node that should be processed.
                 do {
-                    val n = ws.pop()
+                    val n                   = ws.pop()
                     var remainingSuccessors = wsSuccessors.pop()
                     if (remainingSuccessors eq null) {
                         // ... we are processing the node n for the first time
@@ -701,7 +698,7 @@ package object graphs {
                         // ... there are no more successors
                         if (nLowLink(n) == nIndex(n)) {
                             var nextSCC = List.empty[Int]
-                            var w: Int = -1
+                            var w: Int  = -1
                             do {
                                 w = s.pop()
                                 nOnStack(w) = false

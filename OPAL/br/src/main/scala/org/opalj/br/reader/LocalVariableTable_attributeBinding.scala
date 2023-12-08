@@ -3,9 +3,9 @@ package org.opalj
 package br
 package reader
 
-import org.opalj.bi.reader.LocalVariableTable_attributeReader
-
 import scala.reflect.ClassTag
+
+import org.opalj.bi.reader.LocalVariableTable_attributeReader
 
 /**
  * The factory methods to create local variable tables and their entries.
@@ -14,12 +14,12 @@ import scala.reflect.ClassTag
  */
 trait LocalVariableTable_attributeBinding
     extends LocalVariableTable_attributeReader
-    with ConstantPoolBinding
-    with AttributeBinding {
+        with ConstantPoolBinding
+        with AttributeBinding {
 
     type LocalVariableTable_attribute = br.LocalVariableTable
-    type LocalVariableTableEntry = br.LocalVariable
-    override implicit val localVariableTableEntryType: ClassTag[LocalVariableTableEntry] =
+    type LocalVariableTableEntry      = br.LocalVariable
+    implicit override val localVariableTableEntryType: ClassTag[LocalVariableTableEntry] =
         ClassTag(classOf[br.LocalVariable])
 
     override def LocalVariableTableEntry(
@@ -28,25 +28,19 @@ trait LocalVariableTable_attributeBinding
         length:           Int,
         name_index:       Constant_Pool_Index,
         descriptor_index: Constant_Pool_Index,
-        index:            Int
-    ): LocalVariable = {
-        new LocalVariable(
-            start_pc,
-            length,
-            cp(name_index).asString,
-            cp(descriptor_index).asFieldType,
-            index
-        )
-    }
+        index:            Int): LocalVariable = new LocalVariable(
+        start_pc,
+        length,
+        cp(name_index).asString,
+        cp(descriptor_index).asFieldType,
+        index
+    )
 
     override def LocalVariableTable_attribute(
         cp:                   Constant_Pool,
         ap_name_index:        Constant_Pool_Index,
         ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
-        local_variable_table: LocalVariables
-    ): LocalVariableTable =
-        new LocalVariableTable(local_variable_table)
+        local_variable_table: LocalVariables): LocalVariableTable = new LocalVariableTable(local_variable_table)
 
 }
-

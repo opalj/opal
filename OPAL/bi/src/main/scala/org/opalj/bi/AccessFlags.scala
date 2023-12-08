@@ -20,22 +20,18 @@ object AccessFlags {
     /**
      * Returns the names of the access flags set in a respective vector.
      */
-    def toStrings(accessFlags: Int, ctx: AccessFlagsContext): Iterator[String] = {
+    def toStrings(accessFlags: Int, ctx: AccessFlagsContext): Iterator[String] =
         AccessFlagsIterator(accessFlags, ctx) map { accessFlag =>
-            accessFlag.javaName.getOrElse("/*"+accessFlag.toString+"*/")
+            accessFlag.javaName.getOrElse("/*" + accessFlag.toString + "*/")
         }
-    }
 
-    def toString(accessFlags: Int, ctx: AccessFlagsContext): String = {
-        toStrings(accessFlags, ctx).mkString(" ")
-    }
+    def toString(accessFlags: Int, ctx: AccessFlagsContext): String = toStrings(accessFlags, ctx).mkString(" ")
 
     def classFlagsToJava(accessFlags: Int): String = {
         // ACC_PUBLIC,ACC_FINAL,ACC_SUPER,ACC_INTERFACE,ACC_ABSTRACT,
         // ACC_SYNTHETIC,ACC_ANNOTATION,ACC_ENUM,ACC_MODULE
 
-        if (ACC_MODULE.unapply(accessFlags))
-            return "module";
+        if (ACC_MODULE.unapply(accessFlags)) return "module";
 
         var flags = List.empty[String]
 
@@ -51,26 +47,19 @@ object AccessFlags {
             flags ::= "final"
         }
 
-        if (ACC_ABSTRACT.unapply(accessFlags) && !ACC_INTERFACE.unapply(accessFlags))
-            flags ::= "abstract"
+        if (ACC_ABSTRACT.unapply(accessFlags) && !ACC_INTERFACE.unapply(accessFlags)) flags ::= "abstract"
 
         if (ACC_INTERFACE.unapply(accessFlags)) {
-            if (!ACC_ABSTRACT.unapply(accessFlags))
-                flags ::= "/*NOT abstract (specification violation)*/"
+            if (!ACC_ABSTRACT.unapply(accessFlags)) flags ::= "/*NOT abstract (specification violation)*/"
 
-            if (ACC_ANNOTATION.unapply(accessFlags))
-                flags ::= "@interface"
-            else
-                flags ::= "interface"
+            if (ACC_ANNOTATION.unapply(accessFlags)) flags ::= "@interface"
+            else flags ::= "interface"
         }
 
-        if (!ACC_SUPER.unapply(accessFlags) && !ACC_MODULE.unapply(accessFlags))
-            flags ::= "/*super bit NOT set*/"
+        if (!ACC_SUPER.unapply(accessFlags) && !ACC_MODULE.unapply(accessFlags)) flags ::= "/*super bit NOT set*/"
 
-        if (ACC_ENUM.unapply(accessFlags))
-            flags ::= "enum"
-        else if (!ACC_INTERFACE.unapply(accessFlags))
-            flags ::= "class"
+        if (ACC_ENUM.unapply(accessFlags)) flags ::= "enum"
+        else if (!ACC_INTERFACE.unapply(accessFlags)) flags ::= "class"
 
         flags.reverse.mkString(" ")
     }

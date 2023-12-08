@@ -39,15 +39,13 @@ trait AITracer {
      * valid afterwards.
      */
     def continuingInterpretation(
-        code:   Code,
+        code: Code,
         domain: Domain
-    )(
-        initialWorkList:                  List[Int /*PC*/ ],
-        alreadyEvaluatedPCs:              IntArrayStack,
-        operandsArray:                    domain.OperandsArray,
-        localsArray:                      domain.LocalsArray,
-        memoryLayoutBeforeSubroutineCall: List[(Int /*PC*/ , domain.OperandsArray, domain.LocalsArray)]
-    ): Unit
+      )(initialWorkList: List[Int /*PC*/ ],
+        alreadyEvaluatedPCs: IntArrayStack,
+        operandsArray: domain.OperandsArray,
+        localsArray: domain.LocalsArray,
+        memoryLayoutBeforeSubroutineCall: List[(Int /*PC*/, domain.OperandsArray, domain.LocalsArray)]): Unit
 
     /**
      * Called before an instruction is evaluated.
@@ -61,12 +59,10 @@ trait AITracer {
      */
     def instructionEvalution(
         domain: Domain
-    )(
-        pc:          Int,
+      )(pc: Int,
         instruction: Instruction,
-        operands:    domain.Operands,
-        locals:      domain.Locals
-    ): Unit
+        operands: domain.Operands,
+        locals: domain.Locals): Unit
 
     /**
      * Called by the interpreter after an instruction (`currentPC`) was evaluated and
@@ -89,11 +85,9 @@ trait AITracer {
      */
     def flow(
         domain: Domain
-    )(
-        currentPC:                Int,
-        targetPC:                 Int,
-        isExceptionalControlFlow: Boolean
-    ): Unit
+      )(currentPC: Int,
+        targetPC: Int,
+        isExceptionalControlFlow: Boolean): Unit
 
     /**
      * Called by the interpret when a local variable with the given index (`lvIndex`)
@@ -108,10 +102,8 @@ trait AITracer {
      */
     def noFlow(
         domain: Domain
-    )(
-        currentPC: Int,
-        targetPC:  Int
-    ): Unit
+      )(currentPC: Int,
+        targetPC: Int): Unit
 
     /**
      * Called if the instruction with the `targetPC` was already scheduled. I.e., the
@@ -126,12 +118,10 @@ trait AITracer {
      */
     def rescheduled(
         domain: Domain
-    )(
-        sourcePC:                 Int,
-        targetPC:                 Int,
+      )(sourcePC: Int,
+        targetPC: Int,
         isExceptionalControlFlow: Boolean,
-        worklist:                 List[Int /*PC*/ ]
-    ): Unit
+        worklist: List[Int /*PC*/ ]): Unit
 
     /**
      * Called by the abstract interpreter whenever two paths converge and the values
@@ -148,14 +138,12 @@ trait AITracer {
      */
     def join(
         domain: Domain
-    )(
-        pc:            Int,
-        thisOperands:  domain.Operands,
-        thisLocals:    domain.Locals,
+      )(pc: Int,
+        thisOperands: domain.Operands,
+        thisLocals: domain.Locals,
         otherOperands: domain.Operands,
-        otherLocals:   domain.Locals,
-        result:        Update[(domain.Operands, domain.Locals)]
-    ): Unit
+        otherLocals: domain.Locals,
+        result: Update[(domain.Operands, domain.Locals)]): Unit
 
     /**
      * Called before a jump to a subroutine.
@@ -169,12 +157,10 @@ trait AITracer {
      */
     def ret(
         domain: Domain
-    )(
-        pc:              Int,
+      )(pc: Int,
         returnAddressPC: Int,
-        oldWorklist:     List[Int /*PC*/ ],
-        newWorklist:     List[Int /*PC*/ ]
-    ): Unit
+        oldWorklist: List[Int /*PC*/ ],
+        newWorklist: List[Int /*PC*/ ]): Unit
 
     /**
      * Called when the evaluation of a subroutine (JSR/RET) as a whole is completed.
@@ -182,11 +168,9 @@ trait AITracer {
      */
     def returnFromSubroutine(
         domain: Domain
-    )(
-        pc:              Int,
+      )(pc: Int,
         returnAddressPC: Int,
-        subroutinePCs:   List[Int /*PC*/ ]
-    ): Unit
+        subroutinePCs: List[Int /*PC*/ ]): Unit
 
     /**
      * Called when the evaluation of a subroutine terminated abruptly due to an unhandled
@@ -199,15 +183,14 @@ trait AITracer {
      */
     def abruptSubroutineTermination(
         domain: Domain
-    )(
-        details:  String,
-        sourcePC: Int, targetPC: Int,
-        jumpToSubroutineId:         Int,
+      )(details: String,
+        sourcePC: Int,
+        targetPC: Int,
+        jumpToSubroutineId: Int,
         terminatedSubroutinesCount: Int,
-        forceScheduling:            Boolean,
-        oldWorklist:                List[Int /*PC*/ ],
-        newWorklist:                List[Int /*PC*/ ]
-    ): Unit
+        forceScheduling: Boolean,
+        oldWorklist: List[Int /*PC*/ ],
+        newWorklist: List[Int /*PC*/ ]): Unit
 
     /**
      * Called when the analyzed method throws an exception that is not caught within
@@ -216,10 +199,8 @@ trait AITracer {
      */
     def abruptMethodExecution(
         domain: Domain
-    )(
-        pc:        Int,
-        exception: domain.ExceptionValue
-    ): Unit
+      )(pc: Int,
+        exception: domain.ExceptionValue): Unit
 
     /**
      * Called when the abstract interpretation of a method has completed/was
@@ -236,14 +217,12 @@ trait AITracer {
      */
     def establishedConstraint(
         domain: Domain
-    )(
-        pc:          Int,
+      )(pc: Int,
         effectivePC: Int,
-        operands:    domain.Operands,
-        locals:      domain.Locals,
+        operands: domain.Operands,
+        locals: domain.Locals,
         newOperands: domain.Operands,
-        newLocals:   domain.Locals
-    ): Unit
+        newLocals: domain.Locals): Unit
 
     /**
      * Called by the domain if something noteworthy was determined.
@@ -256,8 +235,10 @@ trait AITracer {
      */
     def domainMessage(
         domain: Domain,
-        source: Class[_], typeID: String,
-        pc: Option[Int /*PC*/ ], message: => String // IMPROVE Use IntOption
-    ): Unit
+        source: Class[_],
+        typeID: String,
+        pc: Option[Int /*PC*/ ],
+        message: => String // IMPROVE Use IntOption
+      ): Unit
 
 }

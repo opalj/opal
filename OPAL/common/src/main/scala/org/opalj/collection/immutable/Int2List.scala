@@ -46,11 +46,9 @@ sealed trait Int2List extends Serializable { self =>
     /** Prepends the given value to this list. E.g., `l = 2 +: l`. */
     def +:(v: Int): Int2List
 
-    final override def equals(other: Any): Boolean = {
-        other match {
-            case l: Int2List => equals(l)
-            case _           => false
-        }
+    final override def equals(other: Any): Boolean = other match {
+        case l: Int2List => equals(l)
+        case _           => false
     }
     def equals(that: Int2List): Boolean
 
@@ -74,12 +72,12 @@ object Int2List {
  */
 case object Int2ListEnd extends Int2List {
 
-    override def isEmpty: Boolean = true
+    override def isEmpty: Boolean         = true
     override def isSingletonList: Boolean = false
-    override def nonEmpty: Boolean = false
+    override def nonEmpty: Boolean        = false
 
-    override private[immutable] def h: Int = throw new UnsupportedOperationException
-    override private[immutable] def t: Int = throw new UnsupportedOperationException
+    override private[immutable] def h: Int         = throw new UnsupportedOperationException
+    override private[immutable] def t: Int         = throw new UnsupportedOperationException
     override private[immutable] def rest: Int2List = throw new UnsupportedOperationException
 
     override def foreach[U](f: Int => U): Unit = {}
@@ -99,14 +97,13 @@ case object Int2ListEnd extends Int2List {
  * @author Michael Eichberg
  */
 final case class Int2ListNode(
-        private[immutable] var h:    Int,
-        private[immutable] var t:    Int,
-        private[immutable] var rest: Int2List = Int2ListEnd
-) extends Int2List { list =>
+        private[immutable] var h: Int,
+        private[immutable] var t: Int,
+        private[immutable] var rest: Int2List = Int2ListEnd) extends Int2List { list =>
 
-    override def isEmpty: Boolean = false
+    override def isEmpty: Boolean         = false
     override def isSingletonList: Boolean = h == Int.MinValue && (rest eq Int2ListEnd)
-    override def nonEmpty: Boolean = true
+    override def nonEmpty: Boolean        = true
 
     override def foreach[U](f: Int => U): Unit = {
         if (h != Int.MinValue) f(h)
@@ -119,73 +116,59 @@ final case class Int2ListNode(
         }
     }
 
-    override def forFirstN[U](n: Int)(f: Int => U): Unit = {
-        n match {
-            case 0 =>
-                return ;
-            case 1 =>
-                if (h != Int.MinValue)
-                    f(h)
-                else
-                    f(t)
-                return ;
-            case _ =>
-                // ... n >= 2
-                var i = n - 1 // <= for the second element...
-                if (h != Int.MinValue) { f(h); i -= 1 }
-                f(t)
-                var list: Int2List = rest
-                while (i > 0) {
-                    i -= 2
-                    f(list.h)
-                    if (i >= 0) f(list.t)
-                    list = list.rest
-                }
-        }
-    }
-
-    override def iterator: IntIterator = {
-        new IntIterator {
-            private[this] var currentList: Int2List = list
-            private[this] var head: Boolean = list.h != Int.MinValue
-            def hasNext: Boolean = currentList ne Int2ListEnd
-            def next(): Int = {
-                if (head) {
-                    head = false
-                    currentList.h
-                } else {
-                    head = true
-                    val v = currentList.t
-                    currentList = currentList.rest
-                    v
-                }
+    override def forFirstN[U](n: Int)(f: Int => U): Unit = n match {
+        case 0 => return;
+        case 1 =>
+            if (h != Int.MinValue) f(h)
+            else f(t)
+            return;
+        case _ =>
+            // ... n >= 2
+            var i = n - 1 // <= for the second element...
+            if (h != Int.MinValue) { f(h); i -= 1 }
+            f(t)
+            var list: Int2List = rest
+            while (i > 0) {
+                i -= 2
+                f(list.h)
+                if (i >= 0) f(list.t)
+                list = list.rest
             }
-        }
     }
 
-    override def +:(v: Int): Int2List = {
-        if (h != Int.MinValue)
-            new Int2ListNode(Int.MinValue, v, this)
-        else
-            new Int2ListNode(v, t, this.rest)
-    }
-
-    override def equals(that: Int2List): Boolean = {
-        (that eq this) || {
-            var thisList: Int2List = this
-            var thatList = that
-            while ((thisList ne Int2ListEnd) && (thatList ne Int2ListEnd)) {
-                if (thisList.h != thatList.h || thisList.t != thatList.t)
-                    return false;
-                thisList = thisList.rest
-                thatList = thatList.rest
+    override def iterator: IntIterator = new IntIterator {
+        private[this] var currentList: Int2List = list
+        private[this] var head: Boolean         = list.h != Int.MinValue
+        def hasNext: Boolean                    = currentList ne Int2ListEnd
+        def next(): Int =
+            if (head) {
+                head = false
+                currentList.h
+            } else {
+                head = true
+                val v = currentList.t
+                currentList = currentList.rest
+                v
             }
-            thisList eq thatList //... <=> true iff both lists are empty
+    }
+
+    override def +:(v: Int): Int2List =
+        if (h != Int.MinValue) new Int2ListNode(Int.MinValue, v, this)
+        else new Int2ListNode(v, t, this.rest)
+
+    override def equals(that: Int2List): Boolean = (that eq this) || {
+        var thisList: Int2List = this
+        var thatList           = that
+        while ((thisList ne Int2ListEnd) && (thatList ne Int2ListEnd)) {
+            if (thisList.h != thatList.h || thisList.t != thatList.t) return false;
+            thisList = thisList.rest
+            thatList = thatList.rest
         }
+        thisList eq thatList // ... <=> true iff both lists are empty
     }
 
     override def hashCode(): Int = {
-        var h = 31
+        var h              = 31
         var list: Int2List = this
         while (list ne Int2ListEnd) {
             h = ((h + list.h) * 31 + (list.t)) * 31

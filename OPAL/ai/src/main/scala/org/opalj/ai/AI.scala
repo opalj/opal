@@ -2,27 +2,29 @@
 package org.opalj
 package ai
 
-import scala.language.existentials
 import scala.annotation.switch
-import scala.util.control.ControlThrowable
+import scala.language.existentials
+
 import scala.collection.immutable.List
+import scala.util.control.ControlThrowable
+
+import org.opalj.ai.util.containsInPrefix
+import org.opalj.ai.util.insertBefore
+import org.opalj.ai.util.insertBeforeIfNew
+import org.opalj.ai.util.removeFirstUnless
+import org.opalj.bi.warnMissingLibrary
+import org.opalj.br._
+import org.opalj.br.instructions._
+import org.opalj.bytecode.BytecodeProcessingFailedException
+import org.opalj.collection.immutable.IntIntPair
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.collection.mutable.{Locals => Registers}
+import org.opalj.collection.mutable.IntArrayStack
 import org.opalj.control.foreachNonNullValue
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 import org.opalj.log.Warn
-import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.collection.immutable.IntIntPair
-import org.opalj.collection.mutable.{Locals => Registers}
-import org.opalj.collection.mutable.IntArrayStack
-import org.opalj.bytecode.BytecodeProcessingFailedException
-import org.opalj.bi.warnMissingLibrary
-import org.opalj.br._
-import org.opalj.br.instructions._
-import org.opalj.ai.util.containsInPrefix
-import org.opalj.ai.util.insertBefore
-import org.opalj.ai.util.insertBeforeIfNew
-import org.opalj.ai.util.removeFirstUnless
 
 /**
  * A highly-configurable framework for the (abstract) interpretation of Java bytecode.
@@ -107,7 +109,6 @@ import org.opalj.ai.util.removeFirstUnless
  *         ===Implementation===
  *         When we have a fork, check if all paths...
  *
- *
  * ==Customizing the Abstract Interpretation Framework==
  * Customization of the abstract interpreter is done by creating new subclasses that
  * override the relevant methods (in particular: [[AI#isInterrupted]] and [[AI#tracer]]).
@@ -133,9 +134,8 @@ import org.opalj.ai.util.removeFirstUnless
  * @author Michael Eichberg
  */
 abstract class AI[D <: Domain](
-        final val IdentifyDeadVariables:           Boolean = true,
-        final val RegisterStoreMayThrowExceptions: Boolean = false
-) {
+        final val IdentifyDeadVariables: Boolean = true,
+        final val RegisterStoreMayThrowExceptions: Boolean = false) {
 
     type SomeLocals[V <: d.DomainValue forSome { val d: D }] = Option[IndexedSeq[V]]
 
@@ -186,9 +186,7 @@ abstract class AI[D <: Domain](
      *  @param  theDomain The domain that will be used to perform computations related
      *          to values.
      */
-    def apply(method: Method, theDomain: D): AIResult { val domain: theDomain.type } = {
-        perform(method, theDomain)(None)
-    }
+    def apply(method: Method, theDomain: D): AIResult { val domain: theDomain.type } = perform(method, theDomain)(None)
 
     /**
      * Returns the initial set of operands that will be used for the abstract
@@ -227,9 +225,7 @@ abstract class AI[D <: Domain](
     def initialLocals(
         method: Method,
         domain: D
-    )(
-        someLocals: SomeLocals[domain.DomainValue] = None
-    ): domain.Locals = {
+      )(someLocals: SomeLocals[domain.DomainValue] = None): domain.Locals = {
 
         import domain.DomainValueTag
 
@@ -249,15 +245,15 @@ abstract class AI[D <: Domain](
             // max locals (the former number still has to be larger or equal to the
             // number of parameter values (including "this"))
             val locals = Registers[domain.DomainValue](maxLocals)
-            var i = l.size - 1
+            var i      = l.size - 1
             while (i >= 0) {
                 locals.set(i, l(i))
                 i -= 1
             }
             locals
         }.getOrElse { // there are no locals at all...
-            val code = method.body.get
-            val locals = Registers[domain.DomainValue](code.maxLocals)
+            val code               = method.body.get
+            val locals             = Registers[domain.DomainValue](code.maxLocals)
             var localVariableIndex = 0
 
             // Calculates the initial "PC" associated with a method's parameter.
@@ -286,8 +282,7 @@ abstract class AI[D <: Domain](
             locals
         }
 
-        if (tracer.isDefined)
-            tracer.get.initialLocals(domain)(locals)
+        if (tracer.isDefined) tracer.get.initialLocals(domain)(locals)
 
         locals
     }
@@ -323,14 +318,14 @@ abstract class AI[D <: Domain](
     def perform(
         method:    Method,
         theDomain: D
-    )(
-        someLocals: Option[IndexedSeq[theDomain.DomainValue]] = None
-    ): AIResult { val domain: theDomain.type } = {
+      )(someLocals: Option[IndexedSeq[theDomain.DomainValue]] = None): AIResult { val domain: theDomain.type } = {
         val body = method.body.get
         performInterpretation(
-            body, theDomain
+            body,
+            theDomain
         )(
-            initialOperands(method, theDomain), initialLocals(method, theDomain)(someLocals)
+            initialOperands(method, theDomain),
+            initialLocals(method, theDomain)(someLocals)
         )
     }
 
@@ -339,12 +334,10 @@ abstract class AI[D <: Domain](
      * the given domain and the initial operand stack and initial register assignment.
      */
     def performInterpretation(
-        code:      Code,
-        theDomain: D
-    )(
-        initialOperands: theDomain.Operands,
-        initialLocals:   theDomain.Locals
-    ): AIResult { val domain: theDomain.type } = {
+        code:            Code,
+        theDomain:       D
+      )(initialOperands: theDomain.Operands,
+        initialLocals:   theDomain.Locals): AIResult { val domain: theDomain.type } = {
 
         val codeLength = code.instructions.length
 
@@ -355,30 +348,35 @@ abstract class AI[D <: Domain](
         localsArray(0) = initialLocals
 
         val wl = AI.initialWorkList
-        //val aePCs: List[Int/*PC*/] /*alreadyEvaluated*/ = Nil //
+        // val aePCs: List[Int/*PC*/] /*alreadyEvaluated*/ = Nil //
         val aePCs: IntArrayStack = new IntArrayStack(codeLength * 2) // size is just an initial guess...
         continueInterpretation(code, theDomain)(wl, aePCs, false, operandsArray, localsArray)
     }
 
     def continueInterpretation(
-        code:      Code,
-        theDomain: D
-    )(
-        initialWorkList:          List[Int /*PC*/ ],
+        code:                     Code,
+        theDomain:                D
+      )(initialWorkList:          List[Int /*PC*/ ],
         alreadyEvaluatedPCs:      IntArrayStack,
         subroutinesWereEvaluated: Boolean,
         theOperandsArray:         theDomain.OperandsArray,
-        theLocalsArray:           theDomain.LocalsArray
-    ): AIResult { val domain: theDomain.type } = {
+        theLocalsArray:           theDomain.LocalsArray): AIResult { val domain: theDomain.type } = {
         val (predecessorPCs, finalPCs, cfJoins) = code.predecessorPCs(theDomain.classHierarchy)
-        val liveVariables = code.liveVariables(predecessorPCs, finalPCs, cfJoins)
+        val liveVariables                       = code.liveVariables(predecessorPCs, finalPCs, cfJoins)
         continueInterpretation(
-            code, cfJoins, liveVariables,
+            code,
+            cfJoins,
+            liveVariables,
             theDomain
         )(
-            initialWorkList, alreadyEvaluatedPCs, subroutinesWereEvaluated,
-            theOperandsArray, theLocalsArray,
-            Nil, null, null
+            initialWorkList,
+            alreadyEvaluatedPCs,
+            subroutinesWereEvaluated,
+            theOperandsArray,
+            theLocalsArray,
+            Nil,
+            null,
+            null
         )
     }
 
@@ -390,18 +388,16 @@ abstract class AI[D <: Domain](
      * This method is called before the abstract interpretation is started/continued.
      */
     protected[this] def preInterpretationInitialization(
-        code:          Code,
-        instructions:  Array[Instruction],
-        cfJoins:       IntTrieSet,
-        liveVariables: LiveVariables,
-        theDomain:     D
-    )(
-        theOperandsArray:                    theDomain.OperandsArray,
+        code:                                Code,
+        instructions:                        Array[Instruction],
+        cfJoins:                             IntTrieSet,
+        liveVariables:                       LiveVariables,
+        theDomain:                           D
+      )(theOperandsArray:                    theDomain.OperandsArray,
         theLocalsArray:                      theDomain.LocalsArray,
-        theMemoryLayoutBeforeSubroutineCall: List[(Int /*PC*/ , theDomain.OperandsArray, theDomain.LocalsArray)],
+        theMemoryLayoutBeforeSubroutineCall: List[(Int /*PC*/, theDomain.OperandsArray, theDomain.LocalsArray)],
         theSubroutinesOperandsArray:         theDomain.OperandsArray,
-        theSubroutinesLocalsArray:           theDomain.LocalsArray
-    ): Unit = {
+        theSubroutinesLocalsArray:           theDomain.LocalsArray): Unit = {
         // The following order must not change:
         // (The order is part of the contract of AI.)
         theDomain match {
@@ -413,8 +409,7 @@ abstract class AI[D <: Domain](
             case _                   => /*nothing to do*/
         }
         theDomain match {
-            case d: TheMemoryLayout =>
-                d.setMemoryLayout(
+            case d: TheMemoryLayout => d.setMemoryLayout(
                     theOperandsArray.asInstanceOf[d.OperandsArray],
                     theLocalsArray.asInstanceOf[d.LocalsArray],
                     theMemoryLayoutBeforeSubroutineCall.asInstanceOf[List[(Int, d.OperandsArray, d.LocalsArray)]],
@@ -490,18 +485,18 @@ abstract class AI[D <: Domain](
      *      a subroutine was already analyzed.
      */
     def continueInterpretation(
-        code: Code, cfJoins: IntTrieSet, liveVariables: LiveVariables,
-        theDomain: D
-    )(
-        initialWorkList:                     List[PC],
+        code:                                Code,
+        cfJoins:                             IntTrieSet,
+        liveVariables:                       LiveVariables,
+        theDomain:                           D
+      )(initialWorkList:                     List[PC],
         alreadyEvaluatedPCs:                 IntArrayStack,
         subroutinesWereEvaluated:            Boolean,
         theOperandsArray:                    theDomain.OperandsArray,
         theLocalsArray:                      theDomain.LocalsArray,
-        theMemoryLayoutBeforeSubroutineCall: List[(Int /*PC*/ , theDomain.OperandsArray, theDomain.LocalsArray)],
+        theMemoryLayoutBeforeSubroutineCall: List[(Int /*PC*/, theDomain.OperandsArray, theDomain.LocalsArray)],
         theSubroutinesOperandsArray:         theDomain.OperandsArray,
-        theSubroutinesLocalsArray:           theDomain.LocalsArray
-    ): AIResult { val domain: theDomain.type } = {
+        theSubroutinesLocalsArray:           theDomain.LocalsArray): AIResult { val domain: theDomain.type } = {
 
         assert(
             (theSubroutinesOperandsArray eq null) && (theSubroutinesLocalsArray eq null) ||
@@ -519,8 +514,11 @@ abstract class AI[D <: Domain](
 
         if (tracer.isDefined) {
             tracer.get.continuingInterpretation(code, theDomain)(
-                initialWorkList, alreadyEvaluatedPCs,
-                theOperandsArray, theLocalsArray, theMemoryLayoutBeforeSubroutineCall
+                initialWorkList,
+                alreadyEvaluatedPCs,
+                theOperandsArray,
+                theLocalsArray,
+                theMemoryLayoutBeforeSubroutineCall
             )
         }
 
@@ -562,11 +560,17 @@ abstract class AI[D <: Domain](
         val instructions: Array[Instruction] = code.instructions
 
         preInterpretationInitialization(
-            code, instructions, cfJoins, liveVariables, theDomain
+            code,
+            instructions,
+            cfJoins,
+            liveVariables,
+            theDomain
         )(
-            theOperandsArray, theLocalsArray,
+            theOperandsArray,
+            theLocalsArray,
             theMemoryLayoutBeforeSubroutineCall,
-            theSubroutinesOperandsArray, theSubroutinesLocalsArray
+            theSubroutinesOperandsArray,
+            theSubroutinesLocalsArray
         )
 
         /*
@@ -576,43 +580,53 @@ abstract class AI[D <: Domain](
         type SubroutineMemoryLayouts = List[(PC, theDomain.OperandsArray, theDomain.LocalsArray)]
         // The entire state of the computation is (from the perspective of the AI)
         // encapsulated by the following data-structures:
-        /* 1 */ var operandsArray = theOperandsArray
-        /* 2 */ var localsArray = theLocalsArray
-        /* 3 */ var worklist = initialWorkList
-        /* 4 */ val evaluatedPCs = alreadyEvaluatedPCs
-        /* 5 */ var evaluatedSubroutine = subroutinesWereEvaluated
-        /* 6 */ var memoryLayoutBeforeSubroutineCall: SubroutineMemoryLayouts =
-            theMemoryLayoutBeforeSubroutineCall
-        /* 7 */ var subroutinesOperandsArray = theSubroutinesOperandsArray
-        /* 8 */ var subroutinesLocalsArray = theSubroutinesLocalsArray
+        /* 1 */
+        var operandsArray = theOperandsArray
+        /* 2 */
+        var localsArray = theLocalsArray
+        /* 3 */
+        var worklist = initialWorkList
+        /* 4 */
+        val evaluatedPCs = alreadyEvaluatedPCs
+        /* 5 */
+        var evaluatedSubroutine = subroutinesWereEvaluated
+        /* 6 */
+        var memoryLayoutBeforeSubroutineCall: SubroutineMemoryLayouts = theMemoryLayoutBeforeSubroutineCall
+        /* 7 */
+        var subroutinesOperandsArray = theSubroutinesOperandsArray
+        /* 8 */
+        var subroutinesLocalsArray = theSubroutinesLocalsArray
 
-        def throwInterpretationFailedException(cause: Throwable, pc: Int): Nothing = {
+        def throwInterpretationFailedException(cause: Throwable, pc: Int): Nothing =
             throw InterpretationFailedException(
-                cause, theDomain
+                cause,
+                theDomain
             )(
                 this,
-                pc, cfJoins, worklist, evaluatedPCs,
-                operandsArray, localsArray, memoryLayoutBeforeSubroutineCall
+                pc,
+                cfJoins,
+                worklist,
+                evaluatedPCs,
+                operandsArray,
+                localsArray,
+                memoryLayoutBeforeSubroutineCall
             )
-        }
 
         // Integrates the abstract state related to the execution of the subroutines with the main
         // operands/locals array. The abstract state is the state computed across all executions
         // of the respective subroutines!
-        def integrateSubroutineInformation(): Unit = {
-            if (subroutinesOperandsArray ne null) {
-                foreachNonNullValue(subroutinesOperandsArray) { (pc, value) =>
-                    // It is possible to have a method that only has jsr instructions, but no
-                    // ret instruction(s); e.g. com.sun.mail.imap.IMAPStore compiled with Java 1.4.
-                    // In this case the subroutine and the normal functionality are overlapping.
-                    // In this case, the "normal" operands/locals array already contains the
-                    // combined state.
-                    if (operandsArray(pc) eq null /* && (localsArray(pc) eq null)*/ ) {
-                        val subroutineOperands = subroutinesOperandsArray(pc)
-                        val subroutineLocals = subroutinesLocalsArray(pc)
-                        operandsArray(pc) = subroutineOperands
-                        localsArray(pc) = subroutineLocals
-                    }
+        def integrateSubroutineInformation(): Unit = if (subroutinesOperandsArray ne null) {
+            foreachNonNullValue(subroutinesOperandsArray) { (pc, value) =>
+                // It is possible to have a method that only has jsr instructions, but no
+                // ret instruction(s); e.g. com.sun.mail.imap.IMAPStore compiled with Java 1.4.
+                // In this case the subroutine and the normal functionality are overlapping.
+                // In this case, the "normal" operands/locals array already contains the
+                // combined state.
+                if (operandsArray(pc) eq null /* && (localsArray(pc) eq null)*/ ) {
+                    val subroutineOperands = subroutinesOperandsArray(pc)
+                    val subroutineLocals   = subroutinesLocalsArray(pc)
+                    operandsArray(pc) = subroutineOperands
+                    localsArray(pc) = subroutineLocals
                 }
             }
         }
@@ -620,18 +634,22 @@ abstract class AI[D <: Domain](
         def abstractInterpretationEnded(): AIResult { val domain: theDomain.type } = {
 
             integrateSubroutineInformation()
-            val result =
-                AIResultBuilder.completed(
-                    code, cfJoins, liveVariables, theDomain
-                )(
-                    evaluatedPCs, evaluatedSubroutine, operandsArray, localsArray
-                )
+            val result = AIResultBuilder.completed(
+                code,
+                cfJoins,
+                liveVariables,
+                theDomain
+            )(
+                evaluatedPCs,
+                evaluatedSubroutine,
+                operandsArray,
+                localsArray
+            )
             try {
                 theDomain.abstractInterpretationEnded(result)
             } catch {
                 case ct: ControlThrowable => throw ct
-                case t: Throwable =>
-                    throwInterpretationFailedException(t, instructions.length)
+                case t: Throwable         => throwInterpretationFailedException(t, instructions.length)
             }
             if (tracer.isDefined) tracer.get.result(result)
             result
@@ -677,27 +695,30 @@ abstract class AI[D <: Domain](
             isExceptionalControlFlow: Boolean,
             forceJoin:                Boolean,
             newOperands:              Operands,
-            newLocals:                Locals
-        ): Unit = {
+            newLocals:                Locals): Unit = {
 
-            val (operands, locals) =
-                theDomain.afterEvaluation(
-                    sourcePC, sourceInstruction,
-                    sourceOperands, sourceLocals,
-                    targetPC, isExceptionalControlFlow, forceJoin,
-                    newOperands, newLocals
-                )
+            val (operands, locals) = theDomain.afterEvaluation(
+                sourcePC,
+                sourceInstruction,
+                sourceOperands,
+                sourceLocals,
+                targetPC,
+                isExceptionalControlFlow,
+                forceJoin,
+                newOperands,
+                newLocals
+            )
 
             var isTargetScheduled: Answer = Unknown
 
             // Determine the number of subroutines that are abruptly terminated by
             // an exception that is not handled by the subroutine itself.
-            val abruptSubroutineTerminationCount: Int = {
+            val abruptSubroutineTerminationCount: Int =
                 if (isExceptionalControlFlow && memoryLayoutBeforeSubroutineCall.nonEmpty) {
                     val jumpToSubroutineId = belongsToSubroutine(targetPC)
                     if (jumpToSubroutineId != memoryLayoutBeforeSubroutineCall.head._1) {
                         var subroutinesToTerminate = 1
-                        val it = memoryLayoutBeforeSubroutineCall.iterator
+                        val it                     = memoryLayoutBeforeSubroutineCall.iterator
                         it.next()
                         while (it.hasNext && it.next()._1 != jumpToSubroutineId) {
                             subroutinesToTerminate += 1
@@ -709,13 +730,12 @@ abstract class AI[D <: Domain](
                 } else {
                     0
                 }
-            }
 
             // When we have an abrupt termination of a subroutine, we have to make
             // sure that we are actually scheduling the operation in the handling
             // (sub)routine and use the handling subroutine's operands and locals array.
             var targetOperandsArray: theDomain.OperandsArray = null
-            var targetLocalsArray: theDomain.LocalsArray = null
+            var targetLocalsArray: theDomain.LocalsArray     = null
             if (abruptSubroutineTerminationCount == 0) {
                 targetOperandsArray = operandsArray
                 targetLocalsArray = localsArray
@@ -753,7 +773,7 @@ abstract class AI[D <: Domain](
                 // all active real subroutines) now let's remove the elements of those
                 // subroutines from the worklist, schedule the instruction (if necessary)
                 // and re-add the child subroutines.
-                var header: List[PC] = Nil
+                var header: List[PC]            = Nil
                 var remainingWorklist: List[PC] = worklist
                 while (subroutinesToTerminate > 0) {
                     val pc = remainingWorklist.head
@@ -769,7 +789,8 @@ abstract class AI[D <: Domain](
                     if (tracer.isDefined) {
                         tracer.get.abruptSubroutineTermination(theDomain)(
                             "the target instruction was already scheduled",
-                            sourcePC, targetPC,
+                            sourcePC,
+                            targetPC,
                             belongsToSubroutine(targetPC),
                             abruptSubroutineTerminationCount,
                             forceScheduling,
@@ -780,9 +801,8 @@ abstract class AI[D <: Domain](
                     return true;
                 }
 
-                val filteredRemainingWorkList =
-                    removeFirstUnless(remainingWorklist, targetPC) { _ < 0 }
-                val rescheduled = filteredRemainingWorkList ne remainingWorklist
+                val filteredRemainingWorkList = removeFirstUnless(remainingWorklist, targetPC) { _ < 0 }
+                val rescheduled               = filteredRemainingWorkList ne remainingWorklist
                 if (rescheduled || forceScheduling) {
                     remainingWorklist = targetPC :: filteredRemainingWorkList
                 }
@@ -792,21 +812,22 @@ abstract class AI[D <: Domain](
                 }
 
                 if (tracer.isDefined) {
-                    if (rescheduled || forceScheduling)
-                        tracer.get.abruptSubroutineTermination(theDomain)(
-                            "adapted the worklist of the calling subroutine",
-                            sourcePC, targetPC,
-                            belongsToSubroutine(targetPC),
-                            abruptSubroutineTerminationCount,
-                            forceScheduling,
-                            oldWorklist = worklist,
-                            newWorklist = remainingWorklist
-                        )
+                    if (rescheduled || forceScheduling) tracer.get.abruptSubroutineTermination(theDomain)(
+                        "adapted the worklist of the calling subroutine",
+                        sourcePC,
+                        targetPC,
+                        belongsToSubroutine(targetPC),
+                        abruptSubroutineTerminationCount,
+                        forceScheduling,
+                        oldWorklist = worklist,
+                        newWorklist = remainingWorklist
+                    )
                     else {
                         tracer.get.abruptSubroutineTermination(theDomain)(
-                            "the target instruction was already scheduled or "+
+                            "the target instruction was already scheduled or " +
                                 "explicit scheduling was not necessary",
-                            sourcePC, targetPC,
+                            sourcePC,
+                            targetPC,
                             belongsToSubroutine(targetPC),
                             abruptSubroutineTerminationCount,
                             forceScheduling,
@@ -833,7 +854,7 @@ abstract class AI[D <: Domain](
                     isTargetScheduled = Yes // it is already or will be scheduled...
                     targetOperandsArray(targetPC) = operands
                     if (IdentifyDeadVariables && cfJoins.contains(targetPC)) {
-                        var i = 0
+                        var i                = 0
                         val theLiveVariables = liveVariables(targetPC)
                         val newLocals = locals mapConserve { (v: theDomain.DomainValue) =>
                             val lvIndex = i
@@ -873,7 +894,8 @@ abstract class AI[D <: Domain](
                         tracer.get.flow(theDomain)(sourcePC, targetPC, isExceptionalControlFlow)
                     }
 
-                    /* join: */ false
+                    /* join: */
+                    false
 
                 } else if (!forceJoin && !cfJoins.contains(targetPC)) {
                     assert(abruptSubroutineTerminationCount == 0)
@@ -902,19 +924,21 @@ abstract class AI[D <: Domain](
                         tracer.get.flow(theDomain)(sourcePC, targetPC, isExceptionalControlFlow)
                     }
 
-                    /* join: */ false
+                    /* join: */
+                    false
 
                 } else {
                     // we already evaluated the target (join) instruction ...
                     val currentLocals = targetLocalsArray(targetPC)
-                    val mergeResult =
-                        theDomain.join(targetPC, currentOperands, currentLocals, operands, locals)
-                    if (tracer.isDefined)
-                        tracer.get.join(theDomain)(
-                            targetPC,
-                            currentOperands, currentLocals, operands, locals,
-                            mergeResult
-                        )
+                    val mergeResult   = theDomain.join(targetPC, currentOperands, currentLocals, operands, locals)
+                    if (tracer.isDefined) tracer.get.join(theDomain)(
+                        targetPC,
+                        currentOperands,
+                        currentLocals,
+                        operands,
+                        locals,
+                        mergeResult
+                    )
                     mergeResult match {
                         case NoUpdate => /* nothing to do*/
                             // Keep default: isTargetScheduled = Unknown
@@ -934,25 +958,31 @@ abstract class AI[D <: Domain](
                                     // the instruction was just moved to the beginning
                                     if (tracer.isDefined) {
                                         tracer.get.rescheduled(theDomain)(
-                                            sourcePC, targetPC, isExceptionalControlFlow, worklist
+                                            sourcePC,
+                                            targetPC,
+                                            isExceptionalControlFlow,
+                                            worklist
                                         )
                                     }
                                 } else {
                                     if (tracer.isDefined) {
                                         tracer.get.flow(theDomain)(
-                                            sourcePC, targetPC, isExceptionalControlFlow
+                                            sourcePC,
+                                            targetPC,
+                                            isExceptionalControlFlow
                                         )
                                     }
                                 }
                             } else {
-                                val updatedWorklist =
-                                    insertBeforeIfNew(worklist, targetPC, SUBROUTINE_START)
+                                val updatedWorklist = insertBeforeIfNew(worklist, targetPC, SUBROUTINE_START)
                                 if (tracer.isDefined) {
                                     if (updatedWorklist ne worklist) {
                                         // the instruction was not yet scheduled (in the current
                                         // context) for another evaluation
                                         tracer.get.flow(theDomain)(
-                                            sourcePC, targetPC, isExceptionalControlFlow
+                                            sourcePC,
+                                            targetPC,
+                                            isExceptionalControlFlow
                                         )
                                     } else {
                                         tracer.get.noFlow(theDomain)(sourcePC, targetPC)
@@ -971,7 +1001,9 @@ abstract class AI[D <: Domain](
                                     if (tracer.isDefined) {
                                         // the instruction was just moved to the beginning
                                         tracer.get.flow(theDomain)(
-                                            sourcePC, targetPC, isExceptionalControlFlow
+                                            sourcePC,
+                                            targetPC,
+                                            isExceptionalControlFlow
                                         )
                                     }
                                 } else {
@@ -1005,31 +1037,36 @@ abstract class AI[D <: Domain](
                             }
                     }
 
-                    /*join: */ true
+                    /*join: */
+                    true
                 }
 
             assert(
                 worklist.exists(_ == targetPC) == isTargetScheduled.isYesOrUnknown ||
                     worklist.forall(_ != targetPC) == isTargetScheduled.isNoOrUnknown,
-                s"worklist=$worklist; target=$targetPC; scheduled=$isTargetScheduled "+
+                s"worklist=$worklist; target=$targetPC; scheduled=$isTargetScheduled " +
                     s"(join=$wasJoinPerformed,exceptional=$isExceptionalControlFlow)"
             )
 
-            worklist =
-                theDomain.flow(
-                    sourcePC, sourceOperands, sourceLocals,
-                    targetPC, isTargetScheduled,
-                    isExceptionalControlFlow, abruptSubroutineTerminationCount,
-                    wasJoinPerformed,
-                    worklist,
-                    targetOperandsArray, targetLocalsArray,
-                    tracer
-                )
+            worklist = theDomain.flow(
+                sourcePC,
+                sourceOperands,
+                sourceLocals,
+                targetPC,
+                isTargetScheduled,
+                isExceptionalControlFlow,
+                abruptSubroutineTerminationCount,
+                wasJoinPerformed,
+                worklist,
+                targetOperandsArray,
+                targetLocalsArray,
+                tracer
+            )
 
             assert(
                 abruptSubroutineTerminationCount == 0 ||
                     !containsInPrefix(worklist, targetPC, SUBROUTINE_START),
-                "an exception handler that handles the abrupt termination of a subroutine "+
+                "an exception handler that handles the abrupt termination of a subroutine " +
                     "is scheduled to be executed as part of the abruptly terminated subroutine"
             )
         }
@@ -1037,15 +1074,21 @@ abstract class AI[D <: Domain](
         // THIS IS THE MAIN INTERPRETER LOOP
         while (worklist.nonEmpty) {
             if (isInterrupted) {
-                val result =
-                    AIResultBuilder.aborted(
-                        code, cfJoins, liveVariables, theDomain
-                    )(
-                        worklist, evaluatedPCs, evaluatedSubroutine,
-                        operandsArray, localsArray,
-                        memoryLayoutBeforeSubroutineCall,
-                        subroutinesOperandsArray, subroutinesLocalsArray
-                    )
+                val result = AIResultBuilder.aborted(
+                    code,
+                    cfJoins,
+                    liveVariables,
+                    theDomain
+                )(
+                    worklist,
+                    evaluatedPCs,
+                    evaluatedSubroutine,
+                    operandsArray,
+                    localsArray,
+                    memoryLayoutBeforeSubroutineCall,
+                    subroutinesOperandsArray,
+                    subroutinesLocalsArray
+                )
 
                 if (tracer.isDefined) {
                     tracer.get.result(result)
@@ -1104,7 +1147,7 @@ abstract class AI[D <: Domain](
                     // abstract interpretation time information about the operands/locals across
                     // all subroutine calls; we have to make sure that we extract the information
                     // belonging to the correct subroutine (if we have nested subroutine calls)
-                    var subroutineLevel = 0
+                    var subroutineLevel               = 0
                     var subroutine: List[Int /*PC*/ ] = Nil
                     /* OLD USING Chain
                     var trace = evaluated.tail
@@ -1142,7 +1185,7 @@ abstract class AI[D <: Domain](
                         subroutine foreach { pc =>
                             if (pc >= 0) {
                                 val currentOperands = operandsArray(pc)
-                                val currentLocals = localsArray(pc)
+                                val currentLocals   = localsArray(pc)
                                 assert(currentOperands ne null)
 
                                 val mergedOperands = subroutinesOperandsArray(pc)
@@ -1155,8 +1198,10 @@ abstract class AI[D <: Domain](
                                     val mergedLocals = subroutinesLocalsArray(pc)
                                     theDomain.join(
                                         pc,
-                                        mergedOperands, mergedLocals,
-                                        currentOperands, currentLocals
+                                        mergedOperands,
+                                        mergedLocals,
+                                        currentOperands,
+                                        currentLocals
                                     ) match {
                                         case NoUpdate => /*nothing to do...*/
                                         case SomeUpdate((newOperands, newLocals)) =>
@@ -1179,26 +1224,28 @@ abstract class AI[D <: Domain](
                         // Reset the local variable that stores the return address
                         // to avoid conflicts on merge in case of a nested subroutine
                         // that is evaluated in a loop.
-                        val operands = operandsArray(retPC)
-                        val locals = localsArray(retPC)
-                        val updatedLocals =
-                            lvIndex.map(locals.updated(_, theDomain.Null)).getOrElse(locals)
+                        val operands      = operandsArray(retPC)
+                        val locals        = localsArray(retPC)
+                        val updatedLocals = lvIndex.map(locals.updated(_, theDomain.Null)).getOrElse(locals)
                         (retPC, operands, updatedLocals)
                     }
                     // Clear all computations to make this subroutine callable again.
-                    val (_ /*subroutineId*/ , oldOperandsArray, oldLocalsArray) =
-                        memoryLayoutBeforeSubroutineCall.head
+                    val (_ /*subroutineId*/, oldOperandsArray, oldLocalsArray) = memoryLayoutBeforeSubroutineCall.head
                     operandsArray = oldOperandsArray
                     localsArray = oldLocalsArray
                     memoryLayoutBeforeSubroutineCall = memoryLayoutBeforeSubroutineCall.tail
                     targets foreach { target =>
                         val (retPC, operands, updatedLocals) = target
                         gotoTarget(
-                            retPC, instructions(retPC),
-                            operandsArray(retPC), localsArray(retPC),
+                            retPC,
+                            instructions(retPC),
+                            operandsArray(retPC),
+                            localsArray(retPC),
                             returnAddress,
-                            isExceptionalControlFlow = false, forceJoin = false,
-                            operands, updatedLocals
+                            isExceptionalControlFlow = false,
+                            forceJoin = false,
+                            operands,
+                            updatedLocals
                         )
                     }
 
@@ -1221,7 +1268,7 @@ abstract class AI[D <: Domain](
                 val instruction = instructions(pc)
                 // the memory layout before executing the instruction with the given pc
                 val operands = operandsArray(pc)
-                val locals = localsArray(pc)
+                val locals   = localsArray(pc)
 
                 if (tracer.isDefined) {
                     tracer.get.instructionEvalution(theDomain)(pc, instruction, operands, locals)
@@ -1235,27 +1282,22 @@ abstract class AI[D <: Domain](
                         evaluated.exists(cfJoins.contains) // if it works out we should use something more efficient than the evaluated set (e.g. evaluatedCFJoins)
                         )
                         println(s"$pc > $nextPC(alt: $altPC):definitive path -$qualifier")
-                        */
+                     */
                 }
 
                 def singleDomainValueTest(
                     testId: Int,
                     pc:     Int,
-                    value:  DomainValue
-                ): Answer = {
-                    (testId: @switch) match {
-                        case AI.RefIsNullTestId               => refIsNull(pc, value)
-                        case AI.RefIsNonNullTestId            => refIsNonNull(pc, value)
+                    value:  DomainValue): Answer = (testId: @switch) match {
+                    case AI.RefIsNullTestId    => refIsNull(pc, value)
+                    case AI.RefIsNonNullTestId => refIsNonNull(pc, value)
 
-                        case AI.IntIs0TestId                  => intIs0(pc, value)
-                        case AI.IntIsNot0TestId               => intIsNot0(pc, value)
-                        case AI.IntIsLessThan0TestId          => intIsLessThan0(pc, value)
-                        case AI.IntIsLessThanOrEqualTo0TestId => intIsLessThanOrEqualTo0(pc, value)
-                        case AI.IntIsGreaterThan0TestId =>
-                            intIsGreaterThan0(pc, value)
-                        case AI.IntIsGreaterThanOrEqualTo0TestId =>
-                            intIsGreaterThanOrEqualTo0(pc, value)
-                    }
+                    case AI.IntIs0TestId                     => intIs0(pc, value)
+                    case AI.IntIsNot0TestId                  => intIsNot0(pc, value)
+                    case AI.IntIsLessThan0TestId             => intIsLessThan0(pc, value)
+                    case AI.IntIsLessThanOrEqualTo0TestId    => intIsLessThanOrEqualTo0(pc, value)
+                    case AI.IntIsGreaterThan0TestId          => intIsGreaterThan0(pc, value)
+                    case AI.IntIsGreaterThanOrEqualTo0TestId => intIsGreaterThanOrEqualTo0(pc, value)
                 }
 
                 def singleDomainValueConstraint(
@@ -1263,33 +1305,36 @@ abstract class AI[D <: Domain](
                     pc:           Int,
                     value:        DomainValue,
                     operands:     Operands,
-                    locals:       Locals
-                ): (Operands, Locals) = {
-                    (constraintId: @switch) match {
-                        case AI.RefIsNullConstraintId =>
-                            refEstablishIsNull(pc, value, operands, locals)
-                        case AI.RefIsNonNullConstraintId =>
-                            refEstablishIsNonNull(pc, value, operands, locals)
+                    locals:       Locals): (Operands, Locals) = (constraintId: @switch) match {
+                    case AI.RefIsNullConstraintId    => refEstablishIsNull(pc, value, operands, locals)
+                    case AI.RefIsNonNullConstraintId => refEstablishIsNonNull(pc, value, operands, locals)
 
-                        case AI.IntIs0ConstraintId =>
-                            intEstablishAreEqual(pc, value, IntegerConstant0, operands, locals)
-                        case AI.IntIsNot0ConstraintId =>
-                            intEstablishAreNotEqual(pc, value, IntegerConstant0, operands, locals)
-                        case AI.IntIsLessThan0ConstraintId =>
-                            intEstablishIsLessThan(pc, value, IntegerConstant0, operands, locals)
-                        case AI.IntIsLessThanOrEqualTo0ConstraintId =>
-                            intEstablishIsLessThanOrEqualTo(
-                                pc, value, IntegerConstant0, operands, locals
-                            )
-                        case AI.IntIsGreaterThan0ConstraintId =>
-                            intEstablishIsLessThan(
-                                pc, IntegerConstant0, value, operands, locals
-                            )
-                        case AI.IntIsGreaterThanOrEqualTo0ConstraintId =>
-                            intEstablishIsLessThanOrEqualTo(
-                                pc, IntegerConstant0, value, operands, locals
-                            )
-                    }
+                    case AI.IntIs0ConstraintId => intEstablishAreEqual(pc, value, IntegerConstant0, operands, locals)
+                    case AI.IntIsNot0ConstraintId =>
+                        intEstablishAreNotEqual(pc, value, IntegerConstant0, operands, locals)
+                    case AI.IntIsLessThan0ConstraintId =>
+                        intEstablishIsLessThan(pc, value, IntegerConstant0, operands, locals)
+                    case AI.IntIsLessThanOrEqualTo0ConstraintId => intEstablishIsLessThanOrEqualTo(
+                            pc,
+                            value,
+                            IntegerConstant0,
+                            operands,
+                            locals
+                        )
+                    case AI.IntIsGreaterThan0ConstraintId => intEstablishIsLessThan(
+                            pc,
+                            IntegerConstant0,
+                            value,
+                            operands,
+                            locals
+                        )
+                    case AI.IntIsGreaterThanOrEqualTo0ConstraintId => intEstablishIsLessThanOrEqualTo(
+                            pc,
+                            IntegerConstant0,
+                            value,
+                            operands,
+                            locals
+                        )
                 }
 
                 /*
@@ -1299,53 +1344,78 @@ abstract class AI[D <: Domain](
                 def ifXX(
                     domainValueTestId: Int,
                     yesConstraintId:   Int,
-                    noConstraintId:    Int
-                ): Unit = {
+                    noConstraintId:    Int): Unit = {
 
                     val branchInstruction = instruction.asSimpleConditionalBranchInstruction
-                    val operand = operands.head
-                    val rest = operands.tail
-                    val nextPC = pcOfNextInstruction
-                    val branchTargetPC = pc + branchInstruction.branchoffset
+                    val operand           = operands.head
+                    val rest              = operands.tail
+                    val nextPC            = pcOfNextInstruction
+                    val branchTargetPC    = pc + branchInstruction.branchoffset
 
                     singleDomainValueTest(domainValueTestId, pc, operand) match {
                         case Yes =>
                             checkDefinitivePath(branchTargetPC, nextPC, "ifXX-YES")
                             gotoTarget(
-                                pc, instruction, operands, locals,
+                                pc,
+                                instruction,
+                                operands,
+                                locals,
                                 branchTargetPC,
-                                isExceptionalControlFlow = false, forceJoin = false,
-                                rest, locals
+                                isExceptionalControlFlow = false,
+                                forceJoin = false,
+                                rest,
+                                locals
                             )
                         case No =>
                             checkDefinitivePath(nextPC, branchTargetPC, "ifXX-NO")
                             gotoTarget(
-                                pc, instruction, operands, locals,
+                                pc,
+                                instruction,
+                                operands,
+                                locals,
                                 nextPC,
-                                isExceptionalControlFlow = false, forceJoin = false,
-                                rest, locals
+                                isExceptionalControlFlow = false,
+                                forceJoin = false,
+                                rest,
+                                locals
                             )
                         case Unknown =>
                             // BT = Branch Target
-                            val (newBTOperands, newBTLocals) =
-                                singleDomainValueConstraint(
-                                    yesConstraintId, branchTargetPC, operand, rest, locals
-                                )
+                            val (newBTOperands, newBTLocals) = singleDomainValueConstraint(
+                                yesConstraintId,
+                                branchTargetPC,
+                                operand,
+                                rest,
+                                locals
+                            )
                             if (tracer.isDefined &&
                                 ((rest ne newBTOperands) || (locals ne newBTLocals))) {
                                 tracer.get.establishedConstraint(theDomain)(
-                                    pc, branchTargetPC, rest, locals, newBTOperands, newBTLocals
+                                    pc,
+                                    branchTargetPC,
+                                    rest,
+                                    locals,
+                                    newBTOperands,
+                                    newBTLocals
                                 )
                             }
                             // FT = Fall Through
-                            val (newFTOperands, newFTLocals) =
-                                singleDomainValueConstraint(
-                                    noConstraintId, nextPC, operand, rest, locals
-                                )
+                            val (newFTOperands, newFTLocals) = singleDomainValueConstraint(
+                                noConstraintId,
+                                nextPC,
+                                operand,
+                                rest,
+                                locals
+                            )
                             if (tracer.isDefined &&
                                 ((rest ne newFTOperands) || (locals ne newFTLocals))) {
                                 tracer.get.establishedConstraint(theDomain)(
-                                    pc, nextPC, rest, locals, newFTOperands, newFTLocals
+                                    pc,
+                                    nextPC,
+                                    rest,
+                                    locals,
+                                    newFTOperands,
+                                    newFTLocals
                                 )
                             }
 
@@ -1357,29 +1427,49 @@ abstract class AI[D <: Domain](
                             // optimizer.
                             if (branchTargetPC < pc) {
                                 gotoTarget(
-                                    pc, instruction, operands, locals,
+                                    pc,
+                                    instruction,
+                                    operands,
+                                    locals,
                                     nextPC,
-                                    isExceptionalControlFlow = false, forceJoin = false,
-                                    newFTOperands, newFTLocals
+                                    isExceptionalControlFlow = false,
+                                    forceJoin = false,
+                                    newFTOperands,
+                                    newFTLocals
                                 )
                                 gotoTarget(
-                                    pc, instruction, operands, locals,
+                                    pc,
+                                    instruction,
+                                    operands,
+                                    locals,
                                     branchTargetPC,
-                                    isExceptionalControlFlow = false, forceJoin = false,
-                                    newBTOperands, newBTLocals
+                                    isExceptionalControlFlow = false,
+                                    forceJoin = false,
+                                    newBTOperands,
+                                    newBTLocals
                                 )
                             } else {
                                 gotoTarget(
-                                    pc, instruction, operands, locals,
+                                    pc,
+                                    instruction,
+                                    operands,
+                                    locals,
                                     branchTargetPC,
-                                    isExceptionalControlFlow = false, forceJoin = false,
-                                    newBTOperands, newBTLocals
+                                    isExceptionalControlFlow = false,
+                                    forceJoin = false,
+                                    newBTOperands,
+                                    newBTLocals
                                 )
                                 gotoTarget(
-                                    pc, instruction, operands, locals,
+                                    pc,
+                                    instruction,
+                                    operands,
+                                    locals,
                                     nextPC,
-                                    isExceptionalControlFlow = false, forceJoin = false,
-                                    newFTOperands, newFTLocals
+                                    isExceptionalControlFlow = false,
+                                    forceJoin = false,
+                                    newFTOperands,
+                                    newFTLocals
                                 )
                             }
                     }
@@ -1389,23 +1479,16 @@ abstract class AI[D <: Domain](
                     testId: Int,
                     pc:     Int,
                     value1: DomainValue,
-                    value2: DomainValue
-                ): Answer = {
-                    (testId: @switch) match {
-                        case AI.RefAreEqualTestId    => refAreEqual(pc, value1, value2)
-                        case AI.RefAreNotEqualTestId => refAreNotEqual(pc, value1, value2)
+                    value2: DomainValue): Answer = (testId: @switch) match {
+                    case AI.RefAreEqualTestId    => refAreEqual(pc, value1, value2)
+                    case AI.RefAreNotEqualTestId => refAreNotEqual(pc, value1, value2)
 
-                        case AI.IntAreEqualTestId    => intAreEqual(pc, value1, value2)
-                        case AI.IntAreNotEqualTestId => intAreNotEqual(pc, value1, value2)
-                        case AI.IntIsLessThanTestId =>
-                            intIsLessThan(pc, value1, value2)
-                        case AI.IntIsLessThanOrEqualToTestId =>
-                            intIsLessThanOrEqualTo(pc, value1, value2)
-                        case AI.IntIsGreaterThanTestId =>
-                            intIsGreaterThan(pc, value1, value2)
-                        case AI.IntIsGreaterThanOrEqualToTestId =>
-                            intIsGreaterThanOrEqualTo(pc, value1, value2)
-                    }
+                    case AI.IntAreEqualTestId               => intAreEqual(pc, value1, value2)
+                    case AI.IntAreNotEqualTestId            => intAreNotEqual(pc, value1, value2)
+                    case AI.IntIsLessThanTestId             => intIsLessThan(pc, value1, value2)
+                    case AI.IntIsLessThanOrEqualToTestId    => intIsLessThanOrEqualTo(pc, value1, value2)
+                    case AI.IntIsGreaterThanTestId          => intIsGreaterThan(pc, value1, value2)
+                    case AI.IntIsGreaterThanOrEqualToTestId => intIsGreaterThanOrEqualTo(pc, value1, value2)
                 }
 
                 def twoDomainValuesConstraint(
@@ -1414,30 +1497,21 @@ abstract class AI[D <: Domain](
                     value1:       DomainValue,
                     value2:       DomainValue,
                     operands:     Operands,
-                    locals:       Locals
-                ): (Operands, Locals) = {
-                    (constraintId: @switch) match {
-                        case AI.RefAreEqualConstraintId =>
-                            refEstablishAreEqual(pc, value1, value2, operands, locals)
-                        case AI.RefAreNotEqualConstraintId =>
-                            refEstablishAreNotEqual(pc, value1, value2, operands, locals)
+                    locals:       Locals): (Operands, Locals) = (constraintId: @switch) match {
+                    case AI.RefAreEqualConstraintId    => refEstablishAreEqual(pc, value1, value2, operands, locals)
+                    case AI.RefAreNotEqualConstraintId => refEstablishAreNotEqual(pc, value1, value2, operands, locals)
 
-                        case AI.IntAreEqualConstraintId =>
-                            intEstablishAreEqual(pc, value1, value2, operands, locals)
-                        case AI.IntAreNotEqualConstraintId =>
-                            intEstablishAreNotEqual(pc, value1, value2, operands, locals)
+                    case AI.IntAreEqualConstraintId    => intEstablishAreEqual(pc, value1, value2, operands, locals)
+                    case AI.IntAreNotEqualConstraintId => intEstablishAreNotEqual(pc, value1, value2, operands, locals)
 
-                        case AI.IntIsLessThanConstraintId =>
-                            intEstablishIsLessThan(pc, value1, value2, operands, locals)
-                        case AI.IntIsLessThanOrEqualToConstraintId =>
-                            intEstablishIsLessThanOrEqualTo(pc, value1, value2, operands, locals)
+                    case AI.IntIsLessThanConstraintId => intEstablishIsLessThan(pc, value1, value2, operands, locals)
+                    case AI.IntIsLessThanOrEqualToConstraintId =>
+                        intEstablishIsLessThanOrEqualTo(pc, value1, value2, operands, locals)
 
-                        case AI.IntIsGreaterThanConstraintId =>
-                            intEstablishIsLessThan(pc, value2, value1, operands, locals)
-                        case AI.IntIsGreaterThanOrEqualToConstraintId =>
-                            intEstablishIsLessThanOrEqualTo(pc, value2, value1, operands, locals)
+                    case AI.IntIsGreaterThanConstraintId => intEstablishIsLessThan(pc, value2, value1, operands, locals)
+                    case AI.IntIsGreaterThanOrEqualToConstraintId =>
+                        intEstablishIsLessThanOrEqualTo(pc, value2, value1, operands, locals)
 
-                    }
                 }
 
                 /*
@@ -1447,84 +1521,131 @@ abstract class AI[D <: Domain](
                 def ifTcmpXX(
                     domainValuesTestId: Int,
                     yesConstraintId:    Int,
-                    noConstraintId:     Int
-                ): Unit = {
+                    noConstraintId:     Int): Unit = {
 
                     val branchInstruction = instruction.asSimpleConditionalBranchInstruction
-                    val right = operands.head
+                    val right             = operands.head
                     val remainingOperands = operands.tail
-                    val left = remainingOperands.head
-                    val rest = remainingOperands.tail
-                    val branchTargetPC = pc + branchInstruction.branchoffset
-                    val nextPC = code.pcOfNextInstruction(pc)
-                    val testResult = twoDomainValuesTest(domainValuesTestId, pc, left, right)
+                    val left              = remainingOperands.head
+                    val rest              = remainingOperands.tail
+                    val branchTargetPC    = pc + branchInstruction.branchoffset
+                    val nextPC            = code.pcOfNextInstruction(pc)
+                    val testResult        = twoDomainValuesTest(domainValuesTestId, pc, left, right)
                     testResult match {
                         case Yes =>
                             checkDefinitivePath(branchTargetPC, nextPC, "ifTcmpXX-YES")
                             gotoTarget(
-                                pc, instruction, operands, locals,
+                                pc,
+                                instruction,
+                                operands,
+                                locals,
                                 branchTargetPC,
-                                isExceptionalControlFlow = false, forceJoin = false,
-                                rest, locals
+                                isExceptionalControlFlow = false,
+                                forceJoin = false,
+                                rest,
+                                locals
                             )
                         case No =>
                             checkDefinitivePath(nextPC, branchTargetPC, "ifTcmpXX-NO")
                             gotoTarget(
-                                pc, instruction, operands, locals,
+                                pc,
+                                instruction,
+                                operands,
+                                locals,
                                 nextPC,
-                                isExceptionalControlFlow = false, forceJoin = false,
-                                rest, locals
+                                isExceptionalControlFlow = false,
+                                forceJoin = false,
+                                rest,
+                                locals
                             )
                         case Unknown =>
                             // BT = Branch Target
                             // FT = Fall Through
                             // See ifXX for details regarding the heuristic for selecting the next
                             // instruction to evaluate.
-                            val (newBTOperands, newBTLocals) =
-                                twoDomainValuesConstraint(
-                                    yesConstraintId, branchTargetPC, left, right, rest, locals
-                                )
+                            val (newBTOperands, newBTLocals) = twoDomainValuesConstraint(
+                                yesConstraintId,
+                                branchTargetPC,
+                                left,
+                                right,
+                                rest,
+                                locals
+                            )
                             if (tracer.isDefined &&
                                 ((rest ne newBTOperands) || (locals ne newBTLocals))) {
                                 tracer.get.establishedConstraint(theDomain)(
-                                    pc, branchTargetPC, rest, locals, newBTOperands, newBTLocals
+                                    pc,
+                                    branchTargetPC,
+                                    rest,
+                                    locals,
+                                    newBTOperands,
+                                    newBTLocals
                                 )
                             }
-                            val (newFTOperands, newFTLocals) =
-                                twoDomainValuesConstraint(
-                                    noConstraintId, nextPC, left, right, rest, locals
-                                )
+                            val (newFTOperands, newFTLocals) = twoDomainValuesConstraint(
+                                noConstraintId,
+                                nextPC,
+                                left,
+                                right,
+                                rest,
+                                locals
+                            )
                             if (tracer.isDefined &&
                                 ((rest ne newFTOperands) || (locals ne newFTLocals))) {
                                 tracer.get.establishedConstraint(theDomain)(
-                                    pc, nextPC, rest, locals, newFTOperands, newFTLocals
+                                    pc,
+                                    nextPC,
+                                    rest,
+                                    locals,
+                                    newFTOperands,
+                                    newFTLocals
                                 )
                             }
                             if (branchTargetPC > pc) {
                                 gotoTarget(
-                                    pc, instruction, operands, locals,
+                                    pc,
+                                    instruction,
+                                    operands,
+                                    locals,
                                     nextPC,
-                                    isExceptionalControlFlow = false, forceJoin = false,
-                                    newFTOperands, newFTLocals
+                                    isExceptionalControlFlow = false,
+                                    forceJoin = false,
+                                    newFTOperands,
+                                    newFTLocals
                                 )
                                 gotoTarget(
-                                    pc, instruction, operands, locals,
+                                    pc,
+                                    instruction,
+                                    operands,
+                                    locals,
                                     branchTargetPC,
-                                    isExceptionalControlFlow = false, forceJoin = false,
-                                    newBTOperands, newBTLocals
+                                    isExceptionalControlFlow = false,
+                                    forceJoin = false,
+                                    newBTOperands,
+                                    newBTLocals
                                 )
                             } else {
                                 gotoTarget(
-                                    pc, instruction, operands, locals,
+                                    pc,
+                                    instruction,
+                                    operands,
+                                    locals,
                                     branchTargetPC,
-                                    isExceptionalControlFlow = false, forceJoin = false,
-                                    newBTOperands, newBTLocals
+                                    isExceptionalControlFlow = false,
+                                    forceJoin = false,
+                                    newBTOperands,
+                                    newBTLocals
                                 )
                                 gotoTarget(
-                                    pc, instruction, operands, locals,
+                                    pc,
+                                    instruction,
+                                    operands,
+                                    locals,
                                     nextPC,
-                                    isExceptionalControlFlow = false, forceJoin = false,
-                                    newFTOperands, newFTLocals
+                                    isExceptionalControlFlow = false,
+                                    forceJoin = false,
+                                    newFTOperands,
+                                    newFTLocals
                                 )
                             }
                     }
@@ -1548,45 +1669,47 @@ abstract class AI[D <: Domain](
                 def doHandleTheException(
                     exceptionValue:   ExceptionValue,
                     establishNonNull: Boolean,
-                    forceJoin:        Boolean
-                ): Unit = {
+                    forceJoin:        Boolean): Unit = {
 
                     def gotoExceptionHandler(
                         pc:             Int,
                         branchTargetPC: Int,
-                        upperBound:     Option[ObjectType]
-                    ): Unit = {
+                        upperBound:     Option[ObjectType]): Unit = {
                         val newOperands = List(exceptionValue)
                         val memoryLayout1 @ (updatedOperands1, updatedLocals1) =
-                            if (establishNonNull)
-                                theDomain.refEstablishIsNonNull(
-                                    pc, exceptionValue, newOperands, locals
-                                )
-                            else
-                                (newOperands, locals)
+                            if (establishNonNull) theDomain.refEstablishIsNonNull(
+                                pc,
+                                exceptionValue,
+                                newOperands,
+                                locals
+                            )
+                            else (newOperands, locals)
 
                         val (updatedOperands2, updatedLocals2) =
-                            if (upperBound.isDefined)
-                                theDomain.refSetUpperTypeBoundOfTopOperand(
-                                    branchTargetPC,
-                                    upperBound.get,
-                                    updatedOperands1,
-                                    updatedLocals1
-                                )
-                            else
-                                memoryLayout1
+                            if (upperBound.isDefined) theDomain.refSetUpperTypeBoundOfTopOperand(
+                                branchTargetPC,
+                                upperBound.get,
+                                updatedOperands1,
+                                updatedLocals1
+                            )
+                            else memoryLayout1
 
                         gotoTarget(
-                            pc, instruction, operands, locals,
+                            pc,
+                            instruction,
+                            operands,
+                            locals,
                             branchTargetPC,
-                            isExceptionalControlFlow = true, forceJoin = forceJoin,
-                            updatedOperands2, updatedLocals2
+                            isExceptionalControlFlow = true,
+                            forceJoin = forceJoin,
+                            updatedOperands2,
+                            updatedLocals2
                         )
                     }
 
                     val isHandled = code.handlersFor(pc) exists { eh =>
                         // find the exception handler that matches the given exception
-                        val branchTarget = eh.handlerPC
+                        val branchTarget    = eh.handlerPC
                         val catchTypeOption = eh.catchType
                         if (catchTypeOption.isEmpty) { // this is a finally handler
                             gotoExceptionHandler(pc, branchTarget, None)
@@ -1600,8 +1723,7 @@ abstract class AI[D <: Domain](
                                 true
                             } else {
                                 theDomain.isValueASubtypeOf(exceptionValue, caughtType) match {
-                                    case No =>
-                                        false
+                                    case No => false
                                     case Yes =>
                                         gotoExceptionHandler(pc, branchTarget, None)
                                         true
@@ -1632,15 +1754,13 @@ abstract class AI[D <: Domain](
                                             }
                                             warnMissingLibrary
                                             var exceptionTypeAsJava =
-                                                exceptionValue.upperTypeBound.iterator.
-                                                    map[String](_.toJava).
-                                                    mkString(" & ")
+                                                exceptionValue.upperTypeBound.iterator.map[String](_.toJava).mkString(" & ")
                                             if (!exceptionValue.isPrecise)
-                                                exceptionTypeAsJava = "_ <: "+exceptionTypeAsJava
+                                                exceptionTypeAsJava = "_ <: " + exceptionTypeAsJava
                                             val warning = Warn(
                                                 "precision and soundness",
-                                                "unknown type hierarchy relation between: "+
-                                                    s"$exceptionTypeAsJava and ${caughtType.toJava}; "+
+                                                "unknown type hierarchy relation between: " +
+                                                    s"$exceptionTypeAsJava and ${caughtType.toJava}; " +
                                                     "aborting exception processing"
                                             )
                                             OPALLogger.logOnce(warning)
@@ -1671,8 +1791,7 @@ abstract class AI[D <: Domain](
                 def handleException(
                     exceptionValue:                  ExceptionValue,
                     testForNullnessOfExceptionValue: Boolean,
-                    forceJoin:                       Boolean
-                ): Unit = {
+                    forceJoin:                       Boolean): Unit = {
                     // Iterating over the individual exceptions is potentially
                     // more precise than just iterating over the "abstraction".
                     val baseValues: Iterable[theDomain.DomainReferenceValue] = exceptionValue.baseValues
@@ -1681,13 +1800,17 @@ abstract class AI[D <: Domain](
                             exceptionValue.isNull match {
                                 case No => // just forward
                                     doHandleTheException(
-                                        exceptionValue, establishNonNull = false, forceJoin
+                                        exceptionValue,
+                                        establishNonNull = false,
+                                        forceJoin
                                     )
                                 case Unknown =>
                                     if (theDomain.throwNullPointerExceptionOnThrow) {
                                         val npe = theDomain.VMNullPointerException(pc)
                                         doHandleTheException(
-                                            npe, establishNonNull = false, forceJoin
+                                            npe,
+                                            establishNonNull = false,
+                                            forceJoin
                                         )
                                     }
                                     // Effectively, we now have multiple exceptions that are
@@ -1696,7 +1819,9 @@ abstract class AI[D <: Domain](
                                     // between the two instructions, but multiple data-flows!
                                     // Therefore, we have to force the join of the values.
                                     doHandleTheException(
-                                        exceptionValue, establishNonNull = true, forceJoin = true
+                                        exceptionValue,
+                                        establishNonNull = true,
+                                        forceJoin = true
                                     )
                                 case Yes =>
                                     val npe = theDomain.VMNullPointerException(pc)
@@ -1717,8 +1842,7 @@ abstract class AI[D <: Domain](
                 /* One instruction may cause multiple data-flows at the same time! */
                 def handleExceptions(
                     exceptions:                      Iterable[ExceptionValue],
-                    testForNullnessOfExceptionValue: Boolean
-                ): Unit = {
+                    testForNullnessOfExceptionValue: Boolean): Unit = {
                     var forceJoin: Boolean = false
                     exceptions foreach { e =>
                         handleException(e, testForNullnessOfExceptionValue, forceJoin)
@@ -1727,33 +1851,38 @@ abstract class AI[D <: Domain](
                 }
 
                 def abruptMethodExecution(pc: Int, exception: ExceptionValue): Unit = {
-                    if (tracer.isDefined)
-                        tracer.get.abruptMethodExecution(theDomain)(pc, exception)
+                    if (tracer.isDefined) tracer.get.abruptMethodExecution(theDomain)(pc, exception)
 
                     theDomain.abruptMethodExecution(pc, exception)
                 }
 
                 def fallThrough(
                     newOperands: Operands = operands,
-                    newLocals:   Locals   = locals
-                ): Int /*PC*/ = {
+                    newLocals:   Locals = locals): Int /*PC*/ = {
                     val nextPC = pcOfNextInstruction
                     gotoTarget(
-                        pc, instruction, operands, locals,
-                        nextPC, isExceptionalControlFlow = false, forceJoin = false,
-                        newOperands, newLocals
+                        pc,
+                        instruction,
+                        operands,
+                        locals,
+                        nextPC,
+                        isExceptionalControlFlow = false,
+                        forceJoin = false,
+                        newOperands,
+                        newLocals
                     )
                     nextPC
                 }
 
-                def handleReturn(computation: Computation[Nothing, ExceptionValue]): Unit = {
+                def handleReturn(computation: Computation[Nothing, ExceptionValue]): Unit =
                     if (computation.throwsException) {
                         val exceptions = computation.exceptions
                         handleException(
-                            exceptions, testForNullnessOfExceptionValue = false, forceJoin = false
+                            exceptions,
+                            testForNullnessOfExceptionValue = false,
+                            forceJoin = false
                         )
                     }
-                }
 
                 def handleRegisterStore(newLocals: Locals): Unit = {
                     fallThrough(operands.tail, newLocals)
@@ -1775,22 +1904,21 @@ abstract class AI[D <: Domain](
                  */
                 def computationWithException(
                     computation: Computation[Nothing, ExceptionValue],
-                    rest:        Operands
-                ): Unit = {
+                    rest:        Operands): Unit = {
                     if (computation.returnsNormally) fallThrough(rest)
                     if (computation.throwsException) {
                         val exception = computation.exceptions
                         handleException(
                             exception,
-                            testForNullnessOfExceptionValue = false, forceJoin = false
+                            testForNullnessOfExceptionValue = false,
+                            forceJoin = false
                         )
                     }
                 }
 
                 def computationWithExceptions(
                     computation: Computation[Nothing, ExceptionValues],
-                    rest:        Operands
-                ): Unit = {
+                    rest:        Operands): Unit = {
 
                     if (computation.returnsNormally) fallThrough(rest)
                     if (computation.throwsException) {
@@ -1804,22 +1932,21 @@ abstract class AI[D <: Domain](
                  */
                 def computationWithReturnValueAndException(
                     computation: Computation[DomainValue, ExceptionValue],
-                    rest:        Operands
-                ): Unit = {
+                    rest:        Operands): Unit = {
                     if (computation.hasResult) fallThrough(computation.result :: rest)
                     if (computation.throwsException) {
                         val exceptions = computation.exceptions
                         handleException(
                             exceptions,
-                            testForNullnessOfExceptionValue = false, forceJoin = false
+                            testForNullnessOfExceptionValue = false,
+                            forceJoin = false
                         )
                     }
                 }
 
                 def computationWithReturnValueAndExceptions(
                     computation: Computation[DomainValue, ExceptionValues],
-                    rest:        Operands
-                ): Unit = {
+                    rest:        Operands): Unit = {
                     if (computation.hasResult) fallThrough(computation.result :: rest)
                     if (computation.throwsException) {
                         val exceptions = computation.exceptions
@@ -1829,28 +1956,19 @@ abstract class AI[D <: Domain](
 
                 def computation(
                     computation: Computation[Nothing, Nothing],
-                    rest:        Operands
-                ): Unit = {
-                    fallThrough(rest)
-                }
+                    rest:        Operands): Unit = fallThrough(rest)
 
                 def computationWithReturnValue(
                     computation: Computation[DomainValue, Nothing],
-                    rest:        Operands
-                ): Unit = {
-                    fallThrough(computation.result :: rest)
-                }
+                    rest:        Operands): Unit = fallThrough(computation.result :: rest)
 
                 def computationWithOptionalReturnValueAndExceptions(
                     computation: Computation[DomainValue, ExceptionValues],
-                    rest:        Operands
-                ): Unit = {
+                    rest:        Operands): Unit = {
 
                     if (computation.returnsNormally) {
-                        if (computation.hasResult)
-                            fallThrough(computation.result :: rest)
-                        else
-                            fallThrough(rest)
+                        if (computation.hasResult) fallThrough(computation.result :: rest)
+                        else fallThrough(rest)
                     }
                     if (computation.throwsException) {
                         val exceptions = computation.exceptions
@@ -1867,13 +1985,19 @@ abstract class AI[D <: Domain](
                     //
 
                     case 167 /*goto*/ | 200 /*goto_w*/ =>
-                        val goto = as[UnconditionalBranchInstruction](instruction)
-                        val offset = goto.branchoffset
+                        val goto         = as[UnconditionalBranchInstruction](instruction)
+                        val offset       = goto.branchoffset
                         val branchtarget = pc + offset
                         gotoTarget(
-                            pc, instruction, operands, locals,
-                            branchtarget, isExceptionalControlFlow = false, forceJoin = false,
-                            operands, locals
+                            pc,
+                            instruction,
+                            operands,
+                            locals,
+                            branchtarget,
+                            isExceptionalControlFlow = false,
+                            forceJoin = false,
+                            operands,
+                            locals
                         )
 
                     // Fundamental idea: we treat a "jump to subroutine" similar to
@@ -1908,28 +2032,34 @@ abstract class AI[D <: Domain](
                         // let's check if we can eagerly fetch the information where the
                         // return address is stored!
                         worklist = instructions(branchTarget) match {
-                            case AStoreInstruction(lvIndex) =>
-                                SUBROUTINE_START ::
+                            case AStoreInstruction(lvIndex) => SUBROUTINE_START ::
                                     SUBROUTINE_RETURN_ADDRESS_LOCAL_VARIABLE :: lvIndex ::
                                     SUBROUTINE_RETURN_TO_TARGET :: returnTarget ::
                                     SUBROUTINE :: worklist
-                            case _ =>
-                                SUBROUTINE_START ::
+                            case _ => SUBROUTINE_START ::
                                     SUBROUTINE_RETURN_TO_TARGET :: returnTarget ::
                                     SUBROUTINE :: worklist
                         }
                         val newOperands = theDomain.ReturnAddressValue(returnTarget) :: operands
                         gotoTarget(
-                            pc, instruction, operands, locals,
-                            branchTarget, isExceptionalControlFlow = false, forceJoin = false,
-                            newOperands, locals
+                            pc,
+                            instruction,
+                            operands,
+                            locals,
+                            branchTarget,
+                            isExceptionalControlFlow = false,
+                            forceJoin = false,
+                            newOperands,
+                            locals
                         )
 
                         theDomain.jumpToSubroutine(pc, branchTarget, returnTarget)
 
                         if (tracer.isDefined) {
                             tracer.get.jumpToSubroutine(theDomain)(
-                                pc, branchTarget, memoryLayoutBeforeSubroutineCall.size
+                                pc,
+                                branchTarget,
+                                memoryLayoutBeforeSubroutineCall.size
                             )
                         }
 
@@ -1940,7 +2070,7 @@ abstract class AI[D <: Domain](
                         val oldWorklist: List[Int /*PC*/ ] = worklist
 
                         val subroutineWorkListBuilder = List.newBuilder[PC]
-                        var tail = worklist
+                        var tail                      = worklist
                         while (tail.head >= 0) {
                             subroutineWorkListBuilder += tail.head
                             tail = tail.tail
@@ -1956,17 +2086,15 @@ abstract class AI[D <: Domain](
                         // let's check if we already know the used local variable
                         if (dynamicSubroutineInformation.isEmpty) {
                             // let's store the local variable
-                            worklist =
-                                subroutineWorkList :::
-                                    (SUBROUTINE_START :: pc ::
-                                        SUBROUTINE_RETURN_ADDRESS_LOCAL_VARIABLE :: lvIndex ::
-                                        tail)
+                            worklist = subroutineWorkList :::
+                                (SUBROUTINE_START :: pc ::
+                                    SUBROUTINE_RETURN_ADDRESS_LOCAL_VARIABLE :: lvIndex ::
+                                    tail)
                         } else {
                             // just let's store this ret instruction
-                            worklist =
-                                subroutineWorkList :::
-                                    (SUBROUTINE_START :: pc :: dynamicSubroutineInformation.reverse) :::
-                                    tail
+                            worklist = subroutineWorkList :::
+                                (SUBROUTINE_START :: pc :: dynamicSubroutineInformation.reverse) :::
+                                tail
                         }
 
                         theDomain.returnFromSubroutine(pc, lvIndex)
@@ -1984,107 +2112,109 @@ abstract class AI[D <: Domain](
                     // CONDITIONAL TRANSFER OF CONTROL
                     //
 
-                    case 165 /*if_acmpeq*/ =>
-                        ifTcmpXX(
+                    case 165 /*if_acmpeq*/ => ifTcmpXX(
                             AI.RefAreEqualTestId,
-                            AI.RefAreEqualConstraintId, AI.RefAreNotEqualConstraintId
+                            AI.RefAreEqualConstraintId,
+                            AI.RefAreNotEqualConstraintId
                         )
-                    case 166 /*if_acmpne*/ =>
-                        ifTcmpXX(
+                    case 166 /*if_acmpne*/ => ifTcmpXX(
                             AI.RefAreNotEqualTestId,
-                            AI.RefAreNotEqualConstraintId, AI.RefAreEqualConstraintId
+                            AI.RefAreNotEqualConstraintId,
+                            AI.RefAreEqualConstraintId
                         )
-                    case 198 /*ifnull*/ =>
-                        ifXX(
+                    case 198 /*ifnull*/ => ifXX(
                             AI.RefIsNullTestId,
-                            AI.RefIsNullConstraintId, AI.RefIsNonNullConstraintId
+                            AI.RefIsNullConstraintId,
+                            AI.RefIsNonNullConstraintId
                         )
-                    case 199 /*ifnonnull*/ =>
-                        ifXX(
+                    case 199 /*ifnonnull*/ => ifXX(
                             AI.RefIsNonNullTestId,
-                            AI.RefIsNonNullConstraintId, AI.RefIsNullConstraintId
+                            AI.RefIsNonNullConstraintId,
+                            AI.RefIsNullConstraintId
                         )
 
-                    case 159 /*if_icmpeq*/ =>
-                        ifTcmpXX(
+                    case 159 /*if_icmpeq*/ => ifTcmpXX(
                             AI.IntAreEqualTestId,
-                            AI.IntAreEqualConstraintId, AI.IntAreNotEqualConstraintId
+                            AI.IntAreEqualConstraintId,
+                            AI.IntAreNotEqualConstraintId
                         )
-                    case 160 /*if_icmpne*/ =>
-                        ifTcmpXX(
+                    case 160 /*if_icmpne*/ => ifTcmpXX(
                             AI.IntAreNotEqualTestId,
-                            AI.IntAreNotEqualConstraintId, AI.IntAreEqualConstraintId
+                            AI.IntAreNotEqualConstraintId,
+                            AI.IntAreEqualConstraintId
                         )
-                    case 161 /*if_icmplt*/ =>
-                        ifTcmpXX(
+                    case 161 /*if_icmplt*/ => ifTcmpXX(
                             AI.IntIsLessThanTestId,
-                            AI.IntIsLessThanConstraintId, AI.IntIsGreaterThanOrEqualToConstraintId
+                            AI.IntIsLessThanConstraintId,
+                            AI.IntIsGreaterThanOrEqualToConstraintId
                         )
-                    case 162 /*if_icmpge*/ =>
-                        ifTcmpXX(
+                    case 162 /*if_icmpge*/ => ifTcmpXX(
                             AI.IntIsGreaterThanOrEqualToTestId,
-                            AI.IntIsGreaterThanOrEqualToConstraintId, AI.IntIsLessThanConstraintId
+                            AI.IntIsGreaterThanOrEqualToConstraintId,
+                            AI.IntIsLessThanConstraintId
                         )
-                    case 163 /*if_icmpgt*/ =>
-                        ifTcmpXX(
+                    case 163 /*if_icmpgt*/ => ifTcmpXX(
                             AI.IntIsGreaterThanTestId,
-                            AI.IntIsGreaterThanConstraintId, AI.IntIsLessThanOrEqualToConstraintId
+                            AI.IntIsGreaterThanConstraintId,
+                            AI.IntIsLessThanOrEqualToConstraintId
                         )
-                    case 164 /*if_icmple*/ =>
-                        ifTcmpXX(
+                    case 164 /*if_icmple*/ => ifTcmpXX(
                             AI.IntIsLessThanOrEqualToTestId,
-                            AI.IntIsLessThanOrEqualToConstraintId, AI.IntIsGreaterThanConstraintId
+                            AI.IntIsLessThanOrEqualToConstraintId,
+                            AI.IntIsGreaterThanConstraintId
                         )
-                    case 153 /*ifeq*/ =>
-                        ifXX(AI.IntIs0TestId, AI.IntIs0ConstraintId, AI.IntIsNot0ConstraintId)
-                    case 154 /*ifne*/ =>
-                        ifXX(AI.IntIsNot0TestId, AI.IntIsNot0ConstraintId, AI.IntIs0ConstraintId)
-                    case 155 /*iflt*/ =>
-                        ifXX(
+                    case 153 /*ifeq*/ => ifXX(AI.IntIs0TestId, AI.IntIs0ConstraintId, AI.IntIsNot0ConstraintId)
+                    case 154 /*ifne*/ => ifXX(AI.IntIsNot0TestId, AI.IntIsNot0ConstraintId, AI.IntIs0ConstraintId)
+                    case 155 /*iflt*/ => ifXX(
                             AI.IntIsLessThan0TestId,
-                            AI.IntIsLessThan0ConstraintId, AI.IntIsGreaterThanOrEqualTo0ConstraintId
+                            AI.IntIsLessThan0ConstraintId,
+                            AI.IntIsGreaterThanOrEqualTo0ConstraintId
                         )
-                    case 156 /*ifge*/ =>
-                        ifXX(
+                    case 156 /*ifge*/ => ifXX(
                             AI.IntIsGreaterThanOrEqualTo0TestId,
-                            AI.IntIsGreaterThanOrEqualTo0ConstraintId, AI.IntIsLessThan0ConstraintId
+                            AI.IntIsGreaterThanOrEqualTo0ConstraintId,
+                            AI.IntIsLessThan0ConstraintId
                         )
-                    case 157 /*ifgt*/ =>
-                        ifXX(
+                    case 157 /*ifgt*/ => ifXX(
                             AI.IntIsGreaterThan0TestId,
-                            AI.IntIsGreaterThan0ConstraintId, AI.IntIsLessThanOrEqualTo0ConstraintId
+                            AI.IntIsGreaterThan0ConstraintId,
+                            AI.IntIsLessThanOrEqualTo0ConstraintId
                         )
-                    case 158 /*ifle */ =>
-                        ifXX(
+                    case 158 /*ifle */ => ifXX(
                             AI.IntIsLessThanOrEqualTo0TestId,
-                            AI.IntIsLessThanOrEqualTo0ConstraintId, AI.IntIsGreaterThan0ConstraintId
+                            AI.IntIsLessThanOrEqualTo0ConstraintId,
+                            AI.IntIsGreaterThan0ConstraintId
                         )
 
                     case 171 /*lookupswitch*/ =>
-                        val switch = as[LOOKUPSWITCH](instruction)
-                        val index = operands.head
+                        val switch            = as[LOOKUPSWITCH](instruction)
+                        val index             = operands.head
                         val remainingOperands = operands.tail
                         if (switch.npairs.isEmpty) {
                             // in the Java 7 JDK 45 we actually found a lookupswitch
                             // that just had a defaultBranch (glorified "goto")
                             gotoTarget(
-                                pc, instruction, operands, locals,
+                                pc,
+                                instruction,
+                                operands,
+                                locals,
                                 pc + switch.defaultOffset,
-                                isExceptionalControlFlow = false, forceJoin = false,
-                                remainingOperands, locals
+                                isExceptionalControlFlow = false,
+                                forceJoin = false,
+                                remainingOperands,
+                                locals
                             )
                         } else {
                             import theDomain.intIsSomeValueInRange
                             import theDomain.intIsSomeValueNotInRange
                             var branchToDefaultRequired = false
-                            val npairs = switch.npairs
-                            val firstKey = npairs(0)._1
-                            var previousKey = firstKey
+                            val npairs                  = switch.npairs
+                            val firstKey                = npairs(0)._1
+                            var previousKey             = firstKey
                             for (IntIntPair(key, offset) <- npairs) {
                                 if (!branchToDefaultRequired && (key - previousKey) > 1) {
                                     // there is a hole in the switch table...
-                                    val nonCaseValue =
-                                        intIsSomeValueInRange(pc, index, previousKey + 1, key - 1)
+                                    val nonCaseValue = intIsSomeValueInRange(pc, index, previousKey + 1, key - 1)
                                     if (nonCaseValue.isYesOrUnknown) {
                                         branchToDefaultRequired = true
                                     }
@@ -2093,40 +2223,60 @@ abstract class AI[D <: Domain](
 
                                 if (intIsSomeValueInRange(pc, index, key, key).isYesOrUnknown) {
                                     val branchTargetPC = pc + offset
-                                    val (updatedOperands, updatedLocals) =
-                                        theDomain.intEstablishValue(
-                                            branchTargetPC, key, index, remainingOperands, locals
-                                        )
+                                    val (updatedOperands, updatedLocals) = theDomain.intEstablishValue(
+                                        branchTargetPC,
+                                        key,
+                                        index,
+                                        remainingOperands,
+                                        locals
+                                    )
                                     if (tracer.isDefined &&
                                         (
                                             (remainingOperands ne updatedOperands) ||
-                                            (locals ne updatedLocals)
+                                                (locals ne updatedLocals)
                                         )) {
                                         tracer.get.establishedConstraint(theDomain)(
-                                            pc, branchTargetPC, remainingOperands, locals,
-                                            updatedOperands, updatedLocals
+                                            pc,
+                                            branchTargetPC,
+                                            remainingOperands,
+                                            locals,
+                                            updatedOperands,
+                                            updatedLocals
                                         )
                                     }
                                     gotoTarget(
-                                        pc, instruction, operands, locals,
+                                        pc,
+                                        instruction,
+                                        operands,
+                                        locals,
                                         branchTargetPC,
-                                        isExceptionalControlFlow = false, forceJoin = false,
-                                        updatedOperands, updatedLocals
+                                        isExceptionalControlFlow = false,
+                                        forceJoin = false,
+                                        updatedOperands,
+                                        updatedLocals
                                     )
                                 }
                             }
 
                             if (branchToDefaultRequired ||
                                 intIsSomeValueNotInRange(
-                                    pc, index, firstKey, npairs.last._1
+                                    pc,
+                                    index,
+                                    firstKey,
+                                    npairs.last._1
                                 ).isYesOrUnknown) {
                                 val defaultBranchTargetPC = pc + switch.defaultOffset
 
                                 gotoTarget(
-                                    pc, instruction, operands, locals,
+                                    pc,
+                                    instruction,
+                                    operands,
+                                    locals,
                                     defaultBranchTargetPC,
-                                    isExceptionalControlFlow = false, forceJoin = false,
-                                    remainingOperands, locals
+                                    isExceptionalControlFlow = false,
+                                    forceJoin = false,
+                                    remainingOperands,
+                                    locals
                                 )
                             }
                         }
@@ -2134,36 +2284,48 @@ abstract class AI[D <: Domain](
                     case 170 /*tableswitch*/ =>
                         import theDomain.intIsSomeValueInRange
                         import theDomain.intIsSomeValueNotInRange
-                        val tableswitch = instruction.asInstanceOf[TABLESWITCH]
-                        val index = operands.head
+                        val tableswitch       = instruction.asInstanceOf[TABLESWITCH]
+                        val index             = operands.head
                         val remainingOperands = operands.tail
-                        val low = tableswitch.low
-                        val high = tableswitch.high
-                        var i = low.toLong // if low == high == Int.MaxValue...
+                        val low               = tableswitch.low
+                        val high              = tableswitch.high
+                        var i                 = low.toLong // if low == high == Int.MaxValue...
                         while (i <= high) {
                             val v = i.toInt
                             if (intIsSomeValueInRange(pc, index, v, v).isYesOrUnknown) {
                                 val jumpOffsetIndex = v - low
-                                val branchTargetPC = pc + tableswitch.jumpOffsets(jumpOffsetIndex)
-                                val (updatedOperands, updatedLocals) =
-                                    theDomain.intEstablishValue(
-                                        branchTargetPC, v, index, remainingOperands, locals
-                                    )
+                                val branchTargetPC  = pc + tableswitch.jumpOffsets(jumpOffsetIndex)
+                                val (updatedOperands, updatedLocals) = theDomain.intEstablishValue(
+                                    branchTargetPC,
+                                    v,
+                                    index,
+                                    remainingOperands,
+                                    locals
+                                )
                                 if (tracer.isDefined &&
                                     (
                                         (remainingOperands ne updatedOperands) ||
-                                        (locals ne updatedLocals)
+                                            (locals ne updatedLocals)
                                     )) {
                                     tracer.get.establishedConstraint(theDomain)(
-                                        pc, branchTargetPC, remainingOperands, locals,
-                                        updatedOperands, updatedLocals
+                                        pc,
+                                        branchTargetPC,
+                                        remainingOperands,
+                                        locals,
+                                        updatedOperands,
+                                        updatedLocals
                                     )
                                 }
                                 gotoTarget(
-                                    pc, instruction, operands, locals,
+                                    pc,
+                                    instruction,
+                                    operands,
+                                    locals,
                                     branchTargetPC,
-                                    isExceptionalControlFlow = false, forceJoin = false,
-                                    updatedOperands, updatedLocals
+                                    isExceptionalControlFlow = false,
+                                    forceJoin = false,
+                                    updatedOperands,
+                                    updatedLocals
                                 )
                             }
                             i = i + 1
@@ -2172,10 +2334,15 @@ abstract class AI[D <: Domain](
 
                             val defaultBranchTargetPC = pc + tableswitch.defaultOffset
                             gotoTarget(
-                                pc, instruction, operands, locals,
+                                pc,
+                                instruction,
+                                operands,
+                                locals,
                                 defaultBranchTargetPC,
-                                isExceptionalControlFlow = false, forceJoin = false,
-                                remainingOperands, locals
+                                isExceptionalControlFlow = false,
+                                forceJoin = false,
+                                remainingOperands,
+                                locals
                             )
                         }
 
@@ -2207,24 +2374,16 @@ abstract class AI[D <: Domain](
 
                     case 188 /*newarray*/ =>
                         val count :: rest = operands
-                        val atype = instruction.asInstanceOf[NEWARRAY].atype
+                        val atype         = instruction.asInstanceOf[NEWARRAY].atype
                         val computation = (atype: @annotation.switch) match {
-                            case BooleanType.atype =>
-                                theDomain.newarray(pc, count, BooleanType)
-                            case CharType.atype =>
-                                theDomain.newarray(pc, count, CharType)
-                            case FloatType.atype =>
-                                theDomain.newarray(pc, count, FloatType)
-                            case DoubleType.atype =>
-                                theDomain.newarray(pc, count, DoubleType)
-                            case ByteType.atype =>
-                                theDomain.newarray(pc, count, ByteType)
-                            case ShortType.atype =>
-                                theDomain.newarray(pc, count, ShortType)
-                            case IntegerType.atype =>
-                                theDomain.newarray(pc, count, IntegerType)
-                            case LongType.atype =>
-                                theDomain.newarray(pc, count, LongType)
+                            case BooleanType.atype => theDomain.newarray(pc, count, BooleanType)
+                            case CharType.atype    => theDomain.newarray(pc, count, CharType)
+                            case FloatType.atype   => theDomain.newarray(pc, count, FloatType)
+                            case DoubleType.atype  => theDomain.newarray(pc, count, DoubleType)
+                            case ByteType.atype    => theDomain.newarray(pc, count, ByteType)
+                            case ShortType.atype   => theDomain.newarray(pc, count, ShortType)
+                            case IntegerType.atype => theDomain.newarray(pc, count, IntegerType)
+                            case LongType.atype    => theDomain.newarray(pc, count, LongType)
                         }
                         // TODO Consider modeling of OutOfMemoryErrors here!
                         computationWithReturnValueAndException(computation, rest)
@@ -2232,16 +2391,16 @@ abstract class AI[D <: Domain](
                     case 189 /*anewarray*/ =>
                         val count :: rest = operands
                         val componentType = instruction.asInstanceOf[ANEWARRAY].componentType
-                        val computation = theDomain.newarray(pc, count, componentType)
+                        val computation   = theDomain.newarray(pc, count, componentType)
                         // TODO Consider modeling of OutOfMemoryErrors here!
                         computationWithReturnValueAndException(computation, rest)
 
                     case 197 /*multianewarray*/ =>
                         val multianewarray = instruction.asInstanceOf[MULTIANEWARRAY]
-                        val dimensions = multianewarray.dimensions
+                        val dimensions     = multianewarray.dimensions
                         val dimensionSizes = operands.take(multianewarray.dimensions)
-                        val arrayType = multianewarray.arrayType
-                        val computation = theDomain.multianewarray(pc, dimensionSizes, arrayType)
+                        val arrayType      = multianewarray.arrayType
+                        val computation    = theDomain.multianewarray(pc, dimensionSizes, arrayType)
                         // TODO Consider modeling of OutOfMemoryErrors here!
                         computationWithReturnValueAndException(computation, operands.drop(dimensions))
 
@@ -2256,70 +2415,70 @@ abstract class AI[D <: Domain](
                         computationWithReturnValueAndExceptions(computation, rest)
                     case 83 /*aastore*/ =>
                         val value :: index :: arrayref :: rest = operands
-                        val computation = theDomain.aastore(pc, value, index, arrayref)
+                        val computation                        = theDomain.aastore(pc, value, index, arrayref)
                         computationWithExceptions(computation, rest)
 
                     case 51 /*baload*/ =>
                         val index :: arrayref :: rest = operands
-                        val computation = theDomain.baload(pc, index, arrayref)
+                        val computation               = theDomain.baload(pc, index, arrayref)
                         computationWithReturnValueAndExceptions(computation, rest)
                     case 84 /*bastore*/ =>
                         val value :: index :: arrayref :: rest = operands
-                        val computation = theDomain.bastore(pc, value, index, arrayref)
+                        val computation                        = theDomain.bastore(pc, value, index, arrayref)
                         computationWithExceptions(computation, rest)
 
                     case 52 /*caload*/ =>
                         val index :: arrayref :: rest = operands
-                        val computation = theDomain.caload(pc, index, arrayref)
+                        val computation               = theDomain.caload(pc, index, arrayref)
                         computationWithReturnValueAndExceptions(computation, rest)
                     case 85 /*castore*/ =>
                         val value :: index :: arrayref :: rest = operands
-                        val computation = theDomain.castore(pc, value, index, arrayref)
+                        val computation                        = theDomain.castore(pc, value, index, arrayref)
                         computationWithExceptions(computation, rest)
 
                     case 49 /*daload*/ =>
                         val index :: arrayref :: rest = operands
-                        val computation = theDomain.daload(pc, index, arrayref)
+                        val computation               = theDomain.daload(pc, index, arrayref)
                         computationWithReturnValueAndExceptions(computation, rest)
                     case 82 /*dastore*/ =>
                         val value :: index :: arrayref :: rest = operands
-                        val computation = theDomain.dastore(pc, value, index, arrayref)
+                        val computation                        = theDomain.dastore(pc, value, index, arrayref)
                         computationWithExceptions(computation, rest)
 
                     case 48 /*faload*/ =>
                         val index :: arrayref :: rest = operands
-                        val computation = theDomain.faload(pc, index, arrayref)
+                        val computation               = theDomain.faload(pc, index, arrayref)
                         computationWithReturnValueAndExceptions(computation, rest)
                     case 81 /*fastore*/ =>
                         val value :: index :: arrayref :: rest = operands
-                        val computation = theDomain.fastore(pc, value, index, arrayref)
+                        val computation                        = theDomain.fastore(pc, value, index, arrayref)
                         computationWithExceptions(computation, rest)
 
                     case 46 /*iaload*/ =>
                         val index :: arrayref :: rest = operands
-                        val computation = theDomain.iaload(pc, index, arrayref)
+                        val computation               = theDomain.iaload(pc, index, arrayref)
                         computationWithReturnValueAndExceptions(computation, rest)
                     case 79 /*iastore*/ =>
                         val value :: index :: arrayref :: rest = operands
-                        val computation = theDomain.iastore(pc, value, index, arrayref)
+                        val computation                        = theDomain.iastore(pc, value, index, arrayref)
                         computationWithExceptions(computation, rest)
 
                     case 47 /*laload*/ =>
                         val index :: arrayref :: rest = operands
-                        val computation = theDomain.laload(pc, index, arrayref)
+                        val computation               = theDomain.laload(pc, index, arrayref)
                         computationWithReturnValueAndExceptions(computation, rest)
                     case 80 /*lastore*/ =>
                         val value :: index :: arrayref :: rest = operands
-                        val computation = theDomain.lastore(pc, value, index, arrayref)
+                        val computation                        = theDomain.lastore(pc, value, index, arrayref)
                         computationWithExceptions(computation, rest)
 
                     case 53 /*saload*/ =>
                         val index :: arrayref :: rest = operands
-                        val computation = theDomain.saload(pc, index, arrayref)
+                        val computation               = theDomain.saload(pc, index, arrayref)
                         computationWithReturnValueAndExceptions(computation, rest)
                     case 86 /*sastore*/ =>
                         val value :: index :: arrayref :: rest = operands
-                        val computation = theDomain.sastore(pc, value, index, arrayref)
+                        val computation                        = theDomain.sastore(pc, value, index, arrayref)
                         computationWithExceptions(computation, rest)
 
                     //
@@ -2327,7 +2486,7 @@ abstract class AI[D <: Domain](
                     //
 
                     case 190 /*arraylength*/ =>
-                        val arrayref = operands.head
+                        val arrayref    = operands.head
                         val computation = theDomain.arraylength(pc, arrayref)
                         computationWithReturnValueAndException(computation, operands.tail)
 
@@ -2336,7 +2495,7 @@ abstract class AI[D <: Domain](
                     //
                     case 180 /*getfield*/ =>
                         val GETFIELD(declaringClass, name, fieldType) = instruction
-                        val receiver = operands.head
+                        val receiver                                  = operands.head
                         computationWithReturnValueAndException(
                             theDomain.getfield(pc, receiver, declaringClass, name, fieldType),
                             operands.tail
@@ -2355,7 +2514,7 @@ abstract class AI[D <: Domain](
                         )
 
                     case 181 /*putfield*/ =>
-                        val putfield = instruction.asInstanceOf[PUTFIELD]
+                        val putfield                   = instruction.asInstanceOf[PUTFIELD]
                         val value :: objectref :: rest = operands
                         computationWithException(
                             theDomain.putfield(
@@ -2370,7 +2529,7 @@ abstract class AI[D <: Domain](
                         )
 
                     case 179 /*putstatic*/ =>
-                        val putstatic = instruction.asInstanceOf[PUTSTATIC]
+                        val putstatic     = instruction.asInstanceOf[PUTSTATIC]
                         val value :: rest = operands
                         computation(
                             theDomain.putstatic(
@@ -2387,78 +2546,73 @@ abstract class AI[D <: Domain](
                     // METHOD INVOCATIONS
                     //
                     case 186 /*invokedynamic*/ =>
-                        val invoke = instruction.asInstanceOf[INVOKEDYNAMIC]
+                        val invoke    = instruction.asInstanceOf[INVOKEDYNAMIC]
                         val argsCount = invoke.methodDescriptor.parametersCount
-                        val computation =
-                            theDomain.invokedynamic(
-                                pc,
-                                invoke.bootstrapMethod,
-                                invoke.name,
-                                invoke.methodDescriptor,
-                                operands.take(argsCount)
-                            )
+                        val computation = theDomain.invokedynamic(
+                            pc,
+                            invoke.bootstrapMethod,
+                            invoke.name,
+                            invoke.methodDescriptor,
+                            operands.take(argsCount)
+                        )
                         val newOperands = operands.drop(argsCount)
                         computationWithOptionalReturnValueAndExceptions(computation, newOperands)
 
                     case 185 /*invokeinterface*/ =>
-                        val invoke = instruction.asInstanceOf[INVOKEINTERFACE]
+                        val invoke    = instruction.asInstanceOf[INVOKEINTERFACE]
                         val argsCount = invoke.methodDescriptor.parametersCount
-                        val computation =
-                            theDomain.invokeinterface(
-                                pc,
-                                invoke.declaringClass,
-                                invoke.name,
-                                invoke.methodDescriptor,
-                                operands.take(argsCount + 1)
-                            )
+                        val computation = theDomain.invokeinterface(
+                            pc,
+                            invoke.declaringClass,
+                            invoke.name,
+                            invoke.methodDescriptor,
+                            operands.take(argsCount + 1)
+                        )
                         val newOperands = operands.drop(argsCount + 1)
                         computationWithOptionalReturnValueAndExceptions(computation, newOperands)
 
                     case 183 /*invokespecial*/ =>
-                        val invoke = instruction.asInstanceOf[INVOKESPECIAL]
+                        val invoke    = instruction.asInstanceOf[INVOKESPECIAL]
                         val argsCount = invoke.methodDescriptor.parametersCount
-                        val computation =
-                            theDomain.invokespecial(
-                                pc,
-                                invoke.declaringClass,
-                                invoke.isInterface,
-                                invoke.name,
-                                invoke.methodDescriptor,
-                                operands.take(argsCount + 1)
-                            )
+                        val computation = theDomain.invokespecial(
+                            pc,
+                            invoke.declaringClass,
+                            invoke.isInterface,
+                            invoke.name,
+                            invoke.methodDescriptor,
+                            operands.take(argsCount + 1)
+                        )
                         computationWithOptionalReturnValueAndExceptions(
                             computation,
                             operands.drop(argsCount + 1)
                         )
 
                     case 184 /*invokestatic*/ =>
-                        val invoke = instruction.asInstanceOf[INVOKESTATIC]
+                        val invoke    = instruction.asInstanceOf[INVOKESTATIC]
                         val argsCount = invoke.methodDescriptor.parametersCount
-                        val computation =
-                            theDomain.invokestatic(
-                                pc,
-                                invoke.declaringClass,
-                                invoke.isInterface,
-                                invoke.name,
-                                invoke.methodDescriptor,
-                                operands.take(argsCount)
-                            )
+                        val computation = theDomain.invokestatic(
+                            pc,
+                            invoke.declaringClass,
+                            invoke.isInterface,
+                            invoke.name,
+                            invoke.methodDescriptor,
+                            operands.take(argsCount)
+                        )
                         computationWithOptionalReturnValueAndExceptions(
                             computation,
                             operands.drop(argsCount)
                         )
 
                     case 182 /*invokevirtual*/ =>
-                        val invoke = instruction.asInstanceOf[INVOKEVIRTUAL]
+                        val invoke    = instruction.asInstanceOf[INVOKEVIRTUAL]
                         val argsCount = invoke.methodDescriptor.parametersCount
-                        val computation =
-                            theDomain.invokevirtual(
-                                pc,
-                                invoke.declaringClass,
-                                invoke.name,
-                                invoke.methodDescriptor,
-                                operands.take(argsCount + 1)
-                            )
+                        val computation = theDomain.invokevirtual(
+                            pc,
+                            invoke.declaringClass,
+                            invoke.name,
+                            invoke.methodDescriptor,
+                            operands.take(argsCount + 1)
+                        )
                         computationWithOptionalReturnValueAndExceptions(
                             computation,
                             operands.drop(argsCount + 1)
@@ -2492,52 +2646,47 @@ abstract class AI[D <: Domain](
                     //
                     // PUT LOCAL VARIABLE VALUE ONTO STACK
                     //
-                    case 25 /*aload*/
+                    case 25  /*aload*/
                         | 24 /*dload*/
                         | 23 /*fload*/
                         | 21 /*iload*/
                         | 22 /*lload*/ =>
                         val lvIndex = as[LoadLocalVariableInstruction](instruction).lvIndex
                         fallThrough(locals(lvIndex) :: operands)
-                    case 42 /*aload_0*/
+                    case 42  /*aload_0*/
                         | 38 /*dload_0*/
                         | 34 /*fload_0*/
                         | 26 /*iload_0*/
-                        | 30 /*lload_0*/ =>
-                        fallThrough(locals(0) :: operands)
-                    case 43 /*aload_1*/
+                        | 30 /*lload_0*/ => fallThrough(locals(0) :: operands)
+                    case 43  /*aload_1*/
                         | 39 /*dload_1*/
                         | 35 /*fload_1*/
                         | 27 /*iload_1*/
-                        | 31 /*lload_1*/ =>
-                        fallThrough(locals(1) :: operands)
-                    case 44 /*aload_2*/
+                        | 31 /*lload_1*/ => fallThrough(locals(1) :: operands)
+                    case 44  /*aload_2*/
                         | 40 /*dload_2*/
                         | 36 /*fload_2*/
                         | 28 /*iload_2*/
-                        | 32 /*lload_2*/ =>
-                        fallThrough(locals(2) :: operands)
-                    case 45 /*aload_3*/
+                        | 32 /*lload_2*/ => fallThrough(locals(2) :: operands)
+                    case 45  /*aload_3*/
                         | 41 /*dload_3*/
                         | 37 /*fload_3*/
                         | 29 /*iload_3*/
-                        | 33 /*lload_3*/ =>
-                        fallThrough(locals(3) :: operands)
+                        | 33 /*lload_3*/ => fallThrough(locals(3) :: operands)
 
                     //
                     // STORE OPERAND IN LOCAL VARIABLE
                     //
-                    case 75 /*astore_0*/
+                    case 75  /*astore_0*/
                         | 67 /*fstore_0*/
-                        | 59 /*istore_0*/ =>
-                        handleRegisterStore(locals.updated(0, operands.head))
+                        | 59 /*istore_0*/ => handleRegisterStore(locals.updated(0, operands.head))
 
                     case 63 /*lstore_0*/
                         | 71 /*dstore_0*/ =>
                         // ... the 2nd slot is used by the long/double value:
                         handleRegisterStore(locals.updated(0, operands.head, null))
 
-                    case 76 /*astore_1*/
+                    case 76  /*astore_1*/
                         | 68 /*fstore_1*/
                         | 60 /*istore_1*/ =>
                         val local0 = locals(0)
@@ -2562,7 +2711,7 @@ abstract class AI[D <: Domain](
                             handleRegisterStore(locals.updated(1, operands.head, null))
                         }
 
-                    case 77 /*astore_2*/
+                    case 77  /*astore_2*/
                         | 69 /*fstore_2*/
                         | 61 /*istore_2*/ =>
                         val local1 = locals(1)
@@ -2587,7 +2736,7 @@ abstract class AI[D <: Domain](
                             }
                         handleRegisterStore(newLocals)
 
-                    case 78 /*astore_3*/
+                    case 78  /*astore_3*/
                         | 70 /*fstore_3*/
                         | 62 /*istore_3*/ =>
                         val local2 = locals(2)
@@ -2612,16 +2761,16 @@ abstract class AI[D <: Domain](
                             }
                         handleRegisterStore(newLocals)
 
-                    case 58 /*astore*/
+                    case 58  /*astore*/
                         | 56 /*fstore*/
                         | 54 /*istore*/ =>
                         val lvIndex = as[StoreLocalVariableInstruction](instruction).lvIndex
                         val newLocals =
                             if (lvIndex > 0 && {
-                                val lvIndexM1Local = locals(lvIndex - 1)
-                                lvIndexM1Local != null &&
+                                    val lvIndexM1Local = locals(lvIndex - 1)
+                                    lvIndexM1Local != null &&
                                     lvIndexM1Local.hasCategory2ComputationalType
-                            }) {
+                                }) {
                                 // ... the previous "long or double" is no longer valid!
                                 locals.updated(lvIndex - 1, theDomain.TheIllegalValue, operands.head)
                             } else {
@@ -2634,14 +2783,16 @@ abstract class AI[D <: Domain](
                         val lvIndex = as[StoreLocalVariableInstruction](instruction).lvIndex
                         val newLocals =
                             if (lvIndex > 0 && {
-                                val lvIndexM1Local = locals(lvIndex - 1)
-                                lvIndexM1Local != null &&
+                                    val lvIndexM1Local = locals(lvIndex - 1)
+                                    lvIndexM1Local != null &&
                                     lvIndexM1Local.hasCategory2ComputationalType
-                            }) {
+                                }) {
                                 // ... the previous "long or double" is no longer valid!
                                 locals.updated(
                                     lvIndex - 1,
-                                    theDomain.TheIllegalValue, operands.head, null
+                                    theDomain.TheIllegalValue,
+                                    operands.head,
+                                    null
                                 )
                             } else {
                                 locals.updated(lvIndex, operands.head, null)
@@ -2658,10 +2809,8 @@ abstract class AI[D <: Domain](
                         val value = instruction.asInstanceOf[BIPUSH].value.toByte
                         fallThrough(theDomain.ByteValue(pc, value) :: operands)
 
-                    case 14 /*dconst_0*/ =>
-                        fallThrough(theDomain.DoubleValue(pc, 0.0d) :: operands)
-                    case 15 /*dconst_1*/ =>
-                        fallThrough(theDomain.DoubleValue(pc, 1.0d) :: operands)
+                    case 14 /*dconst_0*/ => fallThrough(theDomain.DoubleValue(pc, 0.0d) :: operands)
+                    case 15 /*dconst_1*/ => fallThrough(theDomain.DoubleValue(pc, 1.0d) :: operands)
 
                     case 11 /*fconst_0*/ => fallThrough(theDomain.FloatValue(pc, 0.0f) :: operands)
                     case 12 /*fconst_1*/ => fallThrough(theDomain.FloatValue(pc, 1.0f) :: operands)
@@ -2679,55 +2828,38 @@ abstract class AI[D <: Domain](
                     case 10 /*lconst_1*/ => fallThrough(theDomain.LongValue(pc, 1L) :: operands)
 
                     case 18 /*ldc*/ => instruction match {
-                        case LoadInt(v) =>
-                            fallThrough(theDomain.IntegerValue(pc, v) :: operands)
-                        case LoadFloat(v) =>
-                            fallThrough(theDomain.FloatValue(pc, v) :: operands)
-                        case LoadString(v) =>
-                            fallThrough(theDomain.StringValue(pc, v) :: operands)
-                        case LoadClass(v) =>
-                            fallThrough(theDomain.ClassValue(pc, v) :: operands)
-                        case LoadMethodHandle(v) =>
-                            fallThrough(theDomain.MethodHandle(pc, v) :: operands)
-                        case LoadMethodType(v) =>
-                            fallThrough(theDomain.MethodType(pc, v) :: operands)
-                        case LoadDynamic(bootstrapMethod, name, descriptor) =>
-                            computationWithReturnValue(
-                                theDomain.loadDynamic(pc, bootstrapMethod, name, descriptor),
-                                operands
-                            )
+                            case LoadInt(v)          => fallThrough(theDomain.IntegerValue(pc, v) :: operands)
+                            case LoadFloat(v)        => fallThrough(theDomain.FloatValue(pc, v) :: operands)
+                            case LoadString(v)       => fallThrough(theDomain.StringValue(pc, v) :: operands)
+                            case LoadClass(v)        => fallThrough(theDomain.ClassValue(pc, v) :: operands)
+                            case LoadMethodHandle(v) => fallThrough(theDomain.MethodHandle(pc, v) :: operands)
+                            case LoadMethodType(v)   => fallThrough(theDomain.MethodType(pc, v) :: operands)
+                            case LoadDynamic(bootstrapMethod, name, descriptor) => computationWithReturnValue(
+                                    theDomain.loadDynamic(pc, bootstrapMethod, name, descriptor),
+                                    operands
+                                )
 
-                    }
+                        }
                     case 19 /*ldc_w*/ => instruction match {
-                        case LoadInt_W(v) =>
-                            fallThrough(theDomain.IntegerValue(pc, v) :: operands)
-                        case LoadFloat_W(v) =>
-                            fallThrough(theDomain.FloatValue(pc, v) :: operands)
-                        case LoadString_W(v) =>
-                            fallThrough(theDomain.StringValue(pc, v) :: operands)
-                        case LoadClass_W(v) =>
-                            fallThrough(theDomain.ClassValue(pc, v) :: operands)
-                        case LoadMethodHandle_W(v) =>
-                            fallThrough(theDomain.MethodHandle(pc, v) :: operands)
-                        case LoadMethodType_W(v) =>
-                            fallThrough(theDomain.MethodType(pc, v) :: operands)
-                        case LoadDynamic_W(bootstrapMethod, name, descriptor) =>
-                            computationWithReturnValue(
-                                theDomain.loadDynamic(pc, bootstrapMethod, name, descriptor),
-                                operands
-                            )
-                    }
+                            case LoadInt_W(v)          => fallThrough(theDomain.IntegerValue(pc, v) :: operands)
+                            case LoadFloat_W(v)        => fallThrough(theDomain.FloatValue(pc, v) :: operands)
+                            case LoadString_W(v)       => fallThrough(theDomain.StringValue(pc, v) :: operands)
+                            case LoadClass_W(v)        => fallThrough(theDomain.ClassValue(pc, v) :: operands)
+                            case LoadMethodHandle_W(v) => fallThrough(theDomain.MethodHandle(pc, v) :: operands)
+                            case LoadMethodType_W(v)   => fallThrough(theDomain.MethodType(pc, v) :: operands)
+                            case LoadDynamic_W(bootstrapMethod, name, descriptor) => computationWithReturnValue(
+                                    theDomain.loadDynamic(pc, bootstrapMethod, name, descriptor),
+                                    operands
+                                )
+                        }
                     case 20 /*ldc2_w*/ => instruction match {
-                        case LoadLong(v) =>
-                            fallThrough(theDomain.LongValue(pc, v) :: operands)
-                        case LoadDouble(v) =>
-                            fallThrough(theDomain.DoubleValue(pc, v) :: operands)
-                        case LoadDynamic2_W(bootstrapMethod, name, descriptor) =>
-                            computationWithReturnValue(
-                                theDomain.loadDynamic(pc, bootstrapMethod, name, descriptor),
-                                operands
-                            )
-                    }
+                            case LoadLong(v)   => fallThrough(theDomain.LongValue(pc, v) :: operands)
+                            case LoadDouble(v) => fallThrough(theDomain.DoubleValue(pc, v) :: operands)
+                            case LoadDynamic2_W(bootstrapMethod, name, descriptor) => computationWithReturnValue(
+                                    theDomain.loadDynamic(pc, bootstrapMethod, name, descriptor),
+                                    operands
+                                )
+                        }
 
                     case 17 /*sipush*/ =>
                         val value = instruction.asInstanceOf[SIPUSH].value.toShort
@@ -2757,14 +2889,10 @@ abstract class AI[D <: Domain](
                     //
                     // UNARY EXPRESSIONS
                     //
-                    case 119 /*dneg*/ =>
-                        fallThrough(theDomain.dneg(pc, operands.head) :: operands.tail)
-                    case 118 /*fneg*/ =>
-                        fallThrough(theDomain.fneg(pc, operands.head) :: operands.tail)
-                    case 117 /*lneg*/ =>
-                        fallThrough(theDomain.lneg(pc, operands.head) :: operands.tail)
-                    case 116 /*ineg*/ =>
-                        fallThrough(theDomain.ineg(pc, operands.head) :: operands.tail)
+                    case 119 /*dneg*/ => fallThrough(theDomain.dneg(pc, operands.head) :: operands.tail)
+                    case 118 /*fneg*/ => fallThrough(theDomain.fneg(pc, operands.head) :: operands.tail)
+                    case 117 /*lneg*/ => fallThrough(theDomain.lneg(pc, operands.head) :: operands.tail)
+                    case 116 /*ineg*/ => fallThrough(theDomain.ineg(pc, operands.head) :: operands.tail)
 
                     //
                     // BINARY EXPRESSIONS
@@ -2810,7 +2938,7 @@ abstract class AI[D <: Domain](
                         fallThrough(theDomain.iand(pc, value1, value2) :: rest)
                     case 108 /*idiv*/ =>
                         val value2 :: value1 :: rest = operands
-                        val computation = theDomain.idiv(pc, value1, value2)
+                        val computation              = theDomain.idiv(pc, value1, value2)
                         computationWithReturnValueAndException(computation, rest)
                     case 104 /*imul*/ =>
                         val value2 :: value1 :: rest = operands
@@ -2820,7 +2948,7 @@ abstract class AI[D <: Domain](
                         fallThrough(theDomain.ior(pc, value1, value2) :: rest)
                     case 112 /*irem*/ =>
                         val value2 :: value1 :: rest = operands
-                        val computation = theDomain.irem(pc, value1, value2)
+                        val computation              = theDomain.irem(pc, value1, value2)
                         computationWithReturnValueAndException(computation, rest)
                     case 120 /*ishl*/ =>
                         val value2 :: value1 :: rest = operands
@@ -2846,7 +2974,7 @@ abstract class AI[D <: Domain](
                         fallThrough(theDomain.land(pc, value1, value2) :: rest)
                     case 109 /*ldiv*/ =>
                         val value2 :: value1 :: rest = operands
-                        val computation = theDomain.ldiv(pc, value1, value2)
+                        val computation              = theDomain.ldiv(pc, value1, value2)
                         computationWithReturnValueAndException(computation, rest)
                     case 105 /*lmul*/ =>
                         val value2 :: value1 :: rest = operands
@@ -2856,7 +2984,7 @@ abstract class AI[D <: Domain](
                         fallThrough(theDomain.lor(pc, value1, value2) :: rest)
                     case 113 /*lrem*/ =>
                         val value2 :: value1 :: rest = operands
-                        val computation = theDomain.lrem(pc, value1, value2)
+                        val computation              = theDomain.lrem(pc, value1, value2)
                         computationWithReturnValueAndException(computation, rest)
                     case 121 /*lshl*/ =>
                         val value2 :: value1 :: rest = operands
@@ -2876,54 +3004,42 @@ abstract class AI[D <: Domain](
                     //
                     // GENERIC STACK MANIPULATION
                     //
-                    case 89 /*dup*/ =>
-                        fallThrough(operands.head :: operands)
+                    case 89 /*dup*/ => fallThrough(operands.head :: operands)
                     case 90 /*dup_x1*/ =>
                         val v1 :: v2 :: rest = operands
                         fallThrough(v1 :: v2 :: v1 :: rest)
-                    case 91 /*dup_x2*/ =>
-                        operands match {
-                            case (v1 /*CTC1*/ ) :: (v2 @ CTC1()) :: (v3 /*CTC1*/ ) :: rest =>
+                    case 91 /*dup_x2*/ => operands match {
+                            case v1 /*CTC1*/ :: (v2 @ CTC1()) :: (v3 /*CTC1*/ ) :: rest =>
                                 fallThrough(v1 :: v2 :: v3 :: v1 :: rest)
-                            case (v1 /*@ CTC1()*/ ) :: v2 /* @ CTC2()*/ :: rest =>
-                                fallThrough(v1 :: v2 :: v1 :: rest)
-                            case _ => throw new MatchError(operands)
+                            case v1 /*@ CTC1()*/ :: v2 /* @ CTC2()*/ :: rest => fallThrough(v1 :: v2 :: v1 :: rest)
+                            case _                                           => throw new MatchError(operands)
                         }
-                    case 92 /*dup2*/ =>
-                        operands match {
-                            case (v1 @ CTC1()) :: (v2 /*CTC1!*/ ) :: _ =>
-                                fallThrough(v1 :: v2 :: operands)
-                            case (v /*CTC2!*/ ) :: _ =>
-                                fallThrough(v :: operands)
-                            case _ => throw new MatchError(operands)
+                    case 92 /*dup2*/ => operands match {
+                            case (v1 @ CTC1()) :: (v2 /*CTC1!*/ ) :: _ => fallThrough(v1 :: v2 :: operands)
+                            case v /*CTC2!*/ :: _                      => fallThrough(v :: operands)
+                            case _                                     => throw new MatchError(operands)
                         }
-                    case 93 /*dup2_x1*/ =>
-                        operands match {
+                    case 93 /*dup2_x1*/ => operands match {
                             case (v1 @ CTC1()) :: (v2 /*CTC1!*/ ) :: (v3 /*CTC1!*/ ) :: rest =>
                                 fallThrough(v1 :: v2 :: v3 :: v1 :: v2 :: rest)
-                            case (v1 @ CTC2()) :: (v2 /*@ CTC1()*/ ) :: rest =>
-                                fallThrough(v1 :: v2 :: v1 :: rest)
-                            case _ => throw new MatchError(operands)
+                            case (v1 @ CTC2()) :: (v2 /*@ CTC1()*/ ) :: rest => fallThrough(v1 :: v2 :: v1 :: rest)
+                            case _                                           => throw new MatchError(operands)
                         }
                     case 94 /*dup2_x2*/ => operands match {
-                        case (v1 @ CTC1()) :: (v2 @ CTC1()) :: (v3 @ CTC1()) :: v4 :: rest =>
-                            fallThrough(v1 :: v2 :: v3 :: v4 :: v1 :: v2 :: rest)
-                        case (v1 @ CTC2()) :: (v2 @ CTC1()) :: (v3 @ CTC1()) :: rest =>
-                            fallThrough(v1 :: v2 :: v3 :: v1 :: rest)
-                        case (v1 @ CTC1()) :: (v2 @ CTC1()) :: (v3 @ CTC2()) :: rest =>
-                            fallThrough(v1 :: v2 :: v3 :: v1 :: v2 :: rest)
-                        case (v1 /*@ CTC2()*/ ) :: (v2 /*@ CTC1()*/ ) :: rest =>
-                            fallThrough(v1 :: v2 :: v1 :: rest)
-                        case _ => throw new MatchError(operands)
-                    }
+                            case (v1 @ CTC1()) :: (v2 @ CTC1()) :: (v3 @ CTC1()) :: v4 :: rest =>
+                                fallThrough(v1 :: v2 :: v3 :: v4 :: v1 :: v2 :: rest)
+                            case (v1 @ CTC2()) :: (v2 @ CTC1()) :: (v3 @ CTC1()) :: rest =>
+                                fallThrough(v1 :: v2 :: v3 :: v1 :: rest)
+                            case (v1 @ CTC1()) :: (v2 @ CTC1()) :: (v3 @ CTC2()) :: rest =>
+                                fallThrough(v1 :: v2 :: v3 :: v1 :: v2 :: rest)
+                            case v1 /*@ CTC2()*/ :: (v2 /*@ CTC1()*/ ) :: rest => fallThrough(v1 :: v2 :: v1 :: rest)
+                            case _                                             => throw new MatchError(operands)
+                        }
 
-                    case 87 /*pop*/ =>
-                        fallThrough(operands.tail)
+                    case 87 /*pop*/ => fallThrough(operands.tail)
                     case 88 /*pop2*/ =>
-                        if (operands.head.computationalType.operandSize == 1)
-                            fallThrough(operands.drop(2))
-                        else
-                            fallThrough(operands.tail)
+                        if (operands.head.computationalType.operandSize == 1) fallThrough(operands.drop(2))
+                        else fallThrough(operands.tail)
 
                     case 95 /*swap*/ =>
                         val v1 :: v2 :: rest = operands
@@ -2932,44 +3048,29 @@ abstract class AI[D <: Domain](
                     //
                     // TYPE CONVERSION
                     //
-                    case 144 /*d2f*/ =>
-                        fallThrough(theDomain.d2f(pc, operands.head) :: operands.tail)
-                    case 142 /*d2i*/ =>
-                        fallThrough(theDomain.d2i(pc, operands.head) :: operands.tail)
-                    case 143 /*d2l*/ =>
-                        fallThrough(theDomain.d2l(pc, operands.head) :: operands.tail)
+                    case 144 /*d2f*/ => fallThrough(theDomain.d2f(pc, operands.head) :: operands.tail)
+                    case 142 /*d2i*/ => fallThrough(theDomain.d2i(pc, operands.head) :: operands.tail)
+                    case 143 /*d2l*/ => fallThrough(theDomain.d2l(pc, operands.head) :: operands.tail)
 
-                    case 141 /*f2d*/ =>
-                        fallThrough(theDomain.f2d(pc, operands.head) :: operands.tail)
-                    case 139 /*f2i*/ =>
-                        fallThrough(theDomain.f2i(pc, operands.head) :: operands.tail)
-                    case 140 /*f2l*/ =>
-                        fallThrough(theDomain.f2l(pc, operands.head) :: operands.tail)
+                    case 141 /*f2d*/ => fallThrough(theDomain.f2d(pc, operands.head) :: operands.tail)
+                    case 139 /*f2i*/ => fallThrough(theDomain.f2i(pc, operands.head) :: operands.tail)
+                    case 140 /*f2l*/ => fallThrough(theDomain.f2l(pc, operands.head) :: operands.tail)
 
-                    case 145 /*i2b*/ =>
-                        fallThrough(theDomain.i2b(pc, operands.head) :: operands.tail)
-                    case 146 /*i2c*/ =>
-                        fallThrough(theDomain.i2c(pc, operands.head) :: operands.tail)
-                    case 135 /*i2d*/ =>
-                        fallThrough(theDomain.i2d(pc, operands.head) :: operands.tail)
-                    case 134 /*i2f*/ =>
-                        fallThrough(theDomain.i2f(pc, operands.head) :: operands.tail)
-                    case 133 /*i2l*/ =>
-                        fallThrough(theDomain.i2l(pc, operands.head) :: operands.tail)
-                    case 147 /*i2s*/ =>
-                        fallThrough(theDomain.i2s(pc, operands.head) :: operands.tail)
+                    case 145 /*i2b*/ => fallThrough(theDomain.i2b(pc, operands.head) :: operands.tail)
+                    case 146 /*i2c*/ => fallThrough(theDomain.i2c(pc, operands.head) :: operands.tail)
+                    case 135 /*i2d*/ => fallThrough(theDomain.i2d(pc, operands.head) :: operands.tail)
+                    case 134 /*i2f*/ => fallThrough(theDomain.i2f(pc, operands.head) :: operands.tail)
+                    case 133 /*i2l*/ => fallThrough(theDomain.i2l(pc, operands.head) :: operands.tail)
+                    case 147 /*i2s*/ => fallThrough(theDomain.i2s(pc, operands.head) :: operands.tail)
 
-                    case 138 /*l2d*/ =>
-                        fallThrough(theDomain.l2d(pc, operands.head) :: operands.tail)
-                    case 137 /*l2f*/ =>
-                        fallThrough(theDomain.l2f(pc, operands.head) :: operands.tail)
-                    case 136 /*l2i*/ =>
-                        fallThrough(theDomain.l2i(pc, operands.head) :: operands.tail)
+                    case 138 /*l2d*/ => fallThrough(theDomain.l2d(pc, operands.head) :: operands.tail)
+                    case 137 /*l2f*/ => fallThrough(theDomain.l2f(pc, operands.head) :: operands.tail)
+                    case 136 /*l2i*/ => fallThrough(theDomain.l2i(pc, operands.head) :: operands.tail)
 
                     case 192 /*checkcast*/ =>
                         val objectref = operands.head
                         val supertype = instruction.asInstanceOf[CHECKCAST].referenceType
-                        val isNull = theDomain.refIsNull(pc, objectref)
+                        val isNull    = theDomain.refIsNull(pc, objectref)
                         if (isNull.isYes)
                             // if objectref is null => UNCHANGED (see spec. for details)
                             fallThrough()
@@ -3001,12 +3102,12 @@ abstract class AI[D <: Domain](
                                     }
 
                                 case Unknown =>
-                                    val (newOperands, newLocals) =
-                                        theDomain.refSetUpperTypeBoundOfTopOperand(
-                                            pc,
-                                            supertype,
-                                            operands, locals
-                                        )
+                                    val (newOperands, newLocals) = theDomain.refSetUpperTypeBoundOfTopOperand(
+                                        pc,
+                                        supertype,
+                                        operands,
+                                        locals
+                                    )
                                     // The following assert may catch bugs in the
                                     // implementation of domains!
                                     assert(
@@ -3014,9 +3115,9 @@ abstract class AI[D <: Domain](
                                             val castedValue = newOperands.head
                                             theDomain.isValueASubtypeOf(castedValue, supertype).isYes
                                         },
-                                        s"the cast of $objectref to ${supertype.toJava} failed: "+
-                                            s"the subtyping relation between "+
-                                            s"${newOperands.head} and ${supertype.toJava} is "+
+                                        s"the cast of $objectref to ${supertype.toJava} failed: " +
+                                            s"the subtyping relation between " +
+                                            s"${newOperands.head} and ${supertype.toJava} is " +
                                             theDomain.isValueASubtypeOf(newOperands.head, supertype).isYes
                                     )
                                     fallThrough(newOperands, newLocals)
@@ -3041,25 +3142,21 @@ abstract class AI[D <: Domain](
 
                         val valueIsNull = theDomain.refIsNull(pc, value)
                         val result =
-                            if (valueIsNull.isYes)
-                                theDomain.BooleanValue(pc, false)
-                            else
-                                theDomain.isValueASubtypeOf(value, referenceType) match {
-                                    case No =>
-                                        theDomain.BooleanValue(pc, false)
+                            if (valueIsNull.isYes) theDomain.BooleanValue(pc, false)
+                            else theDomain.isValueASubtypeOf(value, referenceType) match {
+                                case No => theDomain.BooleanValue(pc, false)
 
-                                    case Yes if valueIsNull.isNo =>
-                                        // null instanceOf[X] is always false...
-                                        // TODO [Dependent Values] add a constraint that – if the value is 1 then the value is non-null and if is 0 then the value is null
-                                        theDomain.BooleanValue(pc, true)
+                                case Yes if valueIsNull.isNo =>
+                                    // null instanceOf[X] is always false...
+                                    // TODO [Dependent Values] add a constraint that – if the value is 1 then the value is non-null and if is 0 then the value is null
+                                    theDomain.BooleanValue(pc, true)
 
-                                    case _ /*Unknown or valueIsNull === Unknown*/ =>
-                                        theDomain.BooleanValue(pc)
-                                }
+                                case _ /*Unknown or valueIsNull === Unknown*/ => theDomain.BooleanValue(pc)
+                            }
                         fallThrough(result :: rest)
 
                     case 132 /*iinc*/ =>
-                        val iinc = as[IINC](instruction)
+                        val iinc     = as[IINC](instruction)
                         val newValue = theDomain.iinc(pc, locals(iinc.lvIndex), iinc.constValue)
                         fallThrough(operandsArray(pc), locals.updated(iinc.lvIndex, newValue))
 
@@ -3076,7 +3173,12 @@ abstract class AI[D <: Domain](
                 }
 
                 theDomain.evaluationCompleted(
-                    pc, worklist, evaluatedPCs, operandsArray, localsArray, tracer
+                    pc,
+                    worklist,
+                    evaluatedPCs,
+                    operandsArray,
+                    localsArray,
+                    tracer
                 )
 
             } catch {
@@ -3102,38 +3204,38 @@ private object AI {
      */
     final val initialWorkList: List[Int /*PC*/ ] = List(0)
 
-    final val RefIsNullTestId = 10001
-    final val RefIsNonNullTestId = 10002
-    final val RefAreEqualTestId = 10003
-    final val RefAreNotEqualTestId = 10004
-    final val IntAreEqualTestId = 10005
-    final val IntAreNotEqualTestId = 10006
-    final val IntIsLessThanTestId = 10007
-    final val IntIsLessThanOrEqualToTestId = 10008
-    final val IntIsGreaterThanTestId = 10009
-    final val IntIsGreaterThanOrEqualToTestId = 10010
-    final val IntIs0TestId = 10011
-    final val IntIsNot0TestId = 10012
-    final val IntIsLessThan0TestId = 10013
-    final val IntIsLessThanOrEqualTo0TestId = 10014
-    final val IntIsGreaterThan0TestId = 10015
+    final val RefIsNullTestId                  = 10001
+    final val RefIsNonNullTestId               = 10002
+    final val RefAreEqualTestId                = 10003
+    final val RefAreNotEqualTestId             = 10004
+    final val IntAreEqualTestId                = 10005
+    final val IntAreNotEqualTestId             = 10006
+    final val IntIsLessThanTestId              = 10007
+    final val IntIsLessThanOrEqualToTestId     = 10008
+    final val IntIsGreaterThanTestId           = 10009
+    final val IntIsGreaterThanOrEqualToTestId  = 10010
+    final val IntIs0TestId                     = 10011
+    final val IntIsNot0TestId                  = 10012
+    final val IntIsLessThan0TestId             = 10013
+    final val IntIsLessThanOrEqualTo0TestId    = 10014
+    final val IntIsGreaterThan0TestId          = 10015
     final val IntIsGreaterThanOrEqualTo0TestId = 10016
 
-    final val RefIsNullConstraintId = 11001
-    final val RefIsNonNullConstraintId = 11002
-    final val RefAreEqualConstraintId = 11003
-    final val RefAreNotEqualConstraintId = 11004
-    final val IntAreEqualConstraintId = 11005
-    final val IntAreNotEqualConstraintId = 11006
-    final val IntIsLessThanConstraintId = 11007
-    final val IntIsLessThanOrEqualToConstraintId = 11008
-    final val IntIsGreaterThanConstraintId = 11009
-    final val IntIsGreaterThanOrEqualToConstraintId = 11010
-    final val IntIs0ConstraintId = 11011
-    final val IntIsNot0ConstraintId = 11012
-    final val IntIsLessThan0ConstraintId = 11013
-    final val IntIsLessThanOrEqualTo0ConstraintId = 11014
-    final val IntIsGreaterThan0ConstraintId = 11015
+    final val RefIsNullConstraintId                  = 11001
+    final val RefIsNonNullConstraintId               = 11002
+    final val RefAreEqualConstraintId                = 11003
+    final val RefAreNotEqualConstraintId             = 11004
+    final val IntAreEqualConstraintId                = 11005
+    final val IntAreNotEqualConstraintId             = 11006
+    final val IntIsLessThanConstraintId              = 11007
+    final val IntIsLessThanOrEqualToConstraintId     = 11008
+    final val IntIsGreaterThanConstraintId           = 11009
+    final val IntIsGreaterThanOrEqualToConstraintId  = 11010
+    final val IntIs0ConstraintId                     = 11011
+    final val IntIsNot0ConstraintId                  = 11012
+    final val IntIsLessThan0ConstraintId             = 11013
+    final val IntIsLessThanOrEqualTo0ConstraintId    = 11014
+    final val IntIsGreaterThan0ConstraintId          = 11015
     final val IntIsGreaterThanOrEqualTo0ConstraintId = 11016
 }
 
@@ -3153,7 +3255,7 @@ object CTC1 {
     def unapply(value: d.DomainValue forSome { val d : Domain}): Boolean = {
         value.computationalType.categoryId == 1
     }
-    */
+     */
 }
 
 /**

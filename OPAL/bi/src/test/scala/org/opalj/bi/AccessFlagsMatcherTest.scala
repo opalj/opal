@@ -3,9 +3,9 @@ package org.opalj
 package bi
 
 import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests the matching of access flags.
@@ -87,59 +87,53 @@ class AccessFlagsMatcherTest extends AnyFlatSpec with Matchers {
         val NOT_PRIVATE___NOT_FINAL = (!ACC_PRIVATE) && (!ACC_FINAL)
         afPublicAbstract match {
             case NOT_PRIVATE___NOT_FINAL() => /*success*/
-            case _ =>
-                fail(
-                    AccessFlags.toString(afPublicAbstract, AccessFlagsContexts.METHOD)+
-                        " did not match "+NOT_PRIVATE___NOT_FINAL
+            case _ => fail(
+                    AccessFlags.toString(afPublicAbstract, AccessFlagsContexts.METHOD) +
+                        " did not match " + NOT_PRIVATE___NOT_FINAL
                 )
         }
 
         val NOT_NOT_PUBLIC = !(!ACC_PUBLIC)
         afPublicAbstract match {
             case NOT_NOT_PUBLIC() => /*success*/
-            case _ =>
-                fail(
-                    AccessFlags.toString(afPublicAbstract, AccessFlagsContexts.METHOD)+
-                        " did not match "+NOT_NOT_PUBLIC
+            case _ => fail(
+                    AccessFlags.toString(afPublicAbstract, AccessFlagsContexts.METHOD) +
+                        " did not match " + NOT_NOT_PUBLIC
                 )
         }
     }
 
     it should "be combinable with other AccessFlagsMatchers" in {
-        val afPublicAbstract = ACC_PUBLIC.mask | ACC_ABSTRACT.mask
+        val afPublicAbstract    = ACC_PUBLIC.mask | ACC_ABSTRACT.mask
         val afProtectedAbstract = ACC_PROTECTED.mask | ACC_ABSTRACT.mask
-        val afProtectedFinal = ACC_PROTECTED.mask | ACC_FINAL.mask
-        val afDefaultAbstract = ACC_ABSTRACT.mask
+        val afProtectedFinal    = ACC_PROTECTED.mask | ACC_FINAL.mask
+        val afDefaultAbstract   = ACC_ABSTRACT.mask
 
         val OrMatcher = AccessFlagsMatcher.PUBLIC___OR___PROTECTED_AND_NOT_FINAL
         afPublicAbstract match {
             case OrMatcher() => /*success*/
-            case _ =>
-                fail(AccessFlags.toString(afPublicAbstract, AccessFlagsContexts.METHOD)+
-                    " did not match "+OrMatcher)
+            case _ => fail(AccessFlags.toString(afPublicAbstract, AccessFlagsContexts.METHOD) +
+                    " did not match " + OrMatcher)
         }
         afProtectedAbstract match {
             case OrMatcher() => /*success*/
-            case _ =>
-                fail(
-                    AccessFlags.toString(afProtectedAbstract, AccessFlagsContexts.METHOD)+
-                        " did not match "+OrMatcher
+            case _ => fail(
+                    AccessFlags.toString(afProtectedAbstract, AccessFlagsContexts.METHOD) +
+                        " did not match " + OrMatcher
                 )
         }
 
         afProtectedFinal match {
-            case OrMatcher() =>
-                fail(
-                    AccessFlags.toString(afProtectedFinal, AccessFlagsContexts.METHOD)+
-                        " did match "+OrMatcher
+            case OrMatcher() => fail(
+                    AccessFlags.toString(afProtectedFinal, AccessFlagsContexts.METHOD) +
+                        " did match " + OrMatcher
                 )
             case _ => /*success*/
         }
         afDefaultAbstract match {
-            case OrMatcher() =>
-                fail(
-                    AccessFlags.toString(afDefaultAbstract, AccessFlagsContexts.METHOD)+
-                        " did match "+OrMatcher
+            case OrMatcher() => fail(
+                    AccessFlags.toString(afDefaultAbstract, AccessFlagsContexts.METHOD) +
+                        " did match " + OrMatcher
                 )
             case _ => /*success*/
         }

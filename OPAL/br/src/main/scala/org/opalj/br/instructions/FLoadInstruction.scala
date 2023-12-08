@@ -17,5 +17,5 @@ trait FLoadInstruction extends LoadLocalVariableInstruction {
 
 trait ConstantIndexFLoadInstruction
     extends FLoadInstruction
-    with ImplicitLocalVariableIndex
-    with InstructionMetaInformation
+        with ImplicitLocalVariableIndex
+        with InstructionMetaInformation

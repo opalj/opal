@@ -28,8 +28,7 @@ case object ATHROW extends Instruction with NoLabels {
 
     final def stackSlotsChange: Int = -1 // take the current exception or null
 
-    final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean =
-        this eq code.instructions(otherPC)
+    final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = this eq code.instructions(otherPC)
 
     final val readsLocal = false
 
@@ -39,23 +38,18 @@ case object ATHROW extends Instruction with NoLabels {
 
     final def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
 
-    final def indexOfNextInstruction(currentPC: Int)(implicit code: Code) = {
-        indexOfNextInstruction(currentPC, false)
-    }
+    final def indexOfNextInstruction(currentPC: Int)(implicit code: Code) = indexOfNextInstruction(currentPC, false)
 
     final def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean): Int = currentPC + 1
 
     final def nextInstructions(
-        currentPC: PC, regularSuccessorsOnly: Boolean
-    )(
-        implicit
-        code: Code, classHierarchy: ClassHierarchy
-    ): List[PC] = {
-        if (regularSuccessorsOnly)
-            List.empty
-        else
-            code.handlerInstructionsFor(currentPC)
-    }
+        currentPC:             PC,
+        regularSuccessorsOnly: Boolean
+      )(implicit
+        code:           Code,
+        classHierarchy: ClassHierarchy): List[PC] =
+        if (regularSuccessorsOnly) List.empty
+        else code.handlerInstructionsFor(currentPC)
 
     final def expressionResult: NoExpression.type = NoExpression
 

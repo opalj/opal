@@ -44,17 +44,13 @@ trait ProgressManagement {
      */
     def progress(step: Int, event: ProgressEvent, message: Option[String]): Unit
 
-    final def start(step: Int, message: String): Unit = {
-        progress(step, ProgressEvents.Start, Some(message))
-    }
+    final def start(step: Int, message: String): Unit = progress(step, ProgressEvents.Start, Some(message))
 
     final def end(step: Int): Unit = progress(step, ProgressEvents.End, None)
 
     final def end(step: Int, message: String): Unit = end(step, Some(message))
 
-    final def end(step: Int, message: Option[String]): Unit = {
-        progress(step, ProgressEvents.End, message)
-    }
+    final def end(step: Int, message: Option[String]): Unit = progress(step, ProgressEvents.End, message)
 
     /**
      * A convenience method to execute one analysis step. If executing the step
@@ -63,15 +59,14 @@ trait ProgressManagement {
     final def step[T](
         step:         Int,
         startMessage: String
-    )(
-        f: => (T, Option[String])
-    ): T = {
+      )(f: => (T, Option[String])): T = {
         start(step, startMessage)
-        val (t, endMessage) = try {
-            f
-        } catch {
-            case t: Throwable => end(step, "failed: "+t.getMessage); throw t
-        }
+        val (t, endMessage) =
+            try {
+                f
+            } catch {
+                case t: Throwable => end(step, "failed: " + t.getMessage); throw t
+            }
         end(step, endMessage)
         t
     }
@@ -92,11 +87,12 @@ trait ProgressManagement {
  */
 object ProgressManagement {
 
-    val None: Int => ProgressManagement = maxSteps => new ProgressManagement {
+    val None: Int => ProgressManagement = maxSteps =>
+        new ProgressManagement {
 
-        final override def progress(step: Int, event: ProgressEvent, msg: Option[String]): Unit = {}
+            final override def progress(step: Int, event: ProgressEvent, msg: Option[String]): Unit = {}
 
-        final override def isInterrupted(): Boolean = false
+            final override def isInterrupted(): Boolean = false
 
-    }
+        }
 }

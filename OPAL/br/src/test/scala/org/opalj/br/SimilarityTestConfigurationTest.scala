@@ -2,17 +2,18 @@
 package org.opalj
 package br
 
-import org.opalj.bi.ACC_PUBLIC
-import org.opalj.bi.ACC_STATIC
+import scala.collection.immutable.ArraySeq
+
 import org.opalj.bi.ACC_PRIVATE
 import org.opalj.bi.ACC_PROTECTED
-import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.matchers.should.Matchers
+import org.opalj.bi.ACC_PUBLIC
+import org.opalj.bi.ACC_STATIC
 import org.opalj.br.instructions.IADD
 import org.opalj.br.instructions.ICONST_1
 import org.opalj.br.instructions.IRETURN
 
-import scala.collection.immutable.ArraySeq
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
 /**
  * Tests the configuration of the similarity test.
@@ -30,10 +31,10 @@ class SimilarityTestConfigurationTest extends AnyFunSuite with Matchers {
     // (The following classes do NOT represent valid class files!)
     //
     def simpleFieldAttributes = ArraySeq(Synthetic, Deprecated)
-    def simpleField = Field(ACC_PUBLIC.mask, "test", ByteType, simpleFieldAttributes)
-    def field2Field = Field(ACC_PROTECTED.mask, "field 2", BooleanType, simpleFieldAttributes)
-    def simpleFields = ArraySeq(simpleField, field2Field)
-    def simpleCode = Code(2, 0, Array(ICONST_1, ICONST_1, IADD, IRETURN))
+    def simpleField           = Field(ACC_PUBLIC.mask, "test", ByteType, simpleFieldAttributes)
+    def field2Field           = Field(ACC_PROTECTED.mask, "field 2", BooleanType, simpleFieldAttributes)
+    def simpleFields          = ArraySeq(simpleField, field2Field)
+    def simpleCode            = Code(2, 0, Array(ICONST_1, ICONST_1, IADD, IRETURN))
     def simpleMethod = Method(
         ACC_PUBLIC.mask,
         "simple_method",
@@ -73,34 +74,23 @@ class SimilarityTestConfigurationTest extends AnyFunSuite with Matchers {
             def compareFields(
                 leftContext: ClassFile,
                 left:        Iterable[JVMField],
-                right:       Iterable[JVMField]
-            ): (Iterable[JVMField], Iterable[JVMField]) = {
-                (Iterable.empty, Iterable.empty)
-            }
+                right:       Iterable[JVMField]): (Iterable[JVMField], Iterable[JVMField]) = (Iterable.empty, Iterable.empty)
 
             def compareMethods(
                 leftContext: ClassFile,
                 left:        Iterable[JVMMethod],
-                right:       Iterable[JVMMethod]
-            ): (Iterable[JVMMethod], Iterable[JVMMethod]) = {
+                right:       Iterable[JVMMethod]): (Iterable[JVMMethod], Iterable[JVMMethod]) =
                 (Iterable.empty, Iterable.empty)
-            }
 
             def compareAttributes(
                 leftContext: CommonAttributes,
                 left:        Attributes,
-                right:       Attributes
-            ): (Attributes, Attributes) = {
-                (NoAttributes, NoAttributes)
-            }
+                right:       Attributes): (Attributes, Attributes) = (NoAttributes, NoAttributes)
 
             def compareCode(
                 leftContext: JVMMethod,
                 left:        Option[Code],
-                right:       Option[Code]
-            ): (Option[Code], Option[Code]) = {
-                (None, None)
-            }
+                right:       Option[Code]): (Option[Code], Option[Code]) = (None, None)
         }
         assert(simpleClass.findDissimilarity(simpleClass, NoTestsConfiguration).isEmpty)
     }
@@ -110,8 +100,7 @@ class SimilarityTestConfigurationTest extends AnyFunSuite with Matchers {
             override def compareAttributes(
                 leftContext: CommonAttributes,
                 left:        Attributes,
-                right:       Attributes
-            ): (Attributes, Attributes) = {
+                right:       Attributes): (Attributes, Attributes) = {
                 val (newLeft, newRight) = super.compareAttributes(leftContext, left, right)
                 (
                     newLeft.filter(a => a.isInstanceOf[SourceFile]),
@@ -140,8 +129,7 @@ class SimilarityTestConfigurationTest extends AnyFunSuite with Matchers {
             override def compareAttributes(
                 leftContext: CommonAttributes,
                 left:        Attributes,
-                right:       Attributes
-            ): (Attributes, Attributes) = {
+                right:       Attributes): (Attributes, Attributes) = {
                 val (superNewLeft, superNewRight) = super.compareAttributes(leftContext, left, right)
                 val (newLeft, newRight) = (
                     superNewLeft.filter(a => a != Deprecated),
@@ -171,13 +159,10 @@ class SimilarityTestConfigurationTest extends AnyFunSuite with Matchers {
             override def compareFields(
                 leftContext: ClassFile,
                 left:        Iterable[JVMField],
-                right:       Iterable[JVMField]
-            ): (Iterable[JVMField], Iterable[JVMField]) = {
-                (
-                    left.filter(a => a.accessFlags == 1),
-                    right.filter(a => a.accessFlags == 1)
-                )
-            }
+                right:       Iterable[JVMField]): (Iterable[JVMField], Iterable[JVMField]) = (
+                left.filter(a => a.accessFlags == 1),
+                right.filter(a => a.accessFlags == 1)
+            )
         }
         // the following class has less fields
         val classWithLessFields = simpleClass.copy(fields = ArraySeq(simpleField))

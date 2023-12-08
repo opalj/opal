@@ -8,15 +8,13 @@ import scala.annotation.switch
 import java.net.URL
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
-
 import scala.collection.mutable.ListBuffer
 
-import org.opalj.log.GlobalLogContext
-import org.opalj.value.ValueInformation
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.ReportableAnalysisResult
+import org.opalj.log.GlobalLogContext
 import org.opalj.tac.Assignment
 import org.opalj.tac.Call
 import org.opalj.tac.DUVar
@@ -25,6 +23,7 @@ import org.opalj.tac.LazyDetachedTACAIKey
 import org.opalj.tac.NonVirtualMethodCall
 import org.opalj.tac.StaticMethodCall
 import org.opalj.tac.VirtualMethodCall
+import org.opalj.value.ValueInformation
 
 /**
  * Analyzes a project for how a particular class is used within that project. Collects information
@@ -46,10 +45,9 @@ object ClassUsageAnalysis extends ProjectAnalysisApplication {
 
     override def title: String = "Class Usage Analysis"
 
-    override def description: String = {
-        "Analyzes a project for how a particular class is used within it, i.e., which methods "+
+    override def description: String =
+        "Analyzes a project for how a particular class is used within it, i.e., which methods " +
             "of instances of that class are called"
-    }
 
     /**
      * Takes a [[Call]] and assembles the method descriptor for this call. The granularity is
@@ -76,8 +74,7 @@ object ClassUsageAnalysis extends ProjectAnalysisApplication {
         call:                  Call[V],
         map:                   ConcurrentHashMap[String, AtomicInteger],
         className:             String,
-        isFineGrainedAnalysis: Boolean
-    ): Unit = {
+        isFineGrainedAnalysis: Boolean): Unit = {
         val declaringClassName = call.declaringClass.toJava
         if (declaringClassName == className) {
             val methodDescriptor = assembleMethodDescriptor(call, isFineGrainedAnalysis)
@@ -87,16 +84,14 @@ object ClassUsageAnalysis extends ProjectAnalysisApplication {
         }
     }
 
-    override def analysisSpecificParametersDescription: String = {
-        "-class=<fully-qualified class name> \n"+
-            "[-granularity=<fine|coarse> (Default: coarse)]"
-    }
+    override def analysisSpecificParametersDescription: String = "-class=<fully-qualified class name> \n" +
+        "[-granularity=<fine|coarse> (Default: coarse)]"
 
     /**
      * The fully-qualified name of the class that is to be analyzed in a Java format, i.e., dots as
      * package / class separators.
      */
-    private final val parameterNameForClass = "-class="
+    final private val parameterNameForClass = "-class="
 
     /**
      * The analysis can run in two modes: Fine-grained or coarse-grained. Fine-grained means that
@@ -106,13 +101,12 @@ object ClassUsageAnalysis extends ProjectAnalysisApplication {
      * base object as well as the method name are equal, i.e., overloaded methods are not
      * distinguished.
      */
-    private final val parameterNameForGranularity = "-granularity="
+    final private val parameterNameForGranularity = "-granularity="
 
     override def checkAnalysisSpecificParameters(parameters: Seq[String]): Iterable[String] = {
-        val remainingParameters =
-            parameters.filter { p =>
-                !p.contains(parameterNameForClass) && !p.contains(parameterNameForGranularity)
-            }
+        val remainingParameters = parameters.filter { p =>
+            !p.contains(parameterNameForClass) && !p.contains(parameterNameForGranularity)
+        }
         super.checkAnalysisSpecificParameters(remainingParameters)
     }
 
@@ -122,11 +116,12 @@ object ClassUsageAnalysis extends ProjectAnalysisApplication {
      */
     private def getAnalysisParameters(parameters: Seq[String]): (String, Boolean) = {
         val classParam = parameters.find(_.startsWith(parameterNameForClass))
-        val className = if (classParam.isDefined) {
-            classParam.get.substring(classParam.get.indexOf("=") + 1)
-        } else {
-            throw new IllegalArgumentException("missing argument: -class")
-        }
+        val className =
+            if (classParam.isDefined) {
+                classParam.get.substring(classParam.get.indexOf("=") + 1)
+            } else {
+                throw new IllegalArgumentException("missing argument: -class")
+            }
 
         val granularityParam = parameters.find(_.startsWith(parameterNameForGranularity))
         val isFineGrainedAnalysis =
@@ -146,20 +141,19 @@ object ClassUsageAnalysis extends ProjectAnalysisApplication {
     }
 
     override def doAnalyze(
-        project: Project[URL], parameters: Seq[String], isInterrupted: () => Boolean
-    ): ReportableAnalysisResult = {
-        val (className, isFineGrainedAnalysis) = getAnalysisParameters(parameters)
+        project:       Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () => Boolean): ReportableAnalysisResult = {
+        val (className, isFineGrainedAnalysis)                  = getAnalysisParameters(parameters)
         val resultMap: ConcurrentHashMap[String, AtomicInteger] = new ConcurrentHashMap()
-        val tacProvider = project.get(LazyDetachedTACAIKey)
+        val tacProvider                                         = project.get(LazyDetachedTACAIKey)
 
         project.parForeachMethodWithBody() { methodInfo =>
             tacProvider(methodInfo.method).stmts.foreach { stmt =>
                 (stmt.astID: @switch) match {
-                    case Assignment.ASTID | ExprStmt.ASTID =>
-                        stmt.asAssignmentLike.expr match {
-                            case c: Call[V] @unchecked =>
-                                processCall(c, resultMap, className, isFineGrainedAnalysis)
-                            case _ =>
+                    case Assignment.ASTID | ExprStmt.ASTID => stmt.asAssignmentLike.expr match {
+                            case c: Call[V] @unchecked => processCall(c, resultMap, className, isFineGrainedAnalysis)
+                            case _                     =>
                         }
                     case NonVirtualMethodCall.ASTID | VirtualMethodCall.ASTID |
                         StaticMethodCall.ASTID =>

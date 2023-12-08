@@ -12,16 +12,16 @@ import org.opalj.br.analyses.Project
  */
 trait SharedValuesDomain[Source]
     extends CorrelationalDomain
-    with DefaultSpecialDomainValuesBinding
-    with TheProject
-    with l0.DefaultTypeLevelFloatValues
-    with l0.DefaultTypeLevelDoubleValues
-    with l0.TypeLevelDynamicLoads
-    with l1.DefaultClassValuesBinding
-    with l1.DefaultArrayValuesBinding
-    with l1.DefaultIntegerRangeValues
-    // [CURRENTLY ONLY A WASTE OF RESOURCES] with l1.ConstraintsBetweenIntegerValues
-    with l1.DefaultLongValues
+        with DefaultSpecialDomainValuesBinding
+        with TheProject
+        with l0.DefaultTypeLevelFloatValues
+        with l0.DefaultTypeLevelDoubleValues
+        with l0.TypeLevelDynamicLoads
+        with l1.DefaultClassValuesBinding
+        with l1.DefaultArrayValuesBinding
+        with l1.DefaultIntegerRangeValues
+        // [CURRENTLY ONLY A WASTE OF RESOURCES] with l1.ConstraintsBetweenIntegerValues
+        with l1.DefaultLongValues
 
 /**
  * Domain that uses the l1 and l2 level ''stable'' domains.
@@ -36,22 +36,21 @@ trait SharedValuesDomain[Source]
  */
 class SharedDefaultDomain[Source](
         val project: Project[Source],
-        val method:  Method
-) extends TheMethod
-    with ThrowAllPotentialExceptionsConfiguration
-    with IgnoreSynchronization
-    with l0.DefaultTypeLevelHandlingOfMethodResults
-    with l0.TypeLevelFieldAccessInstructions
-    with l0.TypeLevelInvokeInstructions
-    with l0.TypeLevelDynamicLoads
-    with SpecialMethodsHandling
-    with SharedValuesDomain[Source]
-    with l1.MaxArrayLengthRefinement // OPTIONAL
-    with l1.NullPropertyRefinement // OPTIONAL
-    // [CURRENTLY ONLY A WASTE OF RESOURCES] with l1.ConstraintsBetweenIntegerValues
-    with l1.LongValuesShiftOperators
-    with l1.ConcretePrimitiveValuesConversions {
+        val method: Method) extends TheMethod
+        with ThrowAllPotentialExceptionsConfiguration
+        with IgnoreSynchronization
+        with l0.DefaultTypeLevelHandlingOfMethodResults
+        with l0.TypeLevelFieldAccessInstructions
+        with l0.TypeLevelInvokeInstructions
+        with l0.TypeLevelDynamicLoads
+        with SpecialMethodsHandling
+        with SharedValuesDomain[Source]
+        with l1.MaxArrayLengthRefinement // OPTIONAL
+        with l1.NullPropertyRefinement   // OPTIONAL
+        // [CURRENTLY ONLY A WASTE OF RESOURCES] with l1.ConstraintsBetweenIntegerValues
+        with l1.LongValuesShiftOperators
+        with l1.ConcretePrimitiveValuesConversions {
 
-    override def toString: String = super.toString()+"("+method.toJava+")"
+    override def toString: String = super.toString() + "(" + method.toJava + ")"
 
 }

@@ -2,12 +2,12 @@
 package org.opalj.br
 package cfg
 
+import org.opalj.br.instructions.Instruction
+import org.opalj.io.writeAndOpen
+
+import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.BeforeAndAfterAll
-
-import org.opalj.io.writeAndOpen
-import org.opalj.br.instructions.Instruction
 
 /**
  * Helper methods to test the CFG related methods.
@@ -18,13 +18,9 @@ abstract class AbstractCFGTest extends AnyFunSpec with Matchers with BeforeAndAf
 
     private[this] val oldCFGValidateSetting = CFG.Validate
 
-    override def beforeAll(): Unit = {
-        CFG.updateValidate(true)
-    }
+    override def beforeAll(): Unit = CFG.updateValidate(true)
 
-    override def afterAll(): Unit = {
-        CFG.updateValidate(oldCFGValidateSetting)
-    }
+    override def afterAll(): Unit = CFG.updateValidate(oldCFGValidateSetting)
 
     /**
      * Tests the correspondence of the information made available using a CFG
@@ -34,19 +30,15 @@ abstract class AbstractCFGTest extends AnyFunSpec with Matchers with BeforeAndAf
         m:    Method,
         code: Code,
         cfg:  CFG[Instruction, Code]
-    )(
-        implicit
-        classHierarchy: ClassHierarchy
-    ): Unit = {
+      )(implicit
+        classHierarchy: ClassHierarchy): Unit = {
         // validate that cfPCs returns the same information as the CFG
-        val (cfJoins, cfForks, forkTargetPCs) = code.cfPCs
+        val (cfJoins, cfForks, forkTargetPCs)        = code.cfPCs
         val (allPredecessorPCs, exitPCs, cfJoinsAlt) = code.predecessorPCs
 
         assert(cfJoins == cfJoinsAlt)
 
-        exitPCs foreach { pc =>
-            assert(cfg.bb(pc).successors.forall(_.isExitNode))
-        }
+        exitPCs foreach { pc => assert(cfg.bb(pc).successors.forall(_.isExitNode)) }
 
         cfJoins foreach { pc =>
             assert(
@@ -92,20 +84,16 @@ abstract class AbstractCFGTest extends AnyFunSpec with Matchers with BeforeAndAf
         method: Method,
         code:   Code,
         cfg:    CFG[Instruction, Code]
-    )(
-        f: => Unit
-    )(
-        implicit
-        classHierarchy: ClassHierarchy
-    ): Unit = {
+      )(f:      => Unit
+      )(implicit
+        classHierarchy: ClassHierarchy): Unit =
         try {
             cfgNodesCheck(method, code, cfg)
             f
         } catch {
             case t: Throwable =>
-                writeAndOpen(cfg.toDot, method.name+"-CFG", ".gv")
+                writeAndOpen(cfg.toDot, method.name + "-CFG", ".gv")
                 throw t
         }
-    }
 
 }

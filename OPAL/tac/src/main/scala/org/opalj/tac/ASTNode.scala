@@ -44,8 +44,6 @@ trait ASTNode[+V <: Var[V]] {
     /** See [[org.opalj.value.ValueInformation.toCanonicalForm]] for detail. */
     def toCanonicalForm(
         implicit
-        ev: V <:< DUVar[ValueInformation]
-    ): ASTNode[DUVar[ValueInformation]]
+        ev: V <:< DUVar[ValueInformation]): ASTNode[DUVar[ValueInformation]]
 
 }
-

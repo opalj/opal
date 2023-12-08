@@ -2,21 +2,20 @@
 package org.opalj
 package fpcf
 
-import java.util.concurrent.ConcurrentHashMap
 import java.util.{Arrays => JArrays}
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.RejectedExecutionException
-
-import scala.util.control.ControlThrowable
 import scala.collection.mutable
+import scala.util.control.ControlThrowable
 
+import org.opalj.collection.IntIterator
+import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPKId
+import org.opalj.fpcf.PropertyKind.SupportedPropertyKinds
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
-import org.opalj.log.OPALLogger.info
 import org.opalj.log.OPALLogger.{debug => trace}
 import org.opalj.log.OPALLogger.error
-import org.opalj.collection.IntIterator
-import org.opalj.fpcf.PropertyKind.SupportedPropertyKinds
-import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPKId
+import org.opalj.log.OPALLogger.info
 
 /**
  * A property store manages the execution of computations of properties related to concrete
@@ -144,9 +143,8 @@ abstract class PropertyStore {
      * has to ensure that the overall process of adding/querying/removing is well defined and
      * the ordered is ensured.
      */
-    final def getOrCreateInformation[T <: AnyRef](key: AnyRef, f: => T): T = {
+    final def getOrCreateInformation[T <: AnyRef](key: AnyRef, f: => T): T =
         externalInformation.computeIfAbsent(key, _ => f).asInstanceOf[T]
-    }
 
     /**
      * Returns the information stored in the store, if any.
@@ -155,9 +153,7 @@ abstract class PropertyStore {
      * has to ensure that the overall process of adding/querying/removing is well defined and
      * the ordered is ensured.
      */
-    final def getInformation[T <: AnyRef](key: AnyRef): Option[T] = {
-        Option(externalInformation.get(key).asInstanceOf[T])
-    }
+    final def getInformation[T <: AnyRef](key: AnyRef): Option[T] = Option(externalInformation.get(key).asInstanceOf[T])
 
     /**
      * Returns the information stored in the store and removes the key, if any.
@@ -166,9 +162,8 @@ abstract class PropertyStore {
      * has to ensure that the overall process of adding/querying/removing is well defined and
      * the ordered is ensured.
      */
-    final def getAndClearInformation[T <: AnyRef](key: AnyRef): Option[T] = {
+    final def getAndClearInformation[T <: AnyRef](key: AnyRef): Option[T] =
         Option(externalInformation.remove(key).asInstanceOf[T])
-    }
 
     //
     //
@@ -184,9 +179,8 @@ abstract class PropertyStore {
      * Looks up the context object of the given type. This is a comparatively expensive operation;
      * the result should be cached.
      */
-    final def context[T](key: Class[T]): T = {
-        ctx.getOrElse(key, { throw ContextNotAvailableException(key, ctx) }).asInstanceOf[T]
-    }
+    final def context[T](key: Class[T]): T =
+        ctx.getOrElse(key, throw ContextNotAvailableException(key, ctx)).asInstanceOf[T]
 
     //
     //
@@ -269,17 +263,15 @@ abstract class PropertyStore {
      */
     def statistics: mutable.LinkedHashMap[String, Int] = {
         val s =
-            if (debug)
-                mutable.LinkedHashMap(
-                    "scheduled tasks" ->
-                        scheduledTasksCount,
-                    "scheduled on update computations" ->
-                        scheduledOnUpdateComputationsCount,
-                    "computations of fallback properties for computed properties" ->
-                        fallbacksUsedForComputedPropertiesCount
-                )
-            else
-                mutable.LinkedHashMap.empty[String, Int]
+            if (debug) mutable.LinkedHashMap(
+                "scheduled tasks" ->
+                    scheduledTasksCount,
+                "scheduled on update computations" ->
+                    scheduledOnUpdateComputationsCount,
+                "computations of fallback properties for computed properties" ->
+                    fallbacksUsedForComputedPropertiesCount
+            )
+            else mutable.LinkedHashMap.empty[String, Int]
 
         // Always available stats:
         s.put("quiescence", quiescenceCount)
@@ -298,74 +290,61 @@ abstract class PropertyStore {
      * If a property is queried for which we have no value, then this information is used
      * to determine which kind of fallback is required.
      */
-    protected[this] final val propertyKindsComputedInEarlierPhase: Array[Boolean] = {
-        new Array(SupportedPropertyKinds)
-    }
+    final protected[this] val propertyKindsComputedInEarlierPhase: Array[Boolean] = new Array(SupportedPropertyKinds)
 
-    final def alreadyComputedPropertyKindIds: IntIterator = {
+    final def alreadyComputedPropertyKindIds: IntIterator =
         IntIterator.upUntil(0, SupportedPropertyKinds).filter(propertyKindsComputedInEarlierPhase)
-    }
 
-    protected[this] final val propertyKindsComputedInThisPhase: Array[Boolean] = {
-        new Array(SupportedPropertyKinds)
-    }
+    final protected[this] val propertyKindsComputedInThisPhase: Array[Boolean] = new Array(SupportedPropertyKinds)
 
     /**
      * Used to identify situations where a property is queried, which is only going to be computed
      * in the future - in this case, the specification of an analysis is broken!
      */
-    protected[this] final val propertyKindsComputedInLaterPhase: Array[Boolean] = {
-        new Array(SupportedPropertyKinds)
-    }
+    final protected[this] val propertyKindsComputedInLaterPhase: Array[Boolean] = new Array(SupportedPropertyKinds)
 
-    protected[this] final val suppressInterimUpdates: Array[Array[Boolean]] = {
+    final protected[this] val suppressInterimUpdates: Array[Array[Boolean]] =
         Array.fill(SupportedPropertyKinds) { new Array[Boolean](SupportedPropertyKinds) }
-    }
 
     /**
      * `true` if entities with a specific property kind (EP) may have dependers with suppressed
      * notifications. (I.e., suppressInteriumUpdates("depender")("EP") is `true`.)
      */
-    protected[this] final val hasSuppressedDependers: Array[Boolean] = {
-        Array.fill(SupportedPropertyKinds) { false }
-    }
+    final protected[this] val hasSuppressedDependers: Array[Boolean] = Array.fill(SupportedPropertyKinds) { false }
 
     /**
      * The order in which the property kinds will be finalized; the last phase is considered
      * the clean-up phase and will contain all remaining properties that were not explicitly
      * finalized previously.
      */
-    protected[this] final var subPhaseFinalizationOrder: Array[List[PropertyKind]] = Array.empty
+    final protected[this] var subPhaseFinalizationOrder: Array[List[PropertyKind]] = Array.empty
 
     /**
      * The set of computations that will only be scheduled if the result is required.
      */
-    protected[this] final val lazyComputations: Array[SomeProperPropertyComputation] = {
+    final protected[this] val lazyComputations: Array[SomeProperPropertyComputation] =
         new Array(PropertyKind.SupportedPropertyKinds)
-    }
 
     /**
      * The set of transformers that will only be executed when required.
      */
-    protected[this] final val transformersByTargetPK: Array[( /*source*/ PropertyKey[Property], (Entity, Property) => FinalEP[Entity, Property])] = {
+    final protected[this] val transformersByTargetPK
+        : Array[(/*source*/ PropertyKey[Property], (Entity, Property) => FinalEP[Entity, Property])] =
         new Array(PropertyKind.SupportedPropertyKinds)
-    }
-    protected[this] final val transformersBySourcePK: Array[( /*target*/ PropertyKey[Property], (Entity, Property) => FinalEP[Entity, Property])] = {
+    final protected[this] val transformersBySourcePK
+        : Array[(/*target*/ PropertyKey[Property], (Entity, Property) => FinalEP[Entity, Property])] =
         new Array(PropertyKind.SupportedPropertyKinds)
-    }
 
     protected[this] def computeFallback[E <: Entity, P <: Property](
         e:    E,
-        pkId: Int
-    ): FinalEP[E, P] = {
-        val reason = {
+        pkId: Int): FinalEP[E, P] = {
+        val reason =
             if (propertyKindsComputedInEarlierPhase(pkId) || propertyKindsComputedInThisPhase(pkId)) {
                 if (debug) incrementFallbacksUsedForComputedPropertiesCounter()
                 PropertyIsNotDerivedByPreviouslyExecutedAnalysis
             } else {
                 PropertyIsNotComputedByAnyAnalysis
             }
-        }
         val p = fallbackPropertyBasedOnPKId(this, reason, e, pkId)
         if (traceFallbacks) {
             trace("analysis progress", s"used fallback $p for $e")
@@ -389,7 +368,7 @@ abstract class PropertyStore {
      */
     final def hasProperty(epk: SomeEPK): Boolean = hasProperty(epk.e, epk.pk)
 
-    /** See `hasProperty(SomeEPK)` for details. **/
+    /** See `hasProperty(SomeEPK)` for details. * */
     def hasProperty(e: Entity, pk: PropertyKind): Boolean
 
     /**
@@ -433,7 +412,6 @@ abstract class PropertyStore {
     def entitiesWithLB[P <: Property](lb: P): Iterator[Entity]
 
     /**
-     *
      * @note Only to be called when the store is quiescent.
      * @note Does not trigger lazy property computations.
      */
@@ -454,9 +432,8 @@ abstract class PropertyStore {
      * @note Only to be called when the store is quiescent.
      * @note Does not trigger lazy property computations.
      */
-    def finalEntities[P <: Property](p: P): Iterator[Entity] = {
+    def finalEntities[P <: Property](p: P): Iterator[Entity] =
         entities((otherEPS: SomeEPS) => otherEPS.isFinal && otherEPS.asFinal.p == p)
-    }
 
     /** @see `get(epk:EPK)` for details. */
     def get[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): Option[EOptionP[E, P]]
@@ -506,9 +483,7 @@ abstract class PropertyStore {
     final def preInitialize[E <: Entity, P <: Property](
         e:  E,
         pk: PropertyKey[P]
-    )(
-        pc: EOptionP[E, P] => InterimEP[E, P]
-    ): Unit = {
+      )(pc: EOptionP[E, P] => InterimEP[E, P]): Unit = {
         if (!isIdle) {
             throw new IllegalStateException("analyses are already running")
         }
@@ -519,20 +494,16 @@ abstract class PropertyStore {
     }
 
     protected[this] def doPreInitialize[E <: Entity, P <: Property](
-        e:  E,
+        e: E,
         pk: PropertyKey[P]
-    )(
-        pc: EOptionP[E, P] => InterimEP[E, P]
-    ): Unit
+      )(pc: EOptionP[E, P] => InterimEP[E, P]): Unit
 
-    final def setupPhase(configuration: PropertyKindsConfiguration): Unit = {
-        setupPhase(
-            configuration.propertyKindsComputedInThisPhase,
-            configuration.propertyKindsComputedInLaterPhase,
-            configuration.suppressInterimUpdates,
-            configuration.collaborativelyComputedPropertyKindsFinalizationOrder
-        )
-    }
+    final def setupPhase(configuration: PropertyKindsConfiguration): Unit = setupPhase(
+        configuration.propertyKindsComputedInThisPhase,
+        configuration.propertyKindsComputedInLaterPhase,
+        configuration.suppressInterimUpdates,
+        configuration.collaborativelyComputedPropertyKindsFinalizationOrder
+    )
 
     protected[this] var subPhaseId: Int = 0
 
@@ -564,10 +535,9 @@ abstract class PropertyStore {
      */
     final def setupPhase(
         propertyKindsComputedInThisPhase:  Set[PropertyKind],
-        propertyKindsComputedInLaterPhase: Set[PropertyKind]                    = Set.empty,
+        propertyKindsComputedInLaterPhase: Set[PropertyKind] = Set.empty,
         suppressInterimUpdates:            Map[PropertyKind, Set[PropertyKind]] = Map.empty,
-        finalizationOrder:                 List[List[PropertyKind]]             = List.empty
-    ): Unit = handleExceptions {
+        finalizationOrder:                 List[List[PropertyKind]] = List.empty): Unit = handleExceptions {
         if (!isIdle) {
             throw new IllegalStateException("computations are already running");
         }
@@ -594,16 +564,12 @@ abstract class PropertyStore {
             }
         }
         JArrays.fill(this.propertyKindsComputedInThisPhase, false)
-        propertyKindsComputedInThisPhase foreach { pk =>
-            this.propertyKindsComputedInThisPhase(pk.id) = true
-        }
+        propertyKindsComputedInThisPhase foreach { pk => this.propertyKindsComputedInThisPhase(pk.id) = true }
 
         // Step 2
         // Set the "propertyKindsComputedInLaterPhase" array to the specified values.
         JArrays.fill(this.propertyKindsComputedInLaterPhase, false)
-        propertyKindsComputedInLaterPhase foreach { pk =>
-            this.propertyKindsComputedInLaterPhase(pk.id) = true
-        }
+        propertyKindsComputedInLaterPhase foreach { pk => this.propertyKindsComputedInLaterPhase(pk.id) = true }
 
         // Step 3
         // Collect the information about which interim results should be suppressed.
@@ -619,8 +585,7 @@ abstract class PropertyStore {
         // Step 4
         // Save the information about the finalization order (of properties which are
         // collaboratively computed).
-        val cleanUpSubPhase =
-            (propertyKindsComputedInThisPhase -- finalizationOrder.flatten.toSet) + AnalysisKey
+        val cleanUpSubPhase = (propertyKindsComputedInThisPhase -- finalizationOrder.flatten.toSet) + AnalysisKey
         this.subPhaseFinalizationOrder =
             if (cleanUpSubPhase.isEmpty) {
                 finalizationOrder.toArray
@@ -650,8 +615,7 @@ abstract class PropertyStore {
         propertyKindsComputedInThisPhase:  Set[PropertyKind],
         propertyKindsComputedInLaterPhase: Set[PropertyKind],
         suppressInterimUpdates:            Map[PropertyKind, Set[PropertyKind]],
-        finalizationOrder:                 List[List[PropertyKind]]
-    ): Unit = { /*nothing to do*/ }
+        finalizationOrder:                 List[List[PropertyKind]]): Unit = { /*nothing to do*/ }
 
     /**
      * Returns `true` if the store does not perform any computations at the time of this method
@@ -670,10 +634,7 @@ abstract class PropertyStore {
      */
     final def apply[E <: Entity, P <: Property](
         es: Iterable[E],
-        pk: PropertyKey[P]
-    ): Iterable[EOptionP[E, P]] = {
-        es.map(e => apply(EPK(e, pk)))
-    }
+        pk: PropertyKey[P]): Iterable[EOptionP[E, P]] = es.map(e => apply(EPK(e, pk)))
 
     /**
      * Returns a snapshot of the properties with the given kind associated with the given entities.
@@ -684,15 +645,11 @@ abstract class PropertyStore {
      */
     final def apply[E <: Entity, P <: Property](
         es:  Iterable[E],
-        pmi: PropertyMetaInformation { type Self <: P }
-    ): Iterable[EOptionP[E, P]] = {
-        apply(es, pmi.key)
-    }
+        pmi: PropertyMetaInformation { type Self <: P }): Iterable[EOptionP[E, P]] = apply(es, pmi.key)
 
     /** @see `apply(epk:EPK)` for details. */
-    final def apply[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): EOptionP[E, P] = {
+    final def apply[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): EOptionP[E, P] =
         apply(EPK(e, pk), e, pk, pk.id)
-    }
 
     /**
      * Returns the property of the respective property kind `pk` currently associated
@@ -721,8 +678,8 @@ abstract class PropertyStore {
      *         `Final|InterimP(e,Property)` otherwise.
      */
     def apply[E <: Entity, P <: Property](epk: EPK[E, P]): EOptionP[E, P] = {
-        val e = epk.e
-        val pk = epk.pk
+        val e    = epk.e
+        val pk   = epk.pk
         val pkId = pk.id
         apply(epk, e, pk, pkId)
     }
@@ -731,8 +688,7 @@ abstract class PropertyStore {
         epk:  EPK[E, P],
         e:    E,
         pk:   PropertyKey[P],
-        pkId: Int
-    ): EOptionP[E, P] = {
+        pkId: Int): EOptionP[E, P] = {
 
         if (debug && propertyKindsComputedInLaterPhase(pkId)) {
             throw new IllegalArgumentException(
@@ -744,10 +700,9 @@ abstract class PropertyStore {
     }
 
     protected[this] def doApply[E <: Entity, P <: Property](
-        epk:  EPK[E, P],
-        e:    E,
-        pkId: Int
-    ): EOptionP[E, P]
+        epk: EPK[E, P],
+        e: E,
+        pkId: Int): EOptionP[E, P]
 
     /**
      * Enforce the evaluation of the specified property kind for the given entity, even
@@ -790,7 +745,7 @@ abstract class PropertyStore {
     final def registerLazyPropertyComputation[E <: Entity, P <: Property](
         pk: PropertyKey[P],
         pc: ProperPropertyComputation[E] // TODO add definition of PropertyComputationResult that is parameterized over the kind of Property to specify that we want a PropertyComputationResult with respect to PropertyKey (pk)
-    ): Unit = {
+      ): Unit = {
         if (!isIdle) {
             throw new IllegalStateException(
                 "lazy computations can only be registered while the property store is idle"
@@ -809,9 +764,7 @@ abstract class PropertyStore {
     final def registerTransformer[SourceP <: Property, TargetP <: Property, E <: Entity](
         sourcePK: PropertyKey[SourceP],
         targetPK: PropertyKey[TargetP]
-    )(
-        pc: (E, SourceP) => FinalEP[E, TargetP]
-    ): Unit = {
+      )(pc: (E, SourceP) => FinalEP[E, TargetP]): Unit = {
         if (!isIdle) {
             throw new IllegalStateException(
                 "transformers can only be registered while the property store is idle"
@@ -859,8 +812,7 @@ abstract class PropertyStore {
      */
     final def registerTriggeredComputation[E <: Entity, P <: Property](
         pk: PropertyKey[P],
-        pc: PropertyComputation[E]
-    ): Unit = {
+        pc: PropertyComputation[E]): Unit = {
         if (!isIdle) {
             throw new IllegalStateException(
                 "triggered computations can only be registered while no computations are running"
@@ -871,8 +823,7 @@ abstract class PropertyStore {
 
     protected[this] def doRegisterTriggeredComputation[E <: Entity, P <: Property](
         pk: PropertyKey[P],
-        pc: PropertyComputation[E]
-    ): Unit
+        pc: PropertyComputation[E]): Unit
 
     /**
      * Will call the given function `c` for all elements of `es` in parallel.
@@ -881,11 +832,7 @@ abstract class PropertyStore {
      */
     final def scheduleEagerComputationsForEntities[E <: Entity](
         es: IterableOnce[E]
-    )(
-        c: PropertyComputation[E]
-    ): Unit = {
-        es.iterator.foreach(e => scheduleEagerComputationForEntity(e)(c))
-    }
+      )(c: PropertyComputation[E]): Unit = es.iterator.foreach(e => scheduleEagerComputationForEntity(e)(c))
 
     /**
      * Schedules the execution of the given `PropertyComputation` function for the given entity.
@@ -900,17 +847,11 @@ abstract class PropertyStore {
      */
     final def scheduleEagerComputationForEntity[E <: Entity](
         e: E
-    )(
-        pc: PropertyComputation[E]
-    ): Unit = {
-        doScheduleEagerComputationForEntity(e)(pc)
-    }
+      )(pc: PropertyComputation[E]): Unit = doScheduleEagerComputationForEntity(e)(pc)
 
     protected[this] def doScheduleEagerComputationForEntity[E <: Entity](
         e: E
-    )(
-        pc: PropertyComputation[E]
-    ): Unit
+      )(pc: PropertyComputation[E]): Unit
 
     /**
      * Processes the result eventually; generally, not directly called by analyses.
@@ -955,7 +896,7 @@ abstract class PropertyStore {
         doTerminate = true
         shutdown()
         if (!suppressError) {
-            val storeId = "PropertyStore@"+System.identityHashCode(this).toHexString
+            val storeId = "PropertyStore@" + System.identityHashCode(this).toHexString
             error(
                 "analysis progress",
                 s"$storeId: shutting down computations due to failing analysis",
@@ -966,12 +907,12 @@ abstract class PropertyStore {
 
     @volatile protected[this] var exception: Throwable = _ /*null*/
 
-    protected[fpcf] def collectException(t: Throwable): Unit = {
+    protected[fpcf] def collectException(t: Throwable): Unit =
         if (exception != null) {
             if (exception != t
                 && !t.isInstanceOf[InterruptedException]
                 && !t.isInstanceOf[RejectedExecutionException] // <= used, e.g., by a ForkJoinPool
-                ) {
+            ) {
                 exception.addSuppressed(t)
             }
         } else {
@@ -988,14 +929,14 @@ abstract class PropertyStore {
                 }
             }
         }
-    }
 
     @inline protected[fpcf] def collectAndThrowException(t: Throwable): Nothing = {
         collectException(t)
         throw t;
     }
 
-    @inline /*visibility should be package and subclasses*/ def handleExceptions[U](f: => U): U = {
+    @inline /*visibility should be package and subclasses*/
+    def handleExceptions[U](f: => U): U = {
         if (exception != null) throw exception;
 
         try {
@@ -1030,7 +971,6 @@ object PropertyStore {
 
     /**
      * Determines if new `PropertyStore` instances run with debugging or without debugging.
-     *
      */
     def updateDebug(newDebug: Boolean): Unit = {
         implicit val logContext: LogContext = GlobalLogContext
@@ -1078,9 +1018,7 @@ object PropertyStore {
             }
     }
 
-    final val TraceSuppressedNotificationsKey = {
-        "org.opalj.fpcf.PropertyStore.TraceSuppressedNotifications"
-    }
+    final val TraceSuppressedNotificationsKey = "org.opalj.fpcf.PropertyStore.TraceSuppressedNotifications"
 
     private[this] var traceSuppressedNotifications: Boolean = {
         val initialTraceSuppressedNotifications = BaseConfig.getBoolean(TraceSuppressedNotificationsKey)

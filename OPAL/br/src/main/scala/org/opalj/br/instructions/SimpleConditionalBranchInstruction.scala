@@ -10,7 +10,7 @@ package instructions
  */
 trait SimpleConditionalBranchInstructionLike
     extends ConditionalBranchInstructionLike
-    with SimpleBranchInstructionLike {
+        with SimpleBranchInstructionLike {
 
     /**
      * The comparison operator (incl. the constant) underlying the if instruction.
@@ -28,8 +28,8 @@ trait SimpleConditionalBranchInstructionLike
 
 trait SimpleConditionalBranchInstruction[T <: SimpleConditionalBranchInstruction[T]]
     extends ConditionalBranchInstruction
-    with SimpleBranchInstruction
-    with SimpleConditionalBranchInstructionLike {
+        with SimpleBranchInstruction
+        with SimpleConditionalBranchInstructionLike {
 
     def copy(branchoffset: Int): SimpleConditionalBranchInstruction[T]
 
@@ -42,7 +42,7 @@ trait SimpleConditionalBranchInstruction[T <: SimpleConditionalBranchInstruction
      */
     def negate(newBranchoffset: Int = branchoffset): SimpleConditionalBranchInstruction[_]
 
-    final override def isSimpleConditionalBranchInstruction: Boolean = true
+    final override def isSimpleConditionalBranchInstruction: Boolean   = true
     final override def asSimpleConditionalBranchInstruction: this.type = this
 
     /**
@@ -55,17 +55,13 @@ trait SimpleConditionalBranchInstruction[T <: SimpleConditionalBranchInstruction
     final def nextInstructions(
         currentPC:             PC,
         regularSuccessorsOnly: Boolean
-    )(
-        implicit
+      )(implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
-    ): List[PC] = {
+        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy): List[PC] = {
         val nextInstruction = indexOfNextInstruction(currentPC)
         val jumpInstruction = currentPC + branchoffset
-        if (nextInstruction == jumpInstruction)
-            List(nextInstruction)
-        else
-            List(nextInstruction, jumpInstruction)
+        if (nextInstruction == jumpInstruction) List(nextInstruction)
+        else List(nextInstruction, jumpInstruction)
     }
 
     override def toString(currentPC: Int): String = {
@@ -82,6 +78,7 @@ object SimpleConditionalBranchInstruction {
     /**
      * Extracts the instructions branchoffset.
      */
-    def unapply(i: SimpleConditionalBranchInstruction[_ <: SimpleConditionalBranchInstruction[_]]): Some[Int] = Some(i.branchoffset)
+    def unapply(i: SimpleConditionalBranchInstruction[_ <: SimpleConditionalBranchInstruction[_]]): Some[Int] =
+        Some(i.branchoffset)
 
 }

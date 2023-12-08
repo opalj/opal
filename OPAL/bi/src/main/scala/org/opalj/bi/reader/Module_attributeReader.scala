@@ -3,12 +3,13 @@ package org.opalj
 package bi
 package reader
 
-import java.io.DataInputStream
-import org.opalj.control.fillArraySeq
-import org.opalj.control.fillArrayOfInt
-
-import scala.collection.immutable.ArraySeq
 import scala.reflect.ClassTag
+
+import java.io.DataInputStream
+import scala.collection.immutable.ArraySeq
+
+import org.opalj.control.fillArrayOfInt
+import org.opalj.control.fillArraySeq
 
 /**
  * Generic parser for the ''Module'' attribute (Java 9).
@@ -63,46 +64,45 @@ trait Module_attributeReader extends AttributeReader {
      *                          which is NOT in internal form. (I.e., "." are used!)
      */
     def Module_attribute(
-        cp:                   Constant_Pool,
-        ap_name_index:        Constant_Pool_Index,
-        ap_descriptor_index:  Constant_Pool_Index,
+        cp: Constant_Pool,
+        ap_name_index: Constant_Pool_Index,
+        ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
-        module_name_index:    Constant_Pool_Index, // CONSTANT_Module_info
-        module_flags:         Int,
+        module_name_index: Constant_Pool_Index, // CONSTANT_Module_info
+        module_flags: Int,
         module_version_index: Constant_Pool_Index, // Optional: CONSTANT_UTF8
-        requires:             Requires,
-        exports:              Exports,
-        opens:                Opens,
-        uses:                 Uses,
-        provides:             Provides
-    ): Module_attribute
+        requires: Requires,
+        exports: Exports,
+        opens: Opens,
+        uses: Uses,
+        provides: Provides): Module_attribute
 
     def RequiresEntry(
-        cp:                    Constant_Pool,
-        module_index:          Constant_Pool_Index, // CONSTANT_Module_info
-        requires_flags:        Int,
+        cp: Constant_Pool,
+        module_index: Constant_Pool_Index, // CONSTANT_Module_info
+        requires_flags: Int,
         require_version_index: Constant_Pool_Index // Optional: CONSTANT_UTF8
-    ): RequiresEntry
+      ): RequiresEntry
 
     def ExportsEntry(
-        cp:                     Constant_Pool,
-        module_index:           Constant_Pool_Index, // CONSTANT_Package_info
-        exports_flags:          Int,
+        cp: Constant_Pool,
+        module_index: Constant_Pool_Index, // CONSTANT_Package_info
+        exports_flags: Int,
         exports_to_index_table: ExportsToIndexTable // CONSTANT_Module_info[]
-    ): ExportsEntry
+      ): ExportsEntry
 
     def OpensEntry(
-        cp:                   Constant_Pool,
-        opens_index:          Constant_Pool_Index, // CONSTANT_Package_info
-        opens_flags:          Int,
+        cp: Constant_Pool,
+        opens_index: Constant_Pool_Index, // CONSTANT_Package_info
+        opens_flags: Int,
         opens_to_index_table: OpensToIndexTable // CONSTANT_Module_info[]
-    ): OpensEntry
+      ): OpensEntry
 
     def ProvidesEntry(
-        cp:                        Constant_Pool,
-        provides_index:            Constant_Pool_Index, // CONSTANT_Class
+        cp: Constant_Pool,
+        provides_index: Constant_Pool_Index,              // CONSTANT_Class
         provides_with_index_table: ProvidesWithIndexTable // CONSTANT_Class[]
-    ): ProvidesEntry
+      ): ProvidesEntry
 
     //
     // IMPLEMENTATION
@@ -158,17 +158,17 @@ trait Module_attributeReader extends AttributeReader {
         ap_name_index: Constant_Pool_Index,
         ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
-        in: DataInputStream
-    ) => {
-        /*val attribute_length = */ in.readInt()
+        in: DataInputStream) =>
+        {
+            /*val attribute_length = */
+            in.readInt()
 
-        val name_index = in.readUnsignedShort()
-        val flags = in.readUnsignedShort()
-        val version_index = in.readUnsignedShort()
+            val name_index    = in.readUnsignedShort()
+            val flags         = in.readUnsignedShort()
+            val version_index = in.readUnsignedShort()
 
-        val requiresCount = in.readUnsignedShort()
-        val requires =
-            fillArraySeq(requiresCount) {
+            val requiresCount = in.readUnsignedShort()
+            val requires = fillArraySeq(requiresCount) {
                 RequiresEntry(
                     cp,
                     in.readUnsignedShort(),
@@ -177,57 +177,59 @@ trait Module_attributeReader extends AttributeReader {
                 )
             }
 
-        val exportsCount = in.readUnsignedShort()
-        val exports =
-            fillArraySeq(exportsCount) {
+            val exportsCount = in.readUnsignedShort()
+            val exports = fillArraySeq(exportsCount) {
                 ExportsEntry(
                     cp,
                     in.readUnsignedShort(),
-                    in.readUnsignedShort(),
-                    {
+                    in.readUnsignedShort(), {
                         val exportsToCount = in.readUnsignedShort()
                         fillArrayOfInt(exportsToCount) { in.readUnsignedShort() }
                     }
                 )
             }
 
-        val opensCount = in.readUnsignedShort()
-        val opens =
-            fillArraySeq(opensCount) {
+            val opensCount = in.readUnsignedShort()
+            val opens = fillArraySeq(opensCount) {
                 OpensEntry(
                     cp,
                     in.readUnsignedShort(),
-                    in.readUnsignedShort(),
-                    {
+                    in.readUnsignedShort(), {
                         val opensToCount = in.readUnsignedShort()
                         fillArrayOfInt(opensToCount) { in.readUnsignedShort() }
                     }
                 )
             }
 
-        val usesCount = in.readUnsignedShort()
-        val uses = fillArrayOfInt(usesCount) { in.readUnsignedShort() }
+            val usesCount = in.readUnsignedShort()
+            val uses      = fillArrayOfInt(usesCount) { in.readUnsignedShort() }
 
-        val providesCount = in.readUnsignedShort()
-        val provides =
-            fillArraySeq(providesCount) {
+            val providesCount = in.readUnsignedShort()
+            val provides = fillArraySeq(providesCount) {
                 ProvidesEntry(
                     cp,
-                    in.readUnsignedShort(),
-                    {
+                    in.readUnsignedShort(), {
                         val providesWithCount = in.readUnsignedShort()
                         fillArrayOfInt(providesWithCount) { in.readUnsignedShort() }
                     }
                 )
             }
 
-        Module_attribute(
-            cp,
-            ap_name_index, ap_descriptor_index,
-            attribute_name_index,
-            name_index, flags, version_index, requires, exports, opens, uses, provides
-        )
-    }: Attribute
+            Module_attribute(
+                cp,
+                ap_name_index,
+                ap_descriptor_index,
+                attribute_name_index,
+                name_index,
+                flags,
+                version_index,
+                requires,
+                exports,
+                opens,
+                uses,
+                provides
+            )
+        }: Attribute
 
     registerAttributeReader(ModuleAttribute.Name -> parserFactory())
 }

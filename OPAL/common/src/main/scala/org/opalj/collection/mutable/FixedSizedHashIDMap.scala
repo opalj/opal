@@ -3,8 +3,9 @@ package org.opalj
 package collection
 package mutable
 
-import scala.collection.immutable.ArraySeq
 import scala.reflect.ClassTag
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Conceptually, a map where the keys have to have unique hash codes that are spread over a
@@ -29,7 +30,7 @@ class FixedSizedHashIDMap[K <: AnyRef, V] private (
         private var theKeys:        Array[K],
         private var theValues:      Array[V],
         private var hashCodeOffset: Int // basically -minValue
-) { self =>
+      ) { self =>
 
     /**
      * Returns the value stored for the given key.
@@ -49,10 +50,10 @@ class FixedSizedHashIDMap[K <: AnyRef, V] private (
     }
 
     def foreach(f: ((K, V)) => Unit): Unit = {
-        val keys = this.theKeys
+        val keys   = this.theKeys
         val values = this.theValues
-        var i = 0
-        val max = keys.length
+        var i      = 0
+        val max    = keys.length
         while (i < max) {
             val k = keys(i)
             // Recall that all values have to be non-null...
@@ -62,10 +63,10 @@ class FixedSizedHashIDMap[K <: AnyRef, V] private (
     }
 
     def iterate(f: (K, V) => Unit): Unit = {
-        val keys = this.theKeys
+        val keys   = this.theKeys
         val values = this.theValues
-        var i = 0
-        val max = keys.length
+        var i      = 0
+        val max    = keys.length
         while (i < max) {
             val k = keys(i)
             // Recall that all values have to be non-null...
@@ -79,21 +80,24 @@ class FixedSizedHashIDMap[K <: AnyRef, V] private (
     def entries: Iterator[(K, V)] = new Iterator[(K, V)] {
         private[this] def getNextIndex(lastIndex: Int): Int = {
             val keys = self.theKeys
-            val max = keys.length
-            var i = lastIndex + 1
-            while (i < max) { if (keys(i) ne null) { return i; } else i += 1 }
+            val max  = keys.length
+            var i    = lastIndex + 1
+            while (i < max) {
+                if (keys(i) ne null) { return i; }
+                else i += 1
+            }
             max
         }
-        private[this] var i = getNextIndex(-1)
+        private[this] var i  = getNextIndex(-1)
         def hasNext: Boolean = i < theKeys.length
-        def next(): (K, V) = { val r = (theKeys(i), theValues(i)); i = getNextIndex(i); r }
+        def next(): (K, V)   = { val r = (theKeys(i), theValues(i)); i = getNextIndex(i); r }
     }
 
     def mkString(start: String, sep: String, end: String): String = {
         val keys = this.theKeys
-        var s = start
-        var i = 0
-        val max = keys.length
+        var s    = start
+        var i    = 0
+        val max  = keys.length
         while (i < max) {
             val k = keys(i)
             if (k ne null) s += s"$k -> ${theValues(i)}"
@@ -111,8 +115,8 @@ object FixedSizedHashIDMap {
 
     def apply[K <: AnyRef: ClassTag, V: ClassTag](
         minValue: Int, // inclusive
-        maxValue: Int // inclusive
-    ): FixedSizedHashIDMap[K, V] = {
+        maxValue: Int  // inclusive
+      ): FixedSizedHashIDMap[K, V] = {
         if (minValue > maxValue) {
             throw new IllegalArgumentException(s"$minValue > $maxValue");
         }
@@ -122,11 +126,10 @@ object FixedSizedHashIDMap {
             throw new IllegalArgumentException(s"range to large: [$minValue,$maxValue]");
         }
 
-        val theKeys: Array[K] = new Array(length.toInt)
+        val theKeys: Array[K]   = new Array(length.toInt)
         val theValues: Array[V] = new Array(length.toInt)
         val hashCodeOffset: Int = -minValue
         new FixedSizedHashIDMap(theKeys, theValues, hashCodeOffset)
     }
 
 }
-

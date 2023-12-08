@@ -14,11 +14,10 @@ case class ILOAD(lvIndex: Int) extends ILoadInstruction with ExplicitLocalVariab
 
     final def mnemonic: String = "iload"
 
-    override def equals(other: Any): Boolean =
-        other match {
-            case that: ILOAD => that.lvIndex == this.lvIndex
-            case _           => false
-        }
+    override def equals(other: Any): Boolean = other match {
+        case that: ILOAD => that.lvIndex == this.lvIndex
+        case _           => false
+    }
 
     override def hashCode: Int = ILOAD.opcode * 71 + lvIndex
 

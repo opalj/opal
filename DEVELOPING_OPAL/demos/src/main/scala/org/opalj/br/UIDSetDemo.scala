@@ -15,8 +15,8 @@ object UIDSetDemo extends App {
     val o6 = ObjectType("o6")
     val o7 = ObjectType("o7")
 
-    val s1 = UIDSet(o1)
-    val s2 = UIDSet(o2)
+    val s1  = UIDSet(o1)
+    val s2  = UIDSet(o2)
     val s12 = s1 + o2
     val s21 = s2 + o1
     s21 == s12
@@ -75,16 +75,16 @@ object UIDSetDemo extends App {
             }
             println("Using +:   "+NS(System.nanoTime - t).toSeconds)
         }
-        */
+         */
 
         { // using +! method (by means of a builder)
-            val r = new java.util.Random(10002323323L)
+            val r    = new java.util.Random(10002323323L)
             var runs = 0
-            val t = System.nanoTime
+            val t    = System.nanoTime
             while (runs < 20) {
-                val s = UIDSet.newBuilder[SUID]
+                val s        = UIDSet.newBuilder[SUID]
                 val addCount = r.nextInt(100000)
-                var i = 0
+                var i        = 0
                 while (i < addCount) {
                     s += SUID(r.nextInt(addCount * 2))
                     i += 1
@@ -92,24 +92,24 @@ object UIDSetDemo extends App {
                 s.result()
                 runs += 1
             }
-            println("Using +!:  "+NS(System.nanoTime - t).toSeconds)
+            println("Using +!:  " + NS(System.nanoTime - t).toSeconds)
         }
 
         { // comparison with Scala set
-            val r = new java.util.Random(10002323323L)
+            val r    = new java.util.Random(10002323323L)
             var runs = 0
-            val t = System.nanoTime
+            val t    = System.nanoTime
             while (runs < 20) {
-                var s = Set.empty[SUID]
+                var s        = Set.empty[SUID]
                 val addCount = r.nextInt(100000)
-                var i = 0
+                var i        = 0
                 while (i < addCount) {
                     s += SUID(r.nextInt(addCount * 2))
                     i += 1
                 }
                 runs += 1
             }
-            println("Using Set: "+NS(System.nanoTime - t).toSeconds)
+            println("Using Set: " + NS(System.nanoTime - t).toSeconds)
         }
     }
     (0 to 5).foreach(e => evalAdd())
@@ -117,25 +117,25 @@ object UIDSetDemo extends App {
     /////////////////////////////////// EXTENSIVE EVAL ///////////////////////////////////
 
     def eval(factory: Set[SUID]): Unit = {
-        val r = new java.util.Random(10002323323L)
+        val r    = new java.util.Random(10002323323L)
         var runs = 0
 
-        var addedValues = 0
-        var uniqueValues = 0
-        var filteredValues = 0
+        var addedValues       = 0
+        var uniqueValues      = 0
+        var filteredValues    = 0
         var containsSucceeded = 0
-        var containsFailed = 0
-        var removedValues = 0
+        var containsFailed    = 0
+        var removedValues     = 0
         // var removedValuesByTail = 0
-        var timeForAddingValues = 0L
+        var timeForAddingValues    = 0L
         var timeForFilteringValues = 0L
-        var timeForContainsCheck = 0L
-        var timeForRemovingValues = 0L
+        var timeForContainsCheck   = 0L
+        var timeForRemovingValues  = 0L
         // var timeForXTailCalls = 0L
 
         val startTime = System.nanoTime
         while (runs < 20) {
-            var s = factory.empty
+            var s        = factory.empty
             val addCount = r.nextInt(100000)
             addedValues += addCount
 
@@ -154,10 +154,8 @@ object UIDSetDemo extends App {
             i = 0
             while (i < addCount / 2) {
                 val targetValue = SUID(r.nextInt(addCount * 2))
-                if (s.contains(targetValue))
-                    containsSucceeded += 1
-                else
-                    containsFailed += 1
+                if (s.contains(targetValue)) containsSucceeded += 1
+                else containsFailed += 1
                 i += 1
             }
             timeForContainsCheck += (System.nanoTime - t)
@@ -195,18 +193,19 @@ object UIDSetDemo extends App {
             }
             removedValuesByTail += sizeBeforeTail - s.size
             timeForXTailCalls += (System.nanoTime - t)
-            */
+             */
 
             runs += 1
         }
         val time = org.opalj.util.Nanoseconds(System.nanoTime - startTime).toSeconds
         println(
-            s"${factory.getClass.getSimpleName} - runs executed: $runs in $time"+
-                s"\n\tadded: $addedValues; unique: $uniqueValues - "+NS(timeForAddingValues).toSeconds +
-                s"\n\tfiltered: $filteredValues - "+NS(timeForFilteringValues).toSeconds +
-                s"\n\tsuccessful contains: $containsSucceeded; failed contains: $containsFailed - "+NS(timeForContainsCheck).toSeconds +
+            s"${factory.getClass.getSimpleName} - runs executed: $runs in $time" +
+                s"\n\tadded: $addedValues; unique: $uniqueValues - " + NS(timeForAddingValues).toSeconds +
+                s"\n\tfiltered: $filteredValues - " + NS(timeForFilteringValues).toSeconds +
+                s"\n\tsuccessful contains: $containsSucceeded; failed contains: $containsFailed - " + NS(
+                    timeForContainsCheck).toSeconds +
                 // s"\n\ttail: $removedValuesByTail - "+NS(timeForXTailCalls).toSeconds+
-                s"\n\tremoved: $removedValues - "+NS(timeForRemovingValues).toSeconds
+                s"\n\tremoved: $removedValues - " + NS(timeForRemovingValues).toSeconds
         )
     }
 

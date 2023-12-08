@@ -27,8 +27,7 @@ trait CurrentCode extends TheCode with CustomInitialization { domain: ValuesDoma
     abstract override def initProperties(
         code:          Code,
         cfJoins:       IntTrieSet,
-        initialLocals: Locals
-    ): Unit = {
+        initialLocals: Locals): Unit = {
 
         this.theCode = code
 

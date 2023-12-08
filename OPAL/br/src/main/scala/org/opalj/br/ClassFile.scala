@@ -3,24 +3,26 @@ package org.opalj
 package br
 
 import scala.annotation.tailrec
-import org.opalj.log.OPALLogger
-import org.opalj.collection.immutable.UShortPair
+
+import scala.collection.immutable.ArraySeq
+
 import org.opalj.bi.ACC_ABSTRACT
 import org.opalj.bi.ACC_ANNOTATION
-import org.opalj.bi.ACC_PRIVATE
 import org.opalj.bi.ACC_ENUM
 import org.opalj.bi.ACC_FINAL
 import org.opalj.bi.ACC_INTERFACE
 import org.opalj.bi.ACC_MODULE
+import org.opalj.bi.ACC_PRIVATE
 import org.opalj.bi.ACC_PUBLIC
 import org.opalj.bi.ACC_SUPER
 import org.opalj.bi.AccessFlags
 import org.opalj.bi.AccessFlagsContexts
 import org.opalj.bi.AccessFlagsMatcher
 import org.opalj.bi.VisibilityModifier
-import org.opalj.collection.{binarySearch, insertedAt}
-
-import scala.collection.immutable.ArraySeq
+import org.opalj.collection.binarySearch
+import org.opalj.collection.immutable.UShortPair
+import org.opalj.collection.insertedAt
+import org.opalj.log.OPALLogger
 
 /**
  * Represents a single class file which either defines a class type or an interface type.
@@ -78,8 +80,7 @@ final class ClassFile private (
         val interfaceTypes: ObjectTypes,
         val fields:         Fields,
         val methods:        Methods,
-        val attributes:     Attributes
-) extends ConcreteSourceElement {
+        val attributes: Attributes) extends ConcreteSourceElement {
 
     methods.foreach { m => assert(m.declaringClassFile == null); m.declaringClassFile = this }
     fields.foreach { f => assert(f.declaringClassFile == null); f.declaringClassFile = this }
@@ -101,8 +102,7 @@ final class ClassFile private (
      */
     def findDissimilarity(
         other:  ClassFile,
-        config: SimilarityTestConfiguration = CompareAllConfiguration
-    ): Option[AnyRef] = {
+        config: SimilarityTestConfiguration = CompareAllConfiguration): Option[AnyRef] = {
 
         if (this.version != other.version) {
             return Some(("class file version", this.version, other.version));
@@ -130,10 +130,10 @@ final class ClassFile private (
             return Some((message, thisFields.size, otherFields.size));
         }
         // RECALL The fields are always strictly ordered in the same way!
-        val thisFieldIt = thisFields.iterator
+        val thisFieldIt  = thisFields.iterator
         val otherFieldIt = otherFields.iterator
         while (thisFieldIt.hasNext) {
-            val thisField = thisFieldIt.next()
+            val thisField  = thisFieldIt.next()
             val otherField = otherFieldIt.next()
             if (!thisField.similar(otherField, config)) {
                 return Some(("the fields are different", thisField, otherField));
@@ -146,10 +146,10 @@ final class ClassFile private (
             return Some((message, thisMethods.size, otherMethods.size));
         }
         // RECALL The methods are always strictly ordered in the same way!
-        val thisMethodIt = thisMethods.iterator
+        val thisMethodIt  = thisMethods.iterator
         val otherMethodIt = otherMethods.iterator
         while (thisMethodIt.hasNext) {
-            val thisMethod = thisMethodIt.next()
+            val thisMethod  = thisMethodIt.next()
             val otherMethod = otherMethodIt.next()
             if (!thisMethod.similar(otherMethod, config)) {
                 return Some(("the methods are different", thisMethod, otherMethod));
@@ -169,10 +169,8 @@ final class ClassFile private (
      */
     def similar(
         other:  ClassFile,
-        config: SimilarityTestConfiguration = CompareAllConfiguration
-    ): Boolean = {
+        config: SimilarityTestConfiguration = CompareAllConfiguration): Boolean =
         findDissimilarity(other, config).isEmpty
-    }
 
     /**
      * Creates a deep copy of this class file object which also copies the methods and fields.
@@ -180,23 +178,24 @@ final class ClassFile private (
      * @note If the requirements of `unsafeReplaceMethod` are met you should use that method!
      */
     def copy(
-        version:        UShortPair         = this.version,
-        accessFlags:    Int                = this.accessFlags,
-        thisType:       ObjectType         = this.thisType,
+        version:        UShortPair = this.version,
+        accessFlags:    Int = this.accessFlags,
+        thisType:       ObjectType = this.thisType,
         superclassType: Option[ObjectType] = this.superclassType,
-        interfaceTypes: ObjectTypes        = this.interfaceTypes,
-        fields:         FieldTemplates     = this.fields.map[FieldTemplate](f => f.copy()),
-        methods:        MethodTemplates    = this.methods.map[MethodTemplate](m => m.copy()),
-        attributes:     Attributes         = this.attributes
-    ): ClassFile = {
-        ClassFile(
-            version.minor, version.major, accessFlags,
-            thisType, superclassType, interfaceTypes,
-            fields,
-            methods,
-            attributes
-        )
-    }
+        interfaceTypes: ObjectTypes = this.interfaceTypes,
+        fields:         FieldTemplates = this.fields.map[FieldTemplate](f => f.copy()),
+        methods:        MethodTemplates = this.methods.map[MethodTemplate](m => m.copy()),
+        attributes:     Attributes = this.attributes): ClassFile = ClassFile(
+        version.minor,
+        version.major,
+        accessFlags,
+        thisType,
+        superclassType,
+        interfaceTypes,
+        fields,
+        methods,
+        attributes
+    )
 
     /**
      * Creates a new class file object which has the specified attributes.
@@ -242,7 +241,7 @@ final class ClassFile private (
         assert(oldMethod.name == newMethod.name)
         assert(oldMethod.descriptor == newMethod.descriptor)
 
-        val index = binarySearch[Method, JVMMethod](this.methods, oldMethod)
+        val index                     = binarySearch[Method, JVMMethod](this.methods, oldMethod)
         val newPreparedMethod: Method = newMethod.prepareClassFileAttachement()
         newPreparedMethod.declaringClassFile = this
         val methods = this.methods.unsafeArray.asInstanceOf[Array[AnyRef]]
@@ -270,12 +269,11 @@ final class ClassFile private (
         assert(this.findMethod(newMethod.name, newMethod.descriptor).isEmpty)
 
         val index = binarySearch[Method, JVMMethod](this.methods, newMethod)
-        if (index >= 0)
-            throw new IllegalArgumentException(
-                s"$this: a method with the given name and descriptor already exists: $newMethod"
-            )
+        if (index >= 0) throw new IllegalArgumentException(
+            s"$this: a method with the given name and descriptor already exists: $newMethod"
+        )
         val insertionPoint = -index - 1
-        var newMethods = this.methods
+        var newMethods     = this.methods
         newMethods.foreach(m => m.detach())
         newMethods = insertedAt(newMethods, insertionPoint, newMethod)
 
@@ -332,11 +330,9 @@ final class ClassFile private (
      *
      * An abstract type (abstract classes and interfaces) is never effectively final.
      */
-    def isEffectivelyFinal: Boolean = {
-        isFinal || (
-            !isAbstract && (constructors forall { _.isPrivate })
-        )
-    }
+    def isEffectivelyFinal: Boolean = isFinal || (
+        !isAbstract && (constructors forall { _.isPrivate })
+    )
 
     /**
      * `true` if the class file has public visibility. If `false` the method `isPackageVisible`
@@ -387,11 +383,9 @@ final class ClassFile private (
     /**
      * Returns Java 9's module attribute if defined.
      */
-    def module: Option[Module] = { attributes collectFirst { case m: Module => m } }
+    def module: Option[Module] = attributes collectFirst { case m: Module => m }
 
-    def enclosingMethod: Option[EnclosingMethod] = {
-        attributes collectFirst { case em: EnclosingMethod => em }
-    }
+    def enclosingMethod: Option[EnclosingMethod] = attributes collectFirst { case em: EnclosingMethod => em }
 
     /**
      * Returns this class file's bootstrap method table.
@@ -400,15 +394,15 @@ final class ClassFile private (
      *          the corresponding [[org.opalj.br.instructions.INVOKEDYNAMIC]] instructions
      *          are rewritten.
      */
-    def bootstrapMethodTable: Option[BootstrapMethodTable] = {
-        attributes collectFirst { case bmt: BootstrapMethodTable => bmt }
+    def bootstrapMethodTable: Option[BootstrapMethodTable] = attributes collectFirst { case bmt: BootstrapMethodTable =>
+        bmt
     }
 
     /**
      * Returns OPAL's [[SynthesizedClassFiles]] attribute if it is defined.
      */
-    def synthesizedClassFiles: Option[SynthesizedClassFiles] = {
-        attributes collectFirst { case scf: SynthesizedClassFiles => scf }
+    def synthesizedClassFiles: Option[SynthesizedClassFiles] = attributes collectFirst {
+        case scf: SynthesizedClassFiles => scf
     }
 
     /**
@@ -421,9 +415,7 @@ final class ClassFile private (
      *      of this class, use the method nested classes.
      * @see [[nestedClasses]]
      */
-    def innerClasses: Option[InnerClasses] = {
-        attributes collectFirst { case InnerClassTable(ice) => ice }
-    }
+    def innerClasses: Option[InnerClasses] = attributes collectFirst { case InnerClassTable(ice) => ice }
 
     /**
      * Returns `true` if this class file defines an anonymous inner class.
@@ -431,18 +423,17 @@ final class ClassFile private (
      * This method relies on the inner classes attribute to identify anonymous inner
      * classes.
      */
-    def isAnonymousInnerClass: Boolean = {
+    def isAnonymousInnerClass: Boolean =
         /*
         isClassDeclaration && innerClasses.isDefined &&  innerClasses.get.exists { i =>
                     i.innerClassType == thisType && {
                         if (i.innerName.isEmpty) true else return false;
                     }
             }
-        */
+         */
         isClassDeclaration && innerClasses.isDefined && !innerClasses.get.forall { i =>
             i.innerClassType != thisType || i.innerName.nonEmpty
         }
-    }
 
     /**
      * Returns the set of all immediate nested classes of this class. I.e., returns those
@@ -460,48 +451,44 @@ final class ClassFile private (
         // - the InnerClasses attribute only encodes information about its immediate
         //   inner classes
         var outerClassType: Option[ObjectType] = enclosingMethod.map(_.clazz)
-        var isInnerType = false
+        var isInnerType                        = false
 
-        def isThisType(innerClass: InnerClass): Boolean = {
+        def isThisType(innerClass: InnerClass): Boolean =
             if (innerClass.innerClassType eq thisType) {
-                if (innerClass.outerClassType.isDefined)
-                    outerClassType = innerClass.outerClassType
+                if (innerClass.outerClassType.isDefined) outerClassType = innerClass.outerClassType
                 isInnerType = true
                 true
-            } else
-                false
-        }
+            } else false
 
-        val nestedClassesCandidates =
-            innerClasses.map { innerClasses =>
-                innerClasses
-                    .filter(innerClass =>
-                        // it does not describe this class:
-                        (!isThisType(innerClass)) &&
-                            // it does not give information about an outer class:
-                            (!this.fqn.startsWith(innerClass.innerClassType.fqn)) &&
-                            // it does not give information about some other inner class of this type:
-                            (
-                                innerClass.outerClassType.isEmpty ||
+        val nestedClassesCandidates = innerClasses.map { innerClasses =>
+            innerClasses
+                .filter(innerClass =>
+                    // it does not describe this class:
+                    (!isThisType(innerClass)) &&
+                        // it does not give information about an outer class:
+                        (!this.fqn.startsWith(innerClass.innerClassType.fqn)) &&
+                        // it does not give information about some other inner class of this type:
+                        (
+                            innerClass.outerClassType.isEmpty ||
                                 (innerClass.outerClassType.get eq thisType)
-                            ))
-                    .map[ObjectType](_.innerClassType)
-            }.getOrElse {
-                ArraySeq.empty
-            }
+                        ))
+                .map[ObjectType](_.innerClassType)
+        }.getOrElse {
+            ArraySeq.empty
+        }
 
         // THE FOLLOWING CODE IS NECESSARY TO COPE WITH BYTECODE GENERATED
         // BY OLD JAVA COMPILERS (IN PARTICULAR JAVA 1.1);
         // IT BASICALLY TRIES TO RECREATE THE INNER-OUTERCLASSES STRUCTURE
         if (isInnerType && outerClassType.isEmpty) {
             // let's try to find the outer class that refers to this class
-            val thisFQN = thisType.fqn
+            val thisFQN                 = thisType.fqn
             val innerTypeNameStartIndex = thisFQN.indexOf('$')
             if (innerTypeNameStartIndex == -1) {
                 OPALLogger.warn(
                     "processing bytecode",
-                    "the inner class "+thisType.toJava+
-                        " does not use the standard naming schema"+
+                    "the inner class " + thisType.toJava +
+                        " does not use the standard naming schema" +
                         "; the inner classes information may be incomplete"
                 )
 
@@ -510,17 +497,14 @@ final class ClassFile private (
             val outerFQN = thisFQN.substring(0, innerTypeNameStartIndex)
             classFileRepository.classFile(ObjectType(outerFQN)) match {
                 case Some(outerClass) =>
-
                     def directNestedClasses(objectTypes: Iterable[ObjectType]): Set[ObjectType] = {
                         var nestedTypes: Set[ObjectType] = Set.empty
                         objectTypes.foreach { objectType =>
                             classFileRepository.classFile(objectType) match {
-                                case Some(classFile) =>
-                                    nestedTypes ++= classFile.nestedClasses(classFileRepository)
-                                case None =>
-                                    OPALLogger.warn(
+                                case Some(classFile) => nestedTypes ++= classFile.nestedClasses(classFileRepository)
+                                case None => OPALLogger.warn(
                                         "class file reader",
-                                        "cannot get informaton about "+objectType.toJava+
+                                        "cannot get informaton about " + objectType.toJava +
                                             "; the inner classes information may be incomplete"
                                     )
                             }
@@ -532,8 +516,8 @@ final class ClassFile private (
                     // (indirect) outertype (they cannot be innerclasses of this class..)
                     var nestedClassesOfOuterClass = outerClass.nestedClasses(classFileRepository)
                     while (nestedClassesOfOuterClass.nonEmpty &&
-                        !nestedClassesOfOuterClass.contains(thisType) &&
-                        !nestedClassesOfOuterClass.exists(nestedClassesCandidates.contains)) {
+                           !nestedClassesOfOuterClass.contains(thisType) &&
+                           !nestedClassesOfOuterClass.exists(nestedClassesCandidates.contains)) {
                         // We are still lacking sufficient information to make a decision
                         // which class is a nested class of which other class
                         // e.g., we might have the following situation:
@@ -543,11 +527,9 @@ final class ClassFile private (
                         //          new Listener(){                  // X$Listener$1
                         //              void event(){
                         //                  new Listener(){...}}}}}} // X$Listener$2
-                        nestedClassesOfOuterClass =
-                            directNestedClasses(nestedClassesOfOuterClass).toSeq
+                        nestedClassesOfOuterClass = directNestedClasses(nestedClassesOfOuterClass).toSeq
                     }
-                    val filteredNestedClasses =
-                        nestedClassesCandidates.filterNot(nestedClassesOfOuterClass.contains)
+                    val filteredNestedClasses = nestedClassesCandidates.filterNot(nestedClassesOfOuterClass.contains)
                     return filteredNestedClasses;
                 case None =>
                     val disclaimer = "; the inner classes information may be incomplete"
@@ -574,15 +556,11 @@ final class ClassFile private (
      */
     def foreachNestedClass(
         f: (ClassFile) => Unit
-    )(
-        implicit
-        classFileRepository: ClassFileRepository
-    ): Unit = {
-        nestedClasses(classFileRepository) foreach { nestedType =>
-            classFileRepository.classFile(nestedType) foreach { nestedClassFile =>
-                f(nestedClassFile)
-                nestedClassFile.foreachNestedClass(f)
-            }
+      )(implicit
+        classFileRepository: ClassFileRepository): Unit = nestedClasses(classFileRepository) foreach { nestedType =>
+        classFileRepository.classFile(nestedType) foreach { nestedClassFile =>
+            f(nestedClassFile)
+            nestedClassFile.foreachNestedClass(f)
         }
     }
 
@@ -594,21 +572,16 @@ final class ClassFile private (
      * @return The object type of the outer type as well as the access flags of this
      *      inner class.
      */
-    def outerType: Option[(ObjectType, Int)] = {
-        innerClasses flatMap { innerClasses =>
-            innerClasses collectFirst {
-                case InnerClass(`thisType`, Some(outerType), _, accessFlags) =>
-                    (outerType, accessFlags)
-            }
+    def outerType: Option[(ObjectType, Int)] = innerClasses flatMap { innerClasses =>
+        innerClasses collectFirst {
+            case InnerClass(`thisType`, Some(outerType), _, accessFlags) => (outerType, accessFlags)
         }
     }
 
     /**
      * Each class file optionally defines a class signature.
      */
-    def classSignature: Option[ClassSignature] = {
-        attributes collectFirst { case s: ClassSignature => s }
-    }
+    def classSignature: Option[ClassSignature] = attributes collectFirst { case s: ClassSignature => s }
 
     /**
      * The SourceFile attribute is an optional attribute [...]. There can be
@@ -624,9 +597,7 @@ final class ClassFile private (
      *
      * The returned Array must not be mutated.
      */
-    def sourceDebugExtension: Option[Array[Byte]] = {
-        attributes collectFirst { case SourceDebugExtension(s) => s }
-    }
+    def sourceDebugExtension: Option[Array[Byte]] = attributes collectFirst { case SourceDebugExtension(s) => s }
 
     /**
      * All constructors/instance initialization methods (`<init>`) defined by this class.
@@ -642,17 +613,15 @@ final class ClassFile private (
                 i = -1
             } else {
                 val methodName = methods(i).name
-                val r = methodName.compareTo("<init>")
-                if (r < 0 /*methodName < "<init>"*/ )
-                    gotoNextConstructor()
-                else if (r > 0 /*methodName > "<init>"*/ )
-                    i = -1;
+                val r          = methodName.compareTo("<init>")
+                if (r < 0 /*methodName < "<init>"*/ ) gotoNextConstructor()
+                else if (r > 0 /*methodName > "<init>"*/ ) i = -1;
             }
         }
         gotoNextConstructor()
 
         def hasNext: Boolean = i >= 0
-        def next(): Method = { val m = methods(i); gotoNextConstructor(); m }
+        def next(): Method   = { val m = methods(i); gotoNextConstructor(); m }
     }
 
     /**
@@ -669,8 +638,8 @@ final class ClassFile private (
      * All defined instance methods. I.e., all methods that are not static,
      * constructors, or static initializers.
      */
-    def instanceMethods: Iterator[Method] = {
-        methods.iterator.filterNot { m => m.isStatic || m.isConstructor || m.isStaticInitializer }
+    def instanceMethods: Iterator[Method] = methods.iterator.filterNot { m =>
+        m.isStatic || m.isConstructor || m.isStaticInitializer
     }
 
     /**
@@ -684,20 +653,17 @@ final class ClassFile private (
     def staticInitializer: Option[Method] = {
         // The set of methods is sorted - hence, the static initializer should
         // be (among) the first method(s).
-        val methodsCount = methods.size
+        val methodsCount                  = methods.size
         val noArgsAndReturnVoidDescriptor = MethodDescriptor.NoArgsAndReturnVoid
-        var i = 0
+        var i                             = 0
         while (i < methodsCount) {
-            val method = methods(i)
+            val method               = methods(i)
             val methodNameComparison = method.name.compareTo("<clinit>")
 
             if (methodNameComparison == 0 &&
                 method.descriptor == noArgsAndReturnVoidDescriptor &&
-                (majorVersion < 51 || method.isStatic))
-                return Some(method);
-
-            else if (methodNameComparison < 0)
-                return None;
+                (majorVersion < 51 || method.isStatic)) return Some(method);
+            else if (methodNameComparison < 0) return None;
 
             i += 1
         }
@@ -711,15 +677,14 @@ final class ClassFile private (
      */
     def findField(name: String): List[Field] = {
         @tailrec @inline def findField(low: Int, high: Int): List[Field] = {
-            if (high < low)
-                return List.empty;
+            if (high < low) return List.empty;
 
-            val mid = (low + high) / 2 // <= will never overflow...(there are at most 65535 fields)
-            val field = fields(mid)
+            val mid                 = (low + high) / 2 // <= will never overflow...(there are at most 65535 fields)
+            val field               = fields(mid)
             val fieldNameComparison = field.name.compareTo(name)
             if (fieldNameComparison == 0) {
                 var theFields = List(field)
-                var d = mid - 1
+                var d         = mid - 1
                 while (low <= d && fields(d).name.equals(name)) {
                     theFields ::= fields(d)
                     d -= 1
@@ -743,9 +708,8 @@ final class ClassFile private (
     /**
      * Returns the field with the given name and type.
      */
-    def findField(name: String, fieldType: FieldType): Option[Field] = {
+    def findField(name: String, fieldType: FieldType): Option[Field] =
         findField(name).find(f => f.fieldType eq fieldType)
-    }
 
     /**
      * Returns the methods (including constructors and static initializers) with the given name,
@@ -755,16 +719,15 @@ final class ClassFile private (
      */
     def findMethod(name: String): List[Method] = {
         @tailrec @inline def findMethod(low: Int, high: Int): List[Method] = {
-            if (high < low)
-                return List.empty;
+            if (high < low) return List.empty;
 
-            val mid = (low + high) / 2 // <= will never overflow...(there are at most 65535 methods)
-            val method = methods(mid)
-            val methodName = method.name
+            val mid                  = (low + high) / 2 // <= will never overflow...(there are at most 65535 methods)
+            val method               = methods(mid)
+            val methodName           = method.name
             val methodNameComparison = methodName.compareTo(name)
             if (methodNameComparison == 0) {
                 var theMethods = List(method)
-                var d = mid - 1
+                var d          = mid - 1
                 while (low <= d && methods(d).name.equals(name)) {
                     theMethods ::= methods(d)
                     d -= 1
@@ -793,20 +756,16 @@ final class ClassFile private (
      */
     def findMethod(name: String, descriptor: MethodDescriptor): Option[Method] = {
         @tailrec @inline def findMethod(low: Int, high: Int): Option[Method] = {
-            if (high < low)
-                return None;
+            if (high < low) return None;
 
-            val mid = (low + high) / 2 // <= will never overflow...(there are at most 65535 methods)
-            val method = methods(mid)
+            val mid            = (low + high) / 2 // <= will never overflow...(there are at most 65535 methods)
+            val method         = methods(mid)
             val nameComparison = method.name.compareTo(name)
             if (nameComparison == 0) {
                 val methodDescriptorComparison = method.descriptor.compare(descriptor)
-                if (methodDescriptorComparison < 0)
-                    findMethod(mid + 1, high)
-                else if (methodDescriptorComparison == 0)
-                    Some(method)
-                else
-                    findMethod(low, mid - 1)
+                if (methodDescriptorComparison < 0) findMethod(mid + 1, high)
+                else if (methodDescriptorComparison == 0) Some(method)
+                else findMethod(low, mid - 1)
             } else if (nameComparison < 0) {
                 findMethod(mid + 1, high)
             } else {
@@ -830,8 +789,7 @@ final class ClassFile private (
         packageName: String,
         visibility:  Option[VisibilityModifier],
         name:        String,
-        descriptor:  MethodDescriptor
-    ): Result[Method] = {
+        descriptor:  MethodDescriptor): Result[Method] = {
         assert(visibility.isEmpty || visibility.get != ACC_PRIVATE)
 
         findMethod(name, descriptor).filter(m => !m.isStatic) match {
@@ -839,35 +797,28 @@ final class ClassFile private (
             case Some(candidateMethod) =>
                 import VisibilityModifier.isAtLeastAsVisibleAs
                 if (Method.canDirectlyOverride(thisType.packageName, visibility, packageName) &&
-                    isAtLeastAsVisibleAs(candidateMethod.visibilityModifier, visibility))
-                    Success(candidateMethod)
-                else
-                    Failure
+                    isAtLeastAsVisibleAs(candidateMethod.visibilityModifier, visibility)) Success(candidateMethod)
+                else Failure
 
-            case None =>
-                Empty
+            case None => Empty
         }
 
     }
 
     final def findDirectlyOverridingMethod(
         packageName: String,
-        method:      Method
-    ): Result[Method] = {
-        findDirectlyOverridingMethod(
-            packageName,
-            method.visibilityModifier,
-            method.name,
-            method.descriptor
-        )
-    }
+        method:      Method): Result[Method] = findDirectlyOverridingMethod(
+        packageName,
+        method.visibilityModifier,
+        method.name,
+        method.descriptor
+    )
 
     def findMethod(
         name:       String,
         descriptor: MethodDescriptor,
-        matcher:    AccessFlagsMatcher
-    ): Option[Method] = {
-        findMethod(name, descriptor) filter { m => matcher.unapply(m.accessFlags) }
+        matcher:    AccessFlagsMatcher): Option[Method] = findMethod(name, descriptor) filter { m =>
+        matcher.unapply(m.accessFlags)
     }
 
     /**
@@ -876,28 +827,25 @@ final class ClassFile private (
      */
     override def hashCode: Int = thisType.id
 
-    override def equals(other: Any): Boolean = {
-        other match {
-            case that: ClassFile => that eq this
-            case _               => false
-        }
+    override def equals(other: Any): Boolean = other match {
+        case that: ClassFile => that eq this
+        case _               => false
     }
 
     override def toString: String = {
         val superIntefaces =
             if (interfaceTypes.nonEmpty)
                 interfaceTypes.iterator.map[String](_.toJava).mkString("\t\twith ", " with ", "\n")
-            else
-                ""
+            else ""
 
-        "ClassFile(\n\t"+
+        "ClassFile(\n\t" +
             AccessFlags.toStrings(accessFlags, AccessFlagsContexts.CLASS).mkString("", " ", " ") +
-            thisType.toJava+"\n"+
-            superclassType.map("\textends "+_.toJava+"\n").getOrElse("") +
+            thisType.toJava + "\n" +
+            superclassType.map("\textends " + _.toJava + "\n").getOrElse("") +
             superIntefaces +
             annotationsToJava(runtimeVisibleAnnotations, "\t@{ ", " }\n") +
-            annotationsToJava(runtimeInvisibleAnnotations, "\t@{ ", " }\n")+
-            "\t[version="+majorVersion+"."+minorVersion+"]\n)"
+            annotationsToJava(runtimeInvisibleAnnotations, "\t@{ ", " }\n") +
+            "\t[version=" + majorVersion + "." + minorVersion + "]\n)"
 
     }
 
@@ -910,9 +858,7 @@ final class ClassFile private (
  */
 object ClassFile {
 
-    val classCategoryMask: Int = {
-        ACC_INTERFACE.mask | ACC_ANNOTATION.mask | ACC_ENUM.mask | ACC_MODULE.mask
-    }
+    val classCategoryMask: Int = ACC_INTERFACE.mask | ACC_ANNOTATION.mask | ACC_ENUM.mask | ACC_MODULE.mask
 
     val annotationMask: Int = ACC_INTERFACE.mask | ACC_ANNOTATION.mask
 
@@ -925,51 +871,48 @@ object ClassFile {
      *         `java.lang.Object`.
      */
     def apply(
-        minorVersion:   Int                = 0,
-        majorVersion:   Int                = 50,
-        accessFlags:    Int                = { ACC_PUBLIC.mask | ACC_SUPER.mask },
+        minorVersion:   Int = 0,
+        majorVersion:   Int = 50,
+        accessFlags:    Int = { ACC_PUBLIC.mask | ACC_SUPER.mask },
         thisType:       ObjectType,
         superclassType: Option[ObjectType] = Some(ObjectType.Object),
-        interfaceTypes: Interfaces         = NoInterfaces,
-        fields:         FieldTemplates     = NoFieldTemplates,
-        methods:        MethodTemplates    = NoMethodTemplates,
-        attributes:     Attributes         = NoAttributes
-    ): ClassFile = {
-        new ClassFile(
-            UShortPair(minorVersion, majorVersion),
-            accessFlags,
-            thisType, superclassType, interfaceTypes,
-            fields.sorted[JVMField].map[Field](f => f.prepareClassFileAttachement()),
-            methods.sorted[JVMMethod].map[Method](f => f.prepareClassFileAttachement()),
-            attributes
-        )
-    }
+        interfaceTypes: Interfaces = NoInterfaces,
+        fields:         FieldTemplates = NoFieldTemplates,
+        methods:        MethodTemplates = NoMethodTemplates,
+        attributes:     Attributes = NoAttributes): ClassFile = new ClassFile(
+        UShortPair(minorVersion, majorVersion),
+        accessFlags,
+        thisType,
+        superclassType,
+        interfaceTypes,
+        fields.sorted[JVMField].map[Field](f => f.prepareClassFileAttachement()),
+        methods.sorted[JVMMethod].map[Method](f => f.prepareClassFileAttachement()),
+        attributes
+    )
 
     // This method is only intended to be called by the ClassFileReader/ClassFileBinding!
     protected[br] def reify(
-        minorVersion:   Int                = 0,
-        majorVersion:   Int                = 50,
-        accessFlags:    Int                = { ACC_PUBLIC.mask | ACC_SUPER.mask },
+        minorVersion:   Int = 0,
+        majorVersion:   Int = 50,
+        accessFlags:    Int = { ACC_PUBLIC.mask | ACC_SUPER.mask },
         thisType:       ObjectType,
         superclassType: Option[ObjectType] = Some(ObjectType.Object),
-        interfaceTypes: Interfaces         = NoInterfaces,
-        fields:         Fields             = NoFields,
-        methods:        Methods            = NoMethods,
-        attributes:     Attributes         = NoAttributes
-    ): ClassFile = {
-        new ClassFile(
-            UShortPair(minorVersion, majorVersion),
-            accessFlags,
-            thisType, superclassType, interfaceTypes,
-            fields.sorted[JVMField],
-            methods.sorted[JVMMethod],
-            attributes
-        )
-    }
+        interfaceTypes: Interfaces = NoInterfaces,
+        fields:         Fields = NoFields,
+        methods:        Methods = NoMethods,
+        attributes:     Attributes = NoAttributes): ClassFile = new ClassFile(
+        UShortPair(minorVersion, majorVersion),
+        accessFlags,
+        thisType,
+        superclassType,
+        interfaceTypes,
+        fields.sorted[JVMField],
+        methods.sorted[JVMMethod],
+        attributes
+    )
 
     def unapply(
-        classFile: ClassFile
-    ): Option[(Int, ObjectType, Option[ObjectType], Seq[ObjectType])] = {
+        classFile: ClassFile): Option[(Int, ObjectType, Option[ObjectType], Seq[ObjectType])] = {
         import classFile._
         Some((accessFlags, thisType, superclassType, interfaceTypes))
     }

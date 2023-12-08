@@ -4,13 +4,13 @@ package ai
 package domain
 package l2
 
-import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
-
 import java.net.URL
 
 import org.opalj.br.Method
 import org.opalj.br.analyses.Project
+
+import org.junit.runner.RunWith
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * This system test(suite) just loads a very large number of class files and performs
@@ -24,8 +24,6 @@ class DefaultDomainTest extends DomainTestInfrastructure("l2.DefaultDomain") {
 
     type AnalyzedDomain = l2.DefaultDomain[URL]
 
-    def Domain(project: Project[URL], method: Method): AnalyzedDomain = {
-        new l2.DefaultDomain(project, method)
-    }
+    def Domain(project: Project[URL], method: Method): AnalyzedDomain = new l2.DefaultDomain(project, method)
 
 }

@@ -5,7 +5,6 @@ package seq
 
 import java.util.ArrayDeque
 import java.util.PriorityQueue
-
 import scala.collection.mutable
 
 trait TasksManager {
@@ -28,12 +27,11 @@ trait TasksManager {
     // else
     //  OrderedProperty.DefaultBottomness
     def push(
-        task:                              QualifiedTask,
-        taskEPK:                           SomeEPK,
-        updatedEOptionP:                   SomeEOptionP, // the current eOptionP to which the task is related
-        updatedEOptionPDependees:          Iterable[SomeEOptionP], // the dependees of the eOptionP
-        currentDependersOfUpdatedEOptionP: Iterable[SomeEPK]
-    ): Unit
+        task: QualifiedTask,
+        taskEPK: SomeEPK,
+        updatedEOptionP: SomeEOptionP,                    // the current eOptionP to which the task is related
+        updatedEOptionPDependees: Iterable[SomeEOptionP], // the dependees of the eOptionP
+        currentDependersOfUpdatedEOptionP: Iterable[SomeEPK]): Unit
 
     def pollAndExecute(): Unit
 
@@ -45,31 +43,24 @@ trait TasksManager {
 /**
  * Processes the task that was added last first.
  */
-private[seq] final class LIFOTasksManager extends TasksManager {
+final private[seq] class LIFOTasksManager extends TasksManager {
 
     private[this] val initialTasks: ArrayDeque[QualifiedTask] = new ArrayDeque(50000)
-    private[this] val tasks: ArrayDeque[QualifiedTask] = new ArrayDeque(50000)
+    private[this] val tasks: ArrayDeque[QualifiedTask]        = new ArrayDeque(50000)
 
-    override def push(task: QualifiedTask): Unit = {
-        this.initialTasks.addFirst(task)
-    }
+    override def push(task: QualifiedTask): Unit = this.initialTasks.addFirst(task)
 
     override def push(
         task:             QualifiedTask,
         taskEPK:          SomeEPK,
         eOptionP:         SomeEOptionP,
         dependees:        Iterable[SomeEOptionP],
-        currentDependers: Iterable[SomeEPK]
-    ): Unit = {
-        this.tasks.addFirst(task)
-    }
+        currentDependers: Iterable[SomeEPK]): Unit = this.tasks.addFirst(task)
 
     override def pollAndExecute(): Unit = {
         val t = this.initialTasks.pollFirst()
-        if (t ne null)
-            t()
-        else
-            this.tasks.pollFirst()()
+        if (t ne null) t()
+        else this.tasks.pollFirst()()
     }
 
     override def isEmpty: Boolean = this.initialTasks.isEmpty && this.tasks.isEmpty
@@ -82,31 +73,24 @@ private[seq] final class LIFOTasksManager extends TasksManager {
 /**
  * Processes the tasks that are scheduled for the longest time first.
  */
-private[seq] final class FIFOTasksManager extends TasksManager {
+final private[seq] class FIFOTasksManager extends TasksManager {
 
     private[this] val initialTasks: ArrayDeque[QualifiedTask] = new ArrayDeque(50000)
-    private[this] val tasks: ArrayDeque[QualifiedTask] = new ArrayDeque(50000)
+    private[this] val tasks: ArrayDeque[QualifiedTask]        = new ArrayDeque(50000)
 
-    override def push(task: QualifiedTask): Unit = {
-        this.initialTasks.addLast(task)
-    }
+    override def push(task: QualifiedTask): Unit = this.initialTasks.addLast(task)
 
     override def push(
         task:             QualifiedTask,
         taskEPK:          SomeEPK,
         eOptionPs:        SomeEOptionP,
         dependees:        Iterable[SomeEOptionP],
-        currentDependers: Iterable[SomeEPK]
-    ): Unit = {
-        this.tasks.addLast(task)
-    }
+        currentDependers: Iterable[SomeEPK]): Unit = this.tasks.addLast(task)
 
     override def pollAndExecute(): Unit = {
         val t = this.initialTasks.pollFirst()
-        if (t ne null)
-            t()
-        else
-            this.tasks.pollFirst()()
+        if (t ne null) t()
+        else this.tasks.pollFirst()()
     }
 
     override def isEmpty: Boolean = this.initialTasks.isEmpty && this.tasks.isEmpty
@@ -117,32 +101,28 @@ private[seq] final class FIFOTasksManager extends TasksManager {
 }
 
 private class WeightedQualifiedTask(
-        val task:   QualifiedTask,
-        val weight: Int
-) extends Comparable[WeightedQualifiedTask] {
+        val task: QualifiedTask,
+        val weight: Int) extends Comparable[WeightedQualifiedTask] {
     def compareTo(other: WeightedQualifiedTask) = this.weight - other.weight
 }
 
 private class WeightedExtendedQualifiedTask(
         val task:    QualifiedTask,
         val taskEPK: SomeEPK,
-        val weight:  Int
-) extends Comparable[WeightedQualifiedTask] {
+        val weight: Int) extends Comparable[WeightedQualifiedTask] {
     def compareTo(other: WeightedQualifiedTask) = this.weight - other.weight
 }
 
 private class ExtendedQualifiedTask(
         val task:    QualifiedTask,
-        val taskEPK: SomeEPK
-)
+        val taskEPK: SomeEPK)
 
 trait PropertyStoreDependentTasksManager extends TasksManager {
 
     protected[this] var ps: PKESequentialPropertyStore = null
 
     private[seq] def setSeqPropertyStore(ps: PKESequentialPropertyStore): Unit = {
-        if (this.ps != null)
-            throw new IllegalStateException(s"property store is already set: ${this.ps}")
+        if (this.ps != null) throw new IllegalStateException(s"property store is already set: ${this.ps}")
 
         this.ps = ps
     }
@@ -152,33 +132,28 @@ trait PropertyStoreDependentTasksManager extends TasksManager {
 /**
  * Schedules tasks that have many depender and dependee relations last.
  */
-private[seq] final class ManyDirectDependenciesLastTasksManager
+final private[seq] class ManyDirectDependenciesLastTasksManager
     extends PropertyStoreDependentTasksManager {
 
-    private[this] val initialTasks: ArrayDeque[QualifiedTask] = new ArrayDeque(50000)
+    private[this] val initialTasks: ArrayDeque[QualifiedTask]     = new ArrayDeque(50000)
     private[this] val tasks: PriorityQueue[WeightedQualifiedTask] = new PriorityQueue(50000)
 
-    override def push(task: QualifiedTask): Unit = {
-        this.initialTasks.addFirst(task)
-    }
+    override def push(task: QualifiedTask): Unit = this.initialTasks.addFirst(task)
 
     override def push(
         task:             QualifiedTask,
         taskEPK:          SomeEPK,
         eOptionP:         SomeEOptionP,
         dependees:        Iterable[SomeEOptionP],
-        currentDependers: Iterable[SomeEPK]
-    ): Unit = {
+        currentDependers: Iterable[SomeEPK]): Unit = {
         val weight = Math.max(1, dependees.size) * Math.max(1, currentDependers.size)
         this.tasks.add(new WeightedQualifiedTask(task, weight))
     }
 
     override def pollAndExecute(): Unit = {
         val t = this.initialTasks.pollFirst()
-        if (t ne null)
-            t()
-        else
-            this.tasks.poll().task()
+        if (t ne null) t()
+        else this.tasks.poll().task()
     }
 
     override def isEmpty: Boolean = this.initialTasks.isEmpty && this.tasks.isEmpty
@@ -191,33 +166,28 @@ private[seq] final class ManyDirectDependenciesLastTasksManager
 /**
  * Schedules tasks that have many depender and dependee relations first.
  */
-private[seq] final class ManyDirectDependenciesFirstTasksManager
+final private[seq] class ManyDirectDependenciesFirstTasksManager
     extends PropertyStoreDependentTasksManager {
 
-    private[this] val initialTasks: ArrayDeque[QualifiedTask] = new ArrayDeque(50000)
+    private[this] val initialTasks: ArrayDeque[QualifiedTask]     = new ArrayDeque(50000)
     private[this] val tasks: PriorityQueue[WeightedQualifiedTask] = new PriorityQueue(50000)
 
-    override def push(task: QualifiedTask): Unit = {
-        this.initialTasks.addFirst(task)
-    }
+    override def push(task: QualifiedTask): Unit = this.initialTasks.addFirst(task)
 
     override def push(
         task:             QualifiedTask,
         taskEPK:          SomeEPK,
         eOptionP:         SomeEOptionP,
         dependees:        Iterable[SomeEOptionP],
-        currentDependers: Iterable[SomeEPK]
-    ): Unit = {
+        currentDependers: Iterable[SomeEPK]): Unit = {
         val weight = -(Math.max(1, dependees.size) * Math.max(1, currentDependers.size))
         this.tasks.add(new WeightedQualifiedTask(task, weight))
     }
 
     override def pollAndExecute(): Unit = {
         val t = this.initialTasks.pollFirst()
-        if (t ne null)
-            t()
-        else
-            this.tasks.poll().task()
+        if (t ne null) t()
+        else this.tasks.poll().task()
     }
 
     override def isEmpty: Boolean = this.initialTasks.isEmpty && this.tasks.isEmpty
@@ -227,32 +197,26 @@ private[seq] final class ManyDirectDependenciesFirstTasksManager
     override def toString: String = "ManyDirectDependenciesFirstTasksManager"
 }
 
-private[seq] final class ManyDirectDependersLastTasksManager
+final private[seq] class ManyDirectDependersLastTasksManager
     extends PropertyStoreDependentTasksManager {
 
-    private[this] val initialTasks: ArrayDeque[QualifiedTask] = new ArrayDeque(50000)
+    private[this] val initialTasks: ArrayDeque[QualifiedTask]     = new ArrayDeque(50000)
     private[this] val tasks: PriorityQueue[WeightedQualifiedTask] = new PriorityQueue(50000)
 
-    override def push(task: QualifiedTask): Unit = {
-        this.initialTasks.addFirst(task)
-    }
+    override def push(task: QualifiedTask): Unit = this.initialTasks.addFirst(task)
 
     override def push(
         task:             QualifiedTask,
         taskEPK:          SomeEPK,
         eOptionP:         SomeEOptionP,
         dependees:        Iterable[SomeEOptionP],
-        currentDependers: Iterable[SomeEPK]
-    ): Unit = {
+        currentDependers: Iterable[SomeEPK]): Unit =
         this.tasks.add(new WeightedQualifiedTask(task, currentDependers.size))
-    }
 
     override def pollAndExecute(): Unit = {
         val t = this.initialTasks.pollFirst()
-        if (t ne null)
-            t()
-        else
-            this.tasks.poll().task()
+        if (t ne null) t()
+        else this.tasks.poll().task()
     }
 
     override def isEmpty: Boolean = this.initialTasks.isEmpty && this.tasks.isEmpty
@@ -262,32 +226,26 @@ private[seq] final class ManyDirectDependersLastTasksManager
     override def toString: String = "ManyDirectDependersLastTasksManager"
 }
 
-private[seq] final class ManyDirectDependersFirstTasksManager
+final private[seq] class ManyDirectDependersFirstTasksManager
     extends PropertyStoreDependentTasksManager {
 
-    private[this] val initialTasks: ArrayDeque[QualifiedTask] = new ArrayDeque(50000)
+    private[this] val initialTasks: ArrayDeque[QualifiedTask]     = new ArrayDeque(50000)
     private[this] val tasks: PriorityQueue[WeightedQualifiedTask] = new PriorityQueue(50000)
 
-    override def push(task: QualifiedTask): Unit = {
-        this.initialTasks.addFirst(task)
-    }
+    override def push(task: QualifiedTask): Unit = this.initialTasks.addFirst(task)
 
     override def push(
         task:             QualifiedTask,
         taskEPK:          SomeEPK,
         eOptionP:         SomeEOptionP,
         dependees:        Iterable[SomeEOptionP],
-        currentDependers: Iterable[SomeEPK]
-    ): Unit = {
-        this.tasks.add(new WeightedQualifiedTask(task, -(currentDependers.size)))
-    }
+        currentDependers: Iterable[SomeEPK]): Unit =
+        this.tasks.add(new WeightedQualifiedTask(task, -currentDependers.size))
 
     override def pollAndExecute(): Unit = {
         val t = this.initialTasks.pollFirst()
-        if (t ne null)
-            t()
-        else
-            this.tasks.poll().task()
+        if (t ne null) t()
+        else this.tasks.poll().task()
     }
 
     override def isEmpty: Boolean = this.initialTasks.isEmpty && this.tasks.isEmpty
@@ -297,21 +255,19 @@ private[seq] final class ManyDirectDependersFirstTasksManager
     override def toString: String = "ManyDirectDependersFirstTasksManager"
 }
 
-private[seq] final class ManyDependeesOfDirectDependersLastTasksManager
+final private[seq] class ManyDependeesOfDirectDependersLastTasksManager
     extends PropertyStoreDependentTasksManager {
 
     // The following insights were gained by running the IFDS taint analysis:
     // Note: What really didn't work was to delay tasks that have no dependers at the time
     //       the task is registered.
 
-    private[this] val initialTasks: ArrayDeque[QualifiedTask] = new ArrayDeque(32768)
+    private[this] val initialTasks: ArrayDeque[QualifiedTask]     = new ArrayDeque(32768)
     private[this] val tasks: PriorityQueue[WeightedQualifiedTask] = new PriorityQueue(32768)
 
-    override def push(task: QualifiedTask): Unit = {
-        task match {
-            case _: HandleResultTask[_, _] => this.initialTasks.addFirst(task)
-            case _                         => this.initialTasks.addLast(task)
-        }
+    override def push(task: QualifiedTask): Unit = task match {
+        case _: HandleResultTask[_, _] => this.initialTasks.addFirst(task)
+        case _                         => this.initialTasks.addLast(task)
     }
 
     override def push(
@@ -319,8 +275,7 @@ private[seq] final class ManyDependeesOfDirectDependersLastTasksManager
         taskEPK:                           SomeEPK,
         updatedEOptionP:                   SomeEOptionP,
         updatedEOptionPDependees:          Iterable[SomeEOptionP],
-        currentDependersOfUpdatedEOptionP: Iterable[SomeEPK]
-    ): Unit = {
+        currentDependersOfUpdatedEOptionP: Iterable[SomeEPK]): Unit =
         if (task.isTriggeredByFinalProperty && ps.dependeesCount(taskEPK) == 1) {
             task()
         } else {
@@ -329,13 +284,12 @@ private[seq] final class ManyDependeesOfDirectDependersLastTasksManager
             val wt = new WeightedQualifiedTask(task, weight)
             this.tasks.add(wt)
         }
-    }
 
     override def pollAndExecute(): Unit = {
         val t = this.initialTasks.pollFirst()
         if (t ne null) {
             t()
-            return ;
+            return;
         }
 
         val wt = this.tasks.poll()
@@ -349,21 +303,19 @@ private[seq] final class ManyDependeesOfDirectDependersLastTasksManager
     override def toString: String = "ManyDependeesOfDirectDependersLastTasksManager"
 }
 
-private[seq] final class ManyDependeesOfDirectDependersFirstTasksManager
+final private[seq] class ManyDependeesOfDirectDependersFirstTasksManager
     extends PropertyStoreDependentTasksManager {
 
     // The following insights were gained by running the IFDS taint analysis:
     // Note: What really didn't work was to delay tasks that have no dependers at the time
     //       the task is registered.
 
-    private[this] val initialTasks: ArrayDeque[QualifiedTask] = new ArrayDeque(32768)
+    private[this] val initialTasks: ArrayDeque[QualifiedTask]     = new ArrayDeque(32768)
     private[this] val tasks: PriorityQueue[WeightedQualifiedTask] = new PriorityQueue(32768)
 
-    override def push(task: QualifiedTask): Unit = {
-        task match {
-            case _: HandleResultTask[_, _] => this.initialTasks.addFirst(task)
-            case _                         => this.initialTasks.addLast(task)
-        }
+    override def push(task: QualifiedTask): Unit = task match {
+        case _: HandleResultTask[_, _] => this.initialTasks.addFirst(task)
+        case _                         => this.initialTasks.addLast(task)
     }
 
     override def push(
@@ -371,8 +323,7 @@ private[seq] final class ManyDependeesOfDirectDependersFirstTasksManager
         taskEPK:                           SomeEPK,
         updatedEOptionP:                   SomeEOptionP,
         updatedEOptionPDependees:          Iterable[SomeEOptionP],
-        currentDependersOfUpdatedEOptionP: Iterable[SomeEPK]
-    ): Unit = {
+        currentDependersOfUpdatedEOptionP: Iterable[SomeEPK]): Unit =
         if (task.isTriggeredByFinalProperty && ps.dependeesCount(taskEPK) == 1) {
             task()
         } else {
@@ -381,17 +332,16 @@ private[seq] final class ManyDependeesOfDirectDependersFirstTasksManager
             val wt = new WeightedQualifiedTask(task, -weight)
             this.tasks.add(wt)
         }
-    }
 
     override def pollAndExecute(): Unit = {
         val t = this.initialTasks.pollFirst()
         if (t ne null) {
             t()
-            return ;
+            return;
         }
 
         val wt = this.tasks.poll()
-        //if (wt ne null) {
+        // if (wt ne null) {
         wt.task()
         //    return ;
         // }
@@ -406,36 +356,29 @@ private[seq] final class ManyDependeesOfDirectDependersFirstTasksManager
     override def toString: String = "ManyDependeesOfDirectDependersFirstTasksManager"
 }
 
-private[seq] final class ManyDependeesAndDependersOfDirectDependersLastTasksManager
+final private[seq] class ManyDependeesAndDependersOfDirectDependersLastTasksManager
     extends PropertyStoreDependentTasksManager {
 
-    private[this] val initialTasks: ArrayDeque[QualifiedTask] = new ArrayDeque(50000)
+    private[this] val initialTasks: ArrayDeque[QualifiedTask]     = new ArrayDeque(50000)
     private[this] val tasks: PriorityQueue[WeightedQualifiedTask] = new PriorityQueue(50000)
 
-    override def push(task: QualifiedTask): Unit = {
-        this.initialTasks.addFirst(task)
-    }
+    override def push(task: QualifiedTask): Unit = this.initialTasks.addFirst(task)
 
     override def push(
         task:             QualifiedTask,
         taskEPK:          SomeEPK,
         eOptionP:         SomeEOptionP,
         dependees:        Iterable[SomeEOptionP],
-        currentDependers: Iterable[SomeEPK]
-    ): Unit = {
+        currentDependers: Iterable[SomeEPK]): Unit = {
         var weight = 0
-        currentDependers foreach { epk =>
-            weight += ps.dependeesCount(epk) + ps.dependersCount(epk)
-        }
+        currentDependers foreach { epk => weight += ps.dependeesCount(epk) + ps.dependersCount(epk) }
         this.tasks.add(new WeightedQualifiedTask(task, weight))
     }
 
     override def pollAndExecute(): Unit = {
         val t = this.initialTasks.pollFirst()
-        if (t ne null)
-            t()
-        else
-            this.tasks.poll().task()
+        if (t ne null) t()
+        else this.tasks.poll().task()
     }
 
     override def isEmpty: Boolean = this.initialTasks.isEmpty && this.tasks.isEmpty
@@ -445,36 +388,29 @@ private[seq] final class ManyDependeesAndDependersOfDirectDependersLastTasksMana
     override def toString: String = "ManyDependeesAndDependersOfDirectDependersLastTasksManager"
 }
 
-private[seq] final class ManyDependeesAndDependersOfDirectDependersFirstTasksManager
+final private[seq] class ManyDependeesAndDependersOfDirectDependersFirstTasksManager
     extends PropertyStoreDependentTasksManager {
 
-    private[this] val initialTasks: ArrayDeque[QualifiedTask] = new ArrayDeque(50000)
+    private[this] val initialTasks: ArrayDeque[QualifiedTask]     = new ArrayDeque(50000)
     private[this] val tasks: PriorityQueue[WeightedQualifiedTask] = new PriorityQueue(50000)
 
-    override def push(task: QualifiedTask): Unit = {
-        this.initialTasks.addFirst(task)
-    }
+    override def push(task: QualifiedTask): Unit = this.initialTasks.addFirst(task)
 
     override def push(
         task:             QualifiedTask,
         taskEPK:          SomeEPK,
         eOptionP:         SomeEOptionP,
         dependees:        Iterable[SomeEOptionP],
-        currentDependers: Iterable[SomeEPK]
-    ): Unit = {
+        currentDependers: Iterable[SomeEPK]): Unit = {
         var weight = 0
-        currentDependers foreach { epk =>
-            weight -= ps.dependeesCount(epk) + ps.dependersCount(epk)
-        }
+        currentDependers foreach { epk => weight -= ps.dependeesCount(epk) + ps.dependersCount(epk) }
         this.tasks.add(new WeightedQualifiedTask(task, weight))
     }
 
     override def pollAndExecute(): Unit = {
         val t = this.initialTasks.pollFirst()
-        if (t ne null)
-            t()
-        else
-            this.tasks.poll().task()
+        if (t ne null) t()
+        else this.tasks.poll().task()
     }
 
     override def isEmpty: Boolean = this.initialTasks.isEmpty && this.tasks.isEmpty
@@ -484,17 +420,14 @@ private[seq] final class ManyDependeesAndDependersOfDirectDependersFirstTasksMan
     override def toString: String = "ManyDependeesAndDependersOfDirectDependersFirstTasksManager"
 }
 
-private[seq] final class AllDependeesTasksManager(
-        final val forward:           Boolean = true,
-        final val manyDependeesLast: Boolean = true
-) extends PropertyStoreDependentTasksManager {
+final private[seq] class AllDependeesTasksManager(
+        final val forward: Boolean = true,
+        final val manyDependeesLast: Boolean = true) extends PropertyStoreDependentTasksManager {
 
-    private[this] val initialTasks: ArrayDeque[QualifiedTask] = new ArrayDeque(50000)
+    private[this] val initialTasks: ArrayDeque[QualifiedTask]     = new ArrayDeque(50000)
     private[this] val tasks: PriorityQueue[WeightedQualifiedTask] = new PriorityQueue(50000)
 
-    override def push(task: QualifiedTask): Unit = {
-        this.initialTasks.addFirst(task)
-    }
+    override def push(task: QualifiedTask): Unit = this.initialTasks.addFirst(task)
 
     private[this] def computeForwardWeight(dependees: Iterable[SomeEOptionP]): Int = {
         val allDependees = mutable.HashSet.empty[SomeEPK]
@@ -515,7 +448,7 @@ private[seq] final class AllDependeesTasksManager(
     }
 
     private[this] def computeBackwardWeight(currentDependers: Iterable[SomeEPK]): Int = {
-        var weight = 0
+        var weight       = 0
         val allDependers = mutable.HashSet.empty[SomeEPK]
         var newDependers = currentDependers.toList
         while (newDependers.nonEmpty) {
@@ -537,8 +470,7 @@ private[seq] final class AllDependeesTasksManager(
         taskEPK:          SomeEPK,
         eOptionP:         SomeEOptionP,
         dependees:        Iterable[SomeEOptionP],
-        currentDependers: Iterable[SomeEPK]
-    ): Unit = {
+        currentDependers: Iterable[SomeEPK]): Unit = {
         var weight =
             if (forward) {
                 computeForwardWeight(dependees)
@@ -546,23 +478,19 @@ private[seq] final class AllDependeesTasksManager(
                 computeBackwardWeight(currentDependers)
             }
         if (!manyDependeesLast) weight = -weight
-        //println("Weight: "+weight+"   -     Tasks:"+size)
+        // println("Weight: "+weight+"   -     Tasks:"+size)
         this.tasks.add(new WeightedQualifiedTask(task, weight))
     }
 
     override def pollAndExecute(): Unit = {
         val t = this.initialTasks.pollFirst()
-        if (t ne null)
-            t()
-        else
-            this.tasks.poll().task()
+        if (t ne null) t()
+        else this.tasks.poll().task()
     }
 
     override def isEmpty: Boolean = this.initialTasks.isEmpty && this.tasks.isEmpty
 
     override def size: Int = this.initialTasks.size + this.tasks.size
 
-    override def toString: String = {
-        s"AllDependeesTasksManager(forward=$forward,manyDependeesLast=$manyDependeesLast)"
-    }
+    override def toString: String = s"AllDependeesTasksManager(forward=$forward,manyDependeesLast=$manyDependeesLast)"
 }

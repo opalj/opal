@@ -3,11 +3,12 @@ package org.opalj
 package br
 package analyses
 
+import org.opalj.br.TestSupport.biProject
+
 import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import org.opalj.br.TestSupport.biProject
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests the `FormalParameters`.
@@ -25,8 +26,8 @@ class FormalParametersTest extends AnyFlatSpec with Matchers {
 
     behavior of "the FormalParametersKey"
 
-    it should ("add for each method parameter a formal parameter") in {
-        val methodsProject = biProject("methods.jar")
+    it should "add for each method parameter a formal parameter" in {
+        val methodsProject  = biProject("methods.jar")
         val declaredMethods = methodsProject.get(DeclaredMethodsKey)
 
         val fps = methodsProject.get(VirtualFormalParametersKey)

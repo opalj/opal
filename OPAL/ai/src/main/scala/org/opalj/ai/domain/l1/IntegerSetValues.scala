@@ -8,9 +8,9 @@ import scala.reflect.ClassTag
 
 import scala.collection.immutable.SortedSet
 
+import org.opalj.br._
 import org.opalj.collection.SingletonSet
 import org.opalj.value.IsIntegerValue
-import org.opalj.br._
 
 /**
  * This domain enables the tracking of integer values using sets. The cardinality of
@@ -24,8 +24,8 @@ import org.opalj.br._
  */
 trait IntegerSetValues
     extends IntegerValuesDomain
-    with ConcreteIntegerValues
-    with IntegerRangeValuesFactory {
+        with ConcreteIntegerValues
+        with IntegerRangeValuesFactory {
     domain: CorrelationalDomainSupport with Configuration with ExceptionsFactory =>
 
     // -----------------------------------------------------------------------------------
@@ -54,7 +54,7 @@ trait IntegerSetValues
      */
     abstract class IntegerLikeValue
         extends TypedValue[CTIntType]
-        with IsIntegerValue {
+            with IsIntegerValue {
         this: DomainTypedValue[CTIntType] =>
 
         final override def leastUpperType: Option[CTIntType] = Some(CTIntType)
@@ -69,8 +69,8 @@ trait IntegerSetValues
     abstract class AnIntegerValueLike extends IntegerLikeValue {
         this: DomainTypedValue[CTIntType] =>
 
-        final override def lowerBound: Int = Int.MinValue
-        final override def upperBound: Int = Int.MaxValue
+        final override def lowerBound: Int            = Int.MinValue
+        final override def upperBound: Int            = Int.MaxValue
         final override def constantValue: Option[Int] = None
     }
 
@@ -82,11 +82,9 @@ trait IntegerSetValues
 
         val values: SortedSet[Int]
 
-        final override def lowerBound: Int = values.firstKey
-        final override def upperBound: Int = values.lastKey
-        final override def constantValue: Option[Int] = {
-            if (values.size == 1) Some(values.head) else None
-        }
+        final override def lowerBound: Int            = values.firstKey
+        final override def upperBound: Int            = values.lastKey
+        final override def constantValue: Option[Int] = if (values.size == 1) Some(values.head) else None
     }
 
     /**
@@ -197,8 +195,7 @@ trait IntegerSetValues
     protected[this] def approximateSet(
         origin:     ValueOrigin,
         lowerBound: Int,
-        upperBound: Int
-    ): DomainTypedValue[CTIntType] = {
+        upperBound: Int): DomainTypedValue[CTIntType] =
         if (lowerBound >= 0) {
             if (upperBound <= Byte.MaxValue) U7BitSet()
             else if (upperBound <= Short.MaxValue) U15BitSet()
@@ -207,21 +204,18 @@ trait IntegerSetValues
         } else if (lowerBound >= Byte.MinValue && upperBound <= Byte.MaxValue) ByteValue(origin)
         else if (lowerBound >= Short.MinValue && upperBound <= Short.MaxValue) ShortValue(origin)
         else IntegerValue(origin = origin)
-    }
 
     /**
      * Creates a new IntegerSet value using the given set unless the set exceeds the
      * maximum cardinality.
      */
-    def IntegerSet(origin: ValueOrigin, values: SortedSet[Int]): DomainTypedValue[CTIntType] = {
-        if (values.size <= maxCardinalityOfIntegerSets)
-            IntegerSet(values)
+    def IntegerSet(origin: ValueOrigin, values: SortedSet[Int]): DomainTypedValue[CTIntType] =
+        if (values.size <= maxCardinalityOfIntegerSets) IntegerSet(values)
         else {
             val lb = values.firstKey
             val ub = values.lastKey
             approximateSet(origin, lb, ub)
         }
-    }
 
     /**
      * Creates a new IntegerSet value containing all values
@@ -230,14 +224,13 @@ trait IntegerSetValues
      */
     def IntegerRange(
         origin:     ValueOrigin,
-        lowerBound: Int, upperBound: Int
-    ): DomainTypedValue[CTIntType] = {
+        lowerBound: Int,
+        upperBound: Int): DomainTypedValue[CTIntType] = {
         assert(lowerBound <= upperBound)
 
         if (upperBound.toLong - lowerBound.toLong <= maxCardinalityOfIntegerSets)
             IntegerSet(SortedSet[Int](lowerBound to upperBound: _*))
-        else
-            approximateSet(origin, lowerBound, upperBound)
+        else approximateSet(origin, lowerBound, upperBound)
     }
 
     /**
@@ -257,36 +250,25 @@ trait IntegerSetValues
 
     @inline final override def intValue[T](
         value: DomainValue
-    )(
-        f: Int => T
-    )(
-        orElse: => T
-    ): T = {
-        value match {
-            case IntegerSetLike(values) if values.size == 1 => f(values.head)
-            case _                                          => orElse
-        }
+      )(f:     Int => T
+      )(orElse: => T): T = value match {
+        case IntegerSetLike(values) if values.size == 1 => f(values.head)
+        case _                                          => orElse
     }
 
-    @inline final override def intValueOption(value: DomainValue): Option[Int] = {
-        value match {
-            case IntegerSetLike(values) if values.size == 1 => Some(values.head)
-            case _                                          => None
-        }
+    @inline final override def intValueOption(value: DomainValue): Option[Int] = value match {
+        case IntegerSetLike(values) if values.size == 1 => Some(values.head)
+        case _                                          => None
     }
 
-    @inline protected final def intValues[T](
-        value1: DomainValue, value2: DomainValue
-    )(
-        f: (Int, Int) => T
-    )(
-        orElse: => T
-    ): T = {
-        intValue(value1) {
-            v1 => intValue(value2) { v2 => f(v1, v2) } { orElse }
-        } {
-            orElse
-        }
+    @inline final protected def intValues[T](
+        value1: DomainValue,
+        value2: DomainValue
+      )(f:      (Int, Int) => T
+      )(orElse: => T): T = intValue(value1) {
+        v1 => intValue(value2) { v2 => f(v1, v2) } { orElse }
+    } {
+        orElse
     }
 
     override def intAreEqual(pc: PC, value1: DomainValue, value2: DomainValue): Answer = {
@@ -297,27 +279,19 @@ trait IntegerSetValues
 
         (value1, value2) match {
             case (IntegerSetLike(v1s), IntegerSetLike(v2s)) =>
-                if (v1s.size == 1 && v2s.size == 1)
-                    Answer(v1s.head == v2s.head)
-                else if (v1s.intersect(v2s).isEmpty)
-                    No
-                else
-                    Unknown
+                if (v1s.size == 1 && v2s.size == 1) Answer(v1s.head == v2s.head)
+                else if (v1s.intersect(v2s).isEmpty) No
+                else Unknown
 
             case (IntegerSetLike(vs), DomainBaseTypesBasedSet(btbs)) =>
-                if (vs forall { v => v < btbs.lowerBound || v > btbs.upperBound })
-                    No
-                else
-                    Unknown
+                if (vs forall { v => v < btbs.lowerBound || v > btbs.upperBound }) No
+                else Unknown
 
             case (DomainBaseTypesBasedSet(btbs), IntegerSetLike(vs)) =>
-                if (vs forall { v => v < btbs.lowerBound || v > btbs.upperBound })
-                    No
-                else
-                    Unknown
+                if (vs forall { v => v < btbs.lowerBound || v > btbs.upperBound }) No
+                else Unknown
 
-            case _ =>
-                Unknown
+            case _ => Unknown
         }
     }
 
@@ -325,14 +299,11 @@ trait IntegerSetValues
         pc:         PC,
         value:      DomainValue,
         lowerBound: Int,
-        upperBound: Int
-    ): Answer = {
-        if (lowerBound == Int.MinValue && upperBound == Int.MaxValue)
-            return Yes;
+        upperBound: Int): Answer = {
+        if (lowerBound == Int.MinValue && upperBound == Int.MaxValue) return Yes;
 
         value match {
-            case IntegerSetLike(values) =>
-                Answer(
+            case IntegerSetLike(values) => Answer(
                     values.lastKey >= lowerBound && values.firstKey <= upperBound &&
                         values.exists(value => value >= lowerBound && value <= upperBound)
                 )
@@ -348,17 +319,13 @@ trait IntegerSetValues
         pc:         PC,
         value:      DomainValue,
         lowerBound: Int,
-        upperBound: Int
-    ): Answer = {
-        if (lowerBound == Int.MinValue && upperBound == Int.MaxValue)
-            return No;
+        upperBound: Int): Answer = {
+        if (lowerBound == Int.MinValue && upperBound == Int.MaxValue) return No;
 
         value match {
-            case IntegerSetLike(values) =>
-                Answer(values.firstKey < lowerBound || values.lastKey > upperBound)
+            case IntegerSetLike(values) => Answer(values.firstKey < lowerBound || values.lastKey > upperBound)
 
-            case DomainBaseTypesBasedSet(value) =>
-                Answer(value.lowerBound < lowerBound || value.upperBound > upperBound)
+            case DomainBaseTypesBasedSet(value) => Answer(value.lowerBound < lowerBound || value.upperBound > upperBound)
 
             case _ => Unknown
         }
@@ -377,38 +344,25 @@ trait IntegerSetValues
                     No
                 else left match {
                     case IntegerSetLike(leftValues) =>
-                        if (leftValues.lastKey < rightValues.firstKey)
-                            Yes
+                        if (leftValues.lastKey < rightValues.firstKey) Yes
                         else if (leftValues.firstKey >= rightValues.lastKey ||
-                            ( /*"for point sets":*/
-                                leftValues.size == 1 && rightValues.size == 1 &&
-                                leftValues.head == rightValues.head
-                            ))
-                            No
-                        else
-                            Unknown
+                                 ( /*"for point sets":*/
+                                     leftValues.size == 1 && rightValues.size == 1 &&
+                                         leftValues.head == rightValues.head)) No
+                        else Unknown
                     case DomainBaseTypesBasedSet(left) =>
-                        if (left.upperBound < rightValues.firstKey)
-                            Yes
-                        else if (rightValues.lastKey <= left.lowerBound)
-                            No
+                        if (left.upperBound < rightValues.firstKey) Yes
+                        else if (rightValues.lastKey <= left.lowerBound) No
+                        else Unknown
 
-                        else
-                            Unknown
-
-                    case _ =>
-                        Unknown
+                    case _ => Unknown
                 }
 
-            case DomainBaseTypesBasedSet(right) =>
-                left match {
+            case DomainBaseTypesBasedSet(right) => left match {
                     case IntegerSetLike(leftValues) =>
-                        if (leftValues.lastKey < right.lowerBound)
-                            Yes
-                        else if (leftValues.firstKey >= right.upperBound)
-                            No
-                        else
-                            Unknown
+                        if (leftValues.lastKey < right.lowerBound) Yes
+                        else if (leftValues.firstKey >= right.upperBound) No
+                        else Unknown
 
                     case _ => Unknown
                 }
@@ -420,8 +374,7 @@ trait IntegerSetValues
     override def intIsLessThanOrEqualTo(
         pc:    PC,
         left:  DomainValue,
-        right: DomainValue
-    ): Answer = {
+        right: DomainValue): Answer = {
         if (left eq right)
             // this handles the case that the two values (even if the concrete value
             // is not known; i.e., AnIntegerValue) are actually exactly the same value
@@ -429,51 +382,36 @@ trait IntegerSetValues
 
         right match {
             case IntegerSetLike(rightValues) =>
-                if (rightValues.firstKey == Int.MaxValue)
-                    Yes
+                if (rightValues.firstKey == Int.MaxValue) Yes
                 else left match {
                     case IntegerSetLike(leftValues) =>
-                        if (leftValues.lastKey <= rightValues.firstKey)
-                            Yes
-                        else if (leftValues.firstKey > rightValues.lastKey)
-                            No
-                        else
-                            Unknown
+                        if (leftValues.lastKey <= rightValues.firstKey) Yes
+                        else if (leftValues.firstKey > rightValues.lastKey) No
+                        else Unknown
 
                     case DomainBaseTypesBasedSet(left) =>
-                        if (left.upperBound <= rightValues.firstKey)
-                            Yes
-                        else if (left.lowerBound > rightValues.lastKey)
-                            No
-                        else
-                            Unknown
+                        if (left.upperBound <= rightValues.firstKey) Yes
+                        else if (left.lowerBound > rightValues.lastKey) No
+                        else Unknown
 
                     case _ => Unknown
                 }
 
-            case DomainBaseTypesBasedSet(right) =>
-                left match {
+            case DomainBaseTypesBasedSet(right) => left match {
                     case IntegerSetLike(leftValues) =>
-                        if (leftValues.lastKey <= right.lowerBound)
-                            Yes
-                        else if (leftValues.firstKey > right.upperBound)
-                            No
-                        else
-                            Unknown
+                        if (leftValues.lastKey <= right.lowerBound) Yes
+                        else if (leftValues.firstKey > right.upperBound) No
+                        else Unknown
 
                     case _ => Unknown
                 }
 
-            case _ =>
-                left match {
+            case _ => left match {
                     case IntegerSetLike(leftValues) =>
-                        if (leftValues.lastKey == Int.MinValue)
-                            Yes
-                        else
-                            Unknown
+                        if (leftValues.lastKey == Int.MinValue) Yes
+                        else Unknown
 
-                    case _ =>
-                        Unknown
+                    case _ => Unknown
                 }
         }
     }
@@ -489,14 +427,9 @@ trait IntegerSetValues
         theValue: Int,
         value:    DomainValue,
         operands: Operands,
-        locals:   Locals
-    ): (Operands, Locals) = {
-        value match {
-            case IntegerSetLike(values) if values.size == 1 && values.head == theValue =>
-                (operands, locals)
-            case _ =>
-                updateMemoryLayout(value, IntegerSet(theValue), operands, locals)
-        }
+        locals:   Locals): (Operands, Locals) = value match {
+        case IntegerSetLike(values) if values.size == 1 && values.head == theValue => (operands, locals)
+        case _                                                                     => updateMemoryLayout(value, IntegerSet(theValue), operands, locals)
     }
 
     override def intEstablishAreEqual(
@@ -504,64 +437,48 @@ trait IntegerSetValues
         value1:   DomainValue,
         value2:   DomainValue,
         operands: Operands,
-        locals:   Locals
-    ): (Operands, Locals) = {
+        locals:   Locals): (Operands, Locals) = {
         if (value1 eq value2)
             // this basically handles the case that both are "AnIntegerValue"
             return (operands, locals);
 
         value1 match {
-            case IntegerSetLike(leftValues) =>
-                value2 match {
+            case IntegerSetLike(leftValues) => value2 match {
 
                     case IntegerSetLike(rightValues) =>
-                        val newValue = IntegerSet(pc, leftValues.intersect(rightValues))
-                        val (operands1, locals1) =
-                            updateMemoryLayout(value1, newValue, operands, locals)
+                        val newValue             = IntegerSet(pc, leftValues.intersect(rightValues))
+                        val (operands1, locals1) = updateMemoryLayout(value1, newValue, operands, locals)
                         updateMemoryLayout(value2, newValue, operands1, locals1)
 
                     case DomainBaseTypesBasedSet(value2) =>
                         // all matching values from value1
-                        val filtered = leftValues.filter { v =>
-                            v >= value2.lowerBound && v <= value2.upperBound
-                        }
-                        val newValue =
-                            if (filtered.size == leftValues.size) value1 else IntegerSet(filtered)
-                        val (newOperands, newLocals) =
-                            updateMemoryLayout(oldValue = value2, newValue, operands, locals)
+                        val filtered                 = leftValues.filter { v => v >= value2.lowerBound && v <= value2.upperBound }
+                        val newValue                 = if (filtered.size == leftValues.size) value1 else IntegerSet(filtered)
+                        val (newOperands, newLocals) = updateMemoryLayout(oldValue = value2, newValue, operands, locals)
 
                         // If there were value removed from value 2, update it too
-                        if (newValue ne value1)
-                            updateMemoryLayout(oldValue = value1, newValue, newOperands, newLocals)
-                        else
-                            (newOperands, newLocals)
+                        if (newValue ne value1) updateMemoryLayout(oldValue = value1, newValue, newOperands, newLocals)
+                        else (newOperands, newLocals)
 
                     case _ =>
                         // value1 is unchanged (an IntegerSet value is always more precise)
                         updateMemoryLayout(oldValue = value2, value1, operands, locals)
                 }
-            case DomainBaseTypesBasedSet(value1) =>
-                value2 match {
+            case DomainBaseTypesBasedSet(value1) => value2 match {
                     case DomainBaseTypesBasedSet(value2) =>
-                        val newValue = value1.fuse(pc, value2)
+                        val newValue   = value1.fuse(pc, value2)
                         val (os1, ls1) = updateMemoryLayout(value1, newValue, operands, locals)
                         updateMemoryLayout(value2, newValue, os1, ls1)
 
                     case IntegerSetLike(rightValues) =>
                         // all matching values from value2
-                        val filtered = rightValues.filter { v =>
-                            v >= value1.lowerBound && v <= value1.upperBound
-                        }
-                        val newValue =
-                            if (filtered.size == rightValues.size) value2 else IntegerSet(filtered)
-                        val (newOperands, newLocals) =
-                            updateMemoryLayout(oldValue = value1, newValue, operands, locals)
+                        val filtered                 = rightValues.filter { v => v >= value1.lowerBound && v <= value1.upperBound }
+                        val newValue                 = if (filtered.size == rightValues.size) value2 else IntegerSet(filtered)
+                        val (newOperands, newLocals) = updateMemoryLayout(oldValue = value1, newValue, operands, locals)
 
                         // If there were value removed from value 2, update it too
-                        if (newValue ne value2)
-                            updateMemoryLayout(oldValue = value2, newValue, newOperands, newLocals)
-                        else
-                            (newOperands, newLocals)
+                        if (newValue ne value2) updateMemoryLayout(oldValue = value2, newValue, newOperands, newLocals)
+                        else (newOperands, newLocals)
 
                     case _ /*AnIntegerValue*/ =>
                         // value1 is unchanged (an IntegerSet value is always more precise)
@@ -579,24 +496,20 @@ trait IntegerSetValues
         value1:   DomainValue,
         value2:   DomainValue,
         operands: Operands,
-        locals:   Locals
-    ): (Operands, Locals) = {
+        locals:   Locals): (Operands, Locals) = {
         assert(value1 ne value2, "the values are definitively equal; impossible refinement \"!=\"")
 
         intValue(value1) { v1 =>
             value2 match {
-                case IntegerSetLike(values) =>
-                    updateMemoryLayout(value2, IntegerSet(pc, values - v1), operands, locals)
-                case _ =>
-                    (operands, locals)
+                case IntegerSetLike(values) => updateMemoryLayout(value2, IntegerSet(pc, values - v1), operands, locals)
+                case _                      => (operands, locals)
             }
         } {
             intValue(value2) { v2 =>
                 value1 match {
                     case IntegerSetLike(values) =>
                         updateMemoryLayout(value1, IntegerSet(pc, values - v2), operands, locals)
-                    case _ =>
-                        (operands, locals)
+                    case _ => (operands, locals)
                 }
             } {
                 (operands, locals)
@@ -609,8 +522,7 @@ trait IntegerSetValues
         left:     DomainValue,
         right:    DomainValue,
         operands: Operands,
-        locals:   Locals
-    ): (Operands, Locals) = {
+        locals:   Locals): (Operands, Locals) = {
         //        println("intEstablishIsLessThan"+System.identityHashCode(left).toHexString + left+" .... "+System.identityHashCode(right).toHexString + right)
         //        println(locals.map(v => System.identityHashCode(v).toHexString+"."+v).mkString("", ";   ", ""))
 
@@ -651,15 +563,13 @@ trait IntegerSetValues
                 val newIntValue = approximateSet(pc, left.lowerBound, right.upperBound)
                 updateMemoryLayout(left, newIntValue, operands, locals)
 
-            case (_, DomainBaseTypesBasedSet(right)) =>
-                updateMemoryLayout(left, right.newInstance, operands, locals)
+            case (_, DomainBaseTypesBasedSet(right)) => updateMemoryLayout(left, right.newInstance, operands, locals)
 
             case (_, IntegerSetLike(rs)) =>
                 val newIntValue = approximateSet(pc, rs.firstKey - 1, rs.lastKey - 1)
                 updateMemoryLayout(left, newIntValue, operands, locals)
 
-            case _ =>
-                (operands, locals)
+            case _ => (operands, locals)
         }
         //        println(locals.map(v => System.identityHashCode(v).toHexString+"."+v).mkString("", ";   ", ""))
         result
@@ -670,55 +580,51 @@ trait IntegerSetValues
         left:     DomainValue,
         right:    DomainValue,
         operands: Operands,
-        locals:   Locals
-    ): (Operands, Locals) = {
+        locals:   Locals): (Operands, Locals) = {
         //        println("intEstablishIsLessThanOrEqualTo"+System.identityHashCode(left).toHexString + left+" .... "+System.identityHashCode(right).toHexString + right)
         //        println(locals.map(v => System.identityHashCode(v).toHexString+"."+v).mkString("", ";   ", ""))
 
-        val result =
-            (left, right) match {
-                case (IntegerSetLike(ls), IntegerSetLike(rs)) =>
-                    val rsMax = rs.lastKey
-                    val newLs = ls.filter(_ <= rsMax)
-                    val (operands1, locals1) =
-                        if (newLs.size != ls.size) {
-                            updateMemoryLayout(left, IntegerSet(pc, newLs), operands, locals)
-                        } else {
-                            (operands, locals)
-                        }
+        val result = (left, right) match {
+            case (IntegerSetLike(ls), IntegerSetLike(rs)) =>
+                val rsMax = rs.lastKey
+                val newLs = ls.filter(_ <= rsMax)
+                val (operands1, locals1) =
+                    if (newLs.size != ls.size) {
+                        updateMemoryLayout(left, IntegerSet(pc, newLs), operands, locals)
+                    } else {
+                        (operands, locals)
+                    }
 
-                    val lsMin = ls.firstKey
-                    val newRs = rs.filter(_ >= lsMin)
-                    val newMemoryLayout =
-                        if (newRs.size != rs.size) {
-                            updateMemoryLayout(right, IntegerSet(pc, newRs), operands1, locals1)
-                        } else {
-                            (operands1, locals1)
-                        }
-                    newMemoryLayout
+                val lsMin = ls.firstKey
+                val newRs = rs.filter(_ >= lsMin)
+                val newMemoryLayout =
+                    if (newRs.size != rs.size) {
+                        updateMemoryLayout(right, IntegerSet(pc, newRs), operands1, locals1)
+                    } else {
+                        (operands1, locals1)
+                    }
+                newMemoryLayout
 
-                case (IntegerSetLike(ls), DomainBaseTypesBasedSet(right)) =>
-                    val newLs = ls.filter(_ <= right.upperBound)
-                    updateMemoryLayout(left, IntegerSet(pc, newLs), operands, locals)
+            case (IntegerSetLike(ls), DomainBaseTypesBasedSet(right)) =>
+                val newLs = ls.filter(_ <= right.upperBound)
+                updateMemoryLayout(left, IntegerSet(pc, newLs), operands, locals)
 
-                case (DomainBaseTypesBasedSet(left), IntegerSetLike(rs)) =>
-                    val newDomainValue = approximateSet(pc, left.lowerBound, rs.lastKey)
-                    updateMemoryLayout(left, newDomainValue, operands, locals)
+            case (DomainBaseTypesBasedSet(left), IntegerSetLike(rs)) =>
+                val newDomainValue = approximateSet(pc, left.lowerBound, rs.lastKey)
+                updateMemoryLayout(left, newDomainValue, operands, locals)
 
-                case (DomainBaseTypesBasedSet(left), DomainBaseTypesBasedSet(right)) =>
-                    val newIntValue = approximateSet(pc, left.lowerBound, right.upperBound)
-                    updateMemoryLayout(left, newIntValue, operands, locals)
+            case (DomainBaseTypesBasedSet(left), DomainBaseTypesBasedSet(right)) =>
+                val newIntValue = approximateSet(pc, left.lowerBound, right.upperBound)
+                updateMemoryLayout(left, newIntValue, operands, locals)
 
-                case (_, DomainBaseTypesBasedSet(right)) =>
-                    updateMemoryLayout(left, right.newInstance, operands, locals)
+            case (_, DomainBaseTypesBasedSet(right)) => updateMemoryLayout(left, right.newInstance, operands, locals)
 
-                case (_, IntegerSetLike(rs)) =>
-                    val newIntValue = approximateSet(pc, rs.firstKey, rs.lastKey)
-                    updateMemoryLayout(left, newIntValue, operands, locals)
+            case (_, IntegerSetLike(rs)) =>
+                val newIntValue = approximateSet(pc, rs.firstKey, rs.lastKey)
+                updateMemoryLayout(left, newIntValue, operands, locals)
 
-                case _ =>
-                    (operands, locals)
-            }
+            case _ => (operands, locals)
+        }
         //        println(locals.map(v => System.identityHashCode(v).toHexString+"."+v).mkString("", ";   ", ""))
         result
     }
@@ -732,316 +638,279 @@ trait IntegerSetValues
     //
     // UNARY EXPRESSIONS
     //
-    /*override*/ def ineg(pc: PC, value: DomainValue): DomainValue = {
-        value match {
-            case IntegerSetLike(SingletonSet(Int.MinValue)) => value
-            case IntegerSetLike(values)                     => IntegerSet(pc, values.map(-_))
-            case _                                          => IntegerValue(origin = pc)
-        }
+    /*override*/
+    def ineg(pc: PC, value: DomainValue): DomainValue = value match {
+        case IntegerSetLike(SingletonSet(Int.MinValue)) => value
+        case IntegerSetLike(values)                     => IntegerSet(pc, values.map(-_))
+        case _                                          => IntegerValue(origin = pc)
     }
 
     //
     // BINARY EXPRESSIONS
     //
 
-    /*override*/ def iadd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
-        (value1, value2) match {
-            case (IntegerSetLike(leftValues), IntegerSetLike(rightValues)) =>
-                // {1,2,3}+{0,1} => {1,2,3,4}
-                val results =
-                    for (leftValue <- leftValues; rightValue <- rightValues) yield {
-                        leftValue + rightValue
+    /*override*/
+    def iadd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = (value1, value2) match {
+        case (IntegerSetLike(leftValues), IntegerSetLike(rightValues)) =>
+            // {1,2,3}+{0,1} => {1,2,3,4}
+            val results = for {
+                leftValue  <- leftValues
+                rightValue <- rightValues
+            } yield {
+                leftValue + rightValue
+            }
+            IntegerSet(pc, results)
+        case _ => IntegerValue(origin = pc)
+    }
+
+    /*override*/
+    def iinc(pc: PC, value: DomainValue, increment: Int): DomainValue = value match {
+        case IntegerSetLike(values) => IntegerSet(values.map(_ + increment))
+        case _                      => IntegerValue(origin = pc)
+    }
+
+    /*override*/
+    def isub(pc: PC, left: DomainValue, right: DomainValue): DomainValue = (left, right) match {
+        case (IntegerSetLike(leftValues), IntegerSetLike(rightValues)) =>
+            val results = for {
+                leftValue  <- leftValues
+                rightValue <- rightValues
+            } yield {
+                leftValue - rightValue
+            }
+            IntegerSet(pc, results)
+        case _ => IntegerValue(origin = pc)
+    }
+
+    /*override*/
+    def imul(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = value1 match {
+        case (IntegerSetLike(leftValues)) =>
+            if (leftValues.size == 1 && leftValues.head == 0) value1
+            else if (leftValues.size == 1 && leftValues.head == 1) value2
+            else value2 match {
+                case (IntegerSetLike(rightValues)) =>
+                    val results = for {
+                        leftValue  <- leftValues
+                        rightValue <- rightValues
+                    } yield {
+                        leftValue * rightValue
                     }
-                IntegerSet(pc, results)
-            case _ =>
-                IntegerValue(origin = pc)
-        }
-    }
+                    IntegerSet(pc, results)
 
-    /*override*/ def iinc(pc: PC, value: DomainValue, increment: Int): DomainValue = {
-        value match {
-            case IntegerSetLike(values) => IntegerSet(values.map(_ + increment))
-            case _                      => IntegerValue(origin = pc)
-        }
-    }
+                case _ => IntegerValue(origin = pc)
 
-    /*override*/ def isub(pc: PC, left: DomainValue, right: DomainValue): DomainValue = {
-        (left, right) match {
-            case (IntegerSetLike(leftValues), IntegerSetLike(rightValues)) =>
-                val results =
-                    for (leftValue <- leftValues; rightValue <- rightValues) yield {
-                        leftValue - rightValue
-                    }
-                IntegerSet(pc, results)
-            case _ =>
-                IntegerValue(origin = pc)
-        }
-    }
-
-    /*override*/ def imul(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
-        value1 match {
-            case (IntegerSetLike(leftValues)) =>
-                if (leftValues.size == 1 && leftValues.head == 0)
-                    value1
-                else if (leftValues.size == 1 && leftValues.head == 1)
-                    value2
-                else value2 match {
-                    case (IntegerSetLike(rightValues)) =>
-                        val results =
-                            for (leftValue <- leftValues; rightValue <- rightValues) yield {
-                                leftValue * rightValue
-                            }
-                        IntegerSet(pc, results)
-
-                    case _ =>
-                        IntegerValue(origin = pc)
-
-                }
-            case _ =>
-                value2 match {
-                    case (IntegerSetLike(rightValues)) =>
-                        if (rightValues.size == 1 && rightValues.head == 0)
-                            value2
-                        else if (rightValues.size == 1 && rightValues.head == 1)
-                            value1
-                        else
-                            IntegerValue(origin = pc)
-                    case _ =>
-                        IntegerValue(origin = pc)
-                }
-        }
+            }
+        case _ => value2 match {
+                case (IntegerSetLike(rightValues)) =>
+                    if (rightValues.size == 1 && rightValues.head == 0) value2
+                    else if (rightValues.size == 1 && rightValues.head == 1) value1
+                    else IntegerValue(origin = pc)
+                case _ => IntegerValue(origin = pc)
+            }
     }
 
     protected[this] def createIntegerValueOrArithmeticException(
         pc:        PC,
         exception: Boolean,
-        results:   SortedSet[Int]
-    ): IntegerValueOrArithmeticException = {
+        results:   SortedSet[Int]): IntegerValueOrArithmeticException = {
 
         assert(exception || results.nonEmpty)
 
         if (results.nonEmpty) {
             val newValue = IntegerSet(pc, results)
-            if (exception)
-                ComputedValueOrException(newValue, VMArithmeticException(pc))
-            else
-                ComputedValue(newValue)
+            if (exception) ComputedValueOrException(newValue, VMArithmeticException(pc))
+            else ComputedValue(newValue)
         } else {
             ThrowsException(VMArithmeticException(pc))
         }
     }
 
-    /*override*/ def idiv(
+    /*override*/
+    def idiv(
         pc:          PC,
         numerator:   DomainValue,
-        denominator: DomainValue
-    ): IntegerValueOrArithmeticException = {
-        (numerator, denominator) match {
-            case (IntegerSetLike(leftValues), IntegerSetLike(rightValues)) =>
-                var results: SortedSet[Int] = SortedSet.empty
-                var exception: Boolean = false
-                for (leftValue <- leftValues; rightValue <- rightValues) {
-                    if (rightValue == 0)
-                        exception = true
-                    else
-                        results += (leftValue / rightValue)
-                }
-                createIntegerValueOrArithmeticException(pc, exception, results)
+        denominator: DomainValue): IntegerValueOrArithmeticException = (numerator, denominator) match {
+        case (IntegerSetLike(leftValues), IntegerSetLike(rightValues)) =>
+            var results: SortedSet[Int] = SortedSet.empty
+            var exception: Boolean      = false
+            for {
+                leftValue  <- leftValues
+                rightValue <- rightValues
+            } {
+                if (rightValue == 0) exception = true
+                else results += (leftValue / rightValue)
+            }
+            createIntegerValueOrArithmeticException(pc, exception, results)
 
-            case (_, IntegerSetLike(rightValues)) =>
-                if (rightValues contains (0)) {
-                    if (rightValues.size == 1)
-                        ThrowsException(VMArithmeticException(pc))
-                    else
-                        ComputedValueOrException(IntegerValue(pc), VMArithmeticException(pc))
-                } else
-                    ComputedValue(IntegerValue(origin = pc))
+        case (_, IntegerSetLike(rightValues)) =>
+            if (rightValues contains 0) {
+                if (rightValues.size == 1) ThrowsException(VMArithmeticException(pc))
+                else ComputedValueOrException(IntegerValue(pc), VMArithmeticException(pc))
+            } else ComputedValue(IntegerValue(origin = pc))
 
-            case _ =>
-                if (throwArithmeticExceptions)
-                    ComputedValueOrException(IntegerValue(origin = pc), VMArithmeticException(pc))
-                else
-                    ComputedValue(IntegerValue(origin = pc))
-        }
+        case _ =>
+            if (throwArithmeticExceptions) ComputedValueOrException(IntegerValue(origin = pc), VMArithmeticException(pc))
+            else ComputedValue(IntegerValue(origin = pc))
     }
 
-    /*override*/ def irem(
+    /*override*/
+    def irem(
         pc:    PC,
         left:  DomainValue,
-        right: DomainValue
-    ): IntegerValueOrArithmeticException = {
+        right: DomainValue): IntegerValueOrArithmeticException = (left, right) match {
+        case (IntegerSetLike(leftValues), IntegerSetLike(rightValues)) =>
+            var results: SortedSet[Int] = SortedSet.empty
+            var exception: Boolean      = false
+            for {
+                leftValue  <- leftValues
+                rightValue <- rightValues
+            } {
+                if (rightValue == 0) exception = true
+                else results += (leftValue % rightValue)
+            }
+            createIntegerValueOrArithmeticException(pc, exception, results)
 
-        (left, right) match {
-            case (IntegerSetLike(leftValues), IntegerSetLike(rightValues)) =>
-                var results: SortedSet[Int] = SortedSet.empty
-                var exception: Boolean = false
-                for (leftValue <- leftValues; rightValue <- rightValues) {
-                    if (rightValue == 0)
-                        exception = true
-                    else
-                        results += (leftValue % rightValue)
-                }
-                createIntegerValueOrArithmeticException(pc, exception, results)
+        case (_, IntegerSetLike(rightValues)) =>
+            if (rightValues contains 0) {
+                if (rightValues.size == 1) ThrowsException(VMArithmeticException(pc))
+                else ComputedValueOrException(IntegerValue(pc), VMArithmeticException(pc))
+            } else ComputedValue(IntegerValue(origin = pc))
 
-            case (_, IntegerSetLike(rightValues)) =>
-                if (rightValues contains (0)) {
-                    if (rightValues.size == 1)
-                        ThrowsException(VMArithmeticException(pc))
-                    else
-                        ComputedValueOrException(IntegerValue(pc), VMArithmeticException(pc))
-                } else
-                    ComputedValue(IntegerValue(origin = pc))
-
-            case _ =>
-                if (throwArithmeticExceptions)
-                    ComputedValueOrException(IntegerValue(origin = pc), VMArithmeticException(pc))
-                else
-                    ComputedValue(IntegerValue(origin = pc))
-        }
+        case _ =>
+            if (throwArithmeticExceptions) ComputedValueOrException(IntegerValue(origin = pc), VMArithmeticException(pc))
+            else ComputedValue(IntegerValue(origin = pc))
     }
 
-    /*override*/ def iand(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
-        value1 match {
-            case (IntegerSetLike(leftValues)) =>
-                if (leftValues.size == 1 && leftValues.head == -1)
-                    value2
-                else if (leftValues.size == 1 && leftValues.head == 0)
-                    value1
-                else value2 match {
-                    case (IntegerSetLike(rightValues)) =>
-                        val results =
-                            for (leftValue <- leftValues; rightValue <- rightValues) yield {
-                                leftValue & rightValue
-                            }
-                        IntegerSet(pc, results)
-
-                    case _ =>
-                        IntegerValue(origin = pc)
-
-                }
-            case _ =>
-                value2 match {
-                    case (IntegerSetLike(rightValues)) =>
-                        if (rightValues.size == 1 && rightValues.head == -1)
-                            value1
-                        else if (rightValues.size == 1 && rightValues.head == 0)
-                            value2
-                        else
-                            IntegerValue(origin = pc)
-                    case _ =>
-                        IntegerValue(origin = pc)
-                }
-        }
-    }
-
-    /*override*/ def ior(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
-        value1 match {
-            case (IntegerSetLike(leftValues)) =>
-                if (leftValues.size == 1 && leftValues.head == -1)
-                    value1
-                else if (leftValues.size == 1 && leftValues.head == 0)
-                    value2
-                else value2 match {
-                    case (IntegerSetLike(rightValues)) =>
-                        val results =
-                            for (leftValue <- leftValues; rightValue <- rightValues) yield {
-                                leftValue | rightValue
-                            }
-                        IntegerSet(pc, results)
-
-                    case _ =>
-                        IntegerValue(origin = pc)
-                }
-            case _ =>
-                value2 match {
-                    case (IntegerSetLike(rightValues)) =>
-                        if (rightValues.size == 1 && rightValues.head == -1)
-                            value2
-                        else if (rightValues.size == 1 && rightValues.head == 0)
-                            value1
-                        else
-                            IntegerValue(origin = pc)
-
-                    case _ =>
-                        IntegerValue(origin = pc)
-                }
-        }
-    }
-
-    /*override*/ def ishl(pc: PC, value: DomainValue, shift: DomainValue): DomainValue = {
-        (value, shift) match {
-            case (IntegerSetLike(leftValues), IntegerSetLike(rightValues)) =>
-                val results = for (leftValue <- leftValues; rightValue <- rightValues) yield {
-                    leftValue << rightValue
-                }
-                IntegerSet(pc, results)
-
-            case _ =>
-                IntegerValue(origin = pc)
-        }
-    }
-
-    /*override*/ def ishr(pc: PC, value: DomainValue, shift: DomainValue): DomainValue = {
-        (value, shift) match {
-            case (IntegerSetLike(leftValues), IntegerSetLike(rightValues)) =>
-                val results = for (leftValue <- leftValues; rightValue <- rightValues) yield {
-                    leftValue >> rightValue
-                }
-                IntegerSet(pc, results)
-
-            case _ =>
-                IntegerValue(origin = pc)
-        }
-    }
-
-    /*override*/ def iushr(pc: PC, value: DomainValue, shift: DomainValue): DomainValue = {
-        (value, shift) match {
-            case (IntegerSetLike(leftValues), IntegerSetLike(rightValues)) =>
-                val results =
-                    for (leftValue <- leftValues; rightValue <- rightValues) yield {
-                        leftValue >>> rightValue
+    /*override*/
+    def iand(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = value1 match {
+        case (IntegerSetLike(leftValues)) =>
+            if (leftValues.size == 1 && leftValues.head == -1) value2
+            else if (leftValues.size == 1 && leftValues.head == 0) value1
+            else value2 match {
+                case (IntegerSetLike(rightValues)) =>
+                    val results = for {
+                        leftValue  <- leftValues
+                        rightValue <- rightValues
+                    } yield {
+                        leftValue & rightValue
                     }
-                IntegerSet(pc, results)
+                    IntegerSet(pc, results)
 
-            case _ =>
-                IntegerValue(origin = pc)
-        }
+                case _ => IntegerValue(origin = pc)
+
+            }
+        case _ => value2 match {
+                case (IntegerSetLike(rightValues)) =>
+                    if (rightValues.size == 1 && rightValues.head == -1) value1
+                    else if (rightValues.size == 1 && rightValues.head == 0) value2
+                    else IntegerValue(origin = pc)
+                case _ => IntegerValue(origin = pc)
+            }
     }
 
-    /*override*/ def ixor(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
-        (value1, value2) match {
-            case (IntegerSetLike(leftValues), IntegerSetLike(rightValues)) =>
-                val results =
-                    for (leftValue <- leftValues; rightValue <- rightValues) yield {
-                        leftValue ^ rightValue
+    /*override*/
+    def ior(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = value1 match {
+        case (IntegerSetLike(leftValues)) =>
+            if (leftValues.size == 1 && leftValues.head == -1) value1
+            else if (leftValues.size == 1 && leftValues.head == 0) value2
+            else value2 match {
+                case (IntegerSetLike(rightValues)) =>
+                    val results = for {
+                        leftValue  <- leftValues
+                        rightValue <- rightValues
+                    } yield {
+                        leftValue | rightValue
                     }
-                IntegerSet(pc, results)
+                    IntegerSet(pc, results)
 
-            case _ =>
-                IntegerValue(origin = pc)
-        }
+                case _ => IntegerValue(origin = pc)
+            }
+        case _ => value2 match {
+                case (IntegerSetLike(rightValues)) =>
+                    if (rightValues.size == 1 && rightValues.head == -1) value2
+                    else if (rightValues.size == 1 && rightValues.head == 0) value1
+                    else IntegerValue(origin = pc)
+
+                case _ => IntegerValue(origin = pc)
+            }
+    }
+
+    /*override*/
+    def ishl(pc: PC, value: DomainValue, shift: DomainValue): DomainValue = (value, shift) match {
+        case (IntegerSetLike(leftValues), IntegerSetLike(rightValues)) =>
+            val results = for {
+                leftValue  <- leftValues
+                rightValue <- rightValues
+            } yield {
+                leftValue << rightValue
+            }
+            IntegerSet(pc, results)
+
+        case _ => IntegerValue(origin = pc)
+    }
+
+    /*override*/
+    def ishr(pc: PC, value: DomainValue, shift: DomainValue): DomainValue = (value, shift) match {
+        case (IntegerSetLike(leftValues), IntegerSetLike(rightValues)) =>
+            val results = for {
+                leftValue  <- leftValues
+                rightValue <- rightValues
+            } yield {
+                leftValue >> rightValue
+            }
+            IntegerSet(pc, results)
+
+        case _ => IntegerValue(origin = pc)
+    }
+
+    /*override*/
+    def iushr(pc: PC, value: DomainValue, shift: DomainValue): DomainValue = (value, shift) match {
+        case (IntegerSetLike(leftValues), IntegerSetLike(rightValues)) =>
+            val results = for {
+                leftValue  <- leftValues
+                rightValue <- rightValues
+            } yield {
+                leftValue >>> rightValue
+            }
+            IntegerSet(pc, results)
+
+        case _ => IntegerValue(origin = pc)
+    }
+
+    /*override*/
+    def ixor(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = (value1, value2) match {
+        case (IntegerSetLike(leftValues), IntegerSetLike(rightValues)) =>
+            val results = for {
+                leftValue  <- leftValues
+                rightValue <- rightValues
+            } yield {
+                leftValue ^ rightValue
+            }
+            IntegerSet(pc, results)
+
+        case _ => IntegerValue(origin = pc)
     }
 
     //
     // TYPE CONVERSION INSTRUCTIONS
     //
 
-    /*override*/ def i2b(pc: PC, value: DomainValue): DomainTypedValue[CTIntType] =
-        value match {
-            case IntegerSetLike(values) => IntegerSet(pc, values.map(_.toByte.toInt))
-            case _                      => ByteValue(origin = pc)
-        }
+    /*override*/
+    def i2b(pc: PC, value: DomainValue): DomainTypedValue[CTIntType] = value match {
+        case IntegerSetLike(values) => IntegerSet(pc, values.map(_.toByte.toInt))
+        case _                      => ByteValue(origin = pc)
+    }
 
-    /*override*/ def i2c(pc: PC, value: DomainValue): DomainTypedValue[CTIntType] =
-        value match {
-            case IntegerSetLike(values) => IntegerSet(pc, values.map(_.toChar.toInt))
-            case _                      => CharValue(origin = pc)
-        }
+    /*override*/
+    def i2c(pc: PC, value: DomainValue): DomainTypedValue[CTIntType] = value match {
+        case IntegerSetLike(values) => IntegerSet(pc, values.map(_.toChar.toInt))
+        case _                      => CharValue(origin = pc)
+    }
 
-    /*override*/ def i2s(pc: PC, value: DomainValue): DomainTypedValue[CTIntType] =
-        value match {
-            case IntegerSetLike(values) => IntegerSet(pc, values.map(_.toShort.toInt))
-            case _                      => ShortValue(origin = pc)
-        }
+    /*override*/
+    def i2s(pc: PC, value: DomainValue): DomainTypedValue[CTIntType] = value match {
+        case IntegerSetLike(values) => IntegerSet(pc, values.map(_.toShort.toInt))
+        case _                      => ShortValue(origin = pc)
+    }
 
 }

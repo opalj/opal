@@ -15,15 +15,12 @@ import org.opalj.br.analyses.SomeProject
  */
 class PrimitiveTACAIDomain(
         val classHierarchy: ClassHierarchy,
-        val method:         Method
-) extends TypeLevelDomain
-    with ThrowAllPotentialExceptionsConfiguration
-    with IgnoreSynchronization
-    with DefaultTypeLevelHandlingOfMethodResults
-    with TheMethod
-    with RecordDefUse {
+        val method: Method) extends TypeLevelDomain
+        with ThrowAllPotentialExceptionsConfiguration
+        with IgnoreSynchronization
+        with DefaultTypeLevelHandlingOfMethodResults
+        with TheMethod
+        with RecordDefUse {
 
-    def this(project: SomeProject, method: Method) =
-        this(project.classHierarchy, method)
+    def this(project: SomeProject, method: Method) = this(project.classHierarchy, method)
 }
-

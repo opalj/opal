@@ -38,93 +38,77 @@ import org.opalj.br.ObjectType
  * @author Michael Eichberg
  */
 trait StringBuilderValues extends StringValues {
-    domain: Domain with CorrelationalDomainSupport with Configuration with IntegerValuesDomain with TypedValuesFactory =>
+    domain: Domain with CorrelationalDomainSupport with Configuration with IntegerValuesDomain
+        with TypedValuesFactory =>
 
     // TODO Move concrete class to DefaultBindingClass...
     protected class StringBuilderValue(
             val origin:      ValueOrigin,
-            val builderType: ObjectType /*either StringBuilder oder StringBuffer*/ ,
+            val builderType: ObjectType /*either StringBuilder oder StringBuffer*/,
             val builder:     JStringBuilder,
-            val refId:       RefId
-    ) extends SObjectValue {
+            val refId: RefId) extends SObjectValue {
         this: DomainStringValue =>
 
         assert(builder != null)
         assert((builderType eq ObjectType.StringBuffer) || (builderType eq ObjectType.StringBuilder))
 
-        final override def isNull: No.type = No
-        final override def isPrecise: Boolean = true
+        final override def isNull: No.type               = No
+        final override def isPrecise: Boolean            = true
         final override def theUpperTypeBound: ObjectType = builderType
 
         override def doJoinWithNonNullValueWithSameOrigin(
             joinPC: Int,
-            other:  DomainSingleOriginReferenceValue
-        ): Update[DomainSingleOriginReferenceValue] = {
-
-            other match {
-                case that: StringBuilderValue =>
-                    if (this.builder == that.builder && this.refId == that.refId) {
-                        NoUpdate
-                    } else {
-                        // we have to drop the concrete information...
-                        // we are no longer able to track a concrete instance
-                        StructuralUpdate(this.update())
-                    }
-                case _ =>
-                    val result = super.doJoinWithNonNullValueWithSameOrigin(joinPC, other)
-                    if (result.isStructuralUpdate) {
-                        result
-                    } else {
-                        // This value and the other value may have a corresponding
-                        // abstract representation (w.r.t. the next abstraction level!)
-                        // but we still need to drop the concrete information and
-                        // have to update the timestamp.
-                        StructuralUpdate(result.value.update())
-                    }
-            }
+            other:  DomainSingleOriginReferenceValue): Update[DomainSingleOriginReferenceValue] = other match {
+            case that: StringBuilderValue =>
+                if (this.builder == that.builder && this.refId == that.refId) {
+                    NoUpdate
+                } else {
+                    // we have to drop the concrete information...
+                    // we are no longer able to track a concrete instance
+                    StructuralUpdate(this.update())
+                }
+            case _ =>
+                val result = super.doJoinWithNonNullValueWithSameOrigin(joinPC, other)
+                if (result.isStructuralUpdate) {
+                    result
+                } else {
+                    // This value and the other value may have a corresponding
+                    // abstract representation (w.r.t. the next abstraction level!)
+                    // but we still need to drop the concrete information and
+                    // have to update the timestamp.
+                    StructuralUpdate(result.value.update())
+                }
         }
 
         override def abstractsOver(other: DomainValue): Boolean = {
-            if (this eq other)
-                return true;
+            if (this eq other) return true;
 
             other match {
-                case that: StringBuilderValue =>
-                    that.builder == this.builder && (this.builderType eq that.builderType)
-                case _ =>
-                    false
+                case that: StringBuilderValue => that.builder == this.builder && (this.builderType eq that.builderType)
+                case _                        => false
             }
         }
 
-        override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue =
-            target match {
-                case that: StringBuilderValues =>
-                    that.StringBuilderValue(
-                        this.origin,
-                        this.builderType,
-                        this.builder
-                    ).asInstanceOf[target.DomainValue]
-                case _ =>
-                    super.adapt(target, vo)
-            }
-
-        override def equals(other: Any): Boolean = {
-            other match {
-                case that: StringBuilderValue =>
-                    that.builder == this.builder && (this.builderType eq that.builderType)
-                case _ => false
-            }
+        override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue = target match {
+            case that: StringBuilderValues => that.StringBuilderValue(
+                    this.origin,
+                    this.builderType,
+                    this.builder
+                ).asInstanceOf[target.DomainValue]
+            case _ => super.adapt(target, vo)
         }
 
-        override protected def canEqual(other: SObjectValue): Boolean = {
-            other.isInstanceOf[StringBuilderValue]
+        override def equals(other: Any): Boolean = other match {
+            case that: StringBuilderValue => that.builder == this.builder && (this.builderType eq that.builderType)
+            case _                        => false
         }
+
+        override protected def canEqual(other: SObjectValue): Boolean = other.isInstanceOf[StringBuilderValue]
 
         override def hashCode: Int = super.hashCode * 71 + value.hashCode()
 
-        override def toString: String = {
+        override def toString: String =
             s"""${this.builderType.toJava}(origin=$origin;builder="$builder";refId=$refId)"""
-        }
 
     }
 
@@ -134,14 +118,10 @@ trait StringBuilderValues extends StringValues {
 
     final def StringBuilderValue(
         origin:      ValueOrigin,
-        builderType: ObjectType
-    ): StringBuilderValue = {
-        StringBuilderValue(origin, builderType, new JStringBuilder())
-    }
+        builderType: ObjectType): StringBuilderValue = StringBuilderValue(origin, builderType, new JStringBuilder())
 
     def StringBuilderValue(
-        origin:      ValueOrigin,
+        origin: ValueOrigin,
         builderType: ObjectType,
-        builder:     JStringBuilder
-    ): StringBuilderValue
+        builder: JStringBuilder): StringBuilderValue
 }

@@ -5,11 +5,10 @@ package br
 import scala.annotation.tailrec
 
 import java.lang.ref.WeakReference
-import java.util.WeakHashMap
 import java.util.{Arrays => JArrays}
+import java.util.WeakHashMap
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantReadWriteLock
-
 import scala.collection.SortedSet
 import scala.math.Ordered
 
@@ -121,10 +120,10 @@ sealed trait Type extends UIDValue with Ordered[Type] {
      *  - the type void.
      */
     def isReferenceType: Boolean = false
-    def isArrayType: Boolean = false
-    def isObjectType: Boolean = false
-    def isNumericType: Boolean = false
-    def isIntLikeType: Boolean = false
+    def isArrayType: Boolean     = false
+    def isObjectType: Boolean    = false
+    def isNumericType: Boolean   = false
+    def isIntLikeType: Boolean   = false
 
     /**
      * The computational type of values of this type.
@@ -141,44 +140,32 @@ sealed trait Type extends UIDValue with Ordered[Type] {
     def operandSize: Int
 
     @throws[ClassCastException]("if this type is not a reference type")
-    def asReferenceType: ReferenceType = {
-        throw new ClassCastException(this.toJava+" cannot be cast to a ReferenceType");
-    }
+    def asReferenceType: ReferenceType =
+        throw new ClassCastException(this.toJava + " cannot be cast to a ReferenceType");
 
     @throws[ClassCastException]("if this type is not an array type")
-    def asArrayType: ArrayType = {
-        throw new ClassCastException(this.toJava+" cannot be cast to an ArrayType");
-    }
+    def asArrayType: ArrayType = throw new ClassCastException(this.toJava + " cannot be cast to an ArrayType");
 
     @throws[ClassCastException]("if this type is not an object type")
-    def asObjectType: ObjectType = {
-        throw new ClassCastException(this.toJava+" cannot be cast to an ObjectType");
-    }
+    def asObjectType: ObjectType = throw new ClassCastException(this.toJava + " cannot be cast to an ObjectType");
 
     @throws[ClassCastException]("if this type is not a base type")
-    def asBaseType: BaseType = {
-        throw new ClassCastException(getClass.getSimpleName+" cannot be cast to a BaseType");
-    }
+    def asBaseType: BaseType = throw new ClassCastException(getClass.getSimpleName + " cannot be cast to a BaseType");
 
     @throws[ClassCastException]("if this type is not a field type")
-    def asFieldType: FieldType = {
-        throw new ClassCastException(getClass.getSimpleName+" cannot be cast to a FieldType");
-    }
+    def asFieldType: FieldType = throw new ClassCastException(getClass.getSimpleName + " cannot be cast to a FieldType");
 
     @throws[ClassCastException]("if this is not a numeric type")
-    def asNumericType: NumericType = {
-        throw new ClassCastException(getClass.getSimpleName+" cannot be cast to a NumericType");
-    }
+    def asNumericType: NumericType =
+        throw new ClassCastException(getClass.getSimpleName + " cannot be cast to a NumericType");
 
     @throws[ClassCastException]("if this is not an int like type")
-    def asIntLikeType: IntLikeType = {
-        throw new ClassCastException(getClass.getSimpleName+" cannot be cast to an IntLikeType");
-    }
+    def asIntLikeType: IntLikeType =
+        throw new ClassCastException(getClass.getSimpleName + " cannot be cast to an IntLikeType");
 
     @throws[ClassCastException]("if this is not a boolean type")
-    def asBooleanType: BooleanType = {
-        throw new ClassCastException(getClass.getSimpleName+" cannot be cast to an IntLikeType");
-    }
+    def asBooleanType: BooleanType =
+        throw new ClassCastException(getClass.getSimpleName + " cannot be cast to an IntLikeType");
 
     /**
      * A String representation of this type as it would be used in Java source code.
@@ -235,17 +222,13 @@ sealed trait Type extends UIDValue with Ordered[Type] {
      * the result of the comparison of two types is '''not stable''' across multiple
      * runs of OPAL.
      */
-    override def compare(that: Type): Int = {
-        if (this eq that)
-            0
-        else if (this.id < that.id)
-            -1
-        else
-            1
-    }
+    override def compare(that: Type): Int =
+        if (this eq that) 0
+        else if (this.id < that.id) -1
+        else 1
 
-    override def <(other: Type): Boolean = this.id < other.id
-    override def >(other: Type): Boolean = this.id > other.id
+    override def <(other:  Type): Boolean = this.id < other.id
+    override def >(other:  Type): Boolean = this.id > other.id
     override def >=(other: Type): Boolean = this.id >= other.id
     override def <=(other: Type): Boolean = this.id <= other.id
 
@@ -253,7 +236,7 @@ sealed trait Type extends UIDValue with Ordered[Type] {
 
 object Type {
 
-    def apply(clazz: Class[_]): Type = {
+    def apply(clazz: Class[_]): Type =
         if (clazz.isPrimitive) {
             clazz match {
                 case java.lang.Boolean.TYPE   => BooleanType
@@ -265,13 +248,11 @@ object Type {
                 case java.lang.Float.TYPE     => FloatType
                 case java.lang.Double.TYPE    => DoubleType
                 case java.lang.Void.TYPE      => VoidType
-                case _ =>
-                    throw new UnknownError(s"unknown primitive type $clazz")
+                case _                        => throw new UnknownError(s"unknown primitive type $clazz")
             }
         } else {
             ReferenceType(clazz.getName.replace('.', '/'))
         }
-    }
 }
 
 object ReturnType {
@@ -304,9 +285,7 @@ sealed abstract class VoidType private () extends Type with ReturnTypeSignature 
 
     override def toJava: String = "void"
 
-    override def toBinaryJavaName: String = {
-        throw new UnsupportedOperationException("void does not have a binary name")
-    }
+    override def toBinaryJavaName: String = throw new UnsupportedOperationException("void does not have a binary name")
 
     override def toJVMTypeName: String = "V"
 
@@ -347,20 +326,18 @@ object FieldType {
     @throws[IllegalArgumentException](
         "if the given string is not a valid field type descriptor"
     )
-    def apply(ft: String): FieldType = {
-        (ft.charAt(0): @scala.annotation.switch) match {
-            case 'B' => ByteType
-            case 'C' => CharType
-            case 'D' => DoubleType
-            case 'F' => FloatType
-            case 'I' => IntegerType
-            case 'J' => LongType
-            case 'S' => ShortType
-            case 'Z' => BooleanType
-            case 'L' => ObjectType(ft.substring(1, ft.length - 1))
-            case '[' => ArrayType(FieldType(ft.substring(1)))
-            case _   => throw new IllegalArgumentException(ft+" is not a valid field type descriptor")
-        }
+    def apply(ft: String): FieldType = (ft.charAt(0): @scala.annotation.switch) match {
+        case 'B' => ByteType
+        case 'C' => CharType
+        case 'D' => DoubleType
+        case 'F' => FloatType
+        case 'I' => IntegerType
+        case 'J' => LongType
+        case 'S' => ShortType
+        case 'Z' => BooleanType
+        case 'L' => ObjectType(ft.substring(1, ft.length - 1))
+        case '[' => ArrayType(FieldType(ft.substring(1)))
+        case _   => throw new IllegalArgumentException(ft + " is not a valid field type descriptor")
     }
 }
 
@@ -396,10 +373,9 @@ object ReferenceType {
     /**
      * Enables the reverse lookup of a ReferenceType given a ReferenceType's id.
      */
-    def lookup(id: Int): ReferenceType = {
+    def lookup(id: Int): ReferenceType =
         if (id >= 0) ObjectType.lookup(id)
         else ArrayType.lookup(id)
-    }
 
     /**
      * Flushes the global caches for all ReferenceType instances. This does not include predefined
@@ -422,12 +398,9 @@ object ReferenceType {
      *          }}}
      */
     @throws[IllegalArgumentException]("in case of an invalid reference type descriptor")
-    def apply(rt: String): ReferenceType = {
-        if (rt.charAt(0) == '[')
-            ArrayType(FieldType(rt.substring(1)))
-        else
-            ObjectType(rt)
-    }
+    def apply(rt: String): ReferenceType =
+        if (rt.charAt(0) == '[') ArrayType(FieldType(rt.substring(1)))
+        else ObjectType(rt)
 }
 
 sealed trait BaseType extends FieldType with TypeSignature {
@@ -452,17 +425,14 @@ sealed trait BaseType extends FieldType with TypeSignature {
 
     final override def adapt[T](
         targetType: Type
-    )(
-        implicit
-        typeConversionFactory: TypeConversionFactory[T]
-    ): T = {
+      )(implicit
+        typeConversionFactory: TypeConversionFactory[T]): T =
         if ((targetType eq WrapperType) || (targetType eq ObjectType.Object)) {
             boxValue
         } else {
             val message = s"adaptation of ${this.toJava} to $targetType is not supported"
             throw new IllegalArgumentException(message)
         }
-    }
 
 }
 
@@ -476,14 +446,16 @@ object BaseType {
     /**
      * The set of [BaseType]s sorted by the type's id.
      */
-    final val baseTypes: SortedSet[BaseType] =
-        SortedSet[BaseType](
-            BooleanType,
-            ByteType, CharType, ShortType, IntegerType, // <= "IntLike" values
-            LongType,
-            FloatType,
-            DoubleType
-        )
+    final val baseTypes: SortedSet[BaseType] = SortedSet[BaseType](
+        BooleanType,
+        ByteType,
+        CharType,
+        ShortType,
+        IntegerType, // <= "IntLike" values
+        LongType,
+        FloatType,
+        DoubleType
+    )
 }
 
 sealed abstract class NumericType protected () extends BaseType {
@@ -502,10 +474,8 @@ sealed abstract class NumericType protected () extends BaseType {
      */
     def convertTo[T](
         targetType: NumericType
-    )(
-        implicit
-        typeConversionFactory: TypeConversionFactory[T]
-    ): T
+      )(implicit
+        typeConversionFactory: TypeConversionFactory[T]): T
 
     /**
      * Determines if the range of values captured by `this` type is a '''strict'''
@@ -550,11 +520,11 @@ sealed trait CTIntType extends Type {
  * In some cases we abstract over all computational type integer values.
  */
 case object CTIntType extends CTIntType {
-    final val id = Int.MinValue + 1
+    final val id                 = Int.MinValue + 1
     def toBinaryJavaName: String = throw new UnsupportedOperationException()
-    def toJVMTypeName: String = throw new UnsupportedOperationException()
-    def toJava: String = throw new UnsupportedOperationException()
-    def toJavaClass: Class[_] = throw new UnsupportedOperationException()
+    def toJVMTypeName: String    = throw new UnsupportedOperationException()
+    def toJava: String           = throw new UnsupportedOperationException()
+    def toJavaClass: Class[_]    = throw new UnsupportedOperationException()
 }
 
 /**
@@ -601,10 +571,8 @@ sealed abstract class ByteType private () extends IntLikeType {
 
     override def convertTo[T](
         targetType: NumericType
-    )(
-        implicit
-        typeConversionFactory: TypeConversionFactory[T]
-    ): T = {
+      )(implicit
+        typeConversionFactory: TypeConversionFactory[T]): T = {
         import typeConversionFactory._
         (targetType.id: @scala.annotation.switch) match {
             case ByteType.id |
@@ -617,9 +585,8 @@ sealed abstract class ByteType private () extends IntLikeType {
         }
     }
 
-    override def boxValue[T](implicit typeConversionFactory: TypeConversionFactory[T]): T = {
+    override def boxValue[T](implicit typeConversionFactory: TypeConversionFactory[T]): T =
         typeConversionFactory.PrimitiveByteToLangByte
-    }
 
 }
 case object ByteType extends ByteType
@@ -652,10 +619,8 @@ sealed abstract class CharType private () extends IntLikeType {
 
     override def convertTo[T](
         targetType: NumericType
-    )(
-        implicit
-        typeConversionFactory: TypeConversionFactory[T]
-    ): T = {
+      )(implicit
+        typeConversionFactory: TypeConversionFactory[T]): T = {
         import typeConversionFactory._
         (targetType.id: @scala.annotation.switch) match {
             case ByteType.id                  => IntToByte
@@ -667,9 +632,8 @@ sealed abstract class CharType private () extends IntLikeType {
         }
     }
 
-    override def boxValue[T](implicit typeConversionFactory: TypeConversionFactory[T]): T = {
+    override def boxValue[T](implicit typeConversionFactory: TypeConversionFactory[T]): T =
         typeConversionFactory.PrimitiveCharToLangCharacter
-    }
 
 }
 case object CharType extends CharType
@@ -698,8 +662,7 @@ sealed abstract class DoubleType private () extends NumericType {
 
     final val WrapperType = ObjectType.Double
 
-    override def toJavaClass: java.lang.Class[_] =
-        java.lang.Double.TYPE
+    override def toJavaClass: java.lang.Class[_] = java.lang.Double.TYPE
 
     override def toString: String = "DoubleType"
 
@@ -707,10 +670,8 @@ sealed abstract class DoubleType private () extends NumericType {
 
     override def convertTo[T](
         targetType: NumericType
-    )(
-        implicit
-        typeConversionFactory: TypeConversionFactory[T]
-    ): T = {
+      )(implicit
+        typeConversionFactory: TypeConversionFactory[T]): T = {
         import typeConversionFactory._
         (targetType.id: @scala.annotation.switch) match {
             case ByteType.id    => Double2Byte
@@ -725,8 +686,7 @@ sealed abstract class DoubleType private () extends NumericType {
 
     override def boxValue[T](
         implicit
-        typeConversionFactory: TypeConversionFactory[T]
-    ): T = { typeConversionFactory.PrimitiveDoubleToLangDouble }
+        typeConversionFactory: TypeConversionFactory[T]): T = typeConversionFactory.PrimitiveDoubleToLangDouble
 
 }
 case object DoubleType extends DoubleType
@@ -759,15 +719,12 @@ sealed abstract class FloatType private () extends NumericType {
 
     override def toString: String = "FloatType"
 
-    override def isWiderThan(targetType: NumericType): Boolean =
-        (targetType ne DoubleType) && (targetType ne this)
+    override def isWiderThan(targetType: NumericType): Boolean = (targetType ne DoubleType) && (targetType ne this)
 
     override def convertTo[T](
         targetType: NumericType
-    )(
-        implicit
-        typeConversionFactory: TypeConversionFactory[T]
-    ): T = {
+      )(implicit
+        typeConversionFactory: TypeConversionFactory[T]): T = {
         import typeConversionFactory._
         (targetType.id: @scala.annotation.switch) match {
             case ByteType.id    => Float2Byte
@@ -780,9 +737,8 @@ sealed abstract class FloatType private () extends NumericType {
         }
     }
 
-    override def boxValue[T](implicit typeConversionFactory: TypeConversionFactory[T]): T = {
+    override def boxValue[T](implicit typeConversionFactory: TypeConversionFactory[T]): T =
         typeConversionFactory.PrimitiveFloatToLangFloat
-    }
 
 }
 case object FloatType extends FloatType
@@ -815,10 +771,8 @@ sealed abstract class ShortType private () extends IntLikeType {
 
     override def convertTo[T](
         targetType: NumericType
-    )(
-        implicit
-        typeConversionFactory: TypeConversionFactory[T]
-    ): T = {
+      )(implicit
+        typeConversionFactory: TypeConversionFactory[T]): T = {
         import typeConversionFactory._
         (targetType.id: @scala.annotation.switch) match {
             case ByteType.id    => IntToByte
@@ -831,9 +785,8 @@ sealed abstract class ShortType private () extends IntLikeType {
         }
     }
 
-    override def boxValue[T](implicit typeConversionFactory: TypeConversionFactory[T]): T = {
+    override def boxValue[T](implicit typeConversionFactory: TypeConversionFactory[T]): T =
         typeConversionFactory.PrimitiveShortToLangShort
-    }
 
 }
 case object ShortType extends ShortType
@@ -862,18 +815,15 @@ sealed abstract class IntegerType private () extends IntLikeType {
 
     override def toString: String = "IntegerType"
 
-    override def isWiderThan(targetType: NumericType): Boolean =
-        (targetType.id: @scala.annotation.switch) match {
-            case ShortType.id | CharType.id | ByteType.id => true
-            case _                                        => false
-        }
+    override def isWiderThan(targetType: NumericType): Boolean = (targetType.id: @scala.annotation.switch) match {
+        case ShortType.id | CharType.id | ByteType.id => true
+        case _                                        => false
+    }
 
     override def convertTo[T](
         targetType: NumericType
-    )(
-        implicit
-        typeConversionFactory: TypeConversionFactory[T]
-    ): T = {
+      )(implicit
+        typeConversionFactory: TypeConversionFactory[T]): T = {
         import typeConversionFactory._
         (targetType.id: @scala.annotation.switch) match {
             case ByteType.id    => IntToByte
@@ -886,9 +836,8 @@ sealed abstract class IntegerType private () extends IntLikeType {
         }
     }
 
-    override def boxValue[T](implicit typeConversionFactory: TypeConversionFactory[T]): T = {
+    override def boxValue[T](implicit typeConversionFactory: TypeConversionFactory[T]): T =
         typeConversionFactory.PrimitiveIntToLangInteger
-    }
 
 }
 case object IntegerType extends IntegerType
@@ -921,15 +870,12 @@ sealed abstract class LongType private () extends NumericType {
 
     override def toString: String = "LongType"
 
-    override def isWiderThan(targetType: NumericType): Boolean =
-        targetType.isInstanceOf[IntLikeType]
+    override def isWiderThan(targetType: NumericType): Boolean = targetType.isInstanceOf[IntLikeType]
 
     override def convertTo[T](
         targetType: NumericType
-    )(
-        implicit
-        typeConversionFactory: TypeConversionFactory[T]
-    ): T = {
+      )(implicit
+        typeConversionFactory: TypeConversionFactory[T]): T = {
         import typeConversionFactory._
         (targetType.id: @scala.annotation.switch) match {
             case ByteType.id    => Long2Byte
@@ -942,9 +888,8 @@ sealed abstract class LongType private () extends NumericType {
         }
     }
 
-    override def boxValue[T](implicit typeConversionFactory: TypeConversionFactory[T]): T = {
+    override def boxValue[T](implicit typeConversionFactory: TypeConversionFactory[T]): T =
         typeConversionFactory.PrimitiveLongToLangLong
-    }
 
 }
 case object LongType extends LongType
@@ -982,9 +927,8 @@ sealed abstract class BooleanType private () extends BaseType with CTIntType {
 
     override def toString: String = "BooleanType"
 
-    override def boxValue[T](implicit typeConversionFactory: TypeConversionFactory[T]): T = {
+    override def boxValue[T](implicit typeConversionFactory: TypeConversionFactory[T]): T =
         typeConversionFactory.PrimitiveBooleanToLangBoolean
-    }
 
 }
 case object BooleanType extends BooleanType
@@ -997,9 +941,8 @@ case object BooleanType extends BooleanType
  *      (e.g. "java/lang/Object").
  */
 final class ObjectType private ( // DO NOT MAKE THIS A CASE CLASS!
-        final val id:  Int,
-        final val fqn: String
-) extends ReferenceType {
+        final val id: Int,
+        final val fqn: String) extends ReferenceType {
 
     assert(fqn.indexOf('.') == -1, s"invalid object type name: $fqn")
 
@@ -1029,30 +972,22 @@ final class ObjectType private ( // DO NOT MAKE THIS A CASE CLASS!
 
     override def toJavaClass: java.lang.Class[_] = classOf[Type].getClassLoader().loadClass(toJava)
 
-    def unboxValue[T](implicit typeConversionFactory: TypeConversionFactory[T]): T = {
-        ObjectType.unboxValue(this)
-    }
+    def unboxValue[T](implicit typeConversionFactory: TypeConversionFactory[T]): T = ObjectType.unboxValue(this)
 
     override def adapt[T](
         targetType: Type
-    )(
-        implicit
-        typeConversionFactory: TypeConversionFactory[T]
-    ): T = {
-        ObjectType.unboxValue(targetType)
-    }
+      )(implicit
+        typeConversionFactory: TypeConversionFactory[T]): T = ObjectType.unboxValue(targetType)
 
-    def isASubtypeOf(that: ObjectType)(implicit classHierarchy: ClassHierarchy): Answer = {
+    def isASubtypeOf(that: ObjectType)(implicit classHierarchy: ClassHierarchy): Answer =
         classHierarchy.isASubtypeOf(this, that)
-    }
 
-    def isSubtypeOf(that: ObjectType)(implicit classHierarchy: ClassHierarchy): Boolean = {
+    def isSubtypeOf(that: ObjectType)(implicit classHierarchy: ClassHierarchy): Boolean =
         classHierarchy.isSubtypeOf(this, that)
-    }
 
     // The default equals and hashCode methods are a perfect fit.
 
-    override def toString: String = "ObjectType("+fqn+")"
+    override def toString: String = "ObjectType(" + fqn + ")"
 
 }
 /**
@@ -1065,22 +1000,20 @@ object ObjectType {
     // IMPROVE Use a soft reference or something similar to avoid filling up the memory when we create multiple projects in a row!
     @volatile private[this] var objectTypes: Array[ObjectType] = new Array[ObjectType](0)
 
-    private[this] def updateObjectTypes(): Unit = {
-        if (nextId.get > objectTypes.length) {
-            val newObjectTypes = JArrays.copyOf(this.objectTypes, nextId.get)
-            cacheRWLock.readLock().lock()
-            try {
-                cache.values.forEach { wot =>
-                    val ot = wot.get
-                    if (ot != null && ot.id < newObjectTypes.length) {
-                        newObjectTypes(ot.id) = ot
-                    }
+    private[this] def updateObjectTypes(): Unit = if (nextId.get > objectTypes.length) {
+        val newObjectTypes = JArrays.copyOf(this.objectTypes, nextId.get)
+        cacheRWLock.readLock().lock()
+        try {
+            cache.values.forEach { wot =>
+                val ot = wot.get
+                if (ot != null && ot.id < newObjectTypes.length) {
+                    newObjectTypes(ot.id) = ot
                 }
-            } finally {
-                cacheRWLock.readLock().unlock()
             }
-            this.objectTypes = newObjectTypes
+        } finally {
+            cacheRWLock.readLock().unlock()
         }
+        this.objectTypes = newObjectTypes
     }
 
     /**
@@ -1129,9 +1062,7 @@ object ObjectType {
             objectTypes = JArrays.copyOf(objectTypes, highestPredefinedTypeId + 1)
 
             // Refill the cache using the objectTypes array
-            objectTypes.foreach { ot =>
-                cache.put(ot.fqn, new WeakReference[ObjectType](ot))
-            }
+            objectTypes.foreach { ot => cache.put(ot.fqn, new WeakReference[ObjectType](ot)) }
 
             // Reset ID counter to highest id in the cache
             nextId.set(highestPredefinedTypeId + 1)
@@ -1141,9 +1072,9 @@ object ObjectType {
 
     }
 
-    private[this] val nextId = new AtomicInteger(0)
+    private[this] val nextId      = new AtomicInteger(0)
     private[this] val cacheRWLock = new ReentrantReadWriteLock();
-    private[this] val cache = new WeakHashMap[String, WeakReference[ObjectType]]()
+    private[this] val cache       = new WeakHashMap[String, WeakReference[ObjectType]]()
 
     @volatile private[this] var objectTypeCreationListener: ObjectType => Unit = null
 
@@ -1190,8 +1121,7 @@ object ObjectType {
             val wrOT = cache.get(fqn)
             if (wrOT != null) {
                 val OT = wrOT.get()
-                if (OT != null)
-                    return OT;
+                if (OT != null) return OT;
             }
         } finally {
             readLock.unlock()
@@ -1205,16 +1135,14 @@ object ObjectType {
             val wrOT = cache.get(fqn)
             if (wrOT != null) {
                 val OT = wrOT.get()
-                if (OT != null)
-                    return OT;
+                if (OT != null) return OT;
             }
 
-            val newOT = new ObjectType(nextId.getAndIncrement(), fqn)
+            val newOT   = new ObjectType(nextId.getAndIncrement(), fqn)
             val wrNewOT = new WeakReference(newOT)
             cache.put(fqn, wrNewOT)
             val currentObjectTypeCreationListener = objectTypeCreationListener
-            if (currentObjectTypeCreationListener ne null)
-                currentObjectTypeCreationListener(newOT)
+            if (currentObjectTypeCreationListener ne null) currentObjectTypeCreationListener(newOT)
             newOT
         } finally {
             writeLock.unlock()
@@ -1225,10 +1153,8 @@ object ObjectType {
 
     def simpleName(fqn: String): String = {
         val index = fqn.lastIndexOf('/')
-        if (index > -1)
-            fqn.substring(index + 1)
-        else
-            fqn
+        if (index > -1) fqn.substring(index + 1)
+        else fqn
     }
 
     /**
@@ -1253,36 +1179,34 @@ object ObjectType {
      */
     def packageName(fqn: String): String = {
         val index = fqn.lastIndexOf('/')
-        if (index == -1)
-            ""
-        else
-            fqn.substring(0, index)
+        if (index == -1) ""
+        else fqn.substring(0, index)
     }
 
     // THE FOLLOWING OBJECT TYPES ARE PREDEFINED BECAUSE OF
     // THEIR PERVASIVE USAGE AND THEIR EXPLICIT MENTIONING IN THE
     // THE JVM SPEC. OR THEIR IMPORTANCE FOR THE RUNTIME ENVIRONMENT
-    final val Object = ObjectType("java/lang/Object")
+    final val Object   = ObjectType("java/lang/Object")
     final val ObjectId = 0
     require(Object.id == ObjectId)
 
-    final val Boolean = ObjectType("java/lang/Boolean")
-    final val Byte = ObjectType("java/lang/Byte")
+    final val Boolean   = ObjectType("java/lang/Boolean")
+    final val Byte      = ObjectType("java/lang/Byte")
     final val Character = ObjectType("java/lang/Character")
-    final val Short = ObjectType("java/lang/Short")
-    final val Integer = ObjectType("java/lang/Integer")
-    final val Long = ObjectType("java/lang/Long")
-    final val Float = ObjectType("java/lang/Float")
-    final val Double = ObjectType("java/lang/Double")
+    final val Short     = ObjectType("java/lang/Short")
+    final val Integer   = ObjectType("java/lang/Integer")
+    final val Long      = ObjectType("java/lang/Long")
+    final val Float     = ObjectType("java/lang/Float")
+    final val Double    = ObjectType("java/lang/Double")
     require(Double.id - Boolean.id == 7)
 
     final val Void = ObjectType("java/lang/Void")
 
-    final val String = ObjectType("java/lang/String")
+    final val String   = ObjectType("java/lang/String")
     final val StringId = 10
     require(String.id == StringId)
 
-    final val Class = ObjectType("java/lang/Class")
+    final val Class   = ObjectType("java/lang/Class")
     final val ClassId = 11
     require(Class.id == ClassId)
 
@@ -1291,91 +1215,89 @@ object ObjectType {
 
     // the following types are relevant when checking the subtype relation between
     // two reference types where the subtype is an array type
-    final val Serializable = ObjectType("java/io/Serializable")
+    final val Serializable   = ObjectType("java/io/Serializable")
     final val SerializableId = 13
     require(Serializable.id == SerializableId)
-    final val Cloneable = ObjectType("java/lang/Cloneable")
+    final val Cloneable   = ObjectType("java/lang/Cloneable")
     final val CloneableId = 14
     require(Cloneable.id == CloneableId)
-    final val Comparable = ObjectType("java/lang/Comparable")
+    final val Comparable   = ObjectType("java/lang/Comparable")
     final val ComparableId = 15
     require(Comparable.id == ComparableId)
-    final val StringBuilder = ObjectType("java/lang/StringBuilder")
+    final val StringBuilder   = ObjectType("java/lang/StringBuilder")
     final val StringBuilderId = 16
     require(StringBuilder.id == StringBuilderId)
-    final val StringBuffer = ObjectType("java/lang/StringBuffer")
+    final val StringBuffer   = ObjectType("java/lang/StringBuffer")
     final val StringBufferId = 17
     require(StringBuffer.id == StringBufferId)
 
     final val System = ObjectType("java/lang/System")
 
-    final val Throwable = ObjectType("java/lang/Throwable")
-    final val Error = ObjectType("java/lang/Error")
-    final val Exception = ObjectType("java/lang/Exception")
+    final val Throwable        = ObjectType("java/lang/Throwable")
+    final val Error            = ObjectType("java/lang/Error")
+    final val Exception        = ObjectType("java/lang/Exception")
     final val RuntimeException = ObjectType("java/lang/RuntimeException")
 
-    final val Thread = ObjectType("java/lang/Thread")
+    final val Thread      = ObjectType("java/lang/Thread")
     final val ThreadGroup = ObjectType("java/lang/ThreadGroup")
-    final val Runnable = ObjectType("java/lang/Runnable")
+    final val Runnable    = ObjectType("java/lang/Runnable")
 
     // Types related to the invokedynamic instruction
-    final val VarHandle = ObjectType("java/lang/invoke/VarHandle")
-    final val MethodHandle = ObjectType("java/lang/invoke/MethodHandle")
-    final val MethodHandles = ObjectType("java/lang/invoke/MethodHandles")
-    final val MethodHandles$Lookup = ObjectType("java/lang/invoke/MethodHandles$Lookup")
-    final val MethodType = ObjectType("java/lang/invoke/MethodType")
-    final val LambdaMetafactory = ObjectType("java/lang/invoke/LambdaMetafactory")
-    final val StringConcatFactory = ObjectType("java/lang/invoke/StringConcatFactory")
-    final val ObjectMethods = ObjectType("java/lang/runtime/ObjectMethods")
-    final val Objects = ObjectType("java/util/Objects")
-    final val CallSite = ObjectType("java/lang/invoke/CallSite")
-    final val ScalaLambdaDeserialize = ObjectType("scala/runtime/LambdaDeserialize")
-    final val SerializedLambda = ObjectType("java/lang/invoke/SerializedLambda")
-    final val ScalaSymbolLiteral = ObjectType("scala/runtime/SymbolLiteral")
-    final val ScalaSymbol = ObjectType("scala/Symbol")
+    final val VarHandle               = ObjectType("java/lang/invoke/VarHandle")
+    final val MethodHandle            = ObjectType("java/lang/invoke/MethodHandle")
+    final val MethodHandles           = ObjectType("java/lang/invoke/MethodHandles")
+    final val MethodHandles$Lookup    = ObjectType("java/lang/invoke/MethodHandles$Lookup")
+    final val MethodType              = ObjectType("java/lang/invoke/MethodType")
+    final val LambdaMetafactory       = ObjectType("java/lang/invoke/LambdaMetafactory")
+    final val StringConcatFactory     = ObjectType("java/lang/invoke/StringConcatFactory")
+    final val ObjectMethods           = ObjectType("java/lang/runtime/ObjectMethods")
+    final val Objects                 = ObjectType("java/util/Objects")
+    final val CallSite                = ObjectType("java/lang/invoke/CallSite")
+    final val ScalaLambdaDeserialize  = ObjectType("scala/runtime/LambdaDeserialize")
+    final val SerializedLambda        = ObjectType("java/lang/invoke/SerializedLambda")
+    final val ScalaSymbolLiteral      = ObjectType("scala/runtime/SymbolLiteral")
+    final val ScalaSymbol             = ObjectType("scala/Symbol")
     final val ScalaStructuralCallSite = ObjectType("scala/runtime/StructuralCallSite")
-    final val Method = ObjectType("java/lang/reflect/Method")
-    final val Constructor = ObjectType("java/lang/reflect/Constructor")
-    final val Array = ObjectType("java/lang/reflect/Array")
-    final val Field = ObjectType("java/lang/reflect/Field")
+    final val Method                  = ObjectType("java/lang/reflect/Method")
+    final val Constructor             = ObjectType("java/lang/reflect/Constructor")
+    final val Array                   = ObjectType("java/lang/reflect/Array")
+    final val Field                   = ObjectType("java/lang/reflect/Field")
 
     // Types related to dynamic constants
     final val ConstantBootstraps = ObjectType("java/lang/invoke/ConstantBootstraps")
 
     // Exceptions and errors that may be thrown by the JVM (i.e., instances of these
     // exceptions may be created at runtime by the JVM)
-    final val IndexOutOfBoundsException = ObjectType("java/lang/IndexOutOfBoundsException")
+    final val IndexOutOfBoundsException   = ObjectType("java/lang/IndexOutOfBoundsException")
     final val ExceptionInInitializerError = ObjectType("java/lang/ExceptionInInitializerError")
-    final val BootstrapMethodError = ObjectType("java/lang/BootstrapMethodError")
-    final val OutOfMemoryError = ObjectType("java/lang/OutOfMemoryError")
+    final val BootstrapMethodError        = ObjectType("java/lang/BootstrapMethodError")
+    final val OutOfMemoryError            = ObjectType("java/lang/OutOfMemoryError")
 
-    final val NullPointerException = ObjectType("java/lang/NullPointerException")
+    final val NullPointerException           = ObjectType("java/lang/NullPointerException")
     final val ArrayIndexOutOfBoundsException = ObjectType("java/lang/ArrayIndexOutOfBoundsException")
-    final val ArrayStoreException = ObjectType("java/lang/ArrayStoreException")
-    final val NegativeArraySizeException = ObjectType("java/lang/NegativeArraySizeException")
-    final val IllegalMonitorStateException = ObjectType("java/lang/IllegalMonitorStateException")
-    final val ClassCastException = ObjectType("java/lang/ClassCastException")
-    final val ArithmeticException = ObjectType("java/lang/ArithmeticException")
-    final val ClassNotFoundException = ObjectType("java/lang/ClassNotFoundException")
+    final val ArrayStoreException            = ObjectType("java/lang/ArrayStoreException")
+    final val NegativeArraySizeException     = ObjectType("java/lang/NegativeArraySizeException")
+    final val IllegalMonitorStateException   = ObjectType("java/lang/IllegalMonitorStateException")
+    final val ClassCastException             = ObjectType("java/lang/ClassCastException")
+    final val ArithmeticException            = ObjectType("java/lang/ArithmeticException")
+    final val ClassNotFoundException         = ObjectType("java/lang/ClassNotFoundException")
 
     /**
      * Least upper type bound of Java arrays. That is, every Java array
      * is always `Serializable` and `Cloneable`.
      */
-    final val SerializableAndCloneable: UIDSet[ObjectType] = {
-        new UIDSet2(ObjectType.Serializable, ObjectType.Cloneable)
-    }
+    final val SerializableAndCloneable: UIDSet[ObjectType] = new UIDSet2(ObjectType.Serializable, ObjectType.Cloneable)
 
-    private final val javaLangBooleanId = Boolean.id
-    private final val javaLangDoubleId = Double.id
+    final private val javaLangBooleanId = Boolean.id
+    final private val javaLangDoubleId  = Double.id
 
     // Given the importance of "Object Serialization" we also predefine Externalizable
     final val Externalizable = ObjectType("java/io/Externalizable")
 
-    final val ObjectInputStream = ObjectType("java/io/ObjectInputStream")
+    final val ObjectInputStream  = ObjectType("java/io/ObjectInputStream")
     final val ObjectOutputStream = ObjectType("java/io/ObjectOutputStream")
 
-    private[br] final val highestPredefinedTypeId = nextId.get() - 1
+    final private[br] val highestPredefinedTypeId = nextId.get() - 1
 
     /**
      * Implicit mapping from a wrapper type to its primitive type.
@@ -1401,12 +1323,8 @@ object ObjectType {
 
     def unboxValue[T](
         wrapperType: Type
-    )(
-        implicit
-        typeConversionFactory: TypeConversionFactory[T]
-    ): T = {
-        typeConversionFactory.unboxValue(wrapperType)
-    }
+      )(implicit
+        typeConversionFactory: TypeConversionFactory[T]): T = typeConversionFactory.unboxValue(wrapperType)
 
     /**
      * Given a wrapper type (e.g., `java.lang.Integer`) the underlying primitive type
@@ -1437,8 +1355,7 @@ object ObjectType {
         longMatch:    Args => T,
         floatMatch:   Args => T,
         doubleMatch:  Args => T,
-        orElse:       Args => T
-    ): (ObjectType, Args) => T = {
+        orElse:       Args => T): (ObjectType, Args) => T = {
         val fs = new Array[Args => T](8)
         fs(0) = booleanMatch
         fs(1) = byteMatch
@@ -1487,9 +1404,8 @@ object ObjectType {
  * @author Michael Eichberg
  */
 final class ArrayType private ( // DO NOT MAKE THIS A CASE CLASS!
-        val id:            Int,
-        val componentType: FieldType
-) extends ReferenceType {
+        val id: Int,
+        val componentType: FieldType) extends ReferenceType {
 
     override def isArrayType = true
 
@@ -1501,20 +1417,16 @@ final class ArrayType private ( // DO NOT MAKE THIS A CASE CLASS!
      * Returns this array type's element type. E.g., the element type of an
      * array of arrays of arrays of `int` is `int`.
      */
-    def elementType: FieldType = {
-        componentType match {
-            case at: ArrayType => at.elementType
-            case _             => componentType
-        }
+    def elementType: FieldType = componentType match {
+        case at: ArrayType => at.elementType
+        case _             => componentType
     }
 
     /**
      * The number of dimensions of this array. E.g. "Object[]" has one dimension and
      * "Object[][]" has two dimensions.
      */
-    def dimensions: Int = {
-        1 + (componentType match { case at: ArrayType => at.dimensions; case _ => 0 })
-    }
+    def dimensions: Int = 1 + (componentType match { case at: ArrayType => at.dimensions; case _ => 0 })
 
     /**
      * Returns the component type of this array type after dropping the given number
@@ -1526,34 +1438,29 @@ final class ArrayType private ( // DO NOT MAKE THIS A CASE CLASS!
      * @param  dimensions The number of dimensions to drop. This values has to be equal or
      *         smaller than the number of dimensions of this array.
      */
-    def drop(dimensions: Int): FieldType = {
-        dimensions match {
-            case 0 => this
-            case 1 => this.componentType
-            case _ => this.componentType.asArrayType.drop(dimensions - 1)
-        }
+    def drop(dimensions: Int): FieldType = dimensions match {
+        case 0 => this
+        case 1 => this.componentType
+        case _ => this.componentType.asArrayType.drop(dimensions - 1)
     }
 
-    override def toJava: String = componentType.toJava+"[]"
+    override def toJava: String = componentType.toJava + "[]"
 
-    override def toBinaryJavaName: String = "["+componentType.toBinaryJavaName
+    override def toBinaryJavaName: String = "[" + componentType.toBinaryJavaName
 
-    override def toJVMTypeName: String = "["+componentType.toJVMTypeName
+    override def toJVMTypeName: String = "[" + componentType.toJVMTypeName
 
     override def toJavaClass: java.lang.Class[_] = java.lang.Class.forName(toBinaryJavaName)
 
     override def adapt[T](
         targetType: Type
-    )(
-        implicit
-        typeConversionFactory: TypeConversionFactory[T]
-    ): T = {
+      )(implicit
+        typeConversionFactory: TypeConversionFactory[T]): T =
         throw new UnsupportedOperationException("adaptation of array values is not supported")
-    }
 
     // The default equals and hashCode methods are a perfect fit.
 
-    override def toString: String = "ArrayType("+componentType.toString+")"
+    override def toString: String = "ArrayType(" + componentType.toString + ")"
 }
 
 /**
@@ -1566,19 +1473,17 @@ object ArrayType {
     // IMPROVE Use a soft reference or something similar to avoid filling up the memory when we create multiple projects in a row!
     @volatile private[this] var arrayTypes: Array[ArrayType] = new Array[ArrayType](0)
 
-    private[this] def updateArrayTypes(): Unit = {
-        if (-nextId.get > arrayTypes.length) {
-            val newArrayTypes = JArrays.copyOf(this.arrayTypes, -nextId.get)
-            cache.synchronized {
-                cache.values.forEach { wat =>
-                    val at = wat.get
-                    if (at != null && -at.id < newArrayTypes.length) {
-                        newArrayTypes(-at.id) = at
-                    }
+    private[this] def updateArrayTypes(): Unit = if (-nextId.get > arrayTypes.length) {
+        val newArrayTypes = JArrays.copyOf(this.arrayTypes, -nextId.get)
+        cache.synchronized {
+            cache.values.forEach { wat =>
+                val at = wat.get
+                if (at != null && -at.id < newArrayTypes.length) {
+                    newArrayTypes(-at.id) = at
                 }
             }
-            this.arrayTypes = newArrayTypes
         }
+        this.arrayTypes = newArrayTypes
     }
 
     /**
@@ -1586,7 +1491,7 @@ object ArrayType {
      */
     def lookup(atId: Int): ArrayType = {
         var arrayTypes = this.arrayTypes
-        val id = -atId
+        val id         = -atId
         if (id < arrayTypes.length) {
             val at = arrayTypes(id)
             if (at == null) throw new IllegalArgumentException(s"$atId is unknown")
@@ -1611,32 +1516,29 @@ object ArrayType {
      *  Flushes the global cache for ArrayType instances. This does not include the predefined types,
      *  which are kept in memory for performance reasons.
      */
-    def flushTypeCache(): Unit = {
+    def flushTypeCache(): Unit = cache.synchronized {
 
-        cache.synchronized {
+        // First we need to write all cached new types to the actual array, otherwise
+        // we might delete the predefined types
+        updateArrayTypes()
 
-            // First we need to write all cached new types to the actual array, otherwise
-            // we might delete the predefined types
-            updateArrayTypes()
+        // Clear the entire cache
+        cache.clear()
 
-            // Clear the entire cache
-            cache.clear()
+        // Reset array to only contain predefined ATs
+        arrayTypes = JArrays.copyOf(arrayTypes, -lowestPredefinedTypeId + 1)
 
-            // Reset array to only contain predefined ATs
-            arrayTypes = JArrays.copyOf(arrayTypes, -lowestPredefinedTypeId + 1)
-
-            // Refill the cache using the arrayTypes array
-            arrayTypes.foreach { at =>
-                // arrayTypes(0) is gonna be null, so we need this guard
-                if (at != null) {
-                    cache.put(at.componentType, new WeakReference[ArrayType](at))
-                }
+        // Refill the cache using the arrayTypes array
+        arrayTypes.foreach { at =>
+            // arrayTypes(0) is gonna be null, so we need this guard
+            if (at != null) {
+                cache.put(at.componentType, new WeakReference[ArrayType](at))
             }
-
-            // Reset id counter
-            nextId.set(lowestPredefinedTypeId - 1)
-
         }
+
+        // Reset id counter
+        nextId.set(lowestPredefinedTypeId - 1)
+
     }
 
     private[this] val cache = new WeakHashMap[FieldType, WeakReference[ArrayType]]()
@@ -1651,19 +1553,16 @@ object ArrayType {
      * and to facilitate reference based comparisons. I.e., to `ArrayType`s are equal
      * iff it is the same object.
      */
-    def apply(componentType: FieldType): ArrayType = {
-        cache.synchronized {
-            val wrAT = cache.get(componentType)
-            if (wrAT != null) {
-                val AT = wrAT.get()
-                if (AT != null)
-                    return AT;
-            }
-            val newAT = new ArrayType(nextId.getAndDecrement(), componentType)
-            val wrNewAT = new WeakReference(newAT)
-            cache.put(componentType, wrNewAT)
-            newAT
+    def apply(componentType: FieldType): ArrayType = cache.synchronized {
+        val wrAT = cache.get(componentType)
+        if (wrAT != null) {
+            val AT = wrAT.get()
+            if (AT != null) return AT;
         }
+        val newAT   = new ArrayType(nextId.getAndDecrement(), componentType)
+        val wrNewAT = new WeakReference(newAT)
+        cache.put(componentType, wrNewAT)
+        newAT
     }
 
     /**
@@ -1674,18 +1573,16 @@ object ArrayType {
         assert(dimension >= 1, s"dimension=$dimension, componentType=$componentType")
 
         val at = apply(componentType)
-        if (dimension > 1)
-            apply(dimension - 1, at)
-        else
-            at
+        if (dimension > 1) apply(dimension - 1, at)
+        else at
     }
 
     def unapply(at: ArrayType): Option[FieldType] = Some(at.componentType)
 
-    final val ArrayOfObject = ArrayType(ObjectType.Object)
+    final val ArrayOfObject       = ArrayType(ObjectType.Object)
     final val ArrayOfMethodHandle = ArrayType(ObjectType.MethodHandle)
 
-    private[br] final val lowestPredefinedTypeId = nextId.get() + 1
+    final private[br] val lowestPredefinedTypeId = nextId.get() + 1
 }
 
 /**
@@ -1701,12 +1598,10 @@ object ArrayElementType {
 
 object ElementReferenceType {
 
-    def unapply(rt: ReferenceType): Option[ObjectType] = {
-        rt match {
-            case ot: ObjectType                   => Some(ot)
-            case ArrayElementType(ot: ObjectType) => Some(ot)
-            case _                                => None
-        }
+    def unapply(rt: ReferenceType): Option[ObjectType] = rt match {
+        case ot: ObjectType                   => Some(ot)
+        case ArrayElementType(ot: ObjectType) => Some(ot)
+        case _                                => None
     }
 
 }

@@ -36,26 +36,19 @@ trait PerInstructionPostProcessing extends CoreDomainFunctionality {
         worklist:                         List[Int /*PC*/ ],
         operandsArray:                    OperandsArray,
         localsArray:                      LocalsArray,
-        tracer:                           Option[AITracer]
-    ): List[Int /*PC*/ ] = {
+        tracer:                           Option[AITracer]): List[Int /*PC*/ ] = {
 
         def doUpdate(updaters: List[DomainValueUpdater]): Unit = {
             val oldOperands = operandsArray(successorPC)
-            val newOperands =
-                oldOperands mapConserve { op =>
-                    updaters.tail.foldLeft(updaters.head(op)) { (updatedOp, updater) =>
-                        updater(updatedOp)
-                    }
-                }
-            if (newOperands ne oldOperands)
-                operandsArray(successorPC) = newOperands
+            val newOperands = oldOperands mapConserve { op =>
+                updaters.tail.foldLeft(updaters.head(op)) { (updatedOp, updater) => updater(updatedOp) }
+            }
+            if (newOperands ne oldOperands) operandsArray(successorPC) = newOperands
 
             val locals: Locals = localsArray(successorPC)
             localsArray(successorPC) = locals.mapConserve { l =>
-                if (l ne null)
-                    updaters.tail.foldLeft(updaters.head.apply(l))((c, u) => u.apply(c))
-                else
-                    null
+                if (l ne null) updaters.tail.foldLeft(updaters.head.apply(l))((c, u) => u.apply(c))
+                else null
             }
 
         }
@@ -73,24 +66,24 @@ trait PerInstructionPostProcessing extends CoreDomainFunctionality {
         }
 
         super.flow(
-            currentPC, currentOperands, currentLocals,
+            currentPC,
+            currentOperands,
+            currentLocals,
             successorPC,
             isSuccessorScheduled,
-            isExceptionalControlFlow, abruptSubroutineTerminationCount,
+            isExceptionalControlFlow,
+            abruptSubroutineTerminationCount,
             wasJoinPerformed,
             worklist,
-            operandsArray, localsArray,
+            operandsArray,
+            localsArray,
             tracer
         )
     }
 
-    def registerOnRegularControlFlowUpdater(f: DomainValue => DomainValue): Unit = {
-        onRegularControlFlow ::= f
-    }
+    def registerOnRegularControlFlowUpdater(f: DomainValue => DomainValue): Unit = onRegularControlFlow ::= f
 
-    def registerOnExceptionalControlFlowUpdater(f: DomainValue => DomainValue): Unit = {
-        onExceptionalControlFlow ::= f
-    }
+    def registerOnExceptionalControlFlowUpdater(f: DomainValue => DomainValue): Unit = onExceptionalControlFlow ::= f
 
     /**
      * @see [[registerOnRegularControlFlowUpdater]]
@@ -107,15 +100,17 @@ trait PerInstructionPostProcessing extends CoreDomainFunctionality {
         evaluatedPCs:  IntArrayStack,
         operandsArray: OperandsArray,
         localsArray:   LocalsArray,
-        tracer:        Option[AITracer]
-    ): Unit = {
+        tracer:        Option[AITracer]): Unit = {
         val l = Nil
         onExceptionalControlFlow = l
         onRegularControlFlow = l
 
         super.evaluationCompleted(
-            pc, worklist, evaluatedPCs,
-            operandsArray, localsArray,
+            pc,
+            worklist,
+            evaluatedPCs,
+            operandsArray,
+            localsArray,
             tracer
         )
     }

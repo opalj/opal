@@ -42,10 +42,8 @@ trait ReportableAnalysisResult {
 
 object ReportableAnalysisResult {
 
-    def asReport(reports: Iterable[ReportableAnalysisResult]): ReportableAnalysisResult = {
-        new ReportableAnalysisResult {
-            def toConsoleString: String = reports.view.map(_.toConsoleString).mkString("\n")
-        }
+    def asReport(reports: Iterable[ReportableAnalysisResult]): ReportableAnalysisResult = new ReportableAnalysisResult {
+        def toConsoleString: String = reports.view.map(_.toConsoleString).mkString("\n")
     }
 
 }

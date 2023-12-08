@@ -24,12 +24,12 @@ trait NestHost_attributeReader extends AttributeReader {
      * @param host_class_index Reference to a CONSTANT_Class_info.
      */
     def NestHost_attribute(
-        cp:                   Constant_Pool,
-        ap_name_index:        Constant_Pool_Index,
-        ap_descriptor_index:  Constant_Pool_Index,
+        cp: Constant_Pool,
+        ap_name_index: Constant_Pool_Index,
+        ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
-        host_class_index:     Constant_Pool_Index // CONSTANT_Class_info
-    ): NestHost_attribute
+        host_class_index: Constant_Pool_Index // CONSTANT_Class_info
+      ): NestHost_attribute
 
     //
     // IMPLEMENTATION
@@ -50,9 +50,9 @@ trait NestHost_attributeReader extends AttributeReader {
         ap_name_index: Constant_Pool_Index,
         ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
-        in: DataInputStream
-    ) => {
-        /*val attribute_length =*/ in.readInt
+        in: DataInputStream) => {
+        /*val attribute_length =*/
+        in.readInt
         NestHost_attribute(
             cp,
             ap_name_index,

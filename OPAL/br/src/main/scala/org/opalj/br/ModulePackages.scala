@@ -10,10 +10,9 @@ case class ModulePackages(packages: Packages) extends Attribute {
 
     final override def kindId: Int = ModulePackages.KindId
 
-    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = {
+    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean =
         // TODO make the comparisons order independent...
         this == other
-    }
 }
 
 object ModulePackages {

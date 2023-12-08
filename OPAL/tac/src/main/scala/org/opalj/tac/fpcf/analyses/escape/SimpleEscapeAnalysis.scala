@@ -5,11 +5,6 @@ package fpcf
 package analyses
 package escape
 
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.ProperPropertyComputationResult
-import org.opalj.fpcf.PropertyBounds
-import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.Result
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.br.analyses.DeclaredMethods
@@ -19,16 +14,21 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.analyses.VirtualFormalParameters
 import org.opalj.br.analyses.VirtualFormalParametersKey
-import org.opalj.br.fpcf.properties.AtMost
-import org.opalj.br.fpcf.properties.EscapeProperty
-import org.opalj.br.fpcf.properties.NoEscape
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.BasicFPCFLazyAnalysisScheduler
+import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
+import org.opalj.br.fpcf.properties.AtMost
 import org.opalj.br.fpcf.properties.Context
+import org.opalj.br.fpcf.properties.EscapeProperty
+import org.opalj.br.fpcf.properties.NoEscape
 import org.opalj.br.fpcf.properties.SimpleContextsKey
-import org.opalj.br.fpcf.ContextProviderKey
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.PropertyBounds
+import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.Result
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.properties.TACAI
 
@@ -38,11 +38,10 @@ class SimpleEscapeAnalysisContext(
         val declaredMethods:         DeclaredMethods,
         val virtualFormalParameters: VirtualFormalParameters,
         val project:                 SomeProject,
-        val propertyStore:           PropertyStore
-) extends AbstractEscapeAnalysisContext
-    with PropertyStoreContainer
-    with VirtualFormalParametersContainer
-    with DeclaredMethodsContainer
+        val propertyStore: PropertyStore) extends AbstractEscapeAnalysisContext
+        with PropertyStoreContainer
+        with VirtualFormalParametersContainer
+        with DeclaredMethodsContainer
 
 /**
  * A simple escape analysis that can handle [[org.opalj.tac.common.DefinitionSiteLike]]s and
@@ -52,34 +51,29 @@ class SimpleEscapeAnalysisContext(
  *
  * @author Florian Kuebler
  */
-class SimpleEscapeAnalysis( final val project: SomeProject)
+class SimpleEscapeAnalysis(final val project: SomeProject)
     extends DefaultEscapeAnalysis
-    with ConstructorSensitiveEscapeAnalysis
-    with ConfigurationBasedConstructorEscapeAnalysis
-    with SimpleFieldAwareEscapeAnalysis
-    with ExceptionAwareEscapeAnalysis {
+        with ConstructorSensitiveEscapeAnalysis
+        with ConfigurationBasedConstructorEscapeAnalysis
+        with SimpleFieldAwareEscapeAnalysis
+        with ExceptionAwareEscapeAnalysis {
 
     override type AnalysisContext = SimpleEscapeAnalysisContext
-    override type AnalysisState = AbstractEscapeAnalysisState
+    override type AnalysisState   = AbstractEscapeAnalysisState
 
     override def determineEscapeOfFP(
-        fp: (Context, VirtualFormalParameter)
-    ): ProperPropertyComputationResult = {
-        fp._2 match {
-            case VirtualFormalParameter(dm: DefinedMethod, _) if dm.definedMethod.body.isEmpty =>
-                Result(fp, AtMost(NoEscape))
-            case VirtualFormalParameter(dm: DefinedMethod, -1) if dm.definedMethod.isInitializer =>
-                val ctx = createContext(fp, dm.definedMethod)
-                doDetermineEscape(ctx, createState)
-            case VirtualFormalParameter(_, _) =>
-                Result(fp, AtMost(NoEscape))
-        }
+        fp: (Context, VirtualFormalParameter)): ProperPropertyComputationResult = fp._2 match {
+        case VirtualFormalParameter(dm: DefinedMethod, _) if dm.definedMethod.body.isEmpty =>
+            Result(fp, AtMost(NoEscape))
+        case VirtualFormalParameter(dm: DefinedMethod, -1) if dm.definedMethod.isInitializer =>
+            val ctx = createContext(fp, dm.definedMethod)
+            doDetermineEscape(ctx, createState)
+        case VirtualFormalParameter(_, _) => Result(fp, AtMost(NoEscape))
     }
 
     override def createContext(
         entity:       (Context, Entity),
-        targetMethod: Method
-    ): SimpleEscapeAnalysisContext = new SimpleEscapeAnalysisContext(
+        targetMethod: Method): SimpleEscapeAnalysisContext = new SimpleEscapeAnalysisContext(
         entity,
         targetMethod,
         declaredMethods,
@@ -110,14 +104,14 @@ trait SimpleEscapeAnalysisScheduler extends FPCFAnalysisScheduler {
  */
 object EagerSimpleEscapeAnalysis
     extends SimpleEscapeAnalysisScheduler
-    with BasicFPCFEagerAnalysisScheduler {
+        with BasicFPCFEagerAnalysisScheduler {
 
     override def requiredProjectInformation: ProjectInformationKeys =
         super.requiredProjectInformation ++ Seq(DefinitionSitesKey, SimpleContextsKey)
 
     override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val declaredMethods = p.get(DeclaredMethodsKey)
-        val simpleContexts = p.get(SimpleContextsKey)
+        val simpleContexts  = p.get(SimpleContextsKey)
 
         val fps = p.get(VirtualFormalParametersKey).virtualFormalParameters.map { fp =>
             (simpleContexts(fp.method), fp)
@@ -138,7 +132,7 @@ object EagerSimpleEscapeAnalysis
 
 object LazySimpleEscapeAnalysis
     extends SimpleEscapeAnalysisScheduler
-    with BasicFPCFLazyAnalysisScheduler {
+        with BasicFPCFLazyAnalysisScheduler {
 
     override def register(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new SimpleEscapeAnalysis(p)

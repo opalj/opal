@@ -3,15 +3,16 @@ package org.opalj
 package ai
 
 import java.net.URL
+
 import org.opalj.br.Method
 import org.opalj.br.MethodWithBody
+import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.instructions.IF0Instruction
 import org.opalj.br.instructions.IFICMPInstruction
-import org.opalj.br.instructions.IFNULL
 import org.opalj.br.instructions.IFNONNULL
-import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.ProjectAnalysisApplication
+import org.opalj.br.instructions.IFNULL
 
 import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParallelizable
 
@@ -24,79 +25,72 @@ object UselessComputations extends ProjectAnalysisApplication {
 
     class AnalysisDomain(val project: Project[java.net.URL], val method: Method)
         extends CorrelationalDomain
-        with domain.DefaultSpecialDomainValuesBinding
-        with domain.TheProject
-        with domain.TheMethod
-        with domain.DefaultHandlingOfMethodResults
-        with domain.IgnoreSynchronization
-        with domain.ThrowAllPotentialExceptionsConfiguration
-        with domain.l0.DefaultTypeLevelFloatValues
-        with domain.l0.DefaultTypeLevelDoubleValues
-        with domain.l0.TypeLevelFieldAccessInstructions
-        with domain.l0.TypeLevelInvokeInstructions
-        with domain.l0.TypeLevelDynamicLoads
-        with domain.l1.DefaultReferenceValuesBinding
-        with domain.l1.DefaultIntegerRangeValues
-        with domain.l1.DefaultLongValues
-        with domain.l1.ConcretePrimitiveValuesConversions
-        with domain.l1.LongValuesShiftOperators {
+            with domain.DefaultSpecialDomainValuesBinding
+            with domain.TheProject
+            with domain.TheMethod
+            with domain.DefaultHandlingOfMethodResults
+            with domain.IgnoreSynchronization
+            with domain.ThrowAllPotentialExceptionsConfiguration
+            with domain.l0.DefaultTypeLevelFloatValues
+            with domain.l0.DefaultTypeLevelDoubleValues
+            with domain.l0.TypeLevelFieldAccessInstructions
+            with domain.l0.TypeLevelInvokeInstructions
+            with domain.l0.TypeLevelDynamicLoads
+            with domain.l1.DefaultReferenceValuesBinding
+            with domain.l1.DefaultIntegerRangeValues
+            with domain.l1.DefaultLongValues
+            with domain.l1.ConcretePrimitiveValuesConversions
+            with domain.l1.LongValuesShiftOperators {
 
         override def maxCardinalityOfIntegerRanges: Long = 4L
     }
 
     override def title: String = "useless computations"
 
-    override def description: String = {
-        "identifies computations that are useless, e.g., "+
-            "comparison against null if the value is known not be null"
-    }
+    override def description: String = "identifies computations that are useless, e.g., " +
+        "comparison against null if the value is known not be null"
 
     override def doAnalyze(
         theProject:    Project[URL],
         parameters:    Seq[String],
-        isInterrupted: () => Boolean
-    ): BasicReport = {
+        isInterrupted: () => Boolean): BasicReport = {
 
         val results = {
             val results = for {
-                classFile <- theProject.allProjectClassFiles.par
+                classFile                     <- theProject.allProjectClassFiles.par
                 method @ MethodWithBody(body) <- classFile.methods
-                result = BaseAI(method, new AnalysisDomain(theProject, method))
+                result                         = BaseAI(method, new AnalysisDomain(theProject, method))
             } yield {
                 import result._
                 val results = collectPCWithOperands(domain)(body, operandsArray) {
                     case (
-                        pc,
-                        IFNULL(_) | IFNONNULL(_),
-                        Seq(domain.DomainReferenceValueTag(value), _*)
-                        ) if value.isNull.isYesOrNo =>
-                        UselessComputation(method, pc, "useless comparison with null")
+                            pc,
+                            IFNULL(_) | IFNONNULL(_),
+                            Seq(domain.DomainReferenceValueTag(value), _*)
+                        ) if value.isNull.isYesOrNo => UselessComputation(method, pc, "useless comparison with null")
                     case (
-                        pc,
-                        _: IFICMPInstruction[_],
-                        Seq(domain.ConcreteIntegerValue(a), domain.ConcreteIntegerValue(b), _*)
-                        ) =>
-                        UselessComputation(method, pc, "comparison of constant values: "+a+", "+b)
+                            pc,
+                            _: IFICMPInstruction[_],
+                            Seq(domain.ConcreteIntegerValue(a), domain.ConcreteIntegerValue(b), _*)
+                        ) => UselessComputation(method, pc, "comparison of constant values: " + a + ", " + b)
                     case (
-                        pc,
-                        _: IF0Instruction[_],
-                        Seq(domain.ConcreteIntegerValue(a), _*)
-                        ) =>
-                        UselessComputation(method, pc, "comparison of 0 with constant value: "+a)
+                            pc,
+                            _: IF0Instruction[_],
+                            Seq(domain.ConcreteIntegerValue(a), _*)
+                        ) => UselessComputation(method, pc, "comparison of 0 with constant value: " + a)
                 }
                 // Let's do some filtering to get rid of some "false positives"
                 // (from the point of view of the Java source code).
 
                 // As a first step we group the results by line.
-                var resultsGroupedByLine: Map[Int, Iterable[UselessComputation]] =
-                    results.groupBy(_.line.getOrElse(-1))
+                var resultsGroupedByLine: Map[Int, Iterable[UselessComputation]] = results.groupBy(_.line.getOrElse(-1))
 
                 // If we have more than one message per line, we are probably dealing
                 // we duplicated code (which is automatically generated by the compiler
                 // for try-catch-finally statements).
                 resultsGroupedByLine = resultsGroupedByLine.map { e =>
                     val (ln, uc) = e
-                    val results = uc.groupBy(_.opcode).values.filter(_.size == 1)
+                    val results  = uc.groupBy(_.opcode).values.filter(_.size == 1)
                     (ln, results.flatten)
                 }
                 resultsGroupedByLine.values.filter(_.nonEmpty).flatten
@@ -105,7 +99,7 @@ object UselessComputations extends ProjectAnalysisApplication {
         }
 
         BasicReport(
-            results.mkString("Useless computations: "+results.size+"): \n", "\n", "\n")
+            results.mkString("Useless computations: " + results.size + "): \n", "\n", "\n")
         )
     }
 }
@@ -119,9 +113,9 @@ case class UselessComputation(method: Method, pc: Int, message: String) {
     override def toString: String = {
         import Console._
 
-        val line = this.line.map("(line:"+_+")").getOrElse("")
+        val line = this.line.map("(line:" + _ + ")").getOrElse("")
 
-        "useless computation "+method.toJava(s"$BLUE$pc$line: $RED$message$RESET")
+        "useless computation " + method.toJava(s"$BLUE$pc$line: $RED$message$RESET")
     }
 
 }

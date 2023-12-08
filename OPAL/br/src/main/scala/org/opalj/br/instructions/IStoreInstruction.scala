@@ -18,5 +18,5 @@ object IStoreInstruction {
 
 trait ConstantIndexIStoreInstruction
     extends IStoreInstruction
-    with ImplicitLocalVariableIndex
-    with InstructionMetaInformation
+        with ImplicitLocalVariableIndex
+        with InstructionMetaInformation

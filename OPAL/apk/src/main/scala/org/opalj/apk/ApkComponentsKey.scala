@@ -33,11 +33,10 @@ object ApkComponentsKey extends ProjectInformationKey[Seq[ApkComponent], ApkPars
      *
      * @return a Seq of [[ApkComponent]].
      */
-    override def compute(project: SomeProject): Seq[ApkComponent] = {
+    override def compute(project: SomeProject): Seq[ApkComponent] =
         project.getOrCreateProjectInformationKeyInitializationData(
             this,
             new ApkParser("")(project.config)
         )
             .parseComponents
-    }
 }

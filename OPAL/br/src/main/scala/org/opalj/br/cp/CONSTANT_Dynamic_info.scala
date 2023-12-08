@@ -19,8 +19,7 @@ import org.opalj.bi.ConstantPoolTags
  */
 case class CONSTANT_Dynamic_info(
         bootstrapMethodAttributeIndex: Int,
-        nameAndTypeIndex:              Constant_Pool_Index
-) extends Constant_Pool_Entry {
+        nameAndTypeIndex: Constant_Pool_Index) extends Constant_Pool_Entry {
 
     override def isDynamic = true
 
@@ -30,15 +29,11 @@ case class CONSTANT_Dynamic_info(
 
     def name(cp: Constant_Pool): String = cp(nameAndTypeIndex).asNameAndType.name(cp)
 
-    def descriptor(cp: Constant_Pool): FieldType = {
-        cp(nameAndTypeIndex).asNameAndType.fieldType(cp)
-    }
+    def descriptor(cp: Constant_Pool): FieldType = cp(nameAndTypeIndex).asNameAndType.fieldType(cp)
 
-    override def asConstantValue(cp: Constant_Pool): ConstantValue[_] = {
+    override def asConstantValue(cp: Constant_Pool): ConstantValue[_] =
         new DynamicConstant(name(cp), descriptor(cp), bootstrapMethodAttributeIndex)
-    }
 
-    override def asBootstrapArgument(cp: Constant_Pool): BootstrapArgument =
-        asConstantValue(cp)
+    override def asBootstrapArgument(cp: Constant_Pool): BootstrapArgument = asConstantValue(cp)
 
 }

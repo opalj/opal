@@ -13,6 +13,5 @@ package reader
  * @author Michael Eichberg
  */
 class Java8FrameworkWithInvokedynamicSupportAndCaching(
-        cache: BytecodeInstructionsCache
-) extends Java8FrameworkWithCaching(cache)
-    with InvokedynamicRewriting
+        cache: BytecodeInstructionsCache) extends Java8FrameworkWithCaching(cache)
+        with InvokedynamicRewriting

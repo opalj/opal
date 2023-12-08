@@ -26,15 +26,15 @@ trait VerificationTypeInfo {
 }
 
 object VerificationTypeInfo {
-    final val ITEM_Top = 0
-    final val ITEM_Integer = 1
-    final val ITEM_Float = 2
-    final val ITEM_Long = 4
-    final val ITEM_Double = 3
-    final val ITEM_Null = 5
+    final val ITEM_Top               = 0
+    final val ITEM_Integer           = 1
+    final val ITEM_Float             = 2
+    final val ITEM_Long              = 4
+    final val ITEM_Double            = 3
+    final val ITEM_Null              = 5
     final val ITEM_UninitializedThis = 6
-    final val ITEM_Object = 7
-    final val ITEM_Unitialized = 8
+    final val ITEM_Object            = 7
+    final val ITEM_Unitialized       = 8
 }
 
 case object TopVariableInfo extends VerificationTypeInfo {
@@ -43,9 +43,7 @@ case object TopVariableInfo extends VerificationTypeInfo {
 
     def tag: Int = VerificationTypeInfo.ITEM_Top
 
-    def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span class="verification_type">&lt;TOP&gt;</span>
-    }
+    def toXHTML(implicit cp: Constant_Pool): Node = <span class="verification_type">&lt;TOP&gt;</span>
 }
 
 case object IntegerVariableInfo extends VerificationTypeInfo {
@@ -104,9 +102,7 @@ case object UninitializedThisVariableInfo extends VerificationTypeInfo {
 
     def tag: Int = VerificationTypeInfo.ITEM_UninitializedThis
 
-    def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span class="verification_type">&lt;UninitializedThis&gt;</span>
-    }
+    def toXHTML(implicit cp: Constant_Pool): Node = <span class="verification_type">&lt;UninitializedThis&gt;</span>
 }
 
 case class ObjectVariableInfo(cpool_index: Int) extends VerificationTypeInfo {
@@ -127,7 +123,6 @@ case class UninitializedVariableInfo(val offset: Int) extends VerificationTypeIn
 
     def tag: Int = VerificationTypeInfo.ITEM_Unitialized
 
-    def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span class="verification_type">&lt;Uninitialized({ offset })&gt;</span>
-    }
+    def toXHTML(implicit cp: Constant_Pool): Node =
+        <span class="verification_type">&lt;Uninitialized({offset})&gt;</span>
 }

@@ -2,9 +2,9 @@
 package org.opalj
 package br
 
-import org.opalj.collection.immutable.UShortPair
-
 import scala.collection.immutable.ArraySeq
+
+import org.opalj.collection.immutable.UShortPair
 
 /**
  * Given a class files' main elements the attribute is build.
@@ -16,13 +16,12 @@ import scala.collection.immutable.ArraySeq
 trait ClassFileAttributeBuilder {
 
     def apply(
-        version:        UShortPair,
-        accessFlags:    Int,
-        thisType:       ObjectType,
+        version: UShortPair,
+        accessFlags: Int,
+        thisType: ObjectType,
         superclassType: Option[ObjectType],
         interfaceTypes: ArraySeq[ObjectType],
-        fields:         ArraySeq[FieldTemplate],
-        methods:        ArraySeq[MethodTemplate]
-    ): Attribute
+        fields: ArraySeq[FieldTemplate],
+        methods: ArraySeq[MethodTemplate]): Attribute
 
 }

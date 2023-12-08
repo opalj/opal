@@ -20,15 +20,14 @@ sealed trait VirtualMethodAllocationFreenessPropertyMetaInformation
  * @author Dominik Helm
  */
 sealed case class VirtualMethodAllocationFreeness(
-        individualProperty: AllocationFreeness
-) extends AggregatedProperty[AllocationFreeness, VirtualMethodAllocationFreeness]
-    with VirtualMethodAllocationFreenessPropertyMetaInformation {
+        individualProperty: AllocationFreeness)
+    extends AggregatedProperty[AllocationFreeness, VirtualMethodAllocationFreeness]
+        with VirtualMethodAllocationFreenessPropertyMetaInformation {
 
     /**
      * The globally unique key of the [[VirtualMethodAllocationFreeness]] property.
      */
-    final def key: PropertyKey[VirtualMethodAllocationFreeness] =
-        VirtualMethodAllocationFreeness.key
+    final def key: PropertyKey[VirtualMethodAllocationFreeness] = VirtualMethodAllocationFreeness.key
 
     override def toString: String = s"VirtualMethodAllocationFreeness($individualProperty)"
 }
@@ -36,7 +35,7 @@ sealed case class VirtualMethodAllocationFreeness(
 object VirtualMethodAllocationFreeness
     extends VirtualMethodAllocationFreenessPropertyMetaInformation {
 
-    final val VAllocationFreeMethod = AllocationFreeMethod.aggregatedProperty
+    final val VAllocationFreeMethod  = AllocationFreeMethod.aggregatedProperty
     final val VMethodWithAllocations = MethodWithAllocations.aggregatedProperty
 
     /**

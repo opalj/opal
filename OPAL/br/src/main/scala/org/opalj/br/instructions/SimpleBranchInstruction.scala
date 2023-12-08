@@ -5,12 +5,12 @@ package instructions
 
 trait SimpleBranchInstructionLike
     extends ControlTransferInstructionLike
-    with ConstantLengthInstructionLike
+        with ConstantLengthInstructionLike
 
 trait SimpleBranchInstruction
     extends SimpleBranchInstructionLike
-    with ConstantLengthInstruction
-    with ControlTransferInstruction {
+        with ConstantLengthInstruction
+        with ControlTransferInstruction {
 
     final override def isSimpleBranchInstruction: Boolean = true
 
@@ -20,12 +20,9 @@ trait SimpleBranchInstruction
 
     final override def jumpTargets(
         currentPC: PC
-    )(
-        implicit
+      )(implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
-    ): Iterator[PC] = {
+        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy): Iterator[PC] =
         Iterator(branchoffset + currentPC)
-    }
 
 }

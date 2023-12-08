@@ -22,7 +22,5 @@ abstract class ShiftInstruction extends AlwaysSucceedingStackBasedBinaryArithmet
 
 object ShiftInstruction {
 
-    def unapply(instruction: ShiftInstruction): Option[ComputationalType] = {
-        Some(instruction.computationalType)
-    }
+    def unapply(instruction: ShiftInstruction): Option[ComputationalType] = Some(instruction.computationalType)
 }

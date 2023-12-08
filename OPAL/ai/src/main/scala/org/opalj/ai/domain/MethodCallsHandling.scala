@@ -20,24 +20,19 @@ trait MethodCallsHandling extends MethodCallsDomain {
 
     protected[this] def getPotentialExceptions(pc: Int): List[ExceptionValue] = {
         val exceptionTypes: mutable.Set[ObjectType] = mutable.Set.empty
-        var exceptionValues: List[ExceptionValue] = List.empty
+        var exceptionValues: List[ExceptionValue]   = List.empty
 
-        def add(exceptionType: ObjectType): Unit = {
-
-            if (!exceptionTypes.contains(exceptionType)) {
-                exceptionTypes += exceptionType
-                // We don't know the true type of the exception, we just know the upper bound!
-                exceptionValues ::=
-                    NonNullObjectValue(ValueOriginForMethodExternalException(pc), exceptionType)
-            }
+        def add(exceptionType: ObjectType): Unit = if (!exceptionTypes.contains(exceptionType)) {
+            exceptionTypes += exceptionType
+            // We don't know the true type of the exception, we just know the upper bound!
+            exceptionValues ::=
+                NonNullObjectValue(ValueOriginForMethodExternalException(pc), exceptionType)
         }
 
         throwExceptionsOnMethodCall match {
-            case ExceptionsRaisedByCalledMethods.Any =>
-                add(ObjectType.Throwable)
+            case ExceptionsRaisedByCalledMethods.Any => add(ObjectType.Throwable)
 
-            case ExceptionsRaisedByCalledMethods.AllExplicitlyHandled =>
-                code.handlersFor(pc) foreach { h =>
+            case ExceptionsRaisedByCalledMethods.AllExplicitlyHandled => code.handlersFor(pc) foreach { h =>
                     h.catchType match {
                         case None     => add(ObjectType.Throwable)
                         case Some(ex) => add(ex)
@@ -57,29 +52,20 @@ trait MethodCallsHandling extends MethodCallsDomain {
     /** Factory method called to create a [[MethodCallResult]]. */
     protected[this] def MethodCallResult(
         returnValue: DomainValue,
-        exceptions:  Iterable[ExceptionValue]
-    ): MethodCallResult = {
-        if (exceptions.isEmpty)
-            ComputedValue(returnValue)
-        else
-            ComputedValueOrException(returnValue, exceptions)
-    }
+        exceptions:  Iterable[ExceptionValue]): MethodCallResult =
+        if (exceptions.isEmpty) ComputedValue(returnValue)
+        else ComputedValueOrException(returnValue, exceptions)
 
     /** Factory method called to create a [[MethodCallResult]]. */
     protected[this] def MethodCallResult(
-        potentialExceptions: Iterable[ExceptionValue]
-    ): MethodCallResult = {
-        if (potentialExceptions.isEmpty)
-            ComputationWithSideEffectOnly
-        else
-            ComputationWithSideEffectOrException(potentialExceptions)
-    }
+        potentialExceptions: Iterable[ExceptionValue]): MethodCallResult =
+        if (potentialExceptions.isEmpty) ComputationWithSideEffectOnly
+        else ComputationWithSideEffectOrException(potentialExceptions)
 
     protected[this] def handleInvoke(
         pc:               Int,
-        methodDescriptor: MethodDescriptor
-    ): MethodCallResult = {
-        val returnType = methodDescriptor.returnType
+        methodDescriptor: MethodDescriptor): MethodCallResult = {
+        val returnType          = methodDescriptor.returnType
         val potentialExceptions = getPotentialExceptions(pc)
         if (returnType.isVoidType) {
             MethodCallResult(potentialExceptions)
@@ -91,32 +77,26 @@ trait MethodCallsHandling extends MethodCallsDomain {
     protected[this] def handleInstanceBasedInvoke(
         pc:               Int,
         methodDescriptor: MethodDescriptor,
-        receiverIsNull:   Answer
-    ): MethodCallResult = {
-        val potentialExceptions =
-            receiverIsNull match {
-                case Yes =>
-                    // That's it!
-                    return justThrows(VMNullPointerException(pc));
+        receiverIsNull:   Answer): MethodCallResult = {
+        val potentialExceptions = receiverIsNull match {
+            case Yes =>
+                // That's it!
+                return justThrows(VMNullPointerException(pc));
 
-                case Unknown if throwNullPointerExceptionOnMethodCall =>
-                    VMNullPointerException(pc) :: getPotentialExceptions(pc)
+            case Unknown if throwNullPointerExceptionOnMethodCall =>
+                VMNullPointerException(pc) :: getPotentialExceptions(pc)
 
-                case /*No or Unknown & DoNotThrowNullPointerException*/ _ =>
-                    getPotentialExceptions(pc)
-            }
+            case /*No or Unknown & DoNotThrowNullPointerException*/ _ => getPotentialExceptions(pc)
+        }
         val returnType = methodDescriptor.returnType
-        if (returnType.isVoidType)
-            MethodCallResult(potentialExceptions)
-        else
-            MethodCallResult(TypedValue(pc, returnType), potentialExceptions)
+        if (returnType.isVoidType) MethodCallResult(potentialExceptions)
+        else MethodCallResult(TypedValue(pc, returnType), potentialExceptions)
     }
 
     protected[this] def handleInstanceBasedInvoke(
         pc:               Int,
         methodDescriptor: MethodDescriptor,
-        operands:         Operands
-    ): MethodCallResult = {
+        operands:         Operands): MethodCallResult = {
         val receiverIsNull = refIsNull(pc, operands.last)
         handleInstanceBasedInvoke(pc, methodDescriptor, receiverIsNull)
     }
@@ -135,9 +115,6 @@ trait MethodCallsHandling extends MethodCallsDomain {
         methodDescriptor: MethodDescriptor,
         targetMethods:    Set[Method],
         receiverIsNull:   Answer,
-        operands:         Operands
-    ): MethodCallResult = {
-        handleInstanceBasedInvoke(pc, methodDescriptor, receiverIsNull)
-    }
+        operands:         Operands): MethodCallResult = handleInstanceBasedInvoke(pc, methodDescriptor, receiverIsNull)
 
 }

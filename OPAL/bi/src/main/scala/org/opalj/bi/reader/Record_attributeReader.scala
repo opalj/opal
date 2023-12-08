@@ -3,11 +3,12 @@ package org.opalj
 package bi
 package reader
 
-import java.io.DataInputStream
-import org.opalj.control.fillArraySeq
-
-import scala.collection.immutable.ArraySeq
 import scala.reflect.ClassTag
+
+import java.io.DataInputStream
+import scala.collection.immutable.ArraySeq
+
+import org.opalj.control.fillArraySeq
 
 /**
  * Generic parser for the ''Record'' attribute (Java 16).
@@ -32,27 +33,24 @@ trait Record_attributeReader extends AttributeReader {
     type RecordComponents = ArraySeq[RecordComponent]
 
     def Record_attribute(
-        cp:                   Constant_Pool,
-        ap_name_index:        Constant_Pool_Index,
-        ap_descriptor_index:  Constant_Pool_Index,
+        cp: Constant_Pool,
+        ap_name_index: Constant_Pool_Index,
+        ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
-        components:           RecordComponents
-    ): Record_attribute
+        components: RecordComponents): Record_attribute
 
     def RecordComponent(
-        cp:               Constant_Pool,
-        name_index:       Constant_Pool_Index,
+        cp: Constant_Pool,
+        name_index: Constant_Pool_Index,
         descriptor_index: Constant_Pool_Index,
-        attributes:       Attributes
-    ): RecordComponent
+        attributes: Attributes): RecordComponent
 
     protected def Attributes(
-        cp:                  Constant_Pool,
-        ap:                  AttributeParent,
-        ap_name_index:       Constant_Pool_Index,
+        cp: Constant_Pool,
+        ap: AttributeParent,
+        ap_name_index: Constant_Pool_Index,
         ap_descriptor_index: Constant_Pool_Index,
-        in:                  DataInputStream
-    ): Attributes
+        in: DataInputStream): Attributes
 
     //
     // IMPLEMENTATION
@@ -81,19 +79,19 @@ trait Record_attributeReader extends AttributeReader {
         ap_name_index: Constant_Pool_Index,
         ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
-        in: DataInputStream
-    ) => {
-        /*val attribute_length =*/ in.readInt()
-        val components_count = in.readUnsignedShort
-        if (components_count > 0 || reifyEmptyAttributes) {
-            Record_attribute(
-                cp,
-                ap_name_index,
-                ap_descriptor_index,
-                attribute_name_index,
-                fillArraySeq(components_count) {
-                    {
-                        val name_index = in.readUnsignedShort
+        in: DataInputStream) =>
+        {
+            /*val attribute_length =*/
+            in.readInt()
+            val components_count = in.readUnsignedShort
+            if (components_count > 0 || reifyEmptyAttributes) {
+                Record_attribute(
+                    cp,
+                    ap_name_index,
+                    ap_descriptor_index,
+                    attribute_name_index,
+                    fillArraySeq(components_count) {
+                        val name_index       = in.readUnsignedShort
                         val descriptor_index = in.readUnsignedShort
                         RecordComponent(
                             cp,
@@ -108,12 +106,11 @@ trait Record_attributeReader extends AttributeReader {
                             )
                         )
                     }
-                }
-            )
-        } else {
-            null
-        }
-    }: Record_attribute
+                )
+            } else {
+                null
+            }
+        }: Record_attribute
 
     registerAttributeReader(RecordAttribute.Name -> parserFactory())
 

@@ -4,6 +4,16 @@ package br
 package fpcf
 package analyses
 
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.properties.StaticDataUsage
+import org.opalj.br.fpcf.properties.UsesConstantDataOnly
+import org.opalj.br.fpcf.properties.UsesNoStaticData
+import org.opalj.br.fpcf.properties.UsesVaryingData
+import org.opalj.br.fpcf.properties.VirtualMethodAllocationFreeness
+import org.opalj.br.fpcf.properties.VirtualMethodStaticDataUsage
+import org.opalj.br.fpcf.properties.VirtualMethodStaticDataUsage.VUsesVaryingData
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.FinalP
@@ -15,16 +25,6 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.SomeEPS
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.properties.StaticDataUsage
-import org.opalj.br.fpcf.properties.UsesConstantDataOnly
-import org.opalj.br.fpcf.properties.UsesNoStaticData
-import org.opalj.br.fpcf.properties.UsesVaryingData
-import org.opalj.br.fpcf.properties.VirtualMethodAllocationFreeness
-import org.opalj.br.fpcf.properties.VirtualMethodStaticDataUsage
-import org.opalj.br.fpcf.properties.VirtualMethodStaticDataUsage.VUsesVaryingData
 
 /**
  * Determines the aggregated static data usage for virtual methods.
@@ -32,13 +32,11 @@ import org.opalj.br.fpcf.properties.VirtualMethodStaticDataUsage.VUsesVaryingDat
  * @author Dominik Helm
  */
 class VirtualMethodStaticDataUsageAnalysis private[analyses] (
-        final val project: SomeProject
-) extends FPCFAnalysis {
+        final val project: SomeProject) extends FPCFAnalysis {
     private[this] val declaredMethods = project.get(DeclaredMethodsKey)
 
     def determineUsage(dm: DeclaredMethod): ProperPropertyComputationResult = {
-        if (!dm.hasSingleDefinedMethod && !dm.hasMultipleDefinedMethods)
-            return Result(dm, VUsesVaryingData);
+        if (!dm.hasSingleDefinedMethod && !dm.hasMultipleDefinedMethods) return Result(dm, VUsesVaryingData);
 
         var dependees: Set[SomeEOptionP] = Set.empty
 
@@ -46,13 +44,12 @@ class VirtualMethodStaticDataUsageAnalysis private[analyses] (
 
         val cfo = project.classFile(dm.declaringClassType)
         val methods =
-            if (cfo.isDefined && cfo.get.isInterfaceDeclaration)
-                project.interfaceCall(
-                    dm.declaringClassType,
-                    dm.declaringClassType,
-                    dm.name,
-                    dm.descriptor
-                )
+            if (cfo.isDefined && cfo.get.isInterfaceDeclaration) project.interfaceCall(
+                dm.declaringClassType,
+                dm.declaringClassType,
+                dm.name,
+                dm.descriptor
+            )
             else project.virtualCall(
                 dm.declaringClassType,
                 dm.declaringClassType,
@@ -89,8 +86,11 @@ class VirtualMethodStaticDataUsageAnalysis private[analyses] (
                 Result(dm, maxLevel.aggregatedProperty)
             } else {
                 InterimResult(
-                    dm, VUsesVaryingData, maxLevel.aggregatedProperty,
-                    dependees, c
+                    dm,
+                    VUsesVaryingData,
+                    maxLevel.aggregatedProperty,
+                    dependees,
+                    c
                 )
             }
         }
@@ -99,18 +99,19 @@ class VirtualMethodStaticDataUsageAnalysis private[analyses] (
             Result(dm, maxLevel.aggregatedProperty)
         } else {
             org.opalj.fpcf.InterimResult(
-                dm, VUsesVaryingData, maxLevel.aggregatedProperty,
-                dependees, c
+                dm,
+                VUsesVaryingData,
+                maxLevel.aggregatedProperty,
+                dependees,
+                c
             )
         }
     }
 
     /** Called when the analysis is scheduled lazily. */
-    def doDetermineUsage(e: Entity): ProperPropertyComputationResult = {
-        e match {
-            case m: DeclaredMethod => determineUsage(m)
-            case _                 => throw new IllegalArgumentException(s"$e is not a method")
-        }
+    def doDetermineUsage(e: Entity): ProperPropertyComputationResult = e match {
+        case m: DeclaredMethod => determineUsage(m)
+        case _                 => throw new IllegalArgumentException(s"$e is not a method")
     }
 
 }
@@ -127,7 +128,7 @@ trait VirtualMethodStaticDataUsageAnalysisScheduler extends FPCFAnalysisSchedule
 
 object EagerVirtualMethodStaticDataUsageAnalysis
     extends VirtualMethodStaticDataUsageAnalysisScheduler
-    with BasicFPCFEagerAnalysisScheduler {
+        with BasicFPCFEagerAnalysisScheduler {
 
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 
@@ -135,7 +136,7 @@ object EagerVirtualMethodStaticDataUsageAnalysis
 
     def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new VirtualMethodStaticDataUsageAnalysis(p)
-        val vms = p.get(DeclaredMethodsKey)
+        val vms      = p.get(DeclaredMethodsKey)
         ps.scheduleEagerComputationsForEntities(vms.declaredMethods)(analysis.determineUsage)
         analysis
     }
@@ -143,7 +144,7 @@ object EagerVirtualMethodStaticDataUsageAnalysis
 
 object LazyVirtualMethodStaticDataUsageAnalysis
     extends VirtualMethodStaticDataUsageAnalysisScheduler
-    with BasicFPCFLazyAnalysisScheduler {
+        with BasicFPCFLazyAnalysisScheduler {
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 

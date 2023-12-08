@@ -3,9 +3,9 @@ package org.opalj
 package br
 package reader
 
-import org.opalj.bi.reader.BootstrapMethods_attributeReader
-
 import scala.reflect.ClassTag
+
+import org.opalj.bi.reader.BootstrapMethods_attributeReader
 
 /**
  * Final bindings and factory methods for the ''BoostrapMethods'' attribute.
@@ -14,41 +14,33 @@ import scala.reflect.ClassTag
  */
 trait BootstrapMethods_attributeBinding
     extends BootstrapMethods_attributeReader
-    with ConstantPoolBinding
-    with AttributeBinding {
+        with ConstantPoolBinding
+        with AttributeBinding {
 
     type BootstrapMethods_attribute = BootstrapMethodTable
 
     type BootstrapMethod = br.BootstrapMethod
-    override implicit val bootstrapMethodType: ClassTag[BootstrapMethod] = ClassTag(classOf[br.BootstrapMethod])
+    implicit override val bootstrapMethodType: ClassTag[BootstrapMethod] = ClassTag(classOf[br.BootstrapMethod])
 
     type BootstrapArgument = br.BootstrapArgument
-    override implicit val bootstrapArgumentType: ClassTag[BootstrapArgument] = ClassTag(classOf[br.BootstrapArgument])
+    implicit override val bootstrapArgumentType: ClassTag[BootstrapArgument] = ClassTag(classOf[br.BootstrapArgument])
 
     def BootstrapMethods_attribute(
         cp:                  Constant_Pool,
         ap_name_index:       Constant_Pool_Index,
         ap_descriptor_index: Constant_Pool_Index,
         attributeNameIndex:  Int,
-        bootstrapMethods:    BootstrapMethods
-    ): BootstrapMethods_attribute = {
-        new BootstrapMethodTable(bootstrapMethods)
-    }
+        bootstrapMethods:    BootstrapMethods): BootstrapMethods_attribute = new BootstrapMethodTable(bootstrapMethods)
 
     def BootstrapMethod(
         cp:                 Constant_Pool,
         bootstrapMethodRef: Int,
-        bootstrapArguments: BootstrapArguments
-    ): BootstrapMethod = {
+        bootstrapArguments: BootstrapArguments): BootstrapMethod =
         new BootstrapMethod(cp(bootstrapMethodRef).asMethodHandle(cp), bootstrapArguments)
-    }
 
     def BootstrapArgument(
         cp:                Constant_Pool,
-        constantPoolIndex: Int
-    ): BootstrapArgument = {
-        cp(constantPoolIndex).asBootstrapArgument(cp)
-    }
+        constantPoolIndex: Int): BootstrapArgument = cp(constantPoolIndex).asBootstrapArgument(cp)
 
     registerAttributesPostProcessor { attributes =>
         val bsmO = attributes collectFirst { case BootstrapMethodTable(bms) => bms }
@@ -64,4 +56,3 @@ trait BootstrapMethods_attributeBinding
         attributes
     }
 }
-

@@ -21,12 +21,11 @@ trait RuntimeVisibleTypeAnnotations_attributeReader extends AttributeReader {
 
     type RuntimeVisibleTypeAnnotations_attribute >: Null <: Attribute
     def RuntimeVisibleTypeAnnotations_attribute(
-        cp:                   Constant_Pool,
-        ap_name_index:        Constant_Pool_Index,
-        ap_descriptor_index:  Constant_Pool_Index,
+        cp: Constant_Pool,
+        ap_name_index: Constant_Pool_Index,
+        ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
-        annotations:          TypeAnnotations
-    ): RuntimeVisibleTypeAnnotations_attribute
+        annotations: TypeAnnotations): RuntimeVisibleTypeAnnotations_attribute
 
     //
     // IMPLEMENTATION
@@ -48,13 +47,17 @@ trait RuntimeVisibleTypeAnnotations_attributeReader extends AttributeReader {
         ap_name_index: Constant_Pool_Index,
         ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
-        in: DataInputStream
-    ) => {
-        /*val attribute_length = */ in.readInt()
+        in: DataInputStream) => {
+        /*val attribute_length = */
+        in.readInt()
         val annotations = TypeAnnotations(cp, in)
         if (annotations.iterator.nonEmpty || reifyEmptyAttributes) {
             RuntimeVisibleTypeAnnotations_attribute(
-                cp, ap_name_index, ap_descriptor_index, attribute_name_index, annotations
+                cp,
+                ap_name_index,
+                ap_descriptor_index,
+                attribute_name_index,
+                annotations
             )
         } else {
             null

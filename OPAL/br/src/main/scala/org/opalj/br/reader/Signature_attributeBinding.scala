@@ -13,8 +13,8 @@ import org.opalj.bi.reader.Signature_attributeReader
  */
 trait Signature_attributeBinding
     extends Signature_attributeReader
-    with ConstantPoolBinding
-    with AttributeBinding {
+        with ConstantPoolBinding
+        with AttributeBinding {
 
     type Signature_attribute = Signature
 
@@ -24,10 +24,6 @@ trait Signature_attributeBinding
         ap_name_index:        Constant_Pool_Index,
         ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
-        signature_index:      Constant_Pool_Index
-    ): Signature_attribute = {
-        cp(signature_index).asSignature(ap)
-    }
+        signature_index:      Constant_Pool_Index): Signature_attribute = cp(signature_index).asSignature(ap)
 
 }
-

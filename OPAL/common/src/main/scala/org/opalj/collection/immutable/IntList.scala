@@ -39,11 +39,9 @@ sealed trait IntList extends Serializable { self =>
     /** Prepends the given values from the other list to this list. */
     def ++:(other: IntList): IntList
 
-    final override def equals(other: Any): Boolean = {
-        other match {
-            case l: IntList => equals(l)
-            case _          => false
-        }
+    final override def equals(other: Any): Boolean = other match {
+        case l: IntList => equals(l)
+        case _          => false
     }
     def equals(that: IntList): Boolean
 
@@ -56,9 +54,7 @@ object IntList {
 
     def apply(v: Int): IntList = new IntListNode(v, EmptyIntList)
 
-    def apply(head: Int, last: Int): IntList = {
-        new IntListNode(head, new IntListNode(last, EmptyIntList))
-    }
+    def apply(head: Int, last: Int): IntList = new IntListNode(head, new IntListNode(last, EmptyIntList))
 
 }
 
@@ -68,9 +64,9 @@ object IntList {
  * @author Michael Eichberg
  */
 case object EmptyIntList extends IntList {
-    override def head: Int = throw new UnsupportedOperationException
-    override def tail: IntList = throw new UnsupportedOperationException
-    override def isEmpty: Boolean = true
+    override def head: Int         = throw new UnsupportedOperationException
+    override def tail: IntList     = throw new UnsupportedOperationException
+    override def isEmpty: Boolean  = true
     override def nonEmpty: Boolean = false
 
     override def foreach[U](f: Int => U): Unit = {}
@@ -78,7 +74,7 @@ case object EmptyIntList extends IntList {
     override def forFirstN[U](n: Int)(f: Int => U): Unit = {}
     override def iterator: IntIterator = IntIterator.empty
     /** Prepends the given value to this list. E.g., `l = 2 +: l`. */
-    override def +:(v: Int): IntList = new IntListNode(v, this)
+    override def +:(v:      Int): IntList     = new IntListNode(v, this)
     override def ++:(other: IntList): IntList = other
 
     override def equals(that: IntList): Boolean = that eq this
@@ -91,13 +87,12 @@ case object EmptyIntList extends IntList {
  * @author Michael Eichberg
  */
 final case class IntListNode(
-        head:                        Int,
-        private[immutable] var rest: IntList = EmptyIntList
-) extends IntList { list =>
+        head: Int,
+        private[immutable] var rest: IntList = EmptyIntList) extends IntList { list =>
 
     override def tail: IntList = rest
 
-    override def isEmpty: Boolean = false
+    override def isEmpty: Boolean  = false
     override def nonEmpty: Boolean = true
 
     override def foreach[U](f: Int => U): Unit = {
@@ -109,9 +104,9 @@ final case class IntListNode(
     }
 
     override def forFirstN[U](n: Int)(f: Int => U): Unit = {
-        if (n == 0) return ;
+        if (n == 0) return;
 
-        var i = 0
+        var i             = 0
         var list: IntList = this
         do {
             f(list.head)
@@ -120,37 +115,32 @@ final case class IntListNode(
         } while (list.nonEmpty && i < n)
     }
 
-    override def iterator: IntIterator = {
-        new IntIterator {
-            private[this] var currentList: IntList = list
-            def hasNext: Boolean = currentList.nonEmpty
-            def next(): Int = {
-                val v = currentList.head
-                currentList = currentList.tail
-                v
-            }
+    override def iterator: IntIterator = new IntIterator {
+        private[this] var currentList: IntList = list
+        def hasNext: Boolean                   = currentList.nonEmpty
+        def next(): Int = {
+            val v = currentList.head
+            currentList = currentList.tail
+            v
         }
     }
 
-    override def +:(v: Int): IntList = new IntListNode(v, this)
+    override def +:(v:      Int): IntList     = new IntListNode(v, this)
     override def ++:(other: IntList): IntList = other.iterator.foldLeft(this)((list, value) => IntListNode(value, list))
 
-    override def equals(that: IntList): Boolean = {
-        (that eq this) || {
-            var thisList: IntList = this
-            var thatList = that
-            while ((thisList ne EmptyIntList) && (thatList ne EmptyIntList)) {
-                if (thisList.head != thatList.head)
-                    return false;
-                thisList = thisList.tail
-                thatList = thatList.tail
-            }
-            thisList eq thatList //... <=> true iff both lists are empty
+    override def equals(that: IntList): Boolean = (that eq this) || {
+        var thisList: IntList = this
+        var thatList          = that
+        while ((thisList ne EmptyIntList) && (thatList ne EmptyIntList)) {
+            if (thisList.head != thatList.head) return false;
+            thisList = thisList.tail
+            thatList = thatList.tail
         }
+        thisList eq thatList // ... <=> true iff both lists are empty
     }
 
     override def hashCode(): Int = {
-        var h = 31
+        var h             = 31
         var list: IntList = this
         while (list ne EmptyIntList) {
             h = (h + list.head) * 31

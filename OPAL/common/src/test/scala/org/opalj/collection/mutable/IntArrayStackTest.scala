@@ -3,10 +3,10 @@ package org.opalj
 package collection
 package mutable
 
-import org.scalatest.matchers.should.Matchers
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatestplus.junit.JUnitRunner
 import org.junit.runner.RunWith
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests the IntArrayStack.
@@ -18,7 +18,7 @@ class IntArrayStackTest extends AnyFlatSpec with Matchers {
 
     behavior of "an IntArrayStack"
 
-    it should ("be empty if it is newly created") in {
+    it should "be empty if it is newly created" in {
         val stack = new IntArrayStack()
         stack.foreach { e => fail("non empty") }
         stack.isEmpty should be(true)
@@ -29,7 +29,7 @@ class IntArrayStackTest extends AnyFlatSpec with Matchers {
         (new IntArrayStack(100 /*sizeHint*/ )).foreach { e => fail("non empty") }
     }
 
-    it should ("should only contain those elements that are added") in {
+    it should "should only contain those elements that are added" in {
         val stack = new IntArrayStack()
         stack.push(4)
         stack.push(5)
@@ -48,7 +48,7 @@ class IntArrayStackTest extends AnyFlatSpec with Matchers {
         values should contain(4)
     }
 
-    it should ("only contain those elements that are added and not popped") in {
+    it should "only contain those elements that are added and not popped" in {
         val stack = new IntArrayStack()
         stack.push(4)
         stack.push(5)
@@ -66,7 +66,7 @@ class IntArrayStackTest extends AnyFlatSpec with Matchers {
         values should be(List(4))
     }
 
-    it should ("be empty if all values are popped") in {
+    it should "be empty if all values are popped" in {
         val stack = new IntArrayStack()
         stack.push(4)
         stack.push(5)
@@ -88,7 +88,7 @@ class IntArrayStackTest extends AnyFlatSpec with Matchers {
         }
     }
 
-    it should ("be possible to sum up the values using foldLeft") in {
+    it should "be possible to sum up the values using foldLeft" in {
         val stack = new IntArrayStack()
         stack.push(4)
         stack.push(5)
@@ -96,12 +96,12 @@ class IntArrayStackTest extends AnyFlatSpec with Matchers {
         stack.foldLeft(0)(_ + _) should be(11)
     }
 
-    it should ("be possible to call foldLeft even when the stack is empty") in {
+    it should "be possible to call foldLeft even when the stack is empty" in {
         val stack = new IntArrayStack()
         stack.foldLeft(-3)(_ + _) should be(-3)
     }
 
-    it should ("iterator overall values using intIterator") in {
+    it should "iterator overall values using intIterator" in {
         val stack = new IntArrayStack()
         stack.iterator.hasNext should be(false)
 
@@ -120,7 +120,7 @@ class IntArrayStackTest extends AnyFlatSpec with Matchers {
         it.hasNext should be(false)
     }
 
-    it should ("be comparable to other IntArrayStacks") in {
+    it should "be comparable to other IntArrayStacks" in {
         val stack1 = new IntArrayStack()
         stack1.push(4)
         stack1.push(5)
@@ -136,18 +136,18 @@ class IntArrayStackTest extends AnyFlatSpec with Matchers {
         stack3.push(5)
 
         stack1 should be(stack2)
-        stack1 should not be (stack3)
+        stack1 should not be stack3
 
     }
 
-    it should ("should contain the correct values even if the initial stack size 0") in {
+    it should "should contain the correct values even if the initial stack size 0" in {
         val stack1 = new IntArrayStack(0)
         stack1.push(1000)
         stack1.pop() should be(1000)
     }
 
-    it should ("should contain the correct values even if the initial stack size was too small") in {
-        val Max = 50000
+    it should "should contain the correct values even if the initial stack size was too small" in {
+        val Max    = 50000
         val stack1 = new IntArrayStack(2)
         Range(start = 0, end = Max).foreach { stack1.push(_) }
         stack1.size should be(Max)
@@ -160,9 +160,7 @@ class IntArrayStackTest extends AnyFlatSpec with Matchers {
 
         { // test pop
             var nextValue = Max - 1
-            Range(start = 0, end = Max).foreach { v =>
-                stack1.pop() should be(nextValue); nextValue -= 1
-            }
+            Range(start = 0, end = Max).foreach { v => stack1.pop() should be(nextValue); nextValue -= 1 }
             stack1.size should be(0)
         }
     }

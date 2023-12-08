@@ -4,16 +4,17 @@ package br
 package instructions
 
 import java.net.URL
+import scala.collection.immutable.ArraySeq
+
+import org.opalj.ai.BaseAI
+import org.opalj.ai.domain.l0.BaseDomain
+import org.opalj.br.TestSupport.biProject
+import org.opalj.collection.immutable.UIDSet
+
 import org.junit.runner.RunWith
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
-import org.opalj.collection.immutable.UIDSet
-import org.opalj.br.TestSupport.biProject
-import org.opalj.ai.BaseAI
-import org.opalj.ai.domain.l0.BaseDomain
-
-import scala.collection.immutable.ArraySeq
 
 /**
  * Checks that the ClassFileFactory produces valid proxy class files.
@@ -28,21 +29,20 @@ class GeneratedProxyClassFilesTest extends AnyFunSpec with Matchers {
         val testProject = biProject("proxy.jar")
 
         val proxies: Seq[(ClassFile, URL)] = testProject.allMethods.map { m =>
-            val classFile = m.classFile
-            val t = classFile.thisType
+            val classFile        = m.classFile
+            val t                = classFile.thisType
             var proxy: ClassFile = null
 
             describe(s"generating a valid proxy for ${m.toJava}") {
-                val typeName = "ProxyValidation$"+t.fqn+":"+m.name + m.descriptor.toJVMDescriptor+"$"
-                val definingType =
-                    TypeDeclaration(
-                        ObjectType(typeName),
-                        false,
-                        Some(ObjectType.Object),
-                        UIDSet.empty
-                    )
-                val proxyMethodName = m.name + '$'+"proxy"
-                val tIsInterface = testProject.classFile(t).get.isInterfaceDeclaration
+                val typeName = "ProxyValidation$" + t.fqn + ":" + m.name + m.descriptor.toJVMDescriptor + "$"
+                val definingType = TypeDeclaration(
+                    ObjectType(typeName),
+                    false,
+                    Some(ObjectType.Object),
+                    UIDSet.empty
+                )
+                val proxyMethodName = m.name + '$' + "proxy"
+                val tIsInterface    = testProject.classFile(t).get.isInterfaceDeclaration
                 val (invocationInstruction: Opcode, methodHandle: MethodCallMethodHandle) =
                     if (tIsInterface) {
                         (
@@ -83,19 +83,19 @@ class GeneratedProxyClassFilesTest extends AnyFunSpec with Matchers {
                             )
                         )
                     }
-                proxy =
-                    ClassFileFactory.Proxy(
-                        classFile.thisType,
-                        classFile.isInterfaceDeclaration,
-                        definingType,
-                        proxyMethodName,
-                        m.descriptor,
-                        t, tIsInterface,
-                        methodHandle,
-                        invocationInstruction,
-                        MethodDescriptor.NoArgsAndReturnVoid, // <= not tested...
-                        ArraySeq.empty
-                    )
+                proxy = ClassFileFactory.Proxy(
+                    classFile.thisType,
+                    classFile.isInterfaceDeclaration,
+                    definingType,
+                    proxyMethodName,
+                    m.descriptor,
+                    t,
+                    tIsInterface,
+                    methodHandle,
+                    invocationInstruction,
+                    MethodDescriptor.NoArgsAndReturnVoid, // <= not tested...
+                    ArraySeq.empty
+                )
 
                 def verifyMethod(method: Method): Unit = {
                     val domain = new BaseDomain(testProject, method)
@@ -111,7 +111,7 @@ class GeneratedProxyClassFilesTest extends AnyFunSpec with Matchers {
                     // there is no dead-code
                     var nextPc = 0
                     while (nextPc < instructions.size) {
-                        result.operandsArray(nextPc) should not be (null)
+                        result.operandsArray(nextPc) should not be null
                         nextPc = instructions(nextPc).indexOfNextInstruction(nextPc, false)
                     }
 
@@ -135,10 +135,9 @@ class GeneratedProxyClassFilesTest extends AnyFunSpec with Matchers {
                     verifyMethod(constructor)
                 }
 
-                val factoryMethod =
-                    proxy.findMethod("$newInstance").headOption.getOrElse(
-                        proxy.findMethod("$createInstance").head
-                    )
+                val factoryMethod = proxy.findMethod("$newInstance").headOption.getOrElse(
+                    proxy.findMethod("$createInstance").head
+                )
                 it("should produce a correct factory method") {
                     verifyMethod(factoryMethod)
                 }

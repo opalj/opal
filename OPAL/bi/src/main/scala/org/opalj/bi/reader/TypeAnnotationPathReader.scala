@@ -3,11 +3,12 @@ package org.opalj
 package bi
 package reader
 
-import java.io.DataInputStream
-import org.opalj.control.fillArraySeq
-
-import scala.collection.immutable.ArraySeq
 import scala.reflect.ClassTag
+
+import java.io.DataInputStream
+import scala.collection.immutable.ArraySeq
+
+import org.opalj.control.fillArraySeq
 
 /**
  * Generic parser for the `type_path` field of type annotations. This
@@ -79,8 +80,7 @@ trait TypeAnnotationPathReader extends Constant_PoolAbstractions {
                         case 2 =>
                             in.read() // <=> in.skip..
                             TypeAnnotationOnBoundOfWildcardType
-                        case 3 =>
-                            TypeAnnotationOnTypeArgument(in.readUnsignedByte())
+                        case 3 => TypeAnnotationOnTypeArgument(in.readUnsignedByte())
                     }
                 }
             )

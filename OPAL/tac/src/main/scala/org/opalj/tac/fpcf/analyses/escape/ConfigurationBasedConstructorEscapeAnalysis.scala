@@ -5,11 +5,11 @@ package fpcf
 package analyses
 package escape
 
-import net.ceedubs.ficus.Ficus._
-import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-
 import org.opalj.br.ObjectType
 import org.opalj.br.fpcf.properties.EscapeProperty
+
+import net.ceedubs.ficus.Ficus._
+import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
 /**
  * In the configuration system it is possible to define escape information for the this local in the
@@ -24,28 +24,27 @@ trait ConfigurationBasedConstructorEscapeAnalysis extends AbstractEscapeAnalysis
 
     private[this] case class PredefinedResult(object_type: String, escape_of_this: String)
 
-    private[this] val ConfigKey = {
-        "org.opalj.fpcf.analyses.ConfigurationBasedConstructorEscapeAnalysis.constructors"
-    }
+    private[this] val ConfigKey = "org.opalj.fpcf.analyses.ConfigurationBasedConstructorEscapeAnalysis.constructors"
 
     /**
      * Statically loads the configuration and gets the escape property objects via reflection.
      *
      * @note The reflective code assumes that every [[EscapeProperty]] is an object and not a class.
      */
-    private[this] val predefinedConstructors: Map[ObjectType, EscapeProperty] = {
+    private[this] val predefinedConstructors: Map[ObjectType, EscapeProperty] =
         project.config.as[Seq[PredefinedResult]](ConfigKey).map { r =>
             import scala.reflect.runtime._
             val rootMirror = universe.runtimeMirror(getClass.getClassLoader)
-            val module = rootMirror.staticModule(r.escape_of_this)
-            val property = rootMirror.reflectModule(module).instance.asInstanceOf[EscapeProperty]
+            val module     = rootMirror.staticModule(r.escape_of_this)
+            val property   = rootMirror.reflectModule(module).instance.asInstanceOf[EscapeProperty]
             (ObjectType(r.object_type), property)
         }.toMap
-    }
 
-    protected[this] abstract override def handleThisLocalOfConstructor(
+    abstract override protected[this] def handleThisLocalOfConstructor(
         call: NonVirtualMethodCall[V]
-    )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
+      )(implicit
+        context: AnalysisContext,
+        state:   AnalysisState): Unit = {
         assert(call.name == "<init>")
         assert(state.usesDefSite(call.receiver))
         assert(call.declaringClass.isObjectType)
@@ -60,4 +59,3 @@ trait ConfigurationBasedConstructorEscapeAnalysis extends AbstractEscapeAnalysis
         }
     }
 }
-

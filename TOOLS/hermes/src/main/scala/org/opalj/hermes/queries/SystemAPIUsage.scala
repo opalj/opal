@@ -20,37 +20,36 @@ class SystemAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery {
     override val apiFeatures: List[APIFeature] = {
 
         object Sound {
-            val Clip = ObjectType("javax/sound/sampled/Clip")
-            val DataLine = ObjectType("javax/sound/sampled/DataLine")
+            val Clip           = ObjectType("javax/sound/sampled/Clip")
+            val DataLine       = ObjectType("javax/sound/sampled/DataLine")
             val TargetDataLine = ObjectType("javax/sound/sampled/TargetDataLine")
             val SourceDataLine = ObjectType("javax/sound/sampled/SourceDataLine")
-            val MediaPlayer = ObjectType("javafx/scene/media/MediaPlayer")
+            val MediaPlayer    = ObjectType("javafx/scene/media/MediaPlayer")
         }
 
         object Network {
-            val Socket = ObjectType("java/net/Socket")
-            val SSLSocket = ObjectType("javax/net/ssl/SSLSocket")
-            val ServerSocket = ObjectType("java/net/ServerSocket")
+            val Socket          = ObjectType("java/net/Socket")
+            val SSLSocket       = ObjectType("javax/net/ssl/SSLSocket")
+            val ServerSocket    = ObjectType("java/net/ServerSocket")
             val SSLServerSocket = ObjectType("javax/net/ssl/SSLServerSocket")
-            val DatagramSocket = ObjectType("javax/net/DatagramSocket")
+            val DatagramSocket  = ObjectType("javax/net/DatagramSocket")
             val MulticastSocket = ObjectType("javax/net/MulticastSocket")
 
             val DatagramPacket = ObjectType("java/net/DatagramPacket")
-            val InetAddress = ObjectType("java/net/InetAddress")
+            val InetAddress    = ObjectType("java/net/InetAddress")
 
-            val URL = ObjectType("java/net/URL")
-            val URI = ObjectType("java/net/URI")
+            val URL           = ObjectType("java/net/URL")
+            val URI           = ObjectType("java/net/URI")
             val URLConnection = ObjectType("java/net/URLConnection")
         }
 
         val constructor = "<init>"
 
-        val Runtime = ObjectType("java/lang/Runtime")
-        val System = ObjectType("java/lang/System")
+        val Runtime        = ObjectType("java/lang/Runtime")
+        val System         = ObjectType("java/lang/System")
         val ProcessBuilder = ObjectType("java/lang/ProcessBuilder")
 
         List(
-
             // PROCESS
 
             APIFeatureGroup(
@@ -107,7 +106,8 @@ class SystemAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery {
                     InstanceAPIMethod(Sound.TargetDataLine, "start"),
                     InstanceAPIMethod(Sound.SourceDataLine, "start"),
                     InstanceAPIMethod(Sound.MediaPlayer, "play")
-                ), "Sound"
+                ),
+                "Sound"
             ),
 
             // NETWORK

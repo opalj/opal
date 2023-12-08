@@ -36,11 +36,9 @@ trait ControlTransferInstruction extends Instruction with ControlTransferInstruc
      */
     def jumpTargets(
         currentPC: Int
-    )(
-        implicit
-        code:           Code,
-        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
-    ): Iterator[Int /*PC*/ ] // IMPROVE Use IntIterator!
+      )(implicit
+        code: Code,
+        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy): Iterator[Int /*PC*/ ] // IMPROVE Use IntIterator!
 
     final override def asControlTransferInstruction: ControlTransferInstruction = this
 

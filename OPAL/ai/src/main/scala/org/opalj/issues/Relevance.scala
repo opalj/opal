@@ -2,12 +2,11 @@
 package org.opalj
 package issues
 
-import scala.Console.YELLOW
-import scala.Console.RESET
-import scala.Console.RED
-
 import play.api.libs.json.Json
 import play.api.libs.json.JsValue
+import scala.Console.RED
+import scala.Console.RESET
+import scala.Console.YELLOW
 
 /**
  * Describes the overall relevance of a finding.
@@ -34,25 +33,18 @@ final case class Relevance(value: Int) extends AnyVal {
      * The lower the value, the "whiter" the color. If the value is 100
      * then the color will be black.
      */
-    def toHTMLColor = {
-        if (value >= 80)
-            "rgb(135, 4, 10)"
-        else if (value >= 40)
-            "rgb(202, 136, 4)"
+    def toHTMLColor =
+        if (value >= 80) "rgb(135, 4, 10)"
+        else if (value >= 40) "rgb(202, 136, 4)"
         else {
             val rgbValue = (0 + (100 - value) * 1.3).toInt
             s"rgb($rgbValue,$rgbValue,$rgbValue)"
         }
-    }
 
-    def toAnsiColoredString: String = {
-        if (value > 65)
-            RED + name + RESET
-        else if (value > 32)
-            YELLOW + name + RESET
-        else
-            Relevance.toCategoryName(this)
-    }
+    def toAnsiColoredString: String =
+        if (value > 65) RED + name + RESET
+        else if (value > 32) YELLOW + name + RESET
+        else Relevance.toCategoryName(this)
 
     def toIDL: JsValue = Json.obj("name" -> name, "value" -> value)
 
@@ -69,7 +61,7 @@ object Relevance {
 
     final val High = Relevance(75)
 
-    final val Moderate = Relevance(50)
+    final val Moderate         = Relevance(50)
     final val DefaultRelevance = Moderate
 
     final val UselessDefensiveProgramming = Relevance(40)

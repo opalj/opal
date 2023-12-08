@@ -13,18 +13,14 @@ import org.opalj.bi.reader.Unknown_attributeReader
  */
 trait Unknown_attributeBinding
     extends Unknown_attributeReader
-    with ConstantPoolBinding
-    with AttributeBinding {
+        with ConstantPoolBinding
+        with AttributeBinding {
 
     type Unknown_attribute = br.UnknownAttribute
 
     def Unknown_attribute(
         cp:                   Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        info:                 Array[Byte]
-    ): Unknown_attribute = {
-        new Unknown_attribute(cp(attribute_name_index).asString, info)
-    }
+        info:                 Array[Byte]): Unknown_attribute = new Unknown_attribute(cp(attribute_name_index).asString, info)
 
 }
-

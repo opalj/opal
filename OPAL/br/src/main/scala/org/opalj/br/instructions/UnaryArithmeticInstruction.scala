@@ -19,7 +19,5 @@ trait UnaryArithmeticInstruction extends ArithmeticInstruction {
 
 object UnaryArithmeticInstruction {
 
-    def unapply(instruction: UnaryArithmeticInstruction): Option[ComputationalType] = {
-        Some(instruction.computationalType)
-    }
+    def unapply(instruction: UnaryArithmeticInstruction): Option[ComputationalType] = Some(instruction.computationalType)
 }

@@ -26,15 +26,11 @@ trait DefaultLongValues extends DefaultSpecialDomainValuesBinding with LongValue
 
         override def doJoin(pc: Int, other: DomainValue): Update[DomainValue] = NoUpdate
 
-        override def abstractsOver(other: DomainValue): Boolean = {
-            other.computationalType == ComputationalTypeLong
-        }
+        override def abstractsOver(other: DomainValue): Boolean = other.computationalType == ComputationalTypeLong
 
         override def summarize(origin: ValueOrigin): DomainValue = this
 
-        override def adapt(target: TargetDomain, origin: ValueOrigin): target.DomainValue = {
-            target.LongValue(origin)
-        }
+        override def adapt(target: TargetDomain, origin: ValueOrigin): target.DomainValue = target.LongValue(origin)
 
     }
 
@@ -45,41 +41,34 @@ trait DefaultLongValues extends DefaultSpecialDomainValuesBinding with LongValue
 
         override def constantValue: Option[Long] = Some(value)
 
-        override def doJoin(pc: Int, other: DomainValue): Update[DomainValue] = {
-            other match {
-                case ConcreteLongValue(thatValue) =>
-                    if (this.value == thatValue) {
-                        NoUpdate
-                    } else {
-                        StructuralUpdate(LongValue(pc))
-                    }
-                case _ => StructuralUpdate(other)
-            }
+        override def doJoin(pc: Int, other: DomainValue): Update[DomainValue] = other match {
+            case ConcreteLongValue(thatValue) =>
+                if (this.value == thatValue) {
+                    NoUpdate
+                } else {
+                    StructuralUpdate(LongValue(pc))
+                }
+            case _ => StructuralUpdate(other)
         }
 
-        override def abstractsOver(other: DomainValue): Boolean = {
-            other match {
-                case ConcreteLongValue(`value`) => true
-                case _                          => false
-            }
+        override def abstractsOver(other: DomainValue): Boolean = other match {
+            case ConcreteLongValue(`value`) => true
+            case _                          => false
         }
 
         override def summarize(origin: ValueOrigin): DomainValue = this
 
-        override def adapt(target: TargetDomain, origin: ValueOrigin): target.DomainValue = {
+        override def adapt(target: TargetDomain, origin: ValueOrigin): target.DomainValue =
             target.LongValue(origin, value)
-        }
 
-        override def equals(other: Any): Boolean = {
-            other match {
-                case that: ConcreteLongValue => that.value == this.value
-                case _                       => false
-            }
+        override def equals(other: Any): Boolean = other match {
+            case that: ConcreteLongValue => that.value == this.value
+            case _                       => false
         }
 
         override def hashCode: Int = (value ^ (value >>> 32)).toInt
 
-        override def toString: String = "long ="+value
+        override def toString: String = "long =" + value
     }
 
     //

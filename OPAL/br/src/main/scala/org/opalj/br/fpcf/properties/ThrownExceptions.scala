@@ -4,10 +4,10 @@ package br
 package fpcf
 package properties
 
+import org.opalj.br.collection.{TypesSet => BRTypesSet}
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
-import org.opalj.br.collection.{TypesSet => BRTypesSet}
 
 sealed trait ThrownExceptionsPropertyMetaInformation extends PropertyMetaInformation {
 
@@ -47,10 +47,9 @@ sealed trait ThrownExceptionsPropertyMetaInformation extends PropertyMetaInforma
  * @author Michael Eichberg
  */
 case class ThrownExceptions(
-        types: BRTypesSet
-)
+        types: BRTypesSet)
     extends Property
-    with ThrownExceptionsPropertyMetaInformation {
+        with ThrownExceptionsPropertyMetaInformation {
 
     final def key = ThrownExceptions.key
 
@@ -61,9 +60,8 @@ case class ThrownExceptions(
      */
     def throwsNoExceptions: Boolean = types.isEmpty
 
-    override def toString: String = {
-        if (this == ThrownExceptions.MethodIsNative)
-            """ThrownExceptionsAreUnknown(reason="method is native")"""
+    override def toString: String =
+        if (this == ThrownExceptions.MethodIsNative) """ThrownExceptionsAreUnknown(reason="method is native")"""
         else if (this == ThrownExceptions.UnknownExceptionIsThrown)
             """ThrownExceptionsAreUnknown(reason="the exception type is unknown")"""
         else if (this == ThrownExceptions.MethodBodyIsNotAvailable)
@@ -72,23 +70,18 @@ case class ThrownExceptions(
             """ThrownExceptionsAreUnknown(reason="analysis limitation")"""
         else if (this == ThrownExceptions.MethodCalledThrowsUnknownExceptions)
             """ThrownExceptionsAreUnknown(reason="Method called throws unknown exception")"""
-        else if (this == ThrownExceptions.SomeException)
-            """ThrownExceptionsAreUnknown(reason="<unspecified>")"""
-        else
-            s"ThrownExceptions(${types.toString})"
-    }
+        else if (this == ThrownExceptions.SomeException) """ThrownExceptionsAreUnknown(reason="<unspecified>")"""
+        else s"ThrownExceptions(${types.toString})"
 }
 
 object ThrownExceptions extends ThrownExceptionsPropertyMetaInformation {
 
     def apply(types: BRTypesSet): ThrownExceptions = new ThrownExceptions(types)
 
-    final val key: PropertyKey[ThrownExceptions] = {
-        PropertyKey.create[br.DeclaredMethod, ThrownExceptions](
-            "ThrownExceptions",
-            ThrownExceptionsFallback
-        )
-    }
+    final val key: PropertyKey[ThrownExceptions] = PropertyKey.create[br.DeclaredMethod, ThrownExceptions](
+        "ThrownExceptions",
+        ThrownExceptionsFallback
+    )
 
     final val NoExceptions: ThrownExceptions = new ThrownExceptions(BRTypesSet.empty)
 

@@ -34,6 +34,5 @@ trait AggregatedProperty[S <: IndividualProperty[S, T], T <: AggregatedProperty[
 
     def individualProperty: S
 
-    override def meet(other: T): T =
-        other.individualProperty.meet(this.individualProperty).aggregatedProperty
+    override def meet(other: T): T = other.individualProperty.meet(this.individualProperty).aggregatedProperty
 }

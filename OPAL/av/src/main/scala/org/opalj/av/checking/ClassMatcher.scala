@@ -4,11 +4,12 @@ package av
 package checking
 
 import scala.util.matching.Regex
+
+import org.opalj.bi.AccessFlagsMatcher
 import org.opalj.br.ClassFile
 import org.opalj.br.VirtualSourceElement
 import org.opalj.br.VirtualSourceElement.asVirtualSourceElements
 import org.opalj.br.analyses.SomeProject
-import org.opalj.bi.AccessFlagsMatcher
 
 /**
  * A class matcher matches classes defined by the respective classes.
@@ -37,9 +38,8 @@ case object AllClasses extends ClassMatcher {
 
     def doesMatch(classFile: ClassFile)(implicit project: SomeProject): Boolean = true
 
-    def extension(implicit project: SomeProject): Set[VirtualSourceElement] = {
+    def extension(implicit project: SomeProject): Set[VirtualSourceElement] =
         asVirtualSourceElements(project.allClassFiles)
-    }
 
 }
 
@@ -49,55 +49,47 @@ case object AllClasses extends ClassMatcher {
  * @author Marco Torsello
  */
 case class DefaultClassMatcher(
-        accessFlagsMatcher:       AccessFlagsMatcher   = AccessFlagsMatcher.ANY,
-        namePredicate:            NamePredicate        = RegexNamePredicate(""".*""".r),
+        accessFlagsMatcher:       AccessFlagsMatcher = AccessFlagsMatcher.ANY,
+        namePredicate:            NamePredicate = RegexNamePredicate(""".*""".r),
         annotationsPredicate:     AnnotationsPredicate = AnyAnnotations,
-        matchSubclasses:          Boolean              = false,
-        matchImplementingclasses: Boolean              = false,
-        matchMethods:             Boolean              = true,
-        matchFields:              Boolean              = true
-) extends ClassMatcher {
+        matchSubclasses:          Boolean = false,
+        matchImplementingclasses: Boolean = false,
+        matchMethods:             Boolean = true,
+        matchFields: Boolean = true) extends ClassMatcher {
 
     def isSubClass(classFile: ClassFile, project: SomeProject): Boolean = {
         var sourceClassFile: ClassFile = classFile
         while (sourceClassFile.superclassType.nonEmpty) {
-            if (namePredicate(sourceClassFile.superclassType.get.fqn))
-                return true;
+            if (namePredicate(sourceClassFile.superclassType.get.fqn)) return true;
 
             project.classFile(sourceClassFile.superclassType.get) match {
                 case Some(cf) => sourceClassFile = cf
-                case None =>
-                    return false;
+                case None     => return false;
             }
         }
 
         false
     }
 
-    def implementsInterface(classFile: ClassFile, project: SomeProject): Boolean = {
+    def implementsInterface(classFile: ClassFile, project: SomeProject): Boolean =
         classFile.interfaceTypes.exists(i => namePredicate(i.fqn))
-    }
 
-    def doesAnnotationMatch(classFile: ClassFile): Boolean = {
-        annotationsPredicate(classFile.annotations)
-    }
+    def doesAnnotationMatch(classFile: ClassFile): Boolean = annotationsPredicate(classFile.annotations)
 
     def doesMatch(classFile: ClassFile)(implicit project: SomeProject): Boolean = {
         val classFileName = classFile.thisType.fqn
         (namePredicate(classFileName) ||
             (matchSubclasses && isSubClass(classFile, project)) ||
             (matchImplementingclasses && implementsInterface(classFile, project))) &&
-            (doesAnnotationMatch(classFile)) &&
-            accessFlagsMatcher.unapply(classFile.accessFlags)
+        (doesAnnotationMatch(classFile)) &&
+        accessFlagsMatcher.unapply(classFile.accessFlags)
     }
 
-    def extension(implicit project: SomeProject): Set[VirtualSourceElement] = {
-        asVirtualSourceElements(
-            project.allClassFiles filter { doesMatch },
-            matchMethods,
-            matchFields
-        )
-    }
+    def extension(implicit project: SomeProject): Set[VirtualSourceElement] = asVirtualSourceElements(
+        project.allClassFiles filter { doesMatch },
+        matchMethods,
+        matchFields
+    )
 
 }
 
@@ -109,13 +101,10 @@ case class DefaultClassMatcher(
  */
 object ClassMatcher {
 
-    def apply(namePredicate: NamePredicate): ClassMatcher = {
-        new DefaultClassMatcher(namePredicate = namePredicate)
-    }
+    def apply(namePredicate: NamePredicate): ClassMatcher = new DefaultClassMatcher(namePredicate = namePredicate)
 
-    def apply(annotationsPredicate: AnnotationsPredicate): ClassMatcher = {
+    def apply(annotationsPredicate: AnnotationsPredicate): ClassMatcher =
         new DefaultClassMatcher(annotationsPredicate = annotationsPredicate)
-    }
 
     def apply(className: String): ClassMatcher = {
         require(className.indexOf('*') == -1)
@@ -125,10 +114,8 @@ object ClassMatcher {
     def apply(className: String, matchPrefix: Boolean): ClassMatcher = {
         require(className.indexOf('*') == -1)
         val namePredicate =
-            if (matchPrefix)
-                StartsWith(className)
-            else
-                Equals(className)
+            if (matchPrefix) StartsWith(className)
+            else Equals(className)
         new DefaultClassMatcher(namePredicate = namePredicate)
     }
 
@@ -136,15 +123,12 @@ object ClassMatcher {
         className:    String,
         matchPrefix:  Boolean,
         matchMethods: Boolean,
-        matchFields:  Boolean
-    ): ClassMatcher = {
+        matchFields:  Boolean): ClassMatcher = {
         require(className.indexOf('*') == -1)
 
         val namePredicate =
-            if (matchPrefix)
-                StartsWith(className)
-            else
-                Equals(className)
+            if (matchPrefix) StartsWith(className)
+            else Equals(className)
 
         new DefaultClassMatcher(
             namePredicate = namePredicate,
@@ -157,25 +141,19 @@ object ClassMatcher {
         require(className.indexOf('*') == -1)
 
         val namePredicate =
-            if (matchPrefix)
-                StartsWith(className)
-            else
-                Equals(className)
+            if (matchPrefix) StartsWith(className)
+            else Equals(className)
         new DefaultClassMatcher(
             namePredicate = namePredicate,
             matchSubclasses = matchSubclasses
         )
     }
 
-    def apply(regex: Regex): ClassMatcher = {
-        new DefaultClassMatcher(namePredicate = RegexNamePredicate(regex))
-    }
+    def apply(regex: Regex): ClassMatcher = new DefaultClassMatcher(namePredicate = RegexNamePredicate(regex))
 
-    def apply(regex: Regex, matchSubclasses: Boolean): ClassMatcher = {
-        new DefaultClassMatcher(
-            namePredicate = RegexNamePredicate(regex),
-            matchSubclasses = matchSubclasses
-        )
-    }
+    def apply(regex: Regex, matchSubclasses: Boolean): ClassMatcher = new DefaultClassMatcher(
+        namePredicate = RegexNamePredicate(regex),
+        matchSubclasses = matchSubclasses
+    )
 
 }

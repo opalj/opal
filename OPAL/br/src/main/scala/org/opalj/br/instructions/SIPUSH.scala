@@ -22,7 +22,7 @@ case class SIPUSH(value: Int) extends LoadConstantInstruction[Int] {
         val other = code.instructions(otherPC)
         (this eq other) || (
             SIPUSH.opcode == other.opcode &&
-            this.value == other.asInstanceOf[SIPUSH].value
+                this.value == other.asInstanceOf[SIPUSH].value
         )
     }
 

@@ -21,14 +21,12 @@ import org.opalj.tac.fpcf.analyses.cg.CHATypeIterator
  */
 object CHACallGraphKey extends CallGraphKey {
 
-    override def requirements(project: SomeProject): ProjectInformationKeys = {
+    override def requirements(project: SomeProject): ProjectInformationKeys =
         Seq(DefinitionSitesKey, VirtualFormalParametersKey, SimpleContextsKey) ++:
             super.requirements(project)
-    }
 
     override protected def callGraphSchedulers(
-        project: SomeProject
-    ): Iterable[FPCFAnalysisScheduler] = List.empty
+        project: SomeProject): Iterable[FPCFAnalysisScheduler] = List.empty
 
     override def getTypeIterator(project: SomeProject) = new CHATypeIterator(project)
 

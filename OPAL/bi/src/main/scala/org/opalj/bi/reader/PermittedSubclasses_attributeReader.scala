@@ -3,9 +3,9 @@ package org.opalj
 package bi
 package reader
 
-import org.opalj.control.fillArrayOfInt
-
 import java.io.DataInputStream
+
+import org.opalj.control.fillArrayOfInt
 
 /**
  * Generic parser for the ''PermittedSubclasses'' attribute (Java 17).
@@ -28,12 +28,11 @@ trait PermittedSubclasses_attributeReader extends AttributeReader {
     type PermittedSubclassesArray = Array[Constant_Pool_Index]
 
     def PermittedSubclasses_attribute(
-        cp:                   Constant_Pool,
-        ap_name_index:        Constant_Pool_Index,
-        ap_descriptor_index:  Constant_Pool_Index,
+        cp: Constant_Pool,
+        ap_name_index: Constant_Pool_Index,
+        ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
-        classes:              PermittedSubclassesArray
-    ): PermittedSubclasses_attribute
+        classes: PermittedSubclassesArray): PermittedSubclasses_attribute
 
     //
     // IMPLEMENTATION
@@ -57,23 +56,24 @@ trait PermittedSubclasses_attributeReader extends AttributeReader {
         ap_name_index: Constant_Pool_Index,
         ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
-        in: DataInputStream
-    ) => {
-        /*val attribute_length =*/ in.readInt()
-        val classes_count = in.readUnsignedShort
-        if (classes_count > 0 || reifyEmptyAttributes) {
-            val classesArray = fillArrayOfInt(classes_count) { in.readUnsignedShort() }
-            PermittedSubclasses_attribute(
-                cp,
-                ap_name_index,
-                ap_descriptor_index,
-                attribute_name_index,
-                classesArray
-            )
-        } else {
-            null
-        }
-    }: PermittedSubclasses_attribute
+        in: DataInputStream) =>
+        {
+            /*val attribute_length =*/
+            in.readInt()
+            val classes_count = in.readUnsignedShort
+            if (classes_count > 0 || reifyEmptyAttributes) {
+                val classesArray = fillArrayOfInt(classes_count) { in.readUnsignedShort() }
+                PermittedSubclasses_attribute(
+                    cp,
+                    ap_name_index,
+                    ap_descriptor_index,
+                    attribute_name_index,
+                    classesArray
+                )
+            } else {
+                null
+            }
+        }: PermittedSubclasses_attribute
 
     registerAttributeReader(PermittedSubclassesAttribute.Name -> parserFactory())
 

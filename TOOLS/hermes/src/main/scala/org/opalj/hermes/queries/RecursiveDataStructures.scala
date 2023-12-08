@@ -3,9 +3,9 @@ package org.opalj
 package hermes
 package queries
 
-import org.opalj.graphs.UnidirectionalGraph
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
+import org.opalj.graphs.UnidirectionalGraph
 
 /**
  * Identifies recursive data structures. Such data-structure can often significantly limit
@@ -15,21 +15,18 @@ import org.opalj.br.analyses.Project
  */
 class RecursiveDataStructures(implicit hermes: HermesConfig) extends FeatureQuery {
 
-    override def featureIDs: IndexedSeq[String] = {
-        IndexedSeq(
-            /*0*/ "Self-recursive Data Structure",
-            /*1*/ "Mutually-recursive Data Structure\n2 Types",
-            /*2*/ "Mutually-recursive Data Structure\n3 Types",
-            /*3*/ "Mutually-recursive Data Structure\n4 Types",
-            /*4*/ "Mutually-recursive Data Structure\nmore than 4 Types"
-        )
-    }
+    override def featureIDs: IndexedSeq[String] = IndexedSeq(
+        /*0*/ "Self-recursive Data Structure",
+        /*1*/ "Mutually-recursive Data Structure\n2 Types",
+        /*2*/ "Mutually-recursive Data Structure\n3 Types",
+        /*3*/ "Mutually-recursive Data Structure\n4 Types",
+        /*4*/ "Mutually-recursive Data Structure\nmore than 4 Types"
+    )
 
     override def apply[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Iterable[(da.ClassFile, S)]
-    ): IterableOnce[Feature[S]] = {
+        rawClassFiles:        Iterable[(da.ClassFile, S)]): IterableOnce[Feature[S]] = {
 
         import project.classHierarchy.getObjectType
 
@@ -42,7 +39,7 @@ class RecursiveDataStructures(implicit hermes: HermesConfig) extends FeatureQuer
             classFile <- project.allProjectClassFiles
             if !isInterrupted()
             classType = classFile.thisType
-            field <- classFile.fields
+            field    <- classFile.fields
             fieldType = field.fieldType
         } {
             if (fieldType.isObjectType) {
@@ -60,9 +57,9 @@ class RecursiveDataStructures(implicit hermes: HermesConfig) extends FeatureQuer
             scc <- g.sccs(filterSingletons = true)
             if !isInterrupted()
             /* An scc is never empty! */
-            sccCategory = Math.min(scc.size, 5) - 1
+            sccCategory   = Math.min(scc.size, 5) - 1
             objectTypeID <- scc
-            objectType = getObjectType(objectTypeID)
+            objectType    = getObjectType(objectTypeID)
         } {
             locations(sccCategory) += ClassFileLocation(project, objectType)
         }

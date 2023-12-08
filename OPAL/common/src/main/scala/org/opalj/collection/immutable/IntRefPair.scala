@@ -15,13 +15,13 @@ package immutable
 final case class IntRefPair[+T](_1: Int, _2: T) extends Product2[Int, T] {
 
     def first: Int = _1
-    def second: T = _2
+    def second: T  = _2
 
     def key: Int = _1
     def value: T = _2
 
     def head: Int = _1
-    def rest: T = _2
+    def rest: T   = _2
 }
 
 /**
@@ -35,12 +35,12 @@ final case class IntRefPair[+T](_1: Int, _2: T) extends Product2[Int, T] {
  */
 final case class RefIntPair[+T](_1: T, _2: Int) extends Product2[T, Int] {
 
-    def first: T = _1
+    def first: T    = _1
     def second: Int = _2
 
-    def key: T = _1
+    def key: T     = _1
     def value: Int = _2
 
-    def head: T = _1
+    def head: T   = _1
     def rest: Int = _2
 }

@@ -13,8 +13,7 @@ package instructions
 case class GETSTATIC(
         declaringClass: ObjectType,
         name:           String,
-        fieldType:      FieldType
-) extends FieldReadAccess {
+        fieldType: FieldType) extends FieldReadAccess {
 
     final def opcode: Opcode = GETSTATIC.opcode
 
@@ -31,16 +30,12 @@ case class GETSTATIC(
     final def nextInstructions(
         currentPC:             PC,
         regularSuccessorsOnly: Boolean
-    )(
-        implicit
+      )(implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
-    ): List[PC] = {
+        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy): List[PC] =
         List(indexOfNextInstruction(currentPC))
-    }
 
-    override def toString =
-        "get static "+declaringClass.toJava+"."+name+" : "+fieldType.toJava
+    override def toString = "get static " + declaringClass.toJava + "." + name + " : " + fieldType.toJava
 
 }
 
@@ -64,8 +59,7 @@ object GETSTATIC extends InstructionMetaInformation {
      * @param   fieldTypeName The field's type; see [[org.opalj.br.FieldType$]] for the concrete
      *          syntax.
      */
-    def apply(declaringClassName: String, name: String, fieldTypeName: String): GETSTATIC = {
+    def apply(declaringClassName: String, name: String, fieldTypeName: String): GETSTATIC =
         GETSTATIC(ObjectType(declaringClassName), name, FieldType(fieldTypeName))
-    }
 
 }

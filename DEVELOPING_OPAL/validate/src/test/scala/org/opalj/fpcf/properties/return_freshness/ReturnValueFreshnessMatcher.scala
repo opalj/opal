@@ -28,17 +28,19 @@ class ReturnValueFreshnessMatcher(val property: ReturnValueFreshness) extends Ab
      *         why the analysis failed.
      */
     override def validateProperty(
-        p: Project[_], as: Set[ObjectType], entity: scala.Any, a: AnnotationLike, properties: Iterable[Property]
-    ): Option[String] = {
+        p:          Project[_],
+        as:         Set[ObjectType],
+        entity:     scala.Any,
+        a:          AnnotationLike,
+        properties: Iterable[Property]): Option[String] =
         if (!properties.exists {
-            case `property` => true
-            case _          => false
-        }) {
+                case `property` => true
+                case _          => false
+            }) {
             Some(a.elementValuePairs.head.value.asStringValue.value)
         } else {
             None
         }
-    }
 }
 
 class PrimitiveReturnValueMatcher

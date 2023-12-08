@@ -14,8 +14,7 @@ package instructions
 case class PUTSTATIC(
         declaringClass: ObjectType,
         name:           String,
-        fieldType:      FieldType
-) extends FieldWriteAccess {
+        fieldType: FieldType) extends FieldWriteAccess {
 
     final def opcode: Opcode = PUTSTATIC.opcode
 
@@ -32,16 +31,12 @@ case class PUTSTATIC(
     final def nextInstructions(
         currentPC:             PC,
         regularSuccessorsOnly: Boolean
-    )(
-        implicit
+      )(implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
-    ): List[PC] = {
+        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy): List[PC] =
         List(indexOfNextInstruction(currentPC))
-    }
 
-    override def toString =
-        "put static "+declaringClass.toJava+"."+name+" : "+fieldType.toJava
+    override def toString = "put static " + declaringClass.toJava + "." + name + " : " + fieldType.toJava
 
 }
 
@@ -63,8 +58,7 @@ object PUTSTATIC extends InstructionMetaInformation {
      * @param   fieldTypeName The field's type; see [[org.opalj.br.FieldType$]] for the concrete
      *          syntax.
      */
-    def apply(declaringClassName: String, name: String, fieldTypeName: String): PUTSTATIC = {
+    def apply(declaringClassName: String, name: String, fieldTypeName: String): PUTSTATIC =
         PUTSTATIC(ObjectType(declaringClassName), name, FieldType(fieldTypeName))
-    }
 
 }

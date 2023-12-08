@@ -5,6 +5,14 @@ package fpcf
 package analyses
 
 import scala.annotation.switch
+
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.properties.AllocationFreeMethod
+import org.opalj.br.fpcf.properties.AllocationFreeness
+import org.opalj.br.fpcf.properties.MethodWithAllocations
+import org.opalj.br.instructions._
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.FinalP
@@ -19,13 +27,6 @@ import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.SomeInterimEP
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.properties.AllocationFreeMethod
-import org.opalj.br.fpcf.properties.AllocationFreeness
-import org.opalj.br.fpcf.properties.MethodWithAllocations
-import org.opalj.br.instructions._
 
 /**
  * A simple analysis that identifies methods that never allocate any objects/arrays.
@@ -33,8 +34,7 @@ import org.opalj.br.instructions._
  * @author Dominik Helm
  */
 class L0AllocationFreenessAnalysis private[analyses] (
-        final val project: SomeProject
-)
+        final val project: SomeProject)
     extends FPCFAnalysis {
 
     import project.nonVirtualCall
@@ -48,11 +48,9 @@ class L0AllocationFreenessAnalysis private[analyses] (
     def baseMethodAllocationFreeness(dm: DefinedMethod): ProperPropertyComputationResult = {
 
         def c(eps: SomeEOptionP): ProperPropertyComputationResult = eps match {
-            case FinalP(af) => Result(dm, af)
-            case ep @ InterimLUBP(lb, ub) =>
-                InterimResult(dm, lb, ub, Set(ep), c)
-            case epk =>
-                InterimResult(dm, MethodWithAllocations, AllocationFreeMethod, Set(epk), c)
+            case FinalP(af)               => Result(dm, af)
+            case ep @ InterimLUBP(lb, ub) => InterimResult(dm, lb, ub, Set(ep), c)
+            case epk                      => InterimResult(dm, MethodWithAllocations, AllocationFreeMethod, Set(epk), c)
         }
 
         c(propertyStore(declaredMethods(dm.definedMethod), AllocationFreeness.key))
@@ -64,13 +62,11 @@ class L0AllocationFreenessAnalysis private[analyses] (
      * This function encapsulates the continuation.
      */
     def determineAllocationFreeness(
-        definedMethod: DefinedMethod
-    ): ProperPropertyComputationResult = {
+        definedMethod: DefinedMethod): ProperPropertyComputationResult = {
 
-        if (definedMethod.definedMethod.body.isEmpty)
-            return Result(definedMethod, MethodWithAllocations);
+        if (definedMethod.definedMethod.body.isEmpty) return Result(definedMethod, MethodWithAllocations);
 
-        val method = definedMethod.definedMethod
+        val method             = definedMethod.definedMethod
         val declaringClassType = method.classFile.thisType
 
         // If thhis is not the method's declaration, but a non-overwritten method in a subtype,
@@ -79,23 +75,20 @@ class L0AllocationFreenessAnalysis private[analyses] (
             return baseMethodAllocationFreeness(definedMethod.asDefinedMethod);
 
         // Synchronized methods may raise IllegalMonitorStateExceptions when invoked.
-        if (method.isSynchronized)
-            return Result(definedMethod, MethodWithAllocations);
+        if (method.isSynchronized) return Result(definedMethod, MethodWithAllocations);
 
         val methodDescriptor = method.descriptor
-        val methodName = method.name
-        val body = method.body.get
-        val instructions = body.instructions
-        val maxPC = instructions.length
+        val methodName       = method.name
+        val body             = method.body.get
+        val instructions     = body.instructions
+        val maxPC            = instructions.length
 
         var dependees: Set[EOptionP[Entity, Property]] = Set.empty
 
-        var overwritesSelf = false
+        var overwritesSelf   = false
         var mayOverwriteSelf = true
 
-        def prevPC(pc: Int): Int = {
-            body.pcOfPreviousInstruction(pc)
-        }
+        def prevPC(pc: Int): Int = body.pcOfPreviousInstruction(pc)
 
         // We need this for numberOfPoppedOperands, but the actual result is irrelevant as we care
         // only for whether ANY operand is popped, not how many exactly.
@@ -109,39 +102,34 @@ class L0AllocationFreenessAnalysis private[analyses] (
                     return Result(definedMethod, MethodWithAllocations);
 
                 case INVOKESPECIAL.opcode | INVOKESTATIC.opcode => instruction match {
-                    case MethodInvocationInstruction(`declaringClassType`, _, `methodName`, `methodDescriptor`) =>
-                    // We have a self-recursive call; such calls do not influence the allocation
-                    // freeness and are ignored.
-                    // Let's continue with the evaluation of the next instruction.
+                        case MethodInvocationInstruction(`declaringClassType`, _, `methodName`, `methodDescriptor`) =>
+                        // We have a self-recursive call; such calls do not influence the allocation
+                        // freeness and are ignored.
+                        // Let's continue with the evaluation of the next instruction.
 
-                    case mii: NonVirtualMethodInvocationInstruction =>
-                        nonVirtualCall(declaringClassType, mii) match {
-                            case Success(callee) =>
-                                /* Recall that self-recursive calls are handled earlier! */
-                                val allocationFreeness =
-                                    propertyStore(declaredMethods(callee), AllocationFreeness.key)
+                        case mii: NonVirtualMethodInvocationInstruction => nonVirtualCall(declaringClassType, mii) match {
+                                case Success(callee) =>
+                                    /* Recall that self-recursive calls are handled earlier! */
+                                    val allocationFreeness =
+                                        propertyStore(declaredMethods(callee), AllocationFreeness.key)
 
-                                allocationFreeness match {
-                                    case FinalP(AllocationFreeMethod) => /* Nothing to do */
+                                    allocationFreeness match {
+                                        case FinalP(AllocationFreeMethod) => /* Nothing to do */
+                                        // Handling cyclic computations
+                                        case ep @ InterimUBP(AllocationFreeMethod) => dependees += ep
 
-                                    // Handling cyclic computations
-                                    case ep @ InterimUBP(AllocationFreeMethod) =>
-                                        dependees += ep
+                                        case _: SomeEPS => return Result(definedMethod, MethodWithAllocations);
 
-                                    case _: SomeEPS =>
-                                        return Result(definedMethod, MethodWithAllocations);
+                                        case epk => dependees += epk
+                                    }
 
-                                    case epk =>
-                                        dependees += epk
-                                }
+                                case _ /* Empty or Failure */ =>
+                                    // We know nothing about the target method (it is not
+                                    // found in the scope of the current project).
+                                    return Result(definedMethod, MethodWithAllocations);
 
-                            case _ /* Empty or Failure */ =>
-                                // We know nothing about the target method (it is not
-                                // found in the scope of the current project).
-                                return Result(definedMethod, MethodWithAllocations);
-
-                        }
-                }
+                            }
+                    }
 
                 case ASTORE_0.opcode if !method.isStatic =>
                     if (mayOverwriteSelf) overwritesSelf = true
@@ -149,18 +137,15 @@ class L0AllocationFreenessAnalysis private[analyses] (
                         return Result(definedMethod, MethodWithAllocations)
 
                 case GETFIELD.opcode => // may allocate NPE (but not on `this`)
-                    if (method.isStatic || overwritesSelf)
-                        return Result(definedMethod, MethodWithAllocations);
+                    if (method.isStatic || overwritesSelf) return Result(definedMethod, MethodWithAllocations);
                     else if (instructions(prevPC(currentPC)).opcode != ALOAD_0.opcode ||
-                        body.cfJoins.contains(currentPC))
-                        return Result(definedMethod, MethodWithAllocations);
+                             body.cfJoins.contains(currentPC)) return Result(definedMethod, MethodWithAllocations);
                     else mayOverwriteSelf = false
 
                 case PUTFIELD.opcode => // may allocate NPE (but not on `this`)
-                    if (method.isStatic || overwritesSelf)
-                        return Result(definedMethod, MethodWithAllocations);
+                    if (method.isStatic || overwritesSelf) return Result(definedMethod, MethodWithAllocations);
                     else {
-                        val previousPC = prevPC(currentPC)
+                        val previousPC   = prevPC(currentPC)
                         val previousInst = instructions(previousPC)
                         val prevPrevInst = instructions(prevPC(previousPC))
                         // If there is a branch target here, if the previous instruction pops an
@@ -168,8 +153,7 @@ class L0AllocationFreenessAnalysis private[analyses] (
                         // cannot guarantee that the receiver is `this`.
                         if (body.cfJoins.contains(currentPC) || body.cfJoins.contains(previousPC) ||
                             previousInst.numberOfPoppedOperands(someTypeCategory) != 0 ||
-                            prevPrevInst.opcode != ALOAD_0.opcode)
-                            return Result(definedMethod, MethodWithAllocations)
+                            prevPrevInst.opcode != ALOAD_0.opcode) return Result(definedMethod, MethodWithAllocations)
                         else mayOverwriteSelf = false
                     }
 
@@ -193,8 +177,7 @@ class L0AllocationFreenessAnalysis private[analyses] (
             currentPC = body.pcOfNextInstruction(currentPC)
         }
 
-        if (dependees.isEmpty)
-            return Result(definedMethod, AllocationFreeMethod);
+        if (dependees.isEmpty) return Result(definedMethod, AllocationFreeMethod);
 
         // This function computes the “allocation freeness for a method based on the allocation
         // freeness of its callees
@@ -214,8 +197,7 @@ class L0AllocationFreenessAnalysis private[analyses] (
                     )
 
                 case FinalP(AllocationFreeMethod) =>
-                    if (dependees.isEmpty)
-                        Result(definedMethod, AllocationFreeMethod)
+                    if (dependees.isEmpty) Result(definedMethod, AllocationFreeMethod)
                     else {
                         InterimResult(
                             definedMethod,
@@ -226,25 +208,25 @@ class L0AllocationFreenessAnalysis private[analyses] (
                         )
                     }
 
-                case FinalP(MethodWithAllocations) =>
-                    Result(definedMethod, MethodWithAllocations)
+                case FinalP(MethodWithAllocations) => Result(definedMethod, MethodWithAllocations)
 
             }
         }
 
         InterimResult(
-            definedMethod, MethodWithAllocations, AllocationFreeMethod,
-            dependees, c
+            definedMethod,
+            MethodWithAllocations,
+            AllocationFreeMethod,
+            dependees,
+            c
         )
     }
 
     /** Called when the analysis is scheduled lazily. */
-    def doDetermineAllocationFreeness(e: Entity): ProperPropertyComputationResult = {
-        e match {
-            case m: DefinedMethod  => determineAllocationFreeness(m)
-            case m: DeclaredMethod => Result(m, MethodWithAllocations)
-            case _                 => throw new UnknownError(s"$e is not a method")
-        }
+    def doDetermineAllocationFreeness(e: Entity): ProperPropertyComputationResult = e match {
+        case m: DefinedMethod  => determineAllocationFreeness(m)
+        case m: DeclaredMethod => Result(m, MethodWithAllocations)
+        case _                 => throw new UnknownError(s"$e is not a method")
     }
 }
 
@@ -260,7 +242,7 @@ trait L0AllocationFreenessAnalysisScheduler extends FPCFAnalysisScheduler {
 
 object EagerL0AllocationFreenessAnalysis
     extends L0AllocationFreenessAnalysisScheduler
-    with BasicFPCFEagerAnalysisScheduler {
+        with BasicFPCFEagerAnalysisScheduler {
 
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 
@@ -278,7 +260,7 @@ object EagerL0AllocationFreenessAnalysis
 
 object LazyL0AllocationFreenessAnalysis
     extends L0AllocationFreenessAnalysisScheduler
-    with BasicFPCFLazyAnalysisScheduler {
+        with BasicFPCFLazyAnalysisScheduler {
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 

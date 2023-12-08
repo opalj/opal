@@ -4,12 +4,12 @@ package hermes
 package queries
 package jcg
 
+import scala.collection.immutable.ArraySeq
+
 import org.opalj.br.MethodWithBody
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.INVOKEINTERFACE
 import org.opalj.da.ClassFile
-
-import scala.collection.immutable.ArraySeq
 
 /**
  * Test case feature that performs an interface call for a default method where an intermediate
@@ -19,15 +19,12 @@ import scala.collection.immutable.ArraySeq
  */
 class NonJavaBytecode1(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
 
-    override def featureIDs: Seq[String] = {
-        Seq("NJ1")
-    }
+    override def featureIDs: Seq[String] = Seq("NJ1")
 
     override def evaluate[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Iterable[(ClassFile, S)]
-    ): IndexedSeq[LocationsContainer[S]] = {
+        rawClassFiles:        Iterable[(ClassFile, S)]): IndexedSeq[LocationsContainer[S]] = {
 
         val instructionsLocations = Array.fill(featureIDs.size)(new LocationsContainer[S])
 
@@ -36,10 +33,10 @@ class NonJavaBytecode1(implicit hermes: HermesConfig) extends DefaultFeatureQuer
         for {
             (classFile, source) <- project.projectClassFilesWithSources
             if !isInterrupted()
-            classFileLocation = ClassFileLocation(source, classFile)
+            classFileLocation              = ClassFileLocation(source, classFile)
             method @ MethodWithBody(body) <- classFile.methods
-            methodLocation = MethodLocation(classFileLocation, method)
-            pcAndInstruction <- body
+            methodLocation                 = MethodLocation(classFileLocation, method)
+            pcAndInstruction              <- body
             if pcAndInstruction.instruction.opcode == INVOKEINTERFACE.opcode
         } {
             val INVOKEINTERFACE(declaringClass, name, desc) = pcAndInstruction.instruction
@@ -48,17 +45,17 @@ class NonJavaBytecode1(implicit hermes: HermesConfig) extends DefaultFeatureQuer
 
             if (targets.size == 1) {
                 val invokedMethod = targets.head
-                val declIntf = invokedMethod.classFile
+                val declIntf      = invokedMethod.classFile
                 if (declIntf.isInterfaceDeclaration &&
                     classHierarchy.allSuperinterfacetypes(declaringClass).exists { sintf =>
                         val sintfCfO = project.classFile(sintf)
                         sintfCfO.isDefined &&
-                            sintfCfO.get.findMethod(name, desc).exists(_.isStatic) &&
-                            classHierarchy.allSuperinterfacetypes(sintf).contains(declIntf.thisType)
+                        sintfCfO.get.findMethod(name, desc).exists(_.isStatic) &&
+                        classHierarchy.allSuperinterfacetypes(sintf).contains(declIntf.thisType)
                     }) {
 
                     val pc = pcAndInstruction.pc
-                    val l = InstructionLocation(methodLocation, pc)
+                    val l  = InstructionLocation(methodLocation, pc)
 
                     instructionsLocations(0) += l
                 }

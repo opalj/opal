@@ -6,17 +6,17 @@ package analyses
 package fieldassignability
 
 import org.opalj.br.DefinedMethod
+import org.opalj.br.Field
+import org.opalj.br.PC
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.BasicFPCFLazyAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.fpcf.PropertyBounds
-import org.opalj.fpcf.PropertyStore
-import org.opalj.br.Field
-import org.opalj.br.PC
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.fieldaccess.AccessReceiver
 import org.opalj.br.fpcf.properties.immutability.FieldAssignability
+import org.opalj.fpcf.PropertyBounds
+import org.opalj.fpcf.PropertyStore
 import org.opalj.tac.fpcf.analyses.cg.uVarForDefSites
 
 /**
@@ -46,8 +46,8 @@ class L1FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
         callers:       Callers,
         pc:            PC,
         receiver:      AccessReceiver
-    )(implicit state: AnalysisState): Boolean = {
-        val stmts = taCode.stmts
+      )(implicit state: AnalysisState): Boolean = {
+        val stmts  = taCode.stmts
         val method = definedMethod.definedMethod
 
         if (receiver.isDefined) {
@@ -64,7 +64,7 @@ class L1FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
             // write the field as long as that new object did not yet escape.
             (!method.isConstructor ||
                 objRef.definedBy != SelfReferenceParameter) &&
-                !referenceHasNotEscaped(objRef, stmts, definedMethod, callers)
+            !referenceHasNotEscaped(objRef, stmts, definedMethod, callers)
         } else {
             !method.isStaticInitializer
         }
@@ -76,7 +76,7 @@ class L1FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
  */
 object EagerL1FieldAssignabilityAnalysis
     extends AbstractFieldAssignabilityAnalysisScheduler
-    with BasicFPCFEagerAnalysisScheduler {
+        with BasicFPCFEagerAnalysisScheduler {
 
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 
@@ -84,7 +84,7 @@ object EagerL1FieldAssignabilityAnalysis
 
     override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new L1FieldAssignabilityAnalysis(p)
-        val fields = p.allFields
+        val fields   = p.allFields
         ps.scheduleEagerComputationsForEntities(fields)(analysis.determineFieldAssignability)
         analysis
     }
@@ -95,14 +95,15 @@ object EagerL1FieldAssignabilityAnalysis
  */
 object LazyL1FieldAssignabilityAnalysis
     extends AbstractFieldAssignabilityAnalysisScheduler
-    with BasicFPCFLazyAnalysisScheduler {
+        with BasicFPCFLazyAnalysisScheduler {
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 
     override def register(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new L1FieldAssignabilityAnalysis(p)
         ps.registerLazyPropertyComputation(
-            FieldAssignability.key, analysis.doDetermineFieldAssignability
+            FieldAssignability.key,
+            analysis.doDetermineFieldAssignability
         )
         analysis
     }

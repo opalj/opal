@@ -10,5 +10,4 @@ package analyses
  */
 case class AnalysisException(
         message: String,
-        cause:   Throwable = null
-) extends RuntimeException(message, cause)
+        cause: Throwable = null) extends RuntimeException(message, cause)

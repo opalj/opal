@@ -4,9 +4,9 @@ package collection
 package immutable
 
 import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests Long2List.
@@ -50,7 +50,7 @@ class Long2ListTest extends AnyFunSpec with Matchers {
 
         it("forFirstN(N=4) of a larger set") {
             var sum = 0L
-            val l = (10L +: 10L +: 5L +: 4L +: Long2List(1L, 2L))
+            val l   = 10L +: 10L +: 5L +: 4L +: Long2List(1L, 2L)
             l.forFirstN(4)(sum += _)
             assert(sum == 29L, l)
         }

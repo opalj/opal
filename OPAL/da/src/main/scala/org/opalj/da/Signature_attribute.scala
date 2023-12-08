@@ -13,8 +13,7 @@ import scala.xml.Node
  */
 case class Signature_attribute(
         attribute_name_index: Constant_Pool_Index,
-        signature_index:      Constant_Pool_Index
-) extends Attribute {
+        signature_index: Constant_Pool_Index) extends Attribute {
 
     /**
      * The value of the attribute_length item is fixed; it is always 2.
@@ -23,15 +22,12 @@ case class Signature_attribute(
 
     def signature(implicit cp: Constant_Pool): String = cp(signature_index).toString
 
-    def signatureSpan(implicit cp: Constant_Pool): Node = {
-        <span class="signature">{ cp(signature_index).toString }</span>
-    }
+    def signatureSpan(implicit cp: Constant_Pool): Node = <span class="signature">{cp(signature_index).toString}</span>
 
     // Primarily implemented to handle the case if the signature attribute is not
     // found in an expected case.
-    override def toXHTML(implicit cp: Constant_Pool): Node = {
-        <details><summary class="attribute_name">Signature</summary>{ signature }</details>
-    }
+    override def toXHTML(implicit cp: Constant_Pool): Node =
+        <details><summary class="attribute_name">Signature</summary>{signature}</details>
 
 }
 /* Functionality, which may be useful when creating a better representation of type signatures.

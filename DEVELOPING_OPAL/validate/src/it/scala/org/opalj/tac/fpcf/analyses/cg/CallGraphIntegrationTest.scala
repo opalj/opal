@@ -7,33 +7,33 @@ package cg
 
 import java.net.URL
 
-import com.typesafe.config.ConfigFactory
-import org.junit.runner.RunWith
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
-import org.scalatestplus.junit.JUnitRunner
-
-import org.opalj.fpcf.FinalEP
-import org.opalj.fpcf.FinalP
-import org.opalj.fpcf.PropertyStore
 import org.opalj.br.DeclaredMethod
-import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.TestSupport.allBIProjects
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.cg.ClassExtensibilityKey
 import org.opalj.br.analyses.cg.ClosedPackagesKey
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
 import org.opalj.br.analyses.cg.TypeExtensibilityKey
-import org.opalj.br.analyses.Project
+import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.cg.NoCallers
-import org.opalj.br.fpcf.ContextProviderKey
+import org.opalj.fpcf.FinalEP
+import org.opalj.fpcf.FinalP
+import org.opalj.fpcf.PropertyStore
 import org.opalj.tac.cg.CallGraph
 import org.opalj.tac.cg.CHACallGraphKey
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.cg.TypeBasedPointsToCallGraphKey
+
+import com.typesafe.config.ConfigFactory
+import org.junit.runner.RunWith
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 
 @RunWith(classOf[JUnitRunner]) // TODO: We should use JCG for some basic tests
 class CallGraphIntegrationTest extends AnyFlatSpec with Matchers {
@@ -48,23 +48,22 @@ class CallGraphIntegrationTest extends AnyFlatSpec with Matchers {
     allBIProjects(
         config = ConfigFactory.load("CommandLineProject.conf")
     ) foreach { biProject =>
-            val (name, projectFactory) = biProject
-            if (!ignoredProjects.contains(name))
-                checkProject(name, projectFactory)
-        }
+        val (name, projectFactory) = biProject
+        if (!ignoredProjects.contains(name)) checkProject(name, projectFactory)
+    }
 
     def checkProject(projectName: String, projectFactory: () => Project[URL]): Unit = {
 
         behavior of s"the call graph analyses on $projectName"
 
-        var project: Project[URL] = null
-        var cha: CallGraph = null
-        var chaPS: PropertyStore = null
-        var rtaProject: Project[URL] = null
-        var rta: CallGraph = null
-        var rtaPS: PropertyStore = null
+        var project: Project[URL]         = null
+        var cha: CallGraph                = null
+        var chaPS: PropertyStore          = null
+        var rtaProject: Project[URL]      = null
+        var rta: CallGraph                = null
+        var rtaPS: PropertyStore          = null
         var pointsToProject: Project[URL] = null
-        var pointsTo: CallGraph = null
+        var pointsTo: CallGraph           = null
 
         it should s"have matching callers and callees for CHA" in {
             project = projectFactory()
@@ -122,11 +121,10 @@ class CallGraphIntegrationTest extends AnyFlatSpec with Matchers {
         morePreciseCG:              CallGraph,
         lessPreciseCGPS:            PropertyStore,
         morePreciseContextProvider: ContextProvider,
-        lessPreciseContextProvider: ContextProvider
-    ): Unit = {
+        lessPreciseContextProvider: ContextProvider): Unit = {
         var unexpectedCalls: List[UnexpectedCallTarget] = Nil
         morePreciseCG.reachableMethods().foreach { context =>
-            val method = context.method
+            val method      = context.method
             val callersLPCG = lessPreciseCG.callersPropertyOf(method)
             val callersMPCG = morePreciseCG.callersPropertyOf(method)
             if ((callersLPCG eq NoCallers) &&
@@ -134,7 +132,7 @@ class CallGraphIntegrationTest extends AnyFlatSpec with Matchers {
                     callSite =>
                         val callees = lessPreciseCG.calleesPropertyOf(callSite._1)
                         !callSite._3 &&
-                            callees.isIncompleteCallSite(context, callSite._2)(lessPreciseCGPS)
+                        callees.isIncompleteCallSite(context, callSite._2)(lessPreciseCGPS)
                 }) {
                 unexpectedCalls ::= UnexpectedCallTarget(null, method, -1)
             } else if (callersMPCG.hasVMLevelCallers && !callersLPCG.hasVMLevelCallers) {
@@ -143,10 +141,10 @@ class CallGraphIntegrationTest extends AnyFlatSpec with Matchers {
             val allCalleesMPCG = morePreciseCG.calleesOf(method).toSet
             for {
                 (pc, calleesMPCG) <- allCalleesMPCG
-                calleesLPCG = lessPreciseCG.calleesPropertyOf(method)
+                calleesLPCG        = lessPreciseCG.calleesPropertyOf(method)
                 if !calleesLPCG.isIncompleteCallSite(context, pc)(lessPreciseCGPS)
                 allCalleesLPCG = calleesLPCG.callees(context, pc)(lessPreciseCGPS, lessPreciseContextProvider).toSet
-                calleeMPCG <- calleesMPCG
+                calleeMPCG    <- calleesMPCG
                 if !allCalleesLPCG(calleeMPCG)
             } {
                 unexpectedCalls ::= UnexpectedCallTarget(method, calleeMPCG.method, pc)
@@ -161,21 +159,22 @@ class CallGraphIntegrationTest extends AnyFlatSpec with Matchers {
 
     def checkBidirectionCallerCallee(
         propertyStore: PropertyStore
-    )(implicit contextProvider: ContextProvider): Unit = {
+      )(implicit contextProvider: ContextProvider): Unit = {
         implicit val ps: PropertyStore = propertyStore
         for {
             FinalEP(dm: DeclaredMethod, callees) <- propertyStore.entities(Callees.key).map(_.asFinal)
-            context <- callees.callerContexts
-            (pc, tgts) <- callees.callSites(context)
-            callee <- tgts
+            context                              <- callees.callerContexts
+            (pc, tgts)                           <- callees.callSites(context)
+            callee                               <- tgts
         } {
             val FinalP(callersProperty) = propertyStore(callee.method, Callers.key).asFinal
-            assert(callersProperty.callers(dm).iterator.map(caller => (caller._1, caller._2)).iterator.to(Set).contains(dm -> pc))
+            assert(callersProperty.callers(dm).iterator.map(caller => (caller._1, caller._2)).iterator.to(Set).contains(
+                dm -> pc))
         }
 
         for {
             FinalEP(dm: DeclaredMethod, callers) <- propertyStore.entities(Callers.key).map(_.asFinal)
-            (callee, caller, pc, _) <- callers.callContexts(dm).iterator
+            (callee, caller, pc, _)              <- callers.callContexts(dm).iterator
             if caller.hasContext
         } {
             val FinalP(calleesProperty) = propertyStore(caller.method, Callees.key).asFinal

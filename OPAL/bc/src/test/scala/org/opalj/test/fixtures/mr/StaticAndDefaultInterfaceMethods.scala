@@ -6,23 +6,23 @@ package mr
 
 import java.nio.file.Files
 import java.nio.file.Paths
+import scala.collection.immutable.ArraySeq
+
 import org.opalj.bc.Assembler
-import org.opalj.bi.ACC_PUBLIC
 import org.opalj.bi.ACC_ABSTRACT
 import org.opalj.bi.ACC_INTERFACE
+import org.opalj.bi.ACC_PUBLIC
 import org.opalj.bi.ACC_STATIC
 import org.opalj.da.ClassFile
-import org.opalj.da.Method_Info
-import org.opalj.da.Constant_Pool_Entry
-import org.opalj.da.CONSTANT_Class_info
-import org.opalj.da.CONSTANT_Utf8
-import org.opalj.da.CONSTANT_NameAndType_info
-import org.opalj.da.CONSTANT_Methodref_info
-import org.opalj.da.CONSTANT_String_info
-import org.opalj.da.Code_attribute
 import org.opalj.da.Code
-
-import scala.collection.immutable.ArraySeq
+import org.opalj.da.Code_attribute
+import org.opalj.da.CONSTANT_Class_info
+import org.opalj.da.CONSTANT_Methodref_info
+import org.opalj.da.CONSTANT_NameAndType_info
+import org.opalj.da.Constant_Pool_Entry
+import org.opalj.da.CONSTANT_String_info
+import org.opalj.da.CONSTANT_Utf8
+import org.opalj.da.Method_Info
 
 /**
  * Generates three interfaces SuperIntf, Intf and SubIntf where Intf inherits from
@@ -56,39 +56,43 @@ object StaticAndDefaultInterfaceMethods extends App {
             /* 16 */ CONSTANT_Utf8("println"),
             /* 17 */ CONSTANT_Utf8("(Ljava/lang/String;)V")
         ),
-        minor_version = 0, major_version = 52,
+        minor_version = 0,
+        major_version = 52,
         access_flags = ACC_INTERFACE.mask | ACC_ABSTRACT.mask,
-        this_class = 1 /*mr/SuperIntf*/ , super_class = 3 /*extends java.lang.Object*/ ,
+        this_class = 1 /*mr/SuperIntf*/,
+        super_class = 3 /*extends java.lang.Object*/,
         // Interfaces.empty,
         // Fields.empty,
         methods = ArraySeq(
             Method_Info(
                 access_flags = ACC_PUBLIC.mask,
-                name_index = 7, descriptor_index = 8,
+                name_index = 7,
+                descriptor_index = 8,
                 attributes = ArraySeq(
                     Code_attribute(
                         attribute_name_index = 9,
-                        max_stack = 1, max_locals = 1,
-                        code =
-                            new Code(
-                                Array[Byte](
-                                    18, // ldc
-                                    10, // #10
-                                    (0xff & 184).toByte, // invokestatic
-                                    0, // -> Methodref
-                                    12, // #12
-                                    (0xff & 177).toByte // return
-                                )
+                        max_stack = 1,
+                        max_locals = 1,
+                        code = new Code(
+                            Array[Byte](
+                                18,                  // ldc
+                                10,                  // #10
+                                (0xff & 184).toByte, // invokestatic
+                                0,                   // -> Methodref
+                                12,                  // #12
+                                (0xff & 177).toByte  // return
                             )
+                        )
                     )
                 )
             )
         )
     )
     val assembledSuperIntf = Assembler(superIntfCF)
-    val assembledSuperIntfPath = Paths.get("OPAL/bc/src/test/resources/StaticAndDefaultInterfaceMethods/mr/SuperIntf.class")
+    val assembledSuperIntfPath =
+        Paths.get("OPAL/bc/src/test/resources/StaticAndDefaultInterfaceMethods/mr/SuperIntf.class")
     val assembledSuperIntfFile = Files.write(assembledSuperIntfPath, assembledSuperIntf)
-    println("Created class file: "+assembledSuperIntfFile.toAbsolutePath())
+    println("Created class file: " + assembledSuperIntfFile.toAbsolutePath())
 
     val intfCF = ClassFile(
         Array[Constant_Pool_Entry](
@@ -111,27 +115,31 @@ object StaticAndDefaultInterfaceMethods extends App {
             /* 16 */ CONSTANT_Utf8("println"),
             /* 17 */ CONSTANT_Utf8("(Ljava/lang/String;)V")
         ),
-        minor_version = 0, major_version = 52,
+        minor_version = 0,
+        major_version = 52,
         access_flags = ACC_INTERFACE.mask | ACC_ABSTRACT.mask,
-        this_class = 1 /*mr/Intf*/ , super_class = 3 /*extends java.lang.Object*/ ,
-        interfaces = ArraySeq(5) /*mr/SuperIntf*/ ,
+        this_class = 1 /*mr/Intf*/,
+        super_class = 3 /*extends java.lang.Object*/,
+        interfaces = ArraySeq(5) /*mr/SuperIntf*/,
         // Fields.empty,
         methods = ArraySeq(
             Method_Info(
                 access_flags = ACC_PUBLIC.mask | ACC_STATIC.mask,
-                name_index = 7, descriptor_index = 8,
+                name_index = 7,
+                descriptor_index = 8,
                 attributes = ArraySeq(
                     Code_attribute(
                         attribute_name_index = 9,
-                        max_stack = 1, max_locals = 1,
+                        max_stack = 1,
+                        max_locals = 1,
                         code = new Code(
                             Array[Byte](
-                                18, // ldc
-                                10, // #10
+                                18,                  // ldc
+                                10,                  // #10
                                 (0xff & 184).toByte, // invokestatic
-                                0, // -> Methodref
-                                12, //    #12
-                                (0xff & 177).toByte // return
+                                0,                   // -> Methodref
+                                12,                  //    #12
+                                (0xff & 177).toByte  // return
                             )
                         )
                     )
@@ -139,10 +147,10 @@ object StaticAndDefaultInterfaceMethods extends App {
             )
         )
     )
-    val assembledIntf = Assembler(intfCF)
+    val assembledIntf     = Assembler(intfCF)
     val assembledIntfPath = Paths.get("OPAL/bc/src/test/resources/StaticAndDefaultInterfaceMethods/mr/Intf.class")
     val assembledIntfFile = Files.write(assembledIntfPath, assembledIntf)
-    println("Created class file: "+assembledIntfFile.toAbsolutePath())
+    println("Created class file: " + assembledIntfFile.toAbsolutePath())
 
     val subIntfCF = ClassFile(
         Array[Constant_Pool_Entry](
@@ -154,14 +162,15 @@ object StaticAndDefaultInterfaceMethods extends App {
             /*  5 */ CONSTANT_Class_info(6),
             /*  6 */ CONSTANT_Utf8("mr/Intf")
         ),
-        minor_version = 0, major_version = 52,
+        minor_version = 0,
+        major_version = 52,
         access_flags = ACC_INTERFACE.mask | ACC_ABSTRACT.mask,
-        this_class = 1 /*mr/SubIntf*/ , super_class = 3 /*extends java.lang.Object*/ ,
-        interfaces = ArraySeq(5) //mr/Intf
+        this_class = 1 /*mr/SubIntf*/,
+        super_class = 3 /*extends java.lang.Object*/,
+        interfaces = ArraySeq(5) // mr/Intf
     )
-    val assembledSubIntf = Assembler(subIntfCF)
-    val assembledSubIntfPath =
-        Paths.get("OPAL/bc/src/test/resources/StaticAndDefaultInterfaceMethods/mr/SubIntf.class")
+    val assembledSubIntf     = Assembler(subIntfCF)
+    val assembledSubIntfPath = Paths.get("OPAL/bc/src/test/resources/StaticAndDefaultInterfaceMethods/mr/SubIntf.class")
     val assembledSubIntfFile = Files.write(assembledSubIntfPath, assembledSubIntf)
-    println("Created class file: "+assembledSubIntfFile.toAbsolutePath())
+    println("Created class file: " + assembledSubIntfFile.toAbsolutePath())
 }

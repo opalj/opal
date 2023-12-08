@@ -6,7 +6,6 @@ package mutable
 import scala.reflect.ClassTag
 
 import java.util.Arrays
-
 import scala.collection.AbstractIterator
 
 /**
@@ -26,7 +25,7 @@ class ArrayMap[T >: Null <: AnyRef: ClassTag] private (private var data: Array[T
     /**
      * Clears, but does not resize/shrink the map.
      */
-    def clear(): Unit = { Arrays.fill(data.asInstanceOf[Array[Object]], null) }
+    def clear(): Unit = Arrays.fill(data.asInstanceOf[Array[Object]], null)
 
     /**
      * Returns the value stored for the given key or `null` instead.
@@ -36,18 +35,15 @@ class ArrayMap[T >: Null <: AnyRef: ClassTag] private (private var data: Array[T
     @throws[IndexOutOfBoundsException]("if the key is negative")
     def apply(key: Int): T = {
         val data = this.data
-        if (key < data.length)
-            data(key)
-        else
-            null
+        if (key < data.length) data(key)
+        else null
     }
 
     def get(key: Int): Option[T] = {
         val data = this.data
         if (key >= 0 && key < data.length) {
             Option(data(key))
-        } else
-            None
+        } else None
     }
 
     def remove(key: Int): Unit = {
@@ -61,8 +57,7 @@ class ArrayMap[T >: Null <: AnyRef: ClassTag] private (private var data: Array[T
         val data = this.data
         if (key >= 0 && key < data.length) {
             val entry = data(key)
-            if (entry ne null)
-                return entry;
+            if (entry ne null) return entry;
         }
         f
     }
@@ -71,8 +66,7 @@ class ArrayMap[T >: Null <: AnyRef: ClassTag] private (private var data: Array[T
         val data = this.data
         if (key >= 0 && key < data.length) {
             val entry = data(key)
-            if (entry ne null)
-                return entry;
+            if (entry ne null) return entry;
         }
 
         // orElseUpdate
@@ -90,7 +84,7 @@ class ArrayMap[T >: Null <: AnyRef: ClassTag] private (private var data: Array[T
     final def update(key: Int, value: T): Unit = {
         assert(value ne null, "ArrayMap only supports non-null values")
         val data = this.data
-        val max = data.length
+        val max  = data.length
         if (key < max) {
             data(key) = value
         } else {
@@ -103,8 +97,8 @@ class ArrayMap[T >: Null <: AnyRef: ClassTag] private (private var data: Array[T
 
     def foreachValue(f: T => Unit): Unit = {
         val data = this.data
-        var i = 0
-        val max = data.length
+        var i    = 0
+        val max  = data.length
         while (i < max) {
             val e = data(i)
             // recall that all values have to be non-null...
@@ -115,8 +109,8 @@ class ArrayMap[T >: Null <: AnyRef: ClassTag] private (private var data: Array[T
 
     def foreach(f: (Int, T) => Unit): Unit = {
         val data = this.data
-        var i = 0
-        val max = data.length
+        var i    = 0
+        val max  = data.length
         while (i < max) {
             val e = data(i)
             // Recall that all values have to be non-null...
@@ -127,13 +121,12 @@ class ArrayMap[T >: Null <: AnyRef: ClassTag] private (private var data: Array[T
 
     def forall(f: T => Boolean): Boolean = {
         val data = this.data
-        var i = 0
-        val max = data.length
+        var i    = 0
+        val max  = data.length
         while (i < max) {
             val e = data(i)
             // Recall that all values have to be non-null...
-            if ((e ne null) && !f(e))
-                return false;
+            if ((e ne null) && !f(e)) return false;
             i += 1
         }
         true
@@ -141,39 +134,35 @@ class ArrayMap[T >: Null <: AnyRef: ClassTag] private (private var data: Array[T
 
     def valuesIterator: Iterator[T] = data.iterator.filter(_ ne null)
 
-    def entries: Iterator[(Int, T)] = {
+    def entries: Iterator[(Int, T)] = new AbstractIterator[(Int, T)] {
 
-        new AbstractIterator[(Int, T)] {
-
-            private[this] def getNextIndex(startIndex: Int): Int = {
-                val data = self.data
-                val max = data.length
-                var i = startIndex
-                while (i + 1 < max) {
-                    i = i + 1
-                    if (data(i) ne null)
-                        return i;
-                }
-                return max;
+        private[this] def getNextIndex(startIndex: Int): Int = {
+            val data = self.data
+            val max  = data.length
+            var i    = startIndex
+            while (i + 1 < max) {
+                i = i + 1
+                if (data(i) ne null) return i;
             }
+            return max;
+        }
 
-            private[this] var i = getNextIndex(-1)
+        private[this] var i = getNextIndex(-1)
 
-            def hasNext: Boolean = i < data.length
+        def hasNext: Boolean = i < data.length
 
-            def next(): (Int, T) = {
-                val r = (i, data(i))
-                i = getNextIndex(i)
-                r
-            }
+        def next(): (Int, T) = {
+            val r = (i, data(i))
+            i = getNextIndex(i)
+            r
         }
     }
 
     def map[X](f: (Int, T) => X): List[X] = {
         val data = this.data
-        var rs = List.empty[X]
-        var i = 0
-        val max = data.length
+        var rs   = List.empty[X]
+        var i    = 0
+        val max  = data.length
         while (i < max) {
             val e = data(i)
             if (e != null) rs = f(i, e) :: rs
@@ -182,39 +171,35 @@ class ArrayMap[T >: Null <: AnyRef: ClassTag] private (private var data: Array[T
         rs
     }
 
-    override def equals(other: Any): Boolean = {
-        other match {
-            case that: ArrayMap[_] =>
-                val thisData = this.data.asInstanceOf[Array[Object]]
-                val thisLength = thisData.length
-                val thatData = that.data.asInstanceOf[Array[Object]]
-                val thatLength = thatData.length
-                if (thisLength == thatLength) {
-                    java.util.Arrays.equals(thisData, thatData)
-                } else if (thisLength < thatLength) {
-                    thatData.startsWith(thisData) &&
-                        (thatData.view.slice(thisLength, thatLength).forall { _ eq null })
-                } else {
-                    thisData.startsWith(thatData) &&
-                        (thisData.view.slice(thatLength, thisLength).forall { _ eq null })
-                }
-            case _ => false
-        }
+    override def equals(other: Any): Boolean = other match {
+        case that: ArrayMap[_] =>
+            val thisData   = this.data.asInstanceOf[Array[Object]]
+            val thisLength = thisData.length
+            val thatData   = that.data.asInstanceOf[Array[Object]]
+            val thatLength = thatData.length
+            if (thisLength == thatLength) {
+                java.util.Arrays.equals(thisData, thatData)
+            } else if (thisLength < thatLength) {
+                thatData.startsWith(thisData) &&
+                (thatData.view.slice(thisLength, thatLength).forall { _ eq null })
+            } else {
+                thisData.startsWith(thatData) &&
+                (thisData.view.slice(thatLength, thisLength).forall { _ eq null })
+            }
+        case _ => false
     }
 
     override def hashCode: Int = {
         var hc = 1
-        foreachValue { e =>
-            hc = hc * 41 + { if (e ne null) e.hashCode else 0 /* === identityHashCode(null) */ }
-        }
+        foreachValue { e => hc = hc * 41 + { if (e ne null) e.hashCode else 0 /* === identityHashCode(null) */ } }
         hc
     }
 
     def mkString(start: String, sep: String, end: String): String = {
         val data = this.data
-        var s = start
-        var i = 0
-        val max = data.length
+        var s    = start
+        var i    = 0
+        val max  = data.length
         while (i < max) {
             val e = data(i)
             if (e ne null) s += s"$i -> $e"
@@ -238,7 +223,5 @@ object ArrayMap {
     /**
      * Creates an empty map which initially can store up to sizeHint values.
      */
-    def apply[T >: Null <: AnyRef: ClassTag](sizeHint: Int): ArrayMap[T] = {
-        new ArrayMap(new Array[T](sizeHint))
-    }
+    def apply[T >: Null <: AnyRef: ClassTag](sizeHint: Int): ArrayMap[T] = new ArrayMap(new Array[T](sizeHint))
 }

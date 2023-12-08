@@ -5,6 +5,24 @@ package fpcf
 package analyses
 package pointsto
 
+import org.opalj.br.ArrayType
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.FieldType
+import org.opalj.br.ObjectType
+import org.opalj.br.ReferenceType
+import org.opalj.br.analyses.DeclaredMethods
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.VirtualFormalParametersKey
+import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.FPCFTriggeredAnalysisScheduler
+import org.opalj.br.fpcf.analyses.SimpleContextProvider
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.cg.NoCallers
+import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
+import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
+import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
@@ -20,24 +38,6 @@ import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.FPCFTriggeredAnalysisScheduler
-import org.opalj.br.DeclaredMethod
-import org.opalj.br.analyses.DeclaredMethods
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.ObjectType
-import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
-import org.opalj.br.FieldType
-import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
-import org.opalj.br.analyses.VirtualFormalParametersKey
-import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
-import org.opalj.br.ArrayType
-import org.opalj.br.ReferenceType
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.fpcf.analyses.SimpleContextProvider
-import org.opalj.br.fpcf.properties.cg.Callers
-import org.opalj.br.fpcf.properties.cg.NoCallers
 import org.opalj.tac.fpcf.analyses.cg.TypeConsumerAnalysis
 
 /**
@@ -49,19 +49,18 @@ import org.opalj.tac.fpcf.analyses.cg.TypeConsumerAnalysis
  * @author Florian Kuebler
  */
 abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
-        final val project: SomeProject
-) extends PointsToAnalysisBase with TypeConsumerAnalysis {
+        final val project: SomeProject) extends PointsToAnalysisBase with TypeConsumerAnalysis {
 
-    private[this] implicit val declaredMethods: DeclaredMethods = p.get(DeclaredMethodsKey)
-    private lazy val virtualFormalParameters = project.get(VirtualFormalParametersKey)
+    implicit private[this] val declaredMethods: DeclaredMethods = p.get(DeclaredMethodsKey)
+    private lazy val virtualFormalParameters                    = project.get(VirtualFormalParametersKey)
 
-    private[this] val nativeMethodData: Map[DeclaredMethod, Option[Array[PointsToRelation]]] = {
+    private[this] val nativeMethodData: Map[DeclaredMethod, Option[Array[PointsToRelation]]] =
         ConfiguredMethods.reader.read(
-            p.config, "org.opalj.fpcf.analyses.ConfiguredNativeMethodsAnalysis"
+            p.config,
+            "org.opalj.fpcf.analyses.ConfiguredNativeMethodsAnalysis"
         ).nativeMethods.map { v => (v.method, v.pointsTo) }.toMap
-    }
 
-    def analyze(dm: DeclaredMethod): PropertyComputationResult = {
+    def analyze(dm: DeclaredMethod): PropertyComputationResult =
         if (dm.isVirtualOrHasSingleDefinedMethod) { // FIXME Find way to do this even if no Method object exists
 
             val callers = propertyStore(dm, Callers.key)
@@ -70,8 +69,7 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
                     // nothing to do, since there is no caller
                     return NoResult;
 
-                case eps: EPS[_, _] =>
-                    if (eps.ub eq NoCallers) {
+                case eps: EPS[_, _] => if (eps.ub eq NoCallers) {
                         // we can not create a dependency here, so the analysis is not allowed to create
                         // such a result
                         throw new IllegalStateException("illegal immediate result for callers")
@@ -82,38 +80,39 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
             if (nativeMethodData.contains(dm) && nativeMethodData(dm).nonEmpty)
                 handleCallers(callers, null, nativeMethodData(dm).get)
             else if (dm.hasSingleDefinedMethod && dm.definedMethod.body.isEmpty &&
-                dm.descriptor.returnType.isReferenceType) {
-                val m = dm.definedMethod
-                val cf = m.classFile.thisType.fqn
+                     dm.descriptor.returnType.isReferenceType) {
+                val m    = dm.definedMethod
+                val cf   = m.classFile.thisType.fqn
                 val name = m.name
                 val desc = m.descriptor.toJVMDescriptor
-                val tpe = m.returnType.asReferenceType.toJVMTypeName
+                val tpe  = m.returnType.asReferenceType.toJVMTypeName
                 val arrayTypes = // TODO We should probably handle ArrayTypes as well
                     if (m.returnType.isArrayType &&
                         m.returnType.asArrayType.elementType.isObjectType)
                         Seq(m.returnType.asArrayType.elementType.asObjectType.fqn)
                     else Seq.empty
-                handleCallers(callers, null, Array(PointsToRelation(
-                    MethodDescription(cf, name, desc),
-                    AllocationSiteDescription(cf, name, desc, tpe, arrayTypes)
-                )), true)
-            } else
-                NoResult
-        } else
-            NoResult
-    }
+                handleCallers(callers,
+                              null,
+                              Array(PointsToRelation(
+                                  MethodDescription(cf, name, desc),
+                                  AllocationSiteDescription(cf, name, desc, tpe, arrayTypes)
+                              )),
+                              true)
+            } else NoResult
+        } else NoResult
 
     private[this] def handleCallers(
         newCallers:                 EOptionP[DeclaredMethod, Callers],
         oldCallers:                 Callers,
         data:                       Array[PointsToRelation],
-        filterNonInstantiableTypes: Boolean                           = false
-    ): ProperPropertyComputationResult = {
-        val dm = newCallers.e
+        filterNonInstantiableTypes: Boolean = false): ProperPropertyComputationResult = {
+        val dm                                                 = newCallers.e
         var results: Iterator[ProperPropertyComputationResult] = Iterator.empty
         newCallers.ub.forNewCalleeContexts(oldCallers, dm) { callContext =>
             results ++= handleNativeMethod(
-                callContext.asInstanceOf[ContextType], data, filterNonInstantiableTypes
+                callContext.asInstanceOf[ContextType],
+                data,
+                filterNonInstantiableTypes
             )
         }
         if (newCallers.isRefinable) {
@@ -135,10 +134,8 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
     private[this] def handleNativeMethod(
         callContext:                ContextType,
         data:                       Array[PointsToRelation],
-        filterNonInstantiableTypes: Boolean
-    ): Iterator[ProperPropertyComputationResult] = {
-        implicit val state: State =
-            new PointsToAnalysisState[ElementType, PointsToSet, ContextType](callContext, null)
+        filterNonInstantiableTypes: Boolean): Iterator[ProperPropertyComputationResult] = {
+        implicit val state: State = new PointsToAnalysisState[ElementType, PointsToSet, ContextType](callContext, null)
 
         var pc = -1
         // for each configured points to relation, add all points-to info from the rhs to the lhs
@@ -150,9 +147,7 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
         createResults(state).iterator
     }
 
-    @inline override protected[this] def toEntity(defSite: Int)(implicit state: State): Entity = {
-        getDefSite(defSite)
-    }
+    @inline override protected[this] def toEntity(defSite: Int)(implicit state: State): Entity = getDefSite(defSite)
 
     private[this] def canBeInstantiated(ot: ObjectType): Boolean = {
         val cfOption = project.classFile(ot)
@@ -163,13 +158,15 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
     }
 
     private[this] def handleGet(
-        rhs: EntityDescription, pc: Int, nextPC: Int, filterNonInstantiableTypes: Boolean
-    )(implicit state: State): Int = {
+        rhs:                        EntityDescription,
+        pc:                         Int,
+        nextPC:                     Int,
+        filterNonInstantiableTypes: Boolean
+      )(implicit state: State): Int = {
         val defSiteObject = getDefSite(pc)
         rhs match {
             case md: MethodDescription =>
-                val method =
-                    typeIterator.expandContext(state.callContext, md.method(declaredMethods), pc)
+                val method = typeIterator.expandContext(state.callContext, md.method(declaredMethods), pc)
                 state.includeSharedPointsToSet(
                     defSiteObject,
                     currentPointsTo(defSiteObject, method, PointsToSetLike.noFilter),
@@ -181,7 +178,7 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
 
             case pd: ParameterDescription =>
                 val method = pd.method(declaredMethods)
-                val fp = pd.fp(method, virtualFormalParameters)
+                val fp     = pd.fp(method, virtualFormalParameters)
                 if (fp ne null) {
                     val entity = typeIterator match {
                         case _: SimpleContextProvider => fp
@@ -196,8 +193,9 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
 
             case asd: AllocationSiteDescription =>
                 val method = asd.method(declaredMethods)
-                val allocationContext = if (method == state.callContext.method) state.callContext
-                else typeIterator.expandContext(state.callContext, method, pc)
+                val allocationContext =
+                    if (method == state.callContext.method) state.callContext
+                    else typeIterator.expandContext(state.callContext, method, pc)
                 if (asd.instantiatedType.startsWith("[")) {
                     val theInstantiatedType = FieldType(asd.instantiatedType).asArrayType
                     val pts = createPointsToSet(
@@ -208,7 +206,7 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
                     )
                     state.includeSharedPointsToSet(defSiteObject, pts, PointsToSetLike.noFilter)
                     if (asd.arrayComponentTypes.nonEmpty) {
-                        val arrayEntity = ArrayEntity(pts.getNewestElement())
+                        val arrayEntity           = ArrayEntity(pts.getNewestElement())
                         var arrayPTS: PointsToSet = emptyPointsToSet
                         asd.arrayComponentTypes.foreach { componentTypeString =>
                             val componentType = ObjectType(componentTypeString)
@@ -223,7 +221,9 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
                                 )
                         }
                         state.includeSharedPointsToSet(
-                            arrayEntity, arrayPTS, PointsToSetLike.noFilter
+                            arrayEntity,
+                            arrayPTS,
+                            PointsToSetLike.noFilter
                         )
                     }
                 } else {
@@ -242,10 +242,13 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
                 }
 
             case ArrayDescription(array, arrayType) =>
-                val arrayPC = nextPC
+                val arrayPC   = nextPC
                 val theNextPC = handleGet(array, arrayPC, nextPC, filterNonInstantiableTypes) - 1
                 handleArrayLoad(
-                    ArrayType(ObjectType(arrayType)), pc, IntTrieSet(arrayPC), checkForCast = false
+                    ArrayType(ObjectType(arrayType)),
+                    pc,
+                    IntTrieSet(arrayPC),
+                    checkForCast = false
                 )
                 return theNextPC;
         }
@@ -253,14 +256,16 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
     }
 
     private[this] def handlePut(
-        lhs: EntityDescription, pc: Int, nextPC: Int
-    )(implicit state: State): Int = {
+        lhs:    EntityDescription,
+        pc:     Int,
+        nextPC: Int
+      )(implicit state: State): Int = {
         lhs match {
             case md: MethodDescription =>
-                val method = md.method(declaredMethods)
+                val method     = md.method(declaredMethods)
                 val returnType = method.descriptor.returnType.asReferenceType
-                val filter = (t: ReferenceType) => classHierarchy.isSubtypeOf(t, returnType)
-                val entity = state.callContext
+                val filter     = (t: ReferenceType) => classHierarchy.isSubtypeOf(t, returnType)
+                val entity     = state.callContext
                 state.includeSharedPointsToSet(
                     entity,
                     currentPointsToOfDefSite(entity, pc, filter),
@@ -272,7 +277,7 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
 
             case pd: ParameterDescription =>
                 val method = pd.method(declaredMethods)
-                val fp = pd.fp(method, virtualFormalParameters)
+                val fp     = pd.fp(method, virtualFormalParameters)
                 if (fp ne null) {
                     if (fp.origin == -1) {
                         handleCallReceiver(
@@ -289,14 +294,15 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
                     }
                 }
 
-            case _: AllocationSiteDescription =>
-                throw new RuntimeException("AllocationSites must not be assigned to")
+            case _: AllocationSiteDescription => throw new RuntimeException("AllocationSites must not be assigned to")
 
             case ArrayDescription(array, arrayType) =>
-                val arrayPC = nextPC
+                val arrayPC   = nextPC
                 val theNextPC = handleGet(array, arrayPC, nextPC, false) - 1
                 handleArrayStore(
-                    ArrayType(ObjectType(arrayType)), IntTrieSet(arrayPC), IntTrieSet(pc)
+                    ArrayType(ObjectType(arrayType)),
+                    IntTrieSet(arrayPC),
+                    IntTrieSet(pc)
                 )
                 return theNextPC;
         }
@@ -318,20 +324,18 @@ trait ConfiguredMethodsPointsToAnalysisScheduler extends FPCFTriggeredAnalysisSc
         propertyKind
     )
 
-    override def derivesCollaboratively: Set[PropertyBounds] =
-        PropertyBounds.ubs(propertyKind)
+    override def derivesCollaboratively: Set[PropertyBounds] = PropertyBounds.ubs(propertyKind)
 
     override def derivesEagerly: Set[PropertyBounds] = Set.empty
 
-    override def init(p: SomeProject, ps: PropertyStore): Null = {
-        null
-    }
+    override def init(p: SomeProject, ps: PropertyStore): Null = null
 
     override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
 
     override def register(
-        p: SomeProject, ps: PropertyStore, unused: Null
-    ): ConfiguredMethodsPointsToAnalysis = {
+        p:      SomeProject,
+        ps:     PropertyStore,
+        unused: Null): ConfiguredMethodsPointsToAnalysis = {
         val analysis = createAnalysis(p)
         // register the analysis for initial values for callers (i.e. methods becoming reachable)
         ps.registerTriggeredComputation(Callers.key, analysis.analyze)
@@ -343,8 +347,7 @@ trait ConfiguredMethodsPointsToAnalysisScheduler extends FPCFTriggeredAnalysisSc
     override def afterPhaseCompletion(
         p:        SomeProject,
         ps:       PropertyStore,
-        analysis: FPCFAnalysis
-    ): Unit = {}
+        analysis: FPCFAnalysis): Unit = {}
 
     /**
      * Specifies the kind of the properties that will trigger the analysis to be registered.

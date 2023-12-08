@@ -8,4 +8,3 @@ package ai
  * @author Michael Eichberg
  */
 trait CorrelationalDomain extends Domain with CorrelationalDomainSupport
-

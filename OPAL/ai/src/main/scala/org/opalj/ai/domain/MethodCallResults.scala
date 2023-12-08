@@ -44,11 +44,9 @@ trait MethodCallResults { domain: ValuesDomain =>
      */
     def returnedValueRemapped(
         callerDomain: TargetDomain,
-        callerPC:     Int
-    )(
-        originalOperands: callerDomain.Operands,
-        passedParameters: Locals
-    ): Option[callerDomain.DomainValue]
+        callerPC: Int
+      )(originalOperands: callerDomain.Operands,
+        passedParameters: Locals): Option[callerDomain.DomainValue]
 
     /**
      * Adapts and returns the exceptions that are thrown by the called method.
@@ -62,4 +60,3 @@ trait MethodCallResults { domain: ValuesDomain =>
     def thrownExceptions(target: TargetDomain, callerPC: Int): target.ExceptionValues
 
 }
-

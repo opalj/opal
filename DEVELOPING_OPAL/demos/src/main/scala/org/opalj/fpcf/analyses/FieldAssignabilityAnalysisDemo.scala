@@ -42,8 +42,8 @@ object FieldAssignabilityAnalysisDemo extends ProjectAnalysisApplication {
     override def description: String = "Identifies non assignable fields"
 
     override def doAnalyze(
-        project:       Project[URL],
-        parameters:    Seq[String],
+        project: Project[URL],
+        parameters: Seq[String],
         isInterrupted: () => Boolean
     ): BasicReport = {
         val result = analyze(project)
@@ -76,9 +76,7 @@ object FieldAssignabilityAnalysisDemo extends ProjectAnalysisApplication {
 
             propertyStore.waitOnPhaseCompletion()
 
-        } { t =>
-            analysisTime = t.toSeconds
-        }
+        } { t => analysisTime = t.toSeconds }
 
         val allFieldsInProjectClassFiles = project.allProjectClassFiles.iterator.flatMap { _.fields }.toSet
 
@@ -103,9 +101,9 @@ object FieldAssignabilityAnalysisDemo extends ProjectAnalysisApplication {
           | Non Assignable Fields: ${NonAssignableFields.size}
           |
           | total Fields: ${
-            assignableFields.size + unsafelyLazilyInitializedFields.size + lazilyInitializedFields.size +
-                EffectivelynonAssignableFields.size + NonAssignableFields.size
-        }
+                assignableFields.size + unsafelyLazilyInitializedFields.size + lazilyInitializedFields.size +
+                    EffectivelynonAssignableFields.size + NonAssignableFields.size
+            }
           | took : $analysisTime seconds
           |""".stripMargin
     }

@@ -23,19 +23,15 @@ trait AnnotationTable extends Attribute {
      */
     def annotations: Annotations
 
-    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = {
-        other match {
-            case that: AnnotationTable => this.similar(that)
-            case _                     => false
-        }
+    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = other match {
+        case that: AnnotationTable => this.similar(that)
+        case _                     => false
     }
 
-    def similar(other: AnnotationTable): Boolean = {
-        this.isRuntimeVisible == other.isRuntimeVisible &&
-            // the order of two annotation tables does not need to be identical
-            this.annotations.size == other.annotations.size &&
-            this.annotations.forall(other.annotations.contains)
-    }
+    def similar(other: AnnotationTable): Boolean = this.isRuntimeVisible == other.isRuntimeVisible &&
+        // the order of two annotation tables does not need to be identical
+        this.annotations.size == other.annotations.size &&
+        this.annotations.forall(other.annotations.contains)
 }
 
 /**
@@ -45,7 +41,5 @@ trait AnnotationTable extends Attribute {
  */
 object AnnotationTable {
 
-    def unapply(aa: AnnotationTable): Option[(Boolean, Annotations)] = {
-        Some((aa.isRuntimeVisible, aa.annotations))
-    }
+    def unapply(aa: AnnotationTable): Option[(Boolean, Annotations)] = Some((aa.isRuntimeVisible, aa.annotations))
 }

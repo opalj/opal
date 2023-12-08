@@ -4,6 +4,18 @@ package tac
 package fpcf
 package analyses
 
+import org.opalj.ai.fpcf.analyses.L0BaseAIResultAnalysis
+import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
+import org.opalj.ai.fpcf.properties.AnAIResult
+import org.opalj.ai.fpcf.properties.BaseAIResult
+import org.opalj.ai.fpcf.properties.NoAIResult
+import org.opalj.ai.fpcf.properties.ProjectSpecificAIExecutor
+import org.opalj.br.Method
+import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.FPCFEagerAnalysisScheduler
+import org.opalj.br.fpcf.FPCFLazyAnalysisScheduler
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
@@ -14,18 +26,6 @@ import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
-import org.opalj.br.Method
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.FPCFEagerAnalysisScheduler
-import org.opalj.br.fpcf.FPCFLazyAnalysisScheduler
-import org.opalj.ai.fpcf.analyses.L0BaseAIResultAnalysis
-import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
-import org.opalj.ai.fpcf.properties.AnAIResult
-import org.opalj.ai.fpcf.properties.BaseAIResult
-import org.opalj.ai.fpcf.properties.NoAIResult
-import org.opalj.ai.fpcf.properties.ProjectSpecificAIExecutor
 import org.opalj.tac.fpcf.properties.NoTACAI
 import org.opalj.tac.fpcf.properties.TACAI
 
@@ -39,21 +39,18 @@ class L0TACAIAnalysis private[analyses] (val project: SomeProject) extends FPCFA
 
     import org.opalj.tac.fpcf.analyses.TACAIAnalysis.computeTheTACAI
 
-    final implicit val aiFactory: ProjectSpecificAIExecutor = project.get(AIDomainFactoryKey)
+    implicit final val aiFactory: ProjectSpecificAIExecutor = project.get(AIDomainFactoryKey)
 
-    def computeTAC(e: Entity): ProperPropertyComputationResult = {
-        e match {
-            case m: Method => computeTAC(m)
-            case _         => throw new IllegalArgumentException(s"$e is not a method")
-        }
+    def computeTAC(e: Entity): ProperPropertyComputationResult = e match {
+        case m: Method => computeTAC(m)
+        case _         => throw new IllegalArgumentException(s"$e is not a method")
     }
 
     /**
      * Computes the TAC for the given method `m`.
      */
-    private[analyses] def computeTAC(m: Method): ProperPropertyComputationResult = {
+    private[analyses] def computeTAC(m: Method): ProperPropertyComputationResult =
         c(ps[Method, BaseAIResult](m, BaseAIResult.key))
-    }
 
     def c(eOptionP: EOptionP[Method, BaseAIResult]): ProperPropertyComputationResult = {
         val m = eOptionP.e
@@ -64,8 +61,7 @@ class L0TACAIAnalysis private[analyses] (val project: SomeProject) extends FPCFA
             case currentAIResult @ InterimLUBP(AnAIResult(initialLBAIResult), ub) =>
                 val newLB = computeTheTACAI(m, initialLBAIResult, false)
                 val newUB =
-                    if (ub == NoAIResult)
-                        NoTACAI
+                    if (ub == NoAIResult) NoTACAI
                     else {
                         val AnAIResult(initialUBAIResult) = ub
                         computeTheTACAI(m, initialUBAIResult, false)
@@ -108,8 +104,7 @@ sealed trait L0TACAIAnalysisScheduler extends TACAIInitializer {
     override def afterPhaseCompletion(
         p:        SomeProject,
         ps:       PropertyStore,
-        analysis: FPCFAnalysis
-    ): Unit = {}
+        analysis: FPCFAnalysis): Unit = {}
 
 }
 
@@ -121,7 +116,7 @@ object EagerL0TACAIAnalysis extends L0TACAIAnalysisScheduler with FPCFEagerAnaly
 
     override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new L0TACAIAnalysis(p)
-        val methods = p.allMethodsWithBody
+        val methods  = p.allMethodsWithBody
         ps.scheduleEagerComputationsForEntities(methods)(analysis.computeTAC)
         analysis
     }

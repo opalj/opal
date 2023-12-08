@@ -105,7 +105,8 @@ package object fpcf {
 
     final type ProperOnUpdateContinuation = SomeEPS => ProperPropertyComputationResult
 
-    final type QualifiedOnUpdateContinuation[E <: Entity, P <: Property] = EOptionP[E, P] => ProperPropertyComputationResult
+    final type QualifiedOnUpdateContinuation[E <: Entity, P <: Property] =
+        EOptionP[E, P] => ProperPropertyComputationResult
 
     /**
      * The [[FallbackReason]] specifies the reason why a fallback property is required. This
@@ -131,18 +132,14 @@ package object fpcf {
      */
     final type ComputationResults = IterableOnce[SomeFinalEP]
 
-    private[fpcf] final val AnalysisKeyName = "<internal>opalj.PartialResultUpdateComputation"
+    final private[fpcf] val AnalysisKeyName = "<internal>opalj.PartialResultUpdateComputation"
 
-    private[fpcf] final val AnalysisKey = PropertyKey.create[Entity, Null](AnalysisKeyName)
+    final private[fpcf] val AnalysisKey = PropertyKey.create[Entity, Null](AnalysisKeyName)
 
-    private[fpcf] final val AnalysisKeyId = AnalysisKey.id
+    final private[fpcf] val AnalysisKeyId = AnalysisKey.id
 
-    def hashCodeToHexString(o: AnyRef): String = {
-        System.identityHashCode(o).toHexString
-    }
+    def hashCodeToHexString(o: AnyRef): String = System.identityHashCode(o).toHexString
 
-    def anyRefToShortString(o: AnyRef): String = {
-        o.getClass.getSimpleName+"@"+hashCodeToHexString(o)
-    }
+    def anyRefToShortString(o: AnyRef): String = o.getClass.getSimpleName + "@" + hashCodeToHexString(o)
 
 }

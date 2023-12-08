@@ -5,10 +5,9 @@ package info
 
 import java.net.URL
 import java.util.concurrent.ConcurrentLinkedQueue
+import scala.collection.immutable.ArraySeq
 import scala.jdk.CollectionConverters._
-import org.opalj.fpcf.FinalP
-import org.opalj.fpcf.PropertyStore
-import org.opalj.value.ValueInformation
+
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.PC
@@ -19,19 +18,20 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
-import org.opalj.br.fpcf.properties.{Purity => PurityProperty}
-import org.opalj.br.fpcf.properties.VirtualMethodPurity.VCompileTimePure
-import org.opalj.br.fpcf.properties.VirtualMethodPurity.VPure
-import org.opalj.br.fpcf.properties.VirtualMethodPurity.VSideEffectFree
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.analyses.immutability.LazyClassImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.immutability.LazyTypeImmutabilityAnalysis
+import org.opalj.br.fpcf.properties.{Purity => PurityProperty}
 import org.opalj.br.fpcf.properties.CompileTimePure
 import org.opalj.br.fpcf.properties.Pure
 import org.opalj.br.fpcf.properties.SideEffectFree
 import org.opalj.br.fpcf.properties.VirtualMethodPurity
-import org.opalj.tac.fpcf.analyses.purity.EagerL2PurityAnalysis
+import org.opalj.br.fpcf.properties.VirtualMethodPurity.VCompileTimePure
+import org.opalj.br.fpcf.properties.VirtualMethodPurity.VPure
+import org.opalj.br.fpcf.properties.VirtualMethodPurity.VSideEffectFree
+import org.opalj.fpcf.FinalP
+import org.opalj.fpcf.PropertyStore
 import org.opalj.tac.DUVar
 import org.opalj.tac.ExprStmt
 import org.opalj.tac.NonVirtualFunctionCall
@@ -39,13 +39,13 @@ import org.opalj.tac.StaticFunctionCall
 import org.opalj.tac.TACode
 import org.opalj.tac.VirtualFunctionCall
 import org.opalj.tac.cg.RTACallGraphKey
+import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
-import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
 import org.opalj.tac.fpcf.analyses.fieldassignability.LazyL1FieldAssignabilityAnalysis
+import org.opalj.tac.fpcf.analyses.purity.EagerL2PurityAnalysis
 import org.opalj.tac.fpcf.properties.TACAI
-
-import scala.collection.immutable.ArraySeq
+import org.opalj.value.ValueInformation
 
 /**
  * Identifies calls to pure/side-effect free methods where the results are not used subsequently.
@@ -59,19 +59,18 @@ object UnusedResults extends ProjectAnalysisApplication {
 
     override def title: String = "Unused Results Analysis"
 
-    override def description: String = {
-        "find invokations of pure/side effect free methods where the result is not used"
-    }
+    override def description: String = "find invokations of pure/side effect free methods where the result is not used"
 
     override def doAnalyze(
-        project: Project[URL], parameters: Seq[String], isInterrupted: () => Boolean
-    ): BasicReport = {
+        project:       Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () => Boolean): BasicReport = {
 
         val issues = new ConcurrentLinkedQueue[String]
 
-        implicit val p: SomeProject = project
-        implicit val ps: PropertyStore = project.get(PropertyStoreKey)
-        implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
+        implicit val p: SomeProject                        = project
+        implicit val ps: PropertyStore                     = project.get(PropertyStoreKey)
+        implicit val declaredMethods: DeclaredMethods      = project.get(DeclaredMethodsKey)
         implicit val isMethodOverridable: Method => Answer = project.get(IsOverridableMethodKey)
 
         project.get(RTACallGraphKey)
@@ -88,7 +87,7 @@ object UnusedResults extends ProjectAnalysisApplication {
 
         project.parForeachMethodWithBody() { mi =>
             val method = mi.method
-            val tacai = (m: Method) => { val FinalP(taCode) = ps(method, TACAI.key); taCode.tac }
+            val tacai  = (m: Method) => { val FinalP(taCode) = ps(method, TACAI.key); taCode.tac }
             issues.addAll(analyzeMethod(method, tacai = tacai).asJava)
         }
 
@@ -98,16 +97,13 @@ object UnusedResults extends ProjectAnalysisApplication {
     def analyzeMethod(
         method: Method,
         tacai:  Method => Option[TACode[_, V]]
-    )(
-        implicit
+      )(implicit
         project:             SomeProject,
         propertyStore:       PropertyStore,
         declaredMethods:     DeclaredMethods,
-        isMethodOverridable: Method => Answer
-    ): Seq[String] = {
+        isMethodOverridable: Method => Answer): Seq[String] = {
         val taCodeOption = tacai(method)
-        if (taCodeOption.isEmpty)
-            return Nil;
+        if (taCodeOption.isEmpty) return Nil;
 
         val code = taCodeOption.get.stmts
 
@@ -118,8 +114,7 @@ object UnusedResults extends ProjectAnalysisApplication {
             case ExprStmt(_, call: NonVirtualFunctionCall[V]) =>
                 val callee = call.resolveCallTarget(method.classFile.thisType)
                 handleCall(method, callee, call.pc)
-            case ExprStmt(_, call: VirtualFunctionCall[V]) =>
-                handleVirtualCall(call, method)
+            case ExprStmt(_, call: VirtualFunctionCall[V]) => handleVirtualCall(call, method)
         }
 
         ArraySeq.unsafeWrapArray(issues) collect { case Some(issue) => issue }
@@ -129,36 +124,30 @@ object UnusedResults extends ProjectAnalysisApplication {
         caller: Method,
         callee: Result[Method],
         pc:     Int
-    )(
-        implicit
+      )(implicit
         propertyStore:   PropertyStore,
-        declaredMethods: DeclaredMethods
-    ): Option[String] = {
+        declaredMethods: DeclaredMethods): Option[String] =
         if (callee.hasValue) {
             propertyStore(declaredMethods(callee.value), PurityProperty.key) match {
-                case FinalP(CompileTimePure | Pure | SideEffectFree) =>
-                    createIssue(caller, callee.value, pc)
-                case _ => None
+                case FinalP(CompileTimePure | Pure | SideEffectFree) => createIssue(caller, callee.value, pc)
+                case _                                               => None
             }
         } else {
             None
         }
-    }
 
     def handleVirtualCall(
         call:   VirtualFunctionCall[V],
         caller: Method
-    )(
-        implicit
+      )(implicit
         project:             SomeProject,
         propertyStore:       PropertyStore,
         declaredMethods:     DeclaredMethods,
-        isMethodOverridable: Method => Answer
-    ): Option[String] = {
-        val callerType = caller.classFile.thisType
+        isMethodOverridable: Method => Answer): Option[String] = {
+        val callerType                                              = caller.classFile.thisType
         val VirtualFunctionCall(_, dc, _, name, descr, receiver, _) = call
 
-        val value = receiver.asVar.value.asReferenceValue
+        val value        = receiver.asVar.value.asReferenceValue
         val receiverType = value.leastUpperType
 
         if (receiverType.isEmpty) {
@@ -193,8 +182,5 @@ object UnusedResults extends ProjectAnalysisApplication {
     private def createIssue(
         method: Method,
         target: Method,
-        pc:     PC
-    ): Some[String] = {
-        Some(s"Unused result of call to ${target.toJava} from ${method.toJava} at $pc")
-    }
+        pc:     PC): Some[String] = Some(s"Unused result of call to ${target.toJava} from ${method.toJava} at $pc")
 }

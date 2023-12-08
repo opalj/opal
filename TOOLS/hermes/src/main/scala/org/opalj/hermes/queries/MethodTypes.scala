@@ -12,26 +12,23 @@ import org.opalj.br.analyses.Project
  */
 class MethodTypes(implicit hermes: HermesConfig) extends FeatureQuery {
 
-    override val featureIDs: List[String] = {
-        List(
-            /*0*/ "native methods",
-            /*1*/ "synthetic methods",
-            /*2*/ "bridge methods",
-            /*3*/ "synchronized methods",
-            /*4*/ "varargs methods",
-            // second category...
-            /*5*/ "static initializers",
-            /*6*/ "static methods\n(not including static initializers)",
-            /*7*/ "constructors",
-            /*8*/ "instance methods"
-        )
-    }
+    override val featureIDs: List[String] = List(
+        /*0*/ "native methods",
+        /*1*/ "synthetic methods",
+        /*2*/ "bridge methods",
+        /*3*/ "synchronized methods",
+        /*4*/ "varargs methods",
+        // second category...
+        /*5*/ "static initializers",
+        /*6*/ "static methods\n(not including static initializers)",
+        /*7*/ "constructors",
+        /*8*/ "instance methods"
+    )
 
     override def apply[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Iterable[(da.ClassFile, S)]
-    ): IterableOnce[Feature[S]] = {
+        rawClassFiles:        Iterable[(da.ClassFile, S)]): IterableOnce[Feature[S]] = {
 
         val methodLocations = Array.fill(featureIDs.size)(new LocationsContainer[S])
 
@@ -39,7 +36,7 @@ class MethodTypes(implicit hermes: HermesConfig) extends FeatureQuery {
             (classFile, source) <- project.projectClassFilesWithSources
             if !isInterrupted()
             classLocation = ClassFileLocation(source, classFile)
-            m <- classFile.methods
+            m            <- classFile.methods
         } {
             val location = MethodLocation(classLocation, m)
             if (m.isNative) methodLocations(0) += location
@@ -48,16 +45,13 @@ class MethodTypes(implicit hermes: HermesConfig) extends FeatureQuery {
             if (m.isSynchronized) methodLocations(3) += location
             if (m.isVarargs) methodLocations(4) += location
 
-            if (m.name == "<clinit>")
-                methodLocations(5) += location
+            if (m.name == "<clinit>") methodLocations(5) += location
             else {
                 if (m.isStatic) {
                     methodLocations(6) += location
                 } else {
-                    if (m.name == "<init>")
-                        methodLocations(7) += location
-                    else
-                        methodLocations(8) += location
+                    if (m.name == "<init>") methodLocations(7) += location
+                    else methodLocations(8) += location
                 }
             }
         }

@@ -4,8 +4,8 @@ package ai
 package domain
 package tracing
 
-import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.br._
+import org.opalj.collection.immutable.IntTrieSet
 
 /**
  * Enables the tracing of some user-defined property while a method is analyzed.
@@ -58,16 +58,13 @@ trait PropertyTracing extends CoreDomainFunctionality with CustomInitialization 
      */
     abstract override def properties(
         pc:               Int,
-        propertyToString: AnyRef => String
-    ): Option[String] = {
+        propertyToString: AnyRef => String): Option[String] = {
 
         val thisProperty = Option(propertiesArray(pc)).map(_.toString())
 
         super.properties(pc, propertyToString) match {
-            case superProperty @ Some(description) =>
-                thisProperty map (_+"; "+description) orElse superProperty
-            case None =>
-                thisProperty
+            case superProperty @ Some(description) => thisProperty map (_ + "; " + description) orElse superProperty
+            case None                              => thisProperty
         }
 
     }
@@ -84,14 +81,12 @@ trait PropertyTracing extends CoreDomainFunctionality with CustomInitialization 
         worklist:                         List[PC],
         operandsArray:                    OperandsArray,
         localsArray:                      LocalsArray,
-        tracer:                           Option[AITracer]
-    ): List[PC] = {
+        tracer:                           Option[AITracer]): List[PC] = {
 
-        val forceScheduling: Boolean = {
+        val forceScheduling: Boolean =
             if (wasJoinPerformed) {
                 propertiesArray(successorPC) join propertiesArray(currentPC) match {
-                    case NoUpdate =>
-                        false
+                    case NoUpdate => false
                     case StructuralUpdate(property) =>
                         propertiesArray(successorPC) = property
                         true
@@ -106,14 +101,12 @@ trait PropertyTracing extends CoreDomainFunctionality with CustomInitialization 
                 // scheduled
                 false
             }
-        }
 
         var newIsSuccessorScheduled = isSuccessorScheduled
         val newWorklist =
             if (forceScheduling && isSuccessorScheduled.isNoOrUnknown) {
                 newIsSuccessorScheduled = Yes
-                val newWorklist =
-                    schedule(successorPC, abruptSubroutineTerminationCount, worklist)
+                val newWorklist = schedule(successorPC, abruptSubroutineTerminationCount, worklist)
                 if ((newWorklist ne worklist) && tracer.isDefined) {
                     // the instruction was not yet scheduled for another evaluation
                     tracer.get.flow(domain)(currentPC, successorPC, isExceptionalControlFlow)
@@ -123,12 +116,17 @@ trait PropertyTracing extends CoreDomainFunctionality with CustomInitialization 
                 worklist
             }
         super.flow(
-            currentPC, currentOperands, currentLocals,
-            successorPC, newIsSuccessorScheduled,
-            isExceptionalControlFlow, abruptSubroutineTerminationCount,
+            currentPC,
+            currentOperands,
+            currentLocals,
+            successorPC,
+            newIsSuccessorScheduled,
+            isExceptionalControlFlow,
+            abruptSubroutineTerminationCount,
             wasJoinPerformed,
             newWorklist,
-            operandsArray, localsArray,
+            operandsArray,
+            localsArray,
             tracer
         )
     }

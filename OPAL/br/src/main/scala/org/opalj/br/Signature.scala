@@ -208,23 +208,19 @@ sealed trait ThrowsSignature extends SignatureElement
  */
 sealed abstract class Signature extends SignatureElement with Attribute {
 
-    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = {
-        this == other
-    }
+    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = this == other
 
 }
 
 object Signature {
 
     private[br] def formalTypeParametersToJVMSignature(
-        formalTypeParameters: List[FormalTypeParameter]
-    ): String = {
+        formalTypeParameters: List[FormalTypeParameter]): String =
         if (formalTypeParameters.isEmpty) {
             ""
         } else {
             formalTypeParameters.map(_.toJVMSignature).mkString("<", "", ">")
         }
-    }
 
     def unapply(s: Signature): Some[String] = Some(s.toJVMSignature)
 
@@ -235,27 +231,22 @@ import Signature.formalTypeParametersToJVMSignature
  * @see For matching signatures see [[Signature]].
  */
 case class ClassSignature(
-        formalTypeParameters:     List[FormalTypeParameter],
-        superClassSignature:      ClassTypeSignature,
-        superInterfacesSignature: List[ClassTypeSignature]
-) extends Signature {
+        formalTypeParameters: List[FormalTypeParameter],
+        superClassSignature:  ClassTypeSignature,
+        superInterfacesSignature: List[ClassTypeSignature]) extends Signature {
 
     def accept[T](sv: SignatureVisitor[T]): T = sv.visit(this)
 
     override def kindId: Int = ClassSignature.KindId
 
-    override def toJVMSignature: String = {
-        formalTypeParametersToJVMSignature(formalTypeParameters) +
-            superClassSignature.toJVMSignature +
-            superInterfacesSignature.map(_.toJVMSignature).mkString("")
-    }
+    override def toJVMSignature: String = formalTypeParametersToJVMSignature(formalTypeParameters) +
+        superClassSignature.toJVMSignature +
+        superInterfacesSignature.map(_.toJVMSignature).mkString("")
 
-    override def toString: String = {
-        "ClassSignature("+
-            formalTypeParameters.mkString("typeParameters=List(", ",", ")")+
-            ",superClass="+superClassSignature.toString +
-            superInterfacesSignature.mkString(",superInterfaces=List(", ",", "))")
-    }
+    override def toString: String = "ClassSignature(" +
+        formalTypeParameters.mkString("typeParameters=List(", ",", ")") +
+        ",superClass=" + superClassSignature.toString +
+        superInterfacesSignature.mkString(",superInterfaces=List(", ",", "))")
 }
 object ClassSignature {
 
@@ -270,18 +261,16 @@ case class MethodTypeSignature(
         formalTypeParameters:     List[FormalTypeParameter],
         parametersTypeSignatures: List[TypeSignature],
         returnTypeSignature:      ReturnTypeSignature,
-        throwsSignature:          List[ThrowsSignature]
-) extends Signature {
+        throwsSignature: List[ThrowsSignature]) extends Signature {
 
     def accept[T](sv: SignatureVisitor[T]): T = sv.visit(this)
 
     override def kindId: Int = MethodTypeSignature.KindId
 
-    override def toJVMSignature: String =
-        formalTypeParametersToJVMSignature(formalTypeParameters) +
-            parametersTypeSignatures.map(_.toJVMSignature).mkString("(", "", ")") +
-            returnTypeSignature.toJVMSignature +
-            throwsSignature.map(s => s"^${s.toJVMSignature}").mkString("")
+    override def toJVMSignature: String = formalTypeParametersToJVMSignature(formalTypeParameters) +
+        parametersTypeSignatures.map(_.toJVMSignature).mkString("(", "", ")") +
+        returnTypeSignature.toJVMSignature +
+        throwsSignature.map(s => s"^${s.toJVMSignature}").mkString("")
 }
 object MethodTypeSignature {
 
@@ -315,7 +304,7 @@ case class ArrayTypeSignature(typeSignature: TypeSignature) extends FieldTypeSig
 
     override def kindId: Int = ArrayTypeSignature.KindId
 
-    override def toJVMSignature: String = "["+typeSignature.toJVMSignature
+    override def toJVMSignature: String = "[" + typeSignature.toJVMSignature
 }
 object ArrayTypeSignature {
 
@@ -329,15 +318,12 @@ object ArrayTypeSignature {
 case class ClassTypeSignature(
         packageIdentifier:        Option[String],
         simpleClassTypeSignature: SimpleClassTypeSignature,
-        classTypeSignatureSuffix: List[SimpleClassTypeSignature]
-) extends FieldTypeSignature with ThrowsSignature {
+        classTypeSignatureSuffix: List[SimpleClassTypeSignature]) extends FieldTypeSignature with ThrowsSignature {
 
     def objectType: ObjectType = {
         val className =
-            if (packageIdentifier.isDefined)
-                new java.lang.StringBuilder(packageIdentifier.get)
-            else
-                new java.lang.StringBuilder()
+            if (packageIdentifier.isDefined) new java.lang.StringBuilder(packageIdentifier.get)
+            else new java.lang.StringBuilder()
         className.append(simpleClassTypeSignature.simpleName)
         classTypeSignatureSuffix foreach { ctss =>
             className.append('$')
@@ -354,13 +340,13 @@ case class ClassTypeSignature(
     override def toJVMSignature: String = {
         val packageName = packageIdentifier.getOrElse("")
 
-        "L"+
+        "L" +
             packageName +
             simpleClassTypeSignature.toJVMSignature +
             (classTypeSignatureSuffix match {
                 case Nil => ""
                 case l   => l.map(_.toJVMSignature).mkString(".", ".", "")
-            })+
+            }) +
             ";"
     }
 
@@ -375,14 +361,13 @@ object ClassTypeSignature {
  * @see For matching signatures see [[Signature]].
  */
 case class TypeVariableSignature(
-        identifier: String
-) extends FieldTypeSignature with ThrowsSignature {
+        identifier: String) extends FieldTypeSignature with ThrowsSignature {
 
     def accept[T](sv: SignatureVisitor[T]): T = sv.visit(this)
 
     override def kindId: Int = TypeVariableSignature.KindId
 
-    override def toJVMSignature: String = "T"+identifier+";"
+    override def toJVMSignature: String = "T" + identifier + ";"
 
 }
 object TypeVariableSignature {
@@ -395,43 +380,37 @@ object TypeVariableSignature {
  * @see For matching signatures see [[Signature]].
  */
 case class SimpleClassTypeSignature(
-        simpleName:    String,
-        typeArguments: List[TypeArgument]
-) {
+        simpleName: String,
+        typeArguments: List[TypeArgument]) {
 
     def accept[T](sv: SignatureVisitor[T]): T = sv.visit(this)
 
-    def toJVMSignature: String = {
-        simpleName +
-            (typeArguments match {
-                case Nil => ""
-                case l   => l.map(_.toJVMSignature).mkString("<", "", ">")
-            })
-    }
+    def toJVMSignature: String = simpleName +
+        (typeArguments match {
+            case Nil => ""
+            case l   => l.map(_.toJVMSignature).mkString("<", "", ">")
+        })
 }
 
 /**
  * @see For matching signatures see [[Signature]].
  */
 case class FormalTypeParameter(
-        identifier:     String,
-        classBound:     Option[FieldTypeSignature],
-        interfaceBound: List[FieldTypeSignature]
-) {
+        identifier: String,
+        classBound: Option[FieldTypeSignature],
+        interfaceBound: List[FieldTypeSignature]) {
 
     def accept[T](sv: SignatureVisitor[T]): T = sv.visit(this)
 
-    def toJVMSignature: String = {
-        identifier +
-            (classBound match {
-                case Some(x) => ":"+x.toJVMSignature
-                case None    => ":"
-            }) +
-            (interfaceBound match {
-                case Nil => ""
-                case l   => ":"+l.map(_.toJVMSignature).mkString(":")
-            })
-    }
+    def toJVMSignature: String = identifier +
+        (classBound match {
+            case Some(x) => ":" + x.toJVMSignature
+            case None    => ":"
+        }) +
+        (interfaceBound match {
+            case Nil => ""
+            case l   => ":" + l.map(_.toJVMSignature).mkString(":")
+        })
 }
 
 /**
@@ -443,26 +422,22 @@ sealed abstract class TypeArgument extends SignatureElement
  * @see For matching signatures see [[Signature]].
  */
 case class ProperTypeArgument(
-        varianceIndicator:  Option[VarianceIndicator],
-        fieldTypeSignature: FieldTypeSignature
-) extends TypeArgument {
+        varianceIndicator: Option[VarianceIndicator],
+        fieldTypeSignature: FieldTypeSignature) extends TypeArgument {
 
     def accept[T](sv: SignatureVisitor[T]): T = sv.visit(this)
 
-    override def toJVMSignature: String = {
+    override def toJVMSignature: String =
         (varianceIndicator match {
             case Some(x) => x.toJVMSignature
             case None    => ""
         }) +
             fieldTypeSignature.toJVMSignature
-    }
 
-    override def toString: String = {
-        "ProperTypeArgument"+
-            "(variance="+varianceIndicator+
-            ",signature="+fieldTypeSignature+
-            ")"
-    }
+    override def toString: String = "ProperTypeArgument" +
+        "(variance=" + varianceIndicator +
+        ",signature=" + fieldTypeSignature +
+        ")"
 }
 
 /**
@@ -504,7 +479,6 @@ case object ContravariantIndicator extends ContravariantIndicator
  * If a type argument is not further specified (e.g., List<?> l = …), then the
  * type argument "?" is represented by this object.
  *
- *
  * @see For matching signatures see [[Signature]].
  */
 sealed abstract class Wildcard extends TypeArgument {
@@ -524,9 +498,7 @@ case object Wildcard extends Wildcard
  */
 object BasicClassTypeSignature {
 
-    def unapply(cts: ClassTypeSignature): Option[ObjectType] = {
-        Some(cts.objectType)
-    }
+    def unapply(cts: ClassTypeSignature): Option[ObjectType] = Some(cts.objectType)
 }
 
 /**
@@ -537,15 +509,12 @@ object BasicClassTypeSignature {
  */
 object ConcreteType {
 
-    def unapply(cts: ClassTypeSignature): Option[ObjectType] = {
-        cts match {
+    def unapply(cts: ClassTypeSignature): Option[ObjectType] = cts match {
 
-            case ClassTypeSignature(cpn, SimpleClassTypeSignature(csn, Nil), Nil) =>
-                Some(ObjectType(cpn.getOrElse("") + csn))
+        case ClassTypeSignature(cpn, SimpleClassTypeSignature(csn, Nil), Nil) =>
+            Some(ObjectType(cpn.getOrElse("") + csn))
 
-            case _ =>
-                None
-        }
+        case _ => None
     }
 }
 
@@ -559,11 +528,9 @@ object ConcreteType {
  */
 object ConcreteTypeArgument {
 
-    def unapply(pta: ProperTypeArgument): Option[ObjectType] = {
-        pta match {
-            case ProperTypeArgument(None, ConcreteType(ot)) => Some(ot)
-            case _                                          => None
-        }
+    def unapply(pta: ProperTypeArgument): Option[ObjectType] = pta match {
+        case ProperTypeArgument(None, ConcreteType(ot)) => Some(ot)
+        case _                                          => None
     }
 }
 
@@ -581,14 +548,13 @@ object ConcreteTypeArgument {
  *  }
  * }}}
  *
- *
  * @see For matching signatures see [[Signature]].
  */
 object UpperTypeBound {
 
     def unapply(pta: ProperTypeArgument): Option[ObjectType] = pta match {
         case ProperTypeArgument(Some(CovariantIndicator), ConcreteType(ot)) => Some(ot)
-        case _ => None
+        case _                                                              => None
     }
 }
 
@@ -613,7 +579,7 @@ object LowerTypeBound {
 
     def unapply(pta: ProperTypeArgument): Option[ObjectType] = pta match {
         case ProperTypeArgument(Some(ContravariantIndicator), ConcreteType(ot)) => Some(ot)
-        case _ => None
+        case _                                                                  => None
     }
 }
 
@@ -637,12 +603,9 @@ object LowerTypeBound {
 object GenericTypeArgument {
 
     def unapply(
-        pta: ProperTypeArgument
-    ): Option[(Option[VarianceIndicator], ClassTypeSignature)] = {
-        pta match {
-            case ProperTypeArgument(variance, cts: ClassTypeSignature) => Some((variance, cts))
-            case _ => None
-        }
+        pta: ProperTypeArgument): Option[(Option[VarianceIndicator], ClassTypeSignature)] = pta match {
+        case ProperTypeArgument(variance, cts: ClassTypeSignature) => Some((variance, cts))
+        case _                                                     => None
     }
 }
 
@@ -655,18 +618,14 @@ object GenericTypeArgument {
  */
 object GenericType {
 
-    def unapply(cts: ClassTypeSignature): Option[(ObjectType, List[TypeArgument])] = {
-        cts match {
+    def unapply(cts: ClassTypeSignature): Option[(ObjectType, List[TypeArgument])] = cts match {
 
-            case ClassTypeSignature(
+        case ClassTypeSignature(
                 _,
                 SimpleClassTypeSignature(_, typeArgs),
-                Nil) if typeArgs.nonEmpty =>
-                Some((cts.objectType, typeArgs))
+                Nil) if typeArgs.nonEmpty => Some((cts.objectType, typeArgs))
 
-            case _ =>
-                None
-        }
+        case _ => None
     }
 }
 
@@ -682,19 +641,14 @@ object GenericType {
 object GenericTypeWithClassSuffix {
 
     def unapply(
-        cts: ClassTypeSignature
-    ): Option[(ObjectType, List[TypeArgument], List[SimpleClassTypeSignature])] = {
-        cts match {
+        cts: ClassTypeSignature): Option[(ObjectType, List[TypeArgument], List[SimpleClassTypeSignature])] = cts match {
 
-            case ClassTypeSignature(
+        case ClassTypeSignature(
                 _,
                 SimpleClassTypeSignature(_, typeArgs),
-                suffix) if suffix.nonEmpty =>
-                Some((cts.objectType, typeArgs, suffix))
+                suffix) if suffix.nonEmpty => Some((cts.objectType, typeArgs, suffix))
 
-            case _ =>
-                None
-        }
+        case _ => None
     }
 }
 
@@ -716,20 +670,16 @@ object GenericTypeWithClassSuffix {
  */
 object SimpleGenericType {
 
-    def unapply(cts: ClassTypeSignature): Option[(ObjectType, ObjectType)] = {
-        cts match {
+    def unapply(cts: ClassTypeSignature): Option[(ObjectType, ObjectType)] = cts match {
 
-            case ClassTypeSignature(
+        case ClassTypeSignature(
                 cpn,
                 SimpleClassTypeSignature(
                     csn,
                     List(ProperTypeArgument(None, ConcreteType(tp)))),
                 Nil
-                ) =>
-                Some((ObjectType(cpn.getOrElse("") + csn), tp))
+            ) => Some((ObjectType(cpn.getOrElse("") + csn), tp))
 
-            case _ =>
-                None
-        }
+        case _ => None
     }
 }

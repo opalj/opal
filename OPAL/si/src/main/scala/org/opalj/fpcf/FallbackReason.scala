@@ -14,7 +14,7 @@ sealed trait FallbackReason {
  * past, is not computed now and will also not be computed in the future.
  */
 case object PropertyIsNotComputedByAnyAnalysis extends FallbackReason {
-    def propertyIsNotComputedByAnyAnalysis: Boolean = true
+    def propertyIsNotComputedByAnyAnalysis: Boolean               = true
     def propertyIsNotDerivedByPreviouslyExecutedAnalysis: Boolean = false
 }
 
@@ -27,6 +27,6 @@ case object PropertyIsNotComputedByAnyAnalysis extends FallbackReason {
  *       likely not computed. If it is queried, then this is the Property that should be returned.
  */
 case object PropertyIsNotDerivedByPreviouslyExecutedAnalysis extends FallbackReason {
-    def propertyIsNotComputedByAnyAnalysis: Boolean = false
+    def propertyIsNotComputedByAnyAnalysis: Boolean               = false
     def propertyIsNotDerivedByPreviouslyExecutedAnalysis: Boolean = true
 }

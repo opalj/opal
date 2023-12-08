@@ -27,7 +27,7 @@ class JavaBackwardICFG(project: SomeProject)
      */
     override def startStatements(callable: Method): Set[JavaStatement] = {
         val TACode(_, code, _, cfg, _) = tacai(callable)
-        val exitStatements = cfg.normalReturnNode.predecessors ++ cfg.abnormalReturnNode.predecessors
+        val exitStatements             = cfg.normalReturnNode.predecessors ++ cfg.abnormalReturnNode.predecessors
         exitStatements.map(s => JavaStatement(callable, s.asBasicBlock.endPC, code, cfg))
     }
 
@@ -37,10 +37,9 @@ class JavaBackwardICFG(project: SomeProject)
      * @param statement The source statement.
      * @return The successor statements
      */
-    override def nextStatements(statement: JavaStatement): Set[JavaStatement] =
-        statement.cfg
-            .predecessors(statement.index)
-            .map(index => JavaStatement(statement, index))
+    override def nextStatements(statement: JavaStatement): Set[JavaStatement] = statement.cfg
+        .predecessors(statement.index)
+        .map(index => JavaStatement(statement, index))
 
     /**
      * Determines whether the statement is an exit statement.

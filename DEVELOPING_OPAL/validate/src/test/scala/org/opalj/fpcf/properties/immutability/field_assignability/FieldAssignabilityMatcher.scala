@@ -22,13 +22,11 @@ class FieldAssignabilityMatcher(val property: FieldAssignability)
         p:      SomeProject,
         as:     Set[ObjectType],
         entity: Object,
-        a:      AnnotationLike
-    ): Boolean = {
+        a:      AnnotationLike): Boolean = {
         val annotationType = a.annotationType.asObjectType
 
-        val analysesElementValues =
-            getValue(p, annotationType, a.elementValuePairs, "analyses").asArrayValue.values
-        val analyses = analysesElementValues.map(ev => ev.asClassValue.value.asObjectType)
+        val analysesElementValues = getValue(p, annotationType, a.elementValuePairs, "analyses").asArrayValue.values
+        val analyses              = analysesElementValues.map(ev => ev.asClassValue.value.asObjectType)
 
         analyses.exists(as.contains)
     }
@@ -38,23 +36,23 @@ class FieldAssignabilityMatcher(val property: FieldAssignability)
         as:         Set[ObjectType],
         entity:     Entity,
         a:          AnnotationLike,
-        properties: Iterable[Property]
-    ): Option[String] = {
+        properties: Iterable[Property]): Option[String] =
         if (!properties.exists(p => p == property)) {
             // ... when we reach this point the expected property was not found.
             Some(a.elementValuePairs(PropertyReasonID).value.asStringValue.value)
         } else {
             None
         }
-    }
 }
 
 class AssignableFieldMatcher extends FieldAssignabilityMatcher(br.fpcf.properties.immutability.Assignable)
 
 class LazilyInitializedFieldMatcher extends FieldAssignabilityMatcher(br.fpcf.properties.immutability.LazilyInitialized)
 
-class UnsafelyLazilyInitializedFieldMatcher extends FieldAssignabilityMatcher(br.fpcf.properties.immutability.UnsafelyLazilyInitialized)
+class UnsafelyLazilyInitializedFieldMatcher
+    extends FieldAssignabilityMatcher(br.fpcf.properties.immutability.UnsafelyLazilyInitialized)
 
-class EffectivelyNonAssignableFieldMatcher extends FieldAssignabilityMatcher(br.fpcf.properties.immutability.EffectivelyNonAssignable)
+class EffectivelyNonAssignableFieldMatcher
+    extends FieldAssignabilityMatcher(br.fpcf.properties.immutability.EffectivelyNonAssignable)
 
 class NonAssignableFieldMatcher extends FieldAssignabilityMatcher(br.fpcf.properties.immutability.NonAssignable)

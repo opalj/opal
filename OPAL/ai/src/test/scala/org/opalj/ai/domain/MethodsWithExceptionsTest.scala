@@ -3,18 +3,18 @@ package org.opalj
 package ai
 package domain
 
-import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
-
 import scala.collection.immutable.LongMap
 
-import org.opalj.bi.TestResources.locateTestResources
-import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.br.reader.Java8Framework.ClassFiles
-import org.opalj.br._
 import org.opalj.ai.common.XHTML.dumpOnFailureDuringValidation
+import org.opalj.bi.TestResources.locateTestResources
+import org.opalj.br._
+import org.opalj.br.reader.Java8Framework.ClassFiles
+import org.opalj.collection.immutable.IntTrieSet
+
+import org.junit.runner.RunWith
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Basic tests of the abstract interpreter in the presence of simple control flow
@@ -30,30 +30,29 @@ class MethodsWithExceptionsTest extends AnyFlatSpec with Matchers {
 
     class DefaultRecordingDomain(val id: String)
         extends CorrelationalDomain
-        with DefaultSpecialDomainValuesBinding
-        with ThrowAllPotentialExceptionsConfiguration
-        with PredefinedClassHierarchy
-        with DefaultHandlingOfMethodResults
-        with IgnoreSynchronization
-        with l0.DefaultTypeLevelIntegerValues
-        with l0.DefaultTypeLevelFloatValues
-        with l0.DefaultTypeLevelDoubleValues
-        with l0.DefaultTypeLevelLongValues
-        with l0.TypeLevelPrimitiveValuesConversions
-        with l0.TypeLevelLongValuesShiftOperators
-        with l0.TypeLevelFieldAccessInstructions
-        with l0.SimpleTypeLevelInvokeInstructions
-        with l0.TypeLevelDynamicLoads
-        with l1.DefaultReferenceValuesBinding
-        /* => */ with RecordLastReturnedValues
-        /* => */ with RecordAllThrownExceptions
-        /* => */ with RecordVoidReturns {
+            with DefaultSpecialDomainValuesBinding
+            with ThrowAllPotentialExceptionsConfiguration
+            with PredefinedClassHierarchy
+            with DefaultHandlingOfMethodResults
+            with IgnoreSynchronization
+            with l0.DefaultTypeLevelIntegerValues
+            with l0.DefaultTypeLevelFloatValues
+            with l0.DefaultTypeLevelDoubleValues
+            with l0.DefaultTypeLevelLongValues
+            with l0.TypeLevelPrimitiveValuesConversions
+            with l0.TypeLevelLongValuesShiftOperators
+            with l0.TypeLevelFieldAccessInstructions
+            with l0.SimpleTypeLevelInvokeInstructions
+            with l0.TypeLevelDynamicLoads
+            with l1.DefaultReferenceValuesBinding
+            /* => */ with RecordLastReturnedValues
+            /* => */ with RecordAllThrownExceptions
+            /* => */ with RecordVoidReturns {
 
         override def throwIllegalMonitorStateException: Boolean = false
 
-        override def throwExceptionsOnMethodCall: ExceptionsRaisedByCalledMethod = {
+        override def throwExceptionsOnMethodCall: ExceptionsRaisedByCalledMethod =
             ExceptionsRaisedByCalledMethods.AllExplicitlyHandled
-        }
     }
 
     private def evaluateMethod(name: String)(f: DefaultRecordingDomain => Unit): Unit = {
@@ -72,7 +71,7 @@ class MethodsWithExceptionsTest extends AnyFlatSpec with Matchers {
         evaluateMethod("alwaysThrows") { domain =>
             import domain._
             allThrownExceptions should be(
-                Map((8 -> Set(ObjectValue(0, No, true, ObjectType.RuntimeException))))
+                Map(8 -> Set(ObjectValue(0, No, true, ObjectType.RuntimeException)))
             )
         }
     }
@@ -89,8 +88,8 @@ class MethodsWithExceptionsTest extends AnyFlatSpec with Matchers {
             import domain._
             allThrownExceptions should be(
                 Map(
-                    (19 -> Set(ObjectValue(12, No, true, ObjectType("java/lang/IllegalArgumentException")))), // <= finally
-                    (11 -> Set(ObjectValue(4, No, true, ObjectType.NullPointerException)))
+                    19 -> Set(ObjectValue(12, No, true, ObjectType("java/lang/IllegalArgumentException"))), // <= finally
+                    11 -> Set(ObjectValue(4, No, true, ObjectType.NullPointerException))
                 ) // <= if t is null
             )
         }
@@ -121,12 +120,15 @@ class MethodsWithExceptionsTest extends AnyFlatSpec with Matchers {
             import domain._
             allThrownExceptions should be(
                 Map(
-                    (19, Set(ObjectValue(ImmediateVMExceptionsOriginOffset - 19, No, true, ObjectType.NullPointerException))),
-                    (23, Set(
-                        ObjectValue(-1, No, false, ObjectType.Throwable),
-                        ObjectValue(ImmediateVMExceptionsOriginOffset - 11, No, true, ObjectType.NullPointerException)
-                    )),
-                    (25, Set(ObjectValue(ImmediateVMExceptionsOriginOffset - 25, No, true, ObjectType.NullPointerException)))
+                    (19,
+                     Set(ObjectValue(ImmediateVMExceptionsOriginOffset - 19, No, true, ObjectType.NullPointerException))),
+                    (23,
+                     Set(
+                         ObjectValue(-1, No, false, ObjectType.Throwable),
+                         ObjectValue(ImmediateVMExceptionsOriginOffset - 11, No, true, ObjectType.NullPointerException)
+                     )),
+                    (25,
+                     Set(ObjectValue(ImmediateVMExceptionsOriginOffset - 25, No, true, ObjectType.NullPointerException)))
                 )
             )
         }

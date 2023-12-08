@@ -21,9 +21,7 @@ import org.opalj.fpcf.SomeEPS
  * @author Dominik Helm
  */
 trait TypeIteratorState extends AnalysisState {
-    private[this] val _dependees: mutable.Map[EPK[Entity, Property], EOptionP[Entity, Property]] = {
-        mutable.Map.empty
-    }
+    private[this] val _dependees: mutable.Map[EPK[Entity, Property], EOptionP[Entity, Property]] = mutable.Map.empty
 
     // We organize the dependencies to type states within a bijective mapping of
     // dependers (the use sites) and their dependees (the respective definition sites).
@@ -31,37 +29,29 @@ trait TypeIteratorState extends AnalysisState {
     // efficiently perform updates here.
     // If we get an update for a dependee, we have to update all points-to sets for the
     // its dependers (_dependeeToDependers(dependee).
-    private[this] val _dependeeToDependers: mutable.Map[EPK[Entity, Property], mutable.Set[Entity]] = {
-        mutable.Map.empty
-    }
-    private[this] val _dependerToDependees: mutable.Map[Entity, mutable.Set[EPK[Entity, Property]]] = {
-        mutable.Map.empty
-    }
+    private[this] val _dependeeToDependers: mutable.Map[EPK[Entity, Property], mutable.Set[Entity]] = mutable.Map.empty
+    private[this] val _dependerToDependees: mutable.Map[Entity, mutable.Set[EPK[Entity, Property]]] = mutable.Map.empty
 
     final def addDependency(
         depender: Entity,
-        dependee: EOptionP[Entity, Property]
-    ): Unit = {
+        dependee: EOptionP[Entity, Property]): Unit = {
         val dependeeEPK = dependee.toEPK
 
         _dependeeToDependers.getOrElseUpdate(dependeeEPK, mutable.Set.empty).add(depender)
         _dependerToDependees.getOrElseUpdate(depender, mutable.Set.empty).add(dependeeEPK)
 
-        if (!_dependees.contains(dependeeEPK))
-            _dependees(dependeeEPK) = dependee
+        if (!_dependees.contains(dependeeEPK)) _dependees(dependeeEPK) = dependee
     }
 
     final def removeDependee(dependee: EPK[Entity, Property]): Unit = {
         // delete the type property of the dependee
-        if (_dependees.remove(dependee).isEmpty)
-            throw new RuntimeException(s"failed to remove dependee: $dependee")
+        if (_dependees.remove(dependee).isEmpty) throw new RuntimeException(s"failed to remove dependee: $dependee")
 
         // for every depender we have to remove the dependee of the set of dependees
         val dependers = _dependeeToDependers(dependee)
         for (depender <- dependers) {
             val dependees = _dependerToDependees(depender)
-            if (!dependees.remove(dependee))
-                throw new RuntimeException(s"failed to remove dependee: $dependee")
+            if (!dependees.remove(dependee)) throw new RuntimeException(s"failed to remove dependee: $dependee")
 
             // if there is no dependee left, we remove the entry from the map
             if (dependees.isEmpty && _dependerToDependees.remove(depender).isEmpty) {
@@ -100,11 +90,10 @@ trait TypeIteratorState extends AnalysisState {
         _dependees.contains(dependee)
     }
 
-    final def hasDependency(depender: Entity, dependee: EPK[Entity, Property]): Boolean = {
+    final def hasDependency(depender: Entity, dependee: EPK[Entity, Property]): Boolean =
         _dependerToDependees.contains(depender) && _dependerToDependees(depender).contains(dependee)
-    }
 
-    private final def hasDependees: Boolean = {
+    final private def hasDependees: Boolean = {
         assert(
             (_dependees.isEmpty == _dependeeToDependers.isEmpty) &&
                 (_dependeeToDependers.isEmpty == _dependerToDependees.isEmpty)
@@ -112,9 +101,7 @@ trait TypeIteratorState extends AnalysisState {
         _dependees.nonEmpty
     }
 
-    abstract override def hasOpenDependencies: Boolean = {
-        hasDependees || super.hasOpenDependencies
-    }
+    abstract override def hasOpenDependencies: Boolean = hasDependees || super.hasOpenDependencies
 
     abstract override def dependees: Set[SomeEOptionP] = {
         // IMPROVE: make it more efficient (maybe use immutable map and join traversables)
@@ -128,9 +115,8 @@ trait TypeIteratorState extends AnalysisState {
         allDependees
     }
 
-    final def getProperty[E <: Entity, P <: Property](dependee: EPK[E, P]): EOptionP[E, P] = {
+    final def getProperty[E <: Entity, P <: Property](dependee: EPK[E, P]): EOptionP[E, P] =
         _dependees(dependee).asInstanceOf[EOptionP[E, P]]
-    }
 
     final def updateDependency(eps: SomeEPS): Unit = {
         val dependeeEPK = eps.toEPK
@@ -142,7 +128,5 @@ trait TypeIteratorState extends AnalysisState {
     // IMPROVE: In order to be thread-safe, we return an immutable copy of the set.
     // However, this is very inefficient!
     // The size of the sets is typically 1 or 2, but there are outliers with up to 100 elements.
-    final def dependersOf(dependee: EPK[Entity, Property]): Set[Entity] = {
-        _dependeeToDependers(dependee).toSet
-    }
+    final def dependersOf(dependee: EPK[Entity, Property]): Set[Entity] = _dependeeToDependers(dependee).toSet
 }

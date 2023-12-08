@@ -8,8 +8,7 @@ package br
  * @author Michael Eichberg
  */
 case class RuntimeInvisibleParameterAnnotationTable(
-        parameterAnnotations: ParameterAnnotations
-) extends ParameterAnnotationTable {
+        parameterAnnotations: ParameterAnnotations) extends ParameterAnnotationTable {
 
     final def isRuntimeVisible: Boolean = false
 

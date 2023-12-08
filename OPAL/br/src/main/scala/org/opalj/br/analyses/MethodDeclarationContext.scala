@@ -3,10 +3,10 @@ package org.opalj
 package br
 package analyses
 
-import org.opalj.bi.VisibilityModifier
-import org.opalj.bi.ACC_PUBLIC
-import org.opalj.bi.ACC_PROTECTED
 import org.opalj.bi.ACC_PRIVATE
+import org.opalj.bi.ACC_PROTECTED
+import org.opalj.bi.ACC_PUBLIC
+import org.opalj.bi.VisibilityModifier
 
 /**
  * Encapsulates the information about a '''non-abstract''', '''non-static''' method which is
@@ -29,23 +29,19 @@ final class MethodDeclarationContext(val method: Method) extends Ordered[MethodD
     assert(!method.isInitializer)
 
     def declaringClassType: ObjectType = method.declaringClassFile.thisType
-    def packageName: String = declaringClassType.packageName
-    def isPublic: Boolean = method.isPublic
-    def name: String = method.name
-    def descriptor: MethodDescriptor = method.descriptor
+    def packageName: String            = declaringClassType.packageName
+    def isPublic: Boolean              = method.isPublic
+    def name: String                   = method.name
+    def descriptor: MethodDescriptor   = method.descriptor
 
-    override def equals(other: Any): Boolean = {
-        other match {
-            case that: MethodDeclarationContext =>
-                this.packageName == that.packageName && {
-                    val thisMethod = this.method
-                    val thatMethod = that.method
-                    thisMethod.name == thatMethod.name &&
-                        thisMethod.descriptor == thatMethod.descriptor
-                }
-            case _ =>
-                false
-        }
+    override def equals(other: Any): Boolean = other match {
+        case that: MethodDeclarationContext => this.packageName == that.packageName && {
+                val thisMethod = this.method
+                val thatMethod = that.method
+                thisMethod.name == thatMethod.name &&
+                thisMethod.descriptor == thatMethod.descriptor
+            }
+        case _ => false
     }
 
     /**
@@ -67,10 +63,8 @@ final class MethodDeclarationContext(val method: Method) extends Ordered[MethodD
      */
     def compare(that: MethodDeclarationContext): Int = {
         val result = this.method compare that.method
-        if (result == 0)
-            this.packageName compareTo that.packageName
-        else
-            result
+        if (result == 0) this.packageName compareTo that.packageName
+        else result
     }
 
     def compareWithPublicMethod(thatMethod: Method): Int = {
@@ -90,8 +84,7 @@ final class MethodDeclarationContext(val method: Method) extends Ordered[MethodD
     def compareAccessibilityAware(
         packageName: String, // only considered if name and descriptor already match...
         name:        String,
-        descriptor:  MethodDescriptor
-    ): Int = {
+        descriptor:  MethodDescriptor): Int = {
         val method = this.method
         val result = method.compare(name, descriptor)
         if (result == 0 && method.hasDefaultVisibility) {
@@ -103,10 +96,7 @@ final class MethodDeclarationContext(val method: Method) extends Ordered[MethodD
 
     def compareAccessibilityAware(
         declaringClass: ObjectType,
-        m:              Method
-    ): Int = {
-        compareAccessibilityAware(declaringClass.packageName, m.name, m.descriptor)
-    }
+        m:              Method): Int = compareAccessibilityAware(declaringClass.packageName, m.name, m.descriptor)
 
     /**
      * Returns `true` if this method directly overrides the given method.
@@ -130,8 +120,8 @@ final class MethodDeclarationContext(val method: Method) extends Ordered[MethodD
 
         mc == ma || (
             mc.name == ma.name &&
-            mc.descriptor == ma.descriptor &&
-            canDirectlyOverride(ma.visibilityModifier, that.packageName)
+                mc.descriptor == ma.descriptor &&
+                canDirectlyOverride(ma.visibilityModifier, that.packageName)
         )
     }
 
@@ -142,9 +132,8 @@ final class MethodDeclarationContext(val method: Method) extends Ordered[MethodD
      * has package visibility, the other (implicit) method has to be defined in
      * this method's package.
      */
-    def isDirectlyOverriddenBy(packageName: String): Boolean = {
+    def isDirectlyOverriddenBy(packageName: String): Boolean =
         !this.method.hasDefaultVisibility || this.packageName == packageName
-    }
 
     /**
      * Performs the accessibility check required when we need to determine
@@ -155,13 +144,10 @@ final class MethodDeclarationContext(val method: Method) extends Ordered[MethodD
      */
     def canDirectlyOverride(
         visibility:  Option[VisibilityModifier],
-        packageName: String
-    ): Boolean = {
-        visibility match {
-            case Some(ACC_PUBLIC) | Some(ACC_PROTECTED) => true
-            case Some(ACC_PRIVATE)                      => false
-            case None                                   => this.packageName == packageName
-        }
+        packageName: String): Boolean = visibility match {
+        case Some(ACC_PUBLIC) | Some(ACC_PROTECTED) => true
+        case Some(ACC_PRIVATE)                      => false
+        case None                                   => this.packageName == packageName
     }
 }
 
@@ -170,9 +156,7 @@ final class MethodDeclarationContext(val method: Method) extends Ordered[MethodD
  */
 object MethodDeclarationContext {
 
-    def apply(method: Method): MethodDeclarationContext = {
-        new MethodDeclarationContext(method)
-    }
+    def apply(method: Method): MethodDeclarationContext = new MethodDeclarationContext(method)
 
     def unapply(mdc: MethodDeclarationContext): Some[Method] = Some(mdc.method)
 

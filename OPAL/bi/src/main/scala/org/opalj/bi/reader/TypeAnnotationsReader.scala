@@ -3,11 +3,12 @@ package org.opalj
 package bi
 package reader
 
-import java.io.DataInputStream
-import org.opalj.control.fillArraySeq
-
-import scala.collection.immutable.ArraySeq
 import scala.reflect.ClassTag
+
+import java.io.DataInputStream
+import scala.collection.immutable.ArraySeq
+
+import org.opalj.control.fillArraySeq
 
 /**
  * Generic parser for type annotations. This reader is intended to be used in conjunction with the
@@ -34,12 +35,11 @@ trait TypeAnnotationsReader extends AnnotationsAbstractions {
     def TypeAnnotationTarget(in: DataInputStream): TypeAnnotationTarget
 
     def TypeAnnotation(
-        cp:                  Constant_Pool,
-        target:              TypeAnnotationTarget,
-        path:                TypeAnnotationPath,
-        type_index:          Constant_Pool_Index,
-        element_value_pairs: ElementValuePairs
-    ): TypeAnnotation
+        cp: Constant_Pool,
+        target: TypeAnnotationTarget,
+        path: TypeAnnotationPath,
+        type_index: Constant_Pool_Index,
+        element_value_pairs: ElementValuePairs): TypeAnnotation
 
     //
     // IMPLEMENTATION
@@ -72,19 +72,15 @@ trait TypeAnnotationsReader extends AnnotationsAbstractions {
      * }
      * </pre>
      */
-    def TypeAnnotations(cp: Constant_Pool, in: DataInputStream): TypeAnnotations = {
-        fillArraySeq(in.readUnsignedShort) {
-            TypeAnnotation(cp, in)
-        }
+    def TypeAnnotations(cp: Constant_Pool, in: DataInputStream): TypeAnnotations = fillArraySeq(in.readUnsignedShort) {
+        TypeAnnotation(cp, in)
     }
 
-    def TypeAnnotation(cp: Constant_Pool, in: DataInputStream): TypeAnnotation = {
-        TypeAnnotation(
-            cp,
-            TypeAnnotationTarget(in),
-            TypeAnnotationPath(in),
-            in.readUnsignedShort() /*type_index*/ ,
-            ElementValuePairs(cp, in)
-        )
-    }
+    def TypeAnnotation(cp: Constant_Pool, in: DataInputStream): TypeAnnotation = TypeAnnotation(
+        cp,
+        TypeAnnotationTarget(in),
+        TypeAnnotationPath(in),
+        in.readUnsignedShort() /*type_index*/,
+        ElementValuePairs(cp, in)
+    )
 }

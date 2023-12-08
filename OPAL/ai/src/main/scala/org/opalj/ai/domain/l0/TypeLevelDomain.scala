@@ -17,16 +17,16 @@ package l0
  */
 trait TypeLevelDomain
     extends Domain
-    with DefaultSpecialDomainValuesBinding
-    with DefaultReferenceValuesBinding
-    with DefaultTypeLevelIntegerValues
-    with DefaultTypeLevelLongValues
-    with TypeLevelLongValuesShiftOperators
-    with TypeLevelPrimitiveValuesConversions
-    with DefaultTypeLevelFloatValues
-    with DefaultTypeLevelDoubleValues
-    with TypeLevelFieldAccessInstructions
-    with TypeLevelInvokeInstructions
-    with TypeLevelDynamicLoads {
+        with DefaultSpecialDomainValuesBinding
+        with DefaultReferenceValuesBinding
+        with DefaultTypeLevelIntegerValues
+        with DefaultTypeLevelLongValues
+        with TypeLevelLongValuesShiftOperators
+        with TypeLevelPrimitiveValuesConversions
+        with DefaultTypeLevelFloatValues
+        with DefaultTypeLevelDoubleValues
+        with TypeLevelFieldAccessInstructions
+        with TypeLevelInvokeInstructions
+        with TypeLevelDynamicLoads {
     this: Configuration with TheCode =>
 }

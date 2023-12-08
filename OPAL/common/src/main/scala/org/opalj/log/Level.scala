@@ -29,9 +29,7 @@ case object Info extends Level {
 
     def apply(info: String): LogMessage = BasicLogMessage(message = info)
 
-    def apply(category: String, info: String): LogMessage = {
-        new StandardLogMessage(Info, Some(category), info)
-    }
+    def apply(category: String, info: String): LogMessage = new StandardLogMessage(Info, Some(category), info)
 
     def ansiColorEscape: String = ""
 
@@ -48,9 +46,7 @@ case object Warn extends Level {
 
     def apply(info: String): LogMessage = BasicLogMessage(Warn, info)
 
-    def apply(category: String, info: String): LogMessage = {
-        new StandardLogMessage(Warn, Some(category), info)
-    }
+    def apply(category: String, info: String): LogMessage = new StandardLogMessage(Warn, Some(category), info)
 
     def ansiColorEscape: String = Console.BLUE
 
@@ -68,11 +64,9 @@ case object Error extends Level {
 
     def apply(info: String): LogMessage = BasicLogMessage(Error, info)
 
-    def apply(category: String, info: String): LogMessage = {
-        new StandardLogMessage(Error, Some(category), info)
-    }
+    def apply(category: String, info: String): LogMessage = new StandardLogMessage(Error, Some(category), info)
 
-    def apply(category: String, info: String, t: Throwable): LogMessage = {
+    def apply(category: String, info: String, t: Throwable): LogMessage =
         try {
             new ExceptionLogMessage(Error, Some(category), info, t)
         } catch {
@@ -83,7 +77,6 @@ case object Error extends Level {
                 it.printStackTrace(Console.err)
                 BasicLogMessage(Fatal, it.getMessage)
         }
-    }
 
     def ansiColorEscape: String = Console.RED
 
@@ -96,9 +89,7 @@ case object Fatal extends Level {
 
     def apply(info: String): LogMessage = new BasicLogMessage(Fatal, info)
 
-    def apply(category: String, info: String): LogMessage = {
-        new StandardLogMessage(Fatal, Some(category), info)
-    }
+    def apply(category: String, info: String): LogMessage = new StandardLogMessage(Fatal, Some(category), info)
 
     def ansiColorEscape: String = Console.RED + Console.YELLOW_B
 

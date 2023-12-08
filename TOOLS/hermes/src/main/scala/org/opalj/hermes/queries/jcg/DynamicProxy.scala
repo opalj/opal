@@ -16,12 +16,11 @@ import org.opalj.hermes.queries.util.StaticAPIMethod
  */
 class DynamicProxy(implicit hermes: HermesConfig) extends APIFeatureQuery {
 
-    override val apiFeatures: List[APIFeature] = {
-
-        List(
-            StaticAPIMethod(
-                ObjectType("java/lang/reflect/Proxy"), "newProxyInstance", featureID = "DP1"
-            )
+    override val apiFeatures: List[APIFeature] = List(
+        StaticAPIMethod(
+            ObjectType("java/lang/reflect/Proxy"),
+            "newProxyInstance",
+            featureID = "DP1"
         )
-    }
+    )
 }

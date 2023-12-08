@@ -5,8 +5,8 @@ package domain
 
 import org.opalj.br.ComputationalType
 import org.opalj.collection.IntIterator
-import org.opalj.collection.immutable.IntTrieSet1
 import org.opalj.collection.immutable.EmptyIntTrieSet
+import org.opalj.collection.immutable.IntTrieSet1
 
 /**
  * Provides information about the origin (that is, def-site) of a value iff the underlying domain
@@ -55,32 +55,26 @@ trait Origin { domain: ValuesDomain =>
      *      respective value.)
      *      By default this method returns an empty `Iterable`.
      */
-    def originsIterator(value: DomainValue): ValueOriginsIterator = {
-        value match {
-            case vo: ValueWithOriginInformation => vo.originsIterator
-            case _                              => IntIterator.empty
-        }
+    def originsIterator(value: DomainValue): ValueOriginsIterator = value match {
+        case vo: ValueWithOriginInformation => vo.originsIterator
+        case _                              => IntIterator.empty
     }
 
     /**
      * Iterates over the origin(s) of the given value if the information is available.
      */
-    def foreachOrigin(value: DomainValue, f: (ValueOrigin) => Unit): Unit = {
-        value match {
-            case sov: SingleOriginValue    => f(sov.origin)
-            case mov: MultipleOriginsValue => mov.originsIterator.foreach(f)
-            case _                         => /* nothing to do */
-        }
+    def foreachOrigin(value: DomainValue, f: (ValueOrigin) => Unit): Unit = value match {
+        case sov: SingleOriginValue    => f(sov.origin)
+        case mov: MultipleOriginsValue => mov.originsIterator.foreach(f)
+        case _                         => /* nothing to do */
     }
 
     /**
      * Returns the origin(s) of the given value if the information is available.
      */
-    def origins(value: DomainValue): ValueOrigins = {
-        value match {
-            case vo: ValueWithOriginInformation => vo.origins
-            case _                              => EmptyIntTrieSet
-        }
+    def origins(value: DomainValue): ValueOrigins = value match {
+        case vo: ValueWithOriginInformation => vo.origins
+        case _                              => EmptyIntTrieSet
     }
 
 }
@@ -107,7 +101,7 @@ object Origin {
         def origin: ValueOrigin
 
         final def originsIterator: ValueOriginsIterator = IntIterator(origin)
-        final def origins: ValueOrigins = IntTrieSet1(origin)
+        final def origins: ValueOrigins                 = IntTrieSet1(origin)
     }
 
     /**
@@ -121,13 +115,9 @@ object Origin {
 }
 
 object OriginsIterator {
-    def unapply(value: Origin.ValueWithOriginInformation): Some[ValueOriginsIterator] = {
-        Some(value.originsIterator)
-    }
+    def unapply(value: Origin.ValueWithOriginInformation): Some[ValueOriginsIterator] = Some(value.originsIterator)
 }
 
 object Origins {
-    def unapply(value: Origin.ValueWithOriginInformation): Some[ValueOrigins] = {
-        Some(value.origins)
-    }
+    def unapply(value: Origin.ValueWithOriginInformation): Some[ValueOrigins] = Some(value.origins)
 }

@@ -23,12 +23,9 @@ trait GotoInstructionLike extends UnconditionalBranchInstructionLike {
 
 object GotoInstruction {
 
-    def unapply(instruction: Instruction): Option[Int] = {
-        (instruction.opcode: @switch) match {
-            case GOTO.opcode | GOTO_W.opcode =>
-                Some(instruction.asInstanceOf[GotoInstruction].branchoffset)
-            case _ => None
-        }
+    def unapply(instruction: Instruction): Option[Int] = (instruction.opcode: @switch) match {
+        case GOTO.opcode | GOTO_W.opcode => Some(instruction.asInstanceOf[GotoInstruction].branchoffset)
+        case _                           => None
     }
 }
 

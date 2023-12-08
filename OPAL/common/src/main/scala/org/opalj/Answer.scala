@@ -100,7 +100,6 @@ sealed trait Answer {
      *
      * If the other `Answer` is identical to `this` answer `this` is returned,
      * otherwise `Unknown` is returned.
-     *
      */
     def join(other: Answer): Answer
 }
@@ -129,23 +128,21 @@ object Answer {
  * @author Michael Eichberg
  */
 case object Yes extends Answer {
-    override def isYes: Boolean = true
-    override def isNo: Boolean = false
+    override def isYes: Boolean     = true
+    override def isNo: Boolean      = false
     override def isUnknown: Boolean = false
 
-    override def isNotNo: Boolean = true
-    override def isNotYes: Boolean = false
+    override def isNotNo: Boolean   = true
+    override def isNotYes: Boolean  = false
     override def isYesOrNo: Boolean = true
 
     override def ifUnknown(f: => Answer): Answer = this
 
     override def negate: No.type = No
-    override def &&(other: Answer): Answer = {
-        other match {
-            case Yes => this
-            case No  => No
-            case _   => Unknown
-        }
+    override def &&(other: Answer): Answer = other match {
+        case Yes => this
+        case No  => No
+        case _   => Unknown
     }
     override def ||(other: Answer): Yes.type = this
 
@@ -158,24 +155,22 @@ case object Yes extends Answer {
  * @author Michael Eichberg
  */
 case object No extends Answer {
-    override def isYes: Boolean = false
-    override def isNo: Boolean = true
+    override def isYes: Boolean     = false
+    override def isNo: Boolean      = true
     override def isUnknown: Boolean = false
 
-    override def isNotNo: Boolean = false
-    override def isNotYes: Boolean = true
+    override def isNotNo: Boolean   = false
+    override def isNotYes: Boolean  = true
     override def isYesOrNo: Boolean = true
 
     override def ifUnknown(f: => Answer): Answer = this
 
     override def negate: Yes.type = Yes
     override def &&(other: Answer): No.type = this
-    override def ||(other: Answer): Answer = {
-        other match {
-            case Yes => Yes
-            case No  => this
-            case _   => Unknown
-        }
+    override def ||(other: Answer): Answer = other match {
+        case Yes => Yes
+        case No  => this
+        case _   => Unknown
     }
     override def join(other: Answer): Answer = if (other eq this) this else Unknown
 }
@@ -187,12 +182,12 @@ case object No extends Answer {
  * @author Michael Eichberg
  */
 case object Unknown extends Answer {
-    override def isYes: Boolean = false
-    override def isNo: Boolean = false
+    override def isYes: Boolean     = false
+    override def isNo: Boolean      = false
     override def isUnknown: Boolean = true
 
-    override def isNotNo: Boolean = true
-    override def isNotYes: Boolean = true
+    override def isNotNo: Boolean   = true
+    override def isNotYes: Boolean  = true
     override def isYesOrNo: Boolean = false
 
     override def ifUnknown(f: => Answer): Answer = f

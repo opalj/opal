@@ -4,16 +4,6 @@ package br
 package fpcf
 package analyses
 
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.InterimResult
-import org.opalj.fpcf.ProperPropertyComputationResult
-import org.opalj.fpcf.PropertyBounds
-import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.Result
-import org.opalj.fpcf.SomeEOptionP
-import org.opalj.fpcf.SomeEPS
-import org.opalj.fpcf.UBP
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
@@ -27,33 +17,41 @@ import org.opalj.br.fpcf.properties.SimpleContextsKey
 import org.opalj.br.fpcf.properties.VirtualMethodPurity
 import org.opalj.br.fpcf.properties.VirtualMethodPurity.VImpureByAnalysis
 import org.opalj.br.fpcf.properties.VirtualMethodPurity.VImpureByLackOfInformation
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.InterimResult
+import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.PropertyBounds
+import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.Result
+import org.opalj.fpcf.SomeEOptionP
+import org.opalj.fpcf.SomeEPS
+import org.opalj.fpcf.UBP
 
 /**
  * Determines the aggregated purity for virtual methods.
  *
  * @author Dominik Helm
  */
-class VirtualMethodPurityAnalysis private[analyses] ( final val project: SomeProject) extends FPCFAnalysis {
+class VirtualMethodPurityAnalysis private[analyses] (final val project: SomeProject) extends FPCFAnalysis {
     private[this] val declaredMethods = project.get(DeclaredMethodsKey)
-    private[this] val simpleContexts = project.get(SimpleContextsKey)
+    private[this] val simpleContexts  = project.get(SimpleContextsKey)
 
     def determinePurity(context: Context): ProperPropertyComputationResult = {
         val dm = context.method
-        if (!dm.hasSingleDefinedMethod && !dm.hasMultipleDefinedMethods)
-            return Result(dm, VImpureByLackOfInformation);
+        if (!dm.hasSingleDefinedMethod && !dm.hasMultipleDefinedMethods) return Result(dm, VImpureByLackOfInformation);
 
-        var maxPurity: Purity = CompileTimePure
+        var maxPurity: Purity            = CompileTimePure
         var dependees: Set[SomeEOptionP] = Set.empty
 
         val cfo = project.classFile(dm.declaringClassType)
         val methods =
-            if (cfo.isDefined && cfo.get.isInterfaceDeclaration)
-                project.interfaceCall(
-                    dm.declaringClassType,
-                    dm.declaringClassType,
-                    dm.name,
-                    dm.descriptor
-                )
+            if (cfo.isDefined && cfo.get.isInterfaceDeclaration) project.interfaceCall(
+                dm.declaringClassType,
+                dm.declaringClassType,
+                dm.name,
+                dm.descriptor
+            )
             else project.virtualCall(
                 dm.declaringClassType,
                 dm.declaringClassType,
@@ -81,8 +79,11 @@ class VirtualMethodPurityAnalysis private[analyses] ( final val project: SomePro
                 Result(dm, maxPurity.aggregatedProperty)
             } else {
                 InterimResult(
-                    dm, VImpureByAnalysis, maxPurity.aggregatedProperty,
-                    dependees, c
+                    dm,
+                    VImpureByAnalysis,
+                    maxPurity.aggregatedProperty,
+                    dependees,
+                    c
                 )
             }
         }
@@ -91,18 +92,19 @@ class VirtualMethodPurityAnalysis private[analyses] ( final val project: SomePro
             Result(dm, maxPurity.aggregatedProperty)
         } else {
             InterimResult(
-                dm, VImpureByAnalysis, maxPurity.aggregatedProperty,
-                dependees, c
+                dm,
+                VImpureByAnalysis,
+                maxPurity.aggregatedProperty,
+                dependees,
+                c
             )
         }
     }
 
     /** Called when the analysis is scheduled lazily. */
-    def doDeterminePurity(e: Entity): ProperPropertyComputationResult = {
-        e match {
-            case c: Context => determinePurity(c)
-            case _          => throw new IllegalArgumentException(s"$e ist not a DefinedMethod")
-        }
+    def doDeterminePurity(e: Entity): ProperPropertyComputationResult = e match {
+        case c: Context => determinePurity(c)
+        case _          => throw new IllegalArgumentException(s"$e ist not a DefinedMethod")
     }
 
 }
@@ -119,7 +121,7 @@ trait VirtualMethodPurityAnalysisScheduler extends FPCFAnalysisScheduler {
 
 object EagerVirtualMethodPurityAnalysis
     extends VirtualMethodPurityAnalysisScheduler
-    with FPCFEagerAnalysisScheduler {
+        with FPCFEagerAnalysisScheduler {
 
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 
@@ -128,10 +130,9 @@ object EagerVirtualMethodPurityAnalysis
     override type InitializationData = (DeclaredMethods, SimpleContexts, ConfiguredPurity)
 
     override def init(
-        p: SomeProject, ps: PropertyStore
-    ): (DeclaredMethods, SimpleContexts, ConfiguredPurity) = {
+        p:  SomeProject,
+        ps: PropertyStore): (DeclaredMethods, SimpleContexts, ConfiguredPurity) =
         (p.get(DeclaredMethodsKey), p.get(SimpleContextsKey), p.get(ConfiguredPurityKey))
-    }
 
     override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
 
@@ -140,21 +141,18 @@ object EagerVirtualMethodPurityAnalysis
     override def afterPhaseCompletion(
         p:        SomeProject,
         ps:       PropertyStore,
-        analysis: FPCFAnalysis
-    ): Unit = {}
+        analysis: FPCFAnalysis): Unit = {}
 
     override def start(
         p:    SomeProject,
         ps:   PropertyStore,
-        data: InitializationData
-    ): FPCFAnalysis = {
-        val analysis = new VirtualMethodPurityAnalysis(p)
+        data: InitializationData): FPCFAnalysis = {
+        val analysis                                            = new VirtualMethodPurityAnalysis(p)
         val (declaredMethods, simpleContexts, configuredPurity) = data
 
         val dms = declaredMethods.declaredMethods
         val methods = dms.collect {
-            case dm if dm.hasSingleDefinedMethod && !configuredPurity.wasSet(dm) =>
-                simpleContexts(dm)
+            case dm if dm.hasSingleDefinedMethod && !configuredPurity.wasSet(dm) => simpleContexts(dm)
         }
         ps.scheduleEagerComputationsForEntities(methods)(analysis.determinePurity)
 
@@ -164,7 +162,7 @@ object EagerVirtualMethodPurityAnalysis
 
 object LazyVirtualMethodPurityAnalysis
     extends VirtualMethodPurityAnalysisScheduler
-    with BasicFPCFLazyAnalysisScheduler {
+        with BasicFPCFLazyAnalysisScheduler {
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 

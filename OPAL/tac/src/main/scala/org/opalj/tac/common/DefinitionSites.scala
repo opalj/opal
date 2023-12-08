@@ -5,7 +5,6 @@ package common
 
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
-
 import scala.jdk.CollectionConverters._
 
 import org.opalj.br.Method
@@ -36,7 +35,7 @@ class DefinitionSites(val project: SomeProject) {
      */
     def apply(m: Method, pc: Int): DefinitionSite = {
         val defSite = DefinitionSite(m, pc)
-        val prev = definitionSites.putIfAbsent(defSite, defSite)
+        val prev    = definitionSites.putIfAbsent(defSite, defSite)
         if (prev == null) defSite else prev
     }
 
@@ -50,9 +49,9 @@ class DefinitionSites(val project: SomeProject) {
         val allocationSites = new ConcurrentLinkedQueue[DefinitionSite]()
 
         project.parForeachMethodWithBody() { methodInfo =>
-            val m = methodInfo.method
+            val m    = methodInfo.method
             val code = m.body.get.instructions
-            var pc = 0
+            var pc   = 0
             while (pc < code.length) {
                 val instr = code(pc)
                 if (instr != null) {

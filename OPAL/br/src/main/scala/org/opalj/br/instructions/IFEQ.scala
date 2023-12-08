@@ -24,13 +24,9 @@ case class IFEQ(branchoffset: Int) extends IF0Instruction[IFEQ] with IFEQLike {
 
     def copy(branchoffset: Int): IFEQ = new IFEQ(branchoffset)
 
-    def negate(newBranchoffset: Int = branchoffset): IFNE = {
-        IFNE(newBranchoffset)
-    }
+    def negate(newBranchoffset: Int = branchoffset): IFNE = IFNE(newBranchoffset)
 
-    def toLabeledInstruction(currentPC: PC): LabeledInstruction = {
-        LabeledIFEQ(InstructionLabel(currentPC + branchoffset))
-    }
+    def toLabeledInstruction(currentPC: PC): LabeledInstruction = LabeledIFEQ(InstructionLabel(currentPC + branchoffset))
 }
 
 /**
@@ -50,16 +46,12 @@ object IFEQ extends InstructionMetaInformation {
 }
 
 case class LabeledIFEQ(
-        branchTarget: InstructionLabel
-) extends LabeledSimpleConditionalBranchInstruction
-    with IFEQLike {
+        branchTarget: InstructionLabel) extends LabeledSimpleConditionalBranchInstruction
+        with IFEQLike {
 
     @throws[BranchoffsetOutOfBoundsException]("if the branchoffset is invalid")
-    override def resolveJumpTargets(pc: PC, pcs: Map[InstructionLabel, PC]): IFEQ = {
+    override def resolveJumpTargets(pc: PC, pcs: Map[InstructionLabel, PC]): IFEQ =
         IFEQ(asShortBranchoffset(pcs(branchTarget) - pc))
-    }
 
-    override def negate(newJumpTargetLabel: InstructionLabel): LabeledIFNE = {
-        LabeledIFNE(newJumpTargetLabel)
-    }
+    override def negate(newJumpTargetLabel: InstructionLabel): LabeledIFNE = LabeledIFNE(newJumpTargetLabel)
 }

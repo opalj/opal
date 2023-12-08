@@ -13,9 +13,8 @@ import org.opalj.bi.ConstantPoolTags
  * @author Andre Pacak
  */
 case class CONSTANT_NameAndType_info(
-        name_index:       Constant_Pool_Index,
-        descriptor_index: Constant_Pool_Index
-) extends Constant_Pool_Entry {
+        name_index: Constant_Pool_Index,
+        descriptor_index: Constant_Pool_Index) extends Constant_Pool_Entry {
 
     override def asNameAndType: this.type = this
 
@@ -24,9 +23,7 @@ case class CONSTANT_NameAndType_info(
 
     def fieldType(cp: Constant_Pool): FieldType = cp(descriptor_index).asFieldType
 
-    def methodDescriptor(cp: Constant_Pool): MethodDescriptor = {
-        cp(descriptor_index).asMethodDescriptor
-    }
+    def methodDescriptor(cp: Constant_Pool): MethodDescriptor = cp(descriptor_index).asMethodDescriptor
 
     override def tag: Int = ConstantPoolTags.CONSTANT_NameAndType_ID
 }

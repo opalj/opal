@@ -16,9 +16,11 @@ import org.opalj.util.PerformanceEvaluation.time
  * @author Michael Eichberg
  */
 case class Schedule[A](
-        batches:            List[PhaseConfiguration[A]],
-        initializationData: Map[ComputationSpecification[A], Any]
-) extends ((PropertyStore, Boolean, PropertyKindsConfiguration => Unit, List[ComputationSpecification[A]] => Unit) => List[(ComputationSpecification[A], A)]) {
+        batches: List[PhaseConfiguration[A]],
+        initializationData: Map[ComputationSpecification[A], Any]) extends (
+        (PropertyStore, Boolean, PropertyKindsConfiguration => Unit, List[ComputationSpecification[A]] => Unit) => List[(
+            ComputationSpecification[A],
+            A)]) {
 
     /**
      * Schedules the computation specifications; that is, executes the underlying analysis scenario.
@@ -30,10 +32,10 @@ case class Schedule[A](
      */
     def apply(
         ps:                   PropertyStore,
-        trace:                Boolean                                   = false,
+        trace:                Boolean = false,
         afterPhaseSetup:      PropertyKindsConfiguration => Unit = _ => (),
-        afterPhaseScheduling: List[ComputationSpecification[A]] => Unit = _ => ()
-    ): List[(ComputationSpecification[A], A)] = {
+        afterPhaseScheduling: List[ComputationSpecification[A]] => Unit = _ => ())
+        : List[(ComputationSpecification[A], A)] = {
         implicit val logContext: LogContext = ps.logContext
 
         var allExecutedAnalyses: List[(ComputationSpecification[A], A)] = Nil
@@ -73,11 +75,10 @@ case class Schedule[A](
                 assert(ps.isIdle, "the property store is not idle after phase completion")
                 allExecutedAnalyses :::= executedAnalyses.reverse
             } { t =>
-                if (trace)
-                    info(
-                        "analysis progress",
-                        s"analysis phase $id took ${t.toSeconds}"
-                    )
+                if (trace) info(
+                    "analysis progress",
+                    s"analysis phase $id took ${t.toSeconds}"
+                )
             }
         }
         // ... we are done now; the computed properties will no longer be computed!
@@ -86,9 +87,7 @@ case class Schedule[A](
         allExecutedAnalyses
     }
 
-    override def toString: String = {
-        batches.map(_.scheduled.map(_.name).mkString("{", ", ", "}")).
-            mkString("Schedule(\n\t", "\n\t", "\n)")
-    }
+    override def toString: String =
+        batches.map(_.scheduled.map(_.name).mkString("{", ", ", "}")).mkString("Schedule(\n\t", "\n\t", "\n)")
 
 }

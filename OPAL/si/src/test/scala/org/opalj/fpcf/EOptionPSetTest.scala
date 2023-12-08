@@ -5,11 +5,11 @@ package fpcf
 import scala.collection.immutable.IntMap
 import scala.collection.mutable
 
-import org.scalatest.funsuite.AnyFunSuite
-
 import org.opalj.fpcf.fixtures.InitializedPropertyStore
 import org.opalj.fpcf.fixtures.Marker
 import org.opalj.fpcf.fixtures.Palindromes
+
+import org.scalatest.funsuite.AnyFunSuite
 
 class EOptionPSetTest extends AnyFunSuite {
 
@@ -21,23 +21,23 @@ class EOptionPSetTest extends AnyFunSuite {
     }
 
     test("we can iterate over the singleton value stored in an EOptionPSet") {
-        val e1 = InterimEUBP(new Object, Marker.IsMarked)
-        val set = EOptionPSet[Entity, Property](e1)
+        val e1    = InterimEUBP(new Object, Marker.IsMarked)
+        val set   = EOptionPSet[Entity, Property](e1)
         var count = 0
-        set.foreach(e => { count += 1; assert(e == e1) })
+        set.foreach { e => count += 1; assert(e == e1) }
         assert(count == 1)
     }
 
     test("the same EOptionP is returned unless explicitly updated (using updateAll)") {
-        val e1 = "e1"
-        val e2 = "e2"
+        val e1        = "e1"
+        val e2        = "e2"
         val ie1Marker = InterimEUBP(e1, Marker.NotMarked)
         val ie2Marker = InterimEUBP(e2, Marker.NotMarked)
-        val ie2Pal = InterimEUBP(e2, Palindromes.NoPalindrome)
+        val ie2Pal    = InterimEUBP(e2, Palindromes.NoPalindrome)
 
         val fep1Marker = FinalEP(e1, Marker.IsMarked)
         val fep2Marker = FinalEP(e2, Marker.IsMarked)
-        val fe2Pal = FinalEP(e2, Palindromes.Palindrome)
+        val fe2Pal     = FinalEP(e2, Palindromes.Palindrome)
 
         implicit val ps: InitializedPropertyStore = new InitializedPropertyStore(IntMap(
             Marker.Key.id -> Map(
@@ -51,7 +51,7 @@ class EOptionPSetTest extends AnyFunSuite {
 
         val set = EOptionPSet.empty[Entity, Property]
         assert(set.getOrQueryAndUpdate(e1, Marker.Key) == ie1Marker)
-        assert(set.getOrQueryAndUpdate(e1, Marker.Key) == ie1Marker) // the same value is returned...
+        assert(set.getOrQueryAndUpdate(e1, Marker.Key) == ie1Marker)             // the same value is returned...
         assert(set.getOrQueryAndUpdate(e2, Palindromes.PalindromeKey) == ie2Pal) // the same value is returned...
 
         set.updateAll() // updates both objects to final values..
@@ -68,10 +68,10 @@ class EOptionPSetTest extends AnyFunSuite {
 
         val ie1Marker = InterimEUBP(e1, Marker.NotMarked)
         val ie2Marker = InterimEUBP(e2, Marker.NotMarked)
-        val ie2Pal = InterimEUBP(e2, Palindromes.NoPalindrome)
+        val ie2Pal    = InterimEUBP(e2, Palindromes.NoPalindrome)
 
         val fep1Marker = FinalEP(e1, Marker.IsMarked)
-        val fe2Pal = FinalEP(e2, Palindromes.Palindrome)
+        val fe2Pal     = FinalEP(e2, Palindromes.Palindrome)
 
         implicit val ps: InitializedPropertyStore = new InitializedPropertyStore(IntMap(
             Marker.Key.id -> Map(
@@ -98,8 +98,8 @@ class EOptionPSetTest extends AnyFunSuite {
     }
 
     test("we can iterate (using foreach) over the values stored in an EOptionPSet") {
-        val e1 = new Object
-        val e2 = new Object
+        val e1     = new Object
+        val e2     = new Object
         val ieupb1 = InterimEUBP(e1, Marker.NotMarked)
         val ieupb2 = InterimEUBP(e2, Marker.NotMarked)
         implicit val ps: InitializedPropertyStore = new InitializedPropertyStore(IntMap(
@@ -197,14 +197,14 @@ class EOptionPSetTest extends AnyFunSuite {
         // the following query is passed through to the property store...
         assert(set.getOrQueryAndUpdate(e2, Palindromes.PalindromeKey) == ie2Pal)
     }
-    */
+     */
 
     test("filters filters the respective value") {
-        val e1 = "e1"
-        val e2 = "e2"
+        val e1        = "e1"
+        val e2        = "e2"
         val ie1Marker = InterimEUBP(e1, Marker.NotMarked)
         val ie2Marker = InterimEUBP(e2, Marker.NotMarked)
-        val ie2Pal = InterimEUBP(e2, Palindromes.NoPalindrome)
+        val ie2Pal    = InterimEUBP(e2, Palindromes.NoPalindrome)
 
         implicit val ps: InitializedPropertyStore = new InitializedPropertyStore(IntMap(
             Marker.Key.id -> Map(

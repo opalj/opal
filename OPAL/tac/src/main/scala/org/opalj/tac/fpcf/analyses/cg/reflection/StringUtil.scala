@@ -6,10 +6,10 @@ package analyses
 package cg
 package reflection
 
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.PropertyStore
 import org.opalj.br.ObjectType
 import org.opalj.br.fpcf.properties.Context
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.PropertyStore
 
 object StringUtil {
 
@@ -19,20 +19,16 @@ object StringUtil {
      */
     def getPossibleStrings[ContextType <: Context](
         value: Expr[V],
-        stmts: Array[Stmt[V]]
-    ): Option[Set[String]] = {
-        Some(value.asVar.definedBy.map[Set[String]] { index =>
-            if (index >= 0) {
-                getString(index, stmts) match {
-                    case Some(v) => Set(v)
-                    case _ =>
-                        return None;
-                }
-            } else {
-                return None;
+        stmts: Array[Stmt[V]]): Option[Set[String]] = Some(value.asVar.definedBy.map[Set[String]] { index =>
+        if (index >= 0) {
+            getString(index, stmts) match {
+                case Some(v) => Set(v)
+                case _       => return None;
             }
-        }.flatten)
-    }
+        } else {
+            return None;
+        }
+    }.flatten)
 
     /**
      * Returns Strings that a given expression may evaluate to.
@@ -46,22 +42,23 @@ object StringUtil {
         depender: Entity,
         stmts:    Array[Stmt[V]],
         failure:  () => Unit
-    )(
-        implicit
+      )(implicit
         typeIterator: TypeIterator,
         state:        TypeIteratorState,
-        ps:           PropertyStore
-    ): Set[String] = {
+        ps:           PropertyStore): Set[String] = {
         var strings = Set.empty[String]
 
         AllocationsUtil.handleAllocations(
-            value, context, depender, stmts, _ eq ObjectType.String, failure
+            value,
+            context,
+            depender,
+            stmts,
+            _ eq ObjectType.String,
+            failure
         ) { (_, defSite, _stmts) =>
             getString(defSite, _stmts) match {
-                case Some(v) =>
-                    strings += v
-                case _ =>
-                    failure()
+                case Some(v) => strings += v
+                case _       => failure()
             }
         }
 

@@ -21,13 +21,9 @@ class FieldLocalityTests extends PropertiesTest {
         EagerFieldAccessInformationAnalysis
     )
 
-    override def fixtureProjectPackage: List[String] = {
-        List("org/opalj/fpcf/fixtures/field_locality")
-    }
+    override def fixtureProjectPackage: List[String] = List("org/opalj/fpcf/fixtures/field_locality")
 
-    override def init(p: Project[URL]): Unit = {
-        p.get(RTACallGraphKey)
-    }
+    override def init(p: Project[URL]): Unit = p.get(RTACallGraphKey)
 
     describe("field locality analysis is executed") {
         val as = executeAnalyses(analyses)

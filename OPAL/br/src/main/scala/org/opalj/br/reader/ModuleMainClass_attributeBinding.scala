@@ -12,8 +12,8 @@ import org.opalj.bi.reader.ModuleMainClass_attributeReader
  */
 trait ModuleMainClass_attributeBinding
     extends ModuleMainClass_attributeReader
-    with ConstantPoolBinding
-    with AttributeBinding {
+        with ConstantPoolBinding
+        with AttributeBinding {
 
     type ModuleMainClass_attribute = ModuleMainClass
 
@@ -26,9 +26,6 @@ trait ModuleMainClass_attributeBinding
         ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         main_class_index:     Constant_Pool_Index // CONSTANT_Class_info
-    ): ModuleMainClass_attribute = {
-        new ModuleMainClass(cp(main_class_index).asObjectType(cp))
-    }
+      ): ModuleMainClass_attribute = new ModuleMainClass(cp(main_class_index).asObjectType(cp))
 
 }
-

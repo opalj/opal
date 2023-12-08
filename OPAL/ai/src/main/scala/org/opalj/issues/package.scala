@@ -3,22 +3,21 @@ package org.opalj
 
 import java.io.File
 import java.net.URL
-
-import play.api.libs.json.Writes
+import play.api.libs.json.JsObject
 import play.api.libs.json.Json
 import play.api.libs.json.JsValue
-import play.api.libs.json.JsObject
+import play.api.libs.json.Writes
 
-import org.opalj.br.LocalVariable
-import org.opalj.br.Type
-import org.opalj.br.BaseType
-import org.opalj.br.VoidType
-import org.opalj.br.BooleanType
-import org.opalj.br.ObjectType
 import org.opalj.br.ArrayType
-import org.opalj.br.MethodDescriptor
-import org.opalj.br.methodAccessFlagsToString
+import org.opalj.br.BaseType
+import org.opalj.br.BooleanType
 import org.opalj.br.CTIntType
+import org.opalj.br.LocalVariable
+import org.opalj.br.MethodDescriptor
+import org.opalj.br.ObjectType
+import org.opalj.br.Type
+import org.opalj.br.VoidType
+import org.opalj.br.methodAccessFlagsToString
 import org.opalj.value.IsIntegerValue
 
 /**
@@ -44,9 +43,8 @@ package object issues {
     /**
      * Shortens an absolute path to one relative to the current working directory.
      */
-    def absoluteToRelative(path: String): String = {
+    def absoluteToRelative(path: String): String =
         path.stripPrefix(System.getProperty("user.dir") + System.getProperty("file.separator"))
-    }
 
     /**
      * Turns the jar URL format into a string better suited for the console reports.
@@ -56,10 +54,10 @@ package object issues {
         // jar URL format: jar:file:<jar path>!/<inner class file path>
         val split = jarurl.stripPrefix("jar:file:").split("!/")
 
-        val jar = absoluteToRelative(split.head)
+        val jar  = absoluteToRelative(split.head)
         val file = split.last
 
-        jar+"!/"+Console.BOLD + file + Console.RESET
+        jar + "!/" + Console.BOLD + file + Console.RESET
     }
 
     /**
@@ -68,12 +66,10 @@ package object issues {
      * Absolute file names are shortened to be relative to the current directory,
      * to avoid using up too much screen space in the console.
      */
-    def urlToLocationIdentifier(url: URL): String = {
-        url.getProtocol() match {
-            case "file" => absoluteToRelative(url.getPath())
-            case "jar"  => prettifyJarUrl(url.toExternalForm())
-            case _      => url.toExternalForm()
-        }
+    def urlToLocationIdentifier(url: URL): String = url.getProtocol() match {
+        case "file" => absoluteToRelative(url.getPath())
+        case "jar"  => prettifyJarUrl(url.toExternalForm())
+        case _      => url.toExternalForm()
     }
 
     def fileToLocationIdentifier(file: File): String = file.getAbsolutePath()
@@ -82,47 +78,35 @@ package object issues {
      * Given a `LocalVariable` object and its current value a human readable `String`
      * is created.
      */
-    def localVariableToString(localVariable: LocalVariable, value: AnyRef): String = {
+    def localVariableToString(localVariable: LocalVariable, value: AnyRef): String =
         if ((localVariable.fieldType eq BooleanType) &&
             // SPECIAL HANDLING IF THE VALUE IS AN INTEGER RANGE VALUE
             value.isInstanceOf[IsIntegerValue]) {
             val range = value.asInstanceOf[IsIntegerValue]
-            if ( /*range.lowerBound == 0 &&*/ range.upperBound == 0)
-                "false"
-            else if (range.lowerBound == 1 /* && range.upperBound == 1*/ )
-                "true"
-            else
-                "true or false"
-        } else
-            value.toString
-    }
+            if (/*range.lowerBound == 0 &&*/ range.upperBound == 0) "false"
+            else if (range.lowerBound == 1 /* && range.upperBound == 1*/ ) "true"
+            else "true or false"
+        } else value.toString
 
-    def typeToIDL(t: Type): JsValue = {
-        t match {
-            case bt: BaseType => Json.obj("bt" -> bt.toJava)
-            case CTIntType    => Json.obj("bt" -> "<Computational Type Int>")
+    def typeToIDL(t: Type): JsValue = t match {
+        case bt: BaseType => Json.obj("bt" -> bt.toJava)
+        case CTIntType    => Json.obj("bt" -> "<Computational Type Int>")
 
-            case ot: ObjectType =>
-                Json.obj("ot" -> ot.toJava, "simpleName" -> ot.simpleName)
-            case at: ArrayType =>
-                Json.obj("at" -> typeToIDL(at.elementType), "dimensions" -> at.dimensions)
+        case ot: ObjectType => Json.obj("ot" -> ot.toJava, "simpleName" -> ot.simpleName)
+        case at: ArrayType  => Json.obj("at" -> typeToIDL(at.elementType), "dimensions" -> at.dimensions)
 
-            case VoidType => Json.obj("vt" -> "void")
+        case VoidType => Json.obj("vt" -> "void")
 
-        }
     }
 
     def methodToIDL(
         accessFlags: Int,
         name:        String,
-        descriptor:  MethodDescriptor
-    ): JsObject = {
-        Json.obj(
-            "accessFlags" -> methodAccessFlagsToString(accessFlags),
-            "name" -> name,
-            "returnType" -> typeToIDL(descriptor.returnType),
-            "parameters" -> descriptor.parameterTypes.map[JsValue](typeToIDL)
-        )
-    }
+        descriptor:  MethodDescriptor): JsObject = Json.obj(
+        "accessFlags" -> methodAccessFlagsToString(accessFlags),
+        "name"        -> name,
+        "returnType"  -> typeToIDL(descriptor.returnType),
+        "parameters"  -> descriptor.parameterTypes.map[JsValue](typeToIDL)
+    )
 
 }

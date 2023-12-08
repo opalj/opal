@@ -24,8 +24,8 @@ import org.opalj.br.fpcf.properties.immutability.Assignable
 import org.opalj.br.fpcf.properties.immutability.EffectivelyNonAssignable
 import org.opalj.br.fpcf.properties.immutability.FieldAssignability
 import org.opalj.br.fpcf.properties.immutability.NonAssignable
-import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.InterimResult
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
@@ -44,15 +44,15 @@ import org.opalj.fpcf.UBP
  */
 class L0FieldAssignabilityAnalysis private[analyses] (val project: SomeProject) extends FPCFAnalysis {
 
-    final val declaredFields: DeclaredFields = project.get(DeclaredFieldsKey)
-    final val contextProvider: ContextProvider = project.get(ContextProviderKey)
+    final val declaredFields: DeclaredFields      = project.get(DeclaredFieldsKey)
+    final val contextProvider: ContextProvider    = project.get(ContextProviderKey)
     implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
     case class L0FieldAssignabilityAnalysisState(field: Field) {
-        var fieldAssignability: FieldAssignability = EffectivelyNonAssignable // Assume this as the optimistic default
+        var fieldAssignability: FieldAssignability                                                          = EffectivelyNonAssignable // Assume this as the optimistic default
         var latestFieldWriteAccessInformation: Option[EOptionP[DeclaredField, FieldWriteAccessInformation]] = None
-        def hasDependees: Boolean = latestFieldWriteAccessInformation.exists(_.isRefinable)
-        def dependees: Set[SomeEOptionP] = latestFieldWriteAccessInformation.filter(_.isRefinable).toSet
+        def hasDependees: Boolean                                                                           = latestFieldWriteAccessInformation.exists(_.isRefinable)
+        def dependees: Set[SomeEOptionP]                                                                    = latestFieldWriteAccessInformation.filter(_.isRefinable).toSet
     }
     type AnalysisState = L0FieldAssignabilityAnalysisState
 
@@ -63,11 +63,9 @@ class L0FieldAssignabilityAnalysis private[analyses] (val project: SomeProject) 
      * considered [[org.opalj.br.fpcf.properties.immutability.Assignable]].
      * For all other cases the call is delegated to [[determineFieldAssignability]].
      */
-    def determineFieldAssignabilityLazy(e: Entity): ProperPropertyComputationResult = {
-        e match {
-            case field: Field => determineFieldAssignability(field)
-            case _            => throw new IllegalArgumentException(s"$e is not a Field")
-        }
+    def determineFieldAssignabilityLazy(e: Entity): ProperPropertyComputationResult = e match {
+        case field: Field => determineFieldAssignability(field)
+        case _            => throw new IllegalArgumentException(s"$e is not a Field")
     }
 
     /**
@@ -84,21 +82,16 @@ class L0FieldAssignabilityAnalysis private[analyses] (val project: SomeProject) 
     def determineFieldAssignability(field: Field): ProperPropertyComputationResult = {
         implicit val state: L0FieldAssignabilityAnalysisState = L0FieldAssignabilityAnalysisState(field)
 
-        if (field.isFinal)
-            return Result(field, NonAssignable);
+        if (field.isFinal) return Result(field, NonAssignable);
 
-        if (!field.isPrivate)
-            return Result(field, Assignable);
+        if (!field.isPrivate) return Result(field, Assignable);
 
-        if (!field.isStatic)
-            return Result(field, Assignable);
+        if (!field.isStatic) return Result(field, Assignable);
 
-        if (field.classFile.methods.exists(_.isNative))
-            return Result(field, Assignable);
+        if (field.classFile.methods.exists(_.isNative)) return Result(field, Assignable);
 
         val faiEP = propertyStore(declaredFields(field), FieldWriteAccessInformation.key)
-        if (handleFieldWriteAccessInformation(faiEP))
-            return Result(field, Assignable)
+        if (handleFieldWriteAccessInformation(faiEP)) return Result(field, Assignable)
 
         createResult()
     }
@@ -109,17 +102,18 @@ class L0FieldAssignabilityAnalysis private[analyses] (val project: SomeProject) 
      */
     def handleFieldWriteAccessInformation(
         faiEP: EOptionP[DeclaredField, FieldWriteAccessInformation]
-    )(implicit state: AnalysisState): Boolean = {
-        val assignable = if (faiEP.hasUBP) {
-            val (seenDirectAccesses, seenIndirectAccesses) = state.latestFieldWriteAccessInformation match {
-                case Some(UBP(fai)) => (fai.numDirectAccesses, fai.numIndirectAccesses)
-                case _              => (0, 0)
-            }
+      )(implicit state: AnalysisState): Boolean = {
+        val assignable =
+            if (faiEP.hasUBP) {
+                val (seenDirectAccesses, seenIndirectAccesses) = state.latestFieldWriteAccessInformation match {
+                    case Some(UBP(fai)) => (fai.numDirectAccesses, fai.numIndirectAccesses)
+                    case _              => (0, 0)
+                }
 
-            faiEP.ub.getNewestAccesses(
-                faiEP.ub.numDirectAccesses - seenDirectAccesses,
-                faiEP.ub.numIndirectAccesses - seenIndirectAccesses
-            ) exists { wa =>
+                faiEP.ub.getNewestAccesses(
+                    faiEP.ub.numDirectAccesses - seenDirectAccesses,
+                    faiEP.ub.numIndirectAccesses - seenIndirectAccesses
+                ) exists { wa =>
                     val method = contextProvider.contextFromId(wa._1).method.definedMethod
                     if (method.isStaticInitializer) {
                         if (wa._3.isDefined) {
@@ -130,17 +124,15 @@ class L0FieldAssignabilityAnalysis private[analyses] (val project: SomeProject) 
                             // As a fallback, we soundly assume assignability
                             true
                         }
-                    } else
-                        false
+                    } else false
                 }
-        } else
-            false
+            } else false
 
         state.latestFieldWriteAccessInformation = Some(faiEP)
         assignable
     }
 
-    def createResult()(implicit state: AnalysisState): ProperPropertyComputationResult = {
+    def createResult()(implicit state: AnalysisState): ProperPropertyComputationResult =
         if (state.hasDependees && (state.fieldAssignability ne Assignable)) {
             InterimResult(
                 state.field,
@@ -152,14 +144,11 @@ class L0FieldAssignabilityAnalysis private[analyses] (val project: SomeProject) 
         } else {
             Result(state.field, state.fieldAssignability)
         }
-    }
 
-    def continuation(eps: SomeEPS)(implicit state: AnalysisState): ProperPropertyComputationResult = {
+    def continuation(eps: SomeEPS)(implicit state: AnalysisState): ProperPropertyComputationResult =
         if (handleFieldWriteAccessInformation(eps.asInstanceOf[EOptionP[DeclaredField, FieldWriteAccessInformation]]))
             Result(state.field, Assignable)
-        else
-            createResult()
-    }
+        else createResult()
 }
 
 trait L0FieldAssignabilityAnalysisScheduler extends FPCFAnalysisScheduler {
@@ -168,10 +157,9 @@ trait L0FieldAssignabilityAnalysisScheduler extends FPCFAnalysisScheduler {
 
     final override def uses: Set[PropertyBounds] = PropertyBounds.ubs(FieldWriteAccessInformation)
 
-    final def derivedProperty: PropertyBounds = {
+    final def derivedProperty: PropertyBounds =
         // currently, the analysis will derive the final result in a single step
         PropertyBounds.finalP(FieldAssignability)
-    }
 }
 
 /**
@@ -179,7 +167,7 @@ trait L0FieldAssignabilityAnalysisScheduler extends FPCFAnalysisScheduler {
  */
 object EagerL0FieldAssignabilityAnalysis
     extends L0FieldAssignabilityAnalysisScheduler
-    with BasicFPCFEagerAnalysisScheduler {
+        with BasicFPCFEagerAnalysisScheduler {
 
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 
@@ -188,13 +176,9 @@ object EagerL0FieldAssignabilityAnalysis
     override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new L0FieldAssignabilityAnalysis(p)
         val classFileCandidates =
-            if (p.libraryClassFilesAreInterfacesOnly)
-                p.allProjectClassFiles
-            else
-                p.allClassFiles
-        val fields = {
-            classFileCandidates.filter(cf => cf.methods.forall(m => !m.isNative)).flatMap(_.fields)
-        }
+            if (p.libraryClassFilesAreInterfacesOnly) p.allProjectClassFiles
+            else p.allClassFiles
+        val fields = classFileCandidates.filter(cf => cf.methods.forall(m => !m.isNative)).flatMap(_.fields)
         ps.scheduleEagerComputationsForEntities(fields)(analysis.determineFieldAssignability)
         analysis
     }
@@ -202,7 +186,7 @@ object EagerL0FieldAssignabilityAnalysis
 
 object LazyL0FieldAssignabilityAnalysis
     extends L0FieldAssignabilityAnalysisScheduler
-    with BasicFPCFLazyAnalysisScheduler {
+        with BasicFPCFLazyAnalysisScheduler {
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 

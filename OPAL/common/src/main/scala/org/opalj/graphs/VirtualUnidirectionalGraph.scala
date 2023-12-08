@@ -24,13 +24,11 @@ import org.opalj.collection.IntIterator
  * val vg = new org.opalj.graphs.VirtualUnidirectionalGraph(4/*max id of a node +1 */,successors)
  * }}}
  *
- *
  * @author Michael Eichberg
  */
 class VirtualUnidirectionalGraph(
         val verticesCount: Int,
-        val successors:    Int => IntIterator
-) extends AbstractGraph[Int] {
+        val successors: Int => IntIterator) extends AbstractGraph[Int] {
 
     def vertices: Range = 0 until this.verticesCount
 
@@ -43,7 +41,6 @@ class VirtualUnidirectionalGraph(
      */
     def theSuccessors(s: Int): IntIterator = successors(s)
 
-    def sccs(filterSingletons: Boolean = false): List[List[Int]] = {
+    def sccs(filterSingletons: Boolean = false): List[List[Int]] =
         org.opalj.graphs.sccs(verticesCount, successors, filterSingletons)
-    }
 }

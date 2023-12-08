@@ -19,7 +19,6 @@ trait StackBasedBinaryArithmeticInstruction extends StackBasedArithmeticInstruct
 
 object StackBasedBinaryArithmeticInstruction {
 
-    def unapply(instruction: StackBasedBinaryArithmeticInstruction): Some[ComputationalType] = {
+    def unapply(instruction: StackBasedBinaryArithmeticInstruction): Some[ComputationalType] =
         Some(instruction.computationalType)
-    }
 }

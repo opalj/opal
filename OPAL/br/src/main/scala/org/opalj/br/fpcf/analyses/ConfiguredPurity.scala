@@ -4,32 +4,30 @@ package br
 package fpcf
 package analyses
 
-import net.ceedubs.ficus.Ficus._
-import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKey
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.ClassExtensibilityKey
-import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.fpcf.properties.Purity
+
+import net.ceedubs.ficus.Ficus._
+import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
 /**
  * @author Dominik Helm
  */
 class ConfiguredPurity(
-        project:         SomeProject,
-        declaredMethods: DeclaredMethods
-) {
+        project: SomeProject,
+        declaredMethods: DeclaredMethods) {
 
     private case class PurityValue(
             cf:    String,
             m:     String,
             desc:  String,
             p:     String,
-            conds: Option[Seq[String]]
-    )
+            conds: Option[Seq[String]])
 
     private val classExtensibility = project.get(ClassExtensibilityKey)
 
@@ -54,22 +52,21 @@ class ConfiguredPurity(
             mdo = if (descriptor == "*") None else Some(MethodDescriptor(descriptor))
 
             ms = if (className == "*") {
-                project.allMethods.filter { m =>
-                    m.name == methodName && mdo.forall(_ == m.descriptor)
-                }.map(declaredMethods(_))
-            } else {
-                val classType = ObjectType(className)
+                     project.allMethods.filter { m => m.name == methodName && mdo.forall(_ == m.descriptor) }.map(
+                         declaredMethods(_))
+                 } else {
+                     val classType = ObjectType(className)
 
-                mdo match {
-                    case Some(md) => Seq(
-                        declaredMethods(classType, classType.packageName, classType, methodName, md)
-                    )
-                    case None => project.classFile(classType).map { cf =>
-                        cf.findMethod(methodName).map(declaredMethods(_))
-                    }.getOrElse(Seq.empty)
+                     mdo match {
+                         case Some(md) => Seq(
+                                 declaredMethods(classType, classType.packageName, classType, methodName, md)
+                             )
+                         case None => project.classFile(classType).map { cf =>
+                                 cf.findMethod(methodName).map(declaredMethods(_))
+                             }.getOrElse(Seq.empty)
 
-                }
-            }
+                     }
+                 }
 
             dm <- ms
         } yield {

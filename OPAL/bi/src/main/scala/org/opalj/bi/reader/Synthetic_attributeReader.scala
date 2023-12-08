@@ -18,11 +18,10 @@ trait Synthetic_attributeReader extends AttributeReader {
     type Synthetic_attribute <: Attribute
 
     def Synthetic_attribute(
-        cp:                   Constant_Pool,
-        ap_name_index:        Constant_Pool_Index,
-        ap_descriptor_index:  Constant_Pool_Index,
-        attribute_name_index: Constant_Pool_Index
-    ): Synthetic_attribute
+        cp: Constant_Pool,
+        ap_name_index: Constant_Pool_Index,
+        ap_descriptor_index: Constant_Pool_Index,
+        attribute_name_index: Constant_Pool_Index): Synthetic_attribute
 
     //
     // IMPLEMENTATION
@@ -41,9 +40,9 @@ trait Synthetic_attributeReader extends AttributeReader {
         ap_name_index: Constant_Pool_Index,
         ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
-        in: DataInputStream
-    ) => {
-        /*val attribute_length =*/ in.readInt
+        in: DataInputStream) => {
+        /*val attribute_length =*/
+        in.readInt
         Synthetic_attribute(cp, ap_name_index, ap_descriptor_index, attribute_name_index)
     }
 

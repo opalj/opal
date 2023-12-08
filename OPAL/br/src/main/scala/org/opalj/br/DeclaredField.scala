@@ -44,16 +44,13 @@ final class VirtualDeclaredField private[br] (
         override val declaringClassType: ObjectType,
         override val name:               String,
         override val fieldType:          FieldType,
-        override val id:                 Int
-) extends DeclaredField {
+        override val id: Int) extends DeclaredField {
 
-    override val isDefinedField = false
-    override def definedField: Field = throw new UnsupportedOperationException();
+    override val isDefinedField               = false
+    override def definedField: Field          = throw new UnsupportedOperationException();
     override def asDefinedField: DefinedField = throw new ClassCastException();
 
-    override def toString: String = {
-        s"VirtualDeclaredField(${declaringClassType.toJava},$name,$fieldType)"
-    }
+    override def toString: String = s"VirtualDeclaredField(${declaringClassType.toJava},$name,$fieldType)"
 }
 
 /**
@@ -61,24 +58,20 @@ final class VirtualDeclaredField private[br] (
  * original reference.
  */
 final class DefinedField private[br] (
-        override val id:           Int,
-        override val definedField: Field
-) extends DeclaredField {
+        override val id: Int,
+        override val definedField: Field) extends DeclaredField {
 
     override def declaringClassType: ObjectType = definedField.declaringClassFile.thisType
-    override def name: String = definedField.name
-    override def fieldType: FieldType = definedField.fieldType
+    override def name: String                   = definedField.name
+    override def fieldType: FieldType           = definedField.fieldType
 
-    override val isDefinedField = true
+    override val isDefinedField               = true
     override def asDefinedField: DefinedField = this
 
-    override def toString: String = {
+    override def toString: String =
         s"DefinedField(declaringClassType=${declaringClassType.toJava},definedField=${definedField.toJava})"
-    }
 }
 
 object DefinedField {
-    def unapply(definedField: DefinedField): Option[Field] = {
-        Some(definedField.definedField)
-    }
+    def unapply(definedField: DefinedField): Option[Field] = Some(definedField.definedField)
 }

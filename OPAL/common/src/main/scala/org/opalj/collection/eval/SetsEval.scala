@@ -27,7 +27,6 @@ import org.opalj.util.PerformanceEvaluation.time
  * immutable HashMap.get: 1,8304 s
  * immutable TreeMap.get: 19,0907 s
  * </pre>
- *
  */
 object SetsEval extends App {
 
@@ -35,7 +34,7 @@ object SetsEval extends App {
 
     type T = String
     val Repetitions = 50
-    val Threads = 4
+    val Threads     = 4
 
     val ls: Seq[T] = (1 to 400000).map(i => (Math.random() * 5000000d).toString).reverse
     ls.foreach(_.hashCode) // <- they are lazily initialized!
@@ -53,45 +52,35 @@ object SetsEval extends App {
 
     println("Fill maps...")
     // fill maps
-    time { ls.foreach(jHashSet.add) } { t => println("jHashSet.add: "+t.toSeconds) }
-    time { ls.foreach(mHashSet.+=) } { t => println("mHashSet.add: "+t.toSeconds) }
-    time { ls.foreach(mTreeSet.+=) } { t => println("mTreeSet.add: "+t.toSeconds) }
-    time { ls.foreach(v => iHashSet += v) } { t => println("iHashSet.add: "+t.toSeconds) }
-    time { ls.foreach(v => iTreeSet += v) } { t => println("iTreeSet.add: "+t.toSeconds) }
+    time { ls.foreach(jHashSet.add) } { t => println("jHashSet.add: " + t.toSeconds) }
+    time { ls.foreach(mHashSet.+=) } { t => println("mHashSet.add: " + t.toSeconds) }
+    time { ls.foreach(mTreeSet.+=) } { t => println("mTreeSet.add: " + t.toSeconds) }
+    time { ls.foreach(v => iHashSet += v) } { t => println("iHashSet.add: " + t.toSeconds) }
+    time { ls.foreach(v => iTreeSet += v) } { t => println("iTreeSet.add: " + t.toSeconds) }
 
     // query maps
     var t = 0
     println("\nQuery maps...")
 
     time {
-        (1 to Repetitions).foreach { i =>
-            ls.foreach { s => if (jHashSet.contains(s)) { t += 1 } }
-        }
-    } { t => println("jHashSet.contains: "+t.toSeconds) }
+        (1 to Repetitions).foreach { i => ls.foreach { s => if (jHashSet.contains(s)) { t += 1 } } }
+    } { t => println("jHashSet.contains: " + t.toSeconds) }
 
     time {
-        (1 to Repetitions).foreach { i =>
-            ls.foreach { s => if (mHashSet.contains(s)) t += 1 }
-        }
-    } { t => println("mHashSet.contains: "+t.toSeconds) }
+        (1 to Repetitions).foreach { i => ls.foreach { s => if (mHashSet.contains(s)) t += 1 } }
+    } { t => println("mHashSet.contains: " + t.toSeconds) }
 
     time {
-        (1 to Repetitions).foreach { i =>
-            ls.foreach { s => if (mTreeSet.contains(s)) t += 1 }
-        }
-    } { t => println("mTreeSet.contains: "+t.toSeconds) }
+        (1 to Repetitions).foreach { i => ls.foreach { s => if (mTreeSet.contains(s)) t += 1 } }
+    } { t => println("mTreeSet.contains: " + t.toSeconds) }
 
     time {
-        (1 to Repetitions).foreach { i =>
-            ls.foreach { s => if (iHashSet.contains(s)) t += 1 }
-        }
-    } { t => println("iHashSet.contains: "+t.toSeconds) }
+        (1 to Repetitions).foreach { i => ls.foreach { s => if (iHashSet.contains(s)) t += 1 } }
+    } { t => println("iHashSet.contains: " + t.toSeconds) }
 
     time {
-        (1 to Repetitions).foreach { i =>
-            ls.foreach { s => if (iTreeSet.contains(s)) t += 1 }
-        }
-    } { t => println("iTreeSet.contains: "+t.toSeconds) }
+        (1 to Repetitions).foreach { i => ls.foreach { s => if (iTreeSet.contains(s)) t += 1 } }
+    } { t => println("iTreeSet.contains: " + t.toSeconds) }
 
     println(s"\n Run: $t")
 }

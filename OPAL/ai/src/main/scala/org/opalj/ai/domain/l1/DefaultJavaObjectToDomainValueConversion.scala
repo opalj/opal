@@ -21,13 +21,12 @@ trait DefaultJavaObjectToDomainValueConversion extends AsDomainValue {
      * that represents an initialized (array/object) value.
      */
     override def toDomainValue(pc: Int, value: Object): DomainReferenceValue = {
-        if (value eq null)
-            return NullValue(pc);
+        if (value eq null) return NullValue(pc);
 
-        val clazz = value.getClass
+        val clazz               = value.getClass
         val fqnInBinaryNotation = clazz.getName.replace('.', '/')
         if (clazz.isArray) {
-            val arrayType = FieldType(fqnInBinaryNotation).asArrayType
+            val arrayType       = FieldType(fqnInBinaryNotation).asArrayType
             val array: Array[_] = value.asInstanceOf[Array[_]]
             this match {
                 case rv: ArrayValues =>

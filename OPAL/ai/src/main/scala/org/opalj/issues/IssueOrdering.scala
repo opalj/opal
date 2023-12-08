@@ -11,11 +11,11 @@ package issues
  */
 object IssueOrdering extends scala.math.Ordering[Issue] {
 
-    def compare(x: Set[String], y: Set[String]): Int = {
+    def compare(x: Set[String], y: Set[String]): Int =
         if (x.size != y.size) {
             x.size - y.size
         } else {
-            val xUniques = (x -- y)
+            val xUniques = x -- y
             if (xUniques.isEmpty) {
                 0
             } else {
@@ -24,7 +24,6 @@ object IssueOrdering extends scala.math.Ordering[Issue] {
                 xUniqueHead compare yUniqueHead
             }
         }
-    }
 
     def compare(x: Issue, y: Issue): Int = {
         if (x.relevance.value < y.relevance.value) return -1;

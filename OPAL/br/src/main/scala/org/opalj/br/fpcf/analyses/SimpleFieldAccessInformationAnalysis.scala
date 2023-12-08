@@ -41,20 +41,27 @@ import org.opalj.fpcf.Results
 class SimpleFieldAccessInformationAnalysis(val project: SomeProject) extends FPCFAnalysis {
 
     private val declaredMethods = project.get(DeclaredMethodsKey)
-    private val declaredFields = project.get(DeclaredFieldsKey)
+    private val declaredFields  = project.get(DeclaredFieldsKey)
     private val contextProvider = project.get(ContextProviderKey)
 
     def analyzeMethod(method: Method): PropertyComputationResult = {
-        val context = contextProvider.newContext(declaredMethods(method))
+        val context                                     = contextProvider.newContext(declaredMethods(method))
         implicit val fieldAccesses: DirectFieldAccesses = new DirectFieldAccesses()
 
         method.body.get iterate { (pc, instruction) =>
             instruction.opcode match {
-                case GETFIELD.opcode | GETSTATIC.opcode =>
-                    fieldAccesses.addFieldRead(context, pc, declaredFields(instruction.asInstanceOf[FieldReadAccess]), None)
+                case GETFIELD.opcode | GETSTATIC.opcode => fieldAccesses.addFieldRead(
+                        context,
+                        pc,
+                        declaredFields(instruction.asInstanceOf[FieldReadAccess]),
+                        None)
 
-                case PUTFIELD.opcode | PUTSTATIC.opcode =>
-                    fieldAccesses.addFieldWrite(context, pc, declaredFields(instruction.asInstanceOf[FieldWriteAccess]), None, None)
+                case PUTFIELD.opcode | PUTSTATIC.opcode => fieldAccesses.addFieldWrite(
+                        context,
+                        pc,
+                        declaredFields(instruction.asInstanceOf[FieldWriteAccess]),
+                        None,
+                        None)
 
                 case _ => /*nothing to do*/
             }
@@ -94,4 +101,3 @@ object EagerSimpleFieldAccessInformationAnalysis extends BasicFPCFEagerAnalysisS
         analysis
     }
 }
-

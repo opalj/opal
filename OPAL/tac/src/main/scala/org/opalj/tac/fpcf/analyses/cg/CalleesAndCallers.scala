@@ -7,6 +7,19 @@ package cg
 
 import scala.collection.immutable.IntMap
 
+import org.opalj.br.ClassHierarchy
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.Method
+import org.opalj.br.MethodDescriptor
+import org.opalj.br.ObjectType
+import org.opalj.br.analyses.DeclaredMethods
+import org.opalj.br.fpcf.analyses.ContextProvider
+import org.opalj.br.fpcf.properties.Context
+import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.cg.CallersOnlyWithConcreteCallers
+import org.opalj.br.fpcf.properties.cg.NoCallees
+import org.opalj.br.fpcf.properties.cg.OnlyVMLevelCallers
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.LongLinkedTrieSet
 import org.opalj.fpcf.EPK
@@ -15,19 +28,6 @@ import org.opalj.fpcf.InterimUBP
 import org.opalj.fpcf.PartialResult
 import org.opalj.fpcf.Property
 import org.opalj.value.ValueInformation
-import org.opalj.br.DeclaredMethod
-import org.opalj.br.Method
-import org.opalj.br.MethodDescriptor
-import org.opalj.br.ObjectType
-import org.opalj.br.analyses.DeclaredMethods
-import org.opalj.br.fpcf.properties.Context
-import org.opalj.br.ClassHierarchy
-import org.opalj.br.fpcf.analyses.ContextProvider
-import org.opalj.br.fpcf.properties.cg.Callees
-import org.opalj.br.fpcf.properties.cg.Callers
-import org.opalj.br.fpcf.properties.cg.CallersOnlyWithConcreteCallers
-import org.opalj.br.fpcf.properties.cg.NoCallees
-import org.opalj.br.fpcf.properties.cg.OnlyVMLevelCallers
 
 /**
  * A convenience class for call graph constructions. Manages direct/indirect calls and incomplete
@@ -39,15 +39,12 @@ import org.opalj.br.fpcf.properties.cg.OnlyVMLevelCallers
  */
 sealed trait CalleesAndCallers {
     final def partialResults(
-        callerContext: Context, enforceCalleesResult: Boolean = false
-    ): IterableOnce[PartialResult[_, _ >: Null <: Property]] =
+        callerContext:        Context,
+        enforceCalleesResult: Boolean = false): IterableOnce[PartialResult[_, _ >: Null <: Property]] =
         if (directCallees.isEmpty && indirectCallees.isEmpty && incompleteCallSites.isEmpty) {
-            if (enforceCalleesResult)
-                Iterator(partialResultForCallees(callerContext)) ++ partialResultsForCallers
-            else
-                partialResultsForCallers
-        } else
-            Iterator(partialResultForCallees(callerContext)) ++ partialResultsForCallers
+            if (enforceCalleesResult) Iterator(partialResultForCallees(callerContext)) ++ partialResultsForCallers
+            else partialResultsForCallers
+        } else Iterator(partialResultForCallees(callerContext)) ++ partialResultsForCallers
 
     protected def directCallees: IntMap[IntTrieSet] = IntMap.empty
 
@@ -60,49 +57,52 @@ sealed trait CalleesAndCallers {
     protected def receivers: IntMap[IntMap[Option[(ValueInformation, IntTrieSet)]]] = IntMap.empty
 
     private[this] def partialResultForCallees(
-        callerContext: Context
-    ): PartialResult[DeclaredMethod, Callees] = {
-        PartialResult[DeclaredMethod, Callees](callerContext.method, Callees.key, {
+        callerContext: Context): PartialResult[DeclaredMethod, Callees] = PartialResult[DeclaredMethod, Callees](
+        callerContext.method,
+        Callees.key,
+        {
             case InterimUBP(_) if directCallees.isEmpty && indirectCallees.isEmpty && incompleteCallSites.isEmpty =>
                 None
 
-            case InterimUBP(ub: Callees) =>
-                Some(InterimEUBP(
+            case InterimUBP(ub: Callees) => Some(InterimEUBP(
                     callerContext.method,
                     ub.updateWithCallees(
                         callerContext,
-                        directCallees, indirectCallees,
+                        directCallees,
+                        indirectCallees,
                         incompleteCallSites,
-                        receivers, parameters
+                        receivers,
+                        parameters
                     )
                 ))
 
             case _: EPK[_, _] if directCallees.isEmpty && indirectCallees.isEmpty && incompleteCallSites.isEmpty =>
                 Some(InterimEUBP(
-                    callerContext.method, NoCallees
+                    callerContext.method,
+                    NoCallees
                 ))
 
-            case _: EPK[_, _] =>
-                Some(InterimEUBP(
+            case _: EPK[_, _] => Some(InterimEUBP(
                     callerContext.method,
                     org.opalj.br.fpcf.properties.cg.ConcreteCallees(
                         callerContext,
-                        directCallees, indirectCallees,
+                        directCallees,
+                        indirectCallees,
                         incompleteCallSites,
-                        receivers, parameters
+                        receivers,
+                        parameters
                     )
                 ))
 
-            case r =>
-                throw new IllegalStateException(s"unexpected previous result $r")
-        })
-    }
+            case r => throw new IllegalStateException(s"unexpected previous result $r")
+        }
+    )
 
     protected def partialResultsForCallers: IterableOnce[PartialResult[DeclaredMethod, Callers]] = Iterator.empty
 }
 
 trait IncompleteCallSites extends CalleesAndCallers {
-    private[this] var _incompleteCallSites = IntTrieSet.empty
+    private[this] var _incompleteCallSites                 = IntTrieSet.empty
     override protected def incompleteCallSites: IntTrieSet = _incompleteCallSites
 
     private[cg] def addIncompleteCallSite(pc: Int): Unit = _incompleteCallSites += pc
@@ -115,16 +115,15 @@ trait Calls extends CalleesAndCallers {
     protected def createPartialResultForContext(
         callerContext: Context,
         calleeContext: Context,
-        pc:            Int
-    ): PartialResult[DeclaredMethod, Callers] = {
-        PartialResult[DeclaredMethod, Callers](calleeContext.method, Callers.key, {
+        pc:            Int): PartialResult[DeclaredMethod, Callers] = PartialResult[DeclaredMethod, Callers](
+        calleeContext.method,
+        Callers.key,
+        {
             case InterimUBP(ub: Callers) =>
                 val newCallers = ub.updated(calleeContext, callerContext, pc, isDirect)
                 // here we assert that update returns the identity if there is no change
-                if (ub ne newCallers)
-                    Some(InterimEUBP(calleeContext.method, newCallers))
-                else
-                    None
+                if (ub ne newCallers) Some(InterimEUBP(calleeContext.method, newCallers))
+                else None
 
             case _: EPK[_, _] =>
                 val set = LongLinkedTrieSet(Callers.toLong(callerContext.id, pc, isDirect))
@@ -133,20 +132,19 @@ trait Calls extends CalleesAndCallers {
                     new CallersOnlyWithConcreteCallers(IntMap(calleeContext.id -> set), 1)
                 ))
 
-            case r =>
-                throw new IllegalStateException(s"unexpected previous result $r")
-        })
-    }
+            case r => throw new IllegalStateException(s"unexpected previous result $r")
+        }
+    )
 
     protected var _callees: IntMap[IntTrieSet] = IntMap.empty
 
-    private[this] var _partialResultsForCallers: List[PartialResult[DeclaredMethod, Callers]] =
-        List.empty
+    private[this] var _partialResultsForCallers: List[PartialResult[DeclaredMethod, Callers]] = List.empty
 
     def addCall(
-        callerContext: Context, pc: Int, calleeContext: Context
-    ): Unit = {
-        val calleeId = calleeContext.id
+        callerContext: Context,
+        pc:            Int,
+        calleeContext: Context): Unit = {
+        val calleeId          = calleeContext.id
         val oldCalleesAtPCOpt = _callees.get(pc)
         if (oldCalleesAtPCOpt.isEmpty) {
             _callees = _callees.updated(pc, IntTrieSet(calleeId))
@@ -163,9 +161,8 @@ trait Calls extends CalleesAndCallers {
         }
     }
 
-    override protected def partialResultsForCallers: IterableOnce[PartialResult[DeclaredMethod, Callers]] = {
+    override protected def partialResultsForCallers: IterableOnce[PartialResult[DeclaredMethod, Callers]] =
         _partialResultsForCallers.iterator ++ super.partialResultsForCallers
-    }
 }
 
 trait DirectCallsBase extends Calls {
@@ -178,17 +175,13 @@ trait IndirectCallsBase extends Calls {
 
     override val isDirect: Boolean = false
 
-    private[this] var _parameters: IntMap[IntMap[Seq[Option[(ValueInformation, IntTrieSet)]]]] =
-        IntMap.empty
+    private[this] var _parameters: IntMap[IntMap[Seq[Option[(ValueInformation, IntTrieSet)]]]] = IntMap.empty
 
-    override protected def parameters: IntMap[IntMap[Seq[Option[(ValueInformation, IntTrieSet)]]]] =
-        _parameters
+    override protected def parameters: IntMap[IntMap[Seq[Option[(ValueInformation, IntTrieSet)]]]] = _parameters
 
-    override protected def receivers: IntMap[IntMap[Option[(ValueInformation, IntTrieSet)]]] =
-        _receivers
+    override protected def receivers: IntMap[IntMap[Option[(ValueInformation, IntTrieSet)]]] = _receivers
 
-    private[this] var _receivers: IntMap[IntMap[Option[(ValueInformation, IntTrieSet)]]] =
-        IntMap.empty
+    private[this] var _receivers: IntMap[IntMap[Option[(ValueInformation, IntTrieSet)]]] = IntMap.empty
 
     override protected def indirectCallees: IntMap[IntTrieSet] = _callees
 
@@ -198,23 +191,23 @@ trait IndirectCallsBase extends Calls {
         callee:        DeclaredMethod,
         params:        Seq[Option[(ValueInformation, IntTrieSet)]],
         receiver:      Option[(ValueInformation, IntTrieSet)]
-    )(implicit contextProvider: ContextProvider, classHierarchy: ClassHierarchy): Unit = {
-        if (callee.descriptor.parameterTypes.size == params.size) {
-            if (receiver.isEmpty || isTypeCompatible(callee.declaringClassType, receiver.get._1, true)) {
-                if (params.zip(callee.descriptor.parameterTypes).forall { p =>
+      )(implicit
+        contextProvider: ContextProvider,
+        classHierarchy:  ClassHierarchy): Unit = if (callee.descriptor.parameterTypes.size == params.size) {
+        if (receiver.isEmpty || isTypeCompatible(callee.declaringClassType, receiver.get._1, true)) {
+            if (params.zip(callee.descriptor.parameterTypes).forall { p =>
                     p._1.isEmpty || isTypeCompatible(p._2, p._1.get._1)
                 }) {
-                    val calleeContext = contextProvider.expandContext(callerContext, callee, pc)
-                    addCall(callerContext, pc, calleeContext)
-                    _parameters = _parameters.updated(
-                        pc,
-                        _parameters.getOrElse(pc, IntMap.empty).updated(calleeContext.id, params)
-                    )
-                    _receivers = _receivers.updated(
-                        pc,
-                        _receivers.getOrElse(pc, IntMap.empty).updated(calleeContext.id, receiver)
-                    )
-                }
+                val calleeContext = contextProvider.expandContext(callerContext, callee, pc)
+                addCall(callerContext, pc, calleeContext)
+                _parameters = _parameters.updated(
+                    pc,
+                    _parameters.getOrElse(pc, IntMap.empty).updated(calleeContext.id, params)
+                )
+                _receivers = _receivers.updated(
+                    pc,
+                    _receivers.getOrElse(pc, IntMap.empty).updated(calleeContext.id, receiver)
+                )
             }
         }
     }
@@ -229,7 +222,10 @@ trait IndirectCallsBase extends Calls {
         fallbackDescriptor: MethodDescriptor,
         parameters:         Seq[Option[(ValueInformation, IntTrieSet)]],
         receiver:           Option[(ValueInformation, IntTrieSet)]
-    )(implicit declaredMethods: DeclaredMethods, typeIterator: TypeIterator, classHierarchy: ClassHierarchy): Unit = {
+      )(implicit
+        declaredMethods: DeclaredMethods,
+        typeIterator:    TypeIterator,
+        classHierarchy:  ClassHierarchy): Unit =
         if (callee.hasValue) {
             addCall(
                 callerContext,
@@ -248,35 +244,32 @@ trait IndirectCallsBase extends Calls {
             )
             addCall(callerContext, pc, fallbackCallee, parameters, receiver)
         }
-    }
 }
 
 trait VMReachableMethodsBase extends CalleesAndCallers {
     private[this] var vmReachableMethods: Set[DeclaredMethod] = Set.empty
 
-    def addVMReachableMethod(declaredMethod: DeclaredMethod): Unit =
-        vmReachableMethods += declaredMethod
+    def addVMReachableMethod(declaredMethod: DeclaredMethod): Unit = vmReachableMethods += declaredMethod
 
-    override protected def partialResultsForCallers: IterableOnce[PartialResult[DeclaredMethod, Callers]] = {
+    override protected def partialResultsForCallers: IterableOnce[PartialResult[DeclaredMethod, Callers]] =
         vmReachableMethods.iterator.map { m =>
-            PartialResult[DeclaredMethod, Callers](m, Callers.key, {
-                case _: EPK[_, _] =>
-                    Some(InterimEUBP(m, OnlyVMLevelCallers))
+            PartialResult[DeclaredMethod, Callers](
+                m,
+                Callers.key,
+                {
+                    case _: EPK[_, _] => Some(InterimEUBP(m, OnlyVMLevelCallers))
 
-                case InterimUBP(ub: Callers) =>
-                    if (ub.hasVMLevelCallers)
-                        None
-                    else
-                        Some(InterimEUBP(m, ub.updatedWithVMLevelCall()))
+                    case InterimUBP(ub: Callers) =>
+                        if (ub.hasVMLevelCallers) None
+                        else Some(InterimEUBP(m, ub.updatedWithVMLevelCall()))
 
-                case r =>
-                    throw new IllegalStateException(s"unexpected previous result $r")
+                    case r => throw new IllegalStateException(s"unexpected previous result $r")
 
-            })
+                }
+            )
         } ++ super.partialResultsForCallers
-    }
 }
 
 class VMReachableMethods extends VMReachableMethodsBase with IncompleteCallSites
-class DirectCalls extends DirectCallsBase with IncompleteCallSites
-class IndirectCalls extends IndirectCallsBase with IncompleteCallSites
+class DirectCalls        extends DirectCallsBase with IncompleteCallSites
+class IndirectCalls      extends IndirectCallsBase with IncompleteCallSites

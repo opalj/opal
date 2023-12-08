@@ -21,7 +21,6 @@ package analyses
  *       reflects the position of the parameter value on the tac; see
  *       [[org.opalj.ai.parameterIndexToValueOrigin]].'''
  *
- *
  * @param method The virtual method which contains the formal parameter.
  * @param origin The origin associated with the parameter. See the general description for
  *               further details.
@@ -36,29 +35,21 @@ final class VirtualFormalParameter(val method: DeclaredMethod, val origin: Int) 
      */
     def parameterIndex: Int = -origin - 2
 
-    override def equals(other: Any): Boolean = {
-        other match {
-            case that: VirtualFormalParameter => (this.method == that.method) && this.origin == that.origin
-            case _                            => false
-        }
+    override def equals(other: Any): Boolean = other match {
+        case that: VirtualFormalParameter => (this.method == that.method) && this.origin == that.origin
+        case _                            => false
     }
 
     override def hashCode(): Int = method.hashCode() * 111 + origin
 
-    override def toString: String = {
-        s"VirtualFormalParameter(${method.toJava},origin=$origin)"
-    }
+    override def toString: String = s"VirtualFormalParameter(${method.toJava},origin=$origin)"
 }
 
 object VirtualFormalParameter {
 
-    def apply(method: DeclaredMethod, origin: Int): VirtualFormalParameter = {
-        new VirtualFormalParameter(method, origin)
-    }
+    def apply(method: DeclaredMethod, origin: Int): VirtualFormalParameter = new VirtualFormalParameter(method, origin)
 
     // TODO Using RefIntPair to avoid (un)boxing.
-    def unapply(fp: VirtualFormalParameter): Some[(DeclaredMethod, Int)] = {
-        Some((fp.method, fp.origin))
-    }
+    def unapply(fp: VirtualFormalParameter): Some[(DeclaredMethod, Int)] = Some((fp.method, fp.origin))
 
 }

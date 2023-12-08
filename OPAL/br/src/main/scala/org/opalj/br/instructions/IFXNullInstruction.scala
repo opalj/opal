@@ -21,7 +21,7 @@ trait IFXNullInstructionLike extends SimpleConditionalBranchInstructionLike {
 
 trait IFXNullInstruction[T <: IFXNullInstruction[T]]
     extends SimpleConditionalBranchInstruction[T]
-    with IFXNullInstructionLike {
+        with IFXNullInstructionLike {
 
     final override def asIFXNullInstruction: this.type = this
 
@@ -29,8 +29,6 @@ trait IFXNullInstruction[T <: IFXNullInstruction[T]]
 
 object IFXNullInstruction {
 
-    def unapply(i: IFXNullInstruction[_]): Some[(RelationalOperator, Int)] = {
-        Some((i.condition, i.branchoffset))
-    }
+    def unapply(i: IFXNullInstruction[_]): Some[(RelationalOperator, Int)] = Some((i.condition, i.branchoffset))
 
 }

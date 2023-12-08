@@ -14,8 +14,7 @@ package instructions
 case class PUTFIELD(
         declaringClass: ObjectType,
         name:           String,
-        fieldType:      FieldType
-) extends FieldWriteAccess {
+        fieldType: FieldType) extends FieldWriteAccess {
 
     final def opcode: Opcode = PUTFIELD.opcode
 
@@ -32,20 +31,17 @@ case class PUTFIELD(
     final def nextInstructions(
         currentPC:             PC,
         regularSuccessorsOnly: Boolean
-    )(
-        implicit
+      )(implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
-    ): List[PC] = {
-        if (regularSuccessorsOnly)
-            List(indexOfNextInstruction(currentPC))
-        else
-            Instruction.nextInstructionOrExceptionHandler(
-                this, currentPC, ObjectType.NullPointerException
-            )
-    }
+        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy): List[PC] =
+        if (regularSuccessorsOnly) List(indexOfNextInstruction(currentPC))
+        else Instruction.nextInstructionOrExceptionHandler(
+            this,
+            currentPC,
+            ObjectType.NullPointerException
+        )
 
-    override def toString = "put "+declaringClass.toJava+"."+name+" : "+fieldType.toJava
+    override def toString = "put " + declaringClass.toJava + "." + name + " : " + fieldType.toJava
 
 }
 
@@ -67,8 +63,7 @@ object PUTFIELD extends InstructionMetaInformation {
      * @param   fieldTypeName The field's type; see [[org.opalj.br.FieldType$]] for the concrete
      *          syntax.
      */
-    def apply(declaringClassName: String, name: String, fieldTypeName: String): PUTFIELD = {
+    def apply(declaringClassName: String, name: String, fieldTypeName: String): PUTFIELD =
         PUTFIELD(ObjectType(declaringClassName), name, FieldType(fieldTypeName))
-    }
 
 }

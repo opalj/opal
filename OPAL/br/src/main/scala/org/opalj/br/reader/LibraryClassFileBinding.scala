@@ -21,18 +21,16 @@ trait LibraryClassFileBinding extends ClassFileBinding {
         interfaces:        Interfaces,
         fields:            Fields,
         methods:           Methods,
-        attributes:        Attributes
-    ): ClassFile = {
-        super.ClassFile(
-            cp,
-            minor_version, major_version,
-            access_flags,
-            this_class_index,
-            super_class_index,
-            interfaces,
-            fields.filterNot(_.isPrivate),
-            methods.filterNot(_.isPrivate),
-            attributes
-        )
-    }
+        attributes:        Attributes): ClassFile = super.ClassFile(
+        cp,
+        minor_version,
+        major_version,
+        access_flags,
+        this_class_index,
+        super_class_index,
+        interfaces,
+        fields.filterNot(_.isPrivate),
+        methods.filterNot(_.isPrivate),
+        attributes
+    )
 }

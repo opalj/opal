@@ -12,9 +12,8 @@ import org.opalj.bi.ConstantPoolTags
  * @author Andre Pacak
  */
 case class CONSTANT_MethodHandle_info(
-        referenceKind:  Int,
-        referenceIndex: Constant_Pool_Index
-) extends Constant_Pool_Entry {
+        referenceKind: Int,
+        referenceIndex: Constant_Pool_Index) extends Constant_Pool_Entry {
 
     override def tag: Int = ConstantPoolTags.CONSTANT_MethodHandle_ID
 
@@ -22,7 +21,7 @@ case class CONSTANT_MethodHandle_info(
 
     override def asConstantValue(cp: Constant_Pool): MethodHandle = asMethodHandle(cp)
 
-    override def asMethodHandle(cp: Constant_Pool): MethodHandle = {
+    override def asMethodHandle(cp: Constant_Pool): MethodHandle =
         (this.referenceKind: @scala.annotation.switch) match {
 
             case bi.REF_getField.referenceKind =>
@@ -70,5 +69,4 @@ case class CONSTANT_MethodHandle_info(
                 InvokeInterfaceMethodHandle(receiverType, name, methodDescriptor)
 
         }
-    }
 }

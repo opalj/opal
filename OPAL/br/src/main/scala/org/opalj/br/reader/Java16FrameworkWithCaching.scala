@@ -11,5 +11,4 @@ package reader
  * @author Dominik Helm
  */
 class Java16FrameworkWithCaching(
-        cache: BytecodeInstructionsCache
-) extends Java11FrameworkWithCaching(cache) with Java16LibraryFramework
+        cache: BytecodeInstructionsCache) extends Java11FrameworkWithCaching(cache) with Java16LibraryFramework

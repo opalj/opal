@@ -3,6 +3,7 @@ package org.opalj
 package br
 
 import java.net.URL
+
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectAnalysisApplication
@@ -22,8 +23,7 @@ object CountClassForNameCalls extends ProjectAnalysisApplication {
     def doAnalyze(
         project:       Project[URL],
         parameters:    Seq[String],
-        isInterrupted: () => Boolean
-    ): BasicReport = {
+        isInterrupted: () => Boolean): BasicReport = {
 
         import ObjectType.{String, Class}
         // Next, we create a descriptor of a method that takes a single parameter of
@@ -35,7 +35,7 @@ object CountClassForNameCalls extends ProjectAnalysisApplication {
             for {
                 // Let's traverse all methods of all class files that have a
                 // concrete (non-native) implementation.
-                classFile <- project.allProjectClassFiles.par
+                classFile                     <- project.allProjectClassFiles.par
                 method @ MethodWithBody(code) <- classFile.methods
                 // Match all invocations of the method:
                 // Class.forName(String) : Class<?>

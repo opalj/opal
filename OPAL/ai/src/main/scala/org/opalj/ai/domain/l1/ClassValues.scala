@@ -5,8 +5,9 @@ package domain
 package l1
 
 import scala.reflect.ClassTag
-import org.opalj.value.IsClassValue
-import org.opalj.value.TheClassValue
+
+import scala.collection.immutable.ArraySeq
+
 import org.opalj.br.BooleanType
 import org.opalj.br.BootstrapMethod
 import org.opalj.br.ByteType
@@ -23,8 +24,8 @@ import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.ShortType
 import org.opalj.br.Type
-
-import scala.collection.immutable.ArraySeq
+import org.opalj.value.IsClassValue
+import org.opalj.value.TheClassValue
 
 /**
  * Enables the tracking of concrete `Class` values.
@@ -45,9 +46,9 @@ import scala.collection.immutable.ArraySeq
  */
 trait ClassValues
     extends StringValues
-    with FieldAccessesDomain
-    with DynamicLoadsDomain
-    with MethodCallsDomain {
+        with FieldAccessesDomain
+        with DynamicLoadsDomain
+        with MethodCallsDomain {
     domain: CorrelationalDomain with IntegerValuesDomain with TypedValuesFactory with Configuration =>
 
     type DomainClassValue <: ClassValue with DomainObjectValue
@@ -63,37 +64,30 @@ trait ClassValues
 
         override def doJoinWithNonNullValueWithSameOrigin(
             joinPC: Int,
-            other:  DomainSingleOriginReferenceValue
-        ): Update[DomainSingleOriginReferenceValue] = {
-
-            other match {
-                case that: ClassValue =>
-                    if (this.value eq that.value)
-                        // Recall: all instances are the same; i.e.,
-                        // String.class "is reference equal to" Class.forName("java.lang.String")
-                        NoUpdate
-                    else
-                        StructuralUpdate(ObjectValue(origin, No, true, ObjectType.Class, nextRefId()))
-                case _ =>
-                    val result = super.doJoinWithNonNullValueWithSameOrigin(joinPC, other)
-                    if (result.isStructuralUpdate) {
-                        result
-                    } else {
-                        // This (class) value and the other value may have a corresponding
-                        // abstract representation (w.r.t. the next abstraction level!)
-                        // but we still need to drop the concrete information.
-                        StructuralUpdate(result.value.update())
-                    }
-            }
+            other:  DomainSingleOriginReferenceValue): Update[DomainSingleOriginReferenceValue] = other match {
+            case that: ClassValue =>
+                if (this.value eq that.value)
+                    // Recall: all instances are the same; i.e.,
+                    // String.class "is reference equal to" Class.forName("java.lang.String")
+                    NoUpdate
+                else StructuralUpdate(ObjectValue(origin, No, true, ObjectType.Class, nextRefId()))
+            case _ =>
+                val result = super.doJoinWithNonNullValueWithSameOrigin(joinPC, other)
+                if (result.isStructuralUpdate) {
+                    result
+                } else {
+                    // This (class) value and the other value may have a corresponding
+                    // abstract representation (w.r.t. the next abstraction level!)
+                    // but we still need to drop the concrete information.
+                    StructuralUpdate(result.value.update())
+                }
         }
 
-        override def adapt(target: TargetDomain, targetOrigin: ValueOrigin): target.DomainValue = {
+        override def adapt(target: TargetDomain, targetOrigin: ValueOrigin): target.DomainValue =
             target.ClassValue(targetOrigin, this.value)
-        }
 
         override def abstractsOver(other: DomainValue): Boolean = {
-            if (this eq other)
-                return true;
+            if (this eq other) return true;
 
             other match {
                 case that: ClassValue => that.value eq this.value
@@ -103,15 +97,12 @@ trait ClassValues
 
         override def toCanonicalForm: TheClassValue = TheClassValue(value)
 
-        override def equals(other: Any): Boolean =
-            other match {
-                case cv: ClassValue => super.equals(other) && cv.value == this.value
-                case _              => false
-            }
-
-        override protected def canEqual(other: SObjectValue): Boolean = {
-            other.isInstanceOf[ClassValue]
+        override def equals(other: Any): Boolean = other match {
+            case cv: ClassValue => super.equals(other) && cv.value == this.value
+            case _              => false
         }
+
+        override protected def canEqual(other: SObjectValue): Boolean = other.isInstanceOf[ClassValue]
 
         override def hashCode: Int = super.hashCode + 71 * value.hashCode
 
@@ -122,8 +113,7 @@ trait ClassValues
     override def ClassValue(vo: ValueOrigin, value: Type): DomainObjectValue
 
     protected[l1] def simpleClassForNameCall(pc: Int, className: String): MethodCallResult = {
-        if (className.length() == 0)
-            return justThrows(ClassNotFoundException(pc));
+        if (className.length() == 0) return justThrows(ClassNotFoundException(pc));
 
         val classValue =
             try {
@@ -163,8 +153,7 @@ trait ClassValues
         isInterface:      Boolean,
         name:             String,
         methodDescriptor: MethodDescriptor,
-        operands:         Operands
-    ): MethodCallResult = {
+        operands:         Operands): MethodCallResult = {
 
         import org.opalj.ai.domain.l1.ClassValues._
 
@@ -179,8 +168,7 @@ trait ClassValues
                         case `forName_String_boolean_ClassLoader`       => simpleClassForNameCall(pc, value)
                         case `forName_String_Class`                     => simpleClassForNameCall(pc, value)
                         case `forName_String_boolean_ClassLoader_Class` => simpleClassForNameCall(pc, value)
-                        case _ =>
-                            throw new DomainException(
+                        case _ => throw new DomainException(
                                 s"unsupported Class { ${methodDescriptor.toJava("forName")} }"
                             )
                     }
@@ -193,8 +181,7 @@ trait ClassValues
                     methodDescriptor match {
                         case `forName_Module_String`       => simpleClassForNameCall(pc, value)
                         case `forName_Module_String_Class` => simpleClassForNameCall(pc, value)
-                        case _ =>
-                            throw new DomainException(
+                        case _ => throw new DomainException(
                                 s"unsupported Class { ${methodDescriptor.toJava("forName")} }"
                             )
                     }
@@ -213,8 +200,7 @@ trait ClassValues
         pc:             Int,
         declaringClass: ObjectType,
         name:           String,
-        fieldType:      FieldType
-    ): Computation[DomainValue, Nothing] = {
+        fieldType:      FieldType): Computation[DomainValue, Nothing] =
         if (name == "TYPE") {
             declaringClass match {
                 case ObjectType.Boolean   => ComputedValue(ClassValue(pc, BooleanType))
@@ -226,34 +212,29 @@ trait ClassValues
                 case ObjectType.Float     => ComputedValue(ClassValue(pc, FloatType))
                 case ObjectType.Double    => ComputedValue(ClassValue(pc, DoubleType))
 
-                case _                    => super.getstatic(pc, declaringClass, name, fieldType)
+                case _ => super.getstatic(pc, declaringClass, name, fieldType)
             }
         } else {
             super.getstatic(pc, declaringClass, name, fieldType)
         }
-    }
 
     abstract override def loadDynamic(
         pc:              Int,
         bootstrapMethod: BootstrapMethod,
         name:            String,
-        descriptor:      FieldType
-    ): Computation[DomainValue, Nothing] = {
-
-        bootstrapMethod match {
-            case BootstrapMethod(InvokeStaticMethodHandle(ObjectType.ConstantBootstraps, false, "primitiveClass", ConstantBootstrapsPrimitiveClassDescriptor), ArraySeq()) =>
-                ComputedValue(ClassValue(pc, FieldType(name)))
-            case _ =>
-                super.loadDynamic(pc, bootstrapMethod, name, descriptor)
-        }
+        descriptor:      FieldType): Computation[DomainValue, Nothing] = bootstrapMethod match {
+        case BootstrapMethod(InvokeStaticMethodHandle(ObjectType.ConstantBootstraps,
+                                                      false,
+                                                      "primitiveClass",
+                                                      ConstantBootstrapsPrimitiveClassDescriptor),
+                             ArraySeq()) => ComputedValue(ClassValue(pc, FieldType(name)))
+        case _ => super.loadDynamic(pc, bootstrapMethod, name, descriptor)
     }
 
     object ClassValue {
-        def unapply(value: DomainValue): Option[Type] = {
-            value match {
-                case classValue: ClassValue => Some(classValue.value)
-                case _                      => None
-            }
+        def unapply(value: DomainValue): Option[Type] = value match {
+            case classValue: ClassValue => Some(classValue.value)
+            case _                      => None
         }
     }
 }
@@ -262,38 +243,28 @@ private object ClassValues {
 
     final val forName_String = MethodDescriptor(ObjectType.String, ObjectType.Class)
 
-    final val forName_String_Class = {
-        MethodDescriptor(
-            ArraySeq(ObjectType.String, ObjectType.Class),
-            ObjectType.Class
-        )
-    }
+    final val forName_String_Class = MethodDescriptor(
+        ArraySeq(ObjectType.String, ObjectType.Class),
+        ObjectType.Class
+    )
 
-    final val forName_String_boolean_ClassLoader = {
-        MethodDescriptor(
-            ArraySeq(ObjectType.String, BooleanType, ObjectType("java/lang/ClassLoader")),
-            ObjectType.Class
-        )
-    }
+    final val forName_String_boolean_ClassLoader = MethodDescriptor(
+        ArraySeq(ObjectType.String, BooleanType, ObjectType("java/lang/ClassLoader")),
+        ObjectType.Class
+    )
 
-    final val forName_String_boolean_ClassLoader_Class = {
-        MethodDescriptor(
-            ArraySeq(ObjectType.String, BooleanType, ObjectType("java/lang/ClassLoader"), ObjectType.Class),
-            ObjectType.Class
-        )
-    }
+    final val forName_String_boolean_ClassLoader_Class = MethodDescriptor(
+        ArraySeq(ObjectType.String, BooleanType, ObjectType("java/lang/ClassLoader"), ObjectType.Class),
+        ObjectType.Class
+    )
 
-    final val forName_Module_String = {
-        MethodDescriptor(
-            ArraySeq(ObjectType("java/lang/Module"), ObjectType.String),
-            ObjectType.Class
-        )
-    }
+    final val forName_Module_String = MethodDescriptor(
+        ArraySeq(ObjectType("java/lang/Module"), ObjectType.String),
+        ObjectType.Class
+    )
 
-    final val forName_Module_String_Class = {
-        MethodDescriptor(
-            ArraySeq(ObjectType("java/lang/Module"), ObjectType.String, ObjectType.Class),
-            ObjectType.Class
-        )
-    }
+    final val forName_Module_String_Class = MethodDescriptor(
+        ArraySeq(ObjectType("java/lang/Module"), ObjectType.String, ObjectType.Class),
+        ObjectType.Class
+    )
 }

@@ -5,6 +5,22 @@ package fpcf
 package analyses
 package pointsto
 
+import org.opalj.br.ArrayType
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.MethodDescriptor
+import org.opalj.br.ObjectType
+import org.opalj.br.ReferenceType
+import org.opalj.br.analyses.DeclaredMethods
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
+import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.properties.Context
+import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
+import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
+import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
@@ -17,22 +33,6 @@ import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.SomeEPK
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
-import org.opalj.br.DeclaredMethod
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
-import org.opalj.br.fpcf.properties.Context
-import org.opalj.br.ReferenceType
-import org.opalj.br.analyses.DeclaredMethods
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.MethodDescriptor
-import org.opalj.br.ObjectType
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
-import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
-import org.opalj.br.ArrayType
-import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.tac.common.DefinitionSite
 
 /**
@@ -41,18 +41,16 @@ import org.opalj.tac.common.DefinitionSite
  * @author Dominik Helm
  */
 abstract class NewInstanceAnalysis private[analyses] (
-        final val project: SomeProject
-) extends PointsToAnalysisBase { self =>
+        final val project: SomeProject) extends PointsToAnalysisBase { self =>
 
     val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
     trait PointsToBase extends AbstractPointsToBasedAnalysis {
-        override protected[this] type ElementType = self.ElementType
-        override protected[this] type PointsToSet = self.PointsToSet
+        override protected[this] type ElementType  = self.ElementType
+        override protected[this] type PointsToSet  = self.PointsToSet
         override protected[this] type DependerType = self.DependerType
 
-        override protected[this] val pointsToPropertyKey: PropertyKey[PointsToSet] =
-            self.pointsToPropertyKey
+        override protected[this] val pointsToPropertyKey: PropertyKey[PointsToSet] = self.pointsToPropertyKey
 
         override protected[this] def emptyPointsToSet: PointsToSet = self.emptyPointsToSet
 
@@ -61,28 +59,19 @@ abstract class NewInstanceAnalysis private[analyses] (
             callContext:   ContextType,
             allocatedType: ReferenceType,
             isConstant:    Boolean,
-            isEmptyArray:  Boolean
-        ): PointsToSet = {
-            self.createPointsToSet(
-                pc,
-                callContext.asInstanceOf[self.ContextType],
-                allocatedType,
-                isConstant,
-                isEmptyArray
-            )
-        }
+            isEmptyArray:  Boolean): PointsToSet = self.createPointsToSet(
+            pc,
+            callContext.asInstanceOf[self.ContextType],
+            allocatedType,
+            isConstant,
+            isEmptyArray
+        )
 
-        @inline override protected[this] def getTypeOf(element: ElementType): ReferenceType = {
-            self.getTypeOf(element)
-        }
+        @inline override protected[this] def getTypeOf(element: ElementType): ReferenceType = self.getTypeOf(element)
 
-        @inline override protected[this] def getTypeIdOf(element: ElementType): Int = {
-            self.getTypeIdOf(element)
-        }
+        @inline override protected[this] def getTypeIdOf(element: ElementType): Int = self.getTypeIdOf(element)
 
-        @inline override protected[this] def isEmptyArray(element: ElementType): Boolean = {
-            self.isEmptyArray(element)
-        }
+        @inline override protected[this] def isEmptyArray(element: ElementType): Boolean = self.isEmptyArray(element)
     }
 
     def process(p: SomeProject): PropertyComputationResult = {
@@ -114,30 +103,28 @@ abstract class NewInstanceAnalysis private[analyses] (
 }
 
 abstract class NewInstanceMethodAnalysis(
-        final val project:            SomeProject,
-        final override val apiMethod: DeclaredMethod
-) extends PointsToAnalysisBase with APIBasedAnalysis {
+        final val project: SomeProject,
+        final override val apiMethod: DeclaredMethod) extends PointsToAnalysisBase with APIBasedAnalysis {
 
     override def handleNewCaller(
         calleeContext: ContextType,
         callerContext: ContextType,
         pc:            Int,
-        isDirect:      Boolean
-    ): ProperPropertyComputationResult = {
+        isDirect:      Boolean): ProperPropertyComputationResult = {
 
-        implicit val state: State =
-            new PointsToAnalysisState[ElementType, PointsToSet, ContextType](callerContext, null)
+        implicit val state: State = new PointsToAnalysisState[ElementType, PointsToSet, ContextType](callerContext, null)
 
         val defSite = getDefSite(pc)
 
         val callees = propertyStore(callerContext.method, Callees.key)
 
         state.addDependee(defSite, callees, PointsToSetLike.noFilter)
-        val pointsToSet = if (callees.hasUBP) {
-            handleCallees(callees.ub, callerContext, pc, defSite)
-        } else {
-            emptyPointsToSet
-        }
+        val pointsToSet =
+            if (callees.hasUBP) {
+                handleCallees(callees.ub, callerContext, pc, defSite)
+            } else {
+                emptyPointsToSet
+            }
 
         state.includeSharedPointsToSet(
             defSite,
@@ -152,29 +139,27 @@ abstract class NewInstanceMethodAnalysis(
         e:         Entity,
         dependees: Map[SomeEPK, (SomeEOptionP, ReferenceType => Boolean)],
         state:     PointsToAnalysisState[ElementType, PointsToSet, ContextType]
-    )(eps: SomeEPS): ProperPropertyComputationResult = {
-        eps match {
-            case UBP(callees: Callees) =>
-                val newDependees = updatedDependees(eps, dependees)
+      )(eps: SomeEPS): ProperPropertyComputationResult = eps match {
+        case UBP(callees: Callees) =>
+            val newDependees = updatedDependees(eps, dependees)
 
-                val defSite = e match {
-                    case ds: DefinitionSite               => ds
-                    case (_: Context, ds: DefinitionSite) => ds
-                }
+            val defSite = e match {
+                case ds: DefinitionSite               => ds
+                case (_: Context, ds: DefinitionSite) => ds
+            }
 
-                val pointsToSet = handleCallees(callees, state.callContext, defSite.pc, defSite)
+            val pointsToSet = handleCallees(callees, state.callContext, defSite.pc, defSite)
 
-                val results = createPartialResults(
-                    e,
-                    pointsToSet,
-                    newDependees,
-                    { old => old.included(pointsToSet) },
-                    true
-                )(state)
+            val results = createPartialResults(
+                e,
+                pointsToSet,
+                newDependees,
+                old => old.included(pointsToSet),
+                true
+            )(state)
 
-                Results(results)
-            case _ => super.continuationForShared(e, dependees, state)(eps)
-        }
+            Results(results)
+        case _ => super.continuationForShared(e, dependees, state)(eps)
     }
 
     def handleCallees(callees: Callees, callerContext: ContextType, pc: Int, defSite: Entity): PointsToSet = {
@@ -214,9 +199,8 @@ trait NewInstanceAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
 }
 
 object TypeBasedNewInstanceAnalysisScheduler extends NewInstanceAnalysisScheduler {
-    override val propertyKind: PropertyMetaInformation = TypeBasedPointsToSet
-    override val createAnalysis: SomeProject => NewInstanceAnalysis =
-        new NewInstanceAnalysis(_) with TypeBasedAnalysis
+    override val propertyKind: PropertyMetaInformation              = TypeBasedPointsToSet
+    override val createAnalysis: SomeProject => NewInstanceAnalysis = new NewInstanceAnalysis(_) with TypeBasedAnalysis
 }
 
 object AllocationSiteBasedNewInstanceAnalysisScheduler extends NewInstanceAnalysisScheduler {
@@ -224,4 +208,3 @@ object AllocationSiteBasedNewInstanceAnalysisScheduler extends NewInstanceAnalys
     override val createAnalysis: SomeProject => NewInstanceAnalysis =
         new NewInstanceAnalysis(_) with AllocationSiteBasedAnalysis
 }
-

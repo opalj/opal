@@ -15,22 +15,18 @@ class DependencyProcessorAdapter extends DependencyProcessor {
     override def processDependency(
         source: VirtualSourceElement,
         target: VirtualSourceElement,
-        dType:  DependencyType
-    ): Unit = {}
+        dType:  DependencyType): Unit = {}
 
     override def processDependency(
         source:   VirtualSourceElement,
         baseType: ArrayType,
-        dType:    DependencyType
-    ): Unit = {}
+        dType:    DependencyType): Unit = {}
 
     override def processDependency(
         source:   VirtualSourceElement,
         baseType: BaseType,
-        dType:    DependencyType
-    ): Unit = {}
+        dType:    DependencyType): Unit = {}
 
 }
 
 object DependencyProcessorAdapter extends DependencyProcessorAdapter
-

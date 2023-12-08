@@ -21,7 +21,7 @@ trait IF0InstructionLike extends SimpleConditionalBranchInstructionLike {
 
 trait IF0Instruction[T <: IF0Instruction[T]]
     extends SimpleConditionalBranchInstruction[T]
-    with IF0InstructionLike {
+        with IF0InstructionLike {
 
     final override def asIF0Instruction: this.type = this
 
@@ -29,11 +29,9 @@ trait IF0Instruction[T <: IF0Instruction[T]]
 
 object IF0Instruction {
 
-    def unapply(i: Instruction): Option[(RelationalOperator, Int /*Branchoffset*/ )] = {
-        i match {
-            case i: IF0Instruction[_] => Some((i.condition, i.branchoffset))
-            case _                    => None
-        }
+    def unapply(i: Instruction): Option[(RelationalOperator, Int /*Branchoffset*/ )] = i match {
+        case i: IF0Instruction[_] => Some((i.condition, i.branchoffset))
+        case _                    => None
     }
 
 }

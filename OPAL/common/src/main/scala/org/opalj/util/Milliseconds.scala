@@ -14,13 +14,9 @@ import play.api.libs.json.Writes
  */
 class Milliseconds(val timeSpan: Long) extends AnyVal with Serializable {
 
-    final def +(other: Milliseconds): Milliseconds = {
-        new Milliseconds(this.timeSpan + other.timeSpan)
-    }
+    final def +(other: Milliseconds): Milliseconds = new Milliseconds(this.timeSpan + other.timeSpan)
 
-    final def -(other: Milliseconds): Milliseconds = {
-        new Milliseconds(this.timeSpan - other.timeSpan)
-    }
+    final def -(other: Milliseconds): Milliseconds = new Milliseconds(this.timeSpan - other.timeSpan)
 
     /**
      * Converts the specified number of milliseconds into seconds.
@@ -29,13 +25,12 @@ class Milliseconds(val timeSpan: Long) extends AnyVal with Serializable {
 
     final def toNanoseconds: Nanoseconds = new Nanoseconds(timeSpan * 1000L * 1000L)
 
-    def toString(withUnit: Boolean): String = {
+    def toString(withUnit: Boolean): String =
         if (withUnit) {
             s"$timeSpan ms"
         } else {
             timeSpan.toString
         }
-    }
 
     override def toString: String = toString(withUnit = true)
 
@@ -48,8 +43,7 @@ class Milliseconds(val timeSpan: Long) extends AnyVal with Serializable {
  */
 object Milliseconds {
 
-    implicit val millisecondsWrites: Writes[Milliseconds] =
-        (millisecond: Milliseconds) => JsNumber(millisecond.timeSpan)
+    implicit val millisecondsWrites: Writes[Milliseconds] = (millisecond: Milliseconds) => JsNumber(millisecond.timeSpan)
 
     implicit val nanosecondsReads: Reads[Milliseconds] = JsPath.read[Long].map(Milliseconds.apply)
 
@@ -62,9 +56,6 @@ object Milliseconds {
      */
     final def TimeSpan(
         startTimeInMilliseconds: Long,
-        endTimeInMilliseconds:   Long
-    ): Milliseconds = {
-        new Milliseconds(startTimeInMilliseconds - endTimeInMilliseconds)
-    }
+        endTimeInMilliseconds:   Long): Milliseconds = new Milliseconds(startTimeInMilliseconds - endTimeInMilliseconds)
 
 }

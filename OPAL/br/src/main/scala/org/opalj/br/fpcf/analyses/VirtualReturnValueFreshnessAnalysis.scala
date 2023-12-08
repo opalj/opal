@@ -4,17 +4,6 @@ package br
 package fpcf
 package analyses
 
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.FinalP
-import org.opalj.fpcf.InterimResult
-import org.opalj.fpcf.ProperPropertyComputationResult
-import org.opalj.fpcf.Property
-import org.opalj.fpcf.PropertyBounds
-import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.Result
-import org.opalj.fpcf.SomeEPS
-import org.opalj.fpcf.UBP
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
@@ -26,6 +15,17 @@ import org.opalj.br.fpcf.properties.VFreshReturnValue
 import org.opalj.br.fpcf.properties.VirtualMethodReturnValueFreshness
 import org.opalj.br.fpcf.properties.VNoFreshReturnValue
 import org.opalj.br.fpcf.properties.VPrimitiveReturnValue
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.FinalP
+import org.opalj.fpcf.InterimResult
+import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.Property
+import org.opalj.fpcf.PropertyBounds
+import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.Result
+import org.opalj.fpcf.SomeEPS
+import org.opalj.fpcf.UBP
 
 /**
  * An analysis that aggregates whether the return value for all possible methods represented by a
@@ -34,8 +34,7 @@ import org.opalj.br.fpcf.properties.VPrimitiveReturnValue
  * @author Florian Kübler
  */
 class VirtualReturnValueFreshnessAnalysis private[analyses] (
-        final val project: SomeProject
-) extends FPCFAnalysis {
+        final val project: SomeProject) extends FPCFAnalysis {
 
     private[this] val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
@@ -48,13 +47,12 @@ class VirtualReturnValueFreshnessAnalysis private[analyses] (
 
         val cfo = project.classFile(dm.declaringClassType)
         val methods =
-            if (cfo.isDefined && cfo.get.isInterfaceDeclaration)
-                project.interfaceCall(
-                    dm.declaringClassType,
-                    dm.declaringClassType,
-                    dm.name,
-                    dm.descriptor
-                )
+            if (cfo.isDefined && cfo.get.isInterfaceDeclaration) project.interfaceCall(
+                dm.declaringClassType,
+                dm.declaringClassType,
+                dm.name,
+                dm.descriptor
+            )
             else project.virtualCall(
                 dm.declaringClassType,
                 dm.declaringClassType,
@@ -70,31 +68,25 @@ class VirtualReturnValueFreshnessAnalysis private[analyses] (
         }
 
         def handleReturnValueFreshness(
-            eOptionP: EOptionP[DeclaredMethod, ReturnValueFreshness]
-        ): Option[ProperPropertyComputationResult] = eOptionP match {
-            case FinalP(NoFreshReturnValue) =>
-                Some(Result(dm, VNoFreshReturnValue))
+            eOptionP: EOptionP[DeclaredMethod, ReturnValueFreshness]): Option[ProperPropertyComputationResult] =
+            eOptionP match {
+                case FinalP(NoFreshReturnValue) => Some(Result(dm, VNoFreshReturnValue))
 
-            case FinalP(PrimitiveReturnValue) =>
-                throw new RuntimeException("unexpected property")
+                case FinalP(PrimitiveReturnValue) => throw new RuntimeException("unexpected property")
 
-            case ep @ UBP(p) =>
-                temporary = temporary meet p.asVirtualMethodReturnValueFreshness
-                if (ep.isRefinable)
-                    dependees += ep
-                None
+                case ep @ UBP(p) =>
+                    temporary = temporary meet p.asVirtualMethodReturnValueFreshness
+                    if (ep.isRefinable) dependees += ep
+                    None
 
-            case epk =>
-                dependees += epk
-                None
-        }
+                case epk =>
+                    dependees += epk
+                    None
+            }
 
-        def returnResult(): ProperPropertyComputationResult = {
-            if (dependees.isEmpty)
-                Result(dm, temporary)
-            else
-                InterimResult(dm, VNoFreshReturnValue, temporary, dependees, c)
-        }
+        def returnResult(): ProperPropertyComputationResult =
+            if (dependees.isEmpty) Result(dm, temporary)
+            else InterimResult(dm, VNoFreshReturnValue, temporary, dependees, c)
 
         def c(someEPS: SomeEPS): ProperPropertyComputationResult = {
 
@@ -117,9 +109,7 @@ sealed trait VirtualReturnValueFreshnessAnalysisScheduler extends FPCFAnalysisSc
 
     override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
 
-    final def derivedProperty: PropertyBounds = {
-        PropertyBounds.lub(VirtualMethodReturnValueFreshness)
-    }
+    final def derivedProperty: PropertyBounds = PropertyBounds.lub(VirtualMethodReturnValueFreshness)
 
     final override def uses: Set[PropertyBounds] = Set(PropertyBounds.lub(ReturnValueFreshness))
 
@@ -127,7 +117,7 @@ sealed trait VirtualReturnValueFreshnessAnalysisScheduler extends FPCFAnalysisSc
 
 object EagerVirtualReturnValueFreshnessAnalysis
     extends VirtualReturnValueFreshnessAnalysisScheduler
-    with BasicFPCFEagerAnalysisScheduler {
+        with BasicFPCFEagerAnalysisScheduler {
 
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 
@@ -135,7 +125,7 @@ object EagerVirtualReturnValueFreshnessAnalysis
 
     override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val declaredMethods = p.get(DeclaredMethodsKey).declaredMethods
-        val analysis = new VirtualReturnValueFreshnessAnalysis(p)
+        val analysis        = new VirtualReturnValueFreshnessAnalysis(p)
         ps.scheduleEagerComputationsForEntities(declaredMethods)(
             analysis.determineFreshness
         )
@@ -145,7 +135,7 @@ object EagerVirtualReturnValueFreshnessAnalysis
 
 object LazyVirtualReturnValueFreshnessAnalysis
     extends VirtualReturnValueFreshnessAnalysisScheduler
-    with BasicFPCFLazyAnalysisScheduler {
+        with BasicFPCFLazyAnalysisScheduler {
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 

@@ -14,9 +14,9 @@ import org.opalj.bi.reader.RuntimeVisibleTypeAnnotations_attributeReader
  */
 trait TypeAnnotationAttributesBinding
     extends TypeAnnotationsBinding
-    with RuntimeInvisibleTypeAnnotations_attributeReader
-    with RuntimeVisibleTypeAnnotations_attributeReader
-    with AttributeBinding {
+        with RuntimeInvisibleTypeAnnotations_attributeReader
+        with RuntimeVisibleTypeAnnotations_attributeReader
+        with AttributeBinding {
 
     type RuntimeInvisibleTypeAnnotations_attribute = RuntimeInvisibleTypeAnnotationTable
 
@@ -27,20 +27,15 @@ trait TypeAnnotationAttributesBinding
         ap_name_index:        Constant_Pool_Index,
         ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
-        annotations:          TypeAnnotations
-    ): RuntimeInvisibleTypeAnnotations_attribute = {
+        annotations:          TypeAnnotations): RuntimeInvisibleTypeAnnotations_attribute =
         new RuntimeInvisibleTypeAnnotationTable(annotations)
-    }
 
     def RuntimeVisibleTypeAnnotations_attribute(
         cp:                   Constant_Pool,
         ap_name_index:        Constant_Pool_Index,
         ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
-        annotations:          TypeAnnotations
-    ): RuntimeVisibleTypeAnnotations_attribute = {
+        annotations:          TypeAnnotations): RuntimeVisibleTypeAnnotations_attribute =
         new RuntimeVisibleTypeAnnotationTable(annotations)
-    }
 
 }
-

@@ -11,10 +11,11 @@ package instructions
  */
 abstract class MethodInvocationInstruction extends InvocationInstruction {
 
-    final override def isMethodInvocationInstruction: Boolean = true
+    final override def isMethodInvocationInstruction: Boolean                     = true
     final override def asMethodInvocationInstruction: MethodInvocationInstruction = this
 
-    /* abstract */ def declaringClass: ReferenceType
+    /* abstract */
+    def declaringClass: ReferenceType
 
     def isInterfaceCall: Boolean
 
@@ -22,23 +23,22 @@ abstract class MethodInvocationInstruction extends InvocationInstruction {
      * Returns the number of registers required to store the method's arguments
      * including (if required) the self reference "this".
      */
-    def count: Int = {
+    def count: Int =
         // c.f. JVM 8 Spec. Section 6.5.
         (if (isInstanceMethod) 1 else 0) + methodDescriptor.requiredRegisters
-    }
 
     /**
      * Returns `true` if the called method is an instance method and virtual method
      * call resolution has to take place. I.e., if the underlying instruction is an
      * invokevirtual or an invokeinterface instruction.
      */
-    /* abstract */ def isVirtualMethodCall: Boolean
+    /* abstract */
+    def isVirtualMethodCall: Boolean
 
     def asVirtualMethod: VirtualMethod = VirtualMethod(declaringClass, name, methodDescriptor)
 
-    override def toString: String = {
+    override def toString: String =
         s"${this.getClass.getSimpleName}(${methodDescriptor.toJava(declaringClass.toJava, name)})"
-    }
 
 }
 
@@ -49,15 +49,12 @@ abstract class MethodInvocationInstruction extends InvocationInstruction {
 object MethodInvocationInstruction {
 
     def unapply(
-        instruction: MethodInvocationInstruction
-    ): Option[(ReferenceType, Boolean, String, MethodDescriptor)] = {
-        Some((
-            instruction.declaringClass,
-            instruction.isInterfaceCall,
-            instruction.name,
-            instruction.methodDescriptor
-        ))
-    }
+        instruction: MethodInvocationInstruction): Option[(ReferenceType, Boolean, String, MethodDescriptor)] = Some((
+        instruction.declaringClass,
+        instruction.isInterfaceCall,
+        instruction.name,
+        instruction.methodDescriptor
+    ))
 
     val jvmExceptions = List(ObjectType.NullPointerException)
 

@@ -6,13 +6,12 @@ package analyses
 package cg
 package xta
 
-import java.util.{HashSet => JHashSet}
 import java.util.{HashMap => JHashMap}
+import java.util.{HashSet => JHashSet}
 import java.util.{Set => JSet}
+import scala.collection.immutable.IntMap
 import scala.jdk.CollectionConverters._
-import org.opalj.collection.immutable.UIDSet
-import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.SomeEOptionP
+
 import org.opalj.br.ClassHierarchy
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.Method
@@ -23,10 +22,11 @@ import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
 import org.opalj.br.fpcf.properties.fieldaccess.MethodFieldReadAccessInformation
 import org.opalj.br.fpcf.properties.fieldaccess.MethodFieldWriteAccessInformation
+import org.opalj.collection.immutable.UIDSet
+import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.SomeEOptionP
 import org.opalj.tac.fpcf.analyses.cg.BaseAnalysisState
 import org.opalj.tac.fpcf.properties.TACAI
-
-import scala.collection.immutable.IntMap
 
 /**
  * Manages the state of each method analyzed by [[TypePropagationAnalysis]].
@@ -38,18 +38,17 @@ import scala.collection.immutable.IntMap
  * @param _calleeDependee Dependee for the callee property of the method.
  */
 final class TypePropagationState[ContextType <: Context](
-        override val callContext:                  ContextType,
-        val typeSetEntity:                         TypeSetEntity,
-        override protected[this] var _tacDependee: EOptionP[Method, TACAI],
-
+        override val callContext:                        ContextType,
+        val typeSetEntity:                               TypeSetEntity,
+        override protected[this] var _tacDependee:       EOptionP[Method, TACAI],
         private[this] var _ownInstantiatedTypesDependee: EOptionP[TypeSetEntity, InstantiatedTypes],
         private[this] var _calleeDependee:               EOptionP[DeclaredMethod, Callees],
         private[this] var _readAccessDependee:           EOptionP[Method, MethodFieldReadAccessInformation],
-        private[this] var _writeAccessDependee:          EOptionP[Method, MethodFieldWriteAccessInformation]
-) extends BaseAnalysisState with TACAIBasedAnalysisState[ContextType] {
+        private[this] var _writeAccessDependee:          EOptionP[Method, MethodFieldWriteAccessInformation])
+    extends BaseAnalysisState with TACAIBasedAnalysisState[ContextType] {
 
     var methodWritesArrays: Boolean = false
-    var methodReadsArrays: Boolean = false
+    var methodReadsArrays: Boolean  = false
 
     /////////////////////////////////////////////
     //                                         //
@@ -57,24 +56,19 @@ final class TypePropagationState[ContextType <: Context](
     //                                         //
     /////////////////////////////////////////////
 
-    def updateOwnInstantiatedTypesDependee(eps: EOptionP[TypeSetEntity, InstantiatedTypes]): Unit = {
+    def updateOwnInstantiatedTypesDependee(eps: EOptionP[TypeSetEntity, InstantiatedTypes]): Unit =
         _ownInstantiatedTypesDependee = eps
-    }
 
-    def ownInstantiatedTypes: UIDSet[ReferenceType] = {
-        if (_ownInstantiatedTypesDependee.hasUBP)
-            _ownInstantiatedTypesDependee.ub.types
-        else
-            UIDSet.empty
-    }
+    def ownInstantiatedTypes: UIDSet[ReferenceType] =
+        if (_ownInstantiatedTypesDependee.hasUBP) _ownInstantiatedTypesDependee.ub.types
+        else UIDSet.empty
 
-    def newInstantiatedTypes(seenTypes: Int): IterableOnce[ReferenceType] = {
+    def newInstantiatedTypes(seenTypes: Int): IterableOnce[ReferenceType] =
         if (_ownInstantiatedTypesDependee.hasUBP) {
             _ownInstantiatedTypesDependee.ub.dropOldest(seenTypes)
         } else {
             UIDSet.empty
         }
-    }
 
     /////////////////////////////////////////////
     //                                         //
@@ -91,17 +85,14 @@ final class TypePropagationState[ContextType <: Context](
         _seenCallees.add((pc, callee))
     }
 
-    def calleeDependee: Option[EOptionP[DeclaredMethod, Callees]] = {
+    def calleeDependee: Option[EOptionP[DeclaredMethod, Callees]] =
         if (_calleeDependee.isRefinable) {
             Some(_calleeDependee)
         } else {
             None
         }
-    }
 
-    def updateCalleeDependee(calleeDependee: EOptionP[DeclaredMethod, Callees]): Unit = {
-        _calleeDependee = calleeDependee
-    }
+    def updateCalleeDependee(calleeDependee: EOptionP[DeclaredMethod, Callees]): Unit = _calleeDependee = calleeDependee
 
     /////////////////////////////////////////////
     //                                         //
@@ -109,26 +100,22 @@ final class TypePropagationState[ContextType <: Context](
     //                                         //
     /////////////////////////////////////////////
 
-    var seenDirectReadAccesses: IntMap[Int] = IntMap.empty
-    var seenIndirectReadAccesses: IntMap[Int] = IntMap.empty
-    var seenDirectWriteAccesses: IntMap[Int] = IntMap.empty
+    var seenDirectReadAccesses: IntMap[Int]    = IntMap.empty
+    var seenIndirectReadAccesses: IntMap[Int]  = IntMap.empty
+    var seenDirectWriteAccesses: IntMap[Int]   = IntMap.empty
     var seenIndirectWriteAccesses: IntMap[Int] = IntMap.empty
 
-    def readAccessDependee: Option[EOptionP[Method, MethodFieldReadAccessInformation]] = {
+    def readAccessDependee: Option[EOptionP[Method, MethodFieldReadAccessInformation]] =
         if (_readAccessDependee.isRefinable) Some(_readAccessDependee) else None
-    }
 
-    def updateReadAccessDependee(readAccessDependee: EOptionP[Method, MethodFieldReadAccessInformation]): Unit = {
+    def updateReadAccessDependee(readAccessDependee: EOptionP[Method, MethodFieldReadAccessInformation]): Unit =
         _readAccessDependee = readAccessDependee
-    }
 
-    def writeAccessDependee: Option[EOptionP[Method, MethodFieldWriteAccessInformation]] = {
+    def writeAccessDependee: Option[EOptionP[Method, MethodFieldWriteAccessInformation]] =
         if (_writeAccessDependee.isRefinable) Some(_writeAccessDependee) else None
-    }
 
-    def updateWriteAccessDependee(writeAccessDependee: EOptionP[Method, MethodFieldWriteAccessInformation]): Unit = {
+    def updateWriteAccessDependee(writeAccessDependee: EOptionP[Method, MethodFieldWriteAccessInformation]): Unit =
         _writeAccessDependee = writeAccessDependee
-    }
 
     /////////////////////////////////////////////
     //                                         //
@@ -136,9 +123,8 @@ final class TypePropagationState[ContextType <: Context](
     //                                         //
     /////////////////////////////////////////////
 
-    private[this] val _forwardPropagationEntities: JSet[TypeSetEntity] = new JHashSet()
-    private[this] val _forwardPropagationFilters: JHashMap[TypeSetEntity, UIDSet[ReferenceType]] =
-        new JHashMap()
+    private[this] val _forwardPropagationEntities: JSet[TypeSetEntity]                           = new JHashSet()
+    private[this] val _forwardPropagationFilters: JHashMap[TypeSetEntity, UIDSet[ReferenceType]] = new JHashMap()
 
     def forwardPropagationEntities: JSet[TypeSetEntity] = _forwardPropagationEntities
 
@@ -157,10 +143,8 @@ final class TypePropagationState[ContextType <: Context](
     def registerForwardPropagationEntity(
         typeSetEntity: TypeSetEntity,
         typeFilters:   UIDSet[ReferenceType]
-    )(
-        implicit
-        classHierarchy: ClassHierarchy
-    ): Boolean = {
+      )(implicit
+        classHierarchy: ClassHierarchy): Boolean = {
         assert(typeFilters.nonEmpty)
         val alreadyExists = _forwardPropagationEntities.contains(typeSetEntity)
         if (!alreadyExists) {
@@ -170,7 +154,7 @@ final class TypePropagationState[ContextType <: Context](
             true
         } else {
             val existingTypeFilters = _forwardPropagationFilters.get(typeSetEntity)
-            val newFilters = rootTypes(existingTypeFilters ++ typeFilters)
+            val newFilters          = rootTypes(existingTypeFilters ++ typeFilters)
             _forwardPropagationFilters.put(typeSetEntity, newFilters)
             newFilters != existingTypeFilters
         }
@@ -184,15 +168,12 @@ final class TypePropagationState[ContextType <: Context](
 
     private[this] val _backwardPropagationDependees: JHashMap[TypeSetEntity, EOptionP[TypeSetEntity, InstantiatedTypes]] =
         new JHashMap()
-    private[this] val _backwardPropagationFilters: JHashMap[TypeSetEntity, UIDSet[ReferenceType]] =
-        new JHashMap()
+    private[this] val _backwardPropagationFilters: JHashMap[TypeSetEntity, UIDSet[ReferenceType]] = new JHashMap()
 
     def backwardPropagationDependeeInstantiatedTypes(typeSetEntity: TypeSetEntity): UIDSet[ReferenceType] = {
         val dependee = _backwardPropagationDependees.get(typeSetEntity)
-        if (dependee.hasUBP)
-            dependee.ub.types
-        else
-            UIDSet.empty
+        if (dependee.hasUBP) dependee.ub.types
+        else UIDSet.empty
     }
 
     def backwardPropagationDependeeIsRegistered(typeSetEntity: TypeSetEntity): Boolean =
@@ -204,10 +185,8 @@ final class TypePropagationState[ContextType <: Context](
     def updateBackwardPropagationFilters(
         typeSetEntity: TypeSetEntity,
         typeFilters:   UIDSet[ReferenceType]
-    )(
-        implicit
-        classHierarchy: ClassHierarchy
-    ): Boolean = {
+      )(implicit
+        classHierarchy: ClassHierarchy): Boolean = {
         assert(typeFilters.nonEmpty)
         val alreadyExists = _backwardPropagationFilters.containsKey(typeSetEntity)
         if (!alreadyExists) {
@@ -216,22 +195,19 @@ final class TypePropagationState[ContextType <: Context](
             true
         } else {
             val existingTypeFilters = _backwardPropagationFilters.get(typeSetEntity)
-            val newFilters = rootTypes(existingTypeFilters ++ typeFilters)
+            val newFilters          = rootTypes(existingTypeFilters ++ typeFilters)
             _backwardPropagationFilters.put(typeSetEntity, newFilters)
             newFilters != existingTypeFilters
         }
     }
 
-    def updateBackwardPropagationDependee(eps: EOptionP[TypeSetEntity, InstantiatedTypes]): Unit = {
+    def updateBackwardPropagationDependee(eps: EOptionP[TypeSetEntity, InstantiatedTypes]): Unit =
         _backwardPropagationDependees.put(eps.e, eps)
-    }
 
     def seenTypes(typeSetEntity: TypeSetEntity): Int = {
         val dependee = _backwardPropagationDependees.get(typeSetEntity)
-        if (dependee.hasUBP)
-            dependee.ub.numElements
-        else
-            0
+        if (dependee.hasUBP) dependee.ub.numElements
+        else 0
     }
 
     /////////////////////////////////////////////
@@ -240,24 +216,19 @@ final class TypePropagationState[ContextType <: Context](
     //                                         //
     /////////////////////////////////////////////
 
-    override def hasOpenDependencies: Boolean = {
-        super.hasOpenDependencies ||
-            _ownInstantiatedTypesDependee.isRefinable ||
-            _calleeDependee.isRefinable ||
-            !_backwardPropagationDependees.isEmpty
-    }
+    override def hasOpenDependencies: Boolean = super.hasOpenDependencies ||
+        _ownInstantiatedTypesDependee.isRefinable ||
+        _calleeDependee.isRefinable ||
+        !_backwardPropagationDependees.isEmpty
 
     override def dependees: Set[SomeEOptionP] = {
         var dependees = super.dependees
 
         dependees += _ownInstantiatedTypesDependee
 
-        if (calleeDependee.isDefined)
-            dependees += calleeDependee.get
-        if (readAccessDependee.isDefined)
-            dependees += readAccessDependee.get
-        if (writeAccessDependee.isDefined)
-            dependees += writeAccessDependee.get
+        if (calleeDependee.isDefined) dependees += calleeDependee.get
+        if (readAccessDependee.isDefined) dependees += readAccessDependee.get
+        if (writeAccessDependee.isDefined) dependees += writeAccessDependee.get
 
         // Note: The values are copied here. The "++" operator on List
         // forces immediate evaluation of the map values iterator.
@@ -285,12 +256,9 @@ final class TypePropagationState[ContextType <: Context](
     // IMPROVE: could be implemented with linear runtime.
     private[this] def rootTypes(
         types: UIDSet[ReferenceType]
-    )(
-        implicit
-        classHierarchy: ClassHierarchy
-    ): UIDSet[ReferenceType] = {
-        if (types.size <= 1)
-            return types;
+      )(implicit
+        classHierarchy: ClassHierarchy): UIDSet[ReferenceType] = {
+        if (types.size <= 1) return types;
 
         types.filter(t1 => !types.exists(t2 => t1 != t2 && classHierarchy.isSubtypeOf(t1, t2)))
     }

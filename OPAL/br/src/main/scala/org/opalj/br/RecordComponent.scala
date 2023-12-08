@@ -10,5 +10,4 @@ package br
 case class RecordComponent(
         name:          String,
         componentType: FieldType,
-        attributes:    Attributes
-)
+        attributes:    Attributes)

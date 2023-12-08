@@ -9,10 +9,9 @@ package instructions
  * @author Michael Eichberg
  */
 case class INVOKEVIRTUAL(
-        declaringClass:   ReferenceType, // an class or array type to be precise
-        name:             String,
-        methodDescriptor: MethodDescriptor
-) extends VirtualMethodInvocationInstruction {
+        declaringClass: ReferenceType, // an class or array type to be precise
+        name:           String,
+        methodDescriptor: MethodDescriptor) extends VirtualMethodInvocationInstruction {
 
     final def isInterfaceCall: Boolean = false
 
@@ -55,8 +54,7 @@ object INVOKEVIRTUAL extends InstructionMetaInformation {
     def apply(
         declaringClass:   String,
         methodName:       String,
-        methodDescriptor: String
-    ): INVOKEVIRTUAL = {
+        methodDescriptor: String): INVOKEVIRTUAL = {
         val declaringClassType = ReferenceType(declaringClass)
         INVOKEVIRTUAL(declaringClassType, methodName, MethodDescriptor(methodDescriptor))
     }

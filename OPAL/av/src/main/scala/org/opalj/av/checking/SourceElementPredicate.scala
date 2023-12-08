@@ -3,9 +3,9 @@ package org.opalj
 package av
 package checking
 
-import org.opalj.br.ConcreteSourceElement
 import org.opalj.bi.AccessFlagsMatcher
 import org.opalj.br.{Attributes => SourceElementAttributes}
+import org.opalj.br.ConcreteSourceElement
 
 /**
  * A predicate related to a specific source element.
@@ -15,19 +15,13 @@ import org.opalj.br.{Attributes => SourceElementAttributes}
 trait SourceElementPredicate[-S <: ConcreteSourceElement] extends (S => Boolean) { left =>
 
     def and[T <: ConcreteSourceElement, X <: S with T](
-        right: SourceElementPredicate[T]
-    ): SourceElementPredicate[X] = {
-
-        new SourceElementPredicate[X] {
-            def apply(s: X): Boolean = left(s) && right(s)
-            def toDescription() = left.toDescription()+" and "+right.toDescription()
-        }
-
+        right: SourceElementPredicate[T]): SourceElementPredicate[X] = new SourceElementPredicate[X] {
+        def apply(s: X): Boolean = left(s) && right(s)
+        def toDescription() = left.toDescription() + " and " + right.toDescription()
     }
 
     final def having[T <: ConcreteSourceElement, X <: S with T](
-        right: SourceElementPredicate[T]
-    ): SourceElementPredicate[X] = and(right)
+        right: SourceElementPredicate[T]): SourceElementPredicate[X] = and(right)
 
     /**
      * Returns a human readable representation of this predicate that is well suited
@@ -41,13 +35,10 @@ trait SourceElementPredicate[-S <: ConcreteSourceElement] extends (S => Boolean)
 }
 
 case class AccessFlags(
-        accessFlags: AccessFlagsMatcher
-)
+        accessFlags: AccessFlagsMatcher)
     extends SourceElementPredicate[ConcreteSourceElement] {
 
-    def apply(sourceElement: ConcreteSourceElement): Boolean = {
-        this.accessFlags.unapply(sourceElement.accessFlags)
-    }
+    def apply(sourceElement: ConcreteSourceElement): Boolean = this.accessFlags.unapply(sourceElement.accessFlags)
 
     def toDescription(): String = accessFlags.toString
 
@@ -58,16 +49,12 @@ case class AccessFlags(
  * @author Michael Eichberg
  */
 case class Attributes(
-        attributes: SourceElementAttributes
-)
+        attributes: SourceElementAttributes)
     extends SourceElementPredicate[ConcreteSourceElement] {
 
-    def apply(sourceElement: ConcreteSourceElement): Boolean = {
+    def apply(sourceElement: ConcreteSourceElement): Boolean =
         //    sourceElement.attributes.size == this.attributes.size &&
         this.attributes.forall(a => sourceElement.attributes.exists(_ == a))
-    }
 
-    def toDescription(): String = {
-        attributes.view.map(_.getClass.getSimpleName).mkString(" « ", ", ", " »")
-    }
+    def toDescription(): String = attributes.view.map(_.getClass.getSimpleName).mkString(" « ", ", ", " »")
 }

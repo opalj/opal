@@ -3,16 +3,16 @@ package org.opalj
 package ai
 package domain
 
-import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
-
+import org.opalj.ai.common.XHTML.dumpOnFailureDuringValidation
+import org.opalj.ai.domain.l0._
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br._
 import org.opalj.br.reader.Java8Framework.ClassFiles
-import org.opalj.ai.common.XHTML.dumpOnFailureDuringValidation
-import org.opalj.ai.domain.l0._
+
+import org.junit.runner.RunWith
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Basic tests of the abstract interpreter related to handling arrays.
@@ -26,22 +26,22 @@ class MethodsWithArraysTest extends AnyFlatSpec with Matchers {
 
     class TestDomain
         extends Domain
-        with DefaultSpecialDomainValuesBinding
-        with DefaultReferenceValuesBinding
-        with DefaultTypeLevelIntegerValues
-        with DefaultTypeLevelLongValues
-        with DefaultTypeLevelFloatValues
-        with DefaultTypeLevelDoubleValues
-        with TypeLevelPrimitiveValuesConversions
-        with TypeLevelLongValuesShiftOperators
-        with TypeLevelFieldAccessInstructions
-        with SimpleTypeLevelInvokeInstructions
-        with TypeLevelDynamicLoads
-        with ThrowAllPotentialExceptionsConfiguration
-        with IgnoreSynchronization
-        with DefaultHandlingOfMethodResults
-        with RecordLastReturnedValues
-        with PredefinedClassHierarchy {
+            with DefaultSpecialDomainValuesBinding
+            with DefaultReferenceValuesBinding
+            with DefaultTypeLevelIntegerValues
+            with DefaultTypeLevelLongValues
+            with DefaultTypeLevelFloatValues
+            with DefaultTypeLevelDoubleValues
+            with TypeLevelPrimitiveValuesConversions
+            with TypeLevelLongValuesShiftOperators
+            with TypeLevelFieldAccessInstructions
+            with SimpleTypeLevelInvokeInstructions
+            with TypeLevelDynamicLoads
+            with ThrowAllPotentialExceptionsConfiguration
+            with IgnoreSynchronization
+            with DefaultHandlingOfMethodResults
+            with RecordLastReturnedValues
+            with PredefinedClassHierarchy {
 
         type Id = String
         def id = "MethodsWithArraysTestDomain"
@@ -51,7 +51,7 @@ class MethodsWithArraysTest extends AnyFlatSpec with Matchers {
         val domain = new TestDomain
 
         val method = classFile.methods.find(_.name == name).get
-        val code = method.body.get
+        val code   = method.body.get
         val result = BaseAI(method, domain)
 
         dumpOnFailureDuringValidation(Some(classFile), Some(method), code, result) { f(domain) }
@@ -60,42 +60,53 @@ class MethodsWithArraysTest extends AnyFlatSpec with Matchers {
     behavior of "the abstract interpreter"
 
     it should "be able to analyze a method that processes a byte array" in {
-        evaluateMethod("byteArrays", domain => {
-            import domain._
-            domain.allReturnedValues should be(
-                Map((15 -> AByteValue))
-            )
-        })
+        evaluateMethod("byteArrays",
+                       domain => {
+                           import domain._
+                           domain.allReturnedValues should be(
+                               Map(15 -> AByteValue)
+                           )
+                       })
     }
 
     it should "be able to analyze a method that processes a boolean array" in {
-        evaluateMethod("booleanArrays", domain => {
-            import domain._
-            domain.allReturnedValues should be(
-                Map((14 -> ABooleanValue))
-            )
-        })
+        evaluateMethod("booleanArrays",
+                       domain => {
+                           import domain._
+                           domain.allReturnedValues should be(
+                               Map(14 -> ABooleanValue)
+                           )
+                       })
     }
 
     it should "be able to analyze a method that uses the Java feature that arrays are covariant" in {
-        evaluateMethod("covariantArrays", domain => {
-            domain.allReturnedValues.size should be(1)
-            domain.isValueASubtypeOf(
-                domain.allReturnedValues(24), ObjectType.Object
-            ) should be(Yes)
-        })
+        evaluateMethod(
+            "covariantArrays",
+            domain => {
+                domain.allReturnedValues.size should be(1)
+                domain.isValueASubtypeOf(
+                    domain.allReturnedValues(24),
+                    ObjectType.Object
+                ) should be(Yes)
+            }
+        )
     }
 
     it should "be able to analyze a method that does various (complex) type casts related to arrays" in {
-        evaluateMethod("integerArraysFrenzy", domain => {
-            domain.allReturnedValues.size should be(2)
-            domain.isValueASubtypeOf(
-                domain.allReturnedValues(78), ArrayType(IntegerType)
-            ) should be(Yes)
-            domain.isValueASubtypeOf(
-                domain.allReturnedValues(76), ArrayType(ByteType)
-            ) should be(Yes)
-        })
+        evaluateMethod(
+            "integerArraysFrenzy",
+            domain => {
+                domain.allReturnedValues.size should be(2)
+                domain.isValueASubtypeOf(
+                    domain.allReturnedValues(78),
+                    ArrayType(IntegerType)
+                ) should be(Yes)
+                domain.isValueASubtypeOf(
+                    domain.allReturnedValues(76),
+                    ArrayType(ByteType)
+                ) should be(Yes)
+            }
+        )
     }
 }
 private object MethodsWithArraysTest {

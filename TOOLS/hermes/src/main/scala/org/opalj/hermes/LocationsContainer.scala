@@ -16,7 +16,7 @@ import scala.language.implicitConversions
  */
 class LocationsContainer[S](implicit hermes: HermesConfig) {
 
-    private var theLocationsCount = 0
+    private var theLocationsCount               = 0
     private var theLocations: List[Location[S]] = List()
 
     def +=(location: => Location[S]): Unit = {
@@ -38,7 +38,5 @@ class LocationsContainer[S](implicit hermes: HermesConfig) {
 
 object LocationsContainer {
 
-    implicit def toLocationsChain[S](lc: LocationsContainer[S]): List[Location[S]] = {
-        lc.locations
-    }
+    implicit def toLocationsChain[S](lc: LocationsContainer[S]): List[Location[S]] = lc.locations
 }

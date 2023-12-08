@@ -4,11 +4,12 @@ package av
 package checking
 
 import scala.collection.immutable
+
 import org.opalj.br.ClassFile
-import org.opalj.br.FieldType
 import org.opalj.br.Field
-import org.opalj.br.analyses.SomeProject
+import org.opalj.br.FieldType
 import org.opalj.br.VirtualSourceElement
+import org.opalj.br.analyses.SomeProject
 
 /**
  * Matches fields based on their name, type, annotations and declaring class.
@@ -20,20 +21,16 @@ case class FieldMatcher(
         declaringClass: ClassLevelMatcher,
         annotations:    AnnotationsPredicate,
         theType:        Option[FieldType],
-        theName:        Option[NamePredicate]
-)
+        theName:        Option[NamePredicate])
     extends SourceElementsMatcher {
 
-    def doesClassFileMatch(classFile: ClassFile)(implicit project: SomeProject): Boolean = {
+    def doesClassFileMatch(classFile: ClassFile)(implicit project: SomeProject): Boolean =
         declaringClass.doesMatch(classFile)
-    }
 
-    def doesFieldMatch(field: Field): Boolean = {
-        (theType.isEmpty || (theType.get eq field.fieldType)) && (
-            (theName.isEmpty || theName.get(field.name))
-        ) &&
-            annotations(field.annotations)
-    }
+    def doesFieldMatch(field: Field): Boolean = (theType.isEmpty || (theType.get eq field.fieldType)) && (
+        theName.isEmpty || theName.get(field.name)
+    ) &&
+        annotations(field.annotations)
 
     def extension(implicit project: SomeProject): immutable.Set[VirtualSourceElement] = {
         val allMatchedFields = project.allClassFiles collect {
@@ -57,25 +54,20 @@ case class FieldMatcher(
 object FieldMatcher {
 
     def apply(
-        declaringClass:       ClassLevelMatcher    = AllClasses,
+        declaringClass:       ClassLevelMatcher = AllClasses,
         annotationsPredicate: AnnotationsPredicate = AnyAnnotations,
-        theType:              Option[String]       = None,
-        theName:              Option[String]       = None,
-        matchPrefix:          Boolean              = false
-    ): FieldMatcher = {
+        theType:              Option[String] = None,
+        theName:              Option[String] = None,
+        matchPrefix:          Boolean = false): FieldMatcher = {
 
         assert(theName.isDefined || !matchPrefix)
 
-        val nameMatcher: Option[NamePredicate] =
-            theName match {
-                case Some(f) =>
-                    if (matchPrefix)
-                        Some(StartsWith(f))
-                    else
-                        Some(Equals(f))
-                case _ =>
-                    None
-            }
+        val nameMatcher: Option[NamePredicate] = theName match {
+            case Some(f) =>
+                if (matchPrefix) Some(StartsWith(f))
+                else Some(Equals(f))
+            case _ => None
+        }
 
         new FieldMatcher(
             declaringClass,

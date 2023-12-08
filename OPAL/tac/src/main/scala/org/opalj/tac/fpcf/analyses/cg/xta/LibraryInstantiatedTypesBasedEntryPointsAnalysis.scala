@@ -8,6 +8,18 @@ package xta
 
 import java.util.concurrent.ConcurrentHashMap
 
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.ObjectType
+import org.opalj.br.ReferenceType
+import org.opalj.br.analyses.DeclaredMethods
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
+import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
+import org.opalj.br.fpcf.properties.cg.OnlyCallersWithUnknownContext
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.InterimEP
@@ -24,18 +36,6 @@ import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
 import org.opalj.fpcf.UBPS
-import org.opalj.br.ReferenceType
-import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
-import org.opalj.br.DeclaredMethod
-import org.opalj.br.ObjectType
-import org.opalj.br.analyses.DeclaredMethods
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.properties.cg.Callers
-import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
-import org.opalj.br.fpcf.properties.cg.OnlyCallersWithUnknownContext
 
 /**
  * In a library analysis scenario, this analysis complements the call graph by marking public
@@ -50,27 +50,23 @@ import org.opalj.br.fpcf.properties.cg.OnlyCallersWithUnknownContext
  * @author Andreas Bauer
  */
 class LibraryInstantiatedTypesBasedEntryPointsAnalysis private[analyses] (
-        final val project: SomeProject
-) extends FPCFAnalysis {
+        final val project: SomeProject) extends FPCFAnalysis {
 
     val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
     // TODO: Use a Scala set
     private val globallySeenTypes = new ConcurrentHashMap[ObjectType, Boolean]()
 
     def analyze(se: TypeSetEntity): PropertyComputationResult = {
-        val instantiatedTypes: EOptionP[TypeSetEntity, InstantiatedTypes] =
-            propertyStore(se, InstantiatedTypes.key)
+        val instantiatedTypes: EOptionP[TypeSetEntity, InstantiatedTypes] = propertyStore(se, InstantiatedTypes.key)
 
         handleInstantiatedTypes(instantiatedTypes, 0)
     }
 
     private[this] def handleInstantiatedTypes(
         instantiatedTypes: EOptionP[TypeSetEntity, InstantiatedTypes],
-        numProcessedTypes: Int
-    ): PropertyComputationResult = {
+        numProcessedTypes: Int): PropertyComputationResult = {
         val (newReachableMethods, isFinal, size) = instantiatedTypes match {
-            case UBPS(initialTypes: InstantiatedTypes, isFinal) =>
-                (
+            case UBPS(initialTypes: InstantiatedTypes, isFinal) => (
                     analyzeTypes(initialTypes.dropOldest(numProcessedTypes)),
                     isFinal,
                     initialTypes.types.size
@@ -78,62 +74,53 @@ class LibraryInstantiatedTypesBasedEntryPointsAnalysis private[analyses] (
             case _ => (Iterator.empty, false, 0)
         }
 
-        val c = if (!isFinal)
-            Some(InterimPartialResult(
+        val c =
+            if (!isFinal) Some(InterimPartialResult(
                 Nil,
                 Set(instantiatedTypes),
                 continuation(size)
             ))
-        else
-            None
+            else None
 
         Results(c, resultsForReachableMethods(newReachableMethods))
     }
 
     private[this] def continuation(
         numProcessedTypes: Int
-    )(
-        eps: SomeEPS
-    ): PropertyComputationResult = {
-        eps match {
-            case UBP(_: InstantiatedTypes) =>
-                handleInstantiatedTypes(
-                    eps.asInstanceOf[EOptionP[TypeSetEntity, InstantiatedTypes]],
-                    numProcessedTypes
-                )
-            case _ => throw new UnknownError("Unexpected update: "+eps)
-        }
+      )(eps: SomeEPS): PropertyComputationResult = eps match {
+        case UBP(_: InstantiatedTypes) => handleInstantiatedTypes(
+                eps.asInstanceOf[EOptionP[TypeSetEntity, InstantiatedTypes]],
+                numProcessedTypes
+            )
+        case _ => throw new UnknownError("Unexpected update: " + eps)
     }
 
-    def analyzeTypes(types: Iterator[ReferenceType]): Iterator[DeclaredMethod] = {
-        types.flatMap {
-            case ot: ObjectType if !globallySeenTypes.containsKey(ot) =>
-                globallySeenTypes.put(ot, true)
-                project.classFile(ot).map { cf =>
-                    cf.methodsWithBody.filter(m => !m.isStatic && m.isPublic)
-                }.getOrElse(Iterator.empty)
-            case _ => Iterator.empty
-        }.map(declaredMethods(_))
-    }
+    def analyzeTypes(types: Iterator[ReferenceType]): Iterator[DeclaredMethod] = types.flatMap {
+        case ot: ObjectType if !globallySeenTypes.containsKey(ot) =>
+            globallySeenTypes.put(ot, true)
+            project.classFile(ot).map { cf => cf.methodsWithBody.filter(m => !m.isStatic && m.isPublic) }.getOrElse(
+                Iterator.empty)
+        case _ => Iterator.empty
+    }.map(declaredMethods(_))
 
     def resultsForReachableMethods(
-        reachableMethods: Iterator[DeclaredMethod]
-    ): Iterator[ProperPropertyComputationResult] = {
+        reachableMethods: Iterator[DeclaredMethod]): Iterator[ProperPropertyComputationResult] =
         reachableMethods.map { method =>
-            PartialResult[DeclaredMethod, Callers](method, Callers.key, {
-                case InterimUBP(ub) if !ub.hasCallersWithUnknownContext =>
-                    Some(InterimEUBP(method, ub.updatedWithUnknownContext()))
+            PartialResult[DeclaredMethod, Callers](
+                method,
+                Callers.key,
+                {
+                    case InterimUBP(ub) if !ub.hasCallersWithUnknownContext =>
+                        Some(InterimEUBP(method, ub.updatedWithUnknownContext()))
 
-                case _: InterimEP[_, _] => None
+                    case _: InterimEP[_, _] => None
 
-                case _: EPK[_, _] =>
-                    Some(InterimEUBP(method, OnlyCallersWithUnknownContext))
+                    case _: EPK[_, _] => Some(InterimEUBP(method, OnlyCallersWithUnknownContext))
 
-                case r =>
-                    throw new IllegalStateException(s"unexpected previous result $r")
-            })
+                    case r => throw new IllegalStateException(s"unexpected previous result $r")
+                }
+            )
         }
-    }
 }
 
 object LibraryInstantiatedTypesBasedEntryPointsAnalysis extends BasicFPCFTriggeredAnalysisScheduler {
@@ -141,8 +128,7 @@ object LibraryInstantiatedTypesBasedEntryPointsAnalysis extends BasicFPCFTrigger
     override def register(
         project:       SomeProject,
         propertyStore: PropertyStore,
-        i:             Null
-    ): FPCFAnalysis = {
+        i:             Null): FPCFAnalysis = {
         val analysis = new LibraryInstantiatedTypesBasedEntryPointsAnalysis(project)
         propertyStore.registerTriggeredComputation(InstantiatedTypes.key, analysis.analyze)
         analysis

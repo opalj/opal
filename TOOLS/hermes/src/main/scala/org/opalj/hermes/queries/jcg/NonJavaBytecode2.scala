@@ -4,11 +4,11 @@ package hermes
 package queries
 package jcg
 
-import org.opalj.br.analyses.Project
-import org.opalj.da.ClassFile
-
 import scala.collection.immutable.ArraySeq
 import scala.collection.mutable
+
+import org.opalj.br.analyses.Project
+import org.opalj.da.ClassFile
 
 /**
  * Test case feature where two methods are defined a class that do only vary in the specified return
@@ -18,15 +18,12 @@ import scala.collection.mutable
  */
 class NonJavaBytecode2(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
 
-    override def featureIDs: Seq[String] = {
-        Seq("NJ2")
-    }
+    override def featureIDs: Seq[String] = Seq("NJ2")
 
     override def evaluate[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Iterable[(ClassFile, S)]
-    ): IndexedSeq[LocationsContainer[S]] = {
+        rawClassFiles:        Iterable[(ClassFile, S)]): IndexedSeq[LocationsContainer[S]] = {
 
         val instructionsLocations = Array.fill(featureIDs.size)(new LocationsContainer[S])
 
@@ -37,9 +34,9 @@ class NonJavaBytecode2(implicit hermes: HermesConfig) extends DefaultFeatureQuer
         } {
             val methodMap = mutable.Map.empty[String, Int]
             classFile.methods.filterNot(_.isSynthetic).foreach { m =>
-                val jvmDescriptor = m.descriptor.toJVMDescriptor
+                val jvmDescriptor   = m.descriptor.toJVMDescriptor
                 val mdWithoutReturn = jvmDescriptor.substring(0, jvmDescriptor.lastIndexOf(')') + 1)
-                val key = m.name + mdWithoutReturn
+                val key             = m.name + mdWithoutReturn
 
                 val prev = methodMap.getOrElse(key, 0)
                 methodMap.put(key, prev + 1)
@@ -47,8 +44,7 @@ class NonJavaBytecode2(implicit hermes: HermesConfig) extends DefaultFeatureQuer
 
             val hasCase = methodMap.values.exists(_ >= 2)
 
-            if (hasCase)
-                instructionsLocations(0) += classFileLocation
+            if (hasCase) instructionsLocations(0) += classFileLocation
         }
 
         ArraySeq.unsafeWrapArray(instructionsLocations)

@@ -23,11 +23,10 @@ import org.opalj.collection.immutable.IntTrieSet
  */
 class UnidirectionalGraph(
         val verticesCount: Int
-)( // a graph which contains the nodes with the ids: [0...vertices-1]
-        private val successors: Array[IntTrieSet] = new Array[IntTrieSet](verticesCount)
-) extends AbstractGraph[Int] {
+      )( // a graph which contains the nodes with the ids: [0...vertices-1]
+        private val successors: Array[IntTrieSet] = new Array[IntTrieSet](verticesCount)) extends AbstractGraph[Int] {
 
-    def vertices: Range = (0 until this.verticesCount)
+    def vertices: Range = 0 until this.verticesCount
 
     override def nonEmpty: Boolean = verticesCount > 0
 
@@ -38,10 +37,8 @@ class UnidirectionalGraph(
      */
     def theSuccessors(s: Int): IntTrieSet = {
         val sSuccessors = successors(s)
-        if (sSuccessors eq null)
-            IntTrieSet.empty
-        else
-            sSuccessors
+        if (sSuccessors eq null) IntTrieSet.empty
+        else sSuccessors
     }
 
     def edges: Int => IntIterator = (n: Int) => { theSuccessors(n).iterator }
@@ -56,7 +53,6 @@ class UnidirectionalGraph(
         this
     }
 
-    def sccs(filterSingletons: Boolean = false): List[List[Int]] = {
+    def sccs(filterSingletons: Boolean = false): List[List[Int]] =
         org.opalj.graphs.sccs(verticesCount, edges, filterSingletons)
-    }
 }

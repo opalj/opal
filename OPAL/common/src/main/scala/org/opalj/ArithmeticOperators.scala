@@ -11,18 +11,18 @@ package org.opalj
  */
 object BinaryArithmeticOperators extends Enumeration {
 
-    final val Add = Value("+")
+    final val Add      = Value("+")
     final val Subtract = Value("-")
     final val Multiply = Value("*")
-    final val Divide = Value("/")
-    final val Modulo = Value("%")
+    final val Divide   = Value("/")
+    final val Modulo   = Value("%")
 
     final val And = Value("&")
-    final val Or = Value("|")
+    final val Or  = Value("|")
     final val XOr = Value("^")
 
-    final val ShiftLeft = Value("<<")
-    final val ShiftRight = Value(">>")
+    final val ShiftLeft          = Value("<<")
+    final val ShiftRight         = Value(">>")
     final val UnsignedShiftRight = Value(">>>")
 }
 

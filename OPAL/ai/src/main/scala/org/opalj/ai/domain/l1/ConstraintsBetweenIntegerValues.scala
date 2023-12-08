@@ -5,13 +5,12 @@ package domain
 package l1
 
 import java.util.{IdentityHashMap => IDMap}
-
 import scala.jdk.CollectionConverters._
 
-import org.opalj.constraints.NumericConstraints
-import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.br.instructions.Instruction
 import org.opalj.br.LiveVariables
+import org.opalj.br.instructions.Instruction
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.constraints.NumericConstraints
 
 /**
  * Domain that traces the relationship between integer values; currently, the domain only
@@ -21,8 +20,8 @@ import org.opalj.br.LiveVariables
  */
 trait ConstraintsBetweenIntegerValues
     extends CoreDomainFunctionality
-    with IntegerRangeValues // IMRPOVE Define a common trait that specifies that the values support aliasing analyses
-    with TheCodeStructure {
+        with IntegerRangeValues // IMRPOVE Define a common trait that specifies that the values support aliasing analyses
+        with TheCodeStructure {
     domain: CorrelationalDomainSupport with Configuration with ExceptionsFactory =>
 
     type Constraint = NumericConstraints.Value
@@ -41,16 +40,13 @@ trait ConstraintsBetweenIntegerValues
     abstract override def setCodeStructure(
         theInstructions: Array[Instruction],
         theCFJoins:      IntTrieSet,
-        liveVariables:   LiveVariables
-    ): Unit = {
+        liveVariables:   LiveVariables): Unit = {
         super.setCodeStructure(theInstructions, theCFJoins, liveVariables)
 
         constraints = new Array[ConstraintsStore](theInstructions.length)
     }
 
-    private[this] var lastConstraint: Option[(Int /*PC*/ , IntegerLikeValue, IntegerLikeValue, Constraint)] = {
-        None
-    }
+    private[this] var lastConstraint: Option[(Int /*PC*/, IntegerLikeValue, IntegerLikeValue, Constraint)] = None
 
     //
     //
@@ -60,8 +56,9 @@ trait ConstraintsBetweenIntegerValues
 
     def putConstraintInStore(
         store: ConstraintsStore,
-        v1:    IntegerLikeValue, v2: IntegerLikeValue, c: Constraint
-    ): ConstraintsStore = {
+        v1:    IntegerLikeValue,
+        v2:    IntegerLikeValue,
+        c:     Constraint): ConstraintsStore = {
 
         assert(v1 ne v2)
 
@@ -72,18 +69,17 @@ trait ConstraintsBetweenIntegerValues
             m.put(v2, c)
         } else {
             val old_c = m.get(v2)
-            if (old_c == null)
-                m.put(v2, c)
-            else
-                m.put(v2, NumericConstraints.combine(old_c, c))
+            if (old_c == null) m.put(v2, c)
+            else m.put(v2, NumericConstraints.combine(old_c, c))
         }
         store
     }
 
     def establishConstraint(
         pc: Int,
-        v1: IntegerLikeValue, v2: IntegerLikeValue, c: Constraint
-    ): ConstraintsStore = {
+        v1: IntegerLikeValue,
+        v2: IntegerLikeValue,
+        c:  Constraint): ConstraintsStore = {
 
         val store = {
             val store = this.constraints(pc)
@@ -102,36 +98,30 @@ trait ConstraintsBetweenIntegerValues
         pc: Int,
         v1: IntegerLikeValue,
         v2: IntegerLikeValue,
-        c:  Constraint
-    ): Unit = {
+        c:  Constraint): Unit =
         // let's collect the constraint(s)
         this.lastConstraint = Some((pc, v1, v2, c))
-    }
 
     private[this] def addConstraint(
         pc: Int,
         v1: DomainValue,
         v2: DomainValue,
-        c:  Constraint
-    ): Unit = {
-        addConstraint(
-            pc,
-            v1.asInstanceOf[IntegerLikeValue], v2.asInstanceOf[IntegerLikeValue], c
-        )
-    }
+        c:  Constraint): Unit = addConstraint(
+        pc,
+        v1.asInstanceOf[IntegerLikeValue],
+        v2.asInstanceOf[IntegerLikeValue],
+        c
+    )
 
     private[this] def getConstraint(
         pc: Int,
         v1: IntegerLikeValue,
-        v2: IntegerLikeValue
-    ): Option[Constraint] = {
+        v2: IntegerLikeValue): Option[Constraint] = {
         val constraints = this.constraints(pc)
-        if (constraints == null)
-            return None
+        if (constraints == null) return None
 
         val m = constraints.get(v1)
-        if (m == null)
-            None
+        if (m == null) None
         else {
             Option(m.get(v2))
         }
@@ -140,17 +130,15 @@ trait ConstraintsBetweenIntegerValues
     private[this] def getConstraint(
         pc: Int,
         v1: DomainValue,
-        v2: DomainValue
-    ): Option[Constraint] = {
-        getConstraint(
-            pc,
-            v1.asInstanceOf[IntegerLikeValue], v2.asInstanceOf[IntegerLikeValue]
-        )
-    }
+        v2: DomainValue): Option[Constraint] = getConstraint(
+        pc,
+        v1.asInstanceOf[IntegerLikeValue],
+        v2.asInstanceOf[IntegerLikeValue]
+    )
 
     def cloneConstraintsStore(store: ConstraintsStore): ConstraintsStore = {
         val newStore = new ConstraintsStore()
-        val it = store.entrySet().iterator
+        val it       = store.entrySet().iterator
         while (it.hasNext) {
             val e = it.next()
             newStore.put(e.getKey(), e.getValue().clone().asInstanceOf[IDMap[IntegerLikeValue, Constraint]])
@@ -170,22 +158,19 @@ trait ConstraintsBetweenIntegerValues
         worklist:                         List[Int /*PC*/ ],
         operandsArray:                    OperandsArray,
         localsArray:                      LocalsArray,
-        tracer:                           Option[AITracer]
-    ): List[Int /*PC*/ ] = {
+        tracer:                           Option[AITracer]): List[Int /*PC*/ ] = {
 
         def clone(store: ConstraintsStore): ConstraintsStore = {
-            def stillExists(value: IntegerLikeValue): Boolean = {
-                operandsArray(successorPC).exists(_ eq value) ||
-                    localsArray(successorPC).exists(_ eq value)
-            }
+            def stillExists(value: IntegerLikeValue): Boolean = operandsArray(successorPC).exists(_ eq value) ||
+                localsArray(successorPC).exists(_ eq value)
 
             val newStore = new ConstraintsStore()
-            val it = store.entrySet().iterator
+            val it       = store.entrySet().iterator
             while (it.hasNext) {
                 val e = it.next()
                 if (stillExists(e.getKey)) {
                     val inner_newStore = new IDMap[IntegerLikeValue, Constraint]()
-                    val inner_it = e.getValue().entrySet().iterator
+                    val inner_it       = e.getValue().entrySet().iterator
                     while (inner_it.hasNext) {
                         val inner_e = inner_it.next()
                         if (stillExists(inner_e.getKey)) {
@@ -197,20 +182,17 @@ trait ConstraintsBetweenIntegerValues
                     }
                 }
             }
-            if (newStore.isEmpty())
-                null
-            else
-                newStore
+            if (newStore.isEmpty()) null
+            else newStore
         }
 
         val constraints = this.constraints
 
         if (!wasJoinPerformed) {
-            if (constraints(currentPC) != null)
-                constraints(successorPC) = clone(constraints(currentPC))
+            if (constraints(currentPC) != null) constraints(successorPC) = clone(constraints(currentPC))
             val lastConstraintOption = this.lastConstraint
             if (lastConstraintOption.isDefined) {
-                val (_, v1, v2, c) = lastConstraintOption.get
+                val (_, v1, v2, c)   = lastConstraintOption.get
                 val constraintsStore = establishConstraint(successorPC, v1, v2, c)
                 putConstraintInStore(constraintsStore, v2, v1, NumericConstraints.inverse(c))
             }
@@ -225,12 +207,17 @@ trait ConstraintsBetweenIntegerValues
         this.lastConstraint = None
 
         super.flow(
-            currentPC, currentOperands, currentLocals,
-            successorPC, isSuccessorScheduled,
-            isExceptionalControlFlow, abruptSubroutineTerminationCount,
+            currentPC,
+            currentOperands,
+            currentLocals,
+            successorPC,
+            isSuccessorScheduled,
+            isExceptionalControlFlow,
+            abruptSubroutineTerminationCount,
             wasJoinPerformed,
             worklist,
-            operandsArray, localsArray,
+            operandsArray,
+            localsArray,
             tracer
         )
 
@@ -242,8 +229,7 @@ trait ConstraintsBetweenIntegerValues
         oldValue: DomainValue,
         newValue: DomainValue,
         operands: Operands,
-        locals:   Locals
-    ): (Operands, Locals) = {
+        locals:   Locals): (Operands, Locals) = {
 
         oldValue match {
             case _: IntegerLikeValue => updatedValues.put(oldValue, newValue)
@@ -255,10 +241,8 @@ trait ConstraintsBetweenIntegerValues
 
     private[this] def currentValue(value: DomainValue): DomainValue = {
         val updatedValue = this.updatedValues.get(value)
-        if (updatedValue != null)
-            updatedValue
-        else
-            value
+        if (updatedValue != null) updatedValue
+        else value
     }
 
     // -----------------------------------------------------------------------------------
@@ -269,67 +253,52 @@ trait ConstraintsBetweenIntegerValues
 
     abstract override def intAreEqual(
         pc:     Int,
-        value1: DomainValue, value2: DomainValue
-    ): Answer = {
-        super.intAreEqual(pc, value1, value2) match {
-            case Unknown =>
-                val constraint = getConstraint(pc, value1, value2)
-                if (constraint.isDefined)
-                    constraint.get match {
-                        case NumericConstraints.!= => No
-                        case NumericConstraints.>  => No
-                        case NumericConstraints.<  => No
-                        case NumericConstraints.== => Yes
-                        case _                     => Unknown
-                    }
-                else
-                    Unknown
-            case answer =>
-                answer
-        }
+        value1: DomainValue,
+        value2: DomainValue): Answer = super.intAreEqual(pc, value1, value2) match {
+        case Unknown =>
+            val constraint = getConstraint(pc, value1, value2)
+            if (constraint.isDefined) constraint.get match {
+                case NumericConstraints.!= => No
+                case NumericConstraints.>  => No
+                case NumericConstraints.<  => No
+                case NumericConstraints.== => Yes
+                case _                     => Unknown
+            }
+            else Unknown
+        case answer => answer
     }
 
     override def intIsLessThan(
         pc:    Int,
         left:  DomainValue,
-        right: DomainValue
-    ): Answer = {
-        super.intIsLessThan(pc, left, right) match {
-            case Unknown =>
-                val constraint = getConstraint(pc, left, right)
-                if (constraint.isDefined)
-                    constraint.get match {
-                        case NumericConstraints.>  => No
-                        case NumericConstraints.>= => No
-                        case NumericConstraints.<  => Yes
-                        case NumericConstraints.== => No
-                        case _                     => Unknown
-                    }
-                else
-                    Unknown
-            case answer =>
-                answer
-        }
+        right: DomainValue): Answer = super.intIsLessThan(pc, left, right) match {
+        case Unknown =>
+            val constraint = getConstraint(pc, left, right)
+            if (constraint.isDefined) constraint.get match {
+                case NumericConstraints.>  => No
+                case NumericConstraints.>= => No
+                case NumericConstraints.<  => Yes
+                case NumericConstraints.== => No
+                case _                     => Unknown
+            }
+            else Unknown
+        case answer => answer
     }
 
-    override def intIsLessThanOrEqualTo(pc: Int, left: DomainValue, right: DomainValue): Answer = {
+    override def intIsLessThanOrEqualTo(pc: Int, left: DomainValue, right: DomainValue): Answer =
         super.intIsLessThanOrEqualTo(pc, left, right) match {
             case Unknown =>
                 val constraint = getConstraint(pc, left, right)
-                if (constraint.isDefined)
-                    constraint.get match {
-                        case NumericConstraints.>  => No
-                        case NumericConstraints.<  => Yes
-                        case NumericConstraints.<= => Yes
-                        case NumericConstraints.== => Yes
-                        case _                     => Unknown
-                    }
-                else
-                    Unknown
-            case answer =>
-                answer
+                if (constraint.isDefined) constraint.get match {
+                    case NumericConstraints.>  => No
+                    case NumericConstraints.<  => Yes
+                    case NumericConstraints.<= => Yes
+                    case NumericConstraints.== => Yes
+                    case _                     => Unknown
+                }
+                else Unknown
+            case answer => answer
         }
-    }
 
     // -----------------------------------------------------------------------------------
     //
@@ -342,8 +311,7 @@ trait ConstraintsBetweenIntegerValues
         theValue: Int,
         value:    DomainValue,
         operands: Operands,
-        locals:   Locals
-    ): (Operands, Locals) = {
+        locals:   Locals): (Operands, Locals) = {
 
         val result = super.intEstablishValue(pc, theValue, value, operands, locals)
 
@@ -358,8 +326,7 @@ trait ConstraintsBetweenIntegerValues
         value1:   DomainValue,
         value2:   DomainValue,
         operands: Operands,
-        locals:   Locals
-    ): (Operands, Locals) = {
+        locals:   Locals): (Operands, Locals) = {
 
         val result = super.intEstablishAreEqual(pc, value1, value2, operands, locals)
 
@@ -374,8 +341,7 @@ trait ConstraintsBetweenIntegerValues
         value1:   DomainValue,
         value2:   DomainValue,
         operands: Operands,
-        locals:   Locals
-    ): (Operands, Locals) = {
+        locals:   Locals): (Operands, Locals) = {
 
         val result = super.intEstablishAreNotEqual(pc, value1, value2, operands, locals)
 
@@ -390,8 +356,7 @@ trait ConstraintsBetweenIntegerValues
         left:     DomainValue,
         right:    DomainValue,
         operands: Operands,
-        locals:   Locals
-    ): (Operands, Locals) = {
+        locals:   Locals): (Operands, Locals) = {
 
         val result = super.intEstablishIsLessThan(pc, left, right, operands, locals)
 
@@ -406,8 +371,7 @@ trait ConstraintsBetweenIntegerValues
         left:     DomainValue,
         right:    DomainValue,
         operands: Operands,
-        locals:   Locals
-    ): (Operands, Locals) = {
+        locals:   Locals): (Operands, Locals) = {
 
         val result = super.intEstablishIsLessThanOrEqualTo(pc, left, right, operands, locals)
 
@@ -576,27 +540,23 @@ trait ConstraintsBetweenIntegerValues
 
     protected[this] def constraintsToText(
         pc:            Int,
-        valueToString: AnyRef => String
-    ): String = {
-        if (constraints(pc) == null)
-            return "No constraints found."
+        valueToString: AnyRef => String): String = {
+        if (constraints(pc) == null) return "No constraints found."
 
-        val cs = (constraints(pc).asScala.map { e =>
+        val cs = constraints(pc).asScala.map { e =>
             val (v1, v2c) = e
-            val jv2c = v2c.asScala
-            for ((v2, c) <- jv2c)
-                yield s"${valueToString(v1)} $c ${valueToString(v2)}"
-        }).flatten
+            val jv2c      = v2c.asScala
+            for ((v2, c) <- jv2c) yield s"${valueToString(v1)} $c ${valueToString(v2)}"
+        }.flatten
         cs.mkString("Constraints:\n\t", "\n\t", "")
     }
 
     abstract override def properties(
         pc:            Int,
-        valueToString: AnyRef => String
-    ): Option[String] = {
+        valueToString: AnyRef => String): Option[String] = {
         val superProperties = super.properties(pc)
         if (constraints(pc) != null) {
-            val otherProperties = superProperties.map(_+"\n").getOrElse("")
+            val otherProperties = superProperties.map(_ + "\n").getOrElse("")
             Some(otherProperties + constraintsToText(pc, valueToString))
         } else {
             superProperties

@@ -17,45 +17,40 @@ trait MethodCallsDomain { this: ValuesDomain =>
     type MethodCallResult = Computation[DomainValue, ExceptionValues]
 
     def invokevirtual(
-        pc:               Int,
-        declaringClass:   ReferenceType, // e.g., Array[] x = ...; x.clone()
-        name:             String,
+        pc: Int,
+        declaringClass: ReferenceType, // e.g., Array[] x = ...; x.clone()
+        name: String,
         methodDescriptor: MethodDescriptor,
-        operands:         Operands
-    ): MethodCallResult
+        operands: Operands): MethodCallResult
 
     def invokeinterface(
-        pc:               Int,
-        declaringClass:   ObjectType,
-        name:             String,
+        pc: Int,
+        declaringClass: ObjectType,
+        name: String,
         methodDescriptor: MethodDescriptor,
-        operands:         Operands
-    ): MethodCallResult
+        operands: Operands): MethodCallResult
 
     def invokespecial(
-        pc:               Int,
-        declaringClass:   ObjectType,
-        isInterface:      Boolean,
-        name:             String,
+        pc: Int,
+        declaringClass: ObjectType,
+        isInterface: Boolean,
+        name: String,
         methodDescriptor: MethodDescriptor,
-        operands:         Operands
-    ): MethodCallResult
+        operands: Operands): MethodCallResult
 
     def invokestatic(
-        pc:               Int,
-        declaringClass:   ObjectType,
-        isInterface:      Boolean,
-        name:             String,
+        pc: Int,
+        declaringClass: ObjectType,
+        isInterface: Boolean,
+        name: String,
         methodDescriptor: MethodDescriptor,
-        operands:         Operands
-    ): MethodCallResult
+        operands: Operands): MethodCallResult
 
     def invokedynamic(
-        pc:               Int,
-        bootstrapMethod:  BootstrapMethod,
-        name:             String,
+        pc: Int,
+        bootstrapMethod: BootstrapMethod,
+        name: String,
         methodDescriptor: MethodDescriptor,
-        operands:         Operands
-    ): MethodCallResult
+        operands: Operands): MethodCallResult
 
 }

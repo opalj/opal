@@ -16,6 +16,6 @@ class LongTrieSetTest extends LongSetTest {
     def create(v1: Long): LongSet = LongTrieSet(v1)
     def create(v1: Long, v2: Long): LongSet = LongTrieSet(v1, v2)
     def create(v1: Long, v2: Long, v3: Long): LongSet = LongTrieSet(v1, v2, v3)
-    def create(v1: Long, v2: Long, v3: Long, v4: Long): LongSet = LongTrieSet(v1, v2, v3) + (v4)
+    def create(v1: Long, v2: Long, v3: Long, v4: Long): LongSet = LongTrieSet(v1, v2, v3) + v4
 
 }

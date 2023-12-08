@@ -21,13 +21,9 @@ import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalys
  */
 class ReturnValueFreshnessTests extends PropertiesTest {
 
-    override def init(p: Project[URL]): Unit = {
-        p.get(RTACallGraphKey)
-    }
+    override def init(p: Project[URL]): Unit = p.get(RTACallGraphKey)
 
-    override def fixtureProjectPackage: List[String] = {
-        List("org/opalj/fpcf/fixtures/return_freshness")
-    }
+    override def fixtureProjectPackage: List[String] = List("org/opalj/fpcf/fixtures/return_freshness")
 
     val analysisSchedulers: Set[FPCFAnalysisScheduler] = Set[FPCFAnalysisScheduler](
         EagerFieldAccessInformationAnalysis,

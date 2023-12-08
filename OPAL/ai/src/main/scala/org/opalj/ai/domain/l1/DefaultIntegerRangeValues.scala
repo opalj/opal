@@ -29,30 +29,23 @@ trait DefaultIntegerRangeValues extends DefaultSpecialDomainValuesBinding with I
      */
     class AnIntegerValue extends super.AnIntegerValueLike {
 
-        override def doJoin(pc: Int, value: DomainValue): Update[DomainValue] = {
+        override def doJoin(pc: Int, value: DomainValue): Update[DomainValue] =
             // ...this method is only called if we are not joining the "same" value...
             MetaInformationUpdate(AnIntegerValue())
-        }
 
-        override def abstractsOver(other: DomainValue): Boolean = {
-            other.computationalType == ComputationalTypeInt
-        }
+        override def abstractsOver(other: DomainValue): Boolean = other.computationalType == ComputationalTypeInt
 
         override def summarize(pc: Int): DomainValue = this
 
-        override def adapt(target: TargetDomain, pc: Int): target.DomainValue = {
-            target.IntegerValue(origin = pc)
-        }
+        override def adapt(target: TargetDomain, pc: Int): target.DomainValue = target.IntegerValue(origin = pc)
 
         override def newInstance: AnIntegerValue = AnIntegerValue()
 
         override def hashCode: Int = 101
 
-        override def equals(other: Any): Boolean = {
-            other match {
-                case _: AnIntegerValue => true
-                case _                 => false
-            }
+        override def equals(other: Any): Boolean = other match {
+            case _: AnIntegerValue => true
+            case _                 => false
         }
 
         override def toString: String = "an int"
@@ -92,8 +85,8 @@ trait DefaultIntegerRangeValues extends DefaultSpecialDomainValuesBinding with I
                 case IntegerRangeLike(otherLB, otherUB) =>
                     val thisLB = this.lowerBound
                     val thisUB = this.upperBound
-                    val newLB = Math.min(thisLB, otherLB)
-                    val newUB = Math.max(thisUB, otherUB)
+                    val newLB  = Math.min(thisLB, otherLB)
+                    val newUB  = Math.max(thisUB, otherUB)
 
                     if (newLB == newUB) {
                         // This is a "point-range" (a concrete value), hence there
@@ -155,95 +148,67 @@ trait DefaultIntegerRangeValues extends DefaultSpecialDomainValuesBinding with I
             result
         }
 
-        override def abstractsOver(other: DomainValue): Boolean = {
-            (this eq other) || (
-                other match {
-                    case IntegerRangeLike(thatLB, thatUB) =>
-                        this.lowerBound <= thatLB && this.upperBound >= thatUB
-                    case _ => false
-                }
-            )
-        }
+        override def abstractsOver(other: DomainValue): Boolean = (this eq other) || (
+            other match {
+                case IntegerRangeLike(thatLB, thatUB) => this.lowerBound <= thatLB && this.upperBound >= thatUB
+                case _                                => false
+            }
+        )
 
         override def summarize(pc: Int): DomainValue = this
 
-        override def adapt(target: TargetDomain, pc: Int): target.DomainValue = {
-            target match {
-                case irv: IntegerRangeValues =>
-                    irv.IntegerRange(lowerBound, upperBound).asInstanceOf[target.DomainValue]
-                case _ =>
-                    target.IntegerValue(pc)
-            }
+        override def adapt(target: TargetDomain, pc: Int): target.DomainValue = target match {
+            case irv: IntegerRangeValues => irv.IntegerRange(lowerBound, upperBound).asInstanceOf[target.DomainValue]
+            case _                       => target.IntegerValue(pc)
         }
 
         override def newInstance: IntegerRange = IntegerRange(lowerBound, upperBound)
 
-        override def constantValue: Option[ValueOrigin] = {
-            if (lowerBound == upperBound)
-                Some(lowerBound)
-            else
-                None
-        }
+        override def constantValue: Option[ValueOrigin] =
+            if (lowerBound == upperBound) Some(lowerBound)
+            else None
 
         override def hashCode: Int = this.lowerBound * 13 + this.upperBound
 
-        override def equals(other: Any): Boolean = {
-            other match {
-                case that: IntegerRange =>
-                    (this eq that) || (
-                        that.lowerBound == this.lowerBound && that.upperBound == this.upperBound
-                    )
-                case _ =>
-                    false
-            }
+        override def equals(other: Any): Boolean = other match {
+            case that: IntegerRange => (this eq that) || (
+                    that.lowerBound == this.lowerBound && that.upperBound == this.upperBound
+                )
+            case _ => false
         }
 
-        override def toString: String = {
-            if (lowerBound == upperBound)
-                "int = "+lowerBound
-            else
-                s"int ∈ [$lowerBound,$upperBound]"
-        }
+        override def toString: String =
+            if (lowerBound == upperBound) "int = " + lowerBound
+            else s"int ∈ [$lowerBound,$upperBound]"
     }
 
-    @inline final override def IntegerRange(lb: Int, ub: Int): IntegerRange = {
-        new IntegerRange(lb, ub)
-    }
+    @inline final override def IntegerRange(lb: Int, ub: Int): IntegerRange = new IntegerRange(lb, ub)
 
     override def BooleanValue(origin: ValueOrigin): DomainTypedValue[CTIntType] = IntegerRange(0, 1)
-    override def BooleanValue(origin: ValueOrigin, value: Boolean): DomainTypedValue[CTIntType] = {
+    override def BooleanValue(origin: ValueOrigin, value: Boolean): DomainTypedValue[CTIntType] =
         if (value) IntegerValue(origin, 1) else IntegerValue(origin, 0)
-    }
 
-    override def ByteValue(origin: ValueOrigin): DomainTypedValue[CTIntType] = {
-        IntegerRange(Byte.MinValue, Byte.MaxValue)
-    }
+    override def ByteValue(origin: ValueOrigin): DomainTypedValue[CTIntType] = IntegerRange(Byte.MinValue, Byte.MaxValue)
     override def ByteValue(origin: ValueOrigin, value: Byte): DomainTypedValue[CTIntType] = {
         val theValue = value.toInt
         new IntegerRange(theValue, theValue)
     }
 
-    override def ShortValue(origin: ValueOrigin): DomainTypedValue[CTIntType] = {
+    override def ShortValue(origin: ValueOrigin): DomainTypedValue[CTIntType] =
         IntegerRange(Short.MinValue, Short.MaxValue)
-    }
     override def ShortValue(origin: ValueOrigin, value: Short): DomainTypedValue[CTIntType] = {
         val theValue = value.toInt
         new IntegerRange(theValue, theValue)
     }
 
-    override def CharValue(origin: ValueOrigin): DomainTypedValue[CTIntType] = {
-        IntegerRange(Char.MinValue, Char.MaxValue)
-    }
+    override def CharValue(origin: ValueOrigin): DomainTypedValue[CTIntType] = IntegerRange(Char.MinValue, Char.MaxValue)
     override def CharValue(origin: ValueOrigin, value: Char): DomainTypedValue[CTIntType] = {
         val theValue = value.toInt
         new IntegerRange(theValue, theValue)
     }
 
-    override def IntegerValue(origin: ValueOrigin): DomainTypedValue[CTIntType] = {
-        AnIntegerValue()
-    }
-    override def IntegerValue(origin: ValueOrigin, value: Int): DomainTypedValue[CTIntType] = {
+    override def IntegerValue(origin: ValueOrigin): DomainTypedValue[CTIntType] = AnIntegerValue()
+    override def IntegerValue(origin: ValueOrigin, value: Int): DomainTypedValue[CTIntType] =
         new IntegerRange(value, value)
-    }
 
 }

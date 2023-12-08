@@ -12,8 +12,8 @@ import org.opalj.bi.reader.SourceDebugExtension_attributeReader
  */
 trait SourceDebugExtension_attributeBinding
     extends SourceDebugExtension_attributeReader
-    with ConstantPoolBinding
-    with AttributeBinding {
+        with ConstantPoolBinding
+        with AttributeBinding {
 
     type SourceDebugExtension_attribute = br.SourceDebugExtension
 
@@ -22,10 +22,6 @@ trait SourceDebugExtension_attributeBinding
         ap_name_index:        Constant_Pool_Index,
         ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
-        debug_extension:      Array[Byte]
-    ): SourceDebugExtension_attribute = {
-        new SourceDebugExtension(debug_extension)
-    }
+        debug_extension:      Array[Byte]): SourceDebugExtension_attribute = new SourceDebugExtension(debug_extension)
 
 }
-

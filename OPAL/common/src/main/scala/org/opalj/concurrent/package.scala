@@ -2,21 +2,21 @@
 package org
 package opalj
 
-import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.ThreadFactory
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
+import scala.collection.immutable.ArraySeq
 import scala.collection.parallel.ExecutionContextTaskSupport
-import scala.util.control.ControlThrowable
 import scala.concurrent.ExecutionContext
+import scala.util.control.ControlThrowable
+
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger.error
-import org.opalj.log.OPALLogger.warn
 import org.opalj.log.OPALLogger.info
-
-import scala.collection.immutable.ArraySeq
+import org.opalj.log.OPALLogger.warn
 
 /**
  * Common constants, factory methods and objects used throughout OPAL when performing
@@ -26,25 +26,22 @@ import scala.collection.immutable.ArraySeq
  */
 package object concurrent {
 
-    private implicit def logContext: GlobalLogContext.type = GlobalLogContext
+    implicit private def logContext: GlobalLogContext.type = GlobalLogContext
 
     final val defaultIsInterrupted = () => Thread.currentThread.isInterrupted
 
-    final def handleUncaughtException(t: Throwable): Unit = {
-        error("internal", "uncaught exception", t)
-    }
+    final def handleUncaughtException(t: Throwable): Unit = error("internal", "uncaught exception", t)
 
-    final def handleUncaughtException(t: Thread, e: Throwable): Unit = {
+    final def handleUncaughtException(t: Thread, e: Throwable): Unit =
         error("internal", s"uncaught exception (Thread=${t.getName})", e)
-    }
 
     final val OPALUnboundedThreadPool: ExecutorService = {
         val nextID = new AtomicLong(0L)
         Executors.newCachedThreadPool(
             new ThreadFactory {
                 def newThread(r: Runnable): Thread = {
-                    val name = s"[global] opalj.ThreadPool - Thread "+nextID.incrementAndGet()
-                    val t = new Thread(r, name)
+                    val name = s"[global] opalj.ThreadPool - Thread " + nextID.incrementAndGet()
+                    val t    = new Thread(r, name)
                     t.setDaemon(true)
                     t.setUncaughtExceptionHandler(UncaughtExceptionHandler)
                     t
@@ -53,9 +50,8 @@ package object concurrent {
         )
     }
 
-    final val OPALUnboundedExecutionContext: ExecutionContext = {
+    final val OPALUnboundedExecutionContext: ExecutionContext =
         ExecutionContext.fromExecutorService(OPALUnboundedThreadPool)
-    }
 
     //
     // STEP 1
@@ -83,8 +79,8 @@ package object concurrent {
     }
     info(
         "OPAL",
-        s"using $NumberOfThreadsForCPUBoundTasks thread(s) for CPU bound tasks "+
-            "(can be changed by setting the system property org.opalj.threads.CPUBoundTasks; "+
+        s"using $NumberOfThreadsForCPUBoundTasks thread(s) for CPU bound tasks " +
+            "(can be changed by setting the system property org.opalj.threads.CPUBoundTasks; " +
             "the number should be equal to the number of physical – not hyperthreaded – cores)"
     )
 
@@ -101,11 +97,10 @@ package object concurrent {
         val maxIOBoundTasks = System.getProperty("org.opalj.threads.IOBoundTasks")
         if (maxIOBoundTasks ne null) {
             val s = Integer.parseInt(maxIOBoundTasks)
-            if (s < NumberOfThreadsForCPUBoundTasks)
-                throw new IllegalArgumentException(
-                    s"org.opalj.threads.IOBoundTasks===$s must be larger than "+
-                        s"org.opalj.threads.CPUBoundTasks===$NumberOfThreadsForCPUBoundTasks"
-                )
+            if (s < NumberOfThreadsForCPUBoundTasks) throw new IllegalArgumentException(
+                s"org.opalj.threads.IOBoundTasks===$s must be larger than " +
+                    s"org.opalj.threads.CPUBoundTasks===$NumberOfThreadsForCPUBoundTasks"
+            )
             s
         } else {
             warn("OPAL", "the property org.opalj.threads.IOBoundTasks is unspecified")
@@ -114,16 +109,16 @@ package object concurrent {
     }
     info(
         "OPAL",
-        s"using at most $NumberOfThreadsForIOBoundTasks thread(s) for IO bound tasks "+
-            "(can be changed by setting the system property org.opalj.threads.IOBoundTasks; "+
+        s"using at most $NumberOfThreadsForIOBoundTasks thread(s) for IO bound tasks " +
+            "(can be changed by setting the system property org.opalj.threads.IOBoundTasks; " +
             "the number should be betweeen 1 and 2 times the number of (hyperthreaded) cores)"
     )
 
     //
     // STEP 3
     //
-    private[concurrent] final val UncaughtExceptionHandler = new Thread.UncaughtExceptionHandler {
-        def uncaughtException(t: Thread, e: Throwable): Unit = {
+    final private[concurrent] val UncaughtExceptionHandler = new Thread.UncaughtExceptionHandler {
+        def uncaughtException(t: Thread, e: Throwable): Unit =
             try {
                 handleUncaughtException(e)
             } catch {
@@ -133,21 +128,19 @@ package object concurrent {
                     Console.err.println("[fatal] internal error when reporting errors: ")
                     t.printStackTrace(Console.err)
             }
-        }
     }
 
     def BoundedThreadPool(name: String, n: Int): OPALBoundedThreadPoolExecutor = {
         val groupName = s"[$name/${System.nanoTime().toHexString.drop(4)}] opalj.ThreadPool[N=$n]"
-        val group = new ThreadGroup(groupName)
-        val tp = new OPALBoundedThreadPoolExecutor(n, group)
+        val group     = new ThreadGroup(groupName)
+        val tp        = new OPALBoundedThreadPoolExecutor(n, group)
         tp.allowCoreThreadTimeOut(true)
         tp.prestartAllCoreThreads()
         tp
     }
 
-    def BoundedExecutionContext(name: String, n: Int): ExecutionContext = {
+    def BoundedExecutionContext(name: String, n: Int): ExecutionContext =
         ExecutionContext.fromExecutorService(BoundedThreadPool(name, n))
-    }
 
     /**
      * Thread pool which supports at most `NumberOfThreadsForIOBoundTasks` tasks.
@@ -165,18 +158,16 @@ package object concurrent {
      *
      * @note This `ExecutionContext` must not be shutdown.
      */
-    implicit final val OPALHTBoundedExecutionContext: ExecutionContext = {
+    implicit final val OPALHTBoundedExecutionContext: ExecutionContext =
         ExecutionContext.fromExecutorService(OPALHTBoundedThreadPool)
-    }
 
     //
     // STEP 5
     //
-    final val OPALHTBoundedExecutionContextTaskSupport: ExecutionContextTaskSupport = {
+    final val OPALHTBoundedExecutionContextTaskSupport: ExecutionContextTaskSupport =
         new ExecutionContextTaskSupport(OPALHTBoundedExecutionContext) {
             override def parallelismLevel: Int = NumberOfThreadsForCPUBoundTasks
         }
-    }
 
     //
     // GENERAL HELPER METHODS
@@ -204,13 +195,10 @@ package object concurrent {
     @throws[ConcurrentExceptions]("the set of concurrently thrown suppressed exceptions ")
     final def parForeachArrayElement[T, U](
         data:                 Array[T],
-        parallelizationLevel: Int           = NumberOfThreadsForCPUBoundTasks,
+        parallelizationLevel: Int = NumberOfThreadsForCPUBoundTasks,
         isInterrupted:        () => Boolean = defaultIsInterrupted
-    )(
-        f: Function[T, U]
-    ): Unit = {
+      )(f: Function[T, U]): Unit =
         parForeachSeqElement(ArraySeq.unsafeWrapArray(data), parallelizationLevel, isInterrupted)(f)
-    }
 
     /**
      * Execute the given function `f` in parallel for each element of the given indexed seq.
@@ -234,17 +222,14 @@ package object concurrent {
     @throws[ConcurrentExceptions]("the set of concurrently thrown suppressed exceptions ")
     final def parForeachSeqElement[T, U](
         data:                 IndexedSeq[T],
-        parallelizationLevel: Int           = NumberOfThreadsForCPUBoundTasks,
+        parallelizationLevel: Int = NumberOfThreadsForCPUBoundTasks,
         isInterrupted:        () => Boolean = defaultIsInterrupted
-    )(
-        f: Function[T, U]
-    ): Unit = {
+      )(f: Function[T, U]): Unit = {
         val dataLength = data.length
 
-        if (dataLength == 0)
-            return ;
+        if (dataLength == 0) return;
 
-        val index = new AtomicInteger(0)
+        val index                            = new AtomicInteger(0)
         var exceptions: ConcurrentExceptions = null
         def addSuppressed(throwable: Throwable): Unit = index.synchronized {
             if (exceptions == null) exceptions = new ConcurrentExceptions
@@ -260,8 +245,7 @@ package object concurrent {
                     case ct: ControlThrowable =>
                         val t = new Throwable("unsupported non-local return", ct)
                         addSuppressed(t)
-                    case t: Throwable =>
-                        addSuppressed(t)
+                    case t: Throwable => addSuppressed(t)
                 }
             }
         }
@@ -275,8 +259,8 @@ package object concurrent {
 
             // Start parallel execution
             val maxThreads = Math.min(parallelizationLevel, dataLength)
-            val latch = new CountDownLatch(maxThreads)
-            val pool = OPALUnboundedThreadPool
+            val latch      = new CountDownLatch(maxThreads)
+            val pool       = OPALUnboundedThreadPool
             try {
                 var t = 0
                 while (t < maxThreads) {

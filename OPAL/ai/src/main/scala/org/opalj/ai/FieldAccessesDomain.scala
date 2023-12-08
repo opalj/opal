@@ -2,8 +2,8 @@
 package org.opalj
 package ai
 
-import org.opalj.br.ObjectType
 import org.opalj.br.FieldType
+import org.opalj.br.ObjectType
 
 /**
  * Interface related to the handling of field access instructions.
@@ -19,45 +19,41 @@ trait FieldAccessesDomain { this: ValuesDomain =>
      * @return The field's value or a new `NullPointerException`.
      */
     def getfield(
-        pc:             Int,
-        objectref:      DomainValue,
+        pc: Int,
+        objectref: DomainValue,
         declaringClass: ObjectType,
-        name:           String,
-        fieldType:      FieldType
-    ): Computation[DomainValue, ExceptionValue]
+        name: String,
+        fieldType: FieldType): Computation[DomainValue, ExceptionValue]
 
     /**
      * Returns the field's value.
      */
     def getstatic(
-        pc:             Int,
+        pc: Int,
         declaringClass: ObjectType,
-        name:           String,
-        fieldType:      FieldType
-    ): Computation[DomainValue, Nothing]
+        name: String,
+        fieldType: FieldType): Computation[DomainValue, Nothing]
 
     /**
      * Sets the field's value if the given `objectref` is not `null`(in the [[Domain]]).
      * In the latter case a `NullPointerException` is thrown.
      */
     def putfield(
-        pc:             Int,
-        objectref:      DomainValue,
-        value:          DomainValue,
+        pc: Int,
+        objectref: DomainValue,
+        value: DomainValue,
         declaringClass: ObjectType,
-        name:           String,
-        fieldType:      FieldType
-    ): Computation[Nothing, ExceptionValue]
+        name: String,
+        fieldType: FieldType): Computation[Nothing, ExceptionValue]
 
     /**
      * Sets the field's value.
      */
     def putstatic(
-        pc:             Int,
-        value:          DomainValue,
+        pc: Int,
+        value: DomainValue,
         declaringClass: ObjectType,
-        name:           String,
-        fieldType:      FieldType
-    ): Computation[Nothing, Nothing]
+        name: String,
+        fieldType: FieldType): Computation[Nothing, Nothing]
 
 }

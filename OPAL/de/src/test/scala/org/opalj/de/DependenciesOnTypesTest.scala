@@ -2,13 +2,14 @@
 package org.opalj
 package de
 
-import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br._
 import org.opalj.br.reader.Java8Framework.ClassFile
+
+import org.junit.runner.RunWith
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests that the dependency extractor extracts the types as desired.
@@ -23,50 +24,39 @@ class DependenciesOnTypesTest extends AnyFlatSpec with Matchers {
     // Set up
     //
     //
-    val extractedBaseTypes = scala.collection.mutable.Set.empty[BaseType]
-    val extractedArrayTypes = scala.collection.mutable.Set.empty[ArrayType]
+    val extractedBaseTypes   = scala.collection.mutable.Set.empty[BaseType]
+    val extractedArrayTypes  = scala.collection.mutable.Set.empty[ArrayType]
     val extractedObjectTypes = scala.collection.mutable.Set.empty[ObjectType]
 
-    def dependencyExtractor: DependencyExtractor = {
-        new DependencyExtractor(
-            new DependencyProcessorAdapter {
+    def dependencyExtractor: DependencyExtractor = new DependencyExtractor(
+        new DependencyProcessorAdapter {
 
-                override def processDependency(
-                    source: VirtualSourceElement,
-                    target: VirtualSourceElement,
-                    dType:  DependencyType
-                ): Unit = {
-                    if (target.isClass) {
-                        val VirtualClass(targetType) = target
-                        extractedObjectTypes += targetType
-                    }
-                }
-
-                override def processDependency(
-                    source:   VirtualSourceElement,
-                    baseType: BaseType,
-                    dType:    DependencyType
-                ): Unit = {
-                    extractedBaseTypes += baseType
-                }
-
-                override def processDependency(
-                    source:    VirtualSourceElement,
-                    arrayType: ArrayType,
-                    dType:     DependencyType
-                ): Unit = {
-                    extractedArrayTypes += arrayType
-                }
+            override def processDependency(
+                source: VirtualSourceElement,
+                target: VirtualSourceElement,
+                dType:  DependencyType): Unit = if (target.isClass) {
+                val VirtualClass(targetType) = target
+                extractedObjectTypes += targetType
             }
-        )
-    }
+
+            override def processDependency(
+                source:   VirtualSourceElement,
+                baseType: BaseType,
+                dType:    DependencyType): Unit = extractedBaseTypes += baseType
+
+            override def processDependency(
+                source:    VirtualSourceElement,
+                arrayType: ArrayType,
+                dType:     DependencyType): Unit = extractedArrayTypes += arrayType
+        }
+    )
 
     //
     //
     // EXERCISE
     //
     //
-    val typesJAR = locateTestResources("types.jar", "bi")
+    val typesJAR   = locateTestResources("types.jar", "bi")
     val classFiles = ClassFile(typesJAR, "types/TypeDeclarations.class")
     classFiles foreach (classFile => dependencyExtractor.process(classFile))
 
@@ -94,67 +84,67 @@ class DependenciesOnTypesTest extends AnyFlatSpec with Matchers {
     }
 
     it should "extract dependencies to byte" in {
-        assert((extractedBaseTypes contains ByteType))
+        assert(extractedBaseTypes contains ByteType)
     }
 
     it should "extract dependencies to short" in {
-        assert((extractedBaseTypes contains ShortType))
+        assert(extractedBaseTypes contains ShortType)
     }
 
     it should "extract dependencies to char" in {
-        assert((extractedBaseTypes contains CharType))
+        assert(extractedBaseTypes contains CharType)
     }
 
     it should "extract dependencies to int" in {
-        assert((extractedBaseTypes contains IntegerType))
+        assert(extractedBaseTypes contains IntegerType)
     }
 
     it should "extract dependencies to long" in {
-        assert((extractedBaseTypes contains LongType))
+        assert(extractedBaseTypes contains LongType)
     }
 
     it should "extract dependencies to boolean" in {
-        assert((extractedBaseTypes contains BooleanType))
+        assert(extractedBaseTypes contains BooleanType)
     }
 
     it should "extract dependencies to float" in {
-        assert((extractedBaseTypes contains FloatType))
+        assert(extractedBaseTypes contains FloatType)
     }
 
     it should "extract dependencies to double" in {
-        assert((extractedBaseTypes contains DoubleType))
+        assert(extractedBaseTypes contains DoubleType)
     }
 
     it should "extract dependencies to byte arrays" in {
-        assert((extractedArrayTypes contains ArrayType(ByteType)))
+        assert(extractedArrayTypes contains ArrayType(ByteType))
     }
 
     it should "extract dependencies to short arrays" in {
-        assert((extractedArrayTypes contains ArrayType(ShortType)))
+        assert(extractedArrayTypes contains ArrayType(ShortType))
     }
 
     it should "extract dependencies to char arrays" in {
-        assert((extractedArrayTypes contains ArrayType(CharType)))
+        assert(extractedArrayTypes contains ArrayType(CharType))
     }
 
     it should "extract dependencies to int arrays" in {
-        assert((extractedArrayTypes contains ArrayType(IntegerType)))
+        assert(extractedArrayTypes contains ArrayType(IntegerType))
     }
 
     it should "extract dependencies to long arrays" in {
-        assert((extractedArrayTypes contains ArrayType(LongType)))
+        assert(extractedArrayTypes contains ArrayType(LongType))
     }
 
     it should "extract dependencies to boolean arrays" in {
-        assert((extractedArrayTypes contains ArrayType(BooleanType)))
+        assert(extractedArrayTypes contains ArrayType(BooleanType))
     }
 
     it should "extract dependencies to float arrays" in {
-        assert((extractedArrayTypes contains ArrayType(FloatType)))
+        assert(extractedArrayTypes contains ArrayType(FloatType))
     }
 
     it should "extract dependencies to double arrays" in {
-        assert((extractedArrayTypes contains ArrayType(DoubleType)))
+        assert(extractedArrayTypes contains ArrayType(DoubleType))
     }
 
 }

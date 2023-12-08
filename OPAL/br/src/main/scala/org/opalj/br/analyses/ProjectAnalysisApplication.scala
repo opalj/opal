@@ -15,7 +15,7 @@ import java.net.URL
  */
 abstract class ProjectAnalysisApplication
     extends AnalysisApplication
-    with OneStepAnalysis[URL, ReportableAnalysisResult] {
+        with OneStepAnalysis[URL, ReportableAnalysisResult] {
 
     implicit def String2BasicReport(report: String): BasicReport = BasicReport(report)
 

@@ -20,9 +20,9 @@ trait Constant_Pool_Entry extends bi.reader.ConstantPoolEntry {
 
     final def tag: Int = Constant_Type_Value.id
 
-    def asConstantClass: CONSTANT_Class_info = throw new ClassCastException();
-    def asConstantUTF8: CONSTANT_Utf8_info = throw new ClassCastException();
-    final def asConstantModule: CONSTANT_Module_info = this.asInstanceOf[CONSTANT_Module_info]
+    def asConstantClass: CONSTANT_Class_info           = throw new ClassCastException();
+    def asConstantUTF8: CONSTANT_Utf8_info             = throw new ClassCastException();
+    final def asConstantModule: CONSTANT_Module_info   = this.asInstanceOf[CONSTANT_Module_info]
     final def asConstantPackage: CONSTANT_Package_info = this.asInstanceOf[CONSTANT_Package_info]
 
     /**

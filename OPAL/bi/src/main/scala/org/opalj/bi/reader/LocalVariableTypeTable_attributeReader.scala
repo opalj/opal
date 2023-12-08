@@ -3,11 +3,12 @@ package org.opalj
 package bi
 package reader
 
-import java.io.DataInputStream
-import org.opalj.control.fillArraySeq
-
-import scala.collection.immutable.ArraySeq
 import scala.reflect.ClassTag
+
+import java.io.DataInputStream
+import scala.collection.immutable.ArraySeq
+
+import org.opalj.control.fillArraySeq
 
 /**
  * Generic parser for the local variable type table attribute.
@@ -25,21 +26,19 @@ trait LocalVariableTypeTable_attributeReader extends AttributeReader {
     type LocalVariableTypes = ArraySeq[LocalVariableTypeTableEntry]
 
     def LocalVariableTypeTable_attribute(
-        cp:                        Constant_Pool,
-        ap_name_index:             Constant_Pool_Index,
-        ap_descriptor_index:       Constant_Pool_Index,
-        attribute_name_index:      Constant_Pool_Index,
-        local_variable_type_table: LocalVariableTypes
-    ): LocalVariableTypeTable_attribute
+        cp: Constant_Pool,
+        ap_name_index: Constant_Pool_Index,
+        ap_descriptor_index: Constant_Pool_Index,
+        attribute_name_index: Constant_Pool_Index,
+        local_variable_type_table: LocalVariableTypes): LocalVariableTypeTable_attribute
 
     def LocalVariableTypeTableEntry(
-        constant_pool:   Constant_Pool,
-        start_pc:        Int,
-        length:          Int,
-        name_index:      Constant_Pool_Index,
+        constant_pool: Constant_Pool,
+        start_pc: Int,
+        length: Int,
+        name_index: Constant_Pool_Index,
         signature_index: Constant_Pool_Index,
-        index:           Int
-    ): LocalVariableTypeTableEntry
+        index: Int): LocalVariableTypeTableEntry
 
     //
     // IMPLEMENTATION
@@ -66,9 +65,9 @@ trait LocalVariableTypeTable_attributeReader extends AttributeReader {
         ap_name_index: Constant_Pool_Index,
         ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
-        in: DataInputStream
-    ) => {
-        /*val attribute_length =*/ in.readInt()
+        in: DataInputStream) => {
+        /*val attribute_length =*/
+        in.readInt()
 
         val entriesCount = in.readUnsignedShort()
         if (entriesCount > 0 || reifyEmptyAttributes) {

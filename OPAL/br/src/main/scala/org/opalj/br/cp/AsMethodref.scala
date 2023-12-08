@@ -22,8 +22,7 @@ trait AsMethodref extends Constant_Pool_Entry {
     // to cache the result
     @volatile private[this] var methodref: (ReferenceType, Boolean, String, MethodDescriptor) = null
     override def asMethodref(
-        cp: Constant_Pool
-    ): (ReferenceType, Boolean /* isInterface*/ , String, MethodDescriptor) = {
+        cp: Constant_Pool): (ReferenceType, Boolean /* isInterface*/, String, MethodDescriptor) = {
         // The following solution is sufficiently thread safe; i.e.,
         // it may happen that two or more methodref instances
         // are created, but these instances are guaranteed to
@@ -32,13 +31,12 @@ trait AsMethodref extends Constant_Pool_Entry {
         var methodref = this.methodref
         if (methodref eq null) {
             val nameAndType = cp(name_and_type_index).asNameAndType
-            methodref =
-                (
-                    cp(class_index).asReferenceType(cp),
-                    isInterfaceMethodRef,
-                    nameAndType.name(cp),
-                    nameAndType.methodDescriptor(cp)
-                )
+            methodref = (
+                cp(class_index).asReferenceType(cp),
+                isInterfaceMethodRef,
+                nameAndType.name(cp),
+                nameAndType.methodDescriptor(cp)
+            )
             this.methodref = methodref
         }
         methodref

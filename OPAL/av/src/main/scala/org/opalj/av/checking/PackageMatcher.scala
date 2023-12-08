@@ -13,23 +13,21 @@ import org.opalj.br.analyses.SomeProject
  */
 case class PackageMatcher(
         namePredicate: NamePredicate,
-        classMatcher:  ClassMatcher
-)
+        classMatcher:  ClassMatcher)
     extends ClassLevelMatcher {
 
     def doesMatch(classFile: ClassFile)(implicit project: SomeProject): Boolean = {
         val packageName = classFile.thisType.packageName
         namePredicate(packageName) &&
-            classMatcher.doesMatch(classFile)
+        classMatcher.doesMatch(classFile)
     }
 
-    def extension(implicit project: SomeProject): Set[VirtualSourceElement] = {
+    def extension(implicit project: SomeProject): Set[VirtualSourceElement] =
         VirtualSourceElement.asVirtualSourceElements(
             project.allClassFiles filter { doesMatch(_) },
             classMatcher.matchMethods,
             classMatcher.matchFields
         )
-    }
 }
 
 /**
@@ -40,9 +38,7 @@ case class PackageMatcher(
  */
 object PackageMatcher {
 
-    def apply(namePredicate: NamePredicate): PackageMatcher = {
-        new PackageMatcher(namePredicate, AllClasses)
-    }
+    def apply(namePredicate: NamePredicate): PackageMatcher = new PackageMatcher(namePredicate, AllClasses)
 
     /**
      * Creates a [[PackageMatcher]], that relies on a [[ClassMatcher]] for matching
@@ -54,28 +50,21 @@ object PackageMatcher {
      * @param classMatcher The [[ClassMatcher]], that will be used to match the class.
      * @param matchSubpackages If true, all packages, that start with the given package
      *      name are matched otherwise only classes declared in the given package are matched.
-     *
      */
     def apply(
         packageName:      String,
         classMatcher:     ClassMatcher = AllClasses,
-        matchSubpackages: Boolean      = false
-    ): PackageMatcher = {
+        matchSubpackages: Boolean = false): PackageMatcher = {
         val binaryPackageName = packageName.replace('.', '/')
         val namePredicate =
-            if (matchSubpackages)
-                StartsWith(binaryPackageName)
-            else
-                Equals(binaryPackageName)
+            if (matchSubpackages) StartsWith(binaryPackageName)
+            else Equals(binaryPackageName)
 
         new PackageMatcher(namePredicate, classMatcher)
     }
 
     def apply(
         packageName:      String,
-        matchSubpackages: Boolean
-    ): PackageMatcher = {
-        apply(packageName.replace('.', '/'), AllClasses, matchSubpackages)
-    }
+        matchSubpackages: Boolean): PackageMatcher = apply(packageName.replace('.', '/'), AllClasses, matchSubpackages)
 
 }

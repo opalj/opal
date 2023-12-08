@@ -12,8 +12,8 @@ import org.opalj.bi.reader.Synthetic_attributeReader
  */
 trait Synthetic_attributeBinding
     extends Synthetic_attributeReader
-    with ConstantPoolBinding
-    with AttributeBinding {
+        with ConstantPoolBinding
+        with AttributeBinding {
 
     type Synthetic_attribute = br.Attribute // ... possible, but useless: br.Synthetic.type
 
@@ -21,10 +21,6 @@ trait Synthetic_attributeBinding
         cp:                   Constant_Pool,
         ap_name_index:        Constant_Pool_Index,
         ap_descriptor_index:  Constant_Pool_Index,
-        attribute_name_index: Constant_Pool_Index
-    ): br.Attribute = {
-        br.Synthetic
-    }
+        attribute_name_index: Constant_Pool_Index): br.Attribute = br.Synthetic
 
 }
-

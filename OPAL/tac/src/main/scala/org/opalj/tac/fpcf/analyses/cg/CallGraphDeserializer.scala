@@ -7,33 +7,31 @@ package cg
 
 import java.io.File
 import java.io.FileInputStream
-
-import scala.collection.mutable.ArrayBuffer
-
 import play.api.libs.json.Json
 import play.api.libs.json.Reads
 import play.api.libs.json.Writes
+import scala.collection.mutable.ArrayBuffer
 
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.FieldType
+import org.opalj.br.MethodDescriptor
+import org.opalj.br.PCAndInstruction
+import org.opalj.br.analyses.DeclaredMethods
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
+import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.properties.SimpleContexts
+import org.opalj.br.fpcf.properties.SimpleContextsKey
+import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.instructions.Instruction
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyComputationResult
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.DeclaredMethod
-import org.opalj.br.analyses.DeclaredMethods
-import org.opalj.br.FieldType
-import org.opalj.br.MethodDescriptor
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.PCAndInstruction
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.fpcf.properties.SimpleContextsKey
-import org.opalj.br.fpcf.properties.SimpleContexts
-import org.opalj.br.fpcf.properties.cg.Callees
-import org.opalj.br.fpcf.properties.cg.Callers
-import org.opalj.br.instructions.Instruction
 
 /**
  * Representation of all Methods that are reachable in the represented call graph.
@@ -46,8 +44,8 @@ case class ReachableMethodsDescription(reachableMethods: List[ReachableMethodDes
     /**
      * Converts the set of reachable methods into a mapping from method to the set of call sites.
      */
-    lazy val toMap: Map[MethodDesc, List[CallSiteDescription]] = {
-        reachableMethods.groupBy(_.method).map { case (k, v) => k -> v.flatMap(_.callSites) }
+    lazy val toMap: Map[MethodDesc, List[CallSiteDescription]] = reachableMethods.groupBy(_.method).map { case (k, v) =>
+        k -> v.flatMap(_.callSites)
     }
 }
 
@@ -73,8 +71,10 @@ object ReachableMethodDescription {
  * contains the set of computed target methods (`targets`).
  */
 case class CallSiteDescription(
-        declaredTarget: MethodDesc, line: Int, pc: Option[Int], targets: List[MethodDesc]
-)
+        declaredTarget: MethodDesc,
+        line:           Int,
+        pc:             Option[Int],
+        targets:        List[MethodDesc])
 
 object CallSiteDescription {
     implicit val callSiteReads: Reads[CallSiteDescription] = Json.reads[CallSiteDescription]
@@ -88,17 +88,14 @@ object CallSiteDescription {
  */
 case class MethodDesc(name: String, declaringClass: String, returnType: String, parameterTypes: List[String]) {
 
-    override def toString: String = {
-        s"$declaringClass { $returnType $name(${parameterTypes.mkString(", ")})}"
-    }
+    override def toString: String = s"$declaringClass { $returnType $name(${parameterTypes.mkString(", ")})}"
 
-    def nameBasedEquals(other: MethodDesc): Boolean = {
+    def nameBasedEquals(other: MethodDesc): Boolean =
         other.name == this.name && other.declaringClass == this.declaringClass
-    }
 
     def toDeclaredMethod(implicit declaredMethods: DeclaredMethods): DeclaredMethod = {
         val cfType = FieldType(declaringClass).asObjectType
-        val desc = MethodDescriptor(s"(${parameterTypes.mkString("")})$returnType")
+        val desc   = MethodDescriptor(s"(${parameterTypes.mkString("")})$returnType")
         declaredMethods(cfType, cfType.packageName, cfType, name, desc)
     }
 }
@@ -119,10 +116,9 @@ object MethodDesc {
  */
 private class CallGraphDeserializer private[analyses] (
         final val serializedCG: File,
-        final val project:      SomeProject
-) extends FPCFAnalysis {
-    private implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
-    private val simpleContexts: SimpleContexts = project.get(SimpleContextsKey)
+        final val project: SomeProject) extends FPCFAnalysis {
+    implicit private val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
+    private val simpleContexts: SimpleContexts            = project.get(SimpleContextsKey)
 
     private val data: Map[MethodDesc, List[CallSiteDescription]] = Json.parse(
         new FileInputStream(serializedCG)
@@ -130,20 +126,17 @@ private class CallGraphDeserializer private[analyses] (
 
     def analyze(p: SomeProject): PropertyComputationResult = {
         val results = ArrayBuffer.empty[ProperPropertyComputationResult]
-        for (
-            (methodDesc, callSites) <- data
-        ) {
-            val calls = new DirectCalls()
+        for ((methodDesc, callSites) <- data) {
+            val calls  = new DirectCalls()
             val method = methodDesc.toDeclaredMethod
-            for (
-                x <- callSites.groupBy(cs => (cs.declaredTarget, cs.line)).values;
+            for {
+                x                                                                <- callSites.groupBy(cs => (cs.declaredTarget, cs.line)).values
                 (CallSiteDescription(declaredTgtDesc, line, pcOpt, tgts), index) <- x.zipWithIndex
-            ) {
+            } {
 
-                val pc = if (pcOpt.isDefined)
-                    pcOpt.get
-                else
-                    getPCFromLineNumber(method, line, declaredTgtDesc.toDeclaredMethod, index)
+                val pc =
+                    if (pcOpt.isDefined) pcOpt.get
+                    else getPCFromLineNumber(method, line, declaredTgtDesc.toDeclaredMethod, index)
 
                 val context = simpleContexts(method)
 
@@ -158,16 +151,16 @@ private class CallGraphDeserializer private[analyses] (
     }
 
     private[this] def getPCFromLineNumber(
-        dm: DeclaredMethod, lineNumber: Int, declaredTgt: DeclaredMethod, index: Int
-    ): Int = {
-        if (!dm.hasSingleDefinedMethod)
-            return 0;
+        dm:          DeclaredMethod,
+        lineNumber:  Int,
+        declaredTgt: DeclaredMethod,
+        index:       Int): Int = {
+        if (!dm.hasSingleDefinedMethod) return 0;
 
-        val method = dm.definedMethod
+        val method  = dm.definedMethod
         val bodyOpt = method.body
 
-        if (bodyOpt.isEmpty)
-            return 0;
+        if (bodyOpt.isEmpty) return 0;
 
         val body = bodyOpt.get
 
@@ -181,7 +174,7 @@ private class CallGraphDeserializer private[analyses] (
                         inst.isInvocationInstruction && {
                             val invokeInst = inst.asInvocationInstruction
                             invokeInst.name == declaredTgt.name &&
-                                invokeInst.methodDescriptor == declaredTgt.descriptor
+                            invokeInst.methodDescriptor == declaredTgt.descriptor
                         }
                     }
                 }
@@ -192,8 +185,7 @@ private class CallGraphDeserializer private[analyses] (
 
         val instructions = body.collectInstructionsWithPC(pf)
 
-        if (!instructions.isDefinedAt(index))
-            return 0;
+        if (!instructions.isDefinedAt(index)) return 0;
 
         instructions(index).pc
     }
@@ -201,8 +193,7 @@ private class CallGraphDeserializer private[analyses] (
 
 class CallGraphDeserializerScheduler(serializedCG: File) extends BasicFPCFEagerAnalysisScheduler {
 
-    override def requiredProjectInformation: ProjectInformationKeys =
-        Seq(DeclaredMethodsKey, SimpleContextsKey)
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey, SimpleContextsKey)
 
     override def start(p: SomeProject, ps: PropertyStore, i: Null): FPCFAnalysis = {
         val analysis = new CallGraphDeserializer(serializedCG, p)

@@ -21,13 +21,11 @@ class ClassImmutabilityMatcher(val property: ClassImmutability) extends Abstract
         p:      SomeProject,
         as:     Set[ObjectType],
         entity: Object,
-        a:      AnnotationLike
-    ): Boolean = {
+        a:      AnnotationLike): Boolean = {
         val annotationType = a.annotationType.asObjectType
 
-        val analysesElementValues =
-            getValue(p, annotationType, a.elementValuePairs, "analyses").asArrayValue.values
-        val analyses = analysesElementValues.map(ev => ev.asClassValue.value.asObjectType)
+        val analysesElementValues = getValue(p, annotationType, a.elementValuePairs, "analyses").asArrayValue.values
+        val analyses              = analysesElementValues.map(ev => ev.asClassValue.value.asObjectType)
 
         analyses.exists(as.contains)
     }
@@ -37,14 +35,12 @@ class ClassImmutabilityMatcher(val property: ClassImmutability) extends Abstract
         as:         Set[ObjectType],
         entity:     scala.Any,
         a:          AnnotationLike,
-        properties: Iterable[Property]
-    ): Option[String] = {
+        properties: Iterable[Property]): Option[String] =
         if (!properties.exists(p => p == property)) {
             Some(a.elementValuePairs.head.value.asStringValue.value)
         } else {
             None
         }
-    }
 }
 
 class TransitivelyImmutableClassMatcher
@@ -57,22 +53,21 @@ class DependentlyImmutableClassMatcher
         as:         Set[ObjectType],
         entity:     scala.Any,
         a:          AnnotationLike,
-        properties: Iterable[Property]
-    ): Option[String] = {
-        if (!properties.exists(p => p match {
-            case DependentlyImmutableClass(latticeParameters) =>
-                val annotationType = a.annotationType.asFieldType.asObjectType
-                val annotationParameters =
-                    getValue(project, annotationType, a.elementValuePairs, "parameter").
-                        asArrayValue.values.map(x => x.asStringValue.value)
-                annotationParameters.toSet.equals(latticeParameters.toSet)
-            case _ => p == property
-        })) {
+        properties: Iterable[Property]): Option[String] =
+        if (!properties.exists(p =>
+                p match {
+                    case DependentlyImmutableClass(latticeParameters) =>
+                        val annotationType = a.annotationType.asFieldType.asObjectType
+                        val annotationParameters =
+                            getValue(project, annotationType, a.elementValuePairs, "parameter").asArrayValue.values.map(
+                                x => x.asStringValue.value)
+                        annotationParameters.toSet.equals(latticeParameters.toSet)
+                    case _ => p == property
+                })) {
             Some(a.elementValuePairs.head.value.asStringValue.value)
         } else {
             None
         }
-    }
 }
 
 class NonTransitivelyImmutableClassMatcher

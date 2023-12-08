@@ -32,9 +32,8 @@ trait OPALLogger {
      * This method should not be used if the message may only be generated at most
      * once. The respective message will be cached in the log context.
      */
-    final def logOnce(message: LogMessage)(implicit ctx: LogContext): Unit = {
+    final def logOnce(message: LogMessage)(implicit ctx: LogContext): Unit =
         if (ctx.incrementAndGetCount(message) == 1) log(message)
-    }
 
 }
 
@@ -85,8 +84,7 @@ object OPALLogger extends OPALLogger {
      */
     def register(
         ctx:    LogContext,
-        logger: OPALLogger = new ConsoleOPALLogger(true)
-    ): Unit = this.synchronized {
+        logger: OPALLogger = new ConsoleOPALLogger(true)): Unit = this.synchronized {
         if (ctx.id == -1) {
             val id = nextId
             if (nextId == loggers.length) {
@@ -122,10 +120,8 @@ object OPALLogger extends OPALLogger {
     def logger(ctx: LogContext): OPALLogger = {
         val ctxId = ctx.id
         if (ctxId == -2) {
-            if (GlobalLogContext eq ctx)
-                throw new UnknownError("the global log context was unregistered")
-            else
-                throw new IllegalArgumentException(s"the log context $ctx is already unregistered")
+            if (GlobalLogContext eq ctx) throw new UnknownError("the global log context was unregistered")
+            else throw new IllegalArgumentException(s"the log context $ctx is already unregistered")
         }
         this.synchronized { loggers(ctxId) }
     }
@@ -137,18 +133,14 @@ object OPALLogger extends OPALLogger {
 
     // IMPLEMENTATION OF THE LOGGING FACILITIES
 
-    def log(message: LogMessage)(implicit ctx: LogContext): Unit = {
-        logger(ctx).log(message)
-    }
+    def log(message: LogMessage)(implicit ctx: LogContext): Unit = logger(ctx).log(message)
 
     /**
      * Debug message are only included in the code if assertions are turned on. If
      * debug message are logged, then they are logged as Info-level messages.
      */
     @elidable(ASSERTION)
-    final def debug(category: String, message: String)(implicit ctx: LogContext): Unit = {
-        log(Info(category, message))
-    }
+    final def debug(category: String, message: String)(implicit ctx: LogContext): Unit = log(Info(category, message))
 
     /**
      * Debug message are only included in the code if assertions are turned on and the predicate
@@ -160,13 +152,9 @@ object OPALLogger extends OPALLogger {
         p:        => Boolean,
         category: String,
         message:  => String
-    )(
-        implicit
-        ctx: LogContext
-    ): Unit = {
-        if (p) {
-            log(Info(category, message))
-        }
+      )(implicit
+        ctx: LogContext): Unit = if (p) {
+        log(Info(category, message))
     }
 
     /**
@@ -180,16 +168,12 @@ object OPALLogger extends OPALLogger {
      * @note Do not use this method if the analysis may create the same message
      *      multiple times. In this case use [[logOnce]].
      */
-    final def info(category: String, message: String)(implicit ctx: LogContext): Unit = {
-        log(Info(category, message))
-    }
+    final def info(category: String, message: String)(implicit ctx: LogContext): Unit = log(Info(category, message))
 
     /**
      * Logs a message in the category "`progress`".
      */
-    final def progress(message: String)(implicit ctx: LogContext): Unit = {
-        log(Info("progress", message))
-    }
+    final def progress(message: String)(implicit ctx: LogContext): Unit = log(Info("progress", message))
 
     /**
      * Log a warning. Warnings are typically related to incomplete project configurations
@@ -202,9 +186,7 @@ object OPALLogger extends OPALLogger {
      * @note Do not use this method if the analysis may create the same message
      *      multiple times. In this case use [[logOnce]].
      */
-    final def warn(category: String, message: String)(implicit ctx: LogContext): Unit = {
-        log(Warn(category, message))
-    }
+    final def warn(category: String, message: String)(implicit ctx: LogContext): Unit = log(Warn(category, message))
 
     /**
      * Log an error message. Error message should either be related to internal errors
@@ -214,9 +196,7 @@ object OPALLogger extends OPALLogger {
      * This method is primarily a convenience method that creates an [[Error]] message
      * which is the logged.
      */
-    final def error(category: String, message: String)(implicit ctx: LogContext): Unit = {
-        log(Error(category, message))
-    }
+    final def error(category: String, message: String)(implicit ctx: LogContext): Unit = log(Error(category, message))
 
     /**
      * Log an error message. Error message should either be related to internal errors
@@ -230,10 +210,6 @@ object OPALLogger extends OPALLogger {
         category: String,
         message:  String,
         t:        Throwable
-    )(
-        implicit
-        ctx: LogContext
-    ): Unit = {
-        log(Error(category, message, t))
-    }
+      )(implicit
+        ctx: LogContext): Unit = log(Error(category, message, t))
 }

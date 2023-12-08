@@ -12,10 +12,9 @@ package instructions
  * @author Michael Eichberg
  */
 case class MULTIANEWARRAY(
-        arrayType:  ArrayType,
-        dimensions: Int
-) extends CreateNewArrayInstruction
-    with InstructionMetaInformation {
+        arrayType: ArrayType,
+        dimensions: Int) extends CreateNewArrayInstruction
+        with InstructionMetaInformation {
 
     final def opcode: Opcode = MULTIANEWARRAY.opcode
 
@@ -58,7 +57,7 @@ object MULTIANEWARRAY {
     def apply(arrayTypeName: String, dimensions: Int): MULTIANEWARRAY = {
         val arrayTypeCandidate = FieldType(arrayTypeName)
         require(arrayTypeCandidate.isArrayType, s"given type $arrayTypeName is not an array type")
-        val arrayType = arrayTypeCandidate.asArrayType
+        val arrayType       = arrayTypeCandidate.asArrayType
         val arrayDimensions = arrayType.dimensions
         require(
             dimensions <= arrayDimensions,

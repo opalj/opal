@@ -21,10 +21,6 @@ package object cp {
 
     implicit def cpIndexToCPEntry(
         index: Constant_Pool_Index
-    )(
-        implicit
-        cp: Constant_Pool
-    ): Constant_Pool_Entry = {
-        cp(index)
-    }
+      )(implicit
+        cp: Constant_Pool): Constant_Pool_Entry = cp(index)
 }

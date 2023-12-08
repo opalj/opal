@@ -17,7 +17,7 @@ class Seconds(val timeSpan: Double) extends AnyVal with Serializable {
     def toString(withUnit: Boolean): String = {
         val time = f"$timeSpan%.4f"
         if (withUnit) {
-            time+" s"
+            time + " s"
         } else {
             time
         }
@@ -25,16 +25,12 @@ class Seconds(val timeSpan: Double) extends AnyVal with Serializable {
 
     def +(other: Seconds): Seconds = new Seconds(this.timeSpan + other.timeSpan)
 
-    final def toNanoseconds: Nanoseconds = {
-        new Nanoseconds((timeSpan * 1000.0d * 1000.0d * 1000.0d).toLong)
-    }
+    final def toNanoseconds: Nanoseconds = new Nanoseconds((timeSpan * 1000.0d * 1000.0d * 1000.0d).toLong)
 
     /**
      * Conversion to [[Milliseconds]].
      */
-    final def toMilliseconds: Milliseconds = {
-        new Milliseconds((timeSpan * 1000).toLong)
-    }
+    final def toMilliseconds: Milliseconds = new Milliseconds((timeSpan * 1000).toLong)
 
     override def toString: String = toString(withUnit = true)
 

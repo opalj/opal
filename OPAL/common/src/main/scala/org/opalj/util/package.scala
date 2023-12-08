@@ -2,18 +2,17 @@
 package org
 package opalj
 
-import java.lang.management.MemoryMXBean
-import java.lang.management.ManagementFactory
+import scala.annotation.nowarn
 
+import java.lang.management.ManagementFactory
+import java.lang.management.MemoryMXBean
 import scala.util.Properties.versionNumberString
+
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
 
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigRenderOptions
-
-import org.opalj.log.OPALLogger
-import org.opalj.log.LogContext
-
-import scala.annotation.nowarn
 
 /**
  * Utility methods.
@@ -23,18 +22,13 @@ import scala.annotation.nowarn
 package object util {
 
     // Used in the context of the implementation of "collect(PartialFunction)" methods.
-    final val AnyToAnyThis: Function1[Any, Any] = {
-        new Function1[Any, Any] { def apply(x: Any): Any = this }
-    }
+    final val AnyToAnyThis: Function1[Any, Any] = new Function1[Any, Any] { def apply(x: Any): Any = this }
 
-    val ScalaMajorVersion: String = {
-        versionNumberString.split('.').take(2).mkString(".") // e.g. 2.10, 2.11
-    }
+    val ScalaMajorVersion: String = versionNumberString.split('.').take(2).mkString(".") // e.g. 2.10, 2.11
 
     def avg(ts: IterableOnce[Nanoseconds]): Nanoseconds = {
         val iterator = ts.iterator
-        if (iterator.isEmpty)
-            return Nanoseconds.None;
+        if (iterator.isEmpty) return Nanoseconds.None;
 
         Nanoseconds(iterator.map(_.timeSpan).sum / iterator.size)
     }
@@ -61,12 +55,10 @@ package object util {
     final def gc(
         memoryMXBean: MemoryMXBean = ManagementFactory.getMemoryMXBean,
         maxGCTime:    Milliseconds = new Milliseconds(333)
-    )(
-        implicit
-        logContext: Option[LogContext] = None
-    ): Unit = {
+      )(implicit
+        logContext: Option[LogContext] = None): Unit = {
         val startTime = System.nanoTime()
-        var run = 0
+        var run       = 0
         do {
             if (logContext.isDefined) {
                 val pendingCount = memoryMXBean.getObjectPendingFinalizationCount()
@@ -90,11 +82,8 @@ package object util {
     }
 
     def renderConfig(config: Config, withComments: Boolean = true): String = {
-        val renderingOptions = ConfigRenderOptions.
-            defaults().
-            setOriginComments(false).
-            setComments(withComments).
-            setJson(false)
+        val renderingOptions =
+            ConfigRenderOptions.defaults().setOriginComments(false).setComments(withComments).setJson(false)
         val opalConf = config.withOnlyPath("org")
         opalConf.root().render(renderingOptions)
     }

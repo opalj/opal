@@ -4,8 +4,8 @@ package hermes
 package queries
 
 import org.opalj.br.analyses.Project
-import org.opalj.br.instructions.ReturnInstruction
 import org.opalj.br.cfg.CFGFactory
+import org.opalj.br.instructions.ReturnInstruction
 
 /**
  * Counts the number of methods without regular returns.
@@ -15,7 +15,7 @@ import org.opalj.br.cfg.CFGFactory
 class MethodsWithoutReturns(implicit hermes: HermesConfig) extends FeatureQuery {
 
     final val AlwaysThrowsExceptionMethodsFeatureId = "Never Returns Normally"
-    final val InfiniteLoopMethodsFeatureId = "Method with Infinite Loop"
+    final val InfiniteLoopMethodsFeatureId          = "Method with Infinite Loop"
     override val featureIDs: List[String] = List(
         AlwaysThrowsExceptionMethodsFeatureId,
         InfiniteLoopMethodsFeatureId
@@ -24,25 +24,23 @@ class MethodsWithoutReturns(implicit hermes: HermesConfig) extends FeatureQuery 
     override def apply[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Iterable[(da.ClassFile, S)]
-    ): IterableOnce[Feature[S]] = {
-        val infiniteLoopMethods: LocationsContainer[S] = new LocationsContainer[S]
+        rawClassFiles:        Iterable[(da.ClassFile, S)]): IterableOnce[Feature[S]] = {
+        val infiniteLoopMethods: LocationsContainer[S]          = new LocationsContainer[S]
         val alwaysThrowsExceptionMethods: LocationsContainer[S] = new LocationsContainer[S]
 
         for {
             (classFile, source) <- project.projectClassFilesWithSources
             if !isInterrupted()
-            classFileLocation = ClassFileLocation(source, classFile)
-            method <- classFile.methods
-            body <- method.body
+            classFileLocation    = ClassFileLocation(source, classFile)
+            method              <- classFile.methods
+            body                <- method.body
             hasReturnInstruction = body.instructionIterator.exists { i => i.isInstanceOf[ReturnInstruction] }
             if !hasReturnInstruction
         } {
             val cfg = CFGFactory(body, project.classHierarchy)
             if (cfg.abnormalReturnNode.predecessors.isEmpty)
                 infiniteLoopMethods += MethodLocation(classFileLocation, method)
-            else
-                alwaysThrowsExceptionMethods += MethodLocation(classFileLocation, method)
+            else alwaysThrowsExceptionMethods += MethodLocation(classFileLocation, method)
         }
 
         List(

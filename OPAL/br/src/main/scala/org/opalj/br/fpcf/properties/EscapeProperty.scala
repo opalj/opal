@@ -40,7 +40,6 @@ sealed trait EscapePropertyMetaInformation extends PropertyMetaInformation {
  * In contrast to this, Kotzmann and Mössenböck [2] describe the escape of an object with the access
  * to this object from other methods or threads.
  *
- *
  * == Definition ==
  * This EscapeProperty combines both concepts and is more specific about the reason why an object
  * escapes to facilitate comprehension of the results.
@@ -126,18 +125,15 @@ sealed trait EscapePropertyMetaInformation extends PropertyMetaInformation {
  */
 sealed abstract class EscapeProperty
     extends OrderedProperty
-    with ExplicitlyNamedProperty
-    with EscapePropertyMetaInformation {
+        with ExplicitlyNamedProperty
+        with EscapePropertyMetaInformation {
 
     final def key: PropertyKey[EscapeProperty] = EscapeProperty.key
 
-    override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
-        other match {
-            case _: AtMost                                                  => //TODO this is not correct -> fix me!
-            case other: EscapeProperty if other lessOrEqualRestrictive this =>
-            case p =>
-                throw new IllegalArgumentException(s"$e: illegal refinement of property $p to $this")
-        }
+    override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = other match {
+        case _: AtMost                                                  => // TODO this is not correct -> fix me!
+        case other: EscapeProperty if other lessOrEqualRestrictive this =>
+        case p                                                          => throw new IllegalArgumentException(s"$e: illegal refinement of property $p to $this")
     }
 
     /**
@@ -227,9 +223,7 @@ case object NoEscape extends FinalEscapeProperty {
 
     override def meet(that: FinalEscapeProperty): FinalEscapeProperty = that
 
-    final override def lessOrEqualRestrictive(that: EscapeProperty): Boolean = {
-        PID == that.propertyValueID
-    }
+    final override def lessOrEqualRestrictive(that: EscapeProperty): Boolean = PID == that.propertyValueID
 
     override def isBottom: Boolean = false
 
@@ -271,11 +265,10 @@ case object EscapeInCallee extends FinalEscapeProperty {
 
     override def propertyName: String = "InCallee"
 
-    override def lessOrEqualRestrictive(that: EscapeProperty): Boolean =
-        (that.propertyValueID: @switch) match {
-            case NoEscape.PID | EscapeInCallee.PID => true
-            case _                                 => false
-        }
+    override def lessOrEqualRestrictive(that: EscapeProperty): Boolean = (that.propertyValueID: @switch) match {
+        case NoEscape.PID | EscapeInCallee.PID => true
+        case _                                 => false
+    }
 
     override def isBottom: Boolean = false
 
@@ -286,11 +279,9 @@ case object EscapeInCallee extends FinalEscapeProperty {
         case _: GlobalEscape           => that
         case AtMost(property)          => AtMost(property meet this)
     }
-    override def meet(that: FinalEscapeProperty): FinalEscapeProperty = {
-        (that.propertyValueID: @switch) match {
-            case NoEscape.PID => this
-            case _            => that
-        }
+    override def meet(that: FinalEscapeProperty): FinalEscapeProperty = (that.propertyValueID: @switch) match {
+        case NoEscape.PID => this
+        case _            => that
     }
 }
 
@@ -321,11 +312,10 @@ case object EscapeViaParameter extends FinalEscapeProperty {
 
     override def propertyName: String = "ViaParameter"
 
-    override def lessOrEqualRestrictive(that: EscapeProperty): Boolean =
-        (that.propertyValueID: @switch) match {
-            case NoEscape.PID | EscapeInCallee.PID | EscapeViaParameter.PID => true
-            case _ => false
-        }
+    override def lessOrEqualRestrictive(that: EscapeProperty): Boolean = (that.propertyValueID: @switch) match {
+        case NoEscape.PID | EscapeInCallee.PID | EscapeViaParameter.PID => true
+        case _                                                          => false
+    }
 
     override def isBottom: Boolean = false
 
@@ -336,14 +326,12 @@ case object EscapeViaParameter extends FinalEscapeProperty {
         case _: GlobalEscape           => that
         case AtMost(property)          => AtMost(property meet this)
     }
-    override def meet(that: FinalEscapeProperty): FinalEscapeProperty = {
-        (that.propertyValueID: @switch) match {
-            case NoEscape.PID | EscapeInCallee.PID    => this
-            case EscapeViaReturn.PID                  => EscapeViaParameterAndReturn
-            case EscapeViaAbnormalReturn.PID          => EscapeViaParameterAndAbnormalReturn
-            case EscapeViaNormalAndAbnormalReturn.PID => EscapeViaParameterAndNormalAndAbnormalReturn
-            case _                                    => that
-        }
+    override def meet(that: FinalEscapeProperty): FinalEscapeProperty = (that.propertyValueID: @switch) match {
+        case NoEscape.PID | EscapeInCallee.PID    => this
+        case EscapeViaReturn.PID                  => EscapeViaParameterAndReturn
+        case EscapeViaAbnormalReturn.PID          => EscapeViaParameterAndAbnormalReturn
+        case EscapeViaNormalAndAbnormalReturn.PID => EscapeViaParameterAndNormalAndAbnormalReturn
+        case _                                    => that
     }
 }
 
@@ -372,11 +360,10 @@ case object EscapeViaReturn extends FinalEscapeProperty {
 
     override def propertyName: String = "ViaReturn"
 
-    override def lessOrEqualRestrictive(that: EscapeProperty): Boolean =
-        (that.propertyValueID: @switch) match {
-            case NoEscape.PID | EscapeInCallee.PID | EscapeViaReturn.PID => true
-            case _ => false
-        }
+    override def lessOrEqualRestrictive(that: EscapeProperty): Boolean = (that.propertyValueID: @switch) match {
+        case NoEscape.PID | EscapeInCallee.PID | EscapeViaReturn.PID => true
+        case _                                                       => false
+    }
 
     override def isBottom: Boolean = false
 
@@ -388,14 +375,12 @@ case object EscapeViaReturn extends FinalEscapeProperty {
         case AtMost(property)          => AtMost(property meet this)
     }
 
-    override def meet(that: FinalEscapeProperty): FinalEscapeProperty = {
-        (that.propertyValueID: @switch) match {
-            case NoEscape.PID | EscapeInCallee.PID       => this
-            case EscapeViaParameter.PID                  => EscapeViaParameterAndReturn
-            case EscapeViaAbnormalReturn.PID             => EscapeViaNormalAndAbnormalReturn
-            case EscapeViaParameterAndAbnormalReturn.PID => EscapeViaParameterAndNormalAndAbnormalReturn
-            case _                                       => that
-        }
+    override def meet(that: FinalEscapeProperty): FinalEscapeProperty = (that.propertyValueID: @switch) match {
+        case NoEscape.PID | EscapeInCallee.PID       => this
+        case EscapeViaParameter.PID                  => EscapeViaParameterAndReturn
+        case EscapeViaAbnormalReturn.PID             => EscapeViaNormalAndAbnormalReturn
+        case EscapeViaParameterAndAbnormalReturn.PID => EscapeViaParameterAndNormalAndAbnormalReturn
+        case _                                       => that
     }
 }
 
@@ -427,11 +412,10 @@ case object EscapeViaAbnormalReturn extends FinalEscapeProperty {
 
     override def propertyName: String = "ViaAbnormalReturn"
 
-    override def lessOrEqualRestrictive(that: EscapeProperty): Boolean =
-        (that.propertyValueID: @switch) match {
-            case NoEscape.PID | EscapeInCallee.PID | EscapeViaAbnormalReturn.PID => true
-            case _ => false
-        }
+    override def lessOrEqualRestrictive(that: EscapeProperty): Boolean = (that.propertyValueID: @switch) match {
+        case NoEscape.PID | EscapeInCallee.PID | EscapeViaAbnormalReturn.PID => true
+        case _                                                               => false
+    }
 
     override def isBottom: Boolean = false
 
@@ -463,15 +447,14 @@ case object EscapeViaParameterAndReturn extends FinalEscapeProperty {
 
     override def propertyName: String = "ViaParameterAndReturn"
 
-    override def lessOrEqualRestrictive(that: EscapeProperty): Boolean =
-        (that.propertyValueID: @switch) match {
-            case NoEscape.PID           => true
-            case EscapeInCallee.PID     => true
-            case EscapeViaParameter.PID => true
-            case EscapeViaReturn.PID    => true
-            case PID                    => true
-            case _                      => false
-        }
+    override def lessOrEqualRestrictive(that: EscapeProperty): Boolean = (that.propertyValueID: @switch) match {
+        case NoEscape.PID           => true
+        case EscapeInCallee.PID     => true
+        case EscapeViaParameter.PID => true
+        case EscapeViaReturn.PID    => true
+        case PID                    => true
+        case _                      => false
+    }
 
     override def isBottom: Boolean = false
 
@@ -504,15 +487,14 @@ case object EscapeViaParameterAndAbnormalReturn extends FinalEscapeProperty {
 
     override def propertyName: String = "ViaParameterAndAbnormalReturn"
 
-    override def lessOrEqualRestrictive(that: EscapeProperty): Boolean =
-        (that.propertyValueID: @switch) match {
-            case NoEscape.PID                => true
-            case EscapeInCallee.PID          => true
-            case EscapeViaParameter.PID      => true
-            case EscapeViaAbnormalReturn.PID => true
-            case PID                         => true
-            case _                           => false
-        }
+    override def lessOrEqualRestrictive(that: EscapeProperty): Boolean = (that.propertyValueID: @switch) match {
+        case NoEscape.PID                => true
+        case EscapeInCallee.PID          => true
+        case EscapeViaParameter.PID      => true
+        case EscapeViaAbnormalReturn.PID => true
+        case PID                         => true
+        case _                           => false
+    }
 
     override def isBottom: Boolean = false
 
@@ -525,12 +507,12 @@ case object EscapeViaParameterAndAbnormalReturn extends FinalEscapeProperty {
     }
 
     override def meet(that: FinalEscapeProperty): FinalEscapeProperty = (that.propertyValueID: @switch) match {
-        case NoEscape.PID | EscapeInCallee.PID => this
+        case NoEscape.PID | EscapeInCallee.PID                    => this
         case EscapeViaParameter.PID | EscapeViaAbnormalReturn.PID => this
-        case EscapeViaReturn.PID => EscapeViaParameterAndNormalAndAbnormalReturn
-        case EscapeViaParameterAndReturn.PID => EscapeViaParameterAndNormalAndAbnormalReturn
-        case EscapeViaNormalAndAbnormalReturn.PID => EscapeViaParameterAndNormalAndAbnormalReturn
-        case _ => that
+        case EscapeViaReturn.PID                                  => EscapeViaParameterAndNormalAndAbnormalReturn
+        case EscapeViaParameterAndReturn.PID                      => EscapeViaParameterAndNormalAndAbnormalReturn
+        case EscapeViaNormalAndAbnormalReturn.PID                 => EscapeViaParameterAndNormalAndAbnormalReturn
+        case _                                                    => that
     }
 }
 
@@ -545,15 +527,14 @@ case object EscapeViaNormalAndAbnormalReturn extends FinalEscapeProperty {
 
     override def propertyName: String = "ViaNormalAndAbnormalReturn"
 
-    override def lessOrEqualRestrictive(that: EscapeProperty): Boolean =
-        (that.propertyValueID: @switch) match {
-            case NoEscape.PID                => true
-            case EscapeInCallee.PID          => true
-            case EscapeViaAbnormalReturn.PID => true
-            case EscapeViaReturn.PID         => true
-            case PID                         => true
-            case _                           => false
-        }
+    override def lessOrEqualRestrictive(that: EscapeProperty): Boolean = (that.propertyValueID: @switch) match {
+        case NoEscape.PID                => true
+        case EscapeInCallee.PID          => true
+        case EscapeViaAbnormalReturn.PID => true
+        case EscapeViaReturn.PID         => true
+        case PID                         => true
+        case _                           => false
+    }
 
     override def isBottom: Boolean = false
 
@@ -586,19 +567,18 @@ case object EscapeViaParameterAndNormalAndAbnormalReturn extends FinalEscapeProp
 
     override def propertyName: String = "ViaParameterAndNormalAndAbnormalReturn"
 
-    override def lessOrEqualRestrictive(that: EscapeProperty): Boolean =
-        (that.propertyValueID: @switch) match {
-            case NoEscape.PID                            => true
-            case EscapeInCallee.PID                      => true
-            case EscapeViaParameter.PID                  => true
-            case EscapeViaReturn.PID                     => true
-            case EscapeViaAbnormalReturn.PID             => true
-            case EscapeViaNormalAndAbnormalReturn.PID    => true
-            case EscapeViaParameterAndReturn.PID         => true
-            case EscapeViaParameterAndAbnormalReturn.PID => true
-            case PID                                     => true
-            case _                                       => false
-        }
+    override def lessOrEqualRestrictive(that: EscapeProperty): Boolean = (that.propertyValueID: @switch) match {
+        case NoEscape.PID                            => true
+        case EscapeInCallee.PID                      => true
+        case EscapeViaParameter.PID                  => true
+        case EscapeViaReturn.PID                     => true
+        case EscapeViaAbnormalReturn.PID             => true
+        case EscapeViaNormalAndAbnormalReturn.PID    => true
+        case EscapeViaParameterAndReturn.PID         => true
+        case EscapeViaParameterAndAbnormalReturn.PID => true
+        case PID                                     => true
+        case _                                       => false
+    }
 
     override def isBottom: Boolean = false
 
@@ -702,8 +682,7 @@ case object EscapeViaHeapObject extends GlobalEscape {
     override def propertyName: String = "ViaHeapObject"
 
     override def meet(that: EscapeProperty): EscapeProperty =
-        if (that.propertyValueID == EscapeViaStaticField.PID || that.propertyValueID == GlobalEscape.PID)
-            GlobalEscape
+        if (that.propertyValueID == EscapeViaStaticField.PID || that.propertyValueID == GlobalEscape.PID) GlobalEscape
         else this
 }
 
@@ -735,8 +714,7 @@ case object EscapeViaStaticField extends GlobalEscape {
     override def propertyName: String = "ViaStaticField"
 
     override def meet(that: EscapeProperty): EscapeProperty =
-        if (that.propertyValueID == EscapeViaHeapObject.PID || that.propertyValueID == GlobalEscape.PID)
-            GlobalEscape
+        if (that.propertyValueID == EscapeViaHeapObject.PID || that.propertyValueID == GlobalEscape.PID) GlobalEscape
         else this
 }
 
@@ -752,15 +730,15 @@ case class AtMost private (property: FinalEscapeProperty) extends EscapeProperty
         case AtMost(thatProperty)   => property lessOrEqualRestrictive thatProperty
         case _                      => false
     }
-    override def isBottom = false
-    override def isTop = false
+    override def isBottom     = false
+    override def isTop        = false
     override def propertyName = s"AtMost${property.propertyName}"
     override def meet(that: EscapeProperty): EscapeProperty = that match {
         case AtMost(thatProperty)      => AtMost(thatProperty meet property)
         case that: FinalEscapeProperty => AtMost(property meet that)
         case _: GlobalEscape           => that
     }
-    //TODO REMOVE ME
+    // TODO REMOVE ME
     override def checkIsEqualOrBetterThan(e: Entity, other: EscapeProperty): Unit = {}
 }
 
@@ -768,15 +746,16 @@ case class AtMost private (property: FinalEscapeProperty) extends EscapeProperty
  * Companion object that ensures singletons of the possible instances.
  */
 object AtMost {
-    final val AtMostNoEscape = new AtMost(NoEscape)
-    final val AtMostEscapeInCallee = new AtMost(EscapeInCallee)
-    final val AtMostEscapeViaParameter = new AtMost(EscapeViaParameter)
-    final val AtMostEscapeViaReturn = new AtMost(EscapeViaReturn)
-    final val AtMostEscapeViaAbnormalReturn = new AtMost(EscapeViaAbnormalReturn)
-    final val AtMostEscapeViaParameterAndReturn = new AtMost(EscapeViaParameterAndReturn)
+    final val AtMostNoEscape                            = new AtMost(NoEscape)
+    final val AtMostEscapeInCallee                      = new AtMost(EscapeInCallee)
+    final val AtMostEscapeViaParameter                  = new AtMost(EscapeViaParameter)
+    final val AtMostEscapeViaReturn                     = new AtMost(EscapeViaReturn)
+    final val AtMostEscapeViaAbnormalReturn             = new AtMost(EscapeViaAbnormalReturn)
+    final val AtMostEscapeViaParameterAndReturn         = new AtMost(EscapeViaParameterAndReturn)
     final val AtMostEscapeViaParameterAndAbnormalReturn = new AtMost(EscapeViaParameterAndAbnormalReturn)
-    final val AtMostEscapeViaNormalAndAbnormalReturn = new AtMost(EscapeViaNormalAndAbnormalReturn)
-    final val AtMostEscapeViaParameterAndNormalAndAbnormalReturn = new AtMost(EscapeViaParameterAndNormalAndAbnormalReturn)
+    final val AtMostEscapeViaNormalAndAbnormalReturn    = new AtMost(EscapeViaNormalAndAbnormalReturn)
+    final val AtMostEscapeViaParameterAndNormalAndAbnormalReturn =
+        new AtMost(EscapeViaParameterAndNormalAndAbnormalReturn)
 
     /**
      * Ensures for each [[FinalEscapeProperty]] only one object will be created.

@@ -5,27 +5,27 @@ package cfg
 
 import scala.annotation.switch
 
-import scala.collection.immutable.IntMap
 import scala.collection.immutable.HashMap
+import scala.collection.immutable.IntMap
 
-import org.opalj.collection.immutable.IntArraySet
-import org.opalj.br.instructions.Instruction
-import org.opalj.br.instructions.JSRInstruction
-import org.opalj.br.instructions.UnconditionalBranchInstruction
-import org.opalj.br.instructions.CompoundConditionalBranchInstruction
-import org.opalj.br.instructions.TABLESWITCH
-import org.opalj.br.instructions.LOOKUPSWITCH
 import org.opalj.br.instructions.ATHROW
-import org.opalj.br.instructions.JSR
-import org.opalj.br.instructions.JSR_W
-import org.opalj.br.instructions.RET
+import org.opalj.br.instructions.CompoundConditionalBranchInstruction
 import org.opalj.br.instructions.GOTO
 import org.opalj.br.instructions.GOTO_W
-import org.opalj.br.instructions.INVOKESTATIC
-import org.opalj.br.instructions.INVOKEINTERFACE
-import org.opalj.br.instructions.INVOKEVIRTUAL
-import org.opalj.br.instructions.INVOKESPECIAL
+import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.INVOKEDYNAMIC
+import org.opalj.br.instructions.INVOKEINTERFACE
+import org.opalj.br.instructions.INVOKESPECIAL
+import org.opalj.br.instructions.INVOKESTATIC
+import org.opalj.br.instructions.INVOKEVIRTUAL
+import org.opalj.br.instructions.JSR
+import org.opalj.br.instructions.JSR_W
+import org.opalj.br.instructions.JSRInstruction
+import org.opalj.br.instructions.LOOKUPSWITCH
+import org.opalj.br.instructions.RET
+import org.opalj.br.instructions.TABLESWITCH
+import org.opalj.br.instructions.UnconditionalBranchInstruction
+import org.opalj.collection.immutable.IntArraySet
 
 /**
  * A factory for computing control flow graphs for methods.
@@ -34,9 +34,8 @@ import org.opalj.br.instructions.INVOKEDYNAMIC
  */
 object CFGFactory {
 
-    def apply(method: Method, classHierarchy: ClassHierarchy): Option[CFG[Instruction, Code]] = {
+    def apply(method: Method, classHierarchy: ClassHierarchy): Option[CFG[Instruction, Code]] =
         method.body.map(code => apply(code, classHierarchy))
-    }
 
     /**
      * Constructs the control flow graph for a given method.
@@ -60,11 +59,9 @@ object CFGFactory {
      * @param classHierarchy The class hierarchy that will be used to determine
      *      if a certain exception is potentially handled by an exception handler.
      */
-    def apply(
-        implicit
+    def apply(implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
-    ): CFG[Instruction, Code] = {
+        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy): CFG[Instruction, Code] = {
 
         /*
          * The basic idea of the algorithm is to create the cfg using a single sweep over
@@ -76,9 +73,9 @@ object CFGFactory {
         import classHierarchy.isASubtypeOf
 
         val instructions = code.instructions
-        val codeSize = instructions.length
+        val codeSize     = instructions.length
 
-        val normalReturnNode = new ExitNode(normalReturn = true)
+        val normalReturnNode   = new ExitNode(normalReturn = true)
         val abnormalReturnNode = new ExitNode(normalReturn = false)
 
         // 1. basic initialization
@@ -103,13 +100,12 @@ object CFGFactory {
 
         // 2. iterate over the code to determine basic block boundaries
         var runningBB: BasicBlock = null
-        var previousPC: PC = 0
-        var subroutineReturnPCs = IntMap.empty[IntArraySet] // PC => IntArraySet
+        var previousPC: PC        = 0
+        var subroutineReturnPCs   = IntMap.empty[IntArraySet] // PC => IntArraySet
         code.iterate { (pc, instruction) =>
             if (runningBB eq null) {
                 runningBB = bbs(pc)
-                if (runningBB eq null)
-                    runningBB = new BasicBlock(pc)
+                if (runningBB eq null) runningBB = new BasicBlock(pc)
             }
 
             def useRunningBB(): BasicBlock = {
@@ -139,8 +135,7 @@ object CFGFactory {
              */
             def connect(
                 theSourceBB:     BasicBlock,
-                targetBBStartPC: PC
-            ): ( /*newSourceBB*/ BasicBlock, /*targetBB*/ BasicBlock) = {
+                targetBBStartPC: PC): (/*newSourceBB*/ BasicBlock, /*targetBB*/ BasicBlock) = {
                 // We ensure that the basic block associated with the PC `targetBBStartPC`
                 // actually starts with the given PC.
                 val targetBB = bbs(targetBBStartPC)
@@ -237,17 +232,17 @@ object CFGFactory {
                     currentBB.endPC = pc
                     runningBB = null // <=> the next instruction gets a new bb
                 case JSR.opcode | JSR_W.opcode =>
-                    val jsrInstr = instruction.asInstanceOf[JSRInstruction]
-                    val subroutinePC = pc + jsrInstr.branchoffset
-                    val thisSubroutineReturnPCs =
-                        subroutineReturnPCs.getOrElse(subroutinePC, IntArraySet.empty)
+                    val jsrInstr                = instruction.asInstanceOf[JSRInstruction]
+                    val subroutinePC            = pc + jsrInstr.branchoffset
+                    val thisSubroutineReturnPCs = subroutineReturnPCs.getOrElse(subroutinePC, IntArraySet.empty)
                     subroutineReturnPCs += (
                         subroutinePC ->
-                        (thisSubroutineReturnPCs + jsrInstr.indexOfNextInstruction(pc))
+                            (thisSubroutineReturnPCs + jsrInstr.indexOfNextInstruction(pc))
                     )
                     val currentBB = useRunningBB()
                     currentBB.endPC = pc
-                    /*val subroutineBB = */ connect(currentBB, subroutinePC)
+                    /*val subroutineBB = */
+                    connect(currentBB, subroutinePC)
                     runningBB = null // <=> the next instruction gets a new bb
 
                 case ATHROW.opcode =>
@@ -256,15 +251,14 @@ object CFGFactory {
                     // We typically don't know anything about the current exception;
                     // hence, we connect this bb with every exception handler in place.
                     var isHandled: Boolean = false
-                    val catchNodeSuccessors =
-                        code.handlersFor(pc).map { eh =>
-                            val catchType = eh.catchType
-                            isHandled = isHandled ||
-                                catchType.isEmpty || catchType.get == ObjectType.Throwable
-                            val catchNode = exceptionHandlers(eh)
-                            catchNode.addPredecessor(currentBB)
-                            catchNode
-                        }.toSet[CFGNode]
+                    val catchNodeSuccessors = code.handlersFor(pc).map { eh =>
+                        val catchType = eh.catchType
+                        isHandled = isHandled ||
+                            catchType.isEmpty || catchType.get == ObjectType.Throwable
+                        val catchNode = exceptionHandlers(eh)
+                        catchNode.addPredecessor(currentBB)
+                        catchNode
+                    }.toSet[CFGNode]
                     currentBB.setSuccessors(catchNodeSuccessors)
                     if (!isHandled) {
                         currentBB.addSuccessor(abnormalReturnNode)
@@ -291,21 +285,21 @@ object CFGFactory {
                 case /*IFs:*/ 165 | 166 | 198 | 199 |
                     159 | 160 | 161 | 162 | 163 | 164 |
                     153 | 154 | 155 | 156 | 157 | 158 =>
-                    val IF = instruction.asSimpleConditionalBranchInstruction
+                    val IF        = instruction.asSimpleConditionalBranchInstruction
                     val currentBB = useRunningBB()
                     currentBB.endPC = pc
                     // jump
                     val (selfBB, _ /*targetBB*/ ) = connect(currentBB, pc + IF.branchoffset)
-                    val newCurrentBB = if (selfBB ne currentBB) selfBB else currentBB
+                    val newCurrentBB              = if (selfBB ne currentBB) selfBB else currentBB
                     // fall through case
                     runningBB = connect(newCurrentBB, code.pcOfNextInstruction(pc))._1
 
                 case TABLESWITCH.opcode | LOOKUPSWITCH.opcode =>
-                    val SWITCH = instruction.asInstanceOf[CompoundConditionalBranchInstruction]
+                    val SWITCH    = instruction.asInstanceOf[CompoundConditionalBranchInstruction]
                     val currentBB = useRunningBB()
                     currentBB.endPC = pc
                     val (selfBB, _ /*targetBB*/ ) = connect(currentBB, pc + SWITCH.defaultOffset)
-                    val newCurrentBB = if (selfBB ne currentBB) selfBB else currentBB
+                    val newCurrentBB              = if (selfBB ne currentBB) selfBB else currentBB
                     SWITCH.jumpOffsets.foreach { offset => connect(newCurrentBB, pc + offset) }
                     runningBB = null
 
@@ -371,9 +365,9 @@ object CFGFactory {
                     ra => bbs(ra),
                     Set.newBuilder[CFGNode]
                 )
-                val subroutineBB = bbs(subroutinePC)
+                val subroutineBB                    = bbs(subroutinePC)
                 val subroutineBBs: List[BasicBlock] = subroutineBB.subroutineFrontier(code, bbs)
-                val retBBs = subroutineBBs.toSet[CFGNode]
+                val retBBs                          = subroutineBBs.toSet[CFGNode]
                 retBBs.foreach(_.setSuccessors(returnBBs))
                 returnBBs.foreach(_.addPredecessors(retBBs))
             }
@@ -388,7 +382,9 @@ object CFGFactory {
 
         CFG(
             code,
-            normalReturnNode, abnormalReturnNode, effectiveExceptionHandlers.toList,
+            normalReturnNode,
+            abnormalReturnNode,
+            effectiveExceptionHandlers.toList,
             bbs
         )
     }

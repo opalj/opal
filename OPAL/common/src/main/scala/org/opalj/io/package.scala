@@ -1,15 +1,14 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 
+import java.awt.Desktop
+import java.io.Closeable
+import java.io.File
+import java.io.FileOutputStream
+import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
-import java.io.File
-import java.io.IOException
-import java.io.Closeable
-import java.awt.Desktop
-import java.io.FileOutputStream
 import java.util.zip.GZIPOutputStream
-
 import scala.io.Source
 import scala.xml.Node
 
@@ -32,12 +31,10 @@ package object io {
      * @param fileName The filename or a suffix/prefix thereof which should be sanitized.
      *
      * @return The sanitized file name.
-     *
      */
-    def sanitizeFileName(fileName: String): String = {
+    def sanitizeFileName(fileName: String): String =
         // take(128+64) ... to have some space for something else...
         fileName.filterNot(_ == ' ').replaceAll("[\\/:*?\"<>|\\[\\]=!@,]", "_").take(128 + 64)
-    }
 
     /**
      * Writes the XML document to a temporary file and opens the file in the
@@ -55,8 +52,7 @@ package object io {
     def writeAndOpen(
         node:           Node,
         filenamePrefix: String,
-        filenameSuffix: String
-    ): File = {
+        filenameSuffix: String): File = {
         val data = node.toString
         writeAndOpen(data, filenamePrefix, filenameSuffix)
     }
@@ -90,35 +86,28 @@ package object io {
     def writeAndOpen(
         data:           String,
         filenamePrefix: String,
-        filenameSuffix: String
-    ): File = {
+        filenameSuffix: String): File = {
         val file = write(data, filenamePrefix, filenameSuffix).toFile
         open(file)
         file
     }
 
-    def open(file: File): Unit = {
+    def open(file: File): Unit =
         try {
             Desktop.getDesktop.open(file)
         } catch {
             case t: Throwable => throw OpeningFileFailedException(file, t)
         }
-    }
 
     def write(
         data:           String,
         filenamePrefix: String,
-        filenameSuffix: String
-    ): Path = {
-
-        write(Seq(data), filenamePrefix, filenameSuffix)
-    }
+        filenameSuffix: String): Path = write(Seq(data), filenamePrefix, filenameSuffix)
 
     def write(
         data:           IterableOnce[String],
         filenamePrefix: String,
-        filenameSuffix: String
-    ): Path = {
+        filenameSuffix: String): Path = {
 
         val path = Files.createTempFile(
             sanitizeFileName(filenamePrefix),
@@ -131,17 +120,12 @@ package object io {
     def writeGZip(
         data:           String,
         filenamePrefix: String,
-        filenameSuffix: String
-    ): Path = {
-
-        writeGZip(Seq(data), filenamePrefix, filenameSuffix)
-    }
+        filenameSuffix: String): Path = writeGZip(Seq(data), filenamePrefix, filenameSuffix)
 
     def writeGZip(
         data:           IterableOnce[String],
         filenamePrefix: String,
-        filenameSuffix: String
-    ): Path = {
+        filenameSuffix: String): Path = {
 
         val path = Files.createTempFile(
             sanitizeFileName(filenamePrefix),
@@ -165,9 +149,7 @@ package object io {
         }
     }
 
-    def writeGZip(data: Array[Byte], path: Path): Unit = {
-        writeGZip(Seq(data), path)
-    }
+    def writeGZip(data: Array[Byte], path: Path): Unit = writeGZip(Seq(data), path)
 
     def writeGZip(data: IterableOnce[Array[Byte]], path: Path): Unit = {
         val out = new GZIPOutputStream(new FileOutputStream(path.toFile))
@@ -190,7 +172,7 @@ package object io {
      * @param closable The `Closeable` resource.
      * @param r The function that processes the `resource`.
      */
-    def process[C <: Closeable, T](closable: C)(r: C => T): T = {
+    def process[C <: Closeable, T](closable: C)(r: C => T): T =
         // Implementation Note
         // Creating the closeable (I) in the try block doesn't make sense, hence
         // we don't need a by-name parameter. (If creating the closable fails,
@@ -200,7 +182,6 @@ package object io {
         } finally {
             if (closable != null) closable.close()
         }
-    }
 
     /**
      * This function takes a `Source` object and a function `r` that will
@@ -211,12 +192,11 @@ package object io {
      *
      * @note If `source` is `null`, `null` is passed to `r`.
      */
-    def processSource[C <: Source, T](source: C)(r: C => T): T = {
+    def processSource[C <: Source, T](source: C)(r: C => T): T =
         try {
             r(source)
         } finally {
             if (source != null) source.close()
         }
-    }
 
 }

@@ -14,28 +14,25 @@ import scala.collection.immutable
  */
 class DefaultMutableNode[I](
         theIdentifier:       I,
-        identifierToString:  I => String                   = (_: Any).toString,
+        identifierToString:  I => String = (_: Any).toString,
         theVisualProperties: immutable.Map[String, String] = immutable.Map.empty,
-        theChildren:         List[DefaultMutableNode[I]]   = List.empty
-) extends MutableNodeLike[I, DefaultMutableNode[I]](
-    theIdentifier,
-    identifierToString,
-    theVisualProperties,
-    theChildren
-) with MutableNode[I, DefaultMutableNode[I]] {
+        theChildren: List[DefaultMutableNode[I]] = List.empty) extends MutableNodeLike[I, DefaultMutableNode[I]](
+        theIdentifier,
+        identifierToString,
+        theVisualProperties,
+        theChildren
+    ) with MutableNode[I, DefaultMutableNode[I]] {
 
     def this(
-        identifier:         I,
-        identifierToString: I => String,
-        fillcolor:          Option[String]
-    ) =
-        this(
-            identifier,
-            identifierToString,
-            theVisualProperties =
-                fillcolor.map(c => DefaultMutableMode.BaseVirtualPropertiers + ("fillcolor" -> c)).
-                    getOrElse(DefaultMutableMode.BaseVirtualPropertiers)
-        )
+            identifier: I,
+            identifierToString: I => String,
+            fillcolor: Option[String]) = this(
+        identifier,
+        identifierToString,
+        theVisualProperties =
+            fillcolor.map(c => DefaultMutableMode.BaseVirtualPropertiers + ("fillcolor" -> c)).getOrElse(
+                DefaultMutableMode.BaseVirtualPropertiers)
+    )
 
 }
 object DefaultMutableMode {

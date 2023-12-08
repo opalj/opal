@@ -30,9 +30,8 @@ case class NEW(objectType: ObjectType) extends ConstantLengthInstruction with No
 
     final override def stackSlotsChange: Int = 1
 
-    final override def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
+    final override def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean =
         this == code.instructions(otherPC)
-    }
 
     final override def readsLocal: Boolean = false
 
@@ -45,20 +44,15 @@ case class NEW(objectType: ObjectType) extends ConstantLengthInstruction with No
     final override def nextInstructions(
         currentPC:             PC,
         regularSuccessorsOnly: Boolean
-    )(
-        implicit
+      )(implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
-    ): List[PC] = {
-        if (regularSuccessorsOnly)
-            List(indexOfNextInstruction(currentPC))
-        else
-            Instruction.nextInstructionOrExceptionHandler(this, currentPC, OutOfMemoryError)
-    }
+        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy): List[PC] =
+        if (regularSuccessorsOnly) List(indexOfNextInstruction(currentPC))
+        else Instruction.nextInstructionOrExceptionHandler(this, currentPC, OutOfMemoryError)
 
     final override def expressionResult: Stack.type = Stack
 
-    override def toString: String = "NEW "+objectType.toJava
+    override def toString: String = "NEW " + objectType.toJava
 
     final override def toString(currentPC: Int): String = toString()
 }

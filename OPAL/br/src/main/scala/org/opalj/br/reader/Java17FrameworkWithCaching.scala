@@ -11,5 +11,4 @@ package reader
  * @author Julius Naeumann
  */
 class Java17FrameworkWithCaching(
-        cache: BytecodeInstructionsCache
-) extends Java16FrameworkWithCaching(cache) with Java17LibraryFramework
+        cache: BytecodeInstructionsCache) extends Java16FrameworkWithCaching(cache) with Java17LibraryFramework

@@ -6,12 +6,12 @@ package analyses
 package cg
 package reflection
 
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.PropertyStore
+import org.opalj.br.FieldTypes
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.FieldTypes
 import org.opalj.br.fpcf.properties.Context
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.PropertyStore
 
 object MatcherUtil {
 
@@ -25,11 +25,9 @@ object MatcherUtil {
         v:       Option[A],
         pc:      Int,
         factory: A => MethodMatcher
-    )(
-        implicit
+      )(implicit
         incompleteCallSites: IncompleteCallSites,
-        highSoundness:       Boolean
-    ): MethodMatcher = {
+        highSoundness:       Boolean): MethodMatcher =
         if (v.isEmpty) {
             if (highSoundness) {
                 AllMethodsMatcher
@@ -40,7 +38,6 @@ object MatcherUtil {
         } else {
             factory(v.get)
         }
-    }
 
     /**
      * Given an optional value of type `A` and a `factory` method for a [[MethodMatcher]],
@@ -49,14 +46,12 @@ object MatcherUtil {
      */
     private[reflection] def retrieveSuitableNonEssentialMatcher[A](
         v: Option[A],
-        f: A => MethodMatcher
-    ): MethodMatcher = {
+        f: A => MethodMatcher): MethodMatcher =
         if (v.isEmpty) {
             AllMethodsMatcher
         } else {
             f(v.get)
         }
-    }
 
     /**
      * Given the expression for a varargs array of types (i.e., Class<?> objects), creates a
@@ -66,11 +61,9 @@ object MatcherUtil {
         varArgs: Expr[V],
         pc:      Int,
         stmts:   Array[Stmt[V]]
-    )(
-        implicit
+      )(implicit
         incompleteCallSites: IncompleteCallSites,
-        highSoundness:       Boolean
-    ): MethodMatcher = {
+        highSoundness:       Boolean): MethodMatcher = {
         val paramTypesO = VarargsUtil.getTypesFromVararg(varArgs, stmts)
         retrieveSuitableMatcher[FieldTypes](
             paramTypesO,
@@ -92,14 +85,12 @@ object MatcherUtil {
         pc:       Int,
         stmts:    Array[Stmt[V]],
         failure:  () => Unit
-    )(
-        implicit
+      )(implicit
         typeIterator:        TypeIterator,
         state:               TypeIteratorState,
         ps:                  PropertyStore,
         incompleteCallSites: IncompleteCallSites,
-        highSoundness:       Boolean
-    ): MethodMatcher = {
+        highSoundness:       Boolean): MethodMatcher = {
         val names = StringUtil.getPossibleStrings(expr, context, depender, stmts, failure)
         retrieveSuitableMatcher[Set[String]](
             Some(names),
@@ -126,18 +117,21 @@ object MatcherUtil {
         project:                   SomeProject,
         failure:                   () => Unit,
         onlyMethodsExactlyInClass: Boolean,
-        onlyObjectTypes:           Boolean        = false,
-        considerSubclasses:        Boolean        = false
-    )(
-        implicit
+        onlyObjectTypes:           Boolean = false,
+        considerSubclasses:        Boolean = false
+      )(implicit
         typeIterator:        TypeIterator,
         state:               TypeIteratorState,
         ps:                  PropertyStore,
         incompleteCallSites: IncompleteCallSites,
-        highSoundness:       Boolean
-    ): MethodMatcher = {
+        highSoundness:       Boolean): MethodMatcher = {
         val typesOpt = Some(TypesUtil.getPossibleClasses(
-            context, ref, depender, stmts, failure, onlyObjectTypes
+            context,
+            ref,
+            depender,
+            stmts,
+            failure,
+            onlyObjectTypes
         ).flatMap { tpe =>
             if (considerSubclasses) project.classHierarchy.allSubtypes(tpe.asObjectType, true)
             else Set(if (tpe.isObjectType) tpe.asObjectType else ObjectType.Object)

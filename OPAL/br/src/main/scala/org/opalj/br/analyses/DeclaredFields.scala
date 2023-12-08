@@ -3,64 +3,56 @@ package org.opalj
 package br
 package analyses
 
-import org.opalj.br.instructions.FieldAccess
-import org.opalj.log.OPALLogger.info
-
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantReadWriteLock
 
+import org.opalj.br.instructions.FieldAccess
+import org.opalj.log.OPALLogger.info
+
 class DeclaredFields(
-        private[this] val project:                SomeProject,
-        private[this] var id2declaredField:       Array[DeclaredField],
-        private[this] val declaredInformation2id: ConcurrentHashMap[ObjectType, ConcurrentHashMap[String, ConcurrentHashMap[FieldType, DeclaredField]]],
-        private[this] val nextId:                 AtomicInteger
-) {
+        private[this] val project:          SomeProject,
+        private[this] var id2declaredField: Array[DeclaredField],
+        private[this] val declaredInformation2id: ConcurrentHashMap[
+            ObjectType,
+            ConcurrentHashMap[String, ConcurrentHashMap[FieldType, DeclaredField]]],
+        private[this] val nextId: AtomicInteger) {
     private var extensionSize = 1000
-    private val rwLock = new ReentrantReadWriteLock()
+    private val rwLock        = new ReentrantReadWriteLock()
 
-    def apply(id: Int): DeclaredField = {
-        id2declaredField(id)
-    }
+    def apply(id: Int): DeclaredField = id2declaredField(id)
 
-    def apply(field: Field): DefinedField = {
-        getDeclaredField(
-            field.declaringClassFile.thisType,
-            field.name,
-            field.fieldType,
-            id => new DefinedField(id, field)
-        ).asDefinedField
-    }
+    def apply(field: Field): DefinedField = getDeclaredField(
+        field.declaringClassFile.thisType,
+        field.name,
+        field.fieldType,
+        id => new DefinedField(id, field)
+    ).asDefinedField
 
-    def apply(access: FieldAccess): DeclaredField = {
-        project.resolveFieldReference(access) match {
-            case Some(field) => apply(field)
-            case None        => apply(access.declaringClass, access.name, access.fieldType)
-        }
+    def apply(access: FieldAccess): DeclaredField = project.resolveFieldReference(access) match {
+        case Some(field) => apply(field)
+        case None        => apply(access.declaringClass, access.name, access.fieldType)
     }
 
     def apply(
         declaringClassType: ObjectType,
         name:               String,
-        fieldType:          FieldType
-    ): DeclaredField = {
+        fieldType:          FieldType): DeclaredField =
         project.resolveFieldReference(declaringClassType, name, fieldType) match {
             case Some(field) => apply(field)
             case None => getDeclaredField(
-                declaringClassType,
-                name,
-                fieldType,
-                id => new VirtualDeclaredField(declaringClassType, name, fieldType, id)
-            )
+                    declaringClassType,
+                    name,
+                    fieldType,
+                    id => new VirtualDeclaredField(declaringClassType, name, fieldType, id)
+                )
         }
-    }
 
     private def getDeclaredField(
         declaringClassType:   ObjectType,
         name:                 String,
         fieldType:            FieldType,
-        declaredFieldFactory: Int => DeclaredField
-    ): DeclaredField = {
+        declaredFieldFactory: Int => DeclaredField): DeclaredField = {
         val readLock = rwLock.readLock()
         readLock.lock()
         try {

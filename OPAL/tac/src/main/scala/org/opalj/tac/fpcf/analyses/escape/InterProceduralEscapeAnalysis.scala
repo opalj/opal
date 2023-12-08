@@ -5,6 +5,32 @@ package fpcf
 package analyses
 package escape
 
+import org.opalj.br.DefinedMethod
+import org.opalj.br.Method
+import org.opalj.br.VirtualDeclaredMethod
+import org.opalj.br.analyses.DeclaredMethods
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.VirtualFormalParameter
+import org.opalj.br.analyses.VirtualFormalParameters
+import org.opalj.br.analyses.VirtualFormalParametersKey
+import org.opalj.br.analyses.cg.IsOverridableMethodKey
+import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
+import org.opalj.br.fpcf.BasicFPCFLazyAnalysisScheduler
+import org.opalj.br.fpcf.ContextProviderKey
+import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.FPCFAnalysisScheduler
+import org.opalj.br.fpcf.analyses.ContextProvider
+import org.opalj.br.fpcf.properties._
+import org.opalj.br.fpcf.properties.Context
+import org.opalj.br.fpcf.properties.EscapeProperty
+import org.opalj.br.fpcf.properties.GlobalEscape
+import org.opalj.br.fpcf.properties.NoEscape
+import org.opalj.br.fpcf.properties.SimpleContext
+import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.cg.NoCallers
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.InterimLUBP
@@ -14,35 +40,9 @@ import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEOptionP
-import org.opalj.value.ValueInformation
-import org.opalj.br.fpcf.properties._
-import org.opalj.br.DefinedMethod
-import org.opalj.br.Method
-import org.opalj.br.VirtualDeclaredMethod
-import org.opalj.br.analyses.DeclaredMethods
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.VirtualFormalParameter
-import org.opalj.br.analyses.VirtualFormalParameters
-import org.opalj.br.analyses.VirtualFormalParametersKey
-import org.opalj.br.analyses.cg.IsOverridableMethodKey
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.fpcf.properties.EscapeProperty
-import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.FPCFAnalysisScheduler
-import org.opalj.br.fpcf.properties.GlobalEscape
-import org.opalj.br.fpcf.properties.NoEscape
-import org.opalj.br.fpcf.BasicFPCFLazyAnalysisScheduler
-import org.opalj.br.fpcf.analyses.ContextProvider
-import org.opalj.br.fpcf.properties.Context
-import org.opalj.br.fpcf.properties.SimpleContext
-import org.opalj.br.fpcf.ContextProviderKey
-import org.opalj.br.fpcf.properties.cg.Callees
-import org.opalj.br.fpcf.properties.cg.Callers
-import org.opalj.br.fpcf.properties.cg.NoCallers
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.properties.TACAI
+import org.opalj.value.ValueInformation
 
 class InterProceduralEscapeAnalysisContext(
         val entity:                  (Context, Entity),
@@ -51,12 +51,11 @@ class InterProceduralEscapeAnalysisContext(
         val virtualFormalParameters: VirtualFormalParameters,
         val project:                 SomeProject,
         val propertyStore:           PropertyStore,
-        val isMethodOverridable:     Method => Answer
-) extends AbstractEscapeAnalysisContext
-    with PropertyStoreContainer
-    with IsMethodOverridableContainer
-    with VirtualFormalParametersContainer
-    with DeclaredMethodsContainer
+        val isMethodOverridable: Method => Answer) extends AbstractEscapeAnalysisContext
+        with PropertyStoreContainer
+        with IsMethodOverridableContainer
+        with VirtualFormalParametersContainer
+        with DeclaredMethodsContainer
 
 class InterProceduralEscapeAnalysisState
     extends AbstractEscapeAnalysisState with ReturnValueUseSites
@@ -67,79 +66,69 @@ class InterProceduralEscapeAnalysisState
  * @author Florian Kübler
  */
 class InterProceduralEscapeAnalysis private[analyses] (
-        final val project: SomeProject
-) extends DefaultEscapeAnalysis
-    with AbstractInterProceduralEscapeAnalysis
-    with ConstructorSensitiveEscapeAnalysis
-    with ConfigurationBasedConstructorEscapeAnalysis
-    with SimpleFieldAwareEscapeAnalysis
-    with ExceptionAwareEscapeAnalysis {
+        final val project: SomeProject) extends DefaultEscapeAnalysis
+        with AbstractInterProceduralEscapeAnalysis
+        with ConstructorSensitiveEscapeAnalysis
+        with ConfigurationBasedConstructorEscapeAnalysis
+        with SimpleFieldAwareEscapeAnalysis
+        with ExceptionAwareEscapeAnalysis {
 
     override type AnalysisContext = InterProceduralEscapeAnalysisContext
-    type AnalysisState = InterProceduralEscapeAnalysisState
+    type AnalysisState            = InterProceduralEscapeAnalysisState
 
     private[this] val isMethodOverridable: Method => Answer = project.get(IsOverridableMethodKey)
-    private[this] val simpleContexts: SimpleContexts = project.get(SimpleContextsKey)
+    private[this] val simpleContexts: SimpleContexts        = project.get(SimpleContextsKey)
 
     override def determineEscapeOfFP(
-        fp: (Context, VirtualFormalParameter)
-    ): ProperPropertyComputationResult = {
-        fp._2 match {
-            // if the underlying method is inherited, we avoid recomputation and query the
-            // result of the method for its defining class.
-            case VirtualFormalParameter(dm: DefinedMethod, i) if fp._1.isInstanceOf[SimpleContext] && dm.declaringClassType != dm.definedMethod.classFile.thisType =>
-                def handleEscapeState(eOptionP: SomeEOptionP): ProperPropertyComputationResult = {
-                    eOptionP match {
-                        case FinalP(p) =>
-                            Result(fp, p)
+        fp: (Context, VirtualFormalParameter)): ProperPropertyComputationResult = fp._2 match {
+        // if the underlying method is inherited, we avoid recomputation and query the
+        // result of the method for its defining class.
+        case VirtualFormalParameter(dm: DefinedMethod, i)
+            if fp._1.isInstanceOf[SimpleContext] && dm.declaringClassType != dm.definedMethod.classFile.thisType =>
+            def handleEscapeState(eOptionP: SomeEOptionP): ProperPropertyComputationResult = eOptionP match {
+                case FinalP(p) => Result(fp, p)
 
-                        case InterimLUBP(lb, ub) =>
-                            InterimResult.create(
-                                fp,
-                                lb,
-                                ub,
-                                Set(eOptionP),
-                                handleEscapeState
-                            )
+                case InterimLUBP(lb, ub) => InterimResult.create(
+                        fp,
+                        lb,
+                        ub,
+                        Set(eOptionP),
+                        handleEscapeState
+                    )
 
-                        case _ =>
-                            InterimResult(
-                                fp,
-                                GlobalEscape,
-                                NoEscape,
-                                Set(eOptionP),
-                                handleEscapeState
-                            )
-                    }
-                }
+                case _ => InterimResult(
+                        fp,
+                        GlobalEscape,
+                        NoEscape,
+                        Set(eOptionP),
+                        handleEscapeState
+                    )
+            }
 
-                val base = declaredMethods(dm.definedMethod)
-                val parameterOfBase = virtualFormalParameters(base)(-i - 1)
+            val base            = declaredMethods(dm.definedMethod)
+            val parameterOfBase = virtualFormalParameters(base)(-i - 1)
 
-                handleEscapeState(
-                    propertyStore((simpleContexts(base), parameterOfBase), EscapeProperty.key)
-                )
+            handleEscapeState(
+                propertyStore((simpleContexts(base), parameterOfBase), EscapeProperty.key)
+            )
 
-            case VirtualFormalParameter(dm: DefinedMethod, _) if dm.definedMethod.body.isEmpty =>
-                Result(fp, AtMost(NoEscape))
+        case VirtualFormalParameter(dm: DefinedMethod, _) if dm.definedMethod.body.isEmpty =>
+            Result(fp, AtMost(NoEscape))
 
-            // parameters of base types are not considered
-            case VirtualFormalParameter(m, i) if i != -1 && m.descriptor.parameterType(-i - 2).isBaseType =>
-                Result(fp, AtMost(NoEscape))
+        // parameters of base types are not considered
+        case VirtualFormalParameter(m, i) if i != -1 && m.descriptor.parameterType(-i - 2).isBaseType =>
+            Result(fp, AtMost(NoEscape))
 
-            case VirtualFormalParameter(dm: DefinedMethod, _) =>
-                val ctx = createContext(fp, dm.definedMethod)
-                doDetermineEscape(ctx, createState)
+        case VirtualFormalParameter(dm: DefinedMethod, _) =>
+            val ctx = createContext(fp, dm.definedMethod)
+            doDetermineEscape(ctx, createState)
 
-            case VirtualFormalParameter(_: VirtualDeclaredMethod, _) =>
-                throw new IllegalArgumentException()
-        }
+        case VirtualFormalParameter(_: VirtualDeclaredMethod, _) => throw new IllegalArgumentException()
     }
 
     override def createContext(
         entity:       (Context, Entity),
-        targetMethod: Method
-    ): InterProceduralEscapeAnalysisContext = new InterProceduralEscapeAnalysisContext(
+        targetMethod: Method): InterProceduralEscapeAnalysisContext = new InterProceduralEscapeAnalysisContext(
         entity,
         targetMethod,
         declaredMethods,
@@ -149,9 +138,7 @@ class InterProceduralEscapeAnalysis private[analyses] (
         isMethodOverridable
     )
 
-    override def createState: InterProceduralEscapeAnalysisState = {
-        new InterProceduralEscapeAnalysisState()
-    }
+    override def createState: InterProceduralEscapeAnalysisState = new InterProceduralEscapeAnalysisState()
 }
 
 sealed trait InterProceduralEscapeAnalysisScheduler extends FPCFAnalysisScheduler {
@@ -170,7 +157,7 @@ sealed trait InterProceduralEscapeAnalysisScheduler extends FPCFAnalysisSchedule
 
 object EagerInterProceduralEscapeAnalysis
     extends InterProceduralEscapeAnalysisScheduler
-    with BasicFPCFEagerAnalysisScheduler {
+        with BasicFPCFEagerAnalysisScheduler {
     type V = DUVar[ValueInformation]
 
     override def requiredProjectInformation: ProjectInformationKeys =
@@ -179,10 +166,10 @@ object EagerInterProceduralEscapeAnalysis
     override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new InterProceduralEscapeAnalysis(p)
 
-        val declaredMethods = p.get(DeclaredMethodsKey)
+        val declaredMethods                           = p.get(DeclaredMethodsKey)
         implicit val contextProvider: ContextProvider = p.get(ContextProviderKey)
 
-        val methods = declaredMethods.declaredMethods
+        val methods           = declaredMethods.declaredMethods
         val callersProperties = ps(methods.to(Iterable), Callers)
         assert(callersProperties.forall(_.isFinal))
 
@@ -214,7 +201,7 @@ object EagerInterProceduralEscapeAnalysis
 
 object LazyInterProceduralEscapeAnalysis
     extends InterProceduralEscapeAnalysisScheduler
-    with BasicFPCFLazyAnalysisScheduler {
+        with BasicFPCFLazyAnalysisScheduler {
 
     /**
      * Registers the analysis as a lazy computation, that is, the method

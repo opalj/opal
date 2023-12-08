@@ -27,6 +27,6 @@ object PropertyKind {
      * The maximum number of Property Kinds that is (currently!) supported. Increasing this
      * number is necessary iff a related exception is thrown.
      */
-    private[fpcf] final val SupportedPropertyKinds /*: Int*/ = 72
+    final private[fpcf] val SupportedPropertyKinds /*: Int*/ = 72
 
 }

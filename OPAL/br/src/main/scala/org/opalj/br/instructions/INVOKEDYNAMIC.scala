@@ -13,7 +13,8 @@ import org.opalj.bytecode.BytecodeProcessingFailedException
  */
 trait INVOKEDYNAMIC extends InvocationInstruction {
 
-    /*abstract*/ def bootstrapMethod: BootstrapMethod
+    /*abstract*/
+    def bootstrapMethod: BootstrapMethod
 
     final override def opcode: Opcode = INVOKEDYNAMIC.opcode
 
@@ -23,9 +24,8 @@ trait INVOKEDYNAMIC extends InvocationInstruction {
 
     final def isInstanceMethod: Boolean = false
 
-    final override def numberOfPoppedOperands(ctg: Int => ComputationalTypeCategory): Int = {
+    final override def numberOfPoppedOperands(ctg: Int => ComputationalTypeCategory): Int =
         methodDescriptor.parametersCount
-    }
 
     final override def jvmExceptions: List[ObjectType] = INVOKEDYNAMIC.jvmExceptions
 
@@ -43,9 +43,8 @@ object INVOKEDYNAMIC extends InstructionMetaInformation {
     /**
      * General extractor for objects of type `INVOKEDYNAMIC`.
      */
-    def unapply(instruction: INVOKEDYNAMIC): Some[(BootstrapMethod, String, MethodDescriptor)] = {
+    def unapply(instruction: INVOKEDYNAMIC): Some[(BootstrapMethod, String, MethodDescriptor)] =
         Some((instruction.bootstrapMethod, instruction.name, instruction.methodDescriptor))
-    }
 }
 
 /**
@@ -86,13 +85,10 @@ case object INCOMPLETE_INVOKEDYNAMIC extends INVOKEDYNAMIC {
  * @author Arne Lottmann
  */
 case class DEFAULT_INVOKEDYNAMIC(
-        bootstrapMethod:  BootstrapMethod,
-        name:             String,
-        methodDescriptor: MethodDescriptor
-) extends INVOKEDYNAMIC {
+        bootstrapMethod: BootstrapMethod,
+        name:            String,
+        methodDescriptor: MethodDescriptor) extends INVOKEDYNAMIC {
 
-    override def toString: String = {
-        s"INVOKEDYNAMIC($bootstrapMethod, target=${methodDescriptor.toJava(name)})"
-    }
+    override def toString: String = s"INVOKEDYNAMIC($bootstrapMethod, target=${methodDescriptor.toJava(name)})"
 
 }

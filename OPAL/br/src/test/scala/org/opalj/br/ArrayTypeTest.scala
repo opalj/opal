@@ -13,13 +13,13 @@ import org.scalatest.funsuite.AnyFunSuite
 class ArrayTypeTest extends AnyFunSuite {
 
     test("ArrayType (Array of References) Field Descriptor") {
-        val fieldType = FieldType("[Ljava/lang/Object;")
+        val fieldType                = FieldType("[Ljava/lang/Object;")
         val ArrayType(componentType) = fieldType
         assert(componentType === FieldType("Ljava/lang/Object;"))
     }
 
     test("ArrayType (Array of Primitives) Field Descriptor") {
-        val fieldType = FieldType("[J")
+        val fieldType                = FieldType("[J")
         val ArrayType(componentType) = fieldType
         assert(componentType === LongType)
     }
@@ -32,7 +32,7 @@ class ArrayTypeTest extends AnyFunSuite {
     }
 
     test("toJavaClass") {
-        val at1 = FieldType("[Ljava/lang/Object;")
+        val at1      = FieldType("[Ljava/lang/Object;")
         val at1Class = at1.toJavaClass
         assert(at1Class == classOf[Array[Object]])
 
@@ -44,8 +44,8 @@ class ArrayTypeTest extends AnyFunSuite {
     }
 
     test("Equality") {
-        val at1 = FieldType("[Ljava/lang/Object;")
-        val at2 = FieldType("[Ljava/lang/Object;")
+        val at1            = FieldType("[Ljava/lang/Object;")
+        val at2            = FieldType("[Ljava/lang/Object;")
         val at3: ArrayType = FieldType("[[Ljava/lang/Object;").asInstanceOf[ArrayType]
 
         assert(at1 == at2)
@@ -67,9 +67,8 @@ class ArrayTypeTest extends AnyFunSuite {
         val at1: FieldType = FieldType("[[[Ljava/lang/Object;")
 
         at1 match {
-            case ArrayType(ArrayType(ArrayType(ObjectType(className)))) =>
-                assert(className === "java/lang/Object")
-            case _type => throw new MatchError(_type)
+            case ArrayType(ArrayType(ArrayType(ObjectType(className)))) => assert(className === "java/lang/Object")
+            case _type                                                  => throw new MatchError(_type)
         }
     }
 }

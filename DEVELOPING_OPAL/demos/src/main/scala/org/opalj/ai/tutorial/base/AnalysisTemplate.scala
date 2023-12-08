@@ -7,8 +7,8 @@ package base
 import java.net.URL
 
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.ProjectAnalysisApplication
 
 /**
  * @author Michael Eichberg
@@ -18,10 +18,6 @@ object AnalysisTemplate extends ProjectAnalysisApplication {
     def doAnalyze(
         theProject:    Project[URL],
         parameters:    Seq[String],
-        isInterrupted: () => Boolean
-    ): BasicReport = {
-        BasicReport(theProject.statistics.mkString("\n"))
-    }
+        isInterrupted: () => Boolean): BasicReport = BasicReport(theProject.statistics.mkString("\n"))
 
 }
-

@@ -3,11 +3,11 @@ package org.opalj
 package br
 package fpcf
 
+import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.ComputationType
 import org.opalj.fpcf.EagerComputation
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
-import org.opalj.br.analyses.SomeProject
 
 /**
  * Factory for FPCF analyses which should be directly started/scheduled.
@@ -20,17 +20,14 @@ trait FPCFEagerAnalysisScheduler extends FPCFAnalysisScheduler {
 
     final override def derivesLazily: Option[PropertyBounds] = None
 
-    final override def schedule(ps: PropertyStore, i: InitializationData): FPCFAnalysis = {
+    final override def schedule(ps: PropertyStore, i: InitializationData): FPCFAnalysis =
         start(ps.context(classOf[SomeProject]), ps, i)
-    }
 
     /**
      * Starts the analysis for the given `project`. This method is typically implicitly
      * called by the [[FPCFAnalysesManager]].
      */
-    def start(p: SomeProject, i: InitializationData): FPCFAnalysis = {
-        start(p, p.get(PropertyStoreKey), i)
-    }
+    def start(p: SomeProject, i: InitializationData): FPCFAnalysis = start(p, p.get(PropertyStoreKey), i)
 
     /**
      * Called when a schedule is executed and when this analysis shall register itself
@@ -51,7 +48,7 @@ trait FPCFEagerAnalysisScheduler extends FPCFAnalysisScheduler {
 // TODO Rename => Simple...
 trait BasicFPCFEagerAnalysisScheduler extends FPCFEagerAnalysisScheduler {
     override type InitializationData = Null
-    override def init(p: SomeProject, ps: PropertyStore): Null = null
+    override def init(p:           SomeProject, ps: PropertyStore): Null = null
     override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
 
     override def afterPhaseScheduling(ps: PropertyStore, analysis: FPCFAnalysis): Unit = {}
@@ -59,6 +56,5 @@ trait BasicFPCFEagerAnalysisScheduler extends FPCFEagerAnalysisScheduler {
     override def afterPhaseCompletion(
         p:        SomeProject,
         ps:       PropertyStore,
-        analysis: FPCFAnalysis
-    ): Unit = {}
+        analysis: FPCFAnalysis): Unit = {}
 }

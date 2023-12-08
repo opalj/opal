@@ -13,7 +13,7 @@ import org.opalj.bytecode.BytecodeProcessingFailedException
  */
 sealed trait LDC[@specialized(Int, Float) T]
     extends LoadConstantInstruction[T]
-    with InstructionMetaInformation {
+        with InstructionMetaInformation {
 
     final def opcode: Opcode = LDC.opcode
 
@@ -25,7 +25,7 @@ sealed trait LDC[@specialized(Int, Float) T]
         val other = code.instructions(otherPC)
         (this eq other) || (
             this.opcode == other.opcode &&
-            this.value == other.asInstanceOf[LDC[_]].value
+                this.value == other.asInstanceOf[LDC[_]].value
         )
     }
 }
@@ -54,20 +54,15 @@ final case class LoadFloat(value: Float) extends PrimitiveLDC[Float] {
         this.similar(other)
     }
 
-    override def similar(other: Instruction): Boolean = {
-        LDC.opcode == other.opcode && other.isInstanceOf[LoadFloat] && {
-            val otherLoadFloat = other.asInstanceOf[LoadFloat]
-            (this.value.isNaN && otherLoadFloat.value.isNaN) ||
-                (this.value == otherLoadFloat.value)
-        }
+    override def similar(other: Instruction): Boolean = LDC.opcode == other.opcode && other.isInstanceOf[LoadFloat] && {
+        val otherLoadFloat = other.asInstanceOf[LoadFloat]
+        (this.value.isNaN && otherLoadFloat.value.isNaN) ||
+        (this.value == otherLoadFloat.value)
     }
 
-    override def equals(other: Any): Boolean = {
-        other match {
-            case LoadFloat(thatValue) =>
-                thatValue == this.value || (thatValue.isNaN && this.value.isNaN)
-            case _ => false
-        }
+    override def equals(other: Any): Boolean = other match {
+        case LoadFloat(thatValue) => thatValue == this.value || (thatValue.isNaN && this.value.isNaN)
+        case _                    => false
     }
 
     // HashCode of "value.NaN" is stable and 0
@@ -103,7 +98,7 @@ final case class LoadString(value: String) extends PrimitiveLDC[String] {
 
     final def computationalType = ComputationalTypeReference
 
-    override def toString: String = "LoadString(\""+value+"\")"
+    override def toString: String = "LoadString(\"" + value + "\")"
 
 }
 
@@ -114,8 +109,7 @@ final case class LoadString(value: String) extends PrimitiveLDC[String] {
 final case class LoadDynamic(
         bootstrapMethod: BootstrapMethod,
         name:            String,
-        descriptor:      FieldType
-) extends LDC[Nothing] {
+        descriptor: FieldType) extends LDC[Nothing] {
     def value: Nothing = throw new UnsupportedOperationException("dynamic constant unknown")
 
     def computationalType: ComputationalType = descriptor.computationalType
@@ -147,19 +141,16 @@ case object INCOMPLETE_LDC extends LDC[Any] {
  */
 object LDC {
 
-    def apply(constantValue: ConstantValue[_]): LDC[_] = {
-        constantValue.value match {
-            case i: Int               => LoadInt(i)
-            case f: Float             => LoadFloat(f)
-            case r: ReferenceType     => LoadClass(r)
-            case s: String            => LoadString(s)
-            case mh: MethodHandle     => LoadMethodHandle(mh)
-            case md: MethodDescriptor => LoadMethodType(md)
-            case _ =>
-                throw BytecodeProcessingFailedException(
-                    "unsupported constant value: "+constantValue
-                )
-        }
+    def apply(constantValue: ConstantValue[_]): LDC[_] = constantValue.value match {
+        case i: Int               => LoadInt(i)
+        case f: Float             => LoadFloat(f)
+        case r: ReferenceType     => LoadClass(r)
+        case s: String            => LoadString(s)
+        case mh: MethodHandle     => LoadMethodHandle(mh)
+        case md: MethodDescriptor => LoadMethodType(md)
+        case _ => throw BytecodeProcessingFailedException(
+                "unsupported constant value: " + constantValue
+            )
     }
 
     def unapply[T](ldc: LDC[T]): Option[T] = Some(ldc.value)

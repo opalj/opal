@@ -3,11 +3,11 @@ package org.opalj
 package br
 package reader
 
+import org.opalj.br.instructions._
+import org.opalj.bytecode.BytecodeProcessingFailedException
+import org.opalj.collection.immutable.IntIntPair
 import org.opalj.control.fillArraySeq
 import org.opalj.control.fillIntArray
-import org.opalj.bytecode.BytecodeProcessingFailedException
-import org.opalj.br.instructions._
-import org.opalj.collection.immutable.IntIntPair
 
 /**
  * Defines a method to parse an array of bytes (containing Java bytecode instructions) and
@@ -33,14 +33,13 @@ trait CachedBytecodeReaderAndBinding extends InstructionsDeserializer {
         cp:                  Constant_Pool,
         ap_name_index:       Constant_Pool_Index,
         ap_descriptor_index: Constant_Pool_Index,
-        source:              Array[Byte]
-    ): Instructions = {
+        source:              Array[Byte]): Instructions = {
         import java.io.DataInputStream
         import java.io.ByteArrayInputStream
 
-        val bas = new ByteArrayInputStream(source)
-        val in = new DataInputStream(bas)
-        val codeLength = source.size
+        val bas          = new ByteArrayInputStream(source)
+        val in           = new DataInputStream(bas)
+        val codeLength   = source.size
         val instructions = new Array[Instruction](codeLength)
 
         var wide: Boolean = false
@@ -190,11 +189,11 @@ trait CachedBytecodeReaderAndBinding extends InstructionsDeserializer {
                 case 132 =>
                     if (wide) {
                         wide = false
-                        val lvIndex = in.readUnsignedShort
+                        val lvIndex    = in.readUnsignedShort
                         val constValue = in.readShort.toInt
                         IINC(lvIndex, constValue)
                     } else {
-                        val lvIndex = in.readUnsignedByte
+                        val lvIndex    = in.readUnsignedByte
                         val constValue = in.readByte.toInt
                         IINC(lvIndex, constValue)
                     }
@@ -205,8 +204,7 @@ trait CachedBytecodeReaderAndBinding extends InstructionsDeserializer {
                 case 29  => ILOAD_3
                 case 104 => IMUL
                 case 116 => INEG
-                case 193 =>
-                    cache.INSTANCEOF(cp(in.readUnsignedShort).asConstantValue(cp).toReferenceType)
+                case 193 => cache.INSTANCEOF(cp(in.readUnsignedShort).asConstantValue(cp).toReferenceType)
                 case 186 => // INVOKEDYNAMIC
                     val cpEntry = cp(in.readUnsignedShort).asInvokeDynamic
                     in.readByte // ignored; fixed value
@@ -222,10 +220,10 @@ trait CachedBytecodeReaderAndBinding extends InstructionsDeserializer {
                             index
                         )
                     }
-                    //INVOKEDYNAMIC(cpe.bootstrapMethodAttributeIndex, cpe.methodName, cpe.methodDescriptor)
+                    // INVOKEDYNAMIC(cpe.bootstrapMethodAttributeIndex, cpe.methodName, cpe.methodDescriptor)
                     INCOMPLETE_INVOKEDYNAMIC
                 case 185 =>
-                    val methodRef = cp(in.readUnsignedShort).asMethodref(cp)
+                    val methodRef                                   = cp(in.readUnsignedShort).asMethodref(cp)
                     val (declaringClass, _, name, methodDescriptor) = methodRef
                     in.readByte // ignored; fixed value
                     in.readByte // ignored; fixed value
@@ -235,21 +233,25 @@ trait CachedBytecodeReaderAndBinding extends InstructionsDeserializer {
                         methodDescriptor
                     )
                 case 183 =>
-                    val methodRef = cp(in.readUnsignedShort).asMethodref(cp)
+                    val methodRef                                             = cp(in.readUnsignedShort).asMethodref(cp)
                     val (declaringClass, isInterface, name, methodDescriptor) = methodRef
                     INVOKESPECIAL(
-                        declaringClass.asObjectType, isInterface,
-                        cache.MethodName(name), methodDescriptor
+                        declaringClass.asObjectType,
+                        isInterface,
+                        cache.MethodName(name),
+                        methodDescriptor
                     )
                 case 184 =>
-                    val methodRef = cp(in.readUnsignedShort).asMethodref(cp)
+                    val methodRef                                             = cp(in.readUnsignedShort).asMethodref(cp)
                     val (declaringClass, isInterface, name, methodDescriptor) = methodRef
                     INVOKESTATIC(
-                        declaringClass.asObjectType, isInterface,
-                        cache.MethodName(name), methodDescriptor
+                        declaringClass.asObjectType,
+                        isInterface,
+                        cache.MethodName(name),
+                        methodDescriptor
                     )
                 case 182 =>
-                    val methodRef = cp(in.readUnsignedShort).asMethodref(cp)
+                    val methodRef                                   = cp(in.readUnsignedShort).asMethodref(cp)
                     val (declaringClass, _, name, methodDescriptor) = methodRef
                     INVOKEVIRTUAL(declaringClass, cache.MethodName(name), methodDescriptor)
                 case 128 => IOR
@@ -342,8 +344,8 @@ trait CachedBytecodeReaderAndBinding extends InstructionsDeserializer {
                 case 171 =>
                     in.skip((3 - (index % 4)).toLong) // skip padding bytes
                     val defaultOffset = in.readInt
-                    val npairsCount = in.readInt
-                    val npairs = fillArraySeq(npairsCount) { IntIntPair(in.readInt, in.readInt) }
+                    val npairsCount   = in.readInt
+                    val npairs        = fillArraySeq(npairsCount) { IntIntPair(in.readInt, in.readInt) }
                     LOOKUPSWITCH(defaultOffset, npairs)
                 case 129 => LOR
                 case 113 => LREM
@@ -360,8 +362,7 @@ trait CachedBytecodeReaderAndBinding extends InstructionsDeserializer {
                 case 131 => LXOR
                 case 194 => MONITORENTER
                 case 195 => MONITOREXIT
-                case 197 =>
-                    MULTIANEWARRAY(
+                case 197 => MULTIANEWARRAY(
                         // componentType
                         cp(in.readUnsignedShort).asConstantValue(cp).toReferenceType.asArrayType,
                         //  dimensions
@@ -380,8 +381,7 @@ trait CachedBytecodeReaderAndBinding extends InstructionsDeserializer {
                     val (declaringClass, name, fieldType): (ObjectType, String, FieldType) =
                         cp(in.readUnsignedShort).asFieldref(cp)
                     PUTSTATIC(declaringClass, cache.FieldName(name), fieldType)
-                case 169 =>
-                    cache.RET(
+                case 169 => cache.RET(
                         if (wide) {
                             wide = false
                             in.readUnsignedShort
@@ -397,16 +397,15 @@ trait CachedBytecodeReaderAndBinding extends InstructionsDeserializer {
                 case 170 =>
                     in.skip((3 - (index % 4)).toLong) // skip padding bytes
                     val defaultOffset = in.readInt
-                    val low = in.readInt
-                    val high = in.readInt
-                    val jumpOffsets = fillIntArray(high - low + 1) { in.readInt }
+                    val low           = in.readInt
+                    val high          = in.readInt
+                    val jumpOffsets   = fillIntArray(high - low + 1) { in.readInt }
                     TABLESWITCH(defaultOffset, low, high, jumpOffsets)
                 case 196 =>
                     wide = true
                     WIDE
 
-                case opcode =>
-                    throw new BytecodeProcessingFailedException("unsupported opcode: "+opcode)
+                case opcode => throw new BytecodeProcessingFailedException("unsupported opcode: " + opcode)
             }
 
         }

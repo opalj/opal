@@ -35,7 +35,7 @@ object XTASetEntitySelector extends TypeSetEntitySelector {
         case _: VirtualDeclaredField  => ExternalWorld
         case at: ArrayType            => at
         case ExternalWorld            => ExternalWorld
-        case _                        => sys.error("unexpected entity: "+e)
+        case _                        => sys.error("unexpected entity: " + e)
     }
 }
 
@@ -52,7 +52,7 @@ object MTASetEntitySelector extends TypeSetEntitySelector {
         case _: VirtualDeclaredField  => ExternalWorld
         case at: ArrayType            => at
         case ExternalWorld            => ExternalWorld
-        case _                        => sys.error("unexpected entity: "+e)
+        case _                        => sys.error("unexpected entity: " + e)
 
     }
 }
@@ -70,7 +70,7 @@ object FTASetEntitySelector extends TypeSetEntitySelector {
         case _: VirtualDeclaredField  => ExternalWorld
         case at: ArrayType            => at
         case ExternalWorld            => ExternalWorld
-        case _                        => sys.error("unexpected entity: "+e)
+        case _                        => sys.error("unexpected entity: " + e)
 
     }
 }
@@ -88,6 +88,6 @@ object CTASetEntitySelector extends TypeSetEntitySelector {
         case _: VirtualDeclaredField  => ExternalWorld
         case at: ArrayType            => at
         case ExternalWorld            => ExternalWorld
-        case _                        => sys.error("unexpected entity: "+e)
+        case _                        => sys.error("unexpected entity: " + e)
     }
 }

@@ -4,15 +4,15 @@ package ai
 
 import scala.reflect.ClassTag
 
+import org.opalj.br.ClassHierarchy
+import org.opalj.br.PC
+import org.opalj.br.ReferenceType
+import org.opalj.br.Type
 import org.opalj.value.IsIllegalValue
 import org.opalj.value.IsReferenceValue
 import org.opalj.value.IsReturnAddressValue
 import org.opalj.value.KnownTypedValue
 import org.opalj.value.ValueInformation
-import org.opalj.br.ClassHierarchy
-import org.opalj.br.PC
-import org.opalj.br.ReferenceType
-import org.opalj.br.Type
 
 /**
  * Defines the concept of a value in a `Domain`.
@@ -35,17 +35,15 @@ trait ValuesDomain { domain =>
      * Tests if `subtype` is known to be subtype of `supertype`.
      * See [[org.opalj.br.ClassHierarchy]]'s `isSubtypeOf` method for details.
      */
-    final def isASubtypeOf(subtype: ReferenceType, supertype: ReferenceType): Answer = {
+    final def isASubtypeOf(subtype: ReferenceType, supertype: ReferenceType): Answer =
         classHierarchy.isASubtypeOf(subtype, supertype)
-    }
 
     /**
      * Tests if `subtype` is known to be subtype of `supertype`.
      * See [[org.opalj.br.ClassHierarchy]]'s `isSubtypeOf` method for details.
      */
-    final def isSubtypeOf(subtype: ReferenceType, supertype: ReferenceType): Boolean = {
+    final def isSubtypeOf(subtype: ReferenceType, supertype: ReferenceType): Boolean =
         classHierarchy.isSubtypeOf(subtype, supertype)
-    }
 
     /**
      * Creates a domain value from the given value information that represents a
@@ -160,16 +158,14 @@ trait ValuesDomain { domain =>
          *          is defined if and only if the value is guaranteed to encapsulate a
          *          `ReturnAddressValue`.
          */
-        private[ai] def asReturnAddressValue: Int = {
-            throw new ClassCastException(this.getClass.getSimpleName+" is no return address value");
-        }
+        private[ai] def asReturnAddressValue: Int =
+            throw new ClassCastException(this.getClass.getSimpleName + " is no return address value");
 
         /**
          * Returns the represented reference value iff this value represents a reference value.
          */
-        def asDomainReferenceValue: DomainReferenceValue = {
-            throw new ClassCastException(this.getClass.getSimpleName+" is no reference value");
-        }
+        def asDomainReferenceValue: DomainReferenceValue =
+            throw new ClassCastException(this.getClass.getSimpleName + " is no reference value");
 
         /**
          * Joins this value and the given value.
@@ -252,8 +248,7 @@ trait ValuesDomain { domain =>
 
             if ((that eq TheIllegalValue) || (this.computationalType ne that.computationalType))
                 MetaInformationUpdateIllegalValue
-            else
-                doJoin(pc, that)
+            else doJoin(pc, that)
         }
 
         //
@@ -284,12 +279,11 @@ trait ValuesDomain { domain =>
          * @see `isMorePreciseThan`
          */
         def abstractsOver(other: DomainValue): Boolean = {
-            if (this eq other)
-                return true;
+            if (this eq other) return true;
 
             val result = this.join(PCIndependent, other)
             result.isNoUpdate ||
-                (result.isMetaInformationUpdate && (result ne MetaInformationUpdateIllegalValue))
+            (result.isMetaInformationUpdate && (result ne MetaInformationUpdateIllegalValue))
         }
 
         /**
@@ -314,8 +308,7 @@ trait ValuesDomain { domain =>
         def isMorePreciseThan(other: DomainValue): Boolean = {
             assert(this.computationalType eq other.computationalType)
 
-            if (this eq other)
-                return false;
+            if (this eq other) return false;
 
             other.join(PCIndependent, this).updateType match {
                 case StructuralUpdateType =>
@@ -368,9 +361,8 @@ trait ValuesDomain { domain =>
          *         project-wide analyses.
          */
         @throws[DomainException]("Adaptation of this value is not supported.")
-        def adapt(target: TargetDomain, valueOrigin: Int): target.DomainValue = {
+        def adapt(target: TargetDomain, valueOrigin: Int): target.DomainValue =
             throw DomainException(s"adaptation of $this to $target is unsupported");
-        }
     }
 
     type DomainTypedValue[+T <: Type] >: Null <: DomainValue
@@ -408,11 +400,9 @@ trait ValuesDomain { domain =>
     trait ReferenceValue extends TypedValue[ReferenceType] with IsReferenceValue {
         this: domain.DomainReferenceValue =>
 
-        override def isPrecise: Boolean = {
-            leastUpperType match {
-                case None    => true // the value is null
-                case Some(t) => classHierarchy.isKnownToBeFinal(t)
-            }
+        override def isPrecise: Boolean = leastUpperType match {
+            case None    => true // the value is null
+            case Some(t) => classHierarchy.isKnownToBeFinal(t)
         }
 
         override def baseValues: Iterable[domain.DomainReferenceValue]
@@ -434,7 +424,7 @@ trait ValuesDomain { domain =>
                 ObjectVariableInfo(leastUpperType.get.asReferenceType)
             }
         }
-        */
+         */
     }
 
     /**
@@ -478,25 +468,18 @@ trait ValuesDomain { domain =>
         this: DomainIllegalValue =>
 
         @throws[DomainException]("doJoin(...) is not supported by IllegalValue")
-        override protected def doJoin(pc: Int, other: DomainValue): Update[DomainValue] = {
+        override protected def doJoin(pc: Int, other: DomainValue): Update[DomainValue] =
             throw DomainException("doJoin(...) is not supported by IllegalValue")
-        }
 
         @throws[DomainException]("summarize(...) is not supported by IllegalValue")
-        override def summarize(pc: Int): DomainValue = {
+        override def summarize(pc: Int): DomainValue =
             throw DomainException("summarize(...) is not supported by IllegalValue")
-        }
 
-        override def join(pc: Int, other: DomainValue): Update[DomainValue] = {
-            if (other eq TheIllegalValue)
-                NoUpdate
-            else
-                MetaInformationUpdateIllegalValue
-        }
+        override def join(pc: Int, other: DomainValue): Update[DomainValue] =
+            if (other eq TheIllegalValue) NoUpdate
+            else MetaInformationUpdateIllegalValue
 
-        override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue = {
-            target.TheIllegalValue
-        }
+        override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue = target.TheIllegalValue
 
         override def toString: String = "IllegalValue"
     }
@@ -528,17 +511,15 @@ trait ValuesDomain { domain =>
      * @note   This method is solely defined for documentation purposes and to catch
      *         implementation errors early on.
      */
-    final def StructuralUpdateIllegalValue: StructuralUpdate[Nothing] = {
+    final def StructuralUpdateIllegalValue: StructuralUpdate[Nothing] =
         throw DomainException("internal error (see ValuesDomain.StructuralUpdateIllegalValue())");
-    }
 
     // an implementation trait for return addresses
     trait RETValue extends Value with IsReturnAddressValue { this: DomainValue =>
 
         @throws[DomainException]("summarize(...) is not supported by RETValue")
-        override def summarize(pc: Int): DomainValue = {
+        override def summarize(pc: Int): DomainValue =
             throw DomainException("summarize(...) is not supported by RETValue");
-        }
     }
 
     /**
@@ -548,18 +529,14 @@ trait ValuesDomain { domain =>
     class ReturnAddressValues extends RETValue {
         this: DomainReturnAddressValues =>
 
-        override protected def doJoin(pc: Int, other: DomainValue): Update[DomainValue] = {
-            other match {
-                case _: RETValue => NoUpdate
-                case _           => MetaInformationUpdateIllegalValue
-                // The superclass "Value" handles the case where this value is joined with itself.
-            }
+        override protected def doJoin(pc: Int, other: DomainValue): Update[DomainValue] = other match {
+            case _: RETValue => NoUpdate
+            case _           => MetaInformationUpdateIllegalValue
+            // The superclass "Value" handles the case where this value is joined with itself.
         }
 
         // Adaptation is supported to support on-the-fly domain up-/downcasts.
-        override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue = {
-            target.TheReturnAddressValues
-        }
+        override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue = target.TheReturnAddressValues
 
         override def toString: String = "ReturnAddresses"
 
@@ -583,23 +560,20 @@ trait ValuesDomain { domain =>
      */
     class ReturnAddressValue(val address: Int) extends RETValue { this: DomainReturnAddressValue =>
 
-        private[ai] final override def asReturnAddressValue: Int = address
+        final override private[ai] def asReturnAddressValue: Int = address
 
-        override protected def doJoin(pc: Int, other: DomainValue): Update[DomainValue] = {
-            other match {
-                case _: RETValue => StructuralUpdate(TheReturnAddressValues)
-                case _           => MetaInformationUpdateIllegalValue
-                // The super class "Value" handles the case where this value is joined with itself.
+        override protected def doJoin(pc: Int, other: DomainValue): Update[DomainValue] = other match {
+            case _: RETValue => StructuralUpdate(TheReturnAddressValues)
+            case _           => MetaInformationUpdateIllegalValue
+            // The super class "Value" handles the case where this value is joined with itself.
 
-            }
         }
 
         // Adaptation is supported to support on-the-fly domain up-/downcasts.
-        override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue = {
+        override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue =
             target.ReturnAddressValue(address)
-        }
 
-        override def toString: String = "ReturnAddress("+address+")"
+        override def toString: String = "ReturnAddress(" + address + ")"
 
         override def hashCode: Int = address
     }
@@ -635,8 +609,7 @@ trait ValuesDomain { domain =>
      * This operation is commutative.
      */
     def mergeDomainValues(pc: Int, v1: DomainValue, v2: DomainValue): DomainValue = {
-        if (v1 eq v2)
-            return v1;
+        if (v1 eq v2) return v1;
 
         v1.join(pc, v2) match {
             case NoUpdate      => v1
@@ -659,7 +632,7 @@ trait ValuesDomain { domain =>
      */
     def summarize(pc: Int, values: Iterable[DomainValue]): DomainValue = {
         val valuesIterator = values.iterator
-        var summary = valuesIterator.next().summarize(pc)
+        var summary        = valuesIterator.next().summarize(pc)
         valuesIterator foreach { value =>
             if (summary ne value) {
                 summary.join(pc, value.summarize(pc)) match {
@@ -686,8 +659,5 @@ trait ValuesDomain { domain =>
      */
     def properties(
         pc:               PC,
-        propertyToString: AnyRef => String = p => p.toString
-    ): Option[String] = {
-        None
-    }
+        propertyToString: AnyRef => String = p => p.toString): Option[String] = None
 }

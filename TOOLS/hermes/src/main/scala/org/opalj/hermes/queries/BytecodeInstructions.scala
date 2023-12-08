@@ -6,8 +6,8 @@ package queries
 import java.net.URI
 import java.net.URL
 
-import org.opalj.br.analyses.Project
 import org.opalj.br.MethodWithBody
+import org.opalj.br.analyses.Project
 
 /**
  * Counts the number of occurrences of each bytecode instruction.
@@ -17,12 +17,11 @@ import org.opalj.br.MethodWithBody
 class BytecodeInstructions(implicit hermes: HermesConfig) extends FeatureQuery {
 
     // Let's do some caching...
-    final val JVMInstructions: List[(Int, String)] = bytecode.JVMInstructions
-    private[this] final val OpcodesToOrdinalNumbers = new Array[Int](256)
+    final val JVMInstructions: List[(Int, String)]  = bytecode.JVMInstructions
+    final private[this] val OpcodesToOrdinalNumbers = new Array[Int](256)
 
-    override val htmlDescription: Either[String, URL] = {
+    override val htmlDescription: Either[String, URL] =
         Right(URI.create("https://www.opal-project.de/bi/JVMInstructions.xml").toURL)
-    }
 
     override def featureIDs: IndexedSeq[String] = {
         var ordinalNumber = 0
@@ -37,20 +36,19 @@ class BytecodeInstructions(implicit hermes: HermesConfig) extends FeatureQuery {
     override def apply[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Iterable[(da.ClassFile, S)]
-    ): IterableOnce[Feature[S]] = {
+        rawClassFiles:        Iterable[(da.ClassFile, S)]): IterableOnce[Feature[S]] = {
         val instructionsLocations = Array.fill(256)(new LocationsContainer[S])
 
         for {
             (classFile, source) <- project.projectClassFilesWithSources
             if !isInterrupted()
-            classFileLocation = ClassFileLocation(source, classFile)
+            classFileLocation              = ClassFileLocation(source, classFile)
             method @ MethodWithBody(body) <- classFile.methods
-            methodLocation = MethodLocation(classFileLocation, method)
-            pcAndInstruction <- body
+            methodLocation                 = MethodLocation(classFileLocation, method)
+            pcAndInstruction              <- body
         } {
             val instruction = pcAndInstruction.instruction
-            val pc = pcAndInstruction.pc
+            val pc          = pcAndInstruction.pc
             instructionsLocations(instruction.opcode) += InstructionLocation(methodLocation, pc)
         }
 

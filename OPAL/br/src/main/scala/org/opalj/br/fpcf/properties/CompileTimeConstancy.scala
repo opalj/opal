@@ -4,8 +4,8 @@ package br
 package fpcf
 package properties
 
-import org.opalj.fpcf.FallbackReason
 import org.opalj.fpcf.Entity
+import org.opalj.fpcf.FallbackReason
 import org.opalj.fpcf.OrderedProperty
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
@@ -25,7 +25,7 @@ sealed trait CompileTimeConstancyPropertyMetaInformation extends PropertyMetaInf
  */
 sealed abstract class CompileTimeConstancy
     extends OrderedProperty
-    with CompileTimeConstancyPropertyMetaInformation {
+        with CompileTimeConstancyPropertyMetaInformation {
 
     /**
      * The globally unique key of the [[CompileTimeConstancy]] property.
@@ -42,10 +42,8 @@ object CompileTimeConstancy extends CompileTimeConstancyPropertyMetaInformation 
     final val key = PropertyKey.create[Field, CompileTimeConstancy](
         "CompileTimeConstancy",
         (_: PropertyStore, _: FallbackReason, field: Field) => {
-            if (field.isStatic && field.isFinal && field.constantFieldValue.isDefined)
-                CompileTimeConstantField
-            else
-                CompileTimeVaryingField
+            if (field.isStatic && field.isFinal && field.constantFieldValue.isDefined) CompileTimeConstantField
+            else CompileTimeVaryingField
         }
     )
 }
@@ -63,8 +61,7 @@ case object CompileTimeConstantField extends CompileTimeConstancy {
  */
 case object CompileTimeVaryingField extends CompileTimeConstancy {
 
-    override def checkIsEqualOrBetterThan(e: Entity, other: CompileTimeConstancy): Unit = {
+    override def checkIsEqualOrBetterThan(e: Entity, other: CompileTimeConstancy): Unit =
         if (other ne CompileTimeVaryingField)
             throw new IllegalArgumentException(s"$e: impossible refinement: $other => $this")
-    }
 }

@@ -4,6 +4,7 @@ package br
 
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.analyses.Project
+
 import org.scalatest.funspec.AnyFunSpec
 
 /**
@@ -16,11 +17,11 @@ class NonJavaTests extends AnyFunSpec {
 
     describe("Project.instanceMethods") {
 
-        val sourceFolder = locateTestResources("StaticAndDefaultInterfaceMethods", "bc")
-        val project = Project(sourceFolder)
+        val sourceFolder  = locateTestResources("StaticAndDefaultInterfaceMethods", "bc")
+        val project       = Project(sourceFolder)
         val superIntfType = ObjectType("mr/SuperIntf")
-        val intfType = ObjectType("mr/Intf")
-        val subIntfType = ObjectType("mr/SubIntf")
+        val intfType      = ObjectType("mr/Intf")
+        val subIntfType   = ObjectType("mr/SubIntf")
 
         it("should not contain the default method \"m\" from SuperIntf that is inaccesible in Intf") {
             assert(project.instanceMethods(superIntfType).size == 1)

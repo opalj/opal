@@ -15,11 +15,9 @@ final class BinaryString private (private val string: String) {
 
     def asString: String = this.string
 
-    override def equals(other: Any): Boolean = {
-        other match {
-            case that: BinaryString => that.string == this.string
-            case _                  => false
-        }
+    override def equals(other: Any): Boolean = other match {
+        case that: BinaryString => that.string == this.string
+        case _                  => false
     }
 
     override def hashCode: Int = string.hashCode()

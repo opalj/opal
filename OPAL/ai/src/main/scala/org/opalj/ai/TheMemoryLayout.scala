@@ -26,15 +26,14 @@ trait TheMemoryLayout { domain: ValuesDomain =>
     private[this] var theMemoryLayoutBeforeSubroutineCall: List[(PC, OperandsArray, LocalsArray)] = null
 
     private[this] var theSubroutinesOperandsArray: OperandsArray = null
-    private[this] var theSubroutinesLocalsArray: LocalsArray = null
+    private[this] var theSubroutinesLocalsArray: LocalsArray     = null
 
     private[ai] def setMemoryLayout(
         theOperandsArray:                    this.OperandsArray,
         theLocalsArray:                      this.LocalsArray,
         theMemoryLayoutBeforeSubroutineCall: List[(PC, this.OperandsArray, this.LocalsArray)],
         theSubroutinesOperandsArray:         this.OperandsArray,
-        theSubroutinesLocalsArray:           this.LocalsArray
-    ): Unit = {
+        theSubroutinesLocalsArray:           this.LocalsArray): Unit = {
         this.theOperandsArray = theOperandsArray
         this.theLocalsArray = theLocalsArray
         this.theMemoryLayoutBeforeSubroutineCall = theMemoryLayoutBeforeSubroutineCall
@@ -46,9 +45,8 @@ trait TheMemoryLayout { domain: ValuesDomain =>
 
     def localsArray: LocalsArray = theLocalsArray
 
-    def memoryLayoutBeforeSubroutineCall: List[(PC, this.OperandsArray, this.LocalsArray)] = {
+    def memoryLayoutBeforeSubroutineCall: List[(PC, this.OperandsArray, this.LocalsArray)] =
         theMemoryLayoutBeforeSubroutineCall
-    }
 
     def subroutinesOperandsArray: OperandsArray = theSubroutinesOperandsArray
 

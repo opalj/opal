@@ -101,9 +101,7 @@ final case class StructuralUpdate[V](value: V) extends SomeUpdate[V] {
 
     override def &:(updateType: UpdateType): UpdateType = StructuralUpdateType
 
-    override def updateValue[NewV](newValue: NewV): StructuralUpdate[NewV] = {
-        StructuralUpdate(newValue)
-    }
+    override def updateValue[NewV](newValue: NewV): StructuralUpdate[NewV] = StructuralUpdate(newValue)
 }
 /**
  * Characterizes an update that did not affect the abstract state but instead just
@@ -127,16 +125,11 @@ final case class MetaInformationUpdate[V](value: V) extends SomeUpdate[V] {
 
     override def updateType: UpdateType = MetaInformationUpdateType
 
-    override def &:(updateType: UpdateType): UpdateType = {
-        if (updateType == StructuralUpdateType)
-            updateType
-        else
-            MetaInformationUpdateType
-    }
+    override def &:(updateType: UpdateType): UpdateType =
+        if (updateType == StructuralUpdateType) updateType
+        else MetaInformationUpdateType
 
-    override def updateValue[NewV](newValue: NewV): MetaInformationUpdate[NewV] = {
-        MetaInformationUpdate(newValue)
-    }
+    override def updateValue[NewV](newValue: NewV): MetaInformationUpdate[NewV] = MetaInformationUpdate(newValue)
 }
 
 /**
@@ -160,7 +153,6 @@ case object NoUpdate extends Update[Nothing] {
 
     override def value: Nothing = throw DomainException("a NoUpdate contains no value")
 
-    override def updateValue[NewV](newValue: NewV): Nothing = {
+    override def updateValue[NewV](newValue: NewV): Nothing =
         throw DomainException("cannot update the value of a NoUpdate")
-    }
 }

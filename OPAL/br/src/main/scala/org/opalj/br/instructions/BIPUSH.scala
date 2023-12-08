@@ -25,20 +25,18 @@ class BIPUSH private (val value: Int) extends LoadConstantInstruction[Int] {
         val other = code.instructions(otherPC)
         (this eq other) || (
             BIPUSH.opcode == other.opcode &&
-            this.value == other.asInstanceOf[BIPUSH].value
+                this.value == other.asInstanceOf[BIPUSH].value
         )
     }
 
-    override def equals(other: Any): Boolean = {
-        other match {
-            case that: BIPUSH => this eq that
-            case _            => false
-        }
+    override def equals(other: Any): Boolean = other match {
+        case that: BIPUSH => this eq that
+        case _            => false
     }
 
     override def hashCode = value
 
-    override def toString = "BIPUSH("+value+")"
+    override def toString = "BIPUSH(" + value + ")"
 }
 
 object BIPUSH extends InstructionMetaInformation {

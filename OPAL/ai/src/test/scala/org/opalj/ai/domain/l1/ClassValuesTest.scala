@@ -4,13 +4,14 @@ package ai
 package domain
 package l1
 
-import org.junit.runner.RunWith
-import org.scalatest.matchers.should.Matchers
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatestplus.junit.JUnitRunner
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br._
 import org.opalj.br.reader.Java8Framework.ClassFiles
+
+import org.junit.runner.RunWith
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Simple test case for ClassValues.
@@ -24,7 +25,7 @@ class ClassValuesTest extends AnyFlatSpec with Matchers {
 
     behavior of "ClassValues"
 
-    it should ("be able to create the right representation for Arrays of primitive values") in {
+    it should "be able to create the right representation for Arrays of primitive values" in {
         val domain = new RecordingDomain
         domain.simpleClassForNameCall(-1, "[B") should be(
             ComputedValue(domain.ClassValue(-1, ArrayType(ByteType)))
@@ -34,35 +35,35 @@ class ClassValuesTest extends AnyFlatSpec with Matchers {
         )
     }
 
-    it should ("be able to create the right representation for Arrays of object values") in {
+    it should "be able to create the right representation for Arrays of object values" in {
         val domain = new RecordingDomain
         domain.simpleClassForNameCall(-1, "[Ljava/lang/Object;") should be(
             ComputedValue(domain.ClassValue(-1, ArrayType(ObjectType.Object)))
         )
     }
 
-    it should ("be able to trace static class values") in {
+    it should "be able to trace static class values" in {
         val domain = new RecordingDomain
         val method = classFile.methods.find(m => m.name == "staticClassValue").get
         BaseAI(method, domain)
         domain.returnedValue should be(Some(domain.ClassValue(0, ObjectType("java/lang/String"))))
     }
 
-    it should ("be able to handle the case that we are not able to resolve the class") in {
+    it should "be able to handle the case that we are not able to resolve the class" in {
         val method = classFile.methods.find(m => m.name == "noLiteralStringInClassForName").get
         val domain = new RecordingDomain
         BaseAI(method, domain)
         domain.returnedValue should be(Some(domain.ObjectValue(9, Unknown, false, ObjectType.Class)))
     }
 
-    it should ("be able to trace literal strings in Class.forName(String) calls") in {
+    it should "be able to trace literal strings in Class.forName(String) calls" in {
         val domain = new RecordingDomain
         val method = classFile.methods.find(m => m.name == "literalStringInClassForName").get
         BaseAI(method, domain)
         domain.returnedValue should be(Some(domain.ClassValue(2, ObjectType("java/lang/Integer"))))
     }
 
-    it should ("be able to trace literal strings in Class.forName(String,boolean,ClassLoader) calls") in {
+    it should "be able to trace literal strings in Class.forName(String,boolean,ClassLoader) calls" in {
         val method = classFile.methods.find(m => m.name == "literalStringInLongClassForName").get
         val domain = new RecordingDomain
         BaseAI(method, domain)
@@ -70,7 +71,7 @@ class ClassValuesTest extends AnyFlatSpec with Matchers {
         classType should be(Some(domain.ClassValue(10, ObjectType("java/lang/Integer"))))
     }
 
-    it should ("be able to trace known string variables in Class.forName calls") in {
+    it should "be able to trace known string variables in Class.forName calls" in {
         val domain = new RecordingDomain
         val method = classFile.methods.find(m => m.name == "stringVariableInClassForName").get
         BaseAI(method, domain)
@@ -78,36 +79,36 @@ class ClassValuesTest extends AnyFlatSpec with Matchers {
         classType should be(Some(domain.ClassValue(4, ObjectType("java/lang/Integer"))))
     }
 
-    it should ("be able to trace literal strings in Class.forName(Module, String) calls") in {
+    it should "be able to trace literal strings in Class.forName(Module, String) calls" in {
         val domain = new RecordingDomain
         val method = classFile.methods.find(m => m.name == "literalStringInClassForNameModule").get
         BaseAI(method, domain)
         domain.returnedValue should be(Some(domain.ClassValue(origin = 7, ObjectType("java/lang/String"))))
     }
 
-    it should ("be able to trace known string variables in Class.forName(Module, String) calls") in {
+    it should "be able to trace known string variables in Class.forName(Module, String) calls" in {
         val domain = new RecordingDomain
         val method = classFile.methods.find(m => m.name == "stringVariableInClassForNameModule").get
         BaseAI(method, domain)
         domain.returnedValue should be(Some(domain.ClassValue(origin = 9, ObjectType("java/lang/Integer"))))
     }
 
-    it should ("over-approximate when incompatible class names and modules are combined in Class.forName") in {
+    it should "over-approximate when incompatible class names and modules are combined in Class.forName" in {
         val domain = new RecordingDomain
         val method = classFile.methods.find(m => m.name == "invalidModuleAndNameInClassForName").get
         BaseAI(method, domain)
         domain.returnedValue should be(Some(domain.ClassValue(origin = 9, ObjectType("java/lang/Integer"))))
     }
 
-    it should ("be able to correctly join multiple class values") in {
+    it should "be able to correctly join multiple class values" in {
         val domain = new RecordingDomain
-        val c1 = domain.ClassValue(1, ObjectType.Serializable)
-        val c2 = domain.ClassValue(1, ObjectType.Cloneable)
+        val c1     = domain.ClassValue(1, ObjectType.Serializable)
+        val c2     = domain.ClassValue(1, ObjectType.Cloneable)
         c1.join(-1, c2) should be(StructuralUpdate(domain.InitializedObjectValue(1, ObjectType.Class)))
         c1.join(-1, c2) should be(c2.join(-1, c1))
     }
 
-    it should ("be able to trace static class values of primitves") in {
+    it should "be able to trace static class values of primitves" in {
         val domain = new RecordingDomain
         val method = classFile.methods.find(m => m.name == "staticPrimitveClassValue").get
         BaseAI(method, domain)
@@ -119,23 +120,23 @@ object PlainClassesTest {
 
     class RecordingDomain
         extends CorrelationalDomain
-        with DefaultSpecialDomainValuesBinding
-        with DefaultHandlingForReturnInstructions
-        with DefaultHandlingOfVoidReturns
-        with ThrowAllPotentialExceptionsConfiguration
-        with PredefinedClassHierarchy
-        with DefaultHandlingOfMethodResults
-        with IgnoreSynchronization
-        with l0.DefaultTypeLevelIntegerValues
-        with l0.DefaultTypeLevelFloatValues
-        with l0.DefaultTypeLevelDoubleValues
-        with l0.DefaultTypeLevelLongValues
-        with l0.TypeLevelPrimitiveValuesConversions
-        with l0.TypeLevelLongValuesShiftOperators
-        with l0.TypeLevelFieldAccessInstructions
-        with l0.SimpleTypeLevelInvokeInstructions
-        with l0.TypeLevelDynamicLoads
-        with l1.DefaultClassValuesBinding {
+            with DefaultSpecialDomainValuesBinding
+            with DefaultHandlingForReturnInstructions
+            with DefaultHandlingOfVoidReturns
+            with ThrowAllPotentialExceptionsConfiguration
+            with PredefinedClassHierarchy
+            with DefaultHandlingOfMethodResults
+            with IgnoreSynchronization
+            with l0.DefaultTypeLevelIntegerValues
+            with l0.DefaultTypeLevelFloatValues
+            with l0.DefaultTypeLevelDoubleValues
+            with l0.DefaultTypeLevelLongValues
+            with l0.TypeLevelPrimitiveValuesConversions
+            with l0.TypeLevelLongValuesShiftOperators
+            with l0.TypeLevelFieldAccessInstructions
+            with l0.SimpleTypeLevelInvokeInstructions
+            with l0.TypeLevelDynamicLoads
+            with l1.DefaultClassValuesBinding {
 
         var returnedValue: Option[DomainValue] = _
         override def areturn(pc: Int, value: DomainValue): Computation[Nothing, ExceptionValue] = {
@@ -165,5 +166,5 @@ object PlainClassesTest {
     }
 
     val testClassFile = locateTestResources("ai-9.jar", "bi")
-    val classFile = ClassFiles(testClassFile).map(_._1).find(_.thisType.fqn == "ai/domain/PlainClassesJava").get
+    val classFile     = ClassFiles(testClassFile).map(_._1).find(_.thisType.fqn == "ai/domain/PlainClassesJava").get
 }

@@ -5,9 +5,9 @@ package cp
 
 import org.opalj.bi.AttributeParent
 import org.opalj.bi.AttributesParent
+import org.opalj.bi.ConstantPoolTags
 import org.opalj.br.reader.SignatureParser
 import org.opalj.bytecode.BytecodeProcessingFailedException
-import org.opalj.bi.ConstantPoolTags
 
 /**
  * Represents a constant string value.
@@ -33,12 +33,11 @@ case class CONSTANT_Utf8_info(value: String) extends Constant_Pool_Entry {
         fieldType
     }
 
-    override def asFieldTypeSignature = {
+    override def asFieldTypeSignature =
         // should be called at most once => caching doesn't make sense
         SignatureParser.parseFieldTypeSignature(value)
-    }
 
-    override def asSignature(ap: AttributeParent): Signature = {
+    override def asSignature(ap: AttributeParent): Signature =
         // should be called at most once => caching doesn't make sense
         ap match {
             case AttributesParent.Field | AttributesParent.RecordComponent =>
@@ -49,11 +48,9 @@ case class CONSTANT_Utf8_info(value: String) extends Constant_Pool_Entry {
                 val message = s"code attribute has an unexpected signature attribute: $value"
                 throw new BytecodeProcessingFailedException(message)
         }
-    }
 
-    override def asConstantValue(cp: Constant_Pool): ConstantString = {
+    override def asConstantValue(cp: Constant_Pool): ConstantString =
         // required to support annotations; should be called at most once
         // => caching doesn't make sense
         ConstantString(value)
-    }
 }

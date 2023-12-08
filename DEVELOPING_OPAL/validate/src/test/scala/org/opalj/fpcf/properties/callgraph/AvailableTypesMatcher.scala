@@ -4,6 +4,8 @@ package fpcf
 package properties
 package callgraph
 
+import scala.collection.mutable
+
 import org.opalj.br.AnnotationLike
 import org.opalj.br.ElementValue
 import org.opalj.br.ObjectType
@@ -14,8 +16,6 @@ import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
-
-import scala.collection.mutable
 
 /**
  * Matches AvailableTypes annotations to the values computed cooperatively by a
@@ -30,8 +30,7 @@ class AvailableTypesMatcher extends AbstractPropertyMatcher {
         as:         Set[ObjectType],
         entity:     Any,
         a:          AnnotationLike,
-        properties: Iterable[Property]
-    ): Option[String] = {
+        properties: Iterable[Property]): Option[String] = {
 
         val annotationType = a.annotationType.asObjectType
 
@@ -50,16 +49,15 @@ class AvailableTypesMatcher extends AbstractPropertyMatcher {
         // If none of the annotated variants match the executed ones, return...
         // If the list of specified variants is empty, we assume the annotation applies to all
         // of them, so we don't exit early.
-        if (variants.nonEmpty && !variants.contains(executedVariant))
-            return None;
+        if (variants.nonEmpty && !variants.contains(executedVariant)) return None;
 
         val instantiatedTypes = {
             properties.find(_.isInstanceOf[InstantiatedTypes]) match {
-                case Some(prop) =>
-                    prop.asInstanceOf[InstantiatedTypes].types
+                case Some(prop) => prop.asInstanceOf[InstantiatedTypes].types
                 case None =>
                     implicit val ctx: LogContext = p.logContext
-                    OPALLogger.warn("property matcher", s"Expected property InstantiatedTypes was not computed for $entity.")
+                    OPALLogger.warn("property matcher",
+                                    s"Expected property InstantiatedTypes was not computed for $entity.")
                     UIDSet.empty[ReferenceType]
             }
         }.toSet
@@ -70,7 +68,7 @@ class AvailableTypesMatcher extends AbstractPropertyMatcher {
 
         val expectedTypes = expectedTypeNames.map(ReferenceType(_)).toSet
 
-        val missingTypes = expectedTypes diff instantiatedTypes
+        val missingTypes    = expectedTypes diff instantiatedTypes
         val additionalTypes = instantiatedTypes diff expectedTypes
 
         val isInvalid = missingTypes.nonEmpty || additionalTypes.nonEmpty

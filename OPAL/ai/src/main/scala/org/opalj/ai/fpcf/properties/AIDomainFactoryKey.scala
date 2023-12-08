@@ -4,24 +4,23 @@ package ai
 package fpcf
 package properties
 
-import org.opalj.log.OPALLogger
-import org.opalj.log.LogContext
+import org.opalj.ai.common.DomainRegistry
 import org.opalj.br.Method
 import org.opalj.br.analyses.ProjectInformationKey
 import org.opalj.br.analyses.SomeProject
-import org.opalj.ai.common.DomainRegistry
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
 
 /**
  * Encapsulates the information which domain will be used to perform the abstract interpretations
  * for the specified project. This typically initialized by the [[AIDomainFactoryKey$]].
  */
 class ProjectSpecificAIExecutor(
-        val project:       SomeProject,
-        val domainClass:   Class[_ <: Domain],
-        val domainFactory: (SomeProject, Method) => Domain
-) extends (Method => AIResult) {
+        val project:     SomeProject,
+        val domainClass: Class[_ <: Domain],
+        val domainFactory: (SomeProject, Method) => Domain) extends (Method => AIResult) {
 
-    def apply(m: Method): AIResult = { BaseAI(m, domainFactory(project, m)) }
+    def apply(m: Method): AIResult = BaseAI(m, domainFactory(project, m))
 }
 
 /**
@@ -57,32 +56,30 @@ object AIDomainFactoryKey
      * is necessary (e.g., on the ProjectInformationKey) to ensure that each project is
      * instantiated using the desired domain.
      */
-    override def compute(project: SomeProject): ProjectSpecificAIExecutor = {
+    override def compute(project: SomeProject): ProjectSpecificAIExecutor =
         compute(project, DomainRegistry.selectConfigured(project.config, _))
-    }
 
     def compute(
         project:         SomeProject,
-        domainFactories: Iterable[Class[_ <: AnyRef]] => Set[Class[_ <: Domain]]
-    ): ProjectSpecificAIExecutor = {
+        domainFactories: Iterable[Class[_ <: AnyRef]] => Set[Class[_ <: Domain]]): ProjectSpecificAIExecutor = {
         implicit val logContext: LogContext = project.logContext
 
-        val domainFactoryRequirements = project.
-            getProjectInformationKeyInitializationData(this).
-            getOrElse(Set.empty)
+        val domainFactoryRequirements = project.getProjectInformationKeyInitializationData(this).getOrElse(Set.empty)
 
         val theDomainFactories = domainFactories(domainFactoryRequirements)
 
         if (theDomainFactories.isEmpty) {
             val message = domainFactoryRequirements.mkString(
-                "no abstract domain that satisfies the requirements: {", ", ", "} exists."
+                "no abstract domain that satisfies the requirements: {",
+                ", ",
+                "} exists."
             )
             throw new IllegalArgumentException(message)
         }
         if (theDomainFactories.size > 1) {
             OPALLogger.info(
                 "analysis configuration",
-                s"multiple domains ${theDomainFactories.mkString(", ")} "+
+                s"multiple domains ${theDomainFactories.mkString(", ")} " +
                     s"satisfy the requirements ${domainFactoryRequirements.mkString(", ")} "
             )
         }

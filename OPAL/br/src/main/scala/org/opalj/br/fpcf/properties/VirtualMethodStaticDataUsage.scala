@@ -19,15 +19,13 @@ sealed trait VirtualMethodStaticDataUsagePropertyMetaInformation extends Propert
  * @author Dominik Helm
  */
 sealed case class VirtualMethodStaticDataUsage(
-        individualProperty: StaticDataUsage
-) extends AggregatedProperty[StaticDataUsage, VirtualMethodStaticDataUsage]
-    with VirtualMethodStaticDataUsagePropertyMetaInformation {
+        individualProperty: StaticDataUsage) extends AggregatedProperty[StaticDataUsage, VirtualMethodStaticDataUsage]
+        with VirtualMethodStaticDataUsagePropertyMetaInformation {
 
     /**
      * The globally unique key of the [[VirtualMethodStaticDataUsage]] property.
      */
-    final def key: PropertyKey[VirtualMethodStaticDataUsage] =
-        VirtualMethodStaticDataUsage.key
+    final def key: PropertyKey[VirtualMethodStaticDataUsage] = VirtualMethodStaticDataUsage.key
 
     override def toString: String = s"VirtualMethodStaticDataUsage($individualProperty)"
 }
@@ -35,9 +33,9 @@ sealed case class VirtualMethodStaticDataUsage(
 object VirtualMethodStaticDataUsage
     extends VirtualMethodStaticDataUsagePropertyMetaInformation {
 
-    final val VUsesNoStaticData = UsesNoStaticData.aggregatedProperty
+    final val VUsesNoStaticData     = UsesNoStaticData.aggregatedProperty
     final val VUsesConstantDataOnly = UsesConstantDataOnly.aggregatedProperty
-    final val VUsesVaryingData = UsesVaryingData.aggregatedProperty
+    final val VUsesVaryingData      = UsesVaryingData.aggregatedProperty
 
     /**
      * The key associated with every virtual method allocation freeness property. The name is

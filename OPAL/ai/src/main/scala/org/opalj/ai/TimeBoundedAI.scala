@@ -15,10 +15,9 @@ import org.opalj.util.Nanoseconds
  * @author Michael Eichberg
  */
 class TimeBoundedAI[D <: Domain](
-        val maxEffort: Nanoseconds = new Milliseconds(150L).toNanoseconds
-) extends AI[D] {
+        val maxEffort: Nanoseconds = new Milliseconds(150L).toNanoseconds) extends AI[D] {
 
-    private[this] final val CheckInterval = 100
+    final private[this] val CheckInterval = 100
 
     private[this] var evaluationCount = -1
 
@@ -38,7 +37,7 @@ class TimeBoundedAI[D <: Domain](
             startTime = System.nanoTime()
             false
         } else if (evaluationCount % CheckInterval == 0 &&
-            (System.nanoTime() - startTime) > maxEffort.timeSpan) {
+                   (System.nanoTime() - startTime) > maxEffort.timeSpan) {
             interrupted = true
             interruptTime = System.nanoTime()
             true

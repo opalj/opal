@@ -3,10 +3,10 @@ package org.opalj
 package collection
 package mutable
 
-import org.scalatest.matchers.should.Matchers
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatestplus.junit.JUnitRunner
 import org.junit.runner.RunWith
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests the utility methods.
@@ -18,46 +18,46 @@ class LocalsTest extends AnyFlatSpec with Matchers {
 
     behavior of "a Locals data structure"
 
-    it should ("be empty if it has size 0") in {
+    it should "be empty if it has size 0" in {
         Locals(0).isEmpty should be(true)
 
         Locals(0).nonEmpty should be(false)
     }
 
-    it should ("be non-empty if it has more than one element") in {
+    it should "be non-empty if it has more than one element" in {
         for {
             i <- 1 to 100
-            v = Locals[Integer](i)
+            v  = Locals[Integer](i)
         } {
             v.isEmpty should be(false)
             v.nonEmpty should be(true)
         }
     }
 
-    it should ("return null for each field after initialization") in {
+    it should "return null for each field after initialization" in {
         for {
             i <- 1 to 100
-            v = Locals[Integer](i)
+            v  = Locals[Integer](i)
             j <- 0 until i
         } {
             v(j) should be(null)
         }
     }
 
-    it should ("be able to return the value stored (upated(index,value)) at an index") in {
+    it should "be able to return the value stored (upated(index,value)) at an index" in {
         for {
             i <- 1 to 100
-            v = Locals[Integer](i)
+            v  = Locals[Integer](i)
             j <- 0 until i
         } {
             v.updated(j, j).apply(j) should equal(j)
         }
     }
 
-    it should ("be able to return the values stored (upated(index,value1,value2)) at an index") in {
+    it should "be able to return the values stored (upated(index,value1,value2)) at an index" in {
         for {
             i <- 2 to 100
-            v = Locals[Integer](i)
+            v  = Locals[Integer](i)
             j <- 0 until i - 1
         } {
             val newV = v.updated(j, j, -3)
@@ -66,7 +66,7 @@ class LocalsTest extends AnyFlatSpec with Matchers {
         }
     }
 
-    it should ("iterate over all values") in {
+    it should "iterate over all values" in {
         for {
             i <- 1 to 100
         } {
@@ -85,7 +85,7 @@ class LocalsTest extends AnyFlatSpec with Matchers {
         }
     }
 
-    it should ("be able to map the values to some other data-type") in {
+    it should "be able to map the values to some other data-type" in {
         for {
             size <- 1 to 100
         } {
@@ -101,7 +101,7 @@ class LocalsTest extends AnyFlatSpec with Matchers {
         }
     }
 
-    it should ("be able to merge two locals") in {
+    it should "be able to merge two locals" in {
         for {
             size <- 1 to 25
         } {
@@ -116,15 +116,15 @@ class LocalsTest extends AnyFlatSpec with Matchers {
                 v3 = v3.updated(i, i + 1)
             }
             v1.fuse(v2, (a, b) => { a should equal(b); a })
-            val vm = v1.fuse(v3, (a, b) => { a should not equal (b); -1 })
+            val vm = v1.fuse(v3, (a, b) => { a should not equal b; -1 })
             vm.foreach { v =>
                 if (v == null || v != -1)
-                    fail("null is not -1 (size="+size+"; va="+v1.toString ++ "; vb="+v3.toString+"; vm="+vm.toString+")")
+                    fail("null is not -1 (size=" + size + "; va=" + v1.toString ++ "; vb=" + v3.toString + "; vm=" + vm.toString + ")")
             }
         }
     }
 
-    it should ("return \"this\" locals if the merge results in values of \"this\" local") in {
+    it should "return \"this\" locals if the merge results in values of \"this\" local" in {
         for {
             size <- 1 to 25
         } {
@@ -147,7 +147,7 @@ class LocalsTest extends AnyFlatSpec with Matchers {
         }
     }
 
-    it should ("be able to set a locals' value") in {
+    it should "be able to set a locals' value" in {
         for {
             size <- 1 to 25
         } {
@@ -161,7 +161,7 @@ class LocalsTest extends AnyFlatSpec with Matchers {
         }
     }
 
-    it should ("be able to update the locals in-place") in {
+    it should "be able to update the locals in-place" in {
         for {
             size <- 1 to 25
         } {
@@ -176,7 +176,7 @@ class LocalsTest extends AnyFlatSpec with Matchers {
         }
     }
 
-    it should ("return the same locals if the mapConserve does not update a value") in {
+    it should "return the same locals if the mapConserve does not update a value" in {
         for {
             size <- 1 to 25
         } {
@@ -188,7 +188,7 @@ class LocalsTest extends AnyFlatSpec with Matchers {
         }
     }
 
-    it should ("be able to map the locals") in {
+    it should "be able to map the locals" in {
         for {
             size <- 1 to 25
         } {
@@ -203,7 +203,7 @@ class LocalsTest extends AnyFlatSpec with Matchers {
         }
     }
 
-    it should ("be able to map the locals using the index") in {
+    it should "be able to map the locals using the index" in {
         for {
             size <- 1 to 25
         } {
@@ -218,20 +218,20 @@ class LocalsTest extends AnyFlatSpec with Matchers {
         }
     }
 
-    it should ("be able to calculate a hashCode even if it is non-full") in {
+    it should "be able to calculate a hashCode even if it is non-full" in {
         val size = 25
-        val v = Locals[Integer](size)
+        val v    = Locals[Integer](size)
         for { i <- 0 until size } {
             if (i % 2 == 0) v.set(i, i)
         }
 
-        v.hashCode should not be (0)
+        v.hashCode should not be 0
     }
 
-    it should ("be compareable to a non-full Locals collections") in {
+    it should "be compareable to a non-full Locals collections" in {
         val size = 25
-        val v1 = Locals[Integer](size)
-        val v2 = Locals[Integer](size)
+        val v1   = Locals[Integer](size)
+        val v2   = Locals[Integer](size)
         for { i <- 0 until size } {
             if (i % 2 == 0) v1.set(i, i)
             if (i % 2 == 0) v2.set(i, i)
@@ -240,7 +240,7 @@ class LocalsTest extends AnyFlatSpec with Matchers {
         v1 should equal(v2)
     }
 
-    it should ("be able to get the nthValue") in {
+    it should "be able to get the nthValue" in {
         val ls = Locals[Integer](5)
         ls(0) = 5
         ls(2) = 2

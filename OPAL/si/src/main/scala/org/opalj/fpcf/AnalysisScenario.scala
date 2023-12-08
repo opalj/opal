@@ -2,11 +2,10 @@
 package org.opalj
 package fpcf
 
+import org.opalj.fpcf.AnalysisScenario.AnalysisAutoConfigKey
+import org.opalj.graphs.Graph
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
-import org.opalj.graphs.Graph
-
-import org.opalj.fpcf.AnalysisScenario.AnalysisAutoConfigKey
 
 /**
  * Provides functionality to determine whether a set of analyses is compatible and to compute
@@ -20,23 +19,21 @@ class AnalysisScenario[A](val ps: PropertyStore) {
 
     private[this] var allCS: Set[ComputationSpecification[A]] = Set.empty
 
-    private[this] var derivedProperties: Set[PropertyBounds] = Set.empty
-    private[this] var eagerlyDerivedProperties: Set[PropertyBounds] = Set.empty
+    private[this] var derivedProperties: Set[PropertyBounds]                = Set.empty
+    private[this] var eagerlyDerivedProperties: Set[PropertyBounds]         = Set.empty
     private[this] var collaborativelyDerivedProperties: Set[PropertyBounds] = Set.empty
-    private[this] var lazilyDerivedProperties: Set[PropertyBounds] = Set.empty
+    private[this] var lazilyDerivedProperties: Set[PropertyBounds]          = Set.empty
 
     private[this] var initializationData: Map[ComputationSpecification[A], Any] = Map.empty
 
     private[this] var usedProperties: Set[PropertyBounds] = Set.empty
 
-    private[this] var eagerCS: Set[ComputationSpecification[A]] = Set.empty
-    private[this] var lazyCS: Set[ComputationSpecification[A]] = Set.empty
-    private[this] var triggeredCS: Set[ComputationSpecification[A]] = Set.empty
+    private[this] var eagerCS: Set[ComputationSpecification[A]]        = Set.empty
+    private[this] var lazyCS: Set[ComputationSpecification[A]]         = Set.empty
+    private[this] var triggeredCS: Set[ComputationSpecification[A]]    = Set.empty
     private[this] var transformersCS: Set[ComputationSpecification[A]] = Set.empty
 
-    private[this] var derivedBy: Map[PropertyKind, (PropertyBounds, Set[ComputationSpecification[A]])] = {
-        Map.empty
-    }
+    private[this] var derivedBy: Map[PropertyKind, (PropertyBounds, Set[ComputationSpecification[A]])] = Map.empty
 
     def allProperties: Set[PropertyBounds] = derivedProperties ++ usedProperties
 
@@ -102,9 +99,7 @@ class AnalysisScenario[A](val ps: PropertyStore) {
         val derivedBy: Map[PropertyBounds, Set[ComputationSpecification[A]]] = {
             var derivedBy: Map[PropertyBounds, Set[ComputationSpecification[A]]] = Map.empty
             allCS foreach { cs =>
-                cs.derives foreach { derives =>
-                    derivedBy += derives -> (derivedBy.getOrElse(derives, Set.empty) + cs)
-                }
+                cs.derives foreach { derives => derivedBy += derives -> (derivedBy.getOrElse(derives, Set.empty) + cs) }
             }
             derivedBy
         }
@@ -120,7 +115,7 @@ class AnalysisScenario[A](val ps: PropertyStore) {
         }
         // let's handle the case that multiple analyses derive a property collaboratively
         derivedBy.valuesIterator.filter(_.size > 1) foreach { css =>
-            val cssIt = css.iterator
+            val cssIt  = css.iterator
             val headCS = cssIt.next()
             var lastCS = headCS
             do {
@@ -139,7 +134,7 @@ class AnalysisScenario[A](val ps: PropertyStore) {
         cs.derivesLazily foreach { lazilyDerivedProperty =>
             if (derivedProperties.contains(lazilyDerivedProperty)) {
                 val pkName = PropertyKey.name(lazilyDerivedProperty.pk.id)
-                val m = s"can not register $cs: $pkName is already computed by another analysis"
+                val m      = s"can not register $cs: $pkName is already computed by another analysis"
                 throw new SpecificationViolation(m)
             }
         }
@@ -148,9 +143,8 @@ class AnalysisScenario[A](val ps: PropertyStore) {
             if (eagerlyDerivedProperties.contains(collaborativelyDerivedProperty) ||
                 lazilyDerivedProperties.contains(collaborativelyDerivedProperty)) {
                 val pkName = PropertyKey.name(collaborativelyDerivedProperty.pk.id)
-                val m =
-                    s"can not register $cs: "+
-                        s"$pkName is not computed collaboratively by all analyses"
+                val m = s"can not register $cs: " +
+                    s"$pkName is not computed collaboratively by all analyses"
                 throw new SpecificationViolation(m)
             }
         }
@@ -158,7 +152,7 @@ class AnalysisScenario[A](val ps: PropertyStore) {
         cs.derivesEagerly foreach { eagerlyDerivedProperty =>
             if (derivedProperties.contains(eagerlyDerivedProperty)) {
                 val pkName = PropertyKey.name(eagerlyDerivedProperty.pk.id)
-                val m = s"can not register $cs: $pkName is already computed by another analysis"
+                val m      = s"can not register $cs: $pkName is already computed by another analysis"
                 throw new SpecificationViolation(m)
             }
         }
@@ -171,15 +165,13 @@ class AnalysisScenario[A](val ps: PropertyStore) {
             derivedProperties foreach { derivedProperty =>
                 val pk = derivedProperty.pk
                 derivedBy.get(pk) match {
-                    case None =>
-                        derivedBy += ((pk, (derivedProperty, Set(cs))))
-                    case Some((`derivedProperty`, css)) =>
-                        derivedBy += ((pk, (derivedProperty, css + cs)))
+                    case None                           => derivedBy += ((pk, (derivedProperty, Set(cs))))
+                    case Some((`derivedProperty`, css)) => derivedBy += ((pk, (derivedProperty, css + cs)))
                     case Some((deviatingPropertyBounds, css)) =>
                         val propertyName = PropertyKey.name(pk)
                         throw new IllegalArgumentException(
-                            s"different bounds ($deviatingPropertyBounds vs. $derivedProperty) "+
-                                s"are computed by $css vs. $cs "+
+                            s"different bounds ($deviatingPropertyBounds vs. $derivedProperty) " +
+                                s"are computed by $css vs. $cs " +
                                 s"for the collaboratively computed property $propertyName"
                         )
                 }
@@ -218,10 +210,8 @@ class AnalysisScenario[A](val ps: PropertyStore) {
     def computeSchedule(
         propertyStore:   PropertyStore,
         defaultAnalysis: PropertyBounds => Option[ComputationSpecification[A]] = _ => None
-    )(
-        implicit
-        logContext: LogContext
-    ): Schedule[A] = {
+      )(implicit
+        logContext: LogContext): Schedule[A] = {
         if (scheduleComputed) {
             throw new IllegalStateException("schedule already computed");
         } else {
@@ -237,33 +227,29 @@ class AnalysisScenario[A](val ps: PropertyStore) {
             cs.derives foreach { derivedProperty =>
                 if (alreadyComputedPropertyKinds.contains(derivedProperty.pk.id)) {
                     val pkName = PropertyKey.name(derivedProperty.pk.id)
-                    val m = s"can not register $cs: $pkName was computed in a previous phase"
+                    val m      = s"can not register $cs: $pkName was computed in a previous phase"
                     throw new SpecificationViolation(m)
                 }
             }
         }
 
         // 1. check for properties that are not derived (and which require an analysis)
-        def useFallback(underivedProperty: PropertyBounds, propertyName: String) = {
+        def useFallback(underivedProperty: PropertyBounds, propertyName: String) =
             if (PropertyKey.hasFallback(underivedProperty.pk)) {
                 val message = s"no analyses scheduled for: $propertyName; using fallback"
                 OPALLogger.warn("analysis configuration", message)
             } else {
                 throw new IllegalStateException(s"no analysis scheduled for $propertyName")
             }
-        }
 
-        val analysisAutoConfig = BaseConfig.getBoolean(AnalysisAutoConfigKey)
+        val analysisAutoConfig  = BaseConfig.getBoolean(AnalysisAutoConfigKey)
         val underivedProperties = usedProperties -- derivedProperties
         underivedProperties
-            .filterNot { underivedProperty =>
-                alreadyComputedPropertyKinds.contains(underivedProperty.pk.id)
-            }
+            .filterNot { underivedProperty => alreadyComputedPropertyKinds.contains(underivedProperty.pk.id) }
             .foreach { underivedProperty =>
                 if (!derivedProperties.contains(underivedProperty)) {
                     val propertyName = PropertyKey.name(underivedProperty.pk.id)
-                    val defaultCSOpt =
-                        if (analysisAutoConfig) defaultAnalysis(underivedProperty) else None
+                    val defaultCSOpt = if (analysisAutoConfig) defaultAnalysis(underivedProperty) else None
                     if (defaultCSOpt.isDefined) {
                         val defaultCS = defaultCSOpt.get
                         try {
@@ -271,8 +257,7 @@ class AnalysisScenario[A](val ps: PropertyStore) {
                             val message = s"no analyses scheduled for: $propertyName; using ${defaultCS.name}"
                             OPALLogger.info("analysis configuration", message)
                         } catch {
-                            case _: SpecificationViolation =>
-                                useFallback(underivedProperty, propertyName)
+                            case _: SpecificationViolation => useFallback(underivedProperty, propertyName)
                         }
                     } else {
                         useFallback(underivedProperty, propertyName)
@@ -305,9 +290,7 @@ class AnalysisScenario[A](val ps: PropertyStore) {
         var suppressInterimUpdates: Map[PropertyKind, Set[PropertyKind]] = Map.empty
         // Interim updates have to be suppressed when an analysis uses a property for which
         // the wrong bounds/not enough bounds are computed.
-        transformersCS foreach { cs =>
-            suppressInterimUpdates += (cs.derivesLazily.get.pk -> cs.uses(ps).map(_.pk))
-        }
+        transformersCS foreach { cs => suppressInterimUpdates += (cs.derivesLazily.get.pk -> cs.uses(ps).map(_.pk)) }
 
         // 3. create the batch
         val batchBuilder = List.newBuilder[ComputationSpecification[A]]
@@ -344,8 +327,7 @@ object AnalysisScenario {
      */
     def apply[A](
         analyses:      Iterable[ComputationSpecification[A]],
-        propertyStore: PropertyStore
-    ): AnalysisScenario[A] = {
+        propertyStore: PropertyStore): AnalysisScenario[A] = {
         val as = new AnalysisScenario[A](propertyStore)
         analyses.foreach(as.+=)
         as

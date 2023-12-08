@@ -3,9 +3,9 @@ package org.opalj
 package br
 package fpcf
 
+import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
-import org.opalj.br.analyses.SomeProject
 
 /**
  * @author Michael Eichberg
@@ -20,14 +20,10 @@ trait FPCFLazyLikeAnalysisScheduler extends FPCFAnalysisScheduler {
 
     final override def schedule(
         ps: PropertyStore,
-        i:  InitializationData
-    ): FPCFAnalysis = {
-        register(ps.context(classOf[SomeProject]), ps, i)
-    }
+        i:  InitializationData): FPCFAnalysis = register(ps.context(classOf[SomeProject]), ps, i)
 
-    final def register(project: SomeProject, i: InitializationData): FPCFAnalysis = {
+    final def register(project: SomeProject, i: InitializationData): FPCFAnalysis =
         register(project, project.get(PropertyStoreKey), i)
-    }
 
     /**
      * Called when a schedule is executed and when this analysis shall register itself
@@ -41,10 +37,8 @@ trait FPCFLazyLikeAnalysisScheduler extends FPCFAnalysisScheduler {
      *       `scheduleEagerComputationForEntity`.
      */
     def register(
-        project:       SomeProject,
+        project: SomeProject,
         propertyStore: PropertyStore,
-        i:             InitializationData
-    ): FPCFAnalysis
+        i: InitializationData): FPCFAnalysis
 
 }
-

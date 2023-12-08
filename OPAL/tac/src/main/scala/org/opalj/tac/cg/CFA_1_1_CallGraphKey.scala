@@ -18,15 +18,11 @@ import org.opalj.tac.fpcf.analyses.cg.CFA_k_l_TypeIterator
  */
 object CFA_1_1_CallGraphKey extends CallGraphKey {
 
-    override def requirements(project: SomeProject): ProjectInformationKeys = {
+    override def requirements(project: SomeProject): ProjectInformationKeys =
         AllocationSiteBasedPointsToCallGraphKey.requirements(project)
-    }
 
     override protected def callGraphSchedulers(
-        project: SomeProject
-    ): Iterable[FPCFAnalysisScheduler] = {
+        project: SomeProject): Iterable[FPCFAnalysisScheduler] =
         AllocationSiteBasedPointsToCallGraphKey.callGraphSchedulers(project)
-    }
-    override def getTypeIterator(project: SomeProject) =
-        new CFA_k_l_TypeIterator(project, 1, 1)
+    override def getTypeIterator(project: SomeProject) = new CFA_k_l_TypeIterator(project, 1, 1)
 }

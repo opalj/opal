@@ -11,8 +11,8 @@ package instructions
  */
 abstract class StackManagementInstruction
     extends ConstantLengthInstruction
-    with NoLabels
-    with InstructionMetaInformation {
+        with NoLabels
+        with InstructionMetaInformation {
 
     final override def isStackManagementInstruction: Boolean = true
 
@@ -21,13 +21,10 @@ abstract class StackManagementInstruction
     final override def nextInstructions(
         currentPC:             PC,
         regularSuccessorsOnly: Boolean
-    )(
-        implicit
+      )(implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
-    ): List[PC] = {
+        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy): List[PC] =
         List(indexOfNextInstruction(currentPC))
-    }
 
     final override def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
         val other = code.instructions(otherPC)

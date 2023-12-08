@@ -7,6 +7,7 @@ package cg
 
 import scala.collection.immutable.IntMap
 
+import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.collection.immutable.LongLinkedSet
 import org.opalj.collection.immutable.LongLinkedTrieSet
 import org.opalj.fpcf.Entity
@@ -16,7 +17,6 @@ import org.opalj.fpcf.PropertyIsNotDerivedByPreviouslyExecutedAnalysis
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStore
-import org.opalj.br.fpcf.analyses.ContextProvider
 
 /**
  * For a given [[org.opalj.br.DeclaredMethod]], and for each call site (represented by the PC),
@@ -41,10 +41,10 @@ sealed trait Callers extends OrderedProperty with CallersPropertyMetaInformation
 
     def nonEmpty: Boolean
 
-    def callers(method: DeclaredMethod)(
-        implicit
-        contextProvider: ContextProvider
-    ): IterableOnce[(DeclaredMethod, Int /*PC*/ , Boolean /*isDirect*/ )] = {
+    def callers(
+        method: DeclaredMethod
+      )(implicit
+        contextProvider: ContextProvider): IterableOnce[(DeclaredMethod, Int /*PC*/, Boolean /*isDirect*/ )] =
         callContexts(method).iterator.foldLeft(List[(DeclaredMethod, Int, Boolean)]()) {
             (results, contextData) =>
                 val (_, callerContext, pc, isDirect) = contextData
@@ -53,32 +53,32 @@ sealed trait Callers extends OrderedProperty with CallersPropertyMetaInformation
                     case _         => (callerContext.method, pc, isDirect) :: results
                 }
         }
-    }
 
     def callersForContextId(calleeContextId: Int): LongLinkedSet
 
-    def callContexts(method: DeclaredMethod)(
-        implicit
-        contextProvider: ContextProvider
-    ): IterableOnce[(Context /*Callee*/ , Context /*Caller*/ , Int /*PC*/ , Boolean /*isDirect*/ )]
+    def callContexts(
+        method: DeclaredMethod
+      )(implicit
+        contextProvider: ContextProvider)
+        : IterableOnce[(Context /*Callee*/, Context /*Caller*/, Int /*PC*/, Boolean /*isDirect*/ )]
 
     def calleeContexts(
         method: DeclaredMethod
-    )(implicit contextProvider: ContextProvider): IterableOnce[Context]
+      )(implicit contextProvider: ContextProvider): IterableOnce[Context]
 
-    def forNewCalleeContexts(old: Callers, method: DeclaredMethod)(
-        handleContext: Context /*Callee*/ => Unit
-    )(
-        implicit
-        contextProvider: ContextProvider
-    ): Unit
+    def forNewCalleeContexts(
+        old: Callers,
+        method: DeclaredMethod
+      )(handleContext: Context /*Callee*/ => Unit
+      )(implicit
+        contextProvider: ContextProvider): Unit
 
-    def forNewCallerContexts(old: Callers, method: DeclaredMethod)(
-        handleContext: (Context /*Callee*/ , Context /*Caller*/ , Int /*PC*/ , Boolean /*isDirect*/ ) => Unit
-    )(
-        implicit
-        contextProvider: ContextProvider
-    ): Unit
+    def forNewCallerContexts(
+        old: Callers,
+        method: DeclaredMethod
+      )(handleContext: (Context /*Callee*/, Context /*Caller*/, Int /*PC*/, Boolean /*isDirect*/ ) => Unit
+      )(implicit
+        contextProvider: ContextProvider): Unit
 
     /**
      * Returns a new callers object, containing all callers of `this` object and a call from
@@ -93,16 +93,12 @@ sealed trait Callers extends OrderedProperty with CallersPropertyMetaInformation
 
     def updatedWithVMLevelCall(): Callers
 
-    override def toString: String = {
-        s"Callers(size=${this.size})"
-    }
+    override def toString: String = s"Callers(size=${this.size})"
 
     final def key: PropertyKey[Callers] = Callers.key
 
-    override def checkIsEqualOrBetterThan(e: Entity, other: Callers): Unit = {
-        if (other.size < size)
-            throw new IllegalArgumentException(s"$e: illegal refinement of property $other to $this")
-    }
+    override def checkIsEqualOrBetterThan(e: Entity, other: Callers): Unit =
+        if (other.size < size) throw new IllegalArgumentException(s"$e: illegal refinement of property $other to $this")
 }
 
 sealed trait CallersWithoutUnknownContext extends Callers {
@@ -110,12 +106,12 @@ sealed trait CallersWithoutUnknownContext extends Callers {
 }
 
 sealed trait CallersWithUnknownContext extends Callers {
-    final override def hasCallersWithUnknownContext: Boolean = true
+    final override def hasCallersWithUnknownContext: Boolean                  = true
     final override def updatedWithUnknownContext(): CallersWithUnknownContext = this
 }
 
 sealed trait CallersWithVMLevelCall extends Callers {
-    final override def hasVMLevelCallers: Boolean = true
+    final override def hasVMLevelCallers: Boolean                       = true
     final override def updatedWithVMLevelCall(): CallersWithVMLevelCall = this
 }
 
@@ -130,54 +126,48 @@ sealed trait EmptyConcreteCallers extends Callers {
 
     final override def nonEmpty: Boolean = false
 
-    override def callersForContextId(calleeContextId: Int): LongLinkedSet = {
-        LongLinkedTrieSet.empty
-    }
+    override def callersForContextId(calleeContextId: Int): LongLinkedSet = LongLinkedTrieSet.empty
 
-    override def callContexts(method: DeclaredMethod)(
-        implicit
-        contextProvider: ContextProvider
-    ): IterableOnce[(Context /*Callee*/ , Context /*Caller*/ , Int /*PC*/ , Boolean /*isDirect*/ )] = {
+    override def callContexts(
+        method: DeclaredMethod
+      )(implicit
+        contextProvider: ContextProvider)
+        : IterableOnce[(Context /*Callee*/, Context /*Caller*/, Int /*PC*/, Boolean /*isDirect*/ )] =
         if (hasCallersWithUnknownContext || hasVMLevelCallers)
             Iterator((contextProvider.newContext(method), NoContext, -1, true))
-        else
-            Nil
-    }
+        else Nil
 
     override def calleeContexts(
         method: DeclaredMethod
-    )(implicit contextProvider: ContextProvider): IterableOnce[Context] = {
-        if (hasCallersWithUnknownContext || hasVMLevelCallers)
-            Iterator(contextProvider.newContext(method))
-        else
-            Iterator.empty
-    }
+      )(implicit contextProvider: ContextProvider): IterableOnce[Context] =
+        if (hasCallersWithUnknownContext || hasVMLevelCallers) Iterator(contextProvider.newContext(method))
+        else Iterator.empty
 
-    override def forNewCalleeContexts(old: Callers, method: DeclaredMethod)(
-        handleContext: Context /*Callee*/ => Unit
-    )(
-        implicit
-        contextProvider: ContextProvider
-    ): Unit = {
+    override def forNewCalleeContexts(
+        old:           Callers,
+        method:        DeclaredMethod
+      )(handleContext: Context /*Callee*/ => Unit
+      )(implicit
+        contextProvider: ContextProvider): Unit =
         if ((hasCallersWithUnknownContext || hasVMLevelCallers) &&
             ((old eq null) || !old.hasCallersWithUnknownContext && !old.hasVMLevelCallers))
             handleContext(contextProvider.newContext(method))
-    }
 
-    override def forNewCallerContexts(old: Callers, method: DeclaredMethod)(
-        handleContext: (Context /*Callee*/ , Context /*Caller*/ , Int /*PC*/ , Boolean /*isDirect*/ ) => Unit
-    )(
-        implicit
-        contextProvider: ContextProvider
-    ): Unit = {
+    override def forNewCallerContexts(
+        old:           Callers,
+        method:        DeclaredMethod
+      )(handleContext: (Context /*Callee*/, Context /*Caller*/, Int /*PC*/, Boolean /*isDirect*/ ) => Unit
+      )(implicit
+        contextProvider: ContextProvider): Unit =
         if ((hasCallersWithUnknownContext || hasVMLevelCallers) &&
             ((old eq null) || !old.hasCallersWithUnknownContext && !old.hasVMLevelCallers))
             handleContext(contextProvider.newContext(method), NoContext, -1, true)
-    }
 
     final override def updated(
-        calleeContext: Context, callerContext: Context, pc: Int, isDirect: Boolean
-    ): Callers = {
+        calleeContext: Context,
+        callerContext: Context,
+        pc:            Int,
+        isDirect:      Boolean): Callers = {
         val map = IntMap(calleeContext.id -> LongLinkedTrieSet(Callers.toLong(callerContext.id, pc, isDirect)))
 
         if (!hasCallersWithUnknownContext && !hasVMLevelCallers) {
@@ -216,14 +206,14 @@ sealed trait CallersImplementation extends Callers {
 
     final override def nonEmpty: Boolean = size != 0
 
-    override def callersForContextId(calleeContextId: Int): LongLinkedSet = {
+    override def callersForContextId(calleeContextId: Int): LongLinkedSet =
         encodedCallers.getOrElse(calleeContextId, LongLinkedTrieSet.empty)
-    }
 
-    final override def callContexts(method: DeclaredMethod)(
-        implicit
-        contextProvider: ContextProvider
-    ): IterableOnce[(Context /*Callee*/ , Context /*Caller*/ , Int /*PC*/ , Boolean /*isDirect*/ )] = {
+    final override def callContexts(
+        method: DeclaredMethod
+      )(implicit
+        contextProvider: ContextProvider)
+        : IterableOnce[(Context /*Callee*/, Context /*Caller*/, Int /*PC*/, Boolean /*isDirect*/ )] = {
         val contexts = encodedCallers.iterator.flatMap {
             case (calleeContextId, callers) =>
                 val calleeContext = contextProvider.contextFromId(calleeContextId)
@@ -234,38 +224,33 @@ sealed trait CallersImplementation extends Callers {
         }
         if (hasCallersWithUnknownContext || hasVMLevelCallers)
             contexts ++ Iterator((contextProvider.newContext(method), NoContext, -1, true))
-        else
-            contexts
+        else contexts
     }
 
-    final override def calleeContexts(method: DeclaredMethod)(
-        implicit
-        contextProvider: ContextProvider
-    ): IterableOnce[Context] = {
+    final override def calleeContexts(
+        method: DeclaredMethod
+      )(implicit
+        contextProvider: ContextProvider): IterableOnce[Context] = {
         val contexts = encodedCallers.keysIterator.map(contextProvider.contextFromId)
         if (hasCallersWithUnknownContext || hasVMLevelCallers) {
             val unknownContext = contextProvider.newContext(method)
-            if (!encodedCallers.contains(unknownContext.id))
-                contexts ++ Iterator(unknownContext)
-            else
-                contexts
-        } else
-            contexts
+            if (!encodedCallers.contains(unknownContext.id)) contexts ++ Iterator(unknownContext)
+            else contexts
+        } else contexts
     }
 
-    final override def forNewCalleeContexts(old: Callers, method: DeclaredMethod)(
-        handleContext: Context /*Callee*/ => Unit
-    )(
-        implicit
-        contextProvider: ContextProvider
-    ): Unit = {
-        val unknownContext = contextProvider.newContext(method)
+    final override def forNewCalleeContexts(
+        old:           Callers,
+        method:        DeclaredMethod
+      )(handleContext: Context /*Callee*/ => Unit
+      )(implicit
+        contextProvider: ContextProvider): Unit = {
+        val unknownContext   = contextProvider.newContext(method)
         val unknownContextId = unknownContext.id
 
         encodedCallers.foreach {
             case (calleeContextId, _) =>
-                if (old eq null)
-                    handleContext(contextProvider.contextFromId(calleeContextId))
+                if (old eq null) handleContext(contextProvider.contextFromId(calleeContextId))
                 else if (old.callersForContextId(calleeContextId).isEmpty) {
                     if (calleeContextId != unknownContextId ||
                         !old.hasCallersWithUnknownContext && !old.hasVMLevelCallers)
@@ -275,23 +260,22 @@ sealed trait CallersImplementation extends Callers {
 
         if ((hasCallersWithUnknownContext || hasVMLevelCallers) &&
             ((old eq null) || !old.hasCallersWithUnknownContext && !old.hasVMLevelCallers))
-            if (!encodedCallers.contains(unknownContextId))
-                handleContext(unknownContext)
+            if (!encodedCallers.contains(unknownContextId)) handleContext(unknownContext)
     }
 
-    final override def forNewCallerContexts(old: Callers, method: DeclaredMethod)(
-        handleContext: (Context /*Callee*/ , Context /*Caller*/ , Int /*PC*/ , Boolean /*isDirect*/ ) => Unit
-    )(
-        implicit
-        contextProvider: ContextProvider
-    ): Unit = {
+    final override def forNewCallerContexts(
+        old:           Callers,
+        method:        DeclaredMethod
+      )(handleContext: (Context /*Callee*/, Context /*Caller*/, Int /*PC*/, Boolean /*isDirect*/ ) => Unit
+      )(implicit
+        contextProvider: ContextProvider): Unit = {
         encodedCallers.foreach {
             case (calleeContextId, callers) =>
                 val calleeContext = contextProvider.contextFromId(calleeContextId)
-                val seen = if (old eq null) 0 else old.callersForContextId(calleeContextId).size
+                val seen          = if (old eq null) 0 else old.callersForContextId(calleeContextId).size
                 callers.forFirstN(callers.size - seen) { (encodedPair: Long) =>
                     val (callerContextId, pc, isDirect) = Callers.toContextPcAndIsDirect(encodedPair)
-                    val callerContext = contextProvider.contextFromId(callerContextId)
+                    val callerContext                   = contextProvider.contextFromId(callerContextId)
                     handleContext(calleeContext, callerContext, pc, isDirect)
                 }
         }
@@ -303,13 +287,14 @@ sealed trait CallersImplementation extends Callers {
 }
 
 class CallersOnlyWithConcreteCallers(
-        val encodedCallers: IntMap[LongLinkedSet] /* Callee Context => Caller Context + PC + isDirect */ ,
-        val size:           Int
-) extends CallersImplementation with CallersWithoutVMLevelCall with CallersWithoutUnknownContext {
+        val encodedCallers: IntMap[LongLinkedSet] /* Callee Context => Caller Context + PC + isDirect */,
+        val size: Int) extends CallersImplementation with CallersWithoutVMLevelCall with CallersWithoutUnknownContext {
 
     override def updated(
-        calleeContext: Context, callerContext: Context, pc: Int, isDirect: Boolean
-    ): Callers = {
+        calleeContext: Context,
+        callerContext: Context,
+        pc:            Int,
+        isDirect:      Boolean): Callers = {
         val encodedCaller = Callers.toLong(callerContext.id, pc, isDirect)
 
         val calleeContextId = calleeContext.id
@@ -318,40 +303,37 @@ class CallersOnlyWithConcreteCallers(
             val newSet = oldSet + encodedCaller
 
             // requires the LongTrieSet to return `this` if the `encodedCaller` is already contained.
-            if (newSet eq oldSet)
-                this
-            else
-                new CallersOnlyWithConcreteCallers(
-                    encodedCallers + (calleeContextId -> newSet),
-                    size + 1
-                )
+            if (newSet eq oldSet) this
+            else new CallersOnlyWithConcreteCallers(
+                encodedCallers + (calleeContextId -> newSet),
+                size + 1
+            )
         } else {
             new CallersOnlyWithConcreteCallers(
-                encodedCallers + (calleeContextId -> LongLinkedTrieSet(encodedCaller)), size + 1
+                encodedCallers + (calleeContextId -> LongLinkedTrieSet(encodedCaller)),
+                size + 1
             )
         }
     }
 
-    override def updatedWithUnknownContext(): Callers =
-        CallersImplWithOtherCalls(
-            encodedCallers,
-            hasVMLevelCallers = false,
-            hasCallersWithUnknownContext = true
-        )
+    override def updatedWithUnknownContext(): Callers = CallersImplWithOtherCalls(
+        encodedCallers,
+        hasVMLevelCallers = false,
+        hasCallersWithUnknownContext = true
+    )
 
-    override def updatedWithVMLevelCall(): Callers =
-        CallersImplWithOtherCalls(
-            encodedCallers,
-            hasVMLevelCallers = true,
-            hasCallersWithUnknownContext = false
-        )
+    override def updatedWithVMLevelCall(): Callers = CallersImplWithOtherCalls(
+        encodedCallers,
+        hasVMLevelCallers = true,
+        hasCallersWithUnknownContext = false
+    )
 }
 
 class CallersImplWithOtherCalls(
-        val encodedCallers:                IntMap[LongLinkedSet] /* Callee Context => Caller Context + PC + isDirect */ ,
+        val encodedCallers:                IntMap[LongLinkedSet] /* Callee Context => Caller Context + PC + isDirect */,
         val size:                          Int,
         private val specialCallSitesFlags: Byte // last bit vm lvl, second last bit unknown context
-) extends CallersImplementation {
+      ) extends CallersImplementation {
     assert(encodedCallers.nonEmpty)
     assert(specialCallSitesFlags >= 0 && specialCallSitesFlags <= 3)
 
@@ -360,8 +342,10 @@ class CallersImplWithOtherCalls(
     override def hasCallersWithUnknownContext: Boolean = (specialCallSitesFlags & 2) != 0
 
     override def updated(
-        calleeContext: Context, callerContext: Context, pc: Int, isDirect: Boolean
-    ): Callers = {
+        calleeContext: Context,
+        callerContext: Context,
+        pc:            Int,
+        isDirect:      Boolean): Callers = {
         val encodedCaller = Callers.toLong(callerContext.id, pc, isDirect)
 
         val calleeContextId = calleeContext.id
@@ -370,14 +354,12 @@ class CallersImplWithOtherCalls(
             val newSet = oldSet + encodedCaller
 
             // requires the LongTrieSet to return `this` if the `encodedCaller` is already contained.
-            if (newSet eq oldSet)
-                this
-            else
-                new CallersImplWithOtherCalls(
-                    encodedCallers + (calleeContextId -> newSet),
-                    size + 1,
-                    specialCallSitesFlags
-                )
+            if (newSet eq oldSet) this
+            else new CallersImplWithOtherCalls(
+                encodedCallers + (calleeContextId -> newSet),
+                size + 1,
+                specialCallSitesFlags
+            )
         } else {
             new CallersImplWithOtherCalls(
                 encodedCallers + (calleeContextId -> LongLinkedTrieSet(encodedCaller)),
@@ -388,28 +370,23 @@ class CallersImplWithOtherCalls(
     }
 
     override def updatedWithVMLevelCall(): Callers =
-        if (hasVMLevelCallers)
-            this
-        else
-            new CallersImplWithOtherCalls(encodedCallers, size, (specialCallSitesFlags | 1).toByte)
+        if (hasVMLevelCallers) this
+        else new CallersImplWithOtherCalls(encodedCallers, size, (specialCallSitesFlags | 1).toByte)
 
     override def updatedWithUnknownContext(): Callers =
-        if (hasCallersWithUnknownContext)
-            this
-        else
-            new CallersImplWithOtherCalls(encodedCallers, size, (specialCallSitesFlags | 2).toByte)
+        if (hasCallersWithUnknownContext) this
+        else new CallersImplWithOtherCalls(encodedCallers, size, (specialCallSitesFlags | 2).toByte)
 }
 
 object CallersImplWithOtherCalls {
     def apply(
-        encodedCallers:               IntMap[LongLinkedSet] /* Callee Context => Caller Context + PC + isDirect */ ,
+        encodedCallers:               IntMap[LongLinkedSet] /* Callee Context => Caller Context + PC + isDirect */,
         hasVMLevelCallers:            Boolean,
-        hasCallersWithUnknownContext: Boolean
-    ): CallersImplWithOtherCalls = {
+        hasCallersWithUnknownContext: Boolean): CallersImplWithOtherCalls = {
         assert(hasVMLevelCallers | hasCallersWithUnknownContext)
         assert(encodedCallers.nonEmpty)
 
-        val vmLvlCallers = if (hasVMLevelCallers) 1 else 0
+        val vmLvlCallers   = if (hasVMLevelCallers) 1 else 0
         val unknownContext = if (hasCallersWithUnknownContext) 2 else 0
 
         new CallersImplWithOtherCalls(
@@ -426,24 +403,22 @@ object Callers extends CallersPropertyMetaInformation {
         val name = "opalj.CallersProperty"
         PropertyKey.create(
             name,
-            (_: PropertyStore, reason: FallbackReason, _: Entity) => reason match {
-                case PropertyIsNotDerivedByPreviouslyExecutedAnalysis => NoCallers
-                case _ =>
-                    throw new IllegalStateException(s"analysis required for property: $name")
-            }
+            (_: PropertyStore, reason: FallbackReason, _: Entity) =>
+                reason match {
+                    case PropertyIsNotDerivedByPreviouslyExecutedAnalysis => NoCallers
+                    case _                                                => throw new IllegalStateException(s"analysis required for property: $name")
+                }
         )
     }
 
     def toLong(contextId: Int, pc: Int, isDirect: Boolean): Long = {
-        assert(pc >= 0 && pc <= 0xFFFF)
+        assert(pc >= 0 && pc <= 0xffff)
         (contextId.toLong << 16) | pc.toLong | (if (isDirect) Long.MinValue else 0)
     }
 
-    def toContextPcAndIsDirect(pcContextAndIsDirect: Long): (Int, Int, Boolean) = {
-        (
-            (pcContextAndIsDirect >> 16).toInt,
-            pcContextAndIsDirect.toInt & 0xFFFF,
-            pcContextAndIsDirect < 0
-        )
-    }
+    def toContextPcAndIsDirect(pcContextAndIsDirect: Long): (Int, Int, Boolean) = (
+        (pcContextAndIsDirect >> 16).toInt,
+        pcContextAndIsDirect.toInt & 0xffff,
+        pcContextAndIsDirect < 0
+    )
 }

@@ -2,29 +2,31 @@
 package org.opalj
 package br
 
-import scala.annotation.tailrec
 import scala.annotation.switch
+import scala.annotation.tailrec
 import scala.reflect.ClassTag
+
 import java.util.Arrays.fill
 import scala.collection.AbstractIterator
-import scala.collection.mutable
 import scala.collection.immutable.IntMap
 import scala.collection.immutable.Queue
-import org.opalj.util.AnyToAnyThis
+import scala.collection.mutable
+
+import org.opalj.br.ClassHierarchy.PreInitializedClassHierarchy
+import org.opalj.br.cfg.CFG
+import org.opalj.br.cfg.CFGFactory
+import org.opalj.br.instructions._
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.collection.IntIterator
+import org.opalj.collection.immutable.BitArraySet
+import org.opalj.collection.immutable.EmptyIntTrieSet
 import org.opalj.collection.immutable.IntArraySet
+import org.opalj.collection.immutable.IntIntPair
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.IntTrieSet1
-import org.opalj.collection.immutable.BitArraySet
-import org.opalj.collection.immutable.IntIntPair
-import org.opalj.collection.immutable.EmptyIntTrieSet
-import org.opalj.collection.mutable.IntQueue
 import org.opalj.collection.mutable.IntArrayStack
-import org.opalj.br.cfg.CFGFactory
-import org.opalj.br.cfg.CFG
-import org.opalj.br.ClassHierarchy.PreInitializedClassHierarchy
-import org.opalj.br.instructions._
+import org.opalj.collection.mutable.IntQueue
+import org.opalj.util.AnyToAnyThis
 
 /**
  * Representation of a method's code attribute, that is, representation of a method's
@@ -50,29 +52,24 @@ final class Code private (
         val maxLocals:         Int,
         val instructions:      Array[Instruction],
         val exceptionHandlers: ExceptionHandlers,
-        val attributes:        Attributes
-) extends Attribute
-    with CommonAttributes
-    with InstructionsContainer
-    with CodeSequence[Instruction]
-    with Iterable[PCAndInstruction] {
+        val attributes: Attributes) extends Attribute
+        with CommonAttributes
+        with InstructionsContainer
+        with CodeSequence[Instruction]
+        with Iterable[PCAndInstruction] {
     code =>
 
     def copy(
-        maxStack:          Int                = this.maxStack,
-        maxLocals:         Int                = this.maxLocals,
+        maxStack:          Int = this.maxStack,
+        maxLocals:         Int = this.maxLocals,
         instructions:      Array[Instruction] = this.instructions,
-        exceptionHandlers: ExceptionHandlers  = this.exceptionHandlers,
-        attributes:        Attributes         = this.attributes
-    ): Code = {
+        exceptionHandlers: ExceptionHandlers = this.exceptionHandlers,
+        attributes:        Attributes = this.attributes): Code =
         new Code(maxStack, maxLocals, instructions, exceptionHandlers, attributes)
-    }
 
-    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = {
-        other match {
-            case that: Code => this.similar(that, config)
-            case _          => false
-        }
+    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = other match {
+        case that: Code => this.similar(that, config)
+        case _          => false
     }
 
     def similar(other: Code, config: SimilarityTestConfiguration): Boolean = {
@@ -85,20 +82,20 @@ final class Code private (
         }
 
         if (!(
-            this.instructions.length == other.instructions.length && {
-                var areEqual = true
-                val max = instructions.length
-                var i = 0
-                while (i < max && areEqual) {
-                    val thisI = this.instructions(i)
-                    val otherI = other.instructions(i)
-                    areEqual = (thisI == null && otherI == null) ||
-                        (thisI != null && otherI != null && thisI.similar(otherI))
-                    i += 1
+                this.instructions.length == other.instructions.length && {
+                    var areEqual = true
+                    val max      = instructions.length
+                    var i        = 0
+                    while (i < max && areEqual) {
+                        val thisI  = this.instructions(i)
+                        val otherI = other.instructions(i)
+                        areEqual = (thisI == null && otherI == null) ||
+                            (thisI != null && otherI != null && thisI.similar(otherI))
+                        i += 1
+                    }
+                    areEqual
                 }
-                areEqual
-            }
-        )) {
+            )) {
             return false;
         }
 
@@ -107,17 +104,15 @@ final class Code private (
 
     @inline final def codeSize: Int = instructions.length
 
-    override def iterator: Iterator[PCAndInstruction] = {
-        new AbstractIterator[PCAndInstruction] {
-            private[this] var pc = 0
+    override def iterator: Iterator[PCAndInstruction] = new AbstractIterator[PCAndInstruction] {
+        private[this] var pc = 0
 
-            def hasNext: Boolean = pc < instructions.length
+        def hasNext: Boolean = pc < instructions.length
 
-            def next(): PCAndInstruction = {
-                val inst = PCAndInstruction(pc, instructions(pc))
-                pc = inst.instruction.indexOfNextInstruction(pc)(code)
-                inst
-            }
+        def next(): PCAndInstruction = {
+            val inst = PCAndInstruction(pc, instructions(pc))
+            pc = inst.instruction.indexOfNextInstruction(pc)(code)
+            inst
         }
     }
 
@@ -133,13 +128,13 @@ final class Code private (
      */
     def programCounters: IntIterator = new IntIterator {
         private[this] var nextPC = 0 // there is always at least one instruction
-        def hasNext: Boolean = nextPC < instructions.length
-        def next(): Int = { val pc = nextPC; nextPC = pcOfNextInstruction(nextPC); pc }
+        def hasNext: Boolean     = nextPC < instructions.length
+        def next(): Int          = { val pc = nextPC; nextPC = pcOfNextInstruction(nextPC); pc }
     }
 
     def foreachProgramCounter[U](f: Int => U): Unit = {
         var nextPC = 0 // there is always at least one instruction
-        val maxPC = instructions.length
+        val maxPC  = instructions.length
         while (nextPC < maxPC) {
             f(nextPC)
             nextPC = pcOfNextInstruction(nextPC)
@@ -153,8 +148,8 @@ final class Code private (
      * @note This operation has complexity O(n).
      */
     def instructionsCount: Int = {
-        var c = 0
-        var pc = 0
+        var c   = 0
+        var pc  = 0
         val max = instructions.length
         while (pc < max) {
             c += 1
@@ -195,13 +190,13 @@ final class Code private (
                     val instruction = instructions(pc)
 
                     (instruction.opcode: @switch) match {
-                        case ATHROW.opcode                                    =>
+                        case ATHROW.opcode =>
                         /* Nothing do to; will be handled when we deal with exceptions. */
 
                         case /* xReturn: */ 176 | 175 | 174 | 172 | 173 | 177 =>
                         /* Nothing to do; there are no successor! */
 
-                        case RET.opcode                                       =>
+                        case RET.opcode =>
                         /*Nothing to do; handled by JSR*/
                         case JSR.opcode | JSR_W.opcode =>
                             val UnconditionalBranchInstruction(branchoffset) = instruction
@@ -224,8 +219,7 @@ final class Code private (
                             nextPCs.enqueue(pc + defaultOffset)
                             jumpOffsets foreach { jumpOffset => nextPCs.enqueue(pc + jumpOffset) }
 
-                        case _ =>
-                            nextPCs.enqueue(pcOfNextInstruction(pc))
+                        case _ => nextPCs.enqueue(pcOfNextInstruction(pc))
                     }
                 }
             }
@@ -256,7 +250,7 @@ final class Code private (
 
             remainingExceptionHandlers = remainingExceptionHandlers filter { eh =>
                 subroutineIds(eh.handlerPC) == -1 && // we did not already analyze the handler
-                    !belongsToCurrentSubroutine(eh.startPC, eh.endPC, eh.handlerPC)
+                !belongsToCurrentSubroutine(eh.startPC, eh.endPC, eh.handlerPC)
             }
         }
 
@@ -283,8 +277,7 @@ final class Code private (
      */
     def cfJoins(
         implicit
-        classHierarchy: ClassHierarchy = PreInitializedClassHierarchy
-    ): IntTrieSet = {
+        classHierarchy: ClassHierarchy = PreInitializedClassHierarchy): IntTrieSet = {
         /* OLD - DOESN'T USE THE CLASS HIERARCHY!
         val instructions = this.instructions
         val instructionsLength = instructions.length
@@ -348,8 +341,8 @@ final class Code private (
             pc = nextPC
         }
         cfJoins
-        */
-        val instructions = this.instructions
+         */
+        val instructions       = this.instructions
         val instructionsLength = instructions.length
 
         var cfJoins: IntTrieSet = EmptyIntTrieSet
@@ -360,18 +353,14 @@ final class Code private (
         var pc = 0
         while (pc < instructionsLength) {
             val instruction = instructions(pc)
-            val nextPC = pcOfNextInstruction(pc)
+            val nextPC      = pcOfNextInstruction(pc)
 
-            @inline def runtimeSuccessor(pc: Int): Unit = {
-                if (isReached(pc))
-                    cfJoins +!= pc
-                else
-                    isReached(pc) = true
-            }
+            @inline def runtimeSuccessor(pc: Int): Unit =
+                if (isReached(pc)) cfJoins +!= pc
+                else isReached(pc) = true
 
             (instruction.opcode: @switch) match {
                 case RET.opcode => // potential path joins are determined when we process JSRs
-
                 case JSR.opcode | JSR_W.opcode =>
                     val UnconditionalBranchInstruction(branchoffset) = instruction
                     runtimeSuccessor(pc + branchoffset)
@@ -404,7 +393,7 @@ final class Code private (
     def predecessorPCs(implicit classHierarchy: ClassHierarchy): (Array[PCs], PCs, PCs) = {
         implicit val code: Code = this
 
-        val instructions = this.instructions
+        val instructions       = this.instructions
         val instructionsLength = instructions.length
 
         val allPredecessorPCs = new Array[PCs](instructionsLength)
@@ -412,24 +401,19 @@ final class Code private (
         var exitPCs: IntTrieSet = EmptyIntTrieSet
 
         var cfJoins: IntTrieSet = EmptyIntTrieSet
-        val isReached = new Array[Boolean](instructionsLength)
+        val isReached           = new Array[Boolean](instructionsLength)
         isReached(0) = true // the first instruction is always reached!
-        @inline def runtimeSuccessor(successorPC: Int): Unit = {
-            if (isReached(successorPC))
-                cfJoins +!= successorPC
-            else
-                isReached(successorPC) = true
-        }
+        @inline def runtimeSuccessor(successorPC: Int): Unit =
+            if (isReached(successorPC)) cfJoins +!= successorPC
+            else isReached(successorPC) = true
 
         lazy val cfg = CFGFactory(code, classHierarchy) // fallback if we analyze pre Java 5 code...
-        var pc = 0
+        var pc       = 0
         while (pc < instructionsLength) {
             val i = instructions(pc)
             val nextPCs =
-                if (i.opcode == RET.opcode)
-                    i.asInstanceOf[RET].nextInstructions(pc, () => cfg)
-                else
-                    i.nextInstructions(pc, regularSuccessorsOnly = false)
+                if (i.opcode == RET.opcode) i.asInstanceOf[RET].nextInstructions(pc, () => cfg)
+                else i.nextInstructions(pc, regularSuccessorsOnly = false)
             if (nextPCs.isEmpty) {
                 exitPCs += pc
             } else {
@@ -482,18 +466,17 @@ final class Code private (
     def liveVariables(
         predecessorPCs: Array[PCs],
         finalPCs:       PCs,
-        cfJoins:        PCs
-    ): LiveVariables = {
+        cfJoins:        PCs): LiveVariables = {
         // IMPROVE Use StackMapTable (if available) to preinitialize the live variable information
-        val instructions = this.instructions
+        val instructions       = this.instructions
         val instructionsLength = instructions.length
-        val liveVariables = new Array[BitArraySet](instructionsLength)
-        val workqueue = IntQueue.empty
-        val AllDead = BitArraySet.empty
+        val liveVariables      = new Array[BitArraySet](instructionsLength)
+        val workqueue          = IntQueue.empty
+        val AllDead            = BitArraySet.empty
         finalPCs foreach { pc => liveVariables(pc) = AllDead; workqueue.enqueue(pc) }
         // required to handle endless loops!
         cfJoins foreach { pc =>
-            val instruction = instructions(pc)
+            val instruction      = instructions(pc)
             var liveVariableInfo = AllDead
             if (instruction.readsLocal) {
                 // This instruction is by construction "not a final instruction"
@@ -505,8 +488,8 @@ final class Code private (
             workqueue.enqueue(pc)
         }
         while (!workqueue.isEmpty) {
-            val pc = workqueue.dequeue
-            val instruction = instructions(pc)
+            val pc               = workqueue.dequeue
+            val instruction      = instructions(pc)
             var liveVariableInfo = liveVariables(pc)
             if (instruction.readsLocal) {
                 val lvIndex = instruction.indexOfReadLocal
@@ -575,14 +558,14 @@ final class Code private (
      */
     def cfPCs(
         implicit
-        classHierarchy: ClassHierarchy = PreInitializedClassHierarchy
-    ): (PCs /*cfJoins*/ , PCs /*forks*/ , IntMap[PCs] /*forkTargetPCs*/ ) = {
-        val instructions = this.instructions
+        classHierarchy: ClassHierarchy = PreInitializedClassHierarchy)
+        : (PCs /*cfJoins*/, PCs /*forks*/, IntMap[PCs] /*forkTargetPCs*/ ) = {
+        val instructions       = this.instructions
         val instructionsLength = instructions.length
 
         var cfJoins: IntTrieSet = EmptyIntTrieSet
         var cfForks: IntTrieSet = EmptyIntTrieSet
-        var cfForkTargets = IntMap.empty[IntTrieSet]
+        var cfForkTargets       = IntMap.empty[IntTrieSet]
 
         val isReached = new Array[Boolean](instructionsLength)
         isReached(0) = true // the first instruction is always reached!
@@ -592,14 +575,11 @@ final class Code private (
         var pc = 0
         while (pc < instructionsLength) {
             val instruction = instructions(pc)
-            val nextPC = pcOfNextInstruction(pc)
+            val nextPC      = pcOfNextInstruction(pc)
 
-            @inline def runtimeSuccessor(pc: Int): Unit = {
-                if (isReached(pc))
-                    cfJoins += pc
-                else
-                    isReached(pc) = true
-            }
+            @inline def runtimeSuccessor(pc: Int): Unit =
+                if (isReached(pc)) cfJoins += pc
+                else isReached(pc) = true
 
             (instruction.opcode: @switch) match {
                 case RET.opcode =>
@@ -630,9 +610,9 @@ final class Code private (
     /**
      * Iterates over all instructions and calls the given function `f` for every instruction.
      */
-    @inline final def iterate[U](f: ( /*pc:*/ Int, Instruction) => U): Unit = {
+    @inline final def iterate[U](f: (/*pc:*/ Int, Instruction) => U): Unit = {
         val instructionsLength = instructions.length
-        var pc = 0
+        var pc                 = 0
         while (pc < instructionsLength) {
             val instruction = instructions(pc)
             f(pc, instruction)
@@ -645,12 +625,10 @@ final class Code private (
      */
     @inline final def iterate[U](
         instructionType: InstructionMetaInformation
-    )(
-        f: ( /*pc:*/ Int, Instruction) => U
-    ): Unit = {
-        val opcode = instructionType.opcode
+      )(f: (/*pc:*/ Int, Instruction) => U): Unit = {
+        val opcode             = instructionType.opcode
         val instructionsLength = instructions.length
-        var pc = 0
+        var pc                 = 0
         while (pc < instructionsLength) {
             val instruction = instructions(pc)
             if (instruction.opcode == opcode) f(pc, instruction)
@@ -658,13 +636,12 @@ final class Code private (
         }
     }
 
-    @inline final def forall(f: ( /*pc:*/ Int, Instruction) => Boolean): Boolean = {
+    @inline final def forall(f: (/*pc:*/ Int, Instruction) => Boolean): Boolean = {
         val instructionsLength = instructions.length
-        var pc = 0
+        var pc                 = 0
         while (pc < instructionsLength) {
             val instruction = instructions(pc)
-            if (!f(pc, instruction))
-                return false;
+            if (!f(pc, instruction)) return false;
 
             pc = pcOfNextInstruction(pc)
         }
@@ -677,7 +654,7 @@ final class Code private (
      */
     @inline final def foreachInstruction[U](f: Instruction => U): Unit = {
         val instructionsLength = instructions.length
-        var pc = 0
+        var pc                 = 0
         while (pc < instructionsLength) {
             val instruction = instructions(pc)
             f(instruction)
@@ -691,7 +668,7 @@ final class Code private (
      */
     @inline final def foreachPC[U](f: PC => U): Unit = {
         val instructionsLength = instructions.length
-        var pc = 0
+        var pc                 = 0
         while (pc < instructionsLength) {
             f(pc)
             pc = pcOfNextInstruction(pc)
@@ -712,7 +689,7 @@ final class Code private (
      */
     def handlersFor(pc: Int, justExceptions: Boolean = false): List[ExceptionHandler] = {
         var handledExceptions = Set.empty[ObjectType]
-        val ehs = List.newBuilder[ExceptionHandler]
+        val ehs               = List.newBuilder[ExceptionHandler]
         exceptionHandlers forall { eh =>
             if (eh.startPC <= pc && eh.endPC > pc) {
                 val catchTypeOption = eh.catchType
@@ -748,9 +725,7 @@ final class Code private (
      *
      * @param pc The program counter of an instruction of this `Code` array.
      */
-    def exceptionHandlersFor(pc: PC): List[ExceptionHandler] = {
-        handlersFor(pc, justExceptions = true)
-    }
+    def exceptionHandlersFor(pc: PC): List[ExceptionHandler] = handlersFor(pc, justExceptions = true)
 
     /**
      * Returns the handlers that may handle the given exception.
@@ -761,10 +736,8 @@ final class Code private (
     def handlersForException(
         pc:        Int,
         exception: ObjectType
-    )(
-        implicit
-        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
-    ): List[ExceptionHandler] = {
+      )(implicit
+        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy): List[ExceptionHandler] = {
         import classHierarchy.isASubtypeOf
 
         var handledExceptions = Set.empty[ObjectType]
@@ -778,22 +751,27 @@ final class Code private (
                     val isSubtype = isASubtypeOf(exception, catchType)
                     if (isSubtype.isYes) {
                         ehs += eh
-                        /* we found a definitiv matching handler*/ false
+                        /* we found a definitiv matching handler*/
+                        false
                     } else if (isSubtype.isUnknown) {
                         if (!handledExceptions.contains(catchType)) {
                             handledExceptions += catchType
                             ehs += eh
                         }
-                        /* we may have a better fit */ true
+                        /* we may have a better fit */
+                        true
                     } else {
-                        /* the exception type is not relevant*/ true
+                        /* the exception type is not relevant*/
+                        true
                     }
                 } else {
                     ehs += eh
-                    /* we are done; we found a finally handler... */ false
+                    /* we are done; we found a finally handler... */
+                    false
                 }
             } else {
-                /* the handler is not relevant */ true
+                /* the handler is not relevant */
+                true
             }
         }
         ehs.result()
@@ -845,18 +823,17 @@ final class Code private (
      *                   program counter will be equivalent to the length of the Code/Instructions
      *                   array.
      */
-    @inline final def pcOfNextInstruction(currentPC: Int): /*PC*/ Int = {
+    @inline final def pcOfNextInstruction(currentPC: Int): /*PC*/ Int =
         instructions(currentPC).indexOfNextInstruction(currentPC)(this)
-        // OLD: ITERATING OVER THE ARRAY AND CHECKING FOR NON-NULL IS NO LONGER SUPPORTED!
-        //    @inline final def pcOfNextInstruction(currentPC: PC): PC = {
-        //        val max_pc = instructions.size
-        //        var nextPC = currentPC + 1
-        //        while (nextPC < max_pc && (instructions(nextPC) eq null))
-        //            nextPC += 1
-        //
-        //        nextPC
-        //    }
-    }
+    // OLD: ITERATING OVER THE ARRAY AND CHECKING FOR NON-NULL IS NO LONGER SUPPORTED!
+    //    @inline final def pcOfNextInstruction(currentPC: PC): PC = {
+    //        val max_pc = instructions.size
+    //        var nextPC = currentPC + 1
+    //        while (nextPC < max_pc && (instructions(nextPC) eq null))
+    //            nextPC += 1
+    //
+    //        nextPC
+    //    }
 
     /**
      * Returns the program counter of the previous instruction in the code array.
@@ -867,7 +844,7 @@ final class Code private (
      * behavior is undefined.
      */
     @inline final def pcOfPreviousInstruction(currentPC: Int): /*PC*/ Int = {
-        var previousPC = currentPC - 1
+        var previousPC   = currentPC - 1
         val instructions = this.instructions
         while (previousPC > 0 && !instructions(previousPC).isInstanceOf[Instruction]) {
             previousPC -= 1
@@ -884,9 +861,7 @@ final class Code private (
      * @note    Depending on the configuration of the reader for `ClassFile`s this
      *          attribute may not be reified.
      */
-    def lineNumberTable: Option[LineNumberTable] = {
-        attributes collectFirst { case lnt: LineNumberTable => lnt }
-    }
+    def lineNumberTable: Option[LineNumberTable] = attributes collectFirst { case lnt: LineNumberTable => lnt }
 
     /**
      * Returns the line number associated with the instruction with the given pc if
@@ -901,9 +876,8 @@ final class Code private (
      * Returns `Some(true)` if both pcs have the same line number. If line number information
      * is not available `None` is returned.
      */
-    def haveSameLineNumber(firstPC: Int, secondPC: Int): Option[Boolean] = {
+    def haveSameLineNumber(firstPC: Int, secondPC: Int): Option[Boolean] =
         lineNumber(firstPC).flatMap(firstLN => lineNumber(secondPC).map(_ == firstLN))
-    }
 
     /**
      * Returns the smallest line number (if any).
@@ -929,9 +903,7 @@ final class Code private (
      * @note   Depending on the configuration of the reader for `ClassFile`s this
      *         attribute may not be reified.
      */
-    def localVariableTable: Option[LocalVariables] = {
-        attributes collectFirst { case LocalVariableTable(lvt) => lvt }
-    }
+    def localVariableTable: Option[LocalVariables] = attributes collectFirst { case LocalVariableTable(lvt) => lvt }
 
     /**
      * Returns the set of local variables defined at the given pc base on debug information.
@@ -939,36 +911,30 @@ final class Code private (
      * @return A mapping of the index to the name of the local variable. The map is
      *         empty if no debug information is available.
      */
-    def localVariablesAt(pc: Int): Map[Int, LocalVariable] = { // IMRPOVE Use IntMap for the return value.
+    def localVariablesAt(pc: Int): Map[Int, LocalVariable] = // IMRPOVE Use IntMap for the return value.
         localVariableTable match {
-            case Some(lvt) =>
-                lvt.collect {
+            case Some(lvt) => lvt.collect {
                     case lv @ LocalVariable(
-                        startPC,
-                        length,
-                        _ /*name*/ ,
-                        _ /*fieldType*/ ,
-                        index
-                        ) if startPC <= pc && startPC + length > pc =>
-                        (index, lv)
+                            startPC,
+                            length,
+                            _ /*name*/,
+                            _ /*fieldType*/,
+                            index
+                        ) if startPC <= pc && startPC + length > pc => (index, lv)
                 }.toMap
-            case _ =>
-                Map.empty
+            case _ => Map.empty
         }
-    }
 
     /**
      * Returns the local variable stored at the given local variable index that is live at
      * the given instruction (pc).
      */
-    def localVariable(pc: Int, index: Int): Option[LocalVariable] = {
-        localVariableTable flatMap { lvs =>
-            lvs find { lv =>
-                val result = lv.index == index &&
-                    lv.startPC <= pc &&
-                    (lv.startPC + lv.length) > pc
-                result
-            }
+    def localVariable(pc: Int, index: Int): Option[LocalVariable] = localVariableTable flatMap { lvs =>
+        lvs find { lv =>
+            val result = lv.index == index &&
+                lv.startPC <= pc &&
+                (lv.startPC + lv.length) > pc
+            result
         }
     }
 
@@ -978,8 +944,8 @@ final class Code private (
      * @note Depending on the configuration of the reader for `ClassFile`s this
      *       attribute may not be reified.
      */
-    def localVariableTypeTable: Iterable[LocalVariableTypes] = {
-        attributes collect { case LocalVariableTypeTable(lvtt) => lvtt }
+    def localVariableTypeTable: Iterable[LocalVariableTypes] = attributes collect { case LocalVariableTypeTable(lvtt) =>
+        lvtt
     }
 
     /**
@@ -989,9 +955,7 @@ final class Code private (
      * @note   Depending on the configuration of the reader for `ClassFile`s this
      *         attribute may not be reified.
      */
-    def stackMapTable: Option[StackMapTable] = {
-        attributes collectFirst { case smt: StackMapTable => smt }
-    }
+    def stackMapTable: Option[StackMapTable] = attributes collectFirst { case smt: StackMapTable => smt }
 
     /**
      * Computes the set of PCs for which a stack map frame is required. Calling this method
@@ -1010,9 +974,8 @@ final class Code private (
         iterate { (pc, instruction) =>
             if (instruction.isControlTransferInstruction) {
                 instruction.opcode match {
-                    case JSR.opcode | JSR_W.opcode | RET.opcode =>
-                        throw BytecodeProcessingFailedException(
-                            "computation of stack map tables containing JSR/RET is not supported; "+
+                    case JSR.opcode | JSR_W.opcode | RET.opcode => throw BytecodeProcessingFailedException(
+                            "computation of stack map tables containing JSR/RET is not supported; " +
                                 "the attribute is neither required nor helpful in this case"
                         )
                     case GOTO.opcode | GOTO_W.opcode =>
@@ -1022,8 +985,7 @@ final class Code private (
                             // test for a goto at the end...
                             stackMapTablePCs += nextPC
                         }
-                    case _ =>
-                        stackMapTablePCs ++=
+                    case _ => stackMapTablePCs ++=
                             instruction.asControlTransferInstruction.jumpTargets(pc)(
                                 code = this,
                                 classHierarchy = classHierarchy
@@ -1044,10 +1006,10 @@ final class Code private (
      */
     @inline def isModifiedByWide(pc: Int): Boolean = pc > 0 && instructions(pc - 1) == WIDE
 
-    def foldLeft[T <: Any](start: T)(f: (T, Int /*PC*/ , Instruction) => T): T = {
+    def foldLeft[T <: Any](start: T)(f: (T, Int /*PC*/, Instruction) => T): T = {
         val max_pc = instructions.length
-        var pc = 0
-        var vs = start
+        var pc     = 0
+        var vs     = start
         while (pc < max_pc) {
             vs = f(vs, pc, instructions(pc))
             pc = pcOfNextInstruction(pc)
@@ -1061,12 +1023,12 @@ final class Code private (
      * instructions array.
      */
     def collectInstructions[B <: AnyRef](f: PartialFunction[Instruction, B]): List[B] = {
-        val max_pc = instructions.length
+        val max_pc          = instructions.length
         var result: List[B] = List.empty
-        var pc = 0
+        var pc              = 0
         while (pc < max_pc) {
             val instruction = instructions(pc)
-            val r: Any = f.applyOrElse(instruction, AnyToAnyThis)
+            val r: Any      = f.applyOrElse(instruction, AnyToAnyThis)
             if (r.asInstanceOf[AnyRef] ne AnyToAnyThis) {
                 result ::= r.asInstanceOf[B]
             }
@@ -1079,14 +1041,13 @@ final class Code private (
      * Collects all instructions for which the given function is defined.
      */
     def collectInstructionsWithPC[B <: AnyRef](
-        f: PartialFunction[PCAndInstruction, B]
-    ): List[PCAndAnyRef[B]] = {
-        val max_pc = instructions.length
+        f: PartialFunction[PCAndInstruction, B]): List[PCAndAnyRef[B]] = {
+        val max_pc                       = instructions.length
         var result: List[PCAndAnyRef[B]] = List.empty
-        var pc = 0
+        var pc                           = 0
         while (pc < max_pc) {
             val instruction = instructions(pc)
-            val r: Any = f.applyOrElse(PCAndInstruction(pc, instruction), AnyToAnyThis)
+            val r: Any      = f.applyOrElse(PCAndInstruction(pc, instruction), AnyToAnyThis)
             if (r.asInstanceOf[AnyRef] ne AnyToAnyThis) {
                 result ::= PCAndAnyRef(pc, r.asInstanceOf[B])
             }
@@ -1123,12 +1084,12 @@ final class Code private (
      *         code array.
      */
     def collect[B <: AnyRef](f: PartialFunction[Instruction, B]): List[PCAndAnyRef[B]] = {
-        val max_pc = instructions.length
-        var pc = 0
+        val max_pc                       = instructions.length
+        var pc                           = 0
         var result: List[PCAndAnyRef[B]] = List.empty
         while (pc < max_pc) {
             val instruction = instructions(pc)
-            val r: Any = f.applyOrElse(instruction, AnyToAnyThis)
+            val r: Any      = f.applyOrElse(instruction, AnyToAnyThis)
             if (r.asInstanceOf[AnyRef] ne AnyToAnyThis) {
                 result ::= PCAndAnyRef(pc, r.asInstanceOf[B])
             }
@@ -1141,7 +1102,7 @@ final class Code private (
         val max_pc = instructions.length
 
         val pcs = IntArrayStack.empty
-        var pc = 0
+        var pc  = 0
         while (pc < max_pc) {
             if (f(pc, instructions(pc))) pcs += pc
             pc = pcOfNextInstruction(pc)
@@ -1164,13 +1125,12 @@ final class Code private (
      * }}}
      */
     def collectPair[B <: AnyRef](
-        f: PartialFunction[(Instruction, Instruction), B]
-    ): List[PCAndAnyRef[B]] = {
+        f: PartialFunction[(Instruction, Instruction), B]): List[PCAndAnyRef[B]] = {
         val max_pc = instructions.length
 
-        var firstPC = 0
-        var firstInstruction = instructions(firstPC)
-        var secondPC = pcOfNextInstruction(0)
+        var firstPC                        = 0
+        var firstInstruction               = instructions(firstPC)
+        var secondPC                       = pcOfNextInstruction(0)
         var secondInstruction: Instruction = null
 
         var result: List[PCAndAnyRef[B]] = Nil
@@ -1203,15 +1163,13 @@ final class Code private (
      */
     def findSequence[B <: AnyRef](
         windowSize: Int
-    )(
-        f: PartialFunction[Queue[Instruction], B]
-    ): List[PCAndAnyRef[B]] = {
+      )(f: PartialFunction[Queue[Instruction], B]): List[PCAndAnyRef[B]] = {
         require(windowSize > 0)
 
-        val max_pc = instructions.length
+        val max_pc                     = instructions.length
         var instrs: Queue[Instruction] = Queue.empty
-        var firstPC, lastPC = 0
-        var elementsInQueue = 0
+        var firstPC, lastPC            = 0
+        var elementsInQueue            = 0
 
         //
         // INITIALIZATION
@@ -1263,8 +1221,8 @@ final class Code private (
      */
     def matchPair(f: (Instruction, Instruction) => Boolean): List[Int /*PC*/ ] = {
         val max_pc = instructions.length
-        var pc1 = 0
-        var pc2 = pcOfNextInstruction(pc1)
+        var pc1    = 0
+        var pc2    = pcOfNextInstruction(pc1)
 
         var result: List[Int /*PC*/ ] = List.empty
         while (pc2 < max_pc) {
@@ -1281,9 +1239,8 @@ final class Code private (
     /**
      * Finds all sequences of three consecutive instructions that are matched by `f`.
      */
-    def matchTriple(f: (Instruction, Instruction, Instruction) => Boolean): List[Int /*PC*/ ] = {
+    def matchTriple(f: (Instruction, Instruction, Instruction) => Boolean): List[Int /*PC*/ ] =
         matchTriple(Int.MaxValue, f)
-    }
 
     /**
      * Finds a sequence of 3 consecutive instructions for which the given function returns
@@ -1294,15 +1251,13 @@ final class Code private (
      *                        passed to `f`.
      */
     def matchTriple(
-        matchMaxTriples: Int                                                = Int.MaxValue,
-        f:               (Instruction, Instruction, Instruction) => Boolean
-    ): List[Int /*PC*/ ] = {
-        val max_pc = instructions.length
+        matchMaxTriples: Int = Int.MaxValue,
+        f:               (Instruction, Instruction, Instruction) => Boolean): List[Int /*PC*/ ] = {
+        val max_pc              = instructions.length
         var matchedTriplesCount = 0
-        var pc1 = 0
-        var pc2 = pcOfNextInstruction(pc1)
-        if (pc2 >= max_pc)
-            return List.empty;
+        var pc1                 = 0
+        var pc2                 = pcOfNextInstruction(pc1)
+        if (pc2 >= max_pc) return List.empty;
 
         var pc3 = pcOfNextInstruction(pc2)
 
@@ -1329,11 +1284,9 @@ final class Code private (
      * If the given instruction is not a [[org.opalj.br.instructions.GotoInstruction]],
      * the given instruction is returned.
      */
-    @tailrec def nextNonGotoInstruction(pc: Int): /*PC*/ Int = {
-        instructions(pc) match {
-            case GotoInstruction(branchoffset) => nextNonGotoInstruction(pc + branchoffset)
-            case _                             => pc
-        }
+    @tailrec def nextNonGotoInstruction(pc: Int): /*PC*/ Int = instructions(pc) match {
+        case GotoInstruction(branchoffset) => nextNonGotoInstruction(pc + branchoffset)
+        case _                             => pc
     }
 
     /**
@@ -1383,9 +1336,8 @@ final class Code private (
     @inline def alwaysResultsInException(
         pc:           Int,
         cfJoins:      IntTrieSet,
-        anInvocation: ( /*PC*/ Int) => Boolean,
-        aThrow:       ( /*PC*/ Int) => Boolean
-    ): Boolean = {
+        anInvocation: (/*PC*/ Int) => Boolean,
+        aThrow:       (/*PC*/ Int) => Boolean): Boolean = {
 
         var currentPC = pc
         while (!cfJoins.contains(currentPC)) {
@@ -1396,34 +1348,27 @@ final class Code private (
                     val result = aThrow(currentPC)
                     return result;
 
-                case RET.opcode | JSR.opcode | JSR_W.opcode =>
-                    return false;
+                case RET.opcode | JSR.opcode | JSR_W.opcode => return false;
 
-                case GOTO.opcode | GOTO_W.opcode =>
-                    currentPC += instruction.asInstanceOf[GotoInstruction].branchoffset
+                case GOTO.opcode | GOTO_W.opcode => currentPC += instruction.asInstanceOf[GotoInstruction].branchoffset
 
                 case /*IFs:*/ 165 | 166 | 198 | 199 |
                     159 | 160 | 161 | 162 | 163 | 164 |
-                    153 | 154 | 155 | 156 | 157 | 158 =>
-                    return false;
+                    153 | 154 | 155 | 156 | 157 | 158 => return false;
 
-                case TABLESWITCH.opcode | LOOKUPSWITCH.opcode =>
-                    return false;
+                case TABLESWITCH.opcode | LOOKUPSWITCH.opcode => return false;
 
-                case /*xReturn:*/ 176 | 175 | 174 | 172 | 173 | 177 =>
-                    return false;
+                case /*xReturn:*/ 176 | 175 | 174 | 172 | 173 | 177 => return false;
 
                 case INVOKEINTERFACE.opcode
                     | INVOKESPECIAL.opcode
                     | INVOKESTATIC.opcode
                     | INVOKEVIRTUAL.opcode =>
-                    if (anInvocation(currentPC))
-                        return true;
+                    if (anInvocation(currentPC)) return true;
 
                     currentPC = pcOfNextInstruction(currentPC)
 
-                case _ =>
-                    currentPC = pcOfNextInstruction(currentPC)
+                case _ => currentPC = pcOfNextInstruction(currentPC)
             }
         }
 
@@ -1433,10 +1378,8 @@ final class Code private (
     @throws[ClassFormatError]("if it is impossible to compute the maximum height of the stack")
     def stackDepthAt(
         atPC:           Int,
-        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
-    ): Int = {
+        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy): Int =
         stackDepthAt(atPC, CFGFactory(this, classHierarchy))
-    }
 
     /**
      * Computes the stack depth for the instruction with the given pc (`atPC`).
@@ -1451,8 +1394,8 @@ final class Code private (
      */
     @throws[ClassFormatError]("if it is impossible to compute the maximum height of the stack")
     def stackDepthAt(atPC: Int, cfg: CFG[Instruction, Code]): Int = {
-        var paths: List[( /*PC*/ Int, Int /*stackdepth before executing the instruction*/ )] = List.empty
-        val visitedPCs = new mutable.BitSet(instructions.length)
+        var paths: List[(/*PC*/ Int, Int /*stackdepth before executing the instruction*/ )] = List.empty
+        val visitedPCs                                                                      = new mutable.BitSet(instructions.length)
 
         // We start with the first instruction and an empty stack.
         paths ::= ((0, 0))
@@ -1492,13 +1435,11 @@ final class Code private (
      * A complete representation of this code attribute (including instructions,
      * attributes, etc.).
      */
-    override def toString: String = {
-        s"Code_attribute(maxStack=$maxStack, maxLocals=$maxLocals, "+
-            instructions.zipWithIndex.filter(_._1 ne null).map(_.swap).toString +
-            exceptionHandlers.toString+","+
-            attributes.toString+
-            ")"
-    }
+    override def toString: String = s"Code_attribute(maxStack=$maxStack, maxLocals=$maxLocals, " +
+        instructions.zipWithIndex.filter(_._1 ne null).map(_.swap).toString +
+        exceptionHandlers.toString + "," +
+        attributes.toString +
+        ")"
 
     /**
      * Collects the results of the evaluation of the partial function until the partial function
@@ -1509,8 +1450,8 @@ final class Code private (
      *         descending order w.r.t. the PC'''.
      */
     def collectUntil[B <: AnyRef](f: PartialFunction[PCAndInstruction, B]): PCAndAnyRef[List[B]] = {
-        val max_pc = instructions.length
-        var pc = 0
+        val max_pc          = instructions.length
+        var pc              = 0
         var result: List[B] = List.empty
         while (pc < max_pc) {
             val r: Any = f.applyOrElse(PCAndInstruction(pc, instructions(pc)), AnyToAnyThis)
@@ -1530,7 +1471,7 @@ final class Code private (
      */
     def collectFirstWithIndex[B](f: PartialFunction[PCAndInstruction, B]): Option[B] = {
         val max_pc = instructions.length
-        var pc = 0
+        var pc     = 0
         while (pc < max_pc) {
             val r: Any = f.applyOrElse(PCAndInstruction(pc, instructions(pc)), AnyToAnyThis)
             if (r.asInstanceOf[AnyRef] ne AnyToAnyThis) {
@@ -1559,8 +1500,8 @@ final class Code private (
      */
     def collectWithIndex[B: ClassTag](f: PartialFunction[PCAndInstruction, B]): List[B] = {
         val max_pc = instructions.length
-        var pc = 0
-        val vs = List.newBuilder[B]
+        var pc     = 0
+        val vs     = List.newBuilder[B]
         while (pc < max_pc) {
             val r: Any = f.applyOrElse(PCAndInstruction(pc, instructions(pc)), AnyToAnyThis)
             if (r.asInstanceOf[AnyRef] ne AnyToAnyThis) {
@@ -1604,15 +1545,13 @@ final class Code private (
      */
     def slidingCollect[B <: AnyRef](
         windowSize: Int
-    )(
-        f: PartialFunction[PCAndAnyRef[Queue[Instruction]], B]
-    ): List[B] = {
+      )(f: PartialFunction[PCAndAnyRef[Queue[Instruction]], B]): List[B] = {
         require(windowSize > 0)
 
-        val max_pc = instructions.length
+        val max_pc                     = instructions.length
         var instrs: Queue[Instruction] = Queue.empty
-        var firstPC, lastPC = 0
-        var elementsInQueue = 0
+        var firstPC, lastPC            = 0
+        var elementsInQueue            = 0
 
         //
         // INITIALIZATION
@@ -1656,12 +1595,11 @@ object Code {
         maxStack:          Int,
         maxLocals:         Int,
         instructions:      Array[Instruction],
-        exceptionHandlers: ExceptionHandlers  = NoExceptionHandlers,
-        attributes:        Attributes         = NoAttributes
-    ): Code = {
+        exceptionHandlers: ExceptionHandlers = NoExceptionHandlers,
+        attributes:        Attributes = NoAttributes): Code = {
 
         var localVariableTablesCount = 0
-        var lineNumberTablesCount = 0
+        var lineNumberTablesCount    = 0
         attributes foreach { a =>
             if (a.isInstanceOf[LocalVariableTable]) {
                 localVariableTablesCount += 1
@@ -1673,8 +1611,7 @@ object Code {
         if (localVariableTablesCount <= 1 && lineNumberTablesCount <= 1) {
             new Code(maxStack, maxLocals, instructions, exceptionHandlers, attributes)
         } else {
-            val (localVariableTables, otherAttributes1) =
-                partitionByType(attributes, classOf[LocalVariableTable])
+            val (localVariableTables, otherAttributes1) = partitionByType(attributes, classOf[LocalVariableTable])
             val newAttributes1 =
                 if (localVariableTables.nonEmpty && localVariableTables.tail.nonEmpty) {
                     val theLVT = localVariableTables.flatMap[LocalVariable](_.localVariables)
@@ -1683,12 +1620,11 @@ object Code {
                     attributes
                 }
 
-            val (lineNumberTables, otherAttributes2) =
-                partitionByType(newAttributes1, classOf[UnpackedLineNumberTable])
+            val (lineNumberTables, otherAttributes2) = partitionByType(newAttributes1, classOf[UnpackedLineNumberTable])
             val newAttributes2 =
                 if (lineNumberTables.nonEmpty && lineNumberTables.size > 1) {
                     val mergedTables = lineNumberTables.flatMap[LineNumber](_.lineNumbers)
-                    val sortedTable = mergedTables.sortWith((ltA, ltB) => ltA.startPC < ltB.startPC)
+                    val sortedTable  = mergedTables.sortWith((ltA, ltB) => ltA.startPC < ltB.startPC)
                     otherAttributes2 :+ UnpackedLineNumberTable(sortedTable)
                 } else {
                     newAttributes1
@@ -1699,8 +1635,7 @@ object Code {
     }
 
     def unapply(
-        code: Code
-    ): Option[(Int, Int, Array[Instruction], ExceptionHandlers, Attributes)] = {
+        code: Code): Option[(Int, Int, Array[Instruction], ExceptionHandlers, Attributes)] = {
         import code._
         Some((maxStack, maxLocals, instructions, exceptionHandlers, attributes))
     }
@@ -1720,9 +1655,9 @@ object Code {
      */
     def computeMaxLocalsRequiredByCode(instructions: Array[Instruction]): Int = {
         val instructionsLength = instructions.length
-        var pc = 0
-        var maxRegisterIndex = -1
-        var modifiedByWide = false
+        var pc                 = 0
+        var maxRegisterIndex   = -1
+        var modifiedByWide     = false
         do {
             val i: Instruction = instructions(pc)
             if (i == WIDE) {
@@ -1751,26 +1686,21 @@ object Code {
     def computeMaxLocals(
         isInstanceMethod: Boolean,
         descriptor:       MethodDescriptor,
-        instructions:     Array[Instruction]
-    ): Int = {
-        Math.max(
-            computeMaxLocalsRequiredByCode(instructions),
-            descriptor.parameterTypes.foldLeft(if (isInstanceMethod) 1 else 0) { (c, n) =>
-                c + n.computationalType.operandSize
-            }
-        )
-    }
+        instructions:     Array[Instruction]): Int = Math.max(
+        computeMaxLocalsRequiredByCode(instructions),
+        descriptor.parameterTypes.foldLeft(if (isInstanceMethod) 1 else 0) { (c, n) =>
+            c + n.computationalType.operandSize
+        }
+    )
 
     def computeCFG(
         instructions:      Array[Instruction],
-        exceptionHandlers: ExceptionHandlers  = NoExceptionHandlers,
-        classHierarchy:    ClassHierarchy     = ClassHierarchy.PreInitializedClassHierarchy
-    ): CFG[Instruction, Code] = {
+        exceptionHandlers: ExceptionHandlers = NoExceptionHandlers,
+        classHierarchy:    ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy): CFG[Instruction, Code] =
         CFGFactory(
             Code(Int.MaxValue, Int.MaxValue, instructions, exceptionHandlers),
             classHierarchy
         )
-    }
 
     /**
      * Computes the maximum stack size required when executing this code block.
@@ -1782,15 +1712,12 @@ object Code {
     @throws[ClassFormatError]("if it is impossible to compute the maximum height of the stack")
     def computeMaxStack(
         instructions:      Array[Instruction],
-        classHierarchy:    ClassHierarchy     = ClassHierarchy.PreInitializedClassHierarchy,
-        exceptionHandlers: ExceptionHandlers  = NoExceptionHandlers
-    ): Int = {
-        computeMaxStack(
-            instructions,
-            exceptionHandlers,
-            computeCFG(instructions, exceptionHandlers, classHierarchy)
-        )
-    }
+        classHierarchy:    ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy,
+        exceptionHandlers: ExceptionHandlers = NoExceptionHandlers): Int = computeMaxStack(
+        instructions,
+        exceptionHandlers,
+        computeCFG(instructions, exceptionHandlers, classHierarchy)
+    )
 
     /**
      * Computes the maximum stack size required when executing this code block.
@@ -1801,14 +1728,13 @@ object Code {
     def computeMaxStack(
         instructions:      Array[Instruction],
         exceptionHandlers: ExceptionHandlers,
-        cfg:               CFG[Instruction, Code]
-    ): Int = {
+        cfg:               CFG[Instruction, Code]): Int = {
         // Basic idea: follow all paths
         var maxStackDepth: Int = 0
 
         // IntIntPair:  /*PC*/ Int, Int /*stackdepth before executing the instruction*/
         var paths: List[IntIntPair] = List()
-        val visitedPCs = new mutable.BitSet(instructions.length)
+        val visitedPCs              = new mutable.BitSet(instructions.length)
 
         // We start with the first instruction and an empty stack.
         paths ::= IntIntPair(0, 0)
@@ -1823,8 +1749,8 @@ object Code {
         }
 
         while (paths.nonEmpty) {
-            val stackInfo = paths.head
-            val pc = stackInfo._1
+            val stackInfo         = paths.head
+            val pc                = stackInfo._1
             val initialStackDepth = stackInfo._2
             paths = paths.tail
             val stackDepth = initialStackDepth + instructions(pc).stackSlotsChange
@@ -1846,29 +1772,28 @@ object Code {
     def invalidBytecode(
         descriptor:       MethodDescriptor,
         isInstanceMethod: Boolean,
-        message:          Option[String]   = None
-    ): Code = {
-        new Code(
-            maxStack = 3 /* 3 for the message! */ ,
-            maxLocals = descriptor.requiredRegisters + (if (isInstanceMethod) 1 else 0),
-            instructions =
-                Array(
-                    NEW(ObjectType.Error), null, null,
-                    DUP,
-                    message.
-                        map(LoadString.apply).
-                        getOrElse(LoadString("OPAL: the underlying bytecode is invalid")), null,
-                    INVOKESPECIAL(
-                        ObjectType.Error,
-                        isInterface = false,
-                        "<init>",
-                        MethodDescriptor.JustTakes(ObjectType.String)
-                    ), null, null,
-                    ATHROW
-                ),
-            exceptionHandlers = NoExceptionHandlers,
-            attributes = NoAttributes
-        )
-    }
+        message:          Option[String] = None): Code = new Code(
+        maxStack = 3 /* 3 for the message! */,
+        maxLocals = descriptor.requiredRegisters + (if (isInstanceMethod) 1 else 0),
+        instructions = Array(
+            NEW(ObjectType.Error),
+            null,
+            null,
+            DUP,
+            message.map(LoadString.apply).getOrElse(LoadString("OPAL: the underlying bytecode is invalid")),
+            null,
+            INVOKESPECIAL(
+                ObjectType.Error,
+                isInterface = false,
+                "<init>",
+                MethodDescriptor.JustTakes(ObjectType.String)
+            ),
+            null,
+            null,
+            ATHROW
+        ),
+        exceptionHandlers = NoExceptionHandlers,
+        attributes = NoAttributes
+    )
 
 }

@@ -3,14 +3,14 @@ package org.opalj
 package br
 package analyses
 
-import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
-
 import scala.jdk.CollectionConverters._
 
 import org.opalj.bi.TestResources.locateTestResources
+
+import org.junit.runner.RunWith
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests the support for "project" related functionality.
@@ -23,7 +23,7 @@ class JavaProjectTest extends AnyFlatSpec with Matchers {
     behavior of "A Java Project"
 
     it should "be able to query the sub classes" in {
-        val methodsProjectArchive = locateTestResources("methods.jar", "bi")
+        val methodsProjectArchive    = locateTestResources("methods.jar", "bi")
         val deprecatedProjectArchive = locateTestResources("deprecated.jar", "bi")
 
         val cp = new java.util.ArrayList[java.io.File]();

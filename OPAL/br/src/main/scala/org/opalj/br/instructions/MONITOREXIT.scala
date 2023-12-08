@@ -14,23 +14,17 @@ case object MONITOREXIT extends SynchronizationInstruction with InstructionMetaI
 
     final val mnemonic = "monitorexit"
 
-    final val jvmExceptions: List[ObjectType] = {
+    final val jvmExceptions: List[ObjectType] =
         List(ObjectType.NullPointerException, ObjectType.IllegalMonitorStateException)
-    }
 
     final def stackSlotsChange: Int = -1
 
     final def nextInstructions(
         currentPC:             PC,
         regularSuccessorsOnly: Boolean
-    )(
-        implicit
+      )(implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
-    ): List[PC] = {
-        if (regularSuccessorsOnly)
-            List(indexOfNextInstruction(currentPC))
-        else
-            Instruction.nextInstructionOrExceptionHandlers(this, currentPC, jvmExceptions)
-    }
+        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy): List[PC] =
+        if (regularSuccessorsOnly) List(indexOfNextInstruction(currentPC))
+        else Instruction.nextInstructionOrExceptionHandlers(this, currentPC, jvmExceptions)
 }

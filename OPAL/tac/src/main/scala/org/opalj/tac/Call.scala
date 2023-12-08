@@ -6,8 +6,8 @@ import scala.collection.Set
 
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.ReferenceType
 import org.opalj.br.ObjectType
+import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.ProjectLike
 import org.opalj.value.ValueInformation
 
@@ -47,19 +47,14 @@ trait Call[+V <: Var[V]] {
      */
     def resolveCallTargets(
         callingContext: ObjectType
-    )(
-        implicit
-        p:  ProjectLike,
-        ev: V <:< DUVar[ValueInformation]
-    ): Set[Method]
+      )(implicit
+        p: ProjectLike,
+        ev: V <:< DUVar[ValueInformation]): Set[Method]
 }
 
 object Call {
 
     def unapply[V <: Var[V]](
-        call: Call[V]
-    ): Some[(ReferenceType, Boolean, String, MethodDescriptor)] = {
+        call: Call[V]): Some[(ReferenceType, Boolean, String, MethodDescriptor)] =
         Some((call.declaringClass, call.isInterface, call.name, call.descriptor))
-    }
 }
-

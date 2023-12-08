@@ -94,26 +94,21 @@ final class VirtualDeclaredMethod private[br] (
         override val declaringClassType: ObjectType,
         override val name:               String,
         override val descriptor:         MethodDescriptor,
-        override val id:                 Int
-) extends DeclaredMethod {
+        override val id: Int) extends DeclaredMethod {
 
     override def isVirtualOrHasSingleDefinedMethod: Boolean = true
 
     override def hasSingleDefinedMethod: Boolean = false
-    override def definedMethod: Method = throw new UnsupportedOperationException();
-    override def asDefinedMethod: DefinedMethod = throw new ClassCastException();
+    override def definedMethod: Method           = throw new UnsupportedOperationException();
+    override def asDefinedMethod: DefinedMethod  = throw new ClassCastException();
 
-    override def hasMultipleDefinedMethods: Boolean = false
-    override def definedMethods: ArraySeq[Method] = throw new UnsupportedOperationException();
+    override def hasMultipleDefinedMethods: Boolean               = false
+    override def definedMethods: ArraySeq[Method]                 = throw new UnsupportedOperationException();
     override def asMultipleDefinedMethods: MultipleDefinedMethods = throw new ClassCastException();
 
-    override def foreachDefinedMethod[U](f: Method => U): Unit = {
-        throw new UnsupportedOperationException();
-    }
+    override def foreachDefinedMethod[U](f: Method => U): Unit = throw new UnsupportedOperationException();
 
-    override def toString: String = {
-        s"VirtualDeclaredMethod(${declaringClassType.toJava},$name,$descriptor)"
-    }
+    override def toString: String = s"VirtualDeclaredMethod(${declaringClassType.toJava},$name,$descriptor)"
 }
 
 /**
@@ -123,50 +118,46 @@ final class VirtualDeclaredMethod private[br] (
 final class DefinedMethod private[br] (
         override val declaringClassType: ObjectType,
         override val definedMethod:      Method,
-        override val id:                 Int
-) extends DeclaredMethod {
+        override val id: Int) extends DeclaredMethod {
 
-    override def name: String = definedMethod.name
+    override def name: String                 = definedMethod.name
     override def descriptor: MethodDescriptor = definedMethod.descriptor
 
     override def isVirtualOrHasSingleDefinedMethod: Boolean = true
 
     override def hasSingleDefinedMethod: Boolean = true
-    override def asDefinedMethod: DefinedMethod = this
+    override def asDefinedMethod: DefinedMethod  = this
 
-    override def hasMultipleDefinedMethods: Boolean = false
-    override def definedMethods: ArraySeq[Method] = throw new UnsupportedOperationException();
+    override def hasMultipleDefinedMethods: Boolean               = false
+    override def definedMethods: ArraySeq[Method]                 = throw new UnsupportedOperationException();
     override def asMultipleDefinedMethods: MultipleDefinedMethods = throw new ClassCastException();
 
     override def foreachDefinedMethod[U](f: Method => U): Unit = f(definedMethod)
 
-    override def toString: String = {
+    override def toString: String =
         s"DefinedMethod(declaringClassType=${declaringClassType.toJava},definedMethod=${definedMethod.toJava})"
-    }
 }
 
 final class MultipleDefinedMethods private[br] (
         override val declaringClassType: ObjectType,
         override val definedMethods:     ArraySeq[Method],
-        override val id:                 Int
-) extends DeclaredMethod {
+        override val id: Int) extends DeclaredMethod {
 
-    override def name: String = definedMethods.head.name
+    override def name: String                 = definedMethods.head.name
     override def descriptor: MethodDescriptor = definedMethods.head.descriptor
 
     override def isVirtualOrHasSingleDefinedMethod: Boolean = false
 
     override def hasSingleDefinedMethod: Boolean = false
-    override def asDefinedMethod: DefinedMethod = throw new ClassCastException();
-    override def definedMethod: Method = throw new UnsupportedOperationException();
+    override def asDefinedMethod: DefinedMethod  = throw new ClassCastException();
+    override def definedMethod: Method           = throw new UnsupportedOperationException();
 
-    override def hasMultipleDefinedMethods: Boolean = true
+    override def hasMultipleDefinedMethods: Boolean               = true
     override def asMultipleDefinedMethods: MultipleDefinedMethods = this
 
     override def foreachDefinedMethod[U](f: Method => U): Unit = definedMethods.foreach(f)
 
-    override def toString: String = {
+    override def toString: String =
         s"DefinedMethod(${declaringClassType.toJava},definedMethods=${definedMethods.map(_.toJava).mkString("{", ", ", "}")})"
-    }
 
 }

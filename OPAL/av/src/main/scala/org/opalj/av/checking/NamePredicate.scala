@@ -18,9 +18,7 @@ trait NamePredicate extends (String => Boolean)
  */
 case class Equals(name: BinaryString) extends NamePredicate {
 
-    def apply(that: String): Boolean = {
-        this.name.asString == that
-    }
+    def apply(that: String): Boolean = this.name.asString == that
 }
 
 /**
@@ -28,9 +26,7 @@ case class Equals(name: BinaryString) extends NamePredicate {
  */
 case class StartsWith(name: BinaryString) extends NamePredicate {
 
-    def apply(that: String): Boolean = {
-        that.startsWith(this.name.asString)
-    }
+    def apply(that: String): Boolean = that.startsWith(this.name.asString)
 }
 
 /**
@@ -42,7 +38,5 @@ case class StartsWith(name: BinaryString) extends NamePredicate {
  */
 case class RegexNamePredicate(matcher: Regex) extends NamePredicate {
 
-    def apply(otherName: String): Boolean = {
-        matcher.findFirstIn(otherName).isDefined
-    }
+    def apply(otherName: String): Boolean = matcher.findFirstIn(otherName).isDefined
 }

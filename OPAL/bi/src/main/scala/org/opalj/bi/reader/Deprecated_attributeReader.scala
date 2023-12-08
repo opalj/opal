@@ -17,11 +17,10 @@ trait Deprecated_attributeReader extends AttributeReader {
     type Deprecated_attribute <: Attribute
 
     def Deprecated_attribute(
-        cp:                   Constant_Pool,
-        ap_name_index:        Constant_Pool_Index,
-        ap_descriptor_index:  Constant_Pool_Index,
-        attribute_name_index: Constant_Pool_Index
-    ): Deprecated_attribute
+        cp: Constant_Pool,
+        ap_name_index: Constant_Pool_Index,
+        ap_descriptor_index: Constant_Pool_Index,
+        attribute_name_index: Constant_Pool_Index): Deprecated_attribute
 
     //
     // IMPLEMENTATION
@@ -41,9 +40,9 @@ trait Deprecated_attributeReader extends AttributeReader {
         ap_name_index: Constant_Pool_Index,
         ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
-        in: DataInputStream
-    ) => {
-        /*val attribute_length =*/ in.readInt
+        in: DataInputStream) => {
+        /*val attribute_length =*/
+        in.readInt
         Deprecated_attribute(cp, ap_name_index, ap_descriptor_index, attribute_name_index)
     }
 

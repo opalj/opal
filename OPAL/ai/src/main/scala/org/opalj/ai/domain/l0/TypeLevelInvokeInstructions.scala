@@ -4,10 +4,10 @@ package ai
 package domain
 package l0
 
-import org.opalj.br.ObjectType
-import org.opalj.br.ReferenceType
 import org.opalj.br.BootstrapMethod
 import org.opalj.br.MethodDescriptor
+import org.opalj.br.ObjectType
+import org.opalj.br.ReferenceType
 
 /**
  * Most basic handling of method invocations that determines the value that is
@@ -21,56 +21,46 @@ import org.opalj.br.MethodDescriptor
 trait TypeLevelInvokeInstructions extends MethodCallsHandling {
     domain: ReferenceValuesDomain with TypedValuesFactory with Configuration with TheCode =>
 
-    /*override*/ def invokevirtual(
+    /*override*/
+    def invokevirtual(
         pc:               Int,
         declaringClass:   ReferenceType,
         name:             String,
         methodDescriptor: MethodDescriptor,
-        operands:         Operands
-    ): MethodCallResult = {
-        handleInstanceBasedInvoke(pc, methodDescriptor, operands)
-    }
+        operands:         Operands): MethodCallResult = handleInstanceBasedInvoke(pc, methodDescriptor, operands)
 
-    /*override*/ def invokeinterface(
+    /*override*/
+    def invokeinterface(
         pc:               Int,
         declaringClass:   ObjectType,
         name:             String,
         methodDescriptor: MethodDescriptor,
-        operands:         Operands
-    ): MethodCallResult = {
-        handleInstanceBasedInvoke(pc, methodDescriptor, operands)
-    }
+        operands:         Operands): MethodCallResult = handleInstanceBasedInvoke(pc, methodDescriptor, operands)
 
-    /*override*/ def invokespecial(
+    /*override*/
+    def invokespecial(
         pc:               Int,
         declaringClass:   ObjectType,
         isInterface:      Boolean,
         name:             String,
         methodDescriptor: MethodDescriptor,
-        operands:         Operands
-    ): MethodCallResult = {
-        handleInstanceBasedInvoke(pc, methodDescriptor, receiverIsNull = No)
-    }
+        operands:         Operands): MethodCallResult = handleInstanceBasedInvoke(pc, methodDescriptor, receiverIsNull = No)
 
-    /*override*/ def invokestatic(
+    /*override*/
+    def invokestatic(
         pc:               Int,
         declaringClass:   ObjectType,
         isInterface:      Boolean,
         name:             String,
         methodDescriptor: MethodDescriptor,
-        operands:         Operands
-    ): MethodCallResult = {
-        handleInvoke(pc, methodDescriptor)
-    }
+        operands:         Operands): MethodCallResult = handleInvoke(pc, methodDescriptor)
 
-    /*override*/ def invokedynamic(
+    /*override*/
+    def invokedynamic(
         pc:               Int,
         bootstrapMethod:  BootstrapMethod,
         name:             String,
         methodDescriptor: MethodDescriptor,
-        operands:         Operands
-    ): MethodCallResult = {
-        handleInvoke(pc, methodDescriptor)
-    }
+        operands:         Operands): MethodCallResult = handleInvoke(pc, methodDescriptor)
 
 }

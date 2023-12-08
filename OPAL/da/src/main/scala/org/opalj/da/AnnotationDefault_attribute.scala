@@ -12,16 +12,13 @@ import scala.xml.Node
  */
 case class AnnotationDefault_attribute(
         attribute_name_index: Constant_Pool_Index,
-        element_value:        ElementValue
-) extends Attribute {
+        element_value: ElementValue) extends Attribute {
 
     final def attribute_length: Int = element_value.attribute_length
 
-    override def toXHTML(implicit cp: Constant_Pool): Node = {
-        <details class="attribute">
+    override def toXHTML(implicit cp: Constant_Pool): Node = <details class="attribute">
             <summary class="attribute_name">AnnotationDefault</summary>
-            { element_value.toXHTML }
+            {element_value.toXHTML}
         </details>
-    }
 
 }

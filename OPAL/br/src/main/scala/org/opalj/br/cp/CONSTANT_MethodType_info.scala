@@ -12,12 +12,9 @@ import org.opalj.bi.ConstantPoolTags
  * @author Andre Pacak
  */
 case class CONSTANT_MethodType_info(
-        descriptorIndex: Constant_Pool_Index
-) extends Constant_Pool_Entry {
+        descriptorIndex: Constant_Pool_Index) extends Constant_Pool_Entry {
 
-    def methodDescriptor(cp: Constant_Pool): MethodDescriptor = {
-        cp(descriptorIndex).asMethodDescriptor
-    }
+    def methodDescriptor(cp: Constant_Pool): MethodDescriptor = cp(descriptorIndex).asMethodDescriptor
 
     override def tag: Int = ConstantPoolTags.CONSTANT_MethodType_ID
 

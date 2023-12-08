@@ -14,17 +14,12 @@ trait PropertyStoreFactory[PS <: PropertyStore] {
     final def apply[T <: AnyRef](
         key:     Class[T],
         context: T
-    )(
-        implicit
-        logContext: LogContext
-    ): PS = {
-        apply(PropertyStoreContext(key, context))
-    }
+      )(implicit
+        logContext: LogContext): PS = apply(PropertyStoreContext(key, context))
 
-    /* abstract */ def apply(
+    /* abstract */
+    def apply(
         context: PropertyStoreContext[_ <: AnyRef]*
-    )(
-        implicit
-        logContext: LogContext
-    ): PS
+      )(implicit
+        logContext: LogContext): PS
 }

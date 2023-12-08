@@ -6,22 +6,6 @@ package analyses
 
 import scala.annotation.switch
 
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.EPS
-import org.opalj.fpcf.FinalEP
-import org.opalj.fpcf.FinalP
-import org.opalj.fpcf.InterimEP
-import org.opalj.fpcf.InterimLUBP
-import org.opalj.fpcf.InterimResult
-import org.opalj.fpcf.InterimUBP
-import org.opalj.fpcf.ProperPropertyComputationResult
-import org.opalj.fpcf.Property
-import org.opalj.fpcf.PropertyBounds
-import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.Result
-import org.opalj.fpcf.SomeEOptionP
-import org.opalj.fpcf.SomeEPS
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
@@ -68,15 +52,31 @@ import org.opalj.br.instructions.IRETURN
 import org.opalj.br.instructions.LALOAD
 import org.opalj.br.instructions.LASTORE
 import org.opalj.br.instructions.LRETURN
+import org.opalj.br.instructions.MethodInvocationInstruction
 import org.opalj.br.instructions.MONITORENTER
 import org.opalj.br.instructions.MONITOREXIT
-import org.opalj.br.instructions.MethodInvocationInstruction
 import org.opalj.br.instructions.NonVirtualMethodInvocationInstruction
 import org.opalj.br.instructions.PUTFIELD
 import org.opalj.br.instructions.PUTSTATIC
 import org.opalj.br.instructions.RETURN
 import org.opalj.br.instructions.SALOAD
 import org.opalj.br.instructions.SASTORE
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.EPS
+import org.opalj.fpcf.FinalEP
+import org.opalj.fpcf.FinalP
+import org.opalj.fpcf.InterimEP
+import org.opalj.fpcf.InterimLUBP
+import org.opalj.fpcf.InterimResult
+import org.opalj.fpcf.InterimUBP
+import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.Property
+import org.opalj.fpcf.PropertyBounds
+import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.Result
+import org.opalj.fpcf.SomeEOptionP
+import org.opalj.fpcf.SomeEPS
 
 /**
  * Very simple, fast, sound but also imprecise analysis of the purity of methods. See the
@@ -90,21 +90,19 @@ import org.opalj.br.instructions.SASTORE
  * @author Michael Eichberg
  * @author Dominik Helm
  */
-class L0PurityAnalysis private[analyses] ( final val project: SomeProject) extends FPCFAnalysis {
+class L0PurityAnalysis private[analyses] (final val project: SomeProject) extends FPCFAnalysis {
 
     import project.nonVirtualCall
     import project.resolveFieldReference
 
     private[this] val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
-    private[this] val simpleContexts: SimpleContexts = project.get(SimpleContextsKey)
+    private[this] val simpleContexts: SimpleContexts   = project.get(SimpleContextsKey)
 
     /** Called when the analysis is scheduled lazily. */
-    def doDeterminePurity(e: Entity): ProperPropertyComputationResult = {
-        e match {
-            case c @ Context(_: DefinedMethod)         => determinePurity(c)
-            case c @ Context(_: VirtualDeclaredMethod) => Result(c, ImpureByLackOfInformation)
-            case _                                     => throw new IllegalArgumentException(s"$e is not a method")
-        }
+    def doDeterminePurity(e: Entity): ProperPropertyComputationResult = e match {
+        case c @ Context(_: DefinedMethod)         => determinePurity(c)
+        case c @ Context(_: VirtualDeclaredMethod) => Result(c, ImpureByLackOfInformation)
+        case _                                     => throw new IllegalArgumentException(s"$e is not a method")
     }
 
     /**
@@ -116,16 +114,15 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
      */
     def doDeterminePurityOfBody(
         context:          Context,
-        initialDependees: Set[EOptionP[Entity, Property]]
-    ): ProperPropertyComputationResult = {
+        initialDependees: Set[EOptionP[Entity, Property]]): ProperPropertyComputationResult = {
 
-        val method = context.method.definedMethod
+        val method             = context.method.definedMethod
         val declaringClassType = method.classFile.thisType
-        val methodDescriptor = method.descriptor
-        val methodName = method.name
-        val body = method.body.get
-        val instructions = body.instructions
-        val maxPC = instructions.length
+        val methodDescriptor   = method.descriptor
+        val methodName         = method.name
+        val body               = method.body.get
+        val instructions       = body.instructions
+        val maxPC              = instructions.length
 
         var dependees = initialDependees
 
@@ -160,41 +157,37 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
 
                 case INVOKESPECIAL.opcode | INVOKESTATIC.opcode => instruction match {
 
-                    case MethodInvocationInstruction(`declaringClassType`, _, `methodName`, `methodDescriptor`) =>
-                    // We have a self-recursive call; such calls do not influence
-                    // the computation of the method's purity and are ignored.
-                    // Let's continue with the evaluation of the next instruction.
+                        case MethodInvocationInstruction(`declaringClassType`, _, `methodName`, `methodDescriptor`) =>
+                        // We have a self-recursive call; such calls do not influence
+                        // the computation of the method's purity and are ignored.
+                        // Let's continue with the evaluation of the next instruction.
 
-                    case mii: NonVirtualMethodInvocationInstruction =>
+                        case mii: NonVirtualMethodInvocationInstruction => nonVirtualCall(declaringClassType, mii) match {
 
-                        nonVirtualCall(declaringClassType, mii) match {
+                                case Success(callee) =>
+                                    /* Recall that self-recursive calls are handled earlier! */
+                                    val purity = propertyStore(
+                                        simpleContexts(declaredMethods(callee)),
+                                        Purity.key
+                                    )
 
-                            case Success(callee) =>
-                                /* Recall that self-recursive calls are handled earlier! */
-                                val purity = propertyStore(
-                                    simpleContexts(declaredMethods(callee)), Purity.key
-                                )
+                                    purity match {
+                                        case FinalP(CompileTimePure | Pure) => /* Nothing to do */
+                                        // Handling cyclic computations
+                                        case ep @ InterimUBP(Pure) => dependees += ep
 
-                                purity match {
-                                    case FinalP(CompileTimePure | Pure) => /* Nothing to do */
+                                        case _: EPS[_, _] => return Result(context, ImpureByAnalysis);
 
-                                    // Handling cyclic computations
-                                    case ep @ InterimUBP(Pure)          => dependees += ep
+                                        case epk => dependees += epk
+                                    }
 
-                                    case _: EPS[_, _] =>
-                                        return Result(context, ImpureByAnalysis);
+                                case _ /* Empty or Failure */ =>
+                                    // We know nothing about the target method (it is not
+                                    // found in the scope of the current project).
+                                    return Result(context, ImpureByAnalysis);
 
-                                    case epk =>
-                                        dependees += epk
-                                }
-
-                            case _ /* Empty or Failure */ =>
-                                // We know nothing about the target method (it is not
-                                // found in the scope of the current project).
-                                return Result(context, ImpureByAnalysis);
-
-                        }
-                }
+                            }
+                    }
 
                 case GETFIELD.opcode |
                     PUTFIELD.opcode | PUTSTATIC.opcode |
@@ -218,8 +211,7 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
                 // hence, we can ignore the monitor related implicit exception
 
                 // Reference comparisons may have different results for structurally equal values
-                case IF_ACMPEQ.opcode | IF_ACMPNE.opcode =>
-                    return Result(context, ImpureByAnalysis);
+                case IF_ACMPEQ.opcode | IF_ACMPNE.opcode => return Result(context, ImpureByAnalysis);
 
                 case _ =>
                     // All other instructions (IFs, Load/Stores, Arith., etc.) are pure
@@ -238,8 +230,7 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
 
         // IN GENERAL
         // Every method that is not identified as being impure is (conditionally)pure.
-        if (dependees.isEmpty)
-            return Result(context, Pure);
+        if (dependees.isEmpty) return Result(context, Pure);
 
         // This function computes the “purity for a method based on the properties of its dependees:
         // other methods (Purity), types (immutability), fields (effectively final)
@@ -268,8 +259,7 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
                 case FinalP(_: TypeImmutability | _: FieldImmutability) => Result(context, ImpureByAnalysis)
 
                 case FinalP(CompileTimePure | Pure) =>
-                    if (dependees.isEmpty)
-                        Result(context, Pure)
+                    if (dependees.isEmpty) Result(context, Pure)
                     else {
                         InterimResult(context, ImpureByAnalysis, Pure, dependees, c)
                     }
@@ -305,12 +295,10 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
         var dependees: Set[EOptionP[Entity, Property]] = Set.empty
         referenceTypedParameters foreach { e =>
             propertyStore(e, TypeImmutability.key) match {
-                case FinalP(TransitivelyImmutableType) => /*everything is Ok*/
-                case _: FinalEP[_, _] =>
-                    return Result(context, ImpureByAnalysis);
-                case InterimUBP(ub) if ub ne TransitivelyImmutableType =>
-                    return Result(context, ImpureByAnalysis);
-                case epk => dependees += epk
+                case FinalP(TransitivelyImmutableType)                 => /*everything is Ok*/
+                case _: FinalEP[_, _]                                  => return Result(context, ImpureByAnalysis);
+                case InterimUBP(ub) if ub ne TransitivelyImmutableType => return Result(context, ImpureByAnalysis);
+                case epk                                               => dependees += epk
             }
         }
 
@@ -324,11 +312,9 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
     def baseMethodPurity(context: Context): ProperPropertyComputationResult = {
 
         def c(eps: SomeEOptionP): ProperPropertyComputationResult = eps match {
-            case FinalP(p) => Result(context, p)
-            case ep @ InterimLUBP(lb, ub) =>
-                InterimResult.create(context, lb, ub, Set(ep), c)
-            case epk =>
-                InterimResult(context, ImpureByAnalysis, CompileTimePure, Set(epk), c)
+            case FinalP(p)                => Result(context, p)
+            case ep @ InterimLUBP(lb, ub) => InterimResult.create(context, lb, ub, Set(ep), c)
+            case epk                      => InterimResult(context, ImpureByAnalysis, CompileTimePure, Set(epk), c)
         }
 
         c(propertyStore(simpleContexts(declaredMethods(context.method.definedMethod)), Purity.key))
@@ -343,14 +329,11 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
         // If this is not the method's declaration, but a non-overwritten method in a subtype,
         // don't re-analyze the code
         if ((method.classFile.thisType ne context.method.declaringClassType) &&
-            context.isInstanceOf[SimpleContext])
-            return baseMethodPurity(context);
+            context.isInstanceOf[SimpleContext]) return baseMethodPurity(context);
 
-        if (method.body.isEmpty)
-            return Result(context, ImpureByAnalysis);
+        if (method.body.isEmpty) return Result(context, ImpureByAnalysis);
 
-        if (method.isSynchronized)
-            return Result(context, ImpureByAnalysis);
+        if (method.isSynchronized) return Result(context, ImpureByAnalysis);
 
         // 1. step (will schedule 2. step if necessary):
         determinePurityStep1(context)
@@ -360,12 +343,10 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
 
 trait L0PurityAnalysisScheduler extends FPCFAnalysisScheduler {
 
-    override def requiredProjectInformation: ProjectInformationKeys =
-        Seq(DeclaredMethodsKey, SimpleContextsKey)
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey, SimpleContextsKey)
 
-    final override def uses: Set[PropertyBounds] = {
+    final override def uses: Set[PropertyBounds] =
         Set(PropertyBounds.ub(TypeImmutability), PropertyBounds.ub(FieldImmutability))
-    }
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(Purity)
 
@@ -373,19 +354,18 @@ trait L0PurityAnalysisScheduler extends FPCFAnalysisScheduler {
 
 object EagerL0PurityAnalysis
     extends L0PurityAnalysisScheduler
-    with BasicFPCFEagerAnalysisScheduler {
+        with BasicFPCFEagerAnalysisScheduler {
 
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 
     override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
 
     override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
-        val analysis = new L0PurityAnalysis(p)
-        val dms = p.get(DeclaredMethodsKey).declaredMethods
+        val analysis       = new L0PurityAnalysis(p)
+        val dms            = p.get(DeclaredMethodsKey).declaredMethods
         val simpleContexts = p.get(SimpleContextsKey)
         val methodsWithBody = dms.collect {
-            case dm if dm.hasSingleDefinedMethod && dm.definedMethod.body.isDefined =>
-                simpleContexts(dm)
+            case dm if dm.hasSingleDefinedMethod && dm.definedMethod.body.isDefined => simpleContexts(dm)
         }
         ps.scheduleEagerComputationsForEntities(methodsWithBody)(analysis.determinePurity)
         analysis
@@ -394,7 +374,7 @@ object EagerL0PurityAnalysis
 
 object LazyL0PurityAnalysis
     extends L0PurityAnalysisScheduler
-    with BasicFPCFLazyAnalysisScheduler {
+        with BasicFPCFLazyAnalysisScheduler {
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 

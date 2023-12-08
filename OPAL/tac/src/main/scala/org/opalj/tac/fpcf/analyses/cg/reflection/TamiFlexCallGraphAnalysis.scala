@@ -8,15 +8,6 @@ package reflection
 
 import scala.collection.immutable.ArraySeq
 
-import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.fpcf.ProperPropertyComputationResult
-import org.opalj.fpcf.PropertyBounds
-import org.opalj.fpcf.PropertyComputationResult
-import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.Results
-import org.opalj.value.ValueInformation
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.ArrayType
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.MethodDescriptor
@@ -24,12 +15,21 @@ import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
+import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.PropertyBounds
+import org.opalj.fpcf.PropertyComputationResult
+import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.Results
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.analyses.pointsto.TamiFlexKey
 import org.opalj.tac.fpcf.properties.TACAI
+import org.opalj.value.ValueInformation
 
 /**
  * Adds the specified calls from the tamiflex.log to the call graph.
@@ -39,11 +39,10 @@ import org.opalj.tac.fpcf.properties.TACAI
  * @author Florian Kuebler
  */
 class TamiFlexCallGraphAnalysis private[analyses] (
-        final val project: SomeProject
-) extends FPCFAnalysis {
+        final val project: SomeProject) extends FPCFAnalysis {
 
     val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
-    val ConstructorT: ObjectType = ObjectType("java/lang/reflect/Constructor")
+    val ConstructorT: ObjectType         = ObjectType("java/lang/reflect/Constructor")
 
     def process(p: SomeProject): PropertyComputationResult = {
         val analyses = List(
@@ -55,7 +54,8 @@ class TamiFlexCallGraphAnalysis private[analyses] (
                     ObjectType.Method,
                     "invoke",
                     MethodDescriptor.apply(
-                        ArraySeq(ObjectType.Object, ArrayType.ArrayOfObject), ObjectType.Object
+                        ArraySeq(ObjectType.Object, ArrayType.ArrayOfObject),
+                        ObjectType.Object
                     )
                 ),
                 "Method.invoke"
@@ -90,8 +90,7 @@ class TamiFlexCallGraphAnalysis private[analyses] (
 class TamiFlexMethodInvokeAnalysis private[analyses] (
         final val project:      SomeProject,
         override val apiMethod: DeclaredMethod,
-        val key:                String
-) extends TACAIBasedAPIBasedAnalysis with TypeConsumerAnalysis {
+        val key: String) extends TACAIBasedAPIBasedAnalysis with TypeConsumerAnalysis {
 
     final private[this] val tamiFlexLogData = project.get(TamiFlexKey)
 
@@ -103,14 +102,11 @@ class TamiFlexMethodInvokeAnalysis private[analyses] (
         receiverOption:  Option[Expr[V]],
         params:          Seq[Option[Expr[V]]],
         targetVarOption: Option[V],
-        isDirect:        Boolean
-    ): ProperPropertyComputationResult = {
+        isDirect:        Boolean): ProperPropertyComputationResult = {
         implicit val indirectCalls: IndirectCalls = new IndirectCalls()
 
-        if (receiverOption.isDefined)
-            handleMethodInvoke(callerContext, pc, receiverOption.get, params, tac)
-        else
-            indirectCalls.addIncompleteCallSite(pc)
+        if (receiverOption.isDefined) handleMethodInvoke(callerContext, pc, receiverOption.get, params, tac)
+        else indirectCalls.addIncompleteCallSite(pc)
 
         Results(indirectCalls.partialResults(callerContext))
     }
@@ -121,28 +117,28 @@ class TamiFlexMethodInvokeAnalysis private[analyses] (
         receiver:     Expr[V],
         methodParams: Seq[Option[Expr[V]]],
         tac:          TACode[TACMethodParameter, V]
-    )(implicit indirectCalls: IndirectCalls): Unit = {
-        val line = context.method.definedMethod.body.flatMap(b => b.lineNumber(pc)).getOrElse(-1)
+      )(implicit indirectCalls: IndirectCalls): Unit = {
+        val line    = context.method.definedMethod.body.flatMap(b => b.lineNumber(pc)).getOrElse(-1)
         val targets = tamiFlexLogData.methods(context.method, key, line)
-        if (targets.isEmpty)
-            return ;
+        if (targets.isEmpty) return;
 
-        val (methodInvokeReceiver, methodInvokeActualParamsOpt) = if (methodParams.size == 2) { // Method.invoke
-            // TODO we should probably match the method receiver information (e.g. points-to) to
-            // each of the target methods to prevent spurious invocations (e.g. because of unknown
-            // source line number
-            (
-                methodParams.head.map(_.asVar),
-                methodParams(1).flatMap(p => VarargsUtil.getParamsFromVararg(p, tac.stmts))
-            )
-        } else if (methodParams.size == 1) { // Constructor.newInstance
-            (
-                None,
-                methodParams.head.flatMap(p => VarargsUtil.getParamsFromVararg(p, tac.stmts))
-            )
-        } else { // Class.newInstance
-            (None, Some(Seq.empty))
-        }
+        val (methodInvokeReceiver, methodInvokeActualParamsOpt) =
+            if (methodParams.size == 2) { // Method.invoke
+                // TODO we should probably match the method receiver information (e.g. points-to) to
+                // each of the target methods to prevent spurious invocations (e.g. because of unknown
+                // source line number
+                (
+                    methodParams.head.map(_.asVar),
+                    methodParams(1).flatMap(p => VarargsUtil.getParamsFromVararg(p, tac.stmts))
+                )
+            } else if (methodParams.size == 1) { // Constructor.newInstance
+                (
+                    None,
+                    methodParams.head.flatMap(p => VarargsUtil.getParamsFromVararg(p, tac.stmts))
+                )
+            } else { // Class.newInstance
+                (None, Some(Seq.empty))
+            }
         val persistentReceiver = methodInvokeReceiver.flatMap(r => persistentUVar(r)(tac.stmts))
         val persistentParams: Seq[Option[(ValueInformation, IntTrieSet)]] =
             methodInvokeActualParamsOpt.map(_.map(persistentUVar(_)(tac.stmts))).getOrElse(Seq.empty)

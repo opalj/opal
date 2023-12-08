@@ -6,8 +6,8 @@ package l1
 
 import scala.collection.immutable.SortedSet
 
-import org.opalj.value.IsLongValue
 import org.opalj.br._
+import org.opalj.value.IsLongValue
 
 /**
  * This domain enables the tracking of long values using sets. The cardinality of
@@ -98,34 +98,25 @@ trait LongSetValues extends LongValuesDomain with ConcreteLongValues {
 
     @inline final override def longValue[T](
         value: DomainValue
-    )(
-        f: Long => T
-    )(
-        orElse: => T
-    ): T =
-        value match {
-            case LongSetLike(values) if values.size == 1 => f(values.head)
-            case _                                       => orElse
-        }
+      )(f:     Long => T
+      )(orElse: => T): T = value match {
+        case LongSetLike(values) if values.size == 1 => f(values.head)
+        case _                                       => orElse
+    }
 
-    @inline final override def longValueOption(value: DomainValue): Option[Long] =
-        value match {
-            case LongSetLike(values) if values.size == 1 => Some(values.head)
-            case _                                       => None
-        }
+    @inline final override def longValueOption(value: DomainValue): Option[Long] = value match {
+        case LongSetLike(values) if values.size == 1 => Some(values.head)
+        case _                                       => None
+    }
 
-    @inline protected final def withLongValuesOrElse[T](
-        value1: DomainValue, value2: DomainValue
-    )(
-        f: (Long, Long) => T
-    )(
-        orElse: => T
-    ): T = {
-        longValue(value1) {
-            v1 => longValue(value2) { v2 => f(v1, v2) } { orElse }
-        } {
-            orElse
-        }
+    @inline final protected def withLongValuesOrElse[T](
+        value1: DomainValue,
+        value2: DomainValue
+      )(f:      (Long, Long) => T
+      )(orElse: => T): T = longValue(value1) {
+        v1 => longValue(value2) { v2 => f(v1, v2) } { orElse }
+    } {
+        orElse
     }
 
     // -----------------------------------------------------------------------------------
@@ -137,315 +128,251 @@ trait LongSetValues extends LongValuesDomain with ConcreteLongValues {
     //
     // UNARY EXPRESSIONS
     //
-    /*override*/ def lneg(pc: PC, value: DomainValue): DomainValue =
-        value match {
-            case LongSetLike(values) => LongSet(values.map(v => -v))
-            case _                   => LongValue(origin = pc)
-        }
+    /*override*/
+    def lneg(pc: PC, value: DomainValue): DomainValue = value match {
+        case LongSetLike(values) => LongSet(values.map(v => -v))
+        case _                   => LongValue(origin = pc)
+    }
 
     //
     // RELATIONAL OPERATORS
     //
 
-    /*override*/ def lcmp(pc: PC, left: DomainValue, right: DomainValue): DomainValue = {
-        left match {
-            case (LongSetLike(leftValues)) =>
-                right match {
-                    case (LongSetLike(rightValues)) =>
-                        val lb =
-                            if (leftValues.head < rightValues.last)
-                                -1
-                            else if (leftValues.head == rightValues.last)
-                                0
-                            else
-                                1
-                        val ub =
-                            if (leftValues.last > rightValues.head)
-                                1
-                            else if (leftValues.last == rightValues.head)
-                                0
-                            else
-                                -1
-                        IntegerRange(pc, lb, ub)
-                    case _ =>
-                        if (leftValues.size == 1) {
-                            if (leftValues.head == Long.MinValue)
-                                IntegerRange(pc, -1, 0)
-                            else if (leftValues.head == Long.MaxValue)
-                                IntegerRange(pc, 0, 1)
-                            else
-                                IntegerRange(pc, -1, 1)
-                        } else
-                            IntegerRange(pc, -1, 1)
-                }
-            case _ =>
-                right match {
-                    case (LongSetLike(rightValues)) =>
-                        if (rightValues.size == 1) {
-                            if (rightValues.head == Long.MinValue)
-                                IntegerRange(pc, 0, 1)
-                            else if (rightValues.head == Long.MaxValue)
-                                IntegerRange(pc, -1, 0)
-                            else
-                                IntegerRange(pc, -1, 1)
-                        } else
-                            IntegerRange(pc, -1, 1)
-                    case _ =>
-                        IntegerRange(pc, -1, 1)
-                }
-        }
+    /*override*/
+    def lcmp(pc: PC, left: DomainValue, right: DomainValue): DomainValue = left match {
+        case (LongSetLike(leftValues)) => right match {
+                case (LongSetLike(rightValues)) =>
+                    val lb =
+                        if (leftValues.head < rightValues.last) -1
+                        else if (leftValues.head == rightValues.last) 0
+                        else 1
+                    val ub =
+                        if (leftValues.last > rightValues.head) 1
+                        else if (leftValues.last == rightValues.head) 0
+                        else -1
+                    IntegerRange(pc, lb, ub)
+                case _ =>
+                    if (leftValues.size == 1) {
+                        if (leftValues.head == Long.MinValue) IntegerRange(pc, -1, 0)
+                        else if (leftValues.head == Long.MaxValue) IntegerRange(pc, 0, 1)
+                        else IntegerRange(pc, -1, 1)
+                    } else IntegerRange(pc, -1, 1)
+            }
+        case _ => right match {
+                case (LongSetLike(rightValues)) =>
+                    if (rightValues.size == 1) {
+                        if (rightValues.head == Long.MinValue) IntegerRange(pc, 0, 1)
+                        else if (rightValues.head == Long.MaxValue) IntegerRange(pc, -1, 0)
+                        else IntegerRange(pc, -1, 1)
+                    } else IntegerRange(pc, -1, 1)
+                case _ => IntegerRange(pc, -1, 1)
+            }
     }
 
     //
     // BINARY EXPRESSIONS
     //
 
-    /*override*/ def ladd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
-        (value1, value2) match {
-            case (LongSetLike(leftValues), LongSetLike(rightValues)) =>
-                val results = for (l <- leftValues; r <- rightValues) yield l + r
-                if (results.size <= maxCardinalityOfLongSets)
-                    LongSet(results)
-                else
-                    LongValue(origin = pc)
-            case _ =>
-                LongValue(origin = pc)
-        }
+    /*override*/
+    def ladd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = (value1, value2) match {
+        case (LongSetLike(leftValues), LongSetLike(rightValues)) =>
+            val results = for {
+                l <- leftValues
+                r <- rightValues
+            } yield l + r
+            if (results.size <= maxCardinalityOfLongSets) LongSet(results)
+            else LongValue(origin = pc)
+        case _ => LongValue(origin = pc)
     }
 
-    /*override*/ def lsub(pc: PC, left: DomainValue, right: DomainValue): DomainValue = {
-        (left, right) match {
-            case (LongSetLike(leftValues), LongSetLike(rightValues)) =>
-                val results = for (l <- leftValues; r <- rightValues) yield l - r
-                if (results.size <= maxCardinalityOfLongSets)
-                    LongSet(results)
-                else
-                    LongValue(origin = pc)
-            case _ =>
-                LongValue(origin = pc)
-        }
+    /*override*/
+    def lsub(pc: PC, left: DomainValue, right: DomainValue): DomainValue = (left, right) match {
+        case (LongSetLike(leftValues), LongSetLike(rightValues)) =>
+            val results = for {
+                l <- leftValues
+                r <- rightValues
+            } yield l - r
+            if (results.size <= maxCardinalityOfLongSets) LongSet(results)
+            else LongValue(origin = pc)
+        case _ => LongValue(origin = pc)
     }
 
-    /*override*/ def lmul(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
-        value1 match {
-            case (LongSetLike(leftValues)) =>
-                if (leftValues.size == 1 && leftValues.head == 0L)
-                    value1
-                else if (leftValues.size == 1 && leftValues.head == 1L)
-                    value2
-                else value2 match {
-                    case (LongSetLike(rightValues)) =>
-                        val results = for (l <- leftValues; r <- rightValues) yield l * r
+    /*override*/
+    def lmul(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = value1 match {
+        case (LongSetLike(leftValues)) =>
+            if (leftValues.size == 1 && leftValues.head == 0L) value1
+            else if (leftValues.size == 1 && leftValues.head == 1L) value2
+            else value2 match {
+                case (LongSetLike(rightValues)) =>
+                    val results = for {
+                        l <- leftValues
+                        r <- rightValues
+                    } yield l * r
 
-                        if (results.size <= maxCardinalityOfLongSets)
-                            LongSet(results)
-                        else
-                            LongValue(origin = pc)
-                    case _ =>
-                        LongValue(origin = pc)
-                }
-            case _ =>
-                value2 match {
-                    case (LongSetLike(rightValues)) =>
-                        if (rightValues.size == 1 && rightValues.head == 0L)
-                            value2
-                        else if (rightValues.size == 1 && rightValues.head == 1L)
-                            value1
-                        else
-                            LongValue(origin = pc)
-                    case _ =>
-                        LongValue(origin = pc)
-                }
-        }
+                    if (results.size <= maxCardinalityOfLongSets) LongSet(results)
+                    else LongValue(origin = pc)
+                case _ => LongValue(origin = pc)
+            }
+        case _ => value2 match {
+                case (LongSetLike(rightValues)) =>
+                    if (rightValues.size == 1 && rightValues.head == 0L) value2
+                    else if (rightValues.size == 1 && rightValues.head == 1L) value1
+                    else LongValue(origin = pc)
+                case _ => LongValue(origin = pc)
+            }
     }
 
     protected[this] def createLongValueOrArithmeticException(
         pc:        PC,
         exception: Boolean,
-        results:   SortedSet[Long]
-    ): LongValueOrArithmeticException = {
+        results:   SortedSet[Long]): LongValueOrArithmeticException = {
 
         val hasResults = results.nonEmpty
         assert(exception || hasResults)
 
         if (hasResults) {
             if (results.size <= maxCardinalityOfLongSets) {
-                if (exception)
-                    ComputedValueOrException(LongSet(results), VMArithmeticException(pc))
-                else
-                    ComputedValue(LongSet(results))
+                if (exception) ComputedValueOrException(LongSet(results), VMArithmeticException(pc))
+                else ComputedValue(LongSet(results))
             } else {
-                if (exception)
-                    ComputedValueOrException(
-                        LongValue(origin = pc),
-                        VMArithmeticException(pc)
-                    )
-                else
-                    ComputedValue(LongValue(origin = pc))
+                if (exception) ComputedValueOrException(
+                    LongValue(origin = pc),
+                    VMArithmeticException(pc)
+                )
+                else ComputedValue(LongValue(origin = pc))
             }
         } else {
             ThrowsException(VMArithmeticException(pc))
         }
     }
 
-    /*override*/ def ldiv(
+    /*override*/
+    def ldiv(
         pc:          PC,
         numerator:   DomainValue,
-        denominator: DomainValue
-    ): LongValueOrArithmeticException = {
-        (numerator, denominator) match {
-            case (LongSetLike(leftValues), LongSetLike(rightValues)) =>
-                var results: SortedSet[Long] = SortedSet.empty
-                var exception: Boolean = false
-                for (l <- leftValues; r <- rightValues) {
-                    if (r == 0L)
-                        exception = true
-                    else
-                        results += (l / r)
-                }
-                createLongValueOrArithmeticException(pc, exception, results)
+        denominator: DomainValue): LongValueOrArithmeticException = (numerator, denominator) match {
+        case (LongSetLike(leftValues), LongSetLike(rightValues)) =>
+            var results: SortedSet[Long] = SortedSet.empty
+            var exception: Boolean       = false
+            for {
+                l <- leftValues
+                r <- rightValues
+            } {
+                if (r == 0L) exception = true
+                else results += (l / r)
+            }
+            createLongValueOrArithmeticException(pc, exception, results)
 
-            case (_, LongSetLike(rightValues)) =>
-                if (rightValues contains (0L)) {
-                    if (rightValues.size == 1)
-                        ThrowsException(VMArithmeticException(pc))
-                    else
-                        ComputedValueOrException(
-                            LongValue(origin = pc),
-                            VMArithmeticException(pc)
-                        )
-                } else
-                    ComputedValue(LongValue(origin = pc))
+        case (_, LongSetLike(rightValues)) =>
+            if (rightValues contains 0L) {
+                if (rightValues.size == 1) ThrowsException(VMArithmeticException(pc))
+                else ComputedValueOrException(
+                    LongValue(origin = pc),
+                    VMArithmeticException(pc)
+                )
+            } else ComputedValue(LongValue(origin = pc))
 
-            case _ =>
-                if (throwArithmeticExceptions)
-                    ComputedValueOrException(
-                        LongValue(origin = pc),
-                        VMArithmeticException(pc)
-                    )
-                else
-                    ComputedValue(LongValue(origin = pc))
-        }
+        case _ =>
+            if (throwArithmeticExceptions) ComputedValueOrException(
+                LongValue(origin = pc),
+                VMArithmeticException(pc)
+            )
+            else ComputedValue(LongValue(origin = pc))
     }
 
-    /*override*/ def lrem(
+    /*override*/
+    def lrem(
         pc:    PC,
         left:  DomainValue,
-        right: DomainValue
-    ): LongValueOrArithmeticException = {
+        right: DomainValue): LongValueOrArithmeticException = (left, right) match {
+        case (LongSetLike(leftValues), LongSetLike(rightValues)) =>
+            var results: SortedSet[Long] = SortedSet.empty
+            var exception: Boolean       = false
+            for {
+                leftValue  <- leftValues
+                rightValue <- rightValues
+            } {
+                if (rightValue == 0L) exception = true
+                else results += (leftValue % rightValue)
+            }
+            createLongValueOrArithmeticException(pc, exception, results)
 
-        (left, right) match {
-            case (LongSetLike(leftValues), LongSetLike(rightValues)) =>
-                var results: SortedSet[Long] = SortedSet.empty
-                var exception: Boolean = false
-                for (leftValue <- leftValues; rightValue <- rightValues) {
-                    if (rightValue == 0L)
-                        exception = true
-                    else
-                        results += (leftValue % rightValue)
-                }
-                createLongValueOrArithmeticException(pc, exception, results)
+        case (_, LongSetLike(rightValues)) =>
+            if (rightValues contains 0L) {
+                if (rightValues.size == 1) ThrowsException(VMArithmeticException(pc))
+                else ComputedValueOrException(
+                    LongValue(origin = pc),
+                    VMArithmeticException(pc)
+                )
+            } else ComputedValue(LongValue(origin = pc))
 
-            case (_, LongSetLike(rightValues)) =>
-                if (rightValues contains (0L)) {
-                    if (rightValues.size == 1)
-                        ThrowsException(VMArithmeticException(pc))
-                    else
-                        ComputedValueOrException(
-                            LongValue(origin = pc),
-                            VMArithmeticException(pc)
-                        )
-                } else
-                    ComputedValue(LongValue(origin = pc))
-
-            case _ =>
-                if (throwArithmeticExceptions)
-                    ComputedValueOrException(
-                        LongValue(origin = pc),
-                        VMArithmeticException(pc)
-                    )
-                else
-                    ComputedValue(LongValue(origin = pc))
-        }
+        case _ =>
+            if (throwArithmeticExceptions) ComputedValueOrException(
+                LongValue(origin = pc),
+                VMArithmeticException(pc)
+            )
+            else ComputedValue(LongValue(origin = pc))
     }
 
-    /*override*/ def land(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
-        value1 match {
-            case (LongSetLike(leftValues)) =>
-                if (leftValues.size == 1 && leftValues.head == -1L)
-                    value2
-                else if (leftValues.size == 1 && leftValues.head == 0L)
-                    value1
-                else value2 match {
-                    case (LongSetLike(rightValues)) =>
-                        val results = for (l <- leftValues; r <- rightValues) yield l & r
-                        if (results.size <= maxCardinalityOfLongSets)
-                            LongSet(results)
-                        else
-                            LongValue(origin = pc)
-                    case _ =>
-                        LongValue(origin = pc)
-                }
-            case _ =>
-                value2 match {
-                    case (LongSetLike(rightValues)) =>
-                        if (rightValues.size == 1 && rightValues.head == -1L)
-                            value1
-                        else if (rightValues.size == 1 && rightValues.head == 0L)
-                            value2
-                        else
-                            LongValue(origin = pc)
-                    case _ =>
-                        LongValue(origin = pc)
-                }
-        }
+    /*override*/
+    def land(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = value1 match {
+        case (LongSetLike(leftValues)) =>
+            if (leftValues.size == 1 && leftValues.head == -1L) value2
+            else if (leftValues.size == 1 && leftValues.head == 0L) value1
+            else value2 match {
+                case (LongSetLike(rightValues)) =>
+                    val results = for {
+                        l <- leftValues
+                        r <- rightValues
+                    } yield l & r
+                    if (results.size <= maxCardinalityOfLongSets) LongSet(results)
+                    else LongValue(origin = pc)
+                case _ => LongValue(origin = pc)
+            }
+        case _ => value2 match {
+                case (LongSetLike(rightValues)) =>
+                    if (rightValues.size == 1 && rightValues.head == -1L) value1
+                    else if (rightValues.size == 1 && rightValues.head == 0L) value2
+                    else LongValue(origin = pc)
+                case _ => LongValue(origin = pc)
+            }
     }
 
-    /*override*/ def lor(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
-        value1 match {
-            case (LongSetLike(leftValues)) =>
-                if (leftValues.size == 1 && leftValues.head == -1L)
-                    value1
-                else if (leftValues.size == 1 && leftValues.head == 0L)
-                    value2
-                else value2 match {
-                    case (LongSetLike(rightValues)) =>
-                        val results = for (l <- leftValues; r <- rightValues) yield l | r
-                        if (results.size <= maxCardinalityOfLongSets)
-                            LongSet(results)
-                        else
-                            LongValue(origin = pc)
-                    case _ =>
-                        LongValue(origin = pc)
-                }
-            case _ =>
-                value2 match {
-                    case (LongSetLike(rightValues)) =>
-                        if (rightValues.size == 1 && rightValues.head == -1L)
-                            value2
-                        else if (rightValues.size == 1 && rightValues.head == 0L)
-                            value1
-                        else
-                            LongValue(origin = pc)
-                    case _ =>
-                        LongValue(origin = pc)
-                }
-        }
+    /*override*/
+    def lor(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = value1 match {
+        case (LongSetLike(leftValues)) =>
+            if (leftValues.size == 1 && leftValues.head == -1L) value1
+            else if (leftValues.size == 1 && leftValues.head == 0L) value2
+            else value2 match {
+                case (LongSetLike(rightValues)) =>
+                    val results = for {
+                        l <- leftValues
+                        r <- rightValues
+                    } yield l | r
+                    if (results.size <= maxCardinalityOfLongSets) LongSet(results)
+                    else LongValue(origin = pc)
+                case _ => LongValue(origin = pc)
+            }
+        case _ => value2 match {
+                case (LongSetLike(rightValues)) =>
+                    if (rightValues.size == 1 && rightValues.head == -1L) value2
+                    else if (rightValues.size == 1 && rightValues.head == 0L) value1
+                    else LongValue(origin = pc)
+                case _ => LongValue(origin = pc)
+            }
     }
 
-    /*override*/ def lxor(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
-        (value1, value2) match {
-            case (LongSetLike(leftValues), LongSetLike(rightValues)) =>
-                val results = for (l <- leftValues; r <- rightValues) yield l ^ r
-                if (results.size <= maxCardinalityOfLongSets)
-                    LongSet(results)
-                else
-                    LongValue(origin = pc)
+    /*override*/
+    def lxor(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = (value1, value2) match {
+        case (LongSetLike(leftValues), LongSetLike(rightValues)) =>
+            val results = for {
+                l <- leftValues
+                r <- rightValues
+            } yield l ^ r
+            if (results.size <= maxCardinalityOfLongSets) LongSet(results)
+            else LongValue(origin = pc)
 
-            case _ =>
-                LongValue(origin = pc)
-        }
+        case _ => LongValue(origin = pc)
     }
 
 }
-

@@ -19,9 +19,8 @@ trait JSR_WLike extends JSRInstructionLike {
 
 case class JSR_W(branchoffset: Int) extends JSRInstruction with JSR_WLike {
 
-    def toLabeledInstruction(currentPC: PC): LabeledInstruction = {
+    def toLabeledInstruction(currentPC: PC): LabeledInstruction =
         LabeledJSR_W(InstructionLabel(currentPC + branchoffset))
-    }
 
 }
 
@@ -41,14 +40,10 @@ object JSR_W extends InstructionMetaInformation {
 }
 
 case class LabeledJSR_W(
-        branchTarget: InstructionLabel
-) extends LabeledUnconditionalBranchInstruction with JSR_WLike {
+        branchTarget: InstructionLabel) extends LabeledUnconditionalBranchInstruction with JSR_WLike {
 
-    override def resolveJumpTargets(currentPC: PC, pcs: Map[InstructionLabel, PC]): JSR_W = {
+    override def resolveJumpTargets(currentPC: PC, pcs: Map[InstructionLabel, PC]): JSR_W =
         JSR_W(pcs(branchTarget) - currentPC)
-    }
 
-    final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
-        this == code.instructions(otherPC)
-    }
+    final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = this == code.instructions(otherPC)
 }

@@ -4,12 +4,6 @@ package br
 package fpcf
 package properties
 
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.FallbackReason
-import org.opalj.fpcf.PropertyComputation
-import org.opalj.fpcf.PropertyComputationResult
-import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.Result
 import org.opalj.br.analyses.Project
 import org.opalj.br.collection.mutable.{TypesSet => BRMutableTypesSet}
 import org.opalj.br.fpcf.properties.ThrownExceptions.MethodBodyIsNotAvailable
@@ -50,6 +44,12 @@ import org.opalj.br.instructions.MONITOREXIT
 import org.opalj.br.instructions.PUTFIELD
 import org.opalj.br.instructions.RETURN
 import org.opalj.br.instructions.StackManagementInstruction
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.FallbackReason
+import org.opalj.fpcf.PropertyComputation
+import org.opalj.fpcf.PropertyComputationResult
+import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.Result
 
 /**
  * A very straight forward flow-insensitive analysis which can successfully analyze methods
@@ -72,29 +72,23 @@ object ThrownExceptionsFallback extends ((PropertyStore, FallbackReason, Entity)
 
     final val ObjectEqualsMethodDescriptor = MethodDescriptor(ObjectType.Object, BooleanType)
 
-    def apply(ps: PropertyStore, reason: FallbackReason, e: Entity): ThrownExceptions = {
+    def apply(ps: PropertyStore, reason: FallbackReason, e: Entity): ThrownExceptions =
         e match { case m: Method => this(ps, m) }
-    }
 
-    def apply(ps: PropertyStore, e: Entity): ThrownExceptions = {
-        e match { case m: Method => this(ps, m) }
-    }
+    def apply(ps: PropertyStore, e: Entity): ThrownExceptions = e match { case m: Method => this(ps, m) }
 
     def apply(ps: PropertyStore, m: Method): ThrownExceptions = {
-        if (m.isNative)
-            return MethodIsNative;
-        if (m.isAbstract)
-            return NoExceptions; // Method is abstract...
+        if (m.isNative) return MethodIsNative;
+        if (m.isAbstract) return NoExceptions; // Method is abstract...
         val body = m.body
-        if (body.isEmpty)
-            return MethodBodyIsNotAvailable;
+        if (body.isEmpty) return MethodBodyIsNotAvailable;
 
         //
-        //... when we reach this point the method is non-empty
+        // ... when we reach this point the method is non-empty
         //
-        val code = body.get
-        val cfJoins = code.cfJoins
-        val instructions = code.instructions
+        val code           = body.get
+        val cfJoins        = code.cfJoins
+        val instructions   = code.instructions
         val isStaticMethod = m.isStatic
 
         val exceptions = new BRMutableTypesSet(ps.context(classOf[Project[_]]).classHierarchy)
@@ -103,9 +97,9 @@ object ThrownExceptionsFallback extends ((PropertyStore, FallbackReason, Entity)
 
         var isSynchronizationUsed = false
 
-        var isLocalVariable0Updated = false
+        var isLocalVariable0Updated                 = false
         var fieldAccessMayThrowNullPointerException = false
-        var isFieldAccessed = false
+        var isFieldAccessed                         = false
 
         /* Implicitly (i.e., as a side effect) collects the thrown exceptions in the exceptions set.
          *
@@ -120,11 +114,11 @@ object ThrownExceptionsFallback extends ((PropertyStore, FallbackReason, Entity)
                 case INVOKESPECIAL.opcode =>
                     val INVOKESPECIAL(declaringClass, _, name, descriptor) = instruction
                     if ((declaringClass eq ObjectType.Object) && (
-                        (name == "<init>" && descriptor == MethodDescriptor.NoArgsAndReturnVoid) ||
-                        (name == "hashCode" && descriptor == MethodDescriptor.JustReturnsInteger) ||
-                        (name == "equals" && descriptor == ObjectEqualsMethodDescriptor) ||
-                        (name == "toString" && descriptor == MethodDescriptor.JustReturnsString)
-                    )) {
+                            (name == "<init>" && descriptor == MethodDescriptor.NoArgsAndReturnVoid) ||
+                                (name == "hashCode" && descriptor == MethodDescriptor.JustReturnsInteger) ||
+                                (name == "equals" && descriptor == ObjectEqualsMethodDescriptor) ||
+                                (name == "toString" && descriptor == MethodDescriptor.JustReturnsString)
+                        )) {
                         true
                     } else {
                         result = ThrownExceptions.AnalysisLimitation
@@ -157,32 +151,30 @@ object ThrownExceptionsFallback extends ((PropertyStore, FallbackReason, Entity)
                 case GETFIELD.opcode =>
                     isFieldAccessed = true
                     fieldAccessMayThrowNullPointerException ||=
-                        isStaticMethod || // <= the receiver is some object
-                        isLocalVariable0Updated || // <= we don't know the receiver object at all
-                        cfJoins.contains(pc) || // <= we cannot locally decide who is the receiver
-                        instructions(code.pcOfPreviousInstruction(pc)) != ALOAD_0 // <= the receiver may be null..
+                        isStaticMethod ||                                             // <= the receiver is some object
+                            isLocalVariable0Updated ||                                // <= we don't know the receiver object at all
+                            cfJoins.contains(pc) ||                                   // <= we cannot locally decide who is the receiver
+                            instructions(code.pcOfPreviousInstruction(pc)) != ALOAD_0 // <= the receiver may be null..
                     true
 
                 case PUTFIELD.opcode =>
                     isFieldAccessed = true
-                    fieldAccessMayThrowNullPointerException =
-                        fieldAccessMayThrowNullPointerException ||
-                            isStaticMethod || // <= the receiver is some object
-                            isLocalVariable0Updated || // <= we don't know the receiver object at all
-                            cfJoins.contains(pc) || // <= we cannot locally decide who is the receiver
-                            {
-                                val predecessorPC = code.pcOfPreviousInstruction(pc)
-                                val predecessorOfPredecessorPC =
-                                    code.pcOfPreviousInstruction(predecessorPC)
-                                val valueInstruction = instructions(predecessorPC)
+                    fieldAccessMayThrowNullPointerException = fieldAccessMayThrowNullPointerException ||
+                        isStaticMethod ||          // <= the receiver is some object
+                        isLocalVariable0Updated || // <= we don't know the receiver object at all
+                        cfJoins.contains(pc) ||    // <= we cannot locally decide who is the receiver
+                        {
+                            val predecessorPC              = code.pcOfPreviousInstruction(pc)
+                            val predecessorOfPredecessorPC = code.pcOfPreviousInstruction(predecessorPC)
+                            val valueInstruction           = instructions(predecessorPC)
 
-                                instructions(predecessorOfPredecessorPC) != ALOAD_0 || // <= the receiver may be null..
-                                    valueInstruction.isInstanceOf[StackManagementInstruction] ||
-                                    // we have to ensure that our "this" reference is not used for something else... =>
-                                    valueInstruction.numberOfPoppedOperands(NotRequired) > 0
-                                // the number of pushed operands is always equal or smaller than 1
-                                // except of the stack management instructions
-                            }
+                            instructions(predecessorOfPredecessorPC) != ALOAD_0 || // <= the receiver may be null..
+                            valueInstruction.isInstanceOf[StackManagementInstruction] ||
+                            // we have to ensure that our "this" reference is not used for something else... =>
+                            valueInstruction.numberOfPoppedOperands(NotRequired) > 0
+                            // the number of pushed operands is always equal or smaller than 1
+                            // except of the stack management instructions
+                        }
                     true
 
                 case MONITORENTER.opcode | MONITOREXIT.opcode =>
@@ -198,7 +190,7 @@ object ThrownExceptionsFallback extends ((PropertyStore, FallbackReason, Entity)
 
                 case IREM.opcode | IDIV.opcode =>
                     if (!cfJoins.contains(pc)) {
-                        val predecessorPC = code.pcOfPreviousInstruction(pc)
+                        val predecessorPC    = code.pcOfPreviousInstruction(pc)
                         val valueInstruction = instructions(predecessorPC)
                         valueInstruction match {
                             case LDCInt(value) if value != 0 =>
@@ -215,7 +207,7 @@ object ThrownExceptionsFallback extends ((PropertyStore, FallbackReason, Entity)
 
                 case LREM.opcode | LDIV.opcode =>
                     if (!cfJoins.contains(pc)) {
-                        val predecessorPC = code.pcOfPreviousInstruction(pc)
+                        val predecessorPC    = code.pcOfPreviousInstruction(pc)
                         val valueInstruction = instructions(predecessorPC)
                         valueInstruction match {
                             case LoadLong(value) if value != 0L =>
@@ -248,18 +240,14 @@ object ThrownExceptionsFallback extends ((PropertyStore, FallbackReason, Entity)
             exceptions += ObjectType.IllegalMonitorStateException
         }
 
-        if (exceptions.isEmpty)
-            NoExceptions
-        else
-            ThrownExceptions(exceptions)
+        if (exceptions.isEmpty) NoExceptions
+        else ThrownExceptions(exceptions)
     }
 
 }
 
 class ThrownExceptionsFallback(ps: PropertyStore) extends PropertyComputation[Method] {
 
-    def apply(m: Method): PropertyComputationResult = {
-        Result(m, ThrownExceptionsFallback(ps, m))
-    }
+    def apply(m: Method): PropertyComputationResult = Result(m, ThrownExceptionsFallback(ps, m))
 
 }

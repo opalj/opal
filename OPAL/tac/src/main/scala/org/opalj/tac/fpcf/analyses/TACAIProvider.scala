@@ -4,22 +4,22 @@ package tac
 package fpcf
 package analyses
 
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.FinalEP
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.FPCFEagerAnalysisScheduler
-import org.opalj.br.fpcf.FPCFLazyAnalysisScheduler
-import org.opalj.fpcf.ProperPropertyComputationResult
-import org.opalj.fpcf.PropertyBounds
-import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.Result
-import org.opalj.br.Method
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.analyses.SomeProject
 import org.opalj.ai.fpcf.analyses.DomainBasedFPCFAnalysisScheduler
 import org.opalj.ai.fpcf.analyses.L0BaseAIResultAnalysis
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.ai.fpcf.properties.ProjectSpecificAIExecutor
+import org.opalj.br.Method
+import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.FPCFEagerAnalysisScheduler
+import org.opalj.br.fpcf.FPCFLazyAnalysisScheduler
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.FinalEP
+import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.PropertyBounds
+import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.Result
 import org.opalj.tac.fpcf.analyses.TACAIAnalysis.computeTheTACAI
 import org.opalj.tac.fpcf.properties.TACAI
 
@@ -32,7 +32,7 @@ import org.opalj.tac.fpcf.properties.TACAI
  */
 class TACAIProvider private[analyses] (val project: SomeProject) extends FPCFAnalysis {
 
-    final implicit val aiFactory: ProjectSpecificAIExecutor = project.get(AIDomainFactoryKey)
+    implicit final val aiFactory: ProjectSpecificAIExecutor = project.get(AIDomainFactoryKey)
 
     def computeTAC(e: Entity): ProperPropertyComputationResult = e match {
         case m: Method =>
@@ -55,8 +55,7 @@ sealed trait TACAIProviderScheduler extends TACAIInitializer with DomainBasedFPC
     override def afterPhaseCompletion(
         p:        SomeProject,
         ps:       PropertyStore,
-        analysis: FPCFAnalysis
-    ): Unit = {}
+        analysis: FPCFAnalysis): Unit = {}
 
 }
 
@@ -68,7 +67,7 @@ object EagerTACAIProvider extends TACAIProviderScheduler with FPCFEagerAnalysisS
 
     override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new TACAIProvider(p) // THE TACAIPROVIDER MUST NOT BE CREATED IN INIT!
-        val methods = p.allMethodsWithBody
+        val methods  = p.allMethodsWithBody
         ps.scheduleEagerComputationsForEntities(methods)(analysis.computeTAC)
         analysis
     }

@@ -3,48 +3,32 @@ package org.opalj
 package support
 package info
 
-import scala.collection.immutable.SortedSet
-import java.nio.file.Path
-import java.io.IOException
-import java.io.File
 import java.io.BufferedWriter
+import java.io.File
 import java.io.FileWriter
-import java.util.Calendar
-import java.nio.file.FileSystems
+import java.io.IOException
 import java.net.URL
+import java.nio.file.FileSystems
+import java.nio.file.Path
 import java.text.SimpleDateFormat
-import com.typesafe.config.ConfigValueFactory
-import com.typesafe.config.Config
-import com.typesafe.config.ConfigFactory
+import java.util.Calendar
+import scala.collection.immutable.SortedSet
 
-import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.Project.JavaClassFileReader
-import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.util.Seconds
-import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
-import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
-import org.opalj.tac.fpcf.analyses.escape.LazySimpleEscapeAnalysis
-import org.opalj.br.ObjectType
-import org.opalj.br.Field
-import org.opalj.fpcf.Entity
-import org.opalj.br.fpcf.FPCFAnalysesManagerKey
-import org.opalj.bytecode.JRELibraryFolder
-import org.opalj.br.fpcf.FPCFAnalysisScheduler
-import org.opalj.br.analyses.Project
-import org.opalj.br.fpcf.PropertyStoreKey
-import org.opalj.fpcf.PropertyStoreContext
-import org.opalj.tac.fpcf.analyses.purity.L2PurityAnalysis
-import org.opalj.tac.fpcf.analyses.purity.SystemOutLoggingAllExceptionRater
-import org.opalj.log.LogContext
-import org.opalj.fpcf.EPS
 import org.opalj.ai.domain
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
-import org.opalj.fpcf.OrderedProperty
+import org.opalj.br.Field
+import org.opalj.br.ObjectType
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.Project.JavaClassFileReader
+import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.FPCFAnalysisScheduler
+import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
+import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
 import org.opalj.br.fpcf.analyses.immutability.LazyClassImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.immutability.LazyTypeImmutabilityAnalysis
-import org.opalj.fpcf.ComputationSpecification
-import org.opalj.tac.cg.XTACallGraphKey
 import org.opalj.br.fpcf.properties.immutability.Assignable
 import org.opalj.br.fpcf.properties.immutability.ClassImmutability
 import org.opalj.br.fpcf.properties.immutability.DependentlyImmutableClass
@@ -52,23 +36,40 @@ import org.opalj.br.fpcf.properties.immutability.DependentlyImmutableField
 import org.opalj.br.fpcf.properties.immutability.DependentlyImmutableType
 import org.opalj.br.fpcf.properties.immutability.EffectivelyNonAssignable
 import org.opalj.br.fpcf.properties.immutability.FieldAssignability
+import org.opalj.br.fpcf.properties.immutability.FieldImmutability
 import org.opalj.br.fpcf.properties.immutability.LazilyInitialized
 import org.opalj.br.fpcf.properties.immutability.MutableClass
+import org.opalj.br.fpcf.properties.immutability.MutableField
 import org.opalj.br.fpcf.properties.immutability.MutableType
 import org.opalj.br.fpcf.properties.immutability.NonAssignable
 import org.opalj.br.fpcf.properties.immutability.NonTransitivelyImmutableClass
+import org.opalj.br.fpcf.properties.immutability.NonTransitivelyImmutableField
 import org.opalj.br.fpcf.properties.immutability.NonTransitivelyImmutableType
 import org.opalj.br.fpcf.properties.immutability.TransitivelyImmutableClass
+import org.opalj.br.fpcf.properties.immutability.TransitivelyImmutableField
 import org.opalj.br.fpcf.properties.immutability.TransitivelyImmutableType
 import org.opalj.br.fpcf.properties.immutability.TypeImmutability
 import org.opalj.br.fpcf.properties.immutability.UnsafelyLazilyInitialized
-import org.opalj.br.fpcf.properties.immutability.FieldImmutability
-import org.opalj.br.fpcf.properties.immutability.MutableField
-import org.opalj.br.fpcf.properties.immutability.NonTransitivelyImmutableField
-import org.opalj.br.fpcf.properties.immutability.TransitivelyImmutableField
+import org.opalj.bytecode.JRELibraryFolder
+import org.opalj.fpcf.ComputationSpecification
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EPS
+import org.opalj.fpcf.OrderedProperty
+import org.opalj.fpcf.PropertyStoreContext
+import org.opalj.log.LogContext
 import org.opalj.tac.cg.CallGraphKey
+import org.opalj.tac.cg.XTACallGraphKey
 import org.opalj.tac.fpcf.analyses.LazyFieldImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.escape.LazySimpleEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.fieldassignability.LazyL2FieldAssignabilityAnalysis
+import org.opalj.tac.fpcf.analyses.purity.L2PurityAnalysis
+import org.opalj.tac.fpcf.analyses.purity.SystemOutLoggingAllExceptionRater
+import org.opalj.util.PerformanceEvaluation.time
+import org.opalj.util.Seconds
+
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
+import com.typesafe.config.ConfigValueFactory
 
 /**
  * Determines the assignability of fields and the immutability of fields, classes and types and provides several
@@ -80,10 +81,10 @@ object Immutability {
 
     sealed trait Analyses
     case object Assignability extends Analyses
-    case object Fields extends Analyses
-    case object Classes extends Analyses
-    case object Types extends Analyses
-    case object All extends Analyses
+    case object Fields        extends Analyses
+    case object Classes       extends Analyses
+    case object Types         extends Analyses
+    case object All           extends Analyses
 
     def evaluate(
         cp:                                File,
@@ -98,8 +99,7 @@ object Immutability {
         withoutConsiderLazyInitialization: Boolean,
         configurationName:                 Option[String],
         times:                             Int,
-        callgraphKey:                      CallGraphKey
-    ): BasicReport = {
+        callgraphKey:                      CallGraphKey): BasicReport = {
 
         val classFiles = projectDir match {
             case Some(dir) => JavaClassFileReader().ClassFiles(cp.toPath.resolve(dir).toFile)
@@ -116,18 +116,16 @@ object Immutability {
             else JavaClassFileReader().ClassFiles(JRELibraryFolder)
 
         implicit var config: Config =
-            if (isLibrary)
-                ConfigFactory.load("LibraryProject.conf")
-            else
-                ConfigFactory.load("CommandLineProject.conf")
+            if (isLibrary) ConfigFactory.load("LibraryProject.conf")
+            else ConfigFactory.load("CommandLineProject.conf")
 
         config = config.withValue(
             "org.opalj.fpcf.analyses.L3FieldAssignabilityAnalysis.considerLazyInitialization",
             ConfigValueFactory.fromAnyRef(!withoutConsiderLazyInitialization)
         )
 
-        var projectTime: Seconds = Seconds.None
-        var analysisTime: Seconds = Seconds.None
+        var projectTime: Seconds   = Seconds.None
+        var analysisTime: Seconds  = Seconds.None
         val callGraphTime: Seconds = Seconds.None
 
         val project = time {
@@ -137,38 +135,31 @@ object Immutability {
                 libraryClassFilesAreInterfacesOnly = false,
                 Iterable.empty
             )
-        } { t =>
-            projectTime = t.toSeconds
-        }
+        } { t => projectTime = t.toSeconds }
 
         val allProjectClassTypes = project.allProjectClassFiles.iterator.map(_.thisType).toSet
 
         val allFieldsInProjectClassFiles = project.allProjectClassFiles.iterator.flatMap { _.fields }.toSet
 
-        val dependencies: List[FPCFAnalysisScheduler] =
-            List(
-                LazyL2FieldAssignabilityAnalysis,
-                LazyFieldImmutabilityAnalysis,
-                LazyClassImmutabilityAnalysis,
-                LazyTypeImmutabilityAnalysis,
-                LazyStaticDataUsageAnalysis,
-                LazyL0CompileTimeConstancyAnalysis,
-                LazySimpleEscapeAnalysis
-            )
+        val dependencies: List[FPCFAnalysisScheduler] = List(
+            LazyL2FieldAssignabilityAnalysis,
+            LazyFieldImmutabilityAnalysis,
+            LazyClassImmutabilityAnalysis,
+            LazyTypeImmutabilityAnalysis,
+            LazyStaticDataUsageAnalysis,
+            LazyL0CompileTimeConstancyAnalysis,
+            LazySimpleEscapeAnalysis
+        )
 
         project.get(callgraphKey)
 
         L2PurityAnalysis.setRater(Some(SystemOutLoggingAllExceptionRater))
 
         project.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) { _ =>
-            if (level == 0)
-                Set[Class[_ <: AnyRef]](classOf[domain.l0.BaseDomainWithDefUse[URL]])
-            else if (level == 1)
-                Set[Class[_ <: AnyRef]](classOf[domain.l1.DefaultDomainWithCFGAndDefUse[URL]])
-            else if (level == 2)
-                Set[Class[_ <: AnyRef]](classOf[domain.l2.DefaultPerformInvocationsDomainWithCFG[URL]])
-            else
-                throw new Exception(s"The level $level does not exist")
+            if (level == 0) Set[Class[_ <: AnyRef]](classOf[domain.l0.BaseDomainWithDefUse[URL]])
+            else if (level == 1) Set[Class[_ <: AnyRef]](classOf[domain.l1.DefaultDomainWithCFGAndDefUse[URL]])
+            else if (level == 2) Set[Class[_ <: AnyRef]](classOf[domain.l2.DefaultPerformInvocationsDomainWithCFG[URL]])
+            else throw new Exception(s"The level $level does not exist")
         }
 
         project.getOrCreateProjectInformationKeyInitializationData(
@@ -184,55 +175,37 @@ object Immutability {
             }
         )
 
-        val propertyStore = project.get(PropertyStoreKey)
+        val propertyStore   = project.get(PropertyStoreKey)
         val analysesManager = project.get(FPCFAnalysesManagerKey)
 
         time {
             analysesManager.runAll(
-                dependencies, {
+                dependencies,
                 (css: List[ComputationSpecification[FPCFAnalysis]]) =>
                     analysis match {
-                        case Assignability =>
-                            if (css.contains(LazyL2FieldAssignabilityAnalysis))
-                                allFieldsInProjectClassFiles.foreach(
-                                    f => propertyStore.force(f, FieldAssignability.key)
-                                )
-                        case Fields =>
-                            if (css.contains(LazyFieldImmutabilityAnalysis))
-                                allFieldsInProjectClassFiles.foreach(
-                                    f => propertyStore.force(f, FieldImmutability.key)
-                                )
-                        case Classes =>
-                            if (css.contains(LazyClassImmutabilityAnalysis))
-                                allProjectClassTypes.foreach(
-                                    c => propertyStore.force(c, ClassImmutability.key)
-                                )
-                        case Types =>
-                            if (css.contains(LazyTypeImmutabilityAnalysis))
-                                allProjectClassTypes.foreach(
-                                    c => propertyStore.force(c, TypeImmutability.key)
-                                )
+                        case Assignability => if (css.contains(LazyL2FieldAssignabilityAnalysis))
+                                allFieldsInProjectClassFiles.foreach(f => propertyStore.force(f, FieldAssignability.key))
+                        case Fields => if (css.contains(LazyFieldImmutabilityAnalysis))
+                                allFieldsInProjectClassFiles.foreach(f => propertyStore.force(f, FieldImmutability.key))
+                        case Classes => if (css.contains(LazyClassImmutabilityAnalysis))
+                                allProjectClassTypes.foreach(c => propertyStore.force(c, ClassImmutability.key))
+                        case Types => if (css.contains(LazyTypeImmutabilityAnalysis))
+                                allProjectClassTypes.foreach(c => propertyStore.force(c, TypeImmutability.key))
                         case All =>
                             if (css.contains(LazyL2FieldAssignabilityAnalysis))
-                                allFieldsInProjectClassFiles.foreach(f => {
+                                allFieldsInProjectClassFiles.foreach { f =>
                                     import org.opalj.br.fpcf.properties.immutability
                                     propertyStore.force(f, immutability.FieldAssignability.key)
-                                })
+                                }
                             if (css.contains(LazyFieldImmutabilityAnalysis))
-                                allFieldsInProjectClassFiles.foreach(
-                                    f => propertyStore.force(f, FieldImmutability.key)
-                                )
-                            if (css.contains(LazyClassImmutabilityAnalysis))
-                                allProjectClassTypes.foreach(c => {
-                                    import org.opalj.br.fpcf.properties.immutability
-                                    propertyStore.force(c, immutability.ClassImmutability.key)
-                                })
+                                allFieldsInProjectClassFiles.foreach(f => propertyStore.force(f, FieldImmutability.key))
+                            if (css.contains(LazyClassImmutabilityAnalysis)) allProjectClassTypes.foreach { c =>
+                                import org.opalj.br.fpcf.properties.immutability
+                                propertyStore.force(c, immutability.ClassImmutability.key)
+                            }
                             if (css.contains(LazyTypeImmutabilityAnalysis))
-                                allProjectClassTypes.foreach(
-                                    c => propertyStore.force(c, TypeImmutability.key)
-                                )
+                                allProjectClassTypes.foreach(c => propertyStore.force(c, TypeImmutability.key))
                     }
-            }
             )
         } { t => analysisTime = t.toSeconds }
 
@@ -245,35 +218,31 @@ object Immutability {
             .groupBy(_.asFinal.p)
 
         def unpackFieldEPS(eps: EPS[Entity, OrderedProperty]): String = {
-            if (!eps.e.isInstanceOf[Field])
-                throw new Exception(s"${eps.e} is not a field")
-            val field = eps.e.asInstanceOf[Field]
-            val fieldName = field.name
+            if (!eps.e.isInstanceOf[Field]) throw new Exception(s"${eps.e} is not a field")
+            val field       = eps.e.asInstanceOf[Field]
+            val fieldName   = field.name
             val packageName = field.classFile.thisType.packageName.replace("/", ".")
-            val className = field.classFile.thisType.simpleName
-            packageName+"."+className+"."+fieldName
+            val className   = field.classFile.thisType.simpleName
+            packageName + "." + className + "." + fieldName
         }
 
-        val assignableFields =
-            fieldAssignabilityGroupedResults
-                .getOrElse(Assignable, Iterator.empty)
-                .toSeq
-                .map(unpackFieldEPS)
-                .sortWith(_ < _)
+        val assignableFields = fieldAssignabilityGroupedResults
+            .getOrElse(Assignable, Iterator.empty)
+            .toSeq
+            .map(unpackFieldEPS)
+            .sortWith(_ < _)
 
-        val unsafelyLazilyInitializedFields =
-            fieldAssignabilityGroupedResults
-                .getOrElse(UnsafelyLazilyInitialized, Iterator.empty)
-                .toSeq
-                .map(unpackFieldEPS)
-                .sortWith(_ < _)
+        val unsafelyLazilyInitializedFields = fieldAssignabilityGroupedResults
+            .getOrElse(UnsafelyLazilyInitialized, Iterator.empty)
+            .toSeq
+            .map(unpackFieldEPS)
+            .sortWith(_ < _)
 
-        val lazilyInitializedFields =
-            fieldAssignabilityGroupedResults
-                .getOrElse(LazilyInitialized, Iterator.empty)
-                .toSeq
-                .map(unpackFieldEPS)
-                .sortWith(_ < _)
+        val lazilyInitializedFields = fieldAssignabilityGroupedResults
+            .getOrElse(LazilyInitialized, Iterator.empty)
+            .toSeq
+            .map(unpackFieldEPS)
+            .sortWith(_ < _)
 
         val effectivelyNonAssignableFields = fieldAssignabilityGroupedResults
             .getOrElse(EffectivelyNonAssignable, Iterator.empty)
@@ -289,39 +258,39 @@ object Immutability {
         if (analysis == All || analysis == Assignability) {
             stringBuilderResults.append(
                 s"""
-                | Assignable Fields:
-                | ${assignableFields.map(_+" | Assignable Field ").mkString("\n")}
-                |
-                | Lazy Initialized Not Thread Safe Field:
-                | ${
-                    unsafelyLazilyInitializedFields
-                        .map(_+" | Lazy Initialized Not Thread Safe Field")
-                        .mkString("\n")
-                }
-                |
-                | Lazy Initialized Thread Safe Field:
-                | ${
-                    lazilyInitializedFields
-                        .map(_+" | Lazy Initialized Thread Safe Field")
-                        .mkString("\n")
-                }
-                |
-                |
-                | effectively non assignable Fields:
-                |                | ${
-                    effectivelyNonAssignableFields
-                        .map(_+" | effectively non assignable ")
-                        .mkString("\n")
-                }
+                   | Assignable Fields:
+                   | ${assignableFields.map(_ + " | Assignable Field ").mkString("\n")}
+                   |
+                   | Lazy Initialized Not Thread Safe Field:
+                   | ${
+                         unsafelyLazilyInitializedFields
+                             .map(_ + " | Lazy Initialized Not Thread Safe Field")
+                             .mkString("\n")
+                     }
+                   |
+                   | Lazy Initialized Thread Safe Field:
+                   | ${
+                         lazilyInitializedFields
+                             .map(_ + " | Lazy Initialized Thread Safe Field")
+                             .mkString("\n")
+                     }
+                   |
+                   |
+                   | effectively non assignable Fields:
+                   |                | ${
+                                          effectivelyNonAssignableFields
+                                              .map(_ + " | effectively non assignable ")
+                                              .mkString("\n")
+                                      }
 
-                | non assignable Fields:
-                | ${
-                    nonAssignableFields
-                        .map(_+" | non assignable")
-                        .mkString("\n")
-                }
-                |
-                |""".stripMargin
+                   | non assignable Fields:
+                   | ${
+                         nonAssignableFields
+                             .map(_ + " | non assignable")
+                             .mkString("\n")
+                     }
+                   |
+                   |""".stripMargin
             )
         }
 
@@ -348,7 +317,7 @@ object Immutability {
             .map(unpackFieldEPS)
             .sortWith(_ < _)
 
-        val dependentlyImmutableFields = fieldGroupedResults //.collect { case (DependentlyImmutableField(_), rhs) => rhs }
+        val dependentlyImmutableFields = fieldGroupedResults // .collect { case (DependentlyImmutableField(_), rhs) => rhs }
             .getOrElse(DependentlyImmutableField(SortedSet.empty), Iterator.empty)
             .toSeq
             .map(unpackFieldEPS)
@@ -363,23 +332,23 @@ object Immutability {
         if (analysis == All || analysis == Fields) {
             stringBuilderResults.append(
                 s"""
-                | Mutable Fields:
-                | ${mutableFields.map(_+" | Mutable Field ").mkString("\n")}
-                |
-                | Non Transitively Immutable Fields:
-                | ${nonTransitivelyImmutableFields.map(_+" | Non Transitively Immutable Field ").mkString("\n")}
-                |
-                | Dependently Immutable Fields:
-                | ${
-                    dependentlyImmutableFields
-                        .map(_+" | Dependently Immutable Field ")
-                        .mkString("\n")
-                }
-                |
-                | Transitively Immutable Fields:
-                | ${transitivelyImmutableFields.map(_+" | Transitively Immutable Field ").mkString("\n")}
-                |
-                |""".stripMargin
+                   | Mutable Fields:
+                   | ${mutableFields.map(_ + " | Mutable Field ").mkString("\n")}
+                   |
+                   | Non Transitively Immutable Fields:
+                   | ${nonTransitivelyImmutableFields.map(_ + " | Non Transitively Immutable Field ").mkString("\n")}
+                   |
+                   | Dependently Immutable Fields:
+                   | ${
+                         dependentlyImmutableFields
+                             .map(_ + " | Dependently Immutable Field ")
+                             .mkString("\n")
+                     }
+                   |
+                   | Transitively Immutable Fields:
+                   | ${transitivelyImmutableFields.map(_ + " | Transitively Immutable Field ").mkString("\n")}
+                   |
+                   |""".stripMargin
             )
         }
 
@@ -400,31 +369,27 @@ object Immutability {
             s"${classFile.packageName.replace("/", ".")}.$className"
         }
 
-        val mutableClasses =
-            classGroupedResults
-                .getOrElse(MutableClass, Iterator.empty)
-                .toSeq
-                .map(unpackClass)
-                .sortWith(_ < _)
+        val mutableClasses = classGroupedResults
+            .getOrElse(MutableClass, Iterator.empty)
+            .toSeq
+            .map(unpackClass)
+            .sortWith(_ < _)
 
-        val nonTransitivelyImmutableClasses =
-            classGroupedResults
-                .getOrElse(NonTransitivelyImmutableClass, Iterator.empty)
-                .toSeq
-                .map(unpackClass)
-                .sortWith(_ < _)
+        val nonTransitivelyImmutableClasses = classGroupedResults
+            .getOrElse(NonTransitivelyImmutableClass, Iterator.empty)
+            .toSeq
+            .map(unpackClass)
+            .sortWith(_ < _)
 
-        val dependentlyImmutableClasses =
-            classGroupedResults
-                .getOrElse(DependentlyImmutableClass(SortedSet.empty), Iterator.empty)
-                .toSeq
-                .map(unpackClass)
-                .sortWith(_ < _)
+        val dependentlyImmutableClasses = classGroupedResults
+            .getOrElse(DependentlyImmutableClass(SortedSet.empty), Iterator.empty)
+            .toSeq
+            .map(unpackClass)
+            .sortWith(_ < _)
 
         val transitivelyImmutables = classGroupedResults.getOrElse(TransitivelyImmutableClass, Iterator.empty)
 
-        val allInterfaces =
-            project.allProjectClassFiles.filter(_.isInterfaceDeclaration).map(_.thisType).toSet
+        val allInterfaces = project.allProjectClassFiles.filter(_.isInterfaceDeclaration).map(_.thisType).toSet
 
         val transitivelyImmutableClassesInterfaces = transitivelyImmutables
             .filter(eps => allInterfaces.contains(eps.e.asInstanceOf[ObjectType]))
@@ -441,29 +406,29 @@ object Immutability {
         if (analysis == All || analysis == Classes) {
             stringBuilderResults.append(
                 s"""
-                | Mutable Classes:
-                | ${mutableClasses.map(_+" | Mutable Class ").mkString("\n")}
-                |
-                | Non Transitively Immutable Classes:
-                | ${nonTransitivelyImmutableClasses.map(_+" | Non Transitively Immutable Class ").mkString("\n")}
-                |
-                | Dependently Immutable Classes:
-                | ${
-                    dependentlyImmutableClasses
-                        .map(_+" | Dependently Immutable Class ")
-                        .mkString("\n")
-                }
-                |
-                | Transitively Immutable Classes:
-                | ${transitivelyImmutableClasses.map(_+" | Transitively Immutable Classes ").mkString("\n")}
-                |
-                | Transitively Immutable Interfaces:
-                | ${
-                    transitivelyImmutableClassesInterfaces
-                        .map(_+" | Transitively Immutable Interfaces ")
-                        .mkString("\n")
-                }
-                |""".stripMargin
+                   | Mutable Classes:
+                   | ${mutableClasses.map(_ + " | Mutable Class ").mkString("\n")}
+                   |
+                   | Non Transitively Immutable Classes:
+                   | ${nonTransitivelyImmutableClasses.map(_ + " | Non Transitively Immutable Class ").mkString("\n")}
+                   |
+                   | Dependently Immutable Classes:
+                   | ${
+                         dependentlyImmutableClasses
+                             .map(_ + " | Dependently Immutable Class ")
+                             .mkString("\n")
+                     }
+                   |
+                   | Transitively Immutable Classes:
+                   | ${transitivelyImmutableClasses.map(_ + " | Transitively Immutable Classes ").mkString("\n")}
+                   |
+                   | Transitively Immutable Interfaces:
+                   | ${
+                         transitivelyImmutableClassesInterfaces
+                             .map(_ + " | Transitively Immutable Interfaces ")
+                             .mkString("\n")
+                     }
+                   |""".stripMargin
             )
         }
 
@@ -506,18 +471,18 @@ object Immutability {
         if (analysis == All || analysis == Types) {
             stringBuilderResults.append(
                 s"""
-                | Mutable Types:
-                | ${mutableTypes.map(_+" | Mutable Type ").mkString("\n")}
-                |
-                | Non-Transitively Immutable Types:
-                | ${nonTransitivelyImmutableTypes.map(_+" | Non-Transitively Immutable Types ").mkString("\n")}
-                |
-                | Dependently Immutable Types:
-                | ${dependentlyImmutableTypes.map(_+" | Dependently Immutable Types ").mkString("\n")}
-                |
-                | Transitively Immutable Types:
-                | ${transitivelyImmutableTypes.map(_+" | Transitively Immutable Types ").mkString("\n")}
-                |""".stripMargin
+                   | Mutable Types:
+                   | ${mutableTypes.map(_ + " | Mutable Type ").mkString("\n")}
+                   |
+                   | Non-Transitively Immutable Types:
+                   | ${nonTransitivelyImmutableTypes.map(_ + " | Non-Transitively Immutable Types ").mkString("\n")}
+                   |
+                   | Dependently Immutable Types:
+                   | ${dependentlyImmutableTypes.map(_ + " | Dependently Immutable Types ").mkString("\n")}
+                   |
+                   | Transitively Immutable Types:
+                   | ${transitivelyImmutableTypes.map(_ + " | Transitively Immutable Types ").mkString("\n")}
+                   |""".stripMargin
             )
         }
 
@@ -526,117 +491,115 @@ object Immutability {
         if (analysis == Assignability || analysis == All) {
             stringBuilderNumber.append(
                 s"""
-                | Assignable Fields: ${assignableFields.size}
-                | Unsafely Lazily Initialized  Fields: ${unsafelyLazilyInitializedFields.size}
-                | lazily Initialized Fields: ${lazilyInitializedFields.size}
-                | Effectively Non Assignable Fields: ${effectivelyNonAssignableFields.size}
-                | Non Assignable Fields: ${nonAssignableFields.size}
-                | Fields: ${allFieldsInProjectClassFiles.size}
-                |""".stripMargin
+                   | Assignable Fields: ${assignableFields.size}
+                   | Unsafely Lazily Initialized  Fields: ${unsafelyLazilyInitializedFields.size}
+                   | lazily Initialized Fields: ${lazilyInitializedFields.size}
+                   | Effectively Non Assignable Fields: ${effectivelyNonAssignableFields.size}
+                   | Non Assignable Fields: ${nonAssignableFields.size}
+                   | Fields: ${allFieldsInProjectClassFiles.size}
+                   |""".stripMargin
             )
         }
 
         if (analysis == Fields || analysis == All) {
             stringBuilderNumber.append(
                 s"""
-                | Mutable Fields: ${mutableFields.size}
-                | Non Transitively Immutable Fields: ${nonTransitivelyImmutableFields.size}
-                | Dependently Immutable Fields: ${dependentlyImmutableFields.size}
-                | Transitively Immutable Fields: ${transitivelyImmutableFields.size}
-                | Fields: ${allFieldsInProjectClassFiles.size}
-                | Fields with primitive Types / java.lang.String: ${
-                    allFieldsInProjectClassFiles
-                        .filter(field => !field.fieldType.isReferenceType || field.fieldType == ObjectType.String).size
-                }
-                |""".stripMargin
+                   | Mutable Fields: ${mutableFields.size}
+                   | Non Transitively Immutable Fields: ${nonTransitivelyImmutableFields.size}
+                   | Dependently Immutable Fields: ${dependentlyImmutableFields.size}
+                   | Transitively Immutable Fields: ${transitivelyImmutableFields.size}
+                   | Fields: ${allFieldsInProjectClassFiles.size}
+                   | Fields with primitive Types / java.lang.String: ${
+                                                                         allFieldsInProjectClassFiles
+                                                                             .filter(field =>
+                                                                                 !field.fieldType.isReferenceType || field.fieldType == ObjectType.String).size
+                                                                     }
+                   |""".stripMargin
             )
         }
 
         if (analysis == Classes || analysis == All) {
             stringBuilderNumber.append(
                 s"""
-                | Mutable Classes: ${mutableClasses.size}
-                | Non Transitively Immutable Classes: ${nonTransitivelyImmutableClasses.size}
-                | Dependently Immutable Classes: ${dependentlyImmutableClasses.size}
-                | Transitively Immutable Classes: ${transitivelyImmutableClasses.size}
-                | Classes: ${allProjectClassTypes.size - transitivelyImmutableClassesInterfaces.size}
-                |
-                | Transitively Immutable Interfaces: ${transitivelyImmutableClassesInterfaces.size}
-                |
-                |""".stripMargin
+                   | Mutable Classes: ${mutableClasses.size}
+                   | Non Transitively Immutable Classes: ${nonTransitivelyImmutableClasses.size}
+                   | Dependently Immutable Classes: ${dependentlyImmutableClasses.size}
+                   | Transitively Immutable Classes: ${transitivelyImmutableClasses.size}
+                   | Classes: ${allProjectClassTypes.size - transitivelyImmutableClassesInterfaces.size}
+                   |
+                   | Transitively Immutable Interfaces: ${transitivelyImmutableClassesInterfaces.size}
+                   |
+                   |""".stripMargin
             )
         }
 
-        if (analysis == Types || analysis == All)
-            stringBuilderNumber.append(
-                s"""
-                | Mutable Types: ${mutableTypes.size}
-                | Non Transitively Immutable Types: ${nonTransitivelyImmutableTypes.size}
-                | Dependently Immutable Types: ${dependentlyImmutableTypes.size}
-                | Transitively immutable Types: ${transitivelyImmutableTypes.size}
-                | Types: ${allProjectClassTypes.size}
-                |""".stripMargin
-            )
+        if (analysis == Types || analysis == All) stringBuilderNumber.append(
+            s"""
+               | Mutable Types: ${mutableTypes.size}
+               | Non Transitively Immutable Types: ${nonTransitivelyImmutableTypes.size}
+               | Dependently Immutable Types: ${dependentlyImmutableTypes.size}
+               | Transitively immutable Types: ${transitivelyImmutableTypes.size}
+               | Types: ${allProjectClassTypes.size}
+               |""".stripMargin
+        )
 
         val totalTime = projectTime + callGraphTime + analysisTime
 
         stringBuilderNumber.append(
             s"""
-            | running ${analysis.toString} analysis
-            | took:
-            |   $totalTime seconds total time
-            |   $projectTime seconds project time
-            |   $callGraphTime seconds callgraph time
-            |   $analysisTime seconds analysis time
-            |""".stripMargin
+               | running ${analysis.toString} analysis
+               | took:
+               |   $totalTime seconds total time
+               |   $projectTime seconds project time
+               |   $callGraphTime seconds callgraph time
+               |   $analysisTime seconds analysis time
+               |""".stripMargin
         )
 
         println(
             s"""
-            |
-            | ${stringBuilderNumber.toString()}
-            |
-            | time results:
-            |
-            | $numThreads Threads :: took $analysisTime seconds analysis time
-            |
-            | results folder: $resultsFolder
-            |
-            | CofigurationName: $configurationName
-            |
-            |  level: $level
-            |
-            |propertyStore: ${propertyStore.getClass}
-            |
-            |""".stripMargin
+               |
+               | ${stringBuilderNumber.toString()}
+               |
+               | time results:
+               |
+               | $numThreads Threads :: took $analysisTime seconds analysis time
+               |
+               | results folder: $resultsFolder
+               |
+               | CofigurationName: $configurationName
+               |
+               |  level: $level
+               |
+               |propertyStore: ${propertyStore.getClass}
+               |
+               |""".stripMargin
         )
 
         val fileNameExtension = {
-            {
-                if (withoutConsiderLazyInitialization) {
-                    println("withoutConsiderLazyInitialization")
-                    "_withoutConsiderLazyInitialization"
-                } else ""
-            } + {
-                if (isLibrary) {
-                    println("is Library")
-                    "_isLibrary_"
-                } else ""
-            } + {
-                if (numThreads == 0) ""
-                else s"_${numThreads}threads"
-            } + s"_l$level"
-        }
+            if (withoutConsiderLazyInitialization) {
+                println("withoutConsiderLazyInitialization")
+                "_withoutConsiderLazyInitialization"
+            } else ""
+        } + {
+            if (isLibrary) {
+                println("is Library")
+                "_isLibrary_"
+            } else ""
+        } + {
+            if (numThreads == 0) ""
+            else s"_${numThreads}threads"
+        } + s"_l$level"
 
         if (resultsFolder != null) {
 
             val calender = Calendar.getInstance()
             calender.add(Calendar.ALL_STYLES, 1)
-            val date = calender.getTime()
+            val date             = calender.getTime()
             val simpleDateFormat = new SimpleDateFormat("dd_MM_yyyy_HH_mm_ss")
 
             val file = new File(
-                s"$resultsFolder/${configurationName.getOrElse("")}_${times}_"+
+                s"$resultsFolder/${configurationName.getOrElse("")}_${times}_" +
                     s"${analysis.toString}_${simpleDateFormat.format(date)}_$fileNameExtension.txt"
             )
 
@@ -646,16 +609,16 @@ object Immutability {
             try {
                 bw.write(
                     s""" ${stringBuilderResults.toString()}
-                    |
-                    | ${stringBuilderNumber.toString()}
-                    |
-                    | level: $level
-                    |
-                    | jdk folder: $JRELibraryFolder
-                    |
-                    | callGraph $CallGraphKey
-                    |
-                    |""".stripMargin
+                       |
+                       | ${stringBuilderNumber.toString()}
+                       |
+                       | level: $level
+                       |
+                       | jdk folder: $JRELibraryFolder
+                       |
+                       | callGraph $CallGraphKey
+                       |
+                       |""".stripMargin
                 )
 
                 bw.close()
@@ -679,44 +642,43 @@ object Immutability {
         import org.opalj.tac.cg.CHACallGraphKey
         import org.opalj.tac.cg.RTACallGraphKey
 
-        def usage: String = {
+        def usage: String =
             s"""
-            | Usage: Immutability
-            | -cp <JAR file/Folder containing class files> OR -JDK
-            | -projectDir <project directory>
-            | -libDir <library directory>
-            | -isLibrary
-            | -adHocCHA
-            | [-JDK] (running with the JDK)
-            | [-analysis <imm analysis that should be executed: FieldAssignability, Fields, Classes, Types, All>]
-            | [-threads <threads that should be max used>]
-            | [-resultFolder <folder for the result files>]
-            | [-closedWorld] (uses closed world assumption, i.e. no class can be extended)
-            | [-noJDK] (running without the JDK)
-            | [-callGraph <CHA|RTA|XTA|PointsTo> (Default: RTA)
-            | [-level] <0|1|2> (domain level  Default: 2)
-            | [-withoutConsiderGenericity]
-            | [-withoutConsiderLazyInitialization]
-            | [-times <1...n>] (times of execution. n is a natural number)
-            |""".stripMargin
-        }
+               | Usage: Immutability
+               | -cp <JAR file/Folder containing class files> OR -JDK
+               | -projectDir <project directory>
+               | -libDir <library directory>
+               | -isLibrary
+               | -adHocCHA
+               | [-JDK] (running with the JDK)
+               | [-analysis <imm analysis that should be executed: FieldAssignability, Fields, Classes, Types, All>]
+               | [-threads <threads that should be max used>]
+               | [-resultFolder <folder for the result files>]
+               | [-closedWorld] (uses closed world assumption, i.e. no class can be extended)
+               | [-noJDK] (running without the JDK)
+               | [-callGraph <CHA|RTA|XTA|PointsTo> (Default: RTA)
+               | [-level] <0|1|2> (domain level  Default: 2)
+               | [-withoutConsiderGenericity]
+               | [-withoutConsiderLazyInitialization]
+               | [-times <1...n>] (times of execution. n is a natural number)
+               |""".stripMargin
 
-        var i = 0
-        var cp: File = null
+        var i                  = 0
+        var cp: File           = null
         var resultFolder: Path = null
-        var numThreads = 0
-        //var timeEvaluation: Boolean = false
-        //var threadEvaluation: Boolean = false
-        var projectDir: Option[String] = None
-        var libDir: Option[String] = None
-        var withoutJDK: Boolean = false
-        var closedWorldAssumption = false
-        var isLibrary = false
-        var callGraphName: Option[String] = None
-        var level = 2
+        var numThreads         = 0
+        // var timeEvaluation: Boolean = false
+        // var threadEvaluation: Boolean = false
+        var projectDir: Option[String]        = None
+        var libDir: Option[String]            = None
+        var withoutJDK: Boolean               = false
+        var closedWorldAssumption             = false
+        var isLibrary                         = false
+        var callGraphName: Option[String]     = None
+        var level                             = 2
         var withoutConsiderLazyInitialization = false
-        var times = 1
-        var multiProjects = false
+        var times                             = 1
+        var multiProjects                     = false
         var configurationName: Option[String] = None
 
         def readNextArg(): String = {
@@ -736,16 +698,11 @@ object Immutability {
 
                 case "-analysis" =>
                     val result = readNextArg()
-                    if (result == "All")
-                        analysis = All
-                    else if (result == "FieldAssignability")
-                        analysis = Assignability
-                    else if (result == "Fields")
-                        analysis = Fields
-                    else if (result == "Classes")
-                        analysis = Classes
-                    else if (result == "Types")
-                        analysis = Types
+                    if (result == "All") analysis = All
+                    else if (result == "FieldAssignability") analysis = Assignability
+                    else if (result == "Fields") analysis = Fields
+                    else if (result == "Classes") analysis = Classes
+                    else if (result == "Types") analysis = Types
                     else {
                         println(usage)
                         throw new IllegalArgumentException(s"unknown parameter: $result")
@@ -774,8 +731,7 @@ object Immutability {
             }
             i += 1
         }
-        if (!(0 <= level && level <= 2))
-            throw new Exception(s"not a domain level: $level")
+        if (!(0 <= level && level <= 2)) throw new Exception(s"not a domain level: $level")
 
         val callGraphKey = callGraphName match {
             case Some("CHA")        => CHACallGraphKey
@@ -785,7 +741,7 @@ object Immutability {
             case Some(a) =>
                 Console.println(s"unknown call graph analysis: $a")
                 Console.println(usage)
-                return ;
+                return;
         }
 
         var nIndex = 1

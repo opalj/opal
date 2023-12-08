@@ -3,8 +3,8 @@ package org.opalj
 package hermes
 package queries
 
-import org.opalj.br.analyses.Project
 import org.opalj.br.MethodWithBody
+import org.opalj.br.analyses.Project
 
 /**
  * Classifies class file elements which contain debug information.
@@ -15,20 +15,17 @@ import org.opalj.br.MethodWithBody
  */
 class DebugInformation(implicit hermes: HermesConfig) extends FeatureQuery {
 
-    override def featureIDs: IndexedSeq[String] = {
-        IndexedSeq(
-            /*0*/ "Class File With\nSource Attribute",
-            /*1*/ "Method With\nLine Number Table",
-            /*2*/ "Method With\nLocal Variable Table",
-            /*3*/ "Method With\nLocal Variable Type Table"
-        )
-    }
+    override def featureIDs: IndexedSeq[String] = IndexedSeq(
+        /*0*/ "Class File With\nSource Attribute",
+        /*1*/ "Method With\nLine Number Table",
+        /*2*/ "Method With\nLocal Variable Table",
+        /*3*/ "Method With\nLocal Variable Type Table"
+    )
 
     override def apply[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Iterable[(da.ClassFile, S)]
-    ): IterableOnce[Feature[S]] = {
+        rawClassFiles:        Iterable[(da.ClassFile, S)]): IterableOnce[Feature[S]] = {
         val locations = Array.fill(4)(new LocationsContainer[S])
 
         for {
@@ -40,7 +37,7 @@ class DebugInformation(implicit hermes: HermesConfig) extends FeatureQuery {
 
             for {
                 method @ MethodWithBody(body) <- classFile.methods
-                methodLocation = MethodLocation(classFileLocation, method)
+                methodLocation                 = MethodLocation(classFileLocation, method)
             } {
                 if (body.localVariableTable.isDefined) locations(1) += methodLocation
                 if (body.localVariableTypeTable.nonEmpty) locations(2) += methodLocation

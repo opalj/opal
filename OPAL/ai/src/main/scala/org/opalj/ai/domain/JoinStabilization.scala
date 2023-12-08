@@ -3,8 +3,6 @@ package org.opalj
 package ai
 
 import java.util.{HashMap => JHashMap}
-//import scala.collection.mutable.Map
-//import scala.collection.mutable.AnyRefMap
 
 import org.opalj.collection.immutable.IdentityPair
 
@@ -110,18 +108,17 @@ trait JoinStabilization extends CoreDomainFunctionality {
         super.afterBaseJoin(pc)
         joinedValues.clear()
     }
-    */
+     */
 
-    protected[this] val joinedValues: JHashMap[IdentityPair[AnyRef, AnyRef], Update[DomainValue]] = {
+    protected[this] val joinedValues: JHashMap[IdentityPair[AnyRef, AnyRef], Update[DomainValue]] =
         new JHashMap[IdentityPair[AnyRef, AnyRef], Update[DomainValue]]()
-    }
 
     /** Classes overriding this method generally have to call it! */
     override protected[this] def joinValues(
-        pc:   Int,
-        left: DomainValue, right: DomainValue
-    ): Update[DomainValue] = {
-        val key = new IdentityPair(left, right)
+        pc:    Int,
+        left:  DomainValue,
+        right: DomainValue): Update[DomainValue] = {
+        val key         = new IdentityPair(left, right)
         val joinedValue = joinedValues.get(key)
         if (joinedValue != null) {
             joinedValue

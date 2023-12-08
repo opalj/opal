@@ -26,14 +26,12 @@ trait CodeAttributeBuilder[T] {
      * @return The newly build code attribute.
      */
     def apply(
-        classFileVersion:   UShortPair,
+        classFileVersion: UShortPair,
         declaringClassType: ObjectType,
-        accessFlags:        Int,
-        name:               String,
-        descriptor:         MethodDescriptor
-    )(
-        implicit
-        classHierarchy: ClassHierarchy
-    ): (Attribute, T)
+        accessFlags: Int,
+        name: String,
+        descriptor: MethodDescriptor
+      )(implicit
+        classHierarchy: ClassHierarchy): (Attribute, T)
 
 }

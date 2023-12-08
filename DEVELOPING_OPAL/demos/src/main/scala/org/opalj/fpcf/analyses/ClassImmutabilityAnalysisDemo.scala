@@ -41,8 +41,8 @@ object ClassImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
     override def description: String = "Identifies classes that are (non-)transitively immutable"
 
     override def doAnalyze(
-        project:       Project[URL],
-        parameters:    Seq[String],
+        project: Project[URL],
+        parameters: Seq[String],
         isInterrupted: () => Boolean
     ): BasicReport = {
         val result = analyze(project)
@@ -74,26 +74,22 @@ object ClassImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
 
             propertyStore.waitOnPhaseCompletion()
 
-        } { t =>
-            analysisTime = t.toSeconds
-        }
+        } { t => analysisTime = t.toSeconds }
 
         val allProjectClassTypes = project.allProjectClassFiles.map(_.thisType).toSet
 
-        val groupedResults = propertyStore.entities(ClassImmutability.key).
-            filter(x => allProjectClassTypes.contains(x.asInstanceOf[ObjectType])).iterator.to(Iterable).groupBy(_.e)
+        val groupedResults = propertyStore.entities(ClassImmutability.key).filter(x =>
+            allProjectClassTypes.contains(x.asInstanceOf[ObjectType])
+        ).iterator.to(Iterable).groupBy(_.e)
 
         val order = (eps1: EPS[Entity, ClassImmutability], eps2: EPS[Entity, ClassImmutability]) =>
             eps1.e.toString < eps2.e.toString
 
-        val mutableClasses =
-            groupedResults(MutableClass).toSeq.sortWith(order)
+        val mutableClasses = groupedResults(MutableClass).toSeq.sortWith(order)
 
-        val nonTransitivelyImmutableClasses =
-            groupedResults(NonTransitivelyImmutableClass).toSeq.sortWith(order)
+        val nonTransitivelyImmutableClasses = groupedResults(NonTransitivelyImmutableClass).toSeq.sortWith(order)
 
-        val dependentlyImmutableClasses =
-            groupedResults(DependentlyImmutableClass).toSeq.sortWith(order)
+        val dependentlyImmutableClasses = groupedResults(DependentlyImmutableClass).toSeq.sortWith(order)
 
         val transitivelyImmutableClassesOrInterfaces = groupedResults(TransitivelyImmutableClass).toSeq.sortWith(order)
 
@@ -115,9 +111,9 @@ object ClassImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
              | Transitively Immutables Classes or Interfaces: ${transitivelyImmutableClassesOrInterfaces.size}
              |
              | total classes or interfaces: ${
-            mutableClasses.size + nonTransitivelyImmutableClasses.size + dependentlyImmutableClasses.size +
-                transitivelyImmutableClasses.size + transitivelyImmutableInterfaces.size
-        }
+                mutableClasses.size + nonTransitivelyImmutableClasses.size + dependentlyImmutableClasses.size +
+                    transitivelyImmutableClasses.size + transitivelyImmutableInterfaces.size
+            }
              | analysis took : $analysisTime seconds
              |"""".stripMargin
     }

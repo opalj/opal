@@ -35,7 +35,7 @@ import net.ceedubs.ficus.Ficus._
 object InitialEntryPointsKey extends ProjectInformationKey[Iterable[Method], Nothing] {
 
     final val ConfigKeyPrefix = "org.opalj.br.analyses.cg.InitialEntryPointsKey."
-    final val ConfigKey = ConfigKeyPrefix+"analysis"
+    final val ConfigKey       = ConfigKeyPrefix + "analysis"
 
     /**
      * The [[InitialEntryPointsKey]] depends on three other keys and queries information about closed
@@ -44,9 +44,8 @@ object InitialEntryPointsKey extends ProjectInformationKey[Iterable[Method], Not
      *
      * @return `Nil`.
      */
-    override def requirements(project: SomeProject): ProjectInformationKeys = {
+    override def requirements(project: SomeProject): ProjectInformationKeys =
         Seq(TypeExtensibilityKey, ClosedPackagesKey, IsOverridableMethodKey)
-    }
 
     /**
      * Reflectively instantiates a ''ClosedPackagesAnalysis'' for the given project.
@@ -55,12 +54,13 @@ object InitialEntryPointsKey extends ProjectInformationKey[Iterable[Method], Not
      */
     override def compute(project: SomeProject): Iterable[Method] = {
         val configuredAnalysis = project.config.as[Option[String]](ConfigKey)
-        val entryPointFinder = configuredAnalysis
+        val entryPointFinder   = configuredAnalysis
         if (entryPointFinder.isEmpty) {
-            throw new IllegalArgumentException(s"entry points cannot be computed due to missing configuration of $ConfigKey")
+            throw new IllegalArgumentException(
+                s"entry points cannot be computed due to missing configuration of $ConfigKey")
         }
 
-        val fqn = entryPointFinder.get
+        val fqn      = entryPointFinder.get
         val epFinder = instantiateEntryPointFinder(fqn)
         epFinder.collectEntryPoints(project)
     }

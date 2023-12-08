@@ -22,9 +22,7 @@ case object Pure extends Purity {
 }
 
 case object Impure extends Purity {
-    def checkIsEqualOrBetterThan(e: Entity, other: Purity): Unit = {
-        if (other != Impure) {
-            throw new IllegalArgumentException(s"$e: $this is not equal or better than $other")
-        }
+    def checkIsEqualOrBetterThan(e: Entity, other: Purity): Unit = if (other != Impure) {
+        throw new IllegalArgumentException(s"$e: $this is not equal or better than $other")
     }
 }

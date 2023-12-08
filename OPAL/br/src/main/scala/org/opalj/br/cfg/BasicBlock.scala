@@ -15,9 +15,8 @@ package cfg
  */
 // IMPROVE create specialized implementations for the most common cases: (1) just one instruction and just on predecessor, (2) just one predecessor, (3) just one successor
 final class BasicBlock(
-        val startPC:             Int, // <= determines this basic blocks' hash value!
-        private[cfg] var _endPC: Int = Int.MinValue
-) extends CFGNode {
+        val startPC: Int, // <= determines this basic blocks' hash value!
+        private[cfg] var _endPC: Int = Int.MinValue) extends CFGNode {
 
     def this(startPC: Int, successors: Set[CFGNode]) = {
         this(startPC, Int.MinValue)
@@ -27,36 +26,31 @@ final class BasicBlock(
     final override def nodeId: Int = startPC
 
     def copy(
-        startPC:      Int          = this.startPC,
-        endPC:        Int          = this.endPC,
+        startPC:      Int = this.startPC,
+        endPC:        Int = this.endPC,
         predecessors: Set[CFGNode] = this.predecessors,
-        successors:   Set[CFGNode] = this.successors
-    ): BasicBlock = {
+        successors:   Set[CFGNode] = this.successors): BasicBlock = {
         val newBB = new BasicBlock(startPC, endPC)
         newBB.setPredecessors(predecessors)
         newBB.setSuccessors(successors)
         newBB
     }
 
-    final override def isCatchNode: Boolean = false
-    final override def isExitNode: Boolean = false
+    final override def isCatchNode: Boolean              = false
+    final override def isExitNode: Boolean               = false
     final override def isAbnormalReturnExitNode: Boolean = false
-    final override def isNormalReturnExitNode: Boolean = false
-    final override def isBasicBlock: Boolean = true
-    final override def asBasicBlock: this.type = this
+    final override def isNormalReturnExitNode: Boolean   = false
+    final override def isBasicBlock: Boolean             = true
+    final override def asBasicBlock: this.type           = this
 
-    def endPC_=(pc: Int): Unit = {
-        _endPC = pc
-    }
+    def endPC_=(pc: Int): Unit = _endPC = pc
     /**
      * The pc of the last instruction belonging to this basic block.
      */
     def endPC: Int = _endPC
 
     private[this] var _isStartOfSubroutine: Boolean = false // will be initialized at construction time
-    def setIsStartOfSubroutine(): Unit = {
-        _isStartOfSubroutine = true
-    }
+    def setIsStartOfSubroutine(): Unit              = _isStartOfSubroutine = true
 
     def isStartOfSubroutine: Boolean = _isStartOfSubroutine
 
@@ -77,7 +71,7 @@ final class BasicBlock(
     def index(pc: Int)(implicit code: Code): Int = {
         assert(pc >= startPC && pc <= endPC)
 
-        var index = 0
+        var index     = 0
         var currentPC = startPC
         while (currentPC < pc) {
             currentPC = code.pcOfNextInstruction(currentPC)
@@ -97,7 +91,7 @@ final class BasicBlock(
     def foreach[U](f: Int => U)(implicit code: Code): Unit = {
         val instructions = code.instructions
 
-        var pc = this.startPC
+        var pc    = this.startPC
         val endPC = this.endPC
         while (pc <= endPC) {
             f(pc)
@@ -110,10 +104,10 @@ final class BasicBlock(
      */
     def countInstructions(implicit code: Code): Int = {
         val instructions = code.instructions
-        var count = 1
-        val startPC = this.startPC
-        var pc = instructions(startPC).indexOfNextInstruction(startPC)
-        val endPC = this.endPC
+        var count        = 1
+        val startPC      = this.startPC
+        var pc           = instructions(startPC).indexOfNextInstruction(startPC)
+        val endPC        = this.endPC
         while (pc <= endPC) {
             count += 1
             pc = instructions(pc).indexOfNextInstruction(pc)
@@ -134,13 +128,13 @@ final class BasicBlock(
 
         if (startPC == 0) {
             visualProperties += "fillcolor" -> "green"
-            visualProperties += "style" -> "filled"
+            visualProperties += "style"     -> "filled"
         }
 
         if (!hasSuccessors) { // in this case something is very broken (internally)...
-            visualProperties += "shape" -> "octagon"
+            visualProperties += "shape"     -> "octagon"
             visualProperties += "fillcolor" -> "gray"
-            visualProperties += "style" -> "filled"
+            visualProperties += "style"     -> "filled"
         }
 
         visualProperties

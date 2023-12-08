@@ -11,9 +11,7 @@ case class NestMembers(classes: Classes) extends Attribute {
 
     final override def kindId: Int = NestMembers.KindId
 
-    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = {
-        this == other
-    }
+    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = this == other
 }
 
 object NestMembers {

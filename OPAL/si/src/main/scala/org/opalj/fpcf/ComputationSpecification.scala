@@ -31,10 +31,8 @@ trait ComputationSpecification[A] {
      */
     def name: String = {
         val nameCandidate = this.getClass.getSimpleName
-        if (nameCandidate.endsWith("$"))
-            nameCandidate.substring(0, nameCandidate.length() - 1)
-        else
-            nameCandidate
+        if (nameCandidate.endsWith("$")) nameCandidate.substring(0, nameCandidate.length() - 1)
+        else nameCandidate
     }
 
     /**
@@ -64,13 +62,12 @@ trait ComputationSpecification[A] {
 
     def derivesCollaboratively: Set[PropertyBounds]
 
-    def derives: Iterator[PropertyBounds] = {
+    def derives: Iterator[PropertyBounds] =
         derivesEagerly.iterator ++ derivesCollaboratively.iterator ++ derivesLazily.iterator
-    }
 
     require(
         (derivesCollaboratively intersect derivesEagerly).isEmpty,
-        "a property either has to be derived eagerly or collaboratively, but not both: "+
+        "a property either has to be derived eagerly or collaboratively, but not both: " +
             (derivesCollaboratively intersect derivesEagerly).mkString(", ")
     )
 
@@ -93,27 +90,17 @@ trait ComputationSpecification[A] {
     def toString(ps: PropertyStore): String = {
         val uses = this.uses(ps).iterator.map(_.toSpecification).mkString("uses={", ", ", "}")
 
-        val derivesLazily =
-            this.derivesLazily.iterator.
-                map(_.toSpecification).
-                mkString("derivesLazily={", ", ", "}")
-        val derivesEagerly =
-            this.derivesEagerly.iterator.
-                map(_.toSpecification).
-                mkString("derivesEagerly={", ", ", "}")
+        val derivesLazily  = this.derivesLazily.iterator.map(_.toSpecification).mkString("derivesLazily={", ", ", "}")
+        val derivesEagerly = this.derivesEagerly.iterator.map(_.toSpecification).mkString("derivesEagerly={", ", ", "}")
         val derivesCollaboratively =
-            this.derivesCollaboratively.iterator.
-                map(_.toSpecification).
-                mkString("derivesCollaboratively={", ", ", "}")
+            this.derivesCollaboratively.iterator.map(_.toSpecification).mkString("derivesCollaboratively={", ", ", "}")
 
-        s"ComputationSpecification(name=$name,type=$computationType,"+
+        s"ComputationSpecification(name=$name,type=$computationType," +
             s"$uses,$derivesLazily,$derivesEagerly,$derivesCollaboratively)"
 
     }
 
-    override def toString: String = {
-        s"ComputationSpecification(name=$name,type=$computationType)"
-    }
+    override def toString: String = s"ComputationSpecification(name=$name,type=$computationType)"
 
     //
     // LIFECYCLE RELATED METHODS
@@ -168,8 +155,8 @@ trait ComputationSpecification[A] {
 trait SimpleComputationSpecification[A] extends ComputationSpecification[A] {
 
     final override type InitializationData = Null
-    final override def init(ps: PropertyStore): Null = null
-    final override def beforeSchedule(ps: PropertyStore): Unit = {}
+    final override def init(ps:                 PropertyStore): Null = null
+    final override def beforeSchedule(ps:       PropertyStore): Unit = {}
     final override def afterPhaseScheduling(ps: PropertyStore, analysis: A): Unit = {}
     final override def afterPhaseCompletion(ps: PropertyStore, analysis: A): Unit = {}
 

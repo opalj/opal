@@ -12,8 +12,8 @@ import org.opalj.bi.reader.SourceFile_attributeReader
  */
 trait SourceFile_attributeBinding
     extends SourceFile_attributeReader
-    with ConstantPoolBinding
-    with AttributeBinding {
+        with ConstantPoolBinding
+        with AttributeBinding {
 
     type SourceFile_attribute = br.SourceFile
 
@@ -22,10 +22,7 @@ trait SourceFile_attributeBinding
         ap_name_index:        Constant_Pool_Index,
         ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
-        sourcefile_index:     Constant_Pool_Index
-    ): SourceFile_attribute = {
+        sourcefile_index:     Constant_Pool_Index): SourceFile_attribute =
         new SourceFile_attribute(cp(sourcefile_index).asString)
-    }
 
 }
-

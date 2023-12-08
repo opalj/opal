@@ -16,29 +16,24 @@ import org.opalj.br.ComputationalTypeLong
  */
 trait DefaultLongSetValues
     extends DefaultSpecialDomainValuesBinding
-    with CorrelationalDomain
-    with LongSetValues {
+        with CorrelationalDomain
+        with LongSetValues {
     domain: IntegerRangeValuesFactory with Configuration with ExceptionsFactory =>
 
     class ALongValue() extends super.ALongValueLike {
 
         override def constantValue: Option[Long] = None
 
-        override def doJoin(pc: Int, value: DomainValue): Update[DomainValue] = {
+        override def doJoin(pc: Int, value: DomainValue): Update[DomainValue] =
             // we are not joining the "same" value; the join stabilization trait
             // takes care of handling potential aliases
             MetaInformationUpdate(new ALongValue())
-        }
 
-        override def abstractsOver(other: DomainValue): Boolean = {
-            other.computationalType == ComputationalTypeLong
-        }
+        override def abstractsOver(other: DomainValue): Boolean = other.computationalType == ComputationalTypeLong
 
         override def summarize(pc: Int): DomainValue = this
 
-        override def adapt(target: TargetDomain, pc: Int): target.DomainValue = {
-            target.LongValue(pc)
-        }
+        override def adapt(target: TargetDomain, pc: Int): target.DomainValue = target.LongValue(pc)
 
         override def hashCode: Int = 929
 
@@ -51,16 +46,14 @@ trait DefaultLongSetValues
 
         assert(values.nonEmpty)
 
-        override def constantValue: Option[Long] = {
-            if (values.size == 1) Some(values.head) else None
-        }
+        override def constantValue: Option[Long] = if (values.size == 1) Some(values.head) else None
 
         override def doJoin(pc: Int, other: DomainValue): Update[DomainValue] = {
             val result = other match {
                 case _: ALongValue => StructuralUpdate(LongValue(pc))
                 case LongSetLike(thatValues) =>
-                    val thisValues = this.values
-                    val newValues = thisValues ++ thatValues
+                    val thisValues    = this.values
+                    val newValues     = thisValues ++ thatValues
                     val newValuesSize = newValues.size
                     if (newValuesSize == 1) {
                         // This is a "singleton set" (a concrete value), hence there
@@ -73,19 +66,15 @@ trait DefaultLongSetValues
                         // have the same values, but which can still be two different
                         // runtime values (they were not created at the same time!)
                         MetaInformationUpdate(LongSet(thisValues))
-                    } else
-                        StructuralUpdate(LongSet(newValues))
+                    } else StructuralUpdate(LongSet(newValues))
             }
             result
         }
 
-        override def abstractsOver(other: DomainValue): Boolean = {
-            (this eq other) || (other match {
-                case that: LongSet =>
-                    that.values.subsetOf(this.values)
-                case _ => false
-            })
-        }
+        override def abstractsOver(other: DomainValue): Boolean = (this eq other) || (other match {
+            case that: LongSet => that.values.subsetOf(this.values)
+            case _             => false
+        })
 
         override def summarize(pc: Int): DomainValue = this
 
@@ -101,13 +90,9 @@ trait DefaultLongSetValues
 
         override def hashCode: Int = this.values.hashCode * 13
 
-        override def equals(other: Any): Boolean = {
-            other match {
-                case that: LongSet =>
-                    (this eq that) || (this.values == that.values)
-                case _ =>
-                    false
-            }
+        override def equals(other: Any): Boolean = other match {
+            case that: LongSet => (this eq that) || (this.values == that.values)
+            case _             => false
         }
 
         override def toString: String = values.mkString("LongSet(", ",", ")")
@@ -117,8 +102,6 @@ trait DefaultLongSetValues
 
     override def LongSet(values: SortedSet[Long]): LongSet = new LongSet(values)
 
-    override def LongValue(origin: ValueOrigin, value: Long): LongSet = {
-        new LongSet(SortedSet(value))
-    }
+    override def LongValue(origin: ValueOrigin, value: Long): LongSet = new LongSet(SortedSet(value))
 
 }

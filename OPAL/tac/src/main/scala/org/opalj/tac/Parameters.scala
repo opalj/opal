@@ -17,7 +17,7 @@ import org.opalj.ai.ValueOrigin
  */
 class Parameters[P <: AnyRef](
         val parameters: Array[P] // EVENTUALLY CONST
-) extends (Int => P) {
+      ) extends (Int => P) {
 
     /**
      * Returns the parameter with the specified index; the first (declared) parameter has the
@@ -50,24 +50,21 @@ class Parameters[P <: AnyRef](
         p
     }
 
-    override def equals(other: Any): Boolean = {
-        other match {
-            case that: Parameters[_] =>
-                JArrays.equals(
-                    this.parameters.asInstanceOf[Array[AnyRef]],
-                    that.parameters.asInstanceOf[Array[AnyRef]]
-                )
-            case _ => false
-        }
+    override def equals(other: Any): Boolean = other match {
+        case that: Parameters[_] => JArrays.equals(
+                this.parameters.asInstanceOf[Array[AnyRef]],
+                that.parameters.asInstanceOf[Array[AnyRef]]
+            )
+        case _ => false
     }
 
-    override def hashCode(): ValueOrigin = {
-        17 * JArrays.hashCode(parameters.asInstanceOf[Array[AnyRef]])
-    }
+    override def hashCode(): ValueOrigin = 17 * JArrays.hashCode(parameters.asInstanceOf[Array[AnyRef]])
 
     override def toString: String = {
         val parametersWithIndex = parameters.iterator.zipWithIndex
-        val parametersTxt = parametersWithIndex.filter(_._1 ne null).map { e => val (p, i) = e; s"$i: $p" }
+        val parametersTxt = parametersWithIndex.filter(_._1 ne null).map { e =>
+            val (p, i) = e; s"$i: $p"
+        }
         parametersTxt.mkString(s"Parameters(\n\t", ",\n\t", "\n)")
     }
 }

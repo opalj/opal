@@ -30,8 +30,8 @@ object SelfReferenceLeakageAnalysisDemo extends ProjectAnalysisApplication {
     }
 
     def doAnalyze(
-        project:       Project[URL],
-        parameters:    Seq[String],
+        project: Project[URL],
+        parameters: Seq[String],
         isInterrupted: () => Boolean
     ): BasicReport = {
 
@@ -45,25 +45,20 @@ object SelfReferenceLeakageAnalysisDemo extends ProjectAnalysisApplication {
         } { t => analysisTime = t.toSeconds }
 
         val notLeakingEntities: Iterator[EPS[Entity, SelfReferenceLeakage]] =
-            projectStore.entities(SelfReferenceLeakage.Key) filter { eps =>
-                eps.lb == DoesNotLeakSelfReference
-            }
+            projectStore.entities(SelfReferenceLeakage.Key) filter { eps => eps.lb == DoesNotLeakSelfReference }
         val notLeakingClasses = notLeakingEntities map { eps =>
             val classFile = eps.e.asInstanceOf[ClassFile]
             val classType = classFile.thisType
             val className = classFile.thisType.toJava
-            if (project.classHierarchy.isInterface(classType).isYes)
-                "interface "+className
-            else
-                "class "+className
+            if (project.classHierarchy.isInterface(classType).isYes) "interface " + className
+            else "class " + className
         }
 
-        val leakageInfo =
-            notLeakingClasses.toList.sorted.mkString(
-                "\nClasses not leaking self reference:\n",
-                "\n",
-                s"\nTotal: ${notLeakingEntities.size}\n"
-            )
-        BasicReport(leakageInfo + projectStore+"\nAnalysis time: "+analysisTime)
+        val leakageInfo = notLeakingClasses.toList.sorted.mkString(
+            "\nClasses not leaking self reference:\n",
+            "\n",
+            s"\nTotal: ${notLeakingEntities.size}\n"
+        )
+        BasicReport(leakageInfo + projectStore + "\nAnalysis time: " + analysisTime)
     }
 }

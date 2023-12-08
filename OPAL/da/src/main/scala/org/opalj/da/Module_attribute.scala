@@ -23,65 +23,49 @@ case class Module_attribute(
         exports:              Exports,
         opens:                Opens,
         uses:                 Uses,
-        provides:             Provides
-) extends Attribute {
+        provides: Provides) extends Attribute {
 
-    def attribute_length: Int = {
-        2 + 2 + 2 + // <= module meta information
-            2 + requires.size * 6 +
-            2 + exports.iterator.map(_.attribute_length).sum +
-            2 + opens.iterator.map(_.attribute_length).sum +
-            2 + uses.size * 2 +
-            2 + provides.iterator.map(_.attribute_length).sum
-    }
+    def attribute_length: Int = 2 + 2 + 2 + // <= module meta information
+        2 + requires.size * 6 +
+        2 + exports.iterator.map(_.attribute_length).sum +
+        2 + opens.iterator.map(_.attribute_length).sum +
+        2 + uses.size * 2 +
+        2 + provides.iterator.map(_.attribute_length).sum
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
-        val name = cp(module_name_index).toString(cp)
-        val flags =
-            AccessFlags.toStrings(module_flags, AccessFlagsContexts.MODULE).mkString("{", " ", "}")
+        val name  = cp(module_name_index).toString(cp)
+        val flags = AccessFlags.toStrings(module_flags, AccessFlagsContexts.MODULE).mkString("{", " ", "}")
         val version =
-            if (module_version_index == 0)
-                "N/A"
-            else
-                cp(module_version_index).toString(cp)
+            if (module_version_index == 0) "N/A"
+            else cp(module_version_index).toString(cp)
         val module = s"Module(name=$name, flags=$flags, version=$version)"
 
         <details>
-            <summary class="attribute">{ module }</summary>
+            <summary class="attribute">{module}</summary>
             <div>
                 {
-                    requires.view.map[String](_.toString).sorted.map[NodeBuffer] { r =>
-                        <span>{ r }</span><br/>
-                    }
-                }
+            requires.view.map[String](_.toString).sorted.map[NodeBuffer] { r => <span>{r}</span><br/> }
+        }
             </div>
             <div>
                 {
-                    exports.view.map[String](_.toString).sorted.map[NodeBuffer] { r =>
-                        <span>{ r }</span><br/>
-                    }
-                }
+            exports.view.map[String](_.toString).sorted.map[NodeBuffer] { r => <span>{r}</span><br/> }
+        }
             </div>
             <div>
                 {
-                    opens.view.map[String](_.toString).sorted.map[NodeBuffer] { r =>
-                        <span>{ r }</span><br/>
-                    }
-                }
+            opens.view.map[String](_.toString).sorted.map[NodeBuffer] { r => <span>{r}</span><br/> }
+        }
             </div>
             <div>
                 {
-                    uses.view.map(cp(_).toString).sorted.map[NodeBuffer] { r =>
-                        <span>{ s"uses $r" }</span><br/>
-                    }
-                }
+            uses.view.map(cp(_).toString).sorted.map[NodeBuffer] { r => <span>{s"uses $r"}</span><br/> }
+        }
             </div>
             <div>
                 {
-                    provides.view.map[String](_.toString).sorted.map[NodeBuffer] { r =>
-                        <span>{ r }</span><br/>
-                    }
-                }
+            provides.view.map[String](_.toString).sorted.map[NodeBuffer] { r => <span>{r}</span><br/> }
+        }
             </div>
         </details>
     }
@@ -92,86 +76,66 @@ case class RequiresEntry(
         requires_index:         Constant_Pool_Index,
         requires_flags:         Int,
         requires_version_index: Constant_Pool_Index // can be "0" (<=> no version...)
-) {
+      ) {
 
     def toString(implicit cp: Constant_Pool): String = {
 
-        val flags = AccessFlags.toString(requires_flags, MODULE)
+        val flags           = AccessFlags.toString(requires_flags, MODULE)
         val requiredPackage = cp(requires_index).toString(cp)
         val versionInfo =
-            if (requires_version_index == 0)
-                ""
-            else
-                "// "+cp(requires_version_index).toString(cp)
+            if (requires_version_index == 0) ""
+            else "// " + cp(requires_version_index).toString(cp)
 
         s"requires $flags $requiredPackage;$versionInfo"
     }
 }
 
 case class ExportsEntry(
-        exports_index:          Constant_Pool_Index,
-        exports_flags:          Int,
-        exports_to_index_table: ExportsToIndexTable
-) {
+        exports_index: Constant_Pool_Index,
+        exports_flags: Int,
+        exports_to_index_table: ExportsToIndexTable) {
 
     def attribute_length: Int = 6 + exports_to_index_table.size * 2
 
     def toString(implicit cp: Constant_Pool): String = {
         val flags = AccessFlags.toString(exports_flags, MODULE)
-        val exports_to = {
-            if (exports_to_index_table.isEmpty)
-                ";"
-            else
-                exports_to_index_table
-                    .view
-                    .map(cp(_).toString)
-                    .sorted
-                    .mkString(" to ", ", ", ";")
-        }
+        val exports_to =
+            if (exports_to_index_table.isEmpty) ";"
+            else exports_to_index_table
+                .view
+                .map(cp(_).toString)
+                .sorted
+                .mkString(" to ", ", ", ";")
 
         s"exports $flags ${cp(exports_index).toString(cp)}$exports_to"
     }
 }
 
 case class OpensEntry(
-        opens_index:          Constant_Pool_Index,
-        opens_flags:          Int,
-        opens_to_index_table: OpensToIndexTable
-) {
+        opens_index: Constant_Pool_Index,
+        opens_flags: Int,
+        opens_to_index_table: OpensToIndexTable) {
 
     def attribute_length: Int = 6 + opens_to_index_table.size * 2
 
     def toString(implicit cp: Constant_Pool): String = {
         val flags = AccessFlags.toString(opens_flags, MODULE)
-        val opens_to = {
-            if (opens_to_index_table.isEmpty)
-                ";"
-            else
-                opens_to_index_table.
-                    view.
-                    map(cp(_).toString).
-                    sorted.
-                    mkString(" to ", ", ", ";")
-        }
+        val opens_to =
+            if (opens_to_index_table.isEmpty) ";"
+            else opens_to_index_table.view.map(cp(_).toString).sorted.mkString(" to ", ", ", ";")
 
         s"opens $flags ${cp(opens_index).toString(cp)}$opens_to"
     }
 }
 
 case class ProvidesEntry(
-        provides_index:            Constant_Pool_Index,
-        provides_with_index_table: ProvidesWithIndexTable
-) {
+        provides_index: Constant_Pool_Index,
+        provides_with_index_table: ProvidesWithIndexTable) {
 
     def attribute_length: Int = 4 + provides_with_index_table.size * 2
 
     def toString(implicit cp: Constant_Pool): String = {
-        val provides_with =
-            provides_with_index_table.
-                view.
-                map(cp(_).toString).
-                sorted.
-                mkString(" with ", ", ", ";")
+        val provides_with = provides_with_index_table.view.map(cp(_).toString).sorted.mkString(" with ", ", ", ";")
 
         s"provides ${cp(provides_index).toString(cp)}$provides_with"
     }

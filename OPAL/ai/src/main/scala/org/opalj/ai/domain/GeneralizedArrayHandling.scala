@@ -15,128 +15,125 @@ trait GeneralizedArrayHandling extends ReferenceValuesDomain { this: ValuesDomai
     // NEW INTERFACE
     //
 
-    /*abstract*/ def arrayload(
-        pc:       Int,
-        index:    DomainValue,
-        arrayRef: DomainValue
-    ): ArrayLoadResult
+    /*abstract*/
+    def arrayload(
+        pc: Int,
+        index: DomainValue,
+        arrayRef: DomainValue): ArrayLoadResult
 
-    /*abstract*/ def arraystore(
-        pc:       Int,
-        value:    DomainValue,
-        index:    DomainValue,
-        arrayRef: DomainValue
-    ): ArrayStoreResult
+    /*abstract*/
+    def arraystore(
+        pc: Int,
+        value: DomainValue,
+        index: DomainValue,
+        arrayRef: DomainValue): ArrayStoreResult
 
     //
     // IMPLEMENTATION OF DOMAIN'S "ARRAY METHODS"
     //
 
-    /*base impl.*/ def aaload(
+    /*base impl.*/
+    def aaload(
         pc:       Int,
         index:    DomainValue,
-        arrayref: DomainValue
-    ): ArrayLoadResult = arrayload(pc, index, arrayref)
+        arrayref: DomainValue): ArrayLoadResult = arrayload(pc, index, arrayref)
 
-    /*base impl.*/ def aastore(
+    /*base impl.*/
+    def aastore(
         pc:       Int,
         value:    DomainValue,
         index:    DomainValue,
-        arrayref: DomainValue
-    ): ArrayStoreResult =
-        arraystore(pc, value, index, arrayref)
+        arrayref: DomainValue): ArrayStoreResult = arraystore(pc, value, index, arrayref)
 
-    /*base impl.*/ def baload(
+    /*base impl.*/
+    def baload(
         pc:       Int,
         index:    DomainValue,
-        arrayref: DomainValue
-    ): ArrayLoadResult = arrayload(pc, index, arrayref)
+        arrayref: DomainValue): ArrayLoadResult = arrayload(pc, index, arrayref)
 
-    /*base impl.*/ def bastore(
-        pc:       Int,
-        value:    DomainValue,
-        index:    DomainValue,
-        arrayref: DomainValue
-    ): ArrayStoreResult =
-        arraystore(pc, value, index, arrayref)
-
-    /*base impl.*/ def caload(
-        pc:       Int,
-        index:    DomainValue,
-        arrayref: DomainValue
-    ): ArrayLoadResult = arrayload(pc, index, arrayref)
-
-    /*base impl.*/ def castore(
+    /*base impl.*/
+    def bastore(
         pc:       Int,
         value:    DomainValue,
         index:    DomainValue,
-        arrayref: DomainValue
-    ): ArrayStoreResult = arraystore(pc, value, index, arrayref)
+        arrayref: DomainValue): ArrayStoreResult = arraystore(pc, value, index, arrayref)
 
-    /*base impl.*/ def daload(
+    /*base impl.*/
+    def caload(
         pc:       Int,
         index:    DomainValue,
-        arrayref: DomainValue
-    ): ArrayLoadResult = arrayload(pc, index, arrayref)
+        arrayref: DomainValue): ArrayLoadResult = arrayload(pc, index, arrayref)
 
-    /*base impl.*/ def dastore(
-        pc:       Int,
-        value:    DomainValue,
-        index:    DomainValue,
-        arrayref: DomainValue
-    ): ArrayStoreResult = arraystore(pc, value, index, arrayref)
-
-    /*base impl.*/ def faload(
-        pc:       Int,
-        index:    DomainValue,
-        arrayref: DomainValue
-    ): ArrayLoadResult = arrayload(pc, index, arrayref)
-
-    /*base impl.*/ def fastore(
+    /*base impl.*/
+    def castore(
         pc:       Int,
         value:    DomainValue,
         index:    DomainValue,
-        arrayref: DomainValue
-    ): ArrayStoreResult = arraystore(pc, value, index, arrayref)
+        arrayref: DomainValue): ArrayStoreResult = arraystore(pc, value, index, arrayref)
 
-    /*base impl.*/ def iaload(
+    /*base impl.*/
+    def daload(
         pc:       Int,
         index:    DomainValue,
-        arrayref: DomainValue
-    ): ArrayLoadResult = arrayload(pc, index, arrayref)
+        arrayref: DomainValue): ArrayLoadResult = arrayload(pc, index, arrayref)
 
-    /*base impl.*/ def iastore(
-        pc:       Int,
-        value:    DomainValue,
-        index:    DomainValue,
-        arrayref: DomainValue
-    ): ArrayStoreResult = arraystore(pc, value, index, arrayref)
-
-    /*base impl.*/ def laload(
-        pc:       Int,
-        index:    DomainValue,
-        arrayref: DomainValue
-    ): ArrayLoadResult =
-        arrayload(pc, index, arrayref)
-
-    /*base impl.*/ def lastore(
+    /*base impl.*/
+    def dastore(
         pc:       Int,
         value:    DomainValue,
         index:    DomainValue,
-        arrayref: DomainValue
-    ): ArrayStoreResult = arraystore(pc, value, index, arrayref)
+        arrayref: DomainValue): ArrayStoreResult = arraystore(pc, value, index, arrayref)
 
-    /*base impl.*/ def saload(
+    /*base impl.*/
+    def faload(
         pc:       Int,
         index:    DomainValue,
-        arrayref: DomainValue
-    ): ArrayLoadResult = arrayload(pc, index, arrayref)
+        arrayref: DomainValue): ArrayLoadResult = arrayload(pc, index, arrayref)
 
-    /*base impl.*/ def sastore(
+    /*base impl.*/
+    def fastore(
         pc:       Int,
         value:    DomainValue,
         index:    DomainValue,
-        arrayref: DomainValue
-    ): ArrayStoreResult = arraystore(pc, value, index, arrayref)
+        arrayref: DomainValue): ArrayStoreResult = arraystore(pc, value, index, arrayref)
+
+    /*base impl.*/
+    def iaload(
+        pc:       Int,
+        index:    DomainValue,
+        arrayref: DomainValue): ArrayLoadResult = arrayload(pc, index, arrayref)
+
+    /*base impl.*/
+    def iastore(
+        pc:       Int,
+        value:    DomainValue,
+        index:    DomainValue,
+        arrayref: DomainValue): ArrayStoreResult = arraystore(pc, value, index, arrayref)
+
+    /*base impl.*/
+    def laload(
+        pc:       Int,
+        index:    DomainValue,
+        arrayref: DomainValue): ArrayLoadResult = arrayload(pc, index, arrayref)
+
+    /*base impl.*/
+    def lastore(
+        pc:       Int,
+        value:    DomainValue,
+        index:    DomainValue,
+        arrayref: DomainValue): ArrayStoreResult = arraystore(pc, value, index, arrayref)
+
+    /*base impl.*/
+    def saload(
+        pc:       Int,
+        index:    DomainValue,
+        arrayref: DomainValue): ArrayLoadResult = arrayload(pc, index, arrayref)
+
+    /*base impl.*/
+    def sastore(
+        pc:       Int,
+        value:    DomainValue,
+        index:    DomainValue,
+        arrayref: DomainValue): ArrayStoreResult = arraystore(pc, value, index, arrayref)
 
 }

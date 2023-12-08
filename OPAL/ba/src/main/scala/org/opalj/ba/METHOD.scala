@@ -2,11 +2,11 @@
 package org.opalj
 package ba
 
+import scala.collection.immutable.ArraySeq
+
 import org.opalj.br.ClassHierarchy
 import org.opalj.br.ObjectType
 import org.opalj.collection.immutable.UShortPair
-
-import scala.collection.immutable.ArraySeq
 
 /**
  * Builder for a [[org.opalj.br.MethodTemplate]].
@@ -19,8 +19,7 @@ class METHOD[T](
         name:            String,
         descriptor:      String,
         code:            Option[br.CodeAttributeBuilder[T]],
-        attributes:      ArraySeq[br.MethodAttributeBuilder]
-) {
+        attributes: ArraySeq[br.MethodAttributeBuilder]) {
 
     /**
      * Returns the build [[org.opalj.br.MethodTemplate]] and its annotations (if any).
@@ -28,20 +27,17 @@ class METHOD[T](
     def result(
         classFileVersion:   UShortPair,
         declaringClassType: ObjectType
-    )(
-        implicit
-        classHierarchy: ClassHierarchy = br.ClassHierarchy.PreInitializedClassHierarchy
-    ): (br.MethodTemplate, Option[T]) = {
-        val descriptor = br.MethodDescriptor(this.descriptor)
+      )(implicit
+        classHierarchy: ClassHierarchy = br.ClassHierarchy.PreInitializedClassHierarchy): (br.MethodTemplate, Option[T]) = {
+        val descriptor  = br.MethodDescriptor(this.descriptor)
         val accessFlags = accessModifiers.accessFlags
 
         val attributes = this.attributes.map[br.Attribute](attributeBuilder =>
             attributeBuilder(accessFlags, name, descriptor))
 
         if (code.isDefined) {
-            val (attribute, annotations) =
-                code.get(classFileVersion, declaringClassType, accessFlags, name, descriptor)
-            val method = br.Method(accessFlags, name, descriptor, attributes :+ attribute)
+            val (attribute, annotations) = code.get(classFileVersion, declaringClassType, accessFlags, name, descriptor)
+            val method                   = br.Method(accessFlags, name, descriptor, attributes :+ attribute)
             (method, Some(annotations))
         } else {
             val method = br.Method(accessFlags, name, descriptor, attributes)
@@ -58,19 +54,15 @@ object METHOD {
         name:            String,
         descriptor:      String,
         code:            Option[br.CodeAttributeBuilder[T]],
-        attributes:      ArraySeq[br.MethodAttributeBuilder]
-    ): METHOD[T] = {
+        attributes:      ArraySeq[br.MethodAttributeBuilder]): METHOD[T] =
         new METHOD(accessModifiers, name, descriptor, code, attributes)
-    }
 
     def apply[T](
         accessModifiers: AccessModifier,
         name:            String,
         descriptor:      String,
         code:            br.CodeAttributeBuilder[T],
-        attributes:      ArraySeq[br.MethodAttributeBuilder] = ArraySeq.empty
-    ): METHOD[T] = {
+        attributes:      ArraySeq[br.MethodAttributeBuilder] = ArraySeq.empty): METHOD[T] =
         new METHOD(accessModifiers, name, descriptor, Some(code), attributes)
-    }
 
 }

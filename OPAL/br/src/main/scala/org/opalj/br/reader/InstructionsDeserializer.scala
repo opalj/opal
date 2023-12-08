@@ -8,12 +8,11 @@ package reader
  */
 trait InstructionsDeserializer
     extends DeferredInvokedynamicResolution
-    with DeferredDynamicConstantResolution {
+        with DeferredDynamicConstantResolution {
 
     def Instructions(
-        cp:                  Constant_Pool,
-        ap_name_index:       Constant_Pool_Index,
+        cp: Constant_Pool,
+        ap_name_index: Constant_Pool_Index,
         ap_descriptor_index: Constant_Pool_Index,
-        source:              Array[Byte]
-    ): Instructions
+        source: Array[Byte]): Instructions
 }

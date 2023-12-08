@@ -2,9 +2,10 @@
 package org.opalj
 package apk
 
-import com.typesafe.config.Config
 import org.opalj.UShort
 import org.opalj.br.Method
+
+import com.typesafe.config.Config
 
 /**
  * Represents the occurrence of a context-registered Broadcast Receiver via call to registerReceiver().
@@ -23,5 +24,5 @@ class ApkContextRegisteredReceiver(
         intentCategories: Seq[String],
         val method:       Method,
         val callPc:       UShort
-)(implicit config: Config)
+      )(implicit config: Config)
     extends ApkComponent(ApkComponentType.BroadcastReceiver, clazz, intentActions, intentCategories)

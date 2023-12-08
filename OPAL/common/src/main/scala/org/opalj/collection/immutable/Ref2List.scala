@@ -46,11 +46,9 @@ sealed abstract class Ref2List[+T <: AnyRef] extends Serializable { self =>
     /** Prepends the given value to this list. E.g., `l = "x" +: l`. */
     def +:[X >: T <: AnyRef](v: X): Ref2List[X]
 
-    final override def equals(other: Any): Boolean = {
-        other match {
-            case l: Ref2List[AnyRef] => equals(l)
-            case _                   => false
-        }
+    final override def equals(other: Any): Boolean = other match {
+        case l: Ref2List[AnyRef] => equals(l)
+        case _                   => false
     }
     def equals(that: Ref2List[AnyRef]): Boolean
 
@@ -61,13 +59,9 @@ object Ref2List {
 
     def empty[T <: AnyRef]: Ref2List[T] = Ref2ListEnd
 
-    def apply[T >: Null <: AnyRef](v: T): Ref2List[T] = {
-        new Ref2ListNode[T](null, v, Ref2ListEnd)
-    }
+    def apply[T >: Null <: AnyRef](v: T): Ref2List[T] = new Ref2ListNode[T](null, v, Ref2ListEnd)
 
-    def apply[T >: Null <: AnyRef](head: T, last: T): Ref2List[T] = {
-        new Ref2ListNode[T](head, last, Ref2ListEnd)
-    }
+    def apply[T >: Null <: AnyRef](head: T, last: T): Ref2List[T] = new Ref2ListNode[T](head, last, Ref2ListEnd)
 
 }
 
@@ -78,12 +72,12 @@ object Ref2List {
  */
 private[immutable] case object Ref2ListEnd extends Ref2List[Nothing] {
 
-    override def isEmpty: Boolean = true
+    override def isEmpty: Boolean         = true
     override def isSingletonList: Boolean = false
-    override def nonEmpty: Boolean = false
+    override def nonEmpty: Boolean        = false
 
-    override private[immutable] def h: Nothing = throw new UnsupportedOperationException
-    override private[immutable] def t: Nothing = throw new UnsupportedOperationException
+    override private[immutable] def h: Nothing              = throw new UnsupportedOperationException
+    override private[immutable] def t: Nothing              = throw new UnsupportedOperationException
     override private[immutable] def rest: Ref2List[Nothing] = throw new UnsupportedOperationException
 
     override def foreach[U](f: Nothing => U): Unit = {}
@@ -91,9 +85,7 @@ private[immutable] case object Ref2ListEnd extends Ref2List[Nothing] {
     override def forFirstN[U](n: Int)(f: Nothing => U): Unit = {}
     override def iterator: Iterator[Nothing] = Iterator.empty
     /** Prepends the given value to this list. E.g., `l = 2l +: l`. */
-    override def +:[X <: AnyRef](v: X): Ref2List[X] = {
-        new Ref2ListNode[AnyRef](null, v, this).asInstanceOf[Ref2List[X]]
-    }
+    override def +:[X <: AnyRef](v: X): Ref2List[X] = new Ref2ListNode[AnyRef](null, v, this).asInstanceOf[Ref2List[X]]
 
     override def equals(that: Ref2List[AnyRef]): Boolean = this eq that
     override def hashCode: Int = 37
@@ -104,15 +96,14 @@ private[immutable] case object Ref2ListEnd extends Ref2List[Nothing] {
  *
  * @author Michael Eichberg
  */
-private[immutable] final case class Ref2ListNode[T >: Null <: AnyRef](
-        private[immutable] var h:    T,
-        private[immutable] var t:    T,
-        private[immutable] var rest: Ref2List[T]
-) extends Ref2List[T] { list =>
+final private[immutable] case class Ref2ListNode[T >: Null <: AnyRef](
+        private[immutable] var h: T,
+        private[immutable] var t: T,
+        private[immutable] var rest: Ref2List[T]) extends Ref2List[T] { list =>
 
-    override def isEmpty: Boolean = false
+    override def isEmpty: Boolean         = false
     override def isSingletonList: Boolean = h == null && (rest eq Ref2ListEnd)
-    override def nonEmpty: Boolean = true
+    override def nonEmpty: Boolean        = true
 
     override def foreach[U](f: T => U): Unit = {
         if (h != null) f(h)
@@ -125,73 +116,59 @@ private[immutable] final case class Ref2ListNode[T >: Null <: AnyRef](
         }
     }
 
-    override def forFirstN[U](n: Int)(f: T => U): Unit = {
-        n match {
-            case 0 =>
-                return ;
-            case 1 =>
-                if (h != null)
-                    f(h)
-                else
-                    f(t)
-                return ;
-            case _ =>
-                // ... n >= 2
-                var i = n - 1 // <= -1 for the second element "t"...
-                if (h != null) { f(h); i -= 1 }
-                f(t)
-                var list: Ref2List[T] = rest
-                while (i > 0) {
-                    i -= 2
-                    f(list.h)
-                    if (i >= 0) f(list.t)
-                    list = list.rest
-                }
-        }
-    }
-
-    override def iterator: Iterator[T] = {
-        new Iterator[T] {
-            private[this] var currentList: Ref2List[T] = list
-            private[this] var head: Boolean = list.h != null
-            def hasNext: Boolean = currentList ne Ref2ListEnd
-            def next(): T = {
-                if (head) {
-                    head = false
-                    currentList.h
-                } else {
-                    head = true
-                    val v = currentList.t
-                    currentList = currentList.rest
-                    v
-                }
+    override def forFirstN[U](n: Int)(f: T => U): Unit = n match {
+        case 0 => return;
+        case 1 =>
+            if (h != null) f(h)
+            else f(t)
+            return;
+        case _ =>
+            // ... n >= 2
+            var i = n - 1 // <= -1 for the second element "t"...
+            if (h != null) { f(h); i -= 1 }
+            f(t)
+            var list: Ref2List[T] = rest
+            while (i > 0) {
+                i -= 2
+                f(list.h)
+                if (i >= 0) f(list.t)
+                list = list.rest
             }
-        }
     }
 
-    override def +:[X >: T <: AnyRef](v: X): Ref2List[X] = {
-        if (h != null)
-            new Ref2ListNode(null, v, this)
-        else
-            new Ref2ListNode(v, t, this.rest)
-    }
-
-    override def equals(that: Ref2List[AnyRef]): Boolean = {
-        (that eq this) || {
-            var thisList: Ref2List[_] = this
-            var thatList = that
-            while ((thisList ne Ref2ListEnd) && (thatList ne Ref2ListEnd)) {
-                if (thisList.h != thatList.h || thisList.t != thatList.t)
-                    return false;
-                thisList = thisList.rest
-                thatList = thatList.rest
+    override def iterator: Iterator[T] = new Iterator[T] {
+        private[this] var currentList: Ref2List[T] = list
+        private[this] var head: Boolean            = list.h != null
+        def hasNext: Boolean                       = currentList ne Ref2ListEnd
+        def next(): T =
+            if (head) {
+                head = false
+                currentList.h
+            } else {
+                head = true
+                val v = currentList.t
+                currentList = currentList.rest
+                v
             }
-            thisList eq thatList //... <=> true iff both lists are empty
+    }
+
+    override def +:[X >: T <: AnyRef](v: X): Ref2List[X] =
+        if (h != null) new Ref2ListNode(null, v, this)
+        else new Ref2ListNode(v, t, this.rest)
+
+    override def equals(that: Ref2List[AnyRef]): Boolean = (that eq this) || {
+        var thisList: Ref2List[_] = this
+        var thatList              = that
+        while ((thisList ne Ref2ListEnd) && (thatList ne Ref2ListEnd)) {
+            if (thisList.h != thatList.h || thisList.t != thatList.t) return false;
+            thisList = thisList.rest
+            thatList = thatList.rest
         }
+        thisList eq thatList // ... <=> true iff both lists are empty
     }
 
     override def hashCode: Int = {
-        var h = 31
+        var h                 = 31
         var list: Ref2List[_] = this
         while (list ne Ref2ListEnd) {
             if (list.h != null) h += list.h.hashCode * 31

@@ -3,10 +3,11 @@ package org.opalj
 package br
 package reader
 
-import org.scalatest.funsuite.AnyFunSuite
 import org.opalj.bi.TestResources.locateTestResources
 
 import scala.collection.parallel.CollectionConverters.ArrayIsParallelizable
+
+import org.scalatest.funsuite.AnyFunSuite
 
 /**
  * Tests the parsing and reconstructing of signatures.
@@ -21,7 +22,7 @@ class SignaturesTest extends AnyFunSuite {
 
     test("traversing a minimal class type signature") {
         var types: Set[Type] = Set()
-        val visitor = new TypesVisitor(t => { types = types + t })
+        val visitor          = new TypesVisitor(t => { types = types + t })
         visitor.visit(parseClassSignature("<E:Ljava/Object;>Lde/Iterator<TE;>;"))
 
         assert(types == Set(ObjectType("java/Object"), ObjectType("de/Iterator")))
@@ -29,7 +30,7 @@ class SignaturesTest extends AnyFunSuite {
 
     test("traversing a class type signature") {
         var types: Set[Type] = Set()
-        val visitor = new TypesVisitor(t => { types = types + t })
+        val visitor          = new TypesVisitor(t => { types = types + t })
         visitor.visit(parseClassSignature("LDefault;Lde/Collection<Lde/Type;>;LAnotherDefault;Lde/MyObject;"))
 
         assert(
@@ -135,8 +136,7 @@ class SignaturesTest extends AnyFunSuite {
     // The following signatures are just thrown to the parser as is.
     //
 
-    val ClassFileSignatures: Array[String] =
-        s"""
+    val ClassFileSignatures: Array[String] = s"""
     <A:Ljava/lang/Object;>Ljava/lang/Object;Lde/tud/cs/st/util/collection/Store<TA;>;Lscala/ScalaObject;
     <A:Ljava/lang/Object;>Ljava/lang/Object;Lde/tud/cs/st/util/collection/WorkList<TA;>;Lscala/ScalaObject;
     <A:Ljava/lang/Object;>Ljava/lang/Object;Lscala/Iterable<TA;>;Lscala/ScalaObject;
@@ -181,8 +181,7 @@ class SignaturesTest extends AnyFunSuite {
     Ljava/lang/Object;Lscala/Iterator<TA;>;
     """.trim.split("\n").map(_.trim())
 
-    val FieldTypeSignatures: Array[String] =
-        s"""
+    val FieldTypeSignatures: Array[String] = s"""
     Lde/tud/bat/instruction/executiongraph/StackLayout$$ShrinkableArrayList<Lde/tud/bat/type/ValueType;>;
     Lde/tud/cs/st/bat/resolved/ConstantValue<*>;
     Lde/tud/cs/st/sae/GroundTerms<Lde/tud/cs/st/bat/prolog/ElementValuePairTerm;>;
@@ -335,8 +334,7 @@ class SignaturesTest extends AnyFunSuite {
     [TE;
     """.trim.split("\n").map(_.trim())
 
-    val MethodTypeSignatures: Array[String] =
-        s"""
+    val MethodTypeSignatures: Array[String] = s"""
     <T::Ljava/io/Serializable;Cloneable:Ljava/lang/Object;>(TT;)V
     <T::Ljava/io/Serializable;:Ljava/lang/Cloneable;>(TT;)V
     ()Lde/tud/bat/util/BATIterator<Lde/tud/bat/classfile/structure/ParameterAnnotation;>;

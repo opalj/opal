@@ -2,14 +2,15 @@
 package org.opalj
 package de
 
-import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.BeforeAndAfterAll
-import org.scalatest.matchers.should.Matchers
 import org.opalj.av.checking._
 import org.opalj.br.reader.InvokedynamicRewriting
 import org.opalj.util.ScalaMajorVersion
+
+import org.junit.runner.RunWith
+import org.scalatest.BeforeAndAfterAll
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests that the implemented architecture of the dependency extraction
@@ -31,33 +32,29 @@ class DEArchitectureConsistencyTest extends AnyFlatSpec with Matchers with Befor
                 val (cf, _) = cfSrc
                 cf.thisType.toJava.matches(InvokedynamicRewriting.LambdaNameRegEx)
             }
-        val expected =
-            new Specification(
-                deTargetClasses,
-                useAnsiColors = true
-            ) {
+        val expected = new Specification(
+            deTargetClasses,
+            useAnsiColors = true
+        ) {
 
-                val DependencyExtractorElements: SourceElementsMatcher =
-                    "org.opalj.de.DependencyExtractor*"
+            val DependencyExtractorElements: SourceElementsMatcher = "org.opalj.de.DependencyExtractor*"
 
-                val DependencyTypeElements: SourceElementsMatcher =
-                    "org.opalj.de.DependencyType*"
+            val DependencyTypeElements: SourceElementsMatcher = "org.opalj.de.DependencyType*"
 
-                val DependencyProcessorElements: SourceElementsMatcher =
-                    "org.opalj.de.DependencyProcessor*"
+            val DependencyProcessorElements: SourceElementsMatcher = "org.opalj.de.DependencyProcessor*"
 
-                ensemble(Symbol("DependencyExtractorCore")) {
-                    DependencyExtractorElements and
-                        DependencyTypeElements and
-                        DependencyProcessorElements
-                }
-
-                ensemble(Symbol("DependencyExtractionSupport")) {
-                    "org.opalj.de.*" except DependencyExtractorElements
-                }
-
-                Symbol("DependencyExtractorCore") is_only_allowed_to (USE, empty)
+            ensemble(Symbol("DependencyExtractorCore")) {
+                DependencyExtractorElements and
+                    DependencyTypeElements and
+                    DependencyProcessorElements
             }
+
+            ensemble(Symbol("DependencyExtractionSupport")) {
+                "org.opalj.de.*" except DependencyExtractorElements
+            }
+
+            Symbol("DependencyExtractorCore") is_only_allowed_to (USE, empty)
+        }
 
         val result = expected.analyze()
         result.map(_.toString(useAnsiColors = true)).mkString("\n") should be("")

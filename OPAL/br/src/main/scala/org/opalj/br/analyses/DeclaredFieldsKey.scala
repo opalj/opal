@@ -26,8 +26,8 @@ object DeclaredFieldsKey extends ProjectInformationKey[DeclaredFields, Nothing] 
         val id2field = new Array[DeclaredField](idCounter.get() + 1000)
         for {
             name2TypeFieldMapping <- result.elements().asScala
-            type2Field <- name2TypeFieldMapping.elements().asScala
-            field <- type2Field.elements().asScala
+            type2Field            <- name2TypeFieldMapping.elements().asScala
+            field                 <- type2Field.elements().asScala
         } {
             id2field(field.id) = field
         }

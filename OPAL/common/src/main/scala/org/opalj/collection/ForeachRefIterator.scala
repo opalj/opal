@@ -15,52 +15,36 @@ abstract class ForeachRefIterator[+T] { self =>
 
     def foreach[U](f: T => U): Unit
 
-    final def filter(p: T => Boolean): ForeachRefIterator[T] = {
-        new ForeachRefIterator[T] {
-            def foreach[U](f: T => U): Unit = {
-                self.foreach { e =>
-                    if (p(e)) f(e)
-                }
-            }
+    final def filter(p: T => Boolean): ForeachRefIterator[T] = new ForeachRefIterator[T] {
+        def foreach[U](f: T => U): Unit = self.foreach { e => if (p(e)) f(e) }
+    }
+
+    final def +[X >: T <: AnyRef](that: X): ForeachRefIterator[X] = new ForeachRefIterator[X] {
+        def foreach[U](f: X => U): Unit = {
+            self.foreach(f)
+            f(that)
         }
     }
 
-    final def +[X >: T <: AnyRef](that: X): ForeachRefIterator[X] = {
-        new ForeachRefIterator[X] {
-            def foreach[U](f: X => U): Unit = {
-                self.foreach(f)
-                f(that)
-            }
+    final def ++[X >: T <: AnyRef](that: ForeachRefIterator[X]): ForeachRefIterator[X] = new ForeachRefIterator[X] {
+        def foreach[U](f: X => U): Unit = {
+            self.foreach(f)
+            that.foreach(f)
         }
     }
 
-    final def ++[X >: T <: AnyRef](that: ForeachRefIterator[X]): ForeachRefIterator[X] = {
-        new ForeachRefIterator[X] {
-            def foreach[U](f: X => U): Unit = {
-                self.foreach(f)
-                that.foreach(f)
-            }
-        }
-    }
-
-    final def map[X <: AnyRef](m: T => X): ForeachRefIterator[X] = {
-        new ForeachRefIterator[X] {
-            def foreach[U](f: X => U): Unit = {
-                self.foreach(e => f(m(e)))
-            }
-        }
+    final def map[X <: AnyRef](m: T => X): ForeachRefIterator[X] = new ForeachRefIterator[X] {
+        def foreach[U](f: X => U): Unit = self.foreach(e => f(m(e)))
     }
 
     final def withFilter(p: T => Boolean): ForeachRefIterator[T] = filter(p)
 
-    final def zipWithIndex: ForeachRefIterator[(T, Int)] = {
-        new ForeachRefIterator[(T, Int)] {
-            def foreach[U](f: ((T, Int)) => U): Unit = {
-                var i = 0
-                self.foreach { e =>
-                    f((e, i))
-                    i += 1
-                }
+    final def zipWithIndex: ForeachRefIterator[(T, Int)] = new ForeachRefIterator[(T, Int)] {
+        def foreach[U](f: ((T, Int)) => U): Unit = {
+            var i = 0
+            self.foreach { e =>
+                f((e, i))
+                i += 1
             }
         }
     }
@@ -84,17 +68,14 @@ object ForeachRefIterator {
     def single[T <: AnyRef](v: T): ForeachRefIterator[T] = this(v)
 
     def apply[T <: AnyRef](v: T): ForeachRefIterator[T] = new ForeachRefIterator[T] {
-        def foreach[U](f: T => U): Unit = { f(v) }
+        def foreach[U](f: T => U): Unit = f(v)
     }
 
-    def fromNonNullValues[T <: AnyRef](data: Array[_ <: T]): ForeachRefIterator[T] = {
-        new ForeachRefIterator[T] {
-            def foreach[U](f: T => U): Unit = {
-                var i = 0
-                val max = data.length
-                while (i < max) { val d = data(i); if (d != null) f(d); i += 1 }
-            }
+    def fromNonNullValues[T <: AnyRef](data: Array[_ <: T]): ForeachRefIterator[T] = new ForeachRefIterator[T] {
+        def foreach[U](f: T => U): Unit = {
+            var i   = 0
+            val max = data.length
+            while (i < max) { val d = data(i); if (d != null) f(d); i += 1 }
         }
     }
 }
-

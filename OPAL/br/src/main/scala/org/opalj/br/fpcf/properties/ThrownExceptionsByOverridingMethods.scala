@@ -4,12 +4,12 @@ package br
 package fpcf
 package properties
 
+import org.opalj.br.collection.{TypesSet => BRTypesSet}
 import org.opalj.fpcf.FallbackReason
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStore
-import org.opalj.br.collection.{TypesSet => BRTypesSet}
 
 sealed trait ThrownExceptionsByOverridingMethodsPropertyMetaInformation
     extends PropertyMetaInformation {
@@ -36,37 +36,31 @@ object ThrownExceptionsByOverridingMethods
     def fallbackPropertyComputation(
         ps:     PropertyStore,
         reason: FallbackReason,
-        m:      br.Method
-    ): ThrownExceptionsByOverridingMethods = {
+        m:      br.Method): ThrownExceptionsByOverridingMethods =
         if (m.isFinal || m.isStatic || m.isInitializer || m.isPrivate) {
             new ThrownExceptionsByOverridingMethods(ThrownExceptionsFallback(ps, m).types)
         } else {
             SomeException
         }
-    }
 
-    final val key: PropertyKey[ThrownExceptionsByOverridingMethods] = {
+    final val key: PropertyKey[ThrownExceptionsByOverridingMethods] =
         PropertyKey.create[br.Method, ThrownExceptionsByOverridingMethods](
             name = "ThrownExceptionsByOverridingMethods",
             fallbackPropertyComputation _
         )
-    }
 
     final val NoExceptions = new ThrownExceptionsByOverridingMethods()
 
     final val SomeException = new ThrownExceptionsByOverridingMethods(BRTypesSet.SomeException)
 
-    final val MethodIsOverridable =
-        new ThrownExceptionsByOverridingMethods(BRTypesSet.SomeException)
+    final val MethodIsOverridable = new ThrownExceptionsByOverridingMethods(BRTypesSet.SomeException)
 }
 
 case class ThrownExceptionsByOverridingMethods(
-        exceptions: BRTypesSet = BRTypesSet.empty
-) extends Property
-    with ThrownExceptionsByOverridingMethodsPropertyMetaInformation {
+        exceptions: BRTypesSet = BRTypesSet.empty) extends Property
+        with ThrownExceptionsByOverridingMethodsPropertyMetaInformation {
 
     final def key = ThrownExceptionsByOverridingMethods.key
 
     override def toString: String = s"ThrownExceptionsByOverridingMethods(${exceptions.toString})"
 }
-

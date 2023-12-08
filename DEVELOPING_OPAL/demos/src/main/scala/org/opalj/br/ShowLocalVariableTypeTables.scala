@@ -4,7 +4,6 @@ package br
 
 import java.net.URL
 import java.util.concurrent.ConcurrentLinkedQueue
-
 import scala.jdk.CollectionConverters._
 
 import org.opalj.br.analyses.BasicReport
@@ -23,18 +22,16 @@ object ShowLocalVariableTypeTables extends ProjectAnalysisApplication {
     def doAnalyze(
         project:       Project[URL],
         params:        Seq[String],
-        isInterrupted: () => Boolean
-    ): BasicReport = {
+        isInterrupted: () => Boolean): BasicReport = {
 
         val messages = new ConcurrentLinkedQueue[String]()
         project.parForeachMethodWithBody(isInterrupted) { mi =>
-            val m = mi.method
+            val m    = mi.method
             val lvtt = m.body.get.localVariableTypeTable
-            if (lvtt.nonEmpty)
-                messages.add(
-                    Console.BOLD + Console.BLUE + m.toJava + Console.RESET+" "+
-                        lvtt.mkString("LocalVariableTypeTable: ", ",", "")
-                )
+            if (lvtt.nonEmpty) messages.add(
+                Console.BOLD + Console.BLUE + m.toJava + Console.RESET + " " +
+                    lvtt.mkString("LocalVariableTypeTable: ", ",", "")
+            )
         }
 
         BasicReport(messages.asScala.mkString("\n", "\n\n", "\n"))

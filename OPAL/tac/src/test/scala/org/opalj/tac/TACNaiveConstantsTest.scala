@@ -2,11 +2,11 @@
 package org.opalj
 package tac
 
-import org.scalatestplus.junit.JUnitRunner
-import org.junit.runner.RunWith
-
 import org.opalj.br._
 import org.opalj.br.TestSupport.biProject
+
+import org.junit.runner.RunWith
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * @author Roberts Kolosovs
@@ -21,17 +21,18 @@ class TACNaiveConstantsTest extends TACNaiveTest {
 
     val ConstantsClassFile = project.classFile(ConstantsType).get
 
-    val IntConstsMethod = ConstantsClassFile.findMethod("intConsts").head
-    val LongConstsMethod = ConstantsClassFile.findMethod("longConsts").head
-    val FloatConstsMethod = ConstantsClassFile.findMethod("floatConsts").head
-    val DoubleConstsMethod = ConstantsClassFile.findMethod("doubleConsts").head
-    val NullRefConstMethod = ConstantsClassFile.findMethod("nullReferenceConst").head
+    val IntConstsMethod       = ConstantsClassFile.findMethod("intConsts").head
+    val LongConstsMethod      = ConstantsClassFile.findMethod("longConsts").head
+    val FloatConstsMethod     = ConstantsClassFile.findMethod("floatConsts").head
+    val DoubleConstsMethod    = ConstantsClassFile.findMethod("doubleConsts").head
+    val NullRefConstMethod    = ConstantsClassFile.findMethod("nullReferenceConst").head
     val LoadConstsInstrMethod = ConstantsClassFile.findMethod("loadConstants").head
 
     describe("the naive TAC of instructions loading constants") {
 
         it("should correctly reflect the integer constants") {
-            val statements = TACNaive(method = IntConstsMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
+            val statements =
+                TACNaive(method = IntConstsMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
@@ -77,7 +78,8 @@ class TACNaiveConstantsTest extends TACNaiveTest {
         }
 
         it("should correctly reflect the long constants") {
-            val statements = TACNaive(method = LongConstsMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
+            val statements =
+                TACNaive(method = LongConstsMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
@@ -103,7 +105,8 @@ class TACNaiveConstantsTest extends TACNaiveTest {
         }
 
         it("should correctly reflect the float constants") {
-            val statements = TACNaive(method = FloatConstsMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
+            val statements =
+                TACNaive(method = FloatConstsMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
@@ -133,7 +136,8 @@ class TACNaiveConstantsTest extends TACNaiveTest {
         }
 
         it("should correctly reflect the double constants") {
-            val statements = TACNaive(method = DoubleConstsMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
+            val statements = TACNaive(method = DoubleConstsMethod,
+                                      classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
@@ -159,7 +163,8 @@ class TACNaiveConstantsTest extends TACNaiveTest {
         }
 
         it("should correctly reflect the null reference constants") {
-            val statements = TACNaive(method = NullRefConstMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
+            val statements = TACNaive(method = NullRefConstMethod,
+                                      classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
@@ -181,7 +186,8 @@ class TACNaiveConstantsTest extends TACNaiveTest {
         }
 
         it("should correctly reflect the other constant loading instructions") {
-            val statements = TACNaive(method = LoadConstsInstrMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
+            val statements = TACNaive(method = LoadConstsInstrMethod,
+                                      classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)

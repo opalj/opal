@@ -57,9 +57,7 @@ object Long2List {
 
     def apply(v1: Long, v2: Long, v3: Long): Long2List = new Long2List3(v1, v2, v3, null)
 
-    def apply(v1: Long, v2: Long, v3: Long, v4: Long): Long2List = {
-        new Long2List4(v1, v2, v3, v4, null)
-    }
+    def apply(v1: Long, v2: Long, v3: Long, v4: Long): Long2List = new Long2List4(v1, v2, v3, v4, null)
 
 }
 
@@ -70,13 +68,13 @@ object Long2List {
  */
 case object Long2List0 extends Long2List {
 
-    override def isEmpty: Boolean = true
+    override def isEmpty: Boolean         = true
     override def isSingletonList: Boolean = false
-    override def nonEmpty: Boolean = false
+    override def nonEmpty: Boolean        = false
 
     override def head: Long = throw new UnsupportedOperationException
-    override def foreach[U](f: Long => U): Unit = {}
-    override def forall(p: Long => Boolean): Boolean = true
+    override def foreach[U](f:  Long => U): Unit = {}
+    override def forall(p:      Long => Boolean): Boolean = true
     override def foldLeft[B](z: B)(op: (B, Long) => B): B = z
     /** Iterates over the first N values. */
     override def forFirstN[U](n: Int)(f: Long => U): Unit = {}
@@ -84,15 +82,13 @@ case object Long2List0 extends Long2List {
     /** Prepends the given value to this list. E.g., `l = 2l +: l`. */
     override def +:(v: Long): Long2List = new Long2List1(v, null)
 
-    override def equals(other: Any): Boolean = {
-        other match { case that: AnyRef => this eq that; case _ => false }
-    }
+    override def equals(other: Any): Boolean = other match { case that: AnyRef => this eq that; case _ => false }
     override def hashCode(): Int = 37
 }
 
-private[immutable] abstract class Long2List1_4 extends Long2List {
+abstract private[immutable] class Long2List1_4 extends Long2List {
 
-    final override def isEmpty: Boolean = false
+    final override def isEmpty: Boolean  = false
     final override def nonEmpty: Boolean = true
 
     private[immutable] def rest: Long2List4
@@ -109,7 +105,7 @@ private[immutable] abstract class Long2List1_4 extends Long2List {
     }
 
     final def restFoldLeft[B](z: B)(op: (B, Long) => B): B = {
-        var r = z
+        var r                = z
         var list: Long2List4 = this.rest
         while (list != null) {
             r = op(op(op(op(r, list.v1), list.v2), list.v3), list.v4)
@@ -121,24 +117,20 @@ private[immutable] abstract class Long2List1_4 extends Long2List {
     final def restForall(p: Long => Boolean): Boolean = {
         var list: Long2List4 = this.rest
         while (list != null) {
-            if (!(p(list.v1) && p(list.v2) && p(list.v3) && p(list.v4)))
-                return false;
+            if (!(p(list.v1) && p(list.v2) && p(list.v3) && p(list.v4))) return false;
             list = list.rest
         }
         true
     }
 
     final def restForFirstN[U](n: Int)(f: Long => U): Unit = {
-        var i = n
+        var i                = n
         var list: Long2List4 = rest
         while (i > 0) {
             i match {
-                case 1 =>
-                    f(list.v1); i = 0
-                case 2 =>
-                    f(list.v1); f(list.v2); i = 0
-                case 3 =>
-                    f(list.v1); f(list.v2); f(list.v3); i = 0
+                case 1 => f(list.v1); i = 0
+                case 2 => f(list.v1); f(list.v2); i = 0
+                case 3 => f(list.v1); f(list.v2); f(list.v3); i = 0
                 case _ =>
                     f(list.v1); f(list.v2); f(list.v3); f(list.v4)
                     i -= 4
@@ -149,19 +141,15 @@ private[immutable] abstract class Long2List1_4 extends Long2List {
         }
     }
 
-    final def restIterator(): LongIterator = {
-        new LongIterator {
-            private[this] var list: Long2List4 = rest
-            private[this] var index: Int = 0
-            def hasNext: Boolean = list != null
-            def next(): Long = {
-                index match {
-                    case 0 => { index += 1; list.v1 }
-                    case 1 => { index += 1; list.v2 }
-                    case 2 => { index += 1; list.v3 }
-                    case 3 => { index = 0; val v = list.v4; list = list.rest; v }
-                }
-            }
+    final def restIterator(): LongIterator = new LongIterator {
+        private[this] var list: Long2List4 = rest
+        private[this] var index: Int       = 0
+        def hasNext: Boolean               = list != null
+        def next(): Long = index match {
+            case 0 => { index += 1; list.v1 }
+            case 1 => { index += 1; list.v2 }
+            case 2 => { index += 1; list.v3 }
+            case 3 => { index = 0; val v = list.v4; list = list.rest; v }
         }
     }
 
@@ -174,8 +162,7 @@ private[immutable] abstract class Long2List1_4 extends Long2List {
                 thisRest.v2 == thatRest.v2 &&
                 thisRest.v3 == thatRest.v3 &&
                 thisRest.v4 == thatRest.v4
-            if (!equal)
-                return false;
+            if (!equal) return false;
             thisRest = thisRest.rest
             thatRest = thatRest.rest
         }
@@ -183,7 +170,7 @@ private[immutable] abstract class Long2List1_4 extends Long2List {
     }
 
     final def restHashCode(): Int = {
-        var h = 31
+        var h                = 31
         var list: Long2List4 = rest
         while (list != null) {
             h += JLong.hashCode(list.v1) * 31
@@ -196,10 +183,9 @@ private[immutable] abstract class Long2List1_4 extends Long2List {
     }
 }
 
-private[immutable] final class Long2List1(
-        private[immutable] val v1:   Long,
-        private[immutable] val rest: Long2List4
-) extends Long2List1_4 { list =>
+final private[immutable] class Long2List1(
+        private[immutable] val v1: Long,
+        private[immutable] val rest: Long2List4) extends Long2List1_4 { list =>
 
     override def isSingletonList: Boolean = rest == null
 
@@ -210,19 +196,13 @@ private[immutable] final class Long2List1(
         restForeach(f)
     }
 
-    override def foldLeft[B](z: B)(op: (B, Long) => B): B = {
-        restFoldLeft(op(z, v1))(op)
-    }
+    override def foldLeft[B](z: B)(op: (B, Long) => B): B = restFoldLeft(op(z, v1))(op)
 
-    override def forall(p: Long => Boolean): Boolean = {
-        p(v1) && restForall(p)
-    }
+    override def forall(p: Long => Boolean): Boolean = p(v1) && restForall(p)
 
-    override def forFirstN[U](n: Int)(f: Long => U): Unit = {
-        if (n > 0) {
-            f(v1)
-            restForFirstN(n - 1)(f)
-        }
+    override def forFirstN[U](n: Int)(f: Long => U): Unit = if (n > 0) {
+        f(v1)
+        restForFirstN(n - 1)(f)
     }
 
     override def iterator: LongIterator = {
@@ -233,25 +213,21 @@ private[immutable] final class Long2List1(
 
     override def +:(v: Long): Long2List = new Long2List2(v, v1, rest)
 
-    override def equals(other: Any): Boolean = {
-        other match {
-            case that: Long2List1 =>
-                (that eq this) || (
-                    that.v1 == this.v1 && restEquals(that.rest)
-                )
-            case _ => false
-        }
+    override def equals(other: Any): Boolean = other match {
+        case that: Long2List1 => (that eq this) || (
+                that.v1 == this.v1 && restEquals(that.rest)
+            )
+        case _ => false
     }
 
     override def hashCode(): Int = JLong.hashCode(v1) * 31 + restHashCode()
 
 }
 
-private[immutable] final class Long2List2(
-        private[immutable] var v1:   Long,
-        private[immutable] var v2:   Long,
-        private[immutable] var rest: Long2List4
-) extends Long2List1_4 { list =>
+final private[immutable] class Long2List2(
+        private[immutable] var v1: Long,
+        private[immutable] var v2: Long,
+        private[immutable] var rest: Long2List4) extends Long2List1_4 { list =>
 
     override def isSingletonList: Boolean = false
 
@@ -263,14 +239,12 @@ private[immutable] final class Long2List2(
 
     override def forall(p: Long => Boolean): Boolean = p(v1) && p(v2) && restForall(p)
 
-    override def forFirstN[U](n: Int)(f: Long => U): Unit = {
-        if (n > 0) {
-            f(v1)
-            if (n > 1) {
-                f(v2)
-                if (n > 2) {
-                    restForFirstN(n - 2)(f)
-                }
+    override def forFirstN[U](n: Int)(f: Long => U): Unit = if (n > 0) {
+        f(v1)
+        if (n > 1) {
+            f(v2)
+            if (n > 2) {
+                restForFirstN(n - 2)(f)
             }
         }
     }
@@ -283,25 +257,21 @@ private[immutable] final class Long2List2(
 
     override def +:(v: Long): Long2List = new Long2List3(v, v1, v2, rest)
 
-    override def equals(other: Any): Boolean = {
-        other match {
-            case that: Long2List2 =>
-                (that eq this) || (
-                    that.v1 == this.v1 && that.v2 == this.v2 && restEquals(that.rest)
-                )
-            case _ => false
-        }
+    override def equals(other: Any): Boolean = other match {
+        case that: Long2List2 => (that eq this) || (
+                that.v1 == this.v1 && that.v2 == this.v2 && restEquals(that.rest)
+            )
+        case _ => false
     }
 
     override def hashCode(): Int = JLong.hashCode(v1) * 31 + JLong.hashCode(v2) * 31 + restHashCode()
 }
 
-private[immutable] final class Long2List3(
-        private[immutable] var v1:   Long,
-        private[immutable] var v2:   Long,
-        private[immutable] var v3:   Long,
-        private[immutable] var rest: Long2List4
-) extends Long2List1_4 { list =>
+final private[immutable] class Long2List3(
+        private[immutable] var v1: Long,
+        private[immutable] var v2: Long,
+        private[immutable] var v3: Long,
+        private[immutable] var rest: Long2List4) extends Long2List1_4 { list =>
 
     override def isSingletonList: Boolean = false
 
@@ -309,23 +279,19 @@ private[immutable] final class Long2List3(
 
     override def foreach[U](f: Long => U): Unit = { f(v1); f(v2); f(v3); restForeach(f) }
 
-    override def foldLeft[B](z: B)(op: (B, Long) => B): B = {
-        restFoldLeft(op(op(op(z, v1), v2), v3))(op)
-    }
+    override def foldLeft[B](z: B)(op: (B, Long) => B): B = restFoldLeft(op(op(op(z, v1), v2), v3))(op)
 
     override def forall(p: Long => Boolean): Boolean = p(v1) && p(v2) && p(v3) && restForall(p)
 
-    override def forFirstN[U](n: Int)(f: Long => U): Unit = {
-        if (n > 0) {
-            f(v1)
-            if (n > 1) {
-                f(v2)
-                if (n > 2) {
-                    f(v3)
-                    if (n > 3) {
-                        restForFirstN(n - 3)(f)
+    override def forFirstN[U](n: Int)(f: Long => U): Unit = if (n > 0) {
+        f(v1)
+        if (n > 1) {
+            f(v2)
+            if (n > 2) {
+                f(v3)
+                if (n > 3) {
+                    restForFirstN(n - 3)(f)
 
-                    }
                 }
             }
         }
@@ -339,28 +305,23 @@ private[immutable] final class Long2List3(
 
     override def +:(v: Long): Long2List = new Long2List4(v, v1, v2, v3, rest)
 
-    override def equals(other: Any): Boolean = {
-        other match {
-            case that: Long2List3 =>
-                (that eq this) || (
-                    that.v1 == v1 && that.v2 == v2 && that.v3 == v3 && restEquals(that.rest)
-                )
-            case _ => false
-        }
+    override def equals(other: Any): Boolean = other match {
+        case that: Long2List3 => (that eq this) || (
+                that.v1 == v1 && that.v2 == v2 && that.v3 == v3 && restEquals(that.rest)
+            )
+        case _ => false
     }
 
-    override def hashCode(): Int = {
+    override def hashCode(): Int =
         JLong.hashCode(v1) * 31 + JLong.hashCode(v2) * 31 + JLong.hashCode(v3) * 31 + restHashCode()
-    }
 }
 
-private[immutable] final class Long2List4(
-        private[immutable] var v1:   Long,
-        private[immutable] var v2:   Long,
-        private[immutable] var v3:   Long,
-        private[immutable] var v4:   Long,
-        private[immutable] var rest: Long2List4
-) extends Long2List1_4 { list =>
+final private[immutable] class Long2List4(
+        private[immutable] var v1: Long,
+        private[immutable] var v2: Long,
+        private[immutable] var v3: Long,
+        private[immutable] var v4: Long,
+        private[immutable] var rest: Long2List4) extends Long2List1_4 { list =>
 
     override def isSingletonList: Boolean = false
 
@@ -370,26 +331,20 @@ private[immutable] final class Long2List4(
         f(v1); f(v2); f(v3); f(v4); restForeach(f)
     }
 
-    override def foldLeft[B](z: B)(op: (B, Long) => B): B = {
-        restFoldLeft(op(op(op(op(z, v1), v2), v3), v4))(op)
-    }
+    override def foldLeft[B](z: B)(op: (B, Long) => B): B = restFoldLeft(op(op(op(op(z, v1), v2), v3), v4))(op)
 
-    override def forall(p: Long => Boolean): Boolean = {
-        p(v1) && p(v2) && p(v3) && p(v4) && restForall(p)
-    }
+    override def forall(p: Long => Boolean): Boolean = p(v1) && p(v2) && p(v3) && p(v4) && restForall(p)
 
-    override def forFirstN[U](n: Int)(f: Long => U): Unit = {
-        if (n > 0) {
-            f(v1)
-            if (n > 1) {
-                f(v2)
-                if (n > 2) {
-                    f(v3)
-                    if (n > 3) {
-                        f(v4)
-                        if (n > 4) {
-                            restForFirstN(n - 4)(f)
-                        }
+    override def forFirstN[U](n: Int)(f: Long => U): Unit = if (n > 0) {
+        f(v1)
+        if (n > 1) {
+            f(v2)
+            if (n > 2) {
+                f(v3)
+                if (n > 3) {
+                    f(v4)
+                    if (n > 4) {
+                        restForFirstN(n - 4)(f)
                     }
                 }
             }
@@ -404,22 +359,17 @@ private[immutable] final class Long2List4(
 
     override def +:(v: Long): Long2List = new Long2List1(v, this)
 
-    override def equals(other: Any): Boolean = {
-        other match {
-            case that: Long2List4 =>
-                (that eq this) || (
-                    that.v1 == v1 && that.v2 == v2 && that.v3 == v3 && that.v4 == v4 &&
+    override def equals(other: Any): Boolean = other match {
+        case that: Long2List4 => (that eq this) || (
+                that.v1 == v1 && that.v2 == v2 && that.v3 == v3 && that.v4 == v4 &&
                     restEquals(that.rest)
-                )
-            case _ => false
-        }
+            )
+        case _ => false
     }
 
-    override def hashCode(): Int = {
-        JLong.hashCode(v1) * 31 +
-            JLong.hashCode(v2) * 31 +
-            JLong.hashCode(v3) * 31 +
-            JLong.hashCode(v4) * 31 +
-            restHashCode()
-    }
+    override def hashCode(): Int = JLong.hashCode(v1) * 31 +
+        JLong.hashCode(v2) * 31 +
+        JLong.hashCode(v3) * 31 +
+        JLong.hashCode(v4) * 31 +
+        restHashCode()
 }

@@ -15,21 +15,18 @@ trait LineNumberTable extends CodeAttribute {
 
     def firstLineNumber(): Option[Int]
 
-    override def remapPCs(codeSize: PC, f: PC => PC): LineNumberTable = {
+    override def remapPCs(codeSize: PC, f: PC => PC): LineNumberTable =
         UnpackedLineNumberTable(lineNumbers.flatMap[LineNumber](ln => ln.remapPCs(codeSize, f)))
-    }
 
     override def kindId: Int = LineNumberTable.KindId
 
-    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = {
-        other match {
-            case that: LineNumberTable => this.similar(that)
-            case _                     => false
-        }
+    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = other match {
+        case that: LineNumberTable => this.similar(that)
+        case _                     => false
     }
 
     def similar(other: LineNumberTable): Boolean = {
-        val thisLineNumbers = this.lineNumbers
+        val thisLineNumbers  = this.lineNumbers
         val otherLineNumbers = other.lineNumbers
         // the order of two line number tables need to be identical
         thisLineNumbers.size == otherLineNumbers.size && thisLineNumbers == otherLineNumbers

@@ -3,14 +3,14 @@ package org.opalj
 package tac
 package cg
 
-import org.opalj.fpcf.PropertyStore
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.PropertyStoreKey
-import org.opalj.br.fpcf.properties.SimpleContextsKey
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
+import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.br.fpcf.properties.SimpleContextsKey
 import org.opalj.br.fpcf.properties.cg.OnlyCallersWithUnknownContext
+import org.opalj.fpcf.PropertyStore
 import org.opalj.tac.fpcf.analyses.cg.CHATypeIterator
 
 /**
@@ -23,9 +23,8 @@ import org.opalj.tac.fpcf.analyses.cg.CHATypeIterator
  */
 object NoCallGraphKey extends CallGraphKey {
 
-    override def requirements(project: SomeProject): ProjectInformationKeys = {
+    override def requirements(project: SomeProject): ProjectInformationKeys =
         Seq(PropertyStoreKey, FPCFAnalysesManagerKey, SimpleContextsKey)
-    }
 
     override protected def callGraphSchedulers(project: SomeProject): Iterable[FPCFAnalysisScheduler] = List.empty
 
@@ -34,8 +33,6 @@ object NoCallGraphKey extends CallGraphKey {
     override protected def runAnalyses(project: SomeProject, ps: PropertyStore): Unit = {
         val methods = project.getProjectInformationKeyInitializationData(this).getOrElse(project.allMethods)
 
-        methods.foreach { method =>
-            ps.set(method, OnlyCallersWithUnknownContext)
-        }
+        methods.foreach { method => ps.set(method, OnlyCallersWithUnknownContext) }
     }
 }

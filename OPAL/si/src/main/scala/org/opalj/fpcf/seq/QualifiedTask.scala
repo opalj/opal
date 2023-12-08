@@ -20,27 +20,22 @@ sealed abstract class QualifiedTask extends (() => Unit) {
 
 final case class HandleResultTask[E <: Entity, P <: Property](
         ps: PropertyStore,
-        r:  PropertyComputationResult
-) extends QualifiedTask {
+        r: PropertyComputationResult) extends QualifiedTask {
 
-    override def apply(): Unit = {
+    override def apply(): Unit =
         // Get the most current property when the depender is eventually evaluated.
         ps.handleResult(r)
-    }
 
-    override def isTriggeredByFinalProperty: Boolean = {
-        r match {
-            case NoResult | _: FinalPropertyComputationResult => true
-            case _                                            => false
-        }
+    override def isTriggeredByFinalProperty: Boolean = r match {
+        case NoResult | _: FinalPropertyComputationResult => true
+        case _                                            => false
     }
 }
 
 final case class PropertyComputationTask[E <: Entity](
         ps: PropertyStore,
         e:  E,
-        pc: PropertyComputation[E]
-) extends QualifiedTask {
+        pc: PropertyComputation[E]) extends QualifiedTask {
 
     override def apply(): Unit = ps.handleResult(pc(e))
 
@@ -50,12 +45,9 @@ final case class PropertyComputationTask[E <: Entity](
 final case class OnFinalUpdateComputationTask[E <: Entity, P <: Property](
         ps: PropertyStore,
         r:  FinalEP[E, P],
-        c:  OnUpdateContinuation
-) extends QualifiedTask {
+        c: OnUpdateContinuation) extends QualifiedTask {
 
-    override def apply(): Unit = {
-        ps.handleResult(c(r))
-    }
+    override def apply(): Unit = ps.handleResult(c(r))
 
     override def isTriggeredByFinalProperty: Boolean = true
 }
@@ -63,13 +55,11 @@ final case class OnFinalUpdateComputationTask[E <: Entity, P <: Property](
 final case class OnUpdateComputationTask[E <: Entity, P <: Property](
         ps:  PropertyStore,
         epk: EPK[E, P],
-        c:   OnUpdateContinuation
-) extends QualifiedTask {
+        c: OnUpdateContinuation) extends QualifiedTask {
 
-    override def apply(): Unit = {
+    override def apply(): Unit =
         // Get the most current property when the depender is eventually evaluated.
         ps.handleResult(c(ps(epk).asEPS))
-    }
 
     override def isTriggeredByFinalProperty: Boolean = false
 

@@ -10,22 +10,19 @@ package issues
 // This is not an enumeration because this set is extensible by custom analyses.
 object IssueKind {
 
-    final val AllKinds = {
-        Set(
-            MethodMissing,
-            ConstantComputation,
-            DeadPath,
-            ThrowsException,
-            UnguardedUse,
-            UnusedField,
-            UnusedMethod,
-            UselessComputation,
-            DubiousMethodCall,
-            DubiousMethodDefinition,
-            InconsistentSynchronization
-
-        )
-    }
+    final val AllKinds = Set(
+        MethodMissing,
+        ConstantComputation,
+        DeadPath,
+        ThrowsException,
+        UnguardedUse,
+        UnusedField,
+        UnusedMethod,
+        UselessComputation,
+        DubiousMethodCall,
+        DubiousMethodDefinition,
+        InconsistentSynchronization
+    )
 
     /**
      * A method that should be implemented is missing.

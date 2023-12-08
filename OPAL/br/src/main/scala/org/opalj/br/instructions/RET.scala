@@ -3,8 +3,8 @@ package org.opalj
 package br
 package instructions
 
-import org.opalj.br.cfg.CFGFactory
 import org.opalj.br.cfg.CFG
+import org.opalj.br.cfg.CFGFactory
 
 /**
  * Return from subroutine.
@@ -15,10 +15,9 @@ import org.opalj.br.cfg.CFG
  * @author Michael Eichberg
  */
 case class RET(
-        lvIndex: Int
-) extends ControlTransferInstruction
-    with ConstantLengthInstruction
-    with NoLabels {
+        lvIndex: Int) extends ControlTransferInstruction
+        with ConstantLengthInstruction
+        with NoLabels {
 
     final override def opcode: Opcode = RET.opcode
 
@@ -29,32 +28,25 @@ case class RET(
     final override def length: Int = 2
 
     final override def nextInstructions(
-        currentPC:             Int /*PC*/ ,
+        currentPC:             Int /*PC*/,
         regularSuccessorsOnly: Boolean
-    )(
-        implicit
+      )(implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
-    ): List[Int /*PC*/ ] = {
+        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy): List[Int /*PC*/ ] =
         nextInstructions(currentPC, () => CFGFactory(code, classHierarchy))
-    }
 
     override def jumpTargets(
         currentPC: Int
-    )(
-        implicit
+      )(implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
-    ): Iterator[PC] = {
+        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy): Iterator[PC] =
         nextInstructions(currentPC, false /*irrelevant*/ ).iterator
-    }
 
     final def nextInstructions(
-        currentPC: Int, cfg: () => CFG[Instruction, Code]
-    )(
-        implicit
-        code: Code
-    ): List[Int /*PC*/ ] = {
+        currentPC: Int,
+        cfg:       () => CFG[Instruction, Code]
+      )(implicit
+        code: Code): List[Int /*PC*/ ] = {
 
         // If we have just one subroutine it is sufficient to collect the
         // successor instructions of all JSR instructions.
@@ -63,8 +55,7 @@ case class RET(
             if (pc != currentPC) { // filter this ret!
                 instruction.opcode match {
 
-                    case JSR.opcode | JSR_W.opcode =>
-                        jumpTargetPCs ::= (instruction.indexOfNextInstruction(pc))
+                    case JSR.opcode | JSR_W.opcode => jumpTargetPCs ::= (instruction.indexOfNextInstruction(pc))
 
                     case RET.opcode =>
                         // we have found another RET ... hence, we have at least two subroutines
@@ -84,9 +75,8 @@ case class RET(
 
     final override def stackSlotsChange: Int = 0
 
-    final override def isIsomorphic(thisPC: Int, otherPC: Int)(implicit code: Code): Boolean = {
+    final override def isIsomorphic(thisPC: Int, otherPC: Int)(implicit code: Code): Boolean =
         this == code.instructions(otherPC)
-    }
 
     final override def readsLocal: Boolean = true
 

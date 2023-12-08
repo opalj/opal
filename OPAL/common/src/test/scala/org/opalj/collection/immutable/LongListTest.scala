@@ -3,12 +3,12 @@ package org.opalj
 package collection
 package immutable
 
+import org.opalj.util.PerformanceEvaluation
+
 import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
-
-import org.opalj.util.PerformanceEvaluation
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests LongList.
@@ -22,8 +22,8 @@ class LongListTest extends AnyFunSpec with Matchers {
 
         it("memory usage and runtime performance (add)") {
             val Elements = 3000000
-            val seed = 123456789L
-            val rngGen = new java.util.Random(seed)
+            val seed     = 123456789L
+            val rngGen   = new java.util.Random(seed)
 
             for { i <- 1 to 10 } {
                 var l = LongList.empty
@@ -48,10 +48,9 @@ class LongListTest extends AnyFunSpec with Matchers {
                     l.forFirstN(Elements / 3)(sumForFirstThird += _)
                 } { t => info(s"forFirstN(1/3*Elements) sum took ${t.toSeconds}") }
 
-                val sumIterator =
-                    PerformanceEvaluation.time {
-                        l.iterator.sum
-                    } { t => info(s"iterator sum took ${t.toSeconds}") }
+                val sumIterator = PerformanceEvaluation.time {
+                    l.iterator.sum
+                } { t => info(s"iterator sum took ${t.toSeconds}") }
 
                 assert(sumForeach == sumIterator)
                 info(s"summarized value: ${sumIterator}")

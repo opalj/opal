@@ -4,13 +4,13 @@ package tac
 
 import scala.collection.concurrent.TrieMap
 
-import org.opalj.br.Method
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.ProjectInformationKey
-import org.opalj.ai.domain.RecordDefUse
-import org.opalj.ai.Domain
 import org.opalj.ai.AIResult
+import org.opalj.ai.Domain
 import org.opalj.ai.common.SimpleAIKey
+import org.opalj.ai.domain.RecordDefUse
+import org.opalj.br.Method
+import org.opalj.br.analyses.ProjectInformationKey
+import org.opalj.br.analyses.SomeProject
 import org.opalj.value.ValueInformation
 
 /**
@@ -28,10 +28,9 @@ object LazyTACUsingAIKey extends TACAIKey[Nothing] {
      * of the underlying methods using the SimpleAIKey.
      */
     override def requirements(
-        project: SomeProject
-    ): Seq[ProjectInformationKey[Method => AIResult { val domain: Domain with RecordDefUse }, _ <: AnyRef]] = {
+        project: SomeProject)
+        : Seq[ProjectInformationKey[Method => AIResult { val domain: Domain with RecordDefUse }, _ <: AnyRef]] =
         Seq(SimpleAIKey)
-    }
 
     /**
      * Returns an object which computes and caches the 3-address code of a method when required.
@@ -43,18 +42,20 @@ object LazyTACUsingAIKey extends TACAIKey[Nothing] {
      * instantiated using the desired domain.
      */
     override def compute(
-        project: SomeProject
-    ): Method => AITACode[TACMethodParameter, ValueInformation] = {
+        project: SomeProject): Method => AITACode[TACMethodParameter, ValueInformation] = {
         val aiResults = project.get(SimpleAIKey)
-        val taCodes = TrieMap.empty[Method, AITACode[TACMethodParameter, ValueInformation]]
+        val taCodes   = TrieMap.empty[Method, AITACode[TACMethodParameter, ValueInformation]]
 
-        (m: Method) => taCodes.getOrElseUpdate(m, {
-            val aiResult = aiResults(m)
-            val code = TACAI(project, m, aiResult)
-            // well... the following cast is safe, because the underlying
-            // data structure is actually (at least conceptually) immutable
-            code.asInstanceOf[AITACode[TACMethodParameter, ValueInformation]]
-        })
+        (m: Method) =>
+            taCodes.getOrElseUpdate(
+                m, {
+                    val aiResult = aiResults(m)
+                    val code     = TACAI(project, m, aiResult)
+                    // well... the following cast is safe, because the underlying
+                    // data structure is actually (at least conceptually) immutable
+                    code.asInstanceOf[AITACode[TACMethodParameter, ValueInformation]]
+                }
+            )
 
         /*
         def computeAndCacheTAC(m: Method) = { // never executed concurrently
@@ -79,6 +80,6 @@ object LazyTACUsingAIKey extends TACAIKey[Nothing] {
                     }
                 }
         }
-        */
+         */
     }
 }

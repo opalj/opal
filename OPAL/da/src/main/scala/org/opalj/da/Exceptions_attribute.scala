@@ -18,38 +18,30 @@ import scala.xml.Text
  * @author Michael Eichberg
  */
 case class Exceptions_attribute(
-        attribute_name_index:  Constant_Pool_Index,
-        exception_index_table: ExceptionIndexTable
-) extends Attribute {
+        attribute_name_index: Constant_Pool_Index,
+        exception_index_table: ExceptionIndexTable) extends Attribute {
 
     override def attribute_length: Int = 2 /*table_size*/ + exception_index_table.size * 2
 
-    def exceptionsSpan(implicit cp: Constant_Pool): Node = {
-        if (exception_index_table.nonEmpty)
-            <span class="throws">
+    def exceptionsSpan(implicit cp: Constant_Pool): Node =
+        if (exception_index_table.nonEmpty) <span class="throws">
                 throws
                 {
-                    exception_index_table.map(cp(_).asInstructionParameter).reduce[Seq[Node]] { (r, e) =>
-                        (r.theSeq :+ Text(", ")) ++ e.theSeq
-                    }
-                }
+            exception_index_table.map(cp(_).asInstructionParameter).reduce[Seq[Node]] { (r, e) =>
+                (r.theSeq :+ Text(", ")) ++ e.theSeq
+            }
+        }
             </span>
-        else
-            <span>&lt;Empty&gt;</span>
-    }
+        else <span>&lt;Empty&gt;</span>
 
     // Primarily implemented to handle the case if the attribute is not found in an expected place.
-    override def toXHTML(implicit cp: Constant_Pool): Node = {
-        <details>
-            <summary class="attribute_name">Exceptions [size: { exception_index_table.size } item(s)]</summary>
+    override def toXHTML(implicit cp: Constant_Pool): Node = <details>
+            <summary class="attribute_name">Exceptions [size: {exception_index_table.size} item(s)]</summary>
             <ol>
                 {
-                    exception_index_table.map[Node] { cpIndex =>
-                        <li>{ cp(cpIndex).asInstructionParameter }</li>
-                    }
-                }
+        exception_index_table.map[Node] { cpIndex => <li>{cp(cpIndex).asInstructionParameter}</li> }
+    }
             </ol>
         </details>
-    }
 
 }

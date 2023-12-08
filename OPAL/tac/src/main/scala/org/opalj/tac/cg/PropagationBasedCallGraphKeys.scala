@@ -8,6 +8,7 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.properties.SimpleContextsKey
+import org.opalj.tac.fpcf.analyses.cg.PropagationBasedTypeIterator
 import org.opalj.tac.fpcf.analyses.cg.rta.ConfiguredNativeMethodsInstantiatedTypesAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.ArrayInstantiationsAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.CTASetEntitySelector
@@ -18,7 +19,6 @@ import org.opalj.tac.fpcf.analyses.cg.xta.MTASetEntitySelector
 import org.opalj.tac.fpcf.analyses.cg.xta.TypePropagationAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.TypeSetEntitySelector
 import org.opalj.tac.fpcf.analyses.cg.xta.XTASetEntitySelector
-import org.opalj.tac.fpcf.analyses.cg.PropagationBasedTypeIterator
 import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalysis
 import org.opalj.tac.fpcf.analyses.fieldaccess.reflection.ReflectionRelatedFieldAccessesAnalysisScheduler
 
@@ -42,20 +42,17 @@ import org.opalj.tac.fpcf.analyses.fieldaccess.reflection.ReflectionRelatedField
  */
 trait PropagationBasedCallGraphKey extends CallGraphKey {
 
-    override def requirements(project: SomeProject): ProjectInformationKeys = {
+    override def requirements(project: SomeProject): ProjectInformationKeys =
         super.requirements(project) ++ Seq(InitialInstantiatedTypesKey, SimpleContextsKey)
-    }
 
     def typeSetEntitySelector(): TypeSetEntitySelector
 
     override protected def callGraphSchedulers(
-        project: SomeProject
-    ): Iterable[FPCFAnalysisScheduler] = {
+        project: SomeProject): Iterable[FPCFAnalysisScheduler] = {
         val theTypeSetEntitySelector = typeSetEntitySelector()
 
-        val isLibrary =
-            project.config.getString("org.opalj.br.analyses.cg.InitialEntryPointsKey.analysis") ==
-                "org.opalj.br.analyses.cg.LibraryEntryPointsFinder"
+        val isLibrary = project.config.getString("org.opalj.br.analyses.cg.InitialEntryPointsKey.analysis") ==
+            "org.opalj.br.analyses.cg.LibraryEntryPointsFinder"
 
         List(
             new InstantiatedTypesAnalysisScheduler(theTypeSetEntitySelector),

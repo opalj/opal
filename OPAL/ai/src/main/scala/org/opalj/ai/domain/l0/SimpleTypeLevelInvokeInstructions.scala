@@ -4,10 +4,10 @@ package ai
 package domain
 package l0
 
-import org.opalj.br.ObjectType
-import org.opalj.br.ReferenceType
 import org.opalj.br.BootstrapMethod
 import org.opalj.br.MethodDescriptor
+import org.opalj.br.ObjectType
+import org.opalj.br.ReferenceType
 
 /**
  * Most basic handling of method invocations that determines the value that is
@@ -30,84 +30,66 @@ trait SimpleTypeLevelInvokeInstructions extends MethodCallsDomain {
     protected[this] def handleInstanceBasedInvoke(
         pc:               Int,
         methodDescriptor: MethodDescriptor,
-        operands:         Operands
-    ): MethodCallResult = {
-        refIsNull(pc, operands.last) match {
-            case Yes =>
-                justThrows(VMNullPointerException(pc))
-            case Unknown if throwNullPointerExceptionOnMethodCall =>
-                val returnType = methodDescriptor.returnType
-                val exceptionValue = Set(VMNullPointerException(pc))
-                if (returnType.isVoidType)
-                    ComputationWithSideEffectOrException(exceptionValue)
-                else
-                    ComputedValueOrException(TypedValue(pc, returnType), exceptionValue)
-            case /*No or Unknown & DoNotThrowNullPointerException*/ _ =>
-                val returnType = methodDescriptor.returnType
-                if (returnType.isVoidType)
-                    ComputationWithSideEffectOnly
-                else
-                    ComputedValue(TypedValue(pc, returnType))
-        }
+        operands:         Operands): MethodCallResult = refIsNull(pc, operands.last) match {
+        case Yes => justThrows(VMNullPointerException(pc))
+        case Unknown if throwNullPointerExceptionOnMethodCall =>
+            val returnType     = methodDescriptor.returnType
+            val exceptionValue = Set(VMNullPointerException(pc))
+            if (returnType.isVoidType) ComputationWithSideEffectOrException(exceptionValue)
+            else ComputedValueOrException(TypedValue(pc, returnType), exceptionValue)
+        case /*No or Unknown & DoNotThrowNullPointerException*/ _ =>
+            val returnType = methodDescriptor.returnType
+            if (returnType.isVoidType) ComputationWithSideEffectOnly
+            else ComputedValue(TypedValue(pc, returnType))
     }
 
-    /*override*/ def invokevirtual(
+    /*override*/
+    def invokevirtual(
         pc:               Int,
         declaringClass:   ReferenceType,
         name:             String,
         methodDescriptor: MethodDescriptor,
-        operands:         Operands
-    ): MethodCallResult = {
-        handleInstanceBasedInvoke(pc, methodDescriptor, operands)
-    }
+        operands:         Operands): MethodCallResult = handleInstanceBasedInvoke(pc, methodDescriptor, operands)
 
-    /*override*/ def invokeinterface(
+    /*override*/
+    def invokeinterface(
         pc:               Int,
         declaringClass:   ObjectType,
         name:             String,
         methodDescriptor: MethodDescriptor,
-        operands:         Operands
-    ): MethodCallResult = {
-        handleInstanceBasedInvoke(pc, methodDescriptor, operands)
-    }
+        operands:         Operands): MethodCallResult = handleInstanceBasedInvoke(pc, methodDescriptor, operands)
 
-    /*override*/ def invokespecial(
+    /*override*/
+    def invokespecial(
         pc:               Int,
         declaringClass:   ObjectType,
         isInterface:      Boolean,
         name:             String,
         methodDescriptor: MethodDescriptor,
-        operands:         Operands
-    ): MethodCallResult = {
-        handleInstanceBasedInvoke(pc, methodDescriptor, operands)
-    }
+        operands:         Operands): MethodCallResult = handleInstanceBasedInvoke(pc, methodDescriptor, operands)
 
-    /*override*/ def invokestatic(
+    /*override*/
+    def invokestatic(
         pc:               Int,
         declaringClass:   ObjectType,
         isInterface:      Boolean,
         name:             String,
         methodDescriptor: MethodDescriptor,
-        operands:         Operands
-    ): MethodCallResult = {
+        operands:         Operands): MethodCallResult = {
         val returnType = methodDescriptor.returnType
-        if (returnType.isVoidType)
-            ComputationWithSideEffectOnly
-        else
-            ComputedValue(TypedValue(pc, returnType))
+        if (returnType.isVoidType) ComputationWithSideEffectOnly
+        else ComputedValue(TypedValue(pc, returnType))
     }
 
-    /*override*/ def invokedynamic(
+    /*override*/
+    def invokedynamic(
         pc:               Int,
         bootstrapMethod:  BootstrapMethod,
         name:             String,
         methodDescriptor: MethodDescriptor,
-        operands:         Operands
-    ): Computation[DomainValue, ExceptionValues] = {
+        operands:         Operands): Computation[DomainValue, ExceptionValues] = {
         val returnType = methodDescriptor.returnType
-        if (returnType.isVoidType)
-            ComputationWithSideEffectOnly
-        else
-            ComputedValue(TypedValue(pc, returnType))
+        if (returnType.isVoidType) ComputationWithSideEffectOnly
+        else ComputedValue(TypedValue(pc, returnType))
     }
 }

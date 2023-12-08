@@ -22,12 +22,11 @@ trait RuntimeInvisibleAnnotations_attributeReader extends AttributeReader {
     type RuntimeInvisibleAnnotations_attribute >: Null <: Attribute
 
     protected def RuntimeInvisibleAnnotations_attribute(
-        constant_pool:        Constant_Pool,
-        ap_name_index:        Constant_Pool_Index,
-        ap_descriptor_index:  Constant_Pool_Index,
+        constant_pool: Constant_Pool,
+        ap_name_index: Constant_Pool_Index,
+        ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
-        annotations:          Annotations
-    ): RuntimeInvisibleAnnotations_attribute
+        annotations: Annotations): RuntimeInvisibleAnnotations_attribute
 
     //
     // IMPLEMENTATION
@@ -49,9 +48,9 @@ trait RuntimeInvisibleAnnotations_attributeReader extends AttributeReader {
         ap_name_index: Constant_Pool_Index,
         ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
-        in: DataInputStream
-    ) => {
-        /*val attribute_length = */ in.readInt()
+        in: DataInputStream) => {
+        /*val attribute_length = */
+        in.readInt()
         val annotations = Annotations(cp, in)
         if (annotations.iterator.nonEmpty || reifyEmptyAttributes) {
             RuntimeInvisibleAnnotations_attribute(

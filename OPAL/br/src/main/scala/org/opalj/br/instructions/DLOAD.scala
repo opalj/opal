@@ -14,11 +14,10 @@ case class DLOAD(lvIndex: Int) extends DLoadInstruction with ExplicitLocalVariab
 
     final def mnemonic: String = "dload"
 
-    override def equals(other: Any): Boolean =
-        other match {
-            case that: DLOAD => that.lvIndex == this.lvIndex
-            case _           => false
-        }
+    override def equals(other: Any): Boolean = other match {
+        case that: DLOAD => that.lvIndex == this.lvIndex
+        case _           => false
+    }
 
     override def hashCode: Int = DLOAD.opcode * 97 + lvIndex
 

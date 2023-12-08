@@ -5,26 +5,26 @@ package fpcf
 package analyses
 package pointsto
 
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.ElementReferenceType
+import org.opalj.br.MethodDescriptor
+import org.opalj.br.ObjectType
+import org.opalj.br.ReferenceType
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
+import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
+import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
+import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
-import org.opalj.br.DeclaredMethod
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.MethodDescriptor
-import org.opalj.br.ObjectType
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
-import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.properties.cg.Callers
-import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
-import org.opalj.br.ReferenceType
-import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
-import org.opalj.br.ElementReferenceType
 
 /**
  * Introduces additional allocation sites for serialization methods.
@@ -32,8 +32,7 @@ import org.opalj.br.ElementReferenceType
  * @author Dominik Helm
  */
 abstract class SerializationAllocationsAnalysis(
-        final val project: SomeProject
-) extends PointsToAnalysisBase with TACAIBasedAPIBasedAnalysis { self =>
+        final val project: SomeProject) extends PointsToAnalysisBase with TACAIBasedAPIBasedAnalysis { self =>
 
     final override val apiMethod: DeclaredMethod = declaredMethods(
         ObjectType.ObjectInputStream,
@@ -44,12 +43,11 @@ abstract class SerializationAllocationsAnalysis(
     )
 
     trait PointsToBase extends AbstractPointsToBasedAnalysis {
-        override protected[this] type ElementType = self.ElementType
-        override protected[this] type PointsToSet = self.PointsToSet
+        override protected[this] type ElementType  = self.ElementType
+        override protected[this] type PointsToSet  = self.PointsToSet
         override protected[this] type DependerType = self.DependerType
 
-        override protected[this] val pointsToPropertyKey: PropertyKey[PointsToSet] =
-            self.pointsToPropertyKey
+        override protected[this] val pointsToPropertyKey: PropertyKey[PointsToSet] = self.pointsToPropertyKey
 
         override protected[this] def emptyPointsToSet: PointsToSet = self.emptyPointsToSet
 
@@ -58,28 +56,19 @@ abstract class SerializationAllocationsAnalysis(
             callContext:   ContextType,
             allocatedType: ReferenceType,
             isConstant:    Boolean,
-            isEmptyArray:  Boolean
-        ): PointsToSet = {
-            self.createPointsToSet(
-                pc,
-                callContext.asInstanceOf[self.ContextType],
-                allocatedType,
-                isConstant,
-                isEmptyArray
-            )
-        }
+            isEmptyArray:  Boolean): PointsToSet = self.createPointsToSet(
+            pc,
+            callContext.asInstanceOf[self.ContextType],
+            allocatedType,
+            isConstant,
+            isEmptyArray
+        )
 
-        @inline override protected[this] def getTypeOf(element: ElementType): ReferenceType = {
-            self.getTypeOf(element)
-        }
+        @inline override protected[this] def getTypeOf(element: ElementType): ReferenceType = self.getTypeOf(element)
 
-        @inline override protected[this] def getTypeIdOf(element: ElementType): Int = {
-            self.getTypeIdOf(element)
-        }
+        @inline override protected[this] def getTypeIdOf(element: ElementType): Int = self.getTypeIdOf(element)
 
-        @inline override protected[this] def isEmptyArray(element: ElementType): Boolean = {
-            self.isEmptyArray(element)
-        }
+        @inline override protected[this] def isEmptyArray(element: ElementType): Boolean = self.isEmptyArray(element)
     }
 
     override def processNewCaller(
@@ -90,10 +79,8 @@ abstract class SerializationAllocationsAnalysis(
         receiverOption: Option[Expr[V]],
         params:         Seq[Option[Expr[V]]],
         tgtVarOption:   Option[V],
-        isDirect:       Boolean
-    ): ProperPropertyComputationResult = {
-        implicit val state: State =
-            new PointsToAnalysisState[ElementType, PointsToSet, ContextType](callerContext, null)
+        isDirect:       Boolean): ProperPropertyComputationResult = {
+        implicit val state: State = new PointsToAnalysisState[ElementType, PointsToSet, ContextType](callerContext, null)
 
         if (tgtVarOption.isDefined) {
             handleOISReadObject(callerContext, tgtVarOption.get, pc, tac.stmts)
@@ -109,10 +96,8 @@ abstract class SerializationAllocationsAnalysis(
         targetVar: V,
         pc:        Int,
         stmts:     Array[Stmt[V]]
-    )(
-        implicit
-        state: State
-    ): Unit = {
+      )(implicit
+        state: State): Unit = {
         val defSite = getDefSite(pc)
 
         var foundCast = false
@@ -124,7 +109,7 @@ abstract class SerializationAllocationsAnalysis(
 
                 // for each subtype of the cast type we add an allocation
                 for {
-                    t <- ch.allSubtypes(castType, reflexive = true)
+                    t  <- ch.allSubtypes(castType, reflexive = true)
                     cf <- project.classFile(t) // we ignore cases were no class file exists
                     if !cf.isInterfaceDeclaration
                     if ch.isSubtypeOf(t, ObjectType.Serializable)

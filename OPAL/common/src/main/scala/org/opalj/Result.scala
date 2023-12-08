@@ -34,18 +34,14 @@ object Result {
     /**
      * Maps a `Some` to [[Success]] and `None` to [[Empty$]].
      */
-    def apply[T](result: Option[T]): Result[T] = {
-        result match {
-            case Some(value) => Success(value)
-            case _ /*None*/  => Empty
-        }
+    def apply[T](result: Option[T]): Result[T] = result match {
+        case Some(value) => Success(value)
+        case _ /*None*/  => Empty
     }
 
-    def successOrFailure[T](result: Option[T]): Result[T] = {
-        result match {
-            case Some(value) => Success(value)
-            case _ /*None*/  => Failure
-        }
+    def successOrFailure[T](result: Option[T]): Result[T] = result match {
+        case Some(value) => Success(value)
+        case _ /*None*/  => Failure
     }
 }
 
@@ -56,39 +52,38 @@ case class Success[@specialized(Int) +T](value: T) extends Result[T] {
 
     class FilteredSuccess(p: (T) => Boolean) extends Result[T] {
         def hasValue: Boolean = p(value)
-        def value: T = {
+        def value: T =
             if (hasValue) {
                 value
             } else {
                 throw new UnsupportedOperationException("the result is filtered")
             }
-        }
-        def foreach[U](f: (T) => U): Unit = if (p(value)) f(value)
-        def map[B](f: (T) => B): Result[B] = if (p(value)) Success(f(value)) else Empty
+        def foreach[U](f: (T) => U): Unit              = if (p(value)) f(value)
+        def map[B](f:     (T) => B): Result[B]         = if (p(value)) Success(f(value)) else Empty
         def flatMap[B](f: (T) => Result[B]): Result[B] = if (p(value)) f(value) else Empty
-        def withFilter(p: (T) => Boolean): Result[T] = new FilteredSuccess((t: T) => p(t) && this.p(t))
+        def withFilter(p: (T) => Boolean): Result[T]   = new FilteredSuccess((t: T) => p(t) && this.p(t))
         def toSet[X >: T]: Set[X] = if (p(value)) Set(value) else Set.empty
-        def toOption: Option[T] = if (p(value)) Some(value) else None
+        def toOption: Option[T]   = if (p(value)) Some(value) else None
     }
 
     def hasValue: Boolean = true
-    def foreach[U](f: (T) => U): Unit = f(value)
-    def map[B](f: (T) => B): Success[B] = Success(f(value))
+    def foreach[U](f: (T) => U): Unit              = f(value)
+    def map[B](f:     (T) => B): Success[B]        = Success(f(value))
     def flatMap[B](f: (T) => Result[B]): Result[B] = f(value)
-    def withFilter(p: (T) => Boolean): Result[T] = new FilteredSuccess(p)
+    def withFilter(p: (T) => Boolean): Result[T]   = new FilteredSuccess(p)
     def toSet[X >: T]: Set[X] = Set(value)
-    def toOption: Option[T] = Some(value)
+    def toOption: Option[T]   = Some(value)
 }
 
 sealed trait NoResult extends Result[Nothing] {
     final def hasValue: Boolean = false
-    final def value: Nothing = throw new UnsupportedOperationException("this result has no value")
-    final def foreach[U](f: (Nothing) => U): Unit = {}
-    final def map[B](f: (Nothing) => B): this.type = this
+    final def value: Nothing    = throw new UnsupportedOperationException("this result has no value")
+    final def foreach[U](f: (Nothing) => U): Unit              = {}
+    final def map[B](f:     (Nothing) => B): this.type         = this
     final def flatMap[B](f: (Nothing) => Result[B]): this.type = this
-    final def withFilter(q: (Nothing) => Boolean): this.type = this
+    final def withFilter(q: (Nothing) => Boolean): this.type   = this
     final def toSet[X >: Nothing]: Set[X] = Set.empty
-    final def toOption: Option[Nothing] = None
+    final def toOption: Option[Nothing]   = None
 }
 
 object NoResult {

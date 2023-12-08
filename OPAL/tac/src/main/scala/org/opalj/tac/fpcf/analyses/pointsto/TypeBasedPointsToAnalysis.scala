@@ -5,9 +5,9 @@ package fpcf
 package analyses
 package pointsto
 
-import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
+import org.opalj.fpcf.PropertyMetaInformation
 
 /**
  * An andersen-style points-to analysis, i.e. points-to sets are modeled as subsets.
@@ -27,12 +27,10 @@ import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
  * @author Florian Kuebler
  */
 class TypeBasedPointsToAnalysis private[analyses] (
-        final val project: SomeProject
-) extends AbstractPointsToAnalysis with TypeBasedAnalysis
+        final val project: SomeProject) extends AbstractPointsToAnalysis with TypeBasedAnalysis
 
 object TypeBasedPointsToAnalysisScheduler extends AbstractPointsToAnalysisScheduler {
 
-    override val propertyKind: PropertyMetaInformation = TypeBasedPointsToSet
-    override val createAnalysis: SomeProject => TypeBasedPointsToAnalysis =
-        new TypeBasedPointsToAnalysis(_)
+    override val propertyKind: PropertyMetaInformation                    = TypeBasedPointsToSet
+    override val createAnalysis: SomeProject => TypeBasedPointsToAnalysis = new TypeBasedPointsToAnalysis(_)
 }

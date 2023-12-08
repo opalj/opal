@@ -13,5 +13,4 @@ case class TypeDeclaration(
         objectType:             ObjectType,
         isInterfaceType:        Boolean,
         theSuperclassType:      Option[ObjectType],
-        theSuperinterfaceTypes: UIDSet[ObjectType]
-)
+        theSuperinterfaceTypes: UIDSet[ObjectType])

@@ -2,8 +2,8 @@
 package org.opalj
 package hermes
 
-import org.opalj.log.OPALLogger.error
 import org.opalj.log.GlobalLogContext
+import org.opalj.log.OPALLogger.error
 
 /**
  * Container for feature queries.
@@ -27,7 +27,7 @@ class Query(val query: String, private[this] var activate: Boolean = true) {
 
         reifiedQuery =
             try {
-                val queryClass = Class.forName(query, false, getClass.getClassLoader)
+                val queryClass            = Class.forName(query, false, getClass.getClassLoader)
                 val queryClassConstructor = queryClass.getDeclaredConstructor(classOf[HermesConfig])
                 Some(queryClassConstructor.newInstance(hermes).asInstanceOf[FeatureQuery])
             } catch {

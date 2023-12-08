@@ -20,8 +20,7 @@ import org.opalj.bi.ConstantPoolTags
  */
 case class CONSTANT_InvokeDynamic_info(
         bootstrapMethodAttributeIndex: Int,
-        nameAndTypeIndex:              Constant_Pool_Index
-) extends Constant_Pool_Entry {
+        nameAndTypeIndex: Constant_Pool_Index) extends Constant_Pool_Entry {
 
     override def asInvokeDynamic: this.type = this
 
@@ -29,8 +28,6 @@ case class CONSTANT_InvokeDynamic_info(
 
     def methodName(cp: Constant_Pool): String = cp(nameAndTypeIndex).asNameAndType.name(cp)
 
-    def methodDescriptor(cp: Constant_Pool): MethodDescriptor = {
-        cp(nameAndTypeIndex).asNameAndType.methodDescriptor(cp)
-    }
+    def methodDescriptor(cp: Constant_Pool): MethodDescriptor = cp(nameAndTypeIndex).asNameAndType.methodDescriptor(cp)
 
 }

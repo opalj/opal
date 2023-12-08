@@ -24,25 +24,18 @@ import scala.collection.mutable
  * @author Michael Eichberg
  */
 class ProjectIndex private (
-        val fields:  Map[String, Map[FieldType, List[Field]]],
-        val methods: Map[String, Map[MethodDescriptor, List[Method]]]
-) {
+        val fields: Map[String, Map[FieldType, List[Field]]],
+        val methods: Map[String, Map[MethodDescriptor, List[Method]]]) {
 
-    def findFields(name: String, fieldType: FieldType): List[Field] = {
+    def findFields(name: String, fieldType: FieldType): List[Field] =
         fields.get(name).flatMap(_.get(fieldType)).getOrElse(Nil)
-    }
 
-    def findFields(name: String): Iterable[Field] = {
-        fields.get(name).map(_.values.flatten).getOrElse(Nil)
-    }
+    def findFields(name: String): Iterable[Field] = fields.get(name).map(_.values.flatten).getOrElse(Nil)
 
-    def findMethods(name: String, descriptor: MethodDescriptor): List[Method] = {
+    def findMethods(name: String, descriptor: MethodDescriptor): List[Method] =
         methods.get(name).flatMap(_.get(descriptor)).getOrElse(Nil)
-    }
 
-    def findMethods(name: String): Iterable[Method] = {
-        methods.get(name).map(_.values.flatten).getOrElse(Nil)
-    }
+    def findMethods(name: String): Iterable[Method] = methods.get(name).map(_.values.flatten).getOrElse(Nil)
 
     /**
      * Returns a map of some basic statistical information, such as the most often used
@@ -51,25 +44,19 @@ class ProjectIndex private (
     def statistics(): Map[String, Any] = {
 
         def getMostOftenUsed(
-            elementsWithSharedName: Iterable[(String, Map[_, Iterable[ClassMember]])]
-        ) = {
+            elementsWithSharedName: Iterable[(String, Map[_, Iterable[ClassMember]])]) =
             elementsWithSharedName.foldLeft((0, mutable.Set.empty[String])) { (c, n) =>
                 val nName = n._1
                 val nSize = n._2.size
-                if (c._1 < nSize)
-                    (nSize, mutable.Set(nName))
-                else if (c._1 == nSize)
-                    (nSize, c._2.addOne(n._1))
-                else
-                    c
+                if (c._1 < nSize) (nSize, mutable.Set(nName))
+                else if (c._1 == nSize) (nSize, c._2.addOne(n._1))
+                else c
             }
-        }
 
-        val fieldsWithSharedName = fields.view.filter(_._2.size > 1)
+        val fieldsWithSharedName   = fields.view.filter(_._2.size > 1)
         val mostOftenUsedFieldName = getMostOftenUsed(fieldsWithSharedName)
 
-        val methodsWithSharedName =
-            methods.view.filter(kv => kv._1 != "<init>" && kv._1 != "<clinit>" && kv._2.size > 1)
+        val methodsWithSharedName   = methods.view.filter(kv => kv._1 != "<init>" && kv._1 != "<clinit>" && kv._2.size > 1)
         val mostOftenUsedMethodName = getMostOftenUsed(methodsWithSharedName)
 
         Map(
@@ -110,7 +97,7 @@ object ProjectIndex {
 
         val fieldsFuture: Future[AnyRefMap[String, AnyRefMap[FieldType, List[Field]]]] = Future {
             val estimatedFieldsCount = project.fieldsCount
-            val fields = new AnyRefMap[String, AnyRefMap[FieldType, List[Field]]](estimatedFieldsCount)
+            val fields               = new AnyRefMap[String, AnyRefMap[FieldType, List[Field]]](estimatedFieldsCount)
             for (field <- project.allFields) {
                 val fieldName = field.name
                 val fieldType = field.fieldType
@@ -119,12 +106,9 @@ object ProjectIndex {
                         val fieldTypeToField = new AnyRefMap[FieldType, List[Field]](4)
                         fieldTypeToField.update(fieldType, List(field))
                         fields.update(fieldName, fieldTypeToField)
-                    case Some(fieldTypeToField) =>
-                        fieldTypeToField.get(fieldType) match {
-                            case None =>
-                                fieldTypeToField.put(fieldType, List(field))
-                            case Some(theFields) =>
-                                fieldTypeToField.put(fieldType, field :: theFields)
+                    case Some(fieldTypeToField) => fieldTypeToField.get(fieldType) match {
+                            case None            => fieldTypeToField.put(fieldType, List(field))
+                            case Some(theFields) => fieldTypeToField.put(fieldType, field :: theFields)
                         }
                 }
             }
@@ -135,21 +119,18 @@ object ProjectIndex {
 
         val methods: AnyRefMap[String, AnyRefMap[MethodDescriptor, List[Method]]] = {
             val estimatedMethodsCount = project.methodsCount
-            val methods = new AnyRefMap[String, AnyRefMap[MethodDescriptor, List[Method]]](estimatedMethodsCount)
+            val methods               = new AnyRefMap[String, AnyRefMap[MethodDescriptor, List[Method]]](estimatedMethodsCount)
             for (method <- project.allMethods) {
-                val methodName = method.name
+                val methodName       = method.name
                 val methodDescriptor = method.descriptor
                 methods.get(methodName) match {
                     case None =>
                         val descriptorToField = new AnyRefMap[MethodDescriptor, List[Method]](4)
                         descriptorToField.update(methodDescriptor, List(method))
                         methods.update(methodName, descriptorToField)
-                    case Some(descriptorToField) =>
-                        descriptorToField.get(methodDescriptor) match {
-                            case None =>
-                                descriptorToField.put(methodDescriptor, List(method))
-                            case Some(theMethods) =>
-                                descriptorToField.put(methodDescriptor, method :: theMethods)
+                    case Some(descriptorToField) => descriptorToField.get(methodDescriptor) match {
+                            case None             => descriptorToField.put(methodDescriptor, List(method))
+                            case Some(theMethods) => descriptorToField.put(methodDescriptor, method :: theMethods)
                         }
                 }
             }

@@ -92,15 +92,13 @@ abstract class AbstractDominatorTree {
      *
      * @param n The id of a valid node.
      */
-    final def foreachDom[U](n: Int, reflexive: Boolean = false)(f: Int => U): Unit = {
-        if (n != startNode || reflexive) {
-            var c = if (reflexive) n else idom(n)
-            while (c != startNode) {
-                f(c)
-                c = idom(c)
-            }
-            f(startNode)
+    final def foreachDom[U](n: Int, reflexive: Boolean = false)(f: Int => U): Unit = if (n != startNode || reflexive) {
+        var c = if (reflexive) n else idom(n)
+        while (c != startNode) {
+            f(c)
+            c = idom(c)
         }
+        f(startNode)
     }
 
     /**
@@ -115,7 +113,7 @@ abstract class AbstractDominatorTree {
      */
     def leaves(isIndexValid: Int => Boolean = _ => true): List[Int] = {
         // A leaf is a node which does not dominate another node.
-        var i = 0
+        var i   = 0
         val max = idom.length
 
         // first loop - identify nodes which dominate other nodes
@@ -150,8 +148,7 @@ abstract class AbstractDominatorTree {
         val g = Graph.empty[Int]
         idom.zipWithIndex.foreach { e =>
             val (t, s /*index*/ ) = e
-            if (isIndexValid(s) && s != startNode)
-                g.addEdge(t, s)
+            if (isIndexValid(s) && s != startNode) g.addEdge(t, s)
         }
         g.toDot(rankdir = "BT", ranksep = "0.3")
     }

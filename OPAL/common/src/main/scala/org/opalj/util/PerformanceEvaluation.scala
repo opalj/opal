@@ -3,13 +3,12 @@ package org.opalj
 package util
 
 import java.lang.management.ManagementFactory
-
 import scala.collection.mutable.Map
 
 import org.opalj.concurrent.Locking
-import org.opalj.log.OPALLogger
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
 
 /**
  * Measures the execution time of some code.
@@ -38,7 +37,7 @@ class PerformanceEvaluation extends Locking {
         try {
             f
         } finally {
-            val endTime = System.nanoTime
+            val endTime  = System.nanoTime
             val timeSpan = new Nanoseconds(endTime - startTime)
             withWriteLock { doUpdateTimes(s, timeSpan) }
         }
@@ -72,9 +71,7 @@ class PerformanceEvaluation extends Locking {
      * ==Thread Safety==
      * The `getTime` method takes care of the synchronization.
      */
-    protected[this] def doGetTime(s: Symbol): Nanoseconds = {
-        timeSpans.getOrElse(s, Nanoseconds.None)
-    }
+    protected[this] def doGetTime(s: Symbol): Nanoseconds = timeSpans.getOrElse(s, Nanoseconds.None)
 
     /**
      * Resets the overall time spent by computations with the given symbol.
@@ -141,17 +138,14 @@ object PerformanceEvaluation {
      *          then it may happen that the used amount of memory is negative.
      */
     def memory[T](
-        f: => T
-    )(
-        mu: Long => Unit
-    )(
-        implicit
-        logContext: Option[LogContext] = None
-    ): T = {
+        f:  => T
+      )(mu: Long => Unit
+      )(implicit
+        logContext: Option[LogContext] = None): T = {
         val memoryMXBean = ManagementFactory.getMemoryMXBean
         gc(memoryMXBean)
         val usedBefore = memoryMXBean.getHeapMemoryUsage.getUsed
-        val r = f
+        val r          = f
         gc(memoryMXBean)
         val usedAfter = memoryMXBean.getHeapMemoryUsage.getUsed
         mu(usedAfter - usedBefore)
@@ -179,7 +173,7 @@ object PerformanceEvaluation {
 
     def timed[T](f: => T): (Nanoseconds, T) = {
         val startTime: Long = System.nanoTime
-        val result = f
+        val result          = f
         (Nanoseconds.TimeSpan(startTime, System.nanoTime), result)
     }
 
@@ -272,10 +266,7 @@ object PerformanceEvaluation {
         minimalNumberOfRelevantRuns: Int,
         f:                           => T,
         runGC:                       Boolean = false
-    )(
-        r: (Nanoseconds, Seq[Nanoseconds]) => Unit
-    ): T = {
-
+      )(r: (Nanoseconds, Seq[Nanoseconds]) => Unit): T =
         try {
             require(minimalNumberOfRelevantRuns >= 3)
 
@@ -286,11 +277,11 @@ object PerformanceEvaluation {
 
             var result: T = 0.asInstanceOf[T]
 
-            val e = epsilon.toDouble / 100.0d
+            val e       = epsilon.toDouble / 100.0d
             val filterE = (consideredRunsEpsilon + 100).toDouble / 100.0d
 
             var runsSinceLastUpdate = 0
-            var times = List.empty[Nanoseconds]
+            var times               = List.empty[Nanoseconds]
             if (runGC) gc()
             time { result = f } { t =>
                 times = t :: times
@@ -298,7 +289,7 @@ object PerformanceEvaluation {
                     r(t, times)
                     OPALLogger.warn(
                         "common",
-                        s"the time required by the function (${t.toString}) "+
+                        s"the time required by the function (${t.toString}) " +
                             "is too small to get meaningful measurements."
                     )(GlobalLogContext)
 
@@ -338,7 +329,6 @@ object PerformanceEvaluation {
         } catch {
             case Return(result) => result.asInstanceOf[T]
         }
-    }
 
     /**
      * Times the execution of a given function `f`.
@@ -348,8 +338,8 @@ object PerformanceEvaluation {
      */
     def run[T, X](f: => T)(r: (Nanoseconds, T) => X): X = {
         val startTime: Long = System.nanoTime
-        val result = f
-        val endTime: Long = System.nanoTime
+        val result          = f
+        val endTime: Long   = System.nanoTime
         r(Nanoseconds.TimeSpan(startTime, endTime), result)
     }
 }

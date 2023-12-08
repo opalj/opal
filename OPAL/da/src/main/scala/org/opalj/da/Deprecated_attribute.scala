@@ -14,7 +14,5 @@ case class Deprecated_attribute(attribute_name_index: Constant_Pool_Index) exten
 
     final override def attribute_length = 0
 
-    override def toXHTML(implicit cp: Constant_Pool): Node = {
-        <div class="details deprecated_attribute">Deprecated</div>
-    }
+    override def toXHTML(implicit cp: Constant_Pool): Node = <div class="details deprecated_attribute">Deprecated</div>
 }

@@ -29,12 +29,12 @@ trait NestMembers_attributeReader extends AttributeReader {
     type ClassesArray = Array[Constant_Pool_Index]
 
     def NestMembers_attribute(
-        cp:                   Constant_Pool,
-        ap_name_index:        Constant_Pool_Index,
-        ap_descriptor_index:  Constant_Pool_Index,
+        cp: Constant_Pool,
+        ap_name_index: Constant_Pool_Index,
+        ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
-        classes_array:        ClassesArray // CONSTANT_Class_info[]
-    ): NestMembers_attribute
+        classes_array: ClassesArray // CONSTANT_Class_info[]
+      ): NestMembers_attribute
 
     //
     // IMPLEMENTATION
@@ -56,23 +56,24 @@ trait NestMembers_attributeReader extends AttributeReader {
         ap_name_index: Constant_Pool_Index,
         ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
-        in: DataInputStream
-    ) => {
-        /*val attribute_length =*/ in.readInt
-        val numberOfClasses = in.readUnsignedShort()
-        if (numberOfClasses > 0 || reifyEmptyAttributes) {
-            val classesArray = fillArrayOfInt(numberOfClasses) { in.readUnsignedShort() }
-            NestMembers_attribute(
-                cp,
-                ap_name_index,
-                ap_descriptor_index,
-                attribute_name_index,
-                classesArray
-            )
-        } else {
-            null
-        }
-    }: NestMembers_attribute
+        in: DataInputStream) =>
+        {
+            /*val attribute_length =*/
+            in.readInt
+            val numberOfClasses = in.readUnsignedShort()
+            if (numberOfClasses > 0 || reifyEmptyAttributes) {
+                val classesArray = fillArrayOfInt(numberOfClasses) { in.readUnsignedShort() }
+                NestMembers_attribute(
+                    cp,
+                    ap_name_index,
+                    ap_descriptor_index,
+                    attribute_name_index,
+                    classesArray
+                )
+            } else {
+                null
+            }
+        }: NestMembers_attribute
 
     registerAttributeReader(NestMembersAttribute.Name -> parserFactory())
 

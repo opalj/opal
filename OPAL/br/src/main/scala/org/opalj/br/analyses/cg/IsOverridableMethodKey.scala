@@ -22,11 +22,9 @@ object IsOverridableMethodKey extends ProjectInformationKey[Method => Answer, No
      */
     override def requirements(project: SomeProject): ProjectInformationKeys = Seq(TypeExtensibilityKey)
 
-    override def compute(project: SomeProject): Method => Answer = {
-        new IsOverridableMethodAnalysis(
-            project,
-            project.get(ClassExtensibilityKey),
-            project.get(TypeExtensibilityKey)
-        )
-    }
+    override def compute(project: SomeProject): Method => Answer = new IsOverridableMethodAnalysis(
+        project,
+        project.get(ClassExtensibilityKey),
+        project.get(TypeExtensibilityKey)
+    )
 }

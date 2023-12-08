@@ -21,9 +21,8 @@ trait GOTO_WLike extends GotoInstructionLike {
 
 case class GOTO_W(branchoffset: Int) extends GotoInstruction with GOTO_WLike {
 
-    def toLabeledInstruction(currentPC: PC): LabeledInstruction = {
+    def toLabeledInstruction(currentPC: PC): LabeledInstruction =
         LabeledGOTO_W(InstructionLabel(currentPC + branchoffset))
-    }
 }
 
 /**
@@ -43,11 +42,9 @@ object GOTO_W extends InstructionMetaInformation {
 }
 
 case class LabeledGOTO_W(
-        branchTarget: InstructionLabel
-) extends LabeledUnconditionalBranchInstruction with GOTO_WLike {
+        branchTarget: InstructionLabel) extends LabeledUnconditionalBranchInstruction with GOTO_WLike {
 
-    override def resolveJumpTargets(currentPC: PC, pcs: Map[InstructionLabel, PC]): GOTO_W = {
+    override def resolveJumpTargets(currentPC: PC, pcs: Map[InstructionLabel, PC]): GOTO_W =
         GOTO_W(pcs(branchTarget) - currentPC)
-    }
 
 }

@@ -20,9 +20,7 @@ trait BitSet {
      */
     def iterator: IntIterator
 
-    final def mkString(pre: String, in: String, post: String): String = {
-        iterator.mkString(pre, in, post)
-    }
+    final def mkString(pre: String, in: String, post: String): String = iterator.mkString(pre, in, post)
 
     // + equals and hashCode
 }

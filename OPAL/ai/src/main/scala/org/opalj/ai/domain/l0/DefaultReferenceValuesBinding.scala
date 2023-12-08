@@ -6,9 +6,9 @@ package l0
 
 import scala.reflect.ClassTag
 
-import org.opalj.collection.immutable.UIDSet
 import org.opalj.br.ArrayType
 import org.opalj.br.ObjectType
+import org.opalj.collection.immutable.UIDSet
 
 /**
  * Default implementation for handling reference values.
@@ -17,17 +17,17 @@ import org.opalj.br.ObjectType
  */
 trait DefaultReferenceValuesBinding
     extends DefaultTypeLevelReferenceValues
-    with DefaultExceptionsFactory {
+        with DefaultExceptionsFactory {
     domain: IntegerValuesDomain with TypedValuesFactory with Configuration =>
 
-    type AReferenceValue = ReferenceValueLike
+    type AReferenceValue      = ReferenceValueLike
     type DomainReferenceValue = AReferenceValue
 
     final val DomainReferenceValueTag: ClassTag[DomainReferenceValue] = implicitly
 
-    type DomainNullValue = ANullValue
+    type DomainNullValue   = ANullValue
     type DomainObjectValue = AnObjectValue
-    type DomainArrayValue = AnArrayValue
+    type DomainArrayValue  = AnArrayValue
 
     val TheNullValue: DomainNullValue = new ANullValue()
 
@@ -44,8 +44,7 @@ trait DefaultReferenceValuesBinding
     }
 
     protected case class DefaultMObjectValue(
-            upperTypeBound: UIDSet[ObjectType]
-    ) extends MObjectValueLike {
+            upperTypeBound: UIDSet[ObjectType]) extends MObjectValueLike {
         override def isNull: Answer = Unknown
     }
 
@@ -56,22 +55,15 @@ trait DefaultReferenceValuesBinding
      */
     override def NullValue(origin: ValueOrigin): DomainNullValue = TheNullValue
 
-    override def ObjectValue(origin: ValueOrigin, objectType: ObjectType): DomainObjectValue = {
+    override def ObjectValue(origin: ValueOrigin, objectType: ObjectType): DomainObjectValue =
         DefaultSObjectValue(objectType)
-    }
 
     override def ObjectValue(
         origin:         ValueOrigin,
-        upperTypeBound: UIDSet[ObjectType]
-    ): DomainObjectValue = {
-        if (upperTypeBound.isSingletonSet)
-            ObjectValue(origin, upperTypeBound.head)
-        else
-            DefaultMObjectValue { upperTypeBound }
-    }
+        upperTypeBound: UIDSet[ObjectType]): DomainObjectValue =
+        if (upperTypeBound.isSingletonSet) ObjectValue(origin, upperTypeBound.head)
+        else DefaultMObjectValue { upperTypeBound }
 
-    override def ArrayValue(origin: ValueOrigin, arrayType: ArrayType): DomainArrayValue = {
-        DefaultArrayValue(arrayType)
-    }
+    override def ArrayValue(origin: ValueOrigin, arrayType: ArrayType): DomainArrayValue = DefaultArrayValue(arrayType)
 
 }

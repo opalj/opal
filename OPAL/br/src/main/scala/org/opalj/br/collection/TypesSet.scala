@@ -11,7 +11,7 @@ package collection
  */
 abstract class TypesSet /*extends Set[(ObjectType,...)]*/ {
 
-    def concreteTypes: Set[ObjectType] // IMPROVE [L2] Use UIDSet
+    def concreteTypes: Set[ObjectType]   // IMPROVE [L2] Use UIDSet
     def upperTypeBounds: Set[ObjectType] // IMPROVE [L2] Use UIDSet
 
     /**
@@ -49,28 +49,19 @@ abstract class TypesSet /*extends Set[(ObjectType,...)]*/ {
      */
     def types: (Set[ObjectType], Set[ObjectType]) = (concreteTypes, upperTypeBounds)
 
-    final override def equals(other: Any): Boolean = {
-
-        other match {
-            case that: TypesSet =>
-                concreteTypes == that.concreteTypes && upperTypeBounds == that.upperTypeBounds
-            case _ => false
-        }
+    final override def equals(other: Any): Boolean = other match {
+        case that: TypesSet => concreteTypes == that.concreteTypes && upperTypeBounds == that.upperTypeBounds
+        case _              => false
     }
 
-    final override lazy val hashCode: Int = {
-        concreteTypes.hashCode() * 111 + upperTypeBounds.hashCode()
-    }
+    final override lazy val hashCode: Int = concreteTypes.hashCode() * 111 + upperTypeBounds.hashCode()
 
     override def toString: String = {
-        if (upperTypeBounds.isEmpty && concreteTypes.isEmpty)
-            return "EmptyTypesSet";
+        if (upperTypeBounds.isEmpty && concreteTypes.isEmpty) return "EmptyTypesSet";
 
-        if (upperTypeBounds.isEmpty)
-            return concreteTypes.map(_.toJava).mkString("PreciseTypesSet(", ",", ")")
+        if (upperTypeBounds.isEmpty) return concreteTypes.map(_.toJava).mkString("PreciseTypesSet(", ",", ")")
 
-        if (concreteTypes.isEmpty)
-            return upperTypeBounds.map(_.toJava).mkString("UpperTypeBoundsSet(", ",", ")")
+        if (concreteTypes.isEmpty) return upperTypeBounds.map(_.toJava).mkString("UpperTypeBoundsSet(", ",", ")")
 
         upperTypeBounds.map(_.toJava).mkString(
             concreteTypes.map(_.toJava).mkString(
@@ -93,18 +84,18 @@ object TypesSet {
 
 case object EmptyTypesSet extends TypesSet {
 
-    def concreteTypes: Set[ObjectType] = Set.empty
+    def concreteTypes: Set[ObjectType]   = Set.empty
     def upperTypeBounds: Set[ObjectType] = Set.empty
 
 }
 
-case class TheTypes( final val concreteTypes: Set[ObjectType]) extends TypesSet {
+case class TheTypes(final val concreteTypes: Set[ObjectType]) extends TypesSet {
 
     final override def upperTypeBounds = Set.empty
 
 }
 
-case class UpperTypeBounds( final val upperTypeBounds: Set[ObjectType]) extends TypesSet {
+case class UpperTypeBounds(final val upperTypeBounds: Set[ObjectType]) extends TypesSet {
 
     final override def concreteTypes = Set.empty
 

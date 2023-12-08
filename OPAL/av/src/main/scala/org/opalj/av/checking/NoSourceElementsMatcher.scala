@@ -4,8 +4,9 @@ package av
 package checking
 
 import scala.collection.immutable
-import org.opalj.br.analyses.SomeProject
+
 import org.opalj.br.VirtualSourceElement
+import org.opalj.br.analyses.SomeProject
 
 /**
  * A source element matcher that matches no elements.
@@ -17,4 +18,3 @@ case object NoSourceElementsMatcher extends SourceElementsMatcher {
     def extension(implicit project: SomeProject): immutable.Set[VirtualSourceElement] = Set.empty
 
 }
-

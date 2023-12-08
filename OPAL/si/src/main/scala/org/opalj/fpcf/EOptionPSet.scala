@@ -32,10 +32,9 @@ sealed trait EOptionPSet[E <: Entity, P <: Property] extends Iterable[EOptionP[E
     final override def hasDefiniteSize: Boolean = true
 
     /** Filters the respective EOptionP values and returns a new EOptionPSet. */
-    override def filter(p: EOptionP[E, P] => Boolean): EOptionPSet[E, P] = {
+    override def filter(p: EOptionP[E, P] => Boolean): EOptionPSet[E, P] =
         // an implementation is required to shut up the compiler...
         throw new UnknownError("this method must be overridden by subclasses")
-    }
 
     /**
      * Returns the last queried value or queries the property store and stores the value unless
@@ -47,12 +46,10 @@ sealed trait EOptionPSet[E <: Entity, P <: Property] extends Iterable[EOptionP[E
      * If the queried eOptionP is final then it is not added to the list of dependees.
      */
     def getOrQueryAndUpdate[NewE <: E, NewP <: P](
-        e:  NewE,
+        e: NewE,
         pk: PropertyKey[NewP]
-    )(
-        implicit
-        ps: PropertyStore
-    ): EOptionP[NewE, NewP]
+      )(implicit
+        ps: PropertyStore): EOptionP[NewE, NewP]
 
     /*
     /** Removes all EOptionP values with the given entity from this set. */
@@ -65,7 +62,7 @@ sealed trait EOptionPSet[E <: Entity, P <: Property] extends Iterable[EOptionP[E
     def remove(eOptionP: SomeEOptionP): Unit
 
     def clear(): Unit
-*/
+     */
 
     /**
      * Updates this set's EOptionP that has the same entity and PropertyKey with the given one.
@@ -80,45 +77,36 @@ sealed trait EOptionPSet[E <: Entity, P <: Property] extends Iterable[EOptionP[E
     def updateAll()(implicit ps: PropertyStore): Unit
 
     /** Creates new successor instance which can be manipulated independently from this instance. */
-    override def clone(): EOptionPSet[E, P] = {
+    override def clone(): EOptionPSet[E, P] =
         // an implementation is required to shut up the compiler...
         throw new UnknownError("this method must be overridden by subclasses")
-    }
 
 }
 
 private[fpcf] class MultiEOptionPSet[E <: Entity, P <: Property](
-        private var data:                  Map[Int, mutable.Map[Entity, EOptionP[E, P]]] = IntMap.empty,
-        private[fpcf] var epkUpdatesCount: Int                                           = 0
-) extends EOptionPSet[E, P] {
+        private var data: Map[Int, mutable.Map[Entity, EOptionP[E, P]]] = IntMap.empty,
+        private[fpcf] var epkUpdatesCount: Int = 0) extends EOptionPSet[E, P] {
 
-    override def foreach[U](f: EOptionP[E, P] => U): Unit = {
-        data.valuesIterator.foreach(_.valuesIterator.foreach(f))
-    }
-    override def forall(p: EOptionP[E, P] => Boolean) = {
-        data.valuesIterator.forall(_.valuesIterator.forall(p))
-    }
-    override def exists(p: EOptionP[E, P] => Boolean) = {
-        data.valuesIterator.exists(_.valuesIterator.exists(p))
-    }
+    override def foreach[U](f: EOptionP[E, P] => U): Unit = data.valuesIterator.foreach(_.valuesIterator.foreach(f))
+    override def forall(p:     EOptionP[E, P] => Boolean) = data.valuesIterator.forall(_.valuesIterator.forall(p))
+    override def exists(p:     EOptionP[E, P] => Boolean) = data.valuesIterator.exists(_.valuesIterator.exists(p))
     override def isEmpty: Boolean = data.isEmpty // <= we always minimize the store
-    override def size: Int = { var size = 0; data.valuesIterator.foreach(size += _.size); size }
+    override def size: Int        = { var size = 0; data.valuesIterator.foreach(size += _.size); size }
 
     override def filter(p: EOptionP[E, P] => Boolean): EOptionPSet[E, P] = {
         var newData: Map[Int, mutable.Map[Entity, EOptionP[E, P]]] = IntMap.empty
-        var filteredSomeValue = false
+        var filteredSomeValue                                      = false
         data.foreach { entry =>
             val (pkId, eEOptionPs) = entry
-            val newEEOptionPs =
-                eEOptionPs.filter { entry =>
-                    val (e, eOptionP) = entry
-                    if (p(eOptionP)) {
-                        true
-                    } else {
-                        filteredSomeValue = true
-                        false
-                    }
+            val newEEOptionPs = eEOptionPs.filter { entry =>
+                val (e, eOptionP) = entry
+                if (p(eOptionP)) {
+                    true
+                } else {
+                    filteredSomeValue = true
+                    false
                 }
+            }
             if (newEEOptionPs.nonEmpty) {
                 newData += ((pkId, newEEOptionPs))
             }
@@ -134,14 +122,11 @@ private[fpcf] class MultiEOptionPSet[E <: Entity, P <: Property](
     override def getOrQueryAndUpdate[NewE <: E, NewP <: P](
         e:  NewE,
         pk: PropertyKey[NewP]
-    )(
-        implicit
-        ps: PropertyStore
-    ): EOptionP[NewE, NewP] = {
+      )(implicit
+        ps: PropertyStore): EOptionP[NewE, NewP] = {
         val pkId = pk.id
         data.get(pkId) match {
-            case Some(eEOptionPs) =>
-                eEOptionPs.get(e) match {
+            case Some(eEOptionPs) => eEOptionPs.get(e) match {
                     case Some(eOptionP) => eOptionP.asInstanceOf[EOptionP[NewE, NewP]]
                     case _ =>
                         val eOptionP: EOptionP[NewE, NewP] = ps(e, pk)
@@ -184,7 +169,7 @@ private[fpcf] class MultiEOptionPSet[E <: Entity, P <: Property](
     def clear(): Unit = {
         data = IntMap.empty
     }
-    */
+     */
 
     override def update(eps: SomeEPS): Unit = {
         val pkId = eps.pk.id
@@ -208,10 +193,8 @@ private[fpcf] class MultiEOptionPSet[E <: Entity, P <: Property](
         data.valuesIterator.foreach { eEOptionPs =>
             eEOptionPs
                 .mapValuesInPlace((_, eOptionP) =>
-                    if (eOptionP.isEPK)
-                        ps(eOptionP.asEPK)
-                    else
-                        ps(eOptionP.toEPK))
+                    if (eOptionP.isEPK) ps(eOptionP.asEPK)
+                    else ps(eOptionP.toEPK))
                 .filterInPlace((_, eOptionP) =>
                     eOptionP.isRefinable)
         }
@@ -223,7 +206,7 @@ private[fpcf] class MultiEOptionPSet[E <: Entity, P <: Property](
     override def toString(): String = {
         var s = "MultiEOptionPSet("
         foreach(e => s += s"\n\t$e")
-        s+"\n)"
+        s + "\n)"
     }
 
     override def iterator: Iterator[EOptionP[E, P]] = data.valuesIterator.flatMap(vals => vals.valuesIterator)
@@ -234,11 +217,10 @@ object EOptionPSet {
     def empty[E <: Entity, P <: Property]: EOptionPSet[E, P] = new MultiEOptionPSet(IntMap.empty)
 
     // IMPROVE Provide specialized implementations for sets consisting only of e/p pairs belonging to the same PK
-    def apply[E <: Entity, P <: Property](eOptionP: EOptionP[E, P]): EOptionPSet[E, P] = {
+    def apply[E <: Entity, P <: Property](eOptionP: EOptionP[E, P]): EOptionPSet[E, P] =
         if (eOptionP.isRefinable) {
             new MultiEOptionPSet(IntMap(eOptionP.pk.id -> mutable.Map(eOptionP.e -> eOptionP)))
         } else {
             empty
         }
-    }
 }

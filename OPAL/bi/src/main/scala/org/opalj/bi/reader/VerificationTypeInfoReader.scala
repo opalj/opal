@@ -67,28 +67,25 @@ trait VerificationTypeInfoReader extends Constant_PoolAbstractions {
 
         r(ITEM_Null.id) = (cp: Constant_Pool, in: DataInputStream) => NullVariableInfo()
 
-        r(ITEM_UninitializedThis.id) =
-            (cp: Constant_Pool, in: DataInputStream) => UninitializedThisVariableInfo()
+        r(ITEM_UninitializedThis.id) = (cp: Constant_Pool, in: DataInputStream) => UninitializedThisVariableInfo()
 
-        r(ITEM_Object.id) =
-            (cp: Constant_Pool, in: DataInputStream) => ObjectVariableInfo(cp, in.readUnsignedShort)
+        r(ITEM_Object.id) = (cp: Constant_Pool, in: DataInputStream) => ObjectVariableInfo(cp, in.readUnsignedShort)
 
-        r(ITEM_Unitialized.id) =
-            (cp: Constant_Pool, in: DataInputStream) =>
-                UninitializedVariableInfo(in.readUnsignedShort)
+        r(ITEM_Unitialized.id) = (cp: Constant_Pool, in: DataInputStream) =>
+            UninitializedVariableInfo(in.readUnsignedShort)
 
         r
     }
 }
 
 object VerificationTypeInfoItem extends Enumeration {
-    final val ITEM_Top = Value(0)
-    final val ITEM_Integer = Value(1)
-    final val ITEM_Float = Value(2)
-    final val ITEM_Long = Value(4)
-    final val ITEM_Double = Value(3)
-    final val ITEM_Null = Value(5)
+    final val ITEM_Top               = Value(0)
+    final val ITEM_Integer           = Value(1)
+    final val ITEM_Float             = Value(2)
+    final val ITEM_Long              = Value(4)
+    final val ITEM_Double            = Value(3)
+    final val ITEM_Null              = Value(5)
     final val ITEM_UninitializedThis = Value(6)
-    final val ITEM_Object = Value(7)
-    final val ITEM_Unitialized = Value(8)
+    final val ITEM_Object            = Value(7)
+    final val ITEM_Unitialized       = Value(8)
 }

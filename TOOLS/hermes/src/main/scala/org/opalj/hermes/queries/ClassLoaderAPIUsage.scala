@@ -26,7 +26,6 @@ class ClassLoaderAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery
 
         List(
             APIClassExtension("custom ClassLoader implementation", ClassLoader),
-
             APIFeatureGroup(
                 List(
                     StaticAPIMethod(ClassLoader, "getSystemClassLoader"),
@@ -34,7 +33,6 @@ class ClassLoaderAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery
                 ),
                 "Retrieving the SystemClassLoader"
             ),
-
             APIFeatureGroup(
                 List(
                     InstanceAPIMethod(ClassLoader, "<init>", JustTakes(ClassLoader)),
@@ -42,7 +40,6 @@ class ClassLoaderAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery
                 ),
                 "Retrieving some ClassLoader"
             ),
-
             APIFeatureGroup(
                 List(
                     InstanceAPIMethod(ClassLoader, "defineClass"),
@@ -50,7 +47,6 @@ class ClassLoaderAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery
                 ),
                 "define new classes/packages"
             ),
-
             APIFeatureGroup(
                 List(
                     InstanceAPIMethod(ClassLoader, "getResource"),

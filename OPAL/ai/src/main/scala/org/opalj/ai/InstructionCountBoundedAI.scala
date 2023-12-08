@@ -2,9 +2,9 @@
 package org.opalj
 package ai
 
-import org.opalj.log.OPALLogger
-import org.opalj.log.LogContext
 import org.opalj.br.Code
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
 
 /**
  * An abstract interpreter that interrupts itself after the evaluation of
@@ -26,23 +26,20 @@ import org.opalj.br.Code
  */
 class InstructionCountBoundedAI[D <: Domain](
         val maxEvaluationCount: Int,
-        IdentifyDeadVariables:  Boolean
-) extends AI[D](IdentifyDeadVariables) {
+        IdentifyDeadVariables: Boolean) extends AI[D](IdentifyDeadVariables) {
 
     /**
      * @param maxEvaluationFactor Determines the maximum number of instruction evaluations
      *      before the evaluation of the method is automatically interrupted.
      */
     def this(
-        code:                  Code,
-        maxEvaluationFactor:   Double  = 1.5d,
-        identifyDeadVariables: Boolean = true
-    )(implicit logContext: LogContext) = {
-        this(
-            InstructionCountBoundedAI.calculateMaxEvaluationCount(code, maxEvaluationFactor),
-            identifyDeadVariables
-        )
-    }
+            code: Code,
+            maxEvaluationFactor: Double = 1.5d,
+            identifyDeadVariables: Boolean = true
+          )(implicit logContext: LogContext) = this(
+        InstructionCountBoundedAI.calculateMaxEvaluationCount(code, maxEvaluationFactor),
+        identifyDeadVariables
+    )
 
     assert(maxEvaluationCount > 0)
 
@@ -51,7 +48,7 @@ class InstructionCountBoundedAI[D <: Domain](
     def currentEvaluationCount: Int = evaluationCount.get
 
     override def isInterrupted = {
-        var count = evaluationCount.get()
+        var count    = evaluationCount.get()
         var newCount = count + 1
         while (count < maxEvaluationCount && !evaluationCount.compareAndSet(count, newCount)) {
             count = evaluationCount.get()
@@ -76,12 +73,9 @@ object InstructionCountBoundedAI {
     def calculateMaxEvaluationCount(
         code:                Code,
         maxEvaluationFactor: Double
-    )(
-        implicit
-        logContext: LogContext
-    ): Int = {
-        if (maxEvaluationFactor == Double.PositiveInfinity)
-            return Int.MaxValue
+      )(implicit
+        logContext: LogContext): Int = {
+        if (maxEvaluationFactor == Double.PositiveInfinity) return Int.MaxValue
 
         // If this method is just a convenience wrapper we want to ensure that
         // we can still analyze the called methods if we also analyze the called
@@ -97,32 +91,30 @@ object InstructionCountBoundedAI {
         upperBound = upperBound * Math.log(code.exceptionHandlers.size + 2 * Math.E)
 
         // to accommodate for analysis specific factors
-        upperBound = (
-            upperBound * maxEvaluationFactor +
+        upperBound = upperBound * maxEvaluationFactor +
             // we want to guarantee a certain minimum length if we raise the
             // evaluation factor
             (maxEvaluationFactor * 250.0d)
-        )
         if (upperBound == java.lang.Double.POSITIVE_INFINITY ||
             upperBound >= Int.MaxValue.toDouble) {
             upperBound = Int.MaxValue
             OPALLogger.warn(
                 "analysis configuration",
-                "effectively unbounded evaluation"+
-                    "; instructions size="+code.instructions.size+
-                    "; exception handlers="+code.exceptionHandlers.size+
-                    "; maxEvaluationFactor="+maxEvaluationFactor
+                "effectively unbounded evaluation" +
+                    "; instructions size=" + code.instructions.size +
+                    "; exception handlers=" + code.exceptionHandlers.size +
+                    "; maxEvaluationFactor=" + maxEvaluationFactor
             )
         }
 
         if (upperBound > 1000000.0d) {
             OPALLogger.warn(
                 "analysis configuration",
-                "evaluation (up to: "+upperBound.toInt+
-                    " instructions) may take execessively long"+
-                    "; instructions size="+code.instructions.size+
-                    "; exception handlers="+code.exceptionHandlers.size+
-                    "; maxEvaluationFactor="+maxEvaluationFactor
+                "evaluation (up to: " + upperBound.toInt +
+                    " instructions) may take execessively long" +
+                    "; instructions size=" + code.instructions.size +
+                    "; exception handlers=" + code.exceptionHandlers.size +
+                    "; maxEvaluationFactor=" + maxEvaluationFactor
             )
         }
 

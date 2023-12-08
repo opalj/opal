@@ -3,10 +3,10 @@ package org.opalj
 package br
 package fpcf
 
+import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.ComputationType
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Transformer
-import org.opalj.br.analyses.SomeProject
 
 /**
  *  The underlying analysis will only be registered with the property store and
@@ -23,7 +23,7 @@ trait FPCFTransformerScheduler extends FPCFLazyLikeAnalysisScheduler {
 
 trait BasicFPCFTransformerScheduler extends FPCFTransformerScheduler {
     override type InitializationData = Null
-    override def init(p: SomeProject, ps: PropertyStore): Null = null
+    override def init(p:           SomeProject, ps: PropertyStore): Null = null
     override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
 
     override def afterPhaseScheduling(ps: PropertyStore, analysis: FPCFAnalysis): Unit = {}
@@ -31,6 +31,5 @@ trait BasicFPCFTransformerScheduler extends FPCFTransformerScheduler {
     override def afterPhaseCompletion(
         p:        SomeProject,
         ps:       PropertyStore,
-        analysis: FPCFAnalysis
-    ): Unit = {}
+        analysis: FPCFAnalysis): Unit = {}
 }

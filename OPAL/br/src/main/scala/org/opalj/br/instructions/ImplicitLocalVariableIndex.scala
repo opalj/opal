@@ -13,8 +13,6 @@ trait ImplicitLocalVariableIndex extends ConstantLengthInstruction {
 
     final def length: Int = 1
 
-    final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
-        (this eq code.instructions(otherPC))
-    }
+    final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = this eq code.instructions(otherPC)
 
 }

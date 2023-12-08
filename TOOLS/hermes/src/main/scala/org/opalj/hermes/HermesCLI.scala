@@ -2,11 +2,11 @@
 package org.opalj
 package hermes
 
+import scala.reflect.io.Directory
+
 import java.io.File
 import java.util.concurrent.CountDownLatch
-
 import scala.io.Source
-import scala.reflect.io.Directory
 
 import org.opalj.io.processSource
 
@@ -19,25 +19,23 @@ import org.opalj.io.processSource
 object HermesCLI {
 
     object Hermes extends HermesCore {
-        override def updateProjectData(f: => Unit): Unit = Hermes.synchronized { f }
-        override def reportProgress(f: => Double): Unit = Hermes.synchronized { f }
+        override def updateProjectData(f: => Unit): Unit   = Hermes.synchronized { f }
+        override def reportProgress(f:    => Double): Unit = Hermes.synchronized { f }
     }
 
     final val usage = {
         val hermesCLIInputStream = this.getClass.getResourceAsStream("HermesCLI.txt")
-        processSource(Source.fromInputStream(hermesCLIInputStream)) { s =>
-            s.getLines().mkString("\n")
-        }
+        processSource(Source.fromInputStream(hermesCLIInputStream)) { s => s.getLines().mkString("\n") }
     }
 
     private def showUsage(): Unit = println(usage)
 
     def main(args: Array[String]): Unit = {
-        var configFile: String = null
-        var statisticsFile: String = null
-        var mappingFile: Option[String] = None
+        var configFile: String           = null
+        var statisticsFile: String       = null
+        var mappingFile: Option[String]  = None
         var noProjectStatistics: Boolean = false
-        var locationsDir: String = null
+        var locationsDir: String         = null
 
         var i = 0
         while (i < args.length) {
@@ -80,12 +78,12 @@ object HermesCLI {
             if (isFinished) {
                 val theStatisticsFile = new File(statisticsFile).getAbsoluteFile()
                 Hermes.exportStatistics(theStatisticsFile, !noProjectStatistics)
-                println("Wrote statistics: "+theStatisticsFile)
+                println("Wrote statistics: " + theStatisticsFile)
 
                 if (locationsDir ne null) {
                     val theLocationsDir = Directory(new File(locationsDir))
                     Hermes.exportLocations(theLocationsDir)
-                    println("Wrote locations: "+theLocationsDir)
+                    println("Wrote locations: " + theLocationsDir)
                 } else {
                     println("Skip writing locations, not specified.")
                 }
@@ -93,7 +91,7 @@ object HermesCLI {
                 mappingFile.foreach { mappingFile =>
                     val theMappingFile = new File(mappingFile).getAbsoluteFile()
                     Hermes.exportMapping(theMappingFile)
-                    println("Wrote mapping: "+theMappingFile)
+                    println("Wrote mapping: " + theMappingFile)
                 }
 
                 waitOnFinished.countDown()

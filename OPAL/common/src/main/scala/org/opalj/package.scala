@@ -1,13 +1,14 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org
 
-import com.typesafe.config.ConfigFactory
-import com.typesafe.config.Config
+import scala.collection.immutable.ArraySeq
+
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 
-import scala.collection.immutable.ArraySeq
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
 
 /**
  * OPAL is a Scala-based framework for the static analysis, manipulation and creation of
@@ -77,14 +78,10 @@ package object opalj {
     final val BaseConfig: Config = ConfigFactory.load(this.getClass.getClassLoader)
 
     /** Non-elidable version of `assert`; only to be used in a guarded context. */
-    def check(condition: Boolean): Unit = {
-        if (!condition) throw new AssertionError();
-    }
+    def check(condition: Boolean): Unit = if (!condition) throw new AssertionError();
 
     /** Non-elidable version of `assert`; only to be used in a guarded context. */
-    def check(condition: Boolean, message: => String): Unit = {
-        if (!condition) throw new AssertionError(message);
-    }
+    def check(condition: Boolean, message: => String): Unit = if (!condition) throw new AssertionError(message);
 
     /**
      * The URL of the webpage of the opal project.
@@ -133,13 +130,10 @@ package object opalj {
      *      `11111111111111111111111111111111`); in other words, the long's sign bit will
      *      still be `0`.
      */
-    @inline final def i2lBitMask(value: Int): Long = {
-        (value >>> 16).toLong << 16 | (value & 0xFFFF).toLong
-    }
+    @inline final def i2lBitMask(value: Int): Long = (value >>> 16).toLong << 16 | (value & 0xffff).toLong
 
-    final def notRequired(): Nothing = {
+    final def notRequired(): Nothing =
         throw new UnknownError("providing an implementation was not expected to be required")
-    }
 
     /**
      * A method that takes an arbitrary parameter and throws an `UnknownError` that states

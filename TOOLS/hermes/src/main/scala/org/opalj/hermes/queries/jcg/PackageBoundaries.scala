@@ -7,13 +7,13 @@ package jcg
 import scala.collection.immutable.ArraySeq
 import scala.collection.mutable.ArrayBuffer
 
-import org.opalj.da.ClassFile
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.MethodWithBody
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
-import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.Instruction
+import org.opalj.br.instructions.INVOKEVIRTUAL
+import org.opalj.da.ClassFile
 
 /**
  * Groups test case features that perform a polymorphic method calls over package boundaries. This is
@@ -25,44 +25,41 @@ import org.opalj.br.instructions.Instruction
  */
 class PackageBoundaries(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
 
-    override def featureIDs: Seq[String] = {
-        Seq(
-            "PB1", /* 0 --- calls are not allowed to leave the package */
-            "PB2" /* 1 --- TODO */
-        )
-    }
+    override def featureIDs: Seq[String] = Seq(
+        "PB1", /* 0 --- calls are not allowed to leave the package */
+        "PB2"  /* 1 --- TODO */
+    )
 
     override def evaluate[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Iterable[(ClassFile, S)]
-    ): IndexedSeq[LocationsContainer[S]] = {
+        rawClassFiles:        Iterable[(ClassFile, S)]): IndexedSeq[LocationsContainer[S]] = {
         val instructionsLocations = Array.fill(2)(new LocationsContainer[S])
 
         for {
             (classFile, source) <- project.projectClassFilesWithSources
             if !isInterrupted()
-            classFileLocation = ClassFileLocation(source, classFile)
-            callerType = classFile.thisType
-            callerPackage = callerType.packageName
+            classFileLocation              = ClassFileLocation(source, classFile)
+            callerType                     = classFile.thisType
+            callerPackage                  = callerType.packageName
             method @ MethodWithBody(body) <- classFile.methods
-            methodLocation = MethodLocation(classFileLocation, method)
+            methodLocation                 = MethodLocation(classFileLocation, method)
             pcAndInvocation <- body collect ({
-                case iv: INVOKEVIRTUAL => iv
-            }: PartialFunction[Instruction, INVOKEVIRTUAL])
+                                   case iv: INVOKEVIRTUAL => iv
+                               }: PartialFunction[Instruction, INVOKEVIRTUAL])
         } {
-            val pc = pcAndInvocation.pc
+            val pc     = pcAndInvocation.pc
             val invoke = pcAndInvocation.value
 
             val l = InstructionLocation(methodLocation, pc)
 
-            val receiver = invoke.declaringClass
-            val name = invoke.name
+            val receiver         = invoke.declaringClass
+            val name             = invoke.name
             val methodDescriptor = invoke.methodDescriptor
 
             if (receiver.isObjectType && (receiver.asObjectType.packageName eq callerPackage)) {
                 val rtOt = receiver.asObjectType
-                val rcf = project.classFile(rtOt)
+                val rcf  = project.classFile(rtOt)
 
                 val isPackageVisibleMethod = rcf.map {
                     _.findMethod(name, methodDescriptor).map(_.isPackagePrivate).getOrElse(false)
@@ -79,11 +76,11 @@ class PackageBoundaries(implicit hermes: HermesConfig) extends DefaultFeatureQue
 
                 if (matchesPreconditions) {
                     if (project.classHierarchy.existsSubclass(rtOt, project) { cf =>
-                        val ot = cf.thisType
-                        if (ot.packageName eq callerPackage) {
-                            isMethodOverriddenInDiffPackage(rtOt, ot, name, methodDescriptor, project)
-                        } else false
-                    }) {
+                            val ot = cf.thisType
+                            if (ot.packageName eq callerPackage) {
+                                isMethodOverriddenInDiffPackage(rtOt, ot, name, methodDescriptor, project)
+                            } else false
+                        }) {
                         instructionsLocations(1) += l
                         1 /* it exists a subtype `S` within the same package as the declared typed `D`
                         that inherits transitively from type `D`, such that `S` <: `S'` <: `D` where
@@ -104,12 +101,9 @@ class PackageBoundaries(implicit hermes: HermesConfig) extends DefaultFeatureQue
         rtOt:             ObjectType,
         name:             String,
         methodDescriptor: MethodDescriptor,
-        project:          Project[S]
-    ) = {
-        project.classHierarchy.existsSubclass(rtOt, project) { sot =>
-            (sot.thisType.packageName ne callerPackage) &&
-                sot.findMethod(name, methodDescriptor).map(_.isPackagePrivate).getOrElse(false)
-        }
+        project:          Project[S]) = project.classHierarchy.existsSubclass(rtOt, project) { sot =>
+        (sot.thisType.packageName ne callerPackage) &&
+        sot.findMethod(name, methodDescriptor).map(_.isPackagePrivate).getOrElse(false)
     }
 
     private[this] def isMethodOverriddenInDiffPackage[S](
@@ -117,19 +111,16 @@ class PackageBoundaries(implicit hermes: HermesConfig) extends DefaultFeatureQue
         targetType:       ObjectType,
         name:             String,
         methodDescriptor: MethodDescriptor,
-        project:          Project[S]
-    ): Boolean = {
+        project:          Project[S]): Boolean = {
 
         val classHierarchy = project.classHierarchy
         val callingPackage = declaredType.packageName
 
         val worklist = ArrayBuffer[Int]()
-        classHierarchy.directSupertypes(targetType).foreach { sot =>
-            worklist.append(sot.id)
-        }
+        classHierarchy.directSupertypes(targetType).foreach { sot => worklist.append(sot.id) }
         while (worklist.nonEmpty) {
             val cur = worklist.remove(0)
-            val ot = classHierarchy.getObjectType(cur)
+            val ot  = classHierarchy.getObjectType(cur)
             if (ot.packageName ne callingPackage) {
                 val cf = project.classFile(ot).get
                 val mo = cf.findMethod(name, methodDescriptor)
@@ -137,9 +128,7 @@ class PackageBoundaries(implicit hermes: HermesConfig) extends DefaultFeatureQue
                     return true;
                 }
             }
-            classHierarchy.directSupertypes(ot).foreach { sot =>
-                worklist.append(sot.id)
-            }
+            classHierarchy.directSupertypes(ot).foreach { sot => worklist.append(sot.id) }
         }
 
         false

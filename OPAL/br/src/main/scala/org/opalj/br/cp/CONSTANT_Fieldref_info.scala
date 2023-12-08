@@ -12,9 +12,8 @@ import org.opalj.bi.ConstantPoolTags
  * @author Andre Pacak
  */
 case class CONSTANT_Fieldref_info(
-        class_index:         Constant_Pool_Index,
-        name_and_type_index: Constant_Pool_Index
-) extends Constant_Pool_Entry {
+        class_index: Constant_Pool_Index,
+        name_and_type_index: Constant_Pool_Index) extends Constant_Pool_Entry {
 
     override def tag: Int = ConstantPoolTags.CONSTANT_Fieldref_ID
 
@@ -27,12 +26,11 @@ case class CONSTANT_Fieldref_info(
         var fieldref = this.fieldref
         if (fieldref eq null) {
             val nameAndType = cp(name_and_type_index).asNameAndType
-            fieldref =
-                (
-                    cp(class_index).asObjectType(cp),
-                    nameAndType.name(cp),
-                    nameAndType.fieldType(cp)
-                )
+            fieldref = (
+                cp(class_index).asObjectType(cp),
+                nameAndType.name(cp),
+                nameAndType.fieldType(cp)
+            )
             this.fieldref = fieldref
         }
         fieldref

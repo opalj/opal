@@ -6,37 +6,33 @@ package domain
 
 import scala.util.control.ControlThrowable
 
-import org.opalj.log.OPALLogger
-import org.opalj.log.Warn
-import org.opalj.fpcf.PropertyKind
+import org.opalj.ai.domain.MethodCallsHandling
+import org.opalj.ai.domain.TheCode
+import org.opalj.ai.domain.TheProject
+import org.opalj.ai.fpcf.properties.MethodReturnValue
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.PC
 import org.opalj.br.ReferenceType
-import org.opalj.ai.domain.MethodCallsHandling
-import org.opalj.ai.domain.TheCode
-import org.opalj.ai.domain.TheProject
-import org.opalj.ai.fpcf.properties.MethodReturnValue
+import org.opalj.fpcf.PropertyKind
+import org.opalj.log.OPALLogger
+import org.opalj.log.Warn
 
 /**
- *
  * @author Michael Eichberg
  */
 trait RefinedTypeLevelInvokeInstructions
     extends MethodCallsDomainWithMethodLockup
-    with PropertyStoreBased {
+        with PropertyStoreBased {
     domain: ValuesFactory with ReferenceValuesDomain with Configuration with TheProject with TheCode =>
 
-    abstract override def usesProperties: Set[PropertyKind] = {
-        super.usesProperties ++ Set(MethodReturnValue)
-    }
+    abstract override def usesProperties: Set[PropertyKind] = super.usesProperties ++ Set(MethodReturnValue)
 
     override protected[this] def tryLookup(
         declaringType: ObjectType,
         name:          String,
-        descriptor:    MethodDescriptor
-    ): Boolean = {
+        descriptor:    MethodDescriptor): Boolean = {
         val returnType = descriptor.returnType
         returnType.isObjectType || super.tryLookup(declaringType, name, descriptor)
     }
@@ -50,30 +46,25 @@ trait RefinedTypeLevelInvokeInstructions
      */
     protected[this] def doInvokeWithRefinedReturnValue(
         calledMethod: Method,
-        result:       MethodCallResult
-    ): MethodCallResult = {
-        result
-    }
+        result:       MethodCallResult): MethodCallResult = result
 
     protected[this] def doInvoke(
         pc:                     PC,
         invokeMethodDescriptor: MethodDescriptor,
         method:                 Method,
         operands:               Operands,
-        fallback:               () => MethodCallResult
-    ): MethodCallResult = {
+        fallback:               () => MethodCallResult): MethodCallResult = {
         val returnType = method.returnType
         if (!returnType.isObjectType ||
             returnType != invokeMethodDescriptor.returnType // <= to handle MethodHandle.invoke(Exact) calls
-            ) {
+        ) {
             return fallback();
         }
 
         dependees.getOrQueryAndUpdate(method, MethodReturnValue.key) match {
-            case UsedPropertiesBound(mrvProperty) =>
-                mrvProperty.returnValue match {
+            case UsedPropertiesBound(mrvProperty) => mrvProperty.returnValue match {
                     case Some(mrvi) =>
-                        val vi = domain.InitializedDomainValue(pc, mrvi)
+                        val vi     = domain.InitializedDomainValue(pc, mrvi)
                         val result = MethodCallResult(vi, getPotentialExceptions(pc))
                         doInvokeWithRefinedReturnValue(method, result)
                     case None =>
@@ -81,14 +72,12 @@ trait RefinedTypeLevelInvokeInstructions
                         val potentialExceptions = getPotentialExceptions(pc)
                         ThrowsException(potentialExceptions)
                 }
-            case _ =>
-                fallback()
+            case _ => fallback()
         }
     }
 }
 
 /**
- *
  * @author Michael Eichberg
  */
 trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling {
@@ -102,12 +91,11 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling {
      *               will most likely not match the descriptor specified by the invoke instruction.
      */
     protected[this] def doInvoke(
-        pc:                     PC,
+        pc: PC,
         invokeMethodDescriptor: MethodDescriptor,
-        method:                 Method,
-        operands:               Operands,
-        fallback:               () => MethodCallResult
-    ): MethodCallResult
+        method: Method,
+        operands: Operands,
+        fallback: () => MethodCallResult): MethodCallResult
 
     /**
      * Currently, if we have multiple targets, `fallback` is called and that result is
@@ -120,13 +108,11 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling {
         name:          String,
         descriptor:    MethodDescriptor,
         operands:      Operands,
-        fallback:      () => MethodCallResult
-    ): MethodCallResult = {
+        fallback:      () => MethodCallResult): MethodCallResult = {
 
         val DomainReferenceValueTag(receiver) = operands.last
-        val receiverUTB = receiver.upperTypeBound
-        if (!receiverUTB.isSingletonSet || !receiver.upperTypeBound.head.isObjectType)
-            return fallback();
+        val receiverUTB                       = receiver.upperTypeBound
+        if (!receiverUTB.isSingletonSet || !receiver.upperTypeBound.head.isObjectType) return fallback();
 
         val receiverType = receiverUTB.head.asObjectType
         // We can resolve (statically) all calls where the type information is precise
@@ -135,30 +121,36 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling {
         if (receiver.isPrecise) {
             // IMPROVE Use project.instanceMethods ....
             classHierarchy.isInterface(receiverType) match {
-                case Yes =>
-                    doNonVirtualInvoke(
-                        pc, receiverType, true, name, descriptor, operands, fallback
+                case Yes => doNonVirtualInvoke(
+                        pc,
+                        receiverType,
+                        true,
+                        name,
+                        descriptor,
+                        operands,
+                        fallback
                     )
-                case No =>
-                    doNonVirtualInvoke(
-                        pc, receiverType, false, name, descriptor, operands, fallback
+                case No => doNonVirtualInvoke(
+                        pc,
+                        receiverType,
+                        false,
+                        name,
+                        descriptor,
+                        operands,
+                        fallback
                     )
-                case Unknown =>
-                    fallback()
+                case Unknown => fallback()
             }
         } else {
             project.classFile(receiverType).map { receiverClassFile =>
                 val targetMethod =
                     if (receiverClassFile.isInterfaceDeclaration)
                         project.resolveInterfaceMethodReference(receiverType, name, descriptor)
-                    else
-                        project.resolveMethodReference(receiverType, name, descriptor)
+                    else project.resolveMethodReference(receiverType, name, descriptor)
 
                 targetMethod match {
-                    case Some(method) if method.isFinal =>
-                        doInvoke(pc, descriptor, method, operands, fallback)
-                    case _ =>
-                        fallback()
+                    case Some(method) if method.isFinal => doInvoke(pc, descriptor, method, operands, fallback)
+                    case _                              => fallback()
                 }
             }.getOrElse {
                 fallback()
@@ -173,33 +165,26 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling {
         name:          String,
         descriptor:    MethodDescriptor,
         operands:      Operands,
-        fallback:      () => MethodCallResult
-    ): MethodCallResult = {
-
+        fallback:      () => MethodCallResult): MethodCallResult =
         try {
-            val resolvedMethod =
-                project.classFile(declaringType) match {
-                    case Some(classFile) =>
-                        if (classFile.isInterfaceDeclaration)
-                            project.resolveInterfaceMethodReference(declaringType, name, descriptor)
-                        else
-                            project.resolveMethodReference(declaringType, name, descriptor)
-                    case _ =>
-                        return fallback();
-                }
+            val resolvedMethod = project.classFile(declaringType) match {
+                case Some(classFile) =>
+                    if (classFile.isInterfaceDeclaration)
+                        project.resolveInterfaceMethodReference(declaringType, name, descriptor)
+                    else project.resolveMethodReference(declaringType, name, descriptor)
+                case _ => return fallback();
+            }
 
             resolvedMethod match {
                 case Some(method) =>
-                    if (method.body.isDefined)
-                        doInvoke(pc, descriptor, method, operands, fallback)
-                    else
-                        fallback() // only happens if the project is incomplete/broken
+                    if (method.body.isDefined) doInvoke(pc, descriptor, method, operands, fallback)
+                    else fallback() // only happens if the project is incomplete/broken
                 case _ =>
                     OPALLogger.logOnce(Warn(
                         "project configuration",
-                        "method reference cannot be resolved: "+
-                            declaringType.toJava+
-                            "{ /*non virtual*/ "+descriptor.toJava(name)+"}"
+                        "method reference cannot be resolved: " +
+                            declaringType.toJava +
+                            "{ /*non virtual*/ " + descriptor.toJava(name) + "}"
                     ))
                     fallback()
             }
@@ -208,14 +193,14 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling {
             case t: Throwable =>
                 OPALLogger.error(
                     "internal, project configuration",
-                    "resolving the method reference resulted in an exception: "+
-                        project.classFile(declaringType).map(cf => if (cf.isInterfaceDeclaration) "interface " else "class ").getOrElse("") +
-                        declaringType.toJava+"{ /*non virtual*/ "+descriptor.toJava(name)+"}",
+                    "resolving the method reference resulted in an exception: " +
+                        project.classFile(declaringType).map(cf =>
+                            if (cf.isInterfaceDeclaration) "interface " else "class ").getOrElse("") +
+                        declaringType.toJava + "{ /*non virtual*/ " + descriptor.toJava(name) + "}",
                     t
                 )
                 fallback()
         }
-    }
 
     // -----------------------------------------------------------------------------------
     //
@@ -235,27 +220,21 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling {
     protected[this] def tryLookup(
         declaringType: ObjectType,
         name:          String,
-        descriptor:    MethodDescriptor
-    ): Boolean = false
+        descriptor:    MethodDescriptor): Boolean = false
 
     abstract override def invokevirtual(
         pc:            PC,
         declaringType: ReferenceType,
         name:          String,
         descriptor:    MethodDescriptor,
-        operands:      Operands
-    ): MethodCallResult = {
+        operands:      Operands): MethodCallResult = {
 
-        def fallback(): MethodCallResult = {
-            super.invokevirtual(pc, declaringType, name, descriptor, operands)
-        }
+        def fallback(): MethodCallResult = super.invokevirtual(pc, declaringType, name, descriptor, operands)
 
-        if (declaringType.isArrayType)
-            return fallback();
+        if (declaringType.isArrayType) return fallback();
 
         val declaringObjectType = declaringType.asObjectType
-        if (!tryLookup(declaringObjectType, name, descriptor))
-            return fallback();
+        if (!tryLookup(declaringObjectType, name, descriptor)) return fallback();
 
         doVirtualInvoke(pc, declaringObjectType, false, name, descriptor, operands, fallback _)
     }
@@ -265,15 +244,11 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling {
         declaringType: ObjectType,
         name:          String,
         descriptor:    MethodDescriptor,
-        operands:      Operands
-    ): MethodCallResult = {
+        operands:      Operands): MethodCallResult = {
 
-        def fallback(): MethodCallResult = {
-            super.invokeinterface(pc, declaringType, name, descriptor, operands)
-        }
+        def fallback(): MethodCallResult = super.invokeinterface(pc, declaringType, name, descriptor, operands)
 
-        if (!tryLookup(declaringType, name, descriptor))
-            return fallback();
+        if (!tryLookup(declaringType, name, descriptor)) return fallback();
 
         doVirtualInvoke(pc, declaringType, true, name, descriptor, operands, fallback _)
     }
@@ -284,15 +259,12 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling {
         isInterface:   Boolean,
         name:          String,
         descriptor:    MethodDescriptor,
-        operands:      Operands
-    ): MethodCallResult = {
+        operands:      Operands): MethodCallResult = {
 
-        def fallback(): MethodCallResult = {
+        def fallback(): MethodCallResult =
             super.invokespecial(pc, declaringType, isInterface, name, descriptor, operands)
-        }
 
-        if (!tryLookup(declaringType, name, descriptor))
-            return fallback();
+        if (!tryLookup(declaringType, name, descriptor)) return fallback();
 
         doNonVirtualInvoke(pc, declaringType, isInterface, name, descriptor, operands, fallback _)
     }
@@ -308,18 +280,13 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling {
         isInterface:   Boolean,
         name:          String,
         descriptor:    MethodDescriptor,
-        operands:      Operands
-    ): MethodCallResult = {
+        operands:      Operands): MethodCallResult = {
 
-        def fallback(): MethodCallResult = {
-            super.invokestatic(pc, declaringType, isInterface, name, descriptor, operands)
-        }
+        def fallback(): MethodCallResult = super.invokestatic(pc, declaringType, isInterface, name, descriptor, operands)
 
-        if (!tryLookup(declaringType, name, descriptor))
-            return fallback();
+        if (!tryLookup(declaringType, name, descriptor)) return fallback();
 
         doNonVirtualInvoke(pc, declaringType, isInterface, name, descriptor, operands, fallback _)
     }
 
 }
-

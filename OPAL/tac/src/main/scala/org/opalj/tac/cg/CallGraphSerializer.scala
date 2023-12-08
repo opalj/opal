@@ -7,11 +7,11 @@ import java.io.File
 import java.io.FileWriter
 import java.io.Writer
 
-import org.opalj.br.instructions.MethodInvocationInstruction
+import org.opalj.br.DeclaredMethod
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethods
-import org.opalj.br.DeclaredMethod
 import org.opalj.br.fpcf.properties.Context
+import org.opalj.br.instructions.MethodInvocationInstruction
 
 /**
  * Provides the functionality to serialize a [[CallGraph]] into a .json file according to the format
@@ -35,7 +35,7 @@ object CallGraphSerializer {
         writer.write(s"""{"reachableMethods":[""")
         var firstRM = true
         for {
-            rm <- cg.reachableMethods()
+            rm     <- cg.reachableMethods()
             callees = cg.calleesOf(rm.method)
         } {
             if (firstRM) {
@@ -60,13 +60,12 @@ object CallGraphSerializer {
         method:  DeclaredMethod,
         callees: Iterator[(Int, Iterator[Context])],
         out:     Writer
-    )(implicit declaredMethods: DeclaredMethods): Unit = {
+      )(implicit declaredMethods: DeclaredMethods): Unit = {
         val bodyO = if (method.hasSingleDefinedMethod) method.definedMethod.body else None
         var first = true
         for ((pc, targets) <- callees) {
             bodyO match {
-                case None =>
-                    for (tgt <- targets) {
+                case None => for (tgt <- targets) {
                         if (first) first = false
                         else out.write(",")
                         writeCallSite(tgt.method, -1, pc, Iterator(tgt), out)
@@ -83,18 +82,20 @@ object CallGraphSerializer {
                     if (declaredTgtO.isDefined) {
                         val (dc, name, desc) = declaredTgtO.get
                         val declaredType =
-                            if (dc.isArrayType)
-                                ObjectType.Object
-                            else
-                                dc.asObjectType
+                            if (dc.isArrayType) ObjectType.Object
+                            else dc.asObjectType
 
                         val declaredTarget = declaredMethods(
-                            declaredType, declaredType.packageName, declaredType, name, desc
+                            declaredType,
+                            declaredType.packageName,
+                            declaredType,
+                            name,
+                            desc
                         )
 
                         val (directCallees, indirectCallees) = targets.partition { callee =>
                             callee.method.name == name && // TODO check descriptor correctly for refinement
-                                callee.method.descriptor.parametersCount == desc.parametersCount
+                            callee.method.descriptor.parametersCount == desc.parametersCount
                         }
 
                         for (tgt <- indirectCallees) {
@@ -124,8 +125,7 @@ object CallGraphSerializer {
         line:           Int,
         pc:             Int,
         targets:        Iterator[Context],
-        out:            Writer
-    ): Unit = {
+        out:            Writer): Unit = {
         out.write("{\"declaredTarget\":")
         writeMethodObject(declaredTarget, out)
         out.write(",\"line\":")
@@ -144,8 +144,7 @@ object CallGraphSerializer {
 
     private def writeMethodObject(
         method: DeclaredMethod,
-        out:    Writer
-    ): Unit = {
+        out:    Writer): Unit = {
         out.write("{\"name\":\"")
         out.write(method.name)
         out.write("\",\"declaringClass\":\"")
@@ -154,7 +153,9 @@ object CallGraphSerializer {
         out.write(method.descriptor.returnType.toJVMTypeName)
         out.write("\",\"parameterTypes\":[")
         if (method.descriptor.parametersCount > 0)
-            out.write(method.descriptor.parameterTypes.iterator.map[String](_.toJVMTypeName).mkString("\"", "\",\"", "\""))
+            out.write(method.descriptor.parameterTypes.iterator.map[String](_.toJVMTypeName).mkString("\"",
+                                                                                                      "\",\"",
+                                                                                                      "\""))
         out.write("]}")
     }
 }

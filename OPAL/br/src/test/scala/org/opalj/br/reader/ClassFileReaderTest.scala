@@ -3,10 +3,10 @@ package org.opalj
 package br
 package reader
 
-import org.scalatest.matchers.should.Matchers
-import org.scalatest.flatspec.AnyFlatSpec
-
 import org.opalj.bi.TestResources.locateTestResources
+
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 /**
  * Tests the reading of class files.
@@ -25,8 +25,7 @@ class ClassFileReaderTest extends AnyFlatSpec with Matchers {
         if (!classFiles.exists(_._1.fqn == "attributes/DeprecatedByAnnotation"))
             fail("could not find the class attributes.DeprecatedByAnnotation")
 
-        if (!classFiles.exists(_._1.fqn == "code/BoundedBuffer"))
-            fail("could not find the class code.BoundedBuffer")
+        if (!classFiles.exists(_._1.fqn == "code/BoundedBuffer")) fail("could not find the class code.BoundedBuffer")
     }
 
     it should "not crash when trying to read an empty (0-byte) .jar" in {

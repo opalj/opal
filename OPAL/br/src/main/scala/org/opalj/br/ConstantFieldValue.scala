@@ -16,8 +16,8 @@ import org.opalj.value.KnownTypedValue
  */
 sealed abstract class ConstantFieldValue[T >: Nothing]
     extends Attribute
-    with ConstantValue[T]
-    with KnownTypedValue {
+        with ConstantValue[T]
+        with KnownTypedValue {
 
     override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = this == other
 }
@@ -30,7 +30,7 @@ final case class ConstantLong(value: Long) extends ConstantFieldValue[Long] with
 
     override def valueToString: String = value.toString
 
-    override def toJava: String = valueToString+"l"
+    override def toJava: String = valueToString + "l"
 
     override def runtimeValueType: LongType = LongType
 
@@ -84,19 +84,15 @@ final case class ConstantDouble(value: Double) extends ConstantFieldValue[Double
 
     override def valueToString: String = value.toString
 
-    override def toJava: String = valueToString+"d"
+    override def toJava: String = valueToString + "d"
 
     override def runtimeValueType: DoubleType = DoubleType
 
     override def kindId: Int = ConstantDouble.KindId
 
-    override def equals(other: Any): Boolean = {
-        other match {
-            case ConstantDouble(thatValue) =>
-                (this.value == thatValue) || (this.value.isNaN && thatValue.isNaN)
-            case _ =>
-                false
-        }
+    override def equals(other: Any): Boolean = other match {
+        case ConstantDouble(thatValue) => (this.value == thatValue) || (this.value.isNaN && thatValue.isNaN)
+        case _                         => false
     }
 
 }
@@ -114,19 +110,15 @@ final case class ConstantFloat(value: Float) extends ConstantFieldValue[Float] w
 
     override def valueToString: String = value.toString
 
-    override def toJava: String = valueToString+"f"
+    override def toJava: String = valueToString + "f"
 
     override def runtimeValueType: FloatType = FloatType
 
     override def kindId: Int = ConstantFloat.KindId
 
-    override def equals(other: Any): Boolean = {
-        other match {
-            case ConstantFloat(thatValue) =>
-                (this.value == thatValue) || (this.value.isNaN && thatValue.isNaN)
-            case _ =>
-                false
-        }
+    override def equals(other: Any): Boolean = other match {
+        case ConstantFloat(thatValue) => (this.value == thatValue) || (this.value.isNaN && thatValue.isNaN)
+        case _                        => false
     }
 
 }
@@ -137,9 +129,8 @@ object ConstantFloat {
 }
 
 final case class ConstantString(
-        value: String
-) extends ConstantFieldValue[String]
-    with IsStringValue {
+        value: String) extends ConstantFieldValue[String]
+        with IsStringValue {
 
     override def toUTF8: String = value
 

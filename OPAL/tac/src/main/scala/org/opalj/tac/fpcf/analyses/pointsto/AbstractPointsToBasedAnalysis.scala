@@ -5,17 +5,17 @@ package fpcf
 package analyses
 package pointsto
 
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.PropertyKey
-import org.opalj.br.analyses.VirtualFormalParameters
-import org.opalj.br.analyses.VirtualFormalParametersKey
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
 import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.DeclaredFields
 import org.opalj.br.analyses.DeclaredFieldsKey
 import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.VirtualFormalParameters
+import org.opalj.br.analyses.VirtualFormalParametersKey
+import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.PropertyKey
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.common.DefinitionSites
 import org.opalj.tac.common.DefinitionSitesKey
@@ -35,22 +35,21 @@ trait AbstractPointsToBasedAnalysis extends FPCFAnalysis with ContextualAnalysis
     protected[this] type State <: TACAIBasedAnalysisState[ContextType]
     protected[this] type DependerType
 
-    protected[this] implicit val typeIterator: TypeIterator
+    implicit protected[this] val typeIterator: TypeIterator
 
-    protected[this] implicit val definitionSites: DefinitionSites = p.get(DefinitionSitesKey)
-    protected[this] implicit val formalParameters: VirtualFormalParameters = p.get(VirtualFormalParametersKey)
-    protected[this] implicit val declaredFields: DeclaredFields = p.get(DeclaredFieldsKey)
+    implicit protected[this] val definitionSites: DefinitionSites          = p.get(DefinitionSitesKey)
+    implicit protected[this] val formalParameters: VirtualFormalParameters = p.get(VirtualFormalParametersKey)
+    implicit protected[this] val declaredFields: DeclaredFields            = p.get(DeclaredFieldsKey)
 
     protected[this] val pointsToPropertyKey: PropertyKey[PointsToSet]
     protected[this] def emptyPointsToSet: PointsToSet
 
     protected[this] def createPointsToSet(
-        pc:            Int,
-        callContext:   ContextType,
+        pc: Int,
+        callContext: ContextType,
         allocatedType: ReferenceType,
-        isConstant:    Boolean,
-        isEmptyArray:  Boolean       = false
-    ): PointsToSet
+        isConstant: Boolean,
+        isEmptyArray: Boolean = false): PointsToSet
 
     @inline protected[this] def getTypeOf(element: ElementType): ReferenceType
 
@@ -58,12 +57,9 @@ trait AbstractPointsToBasedAnalysis extends FPCFAnalysis with ContextualAnalysis
 
     @inline protected[this] def isEmptyArray(element: ElementType): Boolean
 
-    @inline protected[this] def pointsToUB(eOptP: EOptionP[Entity, PointsToSet]): PointsToSet = {
-        if (eOptP.hasUBP)
-            eOptP.ub
-        else
-            emptyPointsToSet
-    }
+    @inline protected[this] def pointsToUB(eOptP: EOptionP[Entity, PointsToSet]): PointsToSet =
+        if (eOptP.hasUBP) eOptP.ub
+        else emptyPointsToSet
 }
 
 object AbstractPointsToBasedAnalysis {

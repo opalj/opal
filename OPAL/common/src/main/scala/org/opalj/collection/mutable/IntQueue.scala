@@ -11,10 +11,9 @@ package mutable
  *
  * @author Michael Eichberg
  */
-protected[opalj] final class IntQueue private (
+final protected[opalj] class IntQueue private (
         private var first: QueueNode = null,
-        private var last:  QueueNode = null
-) extends Serializable { queue =>
+        private var last: QueueNode = null) extends Serializable { queue =>
 
     def this(value: Int) = this(new QueueNode(value, null))
 
@@ -24,7 +23,7 @@ protected[opalj] final class IntQueue private (
 
     def size: Int = {
         var size = 0
-        var c = first
+        var c    = first
         while (c ne null) {
             size += 1
             c = c.next

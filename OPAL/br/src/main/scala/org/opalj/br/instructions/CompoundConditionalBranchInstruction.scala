@@ -24,9 +24,9 @@ trait CompoundConditionalBranchInstructionLike extends ConditionalBranchInstruct
 
 trait CompoundConditionalBranchInstruction
     extends ConditionalBranchInstruction
-    with CompoundConditionalBranchInstructionLike {
+        with CompoundConditionalBranchInstructionLike {
 
-    final override def isCompoundConditionalBranchInstruction: Boolean = true
+    final override def isCompoundConditionalBranchInstruction: Boolean   = true
     final override def asCompoundConditionalBranchInstruction: this.type = this
 
     def defaultOffset: Int
@@ -37,13 +37,10 @@ trait CompoundConditionalBranchInstruction
     // IMPROVE Use IntIterable or IntIterator for the return value.
     final override def jumpTargets(
         currentPC: PC
-    )(
-        implicit
+      )(implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
-    ): Iterator[PC] = {
+        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy): Iterator[PC] =
         jumpOffsets.iterator.map(_ + currentPC) ++ Iterator(defaultOffset + currentPC)
-    }
 
     /**
      * Returns the case value(s) that are associated with the given `jumpOffset`.

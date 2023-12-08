@@ -4,10 +4,8 @@ package ba
 
 import scala.collection.immutable.ArraySeq
 
-import org.opalj.collection.immutable.IntRefPair
-import org.opalj.collection.immutable.UShortPair
-import org.opalj.collection.mutable.Locals
-import org.opalj.bytecode.BytecodeProcessingFailedException
+import org.opalj.ai.BaseAI
+import org.opalj.ai.domain.l0.TypeCheckingDomain
 import org.opalj.bi.ACC_STATIC
 import org.opalj.br.AppendFrame
 import org.opalj.br.Attributes
@@ -27,8 +25,10 @@ import org.opalj.br.StackMapTable
 import org.opalj.br.TopVariableInfo
 import org.opalj.br.VerificationTypeInfo
 import org.opalj.br.instructions.Instruction
-import org.opalj.ai.BaseAI
-import org.opalj.ai.domain.l0.TypeCheckingDomain
+import org.opalj.bytecode.BytecodeProcessingFailedException
+import org.opalj.collection.immutable.IntRefPair
+import org.opalj.collection.immutable.UShortPair
+import org.opalj.collection.mutable.Locals
 
 /**
  * Builder for the [[org.opalj.br.Code]] attribute with all its properties. The ''Builder'' is
@@ -47,21 +47,18 @@ class CodeAttributeBuilder[T] private[ba] (
         private[ba] var maxStack:                       Option[Int],
         private[ba] var maxLocals:                      Option[Int],
         private[ba] var exceptionHandlers:              br.ExceptionHandlers,
-        private[ba] var attributes:                     br.Attributes
-) extends br.CodeAttributeBuilder[(Map[br.PC, T], List[String])] {
+        private[ba] var attributes: br.Attributes) extends br.CodeAttributeBuilder[(Map[br.PC, T], List[String])] {
 
-    def copy(attributes: br.Attributes = this.attributes): CodeAttributeBuilder[T] = {
-        new CodeAttributeBuilder[T](
-            instructions,
-            hasControlTransferInstructions,
-            pcMapping,
-            annotations,
-            maxStack,
-            maxLocals,
-            exceptionHandlers,
-            attributes
-        )
-    }
+    def copy(attributes: br.Attributes = this.attributes): CodeAttributeBuilder[T] = new CodeAttributeBuilder[T](
+        instructions,
+        hasControlTransferInstructions,
+        pcMapping,
+        annotations,
+        maxStack,
+        maxLocals,
+        exceptionHandlers,
+        attributes
+    )
 
     /**
      * Returns an iterator over the code array; hence, will return `null` values whenever
@@ -75,8 +72,8 @@ class CodeAttributeBuilder[T] private[ba] (
 
     def foreachInstructionWithIndex[U](f: IntRefPair[Instruction] => U): Unit = {
         val instructions = this.instructions
-        var i = 0
-        val max = instructions.length
+        var i            = 0
+        val max          = instructions.length
         while (i < max) {
             val instruction = instructions(i)
             if (instruction ne null) f(IntRefPair(i, instruction))
@@ -111,20 +108,19 @@ class CodeAttributeBuilder[T] private[ba] (
      * @see `apply(classFileVersion:UShortPair,accessFlags:Int,name:String,...)` for more details.
      * @param classFileVersion The version of the class file to which the returned will be added
      *                         eventually.
-     *
      */
     def apply(
         classFileVersion: UShortPair,
         method:           Method
-    )(
-        implicit
-        classHierarchy: ClassHierarchy = br.ClassHierarchy.PreInitializedClassHierarchy
-    ): (br.Code, (Map[br.PC, T], List[String])) = {
-        this(
-            classFileVersion, method.classFile.thisType,
-            method.accessFlags, method.name, method.descriptor
-        )
-    }
+      )(implicit
+        classHierarchy: ClassHierarchy = br.ClassHierarchy.PreInitializedClassHierarchy)
+        : (br.Code, (Map[br.PC, T], List[String])) = this(
+        classFileVersion,
+        method.classFile.thisType,
+        method.accessFlags,
+        method.name,
+        method.descriptor
+    )
 
     /**
      * Creates a `Code` attribute.
@@ -147,10 +143,8 @@ class CodeAttributeBuilder[T] private[ba] (
         accessFlags:        Int,
         name:               String,
         descriptor:         br.MethodDescriptor
-    )(
-        implicit
-        classHierarchy: ClassHierarchy
-    ): (br.Code, (Map[br.PC, T], List[String])) = {
+      )(implicit
+        classHierarchy: ClassHierarchy): (br.Code, (Map[br.PC, T], List[String])) = {
 
         import org.opalj.ba.CodeAttributeBuilder.warnMessage
         var warnings = List.empty[String]
@@ -202,7 +196,7 @@ class CodeAttributeBuilder[T] private[ba] (
                 thisType = declaringClassType,
                 methods = Methods(Method(accessFlags, name, descriptor, Attributes(code)))
             )
-            val m = cf.methods.head
+            val m             = cf.methods.head
             val newAttributes = this.attributes :+ CodeAttributeBuilder.computeStackMapTable(m)
             code = code.copy(attributes = newAttributes)
         }
@@ -239,27 +233,24 @@ object CodeAttributeBuilder {
      */
     def computeStackMapTable(
         m: Method
-    )(
-        implicit
-        classHierarchy: ClassHierarchy
-    ): StackMapTable = {
+      )(implicit
+        classHierarchy: ClassHierarchy): StackMapTable = {
         type VerificationTypeInfos = ArraySeq[VerificationTypeInfo]
 
         val c = m.body.get
 
         // compute info
         val theDomain = new TypeCheckingDomain(classHierarchy, m)
-        val ils = CodeAttributeBuilder.ai.initialLocals(m, theDomain)(None)
-        val ios = CodeAttributeBuilder.ai.initialOperands(m, theDomain)
-        val r = CodeAttributeBuilder.ai.performInterpretation(c, theDomain)(ios, ils)
+        val ils       = CodeAttributeBuilder.ai.initialLocals(m, theDomain)(None)
+        val ios       = CodeAttributeBuilder.ai.initialOperands(m, theDomain)
+        val r         = CodeAttributeBuilder.ai.performInterpretation(c, theDomain)(ios, ils)
 
         // compute table
         def computeLocalsVerificationTypeInfo(
-            locals: Locals[theDomain.DomainValue]
-        ): VerificationTypeInfos = {
+            locals: Locals[theDomain.DomainValue]): VerificationTypeInfos = {
             val lastLocalsIndex = locals.indexOfLastNonNullValue
-            var index = 0
-            val b = ArraySeq.newBuilder[VerificationTypeInfo]
+            var index           = 0
+            val b               = ArraySeq.newBuilder[VerificationTypeInfo]
             b.sizeHint(lastLocalsIndex + 1)
             while (index <= lastLocalsIndex) {
                 b += (
@@ -286,38 +277,31 @@ object CodeAttributeBuilder {
             b.result()
         }
 
-        var lastPC = -1 // -1 === initial stack map frame
-        var lastVerificationTypeInfoLocals: VerificationTypeInfos =
-            computeLocalsVerificationTypeInfo(ils)
-        var lastverificationTypeInfoStack: VerificationTypeInfos =
-            ArraySeq.empty // has to be empty...
+        var lastPC                                                = -1             // -1 === initial stack map frame
+        var lastVerificationTypeInfoLocals: VerificationTypeInfos = computeLocalsVerificationTypeInfo(ils)
+        var lastverificationTypeInfoStack: VerificationTypeInfos  = ArraySeq.empty // has to be empty...
 
-        val framePCs = c.stackMapTablePCs(classHierarchy)
-        val fs = new Array[StackMapFrame](framePCs.size)
+        val framePCs   = c.stackMapTablePCs(classHierarchy)
+        val fs         = new Array[StackMapFrame](framePCs.size)
         var frameIndex = 0
         framePCs.foreach { pc =>
             val verificationTypeInfoLocals: VerificationTypeInfos = {
                 val locals = r.localsArray(pc)
                 if (locals == null) {
                     // let's produce a "good" error message...
-                    val instructions =
-                        c.instructions.
-                            zipWithIndex.
-                            filter(_._1 != null).
-                            map(e => s"${e._2}: ${e._1}")
+                    val instructions         = c.instructions.zipWithIndex.filter(_._1 != null).map(e => s"${e._2}: ${e._1}")
                     val instructionsAsString = instructions.mkString("\n\t\t", "\n\t\t", "\n")
-                    val body =
-                        s"; pc $pc is dead; unable to compute stack map table:"+
-                            instructionsAsString
+                    val body = s"; pc $pc is dead; unable to compute stack map table:" +
+                        instructionsAsString
                     val evaluationDetails = r.evaluatedPCs.mkString("evaluated: ", ", ", body)
-                    val ehs = c.exceptionHandlers.mkString("Exception Handlers:\n", "\n", "\nt")
-                    val message = m.toJava(evaluationDetails + ehs)
+                    val ehs               = c.exceptionHandlers.mkString("Exception Handlers:\n", "\n", "\nt")
+                    val message           = m.toJava(evaluationDetails + ehs)
                     throw new BytecodeProcessingFailedException(message);
                 }
                 computeLocalsVerificationTypeInfo(locals)
             }
             val verificationTypeInfoStack: VerificationTypeInfos = {
-                var operands = r.operandsArray(pc)
+                var operands     = r.operandsArray(pc)
                 var operandIndex = operands.size
                 if (operandIndex == 0) {
                     ArraySeq.empty // an empty stack is a VERY common case...
@@ -335,48 +319,44 @@ object CodeAttributeBuilder {
 
             // let's see how the last stack map frame looked like and if we can compute
             // an "optimal" stack map frame item
-            val sameLocals = lastVerificationTypeInfoLocals == verificationTypeInfoLocals
-            val localsCount = verificationTypeInfoLocals.size
+            val sameLocals      = lastVerificationTypeInfoLocals == verificationTypeInfoLocals
+            val localsCount     = verificationTypeInfoLocals.size
             val lastLocalsCount = lastVerificationTypeInfoLocals.size
             val localsDiffCount = localsCount - lastLocalsCount
-            val emptyStack = verificationTypeInfoStack.isEmpty
+            val emptyStack      = verificationTypeInfoStack.isEmpty
             if (sameLocals && emptyStack) {
                 // ---- SameFrame(Extended) ...
                 //
                 val offsetDelta = pc - lastPC - 1
                 fs(frameIndex) =
-                    if (offsetDelta <= 63)
-                        SameFrame(offsetDelta)
-                    else
-                        SameFrameExtended(offsetDelta)
+                    if (offsetDelta <= 63) SameFrame(offsetDelta)
+                    else SameFrameExtended(offsetDelta)
             } else if (sameLocals && verificationTypeInfoStack.size == 1) {
                 // ---- SameLocals1StackItemFrame(Extended) ...
                 //
                 val offsetDelta = pc - lastPC - 1
                 if (offsetDelta <= 63) {
                     val frameType = 64 + offsetDelta
-                    fs(frameIndex) =
-                        SameLocals1StackItemFrame(frameType, verificationTypeInfoStack(0))
+                    fs(frameIndex) = SameLocals1StackItemFrame(frameType, verificationTypeInfoStack(0))
                 } else {
-                    fs(frameIndex) =
-                        SameLocals1StackItemFrameExtended(offsetDelta, verificationTypeInfoStack(0))
+                    fs(frameIndex) = SameLocals1StackItemFrameExtended(offsetDelta, verificationTypeInfoStack(0))
                 }
             } else if (emptyStack && localsDiffCount < 0 && localsDiffCount >= -3 && (
-                // all "still" existing locals are equal...
-                verificationTypeInfoLocals.iterator
-                .zipWithIndex
-                .forall { case (vtil, index) => vtil == lastVerificationTypeInfoLocals(index) }
-            )) {
+                           // all "still" existing locals are equal...
+                           verificationTypeInfoLocals.iterator
+                               .zipWithIndex
+                               .forall { case (vtil, index) => vtil == lastVerificationTypeInfoLocals(index) }
+                       )) {
                 // ---- CHOP FRAME ...
                 //
                 val offsetDelta = pc - lastPC - 1
                 fs(frameIndex) = ChopFrame(251 + localsDiffCount, offsetDelta)
             } else if (emptyStack && localsDiffCount > 0 && localsDiffCount <= 3 && (
-                // all previously existing locals are equal...
-                lastVerificationTypeInfoLocals.iterator
-                .zipWithIndex
-                .forall { case (vtil, index) => vtil == verificationTypeInfoLocals(index) }
-            )) {
+                           // all previously existing locals are equal...
+                           lastVerificationTypeInfoLocals.iterator
+                               .zipWithIndex
+                               .forall { case (vtil, index) => vtil == verificationTypeInfoLocals(index) }
+                       )) {
                 // ---- APPEND FRAME ...
                 //
                 val offsetDelta = pc - lastPC - 1
@@ -387,10 +367,8 @@ object CodeAttributeBuilder {
                 if (newLocals.forall(_ == TopVariableInfo)) { // TODO use forallEquals
                     // just "appending" top is not necessary - this is implicitly the case!
                     fs(frameIndex) =
-                        if (offsetDelta <= 63)
-                            SameFrame(offsetDelta)
-                        else
-                            SameFrameExtended(offsetDelta)
+                        if (offsetDelta <= 63) SameFrame(offsetDelta)
+                        else SameFrameExtended(offsetDelta)
                 } else {
                     fs(frameIndex) = AppendFrame(251 + localsDiffCount, offsetDelta, newLocals)
                 }

@@ -10,11 +10,10 @@ package instructions
  * @author Michael Eichberg
  */
 case class INVOKESPECIAL(
-        declaringClass:   ObjectType, // an interface or class type to be precise
-        isInterface:      Boolean,
-        name:             String, // an interface or class type to be precise
-        methodDescriptor: MethodDescriptor
-) extends NonVirtualMethodInvocationInstruction {
+        declaringClass: ObjectType, // an interface or class type to be precise
+        isInterface:    Boolean,
+        name:           String,     // an interface or class type to be precise
+        methodDescriptor: MethodDescriptor) extends NonVirtualMethodInvocationInstruction {
 
     final def isInterfaceCall: Boolean = isInterface
 
@@ -32,9 +31,7 @@ case class INVOKESPECIAL(
 
     final def isInstanceMethod: Boolean = true
 
-    final def numberOfPoppedOperands(ctg: Int => ComputationalTypeCategory): Int = {
-        methodDescriptor.parametersCount + 1
-    }
+    final def numberOfPoppedOperands(ctg: Int => ComputationalTypeCategory): Int = methodDescriptor.parametersCount + 1
 
     // Required to avoid that Scala generates a default toString method!
     override def toString: String = super.toString
@@ -64,8 +61,7 @@ object INVOKESPECIAL extends InstructionMetaInformation {
         declaringClass:   String,
         isInterface:      Boolean,
         methodName:       String,
-        methodDescriptor: String
-    ): INVOKESPECIAL = {
+        methodDescriptor: String): INVOKESPECIAL = {
         val declaringClassType = ObjectType(declaringClass)
         INVOKESPECIAL(declaringClassType, isInterface, methodName, MethodDescriptor(methodDescriptor))
     }

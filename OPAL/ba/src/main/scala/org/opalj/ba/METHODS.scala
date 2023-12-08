@@ -2,11 +2,11 @@
 package org.opalj
 package ba
 
-import org.opalj.collection.immutable.UShortPair
+import scala.collection.immutable.ArraySeq
+
 import org.opalj.br.ClassHierarchy
 import org.opalj.br.ObjectType
-
-import scala.collection.immutable.ArraySeq
+import org.opalj.collection.immutable.UShortPair
 
 /**
  * Builder for a list of [[org.opalj.br.MethodTemplate]]s.
@@ -22,20 +22,15 @@ case class METHODS[T](methods: ArraySeq[METHOD[T]]) {
     def result(
         classFileVersion:   UShortPair,
         declaringClassType: ObjectType
-    )(
-        implicit
-        classHierarchy: ClassHierarchy = br.ClassHierarchy.PreInitializedClassHierarchy
-    ): ArraySeq[(br.MethodTemplate, Option[T])] = {
-        methods.map[(br.MethodTemplate, Option[T])](m =>
-            m.result(classFileVersion, declaringClassType))
-    }
+      )(implicit
+        classHierarchy: ClassHierarchy = br.ClassHierarchy.PreInitializedClassHierarchy)
+        : ArraySeq[(br.MethodTemplate, Option[T])] = methods.map[(br.MethodTemplate, Option[T])](m =>
+        m.result(classFileVersion, declaringClassType))
 
 }
 
 object METHODS {
 
-    def apply[T](methods: METHOD[T]*): METHODS[T] = {
-        new METHODS(ArraySeq.unsafeWrapArray(methods.toArray))
-    }
+    def apply[T](methods: METHOD[T]*): METHODS[T] = new METHODS(ArraySeq.unsafeWrapArray(methods.toArray))
 
 }

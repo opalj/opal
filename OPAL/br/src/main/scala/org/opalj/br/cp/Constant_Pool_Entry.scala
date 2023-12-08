@@ -16,45 +16,35 @@ trait Constant_Pool_Entry extends bi.reader.ConstantPoolEntry {
 
     def tag: Int = throw new UnknownError("tag not available")
 
-    def asString: String = {
-        throw new BytecodeProcessingFailedException(s"$this cannot be converted to string")
-    }
+    def asString: String = throw new BytecodeProcessingFailedException(s"$this cannot be converted to string")
 
-    def asFieldType: FieldType = {
-        throw new BytecodeProcessingFailedException("conversion to field type is not supported")
-    }
+    def asFieldType: FieldType = throw new BytecodeProcessingFailedException("conversion to field type is not supported")
 
-    def asMethodDescriptor: MethodDescriptor =
-        throw new BytecodeProcessingFailedException(
-            "conversion to method descriptor is not supported"
-        )
+    def asMethodDescriptor: MethodDescriptor = throw new BytecodeProcessingFailedException(
+        "conversion to method descriptor is not supported"
+    )
 
-    def asFieldTypeSignature: FieldTypeSignature =
-        throw new BytecodeProcessingFailedException(
-            "conversion to field type signature is not supported"
-        )
+    def asFieldTypeSignature: FieldTypeSignature = throw new BytecodeProcessingFailedException(
+        "conversion to field type signature is not supported"
+    )
 
-    def asSignature(ap: AttributeParent): Signature =
-        throw new BytecodeProcessingFailedException(
-            "conversion to signature attribute is not supported"
-        )
+    def asSignature(ap: AttributeParent): Signature = throw new BytecodeProcessingFailedException(
+        "conversion to signature attribute is not supported"
+    )
 
-    def asConstantValue(cp: Constant_Pool): ConstantValue[_] =
-        throw new BytecodeProcessingFailedException(
-            "conversion of "+this.getClass.getSimpleName+" to constant value is not supported"
-        )
+    def asConstantValue(cp: Constant_Pool): ConstantValue[_] = throw new BytecodeProcessingFailedException(
+        "conversion of " + this.getClass.getSimpleName + " to constant value is not supported"
+    )
 
-    def asConstantFieldValue(cp: Constant_Pool): ConstantFieldValue[_] =
-        throw new BytecodeProcessingFailedException(
-            "conversion of "+this.getClass.getSimpleName+" to constant field value is not supported"
-        )
+    def asConstantFieldValue(cp: Constant_Pool): ConstantFieldValue[_] = throw new BytecodeProcessingFailedException(
+        "conversion of " + this.getClass.getSimpleName + " to constant field value is not supported"
+    )
 
     def asFieldref(cp: Constant_Pool): (ObjectType, String, FieldType) =
         throw new BytecodeProcessingFailedException("conversion to field ref is not supported")
 
     def asMethodref(
-        cp: Constant_Pool
-    ): (ReferenceType, Boolean /*InterfaceMethodRef*/ , String, MethodDescriptor) =
+        cp: Constant_Pool): (ReferenceType, Boolean /*InterfaceMethodRef*/, String, MethodDescriptor) =
         throw new BytecodeProcessingFailedException("conversion to method ref is not supported")
 
     def asObjectType(cp: Constant_Pool): ObjectType =

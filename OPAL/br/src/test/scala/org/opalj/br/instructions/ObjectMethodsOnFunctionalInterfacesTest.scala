@@ -5,16 +5,16 @@ package instructions
 
 import scala.collection.immutable.ArraySeq
 
-import org.junit.runner.RunWith
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.matchers.should.Matchers
-import org.scalatestplus.junit.JUnitRunner
-
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.reader.Java8Framework
 import org.opalj.br.reader.Java8LibraryFramework
+
+import org.junit.runner.RunWith
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests that calls to inherited methods on lambda instances go to Object.
@@ -27,39 +27,36 @@ class ObjectMethodsOnFunctionalInterfacesTest extends AnyFunSpec with Matchers {
     val InvokedMethod = ObjectType("annotations/target/InvokedMethod")
 
     val project: SomeProject = {
-        val testResources = locateTestResources("lambdas-1.8-g-parameters-genericsignature", "bi")
+        val testResources  = locateTestResources("lambdas-1.8-g-parameters-genericsignature", "bi")
         val projectClasses = Java8Framework.ClassFiles(testResources)
         val libraryClasses = Java8LibraryFramework.ClassFiles(org.opalj.bytecode.RTJar)
         Project(projectClasses, libraryClasses, true)
     }
 
-    private def testMethod(classFile: ClassFile, name: String): Unit = {
-        for {
-            method <- classFile.findMethod(name)
-            body <- method.body
-            invokevirtual <- body.instructions.view.collect { case i: INVOKEVIRTUAL => i }
-            annotations = method.runtimeVisibleAnnotations
-        } {
-            val invokedMethod = getInvokedMethod(annotations)
-            if (invokedMethod.isEmpty)
-                throw new IllegalArgumentException(
-                    s"the method which is expected to be invoked $annotations is not found"
-                )
+    private def testMethod(classFile: ClassFile, name: String): Unit = for {
+        method        <- classFile.findMethod(name)
+        body          <- method.body
+        invokevirtual <- body.instructions.view.collect { case i: INVOKEVIRTUAL => i }
+        annotations    = method.runtimeVisibleAnnotations
+    } {
+        val invokedMethod = getInvokedMethod(annotations)
+        if (invokedMethod.isEmpty) throw new IllegalArgumentException(
+            s"the method which is expected to be invoked $annotations is not found"
+        )
 
-            val methodIdentifier = invokedMethod.get.signatureToJava(false)
-            it(s"«$methodIdentifier» should resolve to Object's method") {
-                val declaringClass = invokevirtual.declaringClass
-                declaringClass should be(Symbol("ObjectType"))
-                val declaringClassFile = project.classFile(declaringClass.asObjectType)
-                declaringClassFile shouldBe defined
-                val actualName = invokevirtual.name
-                val actualDescriptor = invokevirtual.methodDescriptor
-                val actualMethod = declaringClassFile.flatMap(
-                    _.findMethod(actualName, actualDescriptor)
-                )
-                actualMethod shouldBe defined
-                actualMethod should be(invokedMethod)
-            }
+        val methodIdentifier = invokedMethod.get.signatureToJava(false)
+        it(s"«$methodIdentifier» should resolve to Object's method") {
+            val declaringClass = invokevirtual.declaringClass
+            declaringClass should be(Symbol("ObjectType"))
+            val declaringClassFile = project.classFile(declaringClass.asObjectType)
+            declaringClassFile shouldBe defined
+            val actualName       = invokevirtual.name
+            val actualDescriptor = invokevirtual.methodDescriptor
+            val actualMethod = declaringClassFile.flatMap(
+                _.findMethod(actualName, actualDescriptor)
+            )
+            actualMethod shouldBe defined
+            actualMethod should be(invokedMethod)
         }
     }
 
@@ -77,21 +74,21 @@ class ObjectMethodsOnFunctionalInterfacesTest extends AnyFunSpec with Matchers {
      */
     private def getInvokedMethod(annotations: Annotations): Option[Method] = {
         val candidates: ArraySeq[Option[Method]] = for {
-            invokedMethod <- annotations.filter(_.annotationType == InvokedMethod)
-            pairs = invokedMethod.elementValuePairs
+            invokedMethod                                               <- annotations.filter(_.annotationType == InvokedMethod)
+            pairs                                                        = invokedMethod.elementValuePairs
             ElementValuePair("receiverType", StringValue(receiverType)) <- pairs
-            ElementValuePair("name", StringValue(methodName)) <- pairs
-            classFile <- project.classFile(ObjectType(receiverType))
+            ElementValuePair("name", StringValue(methodName))           <- pairs
+            classFile                                                   <- project.classFile(ObjectType(receiverType))
         } yield {
             val parameterTypes = getParameterTypes(pairs)
-            val returnType = getReturnType(pairs)
-            val descriptor = MethodDescriptor(parameterTypes, returnType)
+            val returnType     = getReturnType(pairs)
+            val descriptor     = MethodDescriptor(parameterTypes, returnType)
             classFile.findMethod(methodName, descriptor)
         }
         if (candidates.nonEmpty) candidates.head else None
     }
 
-    private def getParameterTypes(pairs: ElementValuePairs): FieldTypes = {
+    private def getParameterTypes(pairs: ElementValuePairs): FieldTypes =
         pairs.find(_.name == "parameterTypes").map { p =>
             p.value.asInstanceOf[ArrayValue].values.map[FieldType] {
                 case ClassValue(x: ObjectType) => x
@@ -99,17 +96,14 @@ class ObjectMethodsOnFunctionalInterfacesTest extends AnyFunSpec with Matchers {
                 case x: ElementValue           => x.valueType
             }
         }.getOrElse(NoFieldTypes)
-    }
 
-    private def getReturnType(pairs: ElementValuePairs): Type = {
-        pairs.find(_.name == "returnType").map { p =>
-            p.value.asInstanceOf[ClassValue].value
-        }.getOrElse(VoidType)
-    }
+    private def getReturnType(pairs: ElementValuePairs): Type = pairs.find(_.name == "returnType").map { p =>
+        p.value.asInstanceOf[ClassValue].value
+    }.getOrElse(VoidType)
 
     describe("invocations of inherited methods on instances of functional interfaces") {
-        val testClassType = ObjectType("lambdas/ObjectMethodsOnFunctionalInterfaces")
-        val testClass = project.classFile(testClassType).get
+        val testClassType    = ObjectType("lambdas/ObjectMethodsOnFunctionalInterfaces")
+        val testClass        = project.classFile(testClassType).get
         val annotatedMethods = testClass.methods.filter(_.runtimeVisibleAnnotations.nonEmpty)
         annotatedMethods.foreach(m => testMethod(testClass, m.name))
     }

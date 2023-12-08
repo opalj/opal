@@ -13,7 +13,7 @@ import org.opalj.br.ArrayType
  */
 trait DefaultConcreteArrayValuesBinding
     extends DefaultArrayValuesBinding
-    with ConcreteArrayValues {
+        with ConcreteArrayValues {
     domain: CorrelationalDomain with ConcreteIntegerValues with LogContextProvider =>
 
     type DomainConcreteArrayValue = ConcreteArrayValue
@@ -27,16 +27,12 @@ trait DefaultConcreteArrayValuesBinding
             origin:            ValueOrigin,
             theUpperTypeBound: ArrayType,
             values:            Array[DomainValue],
-            refId:             RefId
-    ) extends ConcreteArrayValue
+            refId: RefId) extends ConcreteArrayValue
 
     override def ArrayValue(
         origin:            ValueOrigin,
         theUpperTypeBound: ArrayType,
         values:            Array[DomainValue],
-        refId:             RefId
-    ): DomainConcreteArrayValue = {
-        DefaultConcreteArrayValue(origin, theUpperTypeBound, values, refId)
-    }
+        refId:             RefId): DomainConcreteArrayValue = DefaultConcreteArrayValue(origin, theUpperTypeBound, values, refId)
 
 }

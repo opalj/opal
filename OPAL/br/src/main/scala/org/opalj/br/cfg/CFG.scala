@@ -6,13 +6,9 @@ package cfg
 import scala.reflect.ClassTag
 
 import java.util.Arrays
-
 import scala.collection.{Set => SomeSet}
 import scala.collection.AbstractIterator
 
-import org.opalj.log.LogContext
-import org.opalj.log.GlobalLogContext
-import org.opalj.log.OPALLogger.info
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.IntTrieSet1
 import org.opalj.collection.mutable.FixedSizedHashIDMap
@@ -20,6 +16,9 @@ import org.opalj.collection.mutable.IntArrayStack
 import org.opalj.graphs.DefaultMutableNode
 import org.opalj.graphs.DominatorTree
 import org.opalj.graphs.Node
+import org.opalj.log.GlobalLogContext
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger.info
 
 /**
  * Represents the control flow graph of a method.
@@ -46,15 +45,14 @@ import org.opalj.graphs.Node
  * @author Michael Eichberg
  */
 case class CFG[I <: AnyRef, C <: CodeSequence[I]](
-        code:                    C,
-        normalReturnNode:        ExitNode,
-        abnormalReturnNode:      ExitNode,
-        catchNodes:              Seq[CatchNode],
-        private val basicBlocks: Array[BasicBlock]
-) { cfg =>
+        code:               C,
+        normalReturnNode:   ExitNode,
+        abnormalReturnNode: ExitNode,
+        catchNodes:         Seq[CatchNode],
+        private val basicBlocks: Array[BasicBlock]) { cfg =>
 
     if (CFG.Validate) {
-        val allBBs = basicBlocks.filter(_ != null)
+        val allBBs    = basicBlocks.filter(_ != null)
         val allBBsSet = allBBs.toSet
         // 1. Check that each basic block has a lower start pc than the end pc
         //    i.e., startPC <= endPC.
@@ -67,13 +65,13 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
         //    i.e., pc in basicBlock : bb => basicBlock(pc) == bb.
         check(
             allBBsSet.forall { bb =>
-                (bb.startPC to bb.endPC).forall { pc =>
-                    (basicBlocks(pc) eq null) || (basicBlocks(pc) eq bb)
-                }
+                (bb.startPC to bb.endPC).forall { pc => (basicBlocks(pc) eq null) || (basicBlocks(pc) eq bb) }
             },
-            basicBlocks.zipWithIndex.filter(_._1 != null).
-                map(bb => s"${bb._2}:${bb._1}#${System.identityHashCode(bb._1).toHexString}").
-                mkString("basic blocks mapping broken:\n\t", ",\n\t", "\n")
+            basicBlocks.zipWithIndex.filter(_._1 != null).map(bb =>
+                s"${bb._2}:${bb._1}#${System.identityHashCode(bb._1).toHexString}").mkString(
+                "basic blocks mapping broken:\n\t",
+                ",\n\t",
+                "\n")
         )
 
         // 3. Check that the CFG is self-consistent; i.e., that no node references a node
@@ -85,13 +83,13 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
                         val succBB = successorBB.asBasicBlock
                         (basicBlocks(succBB.startPC) eq succBB) && (basicBlocks(succBB.endPC) eq succBB)
                     }) ||
-                        (successorBB.isCatchNode && catchNodes.contains(successorBB.asCatchNode)) ||
-                        successorBB.isExitNode
+                    (successorBB.isCatchNode && catchNodes.contains(successorBB.asCatchNode)) ||
+                    successorBB.isExitNode
                 }
             },
-            allBBs.
-                map(bb => bb.toString+" => "+bb.successors.mkString(", ")).
-                mkString("unexpected successors:\n\t", "\n\t", "")
+            allBBs.map(bb => bb.toString + " => " + bb.successors.mkString(", ")).mkString("unexpected successors:\n\t",
+                                                                                           "\n\t",
+                                                                                           "")
         )
         check(
             allBBsSet.forall { bb =>
@@ -102,21 +100,21 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
                             (basicBlocks(predBB.startPC) eq predBB) && (basicBlocks(predBB.endPC) eq predBB)
                         }
                     ) ||
-                        (predecessorBB.isCatchNode && catchNodes.contains(predecessorBB.asCatchNode))
+                    (predecessorBB.isCatchNode && catchNodes.contains(predecessorBB.asCatchNode))
                 }
             },
-            basicBlocks.zipWithIndex.filter(_._1 != null).map(_.swap).
-                map(bb => s"${bb._1}:${bb._2.toString} predecessors: ${bb._2.predecessors.mkString(", ")}").
-                mkString("unexpected predecessors:\n\t", "\n\t", s"\ncode:$code")
+            basicBlocks.zipWithIndex.filter(_._1 != null).map(_.swap).map(bb =>
+                s"${bb._1}:${bb._2.toString} predecessors: ${bb._2.predecessors.mkString(", ")}").mkString(
+                "unexpected predecessors:\n\t",
+                "\n\t",
+                s"\ncode:$code")
         )
 
         // 4.  Check that all catch nodes referred to by the basic blocks are listed in the
         //     sequence of catch nodes
         check(
-            allBBs.
-                filter(bb => bb.successors.exists { _.isCatchNode }).
-                flatMap(bb => bb.successors.collect { case cn: CatchNode => cn }).
-                forall(catchBB => catchNodes.contains(catchBB)),
+            allBBs.filter(bb => bb.successors.exists { _.isCatchNode }).flatMap(bb =>
+                bb.successors.collect { case cn: CatchNode => cn }).forall(catchBB => catchNodes.contains(catchBB)),
             catchNodes.mkString("the set of catch nodes {", ", ", "} is incomplete:\n") +
                 allBBs.collect {
                     case bb if bb.successors.exists(succBB => succBB.isCatchNode && !catchNodes.contains(succBB)) =>
@@ -126,22 +124,18 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
 
         // 5.   Check that predecessors and successors are consistent.
         check(
-            allBBsSet.
-                forall(bb => bb.successors.forall { succBB => succBB.predecessors.contains(bb) }),
-            "successors and predecessors are inconsistent; e.g., "+
-                allBBsSet.
-                find(bb => !bb.successors.forall { succBB => succBB.predecessors.contains(bb) }).
-                map(bb => bb.successors.find(succBB => !succBB.predecessors.contains(bb)).map(succBB =>
-                    s"$succBB is a successor of $bb, but does not list it as a predecessor").get).get
+            allBBsSet.forall(bb => bb.successors.forall { succBB => succBB.predecessors.contains(bb) }),
+            "successors and predecessors are inconsistent; e.g., " +
+                allBBsSet.find(bb => !bb.successors.forall { succBB => succBB.predecessors.contains(bb) }).map(bb =>
+                    bb.successors.find(succBB => !succBB.predecessors.contains(bb)).map(succBB =>
+                        s"$succBB is a successor of $bb, but does not list it as a predecessor").get).get
         )
         check(
-            allBBsSet.
-                forall(bb => bb.predecessors.forall { predBB => predBB.successors.contains(bb) }),
-            "predecessors and successors are inconsistent; e.g., "+
-                allBBsSet.
-                find(bb => !bb.predecessors.forall { predBB => predBB.successors.contains(bb) }).
-                map(bb => bb.predecessors.find(predBB => !predBB.successors.contains(bb)).map(predBB =>
-                    s"predBB is a predecessor of $bb, but does not list it as a successor").get).get
+            allBBsSet.forall(bb => bb.predecessors.forall { predBB => predBB.successors.contains(bb) }),
+            "predecessors and successors are inconsistent; e.g., " +
+                allBBsSet.find(bb => !bb.predecessors.forall { predBB => predBB.successors.contains(bb) }).map(bb =>
+                    bb.predecessors.find(predBB => !predBB.successors.contains(bb)).map(predBB =>
+                        s"predBB is a predecessor of $bb, but does not list it as a successor").get).get
         )
     }
 
@@ -165,26 +159,25 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
     final def performForwardDataFlowAnalysis[Facts >: Null <: AnyRef: ClassTag](
         seed: Facts,
         t:    (Facts, I, PC, CFG.SuccessorId) => Facts,
-        join: (Facts, Facts) => Facts
-    ): (Array[Facts], /*normal return*/ Facts, /*abnormal return*/ Facts) = {
+        join: (Facts, Facts) => Facts): (Array[Facts], /*normal return*/ Facts, /*abnormal return*/ Facts) = {
 
         implicit val logContext: LogContext = GlobalLogContext
 
         val instructions = code.instructions
-        val codeSize = instructions.length
+        val codeSize     = instructions.length
 
         val entryFacts = new Array[Facts](codeSize) // the facts before instruction evaluation
         entryFacts(0) = seed
-        var normalReturnFacts: Facts = null
+        var normalReturnFacts: Facts   = null
         var abnormalReturnFacts: Facts = null
 
         val workList = new IntArrayStack(Math.min(codeSize, 10))
         workList.push(0)
 
         while (workList.nonEmpty) {
-            val pc = workList.pop()
+            val pc          = workList.pop()
             val instruction = instructions(pc)
-            val facts = entryFacts(pc)
+            val facts       = entryFacts(pc)
 
             foreachLogicalSuccessor(pc) {
                 case CFG.NormalReturnId =>
@@ -206,9 +199,9 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
                         }
 
                 case succId =>
-                    val newFacts = t(facts, instruction, pc, succId)
+                    val newFacts        = t(facts, instruction, pc, succId)
                     val effectiveSuccPC = if (succId < 0) -succId else succId
-                    val succPCFacts = entryFacts(effectiveSuccPC)
+                    val succPCFacts     = entryFacts(effectiveSuccPC)
                     if (succPCFacts == null) {
                         if (CFG.TraceDFSolver) {
                             info("progress - df solver", s"[initial] $pc -> $succId: $newFacts")
@@ -225,7 +218,8 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
                             workList += effectiveSuccPC
                         } else {
                             if (CFG.TraceDFSolver) {
-                                info("progress - df solver", s"[no update] $pc -> $succId: $succPCFacts -> $newSuccPCFacts")
+                                info("progress - df solver",
+                                     s"[no update] $pc -> $succId: $succPCFacts -> $newSuccPCFacts")
                             }
                         }
                     }
@@ -261,16 +255,15 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
     final def performBackwardDataFlowAnalysis[Facts >: Null <: AnyRef: ClassTag](
         seed: Facts,
         t:    (Facts, I, PC, CFG.PredecessorId) => Facts,
-        join: (Facts, Facts) => Facts
-    ): (Array[Facts], /*init*/ Facts) = {
+        join: (Facts, Facts) => Facts): (Array[Facts], /*init*/ Facts) = {
 
         implicit val logContext: LogContext = GlobalLogContext
 
         val instructions = code.instructions
-        val codeSize = instructions.length
+        val codeSize     = instructions.length
 
         val exitFacts = new Array[Facts](codeSize) // stores the facts after instruction evaluation
-        val workList = new IntArrayStack(Math.min(codeSize, 10))
+        val workList  = new IntArrayStack(Math.min(codeSize, 10))
         normalReturnNode.predecessors.foreach { predBB =>
             val returnPC = predBB.asBasicBlock.endPC
             exitFacts(returnPC) = seed
@@ -286,8 +279,8 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
 
         def handleTransition(pc: PC, predId: Int): Unit = {
             val instruction = instructions(pc)
-            val facts = exitFacts(pc)
-            val newFacts = t(facts, instruction, pc, predId)
+            val facts       = exitFacts(pc)
+            val newFacts    = t(facts, instruction, pc, predId)
 
             if (predId >= 0) {
                 val predPCFacts = exitFacts(predId)
@@ -377,31 +370,27 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
      * Iterates over the set of all [[BasicBlock]]s. (I.e., the exit and catch nodes are
      * not returned.) Always returns the basic block containing the first instruction first.
      */
-    def allBBs: Iterator[BasicBlock] = {
-        new AbstractIterator[BasicBlock] {
+    def allBBs: Iterator[BasicBlock] = new AbstractIterator[BasicBlock] {
 
-            private[this] var currentBBPC = 0
+        private[this] var currentBBPC = 0
 
-            def hasNext: Boolean = currentBBPC < basicBlocks.length
+        def hasNext: Boolean = currentBBPC < basicBlocks.length
 
-            def next(): BasicBlock = {
-                val basicBlocks = cfg.basicBlocks
-                val current = basicBlocks(currentBBPC)
-                currentBBPC = current.endPC + 1
-                // jump to the end and check if the instruction directly following this bb
-                // actually belongs to a basic block
-                val maxPC = basicBlocks.length
-                while (currentBBPC < maxPC && (basicBlocks(currentBBPC) eq null)) {
-                    currentBBPC += 1
-                }
-                current
+        def next(): BasicBlock = {
+            val basicBlocks = cfg.basicBlocks
+            val current     = basicBlocks(currentBBPC)
+            currentBBPC = current.endPC + 1
+            // jump to the end and check if the instruction directly following this bb
+            // actually belongs to a basic block
+            val maxPC = basicBlocks.length
+            while (currentBBPC < maxPC && (basicBlocks(currentBBPC) eq null)) {
+                currentBBPC += 1
             }
+            current
         }
     }
 
-    def allNodes: Iterator[CFGNode] = {
-        allBBs ++ catchNodes.iterator ++ Iterator(normalReturnNode, abnormalReturnNode)
-    }
+    def allNodes: Iterator[CFGNode] = allBBs ++ catchNodes.iterator ++ Iterator(normalReturnNode, abnormalReturnNode)
 
     /**
      * Returns all direct runtime successors of the instruction with the given pc.
@@ -495,26 +484,20 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
                         visited += nextPC
                         f(-nextPC)
                     }
-                case en: ExitNode =>
-                    f(if (en.normalReturn) CFG.NormalReturnId else CFG.AbnormalReturnId)
+                case en: ExitNode => f(if (en.normalReturn) CFG.NormalReturnId else CFG.AbnormalReturnId)
             }
         }
     }
 
     def predecessors(pc: Int): IntTrieSet = {
-        if (pc == 0)
-            return IntTrieSet.empty;
+        if (pc == 0) return IntTrieSet.empty;
 
         val bb = this.bb(pc)
         if (bb.startPC == pc) {
             var predecessorPCs = IntTrieSet.empty
             bb.predecessors foreach {
-                case bb: BasicBlock =>
-                    predecessorPCs += bb.endPC
-                case cn: CatchNode =>
-                    cn.predecessors.foreach { bb =>
-                        predecessorPCs += bb.asBasicBlock.endPC
-                    }
+                case bb: BasicBlock => predecessorPCs += bb.endPC
+                case cn: CatchNode  => cn.predecessors.foreach { bb => predecessorPCs += bb.asBasicBlock.endPC }
             }
             predecessorPCs
         } else {
@@ -523,8 +506,7 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
     }
 
     def foreachPredecessor(pc: Int)(f: Int => Unit): Unit = {
-        if (pc == 0)
-            return ;
+        if (pc == 0) return;
 
         val bb = this.bb(pc)
         if (bb.startPC == pc) {
@@ -552,15 +534,13 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
      *
      * @see [[DominatorTree.apply]]
      */
-    def dominatorTree: DominatorTree = {
-        DominatorTree(
-            0,
-            basicBlocks.head.predecessors.nonEmpty,
-            foreachSuccessor,
-            foreachPredecessor,
-            basicBlocks.last.endPC
-        )
-    }
+    def dominatorTree: DominatorTree = DominatorTree(
+        0,
+        basicBlocks.head.predecessors.nonEmpty,
+        foreachSuccessor,
+        foreachPredecessor,
+        basicBlocks.last.endPC
+    )
 
     /**
      * Creates a new CFG where the boundaries of the basic blocks are updated given the `pcToIndex`
@@ -588,8 +568,7 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
         newCode:              NewC,
         pcToIndex:            Array[Int /*PC*/ ],
         singletonBBsExpander: Int /*PC*/ => Int,
-        lastIndex:            Int
-    ): CFG[NewI, NewC] = {
+        lastIndex:            Int): CFG[NewI, NewC] = {
 
         /*
         // [USED FOR DEBUGGING PURPOSES] *********************************************************
@@ -611,7 +590,7 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
         println(pcToIndex.zipWithIndex.map(_.swap).mkString("Mapping:", ",", "\n"))
         //
         // ********************************************************* [USED FOR DEBUGGING PURPOSES]
-        */
+         */
 
         val bbsLength = basicBlocks.length
         // Note, catch node ids have values in the range [-3-number of catch nodes,-3].
@@ -619,12 +598,12 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
         // of catch nodes does not necessarily reflect the smallest catch node id.
         val leastCatchNodeId = if (catchNodes.isEmpty) 0 else catchNodes.iterator.map(_.nodeId).min
         val bbMapping = FixedSizedHashIDMap[CFGNode, CFGNode](
-            minValue = Math.min(-2 /*the exit nodes*/ , leastCatchNodeId),
+            minValue = Math.min(-2 /*the exit nodes*/, leastCatchNodeId),
             maxValue = code.instructions.length
         )
 
-        val newBasicBlocks = new Array[BasicBlock](lastIndex + 1)
-        val newBasicBlocksArray = newBasicBlocks.asInstanceOf[Array[Object]]
+        val newBasicBlocks        = new Array[BasicBlock](lastIndex + 1)
+        val newBasicBlocksArray   = newBasicBlocks.asInstanceOf[Array[Object]]
         val requiresNewStartBlock = pcToIndex(0) > 0
 
         var lastNewBB: BasicBlock = null
@@ -636,15 +615,14 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
         }
         var startPC = 0
         do {
-            val oldBB = basicBlocks(startPC)
+            val oldBB      = basicBlocks(startPC)
             val startIndex = pcToIndex(startPC)
             val endIndex = {
                 val initialCandidate = pcToIndex(oldBB.endPC)
                 val endIndexCandidate =
                     if (initialCandidate == -1) { // There may be dead instructions
                         pcToIndex(
-                            ((oldBB.endPC - 1) to oldBB.startPC by -1).
-                                find(pcToIndex(_) > -0).getOrElse(0)
+                            ((oldBB.endPC - 1) to oldBB.startPC by -1).find(pcToIndex(_) > -0).getOrElse(0)
                         )
                     } else initialCandidate
                 if (startIndex == endIndexCandidate) {
@@ -660,9 +638,9 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
             startPC = oldBB.endPC + 1
             var tempBB: BasicBlock = null
             while (startPC < bbsLength && {
-                tempBB = basicBlocks(startPC)
-                (tempBB eq null) || pcToIndex(tempBB.startPC) < 0
-            }) {
+                       tempBB = basicBlocks(startPC)
+                       (tempBB eq null) || pcToIndex(tempBB.startPC) < 0
+                   }) {
                 assert(tempBB ne oldBB)
                 // This (index < 0) handles the case where the initial CFG was created using
                 // a simple algorithm that actually resulted in a CFG with detached basic blocks;
@@ -676,7 +654,7 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
         } while (startPC < bbsLength)
 
         if (requiresNewStartBlock) {
-            val firstBB = newBasicBlocks(0)
+            val firstBB  = newBasicBlocks(0)
             val secondBB = newBasicBlocks(pcToIndex(0))
             firstBB.addSuccessor(secondBB)
             secondBB.addPredecessor(firstBB)
@@ -717,15 +695,19 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
 
         // let's see if we can merge the first two basic blocks
         if (requiresNewStartBlock && basicBlocks(0).predecessors.isEmpty) {
-            val firstBB = newBasicBlocks(0)
-            val secondBB = firstBB.successors.head.asBasicBlock
+            val firstBB    = newBasicBlocks(0)
+            val secondBB   = firstBB.successors.head.asBasicBlock
             val newFirstBB = secondBB.copy(startPC = 0, predecessors = Set.empty)
             newFirstBB.successors.foreach(succBB => succBB.updatePredecessor(secondBB, newFirstBB))
-            Arrays.fill(newBasicBlocksArray, 0, secondBB._endPC + 1 /* (exclusive)*/ , newFirstBB)
+            Arrays.fill(newBasicBlocksArray, 0, secondBB._endPC + 1 /* (exclusive)*/, newFirstBB)
         }
 
         CFG[NewI, NewC](
-            newCode, newNormalReturnNode, newAbnormalReturnNode, newCatchNodes, newBasicBlocks
+            newCode,
+            newNormalReturnNode,
+            newAbnormalReturnNode,
+            newCatchNodes,
+            newBasicBlocks
         )
     }
 
@@ -742,11 +724,10 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
         //        catchNodes:              Seq[CatchNode],
         //        private val basicBlocks: Array[BasicBlock]
 
-        val cfgNodes: Set[CFGNode] =
-            basicBlocks.filter(_ ne null).toSet[CFGNode] ++
-                catchNodes +
-                normalReturnNode +
-                abnormalReturnNode
+        val cfgNodes: Set[CFGNode] = basicBlocks.filter(_ ne null).toSet[CFGNode] ++
+            catchNodes +
+            normalReturnNode +
+            abnormalReturnNode
 
         val bbIds: Map[CFGNode, Int] = cfgNodes.zipWithIndex.toMap
 
@@ -755,9 +736,10 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
             if (bb.isExitNode) {
                 s"BB_${id.toHexString}: $bb"
             } else {
-                bb.successors.
-                    map(succBB => "BB_"+bbIds(succBB).toHexString).
-                    mkString(s"BB_${id.toHexString}: $bb -> {", ",", "}")
+                bb.successors.map(succBB => "BB_" + bbIds(succBB).toHexString).mkString(
+                    s"BB_${id.toHexString}: $bb -> {",
+                    ",",
+                    "}")
             }
         }.toList.sorted.mkString("CFG(\n\t", "\n\t", "\n)")
     }
@@ -773,11 +755,10 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
      */
     def toDot(
         f:                      BasicBlock => String,
-        includeAbnormalReturns: Boolean              = true
-    ): (Node, Iterable[Node]) = {
+        includeAbnormalReturns: Boolean = true): (Node, Iterable[Node]) = {
         // 1. create a node foreach cfg node
-        val bbsIterator = allBBs
-        val startBB = bbsIterator.next()
+        val bbsIterator               = allBBs
+        val startBB                   = bbsIterator.next()
         val startNodeVisualProperties = Map("fillcolor" -> "green", "style" -> "filled", "shape" -> "box")
         val startBBNode = new DefaultMutableNode(
             f(startBB),
@@ -788,29 +769,28 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
         cfgNodeToGNodes ++= catchNodes.map(cn => (cn, new DefaultMutableNode(cn.toString)))
         cfgNodeToGNodes += (
             abnormalReturnNode -> {
-                if (includeAbnormalReturns)
-                    new DefaultMutableNode(
-                        "abnormal return", theVisualProperties = abnormalReturnNode.visualProperties
-                    )
-                else
-                    null
+                if (includeAbnormalReturns) new DefaultMutableNode(
+                    "abnormal return",
+                    theVisualProperties = abnormalReturnNode.visualProperties
+                )
+                else null
             }
         )
         cfgNodeToGNodes += (
             normalReturnNode ->
-            new DefaultMutableNode(
-                "return", theVisualProperties = normalReturnNode.visualProperties
-            )
+                new DefaultMutableNode(
+                    "return",
+                    theVisualProperties = normalReturnNode.visualProperties
+                )
         )
 
         // 2. reconnect nodes
         cfgNodeToGNodes foreach { cfgNodeToGNode =>
             val (cfgNode, gNode) = cfgNodeToGNode
-            if (gNode != null)
-                cfgNode.successors foreach { cfgNode =>
-                    val targetGNode = cfgNodeToGNodes(cfgNode)
-                    if (targetGNode != null) gNode.addChild(targetGNode)
-                }
+            if (gNode != null) cfgNode.successors foreach { cfgNode =>
+                val targetGNode = cfgNodeToGNodes(cfgNode)
+                if (targetGNode != null) gNode.addChild(targetGNode)
+            }
         }
 
         val nodes = cfgNodeToGNodes.values
@@ -820,7 +800,7 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
 
 object CFG {
 
-    final val NormalReturnId = Int.MaxValue
+    final val NormalReturnId   = Int.MaxValue
     final val AbnormalReturnId = Int.MinValue
 
     /**

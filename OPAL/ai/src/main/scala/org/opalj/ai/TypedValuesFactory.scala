@@ -2,16 +2,16 @@
 package org.opalj
 package ai
 
-import org.opalj.br.Type
 import org.opalj.br.BooleanType
 import org.opalj.br.ByteType
 import org.opalj.br.CharType
-import org.opalj.br.ShortType
-import org.opalj.br.IntegerType
-import org.opalj.br.LongType
-import org.opalj.br.FloatType
 import org.opalj.br.DoubleType
 import org.opalj.br.FieldType
+import org.opalj.br.FloatType
+import org.opalj.br.IntegerType
+import org.opalj.br.LongType
+import org.opalj.br.ShortType
+import org.opalj.br.Type
 import org.opalj.br.VoidType
 
 /**
@@ -34,19 +34,18 @@ trait TypedValuesFactory {
      * values are given and initial values need to be generated. This method is not
      * used elsewhere by the framework.
      */
-    def TypedValue(origin: ValueOrigin, valueType: Type): DomainValue =
-        (valueType.id: @scala.annotation.switch) match {
-            case BooleanType.id => BooleanValue(origin)
-            case ByteType.id    => ByteValue(origin)
-            case ShortType.id   => ShortValue(origin)
-            case CharType.id    => CharValue(origin)
-            case IntegerType.id => IntegerValue(origin)
-            case FloatType.id   => FloatValue(origin)
-            case LongType.id    => LongValue(origin)
-            case DoubleType.id  => DoubleValue(origin)
-            case VoidType.id    => throw DomainException("cannot create void typed value")
-            case _              => ReferenceValue(origin, valueType.asReferenceType)
-        }
+    def TypedValue(origin: ValueOrigin, valueType: Type): DomainValue = (valueType.id: @scala.annotation.switch) match {
+        case BooleanType.id => BooleanValue(origin)
+        case ByteType.id    => ByteValue(origin)
+        case ShortType.id   => ShortValue(origin)
+        case CharType.id    => CharValue(origin)
+        case IntegerType.id => IntegerValue(origin)
+        case FloatType.id   => FloatValue(origin)
+        case LongType.id    => LongValue(origin)
+        case DoubleType.id  => DoubleValue(origin)
+        case VoidType.id    => throw DomainException("cannot create void typed value")
+        case _              => ReferenceValue(origin, valueType.asReferenceType)
+    }
 
     /**
      * Creates a `DomainValue` that represents a value with the given type
@@ -54,7 +53,7 @@ trait TypedValuesFactory {
      * E.g., for `IntegerValue`s the value is set to `0`. In case of a
      * `ReferenceType` the value is the [[ReferenceValuesFactory#NullValue]].
      */
-    final def DefaultValue(origin: ValueOrigin, theType: FieldType): DomainValue = {
+    final def DefaultValue(origin: ValueOrigin, theType: FieldType): DomainValue =
         (theType.id: @scala.annotation.switch) match {
             case BooleanType.id => BooleanValue(origin, false)
             case ByteType.id    => ByteValue(origin, 0)
@@ -67,5 +66,4 @@ trait TypedValuesFactory {
             case VoidType.id    => throw DomainException("cannot create void typed value")
             case _              => NullValue(origin)
         }
-    }
 }

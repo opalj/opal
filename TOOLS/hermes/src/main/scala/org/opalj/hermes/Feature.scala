@@ -17,10 +17,9 @@ package hermes
  * @author Michael Eichberg
  */
 abstract case class Feature[S] private (
-        id:         String,
-        count:      Int,
-        extensions: List[Location[S]]
-) {
+        id:    String,
+        count: Int,
+        extensions: List[Location[S]]) {
     assert(count >= extensions.size)
 }
 
@@ -33,19 +32,12 @@ object Feature {
 
     def apply[S](
         id:         String,
-        count:      Int               = 0,
+        count:      Int = 0,
         extensions: List[Location[S]] = List.empty
-    )(
-        implicit
-        hermes: HermesConfig
-    ): Feature[S] = {
-        new Feature(id, count, extensions.take(hermes.MaxLocations)) {}
-    }
+      )(implicit
+        hermes: HermesConfig): Feature[S] = new Feature(id, count, extensions.take(hermes.MaxLocations)) {}
 
     def apply[S](
         id:        String,
-        locations: LocationsContainer[S]
-    ): Feature[S] = {
-        new Feature(id, locations.size, locations.locations) {}
-    }
+        locations: LocationsContainer[S]): Feature[S] = new Feature(id, locations.size, locations.locations) {}
 }

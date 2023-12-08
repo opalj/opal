@@ -5,19 +5,18 @@ package analyses
 
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
-
 import scala.collection.mutable.AnyRefMap
 
-import org.opalj.log.OPALLogger
-import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.br.instructions.FieldReadAccess
 import org.opalj.br.instructions.FieldWriteAccess
 import org.opalj.br.instructions.GETFIELD
 import org.opalj.br.instructions.GETSTATIC
+import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.PUTFIELD
 import org.opalj.br.instructions.PUTSTATIC
-import org.opalj.br.instructions.Instruction
+import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.IntTrieSetBuilder
+import org.opalj.log.OPALLogger
 
 /**
  * This analysis determines where each field is accessed.
@@ -41,9 +40,9 @@ object FieldAccessInformationAnalysis {
         import project.resolveFieldReference
         import project.logContext
 
-        val allReadAccesses = new ConcurrentHashMap[Field, List[(Method, PCs)]]()
+        val allReadAccesses  = new ConcurrentHashMap[Field, List[(Method, PCs)]]()
         val allWriteAccesses = new ConcurrentHashMap[Field, List[(Method, PCs)]]()
-        val allUnresolved = new ConcurrentLinkedQueue[(Method, PCs)]()
+        val allUnresolved    = new ConcurrentLinkedQueue[(Method, PCs)]()
 
         // we don't want to report unresolvable field references multiple times
         val reportedFieldAccesses = ConcurrentHashMap.newKeySet[Instruction]()
@@ -51,17 +50,16 @@ object FieldAccessInformationAnalysis {
         project.parForeachMethodWithBody(isInterrupted) { methodInfo =>
             val method = methodInfo.method
 
-            val readAccesses = AnyRefMap.empty[Field, IntTrieSetBuilder]
+            val readAccesses  = AnyRefMap.empty[Field, IntTrieSetBuilder]
             val writeAccesses = AnyRefMap.empty[Field, IntTrieSetBuilder]
-            var unresolved = IntTrieSet.empty
+            var unresolved    = IntTrieSet.empty
             method.body.get iterate { (pc, instruction) =>
                 instruction.opcode match {
 
                     case GETFIELD.opcode | GETSTATIC.opcode =>
                         val fieldReadAccess = instruction.asInstanceOf[FieldReadAccess]
                         resolveFieldReference(fieldReadAccess) match {
-                            case Some(field) =>
-                                readAccesses.getOrElseUpdate(field, new IntTrieSetBuilder()) += pc
+                            case Some(field) => readAccesses.getOrElseUpdate(field, new IntTrieSetBuilder()) += pc
                             case None =>
                                 if (reportedFieldAccesses.add(instruction)) {
                                     val message = s"cannot resolve field read access: $instruction"
@@ -73,8 +71,7 @@ object FieldAccessInformationAnalysis {
                     case PUTFIELD.opcode | PUTSTATIC.opcode =>
                         val fieldWriteAccess = instruction.asInstanceOf[FieldWriteAccess]
                         resolveFieldReference(fieldWriteAccess) match {
-                            case Some(field) =>
-                                writeAccesses.getOrElseUpdate(field, new IntTrieSetBuilder()) += pc
+                            case Some(field) => writeAccesses.getOrElseUpdate(field, new IntTrieSetBuilder()) += pc
                             case None =>
                                 if (reportedFieldAccesses.add(instruction)) {
                                     val message = s"cannot resolve field write access: $instruction"
@@ -92,20 +89,16 @@ object FieldAccessInformationAnalysis {
                 val (key @ field, pcs) = e
                 field.synchronized {
                     val currentAccesses = allReadAccesses.get(key)
-                    if (currentAccesses eq null)
-                        allReadAccesses.put(key, (method, pcs.result()) :: Nil)
-                    else
-                        allReadAccesses.put(key, (method, pcs.result()) :: currentAccesses)
+                    if (currentAccesses eq null) allReadAccesses.put(key, (method, pcs.result()) :: Nil)
+                    else allReadAccesses.put(key, (method, pcs.result()) :: currentAccesses)
                 }
             }
             writeAccesses foreach { e =>
                 val (key @ field, pcs) = e
                 field.synchronized {
                     val currentAccesses = allWriteAccesses.get(key)
-                    if (currentAccesses eq null)
-                        allWriteAccesses.put(key, (method, pcs.result()) :: Nil)
-                    else
-                        allWriteAccesses.put(key, (method, pcs.result()) :: currentAccesses)
+                    if (currentAccesses eq null) allWriteAccesses.put(key, (method, pcs.result()) :: Nil)
+                    else allWriteAccesses.put(key, (method, pcs.result()) :: currentAccesses)
                 }
             }
 

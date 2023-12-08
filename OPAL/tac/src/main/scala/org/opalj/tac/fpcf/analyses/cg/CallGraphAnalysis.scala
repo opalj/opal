@@ -5,43 +5,43 @@ package fpcf
 package analyses
 package cg
 
-import org.opalj.log.Error
-import org.opalj.log.OPALLogger
-import org.opalj.log.OPALLogger.logOnce
-import org.opalj.log.Warn
-import org.opalj.fpcf.EPS
-import org.opalj.fpcf.InterimPartialResult
-import org.opalj.fpcf.ProperPropertyComputationResult
-import org.opalj.fpcf.Results
-import org.opalj.fpcf.SomeEPS
-import org.opalj.fpcf.UBP
-import org.opalj.value.IsMObjectValue
-import org.opalj.value.IsNullValue
-import org.opalj.value.IsSArrayValue
-import org.opalj.value.IsSObjectValue
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
-import org.opalj.br.analyses.cg.IsOverridableMethodKey
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.EPK
-import org.opalj.fpcf.InterimEUBP
-import org.opalj.fpcf.InterimUBP
-import org.opalj.fpcf.PropertyBounds
-import org.opalj.fpcf.PropertyKind
-import org.opalj.fpcf.PropertyStore
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.CallBySignatureKey
+import org.opalj.br.analyses.cg.InitialEntryPointsKey
+import org.opalj.br.analyses.cg.IsOverridableMethodKey
 import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.cg.OnlyCallersWithUnknownContext
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EPK
+import org.opalj.fpcf.EPS
+import org.opalj.fpcf.InterimEUBP
+import org.opalj.fpcf.InterimPartialResult
+import org.opalj.fpcf.InterimUBP
+import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.PropertyBounds
+import org.opalj.fpcf.PropertyKind
+import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.Results
+import org.opalj.fpcf.SomeEPS
+import org.opalj.fpcf.UBP
+import org.opalj.log.Error
+import org.opalj.log.OPALLogger
+import org.opalj.log.OPALLogger.logOnce
+import org.opalj.log.Warn
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.properties.TACAI
+import org.opalj.value.IsMObjectValue
+import org.opalj.value.IsNullValue
+import org.opalj.value.IsSArrayValue
+import org.opalj.value.IsSObjectValue
 
 /**
  * Generates call graphs based on the used [[TypeIterator]].
@@ -54,80 +54,76 @@ import org.opalj.tac.fpcf.properties.TACAI
  * @author Dominik Helm
  */
 class CallGraphAnalysis private[cg] (
-        override val project: SomeProject
-) extends ReachableMethodAnalysis with TypeConsumerAnalysis {
+        override val project: SomeProject) extends ReachableMethodAnalysis with TypeConsumerAnalysis {
     type LocalTypeInformation
 
     private[this] val isMethodOverridable: Method => Answer = project.get(IsOverridableMethodKey)
-    private[this] lazy val getCBSTargets = project.get(CallBySignatureKey)
+    private[this] lazy val getCBSTargets                    = project.get(CallBySignatureKey)
     private[this] val resovleCallBySignature =
         project.config.getBoolean("org.opalj.br.analyses.cg.callBySignatureResolution")
 
-    def c(state: CGState[ContextType])(eps: SomeEPS): ProperPropertyComputationResult = {
-        eps match {
-            case UBP(tacai: TACAI) if tacai.tac.isDefined =>
-                state.updateTACDependee(eps.asInstanceOf[EPS[Method, TACAI]])
+    def c(state: CGState[ContextType])(eps: SomeEPS): ProperPropertyComputationResult = eps match {
+        case UBP(tacai: TACAI) if tacai.tac.isDefined =>
+            state.updateTACDependee(eps.asInstanceOf[EPS[Method, TACAI]])
 
-                // we only want to add the new calls, so we create a fresh object
-                processMethod(state, new DirectCalls())
-
-            case UBP(_: TACAI) =>
-                throw new IllegalStateException("there was already a tac defined")
-
-            case EPS(e) =>
-                val relevantCallSites = state.dependersOf(eps.toEPK).asInstanceOf[Set[CallSite]]
-
-                // ensures, that we only add new calls
-                val calls = new DirectCalls()
-
-                for (cs <- relevantCallSites) {
-                    val (receiver, cbsTargets) = state.callSiteData(cs)
-                    typeIterator.continuation(
-                        receiver, eps.asInstanceOf[EPS[Entity, PropertyType]], cbsTargets
-                    ) {
-                        newType =>
-                            val CallSite(pc, name, descriptor, declaredType) = cs
-                            val tgtR = project.instanceCall(
-                                state.callContext.method.declaringClassType,
-                                newType,
-                                name,
-                                descriptor
-                            )
-                            handleCall(
-                                state.callContext,
-                                name,
-                                descriptor,
-                                declaredType,
-                                isStatic = false,
-                                newType,
-                                pc,
-                                tgtR,
-                                calls
-                            )
-                    }(state)
-                }
-
-                if (eps.isFinal) {
-                    state.removeDependee(eps.toEPK)
-                } else {
-                    state.updateDependency(eps)
-                }
-
-                returnResult(calls)(state)
-        }
-    }
-
-    override final def processMethod(
-        callContext: ContextType, tacEP: EPS[Method, TACAI]
-    ): ProperPropertyComputationResult = {
-        val state = new CGState[ContextType](callContext, tacEP)
-        if (tacEP ne null)
+            // we only want to add the new calls, so we create a fresh object
             processMethod(state, new DirectCalls())
-        else
-            returnResult(new DirectCalls(), enforceCalleesResult = true)(state)
+
+        case UBP(_: TACAI) => throw new IllegalStateException("there was already a tac defined")
+
+        case EPS(e) =>
+            val relevantCallSites = state.dependersOf(eps.toEPK).asInstanceOf[Set[CallSite]]
+
+            // ensures, that we only add new calls
+            val calls = new DirectCalls()
+
+            for (cs <- relevantCallSites) {
+                val (receiver, cbsTargets) = state.callSiteData(cs)
+                typeIterator.continuation(
+                    receiver,
+                    eps.asInstanceOf[EPS[Entity, PropertyType]],
+                    cbsTargets
+                ) {
+                    newType =>
+                        val CallSite(pc, name, descriptor, declaredType) = cs
+                        val tgtR = project.instanceCall(
+                            state.callContext.method.declaringClassType,
+                            newType,
+                            name,
+                            descriptor
+                        )
+                        handleCall(
+                            state.callContext,
+                            name,
+                            descriptor,
+                            declaredType,
+                            isStatic = false,
+                            newType,
+                            pc,
+                            tgtR,
+                            calls
+                        )
+                }(state)
+            }
+
+            if (eps.isFinal) {
+                state.removeDependee(eps.toEPK)
+            } else {
+                state.updateDependency(eps)
+            }
+
+            returnResult(calls)(state)
     }
 
-    override final val processesMethodsWithoutBody = true
+    final override def processMethod(
+        callContext: ContextType,
+        tacEP:       EPS[Method, TACAI]): ProperPropertyComputationResult = {
+        val state = new CGState[ContextType](callContext, tacEP)
+        if (tacEP ne null) processMethod(state, new DirectCalls())
+        else returnResult(new DirectCalls(), enforceCalleesResult = true)(state)
+    }
+
+    final override val processesMethodsWithoutBody = true
 
     protected[this] def doHandleVirtualCall(
         callContext:                   ContextType,
@@ -136,9 +132,9 @@ class CallGraphAnalysis private[cg] (
         specializedDeclaringClassType: ReferenceType,
         isPrecise:                     Boolean,
         calleesAndCallers:             DirectCalls
-    )(implicit state: CGState[ContextType]): Unit = {
+      )(implicit state: CGState[ContextType]): Unit = {
         val callerType = callContext.method.declaringClassType
-        val callSite = CallSite(pc, call.name, call.descriptor, call.declaringClass)
+        val callSite   = CallSite(pc, call.name, call.descriptor, call.declaringClass)
 
         val cbsTargets: Set[ReferenceType] =
             if (!isPrecise && resovleCallBySignature && call.isInterface &&
@@ -150,12 +146,18 @@ class CallGraphAnalysis private[cg] (
             } else Set.empty
 
         val actualTypes = typeIterator.typesProperty(
-            call.receiver.asVar, state.callContext, callSite, state.tac.stmts
+            call.receiver.asVar,
+            state.callContext,
+            callSite,
+            state.tac.stmts
         )
 
         typeIterator.foreachType(call.receiver.asVar, actualTypes, cbsTargets) { possibleTgtType =>
             val tgtR = project.instanceCall(
-                callerType, possibleTgtType, call.name, call.descriptor
+                callerType,
+                possibleTgtType,
+                call.name,
+                call.descriptor
             )
 
             handleCall(
@@ -179,12 +181,14 @@ class CallGraphAnalysis private[cg] (
             if (specializedDeclaringClassType.isObjectType) {
                 val declType = specializedDeclaringClassType.asObjectType
 
-                val mResult = if (classHierarchy.isInterface(declType).isYes)
-                    org.opalj.Result(project.resolveInterfaceMethodReference(
-                        declType, call.name, call.descriptor
-                    ))
-                else
-                    org.opalj.Result(project.resolveMethodReference(
+                val mResult =
+                    if (classHierarchy.isInterface(declType).isYes)
+                        org.opalj.Result(project.resolveInterfaceMethodReference(
+                            declType,
+                            call.name,
+                            call.descriptor
+                        ))
+                    else org.opalj.Result(project.resolveMethodReference(
                         declType,
                         call.name,
                         call.descriptor,
@@ -210,14 +214,13 @@ class CallGraphAnalysis private[cg] (
         }
     }
 
-    protected final def processMethod(
-        state: CGState[ContextType], calls: DirectCalls
-    ): ProperPropertyComputationResult = {
+    final protected def processMethod(
+        state: CGState[ContextType],
+        calls: DirectCalls): ProperPropertyComputationResult = {
         val tac = state.tac
 
         tac.stmts.foreach {
-            case stmt @ StaticFunctionCallStatement(call) =>
-                handleCall(
+            case stmt @ StaticFunctionCallStatement(call) => handleCall(
                     state.callContext,
                     call.name,
                     call.descriptor,
@@ -229,8 +232,7 @@ class CallGraphAnalysis private[cg] (
                     calls
                 )
 
-            case call: StaticMethodCall[V] =>
-                handleCall(
+            case call: StaticMethodCall[V] => handleCall(
                     state.callContext,
                     call.name,
                     call.descriptor,
@@ -242,8 +244,7 @@ class CallGraphAnalysis private[cg] (
                     calls
                 )
 
-            case stmt @ NonVirtualFunctionCallStatement(call) =>
-                handleCall(
+            case stmt @ NonVirtualFunctionCallStatement(call) => handleCall(
                     state.callContext,
                     call.name,
                     call.descriptor,
@@ -255,8 +256,7 @@ class CallGraphAnalysis private[cg] (
                     calls
                 )
 
-            case call: NonVirtualMethodCall[V] =>
-                handleCall(
+            case call: NonVirtualMethodCall[V] => handleCall(
                     state.callContext,
                     call.name,
                     call.descriptor,
@@ -268,11 +268,9 @@ class CallGraphAnalysis private[cg] (
                     calls
                 )
 
-            case VirtualFunctionCallStatement(call) =>
-                handleVirtualCall(state.callContext, call, call.pc, calls)(state)
+            case VirtualFunctionCallStatement(call) => handleVirtualCall(state.callContext, call, call.pc, calls)(state)
 
-            case call: VirtualMethodCall[V] =>
-                handleVirtualCall(state.callContext, call, call.pc, calls)(state)
+            case call: VirtualMethodCall[V] => handleVirtualCall(state.callContext, call, call.pc, calls)(state)
 
             case Assignment(_, _, idc: InvokedynamicFunctionCall[V]) =>
                 calls.addIncompleteCallSite(idc.pc)
@@ -292,29 +290,28 @@ class CallGraphAnalysis private[cg] (
                     Warn("analysis - call graph construction", s"unresolved invokedynamic: $idc")
                 )
 
-            case _ => //nothing to do
+            case _ => // nothing to do
         }
 
         returnResult(calls, true)(state)
     }
 
     protected[this] def returnResult(
-        calleesAndCallers: DirectCalls, enforceCalleesResult: Boolean = false
-    )(implicit state: CGState[ContextType]): ProperPropertyComputationResult = {
+        calleesAndCallers:    DirectCalls,
+        enforceCalleesResult: Boolean = false
+      )(implicit state: CGState[ContextType]): ProperPropertyComputationResult = {
         val results = calleesAndCallers.partialResults(state.callContext, enforceCalleesResult)
 
         // FIXME: This won't work for refinable TACs as state.hasNonFinalCallSite may return false
         //  even if an update for the tac might add a non-final call site
-        if (state.hasNonFinalCallSite && state.hasOpenDependencies)
-            Results(
-                InterimPartialResult(state.dependees, c(state)),
-                results
-            )
-        else
-            Results(results)
+        if (state.hasNonFinalCallSite && state.hasOpenDependencies) Results(
+            InterimPartialResult(state.dependees, c(state)),
+            results
+        )
+        else Results(results)
     }
 
-    protected final def handleCall(
+    final protected def handleCall(
         callContext:        ContextType,
         callName:           String,
         callDescriptor:     MethodDescriptor,
@@ -323,12 +320,13 @@ class CallGraphAnalysis private[cg] (
         receiverType:       ReferenceType,
         pc:                 Int,
         target:             org.opalj.Result[Method],
-        calleesAndCallers:  DirectCalls
-    ): Unit = {
+        calleesAndCallers:  DirectCalls): Unit =
         if (target.hasValue) {
             val tgtDM = declaredMethods(target.value)
             calleesAndCallers.addCall(
-                callContext, pc, typeIterator.expandContext(callContext, tgtDM, pc)
+                callContext,
+                pc,
+                typeIterator.expandContext(callContext, tgtDM, pc)
             )
         } else {
             val packageName = callContext.method.definedMethod.classFile.thisType.packageName
@@ -344,9 +342,8 @@ class CallGraphAnalysis private[cg] (
                 calleesAndCallers
             )
         }
-    }
 
-    protected final def unknownLibraryCall(
+    final protected def unknownLibraryCall(
         callContext:         ContextType,
         callName:            String,
         callDescriptor:      MethodDescriptor,
@@ -355,10 +352,9 @@ class CallGraphAnalysis private[cg] (
         runtimeReceiverType: ReferenceType,
         packageName:         String,
         pc:                  Int,
-        calleesAndCallers:   DirectCalls
-    ): Unit = {
+        calleesAndCallers:   DirectCalls): Unit = {
         val declaringClassType = callDeclaringClass.mostPreciseObjectType
-        val runtimeType = runtimeReceiverType.mostPreciseObjectType
+        val runtimeType        = runtimeReceiverType.mostPreciseObjectType
 
         val declTgt = declaredMethods.apply(
             declaringClassType,
@@ -369,20 +365,25 @@ class CallGraphAnalysis private[cg] (
         )
 
         if (declTgt.hasSingleDefinedMethod) {
-            if (declTgt.definedMethod.isStatic == isStatic)
-                calleesAndCallers.addCall(
-                    callContext, pc, typeIterator.expandContext(callContext, declTgt, pc)
-                )
+            if (declTgt.definedMethod.isStatic == isStatic) calleesAndCallers.addCall(
+                callContext,
+                pc,
+                typeIterator.expandContext(callContext, declTgt, pc)
+            )
         } else if (declTgt.isVirtualOrHasSingleDefinedMethod) {
             calleesAndCallers.addCall(
-                callContext, pc, typeIterator.expandContext(callContext, declTgt, pc)
+                callContext,
+                pc,
+                typeIterator.expandContext(callContext, declTgt, pc)
             )
         } else {
             declTgt.definedMethods foreach { m =>
                 if (m.isStatic == isStatic) {
                     val dm = declaredMethods(m)
                     calleesAndCallers.addCall(
-                        callContext, pc, typeIterator.expandContext(callContext, dm, pc)
+                        callContext,
+                        pc,
+                        typeIterator.expandContext(callContext, dm, pc)
                     )
                 }
             }
@@ -402,16 +403,19 @@ class CallGraphAnalysis private[cg] (
         call:              Call[V] with VirtualCall[V],
         pc:                Int,
         calleesAndCallers: DirectCalls
-    )(implicit state: CGState[ContextType]): Unit = {
+      )(implicit state: CGState[ContextType]): Unit = {
         val rvs = call.receiver.asVar.value.asReferenceValue.allValues
         for (rv <- rvs) rv match {
-            case _: IsSArrayValue =>
-                handlePreciseCall(ObjectType.Object, callContext, call, pc, calleesAndCallers)
+            case _: IsSArrayValue => handlePreciseCall(ObjectType.Object, callContext, call, pc, calleesAndCallers)
 
             case ov: IsSObjectValue =>
                 if (ov.isPrecise) {
                     handlePreciseCall(
-                        ov.theUpperTypeBound, callContext, call, pc, calleesAndCallers
+                        ov.theUpperTypeBound,
+                        callContext,
+                        call,
+                        pc,
+                        calleesAndCallers
                     )
                 } else {
                     doHandleVirtualCall(
@@ -424,8 +428,7 @@ class CallGraphAnalysis private[cg] (
                     )
                 }
 
-            case _: IsMObjectValue =>
-                doHandleVirtualCall(
+            case _: IsMObjectValue => doHandleVirtualCall(
                     callContext,
                     call,
                     pc,
@@ -445,16 +448,14 @@ class CallGraphAnalysis private[cg] (
         call:              Call[V] with VirtualCall[V],
         pc:                Int,
         calleesAndCallers: DirectCalls
-    )(implicit state: CGState[ContextType]): Unit = {
-        doHandleVirtualCall(
-            callContext,
-            call,
-            pc,
-            calleeType,
-            isPrecise = true,
-            calleesAndCallers
-        )
-    }
+      )(implicit state: CGState[ContextType]): Unit = doHandleVirtualCall(
+        callContext,
+        call,
+        pc,
+        calleeType,
+        isPrecise = true,
+        calleesAndCallers
+    )
 }
 
 object CallGraphAnalysisScheduler extends BasicFPCFTriggeredAnalysisScheduler {
@@ -462,12 +463,9 @@ object CallGraphAnalysisScheduler extends BasicFPCFTriggeredAnalysisScheduler {
     override def requiredProjectInformation: ProjectInformationKeys =
         Seq(DeclaredMethodsKey, InitialEntryPointsKey, TypeIteratorKey)
 
-    override def uses: Set[PropertyBounds] =
-        PropertyBounds.ubs(Callers, Callees, TACAI)
+    override def uses: Set[PropertyBounds] = PropertyBounds.ubs(Callers, Callees, TACAI)
 
-    override def uses(p: SomeProject, ps: PropertyStore): Set[PropertyBounds] = {
-        p.get(TypeIteratorKey).usedPropertyKinds
-    }
+    override def uses(p: SomeProject, ps: PropertyStore): Set[PropertyBounds] = p.get(TypeIteratorKey).usedPropertyKinds
 
     override def derivesEagerly: Set[PropertyBounds] = Set.empty
 
@@ -480,21 +478,17 @@ object CallGraphAnalysisScheduler extends BasicFPCFTriggeredAnalysisScheduler {
      */
     override def init(p: SomeProject, ps: PropertyStore): Null = {
         val declaredMethods = p.get(DeclaredMethodsKey)
-        val entryPoints = p.get(InitialEntryPointsKey).map(declaredMethods.apply)
+        val entryPoints     = p.get(InitialEntryPointsKey).map(declaredMethods.apply)
 
-        if (entryPoints.isEmpty)
-            OPALLogger.logOnce(
-                Error("project configuration", "the project has no entry points")
-            )(p.logContext)
+        if (entryPoints.isEmpty) OPALLogger.logOnce(
+            Error("project configuration", "the project has no entry points")
+        )(p.logContext)
 
         entryPoints.foreach { ep =>
             ps.preInitialize(ep, Callers.key) {
-                case _: EPK[_, _] =>
-                    InterimEUBP(ep, OnlyCallersWithUnknownContext)
-                case InterimUBP(ub: Callers) =>
-                    InterimEUBP(ep, ub.updatedWithUnknownContext())
-                case eps =>
-                    throw new IllegalStateException(s"unexpected: $eps")
+                case _: EPK[_, _]            => InterimEUBP(ep, OnlyCallersWithUnknownContext)
+                case InterimUBP(ub: Callers) => InterimEUBP(ep, ub.updatedWithUnknownContext())
+                case eps                     => throw new IllegalStateException(s"unexpected: $eps")
             }
         }
 

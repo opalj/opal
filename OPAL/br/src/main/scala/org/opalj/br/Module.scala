@@ -2,10 +2,10 @@
 package org.opalj
 package br
 
-import org.opalj.bi.AccessFlagsContexts
-import org.opalj.bi.AccessFlags
-
 import scala.collection.immutable.ArraySeq
+
+import org.opalj.bi.AccessFlags
+import org.opalj.bi.AccessFlagsContexts
 
 /**
  * Definition of a Java 9 module.
@@ -20,15 +20,13 @@ case class Module(
         exports:     ArraySeq[Exports],
         opens:       ArraySeq[Opens],
         uses:        ArraySeq[ObjectType],
-        provides:    ArraySeq[Provides]
-) extends Attribute {
+        provides: ArraySeq[Provides]) extends Attribute {
 
     final override def kindId: Int = Module.KindId
 
-    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = {
+    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean =
         // TODO make the comparisons order independent...
         this == other
-    }
 }
 
 object Module {
@@ -60,8 +58,7 @@ case class Exports(exports: String, flags: Int, exportsTo: ArraySeq[String]) {
     def toJava: String = {
         var flags = AccessFlags.toString(this.flags, AccessFlagsContexts.MODULE)
         if (flags.nonEmpty) flags += " "
-        val exportsTo =
-            if (this.exportsTo.isEmpty) "" else this.exportsTo.mkString(" to ", ", ", "")
+        val exportsTo = if (this.exportsTo.isEmpty) "" else this.exportsTo.mkString(" to ", ", ", "")
 
         s"exports $flags$exports$exportsTo;"
     }
@@ -73,8 +70,7 @@ case class Exports(exports: String, flags: Int, exportsTo: ArraySeq[String]) {
 case class Opens(opens: String, flags: Int, toPackages: ArraySeq[String]) {
 
     def toJava: String = {
-        val toPackages =
-            if (this.toPackages.isEmpty) "" else this.toPackages.mkString(" to ", ", ", "")
+        val toPackages = if (this.toPackages.isEmpty) "" else this.toPackages.mkString(" to ", ", ", "")
 
         s"opens $opens$toPackages;"
     }
@@ -85,10 +81,8 @@ case class Provides(provides: ObjectType, withInterfaces: ArraySeq[ObjectType]) 
 
     def toJava: String = {
         val withInterfaces =
-            if (this.withInterfaces.isEmpty)
-                ""
-            else
-                this.withInterfaces.map(_.toJava).mkString(" with ", ", ", "")
+            if (this.withInterfaces.isEmpty) ""
+            else this.withInterfaces.map(_.toJava).mkString(" with ", ", ", "")
         s"provides ${provides.toJava}$withInterfaces;"
     }
 

@@ -12,17 +12,14 @@ import scala.xml.Node
  */
 case class LineNumberTable_attribute(
         attribute_name_index: Constant_Pool_Index,
-        line_number_table:    Seq[LineNumberTableEntry]
-) extends Attribute {
+        line_number_table: Seq[LineNumberTableEntry]) extends Attribute {
 
     final override def attribute_length: Int = 2 + line_number_table.size * 4
 
-    override def toXHTML(implicit cp: Constant_Pool): Node = {
-        <details>
-            <summary class="attribute_name">LineNumberTable [size: { line_number_table.size } item(s)]</summary>
-            { line_number_tableToXHTML() }
+    override def toXHTML(implicit cp: Constant_Pool): Node = <details>
+            <summary class="attribute_name">LineNumberTable [size: {line_number_table.size} item(s)]</summary>
+            {line_number_tableToXHTML()}
         </details>
-    }
 
     def line_number_tableToXHTML(): Seq[Node] = line_number_table.map(_.toXHTML())
 

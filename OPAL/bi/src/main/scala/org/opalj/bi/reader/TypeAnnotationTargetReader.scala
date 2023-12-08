@@ -4,11 +4,12 @@ package bi
 package reader
 
 import scala.annotation.switch
-import java.io.DataInputStream
-import org.opalj.control.fillArraySeq
-
-import scala.collection.immutable.ArraySeq
 import scala.reflect.ClassTag
+
+import java.io.DataInputStream
+import scala.collection.immutable.ArraySeq
+
+import org.opalj.control.fillArraySeq
 
 /**
  * Generic parser for the `target_type` and `target_info` fields of type annotations.
@@ -23,45 +24,43 @@ trait TypeAnnotationTargetReader extends Constant_PoolAbstractions {
 
     type TypeAnnotationTarget <: AnyRef
 
-    //______________________________
+    // ______________________________
     // type_parameter_target
     def ParameterDeclarationOfClassOrInterface(type_parameter_index: Int): TypeAnnotationTarget
     def ParameterDeclarationOfMethodOrConstructor(type_parameter_index: Int): TypeAnnotationTarget
 
-    //______________________________
+    // ______________________________
     // supertype_target
     def SupertypeTarget(supertype_index: Int): TypeAnnotationTarget
 
-    //______________________________
+    // ______________________________
     // type_parameter_bound_target
     def TypeBoundOfParameterDeclarationOfClassOrInterface(
         type_parameter_index: Int,
-        bound_index:          Int
-    ): TypeAnnotationTarget
+        bound_index: Int): TypeAnnotationTarget
     def TypeBoundOfParameterDeclarationOfMethodOrConstructor(
         type_parameter_index: Int,
-        bound_index:          Int
-    ): TypeAnnotationTarget
+        bound_index: Int): TypeAnnotationTarget
 
-    //______________________________
+    // ______________________________
     // empty_target
     def FieldDeclaration: TypeAnnotationTarget
     def ReturnType: TypeAnnotationTarget
     def ReceiverType: TypeAnnotationTarget
 
-    //______________________________
+    // ______________________________
     // formal_parameter_target
     def FormalParameter(formal_parameter_index: Int): TypeAnnotationTarget
 
-    //______________________________
+    // ______________________________
     // throws_target
     def Throws(throws_type_index: Int): TypeAnnotationTarget
 
-    //______________________________
+    // ______________________________
     // catch_target
     def Catch(exception_table_index: Int): TypeAnnotationTarget
 
-    //______________________________
+    // ______________________________
     // localvar_target
     /*
      * Format
@@ -84,59 +83,49 @@ trait TypeAnnotationTargetReader extends Constant_PoolAbstractions {
      * [[org.opalj.bi.reader.AttributeReader.registerAttributesPostProcessor]].
      */
     def LocalvarTableEntry(
-        start_pc:                   Int,
-        length:                     Int,
-        local_variable_table_index: Int
-    ): LocalvarTableEntry
+        start_pc: Int,
+        length: Int,
+        local_variable_table_index: Int): LocalvarTableEntry
     def LocalvarDecl(localVarTable: LocalvarTable): TypeAnnotationTarget
     def ResourcevarDecl(localVarTable: LocalvarTable): TypeAnnotationTarget
 
-    //______________________________
+    // ______________________________
     // offset_target
     def InstanceOf(offset: Int): TypeAnnotationTarget
     def New(offset: Int): TypeAnnotationTarget
     def MethodReferenceExpressionNew /*::New*/ (
-        offset: Int
-    ): TypeAnnotationTarget
+        offset: Int): TypeAnnotationTarget
     def MethodReferenceExpressionIdentifier /*::Identifier*/ (
-        offset: Int
-    ): TypeAnnotationTarget
+        offset: Int): TypeAnnotationTarget
 
-    //______________________________
+    // ______________________________
     // type_argument_target
     def CastExpression(
-        offset:              Int,
-        type_argument_index: Int
-    ): TypeAnnotationTarget
+        offset: Int,
+        type_argument_index: Int): TypeAnnotationTarget
     def ConstructorInvocation(
-        offset:              Int,
-        type_argument_index: Int
-    ): TypeAnnotationTarget
+        offset: Int,
+        type_argument_index: Int): TypeAnnotationTarget
     def MethodInvocation(
-        offset:              Int,
-        type_argument_index: Int
-    ): TypeAnnotationTarget
+        offset: Int,
+        type_argument_index: Int): TypeAnnotationTarget
     def ConstructorInMethodReferenceExpression(
-        offset:              Int,
-        type_argument_index: Int
-    ): TypeAnnotationTarget
+        offset: Int,
+        type_argument_index: Int): TypeAnnotationTarget
     def MethodInMethodReferenceExpression(
-        offset:              Int,
-        type_argument_index: Int
-    ): TypeAnnotationTarget
+        offset: Int,
+        type_argument_index: Int): TypeAnnotationTarget
 
     //
     // IMPLEMENTATION
     //
 
-    def LocalvarTable(in: DataInputStream): LocalvarTable = {
-        fillArraySeq(in.readUnsignedShort) {
-            LocalvarTableEntry(
-                in.readUnsignedShort(),
-                in.readUnsignedShort(),
-                in.readUnsignedShort()
-            )
-        }
+    def LocalvarTable(in: DataInputStream): LocalvarTable = fillArraySeq(in.readUnsignedShort) {
+        LocalvarTableEntry(
+            in.readUnsignedShort(),
+            in.readUnsignedShort(),
+            in.readUnsignedShort()
+        )
     }
 
     /**
@@ -162,13 +151,11 @@ trait TypeAnnotationTargetReader extends Constant_PoolAbstractions {
             case 0x00 => ParameterDeclarationOfClassOrInterface(in.readUnsignedByte())
             case 0x01 => ParameterDeclarationOfMethodOrConstructor(in.readUnsignedByte())
             case 0x10 => SupertypeTarget(in.readUnsignedShort())
-            case 0x11 =>
-                TypeBoundOfParameterDeclarationOfClassOrInterface(
+            case 0x11 => TypeBoundOfParameterDeclarationOfClassOrInterface(
                     in.readUnsignedByte(),
                     in.readUnsignedByte()
                 )
-            case 0x12 =>
-                TypeBoundOfParameterDeclarationOfMethodOrConstructor(
+            case 0x12 => TypeBoundOfParameterDeclarationOfMethodOrConstructor(
                     in.readUnsignedByte(),
                     in.readUnsignedByte()
                 )
@@ -187,13 +174,11 @@ trait TypeAnnotationTargetReader extends Constant_PoolAbstractions {
             case 0x47 => CastExpression(in.readUnsignedShort(), in.readUnsignedByte())
             case 0x48 => ConstructorInvocation(in.readUnsignedShort(), in.readUnsignedByte())
             case 0x49 => MethodInvocation(in.readUnsignedShort(), in.readUnsignedByte())
-            case 0x4A =>
-                ConstructorInMethodReferenceExpression(
+            case 0x4a => ConstructorInMethodReferenceExpression(
                     in.readUnsignedShort(),
                     in.readUnsignedByte()
                 )
-            case 0x4B =>
-                MethodInMethodReferenceExpression(in.readUnsignedShort(), in.readUnsignedByte())
+            case 0x4b => MethodInMethodReferenceExpression(in.readUnsignedShort(), in.readUnsignedByte())
         }
     }
 }

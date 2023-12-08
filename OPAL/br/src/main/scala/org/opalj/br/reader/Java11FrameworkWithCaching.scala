@@ -11,5 +11,4 @@ package reader
  * @author Dominik Helm
  */
 class Java11FrameworkWithCaching(
-        cache: BytecodeInstructionsCache
-) extends Java9FrameworkWithCaching(cache) with Java11LibraryFramework
+        cache: BytecodeInstructionsCache) extends Java9FrameworkWithCaching(cache) with Java11LibraryFramework

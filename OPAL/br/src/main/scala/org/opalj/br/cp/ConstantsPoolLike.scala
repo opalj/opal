@@ -26,34 +26,29 @@ trait ConstantsPoolLike {
 
     def CPEMethodRef(
         referenceType: ReferenceType,
-        methodName:    String,
-        descriptor:    MethodDescriptor
-    ): Int
+        methodName: String,
+        descriptor: MethodDescriptor): Int
 
     def CPEInterfaceMethodRef(
         objectType: ReferenceType,
-        name:       String,
-        descriptor: MethodDescriptor
-    ): Int
+        name: String,
+        descriptor: MethodDescriptor): Int
 
     def CPEInvokeDynamic(
         bootstrapMethod: BootstrapMethod,
-        name:            String,
-        descriptor:      MethodDescriptor
-    ): Int
+        name: String,
+        descriptor: MethodDescriptor): Int
 
     def CPEDynamic(
-        bootstrapMethod:    BootstrapMethod,
-        name:               String,
-        descriptor:         FieldType,
-        requiresUByteIndex: Boolean
-    ): Int
+        bootstrapMethod: BootstrapMethod,
+        name: String,
+        descriptor: FieldType,
+        requiresUByteIndex: Boolean): Int
 
     def CPEUtf8OfCPEClass(referenceType: ReferenceType): Int = {
         val typeName =
-            if (referenceType.isObjectType)
-                referenceType.asObjectType.fqn // "just", e.g., "java/lang/Object"
-            else // an array type including L and ; in case of reference types
+            if (referenceType.isObjectType) referenceType.asObjectType.fqn // "just", e.g., "java/lang/Object"
+            else                                                           // an array type including L and ; in case of reference types
                 referenceType.toJVMTypeName
         CPEUtf8(typeName)
     }
@@ -64,72 +59,63 @@ trait ConstantsPoolLike {
      *          CONSTANT_MethodHandle should reference.
      */
     def CPERefOfCPEMethodHandle(
-        methodHandle: MethodHandle
-    ): (Int /*TAG*/ , Int /*Constant_Pool_Index*/ ) = {
-        methodHandle match {
-            case GetFieldMethodHandle(declType, name, fieldType) =>
-                val cpFieldRef = CPEFieldRef(declType, name, fieldType.toJVMTypeName)
-                (1, cpFieldRef)
+        methodHandle: MethodHandle): (Int /*TAG*/, Int /*Constant_Pool_Index*/ ) = methodHandle match {
+        case GetFieldMethodHandle(declType, name, fieldType) =>
+            val cpFieldRef = CPEFieldRef(declType, name, fieldType.toJVMTypeName)
+            (1, cpFieldRef)
 
-            case GetStaticMethodHandle(declType, name, fieldType) =>
-                val cpFieldRef = CPEFieldRef(declType, name, fieldType.toJVMTypeName)
-                (2, cpFieldRef)
+        case GetStaticMethodHandle(declType, name, fieldType) =>
+            val cpFieldRef = CPEFieldRef(declType, name, fieldType.toJVMTypeName)
+            (2, cpFieldRef)
 
-            case PutFieldMethodHandle(declType, name, fieldType) =>
-                val cpFieldRef = CPEFieldRef(declType, name, fieldType.toJVMTypeName)
-                (3, cpFieldRef)
+        case PutFieldMethodHandle(declType, name, fieldType) =>
+            val cpFieldRef = CPEFieldRef(declType, name, fieldType.toJVMTypeName)
+            (3, cpFieldRef)
 
-            case PutStaticMethodHandle(declType, name, fieldType) =>
-                val cpFieldRef = CPEFieldRef(declType, name, fieldType.toJVMTypeName)
-                (4, cpFieldRef)
+        case PutStaticMethodHandle(declType, name, fieldType) =>
+            val cpFieldRef = CPEFieldRef(declType, name, fieldType.toJVMTypeName)
+            (4, cpFieldRef)
 
-            case InvokeVirtualMethodHandle(receiverType, name, descriptor) =>
-                val cpMethodRef = CPEMethodRef(receiverType, name, descriptor)
-                (5, cpMethodRef)
+        case InvokeVirtualMethodHandle(receiverType, name, descriptor) =>
+            val cpMethodRef = CPEMethodRef(receiverType, name, descriptor)
+            (5, cpMethodRef)
 
-            case InvokeStaticMethodHandle(receiverType, isInterface, name, descriptor) =>
-                val methodRef =
-                    if (isInterface)
-                        CPEInterfaceMethodRef(receiverType, name, descriptor)
-                    else
-                        CPEMethodRef(receiverType, name, descriptor)
-                (6, methodRef)
+        case InvokeStaticMethodHandle(receiverType, isInterface, name, descriptor) =>
+            val methodRef =
+                if (isInterface) CPEInterfaceMethodRef(receiverType, name, descriptor)
+                else CPEMethodRef(receiverType, name, descriptor)
+            (6, methodRef)
 
-            case InvokeSpecialMethodHandle(receiverType, isInterface, name, descriptor) =>
-                val methodRef =
-                    if (isInterface)
-                        CPEInterfaceMethodRef(receiverType, name, descriptor)
-                    else
-                        CPEMethodRef(receiverType, name, descriptor)
-                (7, methodRef)
+        case InvokeSpecialMethodHandle(receiverType, isInterface, name, descriptor) =>
+            val methodRef =
+                if (isInterface) CPEInterfaceMethodRef(receiverType, name, descriptor)
+                else CPEMethodRef(receiverType, name, descriptor)
+            (7, methodRef)
 
-            case NewInvokeSpecialMethodHandle(receiverType, descriptor) =>
-                val cpMethodRef = CPEMethodRef(receiverType, "<init>", descriptor)
-                (8, cpMethodRef)
+        case NewInvokeSpecialMethodHandle(receiverType, descriptor) =>
+            val cpMethodRef = CPEMethodRef(receiverType, "<init>", descriptor)
+            (8, cpMethodRef)
 
-            case InvokeInterfaceMethodHandle(receiverType, name, descriptor) =>
-                val cpMethodRef = CPEInterfaceMethodRef(receiverType, name, descriptor)
-                (9, cpMethodRef)
-        }
+        case InvokeInterfaceMethodHandle(receiverType, name, descriptor) =>
+            val cpMethodRef = CPEInterfaceMethodRef(receiverType, name, descriptor)
+            (9, cpMethodRef)
     }
 
     @throws[ConstantPoolException]
-    def CPEntryForBootstrapArgument(bootstrapArgument: BootstrapArgument): Int = {
-        bootstrapArgument match {
-            case ConstantString(value)        => CPEString(value, requiresUByteIndex = false)
-            case ConstantClass(refType)       => CPEClass(refType, requiresUByteIndex = false)
-            case ConstantInteger(value)       => CPEInteger(value, requiresUByteIndex = false)
-            case ConstantFloat(value)         => CPEFloat(value, requiresUByteIndex = false)
-            case ConstantLong(value)          => CPELong(value)
-            case ConstantDouble(value)        => CPEDouble(value)
-            case md: MethodDescriptor         => CPEMethodType(md, requiresUByteIndex = false)
-            case gfmh: GetFieldMethodHandle   => CPEMethodHandle(gfmh, requiresUByteIndex = false)
-            case gsmh: GetStaticMethodHandle  => CPEMethodHandle(gsmh, requiresUByteIndex = false)
-            case pfmh: PutFieldMethodHandle   => CPEMethodHandle(pfmh, requiresUByteIndex = false)
-            case psmh: PutStaticMethodHandle  => CPEMethodHandle(psmh, requiresUByteIndex = false)
-            case mcmh: MethodCallMethodHandle => CPEMethodHandle(mcmh, requiresUByteIndex = false)
-            case DynamicConstant(bootstrapMethod, name, descriptor) =>
-                CPEDynamic(bootstrapMethod, name, descriptor, requiresUByteIndex = false)
-        }
+    def CPEntryForBootstrapArgument(bootstrapArgument: BootstrapArgument): Int = bootstrapArgument match {
+        case ConstantString(value)        => CPEString(value, requiresUByteIndex = false)
+        case ConstantClass(refType)       => CPEClass(refType, requiresUByteIndex = false)
+        case ConstantInteger(value)       => CPEInteger(value, requiresUByteIndex = false)
+        case ConstantFloat(value)         => CPEFloat(value, requiresUByteIndex = false)
+        case ConstantLong(value)          => CPELong(value)
+        case ConstantDouble(value)        => CPEDouble(value)
+        case md: MethodDescriptor         => CPEMethodType(md, requiresUByteIndex = false)
+        case gfmh: GetFieldMethodHandle   => CPEMethodHandle(gfmh, requiresUByteIndex = false)
+        case gsmh: GetStaticMethodHandle  => CPEMethodHandle(gsmh, requiresUByteIndex = false)
+        case pfmh: PutFieldMethodHandle   => CPEMethodHandle(pfmh, requiresUByteIndex = false)
+        case psmh: PutStaticMethodHandle  => CPEMethodHandle(psmh, requiresUByteIndex = false)
+        case mcmh: MethodCallMethodHandle => CPEMethodHandle(mcmh, requiresUByteIndex = false)
+        case DynamicConstant(bootstrapMethod, name, descriptor) =>
+            CPEDynamic(bootstrapMethod, name, descriptor, requiresUByteIndex = false)
     }
 }

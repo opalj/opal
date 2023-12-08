@@ -24,9 +24,9 @@ trait ExceptionHandlerElement extends PseudoInstruction {
  * @see [[ExceptionHandlerElement]]
  */
 case class TRY(id: Symbol) extends ExceptionHandlerElement {
-    final override def isTry: Boolean = true
+    final override def isTry: Boolean   = true
     final override def isCatch: Boolean = false
-    final override def asTry: TRY = this
+    final override def asTry: TRY       = this
 }
 
 /**
@@ -35,7 +35,7 @@ case class TRY(id: Symbol) extends ExceptionHandlerElement {
  * @see [[ExceptionHandlerElement]]
  */
 case class TRYEND(id: Symbol) extends ExceptionHandlerElement {
-    final override def isTry: Boolean = false
+    final override def isTry: Boolean   = false
     final override def isCatch: Boolean = false
 }
 
@@ -55,11 +55,10 @@ case class TRYEND(id: Symbol) extends ExceptionHandlerElement {
  *         (finally handler).
  */
 case class CATCH(
-        id:          Symbol,
-        position:    Int,
-        handlerType: Option[br.ObjectType] = None
-) extends ExceptionHandlerElement {
-    final override def isTry: Boolean = false
+        id:       Symbol,
+        position: Int,
+        handlerType: Option[br.ObjectType] = None) extends ExceptionHandlerElement {
+    final override def isTry: Boolean   = false
     final override def isCatch: Boolean = true
 }
 
@@ -76,7 +75,6 @@ object CATCH {
      * @see [[ExceptionHandlerElement]]
      * @param handlerType the fqn of the caught exception class
      */
-    def apply(id: Symbol, order: Int, handlerType: String): CATCH = {
+    def apply(id: Symbol, order: Int, handlerType: String): CATCH =
         new CATCH(id, order, Some(br.ObjectType(handlerType)))
-    }
 }

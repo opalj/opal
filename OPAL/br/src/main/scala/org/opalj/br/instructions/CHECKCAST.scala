@@ -9,8 +9,7 @@ package instructions
  * @author Michael Eichberg
  */
 case class CHECKCAST(
-        referenceType: ReferenceType
-) extends Instruction with ConstantLengthInstruction with NoLabels {
+        referenceType: ReferenceType) extends Instruction with ConstantLengthInstruction with NoLabels {
 
     final override def isCheckcast: Boolean = true
 
@@ -24,9 +23,7 @@ case class CHECKCAST(
 
     final def length: Int = 3
 
-    final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
-        this == code.instructions(otherPC)
-    }
+    final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = this == code.instructions(otherPC)
 
     final def numberOfPoppedOperands(ctg: Int => ComputationalTypeCategory): Int = 1
 
@@ -45,22 +42,19 @@ case class CHECKCAST(
     final def nextInstructions(
         currentPC:             PC,
         regularSuccessorsOnly: Boolean
-    )(
-        implicit
+      )(implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
-    ): List[PC] = {
-        if (regularSuccessorsOnly)
-            List(indexOfNextInstruction(currentPC))
-        else
-            Instruction.nextInstructionOrExceptionHandler(
-                this, currentPC, ObjectType.ClassCastException
-            )
-    }
+        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy): List[PC] =
+        if (regularSuccessorsOnly) List(indexOfNextInstruction(currentPC))
+        else Instruction.nextInstructionOrExceptionHandler(
+            this,
+            currentPC,
+            ObjectType.ClassCastException
+        )
 
     final def expressionResult: Stack.type = Stack
 
-    override def toString: String = "CHECKCAST("+referenceType.toJava+")"
+    override def toString: String = "CHECKCAST(" + referenceType.toJava + ")"
 
     final override def toString(currentPC: Int): String = toString()
 

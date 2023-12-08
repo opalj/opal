@@ -3,20 +3,19 @@ package org.opalj
 package ba
 
 import scala.language.postfixOps
-
-import org.junit.runner.RunWith
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatestplus.junit.JUnitRunner
+import scala.reflect.runtime.universe._
 
 import java.io.ByteArrayInputStream
-
-import scala.reflect.runtime.universe._
 
 import org.opalj.bc.Assembler
 import org.opalj.br.Method
 import org.opalj.br.instructions._
 import org.opalj.br.reader.Java8Framework.{ClassFile => ClassFileReader}
 import org.opalj.util.InMemoryClassLoader
+
+import org.junit.runner.RunWith
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests the branchoffset calculation of LabeledBranchInstructions in the BytecodeAssembler DSL
@@ -26,8 +25,11 @@ import org.opalj.util.InMemoryClassLoader
 @RunWith(classOf[JUnitRunner])
 class JumpLabelsTest extends AnyFlatSpec {
 
-    val methodTemplate =
-        METHOD(PUBLIC, "returnInt", "(I)I", CODE(
+    val methodTemplate = METHOD(
+        PUBLIC,
+        "returnInt",
+        "(I)I",
+        CODE(
             GOTO(Symbol("IsZero_?")),
             Symbol("Else"),
             ILOAD_1,
@@ -49,32 +51,31 @@ class JumpLabelsTest extends AnyFlatSpec {
             IFNE(Symbol("IsOne_?")),
             ICONST_0,
             IRETURN
-        ))
+        )
+    )
 
-    val (daJava5ClassFile, _) =
-        CLASS(
-            version = bi.Java5Version,
-            accessModifiers = PUBLIC SUPER,
-            thisType = "TestJumpJava5",
-            methods = METHODS(methodTemplate)
-        ).toDA()
+    val (daJava5ClassFile, _) = CLASS(
+        version = bi.Java5Version,
+        accessModifiers = PUBLIC SUPER,
+        thisType = "TestJumpJava5",
+        methods = METHODS(methodTemplate)
+    ).toDA()
     val rawJava5ClassFile = Assembler(daJava5ClassFile)
-    val brJava5ClassFile = ClassFileReader(() => new ByteArrayInputStream(rawJava5ClassFile)).head
+    val brJava5ClassFile  = ClassFileReader(() => new ByteArrayInputStream(rawJava5ClassFile)).head
 
     // We basically test that we compute the (correct) stack map table attribute
-    val (daJava8ClassFile, _) =
-        CLASS(
-            version = bi.Java8Version,
-            accessModifiers = PUBLIC SUPER,
-            thisType = "TestJumpJava8",
-            methods = METHODS(methodTemplate)
-        ).toDA()
+    val (daJava8ClassFile, _) = CLASS(
+        version = bi.Java8Version,
+        accessModifiers = PUBLIC SUPER,
+        thisType = "TestJumpJava8",
+        methods = METHODS(methodTemplate)
+    ).toDA()
     val rawJava8ClassFile = Assembler(daJava8ClassFile)
-    val brJava8ClassFile = ClassFileReader(() => new ByteArrayInputStream(rawJava8ClassFile)).head
+    val brJava8ClassFile  = ClassFileReader(() => new ByteArrayInputStream(rawJava8ClassFile)).head
 
     "the method returnInt" should "execute as expected" in {
         val classes = Map("TestJumpJava5" -> rawJava5ClassFile, "TestJumpJava8" -> rawJava8ClassFile)
-        val loader = new InMemoryClassLoader(classes, this.getClass.getClassLoader)
+        val loader  = new InMemoryClassLoader(classes, this.getClass.getClassLoader)
         def testClass(clazz: Class[_]): Unit = {
             val testJumpInstance = clazz.getDeclaredConstructor().newInstance()
 

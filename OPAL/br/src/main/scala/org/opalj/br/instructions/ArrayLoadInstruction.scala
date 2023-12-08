@@ -29,17 +29,14 @@ abstract class ArrayLoadInstruction extends ArrayAccessInstruction {
     final def nextInstructions(
         currentPC:             PC,
         regularSuccessorsOnly: Boolean
-    )(
-        implicit
+      )(implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
-    ): List[PC] = {
+        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy): List[PC] =
         if (regularSuccessorsOnly) {
             List(indexOfNextInstruction(currentPC))
         } else {
             Instruction.nextInstructionOrExceptionHandlers(this, currentPC, jvmExceptions)
         }
-    }
 
     final def expressionResult: Stack.type = Stack
 
@@ -52,9 +49,7 @@ abstract class ArrayLoadInstruction extends ArrayAccessInstruction {
  */
 object ArrayLoadInstruction {
 
-    def unapply(ali: ArrayLoadInstruction): Option[ComputationalType] = {
-        Some(ali.elementTypeComputationalType)
-    }
+    def unapply(ali: ArrayLoadInstruction): Option[ComputationalType] = Some(ali.elementTypeComputationalType)
 
     /**
      * The exceptions that are potentially thrown by instructions that load values

@@ -23,18 +23,16 @@ sealed abstract class StaticDataUsageMatcher(val property: StaticDataUsage)
         as:         Set[ObjectType],
         entity:     Entity,
         a:          AnnotationLike,
-        properties: Iterable[Property]
-    ): Option[String] = {
+        properties: Iterable[Property]): Option[String] =
         if (!properties.exists(_ match {
-            case `property` => true
-            case _          => false
-        })) {
+                case `property` => true
+                case _          => false
+            })) {
             // ... when we reach this point the expected property was not found.
             Some(a.elementValuePairs.head.value.asStringValue.value)
         } else {
             None
         }
-    }
 }
 
 /**

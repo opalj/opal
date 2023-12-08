@@ -9,8 +9,7 @@ package ba
  */
 case class ToDAConfig(
         retainOPALAttributes:    Boolean = false,
-        retainUnknownAttributes: Boolean = false
-)
+        retainUnknownAttributes: Boolean = false)
 
 object ToDAConfig {
     val RetainAllAttributes: ToDAConfig = ToDAConfig(true, true)

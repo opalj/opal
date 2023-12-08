@@ -13,16 +13,11 @@ trait IgnoreSynchronization extends MonitorInstructionsDomain {
 
     protected[this] def sideEffectOnlyOrExceptions(
         pc:    Int,
-        value: DomainValue
-    ): Computation[Nothing, ExceptionValue] = {
-        refIsNull(pc, value) match {
-            case Yes =>
-                ThrowsException(VMNullPointerException(pc))
-            case Unknown if throwNullPointerExceptionOnMonitorAccess =>
-                ComputationWithSideEffectOrException(VMNullPointerException(pc))
-            case _ /* No OR Unknown but throwNullPointerExceptionOnMonitorAccess is No */ =>
-                ComputationWithSideEffectOnly
-        }
+        value: DomainValue): Computation[Nothing, ExceptionValue] = refIsNull(pc, value) match {
+        case Yes => ThrowsException(VMNullPointerException(pc))
+        case Unknown if throwNullPointerExceptionOnMonitorAccess =>
+            ComputationWithSideEffectOrException(VMNullPointerException(pc))
+        case _ /* No OR Unknown but throwNullPointerExceptionOnMonitorAccess is No */ => ComputationWithSideEffectOnly
     }
 
     /**
@@ -31,12 +26,10 @@ trait IgnoreSynchronization extends MonitorInstructionsDomain {
      * @note The default implementation checks if the given value is `null` and raises
      *      an exception if it is `null` or maybe `null`.
      */
-    /*override*/ def monitorenter(
+    /*override*/
+    def monitorenter(
         pc:    Int,
-        value: DomainValue
-    ): Computation[Nothing, ExceptionValue] = {
-        sideEffectOnlyOrExceptions(pc, value)
-    }
+        value: DomainValue): Computation[Nothing, ExceptionValue] = sideEffectOnlyOrExceptions(pc, value)
 
     /**
      * Handles a `monitorexit` instruction.
@@ -44,10 +37,10 @@ trait IgnoreSynchronization extends MonitorInstructionsDomain {
      * @note The default implementation checks if the given value is `null` and raises
      *      an exception if it is `null` or maybe `null`.
      */
-    /*override*/ def monitorexit(
+    /*override*/
+    def monitorexit(
         pc:    Int,
-        value: DomainValue
-    ): Computation[Nothing, ExceptionValues] = {
+        value: DomainValue): Computation[Nothing, ExceptionValues] = {
         val result = sideEffectOnlyOrExceptions(pc, value)
         if (result.returnsNormally /* <=> the value maybe non-null*/ &&
             throwIllegalMonitorStateException) {
@@ -63,4 +56,3 @@ trait IgnoreSynchronization extends MonitorInstructionsDomain {
         }
     }
 }
-

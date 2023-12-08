@@ -4,22 +4,20 @@ package br
 package analyses
 package cg
 
-import net.ceedubs.ficus.Ficus._
-
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 
+import net.ceedubs.ficus.Ficus._
+
 /**
- *
  * @author Florian Kuebler
  * @author Michael Reif
  */
 sealed trait InstantiatedTypesFinder {
 
-    def collectInstantiatedTypes(project: SomeProject): Iterable[ObjectType] = {
+    def collectInstantiatedTypes(project: SomeProject): Iterable[ObjectType] =
         // These types can be introduced via constants!
         Iterable(ObjectType.String, ObjectType.Class)
-    }
 }
 
 /**
@@ -47,12 +45,12 @@ trait LibraryInstantiatedTypesFinder extends InstantiatedTypesFinder {
         val closedPackages = project.get(ClosedPackagesKey)
         project.allClassFiles.iterator.filter { cf =>
             !cf.isInterfaceDeclaration && !cf.isAbstract &&
-                (cf.isPublic /* && cf.constructors.nonEmpty*/ ||
-                    !closedPackages.isClosed(cf.thisType.packageName)) &&
-                    cf.constructors.exists { ctor =>
-                        ctor.isPublic ||
-                            !ctor.isPrivate && !closedPackages.isClosed(cf.thisType.packageName)
-                    }
+            (cf.isPublic /* && cf.constructors.nonEmpty*/ ||
+                !closedPackages.isClosed(cf.thisType.packageName)) &&
+            cf.constructors.exists { ctor =>
+                ctor.isPublic ||
+                !ctor.isPrivate && !closedPackages.isClosed(cf.thisType.packageName)
+            }
         }.map(_.thisType).iterator.to(Iterable) ++ super.collectInstantiatedTypes(project)
     }
 }
@@ -87,18 +85,17 @@ trait LibraryInstantiatedTypesFinder extends InstantiatedTypesFinder {
 trait ConfigurationInstantiatedTypesFinder extends InstantiatedTypesFinder {
 
     // don't make this a val for initialization reasons
-    @inline private[this] def additionalInstantiatedTypesKey: String = {
-        InitialInstantiatedTypesKey.ConfigKeyPrefix+"instantiatedTypes"
-    }
+    @inline private[this] def additionalInstantiatedTypesKey: String =
+        InitialInstantiatedTypesKey.ConfigKeyPrefix + "instantiatedTypes"
 
     override def collectInstantiatedTypes(project: SomeProject): Iterable[ObjectType] = {
         implicit val logContext: LogContext = project.logContext
-        var instantiatedTypes = Set.empty[ObjectType]
+        var instantiatedTypes               = Set.empty[ObjectType]
 
         if (!project.config.hasPath(additionalInstantiatedTypesKey)) {
             OPALLogger.info(
                 "project configuration",
-                s"configuration key $additionalInstantiatedTypesKey is missing; "+
+                s"configuration key $additionalInstantiatedTypesKey is missing; " +
                     "no additional types are considered instantiated configured"
             )
             return instantiatedTypes;
@@ -110,7 +107,7 @@ trait ConfigurationInstantiatedTypesFinder extends InstantiatedTypesFinder {
                 case e: Throwable =>
                     OPALLogger.error(
                         "project configuration - recoverable",
-                        s"configuration key $additionalInstantiatedTypesKey is invalid; "+
+                        s"configuration key $additionalInstantiatedTypesKey is invalid; " +
                             "see InstantiatedTypesFinder documentation",
                         e
                     )
@@ -119,17 +116,16 @@ trait ConfigurationInstantiatedTypesFinder extends InstantiatedTypesFinder {
 
         configInstantiatedTypes foreach { configuredType =>
             val considerSubtypes = configuredType.endsWith("+")
-            val typeName = if (considerSubtypes) {
-                configuredType.substring(0, configuredType.size - 1)
-            } else {
-                configuredType
-            }
+            val typeName =
+                if (considerSubtypes) {
+                    configuredType.substring(0, configuredType.size - 1)
+                } else {
+                    configuredType
+                }
 
             val objectType = ObjectType(typeName)
-            if (considerSubtypes)
-                instantiatedTypes ++= project.classHierarchy.allSubtypes(objectType, true)
-            else
-                instantiatedTypes += objectType
+            if (considerSubtypes) instantiatedTypes ++= project.classHierarchy.allSubtypes(objectType, true)
+            else instantiatedTypes += objectType
         }
 
         super.collectInstantiatedTypes(project) ++ instantiatedTypes
@@ -141,11 +137,11 @@ object ConfigurationInstantiatedTypesFinder
 
 object ApplicationInstantiatedTypesFinder
     extends ApplicationInstantiatedTypesFinder
-    with ConfigurationInstantiatedTypesFinder
+        with ConfigurationInstantiatedTypesFinder
 
 object LibraryInstantiatedTypesFinder
     extends LibraryInstantiatedTypesFinder
-    with ConfigurationInstantiatedTypesFinder
+        with ConfigurationInstantiatedTypesFinder
 
 /**
  * The AllInstantiatedTypesFinder considers all class files' types as instantiated. It can be
@@ -157,13 +153,11 @@ object LibraryInstantiatedTypesFinder
  */
 object AllInstantiatedTypesFinder extends InstantiatedTypesFinder {
     override def collectInstantiatedTypes(project: SomeProject): Iterable[ObjectType] = {
-        val projectMethodsOnlyConfigKey = InitialInstantiatedTypesKey.ConfigKeyPrefix+
+        val projectMethodsOnlyConfigKey = InitialInstantiatedTypesKey.ConfigKeyPrefix +
             "AllInstantiatedTypesFinder.projectClassesOnly"
-        val allClassFiles = if (project.config.as[Boolean](projectMethodsOnlyConfigKey))
-            project.allProjectClassFiles
-        else project.allClassFiles
-        allClassFiles.iterator.filter { cf =>
-            !cf.isInterfaceDeclaration && !cf.isAbstract
-        }.map(_.thisType).to(Iterable)
+        val allClassFiles =
+            if (project.config.as[Boolean](projectMethodsOnlyConfigKey)) project.allProjectClassFiles
+            else project.allClassFiles
+        allClassFiles.iterator.filter { cf => !cf.isInterfaceDeclaration && !cf.isAbstract }.map(_.thisType).to(Iterable)
     }
 }

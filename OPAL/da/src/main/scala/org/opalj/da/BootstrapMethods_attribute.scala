@@ -9,19 +9,14 @@ import scala.xml.Node
  */
 case class BootstrapMethods_attribute(
         attribute_name_index: Constant_Pool_Index,
-        bootstrap_methods:    Seq[BootstrapMethod]
-) extends Attribute {
+        bootstrap_methods: Seq[BootstrapMethod]) extends Attribute {
 
-    override def attribute_length: Int = {
-        2 /* num_bootstrap_methods */ + bootstrap_methods.view.map(_.size).sum
-    }
+    override def attribute_length: Int = 2 /* num_bootstrap_methods */ + bootstrap_methods.view.map(_.size).sum
 
-    override def toXHTML(implicit cp: Constant_Pool): Node = {
-        <details class="attribute">
+    override def toXHTML(implicit cp: Constant_Pool): Node = <details class="attribute">
             <summary class="attribute_name">BootstrapMethods</summary>
-            { methodsToXHTML(cp) }
+            {methodsToXHTML(cp)}
         </details>
-    }
 
     def methodsToXHTML(implicit cp: Constant_Pool): Seq[Node] = bootstrap_methods.map(_.toXHTML(cp))
 }

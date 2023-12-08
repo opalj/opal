@@ -2,19 +2,20 @@
 package org.opalj
 package da
 
-import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.matchers.should.Matchers
-
 import java.net.URL
 import java.util.concurrent.atomic.AtomicInteger
+
 import org.opalj.bi.TestResources
 import org.opalj.concurrent.OPALHTBoundedExecutionContextTaskSupport
 import org.opalj.util.PerformanceEvaluation
 import org.opalj.util.Seconds
 
 import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParallelizable
+
+import org.junit.runner.RunWith
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * This test(suite) just loads a very large number of class files and creates
@@ -39,7 +40,7 @@ class DisassemblerSmokeTest extends AnyFunSpec with Matchers {
 
                 val classFiles: List[(ClassFile, URL)] = {
                     var exceptions: List[(AnyRef, Throwable)] = Nil
-                    var seconds: Seconds = Seconds.None
+                    var seconds: Seconds                      = Seconds.None
                     val classFiles = PerformanceEvaluation.time {
                         val Lock = new Object
                         val exceptionHandler = (source: AnyRef, throwable: Throwable) => {
@@ -73,18 +74,16 @@ class DisassemblerSmokeTest extends AnyFunSpec with Matchers {
 
                     val classFilesGroupedByPackage = classFiles.groupBy { e =>
                         val (classFile, _ /*url*/ ) = e
-                        val fqn = classFile.thisType.asJava
-                        if (fqn.contains('.'))
-                            fqn.substring(0, fqn.lastIndexOf('.'))
-                        else
-                            "<default>"
+                        val fqn                     = classFile.thisType.asJava
+                        if (fqn.contains('.')) fqn.substring(0, fqn.lastIndexOf('.'))
+                        else "<default>"
                     }
                     info(s"identified ${classFilesGroupedByPackage.size} packages")
 
                     val exceptions: Iterable[(URL, Exception)] =
                         (for { (packageName, classFiles) <- classFilesGroupedByPackage } yield {
                             val transformationCounter = new AtomicInteger(0)
-                            val parClassFiles = classFiles.par
+                            val parClassFiles         = classFiles.par
                             parClassFiles.tasksupport = OPALHTBoundedExecutionContextTaskSupport
                             PerformanceEvaluation.time {
                                 (
@@ -103,7 +102,7 @@ class DisassemblerSmokeTest extends AnyFunSpec with Matchers {
                                 ).seq.flatten
                             } { t =>
                                 info(
-                                    s"transformation of ${transformationCounter.get} class files "+
+                                    s"transformation of ${transformationCounter.get} class files " +
                                         s"in $packageName (parallelized) took ${t.toSeconds}"
                                 )
                             }

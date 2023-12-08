@@ -10,8 +10,8 @@ import org.opalj.bi.reader.ConstantValue_attributeReader
  */
 trait ConstantValue_attributeBinding
     extends ConstantValue_attributeReader
-    with ConstantPoolBinding
-    with AttributeBinding {
+        with ConstantPoolBinding
+        with AttributeBinding {
 
     type ConstantValue_attribute = ConstantFieldValue[_]
 
@@ -20,9 +20,6 @@ trait ConstantValue_attributeBinding
         ap_name_index:       Constant_Pool_Index,
         ap_descriptor_index: Constant_Pool_Index,
         attributeNameIndex:  Constant_Pool_Index,
-        constantValueIndex:  Constant_Pool_Index
-    ): ConstantValue_attribute = {
+        constantValueIndex:  Constant_Pool_Index): ConstantValue_attribute =
         cp(constantValueIndex).asConstantFieldValue(cp)
-    }
 }
-

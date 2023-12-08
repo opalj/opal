@@ -11,16 +11,14 @@ package br
  *
  * @author Michael Eichberg
  */
-/*no case class!*/ final class PCInMethod(val method: Method, val pc: Int /* PC */ ) {
+/*no case class!*/
+final class PCInMethod(val method: Method, val pc: Int /* PC */ ) {
 
     override def hashCode(): Opcode = method.hashCode() * 113 + pc
 
-    override def equals(other: Any): Boolean = {
-        other match {
-            case that: PCInMethod => that.pc == this.pc && that.method == this.method
-            case _                => false
-        }
-
+    override def equals(other: Any): Boolean = other match {
+        case that: PCInMethod => that.pc == this.pc && that.method == this.method
+        case _                => false
     }
 
     override def toString: String = s"PCInMethod(method=${method.toJava},pc=$pc)"

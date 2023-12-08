@@ -4,5 +4,4 @@ package fpcf
 
 case class PhaseConfiguration[A](
         propertyKinds: PropertyKindsConfiguration,
-        scheduled:     List[ComputationSpecification[A]]
-)
+        scheduled:     List[ComputationSpecification[A]])

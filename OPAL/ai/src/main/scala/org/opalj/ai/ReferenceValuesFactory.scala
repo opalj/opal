@@ -2,11 +2,11 @@
 package org.opalj
 package ai
 
-import org.opalj.br.Type
-import org.opalj.br.ReferenceType
-import org.opalj.br.ObjectType
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.MethodHandle
+import org.opalj.br.ObjectType
+import org.opalj.br.ReferenceType
+import org.opalj.br.Type
 
 /**
  * Definition of factory methods to create `ReferenceValues`.
@@ -176,9 +176,8 @@ trait ReferenceValuesFactory extends ExceptionsFactory { domain =>
      *      Hence, this method needs to be overridden
      *      if resolution of MethodHandle based method calls should be performed.
      */
-    def MethodHandle(origin: ValueOrigin, handle: MethodHandle): DomainReferenceValue = {
+    def MethodHandle(origin: ValueOrigin, handle: MethodHandle): DomainReferenceValue =
         InitializedObjectValue(origin, ObjectType.MethodHandle)
-    }
 
     /**
      * Called by the framework for each ''load constant method type''
@@ -190,9 +189,8 @@ trait ReferenceValuesFactory extends ExceptionsFactory { domain =>
      *      Hence, this method needs to be overridden
      *      if resolution of MethodType based method calls should be performed.
      */
-    def MethodType(origin: ValueOrigin, descriptor: MethodDescriptor): DomainReferenceValue = {
+    def MethodType(origin: ValueOrigin, descriptor: MethodDescriptor): DomainReferenceValue =
         InitializedObjectValue(origin, ObjectType.MethodType)
-    }
 
     // -----------------------------------------------------------------------------------
     //
@@ -200,12 +198,8 @@ trait ReferenceValuesFactory extends ExceptionsFactory { domain =>
     //
     // -----------------------------------------------------------------------------------
 
-    final def justThrows(value: ExceptionValue): ThrowsException[ExceptionValues] = {
-        ThrowsException(Seq(value))
-    }
+    final def justThrows(value: ExceptionValue): ThrowsException[ExceptionValues] = ThrowsException(Seq(value))
 
-    final def throws(value: ExceptionValue): ThrowsException[ExceptionValue] = {
-        ThrowsException(value)
-    }
+    final def throws(value: ExceptionValue): ThrowsException[ExceptionValue] = ThrowsException(value)
 
 }

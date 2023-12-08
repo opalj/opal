@@ -19,9 +19,7 @@ trait TheAI[D <: Domain] {
 
     private[this] var theAI: AI[D] = null
 
-    private[ai] def setAI(ai: AI[D]): Unit = {
-        this.theAI = ai
-    }
+    private[ai] def setAI(ai: AI[D]): Unit = this.theAI = ai
 
     /**
      * Returns the instance of the abstract interpreter that performs the abstract

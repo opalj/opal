@@ -9,8 +9,7 @@ package instructions
  * @author Michael Eichberg
  */
 case class INSTANCEOF(
-        referenceType: ReferenceType
-) extends ConstantLengthInstruction with NoLabels {
+        referenceType: ReferenceType) extends ConstantLengthInstruction with NoLabels {
 
     final def opcode: Opcode = INSTANCEOF.opcode
 
@@ -44,13 +43,10 @@ case class INSTANCEOF(
     final def nextInstructions(
         currentPC:             PC,
         regularSuccessorsOnly: Boolean
-    )(
-        implicit
+      )(implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
-    ): List[PC] = {
+        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy): List[PC] =
         List(indexOfNextInstruction(currentPC))
-    }
 
     final def expressionResult: Stack.type = Stack
 

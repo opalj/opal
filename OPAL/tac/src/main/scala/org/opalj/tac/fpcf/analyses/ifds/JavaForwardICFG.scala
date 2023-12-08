@@ -37,11 +37,9 @@ class JavaForwardICFG(project: SomeProject)
      * @param statement The source statement.
      * @return The successor statements
      */
-    override def nextStatements(statement: JavaStatement): Set[JavaStatement] = {
-        statement.cfg
-            .successors(statement.index)
-            .map { index => JavaStatement(statement, index) }
-    }
+    override def nextStatements(statement: JavaStatement): Set[JavaStatement] = statement.cfg
+        .successors(statement.index)
+        .map { index => JavaStatement(statement, index) }
 
     /**
      * Determines whether the statement is an exit statement.
@@ -49,8 +47,7 @@ class JavaForwardICFG(project: SomeProject)
      * @param statement The source statement.
      * @return Whether the statement flow may exit its callable (function/method)
      */
-    override def isExitStatement(statement: JavaStatement): Boolean = {
+    override def isExitStatement(statement: JavaStatement): Boolean =
         statement.index == statement.basicBlock.asBasicBlock.endPC &&
             statement.basicBlock.successors.exists(_.isExitNode)
-    }
 }

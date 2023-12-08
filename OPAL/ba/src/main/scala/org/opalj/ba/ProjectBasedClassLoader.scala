@@ -2,9 +2,9 @@
 package org.opalj
 package ba
 
+import org.opalj.bc.Assembler
 import org.opalj.br.ClassFileRepository
 import org.opalj.br.ObjectType
-import org.opalj.bc.Assembler
 
 /**
  * A simple `ClassLoader` that looks-up the available classes from the given
@@ -14,19 +14,15 @@ import org.opalj.bc.Assembler
  */
 class ProjectBasedInMemoryClassLoader(
         val project: ClassFileRepository,
-        parent:      ClassLoader         = classOf[ProjectBasedInMemoryClassLoader].getClassLoader
-) extends ClassLoader(parent) {
+        parent: ClassLoader = classOf[ProjectBasedInMemoryClassLoader].getClassLoader) extends ClassLoader(parent) {
 
     @throws[ClassNotFoundException]
-    override def findClass(name: String): Class[_] = {
-        project.classFile(ObjectType(name.replace('.', '/'))) match {
+    override def findClass(name: String): Class[_] = project.classFile(ObjectType(name.replace('.', '/'))) match {
 
-            case Some(cf) =>
-                val bytes = Assembler(ba.toDA(cf))
-                defineClass(name, bytes, 0, bytes.length)
+        case Some(cf) =>
+            val bytes = Assembler(ba.toDA(cf))
+            defineClass(name, bytes, 0, bytes.length)
 
-            case None =>
-                throw new ClassNotFoundException(name)
-        }
+        case None => throw new ClassNotFoundException(name)
     }
 }

@@ -14,9 +14,6 @@ private[tac] class TACNaiveTest extends TACTest {
     def Assignment(
         pc:        PC,
         targetVar: IdBasedVar,
-        expr:      Expr[IdBasedVar]
-    ): Assignment[IdBasedVar] = {
-        new Assignment[IdBasedVar](pc, targetVar, expr)
-    }
+        expr:      Expr[IdBasedVar]): Assignment[IdBasedVar] = new Assignment[IdBasedVar](pc, targetVar, expr)
 
 }

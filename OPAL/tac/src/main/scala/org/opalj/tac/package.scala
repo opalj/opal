@@ -4,8 +4,8 @@ package org.opalj
 import org.opalj.ai.AIResult
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
-import org.opalj.br.ExceptionHandlers
 import org.opalj.br.ExceptionHandler
+import org.opalj.br.ExceptionHandlers
 import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.cfg.CFG
 import org.opalj.collection.immutable.IntTrieSet
@@ -30,18 +30,14 @@ package object tac {
 
     final val SelfReferenceParameter = IntTrieSet(OriginOfThis)
 
-    final val AllNaiveTACodeOptimizations: List[TACOptimization[Param, IdBasedVar, NaiveTACode[Param]]] = {
+    final val AllNaiveTACodeOptimizations: List[TACOptimization[Param, IdBasedVar, NaiveTACode[Param]]] =
         List(SimplePropagation)
-    }
 
-    def tacToGraph[P <: AnyRef, V <: Var[V]](tac: TACode[P, V]): Iterable[Node] = {
-        tacToGraph(tac.stmts, tac.cfg)
-    }
+    def tacToGraph[P <: AnyRef, V <: Var[V]](tac: TACode[P, V]): Iterable[Node] = tacToGraph(tac.stmts, tac.cfg)
 
     def tacToGraph[V <: Var[V]](
         stmts: Array[Stmt[V]],
-        cfg:   CFG[Stmt[V], TACStmts[V]]
-    ): Iterable[Node] = {
+        cfg:   CFG[Stmt[V], TACStmts[V]]): Iterable[Node] = {
         val (_, allNodes) = cfg.toDot { (bb: BasicBlock) =>
             val pcRange = bb.startPC to bb.endPC
             val bbStmts = stmts.slice(bb.startPC, bb.endPC + 1).zip(pcRange)
@@ -56,24 +52,19 @@ package object tac {
 
     def tacToDot[V <: Var[V]](
         stmts: Array[Stmt[V]],
-        cfg:   CFG[Stmt[V], TACStmts[V]]
-    ): String = {
-        org.opalj.graphs.toDot(
-            tacToGraph(stmts, cfg),
-            ranksep = "0.4"
-        )
-    }
+        cfg:   CFG[Stmt[V], TACStmts[V]]): String = org.opalj.graphs.toDot(
+        tacToGraph(stmts, cfg),
+        ranksep = "0.4"
+    )
 
     @inline private[tac] def getStartAndEndIndex(
         oldEH:      ExceptionHandler,
         newIndexes: Array[Int]
-    )(
-        implicit
-        aiResult: AIResult { val domain: Domain with RecordDefUse }
-    ): (Int, Int) = {
-        val oldStartPC = oldEH.startPC
+      )(implicit
+        aiResult: AIResult { val domain: Domain with RecordDefUse }): (Int, Int) = {
+        val oldStartPC    = oldEH.startPC
         var newStartIndex = newIndexes(oldStartPC)
-        var newEndIndex = newIndexes(oldEH.endPC)
+        var newEndIndex   = newIndexes(oldEH.endPC)
         if (newEndIndex <= 0) {
             // The end of the try-block is dead and therefore the end instruction maps to "0".
             // E.g.,
@@ -95,7 +86,7 @@ package object tac {
                43 =>   // DEAD (38 always throws an exception)
                46 =>   N/A
                48 =>   return
-            */
+             */
 
             var lastPC = oldEH.endPC
             do {
@@ -149,11 +140,9 @@ package object tac {
      */
     def updateExceptionHandlers(
         newIndexes: Array[Int]
-    )(
-        implicit
-        aiResult: AIResult { val domain: Domain with RecordDefUse }
-    ): ExceptionHandlers = {
-        val code = aiResult.code
+      )(implicit
+        aiResult: AIResult { val domain: Domain with RecordDefUse }): ExceptionHandlers = {
+        val code              = aiResult.code
         val exceptionHandlers = code.exceptionHandlers
 
         exceptionHandlers map { oldEH =>

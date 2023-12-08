@@ -24,12 +24,11 @@ trait AnnotationDefault_attributeReader extends AttributeReader {
     type AnnotationDefault_attribute <: Attribute
 
     def AnnotationDefault_attribute(
-        cp:                   Constant_Pool,
-        ap_name_index:        Constant_Pool_Index,
-        ap_descriptor_index:  Constant_Pool_Index,
+        cp: Constant_Pool,
+        ap_name_index: Constant_Pool_Index,
+        ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
-        element_value:        ElementValue
-    ): AnnotationDefault_attribute
+        element_value: ElementValue): AnnotationDefault_attribute
 
     //
     // IMPLEMENTATION
@@ -50,9 +49,9 @@ trait AnnotationDefault_attributeReader extends AttributeReader {
         ap_name_index: Constant_Pool_Index,
         ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
-        in: DataInputStream
-    ) => {
-        /* val attributeLength = */ in.readInt()
+        in: DataInputStream) => {
+        /* val attributeLength = */
+        in.readInt()
         AnnotationDefault_attribute(
             cp,
             ap_name_index,

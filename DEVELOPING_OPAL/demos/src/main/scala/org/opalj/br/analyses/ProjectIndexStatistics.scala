@@ -14,20 +14,15 @@ object ProjectIndexStatistics extends ProjectAnalysisApplication {
 
     override def title: String = "project statistics"
 
-    override def description: String = {
-        "statistics about the usage of field/method identifiers in a project"
-    }
+    override def description: String = "statistics about the usage of field/method identifiers in a project"
 
     def doAnalyze(
         project:       Project[URL],
         parameters:    Seq[String],
-        isInterrupted: () => Boolean
-    ): BasicReport = {
-
-        BasicReport(
-            project.get(ProjectIndexKey).
-                statistics().map(kv => "- "+kv._1+": "+kv._2).
-                mkString("Identifier usage statistics:\n\t", "\n\t", "\n")
-        )
-    }
+        isInterrupted: () => Boolean): BasicReport = BasicReport(
+        project.get(ProjectIndexKey).statistics().map(kv => "- " + kv._1 + ": " + kv._2).mkString(
+            "Identifier usage statistics:\n\t",
+            "\n\t",
+            "\n")
+    )
 }

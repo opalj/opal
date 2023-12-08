@@ -72,12 +72,9 @@ sealed trait MetaInformationUpdateType extends UpdateType {
 
     override def isMetaInformationUpdate: Boolean = true
 
-    override def &:(updateType: UpdateType): UpdateType = {
-        if (updateType == StructuralUpdateType)
-            StructuralUpdateType
-        else
-            this
-    }
+    override def &:(updateType: UpdateType): UpdateType =
+        if (updateType == StructuralUpdateType) StructuralUpdateType
+        else this
 
     override def &:(update: Update[_]): UpdateType = update.updateType &: this
 }

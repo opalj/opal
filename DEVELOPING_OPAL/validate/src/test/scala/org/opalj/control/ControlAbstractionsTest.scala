@@ -2,12 +2,12 @@
 package org.opalj
 package control
 
+import scala.collection.immutable.ArraySeq
+
 import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-
-import scala.collection.immutable.ArraySeq
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests the implemented control abstractions.
@@ -28,14 +28,16 @@ class ControlAbstractionsTest extends AnyFlatSpec with Matchers {
         foreachNonNullValue[String] {
             if (initialized) fail(); initialized = true; new Array(0)
         } {
-            (i, e) => /*nothing*/ ;
+            (i, e) => /*nothing*/
+                ;
         }
 
         initialized = false
         foreachNonNullValue[String] {
             if (initialized) fail(); initialized = true; Array("a", "b", "c", null, null, "d")
         } {
-            (i, e) => /*nothing*/ ;
+            (i, e) => /*nothing*/
+                ;
         }
     }
 
@@ -86,22 +88,22 @@ class ControlAbstractionsTest extends AnyFlatSpec with Matchers {
     }
 
     it should "return an ArraySeq with five entries that are dynamically calculated when the number of times is 5" in {
-        var index = 0
+        var index  = 0
         val result = fillIntArray(5) { index += 1; index }
         result.length should be(5)
         result.toList should be(List(1, 2, 3, 4, 5))
     }
 
     it should "work when the number of times is calculated at runtime" in {
-        var index = 0
+        var index  = 0
         val result = fillIntArray((System.nanoTime() % 3 + 1).toInt) { index += 1; index }
-        result.length should not be (0)
+        result.length should not be 0
     }
 
     it should "evaluate the expression that calculates the number of times just once" in {
-        var times = 0
-        var index = 0
-        val result = fillIntArray({ times = times + 1; times }) { index += 1; index };
+        var times  = 0
+        var index  = 0
+        val result = fillIntArray { times = times + 1; times } { index += 1; index };
         times should be(1)
         result.toList should be(List(1))
     }
@@ -115,8 +117,7 @@ class ControlAbstractionsTest extends AnyFlatSpec with Matchers {
     it should "iterate over all values in a range" in {
         var lastResult = -1
         iterateTo(0, 10) { i =>
-            if (i != lastResult + 1)
-                fail();
+            if (i != lastResult + 1) fail();
 
             lastResult = i
         }
@@ -128,8 +129,7 @@ class ControlAbstractionsTest extends AnyFlatSpec with Matchers {
     it should "iterate over all values in a range" in {
         var lastResult = -1
         iterateUntil(0, 10) { i =>
-            if (i != lastResult + 1)
-                fail();
+            if (i != lastResult + 1) fail();
 
             lastResult = i
         }

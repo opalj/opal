@@ -4,8 +4,8 @@ package ai
 package domain
 
 import org.opalj.br.ClassFile
-import org.opalj.br.Method
 import org.opalj.br.Code
+import org.opalj.br.Method
 
 /**
  * Provides information about the method that is currently analyzed.
@@ -40,8 +40,6 @@ trait TheMethod extends TheCode {
      */
     final /*override*/ val code: Code = method.body.get
 
-    override def toString(): String = {
-        super.toString + s" with TheMethod(${method.toJava})"
-    }
+    override def toString(): String = super.toString + s" with TheMethod(${method.toJava})"
 
 }

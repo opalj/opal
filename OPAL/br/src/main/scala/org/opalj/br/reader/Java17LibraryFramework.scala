@@ -12,7 +12,7 @@ package reader
  */
 trait Java17LibraryFramework
     extends Java16LibraryFramework
-    with PermittedSubclasses_attributeBinding
+        with PermittedSubclasses_attributeBinding
 
 object Java17LibraryFramework extends Java17LibraryFramework {
 

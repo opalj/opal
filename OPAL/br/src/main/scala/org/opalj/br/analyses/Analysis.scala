@@ -72,18 +72,15 @@ trait Analysis[Source, +AnalysisResult] {
         val name =
             if (this.getClass.isAnonymousClass || this.getClass.isLocalClass) {
                 val declaringClass = this.getClass.getDeclaringClass
-                if (declaringClass != null)
-                    declaringClass.getSimpleName
-                else
-                    this.getClass.getEnclosingClass.getSimpleName
+                if (declaringClass != null) declaringClass.getSimpleName
+                else this.getClass.getEnclosingClass.getSimpleName
             } else {
                 this.getClass.getSimpleName
             }
 
         if (name.endsWith("$")) {
             name.init
-        } else
-            name
+        } else name
     }
 
     // ------------------------------------------------------------------------------------------
@@ -127,9 +124,8 @@ trait Analysis[Source, +AnalysisResult] {
      *      has to be specified/documented by the analysis.
      */
     def analyze(
-        project:                Project[Source],
-        parameters:             Seq[String]               = Seq.empty,
-        initProgressManagement: Int => ProgressManagement
-    ): AnalysisResult
+        project: Project[Source],
+        parameters: Seq[String] = Seq.empty,
+        initProgressManagement: Int => ProgressManagement): AnalysisResult
 
 }

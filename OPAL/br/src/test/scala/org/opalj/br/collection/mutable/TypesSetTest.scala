@@ -4,12 +4,13 @@ package br
 package collection
 package mutable
 
+import org.opalj.br.analyses.Project
+import org.opalj.log.GlobalLogContext
+
 import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import org.opalj.log.GlobalLogContext
-import org.opalj.br.analyses.Project
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Basic tests of the TypesSet class.
@@ -22,26 +23,26 @@ class TypesSetTest extends AnyFlatSpec with Matchers {
     //
     // Setup
     //
-    val jlsCHFile = "ClassHierarchyJLS.ths"
+    val jlsCHFile    = "ClassHierarchyJLS.ths"
     val jlsCHCreator = List(() => classOf[Project[_]].getResourceAsStream(jlsCHFile))
-    val jlsCH = ClassHierarchy(Iterable.empty, jlsCHCreator)(GlobalLogContext)
+    val jlsCH        = ClassHierarchy(Iterable.empty, jlsCHCreator)(GlobalLogContext)
 
     val preInitCH = ClassHierarchy.PreInitializedClassHierarchy
 
-    val javaLangCHFile = "JavaLangClassHierarchy.ths"
+    val javaLangCHFile    = "JavaLangClassHierarchy.ths"
     val javaLangCHCreator = List(() => classOf[Project[_]].getResourceAsStream(javaLangCHFile))
-    val javaLangCH = ClassHierarchy(Iterable.empty, javaLangCHCreator)(GlobalLogContext)
+    val javaLangCH        = ClassHierarchy(Iterable.empty, javaLangCHCreator)(GlobalLogContext)
 
-    val Object = ObjectType.Object
-    val Class = ObjectType.Class
-    val Throwable = ObjectType.Throwable
-    val Exception = ObjectType.Exception
-    val Error = ObjectType.Error
-    val RuntimeException = ObjectType.RuntimeException
+    val Object              = ObjectType.Object
+    val Class               = ObjectType.Class
+    val Throwable           = ObjectType.Throwable
+    val Exception           = ObjectType.Exception
+    val Error               = ObjectType.Error
+    val RuntimeException    = ObjectType.RuntimeException
     val ArithmeticException = ObjectType.ArithmeticException
-    val Cloneable = ObjectType.Cloneable
-    val Serializable = ObjectType.Serializable
-    val AnUnknownType = ObjectType("myTest/AnUnknownType")
+    val Cloneable           = ObjectType.Cloneable
+    val Serializable        = ObjectType.Serializable
+    val AnUnknownType       = ObjectType("myTest/AnUnknownType")
 
     //
     // Verify

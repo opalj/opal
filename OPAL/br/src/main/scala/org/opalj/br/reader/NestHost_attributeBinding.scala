@@ -12,8 +12,8 @@ import org.opalj.bi.reader.NestHost_attributeReader
  */
 trait NestHost_attributeBinding
     extends NestHost_attributeReader
-    with ConstantPoolBinding
-    with AttributeBinding {
+        with ConstantPoolBinding
+        with AttributeBinding {
 
     type NestHost_attribute = NestHost
 
@@ -26,9 +26,6 @@ trait NestHost_attributeBinding
         ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         host_class_index:     Constant_Pool_Index // CONSTANT_Class_info
-    ): NestHost_attribute = {
-        new NestHost(cp(host_class_index).asObjectType(cp))
-    }
+      ): NestHost_attribute = new NestHost(cp(host_class_index).asObjectType(cp))
 
 }
-

@@ -3,14 +3,14 @@ package org.opalj
 package ai
 package domain
 
-import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
-
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br._
 import org.opalj.br.reader.Java8Framework.ClassFiles
+
+import org.junit.runner.RunWith
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Basic tests of the abstract interpreter in the presence of simple control flow
@@ -23,9 +23,7 @@ class MethodsWithLoopsTest extends AnyFlatSpec with Matchers {
 
     import MethodsWithLoopsTest._
 
-    def findMethod(name: String): Method = {
-        classFile.methods.find(_.name == name).get
-    }
+    def findMethod(name: String): Method = classFile.methods.find(_.name == name).get
 
     //    import domain.l0.BaseDomain
     //    private def evaluateMethod(name: String, f: BaseDomain => Unit) {
@@ -50,24 +48,25 @@ class MethodsWithLoopsTest extends AnyFlatSpec with Matchers {
 
         object MostBasicDomain
             extends Domain
-            with DefaultSpecialDomainValuesBinding
-            with ThrowAllPotentialExceptionsConfiguration
-            with l0.DefaultReferenceValuesBinding
-            with l0.DefaultTypeLevelIntegerValues
-            with l0.DefaultTypeLevelLongValues
-            with l0.TypeLevelPrimitiveValuesConversions
-            with l0.TypeLevelLongValuesShiftOperators
-            with l0.DefaultTypeLevelFloatValues
-            with l0.DefaultTypeLevelDoubleValues
-            with l0.TypeLevelFieldAccessInstructions
-            with l0.SimpleTypeLevelInvokeInstructions
-            with l0.TypeLevelDynamicLoads
-            with PredefinedClassHierarchy
-            with DefaultHandlingOfMethodResults
-            with IgnoreSynchronization
+                with DefaultSpecialDomainValuesBinding
+                with ThrowAllPotentialExceptionsConfiguration
+                with l0.DefaultReferenceValuesBinding
+                with l0.DefaultTypeLevelIntegerValues
+                with l0.DefaultTypeLevelLongValues
+                with l0.TypeLevelPrimitiveValuesConversions
+                with l0.TypeLevelLongValuesShiftOperators
+                with l0.DefaultTypeLevelFloatValues
+                with l0.DefaultTypeLevelDoubleValues
+                with l0.TypeLevelFieldAccessInstructions
+                with l0.SimpleTypeLevelInvokeInstructions
+                with l0.TypeLevelDynamicLoads
+                with PredefinedClassHierarchy
+                with DefaultHandlingOfMethodResults
+                with IgnoreSynchronization
 
         val method = findMethod("endless")
-        /*val result =*/ BaseAI(method, MostBasicDomain)
+        /*val result =*/
+        BaseAI(method, MostBasicDomain)
         // if we reach this point, everything is OK
     }
 

@@ -19,5 +19,5 @@ object LLoadInstruction
 
 trait ConstantIndexLLoadInstruction
     extends LLoadInstruction
-    with ImplicitLocalVariableIndex
-    with InstructionMetaInformation
+        with ImplicitLocalVariableIndex
+        with InstructionMetaInformation

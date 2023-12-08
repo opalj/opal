@@ -147,9 +147,8 @@ sealed trait EOptionP[+E <: Entity, +P <: Property] {
 
     @throws[IllegalArgumentException]("if the given eps is not a valid update")
     private[fpcf] def checkIsValidPropertiesUpdate(
-        eps:          SomeEPS,
-        newDependees: Iterable[SomeEOptionP]
-    ): Unit
+        eps: SomeEPS,
+        newDependees: Iterable[SomeEOptionP]): Unit
 
 }
 
@@ -160,9 +159,7 @@ sealed trait EOptionP[+E <: Entity, +P <: Property] {
  */
 object EOptionP {
 
-    def unapply[E <: Entity, P <: Property](eOptP: EOptionP[E, P]): Some[(E, PropertyKey[P])] = {
-        Some((eOptP.e, eOptP.pk))
-    }
+    def unapply[E <: Entity, P <: Property](eOptP: EOptionP[E, P]): Some[(E, PropertyKey[P])] = Some((eOptP.e, eOptP.pk))
 }
 
 /**
@@ -175,7 +172,7 @@ object EOptionP {
 sealed trait EPS[+E <: Entity, +P <: Property] extends EOptionP[E, P] {
 
     final override def isEPK: Boolean = false
-    def asEPK: EPK[E, P] = throw new ClassCastException();
+    def asEPK: EPK[E, P]              = throw new ClassCastException();
 
     final override def toEPK: EPK[E, P] = EPK(e, pk)
 
@@ -195,7 +192,7 @@ sealed trait EPS[+E <: Entity, +P <: Property] extends EOptionP[E, P] {
      */
     override def toFinalELBP: FinalEP[E, P] = FinalEP(e, lb)
 
-    final override def isEPS: Boolean = true
+    final override def isEPS: Boolean   = true
     final override def asEPS: EPS[E, P] = this
 
     final override def toEPS: Option[EPS[E, P]] = Some(this)
@@ -208,20 +205,16 @@ sealed trait EPS[+E <: Entity, +P <: Property] extends EOptionP[E, P] {
  */
 object EPS {
 
-    def apply[E <: Entity, P <: Property](e: E, lb: P, ub: P): EPS[E, P] = {
+    def apply[E <: Entity, P <: Property](e: E, lb: P, ub: P): EPS[E, P] =
         if (lb == ub) {
             if (lb == null /* && | || ub == null*/ ) {
                 throw new IllegalArgumentException(s"lb and ub are null")
             } else {
                 FinalEP(e, ub)
             }
-        } else if (lb == null)
-            InterimEUBP(e, ub)
-        else if (ub == null)
-            InterimELBP(e, lb)
-        else
-            InterimELUBP(e, lb, ub)
-    }
+        } else if (lb == null) InterimEUBP(e, ub)
+        else if (ub == null) InterimELBP(e, lb)
+        else InterimELUBP(e, lb, ub)
 
     def unapply[E <: Entity, P <: Property](eps: EPS[E, P]): Some[E] = Some(eps.e)
 }
@@ -233,9 +226,7 @@ object EPS {
  */
 object SomeEPS {
 
-    def unapply[E <: Entity, P <: Property](eps: EPS[E, P]): Some[(E, PropertyKey[P])] = {
-        Some((eps.e, eps.pk))
-    }
+    def unapply[E <: Entity, P <: Property](eps: EPS[E, P]): Some[(E, PropertyKey[P])] = Some((eps.e, eps.pk))
 }
 
 object LBPS {
@@ -246,9 +237,7 @@ object LBPS {
      * @note Using LBPS to extract a property for which no lower bound was computed
      *       will (deliberately) result in an exception!
      */
-    def unapply[E <: Entity, P <: Property](eps: EPS[E, P]): Some[(P, Boolean)] = {
-        Some((eps.lb, eps.isFinal))
-    }
+    def unapply[E <: Entity, P <: Property](eps: EPS[E, P]): Some[(P, Boolean)] = Some((eps.lb, eps.isFinal))
 
 }
 
@@ -260,9 +249,7 @@ object UBPS {
      * @note Using UBPS to extract a property for which no upper bound was computed
      *       will (deliberately) result in an exception!
      */
-    def unapply[E <: Entity, P <: Property](eps: EPS[E, P]): Some[(P, Boolean)] = {
-        Some((eps.ub, eps.isFinal))
-    }
+    def unapply[E <: Entity, P <: Property](eps: EPS[E, P]): Some[(P, Boolean)] = Some((eps.ub, eps.isFinal))
 }
 
 object LUBPS {
@@ -273,9 +260,7 @@ object LUBPS {
      * @note Using LUBPS to extract a property for which no lower or upper bound was computed
      *       will (deliberately) result in an exception!
      */
-    def unapply[E <: Entity, P <: Property](eps: EPS[E, P]): Some[(P, P, Boolean)] = {
-        Some((eps.lb, eps.ub, eps.isFinal))
-    }
+    def unapply[E <: Entity, P <: Property](eps: EPS[E, P]): Some[(P, P, Boolean)] = Some((eps.lb, eps.ub, eps.isFinal))
 
 }
 
@@ -292,9 +277,8 @@ object ELUBPS {
      * @note Using ELUBPS to extract a property for which no lower or upper bound was computed
      *       will (deliberately) result in an exception!
      */
-    def unapply[E <: Entity, P <: Property](eps: EPS[E, P]): Some[(E, P, P, Boolean)] = {
+    def unapply[E <: Entity, P <: Property](eps: EPS[E, P]): Some[(E, P, P, Boolean)] =
         Some((eps.e, eps.lb, eps.ub, eps.isFinal))
-    }
 }
 
 object ELUBP {
@@ -305,9 +289,7 @@ object ELUBP {
      * @note Using ELUBP to extract a property for which no lower or upper bound was computed
      *       will (deliberately) result in an exception!
      */
-    def unapply[E <: Entity, P <: Property](eps: EPS[E, P]): Some[(E, P, P)] = {
-        Some((eps.e, eps.lb, eps.ub))
-    }
+    def unapply[E <: Entity, P <: Property](eps: EPS[E, P]): Some[(E, P, P)] = Some((eps.e, eps.lb, eps.ub))
 }
 
 object LUBP {
@@ -318,9 +300,7 @@ object LUBP {
      * @note Using LUBP to extract a property for which no lower or upper bound was computed
      *       will (deliberately) result in an exception!
      */
-    def unapply[E <: Entity, P <: Property](eps: EPS[E, P]): Some[(P, P)] = {
-        Some((eps.lb, eps.ub))
-    }
+    def unapply[E <: Entity, P <: Property](eps: EPS[E, P]): Some[(P, P)] = Some((eps.lb, eps.ub))
 }
 
 object EUBPS {
@@ -328,9 +308,7 @@ object EUBPS {
     /**
      * Returns the triple `(Entity, upperBound : Property, isFinal : Boolean)`.
      */
-    def unapply[E <: Entity, P <: Property](eps: EPS[E, P]): Some[(E, P, Boolean)] = {
-        Some((eps.e, eps.ub, eps.isFinal))
-    }
+    def unapply[E <: Entity, P <: Property](eps: EPS[E, P]): Some[(E, P, Boolean)] = Some((eps.e, eps.ub, eps.isFinal))
 
 }
 
@@ -339,9 +317,7 @@ object EUBP {
     /**
      * Returns the pair `(Entity, upperBound : Property)`.
      */
-    def unapply[E <: Entity, P <: Property](eps: EPS[E, P]): Some[(E, P)] = {
-        Some((eps.e, eps.ub))
-    }
+    def unapply[E <: Entity, P <: Property](eps: EPS[E, P]): Some[(E, P)] = Some((eps.e, eps.ub))
 
 }
 
@@ -359,9 +335,7 @@ object ELBPS {
     /**
      * Returns the triple `(Entity, lowerBound : Property, isFinal : Boolean)`.
      */
-    def unapply[E <: Entity, P <: Property](eps: EPS[E, P]): Some[(E, P, Boolean)] = {
-        Some((eps.e, eps.lb, eps.isFinal))
-    }
+    def unapply[E <: Entity, P <: Property](eps: EPS[E, P]): Some[(E, P, Boolean)] = Some((eps.e, eps.lb, eps.isFinal))
 
 }
 
@@ -370,9 +344,7 @@ object ELBP {
     /**
      * Returns the pair `(Entity, lowerBound : Property)`.
      */
-    def unapply[E <: Entity, P <: Property](eps: EPS[E, P]): Some[(E, P)] = {
-        Some((eps.e, eps.lb))
-    }
+    def unapply[E <: Entity, P <: Property](eps: EPS[E, P]): Some[(E, P)] = Some((eps.e, eps.lb))
 
 }
 
@@ -394,46 +366,36 @@ final class FinalEP[+E <: Entity, +P <: Property](val e: E, val p: P) extends EP
 
     override lazy val pk: PropertyKey[P] = p.key.asInstanceOf[PropertyKey[P]]
 
-    override def isFinal: Boolean = true
+    override def isFinal: Boolean       = true
     override def asFinal: FinalEP[E, P] = this
 
     override private[fpcf] def toFinalEP: FinalEP[E, P] = this
 
-    override def hasLBP: Boolean = true
-    override def lb: P = p
+    override def hasLBP: Boolean            = true
+    override def lb: P                      = p
     override def toFinalELBP: FinalEP[E, P] = this
 
-    override def hasUBP: Boolean = true
-    override def ub: P = p
+    override def hasUBP: Boolean            = true
+    override def ub: P                      = p
     override def toFinalEUBP: FinalEP[E, P] = this
 
     override def asInterim: InterimEP[E, P] = throw new ClassCastException();
 
     override private[fpcf] def isUpdatedComparedTo(
-        oldEOptionP: EOptionP[Entity, Property]
-    ): Boolean = {
-        oldEOptionP.isRefinable
-    }
+        oldEOptionP: EOptionP[Entity, Property]): Boolean = oldEOptionP.isRefinable
 
     private[fpcf] def checkIsValidPropertiesUpdate(
         eps:          SomeEPS,
-        newDependees: Iterable[SomeEOptionP]
-    ): Unit = {
-        throw new IllegalArgumentException("already final")
-    }
+        newDependees: Iterable[SomeEOptionP]): Unit = throw new IllegalArgumentException("already final")
 
-    override def equals(other: Any): Boolean = {
-        other match {
-            case that: FinalEP[_, _] => (this eq that) || (that.e == this.e && this.p == that.p)
-            case _                   => false
-        }
+    override def equals(other: Any): Boolean = other match {
+        case that: FinalEP[_, _] => (this eq that) || (that.e == this.e && this.p == that.p)
+        case _                   => false
     }
 
     override lazy val hashCode: Int = e.hashCode() * 727 + p.hashCode()
 
-    override def toString: String = {
-        s"FinalEP($e@${System.identityHashCode(e).toHexString},p=$p)"
-    }
+    override def toString: String = s"FinalEP($e@${System.identityHashCode(e).toHexString},p=$p)"
 
 }
 
@@ -441,9 +403,7 @@ object FinalEP {
 
     def apply[E <: Entity, P <: Property](e: E, p: P): FinalEP[E, P] = new FinalEP(e, p)
 
-    def unapply[E <: Entity, P <: Property](eps: FinalEP[E, P]): Some[(E, P)] = {
-        Some((eps.e, eps.p))
-    }
+    def unapply[E <: Entity, P <: Property](eps: FinalEP[E, P]): Some[(E, P)] = Some((eps.e, eps.p))
 
 }
 
@@ -454,9 +414,8 @@ object FinalEP {
  */
 object SomeFinalEP {
 
-    def unapply[E <: Entity, P <: Property](finalEP: FinalEP[E, P]): Some[(E, PropertyKey[P])] = {
+    def unapply[E <: Entity, P <: Property](finalEP: FinalEP[E, P]): Some[(E, PropertyKey[P])] =
         Some((finalEP.e, finalEP.pk))
-    }
 }
 
 object FinalP {
@@ -473,27 +432,26 @@ object FinalE {
 
 sealed trait InterimEP[+E <: Entity, +P <: Property] extends EPS[E, P] {
 
-    override def isFinal: Boolean = false
+    override def isFinal: Boolean       = false
     override def asFinal: FinalEP[E, P] = throw new ClassCastException();
 
     override def asInterim: InterimEP[E, P] = this
 
     private[fpcf] def checkIsValidLBPropertyUpdate(eps: SomeEPS): Unit = {
         val newLBAsOP = eps.lb.asOrderedProperty
-        val lbAsOP = lb.asInstanceOf[newLBAsOP.Self]
+        val lbAsOP    = lb.asInstanceOf[newLBAsOP.Self]
         newLBAsOP.checkIsEqualOrBetterThan(e, lbAsOP)
     }
 
     private[fpcf] def checkIsValidUBPropertyUpdate(eps: SomeEPS): Unit = {
-        val ubAsOP = ub.asOrderedProperty
+        val ubAsOP    = ub.asOrderedProperty
         val newUBAsOP = eps.ub.asInstanceOf[ubAsOP.Self]
         ubAsOP.checkIsEqualOrBetterThan(e, newUBAsOP)
     }
 
     override private[fpcf] def checkIsValidPropertiesUpdate(
         eps:          SomeEPS,
-        newDependees: Iterable[SomeEOptionP]
-    ): Unit = {
+        newDependees: Iterable[SomeEOptionP]): Unit =
         try {
             if (eps.isRefinable && (hasLBP != eps.hasLBP || hasUBP != eps.hasUBP)) {
                 throw new IllegalArgumentException(s"inconsistent property bounds: $this vs. $eps")
@@ -507,11 +465,10 @@ sealed trait InterimEP[+E <: Entity, +P <: Property] extends EPS[E, P] {
             }
         } catch {
             case t: Throwable =>
-                val m = s"$e: illegal update oldLB: $lb vs. newLB=$eps.lb "+
+                val m = s"$e: illegal update oldLB: $lb vs. newLB=$eps.lb " +
                     newDependees.mkString("newDependees={", ", ", "}; cause=") + t.getMessage
                 throw new IllegalArgumentException(m, t)
         }
-    }
 }
 
 object InterimE {
@@ -535,8 +492,7 @@ object InterimE {
 final class InterimELUBP[+E <: Entity, +P <: Property](
         val e:  E,
         val lb: P,
-        val ub: P
-) extends InterimEP[E, P] {
+        val ub: P) extends InterimEP[E, P] {
 
     assert(lb != null)
     assert(ub != null)
@@ -554,25 +510,17 @@ final class InterimELUBP[+E <: Entity, +P <: Property](
     override def hasUBP: Boolean = true
 
     override private[fpcf] def isUpdatedComparedTo(
-        oldEOptionP: EOptionP[Entity, Property]
-    ): Boolean = {
+        oldEOptionP: EOptionP[Entity, Property]): Boolean =
         oldEOptionP.isEPK || oldEOptionP.lb != this.lb || oldEOptionP.ub != this.ub
-    }
 
-    override def equals(other: Any): Boolean = {
-        other match {
-            case that: InterimELUBP[_, _] =>
-                (this eq that) || (e == that.e && lb == that.lb && ub == that.ub)
-            case _ =>
-                false
-        }
+    override def equals(other: Any): Boolean = other match {
+        case that: InterimELUBP[_, _] => (this eq that) || (e == that.e && lb == that.lb && ub == that.ub)
+        case _                        => false
     }
 
     override lazy val hashCode: Int = ((e.hashCode() * 31 + lb.hashCode()) * 31) + ub.hashCode()
 
-    override def toString: String = {
-        s"InterimELUBP($e@${System.identityHashCode(e).toHexString},lb=$lb,ub=$ub)"
-    }
+    override def toString: String = s"InterimELUBP($e@${System.identityHashCode(e).toHexString},lb=$lb,ub=$ub)"
 }
 
 object InterimELUBP {
@@ -582,22 +530,18 @@ object InterimELUBP {
         new InterimELUBP(e, lb, ub)
     }
 
-    def unapply[E <: Entity, P >: Null <: Property](eps: InterimELUBP[E, P]): Some[(E, P, P)] = {
+    def unapply[E <: Entity, P >: Null <: Property](eps: InterimELUBP[E, P]): Some[(E, P, P)] =
         Some((eps.e, eps.lb, eps.ub))
-    }
 }
 
 object InterimLUBP {
 
-    def unapply[E <: Entity, P >: Null <: Property](eps: InterimELUBP[E, P]): Some[(P, P)] = {
-        Some((eps.lb, eps.ub))
-    }
+    def unapply[E <: Entity, P >: Null <: Property](eps: InterimELUBP[E, P]): Some[(P, P)] = Some((eps.lb, eps.ub))
 }
 
 final class InterimEUBP[+E <: Entity, +P <: Property](
-        val e:  E,
-        val ub: P
-) extends InterimEP[E, P] {
+        val e: E,
+        val ub: P) extends InterimEP[E, P] {
 
     assert(ub != null)
 
@@ -611,25 +555,16 @@ final class InterimEUBP[+E <: Entity, +P <: Property](
     override def lb: Nothing = throw new UnsupportedOperationException();
 
     override private[fpcf] def isUpdatedComparedTo(
-        oldEOptionP: EOptionP[Entity, Property]
-    ): Boolean = {
-        oldEOptionP.isEPK || oldEOptionP.ub != this.ub
-    }
+        oldEOptionP: EOptionP[Entity, Property]): Boolean = oldEOptionP.isEPK || oldEOptionP.ub != this.ub
 
-    override def equals(other: Any): Boolean = {
-        other match {
-            case that: InterimEUBP[_, _] =>
-                (this eq that) || (this.e == that.e && this.ub == that.ub)
-            case _ =>
-                false
-        }
+    override def equals(other: Any): Boolean = other match {
+        case that: InterimEUBP[_, _] => (this eq that) || (this.e == that.e && this.ub == that.ub)
+        case _                       => false
     }
 
     override lazy val hashCode: Int = e.hashCode() * 31 + ub.hashCode()
 
-    override def toString: String = {
-        s"InterimEUBP($e@${System.identityHashCode(e).toHexString},ub=$ub)"
-    }
+    override def toString: String = s"InterimEUBP($e@${System.identityHashCode(e).toHexString},ub=$ub)"
 }
 
 /**
@@ -639,13 +574,9 @@ final class InterimEUBP[+E <: Entity, +P <: Property](
  */
 object InterimEUBP {
 
-    def apply[E <: Entity, P <: Property](e: E, ub: P): InterimEUBP[E, P] = {
-        new InterimEUBP(e, ub)
-    }
+    def apply[E <: Entity, P <: Property](e: E, ub: P): InterimEUBP[E, P] = new InterimEUBP(e, ub)
 
-    def unapply[E <: Entity, P >: Null <: Property](eps: InterimEP[E, P]): Some[(E, P)] = {
-        Some((eps.e, eps.ub))
-    }
+    def unapply[E <: Entity, P >: Null <: Property](eps: InterimEP[E, P]): Some[(E, P)] = Some((eps.e, eps.ub))
 }
 
 /**
@@ -656,8 +587,7 @@ object InterimEUBP {
 object InterimEUB {
 
     def unapply[E <: Entity, P <: Property](eps: InterimEP[E, P]): Some[E] = {
-        if (!eps.hasUBP)
-            throw new IllegalArgumentException(s"$eps does not define an upper bound property");
+        if (!eps.hasUBP) throw new IllegalArgumentException(s"$eps does not define an upper bound property");
 
         Some(eps.e)
     }
@@ -682,12 +612,9 @@ object InterimEUB {
  */
 object NoLBP {
 
-    def unapply[E <: Entity, P >: Null <: Property](eps: EOptionP[E, P]): Option[EOptionP[E, P]] = {
-        if (!eps.hasLBP)
-            Some(eps)
-        else
-            None
-    }
+    def unapply[E <: Entity, P >: Null <: Property](eps: EOptionP[E, P]): Option[EOptionP[E, P]] =
+        if (!eps.hasLBP) Some(eps)
+        else None
 }
 
 /**
@@ -696,12 +623,9 @@ object NoLBP {
  */
 object NoUBP {
 
-    def unapply[E <: Entity, P >: Null <: Property](eps: EOptionP[E, P]): Option[EOptionP[E, P]] = {
-        if (!eps.hasUBP)
-            Some(eps)
-        else
-            None
-    }
+    def unapply[E <: Entity, P >: Null <: Property](eps: EOptionP[E, P]): Option[EOptionP[E, P]] =
+        if (!eps.hasUBP) Some(eps)
+        else None
 }
 
 object InterimUBP {
@@ -711,9 +635,8 @@ object InterimUBP {
 }
 
 final class InterimELBP[+E <: Entity, +P <: Property](
-        val e:  E,
-        val lb: P
-) extends InterimEP[E, P] {
+        val e: E,
+        val lb: P) extends InterimEP[E, P] {
 
     assert(lb != null)
 
@@ -727,25 +650,16 @@ final class InterimELBP[+E <: Entity, +P <: Property](
     override def ub: Nothing = throw new UnsupportedOperationException();
 
     override private[fpcf] def isUpdatedComparedTo(
-        oldEOptionP: EOptionP[Entity, Property]
-    ): Boolean = {
-        oldEOptionP.isEPK || oldEOptionP.lb != this.lb
-    }
+        oldEOptionP: EOptionP[Entity, Property]): Boolean = oldEOptionP.isEPK || oldEOptionP.lb != this.lb
 
-    override def equals(other: Any): Boolean = {
-        other match {
-            case that: InterimELBP[_, _] =>
-                (this eq that) || (this.lb == that.lb && this.e == that.e)
-            case _ =>
-                false
-        }
+    override def equals(other: Any): Boolean = other match {
+        case that: InterimELBP[_, _] => (this eq that) || (this.lb == that.lb && this.e == that.e)
+        case _                       => false
     }
 
     override lazy val hashCode: Int = e.hashCode() * 31 + lb.hashCode()
 
-    override def toString: String = {
-        s"InterimELBP($e@${System.identityHashCode(e).toHexString},lb=$lb)"
-    }
+    override def toString: String = s"InterimELBP($e@${System.identityHashCode(e).toHexString},lb=$lb)"
 }
 
 /**
@@ -755,13 +669,9 @@ final class InterimELBP[+E <: Entity, +P <: Property](
  */
 object InterimELBP {
 
-    def apply[E <: Entity, P <: Property](e: E, ub: P): InterimELBP[E, P] = {
-        new InterimELBP(e, ub)
-    }
+    def apply[E <: Entity, P <: Property](e: E, ub: P): InterimELBP[E, P] = new InterimELBP(e, ub)
 
-    def unapply[E <: Entity, P >: Null <: Property](eps: InterimEP[E, P]): Some[(E, P)] = {
-        Some((eps.e, eps.ub))
-    }
+    def unapply[E <: Entity, P >: Null <: Property](eps: InterimEP[E, P]): Some[(E, P)] = Some((eps.e, eps.ub))
 }
 
 object InterimLBP {
@@ -776,31 +686,26 @@ object InterimLBP {
  * @author Michael Eichberg
  */
 final class EPK[+E <: Entity, +P <: Property](
-        val e:  E,
-        val pk: PropertyKey[P]
-) extends EOptionP[E, P] {
+        val e: E,
+        val pk: PropertyKey[P]) extends EOptionP[E, P] {
 
-    override def hasLBP: Boolean = false
-    override def lb: Nothing = throw new UnsupportedOperationException();
+    override def hasLBP: Boolean           = false
+    override def lb: Nothing               = throw new UnsupportedOperationException();
     override private[fpcf] def toFinalELBP = throw new UnsupportedOperationException(toString);
 
-    override def hasUBP: Boolean = false
-    override def ub: Nothing = throw new UnsupportedOperationException();
+    override def hasUBP: Boolean           = false
+    override def ub: Nothing               = throw new UnsupportedOperationException();
     override private[fpcf] def toFinalEUBP = throw new UnsupportedOperationException(toString);
 
-    override def isFinal: Boolean = false
+    override def isFinal: Boolean       = false
     override def asFinal: FinalEP[E, P] = throw new ClassCastException();
 
-    override private[fpcf] def toFinalEP: FinalEP[E, P] = {
-        throw new UnsupportedOperationException(toString)
-    };
+    override private[fpcf] def toFinalEP: FinalEP[E, P] = throw new UnsupportedOperationException(toString);
 
-    override def isEPS: Boolean = false
-    override def asEPS: EPS[E, P] = {
-        throw new ClassCastException()
-    };
+    override def isEPS: Boolean   = false
+    override def asEPS: EPS[E, P] = throw new ClassCastException();
 
-    override def isEPK: Boolean = true
+    override def isEPK: Boolean   = true
     override def asEPK: EPK[E, P] = this
 
     override def toEPK: this.type = this
@@ -810,27 +715,21 @@ final class EPK[+E <: Entity, +P <: Property](
     override def asInterim: InterimEP[E, P] = throw new ClassCastException();
 
     override private[fpcf] def isUpdatedComparedTo(
-        oldEOptionP: EOptionP[Entity, Property]
-    ): Boolean = {
-        false
-    }
+        oldEOptionP: EOptionP[Entity, Property]): Boolean = false
 
     override private[fpcf] def checkIsValidPropertiesUpdate(
         eps:          SomeEPS,
-        newDependees: Iterable[SomeEOptionP]
-    ): Unit = {}
+        newDependees: Iterable[SomeEOptionP]): Unit = {}
 
-    override def equals(other: Any): Boolean = {
-        other match {
-            case that: EPK[_, _] => (this eq that) || (this.pk == that.pk && that.e == this.e)
-            case _               => false
-        }
+    override def equals(other: Any): Boolean = other match {
+        case that: EPK[_, _] => (this eq that) || (this.pk == that.pk && that.e == this.e)
+        case _               => false
     }
 
     override lazy val hashCode: Int = e.hashCode() * 31 + pk.id
 
     override def toString: String = {
-        val pkId = pk.id
+        val pkId   = pk.id
         val pkName = PropertyKey.name(pkId)
         s"EPK($e@${System.identityHashCode(e).toHexString},$pkName#$pkId)"
     }
@@ -845,11 +744,7 @@ object EPK {
 
     def apply[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): EPK[e.type, P] = new EPK(e, pk)
 
-    def apply[E <: Entity, P <: Property](e: E, p: P): EPK[E, P] = {
-        new EPK(e, p.key.asInstanceOf[PropertyKey[P]])
-    }
+    def apply[E <: Entity, P <: Property](e: E, p: P): EPK[E, P] = new EPK(e, p.key.asInstanceOf[PropertyKey[P]])
 
-    def unapply[E <: Entity, P >: Null <: Property](epk: EPK[E, P]): Some[(E, PropertyKey[P])] = {
-        Some((epk.e, epk.pk))
-    }
+    def unapply[E <: Entity, P >: Null <: Property](epk: EPK[E, P]): Some[(E, PropertyKey[P])] = Some((epk.e, epk.pk))
 }

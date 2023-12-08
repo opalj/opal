@@ -26,18 +26,16 @@ package immutable
  */
 final case class IdentityPair[+T1 <: AnyRef, +T2 <: AnyRef](
         _1: T1,
-        _2: T2
-) extends Product2[T1, T2] {
+        _2: T2) extends Product2[T1, T2] {
 
     override def canEqual(other: Any): Boolean = other.isInstanceOf[IdentityPair[_, _]]
 
-    override def equals(other: Any): Boolean = {
+    override def equals(other: Any): Boolean =
         // We don't need to call canEqual because this class is final!
         other match {
             case that: IdentityPair[_, _] => (this._1 eq that._1) && (this._2 eq that._2)
             case _                        => false
         }
-    }
 
     /*
     @volatile private[this] var hash: Int = 0
@@ -49,6 +47,6 @@ final case class IdentityPair[+T1 <: AnyRef, +T2 <: AnyRef](
         }
         hash
     }
-    */
+     */
     override def hashCode: Int = System.identityHashCode(_1) * 31 + System.identityHashCode(_2)
 }

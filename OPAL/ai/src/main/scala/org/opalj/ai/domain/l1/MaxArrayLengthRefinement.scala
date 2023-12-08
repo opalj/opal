@@ -15,8 +15,7 @@ trait MaxArrayLengthRefinement extends l0.TypeLevelReferenceValues {
 
     abstract override def arraylength(
         pc:       Int,
-        arrayref: DomainValue
-    ): Computation[DomainValue, ExceptionValue] = {
+        arrayref: DomainValue): Computation[DomainValue, ExceptionValue] = {
         val length = super.arraylength(pc, arrayref)
         if (length.hasResult) {
             length.result match {

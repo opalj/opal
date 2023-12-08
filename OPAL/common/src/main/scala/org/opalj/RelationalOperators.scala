@@ -13,9 +13,9 @@ object RelationalOperators extends Enumeration {
     // Operators to compare int values.
     //
     final val LT = Value("<")
-    final val < = LT
+    final val <  = LT
     final val GT = Value(">")
-    final val > = GT
+    final val >  = GT
     final val LE = Value("<=")
     final val <= = LE
     final val GE = Value(">=")

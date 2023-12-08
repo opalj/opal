@@ -13,7 +13,7 @@ package l0
  */
 trait DefaultTypeLevelDoubleValues
     extends DefaultSpecialDomainValuesBinding
-    with TypeLevelDoubleValues {
+        with TypeLevelDoubleValues {
     domain: IntegerValuesFactory =>
 
     /**
@@ -32,9 +32,7 @@ trait DefaultTypeLevelDoubleValues
 
         override def summarize(pc: Int): DomainValue = this
 
-        override def adapt(target: TargetDomain, valueOrigin: Int): target.DomainValue = {
-            target.DoubleValue(valueOrigin)
-        }
+        override def adapt(target: TargetDomain, valueOrigin: Int): target.DomainValue = target.DoubleValue(valueOrigin)
 
         override def constantValue: Option[Double] = None
 
@@ -44,4 +42,3 @@ trait DefaultTypeLevelDoubleValues
 
     final override def DoubleValue(valueOrigin: Int, value: Double): DoubleValue = ADoubleValue
 }
-

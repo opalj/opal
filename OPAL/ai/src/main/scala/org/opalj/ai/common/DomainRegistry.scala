@@ -3,10 +3,10 @@ package org.opalj
 package ai
 package common
 
-import com.typesafe.config.Config
-
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
+
+import com.typesafe.config.Config
 
 /**
  * Registry for all domains that can be instantiated given a `Project`, and a `Method` with a
@@ -28,13 +28,12 @@ object DomainRegistry {
 
     case class DomainMetaInformation(
             lessPreciseDomains: Set[Class[_ <: Domain]],
-            factory:            (SomeProject, Method) => Domain
-    )
+            factory:            (SomeProject, Method) => Domain)
 
     type ClassRegistry = Map[Class[_ <: Domain], DomainMetaInformation]
 
     private[this] var descriptions: Map[String, Class[_ <: Domain]] = Map.empty
-    private[this] var classRegistry: ClassRegistry = Map.empty
+    private[this] var classRegistry: ClassRegistry                  = Map.empty
 
     /**
      * Register a new domain that can be used to perform an abstract interpretation
@@ -51,38 +50,30 @@ object DomainRegistry {
         domainDescription:  String,
         domainClass:        Class[_ <: Domain],
         lessPreciseDomains: Set[Class[_ <: Domain]],
-        factory:            (SomeProject, Method) => Domain
-    ): Unit = {
-        this.synchronized {
-            if (classRegistry.get(domainClass).nonEmpty)
-                throw new IllegalArgumentException(s"$domainClass is already registered");
+        factory:            (SomeProject, Method) => Domain): Unit = this.synchronized {
+        if (classRegistry.get(domainClass).nonEmpty)
+            throw new IllegalArgumentException(s"$domainClass is already registered");
 
-            descriptions += ((domainDescription, domainClass))
-            classRegistry += ((domainClass, DomainMetaInformation(lessPreciseDomains, factory)))
-        }
+        descriptions += ((domainDescription, domainClass))
+        classRegistry += ((domainClass, DomainMetaInformation(lessPreciseDomains, factory)))
     }
 
     /** The transitive hull of all less precise domains of the given domain. */
     def allLessPreciseDomains(rootDomainClass: Class[_ <: Domain]): Set[Class[_ <: Domain]] = {
-        var domains = Set.empty[Class[_ <: Domain]]
+        var domains          = Set.empty[Class[_ <: Domain]]
         var domainsToAnalyze = classRegistry(rootDomainClass).lessPreciseDomains
         while (domainsToAnalyze.nonEmpty) {
             val domain = domainsToAnalyze.head
             domainsToAnalyze = domainsToAnalyze.tail
             domains += domain
-            classRegistry(domain).lessPreciseDomains.foreach { d =>
-                if (!domains.contains(d)) domainsToAnalyze += d
-            }
+            classRegistry(domain).lessPreciseDomains.foreach { d => if (!domains.contains(d)) domainsToAnalyze += d }
         }
 
         domains
     }
 
-    def selectCandidates(requirements: Iterable[Class[_ <: AnyRef]]): Set[Class[_ <: Domain]] = {
-        classRegistry.keys.filter { candidate =>
-            requirements.forall(r => r.isAssignableFrom(candidate))
-        }.toSet
-    }
+    def selectCandidates(requirements: Iterable[Class[_ <: AnyRef]]): Set[Class[_ <: Domain]] =
+        classRegistry.keys.filter { candidate => requirements.forall(r => r.isAssignableFrom(candidate)) }.toSet
 
     /**
      * Selects a domain that satisfies all requirements and which – according to the domains' partial
@@ -99,16 +90,14 @@ object DomainRegistry {
      */
     def selectBest(requirements: Iterable[Class[_ <: AnyRef]]): Set[Class[_ <: Domain]] = {
         val candidateClasses = selectCandidates(requirements)
-        if (candidateClasses.isEmpty)
-            return Set.empty;
+        if (candidateClasses.isEmpty) return Set.empty;
 
         val d: Class[_ <: Domain] = candidateClasses.head
-        val rootSet = Set[Class[_ <: Domain]](d)
+        val rootSet               = Set[Class[_ <: Domain]](d)
         val (best, _) = candidateClasses.tail.foldLeft((rootSet, allLessPreciseDomains(d))) { (c, n) =>
             // select the most precise domains...
             val (candidateDomains, lessPreciseThanCurrent) = c
-            if (lessPreciseThanCurrent.contains(n))
-                c
+            if (lessPreciseThanCurrent.contains(n)) c
             else {
                 val lessPreciseThanN = allLessPreciseDomains(n)
                 (
@@ -122,11 +111,10 @@ object DomainRegistry {
 
     def selectCheapest(requirements: Iterable[Class[_ <: AnyRef]]): Set[Class[_ <: Domain]] = {
         val candidateClasses = selectCandidates(requirements)
-        if (candidateClasses.isEmpty)
-            return Set.empty;
+        if (candidateClasses.isEmpty) return Set.empty;
 
         val d: Class[_ <: Domain] = candidateClasses.head
-        val rootSet = Set[Class[_ <: Domain]](d)
+        val rootSet               = Set[Class[_ <: Domain]](d)
         candidateClasses.tail.foldLeft(rootSet) { (c, n) =>
             // select the least precise/cheapest domains...
             val lessPreciseThanN = allLessPreciseDomains(n)
@@ -145,14 +133,12 @@ object DomainRegistry {
 
     def selectConfigured(
         config:       Config,
-        requirements: Iterable[Class[_ <: AnyRef]]
-    ): Set[Class[_ <: Domain]] = {
+        requirements: Iterable[Class[_ <: AnyRef]]): Set[Class[_ <: Domain]] =
         config.getString(configStrategySelectionKey) match {
             case "cheapest" => selectCheapest(requirements)
             case "best"     => selectBest(requirements)
             case s          => throw new UnsupportedOperationException(s"unknown strategy: $s")
         }
-    }
 
     /**
      * Returns an `Iterable` to make it possible to iterate over the descriptions of
@@ -178,12 +164,9 @@ object DomainRegistry {
     def newDomain(
         domainDescription: String,
         project:           SomeProject,
-        method:            Method
-    ): Domain = {
-        this.synchronized {
-            val domainClass: Class[_ <: Domain] = descriptions(domainDescription)
-            newDomain(domainClass, project, method)
-        }
+        method:            Method): Domain = this.synchronized {
+        val domainClass: Class[_ <: Domain] = descriptions(domainDescription)
+        newDomain(domainClass, project, method)
     }
 
     /**
@@ -194,13 +177,11 @@ object DomainRegistry {
      * @param project The project.
      * @param method A method with a body.
      */
-    def newDomain(domainClass: Class[_ <: Domain], project: SomeProject, method: Method): Domain = {
+    def newDomain(domainClass: Class[_ <: Domain], project: SomeProject, method: Method): Domain =
         this.synchronized { classRegistry(domainClass).factory(project, method) }
-    }
 
-    def domainMetaInformation(domainClass: Class[_ <: Domain]): DomainMetaInformation = {
+    def domainMetaInformation(domainClass: Class[_ <: Domain]): DomainMetaInformation =
         this.synchronized { classRegistry(domainClass) }
-    }
 
     // initialize the registry with the known default domains
 
@@ -220,8 +201,8 @@ object DomainRegistry {
     )
 
     register(
-        "computations are done at the type level; "+
-            "cfg and def/use information is recorded; "+
+        "computations are done at the type level; " +
+            "cfg and def/use information is recorded; " +
             "signature refinements are used",
         classOf[fpcf.domain.PrimitiveTACAIDomainWithSignatureRefinement],
         lessPreciseDomains = Set(classOf[domain.l0.PrimitiveTACAIDomain]),
@@ -285,9 +266,9 @@ object DomainRegistry {
     )
 
     register(
-        "uses intervals for int values; "+
-            "tracks nullness and must alias information for reference types; "+
-            "records the ai-time def-use information; "+
+        "uses intervals for int values; " +
+            "tracks nullness and must alias information for reference types; " +
+            "records the ai-time def-use information; " +
             "uses refined signature information",
         classOf[fpcf.domain.L1DefaultDomainWithCFGAndDefUseAndSignatureRefinement[_]],
         lessPreciseDomains = Set(

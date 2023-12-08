@@ -6,13 +6,6 @@ package properties
 
 import scala.annotation.switch
 
-import org.opalj.collection.immutable.EmptyIntTrieSet
-import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.FallbackReason
-import org.opalj.fpcf.PropertyKey
-import org.opalj.fpcf.PropertyMetaInformation
-import org.opalj.fpcf.PropertyStore
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.analyses.ConfiguredPurityKey
 import org.opalj.br.fpcf.properties.Purity.ContextuallyPureFlags
@@ -24,6 +17,13 @@ import org.opalj.br.fpcf.properties.Purity.NotCompileTimePure
 import org.opalj.br.fpcf.properties.Purity.PerformsDomainSpecificOperations
 import org.opalj.br.fpcf.properties.Purity.PureFlags
 import org.opalj.br.fpcf.properties.Purity.SideEffectFreeFlags
+import org.opalj.collection.immutable.EmptyIntTrieSet
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.FallbackReason
+import org.opalj.fpcf.PropertyKey
+import org.opalj.fpcf.PropertyMetaInformation
+import org.opalj.fpcf.PropertyStore
 
 sealed trait PurityPropertyMetaInformation extends PropertyMetaInformation {
 
@@ -143,7 +143,7 @@ sealed trait PurityPropertyMetaInformation extends PropertyMetaInformation {
  */
 sealed abstract class Purity
     extends IndividualProperty[Purity, VirtualMethodPurity]
-    with PurityPropertyMetaInformation {
+        with PurityPropertyMetaInformation {
 
     /**
      * The globally unique key of the [[Purity]] property.
@@ -152,9 +152,9 @@ sealed abstract class Purity
 
     val flags: Int
 
-    def isCompileTimePure: Boolean = (flags & NotCompileTimePure) == 0
-    def isDeterministic: Boolean = (flags & IsNonDeterministic) == 0
-    def modifiesParameters: Boolean = (flags & ModifiesParameters) != 0
+    def isCompileTimePure: Boolean         = (flags & NotCompileTimePure) == 0
+    def isDeterministic: Boolean           = (flags & IsNonDeterministic) == 0
+    def modifiesParameters: Boolean        = (flags & ModifiesParameters) != 0
     def usesDomainSpecificActions: Boolean = (flags & PerformsDomainSpecificOperations) != 0
 
     final def aggregatedProperty = new VirtualMethodPurity(this)
@@ -170,17 +170,13 @@ sealed abstract class Purity
      * the same as if the conditional purity value was combined with the conditional value that
      * corresponds to the unconditional value.
      */
-    override def meet(other: Purity): Purity = {
-        other match {
-            case _: ClassifiedImpure           => other
-            case _ if other.modifiesParameters => other.meet(this)
-            case _ =>
-                Purity(this.flags | other.flags)
-        }
+    override def meet(other: Purity): Purity = other match {
+        case _: ClassifiedImpure           => other
+        case _ if other.modifiesParameters => other.meet(this)
+        case _                             => Purity(this.flags | other.flags)
     }
 
-    def withoutContextual: Purity =
-        if (modifiesParameters) Purity(flags & ~ModifiesParameters) else this
+    def withoutContextual: Purity = if (modifiesParameters) Purity(flags & ~ModifiesParameters) else this
 
     val modifiedParams: IntTrieSet = EmptyIntTrieSet
 }
@@ -200,21 +196,21 @@ object Purity extends PurityPropertyMetaInformation {
                     if (conf.isDefined && conf.get.wasSet(dm)) conf.get.purity(dm)
                     else ImpureByLackOfInformation
                 case x =>
-                    val m = x.getClass.getSimpleName+
+                    val m = x.getClass.getSimpleName +
                         " is not an org.opalj.br.fpcf.properties.Context"
                     throw new IllegalArgumentException(m)
             }
         }
     )
 
-    final val NotCompileTimePure = 0x1
-    final val IsNonDeterministic = 0x2
+    final val NotCompileTimePure               = 0x1
+    final val IsNonDeterministic               = 0x2
     final val PerformsDomainSpecificOperations = 0x4
-    final val ModifiesParameters = 0x8
+    final val ModifiesParameters               = 0x8
 
-    final val PureFlags = NotCompileTimePure
-    final val SideEffectFreeFlags = IsNonDeterministic | PureFlags
-    final val ContextuallyPureFlags = PureFlags | ModifiesParameters
+    final val PureFlags                       = NotCompileTimePure
+    final val SideEffectFreeFlags             = IsNonDeterministic | PureFlags
+    final val ContextuallyPureFlags           = PureFlags | ModifiesParameters
     final val ContextuallySideEffectFreeFlags = SideEffectFreeFlags | ModifiesParameters
     // There is no flag for impurity as analyses have to treat [[ClassifiedImpure]] specially anyway
     final val ImpureFlags = ContextuallySideEffectFreeFlags | PerformsDomainSpecificOperations
@@ -229,10 +225,10 @@ object Purity extends PurityPropertyMetaInformation {
         case Pure.flags            => Pure
         // For non-pure levels, we don't have compile-time purity anymore
         case _ => (flags | NotCompileTimePure: @switch) match {
-            case SideEffectFree.flags  => SideEffectFree
-            case DPure.flags           => DPure
-            case DSideEffectFree.flags => DSideEffectFree
-        }
+                case SideEffectFree.flags  => SideEffectFree
+                case DPure.flags           => DPure
+                case DSideEffectFree.flags => DSideEffectFree
+            }
     }
 
     def apply(name: String): Option[Purity] = name match {
@@ -253,10 +249,9 @@ object Purity extends PurityPropertyMetaInformation {
     }
 
     def parseParams(s: String): IntTrieSet = {
-        val params = s.split(',')
+        val params             = s.split(',')
         var result: IntTrieSet = EmptyIntTrieSet
-        for (p <- params)
-            result = result + Integer.valueOf(p)
+        for (p <- params) result = result + Integer.valueOf(p)
         result
     }
 }
@@ -336,15 +331,14 @@ case class ContextuallyPure(override val modifiedParams: IntTrieSet) extends Pur
         case ContextuallySideEffectFree(p)  => ContextuallySideEffectFree(this.modifiedParams ++ p)
         case DContextuallyPure(p)           => DContextuallyPure(this.modifiedParams ++ p)
         case DContextuallySideEffectFree(p) => DContextuallySideEffectFree(this.modifiedParams ++ p)
-        case _ =>
-            (other.flags: @switch) match {
+        case _ => (other.flags: @switch) match {
                 case CompileTimePure.flags | Pure.flags => this
                 // For non-pure levels, we don't have compile-time purity anymore
                 case _ => (other.flags | NotCompileTimePure: @switch) match {
-                    case SideEffectFree.flags  => ContextuallySideEffectFree(modifiedParams)
-                    case DPure.flags           => DContextuallyPure(modifiedParams)
-                    case DSideEffectFree.flags => DContextuallySideEffectFree(modifiedParams)
-                }
+                        case SideEffectFree.flags  => ContextuallySideEffectFree(modifiedParams)
+                        case DPure.flags           => DContextuallyPure(modifiedParams)
+                        case DSideEffectFree.flags => DContextuallySideEffectFree(modifiedParams)
+                    }
             }
     }
 }
@@ -367,15 +361,13 @@ case class ContextuallySideEffectFree(override val modifiedParams: IntTrieSet) e
         case ContextuallySideEffectFree(p)  => ContextuallySideEffectFree(this.modifiedParams ++ p)
         case DContextuallyPure(p)           => DContextuallySideEffectFree(this.modifiedParams ++ p)
         case DContextuallySideEffectFree(p) => DContextuallySideEffectFree(this.modifiedParams ++ p)
-        case _ =>
-            (other.flags: @switch) match {
+        case _ => (other.flags: @switch) match {
                 case CompileTimePure.flags | Pure.flags => this
                 // For non-pure levels, we don't have compile-time purity anymore
                 case _ => (other.flags | NotCompileTimePure: @switch) match {
-                    case SideEffectFree.flags => this
-                    case DPure.flags | DSideEffectFree.flags =>
-                        DContextuallySideEffectFree(modifiedParams)
-                }
+                        case SideEffectFree.flags                => this
+                        case DPure.flags | DSideEffectFree.flags => DContextuallySideEffectFree(modifiedParams)
+                    }
             }
     }
 }
@@ -437,15 +429,13 @@ case class DContextuallyPure(override val modifiedParams: IntTrieSet) extends Pu
         case ContextuallySideEffectFree(p)  => DContextuallySideEffectFree(this.modifiedParams ++ p)
         case DContextuallyPure(p)           => DContextuallyPure(this.modifiedParams ++ p)
         case DContextuallySideEffectFree(p) => DContextuallySideEffectFree(this.modifiedParams ++ p)
-        case _ =>
-            (other.flags: @switch) match {
+        case _ => (other.flags: @switch) match {
                 case CompileTimePure.flags | Pure.flags => this
                 // For non-pure levels, we don't have compile-time purity anymore
                 case _ => (other.flags | NotCompileTimePure: @switch) match {
-                    case SideEffectFree.flags | DSideEffectFree.flags =>
-                        DContextuallySideEffectFree(modifiedParams)
-                    case DPure.flags => this
-                }
+                        case SideEffectFree.flags | DSideEffectFree.flags => DContextuallySideEffectFree(modifiedParams)
+                        case DPure.flags                                  => this
+                    }
             }
     }
 }
@@ -474,7 +464,7 @@ case class DContextuallySideEffectFree(override val modifiedParams: IntTrieSet) 
  * the dependency.
  */
 sealed abstract class ClassifiedImpure extends Purity {
-    final val flags = ImpureFlags
+    final val flags                                  = ImpureFlags
     override val withoutContextual: ClassifiedImpure = this
 }
 
@@ -483,11 +473,9 @@ sealed abstract class ClassifiedImpure extends Purity {
  * analysis is not able to derive a more precise result; no more dependency exist.
  */
 case object ImpureByAnalysis extends ClassifiedImpure {
-    override def meet(other: Purity): Purity = {
-        other match {
-            case ImpureByLackOfInformation => ImpureByLackOfInformation
-            case _                         => this
-        }
+    override def meet(other: Purity): Purity = other match {
+        case ImpureByLackOfInformation => ImpureByLackOfInformation
+        case _                         => this
     }
 }
 

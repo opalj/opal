@@ -3,10 +3,10 @@ package org.opalj
 package av
 package checking
 
+import scala.collection.immutable
+
 import org.opalj.br._
 import org.opalj.br.analyses.SomeProject
-
-import scala.collection.immutable
 
 /**
  * A source element matcher determines a set of source elements that matches a given query.
@@ -20,23 +20,15 @@ trait SourceElementsMatcher extends (SomeProject => immutable.Set[VirtualSourceE
 
     def extension(implicit project: SomeProject): immutable.Set[VirtualSourceElement]
 
-    def and(right: SourceElementsMatcher): SourceElementsMatcher = {
-        new SourceElementsMatcher {
-            def extension(implicit project: SomeProject) = {
-                left.extension ++ right.extension
-            }
+    def and(right: SourceElementsMatcher): SourceElementsMatcher = new SourceElementsMatcher {
+        def extension(implicit project: SomeProject) = left.extension ++ right.extension
 
-            override def toString() = s"($left and $right)"
-        }
+        override def toString() = s"($left and $right)"
     }
 
-    def except(right: SourceElementsMatcher): SourceElementsMatcher = {
-        new SourceElementsMatcher {
-            def extension(implicit project: SomeProject) = {
-                left.extension -- right.extension
-            }
+    def except(right: SourceElementsMatcher): SourceElementsMatcher = new SourceElementsMatcher {
+        def extension(implicit project: SomeProject) = left.extension -- right.extension
 
-            override def toString() = s"($left except $right)"
-        }
+        override def toString() = s"($left except $right)"
     }
 }

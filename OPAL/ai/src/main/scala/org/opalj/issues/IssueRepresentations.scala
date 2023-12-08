@@ -2,9 +2,8 @@
 package org.opalj
 package issues
 
-import scala.xml.Node
-
 import play.api.libs.json.JsValue
+import scala.xml.Node
 
 import org.opalj.br.analyses.ReportableAnalysisResult
 
@@ -65,13 +64,9 @@ trait IssueRepresentations extends ReportableAnalysisResult {
      */
     def toConsoleString: String = {
         import scala.Console._
-        toAnsiColoredString.
-            replace(RED, "").
-            replace(BLACK, "").
-            replace(YELLOW, "").
-            replace(BLUE, "").
-            replace(BOLD, "").
-            replace(RESET, "")
+        toAnsiColoredString.replace(RED, "").replace(BLACK, "").replace(YELLOW, "").replace(BLUE, "").replace(
+            BOLD,
+            "").replace(RESET, "")
     }
 
 }

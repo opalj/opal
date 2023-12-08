@@ -4,8 +4,8 @@ package ai
 
 import org.opalj.br.Code
 import org.opalj.log.LogContext
-import org.opalj.util.Nanoseconds
 import org.opalj.util.Milliseconds
+import org.opalj.util.Nanoseconds
 
 /**
  * An abstract interpreter that interrupts itself after the evaluation of
@@ -28,32 +28,27 @@ class BoundedInterruptableAI[D <: Domain](
         maxEvaluationCount:    Int,
         val maxEvaluationTime: Nanoseconds,
         val doInterrupt:       () => Boolean,
-        IdentifyDeadVariables: Boolean
-) extends InstructionCountBoundedAI[D](maxEvaluationCount, IdentifyDeadVariables) {
+        IdentifyDeadVariables: Boolean)
+    extends InstructionCountBoundedAI[D](maxEvaluationCount, IdentifyDeadVariables) {
 
     private[this] var startTime: Long = -1L;
 
     def this(
-        code:                  Code,
-        maxEvaluationFactor:   Double,
-        maxEvaluationTime:     Milliseconds,
-        doInterrupt:           () => Boolean,
-        identifyDeadVariables: Boolean       = true
-    )(
-        implicit
-        logContext: LogContext
-    ) = {
-        this(
-            InstructionCountBoundedAI.calculateMaxEvaluationCount(code, maxEvaluationFactor),
-            maxEvaluationTime.toNanoseconds,
-            doInterrupt,
-            identifyDeadVariables
-        )
-    }
+            code: Code,
+            maxEvaluationFactor: Double,
+            maxEvaluationTime: Milliseconds,
+            doInterrupt: () => Boolean,
+            identifyDeadVariables: Boolean = true
+          )(implicit
+            logContext: LogContext) = this(
+        InstructionCountBoundedAI.calculateMaxEvaluationCount(code, maxEvaluationFactor),
+        maxEvaluationTime.toNanoseconds,
+        doInterrupt,
+        identifyDeadVariables
+    )
 
     override def isInterrupted: Boolean = {
-        if (super.isInterrupted || doInterrupt())
-            return true;
+        if (super.isInterrupted || doInterrupt()) return true;
 
         val startTime = this.startTime
         if (startTime == -1L) {
@@ -62,8 +57,7 @@ class BoundedInterruptableAI[D <: Domain](
         } else if (super.currentEvaluationCount % 1000 == 0) {
             val elapsedTime = System.nanoTime() - startTime
             elapsedTime > maxEvaluationTime.timeSpan
-        } else
-            false
+        } else false
     }
 
 }

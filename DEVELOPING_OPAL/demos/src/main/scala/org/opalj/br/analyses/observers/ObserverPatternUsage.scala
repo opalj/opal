@@ -5,6 +5,7 @@ package analyses
 package observers
 
 import java.net.URL
+
 import org.opalj.br.instructions.FieldReadAccess
 
 /**
@@ -23,18 +24,17 @@ object ObserverPatternUsage extends ProjectAnalysisApplication {
     def doAnalyze(
         project:       Project[URL],
         parameters:    Seq[String],
-        isInterrupted: () => Boolean
-    ): BasicReport = {
+        isInterrupted: () => Boolean): BasicReport = {
         val appClassFiles = project.allProjectClassFiles
         val libClassFiles = project.allLibraryClassFiles
-        println("Application:\n\tClasses:"+appClassFiles.size)
-        println("\tMethods:"+appClassFiles.foldLeft(0)(_ + _.methods.filter(!_.isSynthetic).size))
-        println("\tNon-final Fields:"+appClassFiles.foldLeft(0)(_ + _.fields.filter(!_.isFinal).size))
-        println("Library:\n\tClasses:"+libClassFiles.size)
-        println("Overall "+project.statistics)
+        println("Application:\n\tClasses:" + appClassFiles.size)
+        println("\tMethods:" + appClassFiles.foldLeft(0)(_ + _.methods.filter(!_.isSynthetic).size))
+        println("\tNon-final Fields:" + appClassFiles.foldLeft(0)(_ + _.fields.filter(!_.isFinal).size))
+        println("Library:\n\tClasses:" + libClassFiles.size)
+        println("Overall " + project.statistics)
 
         val appTypes = appClassFiles.map(_.thisType).toSet
-        //val libTypes = libClassFiles.map(_.thisType).toSet
+        // val libTypes = libClassFiles.map(_.thisType).toSet
         val classHierarchy = project.classHierarchy
         import classHierarchy.allSubtypes
         import classHierarchy.isInterface
@@ -44,7 +44,7 @@ object ObserverPatternUsage extends ProjectAnalysisApplication {
         // subclasses of them.
         var allObserverInterfaces: Set[ObjectType] = Set.empty
         var appObserverInterfaces: Set[ObjectType] = Set.empty
-        var appObserverClasses: Set[ObjectType] = Set.empty
+        var appObserverClasses: Set[ObjectType]    = Set.empty
         val allObservers = {
             var observers = Set.empty[ObjectType]
             classHierarchy foreachKnownType { objectType =>
@@ -86,37 +86,34 @@ object ObserverPatternUsage extends ProjectAnalysisApplication {
                         implObsIntfs.nonEmpty && (
                             observerClassFile.methods forall { method =>
                                 method.isInitializer || method.isSynthetic ||
-                                    // one of the implemented observer interfaces defines the method
-                                    implObsIntfs.exists(observerInterface =>
-                                        project.classFile(observerInterface).isDefined &&
-                                            project.resolveInterfaceMethodReference(
-                                                observerInterface,
-                                                method.name,
-                                                method.descriptor
-                                            ).isDefined)
+                                // one of the implemented observer interfaces defines the method
+                                implObsIntfs.exists(observerInterface =>
+                                    project.classFile(observerInterface).isDefined &&
+                                        project.resolveInterfaceMethodReference(
+                                            observerInterface,
+                                            method.name,
+                                            method.descriptor
+                                        ).isDefined)
                             }
                         )
-                    } else
-                        false
-                } else
-                    false
+                    } else false
+                } else false
             })
 
         // PART 1 - Identifying Fields That Store Observers
         val observerFields = {
             var observerFields = Set.empty[(ClassFile, Field)]
             for {
-                appType <- appTypes
-                classFile <- project.classFile(appType) //.toSeq
-                field <- classFile.fields
+                appType   <- appTypes
+                classFile <- project.classFile(appType) // .toSeq
+                field     <- classFile.fields
                 if field.fieldType.isReferenceType
             } {
                 field.fieldType match {
-                    case ArrayType(ot: ObjectType) if (allObserverTypes.contains(ot)) =>
+                    case ArrayType(ot: ObjectType) if allObserverTypes.contains(ot) =>
                         observerFields += ((classFile, field))
                     case ot: ObjectType =>
-                        if (allObserverTypes.contains(ot))
-                            observerFields += ((classFile, field))
+                        if (allObserverTypes.contains(ot)) observerFields += ((classFile, field))
                         else { // check if it is a container type
                             field.fieldTypeSignature match {
                                 case Some(SimpleGenericType(_, ot: ObjectType)) if allObserverTypes.contains(ot) =>
@@ -141,22 +138,21 @@ object ObserverPatternUsage extends ProjectAnalysisApplication {
         // I.e., methods which access a field that stores observers
         var observerNotificationMethods: Set[(ClassFile, Method)] = Set.empty
         for {
-            observable <- observables
+            observable    <- observables
             observableType = observable.thisType
-            omFieldNames = observerFields.filter(_._1 == observable).map(_._2.name)
-            method <- observable.methods
+            omFieldNames   = observerFields.filter(_._1 == observable).map(_._2.name)
+            method        <- observable.methods
         } {
-            val hasMethodObserverParameter =
-                method.parameterTypes exists { pt =>
-                    pt.isObjectType && allObserverInterfaces.contains(pt.asObjectType)
-                }
+            val hasMethodObserverParameter = method.parameterTypes exists { pt =>
+                pt.isObjectType && allObserverInterfaces.contains(pt.asObjectType)
+            }
             if (hasMethodObserverParameter) {
                 observerManagementMethods += ((observable, method))
             } else if (method.body.isDefined &&
-                method.body.get.instructions.exists({
-                    case FieldReadAccess(`observableType`, name, _) if omFieldNames.contains(name) => true
-                    case _ => false
-                })) {
+                       method.body.get.instructions.exists {
+                           case FieldReadAccess(`observableType`, name, _) if omFieldNames.contains(name) => true
+                           case _                                                                         => false
+                       }) {
                 observerNotificationMethods += ((observable, method))
             }
         }
@@ -166,12 +162,18 @@ object ObserverPatternUsage extends ProjectAnalysisApplication {
         // -------------------------------------------------------------------------------
         import Console.{BOLD, RESET}
         BasicReport(
-            (BOLD+"Observer types in project ("+allObserverTypes.size+"): "+RESET + allObserverTypes.map(_.toJava).mkString(", ")) +
-                (BOLD+"Observer interfaces in application ("+appObserverInterfaces.size+"): "+RESET + appObserverInterfaces.map(_.toJava).mkString(", ")) +
-                (BOLD+"Observer classes in application ("+appObserverClasses.size+"): "+RESET + appObserverClasses.map(_.toJava).mkString(", ")) +
-                (BOLD+"Fields to store observers in application ("+observerFields.size+"): "+RESET + observerFields.map(e => e._1.thisType.toJava+"{ "+e._2.fieldType.toJava+" "+e._2.name+" }").mkString(", ")) +
-                (BOLD+"Methods to manage observers in application ("+observerManagementMethods.size+"): "+RESET + observerManagementMethods.map(e => e._1.thisType.toJava+"{ "+e._2.signatureToJava(false)+" }").mkString(", ")) +
-                (BOLD+"Methods that are related to observers in application ("+observerNotificationMethods.size+"): "+RESET + observerNotificationMethods.map(e => e._1.thisType.toJava+"{ "+e._2.signatureToJava(false)+" }").mkString(", "))
+            (BOLD + "Observer types in project (" + allObserverTypes.size + "): " + RESET + allObserverTypes.map(
+                _.toJava).mkString(", ")) +
+                (BOLD + "Observer interfaces in application (" + appObserverInterfaces.size + "): " + RESET + appObserverInterfaces.map(
+                    _.toJava).mkString(", ")) +
+                (BOLD + "Observer classes in application (" + appObserverClasses.size + "): " + RESET + appObserverClasses.map(
+                    _.toJava).mkString(", ")) +
+                (BOLD + "Fields to store observers in application (" + observerFields.size + "): " + RESET + observerFields.map(
+                    e => e._1.thisType.toJava + "{ " + e._2.fieldType.toJava + " " + e._2.name + " }").mkString(", ")) +
+                (BOLD + "Methods to manage observers in application (" + observerManagementMethods.size + "): " + RESET + observerManagementMethods.map(
+                    e => e._1.thisType.toJava + "{ " + e._2.signatureToJava(false) + " }").mkString(", ")) +
+                (BOLD + "Methods that are related to observers in application (" + observerNotificationMethods.size + "): " + RESET + observerNotificationMethods.map(
+                    e => e._1.thisType.toJava + "{ " + e._2.signatureToJava(false) + " }").mkString(", "))
         )
     }
 }

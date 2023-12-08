@@ -11,24 +11,19 @@ case class LocalVariableTypeTable(localVariableTypes: LocalVariableTypes) extend
 
     override def kindId: Int = LocalVariableTypeTable.KindId
 
-    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = {
-        other match {
-            case that: LocalVariableTypeTable => this.similar(that)
-            case _                            => false
-        }
+    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = other match {
+        case that: LocalVariableTypeTable => this.similar(that)
+        case _                            => false
     }
 
-    def similar(other: LocalVariableTypeTable): Boolean = {
+    def similar(other: LocalVariableTypeTable): Boolean =
         // the order of two local variable type tables does not need to be identical
         this.localVariableTypes.size == other.localVariableTypes.size &&
             this.localVariableTypes.forall(other.localVariableTypes.contains)
-    }
 
-    override def remapPCs(codeSize: Int, f: PC => PC): CodeAttribute = {
-        LocalVariableTypeTable(
-            localVariableTypes.flatMap[LocalVariableType](_.remapPCs(codeSize, f))
-        )
-    }
+    override def remapPCs(codeSize: Int, f: PC => PC): CodeAttribute = LocalVariableTypeTable(
+        localVariableTypes.flatMap[LocalVariableType](_.remapPCs(codeSize, f))
+    )
 }
 object LocalVariableTypeTable {
 
@@ -41,21 +36,18 @@ case class LocalVariableType(
         length:    Int,
         name:      String,
         signature: FieldTypeSignature,
-        index:     Int
-) {
+        index: Int) {
     def remapPCs(codeSize: Int, f: PC => PC): Option[LocalVariableType] = {
         val newStartPC = f(startPC)
-        if (newStartPC < codeSize)
-            Some(
-                LocalVariableType(
-                    newStartPC,
-                    f(startPC + length) - newStartPC,
-                    name,
-                    signature,
-                    index
-                )
+        if (newStartPC < codeSize) Some(
+            LocalVariableType(
+                newStartPC,
+                f(startPC + length) - newStartPC,
+                name,
+                signature,
+                index
             )
-        else
-            None
+        )
+        else None
     }
 }

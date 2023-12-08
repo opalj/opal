@@ -2,10 +2,10 @@
 package org.opalj
 package collection
 
-import java.util.function.LongPredicate
 import java.util.function.LongConsumer
-
+import java.util.function.LongPredicate
 import scala.collection.AbstractIterator
+
 import org.opalj.collection.immutable.LongTrieSet
 
 /**
@@ -16,17 +16,15 @@ import org.opalj.collection.immutable.LongTrieSet
  */
 abstract class LongIterator extends AbstractIterator[Long] { self =>
 
-    def ++(other: LongIterator): LongIterator = {
-        new LongIterator {
-            private[this] var it = self
-            override def hasNext = it != null
-            override def next(): Long = {
-                val v = it.next()
-                if (!it.hasNext) {
-                    it = if (it eq self) other else null
-                }
-                v
+    def ++(other: LongIterator): LongIterator = new LongIterator {
+        private[this] var it = self
+        override def hasNext = it != null
+        override def next(): Long = {
+            val v = it.next()
+            if (!it.hasNext) {
+                it = if (it eq self) other else null
             }
+            v
         }
     }
 
@@ -56,72 +54,62 @@ abstract class LongIterator extends AbstractIterator[Long] { self =>
         c
     }
 
-    def foreachWhile(p: LongPredicate)(f: LongConsumer): Unit = {
-        while (this.hasNext && {
-            val c = this.next()
-            if (p.test(c)) {
-                f.accept(c)
-                true
-            } else {
-                false
-            }
-        }) { /*empty*/ }
+    def foreachWhile(p: LongPredicate)(f: LongConsumer): Unit = while (this.hasNext && {
+                                                                           val c = this.next()
+                                                                           if (p.test(c)) {
+                                                                               f.accept(c)
+                                                                               true
+                                                                           } else {
+                                                                               false
+                                                                           }
+                                                                       }) { /*empty*/ }
+
+    def map(f: Long => Long): LongIterator = new LongIterator {
+        def hasNext: Boolean = self.hasNext
+        def next(): Long     = f(self.next())
     }
 
-    def map(f: Long => Long): LongIterator = {
-        new LongIterator {
-            def hasNext: Boolean = self.hasNext
-            def next(): Long = f(self.next())
-        }
-    }
-
-    override def take(n: Int): LongIterator = {
-        new LongIterator {
-            private[this] var i: Int = 0
-            def hasNext: Boolean = self.hasNext && i < n
-            def next(): Long = { i += 1; self.next() }
-        }
+    override def take(n: Int): LongIterator = new LongIterator {
+        private[this] var i: Int = 0
+        def hasNext: Boolean     = self.hasNext && i < n
+        def next(): Long         = { i += 1; self.next() }
     }
 
     def map(f: Long => Int): IntIterator = new IntIterator {
         def hasNext: Boolean = self.hasNext
-        def next(): Int = f(self.next())
+        def next(): Int      = f(self.next())
     }
     override def map[X](m: Long => X): Iterator[X] = new Iterator[X] {
         def hasNext: Boolean = self.hasNext
-        def next(): X = m(self.next())
+        def next(): X        = m(self.next())
     }
 
     override def foreach[U](f: Long => U): Unit = while (hasNext) f(next())
 
-    def flatMap(f: Long => LongIterator): LongIterator = {
-        new LongIterator {
-            private[this] var it: LongIterator = LongIterator.empty
-            private[this] def advanceIterator(): Unit = {
-                while (!it.hasNext) {
-                    if (self.hasNext) {
-                        it = f(self.next())
-                    } else {
-                        it = null
-                        return ;
-                    }
-                }
+    def flatMap(f: Long => LongIterator): LongIterator = new LongIterator {
+        private[this] var it: LongIterator = LongIterator.empty
+        private[this] def advanceIterator(): Unit = while (!it.hasNext) {
+            if (self.hasNext) {
+                it = f(self.next())
+            } else {
+                it = null
+                return;
             }
-            advanceIterator()
-            def hasNext: Boolean = it != null
-            def next(): Long = { val e = it.next(); advanceIterator(); e }
         }
+        advanceIterator()
+        def hasNext: Boolean = it != null
+        def next(): Long     = { val e = it.next(); advanceIterator(); e }
     }
 
     override def withFilter(p: Long => Boolean): LongIterator = filter(p)
 
     override def filter(p: Long => Boolean): LongIterator = new LongIterator {
         private[this] var hasNextValue: Boolean = true
-        private[this] var v: Long = 0
+        private[this] var v: Long               = 0
         private[this] def goToNextValue(): Unit = {
             while (self.hasNext) {
                 v = self.next()
-                if (p(v)) return ;
+                if (p(v)) return;
             }
             hasNextValue = false
         }
@@ -129,12 +117,12 @@ abstract class LongIterator extends AbstractIterator[Long] { self =>
         goToNextValue()
 
         def hasNext: Boolean = hasNextValue
-        def next(): Long = { val v = this.v; goToNextValue(); v }
+        def next(): Long     = { val v = this.v; goToNextValue(); v }
     }
 
     def toArray: Array[Long] = {
         var asLength = 8
-        var as = new Array[Long](asLength)
+        var as       = new Array[Long](asLength)
 
         var i = 0
         while (hasNext) {
@@ -148,8 +136,7 @@ abstract class LongIterator extends AbstractIterator[Long] { self =>
             as(i) = v
             i += 1
         }
-        if (i == asLength)
-            as
+        if (i == asLength) as
         else {
             val resultAs = new Array[Long](i)
             Array.copy(as, 0, resultAs, 0, i)
@@ -169,7 +156,7 @@ abstract class LongIterator extends AbstractIterator[Long] { self =>
      */
     private[opalj] def toArray(size: Int): Array[Long] = {
         val as = new Array[Long](size)
-        var i = 0
+        var i  = 0
         while (hasNext) {
             val v = next()
             as(i) = v
@@ -185,8 +172,7 @@ abstract class LongIterator extends AbstractIterator[Long] { self =>
      */
     def sameValues(that: LongIterator): Boolean = {
         while (this.hasNext) {
-            if (!that.hasNext || this.next() != that.next())
-                return false;
+            if (!that.hasNext || this.next() != that.next()) return false;
         }
         !that.hasNext
     }
@@ -196,24 +182,26 @@ abstract class LongIterator extends AbstractIterator[Long] { self =>
 object LongIterator {
 
     final val empty: LongIterator = new LongIterator {
-        def hasNext: Boolean = false
-        def next(): Nothing = throw new UnsupportedOperationException
+        def hasNext: Boolean              = false
+        def next(): Nothing               = throw new UnsupportedOperationException
         override def toArray: Array[Long] = new Array[Long](0)
-        override def toSet: LongTrieSet = LongTrieSet.empty
+        override def toSet: LongTrieSet   = LongTrieSet.empty
     }
 
     def apply(i: Long): LongIterator = new LongIterator {
-        private[this] var returned = false
-        def hasNext: Boolean = !returned
-        def next(): Long = { returned = true; i }
+        private[this] var returned        = false
+        def hasNext: Boolean              = !returned
+        def next(): Long                  = { returned = true; i }
         override def toArray: Array[Long] = { val as = new Array[Long](1); as(0) = i; as }
-        override def toSet: LongTrieSet = LongTrieSet(i)
+        override def toSet: LongTrieSet   = LongTrieSet(i)
     }
 
     def apply(i1: Long, i2: Long): LongIterator = new LongIterator {
         private[this] var nextId: Int = 0
-        def hasNext: Boolean = nextId < 2
-        def next(): Long = { if (nextId == 0) { nextId = 1; i1 } else { nextId = 2; i2 } }
+        def hasNext: Boolean          = nextId < 2
+        def next(): Long =
+            if (nextId == 0) { nextId = 1; i1 }
+            else { nextId = 2; i2 }
         override def toArray: Array[Long] = {
             val as = new Array[Long](2)
             as(0) = i1
@@ -225,8 +213,8 @@ object LongIterator {
 
     def apply(i1: Long, i2: Long, i3: Long): LongIterator = new LongIterator {
         private[this] var nextId: Int = 0
-        def hasNext: Boolean = nextId < 3
-        def next(): Long = { nextId += 1; if (nextId == 1) i1 else if (nextId == 2) i2 else i3 }
+        def hasNext: Boolean          = nextId < 3
+        def next(): Long              = { nextId += 1; if (nextId == 1) i1 else if (nextId == 2) i2 else i3 }
         override def toArray: Array[Long] = {
             val as = new Array[Long](3)
             as(0) = i1
@@ -239,7 +227,7 @@ object LongIterator {
 
     def apply(i1: Long, i2: Long, i3: Long, i4: Long): LongIterator = new LongIterator {
         private[this] var nextId: Int = 0
-        def hasNext: Boolean = nextId < 4
+        def hasNext: Boolean          = nextId < 4
         def next(): Long = {
             nextId += 1
             nextId match {

@@ -11,17 +11,13 @@ case class UnknownAttribute(attributeName: String, info: Array[Byte]) extends At
 
     override def kindId: Int = UnknownAttribute.KindId
 
-    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = {
-        other match {
-            case that: UnknownAttribute => this.similar(that)
-            case _                      => false
-        }
+    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = other match {
+        case that: UnknownAttribute => this.similar(that)
+        case _                      => false
     }
 
-    def similar(other: UnknownAttribute): Boolean = {
-        this.attributeName.size == other.attributeName.size &&
-            java.util.Arrays.equals(this.info, other.info)
-    }
+    def similar(other: UnknownAttribute): Boolean = this.attributeName.size == other.attributeName.size &&
+        java.util.Arrays.equals(this.info, other.info)
 }
 object UnknownAttribute {
 

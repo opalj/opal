@@ -4,6 +4,8 @@ package fpcf
 package properties
 package callgraph
 
+import scala.collection.immutable.ArraySeq
+
 import org.opalj.br.AnnotationLike
 import org.opalj.br.ArrayValue
 import org.opalj.br.ClassValue
@@ -16,12 +18,10 @@ import org.opalj.br.ObjectType
 import org.opalj.br.StringValue
 import org.opalj.br.VoidType
 import org.opalj.br.analyses.Project
-import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.ContextProviderKey
-import org.opalj.br.fpcf.properties.cg.Callees
-import scala.collection.immutable.ArraySeq
-
+import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.analyses.ContextProvider
+import org.opalj.br.fpcf.properties.cg.Callees
 
 class DirectCallMatcher extends AbstractPropertyMatcher {
 
@@ -30,12 +30,11 @@ class DirectCallMatcher extends AbstractPropertyMatcher {
         as:         Set[ObjectType],
         entity:     Any,
         a:          AnnotationLike,
-        properties: Iterable[Property]
-    ): Option[String] = {
+        properties: Iterable[Property]): Option[String] = {
         // If the entity is annotated with a single annotation, we receive a DirectCall annotation.
         // If it is annotated with multiple DirectCall annotations, we receive a single DirectCalls
         // container annotation.
-        val singleAnnotation = ObjectType("org/opalj/fpcf/properties/callgraph/DirectCall")
+        val singleAnnotation    = ObjectType("org/opalj/fpcf/properties/callgraph/DirectCall")
         val containerAnnotation = ObjectType("org/opalj/fpcf/properties/callgraph/DirectCalls")
 
         if (a.annotationType == singleAnnotation) {
@@ -43,14 +42,12 @@ class DirectCallMatcher extends AbstractPropertyMatcher {
 
         } else if (a.annotationType == containerAnnotation) {
             // Get sub-annotations from the container annotation.
-            val subAnnotations: ArraySeq[AnnotationLike] =
-                getValue(p, containerAnnotation, a.elementValuePairs, "value")
-                    .asArrayValue.values.map(a => a.asAnnotationValue.annotation)
+            val subAnnotations: ArraySeq[AnnotationLike] = getValue(p, containerAnnotation, a.elementValuePairs, "value")
+                .asArrayValue.values.map(a => a.asAnnotationValue.annotation)
 
             // Validate each sub-annotation individually.
-            val validationResults =
-                subAnnotations.map(validateSingleAnnotation(p, as, entity, _, properties))
-            val errors = validationResults.filter(_.isDefined)
+            val validationResults = subAnnotations.map(validateSingleAnnotation(p, as, entity, _, properties))
+            val errors            = validationResults.filter(_.isDefined)
 
             if (errors.nonEmpty) {
                 Some(errors.mkString(", "))
@@ -68,8 +65,7 @@ class DirectCallMatcher extends AbstractPropertyMatcher {
         as:         Set[ObjectType],
         entity:     Any,
         a:          AnnotationLike,
-        properties: Iterable[Property]
-    ): Option[String] = {
+        properties: Iterable[Property]): Option[String] = {
         val annotationType = a.annotationType.asObjectType
 
         // Get call graph analyses for which this annotation applies.
@@ -80,17 +76,14 @@ class DirectCallMatcher extends AbstractPropertyMatcher {
         // If none of the annotated analyses match the executed ones, return...
         // If the list of specified analyses is empty, we assume the annotation applies to all
         // call graph algorithms, so we don't exit early.
-        if (analyses.nonEmpty && !analyses.exists(as.contains))
-            return None;
+        if (analyses.nonEmpty && !analyses.exists(as.contains)) return None;
 
-        implicit val ps: PropertyStore = p.get(PropertyStoreKey)
+        implicit val ps: PropertyStore                = p.get(PropertyStoreKey)
         implicit val contextProvider: ContextProvider = p.get(ContextProviderKey)
 
-        val calleesP = {
-            properties.find(_.isInstanceOf[Callees]) match {
-                case Some(property) => property.asInstanceOf[Callees]
-                case None           => return Some("Callees property is missing.");
-            }
+        val calleesP = properties.find(_.isInstanceOf[Callees]) match {
+            case Some(property) => property.asInstanceOf[Callees]
+            case None           => return Some("Callees property is missing.");
         }
 
         val callsiteCode = entity.asInstanceOf[DefinedMethod].definedMethod.body match {
@@ -101,9 +94,9 @@ class DirectCallMatcher extends AbstractPropertyMatcher {
         // Retrieve all calls resolved by the call graph algorithm.
         val callees = for {
             callerContext <- calleesP.callerContexts
-            pc <- calleesP.callSitePCs(callerContext)
+            pc            <- calleesP.callSitePCs(callerContext)
             calleeContext <- calleesP.callees(callerContext, pc)
-            lineNr = callsiteCode.lineNumber(pc)
+            lineNr         = callsiteCode.lineNumber(pc)
         } yield {
             val callee = calleeContext.method
             (
@@ -141,7 +134,7 @@ class DirectCallMatcher extends AbstractPropertyMatcher {
         }
 
         val parametersArray = ArraySeq.unsafeWrapArray(parameterTypes)
-        val descriptor = MethodDescriptor(parametersArray, returnType)
+        val descriptor      = MethodDescriptor(parametersArray, returnType)
 
         val minimumExpectedCalleesSet = resolvedTargets.map {
             (lineNumber, _, methodName, descriptor)

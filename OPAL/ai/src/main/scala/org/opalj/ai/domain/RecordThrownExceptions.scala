@@ -42,9 +42,8 @@ trait RecordThrownExceptions extends ai.ReturnInstructionsDomain {
      *      and study the subclass(es) of `RecordThrownExceptions`.
      */
     protected[this] def recordThrownException(
-        pc:    Int,
-        value: ExceptionValue
-    ): ThrownException
+        pc: Int,
+        value: ExceptionValue): ThrownException
 
     /**
      * Joins the previously thrown exception(s) and the newly thrown exception. Both
@@ -57,10 +56,9 @@ trait RecordThrownExceptions extends ai.ReturnInstructionsDomain {
      *      and study the subclass(es) of `RecordThrownExceptions`.
      */
     protected[this] def joinThrownExceptions(
-        pc:                        Int,
+        pc: Int,
         previouslyThrownException: ThrownException,
-        value:                     ExceptionValue
-    ): ThrownException
+        value: ExceptionValue): ThrownException
 
     @volatile private[this] var thrownExceptions: LongMap[ThrownException] = LongMap.empty
 
@@ -71,21 +69,16 @@ trait RecordThrownExceptions extends ai.ReturnInstructionsDomain {
     def allThrownExceptions: LongMap[ThrownException] = thrownExceptions
 
     abstract override def abruptMethodExecution(
-        pc:        Int /*PC*/ ,
-        exception: ExceptionValue
-    ): Unit = {
+        pc:        Int /*PC*/,
+        exception: ExceptionValue): Unit = {
         val longPC = pc.toLong
-        thrownExceptions =
-            thrownExceptions.updated(
-                longPC,
-                thrownExceptions.get(longPC) match {
-                    case Some(previouslyThrownException) =>
-                        joinThrownExceptions(pc, previouslyThrownException, exception)
-                    case None =>
-                        recordThrownException(pc, exception)
-                }
-            )
+        thrownExceptions = thrownExceptions.updated(
+            longPC,
+            thrownExceptions.get(longPC) match {
+                case Some(previouslyThrownException) => joinThrownExceptions(pc, previouslyThrownException, exception)
+                case None                            => recordThrownException(pc, exception)
+            }
+        )
         super.abruptMethodExecution(pc, exception)
     }
 }
-

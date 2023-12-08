@@ -2,13 +2,14 @@
 package org.opalj
 package tac
 
-import org.scalatestplus.junit.JUnitRunner
-import org.junit.runner.RunWith
-import org.opalj.collection.immutable.IntIntPair
+import scala.collection.immutable.ArraySeq
+
 import org.opalj.br._
 import org.opalj.br.TestSupport.biProject
+import org.opalj.collection.immutable.IntIntPair
 
-import scala.collection.immutable.ArraySeq
+import org.junit.runner.RunWith
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * @author Michael Eichberg
@@ -23,12 +24,13 @@ class TACNaiveSwitchTest extends TACNaiveTest {
 
     val SwitchStatementsClassFile = project.classFile(SwitchStatementsType).get
 
-    val TableSwitchMethod = SwitchStatementsClassFile.findMethod("tableSwitch").head
+    val TableSwitchMethod  = SwitchStatementsClassFile.findMethod("tableSwitch").head
     val LookupSwitchMethod = SwitchStatementsClassFile.findMethod("lookupSwitch").head
 
     describe("the naive TAC of switch instructions") {
         it("should correctly reflect tableswitch case") {
-            val statements = TACNaive(method = TableSwitchMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
+            val statements =
+                TACNaive(method = TableSwitchMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, true)
 
             assert(statements.nonEmpty)
@@ -37,15 +39,18 @@ class TACNaiveSwitchTest extends TACNaiveTest {
             val expected = Array(
                 Assignment(
                     -1,
-                    SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")
+                    SimpleVar(-1, ComputationalTypeReference),
+                    Param(ComputationalTypeReference, "this")
                 ),
                 Assignment(
                     -1,
-                    SimpleVar(-2, ComputationalTypeInt), Param(ComputationalTypeInt, "p_1")
+                    SimpleVar(-2, ComputationalTypeInt),
+                    Param(ComputationalTypeInt, "p_1")
                 ),
                 Assignment(
                     0,
-                    SimpleVar(0, ComputationalTypeInt), SimpleVar(-2, ComputationalTypeInt)
+                    SimpleVar(0, ComputationalTypeInt),
+                    SimpleVar(-2, ComputationalTypeInt)
                 ),
                 Switch(
                     1,
@@ -84,7 +89,8 @@ class TACNaiveSwitchTest extends TACNaiveTest {
         }
 
         it("should correctly reflect lookupswitch case") {
-            val statements = TACNaive(method = LookupSwitchMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
+            val statements = TACNaive(method = LookupSwitchMethod,
+                                      classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, true)
 
             assert(statements.nonEmpty)
@@ -92,15 +98,18 @@ class TACNaiveSwitchTest extends TACNaiveTest {
             statements.shouldEqual(Array(
                 Assignment(
                     -1,
-                    SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")
+                    SimpleVar(-1, ComputationalTypeReference),
+                    Param(ComputationalTypeReference, "this")
                 ),
                 Assignment(
                     -1,
-                    SimpleVar(-2, ComputationalTypeInt), Param(ComputationalTypeInt, "p_1")
+                    SimpleVar(-2, ComputationalTypeInt),
+                    Param(ComputationalTypeInt, "p_1")
                 ),
                 Assignment(
                     0,
-                    SimpleVar(0, ComputationalTypeInt), SimpleVar(-2, ComputationalTypeInt)
+                    SimpleVar(0, ComputationalTypeInt),
+                    SimpleVar(-2, ComputationalTypeInt)
                 ),
                 Switch(
                     1,

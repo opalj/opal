@@ -17,5 +17,5 @@ trait ILoadInstruction extends LoadLocalVariableInstruction {
 
 trait ConstantIndexILoadInstruction
     extends ILoadInstruction
-    with ImplicitLocalVariableIndex
-    with InstructionMetaInformation
+        with ImplicitLocalVariableIndex
+        with InstructionMetaInformation

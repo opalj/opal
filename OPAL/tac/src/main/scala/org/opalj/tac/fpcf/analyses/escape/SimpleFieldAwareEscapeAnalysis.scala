@@ -5,13 +5,13 @@ package fpcf
 package analyses
 package escape
 
-import org.opalj.collection.immutable.EmptyIntTrieSet
-import org.opalj.collection.immutable.IntRefPair
-import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.br.fpcf.properties.AtMost
 import org.opalj.br.fpcf.properties.EscapeViaHeapObject
 import org.opalj.br.fpcf.properties.EscapeViaParameter
 import org.opalj.br.fpcf.properties.NoEscape
+import org.opalj.collection.immutable.EmptyIntTrieSet
+import org.opalj.collection.immutable.IntRefPair
+import org.opalj.collection.immutable.IntTrieSet
 
 /**
  * Very simple handling for fields and arrays. This analysis can detect global escapes via
@@ -24,17 +24,17 @@ trait SimpleFieldAwareEscapeAnalysis extends AbstractEscapeAnalysis {
 
     override protected[this] def handlePutField(
         putField: PutField[V]
-    )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
-        if (state.usesDefSite(putField.value))
-            handleFieldLike(putField.objRef.asVar.definedBy)
-    }
+      )(implicit
+        context: AnalysisContext,
+        state:   AnalysisState): Unit =
+        if (state.usesDefSite(putField.value)) handleFieldLike(putField.objRef.asVar.definedBy)
 
     override protected[this] def handleArrayStore(
         arrayStore: ArrayStore[V]
-    )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
-        if (state.usesDefSite(arrayStore.value))
-            handleFieldLike(arrayStore.arrayRef.asVar.definedBy)
-    }
+      )(implicit
+        context: AnalysisContext,
+        state:   AnalysisState): Unit =
+        if (state.usesDefSite(arrayStore.value)) handleFieldLike(arrayStore.arrayRef.asVar.definedBy)
 
     /**
      * A worklist algorithm, check the def sites of the reference of the field, or array, to which
@@ -42,7 +42,7 @@ trait SimpleFieldAwareEscapeAnalysis extends AbstractEscapeAnalysis {
      */
     private[this] def handleFieldLike(
         referenceDefSites: IntTrieSet
-    )(implicit state: AnalysisState): Unit = {
+      )(implicit state: AnalysisState): Unit = {
         // the definition sites to handle
         var workset = referenceDefSites
 
@@ -79,24 +79,17 @@ trait SimpleFieldAwareEscapeAnalysis extends AbstractEscapeAnalysis {
                             }*/
                         /* if the base object came from a static field, the value assigned to it
                          escapes globally */
-                        case Assignment(_, _, GetStatic(_, _, _, _)) =>
-                            state.meetMostRestrictive(EscapeViaHeapObject)
-                        case Assignment(_, _, GetField(_, _, _, _, objRef)) =>
-                            objRef.asVar.definedBy foreach { x =>
-                                if (!seen.contains(x))
-                                    workset += x
+                        case Assignment(_, _, GetStatic(_, _, _, _)) => state.meetMostRestrictive(EscapeViaHeapObject)
+                        case Assignment(_, _, GetField(_, _, _, _, objRef)) => objRef.asVar.definedBy foreach { x =>
+                                if (!seen.contains(x)) workset += x
                             }
-                        case Assignment(_, _, ArrayLoad(_, _, arrayRef)) =>
-                            arrayRef.asVar.definedBy foreach { x =>
-                                if (!seen.contains(x))
-                                    workset += x
+                        case Assignment(_, _, ArrayLoad(_, _, arrayRef)) => arrayRef.asVar.definedBy foreach { x =>
+                                if (!seen.contains(x)) workset += x
                             }
                         // we are not inter-procedural
-                        case Assignment(_, _, _: FunctionCall[_]) =>
-                            state.meetMostRestrictive(AtMost(NoEscape))
-                        case Assignment(_, _, _: Const) =>
-                        case s =>
-                            throw new UnknownError(s"Unexpected tac: $s")
+                        case Assignment(_, _, _: FunctionCall[_]) => state.meetMostRestrictive(AtMost(NoEscape))
+                        case Assignment(_, _, _: Const)           =>
+                        case s                                    => throw new UnknownError(s"Unexpected tac: $s")
                     }
 
                 } else if (referenceDefSite > ai.ImmediateVMExceptionsOriginOffset) {

@@ -24,13 +24,9 @@ case class IFLE(branchoffset: Int) extends IF0Instruction[IFLE] with IFLELike {
 
     def copy(branchoffset: Int): IFLE = new IFLE(branchoffset)
 
-    def negate(newBranchoffset: Int = branchoffset): IFGT = {
-        IFGT(newBranchoffset)
-    }
+    def negate(newBranchoffset: Int = branchoffset): IFGT = IFGT(newBranchoffset)
 
-    def toLabeledInstruction(currentPC: PC): LabeledInstruction = {
-        LabeledIFLE(InstructionLabel(currentPC + branchoffset))
-    }
+    def toLabeledInstruction(currentPC: PC): LabeledInstruction = LabeledIFLE(InstructionLabel(currentPC + branchoffset))
 }
 
 /**
@@ -50,16 +46,12 @@ object IFLE extends InstructionMetaInformation {
 }
 
 case class LabeledIFLE(
-        branchTarget: InstructionLabel
-) extends LabeledSimpleConditionalBranchInstruction
-    with IFLELike {
+        branchTarget: InstructionLabel) extends LabeledSimpleConditionalBranchInstruction
+        with IFLELike {
 
     @throws[BranchoffsetOutOfBoundsException]("if the branchoffset is invalid")
-    override def resolveJumpTargets(pc: PC, pcs: Map[InstructionLabel, PC]): IFLE = {
+    override def resolveJumpTargets(pc: PC, pcs: Map[InstructionLabel, PC]): IFLE =
         IFLE(asShortBranchoffset(pcs(branchTarget) - pc))
-    }
 
-    override def negate(newJumpTargetLabel: InstructionLabel): LabeledIFGT = {
-        LabeledIFGT(newJumpTargetLabel)
-    }
+    override def negate(newJumpTargetLabel: InstructionLabel): LabeledIFGT = LabeledIFGT(newJumpTargetLabel)
 }

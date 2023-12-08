@@ -3,12 +3,12 @@ package org.opalj
 package br
 package instructions
 
+import scala.collection.immutable.ArraySeq
+
 import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-
-import scala.collection.immutable.ArraySeq
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests instantiation and resolving of LabeledInstructions.
@@ -20,34 +20,30 @@ class LabeledInstructionsTest extends AnyFlatSpec with Matchers {
     behavior of "LabeledInstructionsTest"
 
     val label = InstructionLabel(Symbol("TestLabel"))
-    val simpleBranchInstructionsMap: List[(LabeledSimpleConditionalBranchInstruction, InstructionLabel => LabeledSimpleConditionalBranchInstruction)] = {
-        List(
-            IFEQ(label) -> LabeledIFEQ,
-            IFNE(label) -> LabeledIFNE,
-            IFLT(label) -> LabeledIFLT,
-            IFGE(label) -> LabeledIFGE,
-            IFGT(label) -> LabeledIFGT,
-            IFLE(label) -> LabeledIFLE,
+    val simpleBranchInstructionsMap: List[(
+        LabeledSimpleConditionalBranchInstruction,
+        InstructionLabel => LabeledSimpleConditionalBranchInstruction)] = List(
+        IFEQ(label)      -> LabeledIFEQ,
+        IFNE(label)      -> LabeledIFNE,
+        IFLT(label)      -> LabeledIFLT,
+        IFGE(label)      -> LabeledIFGE,
+        IFGT(label)      -> LabeledIFGT,
+        IFLE(label)      -> LabeledIFLE,
+        IF_ICMPEQ(label) -> LabeledIF_ICMPEQ,
+        IF_ICMPNE(label) -> LabeledIF_ICMPNE,
+        IF_ICMPLT(label) -> LabeledIF_ICMPLT,
+        IF_ICMPGE(label) -> LabeledIF_ICMPGE,
+        IF_ICMPGT(label) -> LabeledIF_ICMPGT,
+        IF_ICMPLE(label) -> LabeledIF_ICMPLE,
+        IF_ACMPEQ(label) -> LabeledIF_ACMPEQ,
+        IF_ACMPNE(label) -> LabeledIF_ACMPNE,
+        IFNULL(label)    -> LabeledIFNULL,
+        IFNONNULL(label) -> LabeledIFNONNULL
+    )
 
-            IF_ICMPEQ(label) -> LabeledIF_ICMPEQ,
-            IF_ICMPNE(label) -> LabeledIF_ICMPNE,
-            IF_ICMPLT(label) -> LabeledIF_ICMPLT,
-            IF_ICMPGE(label) -> LabeledIF_ICMPGE,
-            IF_ICMPGT(label) -> LabeledIF_ICMPGT,
-            IF_ICMPLE(label) -> LabeledIF_ICMPLE,
-            IF_ACMPEQ(label) -> LabeledIF_ACMPEQ,
-            IF_ACMPNE(label) -> LabeledIF_ACMPNE,
-
-            IFNULL(label) -> LabeledIFNULL,
-            IFNONNULL(label) -> LabeledIFNONNULL
-        )
-    }
-
-    val resolvedSimpleBranchInstructions = {
-        simpleBranchInstructionsMap.zipWithIndex.map { instructionWithIndex =>
-            val ((labeledInstruction, _), index) = instructionWithIndex
-            labeledInstruction.resolveJumpTargets(0, Map(label -> index))
-        }
+    val resolvedSimpleBranchInstructions = simpleBranchInstructionsMap.zipWithIndex.map { instructionWithIndex =>
+        val ((labeledInstruction, _), index) = instructionWithIndex
+        labeledInstruction.resolveJumpTargets(0, Map(label -> index))
     }
 
     "the convenience factories of SimpleConditionalBranchInstructions" should
@@ -87,11 +83,11 @@ class LabeledInstructionsTest extends AnyFlatSpec with Matchers {
             assert(JSR_W(label).resolveJumpTargets(2, Map(label -> 44)).branchoffset == 42)
         }
 
-    val table = ArraySeq(InstructionLabel(Symbol("two")), InstructionLabel(Symbol("three")))
+    val table       = ArraySeq(InstructionLabel(Symbol("two")), InstructionLabel(Symbol("three")))
     val lookupTable = ArraySeq.from[(Int, InstructionLabel)]((2 to 3).iterator zip table.iterator).take(2)
     val labelsMap = Map[InstructionLabel, Int](
-        label -> 43,
-        InstructionLabel(Symbol("two")) -> 44,
+        label                             -> 43,
+        InstructionLabel(Symbol("two"))   -> 44,
         InstructionLabel(Symbol("three")) -> 45
     )
 

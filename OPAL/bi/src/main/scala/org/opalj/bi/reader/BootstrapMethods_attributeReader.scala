@@ -3,11 +3,12 @@ package org.opalj
 package bi
 package reader
 
-import java.io.DataInputStream
-import org.opalj.control.fillArraySeq
-
-import scala.collection.immutable.ArraySeq
 import scala.reflect.ClassTag
+
+import java.io.DataInputStream
+import scala.collection.immutable.ArraySeq
+
+import org.opalj.control.fillArraySeq
 
 /**
  * Template method to read the (Java 7) ''BootstrapMethods'' attribute.
@@ -34,41 +35,35 @@ trait BootstrapMethods_attributeReader extends AttributeReader {
     type BootstrapArguments = ArraySeq[BootstrapArgument]
 
     def BootstrapMethods_attribute(
-        constant_pool:        Constant_Pool,
-        ap_name_index:        Constant_Pool_Index,
-        ap_descriptor_index:  Constant_Pool_Index,
+        constant_pool: Constant_Pool,
+        ap_name_index: Constant_Pool_Index,
+        ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Int,
-        bootstrap_methods:    BootstrapMethods
-    ): BootstrapMethods_attribute
+        bootstrap_methods: BootstrapMethods): BootstrapMethods_attribute
 
     def BootstrapMethod(
-        constant_pool:        Constant_Pool,
+        constant_pool: Constant_Pool,
         bootstrap_method_ref: Int,
-        bootstrap_arguments:  BootstrapArguments
-    ): BootstrapMethod
+        bootstrap_arguments: BootstrapArguments): BootstrapMethod
 
     def BootstrapArgument(
-        constant_pool:     Constant_Pool,
-        constant_pool_ref: Int
-    ): BootstrapArgument
+        constant_pool: Constant_Pool,
+        constant_pool_ref: Int): BootstrapArgument
 
     //
     // IMPLEMENTATION
     //
 
-    def BootstrapArgument(cp: Constant_Pool, in: DataInputStream): BootstrapArgument = {
+    def BootstrapArgument(cp: Constant_Pool, in: DataInputStream): BootstrapArgument =
         BootstrapArgument(cp, in.readUnsignedShort)
-    }
 
-    def BootstrapMethod(cp: Constant_Pool, in: DataInputStream): BootstrapMethod = {
-        BootstrapMethod(
-            cp,
-            in.readUnsignedShort,
-            fillArraySeq(in.readUnsignedShort) {
-                BootstrapArgument(cp, in)
-            }
-        )
-    }
+    def BootstrapMethod(cp: Constant_Pool, in: DataInputStream): BootstrapMethod = BootstrapMethod(
+        cp,
+        in.readUnsignedShort,
+        fillArraySeq(in.readUnsignedShort) {
+            BootstrapArgument(cp, in)
+        }
+    )
 
     /**
      * <pre>
@@ -89,9 +84,9 @@ trait BootstrapMethods_attributeReader extends AttributeReader {
         ap_name_index: Constant_Pool_Index,
         ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
-        in: DataInputStream
-    ) => {
-        /*val attribute_length =*/ in.readInt
+        in: DataInputStream) => {
+        /*val attribute_length =*/
+        in.readInt
         val num_bootstrap_methods = in.readUnsignedShort
         if (num_bootstrap_methods > 0 || reifyEmptyAttributes) {
             BootstrapMethods_attribute(

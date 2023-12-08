@@ -5,13 +5,13 @@ package common
 
 import scala.collection.concurrent.TrieMap
 
-import org.opalj.log.LogContext
-import org.opalj.log.OPALLogger
+import org.opalj.ai.domain.RecordDefUse
+import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
 import org.opalj.br.Method
 import org.opalj.br.analyses.ProjectInformationKey
 import org.opalj.br.analyses.SomeProject
-import org.opalj.ai.domain.RecordDefUse
-import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
 
 /**
  * Key to get the result of the abstract interpretation of a method using a configured domain
@@ -37,7 +37,8 @@ import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
  * @author Michael Eichberg
  */
 object SimpleAIKey
-    extends ProjectInformationKey[Method => AIResult { val domain: Domain with RecordDefUse }, /*DomainFactory*/ Method => Domain with RecordDefUse] {
+    extends ProjectInformationKey[Method => AIResult { val domain: Domain with RecordDefUse },
+                                  /*DomainFactory*/ Method => Domain with RecordDefUse] {
 
     /**
      * The SimpleAIKey has no special prerequisites.
@@ -55,25 +56,23 @@ object SimpleAIKey
      * instantiated using the desired domain.
      */
     override def compute(
-        project: SomeProject
-    ): Method => AIResult { val domain: Domain with RecordDefUse } = {
+        project: SomeProject): Method => AIResult { val domain: Domain with RecordDefUse } = {
         implicit val logContext: LogContext = project.logContext
 
-        val domainFactory =
-            project.getProjectInformationKeyInitializationData(this) match {
-                case Some(f) =>
-                    OPALLogger.info(
-                        "project configuration",
-                        s"using configured domain factory ($f) for abstract interpretations"
-                    )
-                    f
-                case None =>
-                    OPALLogger.info(
-                        "project configuration",
-                        "using l1.DefaultDomainWithCFGAndDefUse for abstract interpretations"
-                    )
-                    (m: Method) => new DefaultDomainWithCFGAndDefUse(project, m)
-            }
+        val domainFactory = project.getProjectInformationKeyInitializationData(this) match {
+            case Some(f) =>
+                OPALLogger.info(
+                    "project configuration",
+                    s"using configured domain factory ($f) for abstract interpretations"
+                )
+                f
+            case None =>
+                OPALLogger.info(
+                    "project configuration",
+                    "using l1.DefaultDomainWithCFGAndDefUse for abstract interpretations"
+                )
+                (m: Method) => new DefaultDomainWithCFGAndDefUse(project, m)
+        }
 
         val aiResults = TrieMap.empty[Method, AIResult { val domain: Domain with RecordDefUse }]
         (m: Method) => aiResults.getOrElseUpdate(m, BaseAI(m, domainFactory(m)))
@@ -95,6 +94,6 @@ object SimpleAIKey
                         }
                     }
             }
-        */
+         */
     }
 }

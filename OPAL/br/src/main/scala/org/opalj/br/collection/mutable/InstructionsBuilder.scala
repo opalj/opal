@@ -4,10 +4,10 @@ package br
 package collection
 package mutable
 
-import org.opalj.br.instructions.Instruction
-import org.opalj.br.instructions.ConstantLengthInstruction
-
 import scala.collection.mutable.ArrayBuffer
+
+import org.opalj.br.instructions.ConstantLengthInstruction
+import org.opalj.br.instructions.Instruction
 
 /**
  * A buffer for creating bytecode arrays that automatically adds the required null entries.
@@ -17,8 +17,7 @@ import scala.collection.mutable.ArrayBuffer
  */
 class InstructionsBuilder private (private val buffer: ArrayBuffer[Instruction]) {
 
-    def this(initialSize: Int) =
-        this(new ArrayBuffer[Instruction](initialSize = initialSize))
+    def this(initialSize: Int) = this(new ArrayBuffer[Instruction](initialSize = initialSize))
 
     /**
      * Adds the given instruction to the buffer and adds the appropriate number of `null`

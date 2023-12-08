@@ -2,8 +2,8 @@
 package org.opalj
 package ai
 
-import org.opalj.collection.immutable.UIDSet
 import org.opalj.br.ReferenceType
+import org.opalj.collection.immutable.UIDSet
 
 /**
  * This package contains definitions of common domains that can be used for the
@@ -62,11 +62,9 @@ package object domain {
      * Tries to determine the name of the method/class that is analyzed;
      * the result depends on the mixed-in domain(s).
      */
-    def analyzedEntity(domain: Domain): String = {
-        domain match {
-            case d: TheMethod => d.method.toJava
-            case _            => "<Unknown (the domain does not provide source information)>\n"
-        }
+    def analyzedEntity(domain: Domain): String = domain match {
+        case d: TheMethod => d.method.toJava
+        case _            => "<Unknown (the domain does not provide source information)>\n"
     }
 
 }

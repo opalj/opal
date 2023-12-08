@@ -24,12 +24,11 @@ trait RuntimeVisibleParameterAnnotations_attributeReader extends AttributeReader
     type RuntimeVisibleParameterAnnotations_attribute >: Null <: Attribute
 
     def RuntimeVisibleParameterAnnotations_attribute(
-        constant_pool:         Constant_Pool,
-        ap_name_index:         Constant_Pool_Index,
-        ap_descriptor_index:   Constant_Pool_Index,
-        attribute_name_index:  Constant_Pool_Index,
-        parameter_annotations: ParametersAnnotations
-    ): RuntimeVisibleParameterAnnotations_attribute
+        constant_pool: Constant_Pool,
+        ap_name_index: Constant_Pool_Index,
+        ap_descriptor_index: Constant_Pool_Index,
+        attribute_name_index: Constant_Pool_Index,
+        parameter_annotations: ParametersAnnotations): RuntimeVisibleParameterAnnotations_attribute
 
     //
     // IMPLEMENTATION
@@ -54,13 +53,17 @@ trait RuntimeVisibleParameterAnnotations_attributeReader extends AttributeReader
         ap_name_index: Constant_Pool_Index,
         ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
-        in: DataInputStream
-    ) => {
-        /*val attribute_length =*/ in.readInt()
+        in: DataInputStream) => {
+        /*val attribute_length =*/
+        in.readInt()
         val parameter_annotations = ParametersAnnotations(cp, in)
         if (parameter_annotations.iterator.nonEmpty || reifyEmptyAttributes) {
             RuntimeVisibleParameterAnnotations_attribute(
-                cp, ap_name_index, ap_descriptor_index, attribute_name_index, parameter_annotations
+                cp,
+                ap_name_index,
+                ap_descriptor_index,
+                attribute_name_index,
+                parameter_annotations
             )
         } else {
             null

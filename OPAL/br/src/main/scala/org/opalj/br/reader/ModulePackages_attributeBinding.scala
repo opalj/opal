@@ -3,9 +3,9 @@ package org.opalj
 package br
 package reader
 
-import org.opalj.bi.reader.ModulePackages_attributeReader
-
 import scala.collection.immutable.ArraySeq
+
+import org.opalj.bi.reader.ModulePackages_attributeReader
 
 /**
  * The factory method to create the `ModulePackages` attribute (Java 9).
@@ -14,8 +14,8 @@ import scala.collection.immutable.ArraySeq
  */
 trait ModulePackages_attributeBinding
     extends ModulePackages_attributeReader
-    with ConstantPoolBinding
-    with AttributeBinding {
+        with ConstantPoolBinding
+        with AttributeBinding {
 
     type ModulePackages_attribute = ModulePackages
 
@@ -24,12 +24,8 @@ trait ModulePackages_attributeBinding
         ap_name_index:        Constant_Pool_Index,
         ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
-        package_index_table:  PackageIndexTable
-    ): ModulePackages_attribute = {
-        new ModulePackages(
-            ArraySeq.from(package_index_table).map { p => cp(p).asPackageIdentifier(cp) }
-        )
-    }
+        package_index_table:  PackageIndexTable): ModulePackages_attribute = new ModulePackages(
+        ArraySeq.from(package_index_table).map { p => cp(p).asPackageIdentifier(cp) }
+    )
 
 }
-

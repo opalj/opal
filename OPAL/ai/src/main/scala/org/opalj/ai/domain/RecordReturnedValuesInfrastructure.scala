@@ -33,43 +33,37 @@ trait RecordReturnedValuesInfrastructure extends ai.ReturnInstructionsDomain {
 
     abstract override def areturn(
         pc:    Int,
-        value: DomainValue
-    ): Computation[Nothing, ExceptionValue] = {
+        value: DomainValue): Computation[Nothing, ExceptionValue] = {
         doRecordReturnedValue(pc, value)
         super.areturn(pc, value)
     }
 
     abstract override def dreturn(
         pc:    Int,
-        value: DomainValue
-    ): Computation[Nothing, ExceptionValue] = {
+        value: DomainValue): Computation[Nothing, ExceptionValue] = {
         doRecordReturnedValue(pc, value)
         super.dreturn(pc, value)
     }
 
     abstract override def freturn(
         pc:    Int,
-        value: DomainValue
-    ): Computation[Nothing, ExceptionValue] = {
+        value: DomainValue): Computation[Nothing, ExceptionValue] = {
         doRecordReturnedValue(pc, value)
         super.freturn(pc, value)
     }
 
     abstract override def ireturn(
         pc:    Int,
-        value: DomainValue
-    ): Computation[Nothing, ExceptionValue] = {
+        value: DomainValue): Computation[Nothing, ExceptionValue] = {
         doRecordReturnedValue(pc, value)
         super.ireturn(pc, value)
     }
 
     abstract override def lreturn(
         pc:    Int,
-        value: DomainValue
-    ): Computation[Nothing, ExceptionValue] = {
+        value: DomainValue): Computation[Nothing, ExceptionValue] = {
         doRecordReturnedValue(pc, value)
         super.lreturn(pc, value)
     }
 
 }
-

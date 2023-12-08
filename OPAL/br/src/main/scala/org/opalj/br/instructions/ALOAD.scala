@@ -29,14 +29,12 @@ object ALOAD extends InstructionMetaInformation {
 
     final val mnemonic = "aload"
 
-    def canonicalRepresentation(lvIndex: Int): LoadLocalVariableInstruction = {
-        lvIndex match {
-            case 0 => ALOAD_0
-            case 1 => ALOAD_1
-            case 2 => ALOAD_2
-            case 3 => ALOAD_3
-            case _ => new ALOAD(lvIndex)
-        }
+    def canonicalRepresentation(lvIndex: Int): LoadLocalVariableInstruction = lvIndex match {
+        case 0 => ALOAD_0
+        case 1 => ALOAD_1
+        case 2 => ALOAD_2
+        case 3 => ALOAD_3
+        case _ => new ALOAD(lvIndex)
     }
 
 }

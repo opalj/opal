@@ -3,6 +3,8 @@ package org.opalj
 package apk
 package analyses
 
+import scala.collection.mutable.ListBuffer
+
 import org.opalj.apk.ApkContextRegisteredReceiver
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
@@ -16,26 +18,24 @@ import org.opalj.tac.VirtualFunctionCallStatement
 import org.opalj.value.TheStringValue
 import org.opalj.value.ValueInformation
 
-import scala.collection.mutable.ListBuffer
-
 /**
  * Analyzes code of an APK for dynamically registered Intents for Broadcast Receivers.
  *
  * @author Nicolas Gross
  */
 object ContextRegisteredReceiversAnalysis {
-    private val RegisterReceiverMethod = "registerReceiver"
-    private val ContextClass = ObjectType("android/content/Context")
+    private val RegisterReceiverMethod     = "registerReceiver"
+    private val ContextClass               = ObjectType("android/content/Context")
     private val LocalBroadcastManagerClass = ObjectType("androidx/localbroadcastmanager/content/LocalBroadcastManager")
-    private val ActivityClass = ObjectType("android/app/Activity")
-    private val IntentFilterClass = ObjectType("android/content/IntentFilter")
+    private val ActivityClass              = ObjectType("android/app/Activity")
+    private val IntentFilterClass          = ObjectType("android/content/IntentFilter")
 
     def analyze(project: Project[_]): Seq[ApkContextRegisteredReceiver] = {
         val foundReceivers: ListBuffer[ApkContextRegisteredReceiver] = ListBuffer.empty
 
         // calls from java code
         val tacProvider = project.get(LazyDetachedTACAIKey)
-        project.allClassFiles.foreach(_.methodsWithBody.foreach(m => {
+        project.allClassFiles.foreach(_.methodsWithBody.foreach { m =>
             var alreadyFoundCall = false
             m.body.get.instructionIterator.foreach {
                 case i: MethodInvocationInstruction =>
@@ -58,7 +58,7 @@ object ContextRegisteredReceiversAnalysis {
                                         val receiverClass = receiverType.head.toJava
 
                                         // try to find intents, might be incomplete
-                                        val intentDef = tacMethod.stmts(call.params(1).asVar.definedBy.head)
+                                        val intentDef             = tacMethod.stmts(call.params(1).asVar.definedBy.head)
                                         val (actions, categories) = assembleIntentFilter(tacMethod, intentDef)
 
                                         foundReceivers.append(
@@ -77,17 +77,16 @@ object ContextRegisteredReceiversAnalysis {
                     }
                 case _ =>
             }
-        }))
+        })
 
         // TODO calls from native code
 
         foundReceivers.toSeq
     }
 
-    private def classMatches(clazz: ObjectType): Boolean = {
+    private def classMatches(clazz: ObjectType): Boolean =
         clazz == ContextClass || clazz == LocalBroadcastManagerClass ||
             clazz == ActivityClass
-    }
 
     private def classHierarchyMatches(project: Project[_], clazz: ObjectType): Boolean = {
         var tmpClazz = clazz
@@ -109,15 +108,15 @@ object ContextRegisteredReceiversAnalysis {
      */
     private def assembleIntentFilter(
         tacMethod: AITACode[TACMethodParameter, ValueInformation],
-        intentDef: Stmt[DUVar[ValueInformation]]
-    ): (Seq[String], Seq[String]) = {
-        val foundActions: ListBuffer[String] = ListBuffer.empty
+        intentDef: Stmt[DUVar[ValueInformation]]): (Seq[String], Seq[String]) = {
+        val foundActions: ListBuffer[String]    = ListBuffer.empty
         val foundCategories: ListBuffer[String] = ListBuffer.empty
         if (intentDef.isAssignment && intentDef.asAssignment.expr.isNew &&
             intentDef.asAssignment.expr.asNew.tpe == IntentFilterClass) {
             intentDef.asAssignment.targetVar.usedBy
                 .foreach(tacMethod.stmts(_) match {
-                    case VirtualFunctionCallStatement(call) if call.declaringClass.mostPreciseObjectType == IntentFilterClass =>
+                    case VirtualFunctionCallStatement(call)
+                        if call.declaringClass.mostPreciseObjectType == IntentFilterClass =>
                         val actionOrCategory = call.params.head.asVar.value.asReferenceValue.toCanonicalForm
                             .asInstanceOf[TheStringValue]
                             .value

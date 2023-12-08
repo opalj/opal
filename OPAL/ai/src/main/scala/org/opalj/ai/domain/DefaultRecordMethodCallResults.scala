@@ -12,8 +12,8 @@ package domain
  */
 trait DefaultRecordMethodCallResults
     extends RecordMethodCallResults
-    with RecordLastReturnedValues
-    with RecordAllThrownExceptions {
+        with RecordLastReturnedValues
+        with RecordAllThrownExceptions {
     this: Domain =>
 
 }

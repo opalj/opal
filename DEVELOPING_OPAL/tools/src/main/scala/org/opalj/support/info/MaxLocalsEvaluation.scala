@@ -20,24 +20,21 @@ object MaxLocalsEvaluation extends ProjectAnalysisApplication {
 
     override def title: String = "Maximum Number of Locals"
 
-    override def description: String = {
-        "provide information about the maximum number of registers required per method"
-    }
+    override def description: String = "provide information about the maximum number of registers required per method"
 
     def doAnalyze(
         project:       Project[URL],
         parameters:    Seq[String],
-        isInterrupted: () => Boolean
-    ): BasicReport = {
+        isInterrupted: () => Boolean): BasicReport = {
 
         import scala.collection.immutable.TreeMap // <= Sorted...
         var methodParametersDistribution: Map[Int, Int] = TreeMap.empty
-        var maxLocalsDistrbution: Map[Int, Int] = TreeMap.empty
+        var maxLocalsDistrbution: Map[Int, Int]         = TreeMap.empty
 
         for {
-            classFile <- project.allProjectClassFiles
+            classFile                     <- project.allProjectClassFiles
             method @ MethodWithBody(body) <- classFile.methods
-            descriptor = method.descriptor
+            descriptor                     = method.descriptor
         } {
             val parametersCount = descriptor.parametersCount + (if (method.isStatic) 0 else 1)
 
@@ -49,12 +46,16 @@ object MaxLocalsEvaluation extends ProjectAnalysisApplication {
             maxLocalsDistrbution = maxLocalsDistrbution.updated(body.maxLocals, newMaxLocalsCount)
         }
 
-        BasicReport("\nResults:\n"+
-            "Method Parameters Distribution:\n"+
-            "#Parameters\tFrequency:\n"+
-            methodParametersDistribution.map(kv => { val (k, v) = kv; s"$k\t\t$v" }).mkString("\n")+"\n\n"+
-            "MaxLocals Distribution:\n"+
-            "#Locals\t\tFrequency:\n"+
-            maxLocalsDistrbution.map(kv => { val (k, v) = kv; s"$k\t\t$v" }).mkString("\n"))
+        BasicReport("\nResults:\n" +
+            "Method Parameters Distribution:\n" +
+            "#Parameters\tFrequency:\n" +
+            methodParametersDistribution.map { kv =>
+                val (k, v) = kv; s"$k\t\t$v"
+            }.mkString("\n") + "\n\n" +
+            "MaxLocals Distribution:\n" +
+            "#Locals\t\tFrequency:\n" +
+            maxLocalsDistrbution.map { kv =>
+                val (k, v) = kv; s"$k\t\t$v"
+            }.mkString("\n"))
     }
 }

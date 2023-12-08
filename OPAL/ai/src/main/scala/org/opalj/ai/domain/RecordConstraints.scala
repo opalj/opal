@@ -19,8 +19,5 @@ trait RecordConstraints extends ReifiedConstraints { domain: ValuesDomain =>
      */
     def allConstraints: Set[ReifiedConstraint] = constraints
 
-    override def nextConstraint(constraint: ReifiedConstraint): Unit = {
-        constraints += constraint
-    }
+    override def nextConstraint(constraint: ReifiedConstraint): Unit = constraints += constraint
 }
-

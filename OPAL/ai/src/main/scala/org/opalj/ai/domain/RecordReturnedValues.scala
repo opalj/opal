@@ -5,8 +5,8 @@ package domain
 
 import scala.collection.immutable.IntMap
 
-import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.br.Code
+import org.opalj.collection.immutable.IntTrieSet
 
 /**
  * Generic infrastructure to record the values returned by the method.
@@ -50,18 +50,16 @@ trait RecordReturnedValues extends RecordReturnedValuesInfrastructure with Custo
      *      and study the subclass(es) of `RecordReturnedValues`.
      */
     protected[this] def joinReturnedValues(
-        pc:                      Int,
+        pc: Int,
         previouslyReturnedValue: ReturnedValue,
-        value:                   DomainValue
-    ): ReturnedValue
+        value: DomainValue): ReturnedValue
 
     private[this] var returnedValues: IntMap[ReturnedValue] = _
 
     abstract override def initProperties(
         code:          Code,
         cfJoins:       IntTrieSet,
-        initialLocals: Locals
-    ): Unit = {
+        initialLocals: Locals): Unit = {
         returnedValues = IntMap.empty
         super.initProperties(code, cfJoins, initialLocals)
     }
@@ -71,19 +69,17 @@ trait RecordReturnedValues extends RecordReturnedValuesInfrastructure with Custo
      */
     def allReturnedValues: IntMap[ReturnedValue] = returnedValues
 
-    protected[this] def doRecordReturnedValue(pc: Int, value: DomainValue): Boolean = {
-        returnedValues.get(pc) match {
-            case None =>
-                returnedValues = returnedValues.updated(pc, recordReturnedValue(pc, value))
-                true // <=> isUpdated
-            case Some(returnedValue) =>
-                val joinedReturnedValue = joinReturnedValues(pc, returnedValue, value)
-                if (returnedValue ne joinedReturnedValue) {
-                    returnedValues = returnedValues.updated(pc, joinedReturnedValue)
-                    true
-                } else {
-                    false
-                }
-        }
+    protected[this] def doRecordReturnedValue(pc: Int, value: DomainValue): Boolean = returnedValues.get(pc) match {
+        case None =>
+            returnedValues = returnedValues.updated(pc, recordReturnedValue(pc, value))
+            true // <=> isUpdated
+        case Some(returnedValue) =>
+            val joinedReturnedValue = joinReturnedValues(pc, returnedValue, value)
+            if (returnedValue ne joinedReturnedValue) {
+                returnedValues = returnedValues.updated(pc, joinedReturnedValue)
+                true
+            } else {
+                false
+            }
     }
 }

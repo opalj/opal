@@ -3,8 +3,8 @@ package org.opalj
 package br
 package reader
 
-import org.opalj.bi.reader.LineNumberTable_attributeReader
 import org.opalj.bi.reader.CompactLineNumberTable_attributeReader
+import org.opalj.bi.reader.LineNumberTable_attributeReader
 
 /**
  * Implements the factory methods to create line number tables and their entries.
@@ -13,8 +13,8 @@ import org.opalj.bi.reader.CompactLineNumberTable_attributeReader
  */
 trait UnpackedLineNumberTable_attributeBinding
     extends LineNumberTable_attributeReader
-    with ConstantPoolBinding
-    with AttributeBinding {
+        with ConstantPoolBinding
+        with AttributeBinding {
 
     type LineNumberTableEntry = br.LineNumber
 
@@ -25,14 +25,9 @@ trait UnpackedLineNumberTable_attributeBinding
         ap_name_index:        Constant_Pool_Index,
         ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
-        line_number_table:    LineNumbers
-    ): UnpackedLineNumberTable = {
-        new UnpackedLineNumberTable(line_number_table)
-    }
+        line_number_table:    LineNumbers): UnpackedLineNumberTable = new UnpackedLineNumberTable(line_number_table)
 
-    def LineNumberTableEntry(start_pc: Int, line_number: Int): br.LineNumber = {
-        new LineNumber(start_pc, line_number)
-    }
+    def LineNumberTableEntry(start_pc: Int, line_number: Int): br.LineNumber = new LineNumber(start_pc, line_number)
 
 }
 
@@ -43,8 +38,8 @@ trait UnpackedLineNumberTable_attributeBinding
  */
 trait CompactLineNumberTable_attributeBinding
     extends CompactLineNumberTable_attributeReader
-    with ConstantPoolBinding
-    with AttributeBinding {
+        with ConstantPoolBinding
+        with AttributeBinding {
 
     type LineNumberTable_attribute = br.CompactLineNumberTable
 
@@ -53,10 +48,7 @@ trait CompactLineNumberTable_attributeBinding
         ap_name_index:        Constant_Pool_Index,
         ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
-        line_number_table:    Array[Byte]
-    ): CompactLineNumberTable = {
-        new CompactLineNumberTable(line_number_table)
-    }
+        line_number_table:    Array[Byte]): CompactLineNumberTable = new CompactLineNumberTable(line_number_table)
 
     /**
      * Merge all line number tables and create a single sorted line number table.

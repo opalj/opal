@@ -65,14 +65,13 @@ import java.util.IdentityHashMap
 trait IdentityBasedCorrelationChangeDetection extends CoreDomainFunctionality {
 
     /* NOT abstract override [this trait is by purpose NOT stackable] */
-    protected[this] override def joinPostProcessing(
+    override protected[this] def joinPostProcessing(
         updateType:  UpdateType,
         pc:          Int,
         oldOperands: Operands,
         oldLocals:   Locals,
         newOperands: Operands,
-        newLocals:   Locals
-    ): Update[(Operands, Locals)] = {
+        newLocals:   Locals): Update[(Operands, Locals)] = {
 
         if (updateType.isMetaInformationUpdate) {
             val aliasInformation = new IdentityHashMap[DomainValue, Integer]()
@@ -80,8 +79,7 @@ trait IdentityBasedCorrelationChangeDetection extends CoreDomainFunctionality {
             var opi = -1;
             oldOperands.foreach { op =>
                 val previousLocation = aliasInformation.get(op)
-                if (previousLocation == null)
-                    aliasInformation.put(op, opi)
+                if (previousLocation == null) aliasInformation.put(op, opi)
                 else {
                     // let's check if we can no-longer find the same alias
                     // relation in the new operands
@@ -95,15 +93,13 @@ trait IdentityBasedCorrelationChangeDetection extends CoreDomainFunctionality {
             oldLocals.foreach { l =>
                 if ((l ne null) && (l ne TheIllegalValue)) {
                     val previousLocation = aliasInformation.get(l)
-                    if (previousLocation == null)
-                        aliasInformation.put(l, li)
+                    if (previousLocation == null) aliasInformation.put(l, li)
                     else {
                         // let's check if we can find the same alias relation
                         if (previousLocation < 0) {
                             val v2 = newLocals(li)
                             if ((newOperands(-previousLocation - 1) ne v2) &&
-                                (v2 ne TheIllegalValue))
-                                return StructuralUpdate((newOperands, newLocals));
+                                (v2 ne TheIllegalValue)) return StructuralUpdate((newOperands, newLocals));
                         } else /*previousLocation >= 0*/ {
                             val v1 = newLocals(previousLocation)
                             val v2 = newLocals(li)

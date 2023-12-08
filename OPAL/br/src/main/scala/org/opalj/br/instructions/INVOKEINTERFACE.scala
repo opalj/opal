@@ -9,10 +9,9 @@ package instructions
  * @author Michael Eichberg
  */
 case class INVOKEINTERFACE(
-        override val declaringClass:   ObjectType, // an interface type
-        override val name:             String,
-        override val methodDescriptor: MethodDescriptor
-) extends VirtualMethodInvocationInstruction {
+        override val declaringClass: ObjectType, // an interface type
+        override val name:           String,
+        override val methodDescriptor: MethodDescriptor) extends VirtualMethodInvocationInstruction {
 
     final override def isInterfaceCall: Boolean = true
 
@@ -51,8 +50,6 @@ object INVOKEINTERFACE extends InstructionMetaInformation {
     def apply(
         declaringClass:   String,
         methodName:       String,
-        methodDescriptor: String
-    ): INVOKEINTERFACE = {
+        methodDescriptor: String): INVOKEINTERFACE =
         INVOKEINTERFACE(ObjectType(declaringClass), methodName, MethodDescriptor(methodDescriptor))
-    }
 }

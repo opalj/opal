@@ -10,8 +10,8 @@ package instructions
  */
 abstract class SynchronizationInstruction
     extends Instruction
-    with ConstantLengthInstruction
-    with NoLabels {
+        with ConstantLengthInstruction
+        with NoLabels {
 
     final override def length: Int = 1
 

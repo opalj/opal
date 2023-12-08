@@ -3,15 +3,16 @@ package org.opalj
 package ai
 package domain
 
-import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
-import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.ai.common.XHTML.dumpOnFailureDuringValidation
+import org.opalj.ai.domain.l0._
+import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br._
 import org.opalj.br.reader.Java8Framework.ClassFiles
-import org.opalj.ai.domain.l0._
+
+import org.junit.runner.RunWith
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Basic tests of the abstract interpreter in the presence of simple control flow
@@ -24,31 +25,30 @@ import org.opalj.ai.domain.l0._
 class MethodsWithBranchesTest extends AnyFlatSpec with Matchers {
 
     import MethodsWithBranchesTest._
-
     import domain.RecordConstraints
 
     class TestDomain(val name: String)
         extends Domain
-        with DefaultSpecialDomainValuesBinding
-        with DefaultReferenceValuesBinding
-        with DefaultTypeLevelIntegerValues
-        with DefaultTypeLevelLongValues
-        with DefaultTypeLevelFloatValues
-        with DefaultTypeLevelDoubleValues
-        with TypeLevelPrimitiveValuesConversions
-        with TypeLevelLongValuesShiftOperators
-        with TypeLevelFieldAccessInstructions
-        with SimpleTypeLevelInvokeInstructions
-        with TypeLevelDynamicLoads
-        with ThrowAllPotentialExceptionsConfiguration
-        with PredefinedClassHierarchy
-        with IgnoreSynchronization
-        with DefaultHandlingOfMethodResults
-        with RecordLastReturnedValues
-        with RecordConstraints {
+            with DefaultSpecialDomainValuesBinding
+            with DefaultReferenceValuesBinding
+            with DefaultTypeLevelIntegerValues
+            with DefaultTypeLevelLongValues
+            with DefaultTypeLevelFloatValues
+            with DefaultTypeLevelDoubleValues
+            with TypeLevelPrimitiveValuesConversions
+            with TypeLevelLongValuesShiftOperators
+            with TypeLevelFieldAccessInstructions
+            with SimpleTypeLevelInvokeInstructions
+            with TypeLevelDynamicLoads
+            with ThrowAllPotentialExceptionsConfiguration
+            with PredefinedClassHierarchy
+            with IgnoreSynchronization
+            with DefaultHandlingOfMethodResults
+            with RecordLastReturnedValues
+            with RecordConstraints {
 
         type Id = String
-        def id = "MethodsWithBranchesTestDomain: "+name
+        def id = "MethodsWithBranchesTestDomain: " + name
     }
 
     private def evaluateMethod(name: String)(f: TestDomain => Unit): Unit = {
@@ -78,21 +78,21 @@ class MethodsWithBranchesTest extends AnyFlatSpec with Matchers {
             //    7  ireturn
             import domain._
             domain.allReturnedValues should be(
-                Map((5 -> AnIntegerValue), (7 -> AnIntegerValue))
+                Map(5 -> AnIntegerValue, 7 -> AnIntegerValue)
             )
 
             domain.allConstraints exists { constraint =>
                 val ReifiedSingleValueConstraint(pc, value, kind) = constraint
                 pc == 4 &&
-                    domain.isValueASubtypeOf(value, ObjectType.Object).isYes &&
-                    kind == "is null"
+                domain.isValueASubtypeOf(value, ObjectType.Object).isYes &&
+                kind == "is null"
             } should be(true)
 
             domain.allConstraints exists { constraint =>
                 val ReifiedSingleValueConstraint(pc, value, kind) = constraint
                 pc == 6 &&
-                    domain.isValueASubtypeOf(value, ObjectType.Object).isYes &&
-                    kind == "is not null"
+                domain.isValueASubtypeOf(value, ObjectType.Object).isYes &&
+                kind == "is not null"
             } should be(true)
         }
     }
@@ -107,21 +107,21 @@ class MethodsWithBranchesTest extends AnyFlatSpec with Matchers {
             //    7  ireturn
             import domain._
             domain.allReturnedValues should be(
-                Map((5 -> AnIntegerValue), (7 -> AnIntegerValue))
+                Map(5 -> AnIntegerValue, 7 -> AnIntegerValue)
             )
 
             domain.allConstraints exists { constraint =>
                 val ReifiedSingleValueConstraint(pc, value, kind) = constraint
                 pc == 6 &&
-                    domain.isValueASubtypeOf(value, ObjectType.Object).isYes &&
-                    kind == "is null"
+                domain.isValueASubtypeOf(value, ObjectType.Object).isYes &&
+                kind == "is null"
             } should be(true)
 
             domain.allConstraints exists { constraint =>
                 val ReifiedSingleValueConstraint(pc, value, kind) = constraint
                 pc == 4 &&
-                    domain.isValueASubtypeOf(value, ObjectType.Object).isYes &&
-                    kind == "is not null"
+                domain.isValueASubtypeOf(value, ObjectType.Object).isYes &&
+                kind == "is not null"
             } should be(true)
         }
     }
@@ -143,14 +143,14 @@ class MethodsWithBranchesTest extends AnyFlatSpec with Matchers {
             //    18  ireturn
             import domain._
             allReturnedValues should be(Map(
-                (14 -> AnIntegerValue),
-                (16 -> AnIntegerValue),
-                (18 -> AnIntegerValue)
+                14 -> AnIntegerValue,
+                16 -> AnIntegerValue,
+                18 -> AnIntegerValue
             ))
         }
     }
 }
 private object MethodsWithBranchesTest {
     val classFiles = ClassFiles(locateTestResources("ai-9.jar", "bi"))
-    val classFile = classFiles.map(_._1).find(_.thisType.fqn == "ai/MethodsWithBranches").get
+    val classFile  = classFiles.map(_._1).find(_.thisType.fqn == "ai/MethodsWithBranches").get
 }

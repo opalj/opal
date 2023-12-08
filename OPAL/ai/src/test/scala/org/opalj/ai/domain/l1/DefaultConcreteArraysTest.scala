@@ -4,12 +4,7 @@ package ai
 package domain
 package l1
 
-import org.junit.runner.RunWith
-import org.opalj.io.OpeningFileFailedException
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.matchers.should.Matchers
-import org.scalatestplus.junit.JUnitRunner
-
+import org.opalj.ai.common.XHTML.dumpOnFailureDuringValidation
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.ArrayType
 import org.opalj.br.BooleanType
@@ -22,7 +17,12 @@ import org.opalj.br.LongType
 import org.opalj.br.ObjectType
 import org.opalj.br.ShortType
 import org.opalj.br.reader.Java8Framework.ClassFiles
-import org.opalj.ai.common.XHTML.dumpOnFailureDuringValidation
+import org.opalj.io.OpeningFileFailedException
+
+import org.junit.runner.RunWith
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests the ArrayValues domain.
@@ -39,7 +39,7 @@ class DefaultConcreteArraysTest extends AnyFunSpec with Matchers {
         val domain = new DefaultConcreteArraysTestDomain()
 
         val method = classFile.methods.find(_.name == name).get
-        val code = method.body.get
+        val code   = method.body.get
         val result = BaseAI(method, domain)
 
         try {
@@ -58,7 +58,7 @@ class DefaultConcreteArraysTest extends AnyFunSpec with Matchers {
                 import domain._
 
                 val returnIndex = 21
-                val varray = allReturnedValues(returnIndex)
+                val varray      = allReturnedValues(returnIndex)
 
                 allReturnedValues.size should be(1)
 
@@ -275,7 +275,8 @@ class DefaultConcreteArraysTest extends AnyFunSpec with Matchers {
                 isValueASubtypeOf(varray, ArrayType(ObjectType.Object)) should be(Yes)
 
                 arraylength(
-                    returnIndex, varray
+                    returnIndex,
+                    varray
                 ) should be(ComputedValue(IntegerRange(4)))
 
             }
@@ -300,7 +301,8 @@ class DefaultConcreteArraysTest extends AnyFunSpec with Matchers {
                         returnIndex,
                         IntegerValue(10, 0),
                         varray
-                    ).result, ObjectType.Integer
+                    ).result,
+                    ObjectType.Integer
                 ) should be(Yes)
 
                 isValueASubtypeOf(
@@ -308,7 +310,8 @@ class DefaultConcreteArraysTest extends AnyFunSpec with Matchers {
                         returnIndex,
                         IntegerValue(17, 1),
                         varray
-                    ).result, ObjectType.Float
+                    ).result,
+                    ObjectType.Float
                 ) should be(Yes)
 
                 isValueASubtypeOf(
@@ -316,7 +319,8 @@ class DefaultConcreteArraysTest extends AnyFunSpec with Matchers {
                         returnIndex,
                         IntegerValue(26, 2),
                         varray
-                    ).result, ObjectType.Double
+                    ).result,
+                    ObjectType.Double
                 ) should be(Yes)
 
                 isValueASubtypeOf(
@@ -324,7 +328,8 @@ class DefaultConcreteArraysTest extends AnyFunSpec with Matchers {
                         returnIndex,
                         IntegerValue(33, 3),
                         varray
-                    ).result, ObjectType.Boolean
+                    ).result,
+                    ObjectType.Boolean
                 ) should be(Yes)
 
                 isValueASubtypeOf(
@@ -332,7 +337,8 @@ class DefaultConcreteArraysTest extends AnyFunSpec with Matchers {
                         returnIndex,
                         IntegerValue(41, 4),
                         varray
-                    ).result, ObjectType.Character
+                    ).result,
+                    ObjectType.Character
                 ) should be(Yes)
 
                 isValueASubtypeOf(
@@ -340,7 +346,8 @@ class DefaultConcreteArraysTest extends AnyFunSpec with Matchers {
                         returnIndex,
                         IntegerValue(41, 4),
                         varray
-                    ).result, ObjectType.Character
+                    ).result,
+                    ObjectType.Character
                 ) should be(Yes)
 
                 arrayload(
@@ -379,9 +386,9 @@ class DefaultConcreteArraysTest extends AnyFunSpec with Matchers {
         it("should be able to analyze a simple 4-dimensional array initialization") {
             evaluateMethod("a4DimensionalArray") { domain =>
                 import domain._
-                val twoDimIntArray = ArrayType(ArrayType(IntegerType))
+                val twoDimIntArray  = ArrayType(ArrayType(IntegerType))
                 val fourDimIntArray = ArrayType(ArrayType(twoDimIntArray))
-                val operandsArray = domain.operandsArray
+                val operandsArray   = domain.operandsArray
 
                 // we are just testing the dimensions of the array property
                 operandsArray(8).head should be(InitializedArrayValue(4, fourDimIntArray, 2))
@@ -392,7 +399,7 @@ class DefaultConcreteArraysTest extends AnyFunSpec with Matchers {
             evaluateMethod("a2DimensionalArray") { domain =>
                 import domain._
                 val twoDimIntArray = ArrayType(ArrayType(IntegerType))
-                val operandsArray = domain.operandsArray
+                val operandsArray  = domain.operandsArray
 
                 operandsArray(18).head should be(InitializedArrayValue(2, twoDimIntArray, 2))
                 operandsArray(31).head should be(InitializedArrayValue(2, twoDimIntArray, 2))
@@ -404,7 +411,7 @@ class DefaultConcreteArraysTest extends AnyFunSpec with Matchers {
             evaluateMethod("a3DimensionalArray") { domain =>
                 import domain._
                 val threeDimIntArray = ArrayType(ArrayType(ArrayType(IntegerType)))
-                val operandsArray = domain.operandsArray
+                val operandsArray    = domain.operandsArray
 
                 operandsArray(20).head should be(
                     InitializedArrayValue(3, threeDimIntArray, 2)
@@ -425,7 +432,7 @@ class DefaultConcreteArraysTest extends AnyFunSpec with Matchers {
             evaluateMethod("a3DimensionalArrayWithPotentialExceptions") { domain =>
                 import domain._
                 val threeDimIntArray = ArrayType(ArrayType(ArrayType(IntegerType)))
-                val operandsArray = domain.operandsArray
+                val operandsArray    = domain.operandsArray
 
                 operandsArray(20).head should be(
                     InitializedArrayValue(3, threeDimIntArray, 2)
@@ -463,10 +470,9 @@ class DefaultConcreteArraysTest extends AnyFunSpec with Matchers {
                 val returnIndex = 21
 
                 val varray = allReturnedValues(returnIndex)
-                val expectedException =
-                    ThrowsException(List(
-                        InitializedObjectValue(-100021, ObjectType.ArrayIndexOutOfBoundsException)
-                    ))
+                val expectedException = ThrowsException(List(
+                    InitializedObjectValue(-100021, ObjectType.ArrayIndexOutOfBoundsException)
+                ))
 
                 allReturnedValues.size should be(1)
                 arrayload(returnIndex, IntegerValue(returnIndex, 4), varray) should be(expectedException)
@@ -483,7 +489,7 @@ class DefaultConcreteArraysTest extends AnyFunSpec with Matchers {
                 import domain._
 
                 val returnIndex = 26
-                val varray = allReturnedValues(returnIndex)
+                val varray      = allReturnedValues(returnIndex)
                 val expectedException =
                     ThrowsException(List(InitializedObjectValue(-100026, ObjectType.ArrayStoreException)))
 
@@ -507,7 +513,7 @@ class DefaultConcreteArraysTest extends AnyFunSpec with Matchers {
                 import domain._
 
                 val returnIndex = 20
-                val varray = allReturnedValues(returnIndex)
+                val varray      = allReturnedValues(returnIndex)
 
                 allReturnedValues.size should be(1)
 
@@ -543,7 +549,7 @@ class DefaultConcreteArraysTest extends AnyFunSpec with Matchers {
                 isValueASubtypeOf(varray, ArrayType(ObjectType.Cloneable)) should be(Yes)
 
                 val returnedValue = arrayload(returnIndex, IntegerValue(returnIndex, 0), varray)
-                val exceptions = List(ObjectType.ArrayStoreException)
+                val exceptions    = List(ObjectType.ArrayStoreException)
                 returnedValue should be(ComputedValueOrException(null, exceptions))
             }
         }
@@ -562,11 +568,15 @@ class DefaultConcreteArraysTest extends AnyFunSpec with Matchers {
 
                 isValueASubtypeOf(varray, ArrayType(ObjectType.Object)) should be(Yes)
 
-                arraylength(returnIndex, varray) should be(throws(InitializedObjectValue(-100007, ObjectType.NullPointerException)))
+                arraylength(returnIndex, varray) should be(throws(InitializedObjectValue(-100007,
+                                                                                         ObjectType.NullPointerException)))
 
-                arraystore(returnIndex, IntegerValue(20), IntegerValue(12, 0), varray) should be(ThrowsException(List(InitializedObjectValue(-100007, ObjectType.NullPointerException))))
+                arraystore(returnIndex, IntegerValue(20), IntegerValue(12, 0), varray) should be(
+                    ThrowsException(List(InitializedObjectValue(-100007, ObjectType.NullPointerException))))
 
-                arrayload(returnIndex, IntegerValue(1), varray) should be(ThrowsException(List(InitializedObjectValue(-100007, ObjectType.NullPointerException))))
+                arrayload(returnIndex, IntegerValue(1), varray) should be(ThrowsException(List(InitializedObjectValue(
+                    -100007,
+                    ObjectType.NullPointerException))))
 
             }
         }
@@ -591,34 +601,33 @@ class DefaultConcreteArraysTest extends AnyFunSpec with Matchers {
 }
 
 class DefaultConcreteArraysTestDomain(
-        override val maxCardinalityOfIntegerRanges: Long = -(Int.MinValue.toLong) + Int.MaxValue
-) extends CorrelationalDomain
-    with GlobalLogContextProvider
-    with DefaultSpecialDomainValuesBinding
-    with ThrowAllPotentialExceptionsConfiguration
-    with l0.SimpleTypeLevelInvokeInstructions
-    with l0.TypeLevelFieldAccessInstructions
-    with l0.TypeLevelDynamicLoads
-    with l1.DefaultLongValues
-    with l1.DefaultStringValuesBinding
-    with l0.DefaultTypeLevelFloatValues
-    with l0.DefaultTypeLevelDoubleValues
-    with l1.DefaultIntegerRangeValues
-    with l0.TypeLevelPrimitiveValuesConversions
-    with l0.TypeLevelLongValuesShiftOperators
-    with DefaultHandlingOfMethodResults
-    with IgnoreSynchronization
-    with PredefinedClassHierarchy
-    with RecordLastReturnedValues
-    with DefaultConcreteArrayValuesBinding
-    with TheMemoryLayout {
+        override val maxCardinalityOfIntegerRanges: Long = -Int.MinValue.toLong + Int.MaxValue)
+    extends CorrelationalDomain
+        with GlobalLogContextProvider
+        with DefaultSpecialDomainValuesBinding
+        with ThrowAllPotentialExceptionsConfiguration
+        with l0.SimpleTypeLevelInvokeInstructions
+        with l0.TypeLevelFieldAccessInstructions
+        with l0.TypeLevelDynamicLoads
+        with l1.DefaultLongValues
+        with l1.DefaultStringValuesBinding
+        with l0.DefaultTypeLevelFloatValues
+        with l0.DefaultTypeLevelDoubleValues
+        with l1.DefaultIntegerRangeValues
+        with l0.TypeLevelPrimitiveValuesConversions
+        with l0.TypeLevelLongValuesShiftOperators
+        with DefaultHandlingOfMethodResults
+        with IgnoreSynchronization
+        with PredefinedClassHierarchy
+        with RecordLastReturnedValues
+        with DefaultConcreteArrayValuesBinding
+        with TheMemoryLayout {
 
     // we don't collect "precise" information w.r.t. the heap about the content of an
     // array, hence we can track the contents
-    override protected def reifyArray(pc: Int, count: Int, arrayType: ArrayType): Boolean = {
+    override protected def reifyArray(pc: Int, count: Int, arrayType: ArrayType): Boolean =
         super.reifyArray(pc, count, arrayType) ||
             arrayType.componentType.isObjectType && count < maxTrackedArraySize
-    }
 }
 
 private object DefaultArraysTest {

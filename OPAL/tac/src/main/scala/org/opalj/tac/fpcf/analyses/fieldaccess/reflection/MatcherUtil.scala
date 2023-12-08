@@ -29,11 +29,9 @@ object MatcherUtil {
         v:       Option[A],
         pc:      Int,
         factory: A => FieldMatcher
-    )(
-        implicit
+      )(implicit
         incompleteFieldAccesses: IncompleteFieldAccesses,
-        highSoundness:           Boolean
-    ): FieldMatcher = {
+        highSoundness:           Boolean): FieldMatcher =
         if (v.isEmpty) {
             if (highSoundness) {
                 AllFieldsMatcher
@@ -44,7 +42,6 @@ object MatcherUtil {
         } else {
             factory(v.get)
         }
-    }
 
     /**
      * Given an optional value of type `A` and a `factory` method for a [[FieldMatcher]], it either creates a matcher,
@@ -52,8 +49,7 @@ object MatcherUtil {
      */
     private[reflection] def retrieveSuitableNonEssentialMatcher[A](
         v: Option[A],
-        f: A => FieldMatcher
-    ): FieldMatcher = if (v.isEmpty) AllFieldsMatcher else f(v.get)
+        f: A => FieldMatcher): FieldMatcher = if (v.isEmpty) AllFieldsMatcher else f(v.get)
 
     /**
      * Given an expression that evaluates to a String, creates a FieldMatcher to match fields with
@@ -68,14 +64,12 @@ object MatcherUtil {
         pc:       Int,
         stmts:    Array[Stmt[V]],
         failure:  () => Unit
-    )(
-        implicit
+      )(implicit
         typeIterator:            TypeIterator,
         state:                   TypeIteratorState,
         ps:                      PropertyStore,
         highSoundness:           Boolean,
-        incompleteFieldAccesses: IncompleteFieldAccesses
-    ): FieldMatcher = {
+        incompleteFieldAccesses: IncompleteFieldAccesses): FieldMatcher = {
         val names = StringUtil.getPossibleStrings(expr, context, depender, stmts, failure)
         retrieveSuitableMatcher[Set[String]](
             Some(names),
@@ -102,18 +96,21 @@ object MatcherUtil {
         project:                  SomeProject,
         failure:                  () => Unit,
         onlyFieldsExactlyInClass: Boolean,
-        onlyObjectTypes:          Boolean        = false,
-        considerSubclasses:       Boolean        = false
-    )(
-        implicit
+        onlyObjectTypes:          Boolean = false,
+        considerSubclasses:       Boolean = false
+      )(implicit
         typeIterator:            TypeIterator,
         state:                   TypeIteratorState,
         ps:                      PropertyStore,
         highSoundness:           Boolean,
-        incompleteFieldAccesses: IncompleteFieldAccesses
-    ): FieldMatcher = {
+        incompleteFieldAccesses: IncompleteFieldAccesses): FieldMatcher = {
         val typesOpt = Some(TypesUtil.getPossibleClasses(
-            context, ref, depender, stmts, failure, onlyObjectTypes
+            context,
+            ref,
+            depender,
+            stmts,
+            failure,
+            onlyObjectTypes
         ).flatMap { tpe =>
             if (considerSubclasses) project.classHierarchy.allSubtypes(tpe.asObjectType, reflexive = true)
             else Set(if (tpe.isObjectType) tpe.asObjectType else ObjectType.Object)

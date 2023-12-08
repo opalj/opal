@@ -35,11 +35,9 @@ sealed trait LongList extends Serializable { self =>
     /** Prepends the given value to this list. E.g., `l = 2l +: l`. */
     def +:(v: Long): LongList
 
-    final override def equals(other: Any): Boolean = {
-        other match {
-            case l: LongList => equals(l)
-            case _           => false
-        }
+    final override def equals(other: Any): Boolean = other match {
+        case l: LongList => equals(l)
+        case _           => false
     }
     def equals(that: LongList): Boolean
 
@@ -52,9 +50,7 @@ object LongList {
 
     def apply(v: Long): LongList = new LongListNode(v, LongList0)
 
-    def apply(head: Long, last: Long): LongList = {
-        new LongListNode(head, new LongListNode(last, LongList0))
-    }
+    def apply(head: Long, last: Long): LongList = new LongListNode(head, new LongListNode(last, LongList0))
 
 }
 
@@ -64,9 +60,9 @@ object LongList {
  * @author Michael Eichberg
  */
 case object LongList0 extends LongList {
-    override def head: Long = throw new UnsupportedOperationException
-    override def tail: LongList = throw new UnsupportedOperationException
-    override def isEmpty: Boolean = true
+    override def head: Long        = throw new UnsupportedOperationException
+    override def tail: LongList    = throw new UnsupportedOperationException
+    override def isEmpty: Boolean  = true
     override def nonEmpty: Boolean = false
 
     override def foreach[U](f: Long => U): Unit = {}
@@ -86,13 +82,12 @@ case object LongList0 extends LongList {
  * @author Michael Eichberg
  */
 final case class LongListNode(
-        head:                        Long,
-        private[immutable] var rest: LongList = LongList0
-) extends LongList { list =>
+        head: Long,
+        private[immutable] var rest: LongList = LongList0) extends LongList { list =>
 
     override def tail: LongList = rest
 
-    override def isEmpty: Boolean = false
+    override def isEmpty: Boolean  = false
     override def nonEmpty: Boolean = true
 
     override def foreach[U](f: Long => U): Unit = {
@@ -104,9 +99,9 @@ final case class LongListNode(
     }
 
     override def forFirstN[U](n: Int)(f: Long => U): Unit = {
-        if (n == 0) return ;
+        if (n == 0) return;
 
-        var i = 0
+        var i              = 0
         var list: LongList = this
         do {
             f(list.head)
@@ -115,36 +110,31 @@ final case class LongListNode(
         } while (list.nonEmpty && i < n)
     }
 
-    override def iterator: LongIterator = {
-        new LongIterator {
-            private[this] var currentList: LongList = list
-            def hasNext: Boolean = currentList.nonEmpty
-            def next(): Long = {
-                val v = currentList.head
-                currentList = currentList.tail
-                v
-            }
+    override def iterator: LongIterator = new LongIterator {
+        private[this] var currentList: LongList = list
+        def hasNext: Boolean                    = currentList.nonEmpty
+        def next(): Long = {
+            val v = currentList.head
+            currentList = currentList.tail
+            v
         }
     }
 
     override def +:(v: Long): LongList = new LongListNode(v, this)
 
-    override def equals(that: LongList): Boolean = {
-        (that eq this) || {
-            var thisList: LongList = this
-            var thatList = that
-            while ((thisList ne LongList0) && (thatList ne LongList0)) {
-                if (thisList.head != thatList.head)
-                    return false;
-                thisList = thisList.tail
-                thatList = thatList.tail
-            }
-            thisList eq thatList //... <=> true iff both lists are empty
+    override def equals(that: LongList): Boolean = (that eq this) || {
+        var thisList: LongList = this
+        var thatList           = that
+        while ((thisList ne LongList0) && (thatList ne LongList0)) {
+            if (thisList.head != thatList.head) return false;
+            thisList = thisList.tail
+            thatList = thatList.tail
         }
+        thisList eq thatList // ... <=> true iff both lists are empty
     }
 
     override def hashCode(): Int = {
-        var h = 31
+        var h              = 31
         var list: LongList = this
         while (list ne LongList0) {
             h = (h + JLong.hashCode(list.head)) * 31

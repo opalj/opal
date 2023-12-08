@@ -3,19 +3,17 @@ package org.opalj
 package hermes
 
 import java.net.URL
-
-import scala.io.Source
 import scala.io.Codec
+import scala.io.Source
+
+import org.opalj.br.analyses.Project
+import org.opalj.io.processSource
 
 import com.github.rjeschke.txtmark.Processor
-
-import javafx.beans.property.ObjectProperty
-import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.LongProperty
+import javafx.beans.property.ObjectProperty
 import javafx.beans.property.SimpleLongProperty
-
-import org.opalj.io.processSource
-import org.opalj.br.analyses.Project
+import javafx.beans.property.SimpleObjectProperty
 
 /**
  * Extracts a feature/a set of closely related features of a given project.
@@ -51,9 +49,8 @@ abstract class FeatureQuery(implicit hermes: HermesConfig) {
      */
     def apply[S](
         projectConfiguration: ProjectConfiguration,
-        project:              Project[S],
-        rawClassFiles:        Iterable[(da.ClassFile, S)]
-    ): IterableOnce[Feature[S]]
+        project: Project[S],
+        rawClassFiles: Iterable[(da.ClassFile, S)]): IterableOnce[Feature[S]]
 
     // =================================== DEFAULT FUNCTIONALITY ===================================
     // ==================================== (can be overridden) ====================================
@@ -63,11 +60,9 @@ abstract class FeatureQuery(implicit hermes: HermesConfig) {
      */
     val id: String = {
         val simpleClassName = this.getClass.getSimpleName
-        val dollarPosition = simpleClassName.indexOf('$')
-        if (dollarPosition == -1)
-            simpleClassName
-        else
-            simpleClassName.substring(0, dollarPosition)
+        val dollarPosition  = simpleClassName.indexOf('$')
+        if (dollarPosition == -1) simpleClassName
+        else simpleClassName.substring(0, dollarPosition)
     }
 
     /**
@@ -78,8 +73,7 @@ abstract class FeatureQuery(implicit hermes: HermesConfig) {
      */
     protected def mdDescription: String = {
         var descriptionResourceURL = this.getClass.getResource(s"$id.markdown")
-        if (descriptionResourceURL == null)
-            descriptionResourceURL = this.getClass.getResource(s"$id.md")
+        if (descriptionResourceURL == null) descriptionResourceURL = this.getClass.getResource(s"$id.md")
         try {
             processSource(Source.fromURL(descriptionResourceURL)(Codec.UTF8)) { _.mkString }
         } catch {
@@ -105,28 +99,24 @@ abstract class FeatureQuery(implicit hermes: HermesConfig) {
      */
     private[hermes] val accumulatedAnalysisTime: LongProperty = new SimpleLongProperty()
 
-    private[hermes] def createInitialFeatures[S]: Seq[ObjectProperty[Feature[S]]] = {
+    private[hermes] def createInitialFeatures[S]: Seq[ObjectProperty[Feature[S]]] =
         featureIDs.map(fid => new SimpleObjectProperty(Feature[S](fid)))
-    }
 
 }
 
 abstract class DefaultFeatureQuery(
         implicit
-        hermes: HermesConfig
-) extends FeatureQuery {
+        hermes: HermesConfig) extends FeatureQuery {
 
     def evaluate[S](
         projectConfiguration: ProjectConfiguration,
-        project:              Project[S],
-        rawClassFiles:        Iterable[(da.ClassFile, S)]
-    ): IndexedSeq[LocationsContainer[S]]
+        project: Project[S],
+        rawClassFiles: Iterable[(da.ClassFile, S)]): IndexedSeq[LocationsContainer[S]]
 
     final def apply[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Iterable[(da.ClassFile, S)]
-    ): IterableOnce[Feature[S]] = {
+        rawClassFiles:        Iterable[(da.ClassFile, S)]): IterableOnce[Feature[S]] = {
         val locations = evaluate(projectConfiguration, project, rawClassFiles)
         for { (featureID, featureIDIndex) <- featureIDs.iterator.zipWithIndex } yield {
             Feature[S](featureID, locations(featureIDIndex))
@@ -136,26 +126,22 @@ abstract class DefaultFeatureQuery(
 
 abstract class DefaultGroupedFeaturesQuery(
         implicit
-        hermes: HermesConfig
-) extends DefaultFeatureQuery {
+        hermes: HermesConfig) extends DefaultFeatureQuery {
 
     def groupedFeatureIDs: Seq[Seq[String]]
 
     def evaluateFeatureGroups[S](
         projectConfiguration: ProjectConfiguration,
-        project:              Project[S],
-        rawClassFiles:        Iterable[(da.ClassFile, S)]
-    ): IndexedSeq[IterableOnce[LocationsContainer[S]]]
+        project: Project[S],
+        rawClassFiles: Iterable[(da.ClassFile, S)]): IndexedSeq[IterableOnce[LocationsContainer[S]]]
 
     final def featureIDs: Seq[String] = groupedFeatureIDs.flatten
 
     final override def evaluate[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Iterable[(da.ClassFile, S)]
-    ): IndexedSeq[LocationsContainer[S]] = {
+        rawClassFiles:        Iterable[(da.ClassFile, S)]): IndexedSeq[LocationsContainer[S]] =
         evaluateFeatureGroups(projectConfiguration, project, rawClassFiles).flatten
-    }
 
 }
 

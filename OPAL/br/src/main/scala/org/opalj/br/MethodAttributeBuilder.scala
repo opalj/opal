@@ -13,8 +13,7 @@ trait MethodAttributeBuilder {
 
     def apply(
         accessFlags: Int,
-        name:        String,
-        descriptor:  MethodDescriptor
-    ): Attribute
+        name: String,
+        descriptor: MethodDescriptor): Attribute
 
 }

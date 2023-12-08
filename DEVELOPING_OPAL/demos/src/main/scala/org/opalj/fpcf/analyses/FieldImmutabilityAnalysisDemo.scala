@@ -44,8 +44,8 @@ object FieldImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
     override def description: String = "Identifies (non-)transitively immutable fields"
 
     override def doAnalyze(
-        project:       Project[URL],
-        parameters:    Seq[String],
+        project: Project[URL],
+        parameters: Seq[String],
         isInterrupted: () => Boolean
     ): BasicReport = {
         val result = analyze(project)
@@ -76,13 +76,11 @@ object FieldImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
                     LazyInterProceduralEscapeAnalysis,
                     LazyReturnValueFreshnessAnalysis,
                     LazyFieldLocalityAnalysis,
-                    EagerFieldAccessInformationAnalysis,
+                    EagerFieldAccessInformationAnalysis
                 )
                 ._1
             propertyStore.waitOnPhaseCompletion();
-        } { t =>
-            analysisTime = t.toSeconds
-        }
+        } { t => analysisTime = t.toSeconds }
 
         val allFieldsInProjectClassFiles = project.allProjectClassFiles.iterator.flatMap { _.fields }.toSet
 
@@ -109,9 +107,9 @@ object FieldImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
              | Transitively Immutable Fields: ${transitivelyImmutableFields.size}
              |
              | total fields: ${
-            mutableFields.size + nonTransitivelyImmutableFields.size +
-                dependentImmutableFields.size + transitivelyImmutableFields.size
-        }
+                mutableFields.size + nonTransitivelyImmutableFields.size +
+                    dependentImmutableFields.size + transitivelyImmutableFields.size
+            }
              |
              | took : $analysisTime seconds
              |
