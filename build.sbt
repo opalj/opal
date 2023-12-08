@@ -77,8 +77,10 @@ ThisBuild / javaOptions ++= Seq(
 
 addCommandAlias(
   "compileAll",
+    "OPAL / scalafmt ; OPAL / Test / scalafmt ; " +
     "OPAL / Test / headerCheck ; OPAL / Test / compile ;" +
-    "OPAL / IntegrationTest / headerCheck ; OPAL / IntegrationTest / compile "
+    "OPAL/ IntegrationTest/ scalafmt ; OPAL / IntegrationTest / headerCheck ; " +
+        "OPAL / IntegrationTest / compile "
 )
 
 addCommandAlias("buildAll", "; compileAll ; unidoc ;  publishLocal ")
