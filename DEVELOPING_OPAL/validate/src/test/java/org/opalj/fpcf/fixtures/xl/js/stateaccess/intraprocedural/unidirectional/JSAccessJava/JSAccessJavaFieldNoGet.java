@@ -1,7 +1,5 @@
-package org.opalj.fpcf.fixtures.xl.js.stateaccess.intraprocedural.unidirectional.JavaAccessJS;
+package org.opalj.fpcf.fixtures.xl.js.stateaccess.intraprocedural.unidirectional.JSAccessJava;
 
-import org.opalj.fpcf.properties.pts.JavaMethodContextAllocSite;
-import org.opalj.fpcf.properties.pts.PointsToSet;
 import org.opalj.fpcf.properties.xl.TAJSEnvironment;
 import org.opalj.fpcf.properties.xl.TAJSEnvironmentBinding;
 
@@ -13,7 +11,7 @@ import javax.script.ScriptException;
  * set modify JS "state" using ScriptEngine.put (without get)
  * annotation checks TAJS environment
  */
-public class JavaAcccessJSObject {
+public class JSAccessJavaFieldNoGet {
     @TAJSEnvironment(
             bindings = {
                     @TAJSEnvironmentBinding(identifier = "instance",
@@ -21,7 +19,7 @@ public class JavaAcccessJSObject {
             }
     )
     public static void main(String args[]) throws ScriptException, NoSuchMethodException {
-        JavaAcccessJSObject instance = new JavaAcccessJSObject();
+        JSAccessJavaFieldNoGet instance = new JSAccessJavaFieldNoGet();
         ScriptEngineManager sem = new ScriptEngineManager();
         ScriptEngine se = sem.getEngineByName("JavaScript");
         se.put("instance", instance);
