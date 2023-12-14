@@ -1,7 +1,7 @@
 package org.opalj.fpcf.fixtures.xl.js.stateaccess.interprocedural.unidirectional.JavaAccessJS;
 
-import org.opalj.fpcf.properties.xl.TAJSEnvironment;
-import org.opalj.fpcf.properties.xl.TAJSEnvironmentBinding;
+import org.opalj.fpcf.properties.xl.JSEnvironment;
+import org.opalj.fpcf.properties.xl.JSEnvironmentBinding;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
@@ -12,9 +12,9 @@ import javax.script.ScriptException;
  * annotation checks TAJS environment
  */
 public class JSAccessJavaFieldNoGet {
-    @TAJSEnvironment(
+    @JSEnvironment(
             bindings = {
-                    @TAJSEnvironmentBinding(identifier = "instance",
+                    @JSEnvironmentBinding(identifier = "instance",
                     value = "JavaObject[org.opalj.fpcf.fixtures.xl.js.stateaccess.interprocedural.unidirectional.JavaAccessJS.JSAccessJavaFieldNoGet]node: -1<no value>")
             }
     )

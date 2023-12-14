@@ -1,18 +1,16 @@
 package org.opalj.fpcf.fixtures.xl.js.controlflow.intraprocedural.unidirectional;
 
-import org.opalj.fpcf.properties.pts.JavaScriptContextAllocSite;
-import org.opalj.fpcf.properties.pts.PointsToSet;
-import org.opalj.fpcf.properties.xl.TAJSEnvironment;
-import org.opalj.fpcf.properties.xl.TAJSEnvironmentBinding;
+import org.opalj.fpcf.properties.xl.JSEnvironment;
+import org.opalj.fpcf.properties.xl.JSEnvironmentBinding;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
 public class JavaScriptAllocationNoPutNoGet {
-    @TAJSEnvironment(
+    @JSEnvironment(
             bindings = {
-                    @TAJSEnvironmentBinding(identifier = "y",
+                    @JSEnvironmentBinding(identifier = "y",
                             value = "Undef|\"test\"")
             }
     )
