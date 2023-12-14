@@ -1,4 +1,4 @@
-package org.opalj.fpcf.fixtures.xl.js.stateaccess.intraprocedural.unidirectional.JSAccessJava;
+package org.opalj.fpcf.fixtures.xl.js.stateaccess.interprocedural.unidirectional.JavaAccessJS;
 
 import org.opalj.fpcf.properties.xl.TAJSEnvironment;
 import org.opalj.fpcf.properties.xl.TAJSEnvironmentBinding;
@@ -15,15 +15,20 @@ public class JSAccessJavaFieldNoGet {
     @TAJSEnvironment(
             bindings = {
                     @TAJSEnvironmentBinding(identifier = "instance",
-                    value = "JavaObject[org.opalj.fpcf.fixtures.xl.js.stateaccess.intraprocedural.unidirectional.JavaAccessJS.JavaAcccessJSObject]node: -1<no value>")
+                    value = "JavaObject[org.opalj.fpcf.fixtures.xl.js.stateaccess.interprocedural.unidirectional.JavaAccessJS.JSAccessJavaFieldNoGet]node: -1<no value>")
             }
     )
     public static void main(String args[]) throws ScriptException, NoSuchMethodException {
-        JSAccessJavaFieldNoGet instance = new JSAccessJavaFieldNoGet();
         ScriptEngineManager sem = new ScriptEngineManager();
         ScriptEngine se = sem.getEngineByName("JavaScript");
-        se.put("instance", instance);
+        putinstance(se);
         se.eval("var n = {'a':'b'}; var x = instance;");
     }
+
+    private static void putinstance(ScriptEngine se) {
+        JSAccessJavaFieldNoGet instance = new JSAccessJavaFieldNoGet();
+        se.put("instance", instance);
+    }
+
 
 }

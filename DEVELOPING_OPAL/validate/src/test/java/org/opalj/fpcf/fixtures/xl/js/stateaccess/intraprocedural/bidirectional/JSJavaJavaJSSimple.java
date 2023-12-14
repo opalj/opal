@@ -1,6 +1,7 @@
 package org.opalj.fpcf.fixtures.xl.js.stateaccess.intraprocedural.bidirectional;
 
 import org.opalj.fpcf.properties.pts.JavaMethodContextAllocSite;
+import org.opalj.fpcf.properties.pts.JavaScriptContextAllocSite;
 import org.opalj.fpcf.properties.pts.PointsToSet;
 
 import javax.script.ScriptEngine;

@@ -1,4 +1,4 @@
-package org.opalj.fpcf.fixtures.xl.js.stateaccess.intraprocedural.unidirectional.JSAccessJava;
+package org.opalj.fpcf.fixtures.xl.js.stateaccess.intraprocedural.bidirectional;
 
 import org.opalj.fpcf.properties.pts.JavaMethodContextAllocSite;
 import org.opalj.fpcf.properties.pts.PointsToSet;
@@ -9,18 +9,17 @@ import javax.script.ScriptException;
 
 /**
  * javascript code modifies a Java instance field.
- *
+ * <p>
  * https://github.com/jindw/lite/blob/d4b0c7ef54c2469bc10bf63dc892e11e4fd1f7a1/src/main/java/org/xidea/lite/LiteCompiler.java#L45
- *
  */
 public class JavaAllocationWriteFieldFromJS {
-    @PointsToSet(variableDefinition = 36,
+    @PointsToSet(variableDefinition = 35,
             expectedJavaAllocSites = {
                     @JavaMethodContextAllocSite(
                             cf = JavaAllocationWriteFieldFromJS.class,
                             methodName = "main",
                             methodDescriptor = "(java.lang.String[]): void",
-                            allocSiteLinenumber = 33,
+                            allocSiteLinenumber = 32,
                             allocatedType = "java.lang.Object")
 
             }
@@ -37,5 +36,6 @@ public class JavaAllocationWriteFieldFromJS {
         System.out.println(instancefield);
 
     }
+
     public Object myfield;
 }
