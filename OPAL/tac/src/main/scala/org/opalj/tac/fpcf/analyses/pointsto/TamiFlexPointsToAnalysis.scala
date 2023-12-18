@@ -30,12 +30,9 @@ import org.opalj.br.ReferenceType
 import org.opalj.br.VoidType
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
 import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
-import org.opalj.tac.cg.TypeIteratorKey
-import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.properties.TheTACAI
 
 /**
@@ -190,13 +187,8 @@ trait TamiFlexPointsToAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler 
     val propertyKind: PropertyMetaInformation
     val createAnalysis: SomeProject => TamiFlexPointsToAnalysis
 
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(
-        DeclaredMethodsKey,
-        VirtualFormalParametersKey,
-        DefinitionSitesKey,
-        TamiFlexKey,
-        TypeIteratorKey
-    )
+    override def requiredProjectInformation: ProjectInformationKeys =
+        AbstractPointsToBasedAnalysis.requiredProjectInformation :++ Seq(DeclaredMethodsKey, TamiFlexKey)
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(Callers, propertyKind)
 

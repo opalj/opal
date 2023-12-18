@@ -38,8 +38,6 @@ import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.fpcf.analyses.SimpleContextProvider
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.cg.NoCallers
-import org.opalj.tac.cg.TypeIteratorKey
-import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.analyses.cg.TypeConsumerAnalysis
 
 /**
@@ -313,7 +311,7 @@ trait ConfiguredMethodsPointsToAnalysisScheduler extends FPCFTriggeredAnalysisSc
     override type InitializationData = Null
 
     override def requiredProjectInformation: ProjectInformationKeys =
-        Seq(DeclaredMethodsKey, VirtualFormalParametersKey, DefinitionSitesKey, TypeIteratorKey)
+        AbstractPointsToBasedAnalysis.requiredProjectInformation :+ DeclaredMethodsKey
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
         Callers,

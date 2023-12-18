@@ -21,14 +21,11 @@ import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.BooleanType
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
-import org.opalj.tac.cg.TypeIteratorKey
-import org.opalj.tac.common.DefinitionSitesKey
 
 /**
  * Introduces additional allocation sites for reflection methods.
@@ -238,7 +235,7 @@ class ReflectionMethodAllocationsAnalysis(
 
 object ReflectionAllocationsAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
     override def requiredProjectInformation: ProjectInformationKeys =
-        Seq(DeclaredMethodsKey, VirtualFormalParametersKey, DefinitionSitesKey, TypeIteratorKey)
+        AbstractPointsToBasedAnalysis.requiredProjectInformation :+ DeclaredMethodsKey
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(Callers, AllocationSitePointsToSet)
 

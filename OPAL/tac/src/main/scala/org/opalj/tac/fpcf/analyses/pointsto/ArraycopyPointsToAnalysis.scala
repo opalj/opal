@@ -22,14 +22,11 @@ import org.opalj.br.ObjectType
 import org.opalj.br.VoidType
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
 import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
-import org.opalj.tac.cg.TypeIteratorKey
-import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.properties.TheTACAI
 
 import scala.collection.immutable.ArraySeq
@@ -97,7 +94,7 @@ trait ArraycopyPointsToAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler
     override type InitializationData = Null
 
     override def requiredProjectInformation: ProjectInformationKeys =
-        Seq(DeclaredMethodsKey, VirtualFormalParametersKey, DefinitionSitesKey, TypeIteratorKey)
+        AbstractPointsToBasedAnalysis.requiredProjectInformation :+ DeclaredMethodsKey
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(Callers, propertyKind)
 
