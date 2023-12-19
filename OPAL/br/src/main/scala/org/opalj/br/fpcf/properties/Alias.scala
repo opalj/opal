@@ -37,9 +37,9 @@ sealed trait AliasPropertyMetaInformation extends PropertyMetaInformation {
  */
 sealed trait Alias extends AliasPropertyMetaInformation with Property {
 
-  /**
-   * A globally unique key used to access alias properties
-   */
+    /**
+     * A globally unique key used to access alias properties
+     */
     final def key: PropertyKey[Alias] = Alias.key
 }
 
@@ -54,11 +54,11 @@ object Alias extends AliasPropertyMetaInformation {
      * The key used to access alias properties. It's name is "opalj.Alias" and the fallback value is [[MayAlias]].
      */
     final val key: PropertyKey[Alias] = {
-          PropertyKey.create(
-              PropertyKeyName,
-              MayAlias
-          )
-      }
+        PropertyKey.create(
+            PropertyKeyName,
+            MayAlias
+        )
+    }
 }
 
 /**
