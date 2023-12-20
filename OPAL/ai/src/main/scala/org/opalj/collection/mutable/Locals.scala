@@ -4,6 +4,7 @@ package collection
 package mutable
 
 import scala.reflect.ClassTag
+
 import scala.collection.immutable.Vector
 import scala.collection.mutable
 
@@ -496,7 +497,7 @@ private[mutable] final class Locals2[T >: Null <: AnyRef](
             case 0 => v0 = value
             case 1 => v1 = value
             case _ =>
-                throw new IndexOutOfBoundsException("invalid index("+index+")")
+                throw new IndexOutOfBoundsException("invalid index(" + index + ")")
         }
     }
 
@@ -510,7 +511,7 @@ private[mutable] final class Locals2[T >: Null <: AnyRef](
             case 0 => new Locals2(newValue, v1)
             case 1 => new Locals2(v0, newValue)
             case _ =>
-                throw new IndexOutOfBoundsException("invalid index("+index+")")
+                throw new IndexOutOfBoundsException("invalid index(" + index + ")")
         }
     }
 
@@ -601,7 +602,7 @@ private[mutable] final class Locals3[T >: Null <: AnyRef](
             case 1 => v1
             case 2 => v2
             case _ =>
-                throw new IndexOutOfBoundsException("invalid index("+index+")")
+                throw new IndexOutOfBoundsException("invalid index(" + index + ")")
         }
     }
 
@@ -616,7 +617,7 @@ private[mutable] final class Locals3[T >: Null <: AnyRef](
             case 0 => v0 = value
             case 1 => v1 = value
             case 2 => v2 = value
-            case _ => throw new IndexOutOfBoundsException("invalid index("+index+")")
+            case _ => throw new IndexOutOfBoundsException("invalid index(" + index + ")")
         }
     }
 
@@ -631,7 +632,7 @@ private[mutable] final class Locals3[T >: Null <: AnyRef](
             case 0 => new Locals3(newValue, v1, v2)
             case 1 => new Locals3(v0, newValue, v2)
             case 2 => new Locals3(v0, v1, newValue)
-            case _ => throw new IndexOutOfBoundsException("invalid index("+index+")")
+            case _ => throw new IndexOutOfBoundsException("invalid index(" + index + ")")
         }
     }
 
@@ -639,14 +640,14 @@ private[mutable] final class Locals3[T >: Null <: AnyRef](
         (index: @scala.annotation.switch) match {
             case 0 => new Locals3(value1, value2, v2)
             case 1 => new Locals3(v0, value1, value2)
-            case _ => throw new IndexOutOfBoundsException("invalid index("+index+")")
+            case _ => throw new IndexOutOfBoundsException("invalid index(" + index + ")")
         }
     }
 
     override def updated(index: Int, value1: T, value2: T, value3: T): Locals3[T] = {
         (index: @scala.annotation.switch) match {
             case 0 => new Locals3(value1, value2, value3)
-            case _ => throw new IndexOutOfBoundsException("invalid index("+index+")")
+            case _ => throw new IndexOutOfBoundsException("invalid index(" + index + ")")
         }
     }
 
@@ -756,7 +757,7 @@ private[mutable] final class Locals4[T >: Null <: AnyRef](
             case 2 => v2
             case 3 => v3
             case _ =>
-                throw new IndexOutOfBoundsException("invalid index("+index+")")
+                throw new IndexOutOfBoundsException("invalid index(" + index + ")")
         }
     }
 
@@ -774,7 +775,7 @@ private[mutable] final class Locals4[T >: Null <: AnyRef](
             case 2 => v2 = value
             case 3 => v3 = value
             case _ =>
-                throw new IndexOutOfBoundsException("invalid index("+index+")")
+                throw new IndexOutOfBoundsException("invalid index(" + index + ")")
         }
     }
 
@@ -791,7 +792,7 @@ private[mutable] final class Locals4[T >: Null <: AnyRef](
             case 1 => new Locals4(v0, newValue, v2, v3)
             case 2 => new Locals4(v0, v1, newValue, v3)
             case 3 => new Locals4(v0, v1, v2, newValue)
-            case _ => throw new IndexOutOfBoundsException("invalid index("+index+")")
+            case _ => throw new IndexOutOfBoundsException("invalid index(" + index + ")")
         }
     }
 
@@ -800,7 +801,7 @@ private[mutable] final class Locals4[T >: Null <: AnyRef](
             case 0 => new Locals4(value1, value2, v2, v3)
             case 1 => new Locals4(v0, value1, value2, v3)
             case 2 => new Locals4(v0, v1, value1, value2)
-            case _ => throw new IndexOutOfBoundsException("invalid index("+index+")")
+            case _ => throw new IndexOutOfBoundsException("invalid index(" + index + ")")
         }
     }
 
@@ -808,7 +809,7 @@ private[mutable] final class Locals4[T >: Null <: AnyRef](
         (index: @scala.annotation.switch) match {
             case 0 => new Locals4(value1, value2, value3, v3)
             case 1 => new Locals4(v0, value1, value2, value3)
-            case _ => throw new IndexOutOfBoundsException("invalid index("+index+")")
+            case _ => throw new IndexOutOfBoundsException("invalid index(" + index + ")")
         }
     }
 
@@ -956,7 +957,7 @@ private[mutable] final class Locals5[T >: Null <: AnyRef](
             case 0 => new Locals5(new Locals2(value1, value2), vs2.updated(0, value3))
             case 1 => new Locals5(vs1.updated(1, value1), vs2.updated(0, value2, value3))
             case 2 => new Locals5(vs1, new Locals3(value1, value2, value3))
-            case _ => throw new IndexOutOfBoundsException("invalid index("+index+")")
+            case _ => throw new IndexOutOfBoundsException("invalid index(" + index + ")")
         }
     }
 
@@ -1073,7 +1074,7 @@ private[mutable] final class Locals6[T >: Null <: AnyRef](
             case 1 => new Locals6(vs1.updated(1, value1, value2), vs2.updated(0, value3))
             case 2 => new Locals6(vs1.updated(2, value1), vs2.updated(0, value2, value3))
             case 3 => new Locals6(vs1, new Locals3(value1, value2, value3))
-            case _ => throw new IndexOutOfBoundsException("invalid index("+index+")")
+            case _ => throw new IndexOutOfBoundsException("invalid index(" + index + ")")
         }
     }
 
@@ -1187,7 +1188,7 @@ private[mutable] final class Locals7[T >: Null <: AnyRef](
             case 1     => new Locals7(vs1.updated(1, value1, value2), vs2.updated(0, value3))
             case 2     => new Locals7(vs1.updated(2, value1), vs2.updated(0, value2, value3))
             case 3 | 4 => new Locals7(vs1, vs2.updated(index - 3, value1, value2, value3))
-            case _     => throw new IndexOutOfBoundsException("invalid index("+index+")")
+            case _     => throw new IndexOutOfBoundsException("invalid index(" + index + ")")
         }
     }
 
@@ -1271,7 +1272,7 @@ private[mutable] final class Locals8[T >: Null <: AnyRef](
             case 2 | 3 | 4 => vs2(index - 2)
             case 5 | 6 | 7 => vs3(index - 5)
             case _ =>
-                throw new IndexOutOfBoundsException("invalid index("+index+")")
+                throw new IndexOutOfBoundsException("invalid index(" + index + ")")
         }
     }
 
@@ -1286,7 +1287,7 @@ private[mutable] final class Locals8[T >: Null <: AnyRef](
             case 2 | 3 | 4 => vs2.set(index - 2, newValue)
             case 5 | 6 | 7 => vs3.set(index - 5, newValue)
             case _ =>
-                throw new IndexOutOfBoundsException("invalid index("+index+")")
+                throw new IndexOutOfBoundsException("invalid index(" + index + ")")
         }
     }
 
@@ -1302,7 +1303,7 @@ private[mutable] final class Locals8[T >: Null <: AnyRef](
             case 2 | 3 | 4 => new Locals8(vs1, vs2.updated(index - 2, newValue), vs3)
             case 5 | 6 | 7 => new Locals8(vs1, vs2, vs3.updated(index - 5, newValue))
             case _ =>
-                throw new IndexOutOfBoundsException("invalid index("+index+")")
+                throw new IndexOutOfBoundsException("invalid index(" + index + ")")
         }
     }
 
@@ -1325,7 +1326,7 @@ private[mutable] final class Locals8[T >: Null <: AnyRef](
             case 3 => new Locals8(vs1, vs2.updated(1, value1, value2), vs3.updated(0, value3))
             case 4 => new Locals8(vs1, vs2.updated(2, value1), vs3.updated(0, value2, value3))
             case 5 => new Locals8(vs1, vs2, new Locals3(value1, value2, value3))
-            case _ => throw new IndexOutOfBoundsException("invalid index("+index+")")
+            case _ => throw new IndexOutOfBoundsException("invalid index(" + index + ")")
         }
     }
 
@@ -1430,7 +1431,7 @@ private[mutable] final class Locals9[T >: Null <: AnyRef](
             case 3 | 4 | 5 => vs2(index - 3)
             case 6 | 7 | 8 => vs3(index - 6)
             case _ =>
-                throw new IndexOutOfBoundsException("invalid index("+index+")")
+                throw new IndexOutOfBoundsException("invalid index(" + index + ")")
         }
     }
 
@@ -1445,7 +1446,7 @@ private[mutable] final class Locals9[T >: Null <: AnyRef](
             case 3 | 4 | 5 => vs2.set(index - 3, newValue)
             case 6 | 7 | 8 => vs3.set(index - 6, newValue)
             case _ =>
-                throw new IndexOutOfBoundsException("invalid index("+index+")")
+                throw new IndexOutOfBoundsException("invalid index(" + index + ")")
         }
     }
 
@@ -1461,7 +1462,7 @@ private[mutable] final class Locals9[T >: Null <: AnyRef](
             case 3 | 4 | 5 => new Locals9(vs1, vs2.updated(index - 3, newValue), vs3)
             case 6 | 7 | 8 => new Locals9(vs1, vs2, vs3.updated(index - 6, newValue))
             case _ =>
-                throw new IndexOutOfBoundsException("invalid index("+index+")")
+                throw new IndexOutOfBoundsException("invalid index(" + index + ")")
         }
     }
 
@@ -1485,7 +1486,7 @@ private[mutable] final class Locals9[T >: Null <: AnyRef](
             case 4 => new Locals9(vs1, vs2.updated(1, value1, value2), vs3.updated(0, value3))
             case 5 => new Locals9(vs1, vs2.updated(2, value1), vs3.updated(0, value2, value3))
             case 6 => new Locals9(vs1, vs2, new Locals3(value1, value2, value3))
-            case _ => throw new IndexOutOfBoundsException("invalid index("+index+")")
+            case _ => throw new IndexOutOfBoundsException("invalid index(" + index + ")")
         }
     }
 
@@ -1590,7 +1591,7 @@ private[mutable] final class Locals10[T >: Null <: AnyRef](
             case 4 | 5 | 6     => vs2(index - 4)
             case 7 | 8 | 9     => vs3(index - 7)
             case _ =>
-                throw new IndexOutOfBoundsException("invalid index("+index+")")
+                throw new IndexOutOfBoundsException("invalid index(" + index + ")")
         }
     }
 
@@ -1605,7 +1606,7 @@ private[mutable] final class Locals10[T >: Null <: AnyRef](
             case 4 | 5 | 6     => vs2.set(index - 4, newValue)
             case 7 | 8 | 9     => vs3.set(index - 7, newValue)
             case _ =>
-                throw new IndexOutOfBoundsException("invalid index("+index+")")
+                throw new IndexOutOfBoundsException("invalid index(" + index + ")")
         }
     }
 
@@ -1621,7 +1622,7 @@ private[mutable] final class Locals10[T >: Null <: AnyRef](
             case 4 | 5 | 6     => new Locals10(vs1, vs2.updated(index - 4, newValue), vs3)
             case 7 | 8 | 9     => new Locals10(vs1, vs2, vs3.updated(index - 7, newValue))
             case _ =>
-                throw new IndexOutOfBoundsException("invalid index("+index+")")
+                throw new IndexOutOfBoundsException("invalid index(" + index + ")")
         }
     }
 
@@ -1646,7 +1647,7 @@ private[mutable] final class Locals10[T >: Null <: AnyRef](
             case 5 => new Locals10(vs1, vs2.updated(1, value1, value2), vs3.updated(0, value3))
             case 6 => new Locals10(vs1, vs2.updated(2, value1), vs3.updated(0, value2, value3))
             case 7 => new Locals10(vs1, vs2, new Locals3(value1, value2, value3))
-            case _ => throw new IndexOutOfBoundsException("invalid index("+index+")")
+            case _ => throw new IndexOutOfBoundsException("invalid index(" + index + ")")
         }
     }
 
@@ -1748,7 +1749,7 @@ private[mutable] final class Locals11[T >: Null <: AnyRef](
             case 4 | 5 | 6      => vs2(index - 4)
             case 7 | 8 | 9 | 10 => vs3(index - 7)
             case _ =>
-                throw new IndexOutOfBoundsException("invalid index("+index+")")
+                throw new IndexOutOfBoundsException("invalid index(" + index + ")")
         }
     }
 
@@ -1763,7 +1764,7 @@ private[mutable] final class Locals11[T >: Null <: AnyRef](
             case 4 | 5 | 6      => vs2.set(index - 4, newValue)
             case 7 | 8 | 9 | 10 => vs3.set(index - 7, newValue)
             case _ =>
-                throw new IndexOutOfBoundsException("invalid index("+index+")")
+                throw new IndexOutOfBoundsException("invalid index(" + index + ")")
         }
     }
 
@@ -1779,7 +1780,7 @@ private[mutable] final class Locals11[T >: Null <: AnyRef](
             case 4 | 5 | 6      => new Locals11(vs1, vs2.updated(index - 4, newValue), vs3)
             case 7 | 8 | 9 | 10 => new Locals11(vs1, vs2, vs3.updated(index - 7, newValue))
             case _ =>
-                throw new IndexOutOfBoundsException("invalid index("+index+")")
+                throw new IndexOutOfBoundsException("invalid index(" + index + ")")
         }
     }
 
@@ -1805,7 +1806,7 @@ private[mutable] final class Locals11[T >: Null <: AnyRef](
             case 6 => new Locals11(vs1, vs2.updated(2, value1), vs3.updated(0, value2, value3))
             case 7 => new Locals11(vs1, vs2, vs3.updated(0, value1, value2, value3))
             case 8 => new Locals11(vs1, vs2, vs3.updated(1, value1, value2, value3))
-            case _ => throw new IndexOutOfBoundsException("invalid index("+index+")")
+            case _ => throw new IndexOutOfBoundsException("invalid index(" + index + ")")
         }
     }
 

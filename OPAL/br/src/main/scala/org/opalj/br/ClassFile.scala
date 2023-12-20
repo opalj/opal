@@ -3,24 +3,26 @@ package org.opalj
 package br
 
 import scala.annotation.tailrec
-import org.opalj.log.OPALLogger
-import org.opalj.collection.immutable.UShortPair
+
+import scala.collection.immutable.ArraySeq
+
 import org.opalj.bi.ACC_ABSTRACT
 import org.opalj.bi.ACC_ANNOTATION
-import org.opalj.bi.ACC_PRIVATE
 import org.opalj.bi.ACC_ENUM
 import org.opalj.bi.ACC_FINAL
 import org.opalj.bi.ACC_INTERFACE
 import org.opalj.bi.ACC_MODULE
+import org.opalj.bi.ACC_PRIVATE
 import org.opalj.bi.ACC_PUBLIC
 import org.opalj.bi.ACC_SUPER
 import org.opalj.bi.AccessFlags
 import org.opalj.bi.AccessFlagsContexts
 import org.opalj.bi.AccessFlagsMatcher
 import org.opalj.bi.VisibilityModifier
-import org.opalj.collection.{binarySearch, insertedAt}
-
-import scala.collection.immutable.ArraySeq
+import org.opalj.collection.binarySearch
+import org.opalj.collection.immutable.UShortPair
+import org.opalj.collection.insertedAt
+import org.opalj.log.OPALLogger
 
 /**
  * Represents a single class file which either defines a class type or an interface type.
@@ -500,8 +502,8 @@ final class ClassFile private (
             if (innerTypeNameStartIndex == -1) {
                 OPALLogger.warn(
                     "processing bytecode",
-                    "the inner class "+thisType.toJava+
-                        " does not use the standard naming schema"+
+                    "the inner class " + thisType.toJava +
+                        " does not use the standard naming schema" +
                         "; the inner classes information may be incomplete"
                 )
 
@@ -510,7 +512,6 @@ final class ClassFile private (
             val outerFQN = thisFQN.substring(0, innerTypeNameStartIndex)
             classFileRepository.classFile(ObjectType(outerFQN)) match {
                 case Some(outerClass) =>
-
                     def directNestedClasses(objectTypes: Iterable[ObjectType]): Set[ObjectType] = {
                         var nestedTypes: Set[ObjectType] = Set.empty
                         objectTypes.foreach { objectType =>
@@ -520,7 +521,7 @@ final class ClassFile private (
                                 case None =>
                                     OPALLogger.warn(
                                         "class file reader",
-                                        "cannot get informaton about "+objectType.toJava+
+                                        "cannot get informaton about " + objectType.toJava +
                                             "; the inner classes information may be incomplete"
                                     )
                             }
@@ -532,8 +533,9 @@ final class ClassFile private (
                     // (indirect) outertype (they cannot be innerclasses of this class..)
                     var nestedClassesOfOuterClass = outerClass.nestedClasses(classFileRepository)
                     while (nestedClassesOfOuterClass.nonEmpty &&
-                        !nestedClassesOfOuterClass.contains(thisType) &&
-                        !nestedClassesOfOuterClass.exists(nestedClassesCandidates.contains)) {
+                           !nestedClassesOfOuterClass.contains(thisType) &&
+                           !nestedClassesOfOuterClass.exists(nestedClassesCandidates.contains)
+                    ) {
                         // We are still lacking sufficient information to make a decision
                         // which class is a nested class of which other class
                         // e.g., we might have the following situation:
@@ -890,14 +892,14 @@ final class ClassFile private (
             else
                 ""
 
-        "ClassFile(\n\t"+
+        "ClassFile(\n\t" +
             AccessFlags.toStrings(accessFlags, AccessFlagsContexts.CLASS).mkString("", " ", " ") +
-            thisType.toJava+"\n"+
-            superclassType.map("\textends "+_.toJava+"\n").getOrElse("") +
+            thisType.toJava + "\n" +
+            superclassType.map("\textends " + _.toJava + "\n").getOrElse("") +
             superIntefaces +
             annotationsToJava(runtimeVisibleAnnotations, "\t@{ ", " }\n") +
-            annotationsToJava(runtimeInvisibleAnnotations, "\t@{ ", " }\n")+
-            "\t[version="+majorVersion+"."+minorVersion+"]\n)"
+            annotationsToJava(runtimeInvisibleAnnotations, "\t@{ ", " }\n") +
+            "\t[version=" + majorVersion + "." + minorVersion + "]\n)"
 
     }
 

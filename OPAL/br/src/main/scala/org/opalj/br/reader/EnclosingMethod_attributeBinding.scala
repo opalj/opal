@@ -6,7 +6,6 @@ package reader
 import org.opalj.bi.reader.EnclosingMethod_attributeReader
 
 /**
- *
  * @author Michael Eichberg
  */
 trait EnclosingMethod_attributeBinding
@@ -37,4 +36,3 @@ trait EnclosingMethod_attributeBinding
         }
     }
 }
-

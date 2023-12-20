@@ -6,6 +6,8 @@ package analyses
 package cg
 package xta
 
+import scala.collection.mutable
+
 import org.opalj.br.ArrayType
 import org.opalj.br.Method
 import org.opalj.br.analyses.ProjectInformationKeys
@@ -25,8 +27,6 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.properties.TACAI
-
-import scala.collection.mutable
 
 /**
  * Updates InstantiatedTypes attached to a method's set for each array allocation

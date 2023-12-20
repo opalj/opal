@@ -8,6 +8,30 @@ package xta
 
 import scala.collection.mutable.ArrayBuffer
 
+import org.opalj.br.ArrayType
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.Field
+import org.opalj.br.ObjectType
+import org.opalj.br.PCAndInstruction
+import org.opalj.br.ReferenceType
+import org.opalj.br.Type
+import org.opalj.br.analyses.DeclaredFieldsKey
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.cg.ClosedPackagesKey
+import org.opalj.br.analyses.cg.InitialEntryPointsKey
+import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
+import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
+import org.opalj.br.fpcf.ContextProviderKey
+import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.analyses.ContextProvider
+import org.opalj.br.fpcf.properties.Context
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
+import org.opalj.br.fpcf.properties.cg.NoCallers
+import org.opalj.br.instructions.INVOKESPECIAL
+import org.opalj.br.instructions.NEW
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
@@ -25,30 +49,6 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.cg.ClosedPackagesKey
-import org.opalj.br.analyses.cg.InitialEntryPointsKey
-import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
-import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.analyses.ContextProvider
-import org.opalj.br.fpcf.properties.Context
-import org.opalj.br.fpcf.properties.cg.Callers
-import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
-import org.opalj.br.fpcf.properties.cg.NoCallers
-import org.opalj.br.fpcf.ContextProviderKey
-import org.opalj.br.instructions.INVOKESPECIAL
-import org.opalj.br.instructions.NEW
-import org.opalj.br.ArrayType
-import org.opalj.br.DeclaredMethod
-import org.opalj.br.Field
-import org.opalj.br.ObjectType
-import org.opalj.br.PCAndInstruction
-import org.opalj.br.ReferenceType
-import org.opalj.br.Type
-import org.opalj.br.analyses.DeclaredFieldsKey
 
 /**
  * Marks types as instantiated if their constructor is invoked. Constructors invoked by subclass
@@ -58,7 +58,6 @@ import org.opalj.br.analyses.DeclaredFieldsKey
  * This analysis is adapted from the RTA version. Instead of adding the instantiations to the type
  * set of the Project, they are added to the type set of the calling method. Which entity the type
  * is attached to depends on the call graph variant used.
- *
  *
  * TODO: Refactor this and the rta version in order to provide a common base-class.
  *
@@ -150,7 +149,7 @@ class InstantiatedTypesAnalysis private[analyses] (
         // a constructor is called from an unknown context, there could be an initialization.
         if (!callContext.hasContext) {
             partialResults += partialResult(declaredType, ExternalWorld)
-            return ;
+            return;
         }
 
         val caller = callContext.method
@@ -158,20 +157,20 @@ class InstantiatedTypesAnalysis private[analyses] (
         // indirect calls, e.g. via reflection, are to be treated as instantiations as well
         if (!isDirect) {
             partialResults += partialResult(declaredType, caller)
-            return ;
+            return;
         }
 
         // a constructor is called by a non-constructor method, there will be an initialization.
         if (caller.name != "<init>") {
             partialResults += partialResult(declaredType, caller)
-            return ;
+            return;
         }
 
         // the constructor is called from another constructor. it is only an new instantiated
         // type if it was no super call. Thus the caller must be a subtype
         if (!classHierarchy.isSubtypeOf(caller.declaringClassType, declaredType)) {
             partialResults += partialResult(declaredType, caller)
-            return ;
+            return;
         }
 
         // actually it must be the direct subtype! -- we did the first check to return early
@@ -179,7 +178,7 @@ class InstantiatedTypesAnalysis private[analyses] (
             cf.superclassType.foreach { supertype =>
                 if (supertype != declaredType) {
                     partialResults += partialResult(declaredType, caller)
-                    return ;
+                    return;
                 }
             }
         }
@@ -187,7 +186,7 @@ class InstantiatedTypesAnalysis private[analyses] (
         // if the caller is not available, we have to assume that it was no super call
         if (!caller.hasSingleDefinedMethod) {
             partialResults += partialResult(declaredType, caller)
-            return ;
+            return;
         }
 
         val callerMethod = caller.definedMethod
@@ -195,7 +194,7 @@ class InstantiatedTypesAnalysis private[analyses] (
         // if the caller has no body, we have to assume that it was no super call
         if (callerMethod.body.isEmpty) {
             partialResults += partialResult(declaredType, caller)
-            return ;
+            return;
         }
 
         val supercall = INVOKESPECIAL(
@@ -214,7 +213,7 @@ class InstantiatedTypesAnalysis private[analyses] (
         // there can be only one super call, so there must be an explicit call
         if (pcsOfSuperCalls.size > 1) {
             partialResults += partialResult(declaredType, caller)
-            return ;
+            return;
         }
 
         // there is exactly the current call as potential super call, it still might no super
@@ -444,7 +443,7 @@ class InstantiatedTypesAnalysisScheduler(
         def initializeArrayType(at: ArrayType): Unit = {
             // If this type has already been initialized, we skip it.
             if (initializedArrayTypes.contains(at)) {
-                return ;
+                return;
             }
 
             initializedArrayTypes.add(at)

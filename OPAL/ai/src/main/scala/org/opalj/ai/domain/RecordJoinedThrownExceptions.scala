@@ -41,4 +41,3 @@ trait RecordJoinedThrownExceptions extends RecordThrownExceptions {
         }
     }
 }
-

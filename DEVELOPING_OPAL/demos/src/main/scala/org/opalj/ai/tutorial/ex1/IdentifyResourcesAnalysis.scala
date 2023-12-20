@@ -6,17 +6,17 @@ package ex1
 
 import java.net.URL
 
-import scala.collection.parallel.CollectionConverters.IterableIsParallelizable
-
-import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.ProjectAnalysisApplication
-import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.SingleArgumentMethodDescriptor
 import org.opalj.br.VoidType
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.ProjectAnalysisApplication
+import org.opalj.br.instructions.INVOKESPECIAL
+import org.opalj.util.PerformanceEvaluation.time
+
+import scala.collection.parallel.CollectionConverters.IterableIsParallelizable
 
 /**
  * @author Michael Eichberg
@@ -93,17 +93,16 @@ object IdentifyResourcesAnalysis extends ProjectAnalysisApplication {
             } yield (m, pc, value)
         } { ns => println(s"Performing the abstract interpretations took ${ns.toSeconds}") }
 
-        def callSiteToString(callSite: (Method, Int /* PC*/ , String)): String = {
+        def callSiteToString(callSite: (Method, Int /* PC*/, String)): String = {
             val (m, pc, v) = callSite
             m.toJava(s"$pc: $v")
         }
 
         BasicReport(
             if (callSitesWithConstantStringParameter.isEmpty)
-                "Only found "+callSites.size+" candidates."
+                "Only found " + callSites.size + " candidates."
             else
-                callSitesWithConstantStringParameter.map(callSiteToString).
-                    mkString("Methods:\n", "\n", ".\n")
+                callSitesWithConstantStringParameter.map(callSiteToString).mkString("Methods:\n", "\n", ".\n")
         )
     }
 

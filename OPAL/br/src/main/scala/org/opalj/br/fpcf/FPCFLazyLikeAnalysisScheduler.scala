@@ -3,9 +3,9 @@ package org.opalj
 package br
 package fpcf
 
+import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
-import org.opalj.br.analyses.SomeProject
 
 /**
  * @author Michael Eichberg
@@ -47,4 +47,3 @@ trait FPCFLazyLikeAnalysisScheduler extends FPCFAnalysisScheduler {
     ): FPCFAnalysis
 
 }
-

@@ -16,4 +16,3 @@ trait SourceElementsVisitor[T] {
 
     def visit(classFile: ClassFile, field: Field): T
 }
-

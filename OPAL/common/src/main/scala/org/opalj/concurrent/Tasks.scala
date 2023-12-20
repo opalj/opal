@@ -2,12 +2,10 @@
 package org.opalj
 package concurrent
 
+import java.util.concurrent.locks.Condition
 // OLD import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantLock
-import java.util.concurrent.locks.Condition
 import scala.concurrent.ExecutionContext
-// OLD import scala.concurrent.Future
-// OLD import scala.util.Failure
 
 import org.opalj.concurrent.Locking.withLock
 
@@ -62,7 +60,7 @@ final class SequentialTasks[T](
 
     def submit(t: T): Unit = {
         if (isInterrupted())
-            return ;
+            return;
 
         tasksQueue += t
     }
@@ -137,7 +135,7 @@ final class ConcurrentTasks[T](
 
     def submit(t: T): Unit = {
         if (isInterrupted())
-            return ;
+            return;
         val runnable: Runnable = () => {
             try {
                 if (!isInterrupted()) process(self, t)

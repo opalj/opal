@@ -5,11 +5,11 @@ package fpcf
 package analyses
 package escape
 
-import net.ceedubs.ficus.Ficus._
-import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-
 import org.opalj.br.ObjectType
 import org.opalj.br.fpcf.properties.EscapeProperty
+
+import net.ceedubs.ficus.Ficus._
+import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
 /**
  * In the configuration system it is possible to define escape information for the this local in the
@@ -60,4 +60,3 @@ trait ConfigurationBasedConstructorEscapeAnalysis extends AbstractEscapeAnalysis
         }
     }
 }
-

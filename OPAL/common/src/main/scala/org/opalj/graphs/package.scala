@@ -2,11 +2,12 @@
 package org.opalj
 
 import scala.reflect.ClassTag
-import org.opalj.collection.IntIterator
-import org.opalj.collection.mutable.IntArrayStack
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
+
+import org.opalj.collection.IntIterator
+import org.opalj.collection.mutable.IntArrayStack
 
 /**
  * This package defines graph algorithms as well as factory methods to describe and compute graphs
@@ -83,10 +84,10 @@ package object graphs {
         var nodesToProcess = Set.empty[Node] ++ rootNodes
         var processedNodes = Set.empty[Node]
 
-        var s = "digraph G {\n"+
-            s"\tdir=$dir;\n"+
-            s"\tranksep=$ranksep;\n"+
-            s"\trankdir=$rankdir;\n"+
+        var s = "digraph G {\n" +
+            s"\tdir=$dir;\n" +
+            s"\tranksep=$ranksep;\n" +
+            s"\trankdir=$rankdir;\n" +
             s"\tnode [fontname=$fontname,shape=rectangle];\n"
 
         while (nodesToProcess.nonEmpty) {
@@ -101,14 +102,14 @@ package object graphs {
                     "label" -> nextNode.toHRR.get.replace("\"", "\\\"").replace("\n", "\\l")
                 )
                 s +=
-                    "\t"+nextNode.nodeId +
-                    visualProperties.map(e => "\""+e._1+"\"=\""+e._2+"\"").
+                    "\t" + nextNode.nodeId +
+                    visualProperties.map(e => "\"" + e._1 + "\"=\"" + e._2 + "\"").
                     mkString("[", ",", "];\n")
             }
 
             val f: (Node => Unit) = sn => {
                 if (nextNode.toHRR.isDefined)
-                    s += "\t"+nextNode.nodeId+" -> "+sn.nodeId+" [dir="+dir+"];\n"
+                    s += "\t" + nextNode.nodeId + " -> " + sn.nodeId + " [dir=" + dir + "];\n"
 
                 if (!(processedNodes contains sn)) {
                     nodesToProcess += sn
@@ -258,7 +259,7 @@ package object graphs {
                             // Test if we are done exploring all paths potentially related to
                             // the cSCC...
                             // ALTERNATIVE CHECK:
-                            //val cSCCandidate = path.iterator.drop(cSCCDFSNum - initialDFSNum)
+                            // val cSCCandidate = path.iterator.drop(cSCCDFSNum - initialDFSNum)
                             if (workstack.isEmpty ||
                                 path.iterator.drop(cSCCDFSNum - initialDFSNum).forall(n =>
                                     // ... for all cSCCandidates
@@ -555,50 +556,50 @@ package object graphs {
     ): List[List[Int]] = {
 
         /* TEXTBOOK DESCRIPTION
-        * (cannot handle very large, degenerated graphs due to non-tail recursion)
-        *
-        * algorithm tarjan is
-        * input: graph G = (V, E)
-        * output: set of strongly connected components (sets of vertices)
-        *
-        * index := 0
-        * S := empty array
-        * for each v in V do
-        *   if (v.index is undefined) then strongconnect(v) end if
-        * end for
-        *
-        * function strongconnect(v)
-        *   // Set the depth index for v to the smallest unused index
-        *   v.index := index
-        *   v.lowlink := index
-        *    index := index + 1
-        *    S.push(v)
-        *    v.onStack := true
-        *
-        *    // Consider successors of v
-        *   for each (v, w) in E do
-        *    if (w.index is undefined) then
-        *        // Successor w has not yet been visited; recurse on it
-        *           strongconnect(w)
-        *           v.lowlink  := min(v.lowlink, w.lowlink)
-        *       else if (w.onStack) then
-        *           // Successor w is in stack S and hence in the current SCC
-        *           v.lowlink  := min(v.lowlink, w.lowlink)
-        *       end if
-        *   end for
-        *
-        *   // If v is a root node, pop the stack and generate an SCC
-        *   if (v.lowlink = v.index) then
-        *       start a new strongly connected component
-        *       repeat
-        *           w := S.pop()
-        *           w.onStack := false
-        *           add w to current strongly connected component
-        *       while (w != v)
-        *       output the current strongly connected component
-        *   end if
-        * end function
-        */
+         * (cannot handle very large, degenerated graphs due to non-tail recursion)
+         *
+         * algorithm tarjan is
+         * input: graph G = (V, E)
+         * output: set of strongly connected components (sets of vertices)
+         *
+         * index := 0
+         * S := empty array
+         * for each v in V do
+         *   if (v.index is undefined) then strongconnect(v) end if
+         * end for
+         *
+         * function strongconnect(v)
+         *   // Set the depth index for v to the smallest unused index
+         *   v.index := index
+         *   v.lowlink := index
+         *    index := index + 1
+         *    S.push(v)
+         *    v.onStack := true
+         *
+         *    // Consider successors of v
+         *   for each (v, w) in E do
+         *    if (w.index is undefined) then
+         *        // Successor w has not yet been visited; recurse on it
+         *           strongconnect(w)
+         *           v.lowlink  := min(v.lowlink, w.lowlink)
+         *       else if (w.onStack) then
+         *           // Successor w is in stack S and hence in the current SCC
+         *           v.lowlink  := min(v.lowlink, w.lowlink)
+         *       end if
+         *   end for
+         *
+         *   // If v is a root node, pop the stack and generate an SCC
+         *   if (v.lowlink = v.index) then
+         *       start a new strongly connected component
+         *       repeat
+         *           w := S.pop()
+         *           w.onStack := false
+         *           add w to current strongly connected component
+         *       while (w != v)
+         *       output the current strongly connected component
+         *   end if
+         * end function
+         */
 
         // output data structure
         var sccs: List[List[Int]] = List.empty

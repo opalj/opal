@@ -5,15 +5,15 @@ package fpcf
 package analyses
 package escape
 
+import org.opalj.br.analyses.VirtualFormalParameter
+import org.opalj.br.fpcf.properties.Context
+import org.opalj.br.fpcf.properties.EscapeProperty
+import org.opalj.br.fpcf.properties.NoEscape
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.SomeEOptionP
-import org.opalj.br.analyses.VirtualFormalParameter
-import org.opalj.br.fpcf.properties.Context
-import org.opalj.br.fpcf.properties.EscapeProperty
-import org.opalj.br.fpcf.properties.NoEscape
 import org.opalj.tac.common.DefinitionSiteLike
 
 /**

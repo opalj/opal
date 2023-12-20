@@ -4,13 +4,13 @@ package tac
 
 import scala.collection.concurrent.TrieMap
 
-import org.opalj.br.Method
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.ProjectInformationKey
-import org.opalj.ai.domain.RecordDefUse
-import org.opalj.ai.Domain
 import org.opalj.ai.AIResult
+import org.opalj.ai.Domain
 import org.opalj.ai.common.SimpleAIKey
+import org.opalj.ai.domain.RecordDefUse
+import org.opalj.br.Method
+import org.opalj.br.analyses.ProjectInformationKey
+import org.opalj.br.analyses.SomeProject
 import org.opalj.value.ValueInformation
 
 /**

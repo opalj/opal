@@ -4,8 +4,8 @@ package ai
 package domain
 package l0
 
-import org.opalj.value.IsFloatValue
 import org.opalj.br.FloatType
+import org.opalj.value.IsFloatValue
 
 /**
  * This partial `Domain` performs all computations related to primitive float

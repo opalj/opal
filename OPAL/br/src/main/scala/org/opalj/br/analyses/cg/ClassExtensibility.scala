@@ -5,8 +5,10 @@ package analyses
 package cg
 
 import scala.collection.mutable
-import net.ceedubs.ficus.Ficus._
+
 import org.opalj.collection.mutable.ArrayMap
+
+import net.ceedubs.ficus.Ficus._
 
 /**
  * Determines whether a class or interface is '''directly extensible by a (yet unknown)

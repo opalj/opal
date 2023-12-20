@@ -3,13 +3,12 @@ package org.opalj
 package da
 
 import scala.xml.Node
+import scala.xml.NodeSeq
 import scala.xml.Text
+
 import org.opalj.bi.ConstantPoolTag
 
-import scala.xml.NodeSeq
-
 /**
- *
  * @author Michael Eichberg
  */
 case class CONSTANT_Integer_info(value: Int) extends Constant_Pool_Entry {
@@ -28,7 +27,7 @@ case class CONSTANT_Integer_info(value: Int) extends Constant_Pool_Entry {
     override def asInstructionParameter(implicit cp: Constant_Pool): NodeSeq = {
         val repr =
             if (value < 0 || value >= 10) {
-                var additionalInfo = " = 0x"+value.toHexString
+                var additionalInfo = " = 0x" + value.toHexString
                 if (value == Int.MinValue)
                     additionalInfo += " = Int.Min"
                 else if (value == Int.MaxValue)
@@ -51,7 +50,7 @@ case class CONSTANT_Integer_info(value: Int) extends Constant_Pool_Entry {
                 r += " = Int.Min"
             else if (value == Int.MaxValue)
                 r += " = Int.Max"
-            r+")"
+            r + ")"
         } else {
             value.toString
         }

@@ -3,9 +3,9 @@ package org.opalj
 package br
 package reader
 
-import org.opalj.bi.reader.MethodsReader
-
 import scala.reflect.ClassTag
+
+import org.opalj.bi.reader.MethodsReader
 
 /**
  * @author Michael Eichberg

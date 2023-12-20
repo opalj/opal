@@ -24,7 +24,7 @@ case class IINC(lvIndex: Int, constValue: Int) extends ArithmeticInstruction {
 
     final def computationalType: ComputationalType = ComputationalTypeInt
 
-    final def operator: String = "+ "+constValue
+    final def operator: String = "+ " + constValue
 
     final def isPrefixOperator: Boolean = false
 
@@ -68,7 +68,7 @@ case class IINC(lvIndex: Int, constValue: Int) extends ArithmeticInstruction {
 
     final def expressionResult: Register = Register(lvIndex)
 
-    override def toString = "IINC(lvIndex="+lvIndex+", "+constValue+")"
+    override def toString = "IINC(lvIndex=" + lvIndex + ", " + constValue + ")"
 
 }
 object IINC extends InstructionMetaInformation {

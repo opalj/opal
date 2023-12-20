@@ -10,4 +10,3 @@ package cp
  * @author  Michael Eichberg
  */
 case class ConstantPoolException(message: String) extends Exception(message)
-

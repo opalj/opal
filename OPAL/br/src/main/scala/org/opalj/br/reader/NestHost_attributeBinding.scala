@@ -31,4 +31,3 @@ trait NestHost_attributeBinding
     }
 
 }
-

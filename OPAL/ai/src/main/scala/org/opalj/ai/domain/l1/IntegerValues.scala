@@ -4,8 +4,8 @@ package ai
 package domain
 package l1
 
-import org.opalj.value.IsIntegerValue
 import org.opalj.br.CTIntType
+import org.opalj.value.IsIntegerValue
 
 /**
  * This domain enables the tracking of an integer value (a constant);

@@ -3,8 +3,8 @@ package org.opalj
 package br
 package instructions
 
-import org.opalj.br.cfg.CFGFactory
 import org.opalj.br.cfg.CFG
+import org.opalj.br.cfg.CFGFactory
 
 /**
  * Return from subroutine.
@@ -29,7 +29,7 @@ case class RET(
     final override def length: Int = 2
 
     final override def nextInstructions(
-        currentPC:             Int /*PC*/ ,
+        currentPC:             Int /*PC*/,
         regularSuccessorsOnly: Boolean
     )(
         implicit

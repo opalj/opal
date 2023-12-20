@@ -48,4 +48,3 @@ trait ASTNode[+V <: Var[V]] {
     ): ASTNode[DUVar[ValueInformation]]
 
 }
-

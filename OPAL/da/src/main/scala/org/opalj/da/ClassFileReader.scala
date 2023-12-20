@@ -2,10 +2,11 @@
 package org.opalj
 package da
 
-import org.opalj.bi.AttributeParent
+import scala.reflect.ClassTag
 
 import scala.collection.immutable.ArraySeq
-import scala.reflect.ClassTag
+
+import org.opalj.bi.AttributeParent
 
 /**
  * Factory methods to read class files and create [[ClassFile]] objects.

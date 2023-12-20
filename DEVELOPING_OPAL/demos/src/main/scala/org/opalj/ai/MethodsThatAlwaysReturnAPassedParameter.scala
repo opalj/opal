@@ -3,11 +3,12 @@ package org.opalj
 package ai
 
 import java.net.URL
-import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.ProjectAnalysisApplication
-import org.opalj.br.analyses.Project
-import org.opalj.ai.domain.RecordLastReturnedValues
+
 import org.opalj.ai.domain.Origins
+import org.opalj.ai.domain.RecordLastReturnedValues
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.ProjectAnalysisApplication
 
 import scala.collection.parallel.CollectionConverters.IterableIsParallelizable
 
@@ -58,7 +59,7 @@ object MethodsThatAlwaysReturnAPassedParameter extends ProjectAnalysisApplicatio
 
             method.toJava + (
                 if (origins.nonEmpty)
-                    "; returned values: "+origins.mkString(",")
+                    "; returned values: " + origins.mkString(",")
                 else
                     "; throws an exception"
             )

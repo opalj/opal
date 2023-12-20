@@ -58,7 +58,7 @@ case class NEW(objectType: ObjectType) extends ConstantLengthInstruction with No
 
     final override def expressionResult: Stack.type = Stack
 
-    override def toString: String = "NEW "+objectType.toJava
+    override def toString: String = "NEW " + objectType.toJava
 
     final override def toString(currentPC: Int): String = toString()
 }

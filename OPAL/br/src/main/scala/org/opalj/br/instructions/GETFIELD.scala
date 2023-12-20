@@ -53,7 +53,7 @@ case class GETFIELD(
             )
     }
 
-    override def toString = "get "+declaringClass.toJava+"."+name+" : "+fieldType.toJava
+    override def toString = "get " + declaringClass.toJava + "." + name + " : " + fieldType.toJava
 
 }
 

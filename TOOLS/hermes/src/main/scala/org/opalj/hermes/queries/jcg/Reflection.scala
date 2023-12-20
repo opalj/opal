@@ -4,14 +4,16 @@ package hermes
 package queries
 package jcg
 
+import scala.collection.immutable.ArraySeq
+
 import org.opalj.ai.domain.l1.ArrayValues
-import org.opalj.br.MethodDescriptor.JustReturnsObject
 import org.opalj.br._
+import org.opalj.br.MethodDescriptor.JustReturnsObject
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.INVOKEVIRTUAL
-import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.LoadClass
 import org.opalj.br.instructions.LoadClass_W
 import org.opalj.collection.immutable.IntTrieSet
@@ -20,8 +22,6 @@ import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 import org.opalj.tac._
 import org.opalj.value.ValueInformation
-
-import scala.collection.immutable.ArraySeq
 
 /**
  * Groups features that use the java reflection API.
@@ -99,16 +99,16 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
             method @ MethodWithBody(body) <- classFile.methods
             methodLocation = MethodLocation(classFileLocation, method)
             pcAndInstruction <- body collect ({
-                case i: LoadClass => i
-                case i: LoadClass_W => i
-                case i @ INVOKEVIRTUAL(MethodT, "invoke", Invoke) => i
-                case i @ INVOKEVIRTUAL(ClassT, "getMethod", GetMethodMD) => i
-                case i @ INVOKEVIRTUAL(ClassT, "getDeclaredMethod", GetMethodMD) => i
-                case i @ INVOKEVIRTUAL(ClassT, "newInstance", JustReturnsObject) => i
-                case i @ INVOKEVIRTUAL(ConstructorT, "newInstance", NewInstanceMD) => i
-                case i @ INVOKEVIRTUAL(ClassT, "getDeclaredField", GetFieldMD) => i
-                case i @ INVOKEVIRTUAL(ClassT, "getField", GetFieldMD) => i
-                case i @ INVOKEVIRTUAL(FieldT, "get", FieldGetMD) => i
+                case i: LoadClass                                                        => i
+                case i: LoadClass_W                                                      => i
+                case i @ INVOKEVIRTUAL(MethodT, "invoke", Invoke)                        => i
+                case i @ INVOKEVIRTUAL(ClassT, "getMethod", GetMethodMD)                 => i
+                case i @ INVOKEVIRTUAL(ClassT, "getDeclaredMethod", GetMethodMD)         => i
+                case i @ INVOKEVIRTUAL(ClassT, "newInstance", JustReturnsObject)         => i
+                case i @ INVOKEVIRTUAL(ConstructorT, "newInstance", NewInstanceMD)       => i
+                case i @ INVOKEVIRTUAL(ClassT, "getDeclaredField", GetFieldMD)           => i
+                case i @ INVOKEVIRTUAL(ClassT, "getField", GetFieldMD)                   => i
+                case i @ INVOKEVIRTUAL(FieldT, "get", FieldGetMD)                        => i
                 case i @ INVOKESTATIC(ClassT, false, "forName", ForName1MD | ForName3MD) => i
             }: PartialFunction[Instruction, Instruction])
         } {

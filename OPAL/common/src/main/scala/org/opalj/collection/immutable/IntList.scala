@@ -109,7 +109,7 @@ final case class IntListNode(
     }
 
     override def forFirstN[U](n: Int)(f: Int => U): Unit = {
-        if (n == 0) return ;
+        if (n == 0) return;
 
         var i = 0
         var list: IntList = this
@@ -145,7 +145,7 @@ final case class IntListNode(
                 thisList = thisList.tail
                 thatList = thatList.tail
             }
-            thisList eq thatList //... <=> true iff both lists are empty
+            thisList eq thatList // ... <=> true iff both lists are empty
         }
     }
 

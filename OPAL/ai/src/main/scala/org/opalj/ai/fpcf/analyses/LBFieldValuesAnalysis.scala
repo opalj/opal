@@ -5,7 +5,32 @@ package fpcf
 package analyses
 
 import scala.collection.mutable
-import org.opalj.log.OPALLogger
+
+import org.opalj.ai.domain
+import org.opalj.ai.fpcf.analyses.FieldValuesAnalysis.ignoredFields
+import org.opalj.ai.fpcf.domain.RefinedTypeLevelFieldAccessInstructions
+//import org.opalj.ai.fpcf.domain.RefinedTypeLevelInvokeInstructions
+import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
+import org.opalj.ai.fpcf.properties.FieldValue
+import org.opalj.ai.fpcf.properties.TypeBasedFieldValueInformation
+import org.opalj.ai.fpcf.properties.ValueBasedFieldValueInformation
+import org.opalj.br.ClassFile
+import org.opalj.br.Code
+import org.opalj.br.Field
+import org.opalj.br.FieldType
+import org.opalj.br.Method
+import org.opalj.br.ObjectType
+import org.opalj.br.PC
+import org.opalj.br.analyses.DeclaredFields
+import org.opalj.br.analyses.DeclaredFieldsKey
+import org.opalj.br.analyses.DeclaredMethods
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.FieldAccessInformationKey
+import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
+import org.opalj.br.fpcf.ContextProviderKey
+import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EOptionPSet
@@ -22,31 +47,7 @@ import org.opalj.fpcf.Result
 import org.opalj.fpcf.Results
 import org.opalj.fpcf.SinglePropertiesBoundType
 import org.opalj.fpcf.SomeEPS
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.ClassFile
-import org.opalj.br.Code
-import org.opalj.br.FieldType
-import org.opalj.br.Method
-import org.opalj.br.ObjectType
-import org.opalj.br.PC
-import org.opalj.br.analyses.FieldAccessInformationKey
-import org.opalj.br.Field
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.ai.domain
-import org.opalj.ai.fpcf.analyses.FieldValuesAnalysis.ignoredFields
-import org.opalj.ai.fpcf.domain.RefinedTypeLevelFieldAccessInstructions
-import org.opalj.br.analyses.DeclaredFields
-import org.opalj.br.analyses.DeclaredFieldsKey
-import org.opalj.br.analyses.DeclaredMethods
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.fpcf.ContextProviderKey
-//import org.opalj.ai.fpcf.domain.RefinedTypeLevelInvokeInstructions
-import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
-import org.opalj.ai.fpcf.properties.FieldValue
-import org.opalj.ai.fpcf.properties.TypeBasedFieldValueInformation
-import org.opalj.ai.fpcf.properties.ValueBasedFieldValueInformation
+import org.opalj.log.OPALLogger
 
 /**
  * Computes for each private field an approximation of the type of values stored in the field.
@@ -169,7 +170,7 @@ class LBFieldValuesAnalysis private[analyses] (
         with domain.l0.DefaultReferenceValuesBinding
         with domain.DefaultHandlingOfMethodResults
         with domain.IgnoreSynchronization
-        //with RefinedTypeLevelInvokeInstructions
+        // with RefinedTypeLevelInvokeInstructions
         with RefinedTypeLevelFieldAccessInstructions {
 
         final val thisClassType: ObjectType = classFile.thisType
@@ -230,7 +231,7 @@ class LBFieldValuesAnalysis private[analyses] (
             fieldType:          FieldType
         ): Unit = {
             if (declaringClassType ne thisClassType)
-                return ;
+                return;
 
             classFile.findField(name, fieldType).foreach { field =>
                 if (fieldInformation.contains(field)) {

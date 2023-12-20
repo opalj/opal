@@ -5,21 +5,21 @@ package info
 
 import java.net.URL
 
-import org.opalj.util.Nanoseconds
-import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.fpcf.PropertyKind
-import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.SomeEPS
 import org.opalj.br.Method
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.collection.TypesSet
-import org.opalj.br.fpcf.properties.{ThrownExceptions => ThrownExceptionsProperty}
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.analyses.EagerL1ThrownExceptionsAnalysis
 import org.opalj.br.fpcf.analyses.LazyVirtualMethodThrownExceptionsAnalysis
+import org.opalj.br.fpcf.properties.{ThrownExceptions => ThrownExceptionsProperty}
+import org.opalj.fpcf.PropertyKind
+import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.SomeEPS
+import org.opalj.util.Nanoseconds
+import org.opalj.util.PerformanceEvaluation.time
 
 /**
  * Prints out the information about the exceptions thrown by methods.
@@ -40,7 +40,7 @@ object ThrownExceptions extends ProjectAnalysisApplication {
     final val SuppressPerMethodReports = "-suppressPerMethodReports"
 
     override def analysisSpecificParametersDescription: String = {
-        "[-analysisLevel=<L0|L1>  (Default: L1)]\n"+
+        "[-analysisLevel=<L0|L1>  (Default: L1)]\n" +
             "[-suppressPerMethodReports]"
     }
 
@@ -95,34 +95,34 @@ object ThrownExceptions extends ProjectAnalysisApplication {
                 val epsThrowingExceptionsByClassFile = epsThrowingExceptions groupBy (_.e.asInstanceOf[Method].classFile)
                 epsThrowingExceptionsByClassFile.map { e =>
                     val (cf, epsThrowingExceptionsPerMethod) = e
-                    cf.thisType.toJava+"{"+
+                    cf.thisType.toJava + "{" +
                         epsThrowingExceptionsPerMethod.map { (eps: SomeEPS) =>
                             val m: Method = eps.e.asInstanceOf[Method]
                             val ThrownExceptionsProperty(types) = eps.ub
-                            m.descriptor.toJava(m.name)+" throws "+types.toString
-                        }.toList.sorted.mkString("\n\t\t", "\n\t\t", "\n")+
+                            m.descriptor.toJava(m.name) + " throws " + types.toString
+                        }.toList.sorted.mkString("\n\t\t", "\n\t\t", "\n") +
                         "}"
 
                 }.mkString("\n", "\n", "\n")
             }
 
-        val psStatistics = ps.statistics.map(e => e._1+": "+e._2).mkString("Property Store Statistics:\n\t", "\n\t", "\n")
+        val psStatistics = ps.statistics.map(e => e._1 + ": " + e._2).mkString("Property Store Statistics:\n\t", "\n\t", "\n")
 
         val analysisStatistics: String =
-            "\nStatistics:\n"+
-                "#methods with a thrown exceptions property: "+
-                s"${allMethods.size} (${project.methodsCount})\n"+
-                "#methods with exceptions information more precise than _ <: Throwable: "+
-                s"${methodsThrowingExceptions.size + epsNotThrowingExceptions.size}\n"+
-                s" ... #exceptions == 0: ${epsNotThrowingExceptions.size}\n"+
-                s" ... #exceptions == 0 and private: ${privateMethodsNotThrowingExceptions.size}\n"+
-                s" ... #exceptions >  0 and private: $privateMethodsThrowingExceptionsCount\n"+
+            "\nStatistics:\n" +
+                "#methods with a thrown exceptions property: " +
+                s"${allMethods.size} (${project.methodsCount})\n" +
+                "#methods with exceptions information more precise than _ <: Throwable: " +
+                s"${methodsThrowingExceptions.size + epsNotThrowingExceptions.size}\n" +
+                s" ... #exceptions == 0: ${epsNotThrowingExceptions.size}\n" +
+                s" ... #exceptions == 0 and private: ${privateMethodsNotThrowingExceptions.size}\n" +
+                s" ... #exceptions >  0 and private: $privateMethodsThrowingExceptionsCount\n" +
                 s"execution time: ${executionTime.toSeconds}\n"
 
         BasicReport(
-            psStatistics+
-                "\nThrown Exceptions Information:\n"+
-                perMethodsReport+"\n"+
+            psStatistics +
+                "\nThrown Exceptions Information:\n" +
+                perMethodsReport + "\n" +
                 ps.toString(printProperties = false) +
                 analysisStatistics
         )

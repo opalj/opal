@@ -4,17 +4,17 @@ package tac
 
 import scala.collection.mutable.ArrayBuffer
 
-import org.opalj.collection.mutable.FixedSizeBitSet
-import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.collection.immutable.IntIntPair
-import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.br._
-import org.opalj.br.instructions._
-import org.opalj.br.cfg.CFGFactory
 import org.opalj.br.ClassHierarchy
 import org.opalj.br.analyses.AnalysisException
-import org.opalj.br.cfg.CatchNode
 import org.opalj.br.cfg.BasicBlock
+import org.opalj.br.cfg.CatchNode
+import org.opalj.br.cfg.CFGFactory
+import org.opalj.br.instructions._
+import org.opalj.bytecode.BytecodeProcessingFailedException
+import org.opalj.collection.immutable.IntIntPair
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.collection.mutable.FixedSizeBitSet
 import org.opalj.tac.JSR
 
 /**
@@ -650,7 +650,7 @@ object TACNaive {
                             case bb: BasicBlock => bb.startPC
                             case cfgNode =>
                                 // in these cases something went terribly wrong...
-                                val message = "the cfg has an unexpected shape: "+cfgNode
+                                val message = "the cfg has an unexpected shape: " + cfgNode
                                 throw new AnalysisException(message)
                         }
                         successors += successor
@@ -827,7 +827,7 @@ object TACNaive {
         }
         var tacIndex = 1
         parameterTypes foreach { parameterType =>
-            val varName = code.localVariable(0, registerIndex).map(_.name).getOrElse("p_"+tacIndex)
+            val varName = code.localVariable(0, registerIndex).map(_.name).getOrElse("p_" + tacIndex)
             val cTpe = parameterType.computationalType
             val targetVar = RegisterVar(cTpe, registerIndex)
             val sourceParam = Param(cTpe, varName)
@@ -902,17 +902,17 @@ object TACNaive {
         }
 
         /*
-          * Updates the exception handlers by adjusting the start, end and handler index (pc).
-          *
-          * This method can only be used in simple cases where the order of instructions remains
-          * the same and the start and end still map to valid exception handlers -
-          * deleting/adding instructions is supported.
-          *
-          * @param exceptionHandlers The code's exception handlers.
-          * @param newIndexes A map that contains for each previous index the new index
-          *                   that should be used.
-          * @return The new exception handler.
-          */
+         * Updates the exception handlers by adjusting the start, end and handler index (pc).
+         *
+         * This method can only be used in simple cases where the order of instructions remains
+         * the same and the start and end still map to valid exception handlers -
+         * deleting/adding instructions is supported.
+         *
+         * @param exceptionHandlers The code's exception handlers.
+         * @param newIndexes A map that contains for each previous index the new index
+         *                   that should be used.
+         * @return The new exception handler.
+         */
         def updateExceptionHandlers(
             exceptionHandlers: ExceptionHandlers,
             newIndexes:        Array[Int]

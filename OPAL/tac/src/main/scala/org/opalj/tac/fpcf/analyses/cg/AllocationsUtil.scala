@@ -5,15 +5,15 @@ package fpcf
 package analyses
 package cg
 
+import org.opalj.br.Method
+import org.opalj.br.ReferenceType
+import org.opalj.br.fpcf.properties.Context
+import org.opalj.br.fpcf.properties.NoContext
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.EPS
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.SomeEPS
-import org.opalj.br.Method
-import org.opalj.br.ReferenceType
-import org.opalj.br.fpcf.properties.Context
-import org.opalj.br.fpcf.properties.NoContext
 import org.opalj.tac.fpcf.properties.TACAI
 
 object AllocationsUtil {

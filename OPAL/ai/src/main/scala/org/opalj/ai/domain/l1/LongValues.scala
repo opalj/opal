@@ -4,8 +4,8 @@ package ai
 package domain
 package l1
 
-import org.opalj.value.IsLongValue
 import org.opalj.br.LongType
+import org.opalj.value.IsLongValue
 
 /**
  * Foundation for domains that trace specific long values.
@@ -261,4 +261,3 @@ trait LongValues extends LongValuesDomain with ConcreteLongValues {
         }
     }
 }
-

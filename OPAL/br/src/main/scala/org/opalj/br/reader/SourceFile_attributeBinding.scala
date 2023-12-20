@@ -28,4 +28,3 @@ trait SourceFile_attributeBinding
     }
 
 }
-

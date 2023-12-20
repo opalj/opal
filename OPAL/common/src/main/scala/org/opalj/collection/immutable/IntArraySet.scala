@@ -4,7 +4,6 @@ package collection
 package immutable
 
 import java.util.{Arrays => JArrays}
-
 import scala.collection.mutable.Builder
 
 /**
@@ -390,7 +389,7 @@ case class IntArraySetN private[immutable] (
 
         val isb = new IntArraySetBuilder(max)
         var l = 0
-        while (l < i) { isb += is(l) /*the values were unchanged*/ ; l += 1 }
+        while (l < i) { isb += is(l) /*the values were unchanged*/; l += 1 }
         while (i < max) {
             isb += f(is(i))
             i += 1
@@ -633,7 +632,7 @@ class IntArraySetBuilder private[immutable] (
             // the element is NOT already found
             size += 1
             val insertionPoint = -index - 1
-            if ( /*new*/ size <= is.length) { // we have enough space
+            if (/*new*/ size <= is.length) { // we have enough space
                 arraycopy(is, insertionPoint, is, insertionPoint + 1, (size - 1) - insertionPoint)
                 is(insertionPoint) = elem
             } else {
@@ -715,7 +714,7 @@ object IntArraySet {
         if (i1 == i3 || i2 == i3)
             return if (i1 < i2) new IntArraySet2(i1, i2) else new IntArraySet2(i2, i1);
 
-        //... all three values are different
+        // ... all three values are different
         var v0 = 0
         var v1 = 0
         if (i1 < i2) {

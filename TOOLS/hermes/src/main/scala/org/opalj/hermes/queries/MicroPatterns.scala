@@ -3,34 +3,34 @@ package org.opalj
 package hermes
 package queries
 
+import org.opalj.ai.BaseAI
+import org.opalj.ai.CorrelationalDomain
+import org.opalj.ai.domain
 import org.opalj.br.ClassFile
-import org.opalj.br.Method
 import org.opalj.br.Field
-import org.opalj.br.PC
-import org.opalj.br.ObjectType
+import org.opalj.br.LongType
+import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.analyses.SomeProject
+import org.opalj.br.ObjectType
+import org.opalj.br.PC
+import org.opalj.br.analyses.DeclaredFields
+import org.opalj.br.analyses.DeclaredFieldsKey
 import org.opalj.br.analyses.FieldAccessInformation
 import org.opalj.br.analyses.FieldAccessInformationKey
 import org.opalj.br.analyses.Project
-import org.opalj.br.instructions.Instruction
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.ContextProviderKey
+import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.br.instructions.ArrayLoadInstruction
 import org.opalj.br.instructions.FieldReadAccess
 import org.opalj.br.instructions.FieldWriteAccess
+import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.LoadConstantInstruction
 import org.opalj.br.instructions.MethodInvocationInstruction
 import org.opalj.br.instructions.PUTFIELD
 import org.opalj.br.instructions.PUTSTATIC
 import org.opalj.br.instructions.ReturnValueInstruction
 import org.opalj.br.instructions.VirtualMethodInvocationInstruction
-import org.opalj.ai.BaseAI
-import org.opalj.ai.CorrelationalDomain
-import org.opalj.ai.domain
-import org.opalj.br.LongType
-import org.opalj.br.analyses.DeclaredFields
-import org.opalj.br.analyses.DeclaredFieldsKey
-import org.opalj.br.fpcf.ContextProviderKey
-import org.opalj.br.fpcf.analyses.ContextProvider
 
 /**
  * Counts which kinds of micro patterns are actually available.

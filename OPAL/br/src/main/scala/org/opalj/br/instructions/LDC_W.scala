@@ -133,7 +133,7 @@ object LDC_W {
             case s: String            => LoadString_W(s)
             case mh: MethodHandle     => LoadMethodHandle_W(mh)
             case md: MethodDescriptor => LoadMethodType_W(md)
-            case _                    => throw BytecodeProcessingFailedException("unsupported value: "+constantValue)
+            case _                    => throw BytecodeProcessingFailedException("unsupported value: " + constantValue)
         }
     }
 

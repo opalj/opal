@@ -6,17 +6,16 @@ package par
 import scala.annotation.switch
 
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.LinkedBlockingQueue
-
+import java.util.concurrent.atomic.AtomicInteger
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.ListBuffer
 import scala.util.control.ControlThrowable
 
-import com.typesafe.config.Config
-
-import org.opalj.log.LogContext
 import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPKId
+import org.opalj.log.LogContext
+
+import com.typesafe.config.Config
 
 /**
  * Yet another parallel property store.
@@ -581,7 +580,7 @@ class PKECPropertyStore(
                     if (tasks.isEmpty) {
                         val active = activeTasks.get()
                         if (active == 0) {
-                            return ;
+                            return;
                         } else {
                             // try workstealing:
                             val largestQueue = queues.maxBy(_.size())

@@ -4,8 +4,8 @@ package org.opalj
 import org.opalj.ai.AIResult
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
-import org.opalj.br.ExceptionHandlers
 import org.opalj.br.ExceptionHandler
+import org.opalj.br.ExceptionHandlers
 import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.cfg.CFG
 import org.opalj.collection.immutable.IntTrieSet

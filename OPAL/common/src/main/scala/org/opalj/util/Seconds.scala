@@ -17,7 +17,7 @@ class Seconds(val timeSpan: Double) extends AnyVal with Serializable {
     def toString(withUnit: Boolean): String = {
         val time = f"$timeSpan%.4f"
         if (withUnit) {
-            time+" s"
+            time + " s"
         } else {
             time
         }

@@ -5,13 +5,13 @@ package fpcf
 package analyses
 package escape
 
-import org.opalj.collection.immutable.EmptyIntTrieSet
-import org.opalj.collection.immutable.IntRefPair
-import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.br.fpcf.properties.AtMost
 import org.opalj.br.fpcf.properties.EscapeViaHeapObject
 import org.opalj.br.fpcf.properties.EscapeViaParameter
 import org.opalj.br.fpcf.properties.NoEscape
+import org.opalj.collection.immutable.EmptyIntTrieSet
+import org.opalj.collection.immutable.IntRefPair
+import org.opalj.collection.immutable.IntTrieSet
 
 /**
  * Very simple handling for fields and arrays. This analysis can detect global escapes via

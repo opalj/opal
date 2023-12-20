@@ -9,13 +9,14 @@ import scala.Console.BLUE
 import scala.Console.RESET
 import scala.collection.Set
 import scala.collection.immutable.LongMap
+
 import org.opalj.ai.Domain
 import org.opalj.ai.InterruptableAI
 import org.opalj.ai.domain
 import org.opalj.br.ClassFile
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.util.PerformanceEvaluation.time
 
 import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParallelizable
@@ -49,7 +50,7 @@ object IfNullParameterAnalysis extends ProjectAnalysisApplication {
         "Identifies methods that are sensitive to parameters that are \"null\""
 
     override def description: String =
-        "Identifies methods that exhibit different behavior w.r.t. "+
+        "Identifies methods that exhibit different behavior w.r.t. " +
             "the number and kind of thrown exceptions if a parameter is \"null\"."
 
     override def doAnalyze(
@@ -131,12 +132,12 @@ object IfNullParameterAnalysis extends ProjectAnalysisApplication {
                 }
 
                 (
-                    classFile, //<= only used for sorting purposes
+                    classFile, // <= only used for sorting purposes
                     BLUE + method.toJava + RESET,
                     result ++ d2ThrownExceptions
                 )
             }
-        } { t => println("Analysis time "+t.toSeconds) }
+        } { t => println("Analysis time " + t.toSeconds) }
 
         val methodsWithDifferences = methodsWithDifferentExceptions.filter(_._3.nonEmpty).seq.toSeq
         BasicReport(
@@ -144,8 +145,8 @@ object IfNullParameterAnalysis extends ProjectAnalysisApplication {
                 val (cf1: ClassFile, _, _) = l
                 val (cf2: ClassFile, _, _) = r
                 cf1.thisType.toString < cf2.thisType.toString
-            }.map(e => (e._2, e._3)).mkString("\n\n")+
-                "Number of findings: "+methodsWithDifferences.size
+            }.map(e => (e._2, e._3)).mkString("\n\n") +
+                "Number of findings: " + methodsWithDifferences.size
         )
     }
 

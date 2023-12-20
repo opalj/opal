@@ -5,7 +5,6 @@ package seq
 
 import java.util.ArrayDeque
 import java.util.PriorityQueue
-
 import scala.collection.mutable
 
 trait TasksManager {
@@ -335,7 +334,7 @@ private[seq] final class ManyDependeesOfDirectDependersLastTasksManager
         val t = this.initialTasks.pollFirst()
         if (t ne null) {
             t()
-            return ;
+            return;
         }
 
         val wt = this.tasks.poll()
@@ -387,11 +386,11 @@ private[seq] final class ManyDependeesOfDirectDependersFirstTasksManager
         val t = this.initialTasks.pollFirst()
         if (t ne null) {
             t()
-            return ;
+            return;
         }
 
         val wt = this.tasks.poll()
-        //if (wt ne null) {
+        // if (wt ne null) {
         wt.task()
         //    return ;
         // }
@@ -546,7 +545,7 @@ private[seq] final class AllDependeesTasksManager(
                 computeBackwardWeight(currentDependers)
             }
         if (!manyDependeesLast) weight = -weight
-        //println("Weight: "+weight+"   -     Tasks:"+size)
+        // println("Weight: "+weight+"   -     Tasks:"+size)
         this.tasks.add(new WeightedQualifiedTask(task, weight))
     }
 

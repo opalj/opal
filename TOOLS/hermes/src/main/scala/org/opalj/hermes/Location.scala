@@ -2,12 +2,12 @@
 package org.opalj
 package hermes
 
-import org.opalj.br.Method
-import org.opalj.br.Field
 import org.opalj.br.ClassFile
-import org.opalj.br.ObjectType
+import org.opalj.br.Field
 import org.opalj.br.FieldType
+import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
+import org.opalj.br.ObjectType
 import org.opalj.br.analyses.MethodInfo
 import org.opalj.br.analyses.Project
 

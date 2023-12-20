@@ -122,13 +122,13 @@ final case class Int2ListNode(
     override def forFirstN[U](n: Int)(f: Int => U): Unit = {
         n match {
             case 0 =>
-                return ;
+                return;
             case 1 =>
                 if (h != Int.MinValue)
                     f(h)
                 else
                     f(t)
-                return ;
+                return;
             case _ =>
                 // ... n >= 2
                 var i = n - 1 // <= for the second element...
@@ -180,7 +180,7 @@ final case class Int2ListNode(
                 thisList = thisList.rest
                 thatList = thatList.rest
             }
-            thisList eq thatList //... <=> true iff both lists are empty
+            thisList eq thatList // ... <=> true iff both lists are empty
         }
     }
 

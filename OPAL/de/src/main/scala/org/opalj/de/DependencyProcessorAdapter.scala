@@ -33,4 +33,3 @@ class DependencyProcessorAdapter extends DependencyProcessor {
 }
 
 object DependencyProcessorAdapter extends DependencyProcessorAdapter
-

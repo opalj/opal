@@ -14,4 +14,3 @@ trait ClassFileElement[T] {
     def write(t: T)(implicit out: DataOutputStream, segmentInformation: (String, Int) => Unit): Unit
 
 }
-

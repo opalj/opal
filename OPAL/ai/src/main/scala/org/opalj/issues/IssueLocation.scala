@@ -3,29 +3,27 @@ package org.opalj
 package issues
 
 import java.lang.Comparable
-
+import play.api.libs.json.JsNull
+import play.api.libs.json.JsNumber
+import play.api.libs.json.JsObject
+import play.api.libs.json.Json
+import play.api.libs.json.JsString
+import play.api.libs.json.JsValue
+import scala.xml.Group
 import scala.xml.Node
 import scala.xml.Text
-import scala.xml.Group
 import scala.xml.UnprefixedAttribute
 
-import play.api.libs.json.Json
-import play.api.libs.json.JsObject
-import play.api.libs.json.JsValue
-import play.api.libs.json.JsNull
-import play.api.libs.json.JsString
-import play.api.libs.json.JsNumber
-
-import org.opalj.br.PC
 import org.opalj.br.ClassFile
-import org.opalj.br.Method
 import org.opalj.br.Code
 import org.opalj.br.Field
-import org.opalj.br.methodToXHTML
-import org.opalj.br.typeToXHTML
+import org.opalj.br.Method
+import org.opalj.br.PC
+import org.opalj.br.analyses.SomeProject
 import org.opalj.br.classAccessFlagsToString
 import org.opalj.br.classAccessFlagsToXHTML
-import org.opalj.br.analyses.SomeProject
+import org.opalj.br.methodToXHTML
+import org.opalj.br.typeToXHTML
 
 /**
  * The location of an issue.
@@ -148,7 +146,7 @@ class ClassLocation(
     }
 
     override def toAnsiColoredString: String = {
-        theProject.source(classFile.thisType).map(_.toString).getOrElse("<No Source>")+":"
+        theProject.source(classFile.thisType).map(_.toString).getOrElse("<No Source>") + ":"
     }
 
     override def locationAsIDL: JsObject = {
@@ -240,11 +238,11 @@ class InstructionLocation(
     override def toEclipseConsoleString: String = {
         val source = classFile.thisType.toJava.split('$').head
         val line = this.line.map(line => s":$line").getOrElse("")
-        "("+source+".java"+line+") "
+        "(" + source + ".java" + line + ") "
     }
 
     override def toAnsiColoredString: String = {
-        theProject.source(classFile.thisType).map(_.toString).getOrElse("<No Source>")+":"+
+        theProject.source(classFile.thisType).map(_.toString).getOrElse("<No Source>") + ":" +
             line.map(line => s"$line: ").getOrElse(" ")
     }
 

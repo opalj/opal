@@ -7,8 +7,38 @@ package purity
 
 import scala.annotation.switch
 
-import org.opalj.log.GlobalLogContext
-import org.opalj.log.OPALLogger
+import org.opalj.ai.ValueOrigin
+import org.opalj.ai.isImmediateVMException
+import org.opalj.br.ComputationalTypeReference
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.Field
+import org.opalj.br.Method
+import org.opalj.br.ObjectType
+import org.opalj.br.analyses.DeclaredMethods
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.fpcf.ContextProviderKey
+import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.analyses.ConfiguredPurity
+import org.opalj.br.fpcf.analyses.ConfiguredPurityKey
+import org.opalj.br.fpcf.analyses.ContextProvider
+import org.opalj.br.fpcf.properties.CompileTimePure
+import org.opalj.br.fpcf.properties.Context
+import org.opalj.br.fpcf.properties.ImpureByAnalysis
+import org.opalj.br.fpcf.properties.ImpureByLackOfInformation
+import org.opalj.br.fpcf.properties.Pure
+import org.opalj.br.fpcf.properties.Purity
+import org.opalj.br.fpcf.properties.SideEffectFree
+import org.opalj.br.fpcf.properties.SimpleContexts
+import org.opalj.br.fpcf.properties.SimpleContextsKey
+import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.immutability.ClassImmutability
+import org.opalj.br.fpcf.properties.immutability.EffectivelyNonAssignable
+import org.opalj.br.fpcf.properties.immutability.FieldAssignability
+import org.opalj.br.fpcf.properties.immutability.LazilyInitialized
+import org.opalj.br.fpcf.properties.immutability.NonAssignable
+import org.opalj.br.fpcf.properties.immutability.TransitivelyImmutableClass
+import org.opalj.br.fpcf.properties.immutability.TransitivelyImmutableType
+import org.opalj.br.fpcf.properties.immutability.TypeImmutability
 import org.opalj.collection.immutable.EmptyIntTrieSet
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.Entity
@@ -24,41 +54,11 @@ import org.opalj.fpcf.Property
 import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.UBPS
-import org.opalj.value.ValueInformation
-import org.opalj.br.fpcf.properties.CompileTimePure
-import org.opalj.br.fpcf.properties.ImpureByAnalysis
-import org.opalj.br.fpcf.properties.ImpureByLackOfInformation
-import org.opalj.br.fpcf.properties.Pure
-import org.opalj.br.fpcf.properties.SideEffectFree
-import org.opalj.br.ComputationalTypeReference
-import org.opalj.br.DeclaredMethod
-import org.opalj.br.Field
-import org.opalj.br.Method
-import org.opalj.br.ObjectType
-import org.opalj.br.analyses.DeclaredMethods
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.analyses.ConfiguredPurity
-import org.opalj.br.fpcf.analyses.ConfiguredPurityKey
-import org.opalj.br.fpcf.properties.Context
-import org.opalj.br.fpcf.properties.Purity
-import org.opalj.br.fpcf.properties.SimpleContexts
-import org.opalj.br.fpcf.properties.SimpleContextsKey
-import org.opalj.br.fpcf.properties.cg.Callees
-import org.opalj.ai.ValueOrigin
-import org.opalj.ai.isImmediateVMException
-import org.opalj.br.fpcf.properties.immutability.ClassImmutability
-import org.opalj.br.fpcf.properties.immutability.EffectivelyNonAssignable
-import org.opalj.br.fpcf.properties.immutability.FieldAssignability
-import org.opalj.br.fpcf.properties.immutability.LazilyInitialized
-import org.opalj.br.fpcf.properties.immutability.NonAssignable
-import org.opalj.br.fpcf.properties.immutability.TransitivelyImmutableClass
-import org.opalj.br.fpcf.properties.immutability.TransitivelyImmutableType
-import org.opalj.br.fpcf.properties.immutability.TypeImmutability
-import org.opalj.br.fpcf.ContextProviderKey
-import org.opalj.br.fpcf.analyses.ContextProvider
+import org.opalj.log.GlobalLogContext
+import org.opalj.log.OPALLogger
 import org.opalj.tac.fpcf.analyses.cg.uVarForDefSites
 import org.opalj.tac.fpcf.properties.TACAI
+import org.opalj.value.ValueInformation
 
 /**
  * Base trait for analyses that analyze the purity of methods.
@@ -404,10 +404,10 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
      */
     def checkPurityOfReturn(returnValue: Expr[V])(implicit state: StateType): Unit = {
         if (returnValue.cTpe != ComputationalTypeReference)
-            return ; // Only non-primitive return values influence purity.
+            return; // Only non-primitive return values influence purity.
 
         if (!state.ubPurity.isDeterministic)
-            return ; // If the method can't be pure, the return value is not important.
+            return; // If the method can't be pure, the return value is not important.
 
         if (!returnValue.isVar) {
             // The expression could refer to further expressions in a non-flat representation. To
@@ -415,17 +415,17 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
             // the return value is not local as the analysis is intended to be used on flat
             // representations anyway.
             isLocal(returnValue, SideEffectFree)
-            return ;
+            return;
         }
 
         val value = returnValue.asVar.value.asReferenceValue
         if (value.isNull.isYes)
-            return ; // Null is immutable
+            return; // Null is immutable
 
         if (value.upperTypeBound.exists(_.isArrayType)) {
             // Arrays are always mutable
             isLocal(returnValue, SideEffectFree)
-            return ;
+            return;
         }
 
         if (value.isPrecise) { // Precise class known, use ClassImmutability
@@ -651,8 +651,8 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
             case ex @ (_: ScalaReflectionException | _: ClassCastException) =>
                 OPALLogger.error(
                     "analysis configuration",
-                    "resolve of domain specific rater failed, change "+
-                        s"org.opalj.fpcf.${this.getClass.getName}.domainSpecificRater in "+
+                    "resolve of domain specific rater failed, change " +
+                        s"org.opalj.fpcf.${this.getClass.getName}.domainSpecificRater in " +
                         "ai/reference.conf to an existing DomainSpecificRater implementation",
                     ex
                 )(GlobalLogContext)

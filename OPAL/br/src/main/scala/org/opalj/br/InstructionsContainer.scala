@@ -14,4 +14,3 @@ trait InstructionsContainer {
     def instructionsOption: Option[Array[Instruction]]
 
 }
-

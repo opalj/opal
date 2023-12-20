@@ -24,7 +24,7 @@ case class CONSTANT_Long_info(value: Long) extends Constant_Pool_Entry {
         </span>
 
     override def asInstructionParameter(implicit cp: Constant_Pool): NodeSeq = {
-        <span class="constant_value">{ value.toString+"l" }</span>
+        <span class="constant_value">{ value.toString + "l" }</span>
     }
 
     override def toString(implicit cp: Constant_Pool): String = value.toString

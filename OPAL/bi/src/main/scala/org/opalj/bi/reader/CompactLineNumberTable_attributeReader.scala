@@ -40,7 +40,6 @@ trait CompactLineNumberTable_attributeReader extends AttributeReader {
      *   }  line_number_table[line_number_table_length];
      * }
      * </pre>
-     *
      */
     private[this] def parserFactory() = (
         cp: Constant_Pool,

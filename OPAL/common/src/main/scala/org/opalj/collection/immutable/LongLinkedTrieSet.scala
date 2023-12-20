@@ -5,8 +5,8 @@ package immutable
 
 import scala.annotation.switch
 
-import java.lang.{Long => JLong}
 import java.lang.{Integer => JInt}
+import java.lang.{Long => JLong}
 
 /**
  * An effectively immutable trie set of long values where the elements are sorted based on the
@@ -702,53 +702,53 @@ object LongLinkedTrieSetN4 {
     ): LongLinkedTrieSetN4 = {
         if (_0 eq null) {
             if (_1 eq null) {
-                //(0,0,?,?)
+                // (0,0,?,?)
                 new LongLinkedTrieSetN4_2_3(_2, _3)
             } else {
-                //(0,1,?,?)
+                // (0,1,?,?)
                 if (_2 eq null) {
-                    //(0,1,0,?)
+                    // (0,1,0,?)
                     new LongLinkedTrieSetN4_1_3(_1, _3)
                 } else {
-                    //(0,1,1,?)
+                    // (0,1,1,?)
                     if (_3 eq null) {
-                        //(0,1,1,0)
+                        // (0,1,1,0)
                         new LongLinkedTrieSetN4_1_2(_1, _2)
                     } else {
-                        //(0,1,1,1)
+                        // (0,1,1,1)
                         new LongLinkedTrieSetN4_0_1_2_3(null, _1, _2, _3)
                     }
                 }
             }
         } else {
             if (_1 eq null) {
-                //(1,0,?,?)
+                // (1,0,?,?)
                 if (_2 eq null) {
-                    //(1,0,0,?)
+                    // (1,0,0,?)
                     new LongLinkedTrieSetN4_0_3(_0, _3)
                 } else {
-                    //(1,0,1,?)
+                    // (1,0,1,?)
                     if (_3 eq null) {
-                        //(1,0,1,0)
+                        // (1,0,1,0)
                         new LongLinkedTrieSetN4_0_2(_0, _2)
                     } else {
-                        //(1,0,1,1)
+                        // (1,0,1,1)
                         new LongLinkedTrieSetN4_0_1_2_3(_0, null, _2, _3)
                     }
                 }
             } else {
-                //(1,1,?,?)
+                // (1,1,?,?)
                 if (_2 eq null) {
-                    //(1,1,0,?)
+                    // (1,1,0,?)
                     if (_3 eq null) {
-                        //(1,1,0,0)
+                        // (1,1,0,0)
                         new LongLinkedTrieSetN4_0_1(_0, _1)
                     } else {
-                        //(1,1,0,1)
+                        // (1,1,0,1)
                         new LongLinkedTrieSetN4_0_1_2_3(_0, _1, null, _3)
                     }
                 } else {
-                    //(1,1,1,?)
+                    // (1,1,1,?)
                     new LongLinkedTrieSetN4_0_1_2_3(_0, _1, _2, _3)
                 }
             }
@@ -822,7 +822,7 @@ private[immutable] abstract class LongLinkedTrieSetN4 extends LongLinkedTrieSetI
         if (_1 ne null) s += s"\n$indent 01=>${_1.toString(lP2)}"
         if (_2 ne null) s += s"\n$indent 10=>${_2.toString(lP2)}"
         if (_3 ne null) s += s"\n$indent 11=>${_3.toString(lP2)}"
-        s+")"
+        s + ")"
     }
 }
 
@@ -1220,19 +1220,19 @@ private[immutable] class LargeLongLinkedTrieSet(
                 newSize match {
                     // IMPROVE: 5, 10, 20, 40, 80.... ?
                     case 5 =>
-                        //println(this)
+                        // println(this)
                         val updatedTrie = split(newSize, newL, trieId, newTrie, 16)
-                        //println("after split: "+updatedTrie)
+                        // println("after split: "+updatedTrie)
                         updatedTrie
                     case 15 =>
-                        //println(this)
+                        // println(this)
                         val updatedTrie = split(newSize, newL, trieId, newTrie, 32)
-                        //println("after split: "+updatedTrie)
+                        // println("after split: "+updatedTrie)
                         updatedTrie
                     case 25 =>
-                        //println(this)
+                        // println(this)
                         val updatedTrie = split(newSize, newL, trieId, newTrie, 64)
-                        //println("after split: "+updatedTrie)
+                        // println("after split: "+updatedTrie)
                         updatedTrie
                     case 55 =>
                         split(newSize, newL, trieId, newTrie, 128)
@@ -1363,7 +1363,7 @@ private[immutable] class LargeLongLinkedTrieSet(
                 zipWithIndex.
                 map { e =>
                     val (trie, index) = e
-                    s"[${index.toBinaryString.reverse.padTo(bitsCount, '0').reverse}] "+(if (trie ne null) trie.toString(0) else "N/A")
+                    s"[${index.toBinaryString.reverse.padTo(bitsCount, '0').reverse}] " + (if (trie ne null) trie.toString(0) else "N/A")
                 }.
                 mkString("\n")
         s"LongLinkedTrieSet(#$size,tries=\n$triesString\n)"

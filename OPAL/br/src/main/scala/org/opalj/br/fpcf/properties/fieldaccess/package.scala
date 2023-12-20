@@ -4,9 +4,9 @@ package br
 package fpcf
 package properties
 
-import org.opalj.value.ValueInformation
-
 import scala.collection.immutable.IntMap
+
+import org.opalj.value.ValueInformation
 
 package object fieldaccess {
     // we encode field accesses (method, pc) as longs

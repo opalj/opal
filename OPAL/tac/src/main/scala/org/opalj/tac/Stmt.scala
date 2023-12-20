@@ -2,13 +2,13 @@
 package org.opalj
 package tac
 
+import scala.collection.immutable.ArraySeq
+
 import org.opalj.br._
 import org.opalj.br.analyses.ProjectLike
-import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.IntIntPair
+import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.value.ValueInformation
-
-import scala.collection.immutable.ArraySeq
 
 /**
  * Super trait of all three-address code/quadruple statements.
@@ -1172,13 +1172,13 @@ case class CaughtException[+V <: Var[V]](
         throwingStmts.iterator.map { defSite =>
             if (defSite < 0) {
                 if (ai.isImmediateVMException(defSite))
-                    "exception[VM]@"+ai.pcOfImmediateVMException(defSite)
+                    "exception[VM]@" + ai.pcOfImmediateVMException(defSite)
                 else if (ai.isMethodExternalExceptionOrigin(defSite))
-                    "exception@"+ai.pcOfMethodExternalException(defSite)
+                    "exception@" + ai.pcOfMethodExternalException(defSite)
                 else
-                    "param"+(-defSite - 1).toHexString
+                    "param" + (-defSite - 1).toHexString
             } else {
-                "lv"+defSite.toHexString
+                "lv" + defSite.toHexString
             }
         }
     }

@@ -4,17 +4,17 @@ package ai
 package domain
 package l0
 
-import org.opalj.value.IsBooleanValue
-import org.opalj.value.IsByteValue
-import org.opalj.value.IsCharValue
-import org.opalj.value.IsIntegerValue
-import org.opalj.value.IsShortValue
 import org.opalj.br.BooleanType
 import org.opalj.br.ByteType
 import org.opalj.br.CharType
 import org.opalj.br.CTIntType
 import org.opalj.br.IntegerType
 import org.opalj.br.ShortType
+import org.opalj.value.IsBooleanValue
+import org.opalj.value.IsByteValue
+import org.opalj.value.IsCharValue
+import org.opalj.value.IsIntegerValue
+import org.opalj.value.IsShortValue
 
 /**
  * Domain that performs computations related to integer values at the type level.
@@ -211,4 +211,3 @@ trait TypeLevelIntegerValues extends Domain { this: Configuration =>
     override def i2s(pc: Int, value: DomainValue): DomainValue = ShortValue(pc)
 
 }
-

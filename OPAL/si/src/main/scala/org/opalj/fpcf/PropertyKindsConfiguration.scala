@@ -25,7 +25,6 @@ package fpcf
  *         will suppress notifications about interim updates from `ReachableNodes` to
  *         `ReachableNodesCount`
  *
- *
  * @author Michael Eichberg
  */
 case class PropertyKindsConfiguration(
@@ -36,18 +35,18 @@ case class PropertyKindsConfiguration(
 ) {
 
     override def toString: String = {
-        s"PhaseConfiguration(\n\t"+
+        s"PhaseConfiguration(\n\t" +
             propertyKindsComputedInThisPhase.map(PropertyKey.name).mkString("computedInThisPhase={", ", ", "}\n\t") +
             propertyKindsComputedInLaterPhase.map(PropertyKey.name).mkString("computedInLaterPhase={", ", ", "}\n\t") +
             suppressInterimUpdates.map {
                 case (targetPK, sourcePKs) =>
-                    PropertyKey.name(targetPK)+
-                        "<-"+
+                    PropertyKey.name(targetPK) +
+                        "<-" +
                         sourcePKs.map(PropertyKey.name).mkString("{", ", ", "}")
             }.mkString("suppressInterimUpdates={", ",", "}\n\t") +
             collaborativelyComputedPropertyKindsFinalizationOrder
             .map(_.map(PropertyKey.name).mkString("[", ",", "]"))
-            .mkString("finalizationOrder=[ ", " , ", " ]\n")+
+            .mkString("finalizationOrder=[ ", " , ", " ]\n") +
             ")"
     }
 }

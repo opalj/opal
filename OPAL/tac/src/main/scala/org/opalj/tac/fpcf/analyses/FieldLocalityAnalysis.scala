@@ -5,18 +5,32 @@ package fpcf
 package analyses
 
 import java.util.concurrent.ConcurrentHashMap
-import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.FinalP
-import org.opalj.fpcf.InterimUBP
-import org.opalj.fpcf.InterimResult
-import org.opalj.fpcf.ProperPropertyComputationResult
-import org.opalj.fpcf.PropertyBounds
-import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.Result
-import org.opalj.fpcf.SomeEPS
-import org.opalj.fpcf.UBP
-import org.opalj.value.ValueInformation
+
+import org.opalj.ai.ValueOrigin
+import org.opalj.br.DeclaredField
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.DefinedMethod
+import org.opalj.br.Field
+import org.opalj.br.Method
+import org.opalj.br.ObjectType
+import org.opalj.br.analyses.DeclaredFields
+import org.opalj.br.analyses.DeclaredFieldsKey
+import org.opalj.br.analyses.DeclaredMethods
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.cg.ClosedPackagesKey
+import org.opalj.br.analyses.cg.TypeExtensibilityKey
+import org.opalj.br.cfg.BasicBlock
+import org.opalj.br.cfg.CFGNode
+import org.opalj.br.cfg.ExitNode
+import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
+import org.opalj.br.fpcf.BasicFPCFLazyAnalysisScheduler
+import org.opalj.br.fpcf.ContextProviderKey
+import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.FPCFAnalysisScheduler
+import org.opalj.br.fpcf.analyses.ContextProvider
+import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.EscapeInCallee
 import org.opalj.br.fpcf.properties.EscapeProperty
 import org.opalj.br.fpcf.properties.EscapeViaReturn
@@ -32,41 +46,28 @@ import org.opalj.br.fpcf.properties.NoFreshReturnValue
 import org.opalj.br.fpcf.properties.NoLocalField
 import org.opalj.br.fpcf.properties.PrimitiveReturnValue
 import org.opalj.br.fpcf.properties.ReturnValueFreshness
-import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
-import org.opalj.br.fpcf.BasicFPCFLazyAnalysisScheduler
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.FPCFAnalysisScheduler
-import org.opalj.br.DeclaredMethod
-import org.opalj.br.Field
-import org.opalj.br.Method
-import org.opalj.br.ObjectType
-import org.opalj.br.analyses.DeclaredMethods
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.cg.ClosedPackagesKey
-import org.opalj.br.analyses.cg.TypeExtensibilityKey
-import org.opalj.br.cfg.BasicBlock
-import org.opalj.br.cfg.CFGNode
-import org.opalj.br.cfg.ExitNode
-import org.opalj.br.fpcf.analyses.ContextProvider
-import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.Callers
-import org.opalj.br.fpcf.ContextProviderKey
-import org.opalj.ai.ValueOrigin
-import org.opalj.br.DeclaredField
-import org.opalj.br.DefinedMethod
-import org.opalj.br.analyses.DeclaredFields
-import org.opalj.br.analyses.DeclaredFieldsKey
 import org.opalj.br.fpcf.properties.fieldaccess.AccessParameter
 import org.opalj.br.fpcf.properties.fieldaccess.AccessReceiver
 import org.opalj.br.fpcf.properties.fieldaccess.FieldReadAccessInformation
 import org.opalj.br.fpcf.properties.fieldaccess.FieldWriteAccessInformation
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.FinalP
+import org.opalj.fpcf.InterimResult
+import org.opalj.fpcf.InterimUBP
+import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.PropertyBounds
+import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.Result
+import org.opalj.fpcf.SomeEPS
+import org.opalj.fpcf.UBP
 import org.opalj.tac.common.DefinitionSiteLike
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.analyses.cg.uVarForDefSites
 import org.opalj.tac.fpcf.properties.TACAI
+import org.opalj.value.ValueInformation
 
 /**
  * Determines whether the lifetime of a reference type field is the same as that of its owning
@@ -203,7 +204,7 @@ class FieldLocalityAnalysis private[analyses] (
                     declaredMethods(method),
                     tacaiAndCallers.get._2,
                     null,
-                    tacaiAndCallers.get._1,
+                    tacaiAndCallers.get._1
                 )
         }
 
@@ -458,7 +459,7 @@ class FieldLocalityAnalysis private[analyses] (
         case UBP(NoFreshReturnValue) =>
             false
 
-        //IMPROVE - we might treat values returned from a getter as fresh in some cases
+        // IMPROVE - we might treat values returned from a getter as fresh in some cases
         // e.g. if the method's receiver is the same as the analyzed field's owning instance.
         case UBP(Getter) =>
             false
@@ -613,25 +614,25 @@ class FieldLocalityAnalysis private[analyses] (
                 faiEP.ub.numDirectAccesses - seenDirectAccesses,
                 faiEP.ub.numIndirectAccesses - seenIndirectAccesses
             ) exists { wa =>
-                    val definedMethod = contextProvider.contextFromId(wa._1).method
-                    val method = definedMethod.definedMethod
-                    val pc = wa._2
-                    val receiver = wa._3
-                    state.tacFieldReadAccesses += method -> (state.tacFieldReadAccesses.getOrElse(method, Set.empty) + ((pc, receiver)))
+                val definedMethod = contextProvider.contextFromId(wa._1).method
+                val method = definedMethod.definedMethod
+                val pc = wa._2
+                val receiver = wa._3
+                state.tacFieldReadAccesses += method -> (state.tacFieldReadAccesses.getOrElse(method, Set.empty) + ((pc, receiver)))
 
-                    val tacaiAndCallers = getTACAIAndCallers(method)
-                    if (tacaiAndCallers.isDefined) {
-                        val callers = tacaiAndCallers.get._2
-                        val tacai = tacaiAndCallers.get._1
+                val tacaiAndCallers = getTACAIAndCallers(method)
+                if (tacaiAndCallers.isDefined) {
+                    val callers = tacaiAndCallers.get._2
+                    val tacai = tacaiAndCallers.get._1
 
-                        var isLocal = true
-                        callers.forNewCalleeContexts(null, definedMethod) {
-                            isLocal &&= isLocalForFieldReadAccess(_, pc, receiver, tacai)
-                        }
-                        !isLocal
-                    } else
-                        false
-                }
+                    var isLocal = true
+                    callers.forNewCalleeContexts(null, definedMethod) {
+                        isLocal &&= isLocalForFieldReadAccess(_, pc, receiver, tacai)
+                    }
+                    !isLocal
+                } else
+                    false
+            }
         } else
             false
 
@@ -656,26 +657,26 @@ class FieldLocalityAnalysis private[analyses] (
                 faiEP.ub.numDirectAccesses - seenDirectAccesses,
                 faiEP.ub.numIndirectAccesses - seenIndirectAccesses
             ) exists { wa =>
-                    val definedMethod = contextProvider.contextFromId(wa._1).method
-                    val method = definedMethod.definedMethod
-                    val pc = wa._2
-                    val parameter = wa._4
-                    state.tacFieldWriteAccesses += method ->
-                        (state.tacFieldWriteAccesses.getOrElse(method, Set.empty) + ((pc, parameter)))
+                val definedMethod = contextProvider.contextFromId(wa._1).method
+                val method = definedMethod.definedMethod
+                val pc = wa._2
+                val parameter = wa._4
+                state.tacFieldWriteAccesses += method ->
+                    (state.tacFieldWriteAccesses.getOrElse(method, Set.empty) + ((pc, parameter)))
 
-                    val tacaiAndCallers = getTACAIAndCallers(method)
-                    if (tacaiAndCallers.isDefined) {
-                        val callers = tacaiAndCallers.get._2
-                        val tacai = tacaiAndCallers.get._1
+                val tacaiAndCallers = getTACAIAndCallers(method)
+                if (tacaiAndCallers.isDefined) {
+                    val callers = tacaiAndCallers.get._2
+                    val tacai = tacaiAndCallers.get._1
 
-                        var isLocal = true
-                        callers.forNewCalleeContexts(null, definedMethod) {
-                            isLocal &&= isLocalForFieldWriteAccess(_, pc, parameter, tacai)
-                        }
-                        !isLocal
-                    } else
-                        false
-                }
+                    var isLocal = true
+                    callers.forNewCalleeContexts(null, definedMethod) {
+                        isLocal &&= isLocalForFieldWriteAccess(_, pc, parameter, tacai)
+                    }
+                    !isLocal
+                } else
+                    false
+            }
         } else
             false
 

@@ -4,8 +4,8 @@ package ai
 package domain
 package l0
 
-import org.opalj.value.IsLongValue
 import org.opalj.br.LongType
+import org.opalj.value.IsLongValue
 
 /**
  * This partial `Domain` performs all computations related to primitive long
@@ -154,4 +154,3 @@ trait TypeLevelLongValues extends LongValuesDomain {
         LongValue(pc)
 
 }
-

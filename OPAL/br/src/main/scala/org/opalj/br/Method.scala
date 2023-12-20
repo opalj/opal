@@ -3,25 +3,25 @@ package org.opalj
 package br
 
 import scala.collection.{Map => SomeMap}
+import scala.collection.immutable.ArraySeq
 import scala.math.Ordered
+
 import org.opalj.bi.ACC_ABSTRACT
-import org.opalj.bi.ACC_STRICT
-import org.opalj.bi.ACC_NATIVE
 import org.opalj.bi.ACC_BRIDGE
-import org.opalj.bi.ACC_VARARGS
-import org.opalj.bi.ACC_SYNCHRONIZED
-import org.opalj.bi.ACC_PUBLIC
+import org.opalj.bi.ACC_NATIVE
 import org.opalj.bi.ACC_PRIVATE
 import org.opalj.bi.ACC_PROTECTED
-import org.opalj.bi.AccessFlagsContexts
+import org.opalj.bi.ACC_PUBLIC
+import org.opalj.bi.ACC_STRICT
+import org.opalj.bi.ACC_SYNCHRONIZED
+import org.opalj.bi.ACC_VARARGS
 import org.opalj.bi.AccessFlags
+import org.opalj.bi.AccessFlagsContexts
 import org.opalj.bi.VisibilityModifier
 import org.opalj.br.instructions.ALOAD_0
+import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.RETURN
-import org.opalj.br.instructions.Instruction
-
-import scala.collection.immutable.ArraySeq
 
 /**
  * Represents a single method.
@@ -348,7 +348,7 @@ sealed abstract class JVMMethod
     def signatureToJava(withVisibility: Boolean = true): String = {
         val visibility =
             if (withVisibility)
-                VisibilityModifier.get(accessFlags).map(_.javaName.get+" ").getOrElse("")
+                VisibilityModifier.get(accessFlags).map(_.javaName.get + " ").getOrElse("")
             else
                 ""
         val static = if (isStatic) "static " else ""
@@ -366,7 +366,7 @@ sealed abstract class JVMMethod
         val jAccessFlags = AccessFlags.toStrings(accessFlags, METHOD).mkString(" ")
         val method =
             if (jAccessFlags.nonEmpty)
-                jAccessFlags+" "+descriptor.toJava(name)
+                jAccessFlags + " " + descriptor.toJava(name)
             else
                 descriptor.toJava(name)
 
@@ -390,7 +390,7 @@ final class MethodTemplate private[br] (
         val attributes:  Attributes
 ) extends JVMMethod {
 
-    /** This template is not (yet) a [[Method]] which is a [[SourceElement]].  */
+    /** This template is not (yet) a [[Method]] which is a [[SourceElement]]. */
     override def isMethod: Boolean = false
 
 }

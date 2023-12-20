@@ -5,26 +5,27 @@ package domain
 
 import scala.annotation.switch
 import scala.annotation.tailrec
+
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
+import scala.collection.mutable
 import scala.xml.Node
-import org.opalj.graphs.DefaultMutableNode
-import org.opalj.control.foreachNonNullValue
-import org.opalj.collection.immutable.IntArraySet
-import org.opalj.collection.immutable.IntRefPair
-import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.collection.immutable.IntTrieSet1
-import org.opalj.collection.mutable.{Locals => Registers}
-import org.opalj.bytecode.BytecodeProcessingFailedException
+
+import org.opalj.ai.util.XHTML
 import org.opalj.br.Code
 import org.opalj.br.ComputationalTypeCategory
 import org.opalj.br.ObjectType
 import org.opalj.br.PC
 import org.opalj.br.analyses.AnalysisException
 import org.opalj.br.instructions._
-import org.opalj.ai.util.XHTML
-
-import scala.collection.mutable
+import org.opalj.bytecode.BytecodeProcessingFailedException
+import org.opalj.collection.immutable.IntArraySet
+import org.opalj.collection.immutable.IntRefPair
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.collection.immutable.IntTrieSet1
+import org.opalj.collection.mutable.{Locals => Registers}
+import org.opalj.control.foreachNonNullValue
+import org.opalj.graphs.DefaultMutableNode
 
 /**
  * Collects the definition/use information based on the abstract interpretation time cfg.
@@ -136,7 +137,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode =>
     abstract override def properties(pc: Int, propertyToString: AnyRef => String): Option[String] = {
         super.properties(pc, propertyToString) match {
             case superProperty @ Some(description) =>
-                thisProperty(pc) map (_+"; "+description) orElse superProperty
+                thisProperty(pc) map (_ + "; " + description) orElse superProperty
             case None =>
                 thisProperty(pc)
         }
@@ -325,7 +326,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode =>
                     forceScheduling = true
                     // joinedDefOps.foreach{vo =>
                     //    require(vo != null, s"$newDefOps join $oldDefOps == null")
-                    //}
+                    // }
                     // assert(joinedDefOps.forall(e => e.iterator.size == e.size))
                     defOps(successorPC) = joinedDefOps
                 }
@@ -466,26 +467,27 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode =>
                             val receiver = operandsArray(currentPC)(mii.methodDescriptor.parametersCount)
                             var newDefOps = NoValueOrigins
                             if ( // we have to check that the handler is actually handling
-                            // (implicit) null pointer exceptions
-                            throwNullPointerExceptionOnMethodCall
-                                && refIsNull(currentPC, receiver).isYesOrUnknown
-                                && {
-                                    var foundDefinitiveHandler = false
-                                    code.handlersFor(currentPC) filter { eh =>
-                                        !foundDefinitiveHandler && (
-                                            (eh.catchType.isEmpty && { foundDefinitiveHandler = true; true }) || {
-                                                val isHandled = isASubtypeOf(ObjectType.NullPointerException, eh.catchType.get)
-                                                if (isHandled.isYes) {
-                                                    foundDefinitiveHandler = true
-                                                    true
-                                                } else if (isHandled.isYesOrUnknown)
-                                                    true
-                                                else
-                                                    false
-                                            }
-                                        )
-                                    }
-                                }.exists(eh => eh.handlerPC == successorPC)) {
+                                 // (implicit) null pointer exceptions
+                                 throwNullPointerExceptionOnMethodCall
+                                 && refIsNull(currentPC, receiver).isYesOrUnknown
+                                 && {
+                                     var foundDefinitiveHandler = false
+                                     code.handlersFor(currentPC) filter { eh =>
+                                         !foundDefinitiveHandler && (
+                                             (eh.catchType.isEmpty && { foundDefinitiveHandler = true; true }) || {
+                                                 val isHandled = isASubtypeOf(ObjectType.NullPointerException, eh.catchType.get)
+                                                 if (isHandled.isYes) {
+                                                     foundDefinitiveHandler = true
+                                                     true
+                                                 } else if (isHandled.isYesOrUnknown)
+                                                     true
+                                                 else
+                                                     false
+                                             }
+                                         )
+                                     }
+                                 }.exists(eh => eh.handlerPC == successorPC)
+                            ) {
                                 newDefOps += ValueOriginForImmediateVMException(currentPC)
                             }
                             // the configuration option:
@@ -1193,7 +1195,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode =>
                             e.printStackTrace(pout)
                             pout.flush()
                             val stacktrace = bout.toString("UTF-8")
-                            message += "\tStacktrace: \n\t"+stacktrace+"\n"
+                            message += "\tStacktrace: \n\t" + stacktrace + "\n"
                         } catch {
                             case t: Throwable =>
                                 message += s"<fatal error while collecting : ${t.getMessage}>"
@@ -1398,7 +1400,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode =>
             else if (vo < 0)
                 s"<parameter: ${-vo - 1}>"
             else
-                s"$vo: "+code.instructions(vo).toString(vo)
+                s"$vo: " + code.instructions(vo).toString(vo)
         }
 
         val unusedNode =

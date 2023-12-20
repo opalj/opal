@@ -8,9 +8,9 @@ import scala.reflect.ClassTag
 
 import scala.collection.immutable.SortedSet
 
+import org.opalj.br._
 import org.opalj.collection.SingletonSet
 import org.opalj.value.IsIntegerValue
-import org.opalj.br._
 
 /**
  * This domain enables the tracking of integer values using sets. The cardinality of
@@ -392,7 +392,6 @@ trait IntegerSetValues
                             Yes
                         else if (rightValues.lastKey <= left.lowerBound)
                             No
-
                         else
                             Unknown
 

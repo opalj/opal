@@ -2,18 +2,17 @@
 package org.opalj
 package issues
 
-import scala.xml.Node
-import scala.xml.Group
-
 import play.api.libs.json.Json
 import play.api.libs.json.JsValue
+import scala.xml.Group
+import scala.xml.Node
 
-import org.opalj.br.ClassFile
-import org.opalj.br.Method
-import org.opalj.br.instructions.FieldReadAccess
-import org.opalj.br.Code
 import org.opalj.ai.AIResult
+import org.opalj.br.ClassFile
+import org.opalj.br.Code
+import org.opalj.br.Method
 import org.opalj.br.PCAndAnyRef
+import org.opalj.br.instructions.FieldReadAccess
 
 /**
  * Describes an issue related to the value of a field.

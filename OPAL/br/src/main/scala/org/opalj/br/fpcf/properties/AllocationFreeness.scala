@@ -6,12 +6,6 @@ package properties
 
 import scala.annotation.switch
 
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.FallbackReason
-import org.opalj.fpcf.OrderedProperty
-import org.opalj.fpcf.PropertyKey
-import org.opalj.fpcf.PropertyMetaInformation
-import org.opalj.fpcf.PropertyStore
 import org.opalj.br.instructions.ALOAD_0
 import org.opalj.br.instructions.ANEWARRAY
 import org.opalj.br.instructions.ASTORE_0
@@ -25,6 +19,12 @@ import org.opalj.br.instructions.MULTIANEWARRAY
 import org.opalj.br.instructions.NEW
 import org.opalj.br.instructions.NEWARRAY
 import org.opalj.br.instructions.PUTFIELD
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.FallbackReason
+import org.opalj.fpcf.OrderedProperty
+import org.opalj.fpcf.PropertyKey
+import org.opalj.fpcf.PropertyMetaInformation
+import org.opalj.fpcf.PropertyStore
 
 sealed trait AllocationFreenessPropertyMetaInformation extends PropertyMetaInformation {
 

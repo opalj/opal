@@ -8,7 +8,6 @@ import scala.xml.NodeSeq
 import org.opalj.bi.ConstantPoolTag
 
 /**
- *
  * @author Michael Eichberg
  */
 case class CONSTANT_Float_info(value: Float) extends Constant_Pool_Entry {
@@ -25,7 +24,7 @@ case class CONSTANT_Float_info(value: Float) extends Constant_Pool_Entry {
         </span>
 
     override def asInstructionParameter(implicit cp: Constant_Pool): NodeSeq = {
-        <span class="constant_value">{ value.toString+"f" }</span>
+        <span class="constant_value">{ value.toString + "f" }</span>
     }
 
     override def toString(implicit cp: Constant_Pool): String = value.toString

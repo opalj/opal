@@ -5,17 +5,17 @@ package fpcf
 
 import scala.reflect.runtime.universe.runtimeMirror
 
-import com.typesafe.config.ConfigFactory
-import com.typesafe.config.ConfigObject
-import com.typesafe.config.ConfigValueFactory
-
+import org.opalj.fpcf.ComputationSpecification
+import org.opalj.fpcf.PropertyBounds
+import org.opalj.fpcf.PropertyKey
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.error
 import org.opalj.log.OPALLogger.info
-import org.opalj.fpcf.ComputationSpecification
-import org.opalj.fpcf.PropertyBounds
-import org.opalj.fpcf.PropertyKey
+
+import com.typesafe.config.ConfigFactory
+import com.typesafe.config.ConfigObject
+import com.typesafe.config.ConfigValueFactory
 
 /**
  * Registry for all factories for analyses that are implemented using the fixpoint computations
@@ -68,8 +68,8 @@ object FPCFAnalysesRegistry {
                 if (default)
                     analysisRunner.derives.foreach { p =>
                         if (propertyToDefaultScheduler.contains(p)) {
-                            val message = s"cannot register ${analysisRunner.name} "+
-                                s"as default analysis for ${PropertyKey.name(p.pk)}, "+
+                            val message = s"cannot register ${analysisRunner.name} " +
+                                s"as default analysis for ${PropertyKey.name(p.pk)}, " +
                                 s"${propertyToDefaultScheduler(p).name} was already registered"
                             error("OPAL Setup", message)
                         } else {

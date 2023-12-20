@@ -8,15 +8,15 @@ import java.net.URL
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectAnalysisApplication
+import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.properties.ExtensibleGetter
 import org.opalj.br.fpcf.properties.FreshReturnValue
 import org.opalj.br.fpcf.properties.Getter
 import org.opalj.br.fpcf.properties.NoFreshReturnValue
 import org.opalj.br.fpcf.properties.PrimitiveReturnValue
-import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.tac.cg.RTACallGraphKey
-import org.opalj.tac.fpcf.analyses.escape.EagerReturnValueFreshnessAnalysis
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
+import org.opalj.tac.fpcf.analyses.escape.EagerReturnValueFreshnessAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 
 /**
@@ -30,7 +30,7 @@ object ReturnValueFreshness extends ProjectAnalysisApplication {
     override def title: String = "\"Freshness\" of Return Values"
 
     override def description: String = {
-        "Describes whether a method returns a value that is allocated in that method or its "+
+        "Describes whether a method returns a value that is allocated in that method or its " +
             "callees and only has escape state EscapeViaReturn"
     }
 
@@ -55,7 +55,6 @@ object ReturnValueFreshness extends ProjectAnalysisApplication {
         val extGetter = ps.finalEntities(ExtensibleGetter).toSeq
 
         val message =
-
             s"""|${fresh.mkString("fresh methods:", "\t\n)}", "")}
                 |${getter.mkString("getter methods:", "\t\n)}", "")}
                 |${extGetter.mkString("external getter methods:", "\t\n)}", "")}

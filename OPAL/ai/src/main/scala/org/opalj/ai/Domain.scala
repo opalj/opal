@@ -2,25 +2,25 @@
 package org.opalj
 package ai
 
-import org.opalj.value.IsNullValue
-import org.opalj.value.IsPrimitiveValue
-import org.opalj.value.IsReferenceValue
-import org.opalj.value.IsReturnAddressValue
-import org.opalj.value.ValueInformation
 import org.opalj.br.BooleanType
 import org.opalj.br.ByteType
 import org.opalj.br.CharType
+import org.opalj.br.ConstantDouble
 import org.opalj.br.ConstantFieldValue
+import org.opalj.br.ConstantFloat
 import org.opalj.br.ConstantInteger
 import org.opalj.br.ConstantLong
-import org.opalj.br.ConstantFloat
-import org.opalj.br.ConstantDouble
 import org.opalj.br.ConstantString
 import org.opalj.br.DoubleType
 import org.opalj.br.FloatType
 import org.opalj.br.IntegerType
 import org.opalj.br.LongType
 import org.opalj.br.ShortType
+import org.opalj.value.IsNullValue
+import org.opalj.value.IsPrimitiveValue
+import org.opalj.value.IsReferenceValue
+import org.opalj.value.IsReturnAddressValue
+import org.opalj.value.ValueInformation
 
 /**
  * A domain is the fundamental abstraction mechanism in OPAL that enables the customization

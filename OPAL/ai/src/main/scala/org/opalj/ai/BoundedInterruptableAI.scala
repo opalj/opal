@@ -4,8 +4,8 @@ package ai
 
 import org.opalj.br.Code
 import org.opalj.log.LogContext
-import org.opalj.util.Nanoseconds
 import org.opalj.util.Milliseconds
+import org.opalj.util.Nanoseconds
 
 /**
  * An abstract interpreter that interrupts itself after the evaluation of

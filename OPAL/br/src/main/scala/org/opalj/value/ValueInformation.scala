@@ -4,8 +4,6 @@ package value
 
 import scala.annotation.switch
 
-import org.opalj.collection.immutable.UIDSet
-import org.opalj.collection.immutable.UIDSet1
 import org.opalj.br.ArrayType
 import org.opalj.br.BaseType
 import org.opalj.br.BooleanType
@@ -32,6 +30,8 @@ import org.opalj.br.TopVariableInfo
 import org.opalj.br.Type
 import org.opalj.br.VerificationTypeInfo
 import org.opalj.br.VoidType
+import org.opalj.collection.immutable.UIDSet
+import org.opalj.collection.immutable.UIDSet1
 
 /**
  * Encapsulates the available type information about a `DomainValue`.
@@ -522,7 +522,6 @@ trait IsReferenceValue extends KnownTypedValue {
      * it may be better to just return `Unknown` in case that this type and the
      * given type are not in a direct inheritance relationship.
      *
-     *
      * Basically, this method implements the same semantics as the `ClassHierarchy`'s
      * `isSubtypeOf` method, but it additionally checks if the type of this value
      * ''could be a subtype'' of the given supertype. I.e., if this value's type
@@ -709,8 +708,8 @@ case class AProperMObjectValue(
 ) extends IsMObjectValue {
     override def toCanonicalForm: IsMObjectValue = this
     override def toString: String = {
-        "ProperMObjectValue("+
-            s"type=${upperTypeBound.map(_.toJava).toList.sorted.mkString(" with ")},"+
+        "ProperMObjectValue(" +
+            s"type=${upperTypeBound.map(_.toJava).toList.sorted.mkString(" with ")}," +
             s"isNull=$isNull,isPrecise=$isPrecise)"
     }
 
@@ -850,8 +849,8 @@ case class ASArrayValue(
 ) extends IsSArrayValue {
     override def toCanonicalForm: IsSArrayValue = this
     override def toString: String = {
-        "SArrayValue("+
-            s"type=${theUpperTypeBound.toJava},"+
+        "SArrayValue(" +
+            s"type=${theUpperTypeBound.toJava}," +
             s"isNull=$isNull,isPrecise=$isPrecise,length=<N/A>)"
     }
 }
@@ -864,8 +863,8 @@ case class ASArrayWithLengthValue(
     override def isPrecise: Boolean = true
     override def toCanonicalForm: IsSArrayValue = this
     override def toString: String = {
-        s"SArrayValue("+
-            s"type=${theUpperTypeBound.toJava},"+
+        s"SArrayValue(" +
+            s"type=${theUpperTypeBound.toJava}," +
             s"isNull=$isNull,isPrecise=$isPrecise,length=$length)"
     }
 
@@ -1012,7 +1011,7 @@ trait IsMultipleReferenceValue extends IsReferenceValue {
         var answer: Answer = values.next().isValueASubtypeOf(supertype)
         values foreach { value => /* the first value is already removed */
             if (answer eq Unknown)
-                return answer; //isSubtype
+                return answer; // isSubtype
 
             answer = answer join value.isValueASubtypeOf(supertype)
         }
@@ -1062,9 +1061,9 @@ case class AMultipleReferenceValue(
 
     override def toCanonicalForm: IsReferenceValue = this
     override def toString: String = {
-        "MultipleReferenceValue("+
-            s"type=${upperTypeBound.map(_.toJava).toList.sorted.mkString(" with ")},"+
-            s"isNull=$isNull,isPrecise=$isPrecise,"+
+        "MultipleReferenceValue(" +
+            s"type=${upperTypeBound.map(_.toJava).toList.sorted.mkString(" with ")}," +
+            s"isNull=$isNull,isPrecise=$isPrecise," +
             s"baseValues=${baseValues.map(_.toString).mkString("{ ", ", ", " }")})"
     }
 }

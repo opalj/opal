@@ -4,11 +4,11 @@ package da
 
 import scala.xml.Node
 import scala.xml.NodeSeq
+
 import org.opalj.bi.ConstantPoolTag
 import org.opalj.bi.ConstantPoolTags
 
 /**
- *
  * @author Michael Eichberg
  */
 case class CONSTANT_MethodType_info(

@@ -3,11 +3,11 @@ package org.opalj
 package ai
 package domain
 
+import org.opalj.br.BootstrapMethod
 import org.opalj.br.FieldType
+import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
-import org.opalj.br.BootstrapMethod
-import org.opalj.br.MethodDescriptor
 
 /**
  * Can be mixed in to create a `Domain` that is intended to be used to coordinate the

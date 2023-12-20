@@ -103,7 +103,7 @@ final case class LoadString(value: String) extends PrimitiveLDC[String] {
 
     final def computationalType = ComputationalTypeReference
 
-    override def toString: String = "LoadString(\""+value+"\")"
+    override def toString: String = "LoadString(\"" + value + "\")"
 
 }
 
@@ -157,7 +157,7 @@ object LDC {
             case md: MethodDescriptor => LoadMethodType(md)
             case _ =>
                 throw BytecodeProcessingFailedException(
-                    "unsupported constant value: "+constantValue
+                    "unsupported constant value: " + constantValue
                 )
         }
     }

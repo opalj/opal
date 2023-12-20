@@ -7,11 +7,11 @@ import java.io.File
 import java.io.FileWriter
 import java.io.Writer
 
-import org.opalj.br.instructions.MethodInvocationInstruction
+import org.opalj.br.DeclaredMethod
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethods
-import org.opalj.br.DeclaredMethod
 import org.opalj.br.fpcf.properties.Context
+import org.opalj.br.instructions.MethodInvocationInstruction
 
 /**
  * Provides the functionality to serialize a [[CallGraph]] into a .json file according to the format

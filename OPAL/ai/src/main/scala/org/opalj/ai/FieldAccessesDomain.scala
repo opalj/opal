@@ -2,8 +2,8 @@
 package org.opalj
 package ai
 
-import org.opalj.br.ObjectType
 import org.opalj.br.FieldType
+import org.opalj.br.ObjectType
 
 /**
  * Interface related to the handling of field access instructions.

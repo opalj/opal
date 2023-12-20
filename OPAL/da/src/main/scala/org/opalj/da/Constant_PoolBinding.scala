@@ -34,7 +34,7 @@ trait Constant_PoolBinding extends Constant_PoolReader with Constant_PoolAbstrac
 
             override def toString(implicit cp: Constant_Pool): Nothing = {
                 throw new UnsupportedOperationException(
-                    this.getClass.toString+" does not support toString(cp)"
+                    this.getClass.toString + " does not support toString(cp)"
                 )
             }
         }

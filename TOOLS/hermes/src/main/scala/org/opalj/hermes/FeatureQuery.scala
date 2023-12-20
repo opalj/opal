@@ -3,19 +3,17 @@ package org.opalj
 package hermes
 
 import java.net.URL
-
-import scala.io.Source
 import scala.io.Codec
+import scala.io.Source
+
+import org.opalj.br.analyses.Project
+import org.opalj.io.processSource
 
 import com.github.rjeschke.txtmark.Processor
-
-import javafx.beans.property.ObjectProperty
-import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.LongProperty
+import javafx.beans.property.ObjectProperty
 import javafx.beans.property.SimpleLongProperty
-
-import org.opalj.io.processSource
-import org.opalj.br.analyses.Project
+import javafx.beans.property.SimpleObjectProperty
 
 /**
  * Extracts a feature/a set of closely related features of a given project.

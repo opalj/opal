@@ -5,6 +5,7 @@ package analyses
 package cg
 
 import scala.annotation.tailrec
+
 import scala.collection.mutable
 
 import org.opalj.collection.mutable.ArrayMap
@@ -27,8 +28,8 @@ import org.opalj.collection.mutable.ArrayMap
  */
 class TypeExtensibilityAnalysis(val project: SomeProject) extends (ObjectType => Answer) {
 
-    import project.classHierarchy
     import classHierarchy.foreachDirectSupertype
+    import project.classHierarchy
 
     @tailrec private[this] def determineExtensibility(
         typesToProcess:       mutable.Queue[ObjectType],

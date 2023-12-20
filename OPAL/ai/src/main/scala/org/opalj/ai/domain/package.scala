@@ -2,8 +2,8 @@
 package org.opalj
 package ai
 
-import org.opalj.collection.immutable.UIDSet
 import org.opalj.br.ReferenceType
+import org.opalj.collection.immutable.UIDSet
 
 /**
  * This package contains definitions of common domains that can be used for the

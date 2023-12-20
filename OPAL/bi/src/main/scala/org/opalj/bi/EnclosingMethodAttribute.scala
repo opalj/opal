@@ -7,4 +7,3 @@ object EnclosingMethodAttribute {
     final val Name = "EnclosingMethod"
 
 }
-

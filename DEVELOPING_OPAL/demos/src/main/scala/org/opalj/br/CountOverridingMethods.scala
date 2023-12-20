@@ -4,10 +4,10 @@ package br
 
 import java.net.URL
 
-import org.opalj.br.analyses.OneStepAnalysis
-import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.AnalysisApplication
 import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.OneStepAnalysis
+import org.opalj.br.analyses.Project
 
 /**
  * Counts the number of methods that override/implement an instance method.
@@ -39,7 +39,7 @@ object CountOverridingMethods extends AnalysisApplication {
                     }
 
             BasicReport(
-                "Overriding\n"+overridingMethodsInfo.mkString("\n")
+                "Overriding\n" + overridingMethodsInfo.mkString("\n")
             )
         }
     }

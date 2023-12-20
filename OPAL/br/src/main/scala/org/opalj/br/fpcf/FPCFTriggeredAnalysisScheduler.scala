@@ -3,12 +3,12 @@ package org.opalj
 package br
 package fpcf
 
+import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.ComputationType
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyKind
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.TriggeredComputation
-import org.opalj.br.analyses.SomeProject
 
 /**
  *  The underlying analysis will only be registered with the property store and

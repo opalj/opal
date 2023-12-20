@@ -4,15 +4,15 @@ package ai
 
 import scala.reflect.ClassTag
 
+import org.opalj.br.ClassHierarchy
+import org.opalj.br.PC
+import org.opalj.br.ReferenceType
+import org.opalj.br.Type
 import org.opalj.value.IsIllegalValue
 import org.opalj.value.IsReferenceValue
 import org.opalj.value.IsReturnAddressValue
 import org.opalj.value.KnownTypedValue
 import org.opalj.value.ValueInformation
-import org.opalj.br.ClassHierarchy
-import org.opalj.br.PC
-import org.opalj.br.ReferenceType
-import org.opalj.br.Type
 
 /**
  * Defines the concept of a value in a `Domain`.
@@ -161,14 +161,14 @@ trait ValuesDomain { domain =>
          *          `ReturnAddressValue`.
          */
         private[ai] def asReturnAddressValue: Int = {
-            throw new ClassCastException(this.getClass.getSimpleName+" is no return address value");
+            throw new ClassCastException(this.getClass.getSimpleName + " is no return address value");
         }
 
         /**
          * Returns the represented reference value iff this value represents a reference value.
          */
         def asDomainReferenceValue: DomainReferenceValue = {
-            throw new ClassCastException(this.getClass.getSimpleName+" is no reference value");
+            throw new ClassCastException(this.getClass.getSimpleName + " is no reference value");
         }
 
         /**
@@ -599,7 +599,7 @@ trait ValuesDomain { domain =>
             target.ReturnAddressValue(address)
         }
 
-        override def toString: String = "ReturnAddress("+address+")"
+        override def toString: String = "ReturnAddress(" + address + ")"
 
         override def hashCode: Int = address
     }

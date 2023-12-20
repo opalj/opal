@@ -200,7 +200,7 @@ trait DefaultIntegerRangeValues extends DefaultSpecialDomainValuesBinding with I
 
         override def toString: String = {
             if (lowerBound == upperBound)
-                "int = "+lowerBound
+                "int = " + lowerBound
             else
                 s"int ∈ [$lowerBound,$upperBound]"
         }

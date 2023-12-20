@@ -2,15 +2,15 @@
 package org.opalj
 package tac
 
-import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.value.ValueInformation
-import org.opalj.br.ComputationalType
-import org.opalj.br.ComputationalTypeReturnAddress
 import org.opalj.ai.ValueOrigin
 import org.opalj.ai.isImmediateVMException
 import org.opalj.ai.isMethodExternalExceptionOrigin
 import org.opalj.ai.pcOfImmediateVMException
 import org.opalj.ai.pcOfMethodExternalException
+import org.opalj.br.ComputationalType
+import org.opalj.br.ComputationalTypeReturnAddress
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.value.ValueInformation
 
 /**
  * Identifies a variable which has a single static definition/initialization site.
@@ -89,13 +89,13 @@ object DefSites {
     def toString(defSites: IntTrieSet): Iterator[String] = {
         defSites.iterator.map { defSite =>
             if (isImmediateVMException(defSite))
-                "exception[VM]@"+pcOfImmediateVMException(defSite)
+                "exception[VM]@" + pcOfImmediateVMException(defSite)
             else if (isMethodExternalExceptionOrigin(defSite))
-                "exception@"+pcOfMethodExternalException(defSite)
+                "exception@" + pcOfMethodExternalException(defSite)
             else if (defSite < 0) {
-                "param"+(-defSite - 1).toHexString
+                "param" + (-defSite - 1).toHexString
             } else {
-                "lv"+defSite.toHexString
+                "lv" + defSite.toHexString
             }
         }
     }
@@ -109,7 +109,6 @@ object DefSites {
  * has the given origin. Initially, the pc of the underlying bytecode instruction is used.
  *
  * @param value The value information.
- *
  */
 class DVar[+Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/ ] private (
         private[tac] var origin:   ValueOrigin,

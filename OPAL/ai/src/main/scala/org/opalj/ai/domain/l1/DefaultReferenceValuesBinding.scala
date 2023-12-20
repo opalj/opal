@@ -6,10 +6,10 @@ package l1
 
 import scala.reflect.ClassTag
 
-import org.opalj.collection.immutable.UIDSet
 import org.opalj.br.ArrayType
 import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
+import org.opalj.collection.immutable.UIDSet
 
 /**
  * @author Michael Eichberg

@@ -3,8 +3,8 @@ package org.opalj
 package br
 package reader
 
-import org.opalj.bi.reader.LineNumberTable_attributeReader
 import org.opalj.bi.reader.CompactLineNumberTable_attributeReader
+import org.opalj.bi.reader.LineNumberTable_attributeReader
 
 /**
  * Implements the factory methods to create line number tables and their entries.

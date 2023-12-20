@@ -3,37 +3,38 @@ package org.opalj
 package tac
 
 import scala.annotation.switch
-import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.bytecode.BytecodeProcessingFailedException
-import org.opalj.br.Method
-import org.opalj.br.MethodDescriptor
-import org.opalj.br.PCAndAnyRef
-import org.opalj.br.BaseType
-import org.opalj.br.ArrayType
-import org.opalj.br.IntegerType
-import org.opalj.br.LongType
-import org.opalj.br.FloatType
-import org.opalj.br.CharType
-import org.opalj.br.DoubleType
-import org.opalj.br.ShortType
-import org.opalj.br.ByteType
-import org.opalj.br.Code
-import org.opalj.br.ClassHierarchy
-import org.opalj.br.ComputationalTypeInt
-import org.opalj.br.instructions._
-import org.opalj.br.cfg.CFG
-import org.opalj.br.analyses.SomeProject
-import org.opalj.ai.ImmediateVMExceptionsOriginOffset
-import org.opalj.ai.BaseAI
-import org.opalj.ai.AIResult
-import org.opalj.ai.Domain
-import org.opalj.ai.domain.RecordDefUse
-import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
-import org.opalj.collection.immutable.IntIntPair
-import org.opalj.tac.JSR
 
 import scala.collection.immutable.ArraySeq
 import scala.collection.mutable
+
+import org.opalj.ai.AIResult
+import org.opalj.ai.BaseAI
+import org.opalj.ai.Domain
+import org.opalj.ai.ImmediateVMExceptionsOriginOffset
+import org.opalj.ai.domain.RecordDefUse
+import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
+import org.opalj.br.ArrayType
+import org.opalj.br.BaseType
+import org.opalj.br.ByteType
+import org.opalj.br.CharType
+import org.opalj.br.ClassHierarchy
+import org.opalj.br.Code
+import org.opalj.br.ComputationalTypeInt
+import org.opalj.br.DoubleType
+import org.opalj.br.FloatType
+import org.opalj.br.IntegerType
+import org.opalj.br.LongType
+import org.opalj.br.Method
+import org.opalj.br.MethodDescriptor
+import org.opalj.br.PCAndAnyRef
+import org.opalj.br.ShortType
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.cfg.CFG
+import org.opalj.br.instructions._
+import org.opalj.bytecode.BytecodeProcessingFailedException
+import org.opalj.collection.immutable.IntIntPair
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.tac.JSR
 
 /**
  * Factory to convert the bytecode of a method into a three address representation using the
@@ -227,7 +228,7 @@ object TACAI {
 
         def killOperandBasedUsages(useSitePC: Int, valuesCount: Int): Unit = {
             if (valuesCount == 0)
-                return ;
+                return;
 
             // The value(s) is (are) not used and the expression is side effect free;
             // we now have to kill the usages to avoid "wrong" links.
@@ -284,7 +285,7 @@ object TACAI {
             // a jump target, the new "caught exception" becomes the target, however,
             // given that this instruction has no special side effects, this is not
             // problematic.
-            //val addExceptionHandlerInitializer = handlerPCs.contains(pc)
+            // val addExceptionHandlerInitializer = handlerPCs.contains(pc)
             val addExceptionHandlerInitializer = handlerPCs(pc)
 
             def addStmt(stmt: Stmt[DUVar[aiResult.domain.DomainValue]]): Unit = {
@@ -308,7 +309,7 @@ object TACAI {
                 if (addExceptionHandlerInitializer)
                     // We do not have to add the NOP, because the code to initialize the
                     // variable which references the exception is already added.
-                    return ;
+                    return;
 
                 // We only add a NOP if it is the first instruction of a basic block since
                 // we want to ensure that we don't have to rewrite the CFG during the initial

@@ -2,15 +2,17 @@
 package org.opalj
 package ai
 
+import scala.language.existentials
+
 import java.net.URL
 import scala.Console.BLUE
 import scala.Console.BOLD
 import scala.Console.RESET
-import scala.language.existentials
+
 import org.opalj.br.Method
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.instructions.INVOKEINTERFACE
 import org.opalj.br.instructions.INVOKESPECIAL
@@ -213,7 +215,7 @@ case class InfiniteRecursion(method: Method, operands: List[_ <: AnyRef]) {
     override def toString: String = {
         val declaringClassOfMethod = method.classFile.thisType.toJava
 
-        "infinite recursion in "+BOLD + BLUE +
+        "infinite recursion in " + BOLD + BLUE +
             declaringClassOfMethod + RESET +
             operands.mkString(s"{ ${method.signatureToJava()}{ ", ", ", " }}")
     }

@@ -15,4 +15,3 @@ case class TACMethodParameter(origin: ValueOrigin, useSites: IntTrieSet) {
     override def toString: String = useSites.mkString("useSites={", ",", s"} (origin=$origin)")
 
 }
-

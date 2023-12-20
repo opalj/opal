@@ -2,10 +2,11 @@
 package org.opalj
 package apk
 
-import com.typesafe.config.Config
+import scala.jdk.CollectionConverters.ListHasAsScala
+
 import org.opalj.apk.ApkComponentType.ApkComponentType
 
-import scala.jdk.CollectionConverters.ListHasAsScala
+import com.typesafe.config.Config
 
 /**
  * Component of an APK. Each component is a potential entry point. A component is either an
@@ -29,19 +30,19 @@ class ApkComponent(
 )(implicit config: Config) {
 
     private val ActivityEntryPoints = Seq.from(
-        config.getStringList(ConfigKeyPrefix+"APKComponent.ActivityEntryPoints").asScala
+        config.getStringList(ConfigKeyPrefix + "APKComponent.ActivityEntryPoints").asScala
     )
 
     private val ServiceEntryPoints = Seq.from(
-        config.getStringList(ConfigKeyPrefix+"APKComponent.ServiceEntryPoints").asScala
+        config.getStringList(ConfigKeyPrefix + "APKComponent.ServiceEntryPoints").asScala
     )
 
     private val ReceiverEntryPoints = Seq.from(
-        config.getStringList(ConfigKeyPrefix+"APKComponent.ReceiverEntryPoints").asScala
+        config.getStringList(ConfigKeyPrefix + "APKComponent.ReceiverEntryPoints").asScala
     )
 
     private val ProviderEntryPoints = Seq.from(
-        config.getStringList(ConfigKeyPrefix+"APKComponent.ProviderEntryPoints").asScala
+        config.getStringList(ConfigKeyPrefix + "APKComponent.ProviderEntryPoints").asScala
     )
 
     /**
@@ -61,4 +62,3 @@ class ApkComponent(
         s"$clazz: $componentType$ls\tactions: $intentActions$ls\tcategories: $intentCategories$ls"
     }
 }
-

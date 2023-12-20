@@ -6,22 +6,22 @@ import java.io.ByteArrayInputStream
 import java.io.File
 import java.util.ArrayList
 
-import org.opalj.io.writeAndOpen
-import org.opalj.util.InMemoryClassLoader
-import org.opalj.da.ClassFileReader.ClassFile
 import org.opalj.ai.BaseAI
 import org.opalj.ai.domain.l0.TypeCheckingDomain
 import org.opalj.bc.Assembler
-import org.opalj.br.ObjectType
 import org.opalj.br.ClassHierarchy
-import org.opalj.br.MethodDescriptor.JustTakes
 import org.opalj.br.MethodDescriptor.JustReturnsString
+import org.opalj.br.MethodDescriptor.JustTakes
+import org.opalj.br.ObjectType
+import org.opalj.br.PCAndInstruction
 import org.opalj.br.analyses.Project
-import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.DUP
 import org.opalj.br.instructions.GETSTATIC
+import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.SWAP
-import org.opalj.br.PCAndInstruction
+import org.opalj.da.ClassFileReader.ClassFile
+import org.opalj.io.writeAndOpen
+import org.opalj.util.InMemoryClassLoader
 
 /**
  * Demonstrates how to perform an instrumentation where we need more information about the code
@@ -93,12 +93,12 @@ object SecondInstrumentation extends App {
 
     // Let's see the old class file...
     val oldDACF = ClassFile(() => p.source(TheType).get.openConnection().getInputStream).head
-    println("original: "+writeAndOpen(oldDACF.toXHTML(None), "SimpleInstrumentationDemo", ".html"))
+    println("original: " + writeAndOpen(oldDACF.toXHTML(None), "SimpleInstrumentationDemo", ".html"))
 
     // Let's see the new class file...
     val newDACF = ClassFile(() => new ByteArrayInputStream(newRawCF)).head
     val newCFHTML = writeAndOpen(newDACF.toXHTML(None), "NewSimpleInstrumentationDemo", ".html")
-    println("instrumented: "+newCFHTML)
+    println("instrumented: " + newCFHTML)
 
     // Let's test that the new class does what it is expected to do... (we execute the
     // instrumented method)

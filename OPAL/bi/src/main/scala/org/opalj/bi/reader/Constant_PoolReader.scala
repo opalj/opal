@@ -3,8 +3,8 @@ package org.opalj
 package bi
 package reader
 
-import java.io.DataInputStream
 import java.io.ByteArrayInputStream
+import java.io.DataInputStream
 
 import org.opalj.bytecode.BytecodeProcessingFailedException
 

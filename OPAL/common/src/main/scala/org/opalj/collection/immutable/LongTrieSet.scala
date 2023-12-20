@@ -289,7 +289,7 @@ private[immutable] final class LongTrieSet3(
                     new LongTrieSetNode1(i1_7L.toInt, grow(i, level + 3))
                 } else {
                     new LongTrieSetNode2(
-                        1 << (i_7L * 4) | 2 << (i1_7L * 4) /*lookuptable*/ ,
+                        1 << (i_7L * 4) | 2 << (i1_7L * 4) /*lookuptable*/,
                         new LongTrieSet1(i),
                         this
                     )
@@ -298,7 +298,7 @@ private[immutable] final class LongTrieSet3(
                 // i1_7L != i3_7L
                 if (i1_7L == i_7L) {
                     new LongTrieSetNode2(
-                        1 << (i3_7L * 4) | 2 << (i1_7L * 4) /*lookuptable*/ ,
+                        1 << (i3_7L * 4) | 2 << (i1_7L * 4) /*lookuptable*/,
                         new LongTrieSet1(i3),
                         LongTrieSet(i1, i2, i)
                     )
@@ -307,7 +307,7 @@ private[immutable] final class LongTrieSet3(
                     // i1_7L != i_7L
                     if (i3_7L == i_7L) {
                         new LongTrieSetNode2(
-                            1 << (i3_7L * 4) | 2 << (i1_7L * 4) /*lookuptable*/ ,
+                            1 << (i3_7L * 4) | 2 << (i1_7L * 4) /*lookuptable*/,
                             LongTrieSet(i3, i),
                             new LongTrieSet2(i1, i2)
                         )
@@ -326,7 +326,7 @@ private[immutable] final class LongTrieSet3(
             if (i2_7L == i3_7L) {
                 if (i2_7L == i_7L) {
                     new LongTrieSetNode2(
-                        1 << (i1_7L * 4) | 2 << (i2_7L * 4) /*lookuptable*/ ,
+                        1 << (i1_7L * 4) | 2 << (i2_7L * 4) /*lookuptable*/,
                         new LongTrieSet1(i1),
                         LongTrieSet(i2, i3, i)
                     )
@@ -335,7 +335,7 @@ private[immutable] final class LongTrieSet3(
                     // i2_7L != i_7L
                     if (i1_7L == i_7L) {
                         new LongTrieSetNode2(
-                            1 << (i1_7L * 4) | 2 << (i2_7L * 4) /*lookuptable*/ ,
+                            1 << (i1_7L * 4) | 2 << (i2_7L * 4) /*lookuptable*/,
                             LongTrieSet(i1, i),
                             new LongTrieSet2(i2, i3)
                         )
@@ -354,7 +354,7 @@ private[immutable] final class LongTrieSet3(
                 if (i1_7L == i3_7L) {
                     if (i1_7L == i_7L) {
                         new LongTrieSetNode2(
-                            1 << (i2_7L * 4) | 2 << (i1_7L * 4) /*lookuptable*/ ,
+                            1 << (i2_7L * 4) | 2 << (i1_7L * 4) /*lookuptable*/,
                             new LongTrieSet1(i2),
                             LongTrieSet(i1, i3, i)
                         )
@@ -364,7 +364,7 @@ private[immutable] final class LongTrieSet3(
                         // i1_7L != i_7L
                         if (i2_7L == i_7L) {
                             new LongTrieSetNode2(
-                                1 << (i1_7L * 4) | 2 << (i2_7L * 4) /*lookuptable*/ ,
+                                1 << (i1_7L * 4) | 2 << (i2_7L * 4) /*lookuptable*/,
                                 new LongTrieSet2(i1, i3),
                                 LongTrieSet(i2, i)
                             )
@@ -464,13 +464,13 @@ private[immutable] final class LongTrieSetN(
         @tailrec private[this] def moveToNextLeafNode(): Unit = {
             if (nodes.isEmpty) {
                 leafNode = null
-                return ;
+                return;
             }
             (nodes.pop(): @unchecked) match {
                 case n: LongTrieSetLeaf =>
                     leafNode = n
                     index = 0
-                    return ;
+                    return;
 
                 case n: LongTrieSetNode1 =>
                     nodes.push(n.n1)
@@ -658,7 +658,7 @@ private[immutable] sealed abstract class LongTrieSetNode2_7 extends LongTrieSetN
             }
             i += 1
         }
-        s+")"
+        s + ")"
     }
 
     final override def equals(other: Any): Boolean = {
@@ -1337,7 +1337,7 @@ private[immutable] final class LongTrieSetNode8(
             s += s"\n$indent${bitsToString(i)}=>${n.toString(level + 1)}"
             i += 1
         }
-        s+")"
+        s + ")"
     }
 
     override def equals(other: Any): Boolean = {

@@ -16,4 +16,3 @@ case class CodeAnalysisFailedException(
         code:    Code,
         pc:      PC
 ) extends RuntimeException(message)
-

@@ -6,16 +6,16 @@ package analyses
 package cg
 package reflection
 
-import org.opalj.value.IsReferenceValue
+import scala.collection.immutable.ArraySeq
+
+import org.opalj.br.ClassHierarchy
 import org.opalj.br.FieldTypes
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.ProjectIndexKey
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.ClassHierarchy
-
-import scala.collection.immutable.ArraySeq
+import org.opalj.value.IsReferenceValue
 
 /**
  * Used to determine whether a certain method should be considered as a target for a reflective

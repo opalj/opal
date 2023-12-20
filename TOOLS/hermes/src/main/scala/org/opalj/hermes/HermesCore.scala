@@ -3,27 +3,30 @@ package org.opalj
 package hermes
 
 import scala.reflect.io.Directory
-import java.io.File
-import java.net.URL
-import java.io.FileWriter
+
 import java.io.BufferedWriter
+import java.io.File
+import java.io.FileWriter
+import java.net.URL
 import java.util.concurrent.atomic.AtomicInteger
 import scala.jdk.CollectionConverters._
-import net.ceedubs.ficus.Ficus._
-import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-import com.fasterxml.jackson.dataformat.csv.CsvSchema
-import com.fasterxml.jackson.dataformat.csv.CsvFactory
-import javafx.collections.FXCollections
-import javafx.collections.ObservableList
-import javafx.beans.property.BooleanProperty
-import javafx.beans.property.SimpleBooleanProperty
-import javafx.beans.property.IntegerProperty
-import javafx.beans.property.SimpleIntegerProperty
-import javafx.beans.property.LongProperty
-import javafx.beans.property.SimpleLongProperty
+
 import org.opalj.br.analyses.Project
 
 import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParallelizable
+
+import com.fasterxml.jackson.dataformat.csv.CsvFactory
+import com.fasterxml.jackson.dataformat.csv.CsvSchema
+import javafx.beans.property.BooleanProperty
+import javafx.beans.property.IntegerProperty
+import javafx.beans.property.LongProperty
+import javafx.beans.property.SimpleBooleanProperty
+import javafx.beans.property.SimpleIntegerProperty
+import javafx.beans.property.SimpleLongProperty
+import javafx.collections.FXCollections
+import javafx.collections.ObservableList
+import net.ceedubs.ficus.Ficus._
+import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
 /**
  * Implements the core functionality to evaluate a set of feature queries against a set of
@@ -148,7 +151,7 @@ trait HermesCore extends HermesConfig {
             projectAnalysisStartTime: Long
         ): Boolean = {
             if (project.projectClassFilesCount == 0) {
-                updateProjectData { projectFeatures.id.setValue("! "+projectFeatures.id.getValue()) }
+                updateProjectData { projectFeatures.id.setValue("! " + projectFeatures.id.getValue()) }
                 false
             } else {
                 true

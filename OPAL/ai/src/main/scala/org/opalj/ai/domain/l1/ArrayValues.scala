@@ -33,7 +33,6 @@ trait ArrayValues extends l1.ReferenceValues {
     /**
      * Represents some (multi-dimensional) array where the (initialized) dimensions have
      * the given size.
-     *
      */
     // NOTE THAT WE CANNOT STORE SIZE INFORMATION FOR AlL DIMENSIONS BEYOND THE FIRST ONE;
     // WE ARE NOT TRACKING THE ESCAPE STATE!

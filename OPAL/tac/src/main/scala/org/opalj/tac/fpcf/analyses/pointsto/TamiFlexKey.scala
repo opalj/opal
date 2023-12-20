@@ -8,17 +8,17 @@ package pointsto
 import scala.collection.mutable
 import scala.io.Source
 
-import org.opalj.log.OPALLogger
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.Field
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.SomeProject
+import org.opalj.br.FieldType
 import org.opalj.br.MethodDescriptor
+import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.DeclaredMethods
+import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKey
 import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.FieldType
-import org.opalj.br.ReferenceType
+import org.opalj.br.analyses.SomeProject
+import org.opalj.log.OPALLogger
 
 /**
  * Container class, to represent a tamiflex log:
@@ -27,9 +27,9 @@ import org.opalj.br.ReferenceType
  * @author Florian Kuebler
  */
 class TamiFlexLogData(
-        private[this] val _classes: scala.collection.Map[(String /*Caller*/ , String /*Reflection Method*/ , Int /*Line Number*/ ), scala.collection.Set[ReferenceType]],
-        private[this] val _methods: scala.collection.Map[(String /*Caller*/ , String /*Reflection Method*/ , Int /*Line Number*/ ), scala.collection.Set[DeclaredMethod]],
-        private[this] val _fields:  scala.collection.Map[(String /*Caller*/ , String /*Reflection Method*/ , Int /*Line Number*/ ), scala.collection.Set[Field]]
+        private[this] val _classes: scala.collection.Map[(String /*Caller*/, String /*Reflection Method*/, Int /*Line Number*/), scala.collection.Set[ReferenceType]],
+        private[this] val _methods: scala.collection.Map[(String /*Caller*/, String /*Reflection Method*/, Int /*Line Number*/), scala.collection.Set[DeclaredMethod]],
+        private[this] val _fields:  scala.collection.Map[(String /*Caller*/, String /*Reflection Method*/, Int /*Line Number*/), scala.collection.Set[Field]]
 ) {
     private[this] def toMethodDesc(method: DeclaredMethod): String = {
         s"${method.declaringClassType.toJava}.${method.name}"
@@ -93,9 +93,9 @@ object TamiFlexKey extends ProjectInformationKey[TamiFlexLogData, Nothing] {
 
     override def compute(project: SomeProject): TamiFlexLogData = {
         implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
-        val classes: mutable.Map[(String /*Caller*/ , String /*Reflection Method*/ , Int /*Line Number*/ ), mutable.Set[ReferenceType]] = mutable.Map.empty
-        val methods: mutable.Map[(String /*Caller*/ , String /*Reflection Method*/ , Int /*Line Number*/ ), mutable.Set[DeclaredMethod]] = mutable.Map.empty
-        val fields: mutable.Map[(String /*Caller*/ , String /*Reflection Method*/ , Int /*Line Number*/ ), mutable.Set[Field]] = mutable.Map.empty
+        val classes: mutable.Map[(String /*Caller*/, String /*Reflection Method*/, Int /*Line Number*/), mutable.Set[ReferenceType]] = mutable.Map.empty
+        val methods: mutable.Map[(String /*Caller*/, String /*Reflection Method*/, Int /*Line Number*/), mutable.Set[DeclaredMethod]] = mutable.Map.empty
+        val fields: mutable.Map[(String /*Caller*/, String /*Reflection Method*/, Int /*Line Number*/), mutable.Set[Field]] = mutable.Map.empty
 
         @inline def addClassType(
             classType: String, sourceMethod: String, reflectionTarget: String, sourceLine: String
@@ -205,7 +205,7 @@ object TamiFlexKey extends ProjectInformationKey[TamiFlexLogData, Nothing] {
 
     private[this] def toJVMType(javaType: String): String = {
         val trimmedType = javaType.trim
-        if (trimmedType.endsWith("[]")) "["+toJVMType(trimmedType.substring(0, trimmedType.length - 2))
+        if (trimmedType.endsWith("[]")) "[" + toJVMType(trimmedType.substring(0, trimmedType.length - 2))
         else trimmedType match {
             case "void"    => "V"
             case "byte"    => "B"
@@ -216,7 +216,7 @@ object TamiFlexKey extends ProjectInformationKey[TamiFlexLogData, Nothing] {
             case "long"    => "J"
             case "short"   => "S"
             case "boolean" => "Z"
-            case _         => "L"+trimmedType.replace('.', '/')+";"
+            case _         => "L" + trimmedType.replace('.', '/') + ";"
         }
     }
 

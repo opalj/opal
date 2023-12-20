@@ -7,7 +7,6 @@ package jcg
 import scala.collection.immutable.ArraySeq
 import scala.collection.mutable
 
-import org.opalj.da.ClassFile
 import org.opalj.br.Field
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
@@ -17,10 +16,11 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectIndex
 import org.opalj.br.analyses.ProjectIndexKey
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.INVOKEINTERFACE
 import org.opalj.br.instructions.INVOKEVIRTUAL
-import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.VirtualMethodInvocationInstruction
+import org.opalj.da.ClassFile
 
 /**
  * Groups test case features that test the support for libraries/partial programs. All test cases
@@ -51,7 +51,7 @@ class Library(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
 
         val projectIndex = project.get(ProjectIndexKey)
         var cbsCache = Map.empty[String, Set[Method]]
-        //val declaredMethods = project.get(DeclaredMethodsKey)
+        // val declaredMethods = project.get(DeclaredMethodsKey)
 
         for {
             (classFile, source) <- project.projectClassFilesWithSources
@@ -156,34 +156,34 @@ class Library(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
 
         def analyzePotentialCBSTarget(cbsCallee: Method): Unit = {
             if (!cbsCallee.isPublic)
-                return ;
+                return;
 
             if (cbsCallee.isAbstract)
-                return ;
+                return;
 
             if (!isInheritableMethod(cbsCallee))
-                return ;
+                return;
 
             val cbsCalleeDeclaringClass = cbsCallee.classFile
 
             if (!cbsCalleeDeclaringClass.isClassDeclaration)
-                return ;
+                return;
 
             if (cbsCalleeDeclaringClass.isEffectivelyFinal)
-                return ;
+                return;
 
             val cbsCalleeDeclaringType = cbsCalleeDeclaringClass.thisType
 
             if (cbsCalleeDeclaringType eq ObjectType.Object)
-                return ;
+                return;
 
             if (project.classHierarchy.isSubtypeOf(
                 cbsCalleeDeclaringType, interfaceType
             ))
-                return ;
+                return;
 
             if (hasSubclassWhichInheritsFromInterface(cbsCalleeDeclaringType, interfaceType, methodName, methodDescriptor, project).isYes)
-                return ;
+                return;
 
             cbsTargets += cbsCallee
         }

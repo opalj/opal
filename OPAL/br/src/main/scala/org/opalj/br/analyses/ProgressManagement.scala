@@ -70,7 +70,7 @@ trait ProgressManagement {
         val (t, endMessage) = try {
             f
         } catch {
-            case t: Throwable => end(step, "failed: "+t.getMessage); throw t
+            case t: Throwable => end(step, "failed: " + t.getMessage); throw t
         }
         end(step, endMessage)
         t

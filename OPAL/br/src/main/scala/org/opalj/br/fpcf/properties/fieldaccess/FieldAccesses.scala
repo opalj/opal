@@ -5,6 +5,8 @@ package fpcf
 package properties
 package fieldaccess
 
+import scala.collection.immutable.IntMap
+
 import org.opalj.br.DeclaredField
 import org.opalj.br.Method
 import org.opalj.br.PCs
@@ -19,8 +21,6 @@ import org.opalj.fpcf.InterimUBP
 import org.opalj.fpcf.PartialResult
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyKey
-
-import scala.collection.immutable.IntMap
 
 /**
  * A convenience class for field access collection. Manages direct, indirect and incomplete

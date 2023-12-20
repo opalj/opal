@@ -2,10 +2,10 @@
 package org.opalj
 package da
 
-import scala.xml.Node
-import org.opalj.bi.AccessFlagsContexts.METHOD_PARAMETERS
-
 import scala.collection.immutable.ArraySeq
+import scala.xml.Node
+
+import org.opalj.bi.AccessFlagsContexts.METHOD_PARAMETERS
 
 /**
  * @author Michael Eichberg

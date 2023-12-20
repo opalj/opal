@@ -2,29 +2,31 @@
 package org.opalj
 package br
 
-import scala.annotation.tailrec
 import scala.annotation.switch
+import scala.annotation.tailrec
 import scala.reflect.ClassTag
+
 import java.util.Arrays.fill
 import scala.collection.AbstractIterator
-import scala.collection.mutable
 import scala.collection.immutable.IntMap
 import scala.collection.immutable.Queue
-import org.opalj.util.AnyToAnyThis
+import scala.collection.mutable
+
+import org.opalj.br.ClassHierarchy.PreInitializedClassHierarchy
+import org.opalj.br.cfg.CFG
+import org.opalj.br.cfg.CFGFactory
+import org.opalj.br.instructions._
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.collection.IntIterator
+import org.opalj.collection.immutable.BitArraySet
+import org.opalj.collection.immutable.EmptyIntTrieSet
 import org.opalj.collection.immutable.IntArraySet
+import org.opalj.collection.immutable.IntIntPair
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.IntTrieSet1
-import org.opalj.collection.immutable.BitArraySet
-import org.opalj.collection.immutable.IntIntPair
-import org.opalj.collection.immutable.EmptyIntTrieSet
-import org.opalj.collection.mutable.IntQueue
 import org.opalj.collection.mutable.IntArrayStack
-import org.opalj.br.cfg.CFGFactory
-import org.opalj.br.cfg.CFG
-import org.opalj.br.ClassHierarchy.PreInitializedClassHierarchy
-import org.opalj.br.instructions._
+import org.opalj.collection.mutable.IntQueue
+import org.opalj.util.AnyToAnyThis
 
 /**
  * Representation of a method's code attribute, that is, representation of a method's
@@ -576,7 +578,7 @@ final class Code private (
     def cfPCs(
         implicit
         classHierarchy: ClassHierarchy = PreInitializedClassHierarchy
-    ): (PCs /*cfJoins*/ , PCs /*forks*/ , IntMap[PCs] /*forkTargetPCs*/ ) = {
+    ): (PCs /*cfJoins*/, PCs /*forks*/, IntMap[PCs] /*forkTargetPCs*/) = {
         val instructions = this.instructions
         val instructionsLength = instructions.length
 
@@ -946,8 +948,8 @@ final class Code private (
                     case lv @ LocalVariable(
                         startPC,
                         length,
-                        _ /*name*/ ,
-                        _ /*fieldType*/ ,
+                        _ /*name*/,
+                        _ /*fieldType*/,
                         index
                         ) if startPC <= pc && startPC + length > pc =>
                         (index, lv)
@@ -1012,7 +1014,7 @@ final class Code private (
                 instruction.opcode match {
                     case JSR.opcode | JSR_W.opcode | RET.opcode =>
                         throw BytecodeProcessingFailedException(
-                            "computation of stack map tables containing JSR/RET is not supported; "+
+                            "computation of stack map tables containing JSR/RET is not supported; " +
                                 "the attribute is neither required nor helpful in this case"
                         )
                     case GOTO.opcode | GOTO_W.opcode =>
@@ -1044,7 +1046,7 @@ final class Code private (
      */
     @inline def isModifiedByWide(pc: Int): Boolean = pc > 0 && instructions(pc - 1) == WIDE
 
-    def foldLeft[T <: Any](start: T)(f: (T, Int /*PC*/ , Instruction) => T): T = {
+    def foldLeft[T <: Any](start: T)(f: (T, Int /*PC*/, Instruction) => T): T = {
         val max_pc = instructions.length
         var pc = 0
         var vs = start
@@ -1493,10 +1495,10 @@ final class Code private (
      * attributes, etc.).
      */
     override def toString: String = {
-        s"Code_attribute(maxStack=$maxStack, maxLocals=$maxLocals, "+
+        s"Code_attribute(maxStack=$maxStack, maxLocals=$maxLocals, " +
             instructions.zipWithIndex.filter(_._1 ne null).map(_.swap).toString +
-            exceptionHandlers.toString+","+
-            attributes.toString+
+            exceptionHandlers.toString + "," +
+            attributes.toString +
             ")"
     }
 
@@ -1849,7 +1851,7 @@ object Code {
         message:          Option[String]   = None
     ): Code = {
         new Code(
-            maxStack = 3 /* 3 for the message! */ ,
+            maxStack = 3 /* 3 for the message! */,
             maxLocals = descriptor.requiredRegisters + (if (isInstanceMethod) 1 else 0),
             instructions =
                 Array(

@@ -22,7 +22,7 @@ sealed abstract class NEWARRAY extends CreateNewOneDimensionalArrayInstruction {
 
     final override def length: Int = 2
 
-    final override def toString: String = "NEWARRAY("+elementType.toJava+"[])"
+    final override def toString: String = "NEWARRAY(" + elementType.toJava + "[])"
 
 }
 

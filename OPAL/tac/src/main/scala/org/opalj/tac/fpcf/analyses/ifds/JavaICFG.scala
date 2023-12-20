@@ -5,19 +5,19 @@ package fpcf
 package analyses
 package ifds
 
-import org.opalj.fpcf.FinalEP
-import org.opalj.fpcf.PropertyStore
-import org.opalj.value.ValueInformation
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.Method
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.br.fpcf.PropertyStoreKey
-import org.opalj.br.DeclaredMethod
-import org.opalj.br.Method
 import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.Callers
-import org.opalj.br.fpcf.ContextProviderKey
+import org.opalj.fpcf.FinalEP
+import org.opalj.fpcf.PropertyStore
+import org.opalj.ifds.ICFG
 import org.opalj.tac.Assignment
 import org.opalj.tac.DUVar
 import org.opalj.tac.Expr
@@ -32,7 +32,7 @@ import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.TACode
 import org.opalj.tac.VirtualFunctionCall
 import org.opalj.tac.VirtualMethodCall
-import org.opalj.ifds.ICFG
+import org.opalj.value.ValueInformation
 
 /**
  * Interprocedural control flow graph for Java projects used in IFDS Analysis
@@ -68,7 +68,7 @@ abstract class JavaICFG(project: SomeProject)
         statement.cfg
             .successors(statement.index)
             .map { index => JavaStatement(statement, index) }
-        //TODO improve performance
+        // TODO improve performance
     }
 
     /**

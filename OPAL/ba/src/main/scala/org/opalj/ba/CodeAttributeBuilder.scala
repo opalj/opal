@@ -4,10 +4,8 @@ package ba
 
 import scala.collection.immutable.ArraySeq
 
-import org.opalj.collection.immutable.IntRefPair
-import org.opalj.collection.immutable.UShortPair
-import org.opalj.collection.mutable.Locals
-import org.opalj.bytecode.BytecodeProcessingFailedException
+import org.opalj.ai.BaseAI
+import org.opalj.ai.domain.l0.TypeCheckingDomain
 import org.opalj.bi.ACC_STATIC
 import org.opalj.br.AppendFrame
 import org.opalj.br.Attributes
@@ -27,8 +25,10 @@ import org.opalj.br.StackMapTable
 import org.opalj.br.TopVariableInfo
 import org.opalj.br.VerificationTypeInfo
 import org.opalj.br.instructions.Instruction
-import org.opalj.ai.BaseAI
-import org.opalj.ai.domain.l0.TypeCheckingDomain
+import org.opalj.bytecode.BytecodeProcessingFailedException
+import org.opalj.collection.immutable.IntRefPair
+import org.opalj.collection.immutable.UShortPair
+import org.opalj.collection.mutable.Locals
 
 /**
  * Builder for the [[org.opalj.br.Code]] attribute with all its properties. The ''Builder'' is
@@ -111,7 +111,6 @@ class CodeAttributeBuilder[T] private[ba] (
      * @see `apply(classFileVersion:UShortPair,accessFlags:Int,name:String,...)` for more details.
      * @param classFileVersion The version of the class file to which the returned will be added
      *                         eventually.
-     *
      */
     def apply(
         classFileVersion: UShortPair,
@@ -307,7 +306,7 @@ object CodeAttributeBuilder {
                             map(e => s"${e._2}: ${e._1}")
                     val instructionsAsString = instructions.mkString("\n\t\t", "\n\t\t", "\n")
                     val body =
-                        s"; pc $pc is dead; unable to compute stack map table:"+
+                        s"; pc $pc is dead; unable to compute stack map table:" +
                             instructionsAsString
                     val evaluationDetails = r.evaluatedPCs.mkString("evaluated: ", ", ", body)
                     val ehs = c.exceptionHandlers.mkString("Exception Handlers:\n", "\n", "\nt")

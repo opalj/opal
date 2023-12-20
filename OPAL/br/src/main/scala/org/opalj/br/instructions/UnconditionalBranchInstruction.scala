@@ -40,7 +40,7 @@ trait UnconditionalBranchInstruction
 
     override def toString(currentPC: Int): String = {
         val direction = if (branchoffset >= 0) "↓" else "↑"
-        getClass.getSimpleName+" "+(currentPC + branchoffset) + direction
+        getClass.getSimpleName + " " + (currentPC + branchoffset) + direction
     }
 
 }

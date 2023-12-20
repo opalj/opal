@@ -2,10 +2,10 @@
 package org.opalj
 package collection
 
-import java.util.function.LongPredicate
 import java.util.function.LongConsumer
-
+import java.util.function.LongPredicate
 import scala.collection.AbstractIterator
+
 import org.opalj.collection.immutable.LongTrieSet
 
 /**
@@ -103,7 +103,7 @@ abstract class LongIterator extends AbstractIterator[Long] { self =>
                         it = f(self.next())
                     } else {
                         it = null
-                        return ;
+                        return;
                     }
                 }
             }
@@ -121,7 +121,7 @@ abstract class LongIterator extends AbstractIterator[Long] { self =>
         private[this] def goToNextValue(): Unit = {
             while (self.hasNext) {
                 v = self.next()
-                if (p(v)) return ;
+                if (p(v)) return;
             }
             hasNextValue = false
         }

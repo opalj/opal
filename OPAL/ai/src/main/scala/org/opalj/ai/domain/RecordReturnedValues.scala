@@ -5,8 +5,8 @@ package domain
 
 import scala.collection.immutable.IntMap
 
-import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.br.Code
+import org.opalj.collection.immutable.IntTrieSet
 
 /**
  * Generic infrastructure to record the values returned by the method.

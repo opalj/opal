@@ -4,14 +4,10 @@ package tac
 
 import java.net.URL
 
-import org.opalj.log.LogContext
-import org.opalj.log.OPALLogger.info
-import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.fpcf.FinalP
+import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.properties.AtMost
@@ -21,10 +17,14 @@ import org.opalj.br.fpcf.properties.EscapeViaAbnormalReturn
 import org.opalj.br.fpcf.properties.EscapeViaParameter
 import org.opalj.br.fpcf.properties.EscapeViaReturn
 import org.opalj.br.fpcf.properties.NoEscape
-import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.fpcf.FinalP
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger.info
 import org.opalj.tac.common.DefinitionSitesKey
-import org.opalj.tac.fpcf.analyses.escape.EagerSimpleEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.TACAITransformer
+import org.opalj.tac.fpcf.analyses.escape.EagerSimpleEscapeAnalysis
+import org.opalj.util.PerformanceEvaluation.time
 
 /**
  * An evaluation of the impact of field/array writes to the
@@ -81,7 +81,8 @@ object FieldAndArrayUsageAnalysis extends ProjectAnalysisApplication {
             manager.runAll(
                 EagerSimpleEscapeAnalysis,
                 LazyL0BaseAIAnalysis,
-                TACAITransformer /* LazyL0TACAIAnalysis */ )
+                TACAITransformer /* LazyL0TACAIAnalysis */
+            )
         } { t => info("progress", s"escape analysis took ${t.toSeconds}") }
         for {
             as <- ass
@@ -176,8 +177,8 @@ object FieldAndArrayUsageAnalysis extends ProjectAnalysisApplication {
                                                 println(
                                                     s"""
                                                        |${m.toJava}:
-                                                       |  ${body.lineNumber(as.pc).map("line: "+_.toString).getOrElse("")} new $as
-                                                       |  ${body.lineNumber(pcOfStore).map("line: "+_.toString).getOrElse("")} $arrayStore}
+                                                       |  ${body.lineNumber(as.pc).map("line: " + _.toString).getOrElse("")} new $as
+                                                       |  ${body.lineNumber(pcOfStore).map("line: " + _.toString).getOrElse("")} $arrayStore}
                                                        |""".stripMargin
                                                 )
                                             }

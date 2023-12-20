@@ -6,38 +6,36 @@ import java.io.ByteArrayInputStream
 import java.io.File
 import java.util.ArrayList
 import java.util.Arrays
-
-import org.opalj.log.LogContext
-import org.opalj.log.GlobalLogContext
-import org.opalj.io.writeAndOpen
+import scala.collection.immutable.ArraySeq
 
 import org.opalj.ai.BaseAI
 import org.opalj.ai.domain.l0.TypeCheckingDomain
-import org.opalj.da.ClassFileReader.ClassFile
 import org.opalj.bc.Assembler
-import org.opalj.br.ObjectType
-import org.opalj.br.MethodDescriptor.JustTakes
-import org.opalj.br.analyses.Project
 import org.opalj.br.ClassFileRepository
-import org.opalj.br.MethodDescriptor
-import org.opalj.br.cfg.CFGFactory
-import org.opalj.br.instructions.INVOKEVIRTUAL
-import org.opalj.br.instructions.DUP
-import org.opalj.br.instructions.POP
-import org.opalj.br.instructions.GETSTATIC
-import org.opalj.br.instructions.SWAP
-import org.opalj.br.instructions.RETURN
-import org.opalj.br.instructions.IRETURN
-import org.opalj.br.instructions.ATHROW
-import org.opalj.br.instructions.GOTO
-import org.opalj.br.instructions.LoadString
-import org.opalj.br.instructions.IFGT
-import org.opalj.br.instructions.NEW
-import org.opalj.br.instructions.INVOKESPECIAL
-import org.opalj.br.PCAndInstruction
-import scala.collection.immutable.ArraySeq
-
 import org.opalj.br.ClassHierarchy
+import org.opalj.br.MethodDescriptor
+import org.opalj.br.MethodDescriptor.JustTakes
+import org.opalj.br.ObjectType
+import org.opalj.br.PCAndInstruction
+import org.opalj.br.analyses.Project
+import org.opalj.br.cfg.CFGFactory
+import org.opalj.br.instructions.ATHROW
+import org.opalj.br.instructions.DUP
+import org.opalj.br.instructions.GETSTATIC
+import org.opalj.br.instructions.GOTO
+import org.opalj.br.instructions.IFGT
+import org.opalj.br.instructions.INVOKESPECIAL
+import org.opalj.br.instructions.INVOKEVIRTUAL
+import org.opalj.br.instructions.IRETURN
+import org.opalj.br.instructions.LoadString
+import org.opalj.br.instructions.NEW
+import org.opalj.br.instructions.POP
+import org.opalj.br.instructions.RETURN
+import org.opalj.br.instructions.SWAP
+import org.opalj.da.ClassFileReader.ClassFile
+import org.opalj.io.writeAndOpen
+import org.opalj.log.GlobalLogContext
+import org.opalj.log.LogContext
 
 /**
  * Demonstrates how to perform an instrumentation where we need more information about the code
@@ -186,12 +184,12 @@ object ThirdInstrumentation extends App {
 
     // Let's see the old file...
     val oldCFHTML = ClassFile(() => p.source(TheType).get.openConnection().getInputStream).head.toXHTML(None)
-    println("original: "+writeAndOpen(oldCFHTML, "SimpleInstrumentationDemo", ".html"))
+    println("original: " + writeAndOpen(oldCFHTML, "SimpleInstrumentationDemo", ".html"))
 
     // Let's see the new file...
     val newCFHTML = ClassFile(() => new ByteArrayInputStream(newRawCF)).head.toXHTML(None)
     val newCFFile = writeAndOpen(newCFHTML, "NewSimpleInstrumentationDemo", ".html")
-    println("instrumented: "+newCFFile)
+    println("instrumented: " + newCFFile)
 
     // Let's test that the new class does what it is expected to do... (we execute the
     // instrumented method)

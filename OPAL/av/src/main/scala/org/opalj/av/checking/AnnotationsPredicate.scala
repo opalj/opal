@@ -4,6 +4,7 @@ package av
 package checking
 
 import scala.collection.Set
+
 import org.opalj.br._
 
 /**
