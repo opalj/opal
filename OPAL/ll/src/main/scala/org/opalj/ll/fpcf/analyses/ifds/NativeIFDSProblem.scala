@@ -21,12 +21,12 @@ import org.opalj.ifds.IFDSFact
 import org.opalj.ifds.IFDSProblem
 import org.opalj.ifds.IFDSProperty
 import org.opalj.ll.LLVMProjectKey
-import org.opalj.tac.fpcf.analyses.ifds.JavaICFG
-import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
 import org.opalj.tac.DUVar
 import org.opalj.tac.LazyDetachedTACAIKey
 import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.TACode
+import org.opalj.tac.fpcf.analyses.ifds.JavaICFG
+import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
 import org.opalj.value.ValueInformation
 
 abstract class NativeForwardIFDSProblem[Fact <: AbstractIFDSFact, JavaFact <: AbstractIFDSFact](

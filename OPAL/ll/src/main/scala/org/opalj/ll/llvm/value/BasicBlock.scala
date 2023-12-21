@@ -4,6 +4,8 @@ package ll
 package llvm
 package value
 
+import org.opalj.graphs.Node
+
 import org.bytedeco.llvm.LLVM.LLVMBasicBlockRef
 import org.bytedeco.llvm.LLVM.LLVMValueRef
 import org.bytedeco.llvm.global.LLVM.LLVMBasicBlockAsValue
@@ -13,7 +15,6 @@ import org.bytedeco.llvm.global.LLVM.LLVMGetBasicBlockTerminator
 import org.bytedeco.llvm.global.LLVM.LLVMGetFirstInstruction
 import org.bytedeco.llvm.global.LLVM.LLVMGetLastInstruction
 import org.bytedeco.llvm.global.LLVM.LLVMGetNextInstruction
-import org.opalj.graphs.Node
 
 /**
  * Represents a LLVM basic block
@@ -56,7 +57,7 @@ case class BasicBlock(block_ref: LLVMBasicBlockRef)
      * Returns a human readable representation (HRR) of this node.
      */
     override def toHRR: Option[String] = {
-        Some(name) //TODO: maybe add more info
+        Some(name) // TODO: maybe add more info
     }
 
     /**
