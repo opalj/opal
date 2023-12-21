@@ -32,9 +32,20 @@ import scala.collection.immutable.IntMap
  */
 sealed trait FieldAccesses {
     final def partialResults(accessContext: Context): IterableOnce[PartialResult[_, _ >: Null <: Property]] =
-        partialResultForReadFields(accessContext) ++
-            partialResultForWriteFields(accessContext) ++
+        if (containsNoMethodBasedAccessInformation)
             partialResultsForFieldBasedFieldAccesses
+        else
+            Iterator(
+                partialResultForReadFields(accessContext),
+                partialResultForWriteFields(accessContext)
+            ) ++ partialResultsForFieldBasedFieldAccesses
+
+    private[this] def containsNoMethodBasedAccessInformation =
+        directReadFields.isEmpty &&
+            directWriteFields.isEmpty &&
+            indirectReadFields.isEmpty &&
+            indirectWriteFields.isEmpty &&
+            incompleteAccessSites.isEmpty
 
     protected def directReadFields: IntMap[IntList] = IntMap.empty
     protected def directReadReceivers: IntMap[IntMap[AccessReceiver]] = IntMap.empty
@@ -59,8 +70,14 @@ sealed trait FieldAccesses {
         val method = accessContext.method.definedMethod
 
         PartialResult[Method, S](method, propertyKey, {
+            case InterimUBP(_) if containsNoMethodBasedAccessInformation =>
+                None
+
             case InterimUBP(ub) =>
                 Some(InterimEUBP(method, fieldAccessesValueUpdater(ub)))
+
+            case _: EPK[_, _] if containsNoMethodBasedAccessInformation =>
+                Some(InterimEUBP(method, noFieldAccessesValue))
 
             case _: EPK[_, _] =>
                 Some(InterimEUBP(method, fieldAccessesValueUpdater(noFieldAccessesValue)))
@@ -72,46 +89,40 @@ sealed trait FieldAccesses {
 
     private[this] def partialResultForReadFields(
         accessContext: Context
-    ): Option[PartialResult[Method, MethodFieldReadAccessInformation]] = {
-        if (directReadFields.isEmpty && indirectReadFields.isEmpty && incompleteAccessSites.isEmpty)
-            None
-        else
-            Some(partialResultForAccessedFields(
+    ): PartialResult[Method, MethodFieldReadAccessInformation] = {
+        partialResultForAccessedFields(
+            accessContext,
+            MethodFieldReadAccessInformation.key,
+            NoMethodFieldReadAccessInformation,
+            previousFRA => previousFRA.updateWithFieldAccesses(
                 accessContext,
-                MethodFieldReadAccessInformation.key,
-                NoMethodFieldReadAccessInformation,
-                previousFRA => previousFRA.updateWithFieldAccesses(
-                    accessContext,
-                    incompleteAccessSites,
-                    directReadFields,
-                    directReadReceivers,
-                    indirectReadFields,
-                    indirectReadReceivers
-                )
-            ))
+                incompleteAccessSites,
+                directReadFields,
+                directReadReceivers,
+                indirectReadFields,
+                indirectReadReceivers
+            )
+        )
     }
 
     private[this] def partialResultForWriteFields(
         accessContext: Context
-    ): Option[PartialResult[Method, MethodFieldWriteAccessInformation]] = {
-        if (directReadFields.isEmpty && indirectReadFields.isEmpty && incompleteAccessSites.isEmpty)
-            None
-        else
-            Some(partialResultForAccessedFields(
+    ): PartialResult[Method, MethodFieldWriteAccessInformation] = {
+        partialResultForAccessedFields(
+            accessContext,
+            MethodFieldWriteAccessInformation.key,
+            NoMethodFieldWriteAccessInformation,
+            previousFWA => previousFWA.updateWithFieldAccesses(
                 accessContext,
-                MethodFieldWriteAccessInformation.key,
-                NoMethodFieldWriteAccessInformation,
-                previousFWA => previousFWA.updateWithFieldAccesses(
-                    accessContext,
-                    incompleteAccessSites,
-                    directWriteFields,
-                    directWriteReceivers,
-                    directWriteParameters,
-                    indirectWriteFields,
-                    indirectWriteReceivers,
-                    indirectWriteParameters
-                )
-            ))
+                incompleteAccessSites,
+                directWriteFields,
+                directWriteReceivers,
+                directWriteParameters,
+                indirectWriteFields,
+                indirectWriteReceivers,
+                indirectWriteParameters
+            )
+        )
     }
 
     protected def partialResultsForFieldBasedFieldAccesses: IterableOnce[PartialResult[DeclaredField, _ >: Null <: FieldAccessInformation[_]]] =
