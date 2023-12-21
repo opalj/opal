@@ -45,7 +45,7 @@ sealed class StringAnalysisTestRunner(
             "properties/string_analysis/StringDefinitions.class"
         ) ++ filesToLoad
         val basePath = System.getProperty("user.dir")+
-            "/DEVELOPING_OPAL/validate/target/scala-2.12/test-classes/org/opalj/fpcf/"
+            "/DEVELOPING_OPAL/validate/target/scala-2.13/test-classes/org/opalj/fpcf/" // TODO anti-hardcode
 
         necessaryFiles.map { filePath => new File(basePath + filePath) }
     }
@@ -185,10 +185,9 @@ object IntraproceduralStringAnalysisTest {
     // The name of the method from which to extract DUVars to analyze
     val nameTestMethod = "analyzeString"
     // Files to load for the runner
-    val filesToLoad = List(
+    val filesToLoad: List[String] = List(
         "fixtures/string_analysis/LocalTestMethods.class"
     )
-
 }
 
 /**
@@ -240,12 +239,11 @@ object InterproceduralStringAnalysisTest {
     // The name of the method from which to extract DUVars to analyze
     val nameTestMethod = "analyzeString"
     // Files to load for the runner
-    val filesToLoad = List(
+    val filesToLoad: List[String] = List(
         "fixtures/string_analysis/InterproceduralTestMethods.class",
         "fixtures/string_analysis/StringProvider.class",
         "fixtures/string_analysis/hierarchies/GreetingService.class",
         "fixtures/string_analysis/hierarchies/HelloGreeting.class",
         "fixtures/string_analysis/hierarchies/SimpleHelloGreeting.class"
     )
-
 }
