@@ -150,7 +150,7 @@ class L0SelfReferenceLeakageAnalysis(
                     "java.lang.Object does not leak its self reference [configured]"
                 )
             }
-            return Result(classType /* <=> ObjectType.Object*/, DoesNotLeakSelfReference);
+            return Result(classType /* <=> ObjectType.Object*/ , DoesNotLeakSelfReference);
         }
 
         // Let's check the direct supertypes w.r.t. their leakage property.

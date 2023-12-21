@@ -396,7 +396,7 @@ class ClassHierarchy private (
      * Calls the given function `f` for each type that is known to the class hierarchy.
      */
     def foreachKnownType[T](f: ObjectType => T): Unit = {
-        foreachNonNullValue(knownTypesMap)((_ /*index*/, t) => f(t))
+        foreachNonNullValue(knownTypesMap)((_ /*index*/ , t) => f(t))
     }
 
     /**
@@ -588,7 +588,7 @@ class ClassHierarchy private (
     )(
         initial: T
     )(
-        f: (T, ObjectType) => (T /*result*/, Boolean /*skip subtypes*/, Boolean /*abort*/ )
+        f: (T, ObjectType) => (T /*result*/ , Boolean /*skip subtypes*/ , Boolean /*abort*/ )
     ): T = {
         if (isUnknown(objectType))
             return initial;
@@ -668,7 +668,7 @@ class ClassHierarchy private (
         var processed = UIDSet.empty[ObjectType]
         def foreachSubtype(objectType: ObjectType): Unit = {
             if (processed.contains(objectType))
-                return;
+                return ;
 
             processed += objectType
 
@@ -682,7 +682,7 @@ class ClassHierarchy private (
         if (objectType == ObjectType.Object) {
             if (reflexive) {
                 if (!process(ObjectType.Object))
-                    return;
+                    return ;
             };
 
             rootTypes foreach { rootType =>
@@ -695,11 +695,11 @@ class ClassHierarchy private (
                 }
             }
 
-            return;
+            return ;
         }
 
         if (isUnknown(objectType))
-            return;
+            return ;
 
         if (reflexive)
             foreachSubtype(objectType)
@@ -784,7 +784,7 @@ class ClassHierarchy private (
     ): Unit = {
         val oid = objectType.id
         if (isUnknown(oid))
-            return;
+            return ;
 
         import project.classFile
         subclassTypesMap(oid) foreach { subtype => classFile(subtype).foreach(f) }
@@ -834,7 +834,7 @@ class ClassHierarchy private (
     ): Unit = {
         val oid = objectType.id
         if (isUnknown(oid))
-            return;
+            return ;
 
         val superinterfaceTypes = superinterfaceTypesMap(oid)
         if (superinterfaceTypes ne null) {
@@ -848,7 +848,7 @@ class ClassHierarchy private (
 
     def foreachDirectSupertype(objectType: ObjectType)(f: ObjectType => Unit): Unit = {
         if (isUnknown(objectType))
-            return;
+            return ;
 
         val oid = objectType.id
         val superinterfaceTypes = superinterfaceTypesMap(oid)
@@ -1143,7 +1143,7 @@ class ClassHierarchy private (
     def foreachDirectSubtypeOf[U](objectType: ObjectType)(f: ObjectType => U): Unit = {
         val oid = objectType.id
         if (isUnknown(oid))
-            return;
+            return ;
 
         this.subclassTypesMap(oid).foreach(f)
         this.subinterfaceTypesMap(oid).foreach(f)
@@ -1210,7 +1210,7 @@ class ClassHierarchy private (
      */
     def foreachSuperinterfaceType(t: ObjectType)(f: ObjectType => Boolean): Unit = {
         if (isUnknown(t))
-            return;
+            return ;
 
         var processedTypes = UIDSet.empty[ObjectType]
         var typesToProcess = directSuperinterfacesOf(t) ++ superclassType(t)
@@ -1894,8 +1894,7 @@ class ClassHierarchy private (
                     case (_, Unknown)     => return Unknown;
                     case (x, y) if x ne y => No
                     case (x, _ /*x*/ )    => x
-                }
-            )
+                })
         }
         if (subtype.objectType eq supertype.objectType) {
             (subtype, supertype) match {
@@ -2835,7 +2834,7 @@ object ClassHierarchy {
                     "which violates the JVM specification and is therefore ignored"
                 OPALLogger.error("project configuration - class hierarchy", message)
 
-                return;
+                return ;
             }
 
             def addToSet(data: Array[UIDSet[ObjectType]], index: Int, t: ObjectType): Unit = {
@@ -2876,7 +2875,7 @@ object ClassHierarchy {
 
                 if (isInterfaceType) {
                     // an interface always has `java.lang.Object` as its super class
-                    addToSet(subinterfaceTypesMap, ObjectId /*java.lang.Object*/, objectType)
+                    addToSet(subinterfaceTypesMap, ObjectId /*java.lang.Object*/ , objectType)
                 } else {
                     addToSet(subclassTypesMap, superclassTypeId, objectType)
                     ensureHasSet(subinterfaceTypesMap, superclassTypeId)

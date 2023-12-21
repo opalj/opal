@@ -88,7 +88,7 @@ final class IntArrayStack private (
         val thatSize = that.size0
 
         if (thatSize == 0) {
-            return;
+            return ;
         }
 
         val thisSize = this.size0

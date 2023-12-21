@@ -231,7 +231,7 @@ class LBFieldValuesAnalysis private[analyses] (
             fieldType:          FieldType
         ): Unit = {
             if (declaringClassType ne thisClassType)
-                return;
+                return ;
 
             classFile.findField(name, fieldType).foreach { field =>
                 if (fieldInformation.contains(field)) {

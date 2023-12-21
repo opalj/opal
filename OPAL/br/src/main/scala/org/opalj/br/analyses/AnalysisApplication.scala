@@ -231,7 +231,7 @@ trait AnalysisApplication {
         exceptions: Iterable[Throwable]
     ): Unit = {
         if (exceptions.isEmpty)
-            return;
+            return ;
 
         implicit val logContext: LogContext = project.logContext
         for (exception <- exceptions) {

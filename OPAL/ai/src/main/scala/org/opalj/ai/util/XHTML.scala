@@ -151,6 +151,6 @@ object XHTML {
                 } else
                     ""
             ) +
-            footer + "</div>"
+                footer + "</div>"
     }
 }

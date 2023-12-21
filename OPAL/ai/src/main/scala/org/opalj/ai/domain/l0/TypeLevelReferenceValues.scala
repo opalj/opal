@@ -136,7 +136,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
                 ComputationWithSideEffectOrException(mergeMultipleExceptionValues(pc, e1, e2))
             case (ComputationWithException(_), _ /*ComputationWithoutException*/ ) =>
                 c1
-            case (_ /*ComputationWithoutException*/, ComputationWithException(_)) =>
+            case (_ /*ComputationWithoutException*/ , ComputationWithException(_)) =>
                 c2
             case _ =>
                 ComputationWithSideEffectOnly
@@ -160,7 +160,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
                 c2 match {
                     case ComputationWithResultAndException(r2, e2) =>
                         ComputedValueOrException(
-                            mergeDomainValues(pc, r1, r2) /*Value*/,
+                            mergeDomainValues(pc, r1, r2) /*Value*/ ,
                             mergeDomainValues(pc, e1, e2).asInstanceOf[ExceptionValue]
                         )
                     case ComputationWithResult(r2) =>

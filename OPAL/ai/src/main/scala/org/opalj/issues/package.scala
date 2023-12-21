@@ -86,7 +86,7 @@ package object issues {
             // SPECIAL HANDLING IF THE VALUE IS AN INTEGER RANGE VALUE
             value.isInstanceOf[IsIntegerValue]) {
             val range = value.asInstanceOf[IsIntegerValue]
-            if (/*range.lowerBound == 0 &&*/ range.upperBound == 0)
+            if ( /*range.lowerBound == 0 &&*/ range.upperBound == 0)
                 "false"
             else if (range.lowerBound == 1 /* && range.upperBound == 1*/ )
                 "true"

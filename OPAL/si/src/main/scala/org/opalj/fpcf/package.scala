@@ -105,8 +105,7 @@ package object fpcf {
 
     final type ProperOnUpdateContinuation = SomeEPS => ProperPropertyComputationResult
 
-    final type QualifiedOnUpdateContinuation[E <: Entity, P <: Property] =
-        EOptionP[E, P] => ProperPropertyComputationResult
+    final type QualifiedOnUpdateContinuation[E <: Entity, P <: Property] = EOptionP[E, P] => ProperPropertyComputationResult
 
     /**
      * The [[FallbackReason]] specifies the reason why a fallback property is required. This

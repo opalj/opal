@@ -580,7 +580,7 @@ class PKECPropertyStore(
                     if (tasks.isEmpty) {
                         val active = activeTasks.get()
                         if (active == 0) {
-                            return;
+                            return ;
                         } else {
                             // try workstealing:
                             val largestQueue = queues.maxBy(_.size())

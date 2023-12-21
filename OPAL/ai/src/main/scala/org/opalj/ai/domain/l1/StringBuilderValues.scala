@@ -43,7 +43,7 @@ trait StringBuilderValues extends StringValues {
     // TODO Move concrete class to DefaultBindingClass...
     protected class StringBuilderValue(
             val origin:      ValueOrigin,
-            val builderType: ObjectType /*either StringBuilder oder StringBuffer*/,
+            val builderType: ObjectType /*either StringBuilder oder StringBuffer*/ ,
             val builder:     JStringBuilder,
             val refId:       RefId
     ) extends SObjectValue {

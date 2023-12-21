@@ -104,7 +104,7 @@ final case class LongListNode(
     }
 
     override def forFirstN[U](n: Int)(f: Long => U): Unit = {
-        if (n == 0) return;
+        if (n == 0) return ;
 
         var i = 0
         var list: LongList = this

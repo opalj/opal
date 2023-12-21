@@ -300,7 +300,7 @@ trait IntegerRangeValues
             case _ =>
                 left match {
                     case IntegerRangeLike(Int.MaxValue, _ /* Int.MaxValue*/ ) => No
-                    case _                                                    => Unknown
+                    case _ => Unknown
                 }
         }
     }

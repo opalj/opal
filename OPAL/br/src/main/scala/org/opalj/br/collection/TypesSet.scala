@@ -98,13 +98,13 @@ case object EmptyTypesSet extends TypesSet {
 
 }
 
-case class TheTypes(final val concreteTypes: Set[ObjectType]) extends TypesSet {
+case class TheTypes( final val concreteTypes: Set[ObjectType]) extends TypesSet {
 
     final override def upperTypeBounds = Set.empty
 
 }
 
-case class UpperTypeBounds(final val upperTypeBounds: Set[ObjectType]) extends TypesSet {
+case class UpperTypeBounds( final val upperTypeBounds: Set[ObjectType]) extends TypesSet {
 
     final override def concreteTypes = Set.empty
 

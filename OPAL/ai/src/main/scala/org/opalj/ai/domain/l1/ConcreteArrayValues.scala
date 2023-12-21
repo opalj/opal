@@ -65,7 +65,7 @@ trait ConcreteArrayValues
     protected def isEffectivelyImmutable(objectType: ObjectType): Boolean = {
         objectType.id match {
             case ObjectType.ObjectId | ObjectType.StringId | ObjectType.ClassId => true
-            case _                                                              => false
+            case _ => false
         }
     }
 

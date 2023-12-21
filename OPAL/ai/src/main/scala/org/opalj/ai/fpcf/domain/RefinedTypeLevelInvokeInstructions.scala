@@ -64,7 +64,7 @@ trait RefinedTypeLevelInvokeInstructions
         val returnType = method.returnType
         if (!returnType.isObjectType ||
             returnType != invokeMethodDescriptor.returnType // <= to handle MethodHandle.invoke(Exact) calls
-        ) {
+            ) {
             return fallback();
         }
 

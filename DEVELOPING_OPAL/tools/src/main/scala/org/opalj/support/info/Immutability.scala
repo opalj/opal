@@ -786,7 +786,7 @@ object Immutability {
             case Some(a) =>
                 Console.println(s"unknown call graph analysis: $a")
                 Console.println(usage)
-                return;
+                return ;
         }
 
         var nIndex = 1

@@ -1080,31 +1080,26 @@ package object ba { ba =>
                             CPEModule(require.requires),
                             require.flags,
                             require.version.map(CPEUtf8).getOrElse(0)
-                        )
-                    ),
+                        )),
                     exports.map[da.ExportsEntry](export =>
                         da.ExportsEntry(
                             CPEPackage(export.exports),
                             export.flags,
                             export.exportsTo.map(CPEModule _)
-                        )
-                    ),
+                        )),
                     opens.map[da.OpensEntry](open =>
                         da.OpensEntry(
                             CPEPackage(open.opens),
                             open.flags,
                             open.toPackages.map(CPEModule _)
-                        )
-                    ),
+                        )),
                     uses.map(use => CPEClass(use, false)),
                     provides.map[da.ProvidesEntry](provide =>
                         da.ProvidesEntry(
                             CPEClass(provide.provides, false),
                             provide.withInterfaces.map(withInterface =>
-                                CPEClass(withInterface, false)
-                            ): ArraySeq[Int]
-                        )
-                    )
+                                CPEClass(withInterface, false)): ArraySeq[Int]
+                        ))
                 ))
 
             case br.NestHost.KindId =>

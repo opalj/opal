@@ -35,7 +35,7 @@ import org.opalj.fpcf.UBP
  *
  * @author Dominik Helm
  */
-class L0CompileTimeConstancyAnalysis private[analyses] (final val project: SomeProject)
+class L0CompileTimeConstancyAnalysis private[analyses] ( final val project: SomeProject)
     extends FPCFAnalysis {
 
     /**

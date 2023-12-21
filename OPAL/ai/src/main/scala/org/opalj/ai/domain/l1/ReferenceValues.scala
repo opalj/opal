@@ -63,7 +63,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
      * A map that contains the refined values (the map's values) of some old values (the
      * map's keys).
      */
-    type Refinements = IdentityHashMap[AReferenceValue /*old*/, AReferenceValue /*new*/ ]
+    type Refinements = IdentityHashMap[AReferenceValue /*old*/ , AReferenceValue /*new*/ ]
 
     /**
      * Defines a total order on reference values with a single origin by subtracting

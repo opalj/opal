@@ -836,7 +836,7 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
         instruction:     INVOKEDYNAMIC
     ): Unit = {
 
-        val INVOKEDYNAMIC(bootstrapMethod, _ /*name*/, methodDescriptor) = instruction
+        val INVOKEDYNAMIC(bootstrapMethod, _ /*name*/ , methodDescriptor) = instruction
 
         // Dependencies related to the invokedynamic instruction's method descriptor.
         // (Most likely simply java/lang/Object for both the parameter and return types.)
@@ -992,7 +992,7 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
     ): Unit = {
 
         if (target eq VoidType)
-            return;
+            return ;
 
         target match {
             case ot: ObjectType =>

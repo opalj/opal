@@ -93,7 +93,7 @@ object IdentifyResourcesAnalysis extends ProjectAnalysisApplication {
             } yield (m, pc, value)
         } { ns => println(s"Performing the abstract interpretations took ${ns.toSeconds}") }
 
-        def callSiteToString(callSite: (Method, Int /* PC*/, String)): String = {
+        def callSiteToString(callSite: (Method, Int /* PC*/ , String)): String = {
             val (m, pc, v) = callSite
             m.toJava(s"$pc: $v")
         }

@@ -578,7 +578,7 @@ final class Code private (
     def cfPCs(
         implicit
         classHierarchy: ClassHierarchy = PreInitializedClassHierarchy
-    ): (PCs /*cfJoins*/, PCs /*forks*/, IntMap[PCs] /*forkTargetPCs*/) = {
+    ): (PCs /*cfJoins*/ , PCs /*forks*/ , IntMap[PCs] /*forkTargetPCs*/ ) = {
         val instructions = this.instructions
         val instructionsLength = instructions.length
 
@@ -948,8 +948,8 @@ final class Code private (
                     case lv @ LocalVariable(
                         startPC,
                         length,
-                        _ /*name*/,
-                        _ /*fieldType*/,
+                        _ /*name*/ ,
+                        _ /*fieldType*/ ,
                         index
                         ) if startPC <= pc && startPC + length > pc =>
                         (index, lv)
@@ -1046,7 +1046,7 @@ final class Code private (
      */
     @inline def isModifiedByWide(pc: Int): Boolean = pc > 0 && instructions(pc - 1) == WIDE
 
-    def foldLeft[T <: Any](start: T)(f: (T, Int /*PC*/, Instruction) => T): T = {
+    def foldLeft[T <: Any](start: T)(f: (T, Int /*PC*/ , Instruction) => T): T = {
         val max_pc = instructions.length
         var pc = 0
         var vs = start
@@ -1851,7 +1851,7 @@ object Code {
         message:          Option[String]   = None
     ): Code = {
         new Code(
-            maxStack = 3 /* 3 for the message! */,
+            maxStack = 3 /* 3 for the message! */ ,
             maxLocals = descriptor.requiredRegisters + (if (isInstanceMethod) 1 else 0),
             instructions =
                 Array(

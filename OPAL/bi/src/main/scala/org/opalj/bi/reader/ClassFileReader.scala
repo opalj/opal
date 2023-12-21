@@ -621,7 +621,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
             val classFiles = ArrayBuffer.empty[File]
             def collectFiles(files: Array[File]): Unit = {
                 if (files eq null)
-                    return;
+                    return ;
 
                 files foreach { file =>
                     val filename = file.getName
@@ -796,12 +796,12 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
                     findClassFile(
                         List(f), progressReporter, classFileFilter, className, exceptionHandler
                     ) match {
-                        case Left(cf) =>
-                            return Left(cf);
-                        case Right(moreClassNames) =>
-                            classNames ++= moreClassNames
-                        /*nothing else to do... let's continue*/
-                    }
+                            case Left(cf) =>
+                                return Left(cf);
+                            case Right(moreClassNames) =>
+                                classNames ++= moreClassNames
+                            /*nothing else to do... let's continue*/
+                        }
                 }
             }
         }

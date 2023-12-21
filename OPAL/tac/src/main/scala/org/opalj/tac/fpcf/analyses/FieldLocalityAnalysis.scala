@@ -614,25 +614,25 @@ class FieldLocalityAnalysis private[analyses] (
                 faiEP.ub.numDirectAccesses - seenDirectAccesses,
                 faiEP.ub.numIndirectAccesses - seenIndirectAccesses
             ) exists { wa =>
-                val definedMethod = contextProvider.contextFromId(wa._1).method
-                val method = definedMethod.definedMethod
-                val pc = wa._2
-                val receiver = wa._3
-                state.tacFieldReadAccesses += method -> (state.tacFieldReadAccesses.getOrElse(method, Set.empty) + ((pc, receiver)))
+                    val definedMethod = contextProvider.contextFromId(wa._1).method
+                    val method = definedMethod.definedMethod
+                    val pc = wa._2
+                    val receiver = wa._3
+                    state.tacFieldReadAccesses += method -> (state.tacFieldReadAccesses.getOrElse(method, Set.empty) + ((pc, receiver)))
 
-                val tacaiAndCallers = getTACAIAndCallers(method)
-                if (tacaiAndCallers.isDefined) {
-                    val callers = tacaiAndCallers.get._2
-                    val tacai = tacaiAndCallers.get._1
+                    val tacaiAndCallers = getTACAIAndCallers(method)
+                    if (tacaiAndCallers.isDefined) {
+                        val callers = tacaiAndCallers.get._2
+                        val tacai = tacaiAndCallers.get._1
 
-                    var isLocal = true
-                    callers.forNewCalleeContexts(null, definedMethod) {
-                        isLocal &&= isLocalForFieldReadAccess(_, pc, receiver, tacai)
-                    }
-                    !isLocal
-                } else
-                    false
-            }
+                        var isLocal = true
+                        callers.forNewCalleeContexts(null, definedMethod) {
+                            isLocal &&= isLocalForFieldReadAccess(_, pc, receiver, tacai)
+                        }
+                        !isLocal
+                    } else
+                        false
+                }
         } else
             false
 
@@ -657,26 +657,26 @@ class FieldLocalityAnalysis private[analyses] (
                 faiEP.ub.numDirectAccesses - seenDirectAccesses,
                 faiEP.ub.numIndirectAccesses - seenIndirectAccesses
             ) exists { wa =>
-                val definedMethod = contextProvider.contextFromId(wa._1).method
-                val method = definedMethod.definedMethod
-                val pc = wa._2
-                val parameter = wa._4
-                state.tacFieldWriteAccesses += method ->
-                    (state.tacFieldWriteAccesses.getOrElse(method, Set.empty) + ((pc, parameter)))
+                    val definedMethod = contextProvider.contextFromId(wa._1).method
+                    val method = definedMethod.definedMethod
+                    val pc = wa._2
+                    val parameter = wa._4
+                    state.tacFieldWriteAccesses += method ->
+                        (state.tacFieldWriteAccesses.getOrElse(method, Set.empty) + ((pc, parameter)))
 
-                val tacaiAndCallers = getTACAIAndCallers(method)
-                if (tacaiAndCallers.isDefined) {
-                    val callers = tacaiAndCallers.get._2
-                    val tacai = tacaiAndCallers.get._1
+                    val tacaiAndCallers = getTACAIAndCallers(method)
+                    if (tacaiAndCallers.isDefined) {
+                        val callers = tacaiAndCallers.get._2
+                        val tacai = tacaiAndCallers.get._1
 
-                    var isLocal = true
-                    callers.forNewCalleeContexts(null, definedMethod) {
-                        isLocal &&= isLocalForFieldWriteAccess(_, pc, parameter, tacai)
-                    }
-                    !isLocal
-                } else
-                    false
-            }
+                        var isLocal = true
+                        callers.forNewCalleeContexts(null, definedMethod) {
+                            isLocal &&= isLocalForFieldWriteAccess(_, pc, parameter, tacai)
+                        }
+                        !isLocal
+                    } else
+                        false
+                }
         } else
             false
 

@@ -33,7 +33,7 @@ import org.opalj.fpcf.UBP
  *
  * @author Dominik Helm
  */
-class VirtualMethodPurityAnalysis private[analyses] (final val project: SomeProject) extends FPCFAnalysis {
+class VirtualMethodPurityAnalysis private[analyses] ( final val project: SomeProject) extends FPCFAnalysis {
     private[this] val declaredMethods = project.get(DeclaredMethodsKey)
     private[this] val simpleContexts = project.get(SimpleContextsKey)
 

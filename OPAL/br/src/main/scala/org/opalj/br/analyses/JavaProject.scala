@@ -20,7 +20,7 @@ import org.opalj.log.StandardLogContext
  * @author Andreas Muttscheller
  * @author Michael Eichberg
  */
-class JavaProject(final val project: Project[java.net.URL]) {
+class JavaProject( final val project: Project[java.net.URL]) {
 
     /**
      * @param classPath A list of files and jars, where to look for classes.

@@ -846,7 +846,7 @@ class MethodInvokeAnalysis private[analyses] (
         if (methodInvokeReceiver.isDefined) {
             val receiver = methodInvokeReceiver.get.value
             if (receiver.isPrimitiveValue)
-                return;
+                return ;
         }
 
         val methodInvokeActualParamsOpt = methodParams(1).flatMap(p => VarargsUtil.getParamsFromVararg(p, stmts))

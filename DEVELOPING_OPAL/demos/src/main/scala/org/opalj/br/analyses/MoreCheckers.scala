@@ -136,7 +136,7 @@ object MoreCheckers {
                     classFile <- getClassFile.get(cloneable).toList
                     if !classFile.methods.exists({
                         case Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object)) => true
-                        case _                                                              => false
+                        case _ => false
                     })
                 } yield classFile.thisType.fqn
             } else
@@ -155,9 +155,9 @@ object MoreCheckers {
                 if !method.isAbstract
                 if !method.body.get.instructions.exists {
                     case INVOKESPECIAL(`superClass`, _, "clone", JustReturnsObject) => true
-                    case _                                                          => false
+                    case _ => false
                 }
-            } yield (classFile /*.thisClass.className*/, method /*.name*/ )
+            } yield (classFile /*.thisClass.className*/ , method /*.name*/ )
         } { t => collect("CN_IDIOM_NO_SUPER_CALL", t /*nsToSecs(t)*/ ) }
         println(", " /*"\tViolations: "*/ + cloneDoesNotCallSuperClone.length /*+": "+cloneDoesNotCallSuperClone.mkString("; ")*/ )
 

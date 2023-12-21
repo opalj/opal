@@ -291,7 +291,7 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
                     unknownEnsembles.mkString("unknown ensemble(s): ", ",", "")
                 )
 
-            val (_ /*ensembleName*/, sourceEnsembleElements) = ensembles(sourceEnsemble)
+            val (_ /*ensembleName*/ , sourceEnsembleElements) = ensembles(sourceEnsemble)
             val notAllowedTargetSourceElements =
                 targetEnsembles.foldLeft(Set.empty[VirtualSourceElement])(_ ++ ensembles(_)._2)
 
@@ -358,7 +358,7 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
                     unknownEnsembles.mkString("unknown ensemble(s): ", ",", "")
                 )
 
-            val (_ /*ensembleName*/, sourceEnsembleElements) = ensembles(sourceEnsemble)
+            val (_ /*ensembleName*/ , sourceEnsembleElements) = ensembles(sourceEnsemble)
             val allAllowedLocalTargetSourceElements =
                 // self references are allowed as well as references to source elements belonging
                 // to a target ensemble
@@ -435,7 +435,7 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
         override def ensembles: Seq[Symbol] = Seq(sourceEnsemble)
 
         override def violations(): ASet[SpecificationViolation] = {
-            val (_ /*ensembleName*/, sourceEnsembleElements) = spec.ensembles(sourceEnsemble)
+            val (_ /*ensembleName*/ , sourceEnsembleElements) = spec.ensembles(sourceEnsemble)
 
             for {
                 sourceElement <- sourceEnsembleElements
@@ -515,7 +515,7 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
         override def ensembles: Seq[Symbol] = Seq(sourceEnsemble)
 
         override def violations(): ASet[SpecificationViolation] = {
-            val (_ /*ensembleName*/, sourceEnsembleElements) = spec.ensembles(sourceEnsemble)
+            val (_ /*ensembleName*/ , sourceEnsembleElements) = spec.ensembles(sourceEnsemble)
 
             for {
                 sourceElement <- sourceEnsembleElements
@@ -558,7 +558,7 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
         override def ensembles: Seq[Symbol] = Seq(sourceEnsemble)
 
         override def violations(): ASet[SpecificationViolation] = {
-            val (_ /*ensembleName*/, sourceEnsembleElements) = spec.ensembles(sourceEnsemble)
+            val (_ /*ensembleName*/ , sourceEnsembleElements) = spec.ensembles(sourceEnsemble)
             val allLocalTargetSourceElements =
                 // self references are allowed as well as references to source elements belonging
                 // to a target ensemble

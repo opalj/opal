@@ -44,7 +44,7 @@ import org.opalj.fpcf.UBP
  * @author Michael Eichberg
  * @author Tobias Roth
  */
-class TypeImmutabilityAnalysis(final val project: SomeProject) extends FPCFAnalysis {
+class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnalysis {
 
     val defaultTransitivelyImmutableTypes = project.config.getStringList(
         "org.opalj.fpcf.analyses.TypeImmutabilityAnalysis.defaultTransitivelyImmutableTypes"

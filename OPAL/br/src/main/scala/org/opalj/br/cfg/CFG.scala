@@ -523,7 +523,7 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
 
     def foreachPredecessor(pc: Int)(f: Int => Unit): Unit = {
         if (pc == 0)
-            return;
+            return ;
 
         val bb = this.bb(pc)
         if (bb.startPC == pc) {
@@ -618,7 +618,7 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
         // of catch nodes does not necessarily reflect the smallest catch node id.
         val leastCatchNodeId = if (catchNodes.isEmpty) 0 else catchNodes.iterator.map(_.nodeId).min
         val bbMapping = FixedSizedHashIDMap[CFGNode, CFGNode](
-            minValue = Math.min(-2 /*the exit nodes*/, leastCatchNodeId),
+            minValue = Math.min(-2 /*the exit nodes*/ , leastCatchNodeId),
             maxValue = code.instructions.length
         )
 
@@ -720,7 +720,7 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
             val secondBB = firstBB.successors.head.asBasicBlock
             val newFirstBB = secondBB.copy(startPC = 0, predecessors = Set.empty)
             newFirstBB.successors.foreach(succBB => succBB.updatePredecessor(secondBB, newFirstBB))
-            Arrays.fill(newBasicBlocksArray, 0, secondBB._endPC + 1 /* (exclusive)*/, newFirstBB)
+            Arrays.fill(newBasicBlocksArray, 0, secondBB._endPC + 1 /* (exclusive)*/ , newFirstBB)
         }
 
         CFG[NewI, NewC](

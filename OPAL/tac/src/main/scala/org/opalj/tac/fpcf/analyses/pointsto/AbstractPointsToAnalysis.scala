@@ -375,7 +375,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
             if (receiverOpt.isDefined) {
                 val isNonVirtualCall = call match {
                     case _: NonVirtualFunctionCall[V] | _: NonVirtualMethodCall[V] => true
-                    case _                                                         => false
+                    case _ => false
                 }
                 handleCallReceiver(receiverOpt.get.asVar.definedBy, target, isNonVirtualCall)
             }

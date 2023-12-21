@@ -682,17 +682,17 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
      */
     def adjustLowerBound()(implicit state: State): Unit = {
         if (state.calleesDependee.isDefined)
-            return; // Nothing to be done, lower bound is still LBImpure
+            return ; // Nothing to be done, lower bound is still LBImpure
 
         var newLowerBound = state.ubPurity
 
-        if (state.tacai.isDefined) return; // Nothing to be done, lower bound is still LBImpure
+        if (state.tacai.isDefined) return ; // Nothing to be done, lower bound is still LBImpure
 
         for ((eop, _) <- state.purityDependees.valuesIterator) {
             eop match {
                 case LBP(lb) => newLowerBound = newLowerBound meet lb
                 case _ =>
-                    return; // Nothing to be done, lower bound is still LBImpure
+                    return ; // Nothing to be done, lower bound is still LBImpure
             }
         }
 

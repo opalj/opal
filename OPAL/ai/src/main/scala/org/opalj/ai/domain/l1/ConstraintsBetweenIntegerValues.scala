@@ -47,7 +47,7 @@ trait ConstraintsBetweenIntegerValues
         constraints = new Array[ConstraintsStore](theInstructions.length)
     }
 
-    private[this] var lastConstraint: Option[(Int /*PC*/, IntegerLikeValue, IntegerLikeValue, Constraint)] = {
+    private[this] var lastConstraint: Option[(Int /*PC*/ , IntegerLikeValue, IntegerLikeValue, Constraint)] = {
         None
     }
 

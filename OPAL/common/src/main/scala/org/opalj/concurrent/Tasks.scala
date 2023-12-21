@@ -60,7 +60,7 @@ final class SequentialTasks[T](
 
     def submit(t: T): Unit = {
         if (isInterrupted())
-            return;
+            return ;
 
         tasksQueue += t
     }
@@ -135,7 +135,7 @@ final class ConcurrentTasks[T](
 
     def submit(t: T): Unit = {
         if (isInterrupted())
-            return;
+            return ;
         val runnable: Runnable = () => {
             try {
                 if (!isInterrupted()) process(self, t)

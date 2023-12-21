@@ -517,7 +517,7 @@ object Purity {
         if (cp eq null) {
             Console.println("no classpath given (use -cp <classpath> or -JDK)")
             Console.println(usage)
-            return;
+            return ;
         }
 
         var support: List[FPCFAnalysisScheduler] = Nil
@@ -539,7 +539,7 @@ object Purity {
             case Some(a) =>
                 Console.println(s"unknown analysis: $a")
                 Console.println(usage)
-                return;
+                return ;
         }
 
         if (eager) {
@@ -562,7 +562,7 @@ object Purity {
             case Some(a) =>
                 Console.println(s"unknown escape analysis: $a")
                 Console.println(usage)
-                return;
+                return ;
         }
 
         fieldAssignabilityAnalysisName match {
@@ -591,7 +591,7 @@ object Purity {
             case Some(a) =>
                 Console.println(s"unknown field assignability analysis: $a")
                 Console.println(usage)
-                return;
+                return ;
         }
 
         val d =
@@ -617,7 +617,7 @@ object Purity {
             case Some(a) =>
                 Console.println(s"unknown call graph analysis: $a")
                 Console.println(usage)
-                return;
+                return ;
         }
 
         if (evaluationDir.isDefined && !evaluationDir.get.exists()) evaluationDir.get.mkdir

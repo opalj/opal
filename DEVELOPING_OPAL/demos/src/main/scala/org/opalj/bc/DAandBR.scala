@@ -154,8 +154,8 @@ object DAandBR extends App {
         minor_version = 0,
         major_version = 46,
         access_flags = ACC_PUBLIC.mask | ACC_SUPER.mask,
-        this_class = 1 /*Test*/,
-        super_class = 3 /*extends java.lang.Object*/,
+        this_class = 1 /*Test*/ ,
+        super_class = 3 /*extends java.lang.Object*/ ,
         // Interfaces.empty,
         // Fields.empty,
         methods = ArraySeq(

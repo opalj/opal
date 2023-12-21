@@ -608,7 +608,7 @@ package object ai {
     )(
         code: Code, operandsArray: domain.OperandsArray
     )(
-        f: PartialFunction[(Int /*PC*/, Instruction, domain.Operands), B] // IMPROVE Use specialized data-structure to avoid (un)boxing
+        f: PartialFunction[(Int /*PC*/ , Instruction, domain.Operands), B] // IMPROVE Use specialized data-structure to avoid (un)boxing
     ): Seq[B] = {
         val instructions = code.instructions
         val max_pc = instructions.length
@@ -634,7 +634,7 @@ package object ai {
     )(
         code: Code, operandsArray: domain.OperandsArray
     )(
-        f: (Int /*PC*/, Instruction, domain.Operands) => U
+        f: (Int /*PC*/ , Instruction, domain.Operands) => U
     ): Unit = {
         val instructions = code.instructions
         val max_pc = instructions.size

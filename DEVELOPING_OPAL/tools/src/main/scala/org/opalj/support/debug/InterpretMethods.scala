@@ -196,7 +196,7 @@ object InterpretMethodsAnalysis {
                 None
             } catch {
                 case ct: ControlThrowable => throw ct
-                case t: Throwable         =>
+                case t: Throwable =>
                     // basically, we want to catch everything!
                     val classFile = method.classFile
                     val source = project.source(classFile.thisType).get.toString
