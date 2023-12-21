@@ -33,9 +33,7 @@ import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
 import org.opalj.br.ArrayType
 import org.opalj.br.fpcf.properties.cg.Callees
-import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.common.DefinitionSite
-import org.opalj.tac.common.DefinitionSitesKey
 
 /**
  * Introduces object allocations for newInstance reflection methods.
@@ -200,7 +198,7 @@ trait NewInstanceAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
     def createAnalysis: SomeProject => NewInstanceAnalysis
 
     override def requiredProjectInformation: ProjectInformationKeys =
-        Seq(DeclaredMethodsKey, DefinitionSitesKey, TypeIteratorKey)
+        AbstractPointsToBasedAnalysis.requiredProjectInformation :+ DeclaredMethodsKey
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(Callees, propertyKind)
 

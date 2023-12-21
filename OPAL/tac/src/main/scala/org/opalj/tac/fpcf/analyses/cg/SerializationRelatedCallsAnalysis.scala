@@ -198,17 +198,18 @@ class OOSWriteObjectAnalysis private[analyses] (
                 "writeObject",
                 WriteObjectDescriptor
             )
-            indirectCalls.addCallOrFallback(
-                callContext,
-                callPC,
-                writeObjectMethod,
-                ObjectType.Object.packageName,
-                ObjectType.Object,
-                "writeObject",
-                WriteObjectDescriptor,
-                parameters,
-                receiver
-            )
+            if (writeObjectMethod.hasValue)
+                indirectCalls.addCallOrFallback(
+                    callContext,
+                    callPC,
+                    writeObjectMethod,
+                    ObjectType.Object.packageName,
+                    ObjectType.Object,
+                    "writeObject",
+                    WriteObjectDescriptor,
+                    parameters,
+                    receiver
+                )
         }
 
         val writeReplaceMethod = project.specialCall(
@@ -308,17 +309,16 @@ class OISReadObjectAnalysis private[analyses] (
                     t <- ch.allSubtypes(castType, reflexive = true)
                     cf <- project.classFile(t) // we ignore cases were no class file exists
                     if !cf.isInterfaceDeclaration
-                    if ch.isSubtypeOf(castType, ObjectType.Serializable)
+                    if ch.isSubtypeOf(t, ObjectType.Serializable)
                 } {
 
                     val receiver = Some(
                         (ASObjectValue(isNull = No, isPrecise = false, castType), IntTrieSet(pc))
                     )
 
-                    if (ch.isSubtypeOf(castType, ObjectType.Externalizable)) {
+                    if (ch.isSubtypeOf(t, ObjectType.Externalizable)) {
                         // call to `readExternal`
-                        val readExternal =
-                            p.instanceCall(t, t, "readExternal", ReadExternalDescriptor)
+                        val readExternal = p.instanceCall(t, t, "readExternal", ReadExternalDescriptor)
 
                         calleesAndCallers.addCallOrFallback(
                             context,
@@ -344,15 +344,16 @@ class OISReadObjectAnalysis private[analyses] (
                         val readObjectMethod = p.specialCall(
                             t, t, isInterface = false, "readObject", ReadObjectDescriptor
                         )
-                        calleesAndCallers.addCallOrFallback(
-                            context, pc, readObjectMethod,
-                            ObjectType.Object.packageName,
-                            ObjectType.Object,
-                            "readObject",
-                            ReadObjectDescriptor,
-                            parameterList,
-                            receiver
-                        )
+                        if (readObjectMethod.hasValue)
+                            calleesAndCallers.addCallOrFallback(
+                                context, pc, readObjectMethod,
+                                ObjectType.Object.packageName,
+                                ObjectType.Object,
+                                "readObject",
+                                ReadObjectDescriptor,
+                                parameterList,
+                                receiver
+                            )
 
                         // call to first super no-arg constructor
                         val nonSerializableSuperclass = firstNotSerializableSupertype(t)
@@ -419,6 +420,8 @@ class OISReadObjectAnalysis private[analyses] (
                             receiver
                         )
                     }
+
+                    // IMPROVE: Also handle readObjectNoData method
                 }
             case _ =>
         }
