@@ -16,7 +16,7 @@ import org.opalj.tac.Assignment
 import org.opalj.tac.Call
 import org.opalj.tac.ExprStmt
 import org.opalj.tac.VirtualFunctionCall
-import org.opalj.tac.fpcf.analyses.cg.V
+import org.opalj.tac.V
 import org.opalj.tac.EagerDetachedTACAIKey
 
 /**

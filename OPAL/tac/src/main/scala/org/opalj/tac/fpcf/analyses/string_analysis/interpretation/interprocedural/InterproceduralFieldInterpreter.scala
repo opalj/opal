@@ -7,17 +7,20 @@ package string_analysis
 package interpretation
 package interprocedural
 
-import scala.collection.mutable.ListBuffer
+import org.opalj.br.analyses.DeclaredFields
 
+import scala.collection.mutable.ListBuffer
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.PropertyStore
 import org.opalj.br.analyses.FieldAccessInformation
+import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
+import org.opalj.tac.fpcf.analyses.cg.uVarForDefSites
 
 /**
  * The `InterproceduralFieldInterpreter` is responsible for processing instances of [[FieldRead]]s.
@@ -29,10 +32,12 @@ import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
  * @author Patrick Mell
  */
 class InterproceduralFieldInterpreter(
-        state:                  InterproceduralComputationState,
-        exprHandler:            InterproceduralInterpretationHandler,
-        ps:                     PropertyStore,
-        fieldAccessInformation: FieldAccessInformation
+        state:                        InterproceduralComputationState,
+        exprHandler:                  InterproceduralInterpretationHandler,
+        ps:                           PropertyStore,
+        fieldAccessInformation:       FieldAccessInformation,
+        implicit val declaredFields:  DeclaredFields,
+        implicit val contextProvider: ContextProvider
 ) extends AbstractStringInterpreter(state.tac.cfg, exprHandler) {
 
     override type T = FieldRead[V]
@@ -59,7 +64,8 @@ class InterproceduralFieldInterpreter(
             return FinalEP(instr, StringConstancyProperty.lb)
         }
         // Write accesses exceeds the threshold => approximate with lower bound
-        val writeAccesses = fieldAccessInformation.writeAccesses(instr.declaringClass, instr.name)
+        val definedField = declaredFields(instr.declaringClass, instr.name, instr.declaredFieldType).asDefinedField
+        val writeAccesses = fieldAccessInformation.writeAccesses(definedField.definedField)
         if (writeAccesses.length > state.fieldWriteThreshold) {
             return FinalEP(instr, StringConstancyProperty.lb)
         }
@@ -67,18 +73,22 @@ class InterproceduralFieldInterpreter(
         var hasInit = false
         val results = ListBuffer[EOptionP[Entity, StringConstancyProperty]]()
         writeAccesses.foreach {
-            case (m, pcs) => pcs.foreach { pc =>
-                if (m.name == "<init>" || m.name == "<clinit>") {
+            case (contextId, _, _, parameter) =>
+                val method = contextProvider.contextFromId(contextId).method.definedMethod
+
+                if (method.name == "<init>" || method.name == "<clinit>") {
                     hasInit = true
                 }
-                val (tacEps, tac) = getTACAI(ps, m, state)
-                val nextResult = if (tacEps.isRefinable) {
+                val (tacEps, tac) = getTACAI(ps, method, state)
+                val nextResult = if (parameter.isEmpty) {
+                    // Field parameter information is not available
+                    FinalEP(defSitEntity, StringConstancyProperty.lb)
+                } else if (tacEps.isRefinable) {
                     EPK(state.entity, StringConstancyProperty.key)
                 } else {
                     tac match {
                         case Some(methodTac) =>
-                            val stmt = methodTac.stmts(methodTac.pcToIndex(pc))
-                            val entity = (extractUVarFromPut(stmt), m)
+                            val entity = (uVarForDefSites(parameter.get, methodTac.pcToIndex), method)
                             val eps = ps(entity, StringConstancyProperty.key)
                             if (eps.isRefinable) {
                                 state.dependees = eps :: state.dependees
@@ -96,7 +106,6 @@ class InterproceduralFieldInterpreter(
                     }
                 }
                 results.append(nextResult)
-            }
         }
 
         if (results.isEmpty) {
@@ -123,7 +132,7 @@ class InterproceduralFieldInterpreter(
                     ))
                 }
                 val finalSci = StringConstancyInformation.reduceMultiple(results.map {
-                    _.asFinal.p.asInstanceOf[StringConstancyProperty].stringConstancyInformation
+                    _.asFinal.p.stringConstancyInformation
                 })
                 state.appendToFpe2Sci(defSitEntity, finalSci)
                 FinalEP(defSitEntity, StringConstancyProperty(finalSci))
@@ -132,15 +141,4 @@ class InterproceduralFieldInterpreter(
             }
         }
     }
-
-    /**
-     * This function extracts a DUVar from a given statement which is required to be either of type
-     * [[PutStatic]] or [[PutField]].
-     */
-    private def extractUVarFromPut(field: Stmt[V]): V = field match {
-        case PutStatic(_, _, _, _, value)   => value.asVar
-        case PutField(_, _, _, _, _, value) => value.asVar
-        case _                              => throw new IllegalArgumentException(s"Type of $field is currently not supported!")
-    }
-
 }

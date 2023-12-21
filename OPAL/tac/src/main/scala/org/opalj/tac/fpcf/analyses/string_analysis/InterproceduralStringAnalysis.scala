@@ -26,6 +26,7 @@ import org.opalj.br.fpcf.FPCFLazyAnalysisScheduler
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.br.FieldType
+import org.opalj.br.analyses.DeclaredFieldsKey
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
@@ -94,6 +95,7 @@ class InterproceduralStringAnalysis(
      */
     private val fieldWriteThreshold = 100
     private val declaredMethods = project.get(DeclaredMethodsKey)
+    private val declaredFields = project.get(DeclaredFieldsKey)
     private final val fieldAccessInformation = project.get(FieldAccessInformationKey)
 
     /**
@@ -175,7 +177,7 @@ class InterproceduralStringAnalysis(
 
         if (state.iHandler == null) {
             state.iHandler = InterproceduralInterpretationHandler(
-                state.tac, ps, declaredMethods, fieldAccessInformation, state, typeIterator
+                state.tac, ps, declaredMethods, declaredFields, fieldAccessInformation, state, typeIterator
             )
             val interimState = state.copy()
             interimState.tac = state.tac
@@ -184,7 +186,7 @@ class InterproceduralStringAnalysis(
             interimState.callers = state.callers
             interimState.params = state.params
             state.interimIHandler = InterproceduralInterpretationHandler(
-                state.tac, ps, declaredMethods, fieldAccessInformation, interimState, typeIterator
+                state.tac, ps, declaredMethods, declaredFields, fieldAccessInformation, interimState, typeIterator
             )
         }
 

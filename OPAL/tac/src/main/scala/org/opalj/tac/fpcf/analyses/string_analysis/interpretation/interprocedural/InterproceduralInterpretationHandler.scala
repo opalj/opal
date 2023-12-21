@@ -20,6 +20,7 @@ import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.ai.ImmediateVMExceptionsOriginOffset
+import org.opalj.br.analyses.DeclaredFields
 import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.common.BinaryExprInterpreter
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.common.DoubleValueInterpreter
@@ -49,6 +50,7 @@ class InterproceduralInterpretationHandler(
         tac:                    TACode[TACMethodParameter, DUVar[ValueInformation]],
         ps:                     PropertyStore,
         declaredMethods:        DeclaredMethods,
+        declaredFields:         DeclaredFields,
         fieldAccessInformation: FieldAccessInformation,
         state:                  InterproceduralComputationState,
         typeIterator:           TypeIterator
@@ -268,7 +270,7 @@ class InterproceduralInterpretationHandler(
         expr: FieldRead[V], defSite: Int
     ): EOptionP[Entity, StringConstancyProperty] = {
         val r = new InterproceduralFieldInterpreter(
-            state, this, ps, fieldAccessInformation
+            state, this, ps, fieldAccessInformation, declaredFields, typeIterator
         ).interpret(expr, defSite)
         if (r.isRefinable) {
             processedDefSites.remove(defSite)
@@ -404,11 +406,11 @@ object InterproceduralInterpretationHandler {
         tac:                    TACode[TACMethodParameter, DUVar[ValueInformation]],
         ps:                     PropertyStore,
         declaredMethods:        DeclaredMethods,
+        declaredFields:         DeclaredFields,
         fieldAccessInformation: FieldAccessInformation,
         state:                  InterproceduralComputationState,
         typeIterator:           TypeIterator
     ): InterproceduralInterpretationHandler = new InterproceduralInterpretationHandler(
-        tac, ps, declaredMethods, fieldAccessInformation, state, typeIterator
+        tac, ps, declaredMethods, declaredFields, fieldAccessInformation, state, typeIterator
     )
-
 }
