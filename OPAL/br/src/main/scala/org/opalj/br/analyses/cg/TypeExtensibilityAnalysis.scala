@@ -28,8 +28,8 @@ import org.opalj.collection.mutable.ArrayMap
  */
 class TypeExtensibilityAnalysis(val project: SomeProject) extends (ObjectType => Answer) {
 
-    import classHierarchy.foreachDirectSupertype
     import project.classHierarchy
+    import classHierarchy.foreachDirectSupertype
 
     @tailrec private[this] def determineExtensibility(
         typesToProcess:       mutable.Queue[ObjectType],
