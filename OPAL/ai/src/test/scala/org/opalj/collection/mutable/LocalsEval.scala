@@ -4,8 +4,9 @@ package collection
 package mutable
 
 import java.util.Random
-import org.opalj.util.PerformanceEvaluation.time
+
 import org.opalj.util.Nanoseconds
+import org.opalj.util.PerformanceEvaluation.time
 
 /**
  * Evaluates the effectiveness of the locals data structure when compared with an array.
@@ -20,11 +21,11 @@ object LocalsEval extends App {
     val eMax = 2
     val minRuns = 20
     println("Configuration")
-    println("REPETITIONS = "+REPETITIONS)
+    println("REPETITIONS = " + REPETITIONS)
     println("Timer Configuration")
-    println("e = "+e)
-    println("eMax = "+eMax)
-    println("minRuns = "+minRuns)
+    println("e = " + e)
+    println("eMax = " + eMax)
+    println("minRuns = " + minRuns)
 
     /////////
 

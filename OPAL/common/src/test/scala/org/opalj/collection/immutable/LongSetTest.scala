@@ -4,8 +4,8 @@ package collection
 package immutable
 
 import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
 import org.scalatest.funspec.AnyFunSpec
+import org.scalatestplus.junit.JUnitRunner
 
 @RunWith(classOf[JUnitRunner])
 abstract class LongSetTest extends AnyFunSpec {
@@ -111,7 +111,7 @@ abstract class LongSetTest extends AnyFunSpec {
             val oLongSet = fixture.foldLeft(empty())((c, n) => c + n)
             val otherValues = fixture.map(~_).filter(v => !fixture.contains(v))
 
-            it("should return true for all added values: "+fixture) {
+            it("should return true for all added values: " + fixture) {
                 var notFound = List.empty[Long]
                 fixture.foreach(v => if (!oLongSet.contains(v)) notFound ::= v)
                 if (notFound.nonEmpty) {
@@ -120,7 +120,7 @@ abstract class LongSetTest extends AnyFunSpec {
                 }
             }
 
-            it("should return false for values which are not added: "+otherValues) {
+            it("should return false for values which are not added: " + otherValues) {
                 var found = List.empty[Long]
                 otherValues.foreach(v => if (oLongSet.contains(v)) found ::= v)
                 if (found.nonEmpty) {

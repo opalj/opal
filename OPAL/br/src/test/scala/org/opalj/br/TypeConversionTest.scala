@@ -2,11 +2,12 @@
 package org.opalj
 package br
 
+import org.opalj.br.instructions._
+
+import org.junit.runner.RunWith
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
-import org.junit.runner.RunWith
-import org.opalj.br.instructions._
 
 /**
  * Tests the factory methods for [[NumericConversionInstruction]]s.

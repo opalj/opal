@@ -2,15 +2,15 @@
 package org.opalj
 package graphs
 
+import org.opalj.collection.immutable.EmptyIntArraySet
+import org.opalj.collection.immutable.IntArraySet
+import org.opalj.collection.immutable.IntArraySetBuilder
+import org.opalj.io.writeAndOpen
+
 import org.junit.runner.RunWith
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
-
-import org.opalj.io.writeAndOpen
-import org.opalj.collection.immutable.EmptyIntArraySet
-import org.opalj.collection.immutable.IntArraySet
-import org.opalj.collection.immutable.IntArraySetBuilder
 
 /**
  * Tests the [[DominanceFrontiers]] implementation.

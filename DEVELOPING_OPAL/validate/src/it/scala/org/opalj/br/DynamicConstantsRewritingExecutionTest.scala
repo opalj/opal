@@ -6,17 +6,17 @@ import java.io.File
 import java.math.RoundingMode
 import java.net.URL
 
-import com.typesafe.config.Config
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.matchers.should.Matchers
-
-import org.opalj.bytecode.RTJar
+import org.opalj.ba.ProjectBasedInMemoryClassLoader
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.bi.isCurrentJREAtLeastJava11
 import org.opalj.bi.isCurrentJREAtLeastJava15
 import org.opalj.br.analyses.Project
 import org.opalj.br.reader.DynamicConstantRewriting
-import org.opalj.ba.ProjectBasedInMemoryClassLoader
+import org.opalj.bytecode.RTJar
+
+import com.typesafe.config.Config
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
 /**
  * Tests if OPAL is able to rewrite dynamic constants and checks if the rewritten bytecode is
@@ -44,7 +44,7 @@ class DynamicConstantsRewritingExecutionTest extends AnyFunSpec with Matchers {
 
     if (isCurrentJREAtLeastJava11) {
         describe("behavior of rewritten dynamic constants test project") {
-            //TODO jdk 8 incompatibility import java.lang.invoke.VarHandle
+            // TODO jdk 8 incompatibility import java.lang.invoke.VarHandle
 
             // Note: The bytecode for this test project was created using
             // [[org.opalj.test.fixtures.dynamicConstants.DynamicConstantsCreationTest]]

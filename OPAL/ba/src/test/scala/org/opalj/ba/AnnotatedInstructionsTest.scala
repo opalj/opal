@@ -4,15 +4,15 @@ package ba
 
 import scala.language.postfixOps
 
-import org.junit.runner.RunWith
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatestplus.junit.JUnitRunner
-
 import org.opalj.bc.Assembler
 import org.opalj.br.instructions.ALOAD_0
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.RETURN
 import org.opalj.util.InMemoryClassLoader
+
+import org.junit.runner.RunWith
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests annotating instructions in the BytecodeAssembler DSL.

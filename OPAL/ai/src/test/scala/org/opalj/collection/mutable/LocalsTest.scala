@@ -3,10 +3,10 @@ package org.opalj
 package collection
 package mutable
 
-import org.scalatest.matchers.should.Matchers
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatestplus.junit.JUnitRunner
 import org.junit.runner.RunWith
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests the utility methods.
@@ -119,7 +119,7 @@ class LocalsTest extends AnyFlatSpec with Matchers {
             val vm = v1.fuse(v3, (a, b) => { a should not equal (b); -1 })
             vm.foreach { v =>
                 if (v == null || v != -1)
-                    fail("null is not -1 (size="+size+"; va="+v1.toString ++ "; vb="+v3.toString+"; vm="+vm.toString+")")
+                    fail("null is not -1 (size=" + size + "; va=" + v1.toString ++ "; vb=" + v3.toString + "; vm=" + vm.toString + ")")
             }
         }
     }

@@ -2,11 +2,11 @@
 package org.opalj
 package tac
 
-import org.scalatestplus.junit.JUnitRunner
-import org.junit.runner.RunWith
-
 import org.opalj.br._
 import org.opalj.br.TestSupport.biProject
+
+import org.junit.runner.RunWith
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * @author Roberts Kolosovs

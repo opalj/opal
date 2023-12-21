@@ -4,11 +4,11 @@ package fpcf
 package properties
 package thrown_exceptions
 
-import org.opalj.fpcf.properties.AbstractPropertyMatcher
 import org.opalj.br.AnnotationLike
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.ThrownExceptions
+import org.opalj.fpcf.properties.AbstractPropertyMatcher
 
 /**
  * Matches a methods's `ThrownExceptions` property.

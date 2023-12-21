@@ -2,11 +2,11 @@
 package org.opalj
 package tac
 
-import org.scalatestplus.junit.JUnitRunner
-import org.junit.runner.RunWith
-
 import org.opalj.br._
 import org.opalj.br.TestSupport.biProject
+
+import org.junit.runner.RunWith
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * @author Michael Eichberg
@@ -56,11 +56,11 @@ class TACNaiveArrayTest extends TACNaiveTest {
         def expectedJLC(tpe: String, value: String) = Array[String](
             "0: r_0 = this",
             "1: op_0 = 5",
-            "2: op_0 = new "+tpe+"[op_0]",
+            "2: op_0 = new " + tpe + "[op_0]",
             "3: r_1 = op_0",
             "4: op_0 = r_1",
             "5: op_1 = 4",
-            "6: op_2 = "+value+"",
+            "6: op_2 = " + value + "",
             "7: op_0[op_1] = op_2",
             "8: op_0 = r_1",
             "9: op_1 = 4",

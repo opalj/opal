@@ -3,6 +3,7 @@ package org.opalj
 package tac
 
 import java.util.Arrays
+
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 
@@ -30,7 +31,7 @@ private[tac] class TACTest extends AnyFunSpec with Matchers {
             val message =
                 actualStmts.zip(expectedStmts).
                     filter(p => p._1 != p._2).
-                    map(p => "\t"+p._1+"\n\t<=>[Expected:]\n\t"+p._2+"\n").
+                    map(p => "\t" + p._1 + "\n\t<=>[Expected:]\n\t" + p._2 + "\n").
                     mkString("Differences:\n", "\n", "\n")
             fail(message)
         }

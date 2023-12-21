@@ -3,13 +3,15 @@ package org.opalj
 package br
 package analyses
 
+import scala.language.implicitConversions
+
+import org.opalj.collection.immutable.UIDSet
+import org.opalj.log.GlobalLogContext
+
 import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
-import org.opalj.collection.immutable.UIDSet
-import scala.language.implicitConversions
-import org.opalj.log.GlobalLogContext
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * @author Tobias Becker
@@ -42,16 +44,16 @@ class JoinUpperBoundsTest extends AnyFunSpec with Matchers {
         val result1_2 = classhierachy.joinUpperTypeBounds(param1, param2, reflexive)
         if (result1_2 != expected) {
             fail(
-                s"${mkString(param1)} join${if (reflexive) "(reflexive)" else ""}"+
-                    s" ${mkString(param2)} is ${mkString(result1_2)};"+
+                s"${mkString(param1)} join${if (reflexive) "(reflexive)" else ""}" +
+                    s" ${mkString(param2)} is ${mkString(result1_2)};" +
                     s" expected ${mkString(expected)}"
             )
         }
 
         val result2_1 = classhierachy.joinUpperTypeBounds(param2, param1, reflexive)
         if (result2_1 != expected) {
-            fail(s"${mkString(param2)} join${if (reflexive) "(reflexive)" else ""}"+
-                s" ${mkString(param1)} is ${mkString(result2_1)};"+
+            fail(s"${mkString(param2)} join${if (reflexive) "(reflexive)" else ""}" +
+                s" ${mkString(param1)} is ${mkString(result2_1)};" +
                 s" expected ${mkString(expected)}")
         }
 

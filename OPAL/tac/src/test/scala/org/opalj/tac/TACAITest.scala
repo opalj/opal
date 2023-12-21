@@ -2,21 +2,20 @@
 package org.opalj
 package tac
 
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.matchers.should.Matchers
-
-import org.opalj.br.TestSupport.biProject
-import org.opalj.br.TestSupport.biProjectWithJDK
-
-import scala.io.Source
 import scala.io.Codec.UTF8
+import scala.io.Source
 
 import org.opalj.ai.BaseAI
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
-import org.opalj.br.ObjectType
 import org.opalj.br.Method
+import org.opalj.br.ObjectType
+import org.opalj.br.TestSupport.biProject
+import org.opalj.br.TestSupport.biProjectWithJDK
 import org.opalj.br.analyses.Project
+
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
 /**
  * Reads the test configuration file, then creates the tac code according to the specification
@@ -73,7 +72,7 @@ class TACAITest extends AnyFunSpec with Matchers {
                         val expectedInputStream = this.getClass.getResourceAsStream(expectedFileName)
                         if (expectedInputStream eq null)
                             fail(
-                                s"missing expected 3-adddress code representation: $expectedFileName;"+
+                                s"missing expected 3-adddress code representation: $expectedFileName;" +
                                     s"current representation:\n${actual.mkString("\n")}"
                             )
                         val expected = Source.fromInputStream(expectedInputStream)(UTF8).getLines().toList
@@ -86,20 +85,20 @@ class TACAITest extends AnyFunSpec with Matchers {
                             val expectedLine = expectedIt.next()
                             if (actualLine != expectedLine)
                                 fail(
-                                    s"comparison failed:\n$actualLine\n\t\tvs. (expected)\n"+
-                                        s"$expectedLine\ncomputed representation:\n"+
+                                    s"comparison failed:\n$actualLine\n\t\tvs. (expected)\n" +
+                                        s"$expectedLine\ncomputed representation:\n" +
                                         actual.mkString("\n")
                                 )
                         }
                         if (actualIt.hasNext)
                             fail(
-                                "actual is longer than expected - first line: "+actualIt.next()+
-                                    "\n computed representation:\n"+actual.mkString("\n")
+                                "actual is longer than expected - first line: " + actualIt.next() +
+                                    "\n computed representation:\n" + actual.mkString("\n")
                             )
                         if (expectedIt.hasNext)
                             fail(
-                                "expected is longer than actual - first line: "+expectedIt.next()+
-                                    "\n computed representation:\n"+actual.mkString("\n")
+                                "expected is longer than actual - first line: " + expectedIt.next() +
+                                    "\n computed representation:\n" + actual.mkString("\n")
                             )
                     }
                 }

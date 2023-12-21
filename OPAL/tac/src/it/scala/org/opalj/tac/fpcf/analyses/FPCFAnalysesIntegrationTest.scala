@@ -9,16 +9,18 @@ import scala.reflect.runtime.universe.runtimeMirror
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.zip.GZIPInputStream
-
 import scala.io.Source
 
-import com.typesafe.config.ConfigValueFactory
-import org.junit.runner.RunWith
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatestplus.junit.JUnitRunner
-
-import org.opalj.util.Nanoseconds
-import org.opalj.util.PerformanceEvaluation.time
+import org.opalj.ai.domain.l1
+import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
+import org.opalj.br.TestSupport.allBIProjects
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.FPCFAnalysesManagerKey
+import org.opalj.br.fpcf.FPCFAnalysesRegistry
+import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.br.fpcf.properties.Context
+import org.opalj.br.fpcf.properties.Purity
 import org.opalj.fpcf.ComputationSpecification
 import org.opalj.fpcf.PropertyIsNotComputedByAnyAnalysis
 import org.opalj.fpcf.PropertyKey
@@ -26,21 +28,18 @@ import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.SomePropertyKey
-import org.opalj.br.TestSupport.allBIProjects
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.properties.Purity
-import org.opalj.br.fpcf.FPCFAnalysesManagerKey
-import org.opalj.br.fpcf.FPCFAnalysesRegistry
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.PropertyStoreKey
-import org.opalj.br.fpcf.properties.Context
-import org.opalj.ai.domain.l1
-import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.tac.cg.CallGraphKey
 import org.opalj.tac.cg.CHACallGraphKey
 import org.opalj.tac.fpcf.analyses.FPCFAnalysesIntegrationTest.factory
 import org.opalj.tac.fpcf.analyses.FPCFAnalysesIntegrationTest.p
 import org.opalj.tac.fpcf.analyses.FPCFAnalysesIntegrationTest.ps
+import org.opalj.util.Nanoseconds
+import org.opalj.util.PerformanceEvaluation.time
+
+import com.typesafe.config.ConfigValueFactory
+import org.junit.runner.RunWith
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Simple test to ensure that the FPFC analyses do not cause exceptions and that their results
@@ -121,8 +120,8 @@ class FPCFAnalysesIntegrationTest extends AnyFunSpec {
                         val expectedStream = this.getClass.getResourceAsStream(fileName)
                         if (expectedStream eq null)
                             fail(
-                                s"missing expected results: $name; "+
-                                    s"current results written to:\n"+writeActual(actual, fileName)
+                                s"missing expected results: $name; " +
+                                    s"current results written to:\n" + writeActual(actual, fileName)
                             )
                         val expectedIt =
                             Source.fromInputStream(new GZIPInputStream(expectedStream)).getLines()
@@ -132,20 +131,20 @@ class FPCFAnalysesIntegrationTest extends AnyFunSpec {
                             val expectedLine = expectedIt.next()
                             if (actualLine != expectedLine)
                                 fail(
-                                    s"comparison failed:\nnew: $actualLine\n\t\t"+
-                                        s"vs.\nold: $expectedLine\n"+
-                                        "current results written to :\n"+writeActual(actual, fileName)
+                                    s"comparison failed:\nnew: $actualLine\n\t\t" +
+                                        s"vs.\nold: $expectedLine\n" +
+                                        "current results written to :\n" + writeActual(actual, fileName)
                                 )
                         }
                         if (actualIt.hasNext)
                             fail(
-                                "actual is longer than expected - first line: "+actualIt.next()+
-                                    "\n current results written to :\n"+writeActual(actual, fileName)
+                                "actual is longer than expected - first line: " + actualIt.next() +
+                                    "\n current results written to :\n" + writeActual(actual, fileName)
                             )
                         if (expectedIt.hasNext)
                             fail(
-                                "expected is longer than actual - first line: "+expectedIt.next()+
-                                    "\n current results written to :\n"+writeActual(actual, fileName)
+                                "expected is longer than actual - first line: " + expectedIt.next() +
+                                    "\n current results written to :\n" + writeActual(actual, fileName)
                             )
                     }
                 }

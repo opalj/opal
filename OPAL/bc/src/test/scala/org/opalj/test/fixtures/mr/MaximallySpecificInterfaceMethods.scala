@@ -6,22 +6,22 @@ package mr
 
 import java.nio.file.Files
 import java.nio.file.Paths
+import scala.collection.immutable.ArraySeq
+
 import org.opalj.bc.Assembler
-import org.opalj.bi.ACC_PUBLIC
 import org.opalj.bi.ACC_ABSTRACT
 import org.opalj.bi.ACC_INTERFACE
+import org.opalj.bi.ACC_PUBLIC
 import org.opalj.da.ClassFile
-import org.opalj.da.Method_Info
-import org.opalj.da.Constant_Pool_Entry
-import org.opalj.da.CONSTANT_Class_info
-import org.opalj.da.CONSTANT_Utf8
-import org.opalj.da.CONSTANT_NameAndType_info
-import org.opalj.da.CONSTANT_Methodref_info
-import org.opalj.da.CONSTANT_String_info
-import org.opalj.da.Code_attribute
 import org.opalj.da.Code
-
-import scala.collection.immutable.ArraySeq
+import org.opalj.da.Code_attribute
+import org.opalj.da.CONSTANT_Class_info
+import org.opalj.da.CONSTANT_Methodref_info
+import org.opalj.da.CONSTANT_NameAndType_info
+import org.opalj.da.Constant_Pool_Entry
+import org.opalj.da.CONSTANT_String_info
+import org.opalj.da.CONSTANT_Utf8
+import org.opalj.da.Method_Info
 
 /**
  * Generates multiple interfaces with default methods and abstract
@@ -75,7 +75,7 @@ object MaximallySpecificInterfaceMethods extends App {
         val assembledS0_1 = Assembler(s0_1CF)
         val assembledS0_1Path = Paths.get("OPAL/bc/src/test/resources/MaximallySpecificInterfaceMethods/mr/S0_1.class")
         val assembledS0_1File = Files.write(assembledS0_1Path, assembledS0_1)
-        println("Created class file: "+assembledS0_1File.toAbsolutePath())
+        println("Created class file: " + assembledS0_1File.toAbsolutePath())
     }
 
     {
@@ -117,7 +117,7 @@ object MaximallySpecificInterfaceMethods extends App {
         val assembledS0_2 = Assembler(s0_2CF)
         val assembledS0_2Path = Paths.get("OPAL/bc/src/test/resources/MaximallySpecificInterfaceMethods/mr/S0_2.class")
         val assembledS0_2File = Files.write(assembledS0_2Path, assembledS0_2)
-        println("Created class file: "+assembledS0_2File.toAbsolutePath())
+        println("Created class file: " + assembledS0_2File.toAbsolutePath())
     }
 
     {
@@ -143,7 +143,7 @@ object MaximallySpecificInterfaceMethods extends App {
         val assembledS1_a = Assembler(s1_aCF)
         val assembledS1_aPath = Paths.get("OPAL/bc/src/test/resources/MaximallySpecificInterfaceMethods/mr/S1_a.class")
         val assembledS1_aFile = Files.write(assembledS1_aPath, assembledS1_a)
-        println("Created class file: "+assembledS1_aFile.toAbsolutePath())
+        println("Created class file: " + assembledS1_aFile.toAbsolutePath())
     }
 
     {
@@ -187,7 +187,7 @@ object MaximallySpecificInterfaceMethods extends App {
         val assembledS1_c = Assembler(s1_cCF)
         val assembledS1_cPath = Paths.get("OPAL/bc/src/test/resources/MaximallySpecificInterfaceMethods/mr/S1_c.class")
         val assembledS1_cFile = Files.write(assembledS1_cPath, assembledS1_c)
-        println("Created class file: "+assembledS1_cFile.toAbsolutePath())
+        println("Created class file: " + assembledS1_cFile.toAbsolutePath())
     }
 
     {
@@ -209,7 +209,7 @@ object MaximallySpecificInterfaceMethods extends App {
         val assembledS2_1 = Assembler(s2_1CF)
         val assembledS2_1Path = Paths.get("OPAL/bc/src/test/resources/MaximallySpecificInterfaceMethods/mr/S2_1.class")
         val assembledS2_1File = Files.write(assembledS2_1Path, assembledS2_1)
-        println("Created class file: "+assembledS2_1File.toAbsolutePath())
+        println("Created class file: " + assembledS2_1File.toAbsolutePath())
     }
 
     {
@@ -229,7 +229,7 @@ object MaximallySpecificInterfaceMethods extends App {
         val assembledS2_2 = Assembler(s2_2CF)
         val assembledS2_2Path = Paths.get("OPAL/bc/src/test/resources/MaximallySpecificInterfaceMethods/mr/S2_2.class")
         val assembledS2_2File = Files.write(assembledS2_2Path, assembledS2_2)
-        println("Created class file: "+assembledS2_2File.toAbsolutePath())
+        println("Created class file: " + assembledS2_2File.toAbsolutePath())
     }
 
     {
@@ -251,7 +251,7 @@ object MaximallySpecificInterfaceMethods extends App {
         val assembledIntf = Assembler(intfCF)
         val assembledIntfPath = Paths.get("OPAL/bc/src/test/resources/MaximallySpecificInterfaceMethods/mr/Intf.class")
         val assembledIntfFile = Files.write(assembledIntfPath, assembledIntf)
-        println("Created class file: "+assembledIntfFile.toAbsolutePath())
+        println("Created class file: " + assembledIntfFile.toAbsolutePath())
     }
 
 }

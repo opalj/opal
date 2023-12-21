@@ -2,16 +2,16 @@
 package org.opalj
 package br
 
-import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
-
-import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.br.reader.Java8Framework.ClassFiles
+import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions._
-import org.opalj.bi.TestResources.locateTestResources
+import org.opalj.br.reader.Java8Framework.ClassFiles
+import org.opalj.collection.immutable.IntTrieSet
+
+import org.junit.runner.RunWith
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests some of the core methods of the Code attribute.
@@ -245,27 +245,27 @@ private object CodeAttributeTest {
     //
     //
 
-    //PC  Line    Instruction
-    //0   41  aload_0
-    //1   |   invokespecial java.lang.Object{ <init> }
-    //4   39  aload_0
-    //5   |   iconst_0
-    //6   |   putfield code.BoundedBuffer{ numberInBuffer : int }
-    //9   43  aload_0
-    //10  |   iload_1
-    //11  |   putfield code.BoundedBuffer{ size : int }
-    //14  44  aload_0
-    //15  |   aload_0
-    //16  |   getfield code.BoundedBuffer{ size : int }
-    //19  |   newarray 10
-    //21  |   putfield code.BoundedBuffer{ buffer : int[] }
-    //24  45  aload_0
-    //25  |   aload_0
-    //26  |   iconst_0
-    //27  |   dup_x1
-    //28  |   putfield code.BoundedBuffer{ last : int }
-    //31  |   putfield code.BoundedBuffer{ first : int }
-    //44  46  return
+    // PC  Line    Instruction
+    // 0   41  aload_0
+    // 1   |   invokespecial java.lang.Object{ <init> }
+    // 4   39  aload_0
+    // 5   |   iconst_0
+    // 6   |   putfield code.BoundedBuffer{ numberInBuffer : int }
+    // 9   43  aload_0
+    // 10  |   iload_1
+    // 11  |   putfield code.BoundedBuffer{ size : int }
+    // 14  44  aload_0
+    // 15  |   aload_0
+    // 16  |   getfield code.BoundedBuffer{ size : int }
+    // 19  |   newarray 10
+    // 21  |   putfield code.BoundedBuffer{ buffer : int[] }
+    // 24  45  aload_0
+    // 25  |   aload_0
+    // 26  |   iconst_0
+    // 27  |   dup_x1
+    // 28  |   putfield code.BoundedBuffer{ last : int }
+    // 31  |   putfield code.BoundedBuffer{ first : int }
+    // 44  46  return
     val codeOfConstructor =
         project.classFile(boundedBufferClass).get.methods.find(_.name == "<init>").get.body.get
 
@@ -319,7 +319,7 @@ private object CodeAttributeTest {
     //        [pc: 0, pc: 55] local: item index: 1 type: int
     //      Stack map table: number of frames 1
     //        [pc: 15, same]
-    //}
+    // }
 
     val codeOfGet = project.classFile(immutbleListClass).get.methods.find(_.name == "get").get.body.get
     // The code of get is as follows:

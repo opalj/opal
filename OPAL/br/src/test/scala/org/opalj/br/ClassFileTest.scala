@@ -2,13 +2,13 @@
 package org.opalj
 package br
 
-import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.matchers.should.Matchers
-
+import scala.collection.immutable.ArraySeq
 import scala.util.control.ControlThrowable
+
 import org.opalj.bi.TestResources.locateTestResources
 
-import scala.collection.immutable.ArraySeq
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
 /**
  * @author Michael Eichberg
@@ -79,7 +79,7 @@ class ClassFileTest extends AnyFunSuite with Matchers {
 
     test("that findField finds all fields") {
         if (boundedBuffer.fields.size != 5)
-            fail("expected five fields; found: "+boundedBuffer.fields)
+            fail("expected five fields; found: " + boundedBuffer.fields)
 
         boundedBuffer.findField("buffer") should not be (Symbol("Empty"))
         boundedBuffer.findField("first") should not be (Symbol("Empty"))
@@ -90,7 +90,7 @@ class ClassFileTest extends AnyFunSuite with Matchers {
 
     test("that findField does not find non-existing fields") {
         if (boundedBuffer.fields.size != 5)
-            fail("expected five fields; found: "+boundedBuffer.fields)
+            fail("expected five fields; found: " + boundedBuffer.fields)
 
         boundedBuffer.findField("BUFFER") should be(List.empty)
         boundedBuffer.findField("firsT") should be(List.empty)

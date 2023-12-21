@@ -3,17 +3,16 @@ package org.opalj
 package collection
 package immutable
 
-import org.junit.runner.RunWith
-
 import scala.collection.immutable.SortedSet
 
-import org.scalatestplus.junit.JUnitRunner
-import org.scalacheck.Properties
-import org.scalacheck.Prop.forAll
-import org.scalacheck.Prop.classify
-import org.scalacheck.Prop.propBoolean
-import org.scalacheck.Gen
+import org.junit.runner.RunWith
 import org.scalacheck.Arbitrary
+import org.scalacheck.Gen
+import org.scalacheck.Prop.classify
+import org.scalacheck.Prop.forAll
+import org.scalacheck.Prop.propBoolean
+import org.scalacheck.Properties
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests `IntArraySet` by creating standard Scala Set and comparing

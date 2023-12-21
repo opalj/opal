@@ -4,12 +4,14 @@ package ai
 package domain
 package l1
 
-import org.junit.runner.RunWith
 import scala.collection.immutable.SortedSet
-import org.scalatestplus.junit.JUnitRunner
+
+import org.opalj.br.ObjectType
+
+import org.junit.runner.RunWith
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
-import org.opalj.br.ObjectType
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests the LongSets Domain.

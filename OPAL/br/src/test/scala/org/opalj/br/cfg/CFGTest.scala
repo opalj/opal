@@ -2,13 +2,13 @@
 package org.opalj.br
 package cfg
 
-import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
-
 import java.net.URL
 
 import org.opalj.br.TestSupport.biProject
 import org.opalj.br.analyses.Project
+
+import org.junit.runner.RunWith
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Computes the CFGs for various methods and checks their block structure. For example:

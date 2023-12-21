@@ -2,14 +2,15 @@
 package org.opalj
 package apk
 
+import java.net.URL
+
 import org.opalj.apk.parser.ApkParser
 import org.opalj.br.analyses.Project
 import org.opalj.ll.LLVMProjectKey
+
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.Ignore
 import org.scalatest.funsuite.AnyFunSuite
-
-import java.net.URL
 
 /**
  * Tests that the [[ApkParser]] works.
@@ -25,7 +26,7 @@ class ApkParserTest extends AnyFunSuite with BeforeAndAfterAll {
     override def beforeAll(): Unit = {
         project = ApkParser.createProject(
             "./OPAL/apk/src/test/resources/context-registered-receivers-and-native.apk",
-            BaseConfig,
+            BaseConfig
         )
     }
 

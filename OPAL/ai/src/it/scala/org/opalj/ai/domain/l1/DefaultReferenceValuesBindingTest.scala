@@ -4,22 +4,20 @@ package ai
 package domain
 package l1
 
-import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
-
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
-
-import org.opalj.collection.immutable.UIDSet
-import org.opalj.collection.immutable.UIDSet2
-import org.opalj.br.ObjectType
-import org.opalj.br.analyses.Project
-import org.opalj.br.TestSupport
 import org.opalj.ai.domain.TheProject
 import org.opalj.ai.domain.ValuesCoordinatingDomain
+import org.opalj.br.ObjectType
+import org.opalj.br.TestSupport
+import org.opalj.br.analyses.Project
+import org.opalj.collection.immutable.UIDSet
+import org.opalj.collection.immutable.UIDSet2
+
+import org.junit.runner.RunWith
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 
 /**
- *
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
@@ -39,7 +37,7 @@ class DefaultReferenceValuesBindingTest extends AnyFlatSpec with Matchers {
 
     behavior of "instances of domains of type DomainReferenceValuesBinding"
 
-    it should "determine that a value with a single interface as its upper bound abstracts over "+
+    it should "determine that a value with a single interface as its upper bound abstracts over " +
         "a value that implements multiple interfaces that includes the previous one" in {
             val t1 = ObjectType("org/omg/CORBA/Object")
             val t2 = ObjectType("java/rmi/Remote")
@@ -51,7 +49,7 @@ class DefaultReferenceValuesBindingTest extends AnyFlatSpec with Matchers {
 
         }
 
-    it should "determine that a value with a single interface as its upper bound abstracts over "+
+    it should "determine that a value with a single interface as its upper bound abstracts over " +
         "a value that is non-null and that implements multiple interfaces that includes the previous one" in {
             val t1 = ObjectType("org/omg/CORBA/Object")
             val t2 = ObjectType("java/rmi/Remote")

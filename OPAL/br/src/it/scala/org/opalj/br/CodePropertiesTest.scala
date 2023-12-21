@@ -28,24 +28,25 @@
  */
 package org.opalj.br
 
-import org.scalatest.funsuite.AnyFunSuite
-
-import java.util.concurrent.atomic.AtomicInteger
 import java.lang.{Boolean => JBoolean}
-import com.typesafe.config.Config
-import com.typesafe.config.ConfigValueFactory
-import org.opalj.util.PerformanceEvaluation.timed
-import org.opalj.bytecode.JRELibraryFolder
+import java.util.concurrent.atomic.AtomicInteger
+
 import org.opalj.br.TestSupport.allBIProjects
-import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.MethodInfo
 import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.SomeProject
 import org.opalj.br.cfg.CFGFactory
 import org.opalj.br.instructions.LocalVariableAccess
-import org.opalj.br.reader.Java9Framework
 import org.opalj.br.reader.BytecodeOptimizer
+import org.opalj.br.reader.Java9Framework
+import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.collection.immutable.IntArraySet
 import org.opalj.concurrent.ConcurrentExceptions
+import org.opalj.util.PerformanceEvaluation.timed
+
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigValueFactory
+import org.scalatest.funsuite.AnyFunSuite
 
 /**
  * Just tests if we can compute various information for a wide range of methods; e.g.,
@@ -123,8 +124,8 @@ class CodePropertiesTest extends AnyFunSuite {
             val computedMaxLocals = Code.computeMaxLocalsRequiredByCode(instructions)
             if (computedMaxLocals > specifiedMaxLocals) {
                 fail(
-                    s"$src: computed max locals is too large - ${method.toJava}}: "+
-                        s"$specifiedMaxLocals(specified) vs. $computedMaxLocals(computed):\n"+
+                    s"$src: computed max locals is too large - ${method.toJava}}: " +
+                        s"$specifiedMaxLocals(specified) vs. $computedMaxLocals(computed):\n" +
                         code.toString
                 )
             }
@@ -132,8 +133,8 @@ class CodePropertiesTest extends AnyFunSuite {
             val computedMaxStack = Code.computeMaxStack(instructions, eh, cfg)
             if (specifiedMaxStack < computedMaxStack) {
                 fail(
-                    s"$src: computed max stack is too large - ${method.toJava}}: "+
-                        s"$specifiedMaxStack(specified) vs. $computedMaxStack(computed):\n"+
+                    s"$src: computed max stack is too large - ${method.toJava}}: " +
+                        s"$specifiedMaxStack(specified) vs. $computedMaxStack(computed):\n" +
                         code.toString
                 )
             }
@@ -159,8 +160,8 @@ class CodePropertiesTest extends AnyFunSuite {
                     if (computedPCs != definedPCs) {
                         if (computedPCs.size >= definedPCs.size) {
                             fail(
-                                s"${mi.source}:${mi.method.toJava}: "+
-                                    "computed stack map table pcs differ:\n"+
+                                s"${mi.source}:${mi.method.toJava}: " +
+                                    "computed stack map table pcs differ:\n" +
                                     definedPCs.mkString("expected:  {", ",", "}\n") +
                                     computedPCs.mkString("computed:  {", ",", "}\n")
                             )

@@ -2,13 +2,13 @@
 package org.opalj
 package graphs
 
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.util.PerformanceEvaluation.time
+
 import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-
-import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.collection.immutable.IntTrieSet
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests the (Post)[[DominatorTree]] implementation.
@@ -37,7 +37,7 @@ class PostDominatorTreeTest extends AnyFlatSpec with Matchers {
                 foreachSuccessorOf, foreachPredecessorOf,
                 0
             )
-        } { t => info("post dominator tree computed in "+t.toSeconds) }
+        } { t => info("post dominator tree computed in " + t.toSeconds) }
         var ns: List[Int] = null
 
         ns = Nil
@@ -48,7 +48,7 @@ class PostDominatorTreeTest extends AnyFlatSpec with Matchers {
         dt.foreachDom(0, reflexive = false) { n => ns = n :: ns }
         ns should be(List())
 
-        //io.writeAndOpen(dt.toDot, "PostDominatorTree", ".dot")
+        // io.writeAndOpen(dt.toDot, "PostDominatorTree", ".dot")
     }
 
     "a simple tree with multiple exits" should "result in a corresponding postdominator tree" in {
@@ -69,7 +69,7 @@ class PostDominatorTreeTest extends AnyFlatSpec with Matchers {
                 foreachSuccessorOf, foreachPredecessorOf,
                 4
             )
-        } { t => info("post dominator tree computed in "+t.toSeconds) }
+        } { t => info("post dominator tree computed in " + t.toSeconds) }
         dt.dom(0) should be(1)
         dt.dom(1) should be(5)
         dt.dom(2) should be(4)
@@ -86,7 +86,7 @@ class PostDominatorTreeTest extends AnyFlatSpec with Matchers {
         dt.foreachDom(2, reflexive = false) { n => ns = n :: ns }
         ns should be(List(5, 4))
 
-        //io.writeAndOpen(dt.toDot, "PostDominatorTree", ".dot")
+        // io.writeAndOpen(dt.toDot, "PostDominatorTree", ".dot")
     }
 
     "a graph with a cycle" should "yield the correct postdominators" in {
@@ -107,7 +107,7 @@ class PostDominatorTreeTest extends AnyFlatSpec with Matchers {
                 foreachSuccessorOf, foreachPredecessorOf,
                 4
             )
-        } { t => info("post dominator tree computed in "+t.toSeconds) }
+        } { t => info("post dominator tree computed in " + t.toSeconds) }
 
         try {
 
@@ -153,7 +153,7 @@ class PostDominatorTreeTest extends AnyFlatSpec with Matchers {
                 foreachSuccessorOf, foreachPredecessorOf,
                 2
             )
-        } { t => info("post dominator tree computed in "+t.toSeconds) }
+        } { t => info("post dominator tree computed in " + t.toSeconds) }
 
         try {
 

@@ -4,12 +4,12 @@ package fpcf
 package properties
 package thrown_exceptions
 
-import org.opalj.br.analyses.SomeProject
+import scala.collection.immutable.ArraySeq
+
 import org.opalj.br.AnnotationLike
 import org.opalj.br.ObjectType
+import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.ThrownExceptions
-
-import scala.collection.immutable.ArraySeq
 
 /**
  * Trait to extract the concrete and upper bound exceptions specified in the test cases.

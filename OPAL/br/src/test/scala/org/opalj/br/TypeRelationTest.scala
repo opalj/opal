@@ -3,7 +3,6 @@ package org.opalj
 package br
 
 import org.junit.runner.RunWith
-
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner

@@ -5,16 +5,16 @@ package analyses
 
 import java.net.URL
 
+import org.opalj.bi.TestResources.locateTestResources
+import org.opalj.br.MethodDescriptor.NoArgsAndReturnVoid
+import org.opalj.br.reader.Java8Framework.ClassFiles
+import org.opalj.collection.immutable.UIDSet
+import org.opalj.log.GlobalLogContext
+
 import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-
-import org.opalj.log.GlobalLogContext
-import org.opalj.collection.immutable.UIDSet
-import org.opalj.br.MethodDescriptor.NoArgsAndReturnVoid
-import org.opalj.bi.TestResources.locateTestResources
-import org.opalj.br.reader.Java8Framework.ClassFiles
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Basic tests of the class hierarchy.
@@ -128,7 +128,7 @@ class ClassHierarchyTest extends AnyFlatSpec with Matchers {
     /** SimpleGeneric<AlternativeBase> */
     val altContainer = CTS("SimpleGeneric", List(elementType(altBaseCTS)))
 
-    /** SimpleGeneric<lvlTwoBase>*/
+    /** SimpleGeneric<lvlTwoBase> */
     val lvlTwoContainer = CTS("SimpleGeneric", List(elementType(lvlTwoBaseCTS)))
 
     /** SimpleGeneric<Base> */
@@ -140,33 +140,33 @@ class ClassHierarchyTest extends AnyFlatSpec with Matchers {
     /** SimpleGeneric<*> */
     val wildCardContainer = CTS("SimpleGeneric", List(Wildcard))
 
-    /**  SimpleGeneric<? extends Base>*/
+    /** SimpleGeneric<? extends Base> */
     val covariantContainer = CTS("SimpleGeneric", List(upperBoundType(baseCTS)))
 
-    /**  SimpleGeneric<? super Base>*/
+    /** SimpleGeneric<? super Base> */
     val contravariantContainer = CTS("SimpleGeneric", List(lowerBoundType(extBaseCTS)))
 
-    /**  SimpleGeneric<? super SimpleGenericBase>*/
+    /** SimpleGeneric<? super SimpleGenericBase> */
     val contravariantWithContainer = CTS("SimpleGeneric", List(lowerBoundType(baseContainer)))
 
-    /**  SimpleGeneric<? super Base> */
+    /** SimpleGeneric<? super Base> */
     val contravariantBaseContainer = CTS("SimpleGeneric", List(lowerBoundType(baseCTS)))
 
-    /** SubGenericET<SimpleGeneric<Base>, SimpleGeneric<ExtendedBase>>*/
+    /** SubGenericET<SimpleGeneric<Base>, SimpleGeneric<ExtendedBase>> */
     val doubleContainerET = CTS("SubGenericET", List(elementType(baseCTS), elementType(extBaseCTS)))
 
-    /** SubGenericTE<SimpleGeneric<ExtendedBaseBase>, SimpleGeneric<Base>>*/
+    /** SubGenericTE<SimpleGeneric<ExtendedBaseBase>, SimpleGeneric<Base>> */
     val doubleContainerTE = CTS("SubGenericTE", List(elementType(extBaseCTS), elementType(baseCTS)))
 
-    /** IndependentSubclass<SimpleGeneric<ExtendedBaseBase>, SimpleGeneric<Base>>*/
+    /** IndependentSubclass<SimpleGeneric<ExtendedBaseBase>, SimpleGeneric<Base>> */
     val doubleContainerBase =
         CTS("IndependentSubclass", List(elementType(extBaseCTS), elementType(baseCTS)))
 
-    /** AltIndependentSubclass<SimpleGeneric<ExtendedBaseBase>, SimpleGeneric<Base>>*/
+    /** AltIndependentSubclass<SimpleGeneric<ExtendedBaseBase>, SimpleGeneric<Base>> */
     val doubleContainerAltBase =
         CTS("AltIndependentSubclass", List(elementType(extBaseCTS), elementType(baseCTS)))
 
-    /** SubGenericET<SimpleGeneric<ExtendedBaseBase>, SimpleGeneric<Base>>*/
+    /** SubGenericET<SimpleGeneric<ExtendedBaseBase>, SimpleGeneric<Base>> */
     val wrongDoubleContainer =
         CTS("SubGenericET", List(elementType(extBaseCTS), elementType(baseCTS)))
 
@@ -285,7 +285,7 @@ class ClassHierarchyTest extends AnyFlatSpec with Matchers {
     it should "be upwards closed (complete)" in {
         if (preInitCH.rootTypes.size != 1) {
             fail(
-                "The default class hierarchy has unexpected root types: "+
+                "The default class hierarchy has unexpected root types: " +
                     preInitCH.rootTypes.mkString(", ")
             )
         }
@@ -792,9 +792,9 @@ class ClassHierarchyTest extends AnyFlatSpec with Matchers {
         var subtypes = Set.empty[ObjectType]
         classHierarchy.foreachSubtype(window) { subtypes += _ }
         if (!subtypes.contains(simpleWindow))
-            fail(s"SimpleWindow is not among the subtypes: $subtypes; "+
-                s"SimpleWindow <: ${classHierarchy.allSupertypes(simpleWindow)}; "+
-                s"Window >: ${classHierarchy.allSubtypes(window, false)}\n"+
+            fail(s"SimpleWindow is not among the subtypes: $subtypes; " +
+                s"SimpleWindow <: ${classHierarchy.allSupertypes(simpleWindow)}; " +
+                s"Window >: ${classHierarchy.allSubtypes(window, false)}\n" +
                 classHierarchy.asTSV)
 
         clusteringProject.classFile(simpleWindow).get.methods find { method =>

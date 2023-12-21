@@ -4,11 +4,9 @@ package test
 package fixtures
 package dynamicConstants
 
-import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
-import org.scalatest.BeforeAndAfterAll
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
+import scala.collection.immutable.ArraySeq
+
+import org.opalj.bc.Assembler
 import org.opalj.bi.ACC_FINAL
 import org.opalj.bi.ACC_PRIVATE
 import org.opalj.bi.ACC_PUBLIC
@@ -32,9 +30,12 @@ import org.opalj.da.CONSTANT_Utf8
 import org.opalj.da.ConstantValue_attribute
 import org.opalj.da.Field_Info
 import org.opalj.da.Method_Info
-import org.opalj.bc.Assembler
 
-import scala.collection.immutable.ArraySeq
+import org.junit.runner.RunWith
+import org.scalatest.BeforeAndAfterAll
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Creates a fixture to test loading of dynamic constants.
@@ -478,7 +479,7 @@ class DynamicConstantsCreationTest extends AnyFlatSpec with Matchers with Before
         )
 
         // You can recreate the class file using the following code
-        //val cf = Assembler(...)
-        //println("Created class file: "+Files.write(Paths.get("../Test.class"), cf).toRealPath())
+        // val cf = Assembler(...)
+        // println("Created class file: "+Files.write(Paths.get("../Test.class"), cf).toRealPath())
     }
 }

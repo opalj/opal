@@ -7,9 +7,9 @@ import org.opalj.util.PerformanceEvaluation
 
 abstract class LongSetEval {
 
-    println("Please note that the evaluation code itself incurs some constant"+
-        " overhead; hence, if an evaluation of the data structure X is twice as fast"+
-        " as the evaluation of Y the underlying data structure is faster actually"+
+    println("Please note that the evaluation code itself incurs some constant" +
+        " overhead; hence, if an evaluation of the data structure X is twice as fast" +
+        " as the evaluation of Y the underlying data structure is faster actually" +
         " faster than just two times.")
 
     final val numberOfSetsWithSize3orLess = 10000000

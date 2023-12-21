@@ -3,14 +3,14 @@ package org.opalj
 package de
 
 import org.opalj.bi.TestResources.locateTestResources
-import org.opalj.br.reader.Java8Framework.ClassFiles
-import org.opalj.br.VirtualClass
-import org.opalj.br.VirtualMethod
-import org.opalj.br.VirtualField
 import org.opalj.br.ArrayType
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.VirtualSourceElement
 import org.opalj.br.Type
+import org.opalj.br.VirtualClass
+import org.opalj.br.VirtualField
+import org.opalj.br.VirtualMethod
+import org.opalj.br.VirtualSourceElement
+import org.opalj.br.reader.Java8Framework.ClassFiles
 
 /**
  * Functionality useful when testing a dependency extractor.
@@ -38,7 +38,7 @@ object DependencyExtractorsHelper {
     }
 
     def methodDescriptorToString(name: String, descriptor: MethodDescriptor): String = {
-        descriptor.parameterTypes.map { sourceElementName(_) }.mkString(name+"(", ", ", ")")
+        descriptor.parameterTypes.map { sourceElementName(_) }.mkString(name + "(", ", ", ")")
     }
 
     def vseToString(vse: VirtualSourceElement): String = {
