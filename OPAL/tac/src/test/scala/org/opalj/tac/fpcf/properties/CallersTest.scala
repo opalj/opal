@@ -6,19 +6,13 @@ package properties
 
 import scala.collection.immutable.IntMap
 
-import org.junit.runner.RunWith
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
-import org.scalatestplus.junit.JUnitRunner
-
-import org.opalj.collection.immutable.LongLinkedTrieSet
 import org.opalj.bi.TestResources.locateTestResources
+import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.Project
-import org.opalj.br.reader.Java8Framework.ClassFiles
-import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.br.fpcf.properties.SimpleContexts
 import org.opalj.br.fpcf.properties.SimpleContextsKey
@@ -29,8 +23,14 @@ import org.opalj.br.fpcf.properties.cg.NoCallers
 import org.opalj.br.fpcf.properties.cg.OnlyCallersWithUnknownContext
 import org.opalj.br.fpcf.properties.cg.OnlyVMCallersAndWithUnknownContext
 import org.opalj.br.fpcf.properties.cg.OnlyVMLevelCallers
-import org.opalj.br.fpcf.ContextProviderKey
+import org.opalj.br.reader.Java8Framework.ClassFiles
+import org.opalj.collection.immutable.LongLinkedTrieSet
 import org.opalj.tac.cg.CHACallGraphKey
+
+import org.junit.runner.RunWith
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 
 @RunWith(classOf[JUnitRunner])
 class CallersTest extends AnyFlatSpec with Matchers {

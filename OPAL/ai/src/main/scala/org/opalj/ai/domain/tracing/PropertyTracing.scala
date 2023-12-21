@@ -4,8 +4,8 @@ package ai
 package domain
 package tracing
 
-import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.br._
+import org.opalj.collection.immutable.IntTrieSet
 
 /**
  * Enables the tracing of some user-defined property while a method is analyzed.
@@ -65,7 +65,7 @@ trait PropertyTracing extends CoreDomainFunctionality with CustomInitialization 
 
         super.properties(pc, propertyToString) match {
             case superProperty @ Some(description) =>
-                thisProperty map (_+"; "+description) orElse superProperty
+                thisProperty map (_ + "; " + description) orElse superProperty
             case None =>
                 thisProperty
         }

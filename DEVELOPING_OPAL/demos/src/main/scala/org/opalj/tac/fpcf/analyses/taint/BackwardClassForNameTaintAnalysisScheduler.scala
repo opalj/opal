@@ -5,6 +5,8 @@ package fpcf
 package analyses
 package taint
 
+import java.io.File
+
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethodsKey
@@ -26,16 +28,14 @@ import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.analyses.ifds.IFDSEvaluationRunner
 import org.opalj.tac.fpcf.analyses.ifds.JavaMethod
 import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
+import org.opalj.tac.fpcf.analyses.ifds.taint.ArrayElement
 import org.opalj.tac.fpcf.analyses.ifds.taint.FlowFact
+import org.opalj.tac.fpcf.analyses.ifds.taint.InstanceField
 import org.opalj.tac.fpcf.analyses.ifds.taint.JavaBackwardTaintProblem
 import org.opalj.tac.fpcf.analyses.ifds.taint.TaintFact
 import org.opalj.tac.fpcf.analyses.ifds.taint.Variable
-import org.opalj.tac.fpcf.analyses.ifds.taint.ArrayElement
-import org.opalj.tac.fpcf.analyses.ifds.taint.InstanceField
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.Taint
-
-import java.io.File
 
 /**
  * A backward IFDS taint analysis, which tracks the String parameters of all methods of the rt.jar,
@@ -167,7 +167,7 @@ class BackwardClassForNameTaintAnalysisRunner extends IFDSEvaluationRunner {
                 case _ => Seq.empty
             }).foreach {
                 case FlowFact(flow) =>
-                    println(s"flow: "+flow.asInstanceOf[Seq[Method]].map(_.toJava).mkString(", "))
+                    println(s"flow: " + flow.asInstanceOf[Seq[Method]].map(_.toJava).mkString(", "))
                 case _ =>
             }
 

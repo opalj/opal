@@ -7,6 +7,7 @@ package cg
 
 import scala.collection.immutable.IntMap
 
+import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.collection.immutable.LongLinkedSet
 import org.opalj.collection.immutable.LongLinkedTrieSet
 import org.opalj.fpcf.Entity
@@ -16,7 +17,6 @@ import org.opalj.fpcf.PropertyIsNotDerivedByPreviouslyExecutedAnalysis
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStore
-import org.opalj.br.fpcf.analyses.ContextProvider
 
 /**
  * For a given [[org.opalj.br.DeclaredMethod]], and for each call site (represented by the PC),

@@ -30,7 +30,6 @@ sealed abstract class APIFeature {
 
 /**
  * Common trait that abstracts over all Class extension scenarios.
- *
  */
 sealed abstract class ClassExtension extends APIFeature {
 
@@ -133,7 +132,6 @@ object InstanceAPIMethod {
 
 /**
  * Represents a static API call.
- *
  *
  * @param  declClass ObjectType of the receiver.
  * @param  name Name of the API method.

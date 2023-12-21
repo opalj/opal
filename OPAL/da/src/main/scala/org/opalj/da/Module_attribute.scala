@@ -102,7 +102,7 @@ case class RequiresEntry(
             if (requires_version_index == 0)
                 ""
             else
-                "// "+cp(requires_version_index).toString(cp)
+                "// " + cp(requires_version_index).toString(cp)
 
         s"requires $flags $requiredPackage;$versionInfo"
     }

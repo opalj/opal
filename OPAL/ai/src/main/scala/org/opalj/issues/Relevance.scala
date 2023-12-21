@@ -2,12 +2,11 @@
 package org.opalj
 package issues
 
-import scala.Console.YELLOW
-import scala.Console.RESET
-import scala.Console.RED
-
 import play.api.libs.json.Json
 import play.api.libs.json.JsValue
+import scala.Console.RED
+import scala.Console.RESET
+import scala.Console.YELLOW
 
 /**
  * Describes the overall relevance of a finding.

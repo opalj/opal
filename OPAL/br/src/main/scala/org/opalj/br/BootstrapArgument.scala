@@ -13,4 +13,3 @@ trait BootstrapArgument {
     def toJava: String
 
 }
-

@@ -4,23 +4,24 @@ package br
 package reader
 
 import java.io.File
-import org.scalatest.matchers.should.Matchers
-import org.scalatest.funspec.AnyFunSpec
-import org.scalactic.Equality
+import scala.collection.immutable.ArraySeq
+
+import org.opalj.bi.TestResources.{locateTestResources => locate}
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.instructions.INVOKESTATIC
+import org.opalj.br.instructions.MethodInvocationInstruction
+import org.opalj.log.ConsoleOPALLogger
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
+import org.opalj.log.StandardLogContext
+
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory
-import org.opalj.log.LogContext
-import org.opalj.log.StandardLogContext
-import org.opalj.log.ConsoleOPALLogger
-import org.opalj.log.OPALLogger
-import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.SomeProject
-import org.opalj.bi.TestResources.{locateTestResources => locate}
-import org.opalj.br.instructions.INVOKESTATIC
-import org.opalj.br.instructions.MethodInvocationInstruction
-
-import scala.collection.immutable.ArraySeq
+import org.scalactic.Equality
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
 /**
  * Tests the rewriting of lambda expressions/method references using Java 8's infrastructure. I.e.,
@@ -188,7 +189,7 @@ class BasicLambdaExpressionsRewritingTest extends AnyFunSpec with Matchers {
                     filter(_.annotationType == InvokedMethod).
                     mkString("\n\t", "\n\t", "\n")
             fail(
-                s"the specified invoked method $message is not defined "+
+                s"the specified invoked method $message is not defined " +
                     classFile.methods.map(_.name).mkString("; defined methods = {", ",", "}")
             )
         }

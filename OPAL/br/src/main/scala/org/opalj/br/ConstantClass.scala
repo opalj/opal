@@ -13,7 +13,7 @@ final case class ConstantClass(value: ReferenceType) extends ConstantValue[Refer
 
     override def valueToString = value.toJava
 
-    final def toJava = valueToString+".class"
+    final def toJava = valueToString + ".class"
 
     override def runtimeValueType = ObjectType.Class
 

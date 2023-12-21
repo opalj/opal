@@ -4,6 +4,7 @@ package hermes
 package queries
 
 import scala.collection.mutable
+
 import org.opalj.br.analyses.Project
 import org.opalj.br.cfg.CFGFactory
 

@@ -3,15 +3,15 @@ package org.opalj
 package br
 package reader
 
-import net.ceedubs.ficus.Ficus._
-import org.opalj.log.OPALLogger
-import org.opalj.bi.reader.ClassFileReader
-import org.opalj.br.reader.{ClassFileReaderConfiguration => BRClassFileReaderConfiguration}
-
 import scala.collection.immutable.ArraySeq
 
+import org.opalj.bi.reader.ClassFileReader
+import org.opalj.br.reader.{ClassFileReaderConfiguration => BRClassFileReaderConfiguration}
+import org.opalj.log.OPALLogger
+
+import net.ceedubs.ficus.Ficus._
+
 /**
- *
  * @author Michael Eichberg
  */
 trait ClassFileBinding extends ClassFileReader {
@@ -46,8 +46,8 @@ trait ClassFileBinding extends ClassFileReader {
 
     type ClassFile = br.ClassFile
 
-    //type Fields = ArraySeq[Field_Info]
-    //type Methods = ArraySeq[Method_Info]
+    // type Fields = ArraySeq[Field_Info]
+    // type Methods = ArraySeq[Method_Info]
 
     def ClassFile(
         cp:                Constant_Pool,
@@ -145,7 +145,7 @@ trait ClassFileBinding extends ClassFileReader {
 object ClassFileBinding {
 
     final val DeleteSynthesizedClassFilesAttributesConfigKey = {
-        BRClassFileReaderConfiguration.ConfigKeyPrefix+"deleteSynthesizedClassFilesAttributes"
+        BRClassFileReaderConfiguration.ConfigKeyPrefix + "deleteSynthesizedClassFilesAttributes"
     }
 
 }

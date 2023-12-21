@@ -3,13 +3,13 @@ package org.opalj
 package br
 package analyses
 
-import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
-
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.reader.Java11Framework.ClassFiles
+
+import org.junit.runner.RunWith
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests the support for "project" related functionality.
@@ -291,13 +291,13 @@ class ProjectTest extends AnyFlatSpec with Matchers {
             }
             assert(
                 missedMethods.isEmpty, {
-                    s"; missed ${missedMethods.size} methods: "+
+                    s"; missed ${missedMethods.size} methods: " +
                         missedMethods.map { mm =>
                             val (c, m) = mm
                             val belongsToProject = project.isProjectType(c.thisType)
                             m.toJava(
-                                m.body.get.instructions.length.toString+
-                                    "; belongs to project = "+belongsToProject
+                                m.body.get.instructions.length.toString +
+                                    "; belongs to project = " + belongsToProject
                             )
                         }.mkString("\n\t", "\n\t", "\n")
                 }
@@ -339,7 +339,7 @@ class ProjectTest extends AnyFlatSpec with Matchers {
         val SubType = ObjectType("fields/Sub")
         val SubClass = classFile(SubType).get
         val SubSubType = ObjectType("fields/SubSub")
-        //val SubSubClass = classFile(SubSubType).get
+        // val SubSubClass = classFile(SubSubType).get
 
         behavior of "a Project's methods to resolve field references"
 

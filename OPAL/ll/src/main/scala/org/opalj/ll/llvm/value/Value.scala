@@ -4,6 +4,11 @@ package ll
 package llvm
 package value
 
+import org.opalj.ll.llvm.value.constant.ConstantDataArray
+import org.opalj.ll.llvm.value.constant.ConstantDataVector
+import org.opalj.ll.llvm.value.constant.ConstantExpression
+import org.opalj.ll.llvm.value.constant.ConstantIntValue
+
 import org.bytedeco.llvm.LLVM.LLVMUseRef
 import org.bytedeco.llvm.LLVM.LLVMValueRef
 import org.bytedeco.llvm.global.LLVM.LLVMArgumentValueKind
@@ -23,10 +28,6 @@ import org.bytedeco.llvm.global.LLVM.LLVMInstructionValueKind
 import org.bytedeco.llvm.global.LLVM.LLVMPrintValueToString
 import org.bytedeco.llvm.global.LLVM.LLVMTypeOf
 import org.bytedeco.llvm.global.LLVM.LLVMValueAsBasicBlock
-import org.opalj.ll.llvm.value.constant.ConstantDataArray
-import org.opalj.ll.llvm.value.constant.ConstantDataVector
-import org.opalj.ll.llvm.value.constant.ConstantExpression
-import org.opalj.ll.llvm.value.constant.ConstantIntValue
 
 class Value(ref: LLVMValueRef) {
     val address: Long = ref.address
@@ -68,31 +69,31 @@ object Value {
         Some(LLVMGetValueKind(ref) match {
             case LLVMArgumentValueKind           => Argument(ref)
             case LLVMBasicBlockValueKind         => BasicBlock(LLVMValueAsBasicBlock(ref))
-            //LLVMMemoryUseValueKind
-            //LLVMMemoryDefValueKind
-            //LLVMMemoryPhiValueKind
+            // LLVMMemoryUseValueKind
+            // LLVMMemoryDefValueKind
+            // LLVMMemoryPhiValueKind
             case LLVMFunctionValueKind           => Function(ref)
-            //LLVMGlobalAliasValueKind
-            //LLVMGlobalIFuncValueKind
+            // LLVMGlobalAliasValueKind
+            // LLVMGlobalIFuncValueKind
             case LLVMGlobalVariableValueKind     => GlobalVariable(ref)
-            //LLVMBlockAddressValueKind
+            // LLVMBlockAddressValueKind
             case LLVMConstantExprValueKind       => ConstantExpression(ref)
-            //LLVMConstantArrayValueKind
-            //LLVMConstantStructValueKind
-            //LLVMConstantVectorValueKind
-            //LLVMUndefValueValueKind
-            //LLVMConstantAggregateZeroValueKind
+            // LLVMConstantArrayValueKind
+            // LLVMConstantStructValueKind
+            // LLVMConstantVectorValueKind
+            // LLVMUndefValueValueKind
+            // LLVMConstantAggregateZeroValueKind
             case LLVMConstantDataArrayValueKind  => ConstantDataArray(ref)
             case LLVMConstantDataVectorValueKind => ConstantDataVector(ref)
             case LLVMConstantIntValueKind        => ConstantIntValue(ref)
-            //LLVMConstantFPValueKind
-            //LLVMConstantPointerNullValueKind
-            //LLVMConstantTokenNoneValueKind
-            //LLVMMetadataAsValueValueKind
-            //LLVMInlineAsmValueKind
+            // LLVMConstantFPValueKind
+            // LLVMConstantPointerNullValueKind
+            // LLVMConstantTokenNoneValueKind
+            // LLVMMetadataAsValueValueKind
+            // LLVMInlineAsmValueKind
             case LLVMInstructionValueKind        => Instruction(ref)
-            //LLVMPoisonValueValueKind
-            case valueKind                       => throw new IllegalArgumentException("unknown valueKind: "+valueKind)
+            // LLVMPoisonValueValueKind
+            case valueKind                       => throw new IllegalArgumentException("unknown valueKind: " + valueKind)
         })
     }
 }

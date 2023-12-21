@@ -4,17 +4,6 @@ package br
 package fpcf
 package analyses
 
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.FinalP
-import org.opalj.fpcf.InterimResult
-import org.opalj.fpcf.ProperPropertyComputationResult
-import org.opalj.fpcf.Property
-import org.opalj.fpcf.PropertyBounds
-import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.Result
-import org.opalj.fpcf.SomeEPS
-import org.opalj.fpcf.UBP
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
@@ -26,6 +15,17 @@ import org.opalj.br.fpcf.properties.VFreshReturnValue
 import org.opalj.br.fpcf.properties.VirtualMethodReturnValueFreshness
 import org.opalj.br.fpcf.properties.VNoFreshReturnValue
 import org.opalj.br.fpcf.properties.VPrimitiveReturnValue
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.FinalP
+import org.opalj.fpcf.InterimResult
+import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.Property
+import org.opalj.fpcf.PropertyBounds
+import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.Result
+import org.opalj.fpcf.SomeEPS
+import org.opalj.fpcf.UBP
 
 /**
  * An analysis that aggregates whether the return value for all possible methods represented by a

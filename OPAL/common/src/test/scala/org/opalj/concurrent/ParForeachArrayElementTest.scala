@@ -3,13 +3,12 @@ package org.opalj
 package concurrent
 
 import java.util.concurrent.atomic.AtomicInteger
+import scala.util.control.ControlThrowable
 
 import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
-
-import scala.util.control.ControlThrowable
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests `parForeachArrayElement`.

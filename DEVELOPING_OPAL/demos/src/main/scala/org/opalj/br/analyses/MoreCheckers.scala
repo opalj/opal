@@ -3,12 +3,12 @@ package org.opalj
 package br
 package analyses
 
-import org.opalj.util.PerformanceEvaluation
-import org.opalj.log.GlobalLogContext
 import org.opalj.bi.ACC_PUBLIC
 import org.opalj.br.instructions._
 import org.opalj.br.reader.Java8Framework.ClassFiles
+import org.opalj.log.GlobalLogContext
 import org.opalj.util.Nanoseconds
+import org.opalj.util.PerformanceEvaluation
 
 /**
  * Implementation of some simple static analyses to demonstrate the flexibility
@@ -36,7 +36,8 @@ import org.opalj.util.Nanoseconds
  */
 object MoreCheckers {
 
-    import PerformanceEvaluation.{time, memory}
+    import PerformanceEvaluation.memory
+    import PerformanceEvaluation.time
 
     private def printUsage(): Unit = {
         println("Usage: java …Main <JAR file containing class files>+")
@@ -45,7 +46,7 @@ object MoreCheckers {
     val results = scala.collection.mutable.Map[String, List[Nanoseconds]]()
 
     def collect(id: String, ns: Nanoseconds): Unit = {
-        print(id+", "+ns)
+        print(id + ", " + ns)
         results.update(id, ns :: results.getOrElse(id, List()))
     }
 
@@ -59,38 +60,36 @@ object MoreCheckers {
         for (arg <- args) {
             val file = new java.io.File(arg)
             if (!file.canRead || file.isDirectory) {
-                println("The file: "+file+" cannot be read.")
+                println("The file: " + file + " cannot be read.")
                 printUsage()
                 sys.exit(1)
             }
         }
 
-        println(Console.BOLD+"WARMUP PHASE"+Console.RESET)
+        println(Console.BOLD + "WARMUP PHASE" + Console.RESET)
         // for Scalatest - we use 8 warumup runs
         // for Bugs.zip - we use 50 warmup runs
         // for CLASSES.jar - we use 2 warumup runs
         for (i <- 1 to 2) {
-            println("\n\n\n\n\n\n\n"+i+"======================================================================="+i);
-            //time(t => println("Performing all analyses took: "+nsToSecs(t))) {
+            println("\n\n\n\n\n\n\n" + i + "=======================================================================" + i);
+            // time(t => println("Performing all analyses took: "+nsToSecs(t))) {
             analyze(args)
             System.gc();
-            //}
+            // }
         }
-        results.foreach(X => { val (id, times) = X; println(id+","+times.mkString(",")) })
+        results.foreach(X => { val (id, times) = X; println(id + "," + times.mkString(",")) })
         results.clear();
 
-        println(Console.BOLD+"\n\n\n\nMEASUREMENT PHASE"+Console.RESET)
+        println(Console.BOLD + "\n\n\n\nMEASUREMENT PHASE" + Console.RESET)
         for (i <- 1 to 20) {
-            println(); //i+"======================================================================="+i);
+            println(); // i+"======================================================================="+i);
             time {
                 analyze(args)
-            } { executionTime =>
-                println("Reading class files and executing all analyses: "+executionTime)
-            }
+            } { executionTime => println("Reading class files and executing all analyses: " + executionTime) }
             System.gc();
             println();
         }
-        results.foreach(X => { val (id, times) = X; println(id+","+times.mkString(",")) })
+        results.foreach(X => { val (id, times) = X; println(id + "," + times.mkString(",")) })
 
         sys.exit(0)
     }
@@ -109,13 +108,13 @@ object MoreCheckers {
                 classFile
             }
             cf
-        }(mu => println("Memory required for the bytecode representation ("+classFilesCount+"): "+(mu / 1024.0 / 1024.0)+" MByte"))
+        }(mu => println("Memory required for the bytecode representation (" + classFilesCount + "): " + (mu / 1024.0 / 1024.0) + " MByte"))
         val classHierarchy = ClassHierarchy(classFiles)(GlobalLogContext)
 
         val getClassFile: Map[ObjectType, ClassFile] = classFiles.map(cf => (cf.thisType, cf)).toMap // SAME AS IN PROJECT
         println("Press return to continue."); System.in.read()
 
-        //println("Number of class files: "+classFilesCount)
+        // println("Number of class files: "+classFilesCount)
 
         // FINDBUGS: CI: Class is final but declares protected field (CI_CONFUSED_INHERITANCE) // http://code.google.com/p/findbugs/source/browse/branches/2.0_gui_rework/findbugs/src/java/edu/umd/cs/findbugs/detect/ConfusedInheritance.java
         val protectedFields = time {
@@ -124,7 +123,7 @@ object MoreCheckers {
                 field <- classFile.fields if field.isProtected
             ) yield (classFile, field)
         } { t => collect("CI_CONFUSED_INHERITANCE", t /*nsToSecs(t)*/ ) }
-        println(", " /*"\tViolations: "*/ +protectedFields.size)
+        println(", " /*"\tViolations: "*/ + protectedFields.size)
 
         // FINDBUGS: CN: Class implements Cloneable but does not define or use clone method (CN_IDIOM)
         val cloneableNoClone = time {
@@ -143,7 +142,7 @@ object MoreCheckers {
             } else
                 List.empty[String]
         } { t => collect("CN_IDIOM", t /*nsToSecs(t)*/ ) }
-        println(", "+cloneableNoClone.size)
+        println(", " + cloneableNoClone.size)
 
         // FINDBUGS: CN: clone method does not call super.clone() (CN_IDIOM_NO_SUPER_CALL)
         val cloneDoesNotCallSuperClone = time {
@@ -160,7 +159,7 @@ object MoreCheckers {
                 }
             } yield (classFile /*.thisClass.className*/ , method /*.name*/ )
         } { t => collect("CN_IDIOM_NO_SUPER_CALL", t /*nsToSecs(t)*/ ) }
-        println(", " /*"\tViolations: "*/ +cloneDoesNotCallSuperClone.length /*+": "+cloneDoesNotCallSuperClone.mkString("; ")*/ )
+        println(", " /*"\tViolations: "*/ + cloneDoesNotCallSuperClone.length /*+": "+cloneDoesNotCallSuperClone.mkString("; ")*/ )
 
         // FINDBUGS: CN: Class defines clone() but doesn't implement Cloneable (CN_IMPLEMENTS_CLONE_BUT_NOT_CLONEABLE)
         val cloneButNotCloneable = time {
@@ -172,7 +171,7 @@ object MoreCheckers {
                 if classHierarchy.isASubtypeOf(classFile.thisType, ObjectType("java/lang/Cloneable")).isYesOrUnknown
             } yield (classFile.thisType.fqn, method.name)
         }(t => collect("CN_IMPLEMENTS_CLONE_BUT_NOT_CLONEABLE", t /*nsToSecs(t)*/ ))
-        println(", " /*"\tViolations: "*/ /*+cloneButNotCloneable.mkString(", ")*/ +cloneButNotCloneable.size)
+        println(", " /*"\tViolations: "*/ /*+cloneButNotCloneable.mkString(", ")*/ + cloneButNotCloneable.size)
 
         // FINDBUGS: Co: Abstract class defines covariant compareTo() method (CO_ABSTRACT_SELF)
         // FINDBUGS: Co: Covariant compareTo() method defined (CO_SELF_NO_OBJECT)
@@ -189,7 +188,7 @@ object MoreCheckers {
                 if parameterType != ObjectType("java/lang/Object")
             } yield (classFile, method)
         }(t => collect("CO_SELF_NO_OBJECT/CO_ABSTRACT_SELF", t /*nsToSecs(t)*/ ))
-        println(", " /*"\tViolations: "*/ +covariantCompareToMethods.size)
+        println(", " /*"\tViolations: "*/ + covariantCompareToMethods.size)
 
         // FINDBUGS: Dm: Explicit garbage collection; extremely dubious except in benchmarking code (DM_GC)
         var garbageCollectingMethods: List[(ClassFile, Method, Instruction)] = Nil
@@ -208,7 +207,7 @@ object MoreCheckers {
                 }
             }
         }(t => collect("DM_GC", t /*nsToSecs(t)*/ ))
-        println(", " /*"\tViolations: "*/ +garbageCollectingMethods.size)
+        println(", " /*"\tViolations: "*/ + garbageCollectingMethods.size)
 
         // FINDBUGS: Dm: Method invokes dangerous method runFinalizersOnExit (DM_RUN_FINALIZERS_ON_EXIT)
         var methodsThatCallRunFinalizersOnExit: List[(ClassFile, Method, Instruction)] = Nil
@@ -227,8 +226,8 @@ object MoreCheckers {
                 }
             }
         }(t => collect("DM_RUN_FINALIZERS_ON_EXIT", t /*nsToSecs(t)*/ ))
-        println(", " /*"\tViolations: "*/ +methodsThatCallRunFinalizersOnExit.size)
-        //methodsThatCallRunFinalizersOnExit.foreach((t) => {println(t._1.thisClass.className+ " "+ t._2.name)});
+        println(", " /*"\tViolations: "*/ + methodsThatCallRunFinalizersOnExit.size)
+        // methodsThatCallRunFinalizersOnExit.foreach((t) => {println(t._1.thisClass.className+ " "+ t._2.name)});
 
         //        // FINDBUGS: Eq: Abstract class defines covariant equals() method (EQ_ABSTRACT_SELF)
         //        var abstractClassThatDefinesCovariantEquals = time(t => println("EQ_ABSTRACT_SELF: "+nsToSecs(t))) {
@@ -246,7 +245,7 @@ object MoreCheckers {
                 method @ Method(_, "equals", MethodDescriptor(Seq(classFile.thisType), BooleanType)) <- classFile.methods if method.isAbstract
             ) yield (classFile, method);
         }(t => collect("EQ_ABSTRACT_SELF", t /*nsToSecs(t)*/ ))
-        println(", " /*"\tViolations: "*/ +abstractCovariantEquals.size)
+        println(", " /*"\tViolations: "*/ + abstractCovariantEquals.size)
 
         // FINDBUGS: FI: Finalizer should be protected, not public (FI_PUBLIC_SHOULD_BE_PROTECTED)
         val classesWithPublicFinalizeMethods = time {
@@ -255,7 +254,7 @@ object MoreCheckers {
                 if classFile.methods.exists(_ match { case Method(ACC_PUBLIC(), "finalize", HasNoArgsAndReturnsVoid()) => true; case _ => false })
             } yield classFile
         }(t => collect("FI_PUBLIC_SHOULD_BE_PROTECTED", t /*nsToSecs(t)*/ ))
-        println(", " /*"\tViolations: "*/ +classesWithPublicFinalizeMethods.length)
+        println(", " /*"\tViolations: "*/ + classesWithPublicFinalizeMethods.length)
 
         // FINDBUGS: Se: Class is Serializable but its superclass doesn't define a void constructor (SE_NO_SUITABLE_CONSTRUCTOR)
 
@@ -284,7 +283,7 @@ object MoreCheckers {
                 if !superClassFile.constructors.exists(_.descriptor.parameterTypes.length == 0)
             } yield superclass // there can be at most one method
         }(t => collect("SE_NO_SUITABLE_CONSTRUCTOR", t /*nsToSecs(t)*/ ))
-        println(", " /*"\tViolations: "*/ +classesWithoutDefaultConstructor.size);
+        println(", " /*"\tViolations: "*/ + classesWithoutDefaultConstructor.size);
 
         // FINDBUGS: UuF: Unused field (UUF_UNUSED_FIELD)
         var unusedFields: List[(ClassFile, Iterable[String])] = Nil
@@ -306,7 +305,7 @@ object MoreCheckers {
                     unusedFields = (classFile, privateFields) :: unusedFields
             }
         }(t => collect("UUF_UNUSED_FIELD", t /*nsToSecs(t)*/ ))
-        println(", "+ /*"\tViolations: "+*/ unusedFields.size)
+        println(", " + /*"\tViolations: "+*/ unusedFields.size)
         //            var allFields = List[(ObjectType, String)]()
         //            var readFields = Set[(ObjectType, String)]()
         //            var writtenFields = Set[(ObjectType, String)]()
@@ -345,6 +344,6 @@ object MoreCheckers {
                 exceptionHandler <- body.exceptionHandlers if exceptionHandler.catchType == Some(IllegalMonitorStateExceptionType)
             } yield (classFile, method)
         }(t => collect("IMSE_DONT_CATCH_IMSE", t /*nsToSecs(t)*/ ))
-        println(", " /*"\tViolations: "*/ +catchesIllegalMonitorStateException.size)
+        println(", " /*"\tViolations: "*/ + catchesIllegalMonitorStateException.size)
     }
 }

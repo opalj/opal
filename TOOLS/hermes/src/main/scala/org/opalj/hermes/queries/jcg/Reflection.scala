@@ -4,14 +4,16 @@ package hermes
 package queries
 package jcg
 
+import scala.collection.immutable.ArraySeq
+
 import org.opalj.ai.domain.l1.ArrayValues
-import org.opalj.br.MethodDescriptor.JustReturnsObject
 import org.opalj.br._
+import org.opalj.br.MethodDescriptor.JustReturnsObject
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.INVOKEVIRTUAL
-import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.LoadClass
 import org.opalj.br.instructions.LoadClass_W
 import org.opalj.collection.immutable.IntTrieSet
@@ -20,8 +22,6 @@ import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 import org.opalj.tac._
 import org.opalj.value.ValueInformation
-
-import scala.collection.immutable.ArraySeq
 
 /**
  * Groups features that use the java reflection API.

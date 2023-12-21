@@ -30,7 +30,7 @@ trait SimpleBooleanPropertyTracing
                 case newState => StructuralUpdate(new BooleanProperty(newState))
             }
 
-        override def toString: String = domain.propertyName+"("+state+")"
+        override def toString: String = domain.propertyName + "(" + state + ")"
     }
 
     def updateProperty(pc: Int, newState: Boolean): Unit = {

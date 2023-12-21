@@ -3,11 +3,11 @@ package org.opalj
 package fpcf
 package par
 
-import java.util.concurrent.atomic.AtomicInteger
 import java.io.File
 import java.util.concurrent.ConcurrentLinkedQueue
-
+import java.util.concurrent.atomic.AtomicInteger
 import scala.jdk.CollectionConverters._
+
 import org.opalj.io
 
 /**
@@ -217,7 +217,7 @@ case class ImmediatelyExecutedLazyComputationEvent(
         c:               SomePropertyComputation
 ) extends StoreEvent {
     override def toTxt: String = {
-        s"$eventId: ImmediatelyExecutedLazyComputation"+
+        s"$eventId: ImmediatelyExecutedLazyComputation" +
             s"(for=$newEOptionP,evalDepth=$evaluationDepth,c=${anyRefToShortString(c)})"
     }
 }
@@ -459,8 +459,8 @@ private[par] class RecordAllPropertyStoreEvents extends PropertyStoreTracer {
 
     def toTxt: String = {
         allEvents.map {
-            case e: ProcessingResultEvent => "->\t"+e.toTxt
-            case e                        => "\t"+e.toTxt
+            case e: ProcessingResultEvent => "->\t" + e.toTxt
+            case e                        => "\t" + e.toTxt
         }.mkString("Events [\n", "\n", "\n]")
     }
 

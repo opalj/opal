@@ -6,10 +6,7 @@ package analyses
 package cg
 package reflection
 
-import org.opalj.collection.immutable.UIDSet
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.EPS
-import org.opalj.fpcf.PropertyStore
+import org.opalj.br.ArrayType
 import org.opalj.br.BaseType
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
@@ -18,8 +15,11 @@ import org.opalj.br.Type
 import org.opalj.br.VoidType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.Context
-import org.opalj.br.ArrayType
 import org.opalj.br.fpcf.properties.cg.ForNameClasses
+import org.opalj.collection.immutable.UIDSet
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EPS
+import org.opalj.fpcf.PropertyStore
 
 object TypesUtil {
 

@@ -3,11 +3,11 @@ package org.opalj
 package br
 package instructions
 
+import scala.collection.immutable.ArraySeq
+
 import org.opalj.collection.IntIterator
 import org.opalj.collection.immutable.IntArraySet
 import org.opalj.collection.immutable.IntArraySet1
-
-import scala.collection.immutable.ArraySeq
 
 /**
  * Access jump table by index and jump.
@@ -113,14 +113,14 @@ case class TABLESWITCH(
     }
 
     override def toString: String = {
-        s"TABLESWITCH($low -> $high; "+
-            (low to high).zip(jumpOffsets).map(e => s"${e._1}⤼${e._2}").mkString(",")+
-            ";default⤼"+defaultOffset+
+        s"TABLESWITCH($low -> $high; " +
+            (low to high).zip(jumpOffsets).map(e => s"${e._1}⤼${e._2}").mkString(",") +
+            ";default⤼" + defaultOffset +
             ")"
     }
 
     override def toString(pc: PC): String = {
-        s"TABLESWITCH($low -> $high; "+
+        s"TABLESWITCH($low -> $high; " +
             (low to high).zip(jumpOffsets).map { keyOffset =>
                 val (key, offset) = keyOffset
                 s"$key=${pc + offset}${if (offset >= 0) "↓" else "↑"}"
@@ -144,7 +144,6 @@ object TABLESWITCH extends InstructionMetaInformation {
      *
      * @param branchTargets The first target is chosen when the branch value has the value `low`.
      *                      The second target is chosen if the value is `low+1` etc.
-     *
      */
     def apply(
         defaultBranchTarget: InstructionLabel,
@@ -210,6 +209,6 @@ case class LabeledTABLESWITCH(
         (low to high).zip(jumpTargets).map { keyOffset =>
             val (key, target) = keyOffset
             s"$key=$target"
-        }.mkString("TABLESWITCH(", ", ", "; ifNoMatch="+defaultBranchTarget+")")
+        }.mkString("TABLESWITCH(", ", ", "; ifNoMatch=" + defaultBranchTarget + ")")
     }
 }

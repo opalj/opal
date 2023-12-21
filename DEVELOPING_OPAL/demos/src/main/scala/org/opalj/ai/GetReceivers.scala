@@ -3,19 +3,18 @@ package org.opalj
 package ai
 
 import java.net.URL
-
 import scala.collection.mutable
 
-import org.opalj.br.PCAndInstruction
-import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.ProjectAnalysisApplication
-import org.opalj.br.analyses.Project
-import org.opalj.br.instructions.NEW
-import org.opalj.br.Method
-import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.ai.domain.Origin
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.ai.fpcf.domain.L1DefaultDomainWithCFGAndDefUseAndSignatureRefinement
+import org.opalj.br.Method
+import org.opalj.br.PCAndInstruction
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.ProjectAnalysisApplication
+import org.opalj.br.fpcf.FPCFAnalysesManagerKey
+import org.opalj.br.instructions.NEW
 
 /**
  * Extracts the information about receivers of method calls.
@@ -74,7 +73,7 @@ object GetReceivers extends ProjectAnalysisApplication {
                     else
                         utb.map(_.toJava).mkString("⋂(", " with ", ")")
 
-                s += ", "+value.isPrecise
+                s += ", " + value.isPrecise
                 val triviallyPrecise =
                     value.isPrecise &&
                         value.upperTypeBound.isSingletonSet &&
@@ -85,7 +84,7 @@ object GetReceivers extends ProjectAnalysisApplication {
                 if (triviallyPrecise)
                     s += " (trivially)"
 
-                s += ", "+value.isNull
+                s += ", " + value.isNull
                 if (aiResult.domain.origins(value.asInstanceOf[aiResult.domain.DomainValue]).forall(pc =>
                     pc >= 0 && {
                         val i = m.body.get.instructions(pc)
@@ -101,10 +100,10 @@ object GetReceivers extends ProjectAnalysisApplication {
         }
 
         BasicReport(
-            "type, isPrecise, isNull, count\n"+
+            "type, isPrecise, isNull, count\n" +
                 counts
                 .iterator
-                .map(e => e._1+", "+e._2)
+                .map(e => e._1 + ", " + e._2)
                 .mkString("\n")
         )
     }

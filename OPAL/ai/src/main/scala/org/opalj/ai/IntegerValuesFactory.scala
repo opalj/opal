@@ -104,4 +104,3 @@ trait IntegerValuesFactory extends ValuesDomain { domain =>
      */
     def CharValue(origin: ValueOrigin, value: Char): DomainTypedValue[CTIntType]
 }
-

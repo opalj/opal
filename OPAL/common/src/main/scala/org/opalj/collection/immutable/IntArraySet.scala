@@ -4,7 +4,6 @@ package collection
 package immutable
 
 import java.util.{Arrays => JArrays}
-
 import scala.collection.mutable.Builder
 
 /**
@@ -715,7 +714,7 @@ object IntArraySet {
         if (i1 == i3 || i2 == i3)
             return if (i1 < i2) new IntArraySet2(i1, i2) else new IntArraySet2(i2, i1);
 
-        //... all three values are different
+        // ... all three values are different
         var v0 = 0
         var v1 = 0
         if (i1 < i2) {

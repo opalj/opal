@@ -62,4 +62,3 @@ object RefAccumulator {
 
     def apply[N >: Null <: AnyRef](e: N): RefAccumulator[N] = new RefAccumulator[N](List(e))
 }
-

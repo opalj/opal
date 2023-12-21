@@ -58,8 +58,9 @@ trait ReifiedConstraints extends IntegerValuesDomain with ReferenceValuesDomain 
      * Representation of a constraint related to two values.
      */
     case class ReifiedTwoValuesConstraint(
-            pc:     Int,
-            value1: DomainValue, value2: DomainValue,
+            pc:         Int,
+            value1:     DomainValue,
+            value2:     DomainValue,
             constraint: String
     ) extends ReifiedConstraint
 
@@ -117,7 +118,7 @@ trait ReifiedConstraints extends IntegerValuesDomain with ReferenceValuesDomain 
     ): (Operands, Locals) = {
 
         nextConstraint(
-            ReifiedSingleValueConstraint(pc, operands.head, "is subtype of "+bound.toJava)
+            ReifiedSingleValueConstraint(pc, operands.head, "is subtype of " + bound.toJava)
         )
         super.refSetUpperTypeBoundOfTopOperand(pc, bound, operands, locals)
     }
@@ -144,7 +145,7 @@ trait ReifiedConstraints extends IntegerValuesDomain with ReferenceValuesDomain 
         locals:   Locals
     ): (Operands, Locals) = {
 
-        nextConstraint(ReifiedSingleValueConstraint(pc, value, "is "+theValue))
+        nextConstraint(ReifiedSingleValueConstraint(pc, value, "is " + theValue))
         super.intEstablishValue(pc, theValue, value, operands, locals)
     }
 
@@ -196,4 +197,3 @@ trait ReifiedConstraints extends IntegerValuesDomain with ReferenceValuesDomain 
         super.intEstablishIsLessThanOrEqualTo(pc, value1, value2, operands, locals)
     }
 }
-

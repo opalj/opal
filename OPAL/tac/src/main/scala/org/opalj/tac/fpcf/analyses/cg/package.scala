@@ -4,22 +4,24 @@ package tac
 package fpcf
 package analyses
 
-import org.opalj.log.LogContext
-import org.opalj.log.OPALLogger.logOnce
-import org.opalj.log.Warn
-import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.collection.immutable.EmptyIntTrieSet
-import org.opalj.collection.immutable.UIDSet
-import org.opalj.value.ValueInformation
-import org.opalj.br.PCs
-import org.opalj.br.instructions.LoadConstantInstruction
+import org.opalj.ai.ImmediateVMExceptionsOriginOffset
+import org.opalj.ai.MethodExternalExceptionsOriginOffset
+import org.opalj.ai.ValueOrigin
+import org.opalj.ai.ValueOriginForImmediateVMException
+import org.opalj.ai.ValueOriginForMethodExternalException
+import org.opalj.ai.isImmediateVMException
+import org.opalj.ai.isMethodExternalExceptionOrigin
+import org.opalj.ai.pcOfImmediateVMException
+import org.opalj.ai.pcOfMethodExternalException
 import org.opalj.br.ComputationalTypeReference
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.ObjectType
+import org.opalj.br.PCs
 import org.opalj.br.ReferenceType
 import org.opalj.br.instructions.ACONST_NULL
 import org.opalj.br.instructions.LoadClass
 import org.opalj.br.instructions.LoadClass_W
+import org.opalj.br.instructions.LoadConstantInstruction
 import org.opalj.br.instructions.LoadDynamic
 import org.opalj.br.instructions.LoadDynamic_W
 import org.opalj.br.instructions.LoadMethodHandle
@@ -28,15 +30,13 @@ import org.opalj.br.instructions.LoadMethodType
 import org.opalj.br.instructions.LoadMethodType_W
 import org.opalj.br.instructions.LoadString
 import org.opalj.br.instructions.LoadString_W
-import org.opalj.ai.ValueOrigin
-import org.opalj.ai.pcOfImmediateVMException
-import org.opalj.ai.pcOfMethodExternalException
-import org.opalj.ai.ValueOriginForImmediateVMException
-import org.opalj.ai.ValueOriginForMethodExternalException
-import org.opalj.ai.MethodExternalExceptionsOriginOffset
-import org.opalj.ai.ImmediateVMExceptionsOriginOffset
-import org.opalj.ai.isMethodExternalExceptionOrigin
-import org.opalj.ai.isImmediateVMException
+import org.opalj.collection.immutable.EmptyIntTrieSet
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.collection.immutable.UIDSet
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger.logOnce
+import org.opalj.log.Warn
+import org.opalj.value.ValueInformation
 
 package object cg {
 

@@ -6,9 +6,9 @@ package domain
 import scala.collection.Set
 import scala.collection.immutable
 
+import org.opalj.br.ObjectType
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.immutable.UIDSet1
-import org.opalj.br.ObjectType
 
 /**
  * Records the results of the evaluation of the `current` method such that the results
@@ -123,7 +123,7 @@ trait RecordMethodCallResults
     // IMPROVE Remap returned exceptions
     def thrownExceptions(target: TargetDomain, callerPC: Int): target.ExceptionValues = {
 
-        val allThrownExceptions = this.allThrownExceptions //: Map[PC, ThrownException]
+        val allThrownExceptions = this.allThrownExceptions // : Map[PC, ThrownException]
         if (allThrownExceptions.isEmpty) {
             Iterable.empty
         } else {

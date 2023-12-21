@@ -5,10 +5,6 @@ package ifds
 
 import scala.annotation.tailrec
 
-import org.opalj.collection.immutable.EmptyIntTrieSet
-import org.opalj.fpcf.FinalEP
-import org.opalj.fpcf.PropertyStore
-import org.opalj.value.ValueInformation
 import org.opalj.br.ArrayType
 import org.opalj.br.ClassFile
 import org.opalj.br.FieldType
@@ -19,6 +15,14 @@ import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.collection.immutable.EmptyIntTrieSet
+import org.opalj.fpcf.FinalEP
+import org.opalj.fpcf.PropertyStore
+import org.opalj.ifds.AbstractIFDSFact
+import org.opalj.ifds.AbstractIFDSNullFact
+import org.opalj.ifds.Callable
+import org.opalj.ifds.Dependees.Getter
+import org.opalj.ifds.IFDSFact
 import org.opalj.tac.ArrayLoad
 import org.opalj.tac.ArrayStore
 import org.opalj.tac.Assignment
@@ -32,11 +36,7 @@ import org.opalj.tac.Var
 import org.opalj.tac.fpcf.analyses.ifds.JavaForwardIFDSProblem
 import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem
 import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
-import org.opalj.ifds.AbstractIFDSFact
-import org.opalj.ifds.AbstractIFDSNullFact
-import org.opalj.ifds.Callable
-import org.opalj.ifds.Dependees.Getter
-import org.opalj.ifds.IFDSFact
+import org.opalj.value.ValueInformation
 
 trait VTAFact extends AbstractIFDSFact
 case object VTANullFact extends VTAFact with AbstractIFDSNullFact
@@ -137,12 +137,12 @@ class VariableTypeProblem(project: SomeProject, override val subsumeFacts: Boole
                 inSet ++ newFacts(statement.method, statement.stmt.asAssignment.expr, statement.index, in)
             case ArrayStore.ASTID =>
                 /*
-                * Add facts for the array store, like it was a variable assignment.
-                * By doing so, we only want to get the variable's type.
-                * Then, we change the definedBy-index to the one of the array and wrap the variable's
-                * type with an array type.
-                * Note, that an array type may have at most 255 dimensions.
-                */
+                 * Add facts for the array store, like it was a variable assignment.
+                 * By doing so, we only want to get the variable's type.
+                 * Then, we change the definedBy-index to the one of the array and wrap the variable's
+                 * type with an array type.
+                 * Note, that an array type may have at most 255 dimensions.
+                 */
                 val flow = scala.collection.mutable.Set.empty[VTAFact]
                 flow ++= inSet
                 newFacts(statement.method, stmt.asArrayStore.value, statement.index, in).foreach {
@@ -171,9 +171,9 @@ class VariableTypeProblem(project: SomeProject, override val subsumeFacts: Boole
             case VariableType(definedBy, t, upperBound) =>
                 allParams.iterator.zipWithIndex.foreach {
                     /*
-                    * We are only interested in a pair of a variable type and a parameter, if the
-                    * variable and the parameter can refer to the same object.
-                    */
+                     * We are only interested in a pair of a variable type and a parameter, if the
+                     * variable and the parameter can refer to the same object.
+                     */
                     case (parameter, parameterIndex) if parameter.asVar.definedBy.contains(definedBy) =>
                         // If this is the case, create a new fact for the method's formal parameter.
                         flow += VariableType(
@@ -290,9 +290,9 @@ class VariableTypeProblem(project: SomeProject, override val subsumeFacts: Boole
             case GetField.ASTID | GetStatic.ASTID =>
                 val t = expression.asFieldRead.declaredFieldType
                 /*
-                * We do not track field types. So we must assume, that it contains any subtype of its
-                * compile time type.
-                */
+                 * We do not track field types. So we must assume, that it contains any subtype of its
+                 * compile time type.
+                 */
                 if (t.isReferenceType)
                     Iterator(VariableType(statementIndex, t.asReferenceType, upperBound = true))
                 else Iterator.empty
@@ -367,19 +367,19 @@ class VariableTypeProblem(project: SomeProject, override val subsumeFacts: Boole
         (method.descriptor.parameterTypes.zipWithIndex.collect {
             case (t, index) if t.isReferenceType =>
                 /*
-                * Create a fact for the parameter, which says, that the parameter may have any
-                * subtype of its compile time type.
-                */
+                 * Create a fact for the parameter, which says, that the parameter may have any
+                 * subtype of its compile time type.
+                 */
                 VariableType(
                     JavaIFDSProblem.remapParamAndVariableIndex(index, method.isStatic),
                     t.asReferenceType,
                     upperBound = true
                 )
             /*
-            * In IFDS problems, we must always also analyze the null fact, because it creates the facts,
-            * which hold independently of other source facts.
-            * Map the input facts, in which we are interested, to a pair of the method and the fact.
-            */
+             * In IFDS problems, we must always also analyze the null fact, because it creates the facts,
+             * which hold independently of other source facts.
+             * Map the input facts, in which we are interested, to a pair of the method and the fact.
+             */
         } :+ VTANullFact).map(fact => (method, new IFDSFact(fact)))
     }
 }

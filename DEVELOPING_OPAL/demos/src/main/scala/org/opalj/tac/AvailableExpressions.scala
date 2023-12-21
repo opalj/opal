@@ -4,11 +4,11 @@ package tac
 
 import java.net.URL
 
+import org.opalj.br._
+import org.opalj.br.analyses._
+import org.opalj.br.cfg._
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.value._
-import org.opalj.br._
-import org.opalj.br.cfg._
-import org.opalj.br.analyses._
 
 /**
  * Computes the available arithmetic binary expressions.
@@ -88,10 +88,10 @@ object AvailableExpressions extends MethodAnalysisApplication {
             .map(factsToString)
             .zipWithIndex
             .map(e => { val (f, index) = e; s"$index: $f" })
-            .mkString("Available expressions:\n\t", "\n\t", "\n\n")+
-            "\tNormal return(s): "+
-            (if (normalRetFacts != null) factsToString(normalRetFacts) else "N/A")+"\n"+
-            "\tAbnormal return(s): "+
+            .mkString("Available expressions:\n\t", "\n\t", "\n\n") +
+            "\tNormal return(s): " +
+            (if (normalRetFacts != null) factsToString(normalRetFacts) else "N/A") + "\n" +
+            "\tAbnormal return(s): " +
             (if (abnormalRetFacts != null) factsToString(abnormalRetFacts) else "N/A")
     }
 }

@@ -3,9 +3,9 @@ package org.opalj
 package hermes
 package queries
 
-import org.opalj.graphs.UnidirectionalGraph
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
+import org.opalj.graphs.UnidirectionalGraph
 
 /**
  * Identifies recursive data structures. Such data-structure can often significantly limit

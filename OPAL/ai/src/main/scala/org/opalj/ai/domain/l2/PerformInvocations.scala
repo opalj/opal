@@ -4,14 +4,14 @@ package ai
 package domain
 package l2
 
-import org.opalj.log.OPALLogger
-import org.opalj.log.Warn
-import org.opalj.log.Error
 import org.opalj.br.Method
-import org.opalj.br.VoidType
+import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
-import org.opalj.br.MethodDescriptor
+import org.opalj.br.VoidType
+import org.opalj.log.Error
+import org.opalj.log.OPALLogger
+import org.opalj.log.Warn
 
 /**
  * Mix in this trait if methods that are called by `invokeXYZ` instructions should
@@ -138,7 +138,7 @@ trait PerformInvocations extends MethodCallsHandling {
 
         assert(
             method.body.isDefined,
-            s"${project.source(method.classFile.thisType)} - the method: "+
+            s"${project.source(method.classFile.thisType)} - the method: " +
                 s"${method.toJava} does not have a body (is the project self-consistent?)"
         )
 
@@ -165,7 +165,8 @@ trait PerformInvocations extends MethodCallsHandling {
 
         if (method.isAbstract) {
             OPALLogger.logOnce(Error(
-                "project configuration", "resolved method is abstract: "+method.classFile
+                "project configuration",
+                "resolved method is abstract: " + method.classFile
             ))
             fallback()
         } else if (!method.isNative) {
@@ -205,8 +206,8 @@ trait PerformInvocations extends MethodCallsHandling {
             case _ =>
                 OPALLogger.logOnce(Warn(
                     "project configuration",
-                    "method reference cannot be resolved: "+
-                        declaringClass.toJava+"{ (static?) "+descriptor.toJava(name)+"}"
+                    "method reference cannot be resolved: " +
+                        declaringClass.toJava + "{ (static?) " + descriptor.toJava(name) + "}"
                 ))
                 fallback()
         }

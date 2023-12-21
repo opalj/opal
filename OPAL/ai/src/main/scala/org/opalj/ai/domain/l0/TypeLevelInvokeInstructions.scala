@@ -4,10 +4,10 @@ package ai
 package domain
 package l0
 
-import org.opalj.br.ObjectType
-import org.opalj.br.ReferenceType
 import org.opalj.br.BootstrapMethod
 import org.opalj.br.MethodDescriptor
+import org.opalj.br.ObjectType
+import org.opalj.br.ReferenceType
 
 /**
  * Most basic handling of method invocations that determines the value that is

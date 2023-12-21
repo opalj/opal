@@ -4,13 +4,13 @@ package ai
 package fpcf
 package domain
 
+import org.opalj.ai.domain.TheProject
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionPSet
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyKind
 import org.opalj.fpcf.SinglePropertiesBoundType
-import org.opalj.ai.domain.TheProject
 
 /**
  * Mixed in by (partial-)domains that query the property store to state the kinds of properties that

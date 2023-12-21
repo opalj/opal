@@ -2,11 +2,11 @@
 package org.opalj
 package tac
 
-import org.scalatestplus.junit.JUnitRunner
-import org.junit.runner.RunWith
-
 import org.opalj.br._
 import org.opalj.br.TestSupport.biProject
+
+import org.junit.runner.RunWith
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * @author Michael Eichberg
@@ -68,7 +68,7 @@ class TACNaiveCastTest extends TACNaiveTest {
             "0: r_0 = this",
             "1: r_1 = p_1",
             "2: op_0 = r_1",
-            "3: op_0 = op_0 instanceof "+strg+"",
+            "3: op_0 = op_0 instanceof " + strg + "",
             "4: r_2 = op_0",
             "5: return"
         ).mkString("\n")

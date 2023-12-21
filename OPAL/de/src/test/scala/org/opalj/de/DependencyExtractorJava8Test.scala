@@ -35,7 +35,7 @@ class DependencyExtractorJava8Test extends AnyFunSuite {
 
             dependencies.get(key) match {
                 case Some(0) =>
-                    fail("the dependency "+key+" was not extracted the expected number of times")
+                    fail("the dependency " + key + " was not extracted the expected number of times")
                 case Some(x) =>
                     dependencies = dependencies.updated(key, x - 1)
                 case None =>
@@ -45,7 +45,7 @@ class DependencyExtractorJava8Test extends AnyFunSuite {
                             "\n\t",
                             "\n"
                         )
-                    fail("the dependency "+key+" was not extracted.\n"+remainigDependencies)
+                    fail("the dependency " + key + " was not extracted.\n" + remainigDependencies)
             }
         }
 
@@ -54,10 +54,10 @@ class DependencyExtractorJava8Test extends AnyFunSuite {
             superClassName: String = "java.lang.Object"
         ): Unit = {
             // //implicit constructor:
-            val constructorName = className+".<init>()"
+            val constructorName = className + ".<init>()"
             assertDependency(constructorName, className, INSTANCE_MEMBER)
             assertDependency(constructorName, superClassName, DECLARING_CLASS_OF_CALLED_METHOD)
-            assertDependency(constructorName, superClassName+".<init>()", CALLS_METHOD)
+            assertDependency(constructorName, superClassName + ".<init>()", CALLS_METHOD)
             assertImplicitThisLocalVariable(constructorName)
         }
 

@@ -2,13 +2,14 @@
 package org.opalj
 package de
 
-import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br._
 import org.opalj.br.reader.Java8Framework.ClassFile
+
+import org.junit.runner.RunWith
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests that the dependency extractor extracts the types as desired.

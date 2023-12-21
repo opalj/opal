@@ -6,14 +6,13 @@ package l0
 
 import java.net.URL
 import java.util.concurrent.ConcurrentLinkedQueue
-
 import scala.jdk.CollectionConverters._
 
 import org.opalj.ai.Domain
 import org.opalj.ai.InterruptableAI
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
 
@@ -90,7 +89,6 @@ object ParameterUsageAnalysis extends ProjectAnalysisApplication {
             returnedParameters.mkString("Directly returned parameters:\n", "\n", "\n\n") +
                 unusedParameters.mkString("Unused parameters:\n", "\n", "\n\n") +
                 s"\nThe analysis took $analysisTime and found $occurences direct returns"
-
         )
     }
 

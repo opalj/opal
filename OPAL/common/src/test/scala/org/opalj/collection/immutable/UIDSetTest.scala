@@ -5,18 +5,18 @@ package immutable
 
 import scala.language.implicitConversions
 
-import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
-import org.scalacheck.Prop.classify
-import org.scalacheck.Prop.propBoolean
-import org.scalacheck.Gen
-import org.scalacheck.Arbitrary
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.matchers.should.Matchers
-import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
-
 import org.opalj.util.Nanoseconds
 import org.opalj.util.PerformanceEvaluation
+
+import org.junit.runner.RunWith
+import org.scalacheck.Arbitrary
+import org.scalacheck.Gen
+import org.scalacheck.Prop.classify
+import org.scalacheck.Prop.propBoolean
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
+import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 
 /**
  * Tests `UIDSets` by creating standard Sets and comparing
@@ -113,7 +113,7 @@ class UIDSetTest extends AnyFunSpec with Matchers with ScalaCheckDrivenPropertyC
                     (s.size == us.size) && {
                         if (!s.forall(us.contains)) {
                             println(
-                                s"after removing $e s contains more elements: "+
+                                s"after removing $e s contains more elements: " +
                                     s"$s(${s.getClass}) <-> $us(#${us.size}; ${us.getClass})"
                             )
                             false
@@ -277,7 +277,7 @@ class UIDSetTest extends AnyFunSpec with Matchers with ScalaCheckDrivenPropertyC
                 val expected = toSUIDSet(s.filter(i => test(SUID(i))))
                 (us.size == expected.size) :| "size" && {
                     if (expected != us) {
-                        println("expected: "+expected + expected.getClass+"; actual: "+us + us.getClass)
+                        println("expected: " + expected + expected.getClass + "; actual: " + us + us.getClass)
                         false
                     } else {
                         true
@@ -364,12 +364,12 @@ class UIDSetTest extends AnyFunSpec with Matchers with ScalaCheckDrivenPropertyC
                     val s1b = UIDSet.newBuilder[SUID]
                     base.foreach(s1b.+=)
                     s1b.result()
-                } //{ t => println("Builder +!: "+t.toSeconds) }
+                } // { t => println("Builder +!: "+t.toSeconds) }
 
                 var s2 = UIDSet.empty[SUID]
-                //org.opalj.util.PerformanceEvaluation.time {
+                // org.opalj.util.PerformanceEvaluation.time {
                 base.foreach(e => s2 = s2 + e)
-                //} { t => println("Builder + : "+t.toSeconds) }
+                // } { t => println("Builder + : "+t.toSeconds) }
 
                 s1 == s2
             }
@@ -559,7 +559,7 @@ class UIDSetTest extends AnyFunSpec with Matchers with ScalaCheckDrivenPropertyC
                 } { t => info(s"Set[UID] took ${t.toSeconds}") }
             } { mu => info(s"Set[UID] required $mu bytes") }
 
-            info(s"overall size of sets: "+scalaS.map(_.size).sum)
+            info(s"overall size of sets: " + scalaS.map(_.size).sum)
             assert(opalS.map(_.size).sum == scalaS.map(_.size).sum)
         }
     }

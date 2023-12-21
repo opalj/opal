@@ -3,12 +3,13 @@ package org.opalj
 package bc
 
 import scala.annotation.switch
+
 import java.io.ByteArrayOutputStream
 import java.io.DataOutputStream
 
 import org.opalj.bc.MethodFilter.logContext
-import org.opalj.bi.ACC_STRICT
 import org.opalj.bi.{ConstantPoolTags => CPTags}
+import org.opalj.bi.ACC_STRICT
 import org.opalj.da._
 import org.opalj.da.ClassFileReader.LineNumberTable_attribute
 import org.opalj.log.OPALLogger
@@ -757,7 +758,7 @@ object Assembler {
                 if ((ACC_STRICT.mask & m.access_flags) != 0 && (classFile.major_version < 46 || classFile.major_version > 60)) {
                     OPALLogger.warn("assembler", s"Writing out ACC_STRICT flag for a method in a classfile of version ${classFile.major_version}, which is not interpreted in class files of version < 46 or > 60")
                 }
-                segmentInformation("Method: "+cp(m.name_index).toString, out.size)
+                segmentInformation("Method: " + cp(m.name_index).toString, out.size)
             }
             segmentInformation("Methods", out.size)
 

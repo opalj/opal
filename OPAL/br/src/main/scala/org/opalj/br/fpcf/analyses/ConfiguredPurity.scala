@@ -4,16 +4,16 @@ package br
 package fpcf
 package analyses
 
-import net.ceedubs.ficus.Ficus._
-import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKey
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.ClassExtensibilityKey
-import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.fpcf.properties.Purity
+
+import net.ceedubs.ficus.Ficus._
+import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
 /**
  * @author Dominik Helm

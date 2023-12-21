@@ -4,14 +4,14 @@ package tac
 package fpcf
 package analyses
 
-import org.opalj.value.ValueInformation
-import org.opalj.br.Method
-import org.opalj.br.analyses.SomeProject
 import org.opalj.ai.AIResult
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
+import org.opalj.br.Method
+import org.opalj.br.analyses.SomeProject
 import org.opalj.tac.{TACAI => TACAIFactory}
 import org.opalj.tac.fpcf.properties.TheTACAI
+import org.opalj.value.ValueInformation
 
 object TACAIAnalysis {
 

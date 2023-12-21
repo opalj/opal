@@ -2,9 +2,9 @@
 package org.opalj
 package util
 
-import org.opalj.concurrent.Locking
-
 import scala.collection.mutable
+
+import org.opalj.concurrent.Locking
 
 /**
  * A simple class that enables the counting of something.

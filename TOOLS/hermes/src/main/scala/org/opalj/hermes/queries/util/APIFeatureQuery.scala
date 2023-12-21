@@ -6,12 +6,12 @@ package util
 
 import scala.collection.mutable
 
-import org.opalj.da.ClassFile
 import org.opalj.br.MethodWithBody
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.MethodInvocationInstruction
+import org.opalj.da.ClassFile
 
 /**
  * A predefined query for finding simple API features. It supports - in particular -

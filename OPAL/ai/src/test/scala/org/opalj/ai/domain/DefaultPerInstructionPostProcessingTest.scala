@@ -5,14 +5,14 @@ package domain
 
 import scala.collection.immutable.LongMap
 
+import org.opalj.ai.common.XHTML.dumpOnFailureDuringValidation
+import org.opalj.br._
+import org.opalj.collection.immutable.IntTrieSet
+
 import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-
-import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.br._
-import org.opalj.ai.common.XHTML.dumpOnFailureDuringValidation
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests the `DefaultPerInstructionPostProcessing`.

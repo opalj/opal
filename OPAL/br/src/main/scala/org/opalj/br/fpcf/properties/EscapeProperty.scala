@@ -40,7 +40,6 @@ sealed trait EscapePropertyMetaInformation extends PropertyMetaInformation {
  * In contrast to this, Kotzmann and Mössenböck [2] describe the escape of an object with the access
  * to this object from other methods or threads.
  *
- *
  * == Definition ==
  * This EscapeProperty combines both concepts and is more specific about the reason why an object
  * escapes to facilitate comprehension of the results.
@@ -133,7 +132,7 @@ sealed abstract class EscapeProperty
 
     override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
         other match {
-            case _: AtMost                                                  => //TODO this is not correct -> fix me!
+            case _: AtMost                                                  => // TODO this is not correct -> fix me!
             case other: EscapeProperty if other lessOrEqualRestrictive this =>
             case p =>
                 throw new IllegalArgumentException(s"$e: illegal refinement of property $p to $this")
@@ -760,7 +759,7 @@ case class AtMost private (property: FinalEscapeProperty) extends EscapeProperty
         case that: FinalEscapeProperty => AtMost(property meet that)
         case _: GlobalEscape           => that
     }
-    //TODO REMOVE ME
+    // TODO REMOVE ME
     override def checkIsEqualOrBetterThan(e: Entity, other: EscapeProperty): Unit = {}
 }
 

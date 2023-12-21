@@ -5,6 +5,22 @@ package fpcf
 package analyses
 package pointsto
 
+import org.opalj.br.ArrayType
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.MethodDescriptor
+import org.opalj.br.ObjectType
+import org.opalj.br.ReferenceType
+import org.opalj.br.analyses.DeclaredMethods
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
+import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.properties.Context
+import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
+import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
+import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
@@ -17,22 +33,6 @@ import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.SomeEPK
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
-import org.opalj.br.DeclaredMethod
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
-import org.opalj.br.fpcf.properties.Context
-import org.opalj.br.ReferenceType
-import org.opalj.br.analyses.DeclaredMethods
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.MethodDescriptor
-import org.opalj.br.ObjectType
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
-import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
-import org.opalj.br.ArrayType
-import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.tac.common.DefinitionSite
 
 /**
@@ -224,4 +224,3 @@ object AllocationSiteBasedNewInstanceAnalysisScheduler extends NewInstanceAnalys
     override val createAnalysis: SomeProject => NewInstanceAnalysis =
         new NewInstanceAnalysis(_) with AllocationSiteBasedAnalysis
 }
-

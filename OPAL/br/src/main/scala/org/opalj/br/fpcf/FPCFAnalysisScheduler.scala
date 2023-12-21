@@ -5,11 +5,11 @@ package fpcf
 
 import java.util.concurrent.atomic.AtomicInteger
 
+import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.ComputationSpecification
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.analyses.SomeProject
 
 /**
  * Specification of the properties of an analysis.

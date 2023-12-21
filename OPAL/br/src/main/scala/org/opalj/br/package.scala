@@ -1,21 +1,22 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 
+import scala.collection.immutable.ArraySeq
+import scala.collection.mutable.Builder
 import scala.xml.Node
 import scala.xml.Text
-import scala.collection.mutable.Builder
-import com.typesafe.config.Config
-import com.typesafe.config.ConfigFactory
-import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.collection.immutable.BitArraySet
-import org.opalj.collection.immutable.UIDSet
-import org.opalj.log.LogContext
-import org.opalj.log.GlobalLogContext
-import org.opalj.log.OPALLogger.info
+
 import org.opalj.bi.AccessFlags
 import org.opalj.bi.AccessFlagsContexts
+import org.opalj.collection.immutable.BitArraySet
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.collection.immutable.UIDSet
+import org.opalj.log.GlobalLogContext
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger.info
 
-import scala.collection.immutable.ArraySeq
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
 
 /**
  * In this representation of Java bytecode references to a Java class file's constant
@@ -161,7 +162,7 @@ package object br {
         val annotationToJava: Annotation => String = { (annotation: Annotation) =>
             val s = annotation.toJava
             if (s.length() > 50 && annotation.elementValuePairs.nonEmpty)
-                annotation.annotationType.toJava+"(...)"
+                annotation.annotationType.toJava + "(...)"
             else
                 s
         }

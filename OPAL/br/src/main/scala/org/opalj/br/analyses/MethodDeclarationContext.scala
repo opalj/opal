@@ -3,10 +3,10 @@ package org.opalj
 package br
 package analyses
 
-import org.opalj.bi.VisibilityModifier
-import org.opalj.bi.ACC_PUBLIC
-import org.opalj.bi.ACC_PROTECTED
 import org.opalj.bi.ACC_PRIVATE
+import org.opalj.bi.ACC_PROTECTED
+import org.opalj.bi.ACC_PUBLIC
+import org.opalj.bi.VisibilityModifier
 
 /**
  * Encapsulates the information about a '''non-abstract''', '''non-static''' method which is

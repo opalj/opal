@@ -3,10 +3,8 @@ package org.opalj
 package br
 package reader
 
-import com.typesafe.config.Config
-import com.typesafe.config.ConfigValueFactory
-import org.opalj.log.OPALLogger.error
-import org.opalj.log.OPALLogger.info
+import scala.collection.immutable.ArraySeq
+
 import org.opalj.bi.ACC_PRIVATE
 import org.opalj.bi.ACC_STATIC
 import org.opalj.bi.ACC_SYNTHETIC
@@ -19,8 +17,11 @@ import org.opalj.br.instructions.LoadDynamic2_W
 import org.opalj.br.instructions.LoadDynamic_W
 import org.opalj.br.instructions.NOP
 import org.opalj.br.instructions.ReturnInstruction
+import org.opalj.log.OPALLogger.error
+import org.opalj.log.OPALLogger.info
 
-import scala.collection.immutable.ArraySeq
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigValueFactory
 
 /**
  * Provides support for rewriting Java 11 dynamic constant loading instructions.
@@ -210,15 +211,15 @@ trait DynamicConstantRewriting
 object DynamicConstantRewriting {
 
     final val DynamicConstantKeyPrefix = {
-        ClassFileReaderConfiguration.ConfigKeyPrefix+"DynamicConstants."
+        ClassFileReaderConfiguration.ConfigKeyPrefix + "DynamicConstants."
     }
 
-    final val RewritingConfigKey = DynamicConstantKeyPrefix+"rewrite"
-    final val LogRewritingsConfigKey = DynamicConstantKeyPrefix+"logRewrites"
+    final val RewritingConfigKey = DynamicConstantKeyPrefix + "rewrite"
+    final val LogRewritingsConfigKey = DynamicConstantKeyPrefix + "logRewrites"
     final val LogUnknownDynamicConstantsConfigKey =
-        DynamicConstantKeyPrefix+"logUnknownDynamicConstants"
+        DynamicConstantKeyPrefix + "logUnknownDynamicConstants"
     final val LogUnresolvedDynamicConstantsConfigKey =
-        DynamicConstantKeyPrefix+"logUnresolvedDynamicConstants"
+        DynamicConstantKeyPrefix + "logUnresolvedDynamicConstants"
 
     /**
      * Returns the default config where the settings for rewriting and logging rewrites are

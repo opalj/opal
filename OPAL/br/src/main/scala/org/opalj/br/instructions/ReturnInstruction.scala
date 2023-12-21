@@ -4,6 +4,7 @@ package br
 package instructions
 
 import scala.annotation.switch
+
 import org.opalj.collection.immutable.IntTrieSet
 
 /**

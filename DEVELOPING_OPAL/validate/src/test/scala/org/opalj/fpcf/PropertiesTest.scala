@@ -5,26 +5,13 @@ package fpcf
 import java.io.File
 import java.net.URL
 
-import com.typesafe.config.Config
-import com.typesafe.config.ConfigValueFactory
-
 import org.opalj.bi.reader.ClassFileReader
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.matchers.should.Matchers
-
-import org.opalj.log.LogContext
-import org.opalj.util.ScalaMajorVersion
-import org.opalj.fpcf.properties.PropertyMatcher
-import org.opalj.fpcf.seq.PKESequentialPropertyStore
-import org.opalj.bytecode.RTJar
-import org.opalj.br.DefinedMethod
-import org.opalj.br.analyses.VirtualFormalParameter
-import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.Annotation
 import org.opalj.br.AnnotationLike
 import org.opalj.br.Annotations
 import org.opalj.br.ClassFile
 import org.opalj.br.ClassValue
+import org.opalj.br.DefinedMethod
 import org.opalj.br.ElementValuePair
 import org.opalj.br.Field
 import org.opalj.br.Method
@@ -35,6 +22,8 @@ import org.opalj.br.Type
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.VirtualFormalParameter
+import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
@@ -42,8 +31,18 @@ import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.SimpleContextsKey
+import org.opalj.bytecode.RTJar
+import org.opalj.fpcf.properties.PropertyMatcher
+import org.opalj.fpcf.seq.PKESequentialPropertyStore
+import org.opalj.log.LogContext
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.common.DefinitionSitesKey
+import org.opalj.util.ScalaMajorVersion
+
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigValueFactory
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
 /**
  * Framework to test if the properties specified in the test project (the classes in the
@@ -70,7 +69,7 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
         val classFileReader = Project.JavaClassFileReader()
         import classFileReader.ClassFiles
 
-        val fixtureClassFiles = getFixtureClassFiles(classFileReader) //AllClassFiles(List(annotationFiles, fixtureFiles))
+        val fixtureClassFiles = getFixtureClassFiles(classFileReader) // AllClassFiles(List(annotationFiles, fixtureFiles))
         if (fixtureClassFiles.isEmpty) fail(s"no class files at $testFilePath")
 
         val projectClassFiles = fixtureClassFiles.filter { cfSrc =>
@@ -121,18 +120,18 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
 
     def createConfig(): Config = {
         val configForEntryPoints = BaseConfig.withValue(
-            InitialEntryPointsKey.ConfigKeyPrefix+"analysis",
+            InitialEntryPointsKey.ConfigKeyPrefix + "analysis",
             ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.AllEntryPointsFinder")
         ).withValue(
-                InitialEntryPointsKey.ConfigKeyPrefix+"AllEntryPointsFinder.projectMethodsOnly",
+                InitialEntryPointsKey.ConfigKeyPrefix + "AllEntryPointsFinder.projectMethodsOnly",
                 ConfigValueFactory.fromAnyRef(true)
             )
 
         configForEntryPoints.withValue(
-            InitialInstantiatedTypesKey.ConfigKeyPrefix+"analysis",
+            InitialInstantiatedTypesKey.ConfigKeyPrefix + "analysis",
             ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.AllInstantiatedTypesFinder")
         ).withValue(
-                InitialInstantiatedTypesKey.ConfigKeyPrefix+
+                InitialInstantiatedTypesKey.ConfigKeyPrefix +
                     "AllInstantiatedTypesFinder.projectClassesOnly",
                 ConfigValueFactory.fromAnyRef(true)
             )
@@ -202,7 +201,7 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
             if (matcher.isRelevant(p, ats, e, annotation)) {
 
                 it(entityIdentifier(s"$annotationTypeName")) {
-                    info(s"validator: "+matcherClass.toString.substring(32))
+                    info(s"validator: " + matcherClass.toString.substring(32))
                     val epss = ps.properties(e).toIndexedSeq
                     val nonFinalPSs = epss.filter(_.isRefinable)
                     assert(
@@ -216,11 +215,11 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
                             val m = propertiesAsStrings.mkString(
                                 "actual: ",
                                 ", ",
-                                "\nexpectation: "+error
+                                "\nexpectation: " + error
                             )
                             fail(m)
                         case None   => /* OK */
-                        case result => fail("matcher returned unexpected result: "+result)
+                        case result => fail("matcher returned unexpected result: " + result)
                     }
                 }
 
@@ -316,7 +315,7 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
             val fp = formalParameters(dm)(i + 1)
             (
                 fp,
-                (a: String) => s"VirtualFormalParameter: (origin ${fp.origin} in "+
+                (a: String) => s"VirtualFormalParameter: (origin ${fp.origin} in " +
                     s"${dm.declaringClassType}#${m.toJava(s"@$a")}",
                 annotations
             )
@@ -342,7 +341,7 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
         } yield {
             (
                 as,
-                (a: String) => s"AllocationSite: (pc ${as.pc} in "+
+                (a: String) => s"AllocationSite: (pc ${as.pc} in " +
                     s"${m.toJava(s"@$a").substring(24)})",
                 annotations
             )
@@ -377,7 +376,7 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
                     new RecordAllPropertyStoreTracer,
                     context.iterator.map(_.asTuple).toMap
                 )
-                */
+                     */
                     val ps = PKESequentialPropertyStore(context: _*)
                     ps
                 }

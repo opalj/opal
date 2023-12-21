@@ -4,6 +4,9 @@ package tac
 package fpcf
 package analyses
 
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.Method
+import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPS
 import org.opalj.fpcf.InterimPartialResult
@@ -12,12 +15,9 @@ import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.UBP
 import org.opalj.fpcf.UBPS
-import org.opalj.br.DeclaredMethod
-import org.opalj.br.Method
-import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.tac.fpcf.analyses.cg.uVarForDefSites
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.TheTACAI
-import org.opalj.tac.fpcf.analyses.cg.uVarForDefSites
 
 /**
  * An [[APIBasedAnalysis]] that ensures that whenever `processNewCaller` gets called,

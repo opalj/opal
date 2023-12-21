@@ -4,9 +4,9 @@ package br
 package analyses
 package cg
 
-import net.ceedubs.ficus.Ficus._
-
 import org.opalj.log.OPALLogger.error
+
+import net.ceedubs.ficus.Ficus._
 
 /**
  * The ''key'' object to get a function that determines whether a package is closed or not.
@@ -55,7 +55,7 @@ object ClosedPackagesKey extends ProjectInformationKey[ClosedPackages, Nothing] 
      */
     override def compute(project: SomeProject): ClosedPackages = {
         try {
-            val key = ConfigKeyPrefix+"analysis"
+            val key = ConfigKeyPrefix + "analysis"
             val configuredAnalysis = project.config.as[Option[String]](key)
             val analysisClassName = configuredAnalysis.getOrElse(DefaultClosedPackagesAnalysis)
             val constructor = Class.forName(analysisClassName).getConstructors.head

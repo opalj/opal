@@ -8,17 +8,17 @@ package pointsto
 import scala.collection.mutable
 import scala.io.Source
 
-import org.opalj.log.OPALLogger
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.Field
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.SomeProject
+import org.opalj.br.FieldType
 import org.opalj.br.MethodDescriptor
+import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.DeclaredMethods
+import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKey
 import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.FieldType
-import org.opalj.br.ReferenceType
+import org.opalj.br.analyses.SomeProject
+import org.opalj.log.OPALLogger
 
 /**
  * Container class, to represent a tamiflex log:
@@ -205,7 +205,7 @@ object TamiFlexKey extends ProjectInformationKey[TamiFlexLogData, Nothing] {
 
     private[this] def toJVMType(javaType: String): String = {
         val trimmedType = javaType.trim
-        if (trimmedType.endsWith("[]")) "["+toJVMType(trimmedType.substring(0, trimmedType.length - 2))
+        if (trimmedType.endsWith("[]")) "[" + toJVMType(trimmedType.substring(0, trimmedType.length - 2))
         else trimmedType match {
             case "void"    => "V"
             case "byte"    => "B"
@@ -216,7 +216,7 @@ object TamiFlexKey extends ProjectInformationKey[TamiFlexLogData, Nothing] {
             case "long"    => "J"
             case "short"   => "S"
             case "boolean" => "Z"
-            case _         => "L"+trimmedType.replace('.', '/')+";"
+            case _         => "L" + trimmedType.replace('.', '/') + ";"
         }
     }
 
@@ -227,7 +227,7 @@ object TamiFlexKey extends ProjectInformationKey[TamiFlexLogData, Nothing] {
         methodDesc match {
             case regex(declaringClass, returnType, name, parameterTypes) =>
                 val declaringClassType = FieldType(toJVMType(declaringClass)).asObjectType
-                val jvmSignature = parameterTypes.split(',').map(toJVMType).mkString("(", "", ")"+toJVMType(returnType))
+                val jvmSignature = parameterTypes.split(',').map(toJVMType).mkString("(", "", ")" + toJVMType(returnType))
                 declaredMethods(declaringClassType, declaringClassType.packageName, declaringClassType, name, MethodDescriptor(jvmSignature))
         }
 

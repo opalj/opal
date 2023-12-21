@@ -5,17 +5,17 @@ package fpcf
 package analyses
 package pointsto
 
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.PropertyKey
-import org.opalj.br.analyses.VirtualFormalParameters
-import org.opalj.br.analyses.VirtualFormalParametersKey
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
 import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.DeclaredFields
 import org.opalj.br.analyses.DeclaredFieldsKey
 import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.VirtualFormalParameters
+import org.opalj.br.analyses.VirtualFormalParametersKey
+import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.PropertyKey
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.common.DefinitionSites
 import org.opalj.tac.common.DefinitionSitesKey

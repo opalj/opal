@@ -22,27 +22,26 @@ import java.util.jar.JarEntry
 import java.util.jar.JarInputStream
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
-
 import scala.collection.immutable.ArraySeq
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Await
-import scala.concurrent.duration.Duration
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.concurrent.duration.Duration
 import scala.jdk.CollectionConverters._
 import scala.util.control.ControlThrowable
 
-import org.apache.commons.text.similarity.LevenshteinDistance
-import org.opalj.control.fillArrayOfInt
-import org.opalj.io.process
-
-import org.opalj.log.OPALLogger.error
-import org.opalj.log.OPALLogger.info
+import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.concurrent.BoundedExecutionContext
 import org.opalj.concurrent.NumberOfThreadsForIOBoundTasks
-import org.opalj.concurrent.parForeachSeqElement
 import org.opalj.concurrent.Tasks
-import org.opalj.bytecode.BytecodeProcessingFailedException
+import org.opalj.concurrent.parForeachSeqElement
+import org.opalj.control.fillArrayOfInt
+import org.opalj.io.process
+import org.opalj.log.OPALLogger.error
+import org.opalj.log.OPALLogger.info
+
+import org.apache.commons.text.similarity.LevenshteinDistance
 
 /**
  * Implements the template method to read in a Java class file. Additionally,
@@ -240,8 +239,8 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
         val major_version = in.readUnsignedShort
 
         def unsupportedVersion =
-            s"unsupported class file version: $major_version.$minor_version"+
-                " (Supported: 45(Java 1.1) <= version <= "+
+            s"unsupported class file version: $major_version.$minor_version" +
+                " (Supported: 45(Java 1.1) <= version <= " +
                 s"$LatestSupportedJavaMajorVersion(${jdkVersion(LatestSupportedJavaMajorVersion)}))"
 
         // let's make sure that we support this class file's version

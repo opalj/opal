@@ -5,6 +5,7 @@ package analyses
 package observers
 
 import java.net.URL
+
 import org.opalj.br.instructions.FieldReadAccess
 
 /**
@@ -27,14 +28,14 @@ object ObserverPatternUsage extends ProjectAnalysisApplication {
     ): BasicReport = {
         val appClassFiles = project.allProjectClassFiles
         val libClassFiles = project.allLibraryClassFiles
-        println("Application:\n\tClasses:"+appClassFiles.size)
-        println("\tMethods:"+appClassFiles.foldLeft(0)(_ + _.methods.filter(!_.isSynthetic).size))
-        println("\tNon-final Fields:"+appClassFiles.foldLeft(0)(_ + _.fields.filter(!_.isFinal).size))
-        println("Library:\n\tClasses:"+libClassFiles.size)
-        println("Overall "+project.statistics)
+        println("Application:\n\tClasses:" + appClassFiles.size)
+        println("\tMethods:" + appClassFiles.foldLeft(0)(_ + _.methods.filter(!_.isSynthetic).size))
+        println("\tNon-final Fields:" + appClassFiles.foldLeft(0)(_ + _.fields.filter(!_.isFinal).size))
+        println("Library:\n\tClasses:" + libClassFiles.size)
+        println("Overall " + project.statistics)
 
         val appTypes = appClassFiles.map(_.thisType).toSet
-        //val libTypes = libClassFiles.map(_.thisType).toSet
+        // val libTypes = libClassFiles.map(_.thisType).toSet
         val classHierarchy = project.classHierarchy
         import classHierarchy.allSubtypes
         import classHierarchy.isInterface
@@ -107,7 +108,7 @@ object ObserverPatternUsage extends ProjectAnalysisApplication {
             var observerFields = Set.empty[(ClassFile, Field)]
             for {
                 appType <- appTypes
-                classFile <- project.classFile(appType) //.toSeq
+                classFile <- project.classFile(appType) // .toSeq
                 field <- classFile.fields
                 if field.fieldType.isReferenceType
             } {
@@ -166,12 +167,12 @@ object ObserverPatternUsage extends ProjectAnalysisApplication {
         // -------------------------------------------------------------------------------
         import Console.{BOLD, RESET}
         BasicReport(
-            (BOLD+"Observer types in project ("+allObserverTypes.size+"): "+RESET + allObserverTypes.map(_.toJava).mkString(", ")) +
-                (BOLD+"Observer interfaces in application ("+appObserverInterfaces.size+"): "+RESET + appObserverInterfaces.map(_.toJava).mkString(", ")) +
-                (BOLD+"Observer classes in application ("+appObserverClasses.size+"): "+RESET + appObserverClasses.map(_.toJava).mkString(", ")) +
-                (BOLD+"Fields to store observers in application ("+observerFields.size+"): "+RESET + observerFields.map(e => e._1.thisType.toJava+"{ "+e._2.fieldType.toJava+" "+e._2.name+" }").mkString(", ")) +
-                (BOLD+"Methods to manage observers in application ("+observerManagementMethods.size+"): "+RESET + observerManagementMethods.map(e => e._1.thisType.toJava+"{ "+e._2.signatureToJava(false)+" }").mkString(", ")) +
-                (BOLD+"Methods that are related to observers in application ("+observerNotificationMethods.size+"): "+RESET + observerNotificationMethods.map(e => e._1.thisType.toJava+"{ "+e._2.signatureToJava(false)+" }").mkString(", "))
+            (BOLD + "Observer types in project (" + allObserverTypes.size + "): " + RESET + allObserverTypes.map(_.toJava).mkString(", ")) +
+                (BOLD + "Observer interfaces in application (" + appObserverInterfaces.size + "): " + RESET + appObserverInterfaces.map(_.toJava).mkString(", ")) +
+                (BOLD + "Observer classes in application (" + appObserverClasses.size + "): " + RESET + appObserverClasses.map(_.toJava).mkString(", ")) +
+                (BOLD + "Fields to store observers in application (" + observerFields.size + "): " + RESET + observerFields.map(e => e._1.thisType.toJava + "{ " + e._2.fieldType.toJava + " " + e._2.name + " }").mkString(", ")) +
+                (BOLD + "Methods to manage observers in application (" + observerManagementMethods.size + "): " + RESET + observerManagementMethods.map(e => e._1.thisType.toJava + "{ " + e._2.signatureToJava(false) + " }").mkString(", ")) +
+                (BOLD + "Methods that are related to observers in application (" + observerNotificationMethods.size + "): " + RESET + observerNotificationMethods.map(e => e._1.thisType.toJava + "{ " + e._2.signatureToJava(false) + " }").mkString(", "))
         )
     }
 }

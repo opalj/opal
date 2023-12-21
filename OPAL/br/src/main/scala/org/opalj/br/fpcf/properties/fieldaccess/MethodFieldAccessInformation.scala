@@ -5,6 +5,8 @@ package fpcf
 package properties
 package fieldaccess
 
+import scala.collection.immutable.IntMap
+
 import org.opalj.br.analyses.DeclaredFields
 import org.opalj.collection.immutable.IntList
 import org.opalj.fpcf.Entity
@@ -15,9 +17,8 @@ import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStore
 
-import scala.collection.immutable.IntMap
-
-sealed trait MethodFieldAccessInformationPropertyMetaInformation[S <: MethodFieldAccessInformation[S]] extends PropertyMetaInformation {
+sealed trait MethodFieldAccessInformationPropertyMetaInformation[S <: MethodFieldAccessInformation[S]]
+    extends PropertyMetaInformation {
     final override type Self = S;
 
     /**

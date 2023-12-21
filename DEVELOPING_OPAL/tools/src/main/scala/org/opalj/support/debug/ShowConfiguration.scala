@@ -3,13 +3,12 @@ package org.opalj
 package support
 package debug
 
-import java.util.Properties
 import java.io.FileInputStream
+import java.util.Properties
+import scala.jdk.CollectionConverters._
 
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigRenderOptions
-
-import scala.jdk.CollectionConverters._
 
 /**
  * Prints the current explicit (application.conf/reference.conf files) and
@@ -64,8 +63,8 @@ object ShowConfiguration {
         val javaVersion = System.getProperty("java.version")
 
         println(s"\nEnvironment:")
-        println("\t$JAVA_HOME = "+javaHome)
-        println("\t$JAVA_VERSION = "+javaVersion)
+        println("\t$JAVA_HOME = " + javaHome)
+        println("\t$JAVA_VERSION = " + javaVersion)
         if (!javaHome.contains(javaVersion)) {
             err.println("\tJava runtime environment does not match with read java.security file.")
             return ;
@@ -77,9 +76,9 @@ object ShowConfiguration {
         val javaSecurityFile =
             if (!javaVersion.startsWith("1.")) {
                 // Java 9+
-                javaHome+"/conf/security/java.security"
+                javaHome + "/conf/security/java.security"
             } else {
-                javaHome+"/lib/security/java.security"
+                javaHome + "/lib/security/java.security"
             }
         val javaSecurity = new Properties()
         javaSecurity.load(new FileInputStream(javaSecurityFile))
@@ -91,7 +90,7 @@ object ShowConfiguration {
         javaSecurity.stringPropertyNames().asScala.foreach { property =>
             val entry = javaSecurity.getProperty(property)
             if (entry.contains(","))
-                println(entry.split(",").mkString("\t"+property+"=\n\t\t", ",\n\t\t", ""))
+                println(entry.split(",").mkString("\t" + property + "=\n\t\t", ",\n\t\t", ""))
             else
                 println(s"\t$property=$entry")
         }

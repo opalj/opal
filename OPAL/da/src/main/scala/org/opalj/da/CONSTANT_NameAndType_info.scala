@@ -4,12 +4,11 @@ package da
 
 import scala.xml.Node
 import scala.xml.NodeSeq
-import org.opalj.bi.ConstantPoolTag
-
 import scala.xml.Text
 
+import org.opalj.bi.ConstantPoolTag
+
 /**
- *
  * @author Michael Eichberg
  */
 case class CONSTANT_NameAndType_info(
@@ -58,7 +57,7 @@ case class CONSTANT_NameAndType_info(
     override def toString(implicit cp: Constant_Pool): String = {
         val descriptor = cp(descriptor_index).toString(cp)
         if (descriptor.charAt(0) != '(')
-            parseFieldType(cp(descriptor_index).asString).asJava+" "+cp(name_index).toString(cp)
+            parseFieldType(cp(descriptor_index).asString).asJava + " " + cp(name_index).toString(cp)
         else {
             val methodName = cp(name_index).asString
             var index = 1 // we are not interested in the leading '('

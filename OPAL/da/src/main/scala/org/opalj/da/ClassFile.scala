@@ -7,11 +7,12 @@ import scala.xml.Node
 import scala.xml.NodeSeq
 import scala.xml.Text
 import scala.xml.Unparsed
-import org.opalj.io.process
-import org.opalj.bi.AccessFlags
-import org.opalj.bi.reader.Constant_PoolAbstractions
+
 import org.opalj.bi.ACC_PUBLIC
 import org.opalj.bi.ACC_SUPER
+import org.opalj.bi.AccessFlags
+import org.opalj.bi.reader.Constant_PoolAbstractions
+import org.opalj.io.process
 
 /**
  * @author Michael Eichberg

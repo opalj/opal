@@ -93,7 +93,7 @@ trait Signature_attributeReader extends AttributeReader with ClassFileReaderConf
             case iae: IllegalArgumentException =>
                 OPALLogger.error(
                     "parsing bytecode",
-                    s"skipping ${ap.toString().toLowerCase()} signature: "+iae.getMessage
+                    s"skipping ${ap.toString().toLowerCase()} signature: " + iae.getMessage
                 )
                 if (throwIllegalArgumentException) throw iae else null
         }

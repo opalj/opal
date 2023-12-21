@@ -8,15 +8,13 @@ import scala.annotation.switch
 import java.net.URL
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
-
 import scala.collection.mutable.ListBuffer
 
-import org.opalj.log.GlobalLogContext
-import org.opalj.value.ValueInformation
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.ReportableAnalysisResult
+import org.opalj.log.GlobalLogContext
 import org.opalj.tac.Assignment
 import org.opalj.tac.Call
 import org.opalj.tac.DUVar
@@ -25,6 +23,7 @@ import org.opalj.tac.LazyDetachedTACAIKey
 import org.opalj.tac.NonVirtualMethodCall
 import org.opalj.tac.StaticMethodCall
 import org.opalj.tac.VirtualMethodCall
+import org.opalj.value.ValueInformation
 
 /**
  * Analyzes a project for how a particular class is used within that project. Collects information
@@ -47,7 +46,7 @@ object ClassUsageAnalysis extends ProjectAnalysisApplication {
     override def title: String = "Class Usage Analysis"
 
     override def description: String = {
-        "Analyzes a project for how a particular class is used within it, i.e., which methods "+
+        "Analyzes a project for how a particular class is used within it, i.e., which methods " +
             "of instances of that class are called"
     }
 
@@ -88,7 +87,7 @@ object ClassUsageAnalysis extends ProjectAnalysisApplication {
     }
 
     override def analysisSpecificParametersDescription: String = {
-        "-class=<fully-qualified class name> \n"+
+        "-class=<fully-qualified class name> \n" +
             "[-granularity=<fine|coarse> (Default: coarse)]"
     }
 

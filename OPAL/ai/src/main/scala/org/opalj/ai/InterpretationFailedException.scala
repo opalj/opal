@@ -67,9 +67,9 @@ object InterpretationFailedException {
             val memoryLayoutBeforeSubroutineCall: List[(Int /*PC*/ , theDomain.OperandsArray, theDomain.LocalsArray)] = theMemoryLayoutBeforeSubroutineCall
 
             final override def toString: String = {
-                s"InterpretationFailedException(\n\tdomain=$domain,"+
-                    s"\n\tai=${ai.getClass},\n\tcause=$cause,"+
-                    s"\n\tpc=$pc,"+
+                s"InterpretationFailedException(\n\tdomain=$domain," +
+                    s"\n\tai=${ai.getClass},\n\tcause=$cause," +
+                    s"\n\tpc=$pc," +
                     (
                         if (pc < theOperandsArray.length)
                             s"\n\toperands=${operandsArray(pc)},"

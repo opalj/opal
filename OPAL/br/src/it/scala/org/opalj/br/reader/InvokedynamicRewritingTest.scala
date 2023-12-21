@@ -5,17 +5,17 @@ package reader
 
 import scala.language.existentials
 
+import java.util.concurrent.ConcurrentLinkedQueue
 import scala.jdk.CollectionConverters._
 
-import org.scalatest.funsuite.AnyFunSuite
-import java.util.concurrent.ConcurrentLinkedQueue
-
-import org.opalj.log.StandardLogContext
-import org.opalj.log.OPALLogger
 import org.opalj.br.analyses.Project
-import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.reader.InvokedynamicRewriting.TargetMethodNameRegEx
+import org.opalj.log.OPALLogger
+import org.opalj.log.StandardLogContext
+
+import org.scalatest.funsuite.AnyFunSuite
 
 /**
  * Infrastructure to load a project containing Jars.

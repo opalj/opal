@@ -145,7 +145,7 @@ final case class IntListNode(
                 thisList = thisList.tail
                 thatList = thatList.tail
             }
-            thisList eq thatList //... <=> true iff both lists are empty
+            thisList eq thatList // ... <=> true iff both lists are empty
         }
     }
 

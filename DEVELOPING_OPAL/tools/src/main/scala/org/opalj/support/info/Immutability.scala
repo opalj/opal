@@ -3,48 +3,32 @@ package org.opalj
 package support
 package info
 
-import scala.collection.immutable.SortedSet
-import java.nio.file.Path
-import java.io.IOException
-import java.io.File
 import java.io.BufferedWriter
+import java.io.File
 import java.io.FileWriter
-import java.util.Calendar
-import java.nio.file.FileSystems
+import java.io.IOException
 import java.net.URL
+import java.nio.file.FileSystems
+import java.nio.file.Path
 import java.text.SimpleDateFormat
-import com.typesafe.config.ConfigValueFactory
-import com.typesafe.config.Config
-import com.typesafe.config.ConfigFactory
+import java.util.Calendar
+import scala.collection.immutable.SortedSet
 
-import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.Project.JavaClassFileReader
-import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.util.Seconds
-import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
-import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
-import org.opalj.tac.fpcf.analyses.escape.LazySimpleEscapeAnalysis
-import org.opalj.br.ObjectType
-import org.opalj.br.Field
-import org.opalj.fpcf.Entity
-import org.opalj.br.fpcf.FPCFAnalysesManagerKey
-import org.opalj.bytecode.JRELibraryFolder
-import org.opalj.br.fpcf.FPCFAnalysisScheduler
-import org.opalj.br.analyses.Project
-import org.opalj.br.fpcf.PropertyStoreKey
-import org.opalj.fpcf.PropertyStoreContext
-import org.opalj.tac.fpcf.analyses.purity.L2PurityAnalysis
-import org.opalj.tac.fpcf.analyses.purity.SystemOutLoggingAllExceptionRater
-import org.opalj.log.LogContext
-import org.opalj.fpcf.EPS
 import org.opalj.ai.domain
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
-import org.opalj.fpcf.OrderedProperty
+import org.opalj.br.Field
+import org.opalj.br.ObjectType
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.Project.JavaClassFileReader
+import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.FPCFAnalysisScheduler
+import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
+import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
 import org.opalj.br.fpcf.analyses.immutability.LazyClassImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.immutability.LazyTypeImmutabilityAnalysis
-import org.opalj.fpcf.ComputationSpecification
-import org.opalj.tac.cg.XTACallGraphKey
 import org.opalj.br.fpcf.properties.immutability.Assignable
 import org.opalj.br.fpcf.properties.immutability.ClassImmutability
 import org.opalj.br.fpcf.properties.immutability.DependentlyImmutableClass
@@ -52,23 +36,40 @@ import org.opalj.br.fpcf.properties.immutability.DependentlyImmutableField
 import org.opalj.br.fpcf.properties.immutability.DependentlyImmutableType
 import org.opalj.br.fpcf.properties.immutability.EffectivelyNonAssignable
 import org.opalj.br.fpcf.properties.immutability.FieldAssignability
+import org.opalj.br.fpcf.properties.immutability.FieldImmutability
 import org.opalj.br.fpcf.properties.immutability.LazilyInitialized
 import org.opalj.br.fpcf.properties.immutability.MutableClass
+import org.opalj.br.fpcf.properties.immutability.MutableField
 import org.opalj.br.fpcf.properties.immutability.MutableType
 import org.opalj.br.fpcf.properties.immutability.NonAssignable
 import org.opalj.br.fpcf.properties.immutability.NonTransitivelyImmutableClass
+import org.opalj.br.fpcf.properties.immutability.NonTransitivelyImmutableField
 import org.opalj.br.fpcf.properties.immutability.NonTransitivelyImmutableType
 import org.opalj.br.fpcf.properties.immutability.TransitivelyImmutableClass
+import org.opalj.br.fpcf.properties.immutability.TransitivelyImmutableField
 import org.opalj.br.fpcf.properties.immutability.TransitivelyImmutableType
 import org.opalj.br.fpcf.properties.immutability.TypeImmutability
 import org.opalj.br.fpcf.properties.immutability.UnsafelyLazilyInitialized
-import org.opalj.br.fpcf.properties.immutability.FieldImmutability
-import org.opalj.br.fpcf.properties.immutability.MutableField
-import org.opalj.br.fpcf.properties.immutability.NonTransitivelyImmutableField
-import org.opalj.br.fpcf.properties.immutability.TransitivelyImmutableField
+import org.opalj.bytecode.JRELibraryFolder
+import org.opalj.fpcf.ComputationSpecification
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EPS
+import org.opalj.fpcf.OrderedProperty
+import org.opalj.fpcf.PropertyStoreContext
+import org.opalj.log.LogContext
 import org.opalj.tac.cg.CallGraphKey
+import org.opalj.tac.cg.XTACallGraphKey
 import org.opalj.tac.fpcf.analyses.LazyFieldImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.escape.LazySimpleEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.fieldassignability.LazyL2FieldAssignabilityAnalysis
+import org.opalj.tac.fpcf.analyses.purity.L2PurityAnalysis
+import org.opalj.tac.fpcf.analyses.purity.SystemOutLoggingAllExceptionRater
+import org.opalj.util.PerformanceEvaluation.time
+import org.opalj.util.Seconds
+
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
+import com.typesafe.config.ConfigValueFactory
 
 /**
  * Determines the assignability of fields and the immutability of fields, classes and types and provides several
@@ -251,7 +252,7 @@ object Immutability {
             val fieldName = field.name
             val packageName = field.classFile.thisType.packageName.replace("/", ".")
             val className = field.classFile.thisType.simpleName
-            packageName+"."+className+"."+fieldName
+            packageName + "." + className + "." + fieldName
         }
 
         val assignableFields =
@@ -290,19 +291,19 @@ object Immutability {
             stringBuilderResults.append(
                 s"""
                 | Assignable Fields:
-                | ${assignableFields.map(_+" | Assignable Field ").mkString("\n")}
+                | ${assignableFields.map(_ + " | Assignable Field ").mkString("\n")}
                 |
                 | Lazy Initialized Not Thread Safe Field:
                 | ${
                     unsafelyLazilyInitializedFields
-                        .map(_+" | Lazy Initialized Not Thread Safe Field")
+                        .map(_ + " | Lazy Initialized Not Thread Safe Field")
                         .mkString("\n")
                 }
                 |
                 | Lazy Initialized Thread Safe Field:
                 | ${
                     lazilyInitializedFields
-                        .map(_+" | Lazy Initialized Thread Safe Field")
+                        .map(_ + " | Lazy Initialized Thread Safe Field")
                         .mkString("\n")
                 }
                 |
@@ -310,14 +311,14 @@ object Immutability {
                 | effectively non assignable Fields:
                 |                | ${
                     effectivelyNonAssignableFields
-                        .map(_+" | effectively non assignable ")
+                        .map(_ + " | effectively non assignable ")
                         .mkString("\n")
                 }
 
                 | non assignable Fields:
                 | ${
                     nonAssignableFields
-                        .map(_+" | non assignable")
+                        .map(_ + " | non assignable")
                         .mkString("\n")
                 }
                 |
@@ -348,7 +349,7 @@ object Immutability {
             .map(unpackFieldEPS)
             .sortWith(_ < _)
 
-        val dependentlyImmutableFields = fieldGroupedResults //.collect { case (DependentlyImmutableField(_), rhs) => rhs }
+        val dependentlyImmutableFields = fieldGroupedResults // .collect { case (DependentlyImmutableField(_), rhs) => rhs }
             .getOrElse(DependentlyImmutableField(SortedSet.empty), Iterator.empty)
             .toSeq
             .map(unpackFieldEPS)
@@ -364,20 +365,20 @@ object Immutability {
             stringBuilderResults.append(
                 s"""
                 | Mutable Fields:
-                | ${mutableFields.map(_+" | Mutable Field ").mkString("\n")}
+                | ${mutableFields.map(_ + " | Mutable Field ").mkString("\n")}
                 |
                 | Non Transitively Immutable Fields:
-                | ${nonTransitivelyImmutableFields.map(_+" | Non Transitively Immutable Field ").mkString("\n")}
+                | ${nonTransitivelyImmutableFields.map(_ + " | Non Transitively Immutable Field ").mkString("\n")}
                 |
                 | Dependently Immutable Fields:
                 | ${
                     dependentlyImmutableFields
-                        .map(_+" | Dependently Immutable Field ")
+                        .map(_ + " | Dependently Immutable Field ")
                         .mkString("\n")
                 }
                 |
                 | Transitively Immutable Fields:
-                | ${transitivelyImmutableFields.map(_+" | Transitively Immutable Field ").mkString("\n")}
+                | ${transitivelyImmutableFields.map(_ + " | Transitively Immutable Field ").mkString("\n")}
                 |
                 |""".stripMargin
             )
@@ -442,25 +443,25 @@ object Immutability {
             stringBuilderResults.append(
                 s"""
                 | Mutable Classes:
-                | ${mutableClasses.map(_+" | Mutable Class ").mkString("\n")}
+                | ${mutableClasses.map(_ + " | Mutable Class ").mkString("\n")}
                 |
                 | Non Transitively Immutable Classes:
-                | ${nonTransitivelyImmutableClasses.map(_+" | Non Transitively Immutable Class ").mkString("\n")}
+                | ${nonTransitivelyImmutableClasses.map(_ + " | Non Transitively Immutable Class ").mkString("\n")}
                 |
                 | Dependently Immutable Classes:
                 | ${
                     dependentlyImmutableClasses
-                        .map(_+" | Dependently Immutable Class ")
+                        .map(_ + " | Dependently Immutable Class ")
                         .mkString("\n")
                 }
                 |
                 | Transitively Immutable Classes:
-                | ${transitivelyImmutableClasses.map(_+" | Transitively Immutable Classes ").mkString("\n")}
+                | ${transitivelyImmutableClasses.map(_ + " | Transitively Immutable Classes ").mkString("\n")}
                 |
                 | Transitively Immutable Interfaces:
                 | ${
                     transitivelyImmutableClassesInterfaces
-                        .map(_+" | Transitively Immutable Interfaces ")
+                        .map(_ + " | Transitively Immutable Interfaces ")
                         .mkString("\n")
                 }
                 |""".stripMargin
@@ -507,16 +508,16 @@ object Immutability {
             stringBuilderResults.append(
                 s"""
                 | Mutable Types:
-                | ${mutableTypes.map(_+" | Mutable Type ").mkString("\n")}
+                | ${mutableTypes.map(_ + " | Mutable Type ").mkString("\n")}
                 |
                 | Non-Transitively Immutable Types:
-                | ${nonTransitivelyImmutableTypes.map(_+" | Non-Transitively Immutable Types ").mkString("\n")}
+                | ${nonTransitivelyImmutableTypes.map(_ + " | Non-Transitively Immutable Types ").mkString("\n")}
                 |
                 | Dependently Immutable Types:
-                | ${dependentlyImmutableTypes.map(_+" | Dependently Immutable Types ").mkString("\n")}
+                | ${dependentlyImmutableTypes.map(_ + " | Dependently Immutable Types ").mkString("\n")}
                 |
                 | Transitively Immutable Types:
-                | ${transitivelyImmutableTypes.map(_+" | Transitively Immutable Types ").mkString("\n")}
+                | ${transitivelyImmutableTypes.map(_ + " | Transitively Immutable Types ").mkString("\n")}
                 |""".stripMargin
             )
         }
@@ -636,7 +637,7 @@ object Immutability {
             val simpleDateFormat = new SimpleDateFormat("dd_MM_yyyy_HH_mm_ss")
 
             val file = new File(
-                s"$resultsFolder/${configurationName.getOrElse("")}_${times}_"+
+                s"$resultsFolder/${configurationName.getOrElse("")}_${times}_" +
                     s"${analysis.toString}_${simpleDateFormat.format(date)}_$fileNameExtension.txt"
             )
 
@@ -705,8 +706,8 @@ object Immutability {
         var cp: File = null
         var resultFolder: Path = null
         var numThreads = 0
-        //var timeEvaluation: Boolean = false
-        //var threadEvaluation: Boolean = false
+        // var timeEvaluation: Boolean = false
+        // var threadEvaluation: Boolean = false
         var projectDir: Option[String] = None
         var libDir: Option[String] = None
         var withoutJDK: Boolean = false

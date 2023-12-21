@@ -88,4 +88,3 @@ trait RecordThrownExceptions extends ai.ReturnInstructionsDomain {
         super.abruptMethodExecution(pc, exception)
     }
 }
-

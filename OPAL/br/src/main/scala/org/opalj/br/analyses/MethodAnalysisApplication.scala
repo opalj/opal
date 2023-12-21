@@ -15,7 +15,7 @@ import org.opalj.log.OPALLogger.info
 abstract class MethodAnalysisApplication extends ProjectAnalysisApplication {
 
     override def analysisSpecificParametersDescription: String = {
-        "-class=<the fully qualified name of the class>\n"+
+        "-class=<the fully qualified name of the class>\n" +
             "-method=<name and/or parts of the signature>"
     }
 

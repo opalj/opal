@@ -2,9 +2,9 @@
 package org.opalj
 package ai
 
-import org.opalj.br.ReferenceType
 import org.opalj.br.ArrayType
 import org.opalj.br.FieldType
+import org.opalj.br.ReferenceType
 
 /**
  * Domain that defines all methods that perform computations related to `RefernceValues`.

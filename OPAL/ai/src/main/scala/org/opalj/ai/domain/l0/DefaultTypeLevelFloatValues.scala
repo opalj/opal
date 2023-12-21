@@ -35,4 +35,3 @@ trait DefaultTypeLevelFloatValues
 
     override def FloatValue(valueOrigin: Int, value: Float): FloatValue = AFloatValue
 }
-

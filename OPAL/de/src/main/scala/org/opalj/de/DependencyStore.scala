@@ -4,10 +4,11 @@ package de
 
 import scala.collection.Map
 import scala.collection.Set
-import org.opalj.util.PerformanceEvaluation.time
+
+import org.opalj.br._
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
-import org.opalj.br._
+import org.opalj.util.PerformanceEvaluation.time
 
 import scala.collection.parallel.CollectionConverters.IterableIsParallelizable
 
@@ -41,13 +42,13 @@ object DependencyStore {
             classFiles.par.foreach { de.process(_) }
             dc
         } { ns =>
-            OPALLogger.info("progress", "collecting dependencies took "+ns.toSeconds)
+            OPALLogger.info("progress", "collecting dependencies took " + ns.toSeconds)
         }
 
         time {
             dc.toStore
         } { ns =>
-            OPALLogger.info("progress", "creating the dependencies store took "+ns.toSeconds)
+            OPALLogger.info("progress", "creating the dependencies store took " + ns.toSeconds)
         }
     }
 

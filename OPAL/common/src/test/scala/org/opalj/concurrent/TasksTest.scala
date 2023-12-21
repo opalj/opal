@@ -2,17 +2,16 @@
 package org.opalj
 package concurrent
 
-import org.junit.runner.RunWith
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicIntegerArray
-
+import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContextExecutorService
-//import java.util.concurrent.ConcurrentLinkedQueue
-import org.scalatestplus.junit.JUnitRunner
+
+import org.junit.runner.RunWith
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
-
-import scala.concurrent.ExecutionContext
+//import java.util.concurrent.ConcurrentLinkedQueue
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests [[Tasks]].
@@ -162,8 +161,8 @@ class TasksTest extends AnyFunSpec with Matchers {
                     exceptions = ce.getSuppressed
             }
 
-            info("subsequently scheduled: "+subsequentlyScheduled.get)
-            info("number of caught exceptions: "+exceptions.size)
+            info("subsequently scheduled: " + subsequentlyScheduled.get)
+            info("number of caught exceptions: " + exceptions.size)
 
             exceptions.size should be(aborted.get)
             processedValues.get() should be(100000 + subsequentlyScheduled.get - aborted.get)

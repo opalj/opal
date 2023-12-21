@@ -1,15 +1,14 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 
+import java.awt.Desktop
+import java.io.Closeable
+import java.io.File
+import java.io.FileOutputStream
+import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
-import java.io.File
-import java.io.IOException
-import java.io.Closeable
-import java.awt.Desktop
-import java.io.FileOutputStream
 import java.util.zip.GZIPOutputStream
-
 import scala.io.Source
 import scala.xml.Node
 
@@ -32,7 +31,6 @@ package object io {
      * @param fileName The filename or a suffix/prefix thereof which should be sanitized.
      *
      * @return The sanitized file name.
-     *
      */
     def sanitizeFileName(fileName: String): String = {
         // take(128+64) ... to have some space for something else...

@@ -4,11 +4,13 @@ package ai
 package util
 
 import scala.language.reflectiveCalls
+
 import scala.xml.Node
 import scala.xml.NodeSeq
-import org.opalj.io.process
+
 import org.opalj.br._
 import org.opalj.collection.mutable.IntArrayStack
+import org.opalj.io.process
 
 /**
  * Several utility methods to facilitate the development of the abstract interpreter/
@@ -74,7 +76,7 @@ object XHTML {
 
     def valueToString(value: AnyRef)(implicit ids: Option[AnyRef => Int]): String = {
         if (value != null)
-            value.toString + ids.map("@"+_.apply(value)).getOrElse("")
+            value.toString + ids.map("@" + _.apply(value)).getOrElse("")
         else
             "null@<N/A-value>"
     }
@@ -83,7 +85,7 @@ object XHTML {
         val node =
             if (throwable.getStackTrace == null ||
                 throwable.getStackTrace.size == 0) {
-                <div>{ throwable.getClass.getSimpleName+" "+throwable.getMessage }</div>
+                <div>{ throwable.getClass.getSimpleName + " " + throwable.getMessage }</div>
             } else {
                 val stackElements =
                     for { stackElement <- throwable.getStackTrace } yield {
@@ -93,7 +95,7 @@ object XHTML {
                             <td>{ stackElement.getLineNumber }</td>
                         </tr>
                     }
-                val summary = throwable.getClass.getSimpleName+" "+throwable.getMessage
+                val summary = throwable.getClass.getSimpleName + " " + throwable.getMessage
 
                 <details>
                     <summary>{ summary }</summary>
@@ -119,7 +121,7 @@ object XHTML {
     }
 
     def evaluatedInstructionsToXHTML(evaluatedPCs: IntArrayStack) = {
-        val header = "Evaluated instructions: "+evaluatedPCs.count(_ >= 0)+"<br>"
+        val header = "Evaluated instructions: " + evaluatedPCs.count(_ >= 0) + "<br>"
         val footer = ""
         val subroutineStart = "<details><summary>Subroutine</summary><div style=\"margin-left:2em;\">"
         val subroutineEnd = "</div></details>"
@@ -132,10 +134,10 @@ object XHTML {
             case SUBROUTINE_END =>
                 openSubroutines -= 1
                 subroutineEnd
-            case instruction => instruction.toString+" "
+            case instruction => instruction.toString + " "
         }
 
-        header+"Evaluation Order:<br><div style=\"margin-left:2em;\">"+
+        header + "Evaluation Order:<br><div style=\"margin-left:2em;\">" +
             asStrings.mkString("") +
             (
                 if (openSubroutines > 0) {
@@ -149,6 +151,6 @@ object XHTML {
                 } else
                     ""
             ) +
-                footer+"</div>"
+                footer + "</div>"
     }
 }

@@ -658,7 +658,7 @@ private[immutable] sealed abstract class LongTrieSetNode2_7 extends LongTrieSetN
             }
             i += 1
         }
-        s+")"
+        s + ")"
     }
 
     final override def equals(other: Any): Boolean = {
@@ -1337,7 +1337,7 @@ private[immutable] final class LongTrieSetNode8(
             s += s"\n$indent${bitsToString(i)}=>${n.toString(level + 1)}"
             i += 1
         }
-        s+")"
+        s + ")"
     }
 
     override def equals(other: Any): Boolean = {

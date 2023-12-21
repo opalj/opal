@@ -44,4 +44,3 @@ case object ComputationalTypeReturnAddress
     final override def isComputationalTypeReturnAddress: Boolean = true
     final override def isCategory2: Boolean = false
 }
-

@@ -29,9 +29,9 @@ final class DynamicConstant(
     override def value = throw BytecodeProcessingFailedException("value is dynamic")
 
     override def valueToString = {
-        (Iterator(name, descriptor.toJava+".class") ++
+        (Iterator(name, descriptor.toJava + ".class") ++
             bootstrapMethod.arguments.iterator.map(_.toJava))
-            .mkString(bootstrapMethod.handle.toJava+"(", ",", ")")
+            .mkString(bootstrapMethod.handle.toJava + "(", ",", ")")
     }
 
     def toJava = valueToString

@@ -2,22 +2,22 @@
 package org.opalj
 package tac
 
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.matchers.should.Matchers
-import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
-
-import org.opalj.util.PerformanceEvaluation
-import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.br.Method
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.TestSupport
-import org.opalj.ai.Domain
 import org.opalj.ai.BaseAI
+import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.ai.domain.l0.PrimitiveTACAIDomain
 import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
 import org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
+import org.opalj.br.Method
+import org.opalj.br.TestSupport
+import org.opalj.br.analyses.SomeProject
+import org.opalj.util.PerformanceEvaluation
+import org.opalj.util.PerformanceEvaluation.time
+
+import org.junit.runner.RunWith
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests that all methods of OPAL's test projects + the JDK can be converted to the ai-based
@@ -60,7 +60,7 @@ class TACAIIntegrationTest extends AnyFunSpec with Matchers {
                     val bb = cfg.bb(index)
                     if (bb.endPC == index && bb.mayThrowException && stmt.isSideEffectFree) {
                         fail(
-                            s"$stmt is side effect free "+
+                            s"$stmt is side effect free " +
                                 "but the basic block has a catch node/abnormal exit node as a successor"
                         )
                     }
@@ -71,7 +71,7 @@ class TACAIIntegrationTest extends AnyFunSpec with Matchers {
                 case e: Throwable => this.synchronized {
                     val methodSignature = m.toJava
 
-                    println(methodSignature+" - size: "+body.instructions.length)
+                    println(methodSignature + " - size: " + body.instructions.length)
                     e.printStackTrace(Console.out)
                     if (e.getCause != null) {
                         println("\tcause:")
@@ -90,8 +90,8 @@ class TACAIIntegrationTest extends AnyFunSpec with Matchers {
         }
         if (errors.nonEmpty) {
             val summary =
-                s"successfully transformed ${successfullyCompleted.get} methods: "+
-                    "; failed methods: "+errors.size+"\n"
+                s"successfully transformed ${successfullyCompleted.get} methods: " +
+                    "; failed methods: " + errors.size + "\n"
             val message = errors.map(_.toString()).mkString("Errors thrown:\n", "\n\n", summary)
             fail(message)
         }

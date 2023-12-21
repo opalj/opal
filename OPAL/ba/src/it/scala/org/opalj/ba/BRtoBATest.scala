@@ -2,25 +2,26 @@
 package org.opalj
 package ba
 
-import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
-
-import java.lang.Boolean.FALSE
-import java.io.File
-import java.io.DataInputStream
 import java.io.ByteArrayInputStream
+import java.io.DataInputStream
+import java.io.File
+import java.lang.Boolean.FALSE
 import java.util.concurrent.atomic.AtomicInteger
-import com.typesafe.config.ConfigValueFactory.fromAnyRef
-import org.opalj.bytecode.JRELibraryFolder
-import org.opalj.bi.TestResources.locateTestResources
+
 import org.opalj.bi.TestResources.allBITestJARs
+import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.reader.BytecodeInstructionsCache
-import org.opalj.br.reader.Java9FrameworkWithCaching
 import org.opalj.br.reader.BytecodeOptimizer.SimplifyControlFlowKey
+import org.opalj.br.reader.Java9FrameworkWithCaching
+import org.opalj.bytecode.JRELibraryFolder
 
 import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParallelizable
+
+import com.typesafe.config.ConfigValueFactory.fromAnyRef
+import org.junit.runner.RunWith
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Smoketest if we can convert every class file using the "Bytecode Representation" back to a
@@ -72,8 +73,8 @@ class BRtoBATest extends AnyFlatSpec with Matchers {
                     Lock.synchronized {
                         Console.err.println(s"reading/writing of $url -> failed: ${e.getMessage}\n")
                         e.printStackTrace(Console.err)
-                        val details = e.getMessage+"; "+e.getClass.getSimpleName
-                        val message = s"$url(${brClassFile1.thisType.toJava}): "+details
+                        val details = e.getMessage + "; " + e.getClass.getSimpleName
+                        val message = s"$url(${brClassFile1.thisType.toJava}): " + details
                         val newException = new RuntimeException(message, e)
                         exceptions = newException :: exceptions
                     }

@@ -223,7 +223,7 @@ private[fpcf] class MultiEOptionPSet[E <: Entity, P <: Property](
     override def toString(): String = {
         var s = "MultiEOptionPSet("
         foreach(e => s += s"\n\t$e")
-        s+"\n)"
+        s + "\n)"
     }
 
     override def iterator: Iterator[EOptionP[E, P]] = data.valuesIterator.flatMap(vals => vals.valuesIterator)

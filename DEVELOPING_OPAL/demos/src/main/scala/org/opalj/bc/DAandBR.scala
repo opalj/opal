@@ -2,30 +2,29 @@
 package org.opalj
 package bc
 
+import java.io.ByteArrayInputStream
 import java.nio.file.Files
 import java.nio.file.Paths
-import java.io.ByteArrayInputStream
-
-import org.opalj.bi.ACC_PUBLIC
-import org.opalj.bi.ACC_SUPER
-import org.opalj.bi.ACC_STATIC
-import org.opalj.br.MethodTemplate
-import org.opalj.da.ClassFile
-import org.opalj.da.Method_Info
-import org.opalj.da.Constant_Pool_Entry
-import org.opalj.da.SourceFile_attribute
-import org.opalj.da.CONSTANT_Class_info
-import org.opalj.da.CONSTANT_Utf8
-import org.opalj.da.CONSTANT_NameAndType_info
-import org.opalj.da.CONSTANT_Methodref_info
-import org.opalj.da.CONSTANT_Fieldref_info
-import org.opalj.da.CONSTANT_String_info
-import org.opalj.da.Code_attribute
-import org.opalj.da.Code
-import org.opalj.br.reader.Java8Framework
 import scala.collection.immutable.ArraySeq
 
+import org.opalj.bi.ACC_PUBLIC
+import org.opalj.bi.ACC_STATIC
+import org.opalj.bi.ACC_SUPER
+import org.opalj.br.MethodTemplate
+import org.opalj.br.reader.Java8Framework
+import org.opalj.da.ClassFile
+import org.opalj.da.Code
+import org.opalj.da.Code_attribute
+import org.opalj.da.CONSTANT_Class_info
+import org.opalj.da.CONSTANT_Fieldref_info
+import org.opalj.da.CONSTANT_Methodref_info
+import org.opalj.da.CONSTANT_NameAndType_info
 import org.opalj.da.Constant_Pool
+import org.opalj.da.Constant_Pool_Entry
+import org.opalj.da.CONSTANT_String_info
+import org.opalj.da.CONSTANT_Utf8
+import org.opalj.da.Method_Info
+import org.opalj.da.SourceFile_attribute
 
 /**
  * Demonstrates how to create a "HelloWorld" class and how
@@ -113,7 +112,7 @@ object DAandBR extends App {
         fields:        Fields,
         methods:       Methods,
         attributes:    Attributes
-        */
+     */
 
     val cf = ClassFile(
         Array[Constant_Pool_Entry](
@@ -228,5 +227,5 @@ object DAandBR extends App {
         }
     })
 
-    println("Created class file: "+Files.write(Paths.get("Test.class"), assembledCF).toAbsolutePath)
+    println("Created class file: " + Files.write(Paths.get("Test.class"), assembledCF).toAbsolutePath)
 }

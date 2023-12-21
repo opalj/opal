@@ -1,62 +1,63 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 
-import scala.language.implicitConversions
 import scala.annotation.switch
+import scala.language.implicitConversions
+
 import java.io.ByteArrayOutputStream
 import java.io.DataOutputStream
-import org.opalj.collection.immutable.UShortPair
-import org.opalj.collection.immutable.IntIntPair
-import org.opalj.log.GlobalLogContext
-import org.opalj.log.LogContext
-import org.opalj.log.OPALLogger
-import org.opalj.bi.ACC_PUBLIC
-import org.opalj.bi.ACC_FINAL
-import org.opalj.bi.ACC_SUPER
-import org.opalj.bi.ACC_INTERFACE
+import scala.collection.immutable.ArraySeq
+
 import org.opalj.bi.ACC_ABSTRACT
-import org.opalj.bi.ACC_ENUM
 import org.opalj.bi.ACC_ANNOTATION
-import org.opalj.bi.ACC_STATIC
-import org.opalj.bi.ACC_PROTECTED
-import org.opalj.bi.ACC_SYNCHRONIZED
 import org.opalj.bi.ACC_BRIDGE
-import org.opalj.bi.ACC_SYNTHETIC
-import org.opalj.bi.ACC_PRIVATE
-import org.opalj.bi.ACC_VARARGS
-import org.opalj.bi.ACC_TRANSIENT
-import org.opalj.bi.ACC_VOLATILE
-import org.opalj.bi.ACC_NATIVE
-import org.opalj.bi.ACC_STRICT
-import org.opalj.bi.ACC_OPEN
-import org.opalj.bi.ACC_MODULE
-import org.opalj.bi.ACC_TRANSITIVE
+import org.opalj.bi.ACC_ENUM
+import org.opalj.bi.ACC_FINAL
+import org.opalj.bi.ACC_INTERFACE
 import org.opalj.bi.ACC_MANDATED
+import org.opalj.bi.ACC_MODULE
+import org.opalj.bi.ACC_NATIVE
+import org.opalj.bi.ACC_OPEN
+import org.opalj.bi.ACC_PRIVATE
+import org.opalj.bi.ACC_PROTECTED
+import org.opalj.bi.ACC_PUBLIC
+import org.opalj.bi.ACC_STATIC
 import org.opalj.bi.ACC_STATIC_PHASE
+import org.opalj.bi.ACC_STRICT
+import org.opalj.bi.ACC_SUPER
+import org.opalj.bi.ACC_SYNCHRONIZED
+import org.opalj.bi.ACC_SYNTHETIC
+import org.opalj.bi.ACC_TRANSIENT
+import org.opalj.bi.ACC_TRANSITIVE
+import org.opalj.bi.ACC_VARARGS
+import org.opalj.bi.ACC_VOLATILE
 import org.opalj.bi.ConstantPoolTags.CONSTANT_Class_ID
-import org.opalj.bi.ConstantPoolTags.CONSTANT_Fieldref_ID
-import org.opalj.bi.ConstantPoolTags.CONSTANT_Methodref_ID
-import org.opalj.bi.ConstantPoolTags.CONSTANT_InterfaceMethodref_ID
-import org.opalj.bi.ConstantPoolTags.CONSTANT_String_ID
-import org.opalj.bi.ConstantPoolTags.CONSTANT_Integer_ID
-import org.opalj.bi.ConstantPoolTags.CONSTANT_Float_ID
-import org.opalj.bi.ConstantPoolTags.CONSTANT_Long_ID
 import org.opalj.bi.ConstantPoolTags.CONSTANT_Double_ID
-import org.opalj.bi.ConstantPoolTags.CONSTANT_NameAndType_ID
-import org.opalj.bi.ConstantPoolTags.CONSTANT_Utf8_ID
-import org.opalj.bi.ConstantPoolTags.CONSTANT_MethodHandle_ID
-import org.opalj.bi.ConstantPoolTags.CONSTANT_MethodType_ID
-import org.opalj.bi.ConstantPoolTags.CONSTANT_InvokeDynamic_ID
-import org.opalj.bi.ConstantPoolTags.CONSTANT_Module_ID
-import org.opalj.bi.ConstantPoolTags.CONSTANT_Package_ID
 import org.opalj.bi.ConstantPoolTags.CONSTANT_Dynamic_ID
+import org.opalj.bi.ConstantPoolTags.CONSTANT_Fieldref_ID
+import org.opalj.bi.ConstantPoolTags.CONSTANT_Float_ID
+import org.opalj.bi.ConstantPoolTags.CONSTANT_Integer_ID
+import org.opalj.bi.ConstantPoolTags.CONSTANT_InterfaceMethodref_ID
+import org.opalj.bi.ConstantPoolTags.CONSTANT_InvokeDynamic_ID
+import org.opalj.bi.ConstantPoolTags.CONSTANT_Long_ID
+import org.opalj.bi.ConstantPoolTags.CONSTANT_MethodHandle_ID
+import org.opalj.bi.ConstantPoolTags.CONSTANT_Methodref_ID
+import org.opalj.bi.ConstantPoolTags.CONSTANT_MethodType_ID
+import org.opalj.bi.ConstantPoolTags.CONSTANT_Module_ID
+import org.opalj.bi.ConstantPoolTags.CONSTANT_NameAndType_ID
+import org.opalj.bi.ConstantPoolTags.CONSTANT_Package_ID
+import org.opalj.bi.ConstantPoolTags.CONSTANT_String_ID
+import org.opalj.bi.ConstantPoolTags.CONSTANT_Utf8_ID
 import org.opalj.br.Attribute
 import org.opalj.br.Code
 import org.opalj.br.ObjectType
 import org.opalj.br.cp._
 import org.opalj.br.instructions._
-
-import scala.collection.immutable.ArraySeq
+import org.opalj.collection.immutable.IntIntPair
+import org.opalj.collection.immutable.UShortPair
+import org.opalj.log.GlobalLogContext
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
 
 /**
  * Implementation of an eDSL for creating Java bytecode. The eDSL is designed to facilitate
@@ -825,7 +826,7 @@ package object ba { ba =>
                 val attributeNameIndex = CPEUtf8(bi.ConstantValueAttribute.Name)
                 Some(da.ConstantValue_attribute(attributeNameIndex, CPELong(value)))
 
-            //code attribute conversions
+            // code attribute conversions
             case br.LineNumberTable.KindId =>
                 val attributeNameIndex = CPEUtf8(bi.LineNumberTableAttribute.Name)
                 Some(

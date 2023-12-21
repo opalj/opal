@@ -8,6 +8,30 @@ package xta
 
 import scala.collection.mutable.ArrayBuffer
 
+import org.opalj.br.ArrayType
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.Field
+import org.opalj.br.ObjectType
+import org.opalj.br.PCAndInstruction
+import org.opalj.br.ReferenceType
+import org.opalj.br.Type
+import org.opalj.br.analyses.DeclaredFieldsKey
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.cg.ClosedPackagesKey
+import org.opalj.br.analyses.cg.InitialEntryPointsKey
+import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
+import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
+import org.opalj.br.fpcf.ContextProviderKey
+import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.analyses.ContextProvider
+import org.opalj.br.fpcf.properties.Context
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
+import org.opalj.br.fpcf.properties.cg.NoCallers
+import org.opalj.br.instructions.INVOKESPECIAL
+import org.opalj.br.instructions.NEW
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
@@ -25,30 +49,6 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.cg.ClosedPackagesKey
-import org.opalj.br.analyses.cg.InitialEntryPointsKey
-import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
-import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.analyses.ContextProvider
-import org.opalj.br.fpcf.properties.Context
-import org.opalj.br.fpcf.properties.cg.Callers
-import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
-import org.opalj.br.fpcf.properties.cg.NoCallers
-import org.opalj.br.fpcf.ContextProviderKey
-import org.opalj.br.instructions.INVOKESPECIAL
-import org.opalj.br.instructions.NEW
-import org.opalj.br.ArrayType
-import org.opalj.br.DeclaredMethod
-import org.opalj.br.Field
-import org.opalj.br.ObjectType
-import org.opalj.br.PCAndInstruction
-import org.opalj.br.ReferenceType
-import org.opalj.br.Type
-import org.opalj.br.analyses.DeclaredFieldsKey
 
 /**
  * Marks types as instantiated if their constructor is invoked. Constructors invoked by subclass
@@ -58,7 +58,6 @@ import org.opalj.br.analyses.DeclaredFieldsKey
  * This analysis is adapted from the RTA version. Instead of adding the instantiations to the type
  * set of the Project, they are added to the type set of the calling method. Which entity the type
  * is attached to depends on the call graph variant used.
- *
  *
  * TODO: Refactor this and the rta version in order to provide a common base-class.
  *

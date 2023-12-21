@@ -4,33 +4,33 @@ package hermes
 package queries
 package jcg
 
-import org.opalj.value.ValueInformation
-import org.opalj.da.ClassFile
-import org.opalj.br.ObjectType
+import scala.collection.immutable.ArraySeq
+
+import org.opalj.br.ClassHierarchy
+import org.opalj.br.IntegerType
+import org.opalj.br.MethodCallMethodHandle
+import org.opalj.br.MethodDescriptor
+import org.opalj.br.MethodDescriptor.JustReturnsObject
+import org.opalj.br.MethodDescriptor.ReadObjectDescriptor
+import org.opalj.br.MethodDescriptor.WriteObjectDescriptor
 import org.opalj.br.MethodWithBody
+import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.VoidType
-import org.opalj.br.MethodDescriptor
-import org.opalj.br.IntegerType
-import org.opalj.br.ClassHierarchy
-import org.opalj.br.MethodCallMethodHandle
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.MethodDescriptor.WriteObjectDescriptor
-import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.Instruction
-import org.opalj.br.MethodDescriptor.ReadObjectDescriptor
-import org.opalj.br.MethodDescriptor.JustReturnsObject
-import org.opalj.tac.LazyTACUsingAIKey
-import org.opalj.tac.VirtualMethodCall
-import org.opalj.tac.DUVar
+import org.opalj.br.instructions.INVOKEVIRTUAL
+import org.opalj.da.ClassFile
 import org.opalj.tac.Assignment
-import org.opalj.tac.Stmt
 import org.opalj.tac.Checkcast
+import org.opalj.tac.DUVar
 import org.opalj.tac.ExprStmt
 import org.opalj.tac.InvokedynamicFunctionCall
-
-import scala.collection.immutable.ArraySeq
+import org.opalj.tac.LazyTACUsingAIKey
+import org.opalj.tac.Stmt
+import org.opalj.tac.VirtualMethodCall
+import org.opalj.value.ValueInformation
 
 /**
  * Groups test case features that perform serialization.

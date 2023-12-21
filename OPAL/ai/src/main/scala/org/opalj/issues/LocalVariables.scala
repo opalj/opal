@@ -2,17 +2,16 @@
 package org.opalj
 package issues
 
-import scala.xml.Node
-import scala.xml.Text
-import scala.xml.Comment
-
+import play.api.libs.json.JsNull
 import play.api.libs.json.Json
 import play.api.libs.json.JsValue
-import play.api.libs.json.JsNull
+import scala.xml.Comment
+import scala.xml.Node
+import scala.xml.Text
 
-import org.opalj.collection.mutable.Locals
-import org.opalj.br.PC
 import org.opalj.br.Code
+import org.opalj.br.PC
+import org.opalj.collection.mutable.Locals
 
 /**
  * @param   localVariables The register values at the given location.

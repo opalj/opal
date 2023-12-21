@@ -4,9 +4,9 @@ package br
 package fpcf
 package analyses
 
-import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.br.fpcf.properties.MethodComplexity
 import org.opalj.br.instructions._
+import org.opalj.bytecode.BytecodeProcessingFailedException
 
 /**
  * A shallow analysis that tries to identify methods that are relatively simple, that is,

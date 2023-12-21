@@ -4,13 +4,12 @@ package br
 package reader
 
 /**
- *
  * @author Michael Eichberg
  */
 object ClassFileReaderConfiguration {
 
     final val ConfigKeyPrefix = {
-        org.opalj.br.reader.ConfigKeyPrefix+"ClassFileReader."
+        org.opalj.br.reader.ConfigKeyPrefix + "ClassFileReader."
     }
 
 }

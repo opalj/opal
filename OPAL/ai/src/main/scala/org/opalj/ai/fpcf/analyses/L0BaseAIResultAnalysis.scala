@@ -4,23 +4,23 @@ package ai
 package fpcf
 package analyses
 
-import org.opalj.log.LogContext
-import org.opalj.log.OPALLogger.error
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.ProperPropertyComputationResult
-import org.opalj.fpcf.PropertyBounds
-import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.Result
+import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
+import org.opalj.ai.fpcf.properties.AnAIResult
+import org.opalj.ai.fpcf.properties.BaseAIResult
+import org.opalj.ai.fpcf.properties.ProjectSpecificAIExecutor
 import org.opalj.br.Method
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.BasicFPCFLazyAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
-import org.opalj.ai.fpcf.properties.AnAIResult
-import org.opalj.ai.fpcf.properties.BaseAIResult
-import org.opalj.ai.fpcf.properties.ProjectSpecificAIExecutor
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.PropertyBounds
+import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.Result
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger.error
 
 /**
  * Performs an abstract interpretation of a method using a project's AIDomainFactoryKey.
@@ -62,11 +62,11 @@ object L0BaseAIResultAnalysis {
             case t: Throwable =>
                 error(
                     "project configuration",
-                    s"interpretation of ${m.toJava} failed; "+
+                    s"interpretation of ${m.toJava} failed; " +
                         " replacing method body with a generic error throwing body",
                     t
                 )
-                val reason = Some("replaced due to invalid bytecode\n"+t.getMessage)
+                val reason = Some("replaced due to invalid bytecode\n" + t.getMessage)
                 performAI(m.invalidBytecode(reason))
         }
     }

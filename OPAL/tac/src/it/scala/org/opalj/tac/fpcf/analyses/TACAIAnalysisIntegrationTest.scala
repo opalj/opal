@@ -6,20 +6,20 @@ package analyses
 
 import java.util.concurrent.atomic.AtomicInteger
 
+import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
+import org.opalj.ai.fpcf.properties.BaseAIResult
+import org.opalj.br.TestSupport
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.FPCFAnalysesManagerKey
+import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.concurrent.ConcurrentExceptions
+import org.opalj.tac.fpcf.properties.TACAI
+import org.opalj.util.PerformanceEvaluation.time
+
 import org.junit.runner.RunWith
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
-
-import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.concurrent.ConcurrentExceptions
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.TestSupport
-import org.opalj.br.fpcf.FPCFAnalysesManagerKey
-import org.opalj.br.fpcf.PropertyStoreKey
-import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
-import org.opalj.ai.fpcf.properties.BaseAIResult
-import org.opalj.tac.fpcf.properties.TACAI
 
 /**
  * Tests that all methods of OPAL's test projects + the JDK can be converted to the ai-based
@@ -101,7 +101,7 @@ class TACAIAnalysisIntegrationTest extends AnyFunSpec with Matchers {
 
     describe(s"creating the 3-address code using the PropertyStore") {
 
-        //TestSupport.allManagedBITestProjects() foreach { biProject =>
+        // TestSupport.allManagedBITestProjects() foreach { biProject =>
         TestSupport.allBIProjects() foreach { biProject =>
             val (name, projectFactory) = biProject
             it(s"for $name") {

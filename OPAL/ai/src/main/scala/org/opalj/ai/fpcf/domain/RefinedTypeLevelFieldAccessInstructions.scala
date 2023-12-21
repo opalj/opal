@@ -4,14 +4,14 @@ package ai
 package fpcf
 package domain
 
-import org.opalj.fpcf.LBP
-import org.opalj.fpcf.PropertyKind
-import org.opalj.br.FieldType
-import org.opalj.br.ObjectType
-import org.opalj.br.PC
 import org.opalj.ai.domain.TheProject
 import org.opalj.ai.domain.l0.TypeLevelFieldAccessInstructions
 import org.opalj.ai.fpcf.properties.FieldValue
+import org.opalj.br.FieldType
+import org.opalj.br.ObjectType
+import org.opalj.br.PC
+import org.opalj.fpcf.LBP
+import org.opalj.fpcf.PropertyKind
 
 /**
  * Queries the project information to identify fields with refined field type information.

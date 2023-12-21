@@ -6,17 +6,17 @@ package analyses
 package fieldassignability
 
 import org.opalj.br.DefinedMethod
+import org.opalj.br.Field
+import org.opalj.br.PC
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.BasicFPCFLazyAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.fpcf.PropertyBounds
-import org.opalj.fpcf.PropertyStore
-import org.opalj.br.Field
-import org.opalj.br.PC
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.fieldaccess.AccessReceiver
 import org.opalj.br.fpcf.properties.immutability.FieldAssignability
+import org.opalj.fpcf.PropertyBounds
+import org.opalj.fpcf.PropertyStore
 import org.opalj.tac.fpcf.analyses.cg.uVarForDefSites
 
 /**

@@ -3,9 +3,9 @@ package org.opalj
 package br
 package fpcf
 
-import org.opalj.fpcf.PropertyStore
 import org.opalj.br.analyses.ProjectBasedAnalysis
 import org.opalj.br.analyses.SomeProject
+import org.opalj.fpcf.PropertyStore
 
 /**
  * Common super-trait of all analysis which use MISAF.

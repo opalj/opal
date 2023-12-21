@@ -2,12 +2,12 @@
 package org.opalj
 package collection
 
-import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.collection.immutable.IntTrieSet1
+import scala.collection.AbstractIterator
+
 import org.opalj.collection.immutable.EmptyIntTrieSet
 import org.opalj.collection.immutable.IntArraySet
-
-import scala.collection.AbstractIterator
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.collection.immutable.IntTrieSet1
 
 /**
  * Iterator over a collection of primitive int valuea; basically overrides all inherited methods

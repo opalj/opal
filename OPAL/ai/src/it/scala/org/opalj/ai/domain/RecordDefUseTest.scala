@@ -3,24 +3,25 @@ package org.opalj
 package ai
 package domain
 
-import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
-import org.scalatest.matchers.should.Matchers
-import org.scalatest.funspec.AnyFunSpec
 import java.net.URL
-import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.ConcurrentLinkedQueue
-
+import java.util.concurrent.atomic.AtomicLong
 import scala.jdk.CollectionConverters._
-import org.opalj.util.PerformanceEvaluation
-import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.br.analyses.Project
-import org.opalj.br.TestSupport.createJREProject
+
 import org.opalj.br.Method
+import org.opalj.br.TestSupport.createJREProject
+import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.JSR
 import org.opalj.br.instructions.JSR_W
 import org.opalj.br.reader.BytecodeInstructionsCache
 import org.opalj.br.reader.Java8FrameworkWithCaching
+import org.opalj.util.PerformanceEvaluation
+import org.opalj.util.PerformanceEvaluation.time
+
+import org.junit.runner.RunWith
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests if we are able to collect useful and self-consistent def/use information for the entire
@@ -152,8 +153,8 @@ class RecordDefUseTest extends AnyFunSpec with Matchers {
                         val instruction = code.instructions(pc)
                         val isHandler = code.exceptionHandlers.exists(_.handlerPC == pc)
                         val message =
-                            s"{pc=$pc:$instruction[isHandler=$isHandler][operand=$opIndex] "+
-                                s"deviating def/use info: "+
+                            s"{pc=$pc:$instruction[isHandler=$isHandler][operand=$opIndex] " +
+                                s"deviating def/use info: " +
                                 s"domain=$domainOrigins vs defUse=$defUseOrigins}"
                         val messageHeader =
                             if (refinedDefUseInformation) "[using domain.origin]" else ""
@@ -181,8 +182,8 @@ class RecordDefUseTest extends AnyFunSpec with Matchers {
                             val useSiteBelongsToSubroutine =
                                 belongsToSubroutine(pc)
                             fail(
-                                s"$pc(belongs to subroutine $useSiteBelongsToSubroutine): "+
-                                    s"uses sites of $defUseOrigin (belongs to subroutine "+
+                                s"$pc(belongs to subroutine $useSiteBelongsToSubroutine): " +
+                                    s"uses sites of $defUseOrigin (belongs to subroutine " +
                                     s"$defSiteBelongsToSubroutine) is null"
                             )
                         } else if (!defUseUseSites.contains(pc)) {
@@ -195,11 +196,11 @@ class RecordDefUseTest extends AnyFunSpec with Matchers {
                             val useSiteBelongsToSubroutine =
                                 belongsToSubroutine(pc)
                             fail(
-                                s"${underlyingPC(defUseOrigin)}@$i: the use sites of "+
-                                    s"the value with the origin $defUseOrigin (belongs to "+
-                                    s"subroutine $defSiteBelongsToSubroutine) does not list "+
-                                    s"the instruction\n$pc@${instructions(pc)}"+
-                                    s"(belongs to subroutine: $useSiteBelongsToSubroutine) "+
+                                s"${underlyingPC(defUseOrigin)}@$i: the use sites of " +
+                                    s"the value with the origin $defUseOrigin (belongs to " +
+                                    s"subroutine $defSiteBelongsToSubroutine) does not list " +
+                                    s"the instruction\n$pc@${instructions(pc)}" +
+                                    s"(belongs to subroutine: $useSiteBelongsToSubroutine) " +
                                     s"as a use site (use sites=$defUseUseSites)"
                             )
                         }
@@ -262,7 +263,7 @@ class RecordDefUseTest extends AnyFunSpec with Matchers {
                 val containsJSR =
                     m.body.get.instructionIterator.find(i => i.opcode == JSR.opcode || i.opcode == JSR_W.opcode)
                 val details = exception.getMessage.replace("\n", "\n\t")
-                s"${m.toJava}[containsJSR=$containsJSR;\n\t"+
+                s"${m.toJava}[containsJSR=$containsJSR;\n\t" +
                     s"${exception.getClass.getSimpleName}:\n\t$details;\n\tlocation: $location]"
             }
 
@@ -287,7 +288,7 @@ class RecordDefUseTest extends AnyFunSpec with Matchers {
                 val project = projectFactory()
                 time {
                     analyzeProject(projectName, project)
-                } { t => info("the analysis took (real time): "+t.toSeconds) }
+                } { t => info("the analysis took (real time): " + t.toSeconds) }
                 val effort = DominatorsPerformanceEvaluation.getTime(Symbol("Dominators")).toSeconds
                 info(s"computing dominator information took (CPU time): $effort")
             }

@@ -2,9 +2,9 @@
 package org.opalj
 package da
 
-import scala.xml.Text
-import scala.xml.NodeSeq
 import scala.xml.Node
+import scala.xml.NodeSeq
+import scala.xml.Text
 
 import org.opalj.bi.AccessFlagsContexts.METHOD
 

@@ -9,7 +9,6 @@ import scala.xml.Text
 import org.opalj.bi.ConstantPoolTag
 
 /**
- *
  * @author Dominik Helm
  */
 case class CONSTANT_Dynamic_info(
@@ -48,9 +47,9 @@ case class CONSTANT_Dynamic_info(
     }
 
     override def toString(implicit cp: Constant_Pool): String = {
-        "CONSTANT_Dynamic_info("+
-            s"$bootstrap_method_attr_index,"+
-            s"${cp(name_and_type_index).toString(cp)}/*$name_and_type_index */ "+
+        "CONSTANT_Dynamic_info(" +
+            s"$bootstrap_method_attr_index," +
+            s"${cp(name_and_type_index).toString(cp)}/*$name_and_type_index */ " +
             ")"
     }
 }

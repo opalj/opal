@@ -33,14 +33,14 @@ package cfg
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 
-import org.opalj.concurrent.ConcurrentExceptions
-import org.opalj.util.PerformanceEvaluation._
-import org.opalj.util.Nanoseconds
-import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.bi.TestResources.allBITestJARs
-import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.SomeProject
+import org.opalj.bytecode.JRELibraryFolder
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.concurrent.ConcurrentExceptions
+import org.opalj.util.Nanoseconds
+import org.opalj.util.PerformanceEvaluation._
 
 /**
  * Just reads a lot of class files and computes CFGs related information for all methods
@@ -85,7 +85,7 @@ class CFGsSmokeTest extends AbstractCFGTest {
                     fail(s"the startPC ${bb.startPC} is larger than the endPC ${bb.endPC}")
                 if (allStartPCs.contains(bb.startPC))
                     fail(
-                        s"the startPC ${bb.startPC} is used by multiple basic blocks "+
+                        s"the startPC ${bb.startPC} is used by multiple basic blocks " +
                             s" (${cfg.allBBs.mkString(", ")}"
                     )
                 else
@@ -120,16 +120,16 @@ class CFGsSmokeTest extends AbstractCFGTest {
                     val successors = cfg.bb(pc).successors
                     if (successors.exists(succBB => succBB.isBasicBlock))
                         fail(
-                            s"the successor nodes of a return instruction $pc:($instruction)"+
+                            s"the successor nodes of a return instruction $pc:($instruction)" +
                                 s"have to be catch|exit nodes; found: $successors"
                         )
                 } else {
                     val cfgSuccessors = cfg.successors(pc)
                     if (nextInstructions != cfgSuccessors) {
-                        fail(s"the instruction ($instruction) with pc $pc has the following "+
-                            s"instruction successors:\n\t$nextInstructions and\n"+
-                            s"the following cfg successors:\n\t$cfgSuccessors\n"+
-                            s"the nodes are:\n\t${cfg.bb(pc)} =>\n\t\t"+
+                        fail(s"the instruction ($instruction) with pc $pc has the following " +
+                            s"instruction successors:\n\t$nextInstructions and\n" +
+                            s"the following cfg successors:\n\t$cfgSuccessors\n" +
+                            s"the nodes are:\n\t${cfg.bb(pc)} =>\n\t\t" +
                             cfg.bb(pc).successors.mkString("\n\t\t"))
                     }
                 }
@@ -165,7 +165,7 @@ class CFGsSmokeTest extends AbstractCFGTest {
             methodsCount.incrementAndGet()
         }
         info(
-            s"analyzed ${methodsCount.get}/$methodsWithBodyCount methods "+
+            s"analyzed ${methodsCount.get}/$methodsWithBodyCount methods " +
                 s"in ∑ ${Nanoseconds(executionTime.get).toSeconds}"
         )
     }
@@ -175,7 +175,7 @@ class CFGsSmokeTest extends AbstractCFGTest {
             try { doAnalyzeProject(project) } catch {
                 case ce: ConcurrentExceptions => ce.printStackTrace(Console.err)
             }
-        } { t => info("the analysis took "+t.toSeconds) }
+        } { t => info("the analysis took " + t.toSeconds) }
     }
 
     //

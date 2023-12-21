@@ -4,10 +4,11 @@ package org.opalj
 package collection
 package immutable
 
-import scala.collection.mutable
-import scala.collection.immutable.ArraySeq
-import scala.collection.mutable.Builder
 import scala.reflect.ClassTag
+
+import scala.collection.immutable.ArraySeq
+import scala.collection.mutable
+import scala.collection.mutable.Builder
 
 /**
  * An '''unordered''' trie-set based on the unique ids of the stored [[UID]] objects. I.e.,
@@ -771,7 +772,7 @@ sealed private[immutable] abstract class UIDSetNodeLike[T <: UID] extends NonEmp
                     new UIDSetLeaf(leftValue)
                 else
                     new UIDSetInnerNode(size - 1, leftValue, null, right)
-            } else { //left.size >= 2... but maybe we can pull the right value...
+            } else { // left.size >= 2... but maybe we can pull the right value...
                 if ((right ne null) && right.size == 1)
                     new UIDSetInnerNode(size - 1, right.head, left, null)
                 else
@@ -784,7 +785,7 @@ sealed private[immutable] abstract class UIDSetNodeLike[T <: UID] extends NonEmp
                     new UIDSetLeaf(rightValue)
                 else
                     new UIDSetInnerNode(size - 1, rightValue, left, null)
-            } else { //right.size >= 2... but maybe we can pull the left value...
+            } else { // right.size >= 2... but maybe we can pull the left value...
                 if ((left ne null) && left.size == 1)
                     new UIDSetInnerNode(size - 1, left.head, null, right)
                 else
@@ -903,9 +904,9 @@ sealed private[immutable] abstract class UIDSetNodeLike[T <: UID] extends NonEmp
 
     def showTree(level: Int = 0): String = {
         val indent = "  " * level
-        indent + value.id.toBinaryString + s" #$size("+
-            (if (left ne null) s"\n$indent left ="+left.showTree(level + 1)+"\n" else "") +
-            (if (right ne null) s"\n$indent right="+right.showTree(level + 1)+"\n)" else ")")
+        indent + value.id.toBinaryString + s" #$size(" +
+            (if (left ne null) s"\n$indent left =" + left.showTree(level + 1) + "\n" else "") +
+            (if (right ne null) s"\n$indent right=" + right.showTree(level + 1) + "\n)" else ")")
     }
 }
 

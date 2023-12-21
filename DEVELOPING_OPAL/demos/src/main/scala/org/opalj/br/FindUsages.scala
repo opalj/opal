@@ -1,9 +1,9 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.br
 
-import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.br.reader.Java9Framework
 import org.opalj.bi.reader.ClassFileReader.SuppressExceptionHandler
+import org.opalj.br.reader.Java9Framework
+import org.opalj.util.PerformanceEvaluation.time
 
 /**
  * Shows how to scan for calls of a method belonging to a specific API (here: bouncycastle.)
@@ -33,7 +33,7 @@ object FindUsages {
                     SuppressExceptionHandler
                 )
             } { t =>
-                println(s"Done ${t.toSeconds}; analyzed class files: "+c.get)
+                println(s"Done ${t.toSeconds}; analyzed class files: " + c.get)
             }
         }
         m()

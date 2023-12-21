@@ -4,13 +4,13 @@ package ai
 package domain
 package l1
 
-import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.matchers.should.Matchers
-
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
+
+import org.junit.runner.RunWith
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests the resolution of ConstantFieldValues.

@@ -4,14 +4,14 @@ package tac
 
 import java.util.{Arrays => JArrays}
 
-import org.opalj.value.ValueInformation
 import org.opalj.br.Attribute
+import org.opalj.br.Code
 import org.opalj.br.CodeSequence
 import org.opalj.br.ExceptionHandlers
+import org.opalj.br.PC
 import org.opalj.br.SimilarityTestConfiguration
 import org.opalj.br.cfg.CFG
-import org.opalj.br.Code
-import org.opalj.br.PC
+import org.opalj.value.ValueInformation
 
 /**
  * Contains the 3-address code (like) representation of a method.
@@ -222,4 +222,3 @@ final class NaiveTACode[P <: AnyRef](
     override def toString: String = toString("NaiveTACode", "")
 
 }
-

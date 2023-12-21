@@ -3,6 +3,7 @@ package org.opalj.br
 package cfg
 
 import scala.collection.mutable
+
 import org.opalj.graphs.Node
 
 /**
@@ -92,9 +93,9 @@ trait CFGNode extends Node {
 
     private[cfg] def reachable(reachable: mutable.Set[CFGNode]): Unit = {
         // the following
-        //_successors.
-        //filterNot(reachable.contains).
-        //foreach { d => reachable += d; d.reachable(reachable) }
+        // _successors.
+        // filterNot(reachable.contains).
+        // foreach { d => reachable += d; d.reachable(reachable) }
 
         var remainingSuccessors = this._successors
         while (remainingSuccessors.nonEmpty) {

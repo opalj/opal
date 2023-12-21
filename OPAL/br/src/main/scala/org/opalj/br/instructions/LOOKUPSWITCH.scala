@@ -3,11 +3,11 @@ package org.opalj
 package br
 package instructions
 
+import scala.collection.immutable.ArraySeq
+
 import org.opalj.collection.immutable.IntArraySet
 import org.opalj.collection.immutable.IntArraySet1
 import org.opalj.collection.immutable.IntIntPair
-
-import scala.collection.immutable.ArraySeq
 
 /**
  * Access jump table by key match and jump.
@@ -120,11 +120,11 @@ case class LOOKUPSWITCH(
     }
 
     override def toString(pc: Int): String = {
-        "LOOKUPSWITCH("+
+        "LOOKUPSWITCH(" +
             npairs.iterator.
             map[String](p => s"${p._1}=${pc + p._2}${if (p._2 >= 0) "↓" else "↑"}").
             mkString(",") +
-            s"; ifNoMatch=${(defaultOffset + pc)}${if (defaultOffset >= 0) "↓" else "↑"}"+
+            s"; ifNoMatch=${(defaultOffset + pc)}${if (defaultOffset >= 0) "↓" else "↑"}" +
             ")"
     }
 }
@@ -152,11 +152,9 @@ object LOOKUPSWITCH extends InstructionMetaInformation {
 }
 
 /**
- *
  * Represents a [[LOOKUPSWITCH]] instruction with unresolved jump targets represented as `Symbols`.
  *
  * @author Malte Limmeroth
- *
  */
 case class LabeledLOOKUPSWITCH(
         defaultBranchTarget: InstructionLabel,

@@ -8,6 +8,14 @@ package pointsto
 import scala.collection.immutable.ArraySeq
 import scala.collection.mutable.ArrayBuffer
 
+import org.opalj.br.ArrayType
+import org.opalj.br.DeclaredField
+import org.opalj.br.ObjectType
+import org.opalj.br.ReferenceType
+import org.opalj.br.analyses.VirtualFormalParameter
+import org.opalj.br.fpcf.analyses.SimpleContextProvider
+import org.opalj.br.fpcf.properties.Context
+import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
@@ -23,14 +31,6 @@ import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.SomeEPK
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
-import org.opalj.br.ArrayType
-import org.opalj.br.DeclaredField
-import org.opalj.br.ReferenceType
-import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
-import org.opalj.br.ObjectType
-import org.opalj.br.analyses.VirtualFormalParameter
-import org.opalj.br.fpcf.analyses.SimpleContextProvider
-import org.opalj.br.fpcf.properties.Context
 import org.opalj.tac.fpcf.analyses.cg.TypeConsumerAnalysis
 
 /**

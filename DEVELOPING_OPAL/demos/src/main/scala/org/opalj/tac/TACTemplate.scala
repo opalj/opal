@@ -5,16 +5,17 @@ package tac
 import java.io.File
 import java.net.URL
 
-import org.opalj.log.LogContext
-import org.opalj.log.OPALLogger
-import org.opalj.log.StandardLogContext
+import org.opalj.ai.Domain
+import org.opalj.ai.common.SimpleAIKey
+import org.opalj.ai.domain.RecordDefUse
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
 import org.opalj.bytecode.JRELibraryFolder
-import org.opalj.ai.Domain
-import org.opalj.ai.domain.RecordDefUse
-import org.opalj.ai.common.SimpleAIKey
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
+import org.opalj.log.StandardLogContext
+
 import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParallelizable
 
 /**
@@ -26,13 +27,13 @@ object TACTemplate {
 
     /** Description of the command-line parameters. */
     def usage: String = {
-        "Usage: java …TACTemplate \n"+
-            "{-cp <JAR file/Folder containing class files>}*\n"+
-            "[{-libCP <JAR file/Folder containing library class files>}*] (generally required to get precise/correct type information)\n"+
-            "[-libJDK] (the JDK is added to the project as a library)\n"+
-            "[-class <class file name>] (filters the set of classes)\n"+
-            "[-method <method name/signature using Java notation; e.g., \"int hashCode()\">] (filters the set of methods)\n"+
-            "[-domain <class name of the domain>]\n"+
+        "Usage: java …TACTemplate \n" +
+            "{-cp <JAR file/Folder containing class files>}*\n" +
+            "[{-libCP <JAR file/Folder containing library class files>}*] (generally required to get precise/correct type information)\n" +
+            "[-libJDK] (the JDK is added to the project as a library)\n" +
+            "[-class <class file name>] (filters the set of classes)\n" +
+            "[-method <method name/signature using Java notation; e.g., \"int hashCode()\">] (filters the set of methods)\n" +
+            "[-domain <class name of the domain>]\n" +
             "Example:\n\tjava …TACTemplate -cp /Library/jre/lib/rt.jar -class java.util.ArrayList -method toString"
     }
 

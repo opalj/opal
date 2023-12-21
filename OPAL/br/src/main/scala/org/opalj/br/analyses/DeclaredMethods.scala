@@ -6,8 +6,6 @@ package analyses
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.locks.ReentrantReadWriteLock
 
-import org.opalj.log.LogContext
-import org.opalj.log.OPALLogger.info
 import org.opalj.br.MethodDescriptor.SignaturePolymorphicMethodBoolean
 import org.opalj.br.MethodDescriptor.SignaturePolymorphicMethodObject
 import org.opalj.br.MethodDescriptor.SignaturePolymorphicMethodVoid
@@ -15,6 +13,8 @@ import org.opalj.br.ObjectType.MethodHandle
 import org.opalj.br.ObjectType.VarHandle
 import org.opalj.br.analyses.DeclaredMethodsKey.MethodContext
 import org.opalj.br.analyses.DeclaredMethodsKey.MethodContextQuery
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger.info
 
 /**
  * The set of all [[org.opalj.br.DeclaredMethod]]s (potentially used by the property store).
@@ -152,4 +152,3 @@ class DeclaredMethods(
         data.values().asScala.iterator.flatMap { _.values().asScala }
     }
 }
-

@@ -41,7 +41,7 @@ case class PUTSTATIC(
     }
 
     override def toString =
-        "put static "+declaringClass.toJava+"."+name+" : "+fieldType.toJava
+        "put static " + declaringClass.toJava + "." + name + " : " + fieldType.toJava
 
 }
 

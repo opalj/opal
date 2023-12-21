@@ -25,6 +25,6 @@ case class CONSTANT_String_info(string_index: Constant_Pool_Index) extends Const
     override def toString(implicit cp: Constant_Pool): String = cp(string_index).toString
 
     override def asInstructionParameter(implicit cp: Constant_Pool): NodeSeq = {
-        <span class="constant_value">{ "\""+cp(string_index).toString+"\"" }</span>
+        <span class="constant_value">{ "\"" + cp(string_index).toString + "\"" }</span>
     }
 }

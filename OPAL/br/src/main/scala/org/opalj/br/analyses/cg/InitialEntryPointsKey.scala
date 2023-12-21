@@ -35,7 +35,7 @@ import net.ceedubs.ficus.Ficus._
 object InitialEntryPointsKey extends ProjectInformationKey[Iterable[Method], Nothing] {
 
     final val ConfigKeyPrefix = "org.opalj.br.analyses.cg.InitialEntryPointsKey."
-    final val ConfigKey = ConfigKeyPrefix+"analysis"
+    final val ConfigKey = ConfigKeyPrefix + "analysis"
 
     /**
      * The [[InitialEntryPointsKey]] depends on three other keys and queries information about closed

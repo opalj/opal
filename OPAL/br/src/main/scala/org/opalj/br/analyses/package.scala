@@ -3,7 +3,6 @@ package org.opalj
 package br
 
 import scala.collection.Map
-
 import scala.collection.immutable.ArraySeq
 
 /**

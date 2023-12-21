@@ -6,10 +6,10 @@ package l1
 
 import scala.reflect.ClassTag
 
-import org.opalj.log.OPALLogger
-import org.opalj.log.Warn
 import org.opalj.br.ArrayType
 import org.opalj.br.ObjectType
+import org.opalj.log.OPALLogger
+import org.opalj.log.Warn
 
 /**
  * Enables the tracking of various properties related to arrays.
@@ -266,7 +266,6 @@ trait ConcreteArrayValues
          * @note After adaptation of the array value, the array is usually passed to another
          *       method - in this case it is the responsibility of the caller to
          *       ensure that the (abstraction of the) contents of the array remains valid.
-         *
          */
         override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue = {
             val adaptedValue = target match {
@@ -337,8 +336,8 @@ trait ConcreteArrayValues
         )
 
         if (size >= 256) {
-            val message = s"tracking very large arrays (${arrayType.toJava}) "+
-                "usually incurrs significant overhead without increasing "+
+            val message = s"tracking very large arrays (${arrayType.toJava}) " +
+                "usually incurrs significant overhead without increasing " +
                 "the precision of the analysis"
             OPALLogger.logOnce(Warn("analysis configuration", message))
         }

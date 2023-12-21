@@ -5,11 +5,6 @@ package fpcf
 package analyses
 package escape
 
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.ProperPropertyComputationResult
-import org.opalj.fpcf.PropertyBounds
-import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.Result
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.br.analyses.DeclaredMethods
@@ -19,16 +14,21 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.analyses.VirtualFormalParameters
 import org.opalj.br.analyses.VirtualFormalParametersKey
-import org.opalj.br.fpcf.properties.AtMost
-import org.opalj.br.fpcf.properties.EscapeProperty
-import org.opalj.br.fpcf.properties.NoEscape
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.BasicFPCFLazyAnalysisScheduler
+import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
+import org.opalj.br.fpcf.properties.AtMost
 import org.opalj.br.fpcf.properties.Context
+import org.opalj.br.fpcf.properties.EscapeProperty
+import org.opalj.br.fpcf.properties.NoEscape
 import org.opalj.br.fpcf.properties.SimpleContextsKey
-import org.opalj.br.fpcf.ContextProviderKey
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.PropertyBounds
+import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.Result
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.properties.TACAI
 

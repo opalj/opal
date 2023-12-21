@@ -2,10 +2,10 @@
 package org.opalj
 package br
 
-import org.opalj.bi.AccessFlagsContexts
-import org.opalj.bi.AccessFlags
-
 import scala.collection.immutable.ArraySeq
+
+import org.opalj.bi.AccessFlags
+import org.opalj.bi.AccessFlagsContexts
 
 /**
  * Definition of a Java 9 module.

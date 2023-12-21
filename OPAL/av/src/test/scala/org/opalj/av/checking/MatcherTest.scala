@@ -3,27 +3,26 @@ package org.opalj
 package av
 package checking
 
-import org.junit.runner.RunWith
-
-import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.matchers.should.Matchers
-import org.scalatest.BeforeAndAfterAll
-import org.scalatestplus.junit.JUnitRunner
-
 import scala.collection.IndexedSeq
 
-import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.bi.AccessFlagsMatcher._
-import org.opalj.br.reader.Java8Framework.ClassFiles
-import org.opalj.br.analyses.Project
-import org.opalj.br.StringValue
-import org.opalj.br.BooleanValue
+import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.Annotation
-import org.opalj.br.ObjectType
-import org.opalj.br.MethodDescriptor
+import org.opalj.br.BooleanValue
 import org.opalj.br.ElementValuePair
 import org.opalj.br.ElementValuePairs
+import org.opalj.br.MethodDescriptor
 import org.opalj.br.NoElementValuePairs
+import org.opalj.br.ObjectType
+import org.opalj.br.StringValue
+import org.opalj.br.analyses.Project
+import org.opalj.br.reader.Java8Framework.ClassFiles
+
+import org.junit.runner.RunWith
+import org.scalatest.BeforeAndAfterAll
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests matchers of the Architecture Validation Framework.

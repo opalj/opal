@@ -2,28 +2,27 @@
 package org.opalj
 package br
 
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.matchers.should.Matchers
+import java.io.ByteArrayOutputStream
+import java.io.File
+import java.io.PrintStream
 import java.net.URL
 import java.net.URLClassLoader
-import java.io.File
-import java.io.ByteArrayOutputStream
-import java.io.PrintStream
 import java.nio.file.Files
 
-import com.typesafe.config.Config
-
-import org.opalj.bytecode.RTJar
+import org.opalj.ba.ProjectBasedInMemoryClassLoader
+import org.opalj.bc.Assembler
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.bi.isCurrentJREAtLeastJava10
 import org.opalj.bi.isCurrentJREAtLeastJava16
 import org.opalj.br.analyses.Project
 import org.opalj.br.reader.InvokedynamicRewriting
-import org.opalj.ba.ProjectBasedInMemoryClassLoader
-import org.opalj.bc.Assembler
+import org.opalj.bytecode.RTJar
 import org.opalj.io.JARsFileFilter
-
 import org.opalj.util.InMemoryClassLoader
+
+import com.typesafe.config.Config
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
 /**
  * Tests if OPAL is able to rewrite invokedynamics and checks if the rewritten bytecode is
@@ -346,7 +345,7 @@ class InvokedynamicRewritingExecutionTest extends AnyFunSpec with Matchers {
 
             it("should provide hashCode as expected") {
                 validateMethod(
-                    Int.box(Integer.hashCode(42) * 31+"foo".hashCode),
+                    Int.box(Integer.hashCode(42) * 31 + "foo".hashCode),
                     inMemoryClassLoader,
                     fixtureClassLoader,
                     testClassType,

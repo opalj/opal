@@ -3,10 +3,10 @@ package org.opalj
 package ai
 package common
 
-import com.typesafe.config.Config
-
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
+
+import com.typesafe.config.Config
 
 /**
  * Registry for all domains that can be instantiated given a `Project`, and a `Method` with a
@@ -220,8 +220,8 @@ object DomainRegistry {
     )
 
     register(
-        "computations are done at the type level; "+
-            "cfg and def/use information is recorded; "+
+        "computations are done at the type level; " +
+            "cfg and def/use information is recorded; " +
             "signature refinements are used",
         classOf[fpcf.domain.PrimitiveTACAIDomainWithSignatureRefinement],
         lessPreciseDomains = Set(classOf[domain.l0.PrimitiveTACAIDomain]),
@@ -285,9 +285,9 @@ object DomainRegistry {
     )
 
     register(
-        "uses intervals for int values; "+
-            "tracks nullness and must alias information for reference types; "+
-            "records the ai-time def-use information; "+
+        "uses intervals for int values; " +
+            "tracks nullness and must alias information for reference types; " +
+            "records the ai-time def-use information; " +
             "uses refined signature information",
         classOf[fpcf.domain.L1DefaultDomainWithCFGAndDefUseAndSignatureRefinement[_]],
         lessPreciseDomains = Set(

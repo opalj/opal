@@ -3,48 +3,48 @@ package org.opalj
 package br
 package reader
 
+import scala.collection.immutable.ArraySeq
+
 import org.opalj.bi.ACC_PRIVATE
 import org.opalj.bi.ACC_STATIC
 import org.opalj.bi.ACC_SYNTHETIC
+import org.opalj.br.MethodDescriptor.JustReturnsString
 import org.opalj.br.collection.mutable.InstructionsBuilder
+import org.opalj.br.cp.Constant_Pool
 import org.opalj.br.instructions.AASTORE
 import org.opalj.br.instructions.ACONST_NULL
-import org.opalj.br.instructions.ALOAD_1
-import org.opalj.br.instructions.ANEWARRAY
-import org.opalj.br.instructions.CHECKCAST
-import org.opalj.br.instructions.DUP
-import org.opalj.br.instructions.GETSTATIC
-import org.opalj.br.instructions.IAND
-import org.opalj.br.instructions.ICONST_0
-import org.opalj.br.instructions.ICONST_1
-import org.opalj.br.instructions.IFNE
-import org.opalj.br.instructions.INVOKESTATIC
-import org.opalj.br.instructions.INVOKEVIRTUAL
-import org.opalj.br.instructions.LoadClass_W
-import org.opalj.br.instructions.LoadConstantInstruction
-import org.opalj.br.instructions.LoadDynamic2_W
-import org.opalj.br.instructions.LoadDynamic_W
-import org.opalj.br.instructions.LoadMethodHandle_W
-import org.opalj.br.instructions.LoadString_W
-import org.opalj.br.instructions.TypeConversionInstructions
-import org.opalj.br.MethodDescriptor.JustReturnsString
-import org.opalj.br.cp.Constant_Pool
 import org.opalj.br.instructions.ALOAD_0
+import org.opalj.br.instructions.ALOAD_1
 import org.opalj.br.instructions.ALOAD_2
+import org.opalj.br.instructions.ANEWARRAY
 import org.opalj.br.instructions.ARETURN
 import org.opalj.br.instructions.ASTORE_1
 import org.opalj.br.instructions.ASTORE_2
 import org.opalj.br.instructions.BIPUSH
+import org.opalj.br.instructions.CHECKCAST
+import org.opalj.br.instructions.DUP
+import org.opalj.br.instructions.GETSTATIC
 import org.opalj.br.instructions.IADD
+import org.opalj.br.instructions.IAND
+import org.opalj.br.instructions.ICONST_0
+import org.opalj.br.instructions.ICONST_1
 import org.opalj.br.instructions.IFEQ
+import org.opalj.br.instructions.IFNE
 import org.opalj.br.instructions.IMUL
 import org.opalj.br.instructions.INSTANCEOF
 import org.opalj.br.instructions.INVOKESPECIAL
+import org.opalj.br.instructions.INVOKESTATIC
+import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.IRETURN
+import org.opalj.br.instructions.LoadClass_W
+import org.opalj.br.instructions.LoadConstantInstruction
+import org.opalj.br.instructions.LoadDynamic2_W
+import org.opalj.br.instructions.LoadDynamic_W
 import org.opalj.br.instructions.LoadInt_W
+import org.opalj.br.instructions.LoadMethodHandle_W
+import org.opalj.br.instructions.LoadString_W
 import org.opalj.br.instructions.NEW
-
-import scala.collection.immutable.ArraySeq
+import org.opalj.br.instructions.TypeConversionInstructions
 
 /**
  * Provides functionality to produce bytecode that loads a bootstrap argument. Loading of dynamic

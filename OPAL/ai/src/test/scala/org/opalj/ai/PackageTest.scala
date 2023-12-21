@@ -2,20 +2,20 @@
 package org.opalj
 package ai
 
-import org.scalatest.matchers.should.Matchers
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatestplus.junit.JUnitRunner
-import org.junit.runner.RunWith
-
-import org.opalj.ai.domain.ValuesCoordinatingDomain
 import org.opalj.ai.domain.DefaultSpecialDomainValuesBinding
 import org.opalj.ai.domain.PredefinedClassHierarchy
+import org.opalj.ai.domain.ValuesCoordinatingDomain
 import org.opalj.ai.domain.l0.DefaultReferenceValuesBinding
+import org.opalj.ai.domain.l0.DefaultTypeLevelDoubleValues
+import org.opalj.ai.domain.l0.DefaultTypeLevelFloatValues
 import org.opalj.ai.domain.l0.DefaultTypeLevelIntegerValues
 import org.opalj.ai.domain.l0.DefaultTypeLevelLongValues
-import org.opalj.ai.domain.l0.DefaultTypeLevelFloatValues
-import org.opalj.ai.domain.l0.DefaultTypeLevelDoubleValues
 import org.opalj.ai.domain.l0.TypeLevelDynamicLoads
+
+import org.junit.runner.RunWith
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests the utility methods.
@@ -92,7 +92,7 @@ class PackageTest extends AnyFlatSpec with Matchers {
             List(
                 DoubleValue(valueOrigin = -1),
                 lastOperand,
-                lastOperand,
+                lastOperand
             )
 
         val result = mapOperands(operands, SimpleCoordinatingTypeLevelDomain)

@@ -507,7 +507,7 @@ sealed trait InterimEP[+E <: Entity, +P <: Property] extends EPS[E, P] {
             }
         } catch {
             case t: Throwable =>
-                val m = s"$e: illegal update oldLB: $lb vs. newLB=$eps.lb "+
+                val m = s"$e: illegal update oldLB: $lb vs. newLB=$eps.lb " +
                     newDependees.mkString("newDependees={", ", ", "}; cause=") + t.getMessage
                 throw new IllegalArgumentException(m, t)
         }

@@ -3,9 +3,9 @@ package org.opalj
 package br
 package reader
 
-import org.opalj.bi.reader.Code_attributeReader
-
 import scala.reflect.ClassTag
+
+import org.opalj.bi.reader.Code_attributeReader
 
 /**
  * Binding for the code attribute.

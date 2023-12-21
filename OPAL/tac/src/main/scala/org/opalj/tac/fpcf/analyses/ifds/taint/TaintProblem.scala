@@ -10,10 +10,10 @@ import org.opalj.br.ObjectType
 import org.opalj.ifds.AbstractIFDSFact
 import org.opalj.ifds.AbstractIFDSNullFact
 import org.opalj.ifds.Callable
-import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem.V
 import org.opalj.tac.Assignment
 import org.opalj.tac.Expr
 import org.opalj.tac.Stmt
+import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem.V
 
 trait TaintFact extends AbstractIFDSFact
 

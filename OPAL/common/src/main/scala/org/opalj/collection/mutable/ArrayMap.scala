@@ -6,7 +6,6 @@ package mutable
 import scala.reflect.ClassTag
 
 import java.util.Arrays
-
 import scala.collection.AbstractIterator
 
 /**

@@ -2,11 +2,11 @@
 package org.opalj
 package hermes
 
+import scala.reflect.io.Directory
+
 import java.io.File
 import java.util.concurrent.CountDownLatch
-
 import scala.io.Source
-import scala.reflect.io.Directory
 
 import org.opalj.io.processSource
 
@@ -80,12 +80,12 @@ object HermesCLI {
             if (isFinished) {
                 val theStatisticsFile = new File(statisticsFile).getAbsoluteFile()
                 Hermes.exportStatistics(theStatisticsFile, !noProjectStatistics)
-                println("Wrote statistics: "+theStatisticsFile)
+                println("Wrote statistics: " + theStatisticsFile)
 
                 if (locationsDir ne null) {
                     val theLocationsDir = Directory(new File(locationsDir))
                     Hermes.exportLocations(theLocationsDir)
-                    println("Wrote locations: "+theLocationsDir)
+                    println("Wrote locations: " + theLocationsDir)
                 } else {
                     println("Skip writing locations, not specified.")
                 }
@@ -93,7 +93,7 @@ object HermesCLI {
                 mappingFile.foreach { mappingFile =>
                     val theMappingFile = new File(mappingFile).getAbsoluteFile()
                     Hermes.exportMapping(theMappingFile)
-                    println("Wrote mapping: "+theMappingFile)
+                    println("Wrote mapping: " + theMappingFile)
                 }
 
                 waitOnFinished.countDown()

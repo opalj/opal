@@ -3,38 +3,36 @@ package org.opalj
 package ba
 
 import java.util.NoSuchElementException
-
 import scala.collection.mutable.ArrayBuffer
+
+import org.opalj.br.instructions.BranchoffsetOutOfBoundsException
+import org.opalj.br.instructions.Instruction
+import org.opalj.br.instructions.InstructionLabel
+import org.opalj.br.instructions.LabeledGOTO
+import org.opalj.br.instructions.LabeledGOTO_W
+import org.opalj.br.instructions.LabeledInstruction
+import org.opalj.br.instructions.LabeledJSR
+import org.opalj.br.instructions.LabeledJSR_W
+import org.opalj.br.instructions.LabeledLOOKUPSWITCH
+import org.opalj.br.instructions.LabeledSimpleConditionalBranchInstruction
+import org.opalj.br.instructions.LabeledTABLESWITCH
+import org.opalj.br.instructions.PCLabel
+import org.opalj.br.instructions.RewriteLabel
+import org.opalj.br.instructions.WIDE
+import org.opalj.collection.immutable.IntArraySet
+import org.opalj.collection.immutable.IntRefPair
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.collection.immutable.IntTrieSet1
+import org.opalj.control.iterateUntil
+import org.opalj.control.repeat
+import org.opalj.log.GlobalLogContext
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger.info
 
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
-
 import it.unimi.dsi.fastutil.ints.Int2IntArrayMap
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap
-
-import org.opalj.control.repeat
-import org.opalj.control.iterateUntil
-import org.opalj.log.LogContext
-import org.opalj.log.GlobalLogContext
-import org.opalj.log.OPALLogger.info
-import org.opalj.br.instructions.Instruction
-import org.opalj.br.instructions.WIDE
-import org.opalj.br.instructions.LabeledInstruction
-import org.opalj.br.instructions.InstructionLabel
-import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.collection.immutable.IntArraySet
-import org.opalj.collection.immutable.IntTrieSet1
-import org.opalj.br.instructions.LabeledJSR
-import org.opalj.br.instructions.LabeledJSR_W
-import org.opalj.br.instructions.LabeledSimpleConditionalBranchInstruction
-import org.opalj.br.instructions.PCLabel
-import org.opalj.br.instructions.BranchoffsetOutOfBoundsException
-import org.opalj.br.instructions.LabeledGOTO
-import org.opalj.br.instructions.LabeledGOTO_W
-import org.opalj.br.instructions.RewriteLabel
-import org.opalj.br.instructions.LabeledTABLESWITCH
-import org.opalj.br.instructions.LabeledLOOKUPSWITCH
-import org.opalj.collection.immutable.IntRefPair
 
 /**
  * Factory to create an initial [[CodeAttributeBuilder]].
@@ -47,9 +45,9 @@ object CODE {
     implicit def logContext: LogContext = GlobalLogContext
 
     final val CodeConfigKeyPrefix = "org.opalj.ba.CODE."
-    final val LogDeadCodeRemovalConfigKey = CodeConfigKeyPrefix+"logDeadCodeRemoval"
-    final val LogDeadCodeConfigKey = CodeConfigKeyPrefix+"logDeadCode"
-    final val LogCodeRewritingConfigKey = CodeConfigKeyPrefix+"logCodeRewriting"
+    final val LogDeadCodeRemovalConfigKey = CodeConfigKeyPrefix + "logDeadCodeRemoval"
+    final val LogDeadCodeConfigKey = CodeConfigKeyPrefix + "logDeadCode"
+    final val LogCodeRewritingConfigKey = CodeConfigKeyPrefix + "logCodeRewriting"
 
     @volatile private[this] var logDeadCodeRemoval: Boolean = true
     @volatile private[this] var logDeadCode: Boolean = true

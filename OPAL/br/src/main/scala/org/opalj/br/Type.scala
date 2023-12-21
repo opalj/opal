@@ -5,11 +5,10 @@ package br
 import scala.annotation.tailrec
 
 import java.lang.ref.WeakReference
-import java.util.WeakHashMap
 import java.util.{Arrays => JArrays}
+import java.util.WeakHashMap
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantReadWriteLock
-
 import scala.collection.SortedSet
 import scala.math.Ordered
 
@@ -142,42 +141,42 @@ sealed trait Type extends UIDValue with Ordered[Type] {
 
     @throws[ClassCastException]("if this type is not a reference type")
     def asReferenceType: ReferenceType = {
-        throw new ClassCastException(this.toJava+" cannot be cast to a ReferenceType");
+        throw new ClassCastException(this.toJava + " cannot be cast to a ReferenceType");
     }
 
     @throws[ClassCastException]("if this type is not an array type")
     def asArrayType: ArrayType = {
-        throw new ClassCastException(this.toJava+" cannot be cast to an ArrayType");
+        throw new ClassCastException(this.toJava + " cannot be cast to an ArrayType");
     }
 
     @throws[ClassCastException]("if this type is not an object type")
     def asObjectType: ObjectType = {
-        throw new ClassCastException(this.toJava+" cannot be cast to an ObjectType");
+        throw new ClassCastException(this.toJava + " cannot be cast to an ObjectType");
     }
 
     @throws[ClassCastException]("if this type is not a base type")
     def asBaseType: BaseType = {
-        throw new ClassCastException(getClass.getSimpleName+" cannot be cast to a BaseType");
+        throw new ClassCastException(getClass.getSimpleName + " cannot be cast to a BaseType");
     }
 
     @throws[ClassCastException]("if this type is not a field type")
     def asFieldType: FieldType = {
-        throw new ClassCastException(getClass.getSimpleName+" cannot be cast to a FieldType");
+        throw new ClassCastException(getClass.getSimpleName + " cannot be cast to a FieldType");
     }
 
     @throws[ClassCastException]("if this is not a numeric type")
     def asNumericType: NumericType = {
-        throw new ClassCastException(getClass.getSimpleName+" cannot be cast to a NumericType");
+        throw new ClassCastException(getClass.getSimpleName + " cannot be cast to a NumericType");
     }
 
     @throws[ClassCastException]("if this is not an int like type")
     def asIntLikeType: IntLikeType = {
-        throw new ClassCastException(getClass.getSimpleName+" cannot be cast to an IntLikeType");
+        throw new ClassCastException(getClass.getSimpleName + " cannot be cast to an IntLikeType");
     }
 
     @throws[ClassCastException]("if this is not a boolean type")
     def asBooleanType: BooleanType = {
-        throw new ClassCastException(getClass.getSimpleName+" cannot be cast to an IntLikeType");
+        throw new ClassCastException(getClass.getSimpleName + " cannot be cast to an IntLikeType");
     }
 
     /**
@@ -359,7 +358,7 @@ object FieldType {
             case 'Z' => BooleanType
             case 'L' => ObjectType(ft.substring(1, ft.length - 1))
             case '[' => ArrayType(FieldType(ft.substring(1)))
-            case _   => throw new IllegalArgumentException(ft+" is not a valid field type descriptor")
+            case _   => throw new IllegalArgumentException(ft + " is not a valid field type descriptor")
         }
     }
 }
@@ -1052,7 +1051,7 @@ final class ObjectType private ( // DO NOT MAKE THIS A CASE CLASS!
 
     // The default equals and hashCode methods are a perfect fit.
 
-    override def toString: String = "ObjectType("+fqn+")"
+    override def toString: String = "ObjectType(" + fqn + ")"
 
 }
 /**
@@ -1534,11 +1533,11 @@ final class ArrayType private ( // DO NOT MAKE THIS A CASE CLASS!
         }
     }
 
-    override def toJava: String = componentType.toJava+"[]"
+    override def toJava: String = componentType.toJava + "[]"
 
-    override def toBinaryJavaName: String = "["+componentType.toBinaryJavaName
+    override def toBinaryJavaName: String = "[" + componentType.toBinaryJavaName
 
-    override def toJVMTypeName: String = "["+componentType.toJVMTypeName
+    override def toJVMTypeName: String = "[" + componentType.toJVMTypeName
 
     override def toJavaClass: java.lang.Class[_] = java.lang.Class.forName(toBinaryJavaName)
 
@@ -1553,7 +1552,7 @@ final class ArrayType private ( // DO NOT MAKE THIS A CASE CLASS!
 
     // The default equals and hashCode methods are a perfect fit.
 
-    override def toString: String = "ArrayType("+componentType.toString+")"
+    override def toString: String = "ArrayType(" + componentType.toString + ")"
 }
 
 /**

@@ -22,7 +22,7 @@ sealed trait AccessFlagsMatcher { left =>
                 left.unapply(accessFlags) && right.unapply(accessFlags)
             }
 
-            override def toString: String = "("+left.toString+" && "+right.toString+")"
+            override def toString: String = "(" + left.toString + " && " + right.toString + ")"
         }
     }
 
@@ -33,7 +33,7 @@ sealed trait AccessFlagsMatcher { left =>
                 left.unapply(accessFlags) || right.unapply(accessFlags)
             }
 
-            override def toString: String = "("+left.toString+" || "+right.toString+")"
+            override def toString: String = "(" + left.toString + " || " + right.toString + ")"
         }
     }
 
@@ -46,7 +46,7 @@ sealed trait AccessFlagsMatcher { left =>
 
             override def unapply(accessFlags: Int): Boolean = !left.unapply(accessFlags)
 
-            override def toString: String = "!("+left.toString+")"
+            override def toString: String = "!(" + left.toString + ")"
         }
 }
 
@@ -73,7 +73,7 @@ trait PrimitiveAccessFlagsMatcher extends AccessFlagsMatcher { left =>
         new AccessFlagsMatcher { // <= it is no longer a primitive matcher
             val mask = left.mask
             override def unapply(accessFlags: Int): Boolean = (accessFlags & mask) != mask
-            override def toString: String = "!("+mask.toString+")"
+            override def toString: String = "!(" + mask.toString + ")"
         }
 }
 /**

@@ -30,10 +30,10 @@ import org.opalj.br.fpcf.properties.immutability.NonTransitivelyImmutableField
 import org.opalj.br.fpcf.properties.immutability.TransitivelyImmutableClass
 import org.opalj.br.fpcf.properties.immutability.TransitivelyImmutableField
 import org.opalj.fpcf.ELBP
+import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.EPS
-import org.opalj.fpcf.Entity
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.IncrementalResult
@@ -55,7 +55,6 @@ import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 
 /**
- *
  * Determines the immutability of instances of a specific class. In the case of an abstract class
  * the (implicit) assumption is made that all abstract methods (if any) are/can
  * be implemented without necessarily/always requiring additional state; i.e., only the currently
@@ -76,17 +75,16 @@ import org.opalj.log.OPALLogger
  * @author Florian Kübler
  * @author Dominik Helm
  * @author Tobias Roth
- *
  */
 class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
     /*
-   * The analysis is implemented as an incremental analysis which starts with the analysis
-   * of those types which directly inherit from java.lang.Object and then propagates the
-   * immutability information down the class hierarchy.
-   *
-   * This propagation needs to be done eagerly to ensure that all types are associated with
-   * some property when the initial computation finishes and fallback properties are associated.
-   */
+     * The analysis is implemented as an incremental analysis which starts with the analysis
+     * of those types which directly inherit from java.lang.Object and then propagates the
+     * immutability information down the class hierarchy.
+     *
+     * This propagation needs to be done eagerly to ensure that all types are associated with
+     * some property when the initial computation finishes and fallback properties are associated.
+     */
 
     /**
      * Creates a result object that sets this type and all subclasses of if to the given immutability rating.
@@ -160,13 +158,13 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
             case t: ObjectType =>
                 if (defaultTransitivelyImmutableTypes.contains(t.asObjectType))
                     return Result(t, TransitivelyImmutableClass)
-                //this is safe
+                // this is safe
                 classHierarchy.superclassType(t) match {
                     case None => Result(t, MutableClass);
                     case Some(superClassType) =>
                         val cf = project.classFile(t) match {
                             case None =>
-                                return Result(t, MutableClass); //TODO consider other lattice element
+                                return Result(t, MutableClass); // TODO consider other lattice element
                             case Some(cf) => cf
                         }
 
@@ -190,7 +188,7 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
                         }
                 }
             case _ =>
-                val m = e.getClass.getSimpleName+" is not an org.opalj.br.ObjectType"
+                val m = e.getClass.getSimpleName + " is not an org.opalj.br.ObjectType"
                 throw new IllegalArgumentException(m)
         }
     }
@@ -260,7 +258,7 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
                 dependees += (e -> epk)
 
             case _ =>
-                if (lazyComputation) //TODO check
+                if (lazyComputation) // TODO check
                     return Result(t, MutableClass);
                 else
                     return createResultForAllSubtypes(t, MutableClass);
@@ -311,8 +309,8 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
         }
 
         def c(someEPS: SomeEPS): ProperPropertyComputationResult = {
-            //[DEBUG]
-            //val oldDependees = dependees
+            // [DEBUG]
+            // val oldDependees = dependees
             dependees = dependees.iterator.filter(_._1 ne someEPS.e).toMap
             someEPS match {
                 // Superclass related dependencies:
@@ -364,7 +362,7 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
                     genericTypeParameters ++= parameter
                     maxLocalImmutability =
                         DependentlyImmutableClass(genericTypeParameters)
-                case _ => Result(t, MutableClass) //TODO
+                case _ => Result(t, MutableClass) // TODO
             }
 
             if (someEPS.isRefinable) {
@@ -377,7 +375,7 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
                     oldDependees != dependees,
                     s"dependees are not correctly updated $e($p)\n:old=$oldDependees\nnew=$dependees"
                 )
-       */
+             */
 
             if (dependees.isEmpty || minLocalImmutability == maxLocalImmutability) {
                 Result(t, maxLocalImmutability)

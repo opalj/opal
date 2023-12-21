@@ -34,11 +34,11 @@ package hermes
 package queries
 package jcg
 
-import org.opalj.br.analyses.Project
-import org.opalj.da.ClassFile
-
 import scala.collection.immutable.ArraySeq
 import scala.collection.mutable
+
+import org.opalj.br.analyses.Project
+import org.opalj.da.ClassFile
 
 /**
  * Test case feature where two methods are defined a class that do only vary in the specified return

@@ -3,15 +3,16 @@ package org.opalj
 package ai
 
 import java.net.URL
+
 import org.opalj.br.Method
 import org.opalj.br.MethodWithBody
+import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.instructions.IF0Instruction
 import org.opalj.br.instructions.IFICMPInstruction
-import org.opalj.br.instructions.IFNULL
 import org.opalj.br.instructions.IFNONNULL
-import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.ProjectAnalysisApplication
+import org.opalj.br.instructions.IFNULL
 
 import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParallelizable
 
@@ -47,7 +48,7 @@ object UselessComputations extends ProjectAnalysisApplication {
     override def title: String = "useless computations"
 
     override def description: String = {
-        "identifies computations that are useless, e.g., "+
+        "identifies computations that are useless, e.g., " +
             "comparison against null if the value is known not be null"
     }
 
@@ -76,13 +77,13 @@ object UselessComputations extends ProjectAnalysisApplication {
                         _: IFICMPInstruction[_],
                         Seq(domain.ConcreteIntegerValue(a), domain.ConcreteIntegerValue(b), _*)
                         ) =>
-                        UselessComputation(method, pc, "comparison of constant values: "+a+", "+b)
+                        UselessComputation(method, pc, "comparison of constant values: " + a + ", " + b)
                     case (
                         pc,
                         _: IF0Instruction[_],
                         Seq(domain.ConcreteIntegerValue(a), _*)
                         ) =>
-                        UselessComputation(method, pc, "comparison of 0 with constant value: "+a)
+                        UselessComputation(method, pc, "comparison of 0 with constant value: " + a)
                 }
                 // Let's do some filtering to get rid of some "false positives"
                 // (from the point of view of the Java source code).
@@ -105,7 +106,7 @@ object UselessComputations extends ProjectAnalysisApplication {
         }
 
         BasicReport(
-            results.mkString("Useless computations: "+results.size+"): \n", "\n", "\n")
+            results.mkString("Useless computations: " + results.size + "): \n", "\n", "\n")
         )
     }
 }
@@ -119,9 +120,9 @@ case class UselessComputation(method: Method, pc: Int, message: String) {
     override def toString: String = {
         import Console._
 
-        val line = this.line.map("(line:"+_+")").getOrElse("")
+        val line = this.line.map("(line:" + _ + ")").getOrElse("")
 
-        "useless computation "+method.toJava(s"$BLUE$pc$line: $RED$message$RESET")
+        "useless computation " + method.toJava(s"$BLUE$pc$line: $RED$message$RESET")
     }
 
 }

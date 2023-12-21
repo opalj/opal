@@ -4,9 +4,9 @@ package bi
 package reader
 
 import java.io.DataInputStream
-import org.opalj.control.fillArraySeq
-
 import scala.collection.immutable.ArraySeq
+
+import org.opalj.control.fillArraySeq
 
 /**
  * Trait that implements a template method to read in the attributes of

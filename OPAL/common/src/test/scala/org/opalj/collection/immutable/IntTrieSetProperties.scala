@@ -3,18 +3,18 @@ package org.opalj
 package collection
 package immutable
 
-import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
-import org.scalacheck.Properties
-import org.scalacheck.Prop.forAll
-import org.scalacheck.Prop.classify
-import org.scalacheck.Prop.propBoolean
-import org.scalacheck.Gen
-import org.scalacheck.Arbitrary
-import org.scalatest.matchers.should.Matchers
-import org.scalatest.funspec.AnyFunSpec
-
 import org.opalj.util.PerformanceEvaluation
+
+import org.junit.runner.RunWith
+import org.scalacheck.Arbitrary
+import org.scalacheck.Gen
+import org.scalacheck.Prop.classify
+import org.scalacheck.Prop.forAll
+import org.scalacheck.Prop.propBoolean
+import org.scalacheck.Properties
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests `IntTrieSet` by creating a standard Scala Set and comparing

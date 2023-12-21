@@ -3,18 +3,17 @@ package org.opalj
 package collection
 package immutable
 
-import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
-import org.scalacheck.Properties
-import org.scalacheck.Prop.forAll
-import org.scalacheck.Prop.classify
-import org.scalacheck.Prop.propBoolean
-import org.scalacheck.Gen
-import org.scalacheck.Arbitrary
-
 import java.util.Random
-
 import scala.collection.immutable.{BitSet => SBitSet}
+
+import org.junit.runner.RunWith
+import org.scalacheck.Arbitrary
+import org.scalacheck.Gen
+import org.scalacheck.Prop.classify
+import org.scalacheck.Prop.forAll
+import org.scalacheck.Prop.propBoolean
+import org.scalacheck.Properties
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests `BitArraySet`.

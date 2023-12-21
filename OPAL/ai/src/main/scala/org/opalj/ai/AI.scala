@@ -2,27 +2,29 @@
 package org.opalj
 package ai
 
-import scala.language.existentials
 import scala.annotation.switch
-import scala.util.control.ControlThrowable
+import scala.language.existentials
+
 import scala.collection.immutable.List
+import scala.util.control.ControlThrowable
+
+import org.opalj.ai.util.containsInPrefix
+import org.opalj.ai.util.insertBefore
+import org.opalj.ai.util.insertBeforeIfNew
+import org.opalj.ai.util.removeFirstUnless
+import org.opalj.bi.warnMissingLibrary
+import org.opalj.br._
+import org.opalj.br.instructions._
+import org.opalj.bytecode.BytecodeProcessingFailedException
+import org.opalj.collection.immutable.IntIntPair
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.collection.mutable.{Locals => Registers}
+import org.opalj.collection.mutable.IntArrayStack
 import org.opalj.control.foreachNonNullValue
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 import org.opalj.log.Warn
-import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.collection.immutable.IntIntPair
-import org.opalj.collection.mutable.{Locals => Registers}
-import org.opalj.collection.mutable.IntArrayStack
-import org.opalj.bytecode.BytecodeProcessingFailedException
-import org.opalj.bi.warnMissingLibrary
-import org.opalj.br._
-import org.opalj.br.instructions._
-import org.opalj.ai.util.containsInPrefix
-import org.opalj.ai.util.insertBefore
-import org.opalj.ai.util.insertBeforeIfNew
-import org.opalj.ai.util.removeFirstUnless
 
 /**
  * A highly-configurable framework for the (abstract) interpretation of Java bytecode.
@@ -106,7 +108,6 @@ import org.opalj.ai.util.removeFirstUnless
  *         }}}
  *         ===Implementation===
  *         When we have a fork, check if all paths...
- *
  *
  * ==Customizing the Abstract Interpretation Framework==
  * Customization of the abstract interpreter is done by creating new subclasses that
@@ -355,7 +356,7 @@ abstract class AI[D <: Domain](
         localsArray(0) = initialLocals
 
         val wl = AI.initialWorkList
-        //val aePCs: List[Int/*PC*/] /*alreadyEvaluated*/ = Nil //
+        // val aePCs: List[Int/*PC*/] /*alreadyEvaluated*/ = Nil //
         val aePCs: IntArrayStack = new IntArrayStack(codeLength * 2) // size is just an initial guess...
         continueInterpretation(code, theDomain)(wl, aePCs, false, operandsArray, localsArray)
     }
@@ -804,7 +805,7 @@ abstract class AI[D <: Domain](
                         )
                     else {
                         tracer.get.abruptSubroutineTermination(theDomain)(
-                            "the target instruction was already scheduled or "+
+                            "the target instruction was already scheduled or " +
                                 "explicit scheduling was not necessary",
                             sourcePC, targetPC,
                             belongsToSubroutine(targetPC),
@@ -1011,7 +1012,7 @@ abstract class AI[D <: Domain](
             assert(
                 worklist.exists(_ == targetPC) == isTargetScheduled.isYesOrUnknown ||
                     worklist.forall(_ != targetPC) == isTargetScheduled.isNoOrUnknown,
-                s"worklist=$worklist; target=$targetPC; scheduled=$isTargetScheduled "+
+                s"worklist=$worklist; target=$targetPC; scheduled=$isTargetScheduled " +
                     s"(join=$wasJoinPerformed,exceptional=$isExceptionalControlFlow)"
             )
 
@@ -1029,7 +1030,7 @@ abstract class AI[D <: Domain](
             assert(
                 abruptSubroutineTerminationCount == 0 ||
                     !containsInPrefix(worklist, targetPC, SUBROUTINE_START),
-                "an exception handler that handles the abrupt termination of a subroutine "+
+                "an exception handler that handles the abrupt termination of a subroutine " +
                     "is scheduled to be executed as part of the abruptly terminated subroutine"
             )
         }
@@ -1636,11 +1637,11 @@ abstract class AI[D <: Domain](
                                                     map[String](_.toJava).
                                                     mkString(" & ")
                                             if (!exceptionValue.isPrecise)
-                                                exceptionTypeAsJava = "_ <: "+exceptionTypeAsJava
+                                                exceptionTypeAsJava = "_ <: " + exceptionTypeAsJava
                                             val warning = Warn(
                                                 "precision and soundness",
-                                                "unknown type hierarchy relation between: "+
-                                                    s"$exceptionTypeAsJava and ${caughtType.toJava}; "+
+                                                "unknown type hierarchy relation between: " +
+                                                    s"$exceptionTypeAsJava and ${caughtType.toJava}; " +
                                                     "aborting exception processing"
                                             )
                                             OPALLogger.logOnce(warning)
@@ -3014,9 +3015,9 @@ abstract class AI[D <: Domain](
                                             val castedValue = newOperands.head
                                             theDomain.isValueASubtypeOf(castedValue, supertype).isYes
                                         },
-                                        s"the cast of $objectref to ${supertype.toJava} failed: "+
-                                            s"the subtyping relation between "+
-                                            s"${newOperands.head} and ${supertype.toJava} is "+
+                                        s"the cast of $objectref to ${supertype.toJava} failed: " +
+                                            s"the subtyping relation between " +
+                                            s"${newOperands.head} and ${supertype.toJava} is " +
                                             theDomain.isValueASubtypeOf(newOperands.head, supertype).isYes
                                     )
                                     fallThrough(newOperands, newLocals)

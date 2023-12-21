@@ -5,13 +5,12 @@ package domain
 package l1
 
 import java.util.{IdentityHashMap => IDMap}
-
 import scala.jdk.CollectionConverters._
 
-import org.opalj.constraints.NumericConstraints
-import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.br.instructions.Instruction
 import org.opalj.br.LiveVariables
+import org.opalj.br.instructions.Instruction
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.constraints.NumericConstraints
 
 /**
  * Domain that traces the relationship between integer values; currently, the domain only
@@ -596,7 +595,7 @@ trait ConstraintsBetweenIntegerValues
     ): Option[String] = {
         val superProperties = super.properties(pc)
         if (constraints(pc) != null) {
-            val otherProperties = superProperties.map(_+"\n").getOrElse("")
+            val otherProperties = superProperties.map(_ + "\n").getOrElse("")
             Some(otherProperties + constraintsToText(pc, valueToString))
         } else {
             superProperties

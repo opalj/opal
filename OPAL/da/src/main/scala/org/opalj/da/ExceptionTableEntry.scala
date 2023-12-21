@@ -2,10 +2,10 @@
 package org.opalj
 package da
 
-import org.opalj.bytecode.PC
-
 import scala.xml.Node
 import scala.xml.Text
+
+import org.opalj.bytecode.PC
 
 /**
  * @author Wael Alkhatib

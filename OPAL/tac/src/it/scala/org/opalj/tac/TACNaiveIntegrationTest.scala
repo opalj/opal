@@ -2,18 +2,19 @@
 package org.opalj
 package tac
 
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.matchers.should.Matchers
-import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
-import org.opalj.bi.TestResources.locateTestResources
-import org.opalj.bytecode.JRELibraryFolder
-
 import java.io.File
+
+import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.analyses.Project
+import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.util.PerformanceEvaluation.time
 
 import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParallelizable
+
+import org.junit.runner.RunWith
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests that all methods of the JDK can be converted to a three address representation.
@@ -56,7 +57,7 @@ class TACNaiveIntegrationTest extends AnyFunSpec with Matchers {
                 case e: Throwable => this.synchronized {
                     val methodSignature = m.toJava
                     mutex.synchronized {
-                        println(methodSignature+" - size: "+body.instructions.length)
+                        println(methodSignature + " - size: " + body.instructions.length)
                         e.printStackTrace(Console.out)
                         if (e.getCause != null) {
                             println("\tcause:")
@@ -80,14 +81,12 @@ class TACNaiveIntegrationTest extends AnyFunSpec with Matchers {
         }
         if (errors.nonEmpty) {
             val message =
-                errors.
-                    map(_.toString()+"\n").
-                    mkString(
-                        "Errors thrown:\n",
-                        "\n",
-                        "successfully transformed methods: "+successfullyCompleted.get+
-                            "; failed methods: "+errors.size+"\n"
-                    )
+                errors.map(_.toString() + "\n").mkString(
+                    "Errors thrown:\n",
+                    "\n",
+                    "successfully transformed methods: " + successfullyCompleted.get +
+                        "; failed methods: " + errors.size + "\n"
+                )
             fail(message)
         }
     }

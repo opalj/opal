@@ -144,4 +144,3 @@ class EscapeViaHeapObjectMatcher
 
 class GlobalEscapeMatcher
     extends EscapePropertyMatcher(org.opalj.br.fpcf.properties.GlobalEscape)
-

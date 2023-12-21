@@ -44,4 +44,3 @@ trait DefaultTypeLevelDoubleValues
 
     final override def DoubleValue(valueOrigin: Int, value: Double): DoubleValue = ADoubleValue
 }
-

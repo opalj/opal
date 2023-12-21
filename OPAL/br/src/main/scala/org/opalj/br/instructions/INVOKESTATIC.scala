@@ -41,7 +41,7 @@ case class INVOKESTATIC(
 
     override def toString: String = {
         if (isInterface)
-            "/* interface */"+super.toString
+            "/* interface */" + super.toString
         else
             super.toString
     }

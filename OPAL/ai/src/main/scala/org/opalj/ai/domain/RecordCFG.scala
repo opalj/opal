@@ -4,30 +4,29 @@ package ai
 package domain
 
 import java.lang.ref.{SoftReference => SRef}
-
 import scala.collection.BitSet
 import scala.collection.mutable
 import scala.jdk.CollectionConverters._
 
-import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap
-
-import org.opalj.collection.mutable.IntArrayStack
-import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.collection.immutable.IntTrieSet1
-import org.opalj.collection.immutable.IntRefPair
-import org.opalj.graphs.DefaultMutableNode
-import org.opalj.graphs.DominatorTree
-import org.opalj.graphs.PostDominatorTree
-import org.opalj.graphs.DominanceFrontiers
-import org.opalj.br.PC
 import org.opalj.br.Code
 import org.opalj.br.ExceptionHandler
-import org.opalj.br.instructions.Instruction
-import org.opalj.br.instructions.ATHROW
-import org.opalj.br.cfg.CFG
-import org.opalj.br.cfg.ExitNode
+import org.opalj.br.PC
 import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.cfg.CatchNode
+import org.opalj.br.cfg.CFG
+import org.opalj.br.cfg.ExitNode
+import org.opalj.br.instructions.ATHROW
+import org.opalj.br.instructions.Instruction
+import org.opalj.collection.immutable.IntRefPair
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.collection.immutable.IntTrieSet1
+import org.opalj.collection.mutable.IntArrayStack
+import org.opalj.graphs.DefaultMutableNode
+import org.opalj.graphs.DominanceFrontiers
+import org.opalj.graphs.DominatorTree
+import org.opalj.graphs.PostDominatorTree
+
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap
 
 /**
  * Records the abstract interpretation time control-flow graph (CFG).

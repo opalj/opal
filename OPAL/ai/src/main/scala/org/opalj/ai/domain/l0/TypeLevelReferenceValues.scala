@@ -4,6 +4,11 @@ package ai
 package domain
 package l0
 
+import org.opalj.br.ArrayType
+import org.opalj.br.FieldType
+import org.opalj.br.ObjectType
+import org.opalj.br.ReferenceType
+import org.opalj.br.Type
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.value.ASArrayValue
 import org.opalj.value.IsNullValue
@@ -11,11 +16,6 @@ import org.opalj.value.IsReferenceValue
 import org.opalj.value.IsSArrayValue
 import org.opalj.value.IsSReferenceValue
 import org.opalj.value.ValueInformation
-import org.opalj.br.ArrayType
-import org.opalj.br.FieldType
-import org.opalj.br.ObjectType
-import org.opalj.br.ReferenceType
-import org.opalj.br.Type
 
 /**
  * Implements the foundations for performing computations related to reference values.

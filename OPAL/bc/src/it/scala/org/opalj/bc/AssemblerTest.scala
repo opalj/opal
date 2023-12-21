@@ -2,26 +2,27 @@
 package org.opalj
 package bc
 
-import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
-
-import java.io.DataInputStream
 import java.io.BufferedInputStream
-import java.io.IOException
 import java.io.ByteArrayInputStream
+import java.io.DataInputStream
 import java.io.DataOutputStream
-import java.util.zip.ZipFile
+import java.io.IOException
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.zip.ZipFile
 import scala.jdk.CollectionConverters._
-import org.opalj.io.FailAfterByteArrayOutputStream
-import org.opalj.bytecode.JRELibraryFolder
+
 import org.opalj.bi.TestResources.allBITestJARs
 import org.opalj.bi.TestResources.locateTestResources
+import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.da.ClassFileReader.{ClassFile => LoadClassFile}
+import org.opalj.io.FailAfterByteArrayOutputStream
 
 import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParallelizable
+
+import org.junit.runner.RunWith
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests the assembler by loading and writing a large number of class files and by
@@ -99,8 +100,8 @@ class AssemberTest extends AnyFlatSpec with Matchers {
                             val successfullyReadBytes =
                                 s"(i.e., successfully read ${succeeded.last._2} bytes)"
                             val message =
-                                s"the class files differ starting with index $i ($failedSegment): "+
-                                    s"found $c but expected $r"+
+                                s"the class files differ starting with index $i ($failedSegment): " +
+                                    s"found $c but expected $r" +
                                     succeeded.map(_._1).mkString(
                                         "; successfully read segments: ",
                                         ",",

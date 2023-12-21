@@ -5,16 +5,16 @@ package instructions
 
 import scala.collection.immutable.ArraySeq
 
-import org.junit.runner.RunWith
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.matchers.should.Matchers
-import org.scalatestplus.junit.JUnitRunner
-
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.reader.Java8Framework
 import org.opalj.br.reader.Java8LibraryFramework
+
+import org.junit.runner.RunWith
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests that calls to inherited methods on lambda instances go to Object.

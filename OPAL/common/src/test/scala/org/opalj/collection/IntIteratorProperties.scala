@@ -2,19 +2,18 @@
 package org.opalj
 package collection
 
-import org.scalacheck.Properties
-import org.scalacheck.Gen
-import org.scalacheck.Arbitrary
-import org.scalacheck.Prop.forAll
-import org.scalacheck.Prop.classify
-import org.scalacheck.Prop.propBoolean
-
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.matchers.should.Matchers
-
 import java.util.{Arrays => JArrays}
 
 import org.opalj.collection.immutable.IntArraySet
+
+import org.scalacheck.Arbitrary
+import org.scalacheck.Gen
+import org.scalacheck.Prop.classify
+import org.scalacheck.Prop.forAll
+import org.scalacheck.Prop.propBoolean
+import org.scalacheck.Properties
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
 /**
  * Tests IntIterator.
@@ -116,7 +115,7 @@ object IntIteratorProperties extends Properties("IntIterator") {
     property("toArray") = forAll { (is: IntArraySet) =>
         val itArray = is.iterator.toArray
         val isArray = is.toList.toArray
-        JArrays.equals(itArray, isArray) :| isArray.mkString(",")+" vs. "+itArray.mkString(",")
+        JArrays.equals(itArray, isArray) :| isArray.mkString(",") + " vs. " + itArray.mkString(",")
     }
 
     property("toChain") = forAll { (is: IntArraySet) =>

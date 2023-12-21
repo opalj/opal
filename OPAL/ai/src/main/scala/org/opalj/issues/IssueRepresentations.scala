@@ -2,9 +2,8 @@
 package org.opalj
 package issues
 
-import scala.xml.Node
-
 import play.api.libs.json.JsValue
+import scala.xml.Node
 
 import org.opalj.br.analyses.ReportableAnalysisResult
 

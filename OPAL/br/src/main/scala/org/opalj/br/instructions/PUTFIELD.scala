@@ -45,7 +45,7 @@ case class PUTFIELD(
             )
     }
 
-    override def toString = "put "+declaringClass.toJava+"."+name+" : "+fieldType.toJava
+    override def toString = "put " + declaringClass.toJava + "." + name + " : " + fieldType.toJava
 
 }
 

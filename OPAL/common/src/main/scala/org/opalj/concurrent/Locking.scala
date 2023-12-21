@@ -2,9 +2,9 @@
 package org.opalj
 package concurrent
 
-import java.util.concurrent.locks.ReentrantReadWriteLock
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.locks.ReentrantLock
+import java.util.concurrent.locks.ReentrantReadWriteLock
 import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock
 
 /**

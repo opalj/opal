@@ -4,9 +4,9 @@ package br
 package analyses
 package cg
 
-import net.ceedubs.ficus.Ficus._
-
 import org.opalj.log.OPALLogger
+
+import net.ceedubs.ficus.Ficus._
 
 /**
  * The ''key'' object to get a function that determines whether a type is directly
@@ -32,7 +32,7 @@ object ClassExtensibilityKey extends ProjectInformationKey[ClassExtensibility, N
      * Computes the direct type extensibility information for the given project.
      */
     override def compute(project: SomeProject): ClassExtensibility = {
-        val configKey = ConfigKeyPrefix+"analysis"
+        val configKey = ConfigKeyPrefix + "analysis"
         try {
             val configuredAnalysis = project.config.as[Option[String]](configKey)
             val analysisClassName = configuredAnalysis.getOrElse(DefaultClassExtensibilityAnalysis)

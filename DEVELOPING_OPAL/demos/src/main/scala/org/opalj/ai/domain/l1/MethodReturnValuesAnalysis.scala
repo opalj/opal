@@ -5,19 +5,20 @@ package domain
 package l1
 
 import java.net.URL
-import org.opalj.ai.domain
-import org.opalj.value.TypeOfReferenceValue
-import org.opalj.br.Method
-import org.opalj.br.ReferenceType
-import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.ProjectAnalysisApplication
-import org.opalj.br.analyses.Project
-import org.opalj.collection.immutable.UIDSet
-import org.opalj.collection.immutable.UIDSet1
-import org.opalj.util.PerformanceEvaluation.time
+
 import org.opalj.ai.CorrelationalDomain
 import org.opalj.ai.Domain
 import org.opalj.ai.InterruptableAI
+import org.opalj.ai.domain
+import org.opalj.br.Method
+import org.opalj.br.ReferenceType
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.ProjectAnalysisApplication
+import org.opalj.collection.immutable.UIDSet
+import org.opalj.collection.immutable.UIDSet1
+import org.opalj.util.PerformanceEvaluation.time
+import org.opalj.value.TypeOfReferenceValue
 
 import scala.collection.parallel.CollectionConverters.IterableIsParallelizable
 
@@ -123,7 +124,7 @@ object MethodReturnValuesAnalysis extends ProjectAnalysisApplication {
 
         BasicReport(
             methodsWithRefinedReturnTypes.mkString(
-                "Methods with refined return types ("+methodsWithRefinedReturnTypes.size+"): \n", "\n", "\n"
+                "Methods with refined return types (" + methodsWithRefinedReturnTypes.size + "): \n", "\n", "\n"
             )
         )
     }
@@ -134,7 +135,7 @@ case class RefinedReturnType(method: Method, refinedType: Option[Domain#DomainVa
 
     override def toString(): String = {
         import Console._
-        "Refined the return type of "+BOLD + BLUE + method.toJava+" => "+
+        "Refined the return type of " + BOLD + BLUE + method.toJava + " => " +
             GREEN + refinedType.getOrElse("\"NONE\" (the method does not return normally)") + RESET
     }
 

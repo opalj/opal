@@ -3,12 +3,14 @@ package org.opalj
 package br
 
 import java.net.URL
+
 import org.opalj.br.analyses.OneStepAnalysis
 import org.opalj.br.analyses.Project
-import analyses.AnalysisApplication
-import analyses.BasicReport
 
 import scala.collection.parallel.CollectionConverters.IterableIsParallelizable
+
+import analyses.AnalysisApplication
+import analyses.BasicReport
 
 /**
  * Prints out the method-level annotations of all methods. (I.e., class, field and

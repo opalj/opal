@@ -4,6 +4,8 @@ package ll
 package llvm
 package value
 
+import org.opalj.io.writeAndOpen
+
 import org.bytedeco.llvm.LLVM.LLVMBasicBlockRef
 import org.bytedeco.llvm.LLVM.LLVMValueRef
 import org.bytedeco.llvm.global.LLVM.LLVMCountBasicBlocks
@@ -22,7 +24,6 @@ import org.bytedeco.llvm.global.LLVM.LLVMPrintTypeToString
 import org.bytedeco.llvm.global.LLVM.LLVMTypeOf
 import org.bytedeco.llvm.global.LLVM.LLVMViewFunctionCFG
 import org.bytedeco.llvm.global.LLVM.LLVMViewFunctionCFGOnly
-import org.opalj.io.writeAndOpen
 
 /**
  * This represents a LLVM function
@@ -77,7 +78,7 @@ case class Function(ref: LLVMValueRef) extends Value(ref) {
 
     def viewCFG(): Unit = {
         val cfg_dot = org.opalj.graphs.toDot(Set(entryBlock))
-        writeAndOpen(cfg_dot, name+"-CFG", ".gv")
+        writeAndOpen(cfg_dot, name + "-CFG", ".gv")
     }
 
     def viewLLVMCFG(include_content: Boolean = true): Unit = {

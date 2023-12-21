@@ -5,26 +5,26 @@ package br
 import java.io.File
 import java.net.URL
 
-import com.typesafe.config.Config
-import com.typesafe.config.ConfigValueFactory
-
-import org.opalj.log.GlobalLogContext
-import org.opalj.util.gc
-import org.opalj.bytecode.RTJar
-import org.opalj.bytecode.JRELibraryFolder
-import org.opalj.br.reader.readJREClassFiles
-import org.opalj.br.reader.readRTJarClassFiles
-import org.opalj.br.reader.{ClassFileBinding => ClassFileReader}
-import org.opalj.br.analyses.Project
-import org.opalj.br.reader.Java9LibraryFramework
-import org.opalj.br.reader.Java11FrameworkWithCaching
-import org.opalj.br.reader.BytecodeInstructionsCache
-import org.opalj.bi.TestResources.locateTestResources
-import org.opalj.bi.TestResources.allBITestProjectFolders
 import org.opalj.bi.TestResources.allBITestJARs
+import org.opalj.bi.TestResources.allBITestProjectFolders
 import org.opalj.bi.TestResources.allManagedBITestJARs
+import org.opalj.bi.TestResources.locateTestResources
+import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.cg.AllEntryPointsFinder
 import org.opalj.br.analyses.cg.InitialEntryPointsKey
+import org.opalj.br.reader.{ClassFileBinding => ClassFileReader}
+import org.opalj.br.reader.BytecodeInstructionsCache
+import org.opalj.br.reader.Java11FrameworkWithCaching
+import org.opalj.br.reader.Java9LibraryFramework
+import org.opalj.br.reader.readJREClassFiles
+import org.opalj.br.reader.readRTJarClassFiles
+import org.opalj.bytecode.JRELibraryFolder
+import org.opalj.bytecode.RTJar
+import org.opalj.log.GlobalLogContext
+import org.opalj.util.gc
+
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigValueFactory
 
 /**
  * Common helper and factory methods required by tests.

@@ -4,11 +4,11 @@ package tac
 
 import java.net.URL
 
+import org.opalj.br._
+import org.opalj.br.analyses._
+import org.opalj.br.cfg._
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.value._
-import org.opalj.br._
-import org.opalj.br.cfg._
-import org.opalj.br.analyses._
 
 /**
  * Computes the very busy binary arithmetic expressions.
@@ -91,7 +91,7 @@ object VeryBusyExpressions extends MethodAnalysisApplication {
             .map(factsToString)
             .zipWithIndex
             .map({ e => val (f, index) = e; s"$index: $f" })
-            .mkString("Very busy expressions (on exit):\n\t", "\n\t", "\n\n")+
-            "\tInit: "+factsToString(initFacts)
+            .mkString("Very busy expressions (on exit):\n\t", "\n\t", "\n\n") +
+            "\tInit: " + factsToString(initFacts)
     }
 }

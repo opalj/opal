@@ -4,16 +4,16 @@ package ai
 package fpcf
 package properties
 
+import org.opalj.br.ClassHierarchy
+import org.opalj.br.Field
+import org.opalj.br.FieldType
+import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.FallbackReason
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStore
 import org.opalj.value.ValueInformation
-import org.opalj.br.Field
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.ClassHierarchy
-import org.opalj.br.FieldType
 
 sealed trait FieldValueMetaInformation extends PropertyMetaInformation {
 

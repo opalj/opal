@@ -3,10 +3,10 @@ package org.opalj
 package ai
 package domain
 
-import org.opalj.br.Code
-import org.opalj.br.instructions.NEW
-import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.ai.collectPCWithOperands
+import org.opalj.br.Code
+import org.opalj.br.instructions.INVOKESPECIAL
+import org.opalj.br.instructions.NEW
 
 /**
  * Commonly useful methods.

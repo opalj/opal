@@ -3,12 +3,12 @@ package org.opalj
 package br
 package analyses
 
-import org.opalj.br.instructions.FieldAccess
-import org.opalj.log.OPALLogger.info
-
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantReadWriteLock
+
+import org.opalj.br.instructions.FieldAccess
+import org.opalj.log.OPALLogger.info
 
 class DeclaredFields(
         private[this] val project:                SomeProject,

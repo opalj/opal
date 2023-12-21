@@ -3,6 +3,7 @@ package org.opalj
 package ai
 
 import java.net.URL
+
 import org.opalj.br._
 import org.opalj.br.analyses._
 import org.opalj.br.instructions._
@@ -30,8 +31,8 @@ object ExceptionUsage extends ProjectAnalysisApplication {
 
         if (theProject.classFile(ObjectType("java/lang/Object")).isEmpty) {
             Console.err.println(
-                "[warn] It seems as if the JDK was not loaded"+
-                    "(use: -libcp=<PATH TO THE JRE>); "+
+                "[warn] It seems as if the JDK was not loaded" +
+                    "(use: -libcp=<PATH TO THE JRE>); " +
                     "the results of the analysis might not be useful."
             )
         }
@@ -151,7 +152,7 @@ case class ExceptionUsage(
 ) extends scala.math.Ordered[ExceptionUsage] {
 
     override def toString: String = {
-        val lineNumber = method.body.get.lineNumber(definitionSite).map("line="+_+";").getOrElse("")
+        val lineNumber = method.body.get.lineNumber(definitionSite).map("line=" + _ + ";").getOrElse("")
         import Console._
         method.toJava(
             usageInformation.mkString(

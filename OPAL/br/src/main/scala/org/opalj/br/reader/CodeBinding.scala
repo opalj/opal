@@ -6,7 +6,6 @@ package reader
 import org.opalj.br.instructions.Instruction
 
 /**
- *
  * @author Michael Eichberg
  */
 trait CodeBinding {
@@ -14,4 +13,3 @@ trait CodeBinding {
     type Instructions = Array[Instruction]
 
 }
-

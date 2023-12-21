@@ -3,10 +3,11 @@ package org.opalj
 package br
 package reader
 
-import org.opalj.bi.reader.Module_attributeReader
+import scala.reflect.ClassTag
 
 import scala.collection.immutable.ArraySeq
-import scala.reflect.ClassTag
+
+import org.opalj.bi.reader.Module_attributeReader
 
 /**
  * The factory method to create the "class level" `Module` attribute (Java 9).
@@ -116,4 +117,3 @@ trait Module_attributeBinding
     }
 
 }
-

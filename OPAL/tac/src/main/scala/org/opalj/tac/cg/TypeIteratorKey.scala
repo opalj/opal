@@ -3,13 +3,13 @@ package org.opalj
 package tac
 package cg
 
-import org.opalj.log.LogContext
-import org.opalj.log.OPALLogger
 import org.opalj.br.analyses.ProjectInformationKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.br.fpcf.analyses.ContextProvider
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
 import org.opalj.tac.fpcf.analyses.cg.CHATypeIterator
 import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 

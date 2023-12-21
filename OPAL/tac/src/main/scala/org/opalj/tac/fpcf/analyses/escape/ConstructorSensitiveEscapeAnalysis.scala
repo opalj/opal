@@ -5,14 +5,6 @@ package fpcf
 package analyses
 package escape
 
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.FinalP
-import org.opalj.fpcf.InterimUBP
-import org.opalj.fpcf.ProperPropertyComputationResult
-import org.opalj.fpcf.Property
-import org.opalj.fpcf.SomeEPS
-import org.opalj.fpcf.SomeInterimEP
 import org.opalj.br.DefinedMethod
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.VirtualFormalParameter
@@ -27,6 +19,14 @@ import org.opalj.br.fpcf.properties.EscapeViaParameterAndAbnormalReturn
 import org.opalj.br.fpcf.properties.EscapeViaStaticField
 import org.opalj.br.fpcf.properties.GlobalEscape
 import org.opalj.br.fpcf.properties.NoEscape
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.FinalP
+import org.opalj.fpcf.InterimUBP
+import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.Property
+import org.opalj.fpcf.SomeEPS
+import org.opalj.fpcf.SomeInterimEP
 
 /**
  * Special handling for constructor calls, as the receiver of an constructor is always an
@@ -93,8 +93,7 @@ trait ConstructorSensitiveEscapeAnalysis extends AbstractEscapeAnalysis {
         state: AnalysisState
     ): Unit = {
         eOptionP match {
-            case FinalP(NoEscape) => //NOTHING TO DO
-
+            case FinalP(NoEscape) => // NOTHING TO DO
             case FinalP(GlobalEscape) =>
                 state.meetMostRestrictive(GlobalEscape)
 

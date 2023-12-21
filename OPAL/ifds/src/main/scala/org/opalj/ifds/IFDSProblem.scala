@@ -168,4 +168,3 @@ abstract class IFDSProblem[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement
      */
     def outsideAnalysisContextUnbReturn(callee: C): Option[OutsideAnalysisContextUnbReturnHandler]
 }
-

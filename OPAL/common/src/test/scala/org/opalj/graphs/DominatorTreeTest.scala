@@ -2,12 +2,12 @@
 package org.opalj
 package graphs
 
+import org.opalj.util.PerformanceEvaluation.time
+
 import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-
-import org.opalj.util.PerformanceEvaluation.time
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Test the [[DominatorTree]] implementation.
@@ -29,7 +29,7 @@ class DominatorTreeTest extends AnyFlatSpec with Matchers {
 
         val dt = time {
             DominatorTree(0, false, foreachSuccessorOf, foreachPredecessorOf, 0)
-        } { t => info("dominators computed in "+t.toSeconds) }
+        } { t => info("dominators computed in " + t.toSeconds) }
         var ns: List[Int] = null
 
         ns = Nil
@@ -40,7 +40,7 @@ class DominatorTreeTest extends AnyFlatSpec with Matchers {
         dt.foreachDom(0, reflexive = false) { n => ns = n :: ns }
         ns should be(Nil)
 
-        //io.writeAndOpen(dt.toDot, "DominatorTree", ".dot")
+        // io.writeAndOpen(dt.toDot, "DominatorTree", ".dot")
     }
 
     "a graph with one custom node" should "result in a dominator tree with a single node" in {
@@ -54,7 +54,7 @@ class DominatorTreeTest extends AnyFlatSpec with Matchers {
 
         val dt = time {
             DominatorTree(7, false, foreachSuccessorOf, foreachPredecessorOf, 7)
-        } { t => info("dominators computed in "+t.toSeconds) }
+        } { t => info("dominators computed in " + t.toSeconds) }
         var ns: List[Int] = null
 
         ns = Nil
@@ -65,7 +65,7 @@ class DominatorTreeTest extends AnyFlatSpec with Matchers {
         dt.foreachDom(7, reflexive = false) { n => ns = n :: ns }
         ns should be(Nil)
 
-        //io.writeAndOpen(dt.toDot, "DominatorTree", ".dot")
+        // io.writeAndOpen(dt.toDot, "DominatorTree", ".dot")
     }
 
     "a graph with two connected nodes" should "yield one node dominating the other" in {
@@ -78,11 +78,11 @@ class DominatorTreeTest extends AnyFlatSpec with Matchers {
         }
         val dt = time {
             DominatorTree(0, false, foreachSuccessorOf, foreachPredecessorOf, 4)
-        } { t => info("dominator tree computed in "+t.toSeconds) }
+        } { t => info("dominator tree computed in " + t.toSeconds) }
 
         dt.dom(1) should be(0)
 
-        //io.writeAndOpen(dt.toDot, "DominatorTree", ".dot")
+        // io.writeAndOpen(dt.toDot, "DominatorTree", ".dot")
     }
 
     "a simple tree" should "result in a corresponding dominator tree" in {
@@ -95,13 +95,13 @@ class DominatorTreeTest extends AnyFlatSpec with Matchers {
         }
         val dt = time {
             DominatorTree(0, false, foreachSuccessorOf, foreachPredecessorOf, 4)
-        } { t => info("dominator tree computed in "+t.toSeconds) }
+        } { t => info("dominator tree computed in " + t.toSeconds) }
         dt.dom(1) should be(0)
         dt.dom(2) should be(1)
         dt.dom(3) should be(1)
         dt.dom(4) should be(1)
 
-        //io.writeAndOpen(dt.toDot, "DominatorTree", ".dot")
+        // io.writeAndOpen(dt.toDot, "DominatorTree", ".dot")
     }
 
     "a tree with a custom start node" should "result in a corresponding dominator tree" in {
@@ -114,7 +114,7 @@ class DominatorTreeTest extends AnyFlatSpec with Matchers {
         }
         val dt = time {
             DominatorTree(5, false, foreachSuccessorOf, foreachPredecessorOf, 5)
-        } { t => info("dominator tree computed in "+t.toSeconds) }
+        } { t => info("dominator tree computed in " + t.toSeconds) }
         dt.dom(0) should be(5)
         dt.dom(1) should be(0)
         dt.dom(2) should be(1)
@@ -125,7 +125,7 @@ class DominatorTreeTest extends AnyFlatSpec with Matchers {
         dt.foreachDom(4, reflexive = true) { n => ns = n :: ns }
         ns should be(List(5, 0, 1, 2, 4))
 
-        //io.writeAndOpen(dt.toDot, "DominatorTree", ".dot")
+        // io.writeAndOpen(dt.toDot, "DominatorTree", ".dot")
     }
 
     "a graph with a cycle" should "correctly be resolved" in {
@@ -138,14 +138,14 @@ class DominatorTreeTest extends AnyFlatSpec with Matchers {
         }
         val dt = time {
             DominatorTree(0, false, foreachSuccessorOf, foreachPredecessorOf, 4)
-        } { t => info("dominator tree computed in "+t.toSeconds) }
+        } { t => info("dominator tree computed in " + t.toSeconds) }
 
         dt.dom(1) should be(0)
         dt.dom(2) should be(1)
         dt.dom(3) should be(1)
         dt.dom(4) should be(0)
 
-        //io.writeAndOpen(dt.toDot, "DominatorTree", ".dot")
+        // io.writeAndOpen(dt.toDot, "DominatorTree", ".dot")
     }
 
     "a graph with a cycle and custom start node" should "correctly be resolved" in {
@@ -158,14 +158,14 @@ class DominatorTreeTest extends AnyFlatSpec with Matchers {
         }
         val dt = time {
             DominatorTree(5, false, foreachSuccessorOf, foreachPredecessorOf, 5)
-        } { t => info("dominator tree computed in "+t.toSeconds) }
+        } { t => info("dominator tree computed in " + t.toSeconds) }
 
         dt.dom(1) should be(5)
         dt.dom(2) should be(1)
         dt.dom(3) should be(1)
         dt.dom(4) should be(5)
 
-        //io.writeAndOpen(dt.toDot, "DominatorTree", ".dot")
+        // io.writeAndOpen(dt.toDot, "DominatorTree", ".dot")
     }
 
     "a graph with a cycle related to the root node" should "correctly be resolved" in {
@@ -178,11 +178,11 @@ class DominatorTreeTest extends AnyFlatSpec with Matchers {
         }
         val dt = time {
             DominatorTree(0, true, foreachSuccessorOf, foreachPredecessorOf, 4)
-        } { t => info("dominator tree computed in "+t.toSeconds) }
+        } { t => info("dominator tree computed in " + t.toSeconds) }
 
         dt.dom(1) should be(0)
 
-        //io.writeAndOpen(dt.toDot, "DominatorTree", ".dot")
+        // io.writeAndOpen(dt.toDot, "DominatorTree", ".dot")
     }
 
     "a graph with a cycle related to a custom root node" should "correctly be resolved" in {
@@ -195,11 +195,11 @@ class DominatorTreeTest extends AnyFlatSpec with Matchers {
         }
         val dt = time {
             DominatorTree(2, true, foreachSuccessorOf, foreachPredecessorOf, 2)
-        } { t => info("dominator tree computed in "+t.toSeconds) }
+        } { t => info("dominator tree computed in " + t.toSeconds) }
 
         dt.dom(1) should be(2)
 
-        //io.writeAndOpen(dt.toDot, "DominatorTree", ".dot")
+        // io.writeAndOpen(dt.toDot, "DominatorTree", ".dot")
     }
 
     "a sparse cyclic graph" should "result in a compact dominator tree" in {
@@ -212,7 +212,7 @@ class DominatorTreeTest extends AnyFlatSpec with Matchers {
         }
         val dt = time {
             DominatorTree(0, false, foreachSuccessorOf, foreachPredecessorOf, 20)
-        } { t => info("dominator tree computed in "+t.toSeconds) }
+        } { t => info("dominator tree computed in " + t.toSeconds) }
 
         dt.dom(3) should be(8)
         dt.dom(4) should be(0)
@@ -223,7 +223,7 @@ class DominatorTreeTest extends AnyFlatSpec with Matchers {
         dt.foreachDom(20, reflexive = true) { n => ns = n :: ns }
         ns should be(List(0, 8, 20))
 
-        //io.writeAndOpen(dt.toDot, "DominatorTree", ".dot")
+        // io.writeAndOpen(dt.toDot, "DominatorTree", ".dot")
     }
 
     "a graph with a long cycle" should "be handled gracefully" in {
@@ -238,13 +238,13 @@ class DominatorTreeTest extends AnyFlatSpec with Matchers {
         }
         val dt = time {
             DominatorTree(0, false, foreachSuccessorOf, foreachPredecessorOf, 128)
-        } { t => info("dominator tree computed in "+t.toSeconds) }
+        } { t => info("dominator tree computed in " + t.toSeconds) }
 
         var ns: List[Int] = Nil
         dt.foreachDom("f", reflexive = true) { n => ns = n :: ns }
         ns should be(List[Int]("f", "d", "b", 0).reverse)
 
-        //io.writeAndOpen(dt.toDot, "DominatorTree", ".dot")
+        // io.writeAndOpen(dt.toDot, "DominatorTree", ".dot")
     }
 
     "a very large, degenerated graph (path)" should "be computed in due time and should not raise an exception (e.g. StackOverflowError)" in {
@@ -262,7 +262,7 @@ class DominatorTreeTest extends AnyFlatSpec with Matchers {
         }
         val dt = time {
             DominatorTree(0, false, foreachSuccessorOf, foreachPredecessorOf, 65000)
-        } { t => info("dominator tree computed in "+t.toSeconds) }
+        } { t => info("dominator tree computed in " + t.toSeconds) }
         var ns: List[Int] = null
 
         ns = Nil
@@ -277,7 +277,7 @@ class DominatorTreeTest extends AnyFlatSpec with Matchers {
         dt.foreachDom(60000, reflexive = false) { n => ns = n :: ns }
         ns should be(Range(0, 60000, 1).toList)
 
-        //io.writeAndOpen(dt.toDot, "DominatorTree", ".dot")
+        // io.writeAndOpen(dt.toDot, "DominatorTree", ".dot")
     }
 
 }

@@ -5,43 +5,43 @@ package fpcf
 package analyses
 package cg
 
-import org.opalj.log.Error
-import org.opalj.log.OPALLogger
-import org.opalj.log.OPALLogger.logOnce
-import org.opalj.log.Warn
-import org.opalj.fpcf.EPS
-import org.opalj.fpcf.InterimPartialResult
-import org.opalj.fpcf.ProperPropertyComputationResult
-import org.opalj.fpcf.Results
-import org.opalj.fpcf.SomeEPS
-import org.opalj.fpcf.UBP
-import org.opalj.value.IsMObjectValue
-import org.opalj.value.IsNullValue
-import org.opalj.value.IsSArrayValue
-import org.opalj.value.IsSObjectValue
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
-import org.opalj.br.analyses.cg.IsOverridableMethodKey
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.EPK
-import org.opalj.fpcf.InterimEUBP
-import org.opalj.fpcf.InterimUBP
-import org.opalj.fpcf.PropertyBounds
-import org.opalj.fpcf.PropertyKind
-import org.opalj.fpcf.PropertyStore
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.CallBySignatureKey
+import org.opalj.br.analyses.cg.InitialEntryPointsKey
+import org.opalj.br.analyses.cg.IsOverridableMethodKey
 import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.cg.OnlyCallersWithUnknownContext
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EPK
+import org.opalj.fpcf.EPS
+import org.opalj.fpcf.InterimEUBP
+import org.opalj.fpcf.InterimPartialResult
+import org.opalj.fpcf.InterimUBP
+import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.PropertyBounds
+import org.opalj.fpcf.PropertyKind
+import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.Results
+import org.opalj.fpcf.SomeEPS
+import org.opalj.fpcf.UBP
+import org.opalj.log.Error
+import org.opalj.log.OPALLogger
+import org.opalj.log.OPALLogger.logOnce
+import org.opalj.log.Warn
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.properties.TACAI
+import org.opalj.value.IsMObjectValue
+import org.opalj.value.IsNullValue
+import org.opalj.value.IsSArrayValue
+import org.opalj.value.IsSObjectValue
 
 /**
  * Generates call graphs based on the used [[TypeIterator]].
@@ -292,7 +292,7 @@ class CallGraphAnalysis private[cg] (
                     Warn("analysis - call graph construction", s"unresolved invokedynamic: $idc")
                 )
 
-            case _ => //nothing to do
+            case _ => // nothing to do
         }
 
         returnResult(calls, true)(state)

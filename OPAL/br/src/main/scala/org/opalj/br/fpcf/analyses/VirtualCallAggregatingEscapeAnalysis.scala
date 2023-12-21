@@ -4,16 +4,6 @@ package br
 package fpcf
 package analyses
 
-import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.FinalP
-import org.opalj.fpcf.InterimResult
-import org.opalj.fpcf.InterimUBP
-import org.opalj.fpcf.ProperPropertyComputationResult
-import org.opalj.fpcf.PropertyBounds
-import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.Result
-import org.opalj.fpcf.SomeEOptionP
-import org.opalj.fpcf.SomeEPS
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
@@ -24,6 +14,16 @@ import org.opalj.br.fpcf.properties.EscapeProperty
 import org.opalj.br.fpcf.properties.GlobalEscape
 import org.opalj.br.fpcf.properties.NoEscape
 import org.opalj.br.fpcf.properties.VirtualMethodEscapeProperty
+import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.FinalP
+import org.opalj.fpcf.InterimResult
+import org.opalj.fpcf.InterimUBP
+import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.PropertyBounds
+import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.Result
+import org.opalj.fpcf.SomeEOptionP
+import org.opalj.fpcf.SomeEPS
 
 /**
  * Aggregates the escape information for virtual formal parameters.
@@ -44,7 +44,7 @@ class VirtualCallAggregatingEscapeAnalysis private[analyses] ( final val project
         assert(!dm.isInstanceOf[VirtualDeclaredMethod])
 
         if (dm.declaringClassType.isArrayType) {
-            ??? //TODO handle case
+            ??? // TODO handle case
         }
 
         // ANALYSIS STATE
@@ -84,7 +84,7 @@ class VirtualCallAggregatingEscapeAnalysis private[analyses] ( final val project
         def returnResult: ProperPropertyComputationResult = {
             if (escapeState.isBottom || dependees.isEmpty)
                 if (escapeState.isInstanceOf[AtMost])
-                    //InterimResult(fp, GlobalEscape.asAggregatedProperty, escapeState.asAggregatedProperty, dependees, continuation)
+                    // InterimResult(fp, GlobalEscape.asAggregatedProperty, escapeState.asAggregatedProperty, dependees, continuation)
                     Result(fp, escapeState.asAggregatedProperty)
                 else
                     Result(fp, escapeState.asAggregatedProperty)

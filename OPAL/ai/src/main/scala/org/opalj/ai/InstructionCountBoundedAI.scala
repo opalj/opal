@@ -2,9 +2,9 @@
 package org.opalj
 package ai
 
-import org.opalj.log.OPALLogger
-import org.opalj.log.LogContext
 import org.opalj.br.Code
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
 
 /**
  * An abstract interpreter that interrupts itself after the evaluation of
@@ -108,21 +108,21 @@ object InstructionCountBoundedAI {
             upperBound = Int.MaxValue
             OPALLogger.warn(
                 "analysis configuration",
-                "effectively unbounded evaluation"+
-                    "; instructions size="+code.instructions.size+
-                    "; exception handlers="+code.exceptionHandlers.size+
-                    "; maxEvaluationFactor="+maxEvaluationFactor
+                "effectively unbounded evaluation" +
+                    "; instructions size=" + code.instructions.size +
+                    "; exception handlers=" + code.exceptionHandlers.size +
+                    "; maxEvaluationFactor=" + maxEvaluationFactor
             )
         }
 
         if (upperBound > 1000000.0d) {
             OPALLogger.warn(
                 "analysis configuration",
-                "evaluation (up to: "+upperBound.toInt+
-                    " instructions) may take execessively long"+
-                    "; instructions size="+code.instructions.size+
-                    "; exception handlers="+code.exceptionHandlers.size+
-                    "; maxEvaluationFactor="+maxEvaluationFactor
+                "evaluation (up to: " + upperBound.toInt +
+                    " instructions) may take execessively long" +
+                    "; instructions size=" + code.instructions.size +
+                    "; exception handlers=" + code.exceptionHandlers.size +
+                    "; maxEvaluationFactor=" + maxEvaluationFactor
             )
         }
 

@@ -5,18 +5,18 @@ package info
 
 import java.net.URL
 
-import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.util.Seconds
-import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.ProjectAnalysisApplication
-import org.opalj.br.analyses.Project
 import org.opalj.br.ObjectType
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.analyses.immutability.EagerClassImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.immutability.EagerTypeImmutabilityAnalysis
 import org.opalj.br.fpcf.properties.immutability.ClassImmutability
 import org.opalj.br.fpcf.properties.immutability.TypeImmutability
 import org.opalj.tac.fpcf.analyses.fieldassignability.EagerL0FieldAssignabilityAnalysis
+import org.opalj.util.PerformanceEvaluation.time
+import org.opalj.util.Seconds
 
 /**
  * Determines the immutability of the classes of a project.
@@ -70,35 +70,35 @@ object ImmutabilityAnalysis extends ProjectAnalysisApplication {
                 }
 
         val immutableClassesPerCategory =
-            immutableClasses.map(kv => "\t\t"+kv._1+": "+kv._2.size).toList.sorted.mkString("\n")
+            immutableClasses.map(kv => "\t\t" + kv._1 + ": " + kv._2.size).toList.sorted.mkString("\n")
 
         val immutableTypes =
             ps.entities(TypeImmutability.key).toSeq.
                 filter(ep => project.classHierarchy.isInterface(ep.e.asInstanceOf[ObjectType]).isNo).
                 groupBy { _.ub }.map { kv => (kv._1, kv._2.size) }
         val immutableTypesPerCategory =
-            immutableTypes.map(kv => "\t\t"+kv._1+": "+kv._2).toList.sorted.mkString("\n")
+            immutableTypes.map(kv => "\t\t" + kv._1 + ": " + kv._2).toList.sorted.mkString("\n")
 
         val immutableClassesInfo =
             immutableClasses.values.flatten
                 .filter(ep => project.classHierarchy.isInterface(ep.e.asInstanceOf[ObjectType]).isNo)
                 .map { ep =>
-                    ep.e.asInstanceOf[ObjectType].toJava+
-                        " => "+ep.ub+
-                        " => "+ps(ep.e, TypeImmutability.key).ub
+                    ep.e.asInstanceOf[ObjectType].toJava +
+                        " => " + ep.ub +
+                        " => " + ps(ep.e, TypeImmutability.key).ub
                 }
                 .mkString("\tImmutability:\n\t\t", "\n\t\t", "\n")
 
         BasicReport(
-            "\nImmutability Information:\n"+
-                immutableClassesInfo+
-                "\nSummary (w.r.t classes):\n"+
-                "\tObject Immutability:\n"+
-                immutableClassesPerCategory+"\n"+
-                "\tType Immutability:\n"+
-                immutableTypesPerCategory+"\n"+
-                "\n"+ps.toString(false)+"\n"+
-                "The overall analysis took: "+t
+            "\nImmutability Information:\n" +
+                immutableClassesInfo +
+                "\nSummary (w.r.t classes):\n" +
+                "\tObject Immutability:\n" +
+                immutableClassesPerCategory + "\n" +
+                "\tType Immutability:\n" +
+                immutableTypesPerCategory + "\n" +
+                "\n" + ps.toString(false) + "\n" +
+                "The overall analysis took: " + t
         )
     }
 }
