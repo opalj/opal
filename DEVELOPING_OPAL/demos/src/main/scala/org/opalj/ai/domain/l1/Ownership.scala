@@ -5,20 +5,21 @@ package domain
 package l1
 
 import java.net.URL
-import org.opalj.br.Field
-import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.Project
+
 import org.opalj.bi.ACC_PRIVATE
 import org.opalj.bi.AccessFlagsMatcher
 import org.opalj.br.ArrayType
+import org.opalj.br.Field
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.ProjectAnalysisApplication
+import org.opalj.br.instructions.AALOAD
+import org.opalj.br.instructions.ANEWARRAY
 import org.opalj.br.instructions.GETFIELD
 import org.opalj.br.instructions.GETSTATIC
-import org.opalj.br.instructions.NEWARRAY
-import org.opalj.br.instructions.ANEWARRAY
-import org.opalj.br.instructions.MULTIANEWARRAY
-import org.opalj.br.instructions.AALOAD
 import org.opalj.br.instructions.MethodInvocationInstruction
-import org.opalj.br.analyses.ProjectAnalysisApplication
+import org.opalj.br.instructions.MULTIANEWARRAY
+import org.opalj.br.instructions.NEWARRAY
 
 import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParallelizable
 

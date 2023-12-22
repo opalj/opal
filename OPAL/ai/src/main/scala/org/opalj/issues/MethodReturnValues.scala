@@ -2,19 +2,18 @@
 package org.opalj
 package issues
 
-import scala.xml.Node
-import scala.xml.Group
-
 import play.api.libs.json.Json
 import play.api.libs.json.JsValue
+import scala.xml.Group
+import scala.xml.Node
 
-import org.opalj.br.Method
-import org.opalj.br.ClassFile
-import org.opalj.br.instructions.MethodInvocationInstruction
-import org.opalj.br.instructions.INVOKESTATIC
-import org.opalj.br.Code
 import org.opalj.ai.AIResult
+import org.opalj.br.ClassFile
+import org.opalj.br.Code
+import org.opalj.br.Method
 import org.opalj.br.PCAndAnyRef
+import org.opalj.br.instructions.INVOKESTATIC
+import org.opalj.br.instructions.MethodInvocationInstruction
 
 class MethodReturnValues(
         val method: Method,

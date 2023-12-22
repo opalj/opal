@@ -2,8 +2,8 @@
 package org.opalj
 package da
 
-import scala.xml.Text
 import scala.xml.Node
+import scala.xml.Text
 
 /**
  * @author Michael Eichberg

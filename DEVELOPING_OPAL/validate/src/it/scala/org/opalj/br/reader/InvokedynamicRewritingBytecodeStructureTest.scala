@@ -3,27 +3,27 @@ package org.opalj
 package br
 package reader
 
-import org.junit.runner.RunWith
-import org.scalatest.matchers.should.Matchers
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatestplus.junit.JUnitRunner
 import java.util.concurrent.atomic.AtomicInteger
 
-import com.typesafe.config.ConfigValueFactory
-
-import org.opalj.log.GlobalLogContext
+import org.opalj.ai.BaseAI
+import org.opalj.ai.Domain
+import org.opalj.ai.InterpretationFailedException
+import org.opalj.ai.domain.l0.BaseDomain
+import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.instructions.INVOKESTATIC
-import org.opalj.br.reader.InvokedynamicRewriting.LambdaNameRegEx
-import org.opalj.ai.BaseAI
-import org.opalj.ai.InterpretationFailedException
-import org.opalj.ai.Domain
-import org.opalj.ai.domain.l0.BaseDomain
-import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
 import org.opalj.br.instructions.WIDE
+import org.opalj.br.reader.InvokedynamicRewriting.LambdaNameRegEx
 import org.opalj.br.reader.InvokedynamicRewriting.TargetMethodNameRegEx
+import org.opalj.log.GlobalLogContext
+
+import com.typesafe.config.ConfigValueFactory
+import org.junit.runner.RunWith
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Test that code with rewritten `invokedynamic` instructions is still valid bytecode.
@@ -70,9 +70,9 @@ class InvokedynamicRewritingBytecodeStructureTest extends AnyFunSpec with Matche
                     } else {
                         e.operandsArray(pc).mkString(s"\tAt PC $pc\n\twith stack:\n", ", ", "")
                     }
-                val msg = e.getMessage+"\n"+
-                    (if (e.getCause != null) "\tcause: "+e.getCause.getMessage+"\n" else "") +
-                    details+"\n"+
+                val msg = e.getMessage + "\n" +
+                    (if (e.getCause != null) "\tcause: " + e.getCause.getMessage + "\n" else "") +
+                    details + "\n" +
                     method.toJava +
                     instructions.zipWithIndex.map(_.swap).mkString("\n\t\t", "\n\t\t", "\n")
                 Console.err.println(msg)
@@ -118,7 +118,7 @@ class InvokedynamicRewritingBytecodeStructureTest extends AnyFunSpec with Matche
             val lambdas = Project(lambdasJar, GlobalLogContext, config)
             info(lambdas.statistics.toList.map(_.toString).filter(_.startsWith("(Project")).mkString(","))
 
-            it("should be able to perform abstract interpretation of rewritten Java lambda"+
+            it("should be able to perform abstract interpretation of rewritten Java lambda" +
                 "expressions in the lambdas test project") {
                 val verifiedMethodsCount =
                     testProject(lambdas, (p, m) => BaseDomain(p, m)) +
@@ -137,7 +137,7 @@ class InvokedynamicRewritingBytecodeStructureTest extends AnyFunSpec with Matche
             val stringConcat = Project(stringConcatJar, GlobalLogContext, config)
             info(stringConcat.statistics.toList.map(_.toString).filter(_.startsWith("(Project")).mkString(","))
 
-            it("should be able to perform abstract interpretation of rewritten Java string concat"+
+            it("should be able to perform abstract interpretation of rewritten Java string concat" +
                 " expressions in the string concat test project") {
                 val verifiedMethodsCount =
                     testProject(stringConcat, (p, m) => BaseDomain(p, m)) +
@@ -156,7 +156,7 @@ class InvokedynamicRewritingBytecodeStructureTest extends AnyFunSpec with Matche
             val records = Project(recordsJar, GlobalLogContext, config)
             info(records.statistics.toList.map(_.toString).filter(_.startsWith("(Project")).mkString(","))
 
-            it("should be able to perform abstract interpretation of rewritten Java 16 record"+
+            it("should be able to perform abstract interpretation of rewritten Java 16 record" +
                 " methods in the java16records test project") {
                 val verifiedMethodsCount =
                     testProject(records, (p, m) => BaseDomain(p, m)) +
@@ -174,7 +174,7 @@ class InvokedynamicRewritingBytecodeStructureTest extends AnyFunSpec with Matche
                 ).withValue(DeleteSynthesizedClassFilesAttributesConfigKey, configValueFalse)
                 val jre = Project(jrePath, GlobalLogContext, config)
                 info(jre.statistics.toList.map(_.toString).filter(_.startsWith("(Project")).mkString(","))
-                it("should be able to perform abstract interpretation of rewritten Java lambda "+
+                it("should be able to perform abstract interpretation of rewritten Java lambda " +
                     "expressions in the JRE") {
                     val verifiedMethodsCount =
                         testProject(jre, (p, m) => BaseDomain(p, m)) +

@@ -5,16 +5,16 @@ package domain
 
 import java.net.URL
 
-import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
-import org.scalatest.matchers.should.Matchers
-import org.scalatest.funspec.AnyFunSpec
-
-import org.opalj.concurrent.ConcurrentExceptions
 import org.opalj.br.Method
-import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.MethodInfo
 import org.opalj.br.TestSupport.createJREProject
+import org.opalj.br.analyses.MethodInfo
+import org.opalj.br.analyses.Project
+import org.opalj.concurrent.ConcurrentExceptions
+
+import org.junit.runner.RunWith
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * This integration test(suite) just loads a very large number of class files and performs
@@ -120,9 +120,9 @@ class PrecisionOfDomainsTest extends AnyFunSpec with Matchers {
                                 val line =
                                     r1.domain.code.lineNumber(pc).map(_.toString).getOrElse("N/A")
                                 return Some(
-                                    s"$pc[line=$line]: the operand stack $op "+
-                                        s"value $lVD (${lVD.getClass.getName})"+
-                                        s" does not abstract over $rVD (${rVD.getClass.getName})"+
+                                    s"$pc[line=$line]: the operand stack $op " +
+                                        s"value $lVD (${lVD.getClass.getName})" +
+                                        s" does not abstract over $rVD (${rVD.getClass.getName})" +
                                         s" (original: $lValue join $rValue )"
                                 );
                             }
@@ -131,10 +131,10 @@ class PrecisionOfDomainsTest extends AnyFunSpec with Matchers {
                                 val line =
                                     r1.domain.code.lineNumber(pc).map(_.toString).getOrElse("N/A")
                                 return Some(
-                                    s"$pc[line=$line]: the operand stack value $op "+
-                                        s"$lVD#${System.identityHashCode(lVD)} (${lVD.getClass.getName})"+
-                                        s" is more precise than "+
-                                        s"$rVD#${System.identityHashCode(rVD)} (${rVD.getClass.getName})"+
+                                    s"$pc[line=$line]: the operand stack value $op " +
+                                        s"$lVD#${System.identityHashCode(lVD)} (${lVD.getClass.getName})" +
+                                        s" is more precise than " +
+                                        s"$rVD#${System.identityHashCode(rVD)} (${rVD.getClass.getName})" +
                                         s" (original: $lValue join $rValue )"
                                 );
                             }
@@ -172,10 +172,10 @@ class PrecisionOfDomainsTest extends AnyFunSpec with Matchers {
                     ): Unit = {
                         failed.set(true)
                         val bodyMessage =
-                            "\" /*Instructions "+method.body.get.instructions.size+"*/\n"+
-                                s"\tthe less precise domain ($lpDomain) did not abstract "+
-                                s"over the state of the more precise domain ($mpDomain)\n"+
-                                "\t"+Console.BOLD + m + Console.RESET+"\n"
+                            "\" /*Instructions " + method.body.get.instructions.size + "*/\n" +
+                                s"\tthe less precise domain ($lpDomain) did not abstract " +
+                                s"over the state of the more precise domain ($mpDomain)\n" +
+                                "\t" + Console.BOLD + m + Console.RESET + "\n"
                         println(method.toJava(bodyMessage))
                     }
 

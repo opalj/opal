@@ -4,12 +4,7 @@ package ai
 package domain
 package l1
 
-import org.junit.runner.RunWith
-import org.opalj.io.OpeningFileFailedException
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.matchers.should.Matchers
-import org.scalatestplus.junit.JUnitRunner
-
+import org.opalj.ai.common.XHTML.dumpOnFailureDuringValidation
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.ArrayType
 import org.opalj.br.BooleanType
@@ -22,7 +17,12 @@ import org.opalj.br.LongType
 import org.opalj.br.ObjectType
 import org.opalj.br.ShortType
 import org.opalj.br.reader.Java8Framework.ClassFiles
-import org.opalj.ai.common.XHTML.dumpOnFailureDuringValidation
+import org.opalj.io.OpeningFileFailedException
+
+import org.junit.runner.RunWith
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests the ArrayValues domain.

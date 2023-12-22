@@ -19,4 +19,3 @@ trait DefaultHandlingOfMethodResults
     domain: ValuesDomain with ExceptionsFactory with Configuration =>
 
 }
-

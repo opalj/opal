@@ -25,4 +25,3 @@ trait Deprecated_attributeBinding
     }
 
 }
-

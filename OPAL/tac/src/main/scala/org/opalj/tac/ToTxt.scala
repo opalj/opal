@@ -2,17 +2,17 @@
 package org.opalj
 package tac
 
-import org.opalj.br.Method
 import org.opalj.ai.AIResult
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
-import org.opalj.br.cfg.CFG
+import org.opalj.br.ClassHierarchy
+import org.opalj.br.ComputationalTypeReturnAddress
+import org.opalj.br.Method
+import org.opalj.br.Type
 import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.cfg.CatchNode
+import org.opalj.br.cfg.CFG
 import org.opalj.br.cfg.ExitNode
-import org.opalj.br.ClassHierarchy
-import org.opalj.br.Type
-import org.opalj.br.ComputationalTypeReturnAddress
 
 /**
  * Converts a list of three-address instructions into a text-based representation for comprehension
@@ -34,15 +34,15 @@ object ToTxt {
         expr match {
             case v: Var[_] =>
                 if (v.cTpe == ComputationalTypeReturnAddress)
-                    v.name+"/* return address */"
+                    v.name + "/* return address */"
                 else
                     v.name
             case Param(_ /*cTpe*/ , name)    => name
             case IntConst(_, value)          => value.toString
-            case LongConst(_, value)         => value.toString+"l"
-            case FloatConst(_, value)        => value.toString+"f"
-            case DoubleConst(_, value)       => value.toString+"d"
-            case ClassConst(_, value)        => value.toJava+".class"
+            case LongConst(_, value)         => value.toString + "l"
+            case FloatConst(_, value)        => value.toString + "f"
+            case DoubleConst(_, value)       => value.toString + "d"
+            case ClassConst(_, value)        => value.toJava + ".class"
             case StringConst(_, value)       => s""""${value.replace("\\", "\\\\")}""""
             case MethodHandleConst(_, value) => s"""MethodHandle("${value.toJava}")"""
             case MethodTypeConst(_, value)   => s"""MethodType("${value.toJava}")"""
@@ -50,7 +50,7 @@ object ToTxt {
                 s"DynamicConstant[${bootstrapMethod.toJava}]($name)"
             case NullExpr(_)                   => "null"
 
-            case PrefixExpr(_, _, op, operand) => op.toString+" "+toTxtExpr[V](operand)
+            case PrefixExpr(_, _, op, operand) => op.toString + " " + toTxtExpr[V](operand)
 
             case ArrayLoad(_, index, arrayRef) => s"${toTxtExpr(arrayRef)}[${toTxtExpr(index)}]"
             case ArrayLength(_, arrayRef)      => s"${toTxtExpr(arrayRef)}.length"
@@ -61,10 +61,10 @@ object ToTxt {
                 s"${toTxtExpr(value)} instanceof ${tpe.asReferenceType.toJava}"
 
             case Compare(_, left, op, right) =>
-                toTxtExpr(left)+" "+op.toString+" "+toTxtExpr[V](right)
+                toTxtExpr(left) + " " + op.toString + " " + toTxtExpr[V](right)
 
             case BinaryExpr(_, _ /*cTpe*/ , op, left, right) =>
-                toTxtExpr[V](left)+" "+op.toString+" "+toTxtExpr[V](right)
+                toTxtExpr[V](left) + " " + op.toString + " " + toTxtExpr[V](right)
 
             case PrimitiveTypecastExpr(_, baseTpe, operand) =>
                 s"(${baseTpe.toJava}) ${toTxtExpr(operand)}"
@@ -90,7 +90,7 @@ object ToTxt {
 
             case NonVirtualFunctionCall(_, declClass, _, name, _ /*descriptor*/ , receiver, params) =>
                 val call = callToTxt(name, params)
-                toTxtExpr[V](receiver)+"/*(non-virtual) "+declClass.toJava+"*/"+call
+                toTxtExpr[V](receiver) + "/*(non-virtual) " + declClass.toJava + "*/" + call
 
             case GetStatic(_, declaringClass, name, _) =>
                 s"${declaringClass.toJava}.$name"
@@ -139,8 +139,8 @@ object ToTxt {
             case Switch.ASTID =>
                 val Switch(_, defaultTarget, index, npairs) = stmt
                 var result = "\n"
-                for (x <- npairs) { result = result+"    "+x._1+": goto "+x._2+";\n" }
-                result = result+"    default: goto "+defaultTarget+"\n"
+                for (x <- npairs) { result = result + "    " + x._1 + ": goto " + x._2 + ";\n" }
+                result = result + "    default: goto " + defaultTarget + "\n"
                 s"$pc switch(${toTxtExpr(index)}){$result}"
 
             case Assignment.ASTID =>
@@ -234,11 +234,11 @@ object ToTxt {
 
         if (!skipParams) {
             if (params.parameters.nonEmpty) {
-                javaLikeCode += indention+"/* PARAMETERS:"
+                javaLikeCode += indention + "/* PARAMETERS:"
                 params.parameters.zipWithIndex foreach { paramWithIndex =>
                     val (param, index) = paramWithIndex
                     if (param ne null) {
-                        val paramTxt = indention+"   param"+index.toHexString+": "+param.toString()
+                        val paramTxt = indention + "   param" + index.toHexString + ": " + param.toString()
                         javaLikeCode += (param match {
                             case v: DVar[_] =>
                                 v.useSites.mkString(s"$paramTxt // use sites={", ", ", "}")
@@ -247,7 +247,7 @@ object ToTxt {
                         })
                     }
                 }
-                javaLikeCode += indention+"*/"
+                javaLikeCode += indention + "*/"
             } else {
                 javaLikeCode += "/* NO PARAMETERS */"
             }
@@ -273,7 +273,7 @@ object ToTxt {
                             case bb: BasicBlock => bb.endPC.toString
                             case cn: CatchNode  => catchTypeToString(cn.catchType)
                         }.toList.sorted.mkString(
-                            indention+"// "+(if (index == 0) "<start>, " else ""),
+                            indention + "// " + (if (index == 0) "<start>, " else ""),
                             ", ",
                             " ->"
                         )
@@ -291,7 +291,7 @@ object ToTxt {
                             "⚡️ <uncaught exception => abnormal return>"
                     }
 
-                var head = (" " * (if (indented) 6 else 0))+"// "
+                var head = (" " * (if (indented) 6 else 0)) + "// "
                 if (stmts(index).astID != Throw.ASTID && bb.successors.forall(successor => {
                     !successor.isBasicBlock && !successor.isNormalReturnExitNode
                 }))

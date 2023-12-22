@@ -4,15 +4,16 @@ package ai
 package domain
 package l0
 
-import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
 import java.net.URL
 
+import org.opalj.br.ClassHierarchy
+import org.opalj.br.Code
 import org.opalj.br.Method
 import org.opalj.br.PCAndInstruction
 import org.opalj.br.analyses.Project
-import org.opalj.br.ClassHierarchy
-import org.opalj.br.Code
+
+import org.junit.runner.RunWith
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * This system test(suite) just loads a very large number of class files and performs
@@ -54,7 +55,7 @@ class DefaultDomainTest extends DomainTestInfrastructure("l0.DefaultDomain") {
 
                     assert(
                         instruction.stackSlotsChange == (stackSizeAfter - stackSizeBefore),
-                        s"the height of the stack is not as expected for $instruction: "+
+                        s"the height of the stack is not as expected for $instruction: " +
                             s"${instruction.stackSlotsChange} <> ${stackSizeAfter - stackSizeBefore}"
                     )
                 }

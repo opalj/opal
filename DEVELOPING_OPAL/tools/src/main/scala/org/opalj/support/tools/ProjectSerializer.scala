@@ -3,16 +3,16 @@ package org.opalj
 package support
 package tools
 
+import java.io.BufferedOutputStream
 import java.io.File
 import java.io.FileOutputStream
-import java.io.BufferedOutputStream
-import java.util.zip.ZipOutputStream
 import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 
-import org.opalj.io.process
-import org.opalj.br.analyses.Project
 import org.opalj.bc.Assembler
+import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
+import org.opalj.io.process
 
 /**
  * Exports the class files belonging to the project part of a loaded
@@ -78,7 +78,7 @@ object ProjectSerializer {
         }
         val outFolder = new File(out)
         checkOrCreateOutputFolder(outFolder)
-        val classesFolder = new File(outFolder.getPath + File.separator+"classes")
+        val classesFolder = new File(outFolder.getPath + File.separator + "classes")
         checkOrCreateOutputFolder(classesFolder)
 
         val p = Project(inFile /* actually, we don't need the RTJar */ )
@@ -87,7 +87,7 @@ object ProjectSerializer {
     }
 
     def serialize(p: SomeProject, targetFolder: File): Unit = {
-        val zipFile = new File(targetFolder.getAbsolutePath + File.separator+"project.zip")
+        val zipFile = new File(targetFolder.getAbsolutePath + File.separator + "project.zip")
         val zipOut = new ZipOutputStream(new FileOutputStream(zipFile))
         p.parForeachProjectClassFile() { cf =>
             val classFileFolderName = s"${targetFolder.getAbsolutePath}/${cf.thisType.packageName}"

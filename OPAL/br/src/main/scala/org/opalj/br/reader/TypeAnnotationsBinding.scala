@@ -3,12 +3,13 @@ package org.opalj
 package br
 package reader
 
-import org.opalj.bi.reader.TypeAnnotationsReader
-import org.opalj.bi.reader.TypeAnnotationTargetReader
-import org.opalj.bi.reader.TypeAnnotationPathReader
+import scala.reflect.ClassTag
 
 import scala.collection.immutable.ArraySeq
-import scala.reflect.ClassTag
+
+import org.opalj.bi.reader.TypeAnnotationPathReader
+import org.opalj.bi.reader.TypeAnnotationsReader
+import org.opalj.bi.reader.TypeAnnotationTargetReader
 
 /**
  * Factory methods to create representations of Java type annotations.
@@ -224,4 +225,3 @@ trait TypeAnnotationsBinding
     }
 
 }
-

@@ -43,4 +43,3 @@ trait TypeAnnotationAttributesBinding
     }
 
 }
-

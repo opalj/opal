@@ -3,8 +3,8 @@ package org.opalj
 package hermes
 package queries
 
-import org.opalj.br.analyses.Project
 import org.opalj.br.MethodWithBody
+import org.opalj.br.analyses.Project
 
 /**
  * Classifies class file elements which contain debug information.

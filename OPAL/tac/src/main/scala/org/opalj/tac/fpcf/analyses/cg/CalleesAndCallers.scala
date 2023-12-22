@@ -7,6 +7,19 @@ package cg
 
 import scala.collection.immutable.IntMap
 
+import org.opalj.br.ClassHierarchy
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.Method
+import org.opalj.br.MethodDescriptor
+import org.opalj.br.ObjectType
+import org.opalj.br.analyses.DeclaredMethods
+import org.opalj.br.fpcf.analyses.ContextProvider
+import org.opalj.br.fpcf.properties.Context
+import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.cg.CallersOnlyWithConcreteCallers
+import org.opalj.br.fpcf.properties.cg.NoCallees
+import org.opalj.br.fpcf.properties.cg.OnlyVMLevelCallers
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.LongLinkedTrieSet
 import org.opalj.fpcf.EPK
@@ -15,19 +28,6 @@ import org.opalj.fpcf.InterimUBP
 import org.opalj.fpcf.PartialResult
 import org.opalj.fpcf.Property
 import org.opalj.value.ValueInformation
-import org.opalj.br.DeclaredMethod
-import org.opalj.br.Method
-import org.opalj.br.MethodDescriptor
-import org.opalj.br.ObjectType
-import org.opalj.br.analyses.DeclaredMethods
-import org.opalj.br.fpcf.properties.Context
-import org.opalj.br.ClassHierarchy
-import org.opalj.br.fpcf.analyses.ContextProvider
-import org.opalj.br.fpcf.properties.cg.Callees
-import org.opalj.br.fpcf.properties.cg.Callers
-import org.opalj.br.fpcf.properties.cg.CallersOnlyWithConcreteCallers
-import org.opalj.br.fpcf.properties.cg.NoCallees
-import org.opalj.br.fpcf.properties.cg.OnlyVMLevelCallers
 
 /**
  * A convenience class for call graph constructions. Manages direct/indirect calls and incomplete

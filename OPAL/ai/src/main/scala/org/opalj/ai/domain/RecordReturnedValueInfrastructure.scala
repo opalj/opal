@@ -25,4 +25,3 @@ trait RecordReturnedValueInfrastructure extends RecordReturnedValuesInfrastructu
     def returnedValue: Option[DomainValue] // = Option(theReturnedValue)
 
 }
-

@@ -31,4 +31,3 @@ trait ModuleMainClass_attributeBinding
     }
 
 }
-

@@ -4,19 +4,18 @@ package ai
 package domain
 package l2
 
+import org.opalj.br.ClassFile
+import org.opalj.br.Method
+import org.opalj.br.ObjectType
+import org.opalj.br.TestSupport.biProject
+import org.opalj.br.analyses.Project
+
 import org.junit.runner.RunWith
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
 
-import org.opalj.br.ClassFile
-import org.opalj.br.Method
-import org.opalj.br.ObjectType
-import org.opalj.br.analyses.Project
-import org.opalj.br.TestSupport.biProject
-
 /**
- *
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
@@ -98,7 +97,7 @@ class PerformInvocationsTest extends AnyFlatSpec with Matchers {
         val result = BaseAI(method, domain)
         domain.returnedNormally should be(false)
         val exs = domain.thrownExceptions(result.domain, -1)
-        if (exs.size != 4) fail("too many exceptions: "+exs)
+        if (exs.size != 4) fail("too many exceptions: " + exs)
         var foundUnknownError = false
         var foundUnsupportedOperationException = false
         var foundNullPointerException = false
@@ -119,7 +118,7 @@ class PerformInvocationsTest extends AnyFlatSpec with Matchers {
                     foundIllegalArgumentException = true
                     true
                 case _ =>
-                    fail("unexpected exception: "+ex)
+                    fail("unexpected exception: " + ex)
             }
         } should be(true)
         if (!(foundUnknownError &&
@@ -149,7 +148,7 @@ class PerformInvocationsTest extends AnyFlatSpec with Matchers {
         domain.allReturnedValues.size should be(2)
         if (!domain.allReturnedValues.forall {
             e => domain.intValueOption(e._2).map(_ == 1).getOrElse(false)
-        }) fail("unexpected result: "+domain.allReturnedValues)
+        }) fail("unexpected result: " + domain.allReturnedValues)
     }
 
     it should ("be able to identify the situation where a passed value is returned as is") in {

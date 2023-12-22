@@ -4,13 +4,14 @@ package ai
 package domain
 package l1
 
-import org.junit.runner.RunWith
-import org.scalatest.matchers.should.Matchers
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatestplus.junit.JUnitRunner
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br._
 import org.opalj.br.reader.Java8Framework.ClassFiles
+
+import org.junit.runner.RunWith
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Simple test case for ClassValues.

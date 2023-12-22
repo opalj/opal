@@ -41,4 +41,3 @@ class DefaultReferenceValuesDomainWithCFGAndDefUse[Source](
         method:  Method
 ) extends DefaultReferenceValuesDomain(project, method)
     with RefineDefUseUsingOrigins
-

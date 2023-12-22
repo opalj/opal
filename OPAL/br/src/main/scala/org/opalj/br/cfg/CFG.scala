@@ -6,13 +6,9 @@ package cfg
 import scala.reflect.ClassTag
 
 import java.util.Arrays
-
 import scala.collection.{Set => SomeSet}
 import scala.collection.AbstractIterator
 
-import org.opalj.log.LogContext
-import org.opalj.log.GlobalLogContext
-import org.opalj.log.OPALLogger.info
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.IntTrieSet1
 import org.opalj.collection.mutable.FixedSizedHashIDMap
@@ -20,6 +16,9 @@ import org.opalj.collection.mutable.IntArrayStack
 import org.opalj.graphs.DefaultMutableNode
 import org.opalj.graphs.DominatorTree
 import org.opalj.graphs.Node
+import org.opalj.log.GlobalLogContext
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger.info
 
 /**
  * Represents the control flow graph of a method.
@@ -90,7 +89,7 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
                 }
             },
             allBBs.
-                map(bb => bb.toString+" => "+bb.successors.mkString(", ")).
+                map(bb => bb.toString + " => " + bb.successors.mkString(", ")).
                 mkString("unexpected successors:\n\t", "\n\t", "")
         )
         check(
@@ -128,7 +127,7 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
         check(
             allBBsSet.
                 forall(bb => bb.successors.forall { succBB => succBB.predecessors.contains(bb) }),
-            "successors and predecessors are inconsistent; e.g., "+
+            "successors and predecessors are inconsistent; e.g., " +
                 allBBsSet.
                 find(bb => !bb.successors.forall { succBB => succBB.predecessors.contains(bb) }).
                 map(bb => bb.successors.find(succBB => !succBB.predecessors.contains(bb)).map(succBB =>
@@ -137,7 +136,7 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
         check(
             allBBsSet.
                 forall(bb => bb.predecessors.forall { predBB => predBB.successors.contains(bb) }),
-            "predecessors and successors are inconsistent; e.g., "+
+            "predecessors and successors are inconsistent; e.g., " +
                 allBBsSet.
                 find(bb => !bb.predecessors.forall { predBB => predBB.successors.contains(bb) }).
                 map(bb => bb.predecessors.find(predBB => !predBB.successors.contains(bb)).map(predBB =>
@@ -597,14 +596,14 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
             basicBlocks.
                 filter(_ != null).
                 toSet.
-                map((bb: BasicBlock) => bb.toString+" => "+bb.successors.mkString(", ")).
+                map((bb: BasicBlock) => bb.toString + " => " + bb.successors.mkString(", ")).
                 mkString("Successors:\n", "\n", "\n")
         )
         println(
             basicBlocks.
                 filter(_ != null).
                 toSet.
-                map((bb: BasicBlock) => bb.predecessors.mkString(", ")+" => "+bb.toString).
+                map((bb: BasicBlock) => bb.predecessors.mkString(", ") + " => " + bb.toString).
                 mkString("Predecessors:\n", "\n", "\n")
         )
         println(catchNodes.mkString("CatchNodes:", ",", "\n"))
@@ -756,7 +755,7 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
                 s"BB_${id.toHexString}: $bb"
             } else {
                 bb.successors.
-                    map(succBB => "BB_"+bbIds(succBB).toHexString).
+                    map(succBB => "BB_" + bbIds(succBB).toHexString).
                     mkString(s"BB_${id.toHexString}: $bb -> {", ",", "}")
             }
         }.toList.sorted.mkString("CFG(\n\t", "\n\t", "\n)")

@@ -4,8 +4,8 @@ package ai
 package domain
 package l0
 
-import org.opalj.value.IsDoubleValue
 import org.opalj.br.DoubleType
+import org.opalj.value.IsDoubleValue
 
 /**
  * This partial `Domain` performs all computations related to primitive double

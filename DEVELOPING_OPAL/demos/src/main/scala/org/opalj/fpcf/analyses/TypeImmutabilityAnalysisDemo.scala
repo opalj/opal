@@ -13,25 +13,25 @@ import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
 import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
+import org.opalj.br.fpcf.analyses.immutability.EagerTypeImmutabilityAnalysis
+import org.opalj.br.fpcf.analyses.immutability.LazyClassImmutabilityAnalysis
 import org.opalj.br.fpcf.properties.immutability.DependentlyImmutableType
 import org.opalj.br.fpcf.properties.immutability.MutableType
 import org.opalj.br.fpcf.properties.immutability.NonTransitivelyImmutableType
 import org.opalj.br.fpcf.properties.immutability.TransitivelyImmutableType
 import org.opalj.br.fpcf.properties.immutability.TypeImmutability
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EPS
 import org.opalj.fpcf.PropertyStore
 import org.opalj.tac.cg.RTACallGraphKey
+import org.opalj.tac.fpcf.analyses.LazyFieldImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
-import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.util.Seconds
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
-import org.opalj.br.fpcf.analyses.immutability.EagerTypeImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.LazyFieldImmutabilityAnalysis
-import org.opalj.br.fpcf.analyses.immutability.LazyClassImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.fieldassignability.LazyL2FieldAssignabilityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
-import org.opalj.fpcf.EPS
-import org.opalj.fpcf.Entity
+import org.opalj.util.PerformanceEvaluation.time
+import org.opalj.util.Seconds
 
 /**
  * Runs the EagerTypeImmutabilityAnalysis as well as all analyses needed for improving the result

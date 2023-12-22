@@ -4,6 +4,14 @@ package tac
 package fpcf
 package analyses
 
+import org.opalj.br.Method
+import org.opalj.br.ObjectType
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
+import org.opalj.br.fpcf.properties.SystemProperties
+import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.EPS
@@ -17,18 +25,10 @@ import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
 import org.opalj.fpcf.UBP
-import org.opalj.value.ValueInformation
-import org.opalj.br.fpcf.properties.SystemProperties
-import org.opalj.br.Method
-import org.opalj.br.ObjectType
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.analyses.cg.ReachableMethodAnalysis
 import org.opalj.tac.fpcf.properties.TACAI
+import org.opalj.value.ValueInformation
 
 class SystemPropertiesAnalysisScheduler private[analyses] (
         final val project: SomeProject

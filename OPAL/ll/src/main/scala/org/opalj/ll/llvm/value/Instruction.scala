@@ -4,11 +4,12 @@ package ll
 package llvm
 package value
 
-import org.bytedeco.llvm.LLVM.LLVMValueRef
-import org.bytedeco.llvm.global.LLVM._
 import org.opalj.ll.llvm.FunctionType
 import org.opalj.ll.llvm.Type
 import org.opalj.ll.llvm.value.constant.ConstantIntValue
+
+import org.bytedeco.llvm.LLVM.LLVMValueRef
+import org.bytedeco.llvm.global.LLVM._
 
 object OptionalInstruction {
     def apply(ref: LLVMValueRef): Option[Instruction] = {
@@ -94,7 +95,7 @@ object Instruction {
             case LLVMCatchPad       => CatchPad(ref)
             case LLVMCleanupPad     => CleanupPad(ref)
             case LLVMCatchSwitch    => CatchSwitch(ref)
-            case opCode             => throw new IllegalArgumentException("unknown instruction opcode: "+opCode)
+            case opCode             => throw new IllegalArgumentException("unknown instruction opcode: " + opCode)
         }
     }
 }
@@ -184,7 +185,6 @@ case class GetElementPtr(ref: LLVMValueRef) extends Instruction(ref) {
 
     /**
      * This will throw an exception if isConstant returns false.
-     *
      */
     def constants: Seq[Long] = (1 until numOperands).map(operand(_).asInstanceOf[ConstantIntValue].signExtendedValue)
 

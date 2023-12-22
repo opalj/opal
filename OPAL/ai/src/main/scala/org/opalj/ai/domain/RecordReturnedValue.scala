@@ -41,4 +41,3 @@ trait RecordReturnedValue extends RecordReturnedValuesInfrastructure {
         }
     }
 }
-

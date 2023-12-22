@@ -4,27 +4,28 @@ package hermes
 package queries
 
 import scala.annotation.tailrec
+
 import scala.collection.mutable
 
-import com.typesafe.config.Config
-
-import org.opalj.log.GlobalLogContext
-import org.opalj.log.OPALLogger
-import org.opalj.log.LogContext
 import org.opalj.br.FieldType
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
+import org.opalj.da.ClassFile
 import org.opalj.da.CONSTANT_Class_info
 import org.opalj.da.CONSTANT_Fieldref_info
 import org.opalj.da.CONSTANT_InterfaceMethodref_info
 import org.opalj.da.CONSTANT_MethodHandle_info
 import org.opalj.da.CONSTANT_Methodref_info
-import org.opalj.da.Constant_Pool
 import org.opalj.da.CONSTANT_NameAndType_info
-import org.opalj.da.CONSTANT_Utf8_info
-import org.opalj.da.ClassFile
+import org.opalj.da.Constant_Pool
 import org.opalj.da.Constant_Pool_Entry
+import org.opalj.da.CONSTANT_Utf8_info
+import org.opalj.log.GlobalLogContext
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
+
+import com.typesafe.config.Config
 
 /**
  *  This metric computes the Fan-In and Fan-Out of a class.
@@ -90,7 +91,7 @@ class FanInFanOut(implicit hermes: HermesConfig) extends FeatureQuery {
                 Some(numCategories)
             else {
                 val message =
-                    FanInFanOutConfigPrefix + categoriesKey+
+                    FanInFanOutConfigPrefix + categoriesKey +
                         " setting invalid - value <= 0; category size has been set to default"
                 OPALLogger.warn(logCategory, message)
                 None
@@ -108,7 +109,7 @@ class FanInFanOut(implicit hermes: HermesConfig) extends FeatureQuery {
                 Some(categorySize)
             } else {
                 val message =
-                    FanInFanOutConfigPrefix + categorySizeKey+
+                    FanInFanOutConfigPrefix + categorySizeKey +
                         " setting invalid - value <= 0; category size has been set to default"
                 OPALLogger.warn(logCategory, message)
                 None
@@ -299,4 +300,3 @@ class FanInFanOut(implicit hermes: HermesConfig) extends FeatureQuery {
         }
     }
 }
-

@@ -2,9 +2,8 @@
 package org.opalj
 
 import java.io.File
-
-import scala.io.Source
 import scala.collection.immutable.BitSet
+import scala.io.Source
 
 import org.opalj.io.process
 
@@ -134,7 +133,7 @@ package object bytecode {
                     }
             }
         } else {
-            val javaJMods = System.getProperty("java.home")+"/jmods"
+            val javaJMods = System.getProperty("java.home") + "/jmods"
             val directory = new File(javaJMods)
             if (!directory.exists())
                 throw new RuntimeException("cannot locate the JRE libraries")
@@ -168,7 +167,7 @@ package object bytecode {
                     }
             }
         } else {
-            val javaBaseJMod = System.getProperty("java.home")+"/jmods/java.base.jmod" // ~ rt.jar
+            val javaBaseJMod = System.getProperty("java.home") + "/jmods/java.base.jmod" // ~ rt.jar
             val file = new File(javaBaseJMod)
             if (!file.exists())
                 throw new RuntimeException("cannot locate the JRE libraries")

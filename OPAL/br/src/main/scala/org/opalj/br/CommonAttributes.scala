@@ -44,7 +44,7 @@ trait CommonAttributes {
         val (thisAttributes, otherAttributes) = config.compareAttributes(this, this.attributes, other)
         if (thisAttributes.size != otherAttributes.size) {
             val message =
-                "number of (filtered) attributes differ: "+
+                "number of (filtered) attributes differ: " +
                     thisAttributes.toSet.diff(otherAttributes.toSet).mkString("{", ",", "}")
             return Some((message, thisAttributes.size, otherAttributes.size));
         }
@@ -52,7 +52,7 @@ trait CommonAttributes {
         // approach to get a stable sorting is not available.
         // (We have not seen any case of multiple occurences of an attribute in practice so far.)
         thisAttributes.find { a => !otherAttributes.exists(o => a.similar(o, config)) } map { missingAttribute =>
-            val message = "missing attribute: "+missingAttribute
+            val message = "missing attribute: " + missingAttribute
             return Some((message, thisAttributes, otherAttributes));
         }
 

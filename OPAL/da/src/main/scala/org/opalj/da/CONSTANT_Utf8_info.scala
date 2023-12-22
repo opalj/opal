@@ -2,9 +2,8 @@
 package org.opalj
 package da
 
-import java.io.DataOutputStream
 import java.io.ByteArrayOutputStream
-
+import java.io.DataOutputStream
 import scala.xml.Node
 import scala.xml.NodeSeq
 

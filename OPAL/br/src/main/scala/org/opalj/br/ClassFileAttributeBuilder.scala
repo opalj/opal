@@ -2,9 +2,9 @@
 package org.opalj
 package br
 
-import org.opalj.collection.immutable.UShortPair
-
 import scala.collection.immutable.ArraySeq
+
+import org.opalj.collection.immutable.UShortPair
 
 /**
  * Given a class files' main elements the attribute is build.

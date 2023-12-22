@@ -2,12 +2,15 @@
 package org.opalj
 package ifds
 
+import scala.collection.{Set => SomeSet}
+import scala.collection.mutable
+
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFLazyAnalysisScheduler
+import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
-import org.opalj.fpcf.Entity
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.InterimEUBP
 import org.opalj.fpcf.InterimResult
@@ -21,9 +24,6 @@ import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.SomeEPK
 import org.opalj.fpcf.SomeEPS
 import org.opalj.ifds.Dependees.Getter
-
-import scala.collection.mutable
-import scala.collection.{Set => SomeSet}
 
 /**
  * A container for a data flow fact, holding also information for unbalanced returns.
@@ -278,7 +278,6 @@ class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C,
      *         the statement, based on the current results. If the analysis is still waiting for its
      *         method's TAC or call graph or the result of another method-fact-pair, an interim
      *         result will be returned.
-     *
      */
     private def createResult()(implicit state: State): ProperPropertyComputationResult = {
         val propertyValue = createPropertyValue()
@@ -294,7 +293,7 @@ class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C,
      * @return An IFDSProperty containing the `result`.
      */
     private def createPropertyValue()(implicit state: State): IFDSProperty[S, Fact] = {
-        if (project.config.getBoolean(ConfigKeyPrefix+"debug"))
+        if (project.config.getBoolean(ConfigKeyPrefix + "debug"))
             propertyKey.create(collectResult, state.pathEdges.debugData)
         else
             propertyKey.create(collectResult)

@@ -3,11 +3,11 @@ package org.opalj
 package br
 package analyses
 
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
-
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.reader.Java8Framework.ClassFiles
+
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 /**
  * Tests the support for "project" related functionality.

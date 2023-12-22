@@ -92,7 +92,7 @@ object UIDSetDemo extends App {
                 s.result()
                 runs += 1
             }
-            println("Using +!:  "+NS(System.nanoTime - t).toSeconds)
+            println("Using +!:  " + NS(System.nanoTime - t).toSeconds)
         }
 
         { // comparison with Scala set
@@ -109,7 +109,7 @@ object UIDSetDemo extends App {
                 }
                 runs += 1
             }
-            println("Using Set: "+NS(System.nanoTime - t).toSeconds)
+            println("Using Set: " + NS(System.nanoTime - t).toSeconds)
         }
     }
     (0 to 5).foreach(e => evalAdd())
@@ -201,12 +201,12 @@ object UIDSetDemo extends App {
         }
         val time = org.opalj.util.Nanoseconds(System.nanoTime - startTime).toSeconds
         println(
-            s"${factory.getClass.getSimpleName} - runs executed: $runs in $time"+
-                s"\n\tadded: $addedValues; unique: $uniqueValues - "+NS(timeForAddingValues).toSeconds +
-                s"\n\tfiltered: $filteredValues - "+NS(timeForFilteringValues).toSeconds +
-                s"\n\tsuccessful contains: $containsSucceeded; failed contains: $containsFailed - "+NS(timeForContainsCheck).toSeconds +
+            s"${factory.getClass.getSimpleName} - runs executed: $runs in $time" +
+                s"\n\tadded: $addedValues; unique: $uniqueValues - " + NS(timeForAddingValues).toSeconds +
+                s"\n\tfiltered: $filteredValues - " + NS(timeForFilteringValues).toSeconds +
+                s"\n\tsuccessful contains: $containsSucceeded; failed contains: $containsFailed - " + NS(timeForContainsCheck).toSeconds +
                 // s"\n\ttail: $removedValuesByTail - "+NS(timeForXTailCalls).toSeconds+
-                s"\n\tremoved: $removedValues - "+NS(timeForRemovingValues).toSeconds
+                s"\n\tremoved: $removedValues - " + NS(timeForRemovingValues).toSeconds
         )
     }
 

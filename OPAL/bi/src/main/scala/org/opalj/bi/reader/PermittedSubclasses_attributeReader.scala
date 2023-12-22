@@ -3,9 +3,9 @@ package org.opalj
 package bi
 package reader
 
-import org.opalj.control.fillArrayOfInt
-
 import java.io.DataInputStream
+
+import org.opalj.control.fillArrayOfInt
 
 /**
  * Generic parser for the ''PermittedSubclasses'' attribute (Java 17).

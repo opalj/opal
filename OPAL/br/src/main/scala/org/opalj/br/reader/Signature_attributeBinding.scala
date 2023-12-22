@@ -30,4 +30,3 @@ trait Signature_attributeBinding
     }
 
 }
-

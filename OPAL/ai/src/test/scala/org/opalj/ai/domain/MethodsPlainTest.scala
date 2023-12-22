@@ -3,17 +3,18 @@ package org.opalj
 package ai
 package domain
 
-import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
+import scala.collection.immutable.ArraySeq
+
+import org.opalj.ai.common.XHTML.dumpOnFailureDuringValidation
+import org.opalj.ai.domain.l0._
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br._
 import org.opalj.br.reader.Java8Framework.ClassFiles
-import org.opalj.ai.domain.l0._
-import org.opalj.ai.common.XHTML.dumpOnFailureDuringValidation
 
-import scala.collection.immutable.ArraySeq
+import org.junit.runner.RunWith
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Basic tests of the abstract interpreter.
@@ -699,7 +700,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
 
         assert(
             domain.refIsNull(-1, domain.returnedValue.get).isYes,
-            "unexpected nullness property of the returned value: "+domain.returnedValue.get
+            "unexpected nullness property of the returned value: " + domain.returnedValue.get
         )
     }
     it should "be able to analyze a push of byte value" in {

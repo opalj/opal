@@ -3,6 +3,8 @@ package org.opalj
 package fpcf
 package analyses
 
+import java.net.URL
+
 import org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.DefinedField
@@ -24,8 +26,6 @@ import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalys
 import org.opalj.tac.fpcf.analyses.fieldaccess.reflection.ReflectionRelatedFieldAccessesAnalysisScheduler
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
-
-import java.net.URL
 
 /**
  * Runs analyses for field accesses throughout a project and automatically excludes any JDK files included in the project

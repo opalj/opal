@@ -43,7 +43,7 @@ trait CONSTANT_Ref extends Constant_Pool_Entry {
     }
 
     override def toString(implicit cp: Constant_Pool): String = {
-        cp(class_index).toString(cp)+"{ "+cp(name_and_type_index).toString(cp)+" }"
+        cp(class_index).toString(cp) + "{ " + cp(name_and_type_index).toString(cp) + " }"
     }
 
 }

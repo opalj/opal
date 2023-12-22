@@ -7,8 +7,8 @@ package allocation_freeness
 import org.opalj.br.AnnotationLike
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.properties.AllocationFreeness
 import org.opalj.br.fpcf.properties
+import org.opalj.br.fpcf.properties.AllocationFreeness
 
 /**
  * Base trait for matchers that match a method's `AllocationFreeness` property.
@@ -17,8 +17,7 @@ import org.opalj.br.fpcf.properties
  */
 sealed abstract class AllocationFreenessMatcher(
         val property: AllocationFreeness
-)
-    extends AbstractPropertyMatcher {
+) extends AbstractPropertyMatcher {
 
     def validateProperty(
         p:          SomeProject,

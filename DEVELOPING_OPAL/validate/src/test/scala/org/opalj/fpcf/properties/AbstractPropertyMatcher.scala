@@ -3,10 +3,10 @@ package org.opalj
 package fpcf
 package properties
 
-import org.opalj.br.ObjectType
 import org.opalj.br.ElementValue
 import org.opalj.br.ElementValuePair
 import org.opalj.br.ElementValuePairs
+import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
 
 /**

@@ -5,27 +5,28 @@ package fpcf
 package analyses
 
 import scala.collection.mutable
-import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.SomeEOptionP
+
+import org.opalj.br.DeclaredField
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.Field
 import org.opalj.br.Method
+import org.opalj.br.ObjectType
 import org.opalj.br.PC
+import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.EscapeProperty
 import org.opalj.br.fpcf.properties.FieldLocality
 import org.opalj.br.fpcf.properties.LocalField
-import org.opalj.br.ObjectType
-import org.opalj.br.DeclaredField
-import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.ReturnValueFreshness
-import org.opalj.br.fpcf.properties.fieldaccess.FieldWriteAccessInformation
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.fieldaccess.AccessParameter
 import org.opalj.br.fpcf.properties.fieldaccess.AccessReceiver
 import org.opalj.br.fpcf.properties.fieldaccess.FieldReadAccessInformation
+import org.opalj.br.fpcf.properties.fieldaccess.FieldWriteAccessInformation
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.SomeEOptionP
 import org.opalj.tac.common.DefinitionSiteLike
 import org.opalj.tac.fpcf.properties.TACAI
 

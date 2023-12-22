@@ -3,11 +3,11 @@ package org.opalj
 package br
 package reader
 
+import org.opalj.br.instructions._
+import org.opalj.bytecode.BytecodeProcessingFailedException
+import org.opalj.collection.immutable.IntIntPair
 import org.opalj.control.fillArraySeq
 import org.opalj.control.fillIntArray
-import org.opalj.bytecode.BytecodeProcessingFailedException
-import org.opalj.br.instructions._
-import org.opalj.collection.immutable.IntIntPair
 
 /**
  * Defines a method to parse an array of bytes (containing Java bytecode instructions) and
@@ -222,7 +222,7 @@ trait CachedBytecodeReaderAndBinding extends InstructionsDeserializer {
                             index
                         )
                     }
-                    //INVOKEDYNAMIC(cpe.bootstrapMethodAttributeIndex, cpe.methodName, cpe.methodDescriptor)
+                    // INVOKEDYNAMIC(cpe.bootstrapMethodAttributeIndex, cpe.methodName, cpe.methodDescriptor)
                     INCOMPLETE_INVOKEDYNAMIC
                 case 185 =>
                     val methodRef = cp(in.readUnsignedShort).asMethodref(cp)
@@ -406,7 +406,7 @@ trait CachedBytecodeReaderAndBinding extends InstructionsDeserializer {
                     WIDE
 
                 case opcode =>
-                    throw new BytecodeProcessingFailedException("unsupported opcode: "+opcode)
+                    throw new BytecodeProcessingFailedException("unsupported opcode: " + opcode)
             }
 
         }

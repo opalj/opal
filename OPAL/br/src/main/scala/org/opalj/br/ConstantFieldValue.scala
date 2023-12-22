@@ -30,7 +30,7 @@ final case class ConstantLong(value: Long) extends ConstantFieldValue[Long] with
 
     override def valueToString: String = value.toString
 
-    override def toJava: String = valueToString+"l"
+    override def toJava: String = valueToString + "l"
 
     override def runtimeValueType: LongType = LongType
 
@@ -84,7 +84,7 @@ final case class ConstantDouble(value: Double) extends ConstantFieldValue[Double
 
     override def valueToString: String = value.toString
 
-    override def toJava: String = valueToString+"d"
+    override def toJava: String = valueToString + "d"
 
     override def runtimeValueType: DoubleType = DoubleType
 
@@ -114,7 +114,7 @@ final case class ConstantFloat(value: Float) extends ConstantFieldValue[Float] w
 
     override def valueToString: String = value.toString
 
-    override def toJava: String = valueToString+"f"
+    override def toJava: String = valueToString + "f"
 
     override def runtimeValueType: FloatType = FloatType
 

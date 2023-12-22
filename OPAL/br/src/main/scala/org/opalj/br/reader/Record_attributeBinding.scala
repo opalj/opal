@@ -3,9 +3,9 @@ package org.opalj
 package br
 package reader
 
-import org.opalj.bi.reader.Record_attributeReader
-
 import scala.reflect.ClassTag
+
+import org.opalj.bi.reader.Record_attributeReader
 
 /**
  * Implements the factory methods to create the `Record` attribute (Java 16).

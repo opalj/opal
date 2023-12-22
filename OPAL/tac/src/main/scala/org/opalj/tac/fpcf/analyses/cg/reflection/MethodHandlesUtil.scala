@@ -6,12 +6,12 @@ package analyses
 package cg
 package reflection
 
+import org.opalj.br.FieldType
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.VoidType
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.FieldType
 
 object MethodHandlesUtil {
     // TODO what about the case of an constructor?

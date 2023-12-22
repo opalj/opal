@@ -10,11 +10,11 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.CallStringContext
 import org.opalj.br.fpcf.properties.CallStringContexts
 import org.opalj.br.fpcf.properties.CallStringContextsKey
+import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.NoContext
 import org.opalj.br.fpcf.properties.SimpleContext
 import org.opalj.br.fpcf.properties.SimpleContexts
 import org.opalj.br.fpcf.properties.SimpleContextsKey
-import org.opalj.br.fpcf.properties.Context
 
 /**
  * Provides analyses with [[Context]]s for method executions.

@@ -6,22 +6,6 @@ package analyses
 
 import scala.annotation.switch
 
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.EPS
-import org.opalj.fpcf.FinalEP
-import org.opalj.fpcf.FinalP
-import org.opalj.fpcf.InterimEP
-import org.opalj.fpcf.InterimLUBP
-import org.opalj.fpcf.InterimResult
-import org.opalj.fpcf.InterimUBP
-import org.opalj.fpcf.ProperPropertyComputationResult
-import org.opalj.fpcf.Property
-import org.opalj.fpcf.PropertyBounds
-import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.Result
-import org.opalj.fpcf.SomeEOptionP
-import org.opalj.fpcf.SomeEPS
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
@@ -68,15 +52,31 @@ import org.opalj.br.instructions.IRETURN
 import org.opalj.br.instructions.LALOAD
 import org.opalj.br.instructions.LASTORE
 import org.opalj.br.instructions.LRETURN
+import org.opalj.br.instructions.MethodInvocationInstruction
 import org.opalj.br.instructions.MONITORENTER
 import org.opalj.br.instructions.MONITOREXIT
-import org.opalj.br.instructions.MethodInvocationInstruction
 import org.opalj.br.instructions.NonVirtualMethodInvocationInstruction
 import org.opalj.br.instructions.PUTFIELD
 import org.opalj.br.instructions.PUTSTATIC
 import org.opalj.br.instructions.RETURN
 import org.opalj.br.instructions.SALOAD
 import org.opalj.br.instructions.SASTORE
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.EPS
+import org.opalj.fpcf.FinalEP
+import org.opalj.fpcf.FinalP
+import org.opalj.fpcf.InterimEP
+import org.opalj.fpcf.InterimLUBP
+import org.opalj.fpcf.InterimResult
+import org.opalj.fpcf.InterimUBP
+import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.Property
+import org.opalj.fpcf.PropertyBounds
+import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.Result
+import org.opalj.fpcf.SomeEOptionP
+import org.opalj.fpcf.SomeEPS
 
 /**
  * Very simple, fast, sound but also imprecise analysis of the purity of methods. See the

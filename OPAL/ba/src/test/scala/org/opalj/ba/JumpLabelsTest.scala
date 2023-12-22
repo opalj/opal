@@ -3,20 +3,19 @@ package org.opalj
 package ba
 
 import scala.language.postfixOps
-
-import org.junit.runner.RunWith
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatestplus.junit.JUnitRunner
+import scala.reflect.runtime.universe._
 
 import java.io.ByteArrayInputStream
-
-import scala.reflect.runtime.universe._
 
 import org.opalj.bc.Assembler
 import org.opalj.br.Method
 import org.opalj.br.instructions._
 import org.opalj.br.reader.Java8Framework.{ClassFile => ClassFileReader}
 import org.opalj.util.InMemoryClassLoader
+
+import org.junit.runner.RunWith
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests the branchoffset calculation of LabeledBranchInstructions in the BytecodeAssembler DSL

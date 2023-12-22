@@ -4,21 +4,21 @@ package ba
 
 import java.io.ByteArrayInputStream
 
-import org.opalj.io.writeAndOpen
-import org.opalj.da.ClassFileReader.ClassFile
 import org.opalj.bc.Assembler
-import org.opalj.br.ObjectType
 import org.opalj.br.IntegerType
-import org.opalj.br.MethodDescriptor.JustReturnsString
 import org.opalj.br.MethodDescriptor.JustReturnsInteger
+import org.opalj.br.MethodDescriptor.JustReturnsString
 import org.opalj.br.MethodDescriptor.JustTakes
-import org.opalj.br.instructions.INVOKEVIRTUAL
+import org.opalj.br.ObjectType
+import org.opalj.br.PCAndInstruction
 import org.opalj.br.instructions.DUP
 import org.opalj.br.instructions.GETSTATIC
+import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.SWAP
 import org.opalj.br.reader.Java8Framework
+import org.opalj.da.ClassFileReader.ClassFile
+import org.opalj.io.writeAndOpen
 import org.opalj.util.InMemoryClassLoader
-import org.opalj.br.PCAndInstruction
 
 /**
  * Demonstrates how to perform a simple instrumentation; here, we just search for toString calls
@@ -94,11 +94,11 @@ object FirstInstrumentation extends App {
     // Let's see the old class file...
     val odlCFHTML = ClassFile(in).head.toXHTML(None)
     val oldCFHTMLFile = writeAndOpen(odlCFHTML, "SimpleInstrumentationDemo", ".html")
-    println("original: "+oldCFHTMLFile)
+    println("original: " + oldCFHTMLFile)
 
     // Let's see the new class file...
     val newCF = ClassFile(() => new ByteArrayInputStream(newRawCF)).head.toXHTML(None)
-    println("instrumented: "+writeAndOpen(newCF, "NewSimpleInstrumentationDemo", ".html"))
+    println("instrumented: " + writeAndOpen(newCF, "NewSimpleInstrumentationDemo", ".html"))
 
     // Let's test that the new class does what it is expected to do... (we execute the
     // instrumented method)

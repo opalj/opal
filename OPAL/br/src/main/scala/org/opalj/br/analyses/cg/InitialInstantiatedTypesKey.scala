@@ -7,7 +7,6 @@ package cg
 import net.ceedubs.ficus.Ficus._
 
 /**
- *
  * Creates the [[InstantiatedTypesFinder]] as specified in the [[ConfigKeyPrefix]] config key.
  *
  * @example
@@ -31,7 +30,7 @@ object InitialInstantiatedTypesKey extends ProjectInformationKey[Iterable[Object
     override def requirements(project: SomeProject): ProjectInformationKeys = Seq(ClosedPackagesKey)
 
     override def compute(project: SomeProject): Iterable[ObjectType] = {
-        val key = ConfigKeyPrefix+"analysis"
+        val key = ConfigKeyPrefix + "analysis"
         val configuredAnalysis = project.config.as[Option[String]](key)
         if (configuredAnalysis.isEmpty) {
             throw new IllegalArgumentException(

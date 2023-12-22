@@ -5,8 +5,9 @@ package domain
 package l1
 
 import scala.reflect.ClassTag
-import org.opalj.value.IsClassValue
-import org.opalj.value.TheClassValue
+
+import scala.collection.immutable.ArraySeq
+
 import org.opalj.br.BooleanType
 import org.opalj.br.BootstrapMethod
 import org.opalj.br.ByteType
@@ -23,8 +24,8 @@ import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.ShortType
 import org.opalj.br.Type
-
-import scala.collection.immutable.ArraySeq
+import org.opalj.value.IsClassValue
+import org.opalj.value.TheClassValue
 
 /**
  * Enables the tracking of concrete `Class` values.

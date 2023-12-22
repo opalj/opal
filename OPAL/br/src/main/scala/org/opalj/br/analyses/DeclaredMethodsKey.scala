@@ -6,14 +6,14 @@ package analyses
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.function.{Function => JFunction}
-import org.opalj.br.ObjectType.MethodHandle
-import org.opalj.br.ObjectType.VarHandle
+import scala.collection.immutable.ArraySeq
+import scala.jdk.CollectionConverters._
+
 import org.opalj.br.MethodDescriptor.SignaturePolymorphicMethodBoolean
 import org.opalj.br.MethodDescriptor.SignaturePolymorphicMethodObject
 import org.opalj.br.MethodDescriptor.SignaturePolymorphicMethodVoid
-
-import scala.collection.immutable.ArraySeq
-import scala.jdk.CollectionConverters._
+import org.opalj.br.ObjectType.MethodHandle
+import org.opalj.br.ObjectType.VarHandle
 
 /**
  * The ''key'' object to get information about all declared methods.
@@ -113,7 +113,7 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
                         case _: VirtualDeclaredMethod => true
                     }
                 },
-                "creation of declared methods failed:\n\t"+
+                "creation of declared methods failed:\n\t" +
                     s"$oldDm\n\t\tvs.(new)\n\t$computedDM}"
             )
         }

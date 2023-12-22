@@ -3,9 +3,9 @@ package org.opalj
 package bi
 
 import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests the matching of access flags.
@@ -89,8 +89,8 @@ class AccessFlagsMatcherTest extends AnyFlatSpec with Matchers {
             case NOT_PRIVATE___NOT_FINAL() => /*success*/
             case _ =>
                 fail(
-                    AccessFlags.toString(afPublicAbstract, AccessFlagsContexts.METHOD)+
-                        " did not match "+NOT_PRIVATE___NOT_FINAL
+                    AccessFlags.toString(afPublicAbstract, AccessFlagsContexts.METHOD) +
+                        " did not match " + NOT_PRIVATE___NOT_FINAL
                 )
         }
 
@@ -99,8 +99,8 @@ class AccessFlagsMatcherTest extends AnyFlatSpec with Matchers {
             case NOT_NOT_PUBLIC() => /*success*/
             case _ =>
                 fail(
-                    AccessFlags.toString(afPublicAbstract, AccessFlagsContexts.METHOD)+
-                        " did not match "+NOT_NOT_PUBLIC
+                    AccessFlags.toString(afPublicAbstract, AccessFlagsContexts.METHOD) +
+                        " did not match " + NOT_NOT_PUBLIC
                 )
         }
     }
@@ -115,31 +115,31 @@ class AccessFlagsMatcherTest extends AnyFlatSpec with Matchers {
         afPublicAbstract match {
             case OrMatcher() => /*success*/
             case _ =>
-                fail(AccessFlags.toString(afPublicAbstract, AccessFlagsContexts.METHOD)+
-                    " did not match "+OrMatcher)
+                fail(AccessFlags.toString(afPublicAbstract, AccessFlagsContexts.METHOD) +
+                    " did not match " + OrMatcher)
         }
         afProtectedAbstract match {
             case OrMatcher() => /*success*/
             case _ =>
                 fail(
-                    AccessFlags.toString(afProtectedAbstract, AccessFlagsContexts.METHOD)+
-                        " did not match "+OrMatcher
+                    AccessFlags.toString(afProtectedAbstract, AccessFlagsContexts.METHOD) +
+                        " did not match " + OrMatcher
                 )
         }
 
         afProtectedFinal match {
             case OrMatcher() =>
                 fail(
-                    AccessFlags.toString(afProtectedFinal, AccessFlagsContexts.METHOD)+
-                        " did match "+OrMatcher
+                    AccessFlags.toString(afProtectedFinal, AccessFlagsContexts.METHOD) +
+                        " did match " + OrMatcher
                 )
             case _ => /*success*/
         }
         afDefaultAbstract match {
             case OrMatcher() =>
                 fail(
-                    AccessFlags.toString(afDefaultAbstract, AccessFlagsContexts.METHOD)+
-                        " did match "+OrMatcher
+                    AccessFlags.toString(afDefaultAbstract, AccessFlagsContexts.METHOD) +
+                        " did match " + OrMatcher
                 )
             case _ => /*success*/
         }

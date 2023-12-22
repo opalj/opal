@@ -3,13 +3,13 @@ package org.opalj
 package br
 package fpcf
 
-import org.opalj.log.LogContext
-import org.opalj.log.OPALLogger
 import org.opalj.br.analyses.ProjectInformationKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.br.fpcf.analyses.SimpleContextProvider
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
 
 /**
  *  An [[org.opalj.br.analyses.ProjectInformationKey]] to get the

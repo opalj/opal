@@ -2,13 +2,13 @@
 package org.opalj
 package de
 
-import org.opalj.log.OPALLogger
-import org.opalj.log.LogContext
-import org.opalj.log.GlobalLogContext
-import org.opalj.log.BasicLogMessage
-import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.br._
 import org.opalj.br.instructions._
+import org.opalj.bytecode.BytecodeProcessingFailedException
+import org.opalj.log.BasicLogMessage
+import org.opalj.log.GlobalLogContext
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
 
 /**
  * Traverses a [[org.opalj.br.SourceElement]] and identifies all dependencies between the element
@@ -506,20 +506,20 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
         //                    processDependency(vm, ByteType, USES_DEFAULT_ANNOTATION_VALUE_TYPE)
         //                case CharValue.KindId =>
         //                    processDependency(vm, CharType, USES_DEFAULT_ANNOTATION_VALUE_TYPE)
-        //case ShortValue.KindId =>
+        // case ShortValue.KindId =>
         //                    processDependency(vm, ShortType, USES_DEFAULT_ANNOTATION_VALUE_TYPE)
-        //case IntValue.KindId =>
+        // case IntValue.KindId =>
         //                    processDependency(vm, IntegerType, USES_DEFAULT_ANNOTATION_VALUE_TYPE)
-        //case LongValue.KindId =>
+        // case LongValue.KindId =>
         //                    processDependency(vm, LongType, USES_DEFAULT_ANNOTATION_VALUE_TYPE)
-        //case FloatValue.KindId =>
+        // case FloatValue.KindId =>
         //                    processDependency(vm, FloatType, USES_DEFAULT_ANNOTATION_VALUE_TYPE)
-        //case DoubleValue.KindId =>
+        // case DoubleValue.KindId =>
         //                    processDependency(vm, DoubleType, USES_DEFAULT_ANNOTATION_VALUE_TYPE)
 
-        //case StringValue.KindId =>
+        // case StringValue.KindId =>
         //                    processDependency(vm, ObjectType.String , USES_DEFAULT_ANNOTATION_VALUE_TYPE)
-        //case AnnotationValue.KindId =>
+        // case AnnotationValue.KindId =>
         //                    processDependency(vm, AnnotationType, USES_DEFAULT_ANNOTATION_VALUE_TYPE)
         // case ClassValue.KindId =>
         //                    processDependency(vm, ByteType, USES_DEFAULT_ANNOTATION_VALUE_TYPE)

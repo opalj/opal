@@ -2,15 +2,16 @@
 package org.opalj
 package br
 
+import scala.collection.immutable.ArraySeq
+
+import org.opalj.bi.TestResources.locateTestResources
+import org.opalj.br.analyses.Project
+import org.opalj.br.reader.Java8Framework.ClassFiles
+
 import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import org.opalj.bi.TestResources.locateTestResources
-import org.opalj.br.reader.Java8Framework.ClassFiles
-import org.opalj.br.analyses.Project
-
-import scala.collection.immutable.ArraySeq
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests that type annotations can be read.
@@ -62,9 +63,9 @@ private object TypeAnnotationsTest {
         Project(ClassFiles(testResources), Iterable.empty, true)
     }
 
-    //Classfile /Users/Michael/Code/OPAL/core/bin/type_annotations/RITypeAnnotationUser.class
-    //Compiled from "RITypeAnnotationUser.java"
-    //public abstract class type_annotations.RITypeAnnotationUser<T extends java.io.Serializable> extends java.lang.Object implements java.util.List<java.lang.Object>, java.io.Serializable
+    // Classfile /Users/Michael/Code/OPAL/core/bin/type_annotations/RITypeAnnotationUser.class
+    // Compiled from "RITypeAnnotationUser.java"
+    // public abstract class type_annotations.RITypeAnnotationUser<T extends java.io.Serializable> extends java.lang.Object implements java.util.List<java.lang.Object>, java.io.Serializable
     //  Constant_Pool:
     //  ...
     //  #15 = Utf8               Ltype_annotations/RITypeAnnotation;
@@ -114,7 +115,7 @@ private object TypeAnnotationsTest {
     //        2: #15(): LOCAL_VARIABLE, {start_pc=8, length=2, index=1}, location=[TYPE_ARGUMENT(0)]
     //    RuntimeInvisibleTypeAnnotations:
     //      0: #15(): METHOD_RETURN
-    //}
+    // }
     val aTA = ObjectType("type_annotations/RITypeAnnotation")
     val taUser = ObjectType("type_annotations/RITypeAnnotationUser")
     val taUserClassFile = project.classFile(taUser).get

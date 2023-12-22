@@ -3,12 +3,13 @@ package org.opalj
 package bi
 package reader
 
-import java.io.DataInputStream
-import org.opalj.control.fillArraySeq
-import org.opalj.control.fillArrayOfInt
-
-import scala.collection.immutable.ArraySeq
 import scala.reflect.ClassTag
+
+import java.io.DataInputStream
+import scala.collection.immutable.ArraySeq
+
+import org.opalj.control.fillArrayOfInt
+import org.opalj.control.fillArraySeq
 
 /**
  * Generic parser for the ''Module'' attribute (Java 9).

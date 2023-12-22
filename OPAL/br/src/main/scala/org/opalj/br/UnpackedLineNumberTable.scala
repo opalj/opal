@@ -49,4 +49,3 @@ case class UnpackedLineNumberTable(lineNumbers: LineNumbers) extends LineNumberT
     }
 
 }
-

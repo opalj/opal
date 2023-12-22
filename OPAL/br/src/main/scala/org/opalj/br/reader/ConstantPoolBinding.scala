@@ -5,7 +5,9 @@ package reader
 
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
+
 import scala.collection.mutable
+
 import org.opalj.bi.reader.Constant_PoolReader
 
 /**

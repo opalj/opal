@@ -16,4 +16,3 @@ trait DefaultHandlingOfVoidReturns extends ReturnInstructionsDomain {
     }
 
 }
-

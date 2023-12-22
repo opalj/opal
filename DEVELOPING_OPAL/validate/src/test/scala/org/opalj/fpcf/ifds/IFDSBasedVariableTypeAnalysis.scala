@@ -6,24 +6,24 @@ package ifds
 import java.io.File
 import java.io.PrintWriter
 
-import org.opalj.fpcf.PropertyBounds
-import org.opalj.fpcf.PropertyKey
-import org.opalj.fpcf.PropertyStore
 import org.opalj.br.Method
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.properties.cg.Callers
-import org.opalj.br.fpcf.ContextProviderKey
-import org.opalj.tac.fpcf.analyses.ifds.IFDSEvaluationRunner
-import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
-import org.opalj.tac.fpcf.properties.TACAI
+import org.opalj.fpcf.PropertyBounds
+import org.opalj.fpcf.PropertyKey
+import org.opalj.fpcf.PropertyStore
 import org.opalj.ifds.IFDSAnalysis
 import org.opalj.ifds.IFDSAnalysisScheduler
 import org.opalj.ifds.IFDSProperty
 import org.opalj.ifds.IFDSPropertyMetaInformation
 import org.opalj.ifds.Statistics
+import org.opalj.tac.fpcf.analyses.ifds.IFDSEvaluationRunner
+import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
+import org.opalj.tac.fpcf.properties.TACAI
 
 /**
  * A variable type analysis implemented as an IFDS analysis.

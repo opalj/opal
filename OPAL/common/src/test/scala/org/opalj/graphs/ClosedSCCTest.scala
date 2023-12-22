@@ -2,13 +2,14 @@
 package org.opalj
 package graphs
 
-import org.junit.runner.RunWith
+import scala.collection.immutable.ArraySeq
+
 import org.opalj.util.PerformanceEvaluation
-import org.scalatestplus.junit.JUnitRunner
+
+import org.junit.runner.RunWith
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-
-import scala.collection.immutable.ArraySeq
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests the SCC algorithm.
@@ -132,7 +133,7 @@ class ClosedSCCTest extends AnyFlatSpec with Matchers {
                 val expected = Set(List("a", "b"), List("d", "e"))
                 if (cSCCs != expected) {
                     fail(
-                        s"the graph $g\ncontains two closed SCCs $expected,\n but found $cSCCs\n"+
+                        s"the graph $g\ncontains two closed SCCs $expected,\n but found $cSCCs\n" +
                             s"permutation $permutationCount: $aPermutation"
                     )
                 }
@@ -204,7 +205,7 @@ class ClosedSCCTest extends AnyFlatSpec with Matchers {
                 val cSCCs = closedSCCs(g).map(_.toList.sorted)
                 val expected = List(List("a", "b", "c", "d", "e", "f"))
                 if (cSCCs != expected) {
-                    fail(s"the graph $g (created with permutation $permutationCount: $aPermutation) "+
+                    fail(s"the graph $g (created with permutation $permutationCount: $aPermutation) " +
                         s"contains one closed SCCs $expected, but found $cSCCs")
                 }
             }
@@ -235,7 +236,7 @@ class ClosedSCCTest extends AnyFlatSpec with Matchers {
                 val cSCCs = closedSCCs(g).map(_.toList.sorted).toSet
                 val expected = Set(List("l", "m"), List("h", "i", "j", "k"), List("d", "e"))
                 if (cSCCs != expected) {
-                    fail(s"the graph $g (created with permutation $permutationCount: $data) "+
+                    fail(s"the graph $g (created with permutation $permutationCount: $data) " +
                         s"contains three closed SCCs $expected, but found $cSCCs")
                 }
             }
@@ -447,9 +448,9 @@ class ClosedSCCTest extends AnyFlatSpec with Matchers {
                 val cSCCs = closedSCCs(g).map(_.toSet).toSet
                 val expected = Set(Set("e"), Set("g"))
                 if (cSCCs != expected) {
-                    fail(s"the graph $g\n"+
-                        s"created using permutation: $aPermutation\n"+
-                        s"contains two closed SCCs : $expected\n"+
+                    fail(s"the graph $g\n" +
+                        s"created using permutation: $aPermutation\n" +
+                        s"contains two closed SCCs : $expected\n" +
                         s"found: $cSCCs")
                 } else {
                     // info(s"successfully tested permutation $permutationCounter: $aPermutation")
@@ -461,16 +462,16 @@ class ClosedSCCTest extends AnyFlatSpec with Matchers {
 
     "a graph with two cSCCs where one is a chain " should "contain two cSCCs" in {
         List(1, 2, 3, 4, 5, 6, 7, 8, 9, 0).permutations.take(50).foreach { lis =>
-            val a = "n"+lis(0)
-            val b = "n"+lis(1)
-            val d = "n"+lis(2)
-            val e = "n"+lis(3)
-            val f = "n"+lis(4)
-            val g = "n"+lis(5)
-            val h = "n"+lis(6)
-            val i = "n"+lis(7)
-            val j = "n"+lis(8)
-            val r = "n"+lis(9)
+            val a = "n" + lis(0)
+            val b = "n" + lis(1)
+            val d = "n" + lis(2)
+            val e = "n" + lis(3)
+            val f = "n" + lis(4)
+            val g = "n" + lis(5)
+            val h = "n" + lis(6)
+            val i = "n" + lis(7)
+            val j = "n" + lis(8)
+            val r = "n" + lis(9)
             val data = List(
                 a -> f, f -> h, f -> j, f -> i,
                 h -> j, j -> h, i -> j, j -> i,
@@ -486,9 +487,9 @@ class ClosedSCCTest extends AnyFlatSpec with Matchers {
                     val cSCCs = closedSCCs(g).map(_.toSet).toSet
                     val expected = Set(Set(h, j, i), Set(b, d, e, r))
                     if (cSCCs != expected) {
-                        fail(s"the graph $g\n"+
-                            s"created using permutation: $aPermutation\n"+
-                            s"contains two closed SCCs : $expected\n"+
+                        fail(s"the graph $g\n" +
+                            s"created using permutation: $aPermutation\n" +
+                            s"contains two closed SCCs : $expected\n" +
                             s"found: $cSCCs")
                     } else {
                         // info(s"successfully tested permutation $permutationCounter: $aPermutation")
@@ -501,9 +502,9 @@ class ClosedSCCTest extends AnyFlatSpec with Matchers {
 
     "a graph with multiple cycles embedded in a larger cycle " should "contain one cSCC" in {
         List(1, 2, 3).permutations.foreach { lis =>
-            val a = "n"+lis(0)
-            val b = "n"+lis(1)
-            val c = "n"+lis(2)
+            val a = "n" + lis(0)
+            val b = "n" + lis(1)
+            val c = "n" + lis(2)
             val data = List(a -> b, a -> c, b -> a, b -> c, c -> a)
             var permutationCounter = 1
             PerformanceEvaluation.time {
@@ -513,9 +514,9 @@ class ClosedSCCTest extends AnyFlatSpec with Matchers {
                     val cSCCs = rawCSCCs.map(_.toSet).toSet
                     val expected = Set(Set(a, b, c))
                     if (cSCCs != expected) {
-                        fail(s"the graph (with the nodes $lis) $g\n"+
-                            s"created using permutation: $aPermutation\n"+
-                            s"contains one closed SCC : $expected\n"+
+                        fail(s"the graph (with the nodes $lis) $g\n" +
+                            s"created using permutation: $aPermutation\n" +
+                            s"contains one closed SCC : $expected\n" +
                             s"found: $cSCCs")
                     } else {
                         info(s"successfully tested permutation $permutationCounter: $aPermutation")

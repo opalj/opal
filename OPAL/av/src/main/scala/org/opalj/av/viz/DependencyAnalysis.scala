@@ -3,28 +3,27 @@ package org.opalj
 package av
 package viz
 
+import scala.language.reflectiveCalls
+
 import java.net.URL
 import java.util.concurrent.atomic.AtomicInteger
-
-import scala.language.reflectiveCalls
 import scala.util.Random
-
-import org.opalj.io.writeAndOpen
-import org.opalj.br.analyses.Analysis
-import org.opalj.br.analyses.Project
-import org.opalj.de.DependencyExtractor
-import org.opalj.de.DependencyProcessor
-import org.opalj.de.DependencyType
 
 import org.opalj.br.ArrayType
 import org.opalj.br.BaseType
 import org.opalj.br.ObjectType
 import org.opalj.br.VirtualClass
 import org.opalj.br.VirtualSourceElement
+import org.opalj.br.analyses.Analysis
 import org.opalj.br.analyses.AnalysisApplication
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.ProgressManagement
 import org.opalj.br.analyses.ProgressEvents
+import org.opalj.br.analyses.ProgressManagement
+import org.opalj.br.analyses.Project
+import org.opalj.de.DependencyExtractor
+import org.opalj.de.DependencyProcessor
+import org.opalj.de.DependencyType
+import org.opalj.io.writeAndOpen
 
 /**
  * @author Tobias Becker
@@ -45,10 +44,10 @@ object DependencyAnalysis extends AnalysisApplication {
     var inverse: Boolean = false
 
     def readParameter(param: String, args: Seq[String], default: String = ""): (String, Seq[String]) = {
-        args.partition(_.startsWith("-"+param+"=")) match {
+        args.partition(_.startsWith("-" + param + "=")) match {
             case (Seq(), parameters1) => (default, parameters1)
             case (Seq(p), parameters1) => {
-                if (p.startsWith("-"+param+"=\"") && p.endsWith("\""))
+                if (p.startsWith("-" + param + "=\"") && p.endsWith("\""))
                     (p.substring(param.length + 3, p.length - 1), parameters1)
                 else
                     (p.substring(param.length + 2), parameters1)
@@ -73,13 +72,13 @@ object DependencyAnalysis extends AnalysisApplication {
         if (parameters4.isEmpty)
             Iterable.empty
         else
-            parameters4.map("unknown parameter: "+_)
+            parameters4.map("unknown parameter: " + _)
     }
 
-    override def analysisSpecificParametersDescription: String = ""+
-        "[-mp=<Package-Name> (Main Package, won't be clustered. default: \"\")]\n"+
-        "[-debug=<Boolean> (true, if there should be additional output. default: false)]\n"+
-        "[-inverse=<Boolean> (true, if incoming and outgoing dependencies should be switched. default: false)]\n"+
+    override def analysisSpecificParametersDescription: String = "" +
+        "[-mp=<Package-Name> (Main Package, won't be clustered. default: \"\")]\n" +
+        "[-debug=<Boolean> (true, if there should be additional output. default: false)]\n" +
+        "[-inverse=<Boolean> (true, if incoming and outgoing dependencies should be switched. default: false)]\n" +
         "[-filter=<Prefix> (Only show dependencies within packages with this prefix. default: \"\")]\n"
 
     private def checkDocument(doc: String): String = {
@@ -88,8 +87,8 @@ object DependencyAnalysis extends AnalysisApplication {
         option match {
             case Some(o) => {
                 println(
-                    Console.YELLOW+
-                        "[warn] HtmlDocument has at least one unset option "+o +
+                    Console.YELLOW +
+                        "[warn] HtmlDocument has at least one unset option " + o +
                         Console.RESET
                 )
             }
@@ -205,24 +204,24 @@ object DependencyAnalysis extends AnalysisApplication {
 
             val maxCount = dependencyProcessor.currentMaxDependencyCount
 
-            var data = ("["+packages.foldRight("")(
-                (p1, l1) => "["+
+            var data = ("[" + packages.foldRight("")(
+                (p1, l1) => "[" +
                     packages.foldRight("")(
                         (p2, l2) => s"${dependencyProcessor.currentDependencyCount(p1, p2) / maxCount},$l2"
-                    )+"],"+l1
-            )+"]").replaceAll(",]", "]")
+                    ) + "]," + l1
+            ) + "]").replaceAll(",]", "]")
 
             if (inverse)
-                data = "d3.transpose("+data+")"
+                data = "d3.transpose(" + data + ")"
 
             val cS = """ style="border-style:solid;border-width:1px;""""
 
             val addOut =
                 if (debug)
-                    ("<table> <tr><th"+cS+"></th>"+packages.foldRight("</tr>")((p, l) => "<th"+cS+">"+p+"</th>"+l) + packages.foldRight("</table>")(
-                        (p1, l1) => "<tr><td"+cS+"><b>"+p1+"</b></td>"+
+                    ("<table> <tr><th" + cS + "></th>" + packages.foldRight("</tr>")((p, l) => "<th" + cS + ">" + p + "</th>" + l) + packages.foldRight("</table>")(
+                        (p1, l1) => "<tr><td" + cS + "><b>" + p1 + "</b></td>" +
                             packages.foldRight("</tr>\n")(
-                                (p2, l2) => "<td"+cS+">"+(dependencyProcessor.currentDependencyCount(p1, p2))+"</td>"+l2
+                                (p2, l2) => "<td" + cS + ">" + (dependencyProcessor.currentDependencyCount(p1, p2)) + "</td>" + l2
                             ) + l1
                     ))
                 else
@@ -231,8 +230,8 @@ object DependencyAnalysis extends AnalysisApplication {
             var htmlDocument = scala.io.Source.fromFile(template.getPath())(scala.io.Codec.UTF8).mkString
 
             if (!htmlDocument.contains("<%DATA%>") || !htmlDocument.contains("<%PACKAGES%>")) {
-                println(Console.RED+
-                    "[error] The template: "+template+" is not valid."+Console.RESET)
+                println(Console.RED +
+                    "[error] The template: " + template + " is not valid." + Console.RESET)
                 sys.exit(-2)
             }
 
@@ -242,10 +241,10 @@ object DependencyAnalysis extends AnalysisApplication {
 
             htmlDocument = htmlDocument.replace("<%ADDITIONAL_OUTPUT%>", addOut)
 
-            htmlDocument = htmlDocument.replace("<%PACKAGES%>", "["+packages.foldRight("")(
+            htmlDocument = htmlDocument.replace("<%PACKAGES%>", "[" + packages.foldRight("")(
                 (name, json) =>
-                    s"""{ "name": "$name", "color": "${Random.shuffle(colors.toList).head}"},\n"""+json
-            )+"]")
+                    s"""{ "name": "$name", "color": "${Random.shuffle(colors.toList).head}"},\n""" + json
+            ) + "]")
             writeAndOpen(checkDocument(htmlDocument), "DependencyAnalysis", ".html")
 
             pm.progress(3, ProgressEvents.End, None)

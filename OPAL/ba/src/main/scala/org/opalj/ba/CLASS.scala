@@ -2,13 +2,13 @@
 package org.opalj
 package ba
 
-import org.opalj.collection.immutable.UShortPair
-import org.opalj.br.MethodSignature
-import org.opalj.br.ClassHierarchy
-import org.opalj.br.ObjectType
-import org.opalj.br.MethodTemplate
-
 import scala.collection.immutable.ArraySeq
+
+import org.opalj.br.ClassHierarchy
+import org.opalj.br.MethodSignature
+import org.opalj.br.MethodTemplate
+import org.opalj.br.ObjectType
+import org.opalj.collection.immutable.UShortPair
 
 /**
  * Builder for [[org.opalj.br.ClassFile]] objects.
@@ -39,7 +39,6 @@ class CLASS[T](
      * transfer instructions which jump to instructions or exception handlers. In this case,
      * it is necessary that a class hierarchy is given which is '''complete'''; ''the default one
      * is not sufficient for any practical purposes''.
-     *
      *
      * @param classHierarchy The project's class hierarchy. Required if and only if stack map
      *                       table attributes need to be automatically computed.

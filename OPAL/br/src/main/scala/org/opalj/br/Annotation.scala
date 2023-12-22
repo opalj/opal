@@ -35,10 +35,10 @@ case class Annotation(
             if (elementValuePairs.isEmpty)
                 ""
             else if (elementValuePairs.size == 1)
-                "("+elementValuePairs.head.toJava+")"
+                "(" + elementValuePairs.head.toJava + ")"
             else
                 elementValuePairs.map[String](_.toJava).mkString("(\n\t", ",\n\t", "\n)")
-        "@"+name + parameters
+        "@" + name + parameters
     }
 
 }

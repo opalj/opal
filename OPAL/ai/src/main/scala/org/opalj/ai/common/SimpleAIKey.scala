@@ -5,13 +5,13 @@ package common
 
 import scala.collection.concurrent.TrieMap
 
-import org.opalj.log.LogContext
-import org.opalj.log.OPALLogger
+import org.opalj.ai.domain.RecordDefUse
+import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
 import org.opalj.br.Method
 import org.opalj.br.analyses.ProjectInformationKey
 import org.opalj.br.analyses.SomeProject
-import org.opalj.ai.domain.RecordDefUse
-import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
 
 /**
  * Key to get the result of the abstract interpretation of a method using a configured domain

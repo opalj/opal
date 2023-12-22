@@ -5,14 +5,14 @@ package fpcf
 package analyses
 package purity
 
-import org.opalj.value.ValueInformation
+import org.opalj.br.ClassHierarchy
+import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.DPure
 import org.opalj.br.fpcf.properties.Pure
 import org.opalj.br.fpcf.properties.Purity
-import org.opalj.br.ClassHierarchy
-import org.opalj.br.MethodDescriptor
+import org.opalj.value.ValueInformation
 
 /**
  * Rates, whether three address code statements perform actions that are domain-specific pure.

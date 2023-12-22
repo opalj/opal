@@ -72,4 +72,3 @@ trait RecordReturnedValuesInfrastructure extends ai.ReturnInstructionsDomain {
     }
 
 }
-

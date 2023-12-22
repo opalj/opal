@@ -3,6 +3,8 @@ package org.opalj
 package br
 package analyses
 
+import scala.collection.Map
+
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.properties.fieldaccess
 import org.opalj.br.fpcf.properties.fieldaccess.AccessParameter
@@ -12,8 +14,6 @@ import org.opalj.br.fpcf.properties.fieldaccess.FieldWriteAccessInformation
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.SomeInterimEP
-
-import scala.collection.Map
 
 /**
  * Acts as a proxy for the propertyStore, accessing [[FieldReadAccessInformation]] and [[FieldWriteAccessInformation]].

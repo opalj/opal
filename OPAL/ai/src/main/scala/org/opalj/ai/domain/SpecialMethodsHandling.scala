@@ -3,15 +3,15 @@ package org.opalj
 package ai
 package domain
 
-import org.opalj.br.MethodDescriptor
-import org.opalj.br.ObjectType
-import org.opalj.br.VoidType
-import org.opalj.br.IntegerType
+import scala.collection.immutable.ArraySeq
+
 import org.opalj.ai.Configuration
 import org.opalj.ai.IntegerValuesDomain
 import org.opalj.ai.ReferenceValuesDomain
-
-import scala.collection.immutable.ArraySeq
+import org.opalj.br.IntegerType
+import org.opalj.br.MethodDescriptor
+import org.opalj.br.ObjectType
+import org.opalj.br.VoidType
 
 /**
  * Hard-codes some part of the semantics of some very high-profile (native) methods of the JDK

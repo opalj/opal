@@ -5,6 +5,20 @@ package fpcf
 package analyses
 package escape
 
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.DefinedMethod
+import org.opalj.br.analyses.VirtualFormalParameter
+import org.opalj.br.fpcf.properties.AtMost
+import org.opalj.br.fpcf.properties.Context
+import org.opalj.br.fpcf.properties.EscapeInCallee
+import org.opalj.br.fpcf.properties.EscapeProperty
+import org.opalj.br.fpcf.properties.EscapeViaHeapObject
+import org.opalj.br.fpcf.properties.EscapeViaReturn
+import org.opalj.br.fpcf.properties.EscapeViaStaticField
+import org.opalj.br.fpcf.properties.GlobalEscape
+import org.opalj.br.fpcf.properties.NoEscape
+import org.opalj.br.fpcf.properties.VirtualMethodEscapeProperty
+import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPS
@@ -15,20 +29,6 @@ import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.SomeInterimEP
-import org.opalj.br.fpcf.properties.AtMost
-import org.opalj.br.fpcf.properties.EscapeInCallee
-import org.opalj.br.fpcf.properties.EscapeProperty
-import org.opalj.br.fpcf.properties.EscapeViaHeapObject
-import org.opalj.br.fpcf.properties.EscapeViaReturn
-import org.opalj.br.fpcf.properties.EscapeViaStaticField
-import org.opalj.br.fpcf.properties.GlobalEscape
-import org.opalj.br.fpcf.properties.NoEscape
-import org.opalj.br.fpcf.properties.VirtualMethodEscapeProperty
-import org.opalj.br.DeclaredMethod
-import org.opalj.br.DefinedMethod
-import org.opalj.br.analyses.VirtualFormalParameter
-import org.opalj.br.fpcf.properties.Context
-import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.tac.fpcf.analyses.cg.uVarForDefSites
 
 /**

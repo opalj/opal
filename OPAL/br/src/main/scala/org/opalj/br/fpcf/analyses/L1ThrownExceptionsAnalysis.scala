@@ -4,61 +4,61 @@ package br
 package fpcf
 package analyses
 
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.Result
-import org.opalj.br.collection.mutable.{TypesSet => BRMutableTypesSet}
-import org.opalj.br.ObjectType
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
+import org.opalj.br.ObjectType
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.instructions.Instruction
+import org.opalj.br.collection.mutable.{TypesSet => BRMutableTypesSet}
+import org.opalj.br.fpcf.properties.ThrownExceptions
+import org.opalj.br.fpcf.properties.ThrownExceptions.AnalysisLimitation
+import org.opalj.br.fpcf.properties.ThrownExceptions.MethodBodyIsNotAvailable
+import org.opalj.br.fpcf.properties.ThrownExceptions.MethodCalledThrowsUnknownExceptions
+import org.opalj.br.fpcf.properties.ThrownExceptions.MethodIsAbstract
+import org.opalj.br.fpcf.properties.ThrownExceptions.MethodIsNative
+import org.opalj.br.fpcf.properties.ThrownExceptions.SomeException
+import org.opalj.br.fpcf.properties.ThrownExceptions.UnknownExceptionIsThrown
+import org.opalj.br.fpcf.properties.ThrownExceptions.UnresolvedInvokeDynamicInstruction
+import org.opalj.br.fpcf.properties.ThrownExceptionsByOverridingMethods
+import org.opalj.br.fpcf.properties.ThrownExceptionsFallback
+import org.opalj.br.instructions.ALOAD_0
+import org.opalj.br.instructions.ARETURN
+import org.opalj.br.instructions.ASTORE
+import org.opalj.br.instructions.ASTORE_0
 import org.opalj.br.instructions.ATHROW
+import org.opalj.br.instructions.DRETURN
+import org.opalj.br.instructions.DSTORE
+import org.opalj.br.instructions.DSTORE_0
+import org.opalj.br.instructions.FRETURN
+import org.opalj.br.instructions.FSTORE
+import org.opalj.br.instructions.FSTORE_0
+import org.opalj.br.instructions.GETFIELD
+import org.opalj.br.instructions.IDIV
+import org.opalj.br.instructions.Instruction
+import org.opalj.br.instructions.INVOKEDYNAMIC
+import org.opalj.br.instructions.INVOKEINTERFACE
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.INVOKESTATIC
-import org.opalj.br.instructions.MethodInvocationInstruction
-import org.opalj.br.instructions.NonVirtualMethodInvocationInstruction
-import org.opalj.br.instructions.INVOKEDYNAMIC
 import org.opalj.br.instructions.INVOKEVIRTUAL
-import org.opalj.br.instructions.INVOKEINTERFACE
-import org.opalj.br.instructions.ISTORE_0
-import org.opalj.br.instructions.LSTORE_0
-import org.opalj.br.instructions.FSTORE_0
-import org.opalj.br.instructions.DSTORE_0
-import org.opalj.br.instructions.ASTORE_0
-import org.opalj.br.instructions.ISTORE
-import org.opalj.br.instructions.FSTORE
-import org.opalj.br.instructions.LSTORE
-import org.opalj.br.instructions.DSTORE
-import org.opalj.br.instructions.ASTORE
-import org.opalj.br.instructions.GETFIELD
-import org.opalj.br.instructions.PUTFIELD
-import org.opalj.br.instructions.ALOAD_0
-import org.opalj.br.instructions.StackManagementInstruction
-import org.opalj.br.instructions.MONITOREXIT
-import org.opalj.br.instructions.MONITORENTER
-import org.opalj.br.instructions.IRETURN
-import org.opalj.br.instructions.DRETURN
-import org.opalj.br.instructions.LRETURN
-import org.opalj.br.instructions.FRETURN
-import org.opalj.br.instructions.ARETURN
-import org.opalj.br.instructions.RETURN
 import org.opalj.br.instructions.IREM
-import org.opalj.br.instructions.IDIV
+import org.opalj.br.instructions.IRETURN
+import org.opalj.br.instructions.ISTORE
+import org.opalj.br.instructions.ISTORE_0
 import org.opalj.br.instructions.LDCInt
 import org.opalj.br.instructions.LDIV
 import org.opalj.br.instructions.LoadLong
 import org.opalj.br.instructions.LREM
-import org.opalj.br.fpcf.properties.ThrownExceptions
-import org.opalj.br.fpcf.properties.ThrownExceptionsFallback
-import org.opalj.br.fpcf.properties.ThrownExceptionsByOverridingMethods
-import org.opalj.br.fpcf.properties.ThrownExceptions.MethodIsAbstract
-import org.opalj.br.fpcf.properties.ThrownExceptions.MethodBodyIsNotAvailable
-import org.opalj.br.fpcf.properties.ThrownExceptions.MethodIsNative
-import org.opalj.br.fpcf.properties.ThrownExceptions.UnknownExceptionIsThrown
-import org.opalj.br.fpcf.properties.ThrownExceptions.AnalysisLimitation
-import org.opalj.br.fpcf.properties.ThrownExceptions.UnresolvedInvokeDynamicInstruction
-import org.opalj.br.fpcf.properties.ThrownExceptions.MethodCalledThrowsUnknownExceptions
-import org.opalj.br.fpcf.properties.ThrownExceptions.SomeException
+import org.opalj.br.instructions.LRETURN
+import org.opalj.br.instructions.LSTORE
+import org.opalj.br.instructions.LSTORE_0
+import org.opalj.br.instructions.MethodInvocationInstruction
+import org.opalj.br.instructions.MONITORENTER
+import org.opalj.br.instructions.MONITOREXIT
+import org.opalj.br.instructions.NonVirtualMethodInvocationInstruction
+import org.opalj.br.instructions.PUTFIELD
+import org.opalj.br.instructions.RETURN
+import org.opalj.br.instructions.StackManagementInstruction
+import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPS
 import org.opalj.fpcf.InterimResult
@@ -66,9 +66,9 @@ import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
-import org.opalj.br.analyses.ProjectInformationKeys
 
 /**
  * Analysis of thrown exceptions; computes the [[org.opalj.br.fpcf.properties.ThrownExceptions]]
@@ -104,7 +104,7 @@ class L1ThrownExceptionsAnalysis private[analyses] (
             return Result(m, MethodBodyIsNotAvailable);
 
         //
-        //... when we reach this point the method is non-empty
+        // ... when we reach this point the method is non-empty
         //
         val code = body.get
         val cfJoins = code.cfJoins

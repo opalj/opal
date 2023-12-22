@@ -28,4 +28,3 @@ trait DefaultHandlingForThrownExceptions extends ReturnInstructionsDomain {
         /* Nothing to do. */
     }
 }
-

@@ -186,7 +186,7 @@ private[immutable] final case class Ref2ListNode[T >: Null <: AnyRef](
                 thisList = thisList.rest
                 thatList = thatList.rest
             }
-            thisList eq thatList //... <=> true iff both lists are empty
+            thisList eq thatList // ... <=> true iff both lists are empty
         }
     }
 

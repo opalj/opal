@@ -3,20 +3,21 @@ package org.opalj
 package br
 package analyses
 
-import java.net.URL
 import java.io.File
+import java.net.URL
+import scala.collection.immutable.ArraySeq
 import scala.util.control.ControlThrowable
-import com.typesafe.config.ConfigFactory
-import com.typesafe.config.Config
+
 import org.opalj.br.reader.Java9LibraryFramework
-import org.opalj.log.OPALLogger
-import org.opalj.log.OPALLogger.info
-import org.opalj.log.OPALLogger.error
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.LogMessage
+import org.opalj.log.OPALLogger
+import org.opalj.log.OPALLogger.error
+import org.opalj.log.OPALLogger.info
 
-import scala.collection.immutable.ArraySeq
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
 
 /**
  * Provides the necessary infrastructure to easily execute a given analysis that
@@ -73,7 +74,7 @@ trait AnalysisApplication {
      * The default behavior is to check that there are no additional parameters.
      */
     def checkAnalysisSpecificParameters(parameters: Seq[String]): Iterable[String] = {
-        if (parameters.isEmpty) Nil else parameters.map("unknown parameter: "+_)
+        if (parameters.isEmpty) Nil else parameters.map("unknown parameter: " + _)
     }
 
     /**
@@ -83,18 +84,18 @@ trait AnalysisApplication {
     protected def printUsage(implicit logContext: LogContext): Unit = {
         info(
             "usage",
-            "java "+
-                this.getClass.getName+"\n"+
-                "[-help (prints this help and exits)]\n"+
-                "[-renderConfig (prints the configuration)]\n"+
-                "[-cp=<Directories or JAR/class files> (Default: the current folder.)]\n"+
-                "[-libcp=<Directories or JAR/class files>]\n"+
-                "[-projectConfig=<project type specific configuration options)>]\n"+
-                "[-completelyLoadLibraries (the bodies of library methods are loaded)]\n"+
+            "java " +
+                this.getClass.getName + "\n" +
+                "[-help (prints this help and exits)]\n" +
+                "[-renderConfig (prints the configuration)]\n" +
+                "[-cp=<Directories or JAR/class files> (Default: the current folder.)]\n" +
+                "[-libcp=<Directories or JAR/class files>]\n" +
+                "[-projectConfig=<project type specific configuration options)>]\n" +
+                "[-completelyLoadLibraries (the bodies of library methods are loaded)]\n" +
                 analysisSpecificParametersDescription
         )
-        info("general", "description: "+analysis.description)
-        info("general", "copyright: "+analysis.copyright)
+        info("general", "description: " + analysis.description)
+        info("general", "copyright: " + analysis.copyright)
     }
 
     def main(args: Array[String]): Unit = {
@@ -183,7 +184,7 @@ trait AnalysisApplication {
         val libcpFiles = verifyFiles(libcp)
 
         if (unknownArgs.nonEmpty)
-            info("project configuration", "analysis specific parameters: "+unknownArgs.mkString(", "))
+            info("project configuration", "analysis specific parameters: " + unknownArgs.mkString(", "))
         val issues = checkAnalysisSpecificParameters(unknownArgs)
         if (issues.nonEmpty) {
             issues.foreach { i => error("project configuration", i) }
@@ -215,11 +216,11 @@ trait AnalysisApplication {
 
         if (renderConfig) {
             val effectiveConfiguration =
-                "Effective configuration:\n"+org.opalj.util.renderConfig(project.config)
+                "Effective configuration:\n" + org.opalj.util.renderConfig(project.config)
             info("project configuration", effectiveConfiguration)
         }
 
-        info("info", "executing analysis: "+analysis.title+".")
+        info("info", "executing analysis: " + analysis.title + ".")
         // TODO Add progressmanagement.
         val result = analysis.analyze(project, unknownArgs.toSeq, ProgressManagement.None)
         OPALLogger.log(LogMessage.plainInfo(result.toConsoleString))
@@ -254,7 +255,7 @@ trait AnalysisApplication {
             reader.readClassFiles(
                 cpFiles,
                 JavaClassFileReader.ClassFiles,
-                file => info("creating project", "\tfile: "+file)
+                file => info("creating project", "\tfile: " + file)
             )
 
         val (libraryClassFiles, exceptions2) = {
@@ -267,7 +268,7 @@ trait AnalysisApplication {
                     } else {
                         Java9LibraryFramework.ClassFiles
                     },
-                    file => info("creating project", "\tfile: "+file)
+                    file => info("creating project", "\tfile: " + file)
                 )
             } else {
                 (Iterable.empty[(ClassFile, URL)], List.empty[Throwable])
@@ -284,7 +285,7 @@ trait AnalysisApplication {
 
         val statistics =
             project
-                .statistics.map(kv => "- "+kv._1+": "+kv._2)
+                .statistics.map(kv => "- " + kv._1 + ": " + kv._2)
                 .toList.sorted.reverse
                 .mkString("project statistics:\n\t", "\n\t", "\n")
         info("project", statistics)(project.logContext)

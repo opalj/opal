@@ -5,16 +5,16 @@ package analyses
 
 import java.net.URL
 
-import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.util.Seconds
-import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.ProjectAnalysisApplication
-import org.opalj.br.analyses.Project
 import org.opalj.br.ClassFile
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.analyses.L0SelfReferenceLeakageAnalysis
 import org.opalj.br.fpcf.properties.DoesNotLeakSelfReference
 import org.opalj.br.fpcf.properties.SelfReferenceLeakage
+import org.opalj.util.PerformanceEvaluation.time
+import org.opalj.util.Seconds
 
 /**
  * Runs the default self-reference leakage analysis.
@@ -53,9 +53,9 @@ object SelfReferenceLeakageAnalysisDemo extends ProjectAnalysisApplication {
             val classType = classFile.thisType
             val className = classFile.thisType.toJava
             if (project.classHierarchy.isInterface(classType).isYes)
-                "interface "+className
+                "interface " + className
             else
-                "class "+className
+                "class " + className
         }
 
         val leakageInfo =
@@ -64,6 +64,6 @@ object SelfReferenceLeakageAnalysisDemo extends ProjectAnalysisApplication {
                 "\n",
                 s"\nTotal: ${notLeakingEntities.size}\n"
             )
-        BasicReport(leakageInfo + projectStore+"\nAnalysis time: "+analysisTime)
+        BasicReport(leakageInfo + projectStore + "\nAnalysis time: " + analysisTime)
     }
 }

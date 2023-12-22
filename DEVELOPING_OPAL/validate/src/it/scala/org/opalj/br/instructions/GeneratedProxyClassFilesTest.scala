@@ -4,16 +4,17 @@ package br
 package instructions
 
 import java.net.URL
+import scala.collection.immutable.ArraySeq
+
+import org.opalj.ai.BaseAI
+import org.opalj.ai.domain.l0.BaseDomain
+import org.opalj.br.TestSupport.biProject
+import org.opalj.collection.immutable.UIDSet
+
 import org.junit.runner.RunWith
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
-import org.opalj.collection.immutable.UIDSet
-import org.opalj.br.TestSupport.biProject
-import org.opalj.ai.BaseAI
-import org.opalj.ai.domain.l0.BaseDomain
-
-import scala.collection.immutable.ArraySeq
 
 /**
  * Checks that the ClassFileFactory produces valid proxy class files.
@@ -33,7 +34,7 @@ class GeneratedProxyClassFilesTest extends AnyFunSpec with Matchers {
             var proxy: ClassFile = null
 
             describe(s"generating a valid proxy for ${m.toJava}") {
-                val typeName = "ProxyValidation$"+t.fqn+":"+m.name + m.descriptor.toJVMDescriptor+"$"
+                val typeName = "ProxyValidation$" + t.fqn + ":" + m.name + m.descriptor.toJVMDescriptor + "$"
                 val definingType =
                     TypeDeclaration(
                         ObjectType(typeName),
@@ -41,7 +42,7 @@ class GeneratedProxyClassFilesTest extends AnyFunSpec with Matchers {
                         Some(ObjectType.Object),
                         UIDSet.empty
                     )
-                val proxyMethodName = m.name + '$'+"proxy"
+                val proxyMethodName = m.name + '$' + "proxy"
                 val tIsInterface = testProject.classFile(t).get.isInterfaceDeclaration
                 val (invocationInstruction: Opcode, methodHandle: MethodCallMethodHandle) =
                     if (tIsInterface) {

@@ -2,9 +2,9 @@
 package org.opalj
 package graphs
 
-import org.opalj.collection.mutable.IntArrayStack
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.IntTrieSet1
+import org.opalj.collection.mutable.IntArrayStack
 
 /**
  * A (standard) dominator tree.

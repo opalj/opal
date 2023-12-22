@@ -5,9 +5,11 @@ package analyses
 
 import java.io.File
 import java.net.URL
+
 import org.opalj.util.ScalaMajorVersion
-import org.scalatest.matchers.should.Matchers
+
 import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
 /**
  * Tests whether the DeclaredMethodsKey creates the correct declared method objects for each class
@@ -80,7 +82,7 @@ class DeclaredMethodsKeyTest extends AnyFunSpec with Matchers {
         val excessMethods = declaredMethods.filter(m => m.hasSingleDefinedMethod && !annotated.contains(m))
         if (excessMethods.nonEmpty)
             fail(
-                "found unexpected methods: \n\t"+excessMethods.mkString("\n\t")
+                "found unexpected methods: \n\t" + excessMethods.mkString("\n\t")
             )
     }
 
@@ -96,7 +98,7 @@ class DeclaredMethodsKeyTest extends AnyFunSpec with Matchers {
 
         val emptyMethodO = methodOs.find(_._2.isEmpty)
         if (emptyMethodO.isDefined)
-            fail(s"method ${emptyMethodO.get._1.simpleName}.${descriptor.toJava(name)}"+
+            fail(s"method ${emptyMethodO.get._1.simpleName}.${descriptor.toJava(name)}" +
                 "not found in fixture project")
 
         val actual = declaredMethodsKey(

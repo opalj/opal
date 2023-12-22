@@ -4,10 +4,10 @@ package br
 package fpcf
 package properties
 
+import org.opalj.collection.immutable.IntTrieSet
+
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-
-import org.opalj.collection.immutable.IntTrieSet
 
 /**
  * Tests the [[Purity]] property, especially correctness of the meet operator.
@@ -114,18 +114,18 @@ class PurityPropertyTest extends AnyFlatSpec with Matchers {
 
         assert(
             (DPure meet DSideEffectFree) == DSideEffectFree,
-            "LBDPure meet LBDSideEffectFree was not LBDSideEffectFree"+
+            "LBDPure meet LBDSideEffectFree was not LBDSideEffectFree" +
                 s" (was ${DPure meet DSideEffectFree})"
         )
         assert(
             (DPure meet ImpureByAnalysis) == ImpureByAnalysis,
-            "LBDPure meet LBImpure was not LBImpure"+
+            "LBDPure meet LBImpure was not LBImpure" +
                 s" (was ${DPure meet ImpureByAnalysis})"
         )
 
         assert(
             (DSideEffectFree meet ImpureByAnalysis) == ImpureByAnalysis,
-            "LBDSideEffectFree meet LBImpure was not LBImpure"+
+            "LBDSideEffectFree meet LBImpure was not LBImpure" +
                 s" (was ${DSideEffectFree meet ImpureByAnalysis})"
         )
 

@@ -4,14 +4,9 @@ package br
 package reader
 
 import java.lang.invoke.LambdaMetafactory
-import com.typesafe.config.Config
-import com.typesafe.config.ConfigValueFactory
-import org.opalj.log.Info
-import org.opalj.log.OPALLogger
-import org.opalj.log.OPALLogger.error
-import org.opalj.log.OPALLogger.info
-import org.opalj.log.StandardLogMessage
-import org.opalj.collection.immutable.UIDSet
+import scala.collection.IndexedSeqView
+import scala.collection.immutable.ArraySeq
+
 import org.opalj.bi.ACC_PRIVATE
 import org.opalj.bi.ACC_PUBLIC
 import org.opalj.bi.ACC_STATIC
@@ -24,9 +19,15 @@ import org.opalj.br.collection.mutable.InstructionsBuilder
 import org.opalj.br.instructions._
 import org.opalj.br.instructions.ClassFileFactory.AlternativeFactoryMethodName
 import org.opalj.br.instructions.ClassFileFactory.DefaultFactoryMethodName
+import org.opalj.collection.immutable.UIDSet
+import org.opalj.log.Info
+import org.opalj.log.OPALLogger
+import org.opalj.log.OPALLogger.error
+import org.opalj.log.OPALLogger.info
+import org.opalj.log.StandardLogMessage
 
-import scala.collection.IndexedSeqView
-import scala.collection.immutable.ArraySeq
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigValueFactory
 
 /**
  * Provides support for rewriting Java 8/Scala lambda or method reference expressions that
@@ -193,7 +194,7 @@ trait InvokedynamicRewriting
     ): String = {
         val descriptor = surroundingMethodDescriptor.toJVMDescriptor
         val sanitizedDescriptor = replaceChars(descriptor, "/[;", "$]:")
-        s"${surroundingType.packageName}/${surroundingType.simpleName}$$"+
+        s"${surroundingType.packageName}/${surroundingType.simpleName}$$" +
             s"$surroundingMethodName$sanitizedDescriptor:$pc$$Lambda"
     }
 
@@ -354,7 +355,7 @@ trait InvokedynamicRewriting
                         val t = classFile.thisType.toJava
                         info(
                             "load-time transformation",
-                            s"$t - unresolvable INVOKEDYNAMIC (unknown string recipe): "+
+                            s"$t - unresolvable INVOKEDYNAMIC (unknown string recipe): " +
                                 invokedynamic
                         )
                     }
@@ -897,7 +898,7 @@ trait InvokedynamicRewriting
                     val t = classFile.thisType.toJava
                     info(
                         "load-time transformation",
-                        s"$t - unresolvable INVOKEDYNAMIC (unknown lambda factory argument): "+
+                        s"$t - unresolvable INVOKEDYNAMIC (unknown lambda factory argument): " +
                             invokedynamic
                     )
                 }
@@ -1066,7 +1067,7 @@ trait InvokedynamicRewriting
                         handle.isInterface
                     }
 
-                case other => throw new UnknownError("unexpected handle: "+other)
+                case other => throw new UnknownError("unexpected handle: " + other)
             }
 
         // Creates forwarding method for private method `m` that can be accessed by the proxy class.
@@ -1148,7 +1149,7 @@ trait InvokedynamicRewriting
                         targetMethod.get, lift(targetMethod.get)
                     )
                 } else {
-                    val forwardingName = "$forward$"+m.name
+                    val forwardingName = "$forward$" + m.name
 
                     // Update the implMethod and other information to match the forwarder
                     implMethod = if (isInterface) {
@@ -1330,27 +1331,27 @@ object InvokedynamicRewriting {
     final val TargetMethodNameRegEx = "\\$[A-Za-z_]+\\$[^.;\\[/<>]*:[0-9]+$"
 
     final val InvokedynamicKeyPrefix = {
-        ClassFileReaderConfiguration.ConfigKeyPrefix+"Invokedynamic."
+        ClassFileReaderConfiguration.ConfigKeyPrefix + "Invokedynamic."
     }
 
     final val InvokedynamicRewritingConfigKey = {
-        InvokedynamicKeyPrefix+"rewrite"
+        InvokedynamicKeyPrefix + "rewrite"
     }
 
     final val LambdaExpressionsLogRewritingsConfigKey = {
-        InvokedynamicKeyPrefix+"logLambdaRewrites"
+        InvokedynamicKeyPrefix + "logLambdaRewrites"
     }
 
     final val StringConcatLogRewritingsConfigKey = {
-        InvokedynamicKeyPrefix+"logStringConcatRewrites"
+        InvokedynamicKeyPrefix + "logStringConcatRewrites"
     }
 
     final val ObjectMethodsLogRewritingsConfigKey = {
-        InvokedynamicKeyPrefix+"logObjectMethodsRewrites"
+        InvokedynamicKeyPrefix + "logObjectMethodsRewrites"
     }
 
     final val InvokedynamicLogUnknownInvokeDynamicsConfigKey = {
-        InvokedynamicKeyPrefix+"logUnknownInvokeDynamics"
+        InvokedynamicKeyPrefix + "logUnknownInvokeDynamics"
     }
 
     def isJava8LikeLambdaExpression(invokedynamic: INVOKEDYNAMIC): Boolean = {

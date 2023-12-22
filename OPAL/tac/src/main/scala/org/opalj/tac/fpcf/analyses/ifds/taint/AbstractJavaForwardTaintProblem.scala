@@ -12,14 +12,13 @@ import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.ifds.Callable
 import org.opalj.ifds.Dependees.Getter
-import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem.V
 import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem
+import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem.V
 import org.opalj.tac.fpcf.analyses.ifds.JavaMethod
 import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
 
 /**
  * IFDS Problem that performs a forward Taint Analysis on Java
- *
  *
  * @param project the analyzed project
  *

@@ -2,21 +2,21 @@
 package org
 package opalj
 
-import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.ThreadFactory
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
+import scala.collection.immutable.ArraySeq
 import scala.collection.parallel.ExecutionContextTaskSupport
-import scala.util.control.ControlThrowable
 import scala.concurrent.ExecutionContext
+import scala.util.control.ControlThrowable
+
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger.error
-import org.opalj.log.OPALLogger.warn
 import org.opalj.log.OPALLogger.info
-
-import scala.collection.immutable.ArraySeq
+import org.opalj.log.OPALLogger.warn
 
 /**
  * Common constants, factory methods and objects used throughout OPAL when performing
@@ -43,7 +43,7 @@ package object concurrent {
         Executors.newCachedThreadPool(
             new ThreadFactory {
                 def newThread(r: Runnable): Thread = {
-                    val name = s"[global] opalj.ThreadPool - Thread "+nextID.incrementAndGet()
+                    val name = s"[global] opalj.ThreadPool - Thread " + nextID.incrementAndGet()
                     val t = new Thread(r, name)
                     t.setDaemon(true)
                     t.setUncaughtExceptionHandler(UncaughtExceptionHandler)
@@ -83,8 +83,8 @@ package object concurrent {
     }
     info(
         "OPAL",
-        s"using $NumberOfThreadsForCPUBoundTasks thread(s) for CPU bound tasks "+
-            "(can be changed by setting the system property org.opalj.threads.CPUBoundTasks; "+
+        s"using $NumberOfThreadsForCPUBoundTasks thread(s) for CPU bound tasks " +
+            "(can be changed by setting the system property org.opalj.threads.CPUBoundTasks; " +
             "the number should be equal to the number of physical – not hyperthreaded – cores)"
     )
 
@@ -103,7 +103,7 @@ package object concurrent {
             val s = Integer.parseInt(maxIOBoundTasks)
             if (s < NumberOfThreadsForCPUBoundTasks)
                 throw new IllegalArgumentException(
-                    s"org.opalj.threads.IOBoundTasks===$s must be larger than "+
+                    s"org.opalj.threads.IOBoundTasks===$s must be larger than " +
                         s"org.opalj.threads.CPUBoundTasks===$NumberOfThreadsForCPUBoundTasks"
                 )
             s
@@ -114,8 +114,8 @@ package object concurrent {
     }
     info(
         "OPAL",
-        s"using at most $NumberOfThreadsForIOBoundTasks thread(s) for IO bound tasks "+
-            "(can be changed by setting the system property org.opalj.threads.IOBoundTasks; "+
+        s"using at most $NumberOfThreadsForIOBoundTasks thread(s) for IO bound tasks " +
+            "(can be changed by setting the system property org.opalj.threads.IOBoundTasks; " +
             "the number should be betweeen 1 and 2 times the number of (hyperthreaded) cores)"
     )
 

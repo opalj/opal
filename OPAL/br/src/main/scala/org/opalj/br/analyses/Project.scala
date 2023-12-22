@@ -5,6 +5,7 @@ package analyses
 
 import scala.annotation.switch
 import scala.annotation.tailrec
+
 import java.io.File
 import java.lang.ref.SoftReference
 import java.net.URL
@@ -14,27 +15,12 @@ import java.util.concurrent.atomic.AtomicReferenceArray
 import scala.collection.Map
 import scala.collection.Set
 import scala.collection.immutable
+import scala.collection.immutable.ArraySeq
 import scala.collection.mutable
 import scala.collection.mutable.AnyRefMap
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.Buffer
-import com.typesafe.config.Config
-import com.typesafe.config.ConfigFactory
-import org.opalj.log.Error
-import org.opalj.log.GlobalLogContext
-import org.opalj.log.LogContext
-import org.opalj.log.OPALLogger
-import org.opalj.log.OPALLogger.error
-import org.opalj.log.OPALLogger.info
-import org.opalj.log.StandardLogContext
-import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.collection.immutable.UIDSet
-import org.opalj.concurrent.ConcurrentExceptions
-import org.opalj.concurrent.SequentialTasks
-import org.opalj.concurrent.Tasks
-import org.opalj.concurrent.defaultIsInterrupted
-import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
-import org.opalj.concurrent.parForeachArrayElement
+
 import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.INVOKESTATIC
@@ -43,8 +29,24 @@ import org.opalj.br.instructions.NonVirtualMethodInvocationInstruction
 import org.opalj.br.reader.BytecodeInstructionsCache
 import org.opalj.br.reader.Java17FrameworkWithDynamicRewritingAndCaching
 import org.opalj.br.reader.Java17LibraryFramework
+import org.opalj.collection.immutable.UIDSet
+import org.opalj.concurrent.ConcurrentExceptions
+import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
+import org.opalj.concurrent.SequentialTasks
+import org.opalj.concurrent.Tasks
+import org.opalj.concurrent.defaultIsInterrupted
+import org.opalj.concurrent.parForeachArrayElement
+import org.opalj.log.Error
+import org.opalj.log.GlobalLogContext
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
+import org.opalj.log.OPALLogger.error
+import org.opalj.log.OPALLogger.info
+import org.opalj.log.StandardLogContext
+import org.opalj.util.PerformanceEvaluation.time
 
-import scala.collection.immutable.ArraySeq
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
 
 /**
  * Primary abstraction of a Java project; i.e., a set of classes that constitute a
@@ -361,7 +363,7 @@ class Project[Source] private (
             } else {
                 var sharedFunctionalMethod: MethodSignature = null
                 if (classFile.interfaceTypes.forall { i =>
-                    //... forall is "only" used to short-cut the evaluation; in case of
+                    // ... forall is "only" used to short-cut the evaluation; in case of
                     // false all relevant state is already updated
                     if (!irrelevantInterfaces.contains(i)) {
                         functionalInterfaces.get(i) match {
@@ -1002,7 +1004,7 @@ class Project[Source] private (
 
         projectClassFiles foreach { classFile =>
             // we want to collect the size in relation to the source code;
-            //i.e., across all nested classes
+            // i.e., across all nested classes
             val count =
                 classFile.methods.iterator.filterNot(_.isSynthetic).size +
                     classFile.fields.iterator.filterNot(_.isSynthetic).size
@@ -1029,12 +1031,12 @@ class Project[Source] private (
         val classDescriptions =
             sources map { entry =>
                 val (ot, source) = entry
-                ot.toJava+" « "+source.toString
+                ot.toJava + " « " + source.toString
             }
 
         classDescriptions.mkString(
-            "Project("+
-                "\n\tlibraryClassFilesAreInterfacesOnly="+libraryClassFilesAreInterfacesOnly+
+            "Project(" +
+                "\n\tlibraryClassFilesAreInterfacesOnly=" + libraryClassFilesAreInterfacesOnly +
                 "\n\t",
             "\n\t",
             "\n)"
@@ -1051,7 +1053,7 @@ class Project[Source] private (
      * Unregisters this project from the OPALLogger and then calls `super.finalize`.
      */
     override protected def finalize(): Unit = {
-        OPALLogger.debug("project", "finalized ("+logContext+")")
+        OPALLogger.debug("project", "finalized (" + logContext + ")")
         if (logContext != GlobalLogContext) { OPALLogger.unregister(logContext) }
 
         // DEPRECATED: super.finalize()
@@ -1145,9 +1147,9 @@ object Project {
                         val typeIsInterface = isInterface(invoke.declaringClass.asObjectType)
                         if (typeIsInterface.isYesOrNo && typeIsInterface.isYes != invoke.isInterfaceCall) {
                             val ex = InconsistentProjectException(
-                                s"the type of the declaring class of the target method of the invokes call in "+
-                                    m.toJava(s"pc=$pc; $invoke - $disclaimer")+
-                                    " is inconsistent; it is expected to be "+
+                                s"the type of the declaring class of the target method of the invokes call in " +
+                                    m.toJava(s"pc=$pc; $invoke - $disclaimer") +
+                                    " is inconsistent; it is expected to be " +
                                     (if (invoke.isInterfaceCall) "an interface" else "a class"),
                                 Error
                             )
@@ -1165,7 +1167,7 @@ object Project {
                                 val NEW(objectType) = instruction
                                 if (isInterface(objectType).isYes) {
                                     val ex = InconsistentProjectException(
-                                        s"cannot create an instance of interface ${objectType.toJava} in "+
+                                        s"cannot create an instance of interface ${objectType.toJava} in " +
                                             m.toJava(s"pc=$pc $disclaimer"),
                                         Error
                                     )
@@ -1180,11 +1182,11 @@ object Project {
                                         case Empty         => /*OK - partial project*/
                                         case Failure =>
                                             val ex = InconsistentProjectException(
-                                                s"target method of invokestatic call in "+
-                                                    m.toJava(s"pc=$pc; $invokestatic - $disclaimer")+
-                                                    " cannot be resolved; supertype information is complete="+
-                                                    completeSupertypeInformation+
-                                                    "; missing supertype class file: "+missingSupertypeClassFile,
+                                                s"target method of invokestatic call in " +
+                                                    m.toJava(s"pc=$pc; $invokestatic - $disclaimer") +
+                                                    " cannot be resolved; supertype information is complete=" +
+                                                    completeSupertypeInformation +
+                                                    "; missing supertype class file: " + missingSupertypeClassFile,
                                                 Error
                                             )
                                             addException(ex)
@@ -1199,11 +1201,11 @@ object Project {
                                         case Empty         => /*OK - partial project*/
                                         case Failure =>
                                             val ex = InconsistentProjectException(
-                                                s"target method of invokespecial call in "+
-                                                    m.toJava(s"pc=$pc; $invokespecial - $disclaimer")+
-                                                    " cannot be resolved; supertype information is complete="+
-                                                    completeSupertypeInformation+
-                                                    "; missing supertype class file: "+missingSupertypeClassFile,
+                                                s"target method of invokespecial call in " +
+                                                    m.toJava(s"pc=$pc; $invokespecial - $disclaimer") +
+                                                    " cannot be resolved; supertype information is complete=" +
+                                                    completeSupertypeInformation +
+                                                    "; missing supertype class file: " + missingSupertypeClassFile,
                                                 Error
                                             )
                                             addException(ex)
@@ -1587,7 +1589,7 @@ object Project {
                     declaredMethod <- cf.methods
                     if declaredMethod.isVirtualMethodDeclaration
                 } {
-                    if (declaredMethod.isFinal) { //... the method is necessarily not abstract...
+                    if (declaredMethod.isFinal) { // ... the method is necessarily not abstract...
                         methods += ((declaredMethod, immutable.Set(declaredMethod)))
                     } else {
                         var overridingMethods = immutable.Set.empty[Method]
@@ -1910,9 +1912,9 @@ object Project {
                             ClassHierarchy.noDefaultTypeHierarchyDefinitions()
                         } else {
                             val alternative =
-                                "(using the preconfigured type hierarchy (based on Java 7) "+
+                                "(using the preconfigured type hierarchy (based on Java 7) " +
                                     "for classes belonging java.lang)"
-                            info("project configuration", "JDK classes not found "+alternative)
+                            info("project configuration", "JDK classes not found " + alternative)
                             ClassHierarchy.defaultTypeHierarchyDefinitions()
                         }
                     ClassHierarchy(
@@ -1955,9 +1957,9 @@ object Project {
                     handleInconsistentProject(
                         logContext,
                         InconsistentProjectException(
-                            s"the module $moduleName is defined as part of the project:\n\t"+
-                                projectModules(moduleName).source.getOrElse("<VIRTUAL>")+" and\n\t"+
-                                source.map(_.toString).getOrElse("<VIRTUAL>")+
+                            s"the module $moduleName is defined as part of the project:\n\t" +
+                                projectModules(moduleName).source.getOrElse("<VIRTUAL>") + " and\n\t" +
+                                source.map(_.toString).getOrElse("<VIRTUAL>") +
                                 "\n\tkeeping the first one."
                         )
                     )
@@ -1965,9 +1967,9 @@ object Project {
                     handleInconsistentProject(
                         logContext,
                         InconsistentProjectException(
-                            s"the module $moduleName is defined as part of the libraries:\n\t"+
-                                libraryModules(moduleName).source.getOrElse("<VIRTUAL>")+" and\n\t"+
-                                source.map(_.toString).getOrElse("<VIRTUAL>")+
+                            s"the module $moduleName is defined as part of the libraries:\n\t" +
+                                libraryModules(moduleName).source.getOrElse("<VIRTUAL>") + " and\n\t" +
+                                source.map(_.toString).getOrElse("<VIRTUAL>") +
                                 "\n\tkeeping the first one."
                         )
                     )
@@ -1983,8 +1985,8 @@ object Project {
                         handleInconsistentProject(
                             logContext,
                             InconsistentProjectException(
-                                s"inconsistent nesting information for class $member, "+
-                                    s"found in nests $host and ${prevHost.get}"+
+                                s"inconsistent nesting information for class $member, " +
+                                    s"found in nests $host and ${prevHost.get}" +
                                     "\n\tkeeping the first one."
                             )
                         )
@@ -2007,9 +2009,9 @@ object Project {
                     handleInconsistentProject(
                         logContext,
                         InconsistentProjectException(
-                            s"${projectType.toJava} is defined by multiple class files:\n\t"+
-                                sources.get(projectType).getOrElse("<VIRTUAL>")+" and\n\t"+
-                                source.map(_.toString).getOrElse("<VIRTUAL>")+
+                            s"${projectType.toJava} is defined by multiple class files:\n\t" +
+                                sources.get(projectType).getOrElse("<VIRTUAL>") + " and\n\t" +
+                                source.map(_.toString).getOrElse("<VIRTUAL>") +
                                 "\n\tkeeping the first one."
                         )
                     )
@@ -2056,9 +2058,9 @@ object Project {
                     handleInconsistentProject(
                         logContext,
                         InconsistentProjectException(
-                            s"${libraryType.toJava} is defined by the project and a library: "+
-                                sources.getOrElse(libraryType, "<VIRTUAL>")+" and "+
-                                source.toString+"; keeping the project class file."
+                            s"${libraryType.toJava} is defined by the project and a library: " +
+                                sources.getOrElse(libraryType, "<VIRTUAL>") + " and " +
+                                source.toString + "; keeping the project class file."
                         )
                     )
 
@@ -2066,8 +2068,8 @@ object Project {
                         handleInconsistentProject(
                             logContext,
                             InconsistentProjectException(
-                                s"the kind of the type ${libraryType.toJava} "+
-                                    s"defined by the project ($projectTypeQualifier) "+
+                                s"the kind of the type ${libraryType.toJava} " +
+                                    s"defined by the project ($projectTypeQualifier) " +
                                     s"and a library ($libraryTypeQualifier) differs"
                             )
                         )
@@ -2077,9 +2079,9 @@ object Project {
                     handleInconsistentProject(
                         logContext,
                         InconsistentProjectException(
-                            s"${libraryType.toJava} is defined multiple times in the libraries: "+
-                                sources.getOrElse(libraryType, "<VIRTUAL>")+" and "+
-                                source.toString+"; keeping the first one."
+                            s"${libraryType.toJava} is defined multiple times in the libraries: " +
+                                sources.getOrElse(libraryType, "<VIRTUAL>") + " and " +
+                                source.toString + "; keeping the first one."
                         )
                     )
                 } else {
@@ -2208,7 +2210,7 @@ object Project {
                 issues.foreach { handleInconsistentProject(logContext, _) }
                 info(
                     "project configuration",
-                    s"project validation revealed ${issues.size} significant issues"+
+                    s"project validation revealed ${issues.size} significant issues" +
                         (
                             if (issues.nonEmpty)
                                 "; validate the configured libraries for inconsistencies"

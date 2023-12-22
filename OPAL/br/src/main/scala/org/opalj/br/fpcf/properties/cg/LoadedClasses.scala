@@ -5,7 +5,6 @@ package fpcf
 package properties
 package cg
 
-import org.opalj.log.OPALLogger
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.FallbackReason
@@ -14,6 +13,7 @@ import org.opalj.fpcf.PropertyIsNotDerivedByPreviouslyExecutedAnalysis
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStore
+import org.opalj.log.OPALLogger
 
 sealed trait LoadedClassesMetaInformation extends PropertyMetaInformation {
     final type Self = LoadedClasses

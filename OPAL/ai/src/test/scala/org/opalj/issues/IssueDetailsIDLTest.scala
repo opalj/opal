@@ -3,17 +3,15 @@ package org.opalj
 package issues
 
 import scala.reflect.ClassTag
-import org.junit.runner.RunWith
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
-import org.scalatestplus.junit.JUnitRunner
+
 import play.api.libs.json.Json
-import org.opalj.collection.mutable.Locals
+import scala.collection.immutable.ArraySeq
+
 import org.opalj.br.Code
-import org.opalj.br.NoExceptionHandlers
 import org.opalj.br.FieldType
 import org.opalj.br.LocalVariable
 import org.opalj.br.LocalVariableTable
+import org.opalj.br.NoExceptionHandlers
 import org.opalj.br.instructions.ATHROW
 import org.opalj.br.instructions.DADD
 import org.opalj.br.instructions.DUP
@@ -23,8 +21,12 @@ import org.opalj.br.instructions.IINC
 import org.opalj.br.instructions.LOOKUPSWITCH
 import org.opalj.br.instructions.NOP
 import org.opalj.collection.immutable.IntIntPair
+import org.opalj.collection.mutable.Locals
 
-import scala.collection.immutable.ArraySeq
+import org.junit.runner.RunWith
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests the toIDL method of IssueDetails
@@ -71,7 +73,8 @@ class IssueDetailsIDLTest extends AnyFlatSpec with Matchers {
                 Json.obj(
                     "name" -> "foo",
                     "value" -> "Int"
-                ), Json.obj(
+                ),
+                Json.obj(
                     "name" -> "bar",
                     "value" -> "Double"
                 )
@@ -203,8 +206,7 @@ class IssueDetailsIDLTest extends AnyFlatSpec with Matchers {
         ))
     }
 
-    //TODO implement tests for FieldValues
+    // TODO implement tests for FieldValues
 
-    //TODO implement tests for MethodReturnValues
+    // TODO implement tests for MethodReturnValues
 }
-

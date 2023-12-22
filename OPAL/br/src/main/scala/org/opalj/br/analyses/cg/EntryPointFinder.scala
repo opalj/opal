@@ -6,10 +6,10 @@ package cg
 
 import scala.collection.mutable.ArrayBuffer
 
-import org.opalj.log.OPALLogger
-import net.ceedubs.ficus.Ficus._
-
 import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
+
+import net.ceedubs.ficus.Ficus._
 
 /**
  * The EntryPointFinder trait is a common trait for all analyses that can derive an programs entry
@@ -23,10 +23,10 @@ import org.opalj.log.LogContext
 sealed trait EntryPointFinder {
 
     /*
-    * Returns the entry points with respect to a concrete scenario.
-    *
-    * This method must be implemented by any subtype.
-    */
+     * Returns the entry points with respect to a concrete scenario.
+     *
+     * This method must be implemented by any subtype.
+     */
     def collectEntryPoints(project: SomeProject): Iterable[Method] = Set.empty[Method]
 }
 
@@ -174,7 +174,7 @@ trait ConfigurationEntryPointsFinder extends EntryPointFinder {
 
     // don't make this a val for initialization reasons
     @inline private[this] def additionalEPConfigKey: String = {
-        InitialEntryPointsKey.ConfigKeyPrefix+"entryPoints"
+        InitialEntryPointsKey.ConfigKeyPrefix + "entryPoints"
     }
 
     override def collectEntryPoints(project: SomeProject): Iterable[Method] = {
@@ -186,7 +186,7 @@ trait ConfigurationEntryPointsFinder extends EntryPointFinder {
         if (!project.config.hasPath(additionalEPConfigKey)) {
             OPALLogger.info(
                 "project configuration",
-                s"configuration key $additionalEPConfigKey is missing; "+
+                s"configuration key $additionalEPConfigKey is missing; " +
                     "no additional entry points configured"
             )
             return entryPoints;
@@ -198,7 +198,7 @@ trait ConfigurationEntryPointsFinder extends EntryPointFinder {
                 case e: Throwable =>
                     OPALLogger.error(
                         "project configuration - recoverable",
-                        s"configuration key $additionalEPConfigKey is invalid; "+
+                        s"configuration key $additionalEPConfigKey is invalid; " +
                             "see EntryPointKey documentation",
                         e
                     )
@@ -249,7 +249,7 @@ trait ConfigurationEntryPointsFinder extends EntryPointFinder {
                             if (methods.isEmpty && !isSubtype)
                                 OPALLogger.warn(
                                     "project configuration",
-                                    s"$typeName does not define a method $name(${md.toJVMDescriptor}); "+
+                                    s"$typeName does not define a method $name(${md.toJVMDescriptor}); " +
                                         "entry point ignored"
                                 )
                         }
@@ -257,7 +257,7 @@ trait ConfigurationEntryPointsFinder extends EntryPointFinder {
                         if (methods.exists(_.body.isEmpty)) {
                             OPALLogger.warn(
                                 "project configuration",
-                                s"$typeName has an empty method $name); "+
+                                s"$typeName has an empty method $name); " +
                                     "entry point ignored"
                             )
                             methods = methods.filter(_.body.isDefined)
@@ -345,7 +345,7 @@ object MetaEntryPointsFinder
  */
 object AllEntryPointsFinder extends EntryPointFinder {
     final val ConfigKey =
-        InitialEntryPointsKey.ConfigKeyPrefix+"AllEntryPointsFinder.projectMethodsOnly"
+        InitialEntryPointsKey.ConfigKeyPrefix + "AllEntryPointsFinder.projectMethodsOnly"
 
     override def collectEntryPoints(project: SomeProject): Iterable[Method] = {
         if (project.config.as[Boolean](ConfigKey))

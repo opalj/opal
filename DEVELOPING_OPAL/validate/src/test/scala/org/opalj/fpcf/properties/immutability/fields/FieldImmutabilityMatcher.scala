@@ -10,8 +10,8 @@ import scala.collection.immutable.SortedSet
 import org.opalj.br.AnnotationLike
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.properties.immutability.FieldImmutability
 import org.opalj.br.fpcf.properties.immutability.DependentlyImmutableField
+import org.opalj.br.fpcf.properties.immutability.FieldImmutability
 
 /**
  * Matches a field's `FieldImmutability` property. The match is successful if the field has the
@@ -23,7 +23,7 @@ import org.opalj.br.fpcf.properties.immutability.DependentlyImmutableField
  */
 class FieldImmutabilityMatcher(val property: FieldImmutability) extends AbstractPropertyMatcher {
 
-    //private final val PropertyReasonID = 0
+    // private final val PropertyReasonID = 0
 
     override def isRelevant(
         p:      SomeProject,

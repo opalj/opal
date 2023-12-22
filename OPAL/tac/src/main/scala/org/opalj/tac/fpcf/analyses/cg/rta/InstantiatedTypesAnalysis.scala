@@ -8,6 +8,20 @@ package rta
 
 import scala.language.existentials
 
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.ObjectType
+import org.opalj.br.ReferenceType
+import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
+import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
+import org.opalj.br.fpcf.ContextProviderKey
+import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.analyses.ContextProvider
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
+import org.opalj.br.fpcf.properties.cg.NoCallers
+import org.opalj.br.instructions.NEW
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
@@ -24,20 +38,6 @@ import org.opalj.fpcf.PropertyComputationResult
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.SomeEPS
-import org.opalj.br.DeclaredMethod
-import org.opalj.br.ObjectType
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
-import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.instructions.NEW
-import org.opalj.br.ReferenceType
-import org.opalj.br.fpcf.analyses.ContextProvider
-import org.opalj.br.fpcf.properties.cg.Callers
-import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
-import org.opalj.br.fpcf.properties.cg.NoCallers
-import org.opalj.br.fpcf.ContextProviderKey
 
 /**
  * Marks types as instantiated if their constructor is invoked. Constructors invoked by subclass

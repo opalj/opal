@@ -5,17 +5,16 @@ package queries
 package jcg
 
 import java.util.concurrent.ConcurrentHashMap
-
 import scala.collection.immutable.ArraySeq
 
-import org.opalj.da.ClassFile
 import org.opalj.br.MethodWithBody
 import org.opalj.br.analyses.Project
+import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.INVOKEINTERFACE
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.INVOKEVIRTUAL
-import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.MethodInvocationInstruction
+import org.opalj.da.ClassFile
 
 /**
  * Groups test case features that perform a method calls that are related to Java 8
@@ -37,7 +36,7 @@ class Java8InterfaceMethods(implicit hermes: HermesConfig) extends DefaultFeatur
             "J8DIM3", /* 2 --- call on class which transitively calls an method that potentially could target an IDM */
             "J8DIM4", /* 3 --- call on class type which must be resolved to an IDM */
             "J8DIM5", /* 4 --- call that's dispatched to IDM where the class inherits from multiple interfaces with that idm (sig. wise) */
-            "J8SIM1" /* 5 --- call to static interface method */ ,
+            "J8SIM1", /* 5 --- call to static interface method */
             "J10SIM2" /* 6 --- call to a private static interface method (from Java 10) */
         )
     }

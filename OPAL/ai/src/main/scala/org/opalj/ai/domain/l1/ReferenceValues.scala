@@ -4,12 +4,20 @@ package ai
 package domain
 package l1
 
-import scala.language.existentials
 import scala.annotation.tailrec
+import scala.language.existentials
 import scala.reflect.ClassTag
 
 import java.util.IdentityHashMap
 
+import org.opalj.ai.domain.Origin.MultipleOriginsValue
+import org.opalj.ai.domain.Origin.SingleOriginValue
+import org.opalj.br.ArrayType
+import org.opalj.br.ComputationalType
+import org.opalj.br.ComputationalTypeReference
+import org.opalj.br.ObjectType
+import org.opalj.br.ReferenceType
+import org.opalj.br.Type
 import org.opalj.collection.IntIterator
 import org.opalj.collection.UID
 import org.opalj.collection.immutable.IdentityPair
@@ -20,14 +28,6 @@ import org.opalj.value.IsMultipleReferenceValue
 import org.opalj.value.IsNullValue
 import org.opalj.value.IsReferenceValue
 import org.opalj.value.ValueInformation
-import org.opalj.br.ArrayType
-import org.opalj.br.ComputationalType
-import org.opalj.br.ComputationalTypeReference
-import org.opalj.br.ObjectType
-import org.opalj.br.ReferenceType
-import org.opalj.br.Type
-import org.opalj.ai.domain.Origin.MultipleOriginsValue
-import org.opalj.ai.domain.Origin.SingleOriginValue
 
 /**
  * This partial domain enables tracking of a reference value's null-ness and must-alias information.
@@ -654,7 +654,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
 
         def toString(upperTypeBound: String): String = {
             var description = upperTypeBound
-            if (!this.isPrecise) description = "_ <: "+description
+            if (!this.isPrecise) description = "_ <: " + description
             if (this.isNull.isUnknown) description = s"{$description, null}"
             description += s"[↦$origin;refId=$refId]"
             description
@@ -794,8 +794,8 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             !this.isPrecise ||
                 !classHierarchy.isKnown(theUpperTypeBound) ||
                 classHierarchy.isInterface(theUpperTypeBound).isNo,
-            s"the type ${theUpperTypeBound.toJava} defines an interface and, "+
-                "hence, cannnot be the concrete(precise) type of an object instance "+
+            s"the type ${theUpperTypeBound.toJava} defines an interface and, " +
+                "hence, cannnot be the concrete(precise) type of an object instance " +
                 "(if this assertion fails, the project configuration may be bogus))"
         )
 
@@ -813,9 +813,9 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             assert(thisUTB ne supertype)
             assert(
                 !this.isPrecise || !domain.isSubtypeOf(supertype, thisUTB),
-                s"this type is precise ${thisUTB.toJava}; "+
-                    s"refinement goal: ${supertype.toJava} "+
-                    "(is this type a subtype of the given type: "+
+                s"this type is precise ${thisUTB.toJava}; " +
+                    s"refinement goal: ${supertype.toJava} " +
+                    "(is this type a subtype of the given type: " +
                     s"${domain.isSubtypeOf(thisUTB, supertype)})"
             )
 
@@ -1105,8 +1105,8 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                     )
                 )
             ),
-            s"the upper type bound (isNull == $isNull) of ${values.mkString(",")} "+
-                s"== ${domain.upperTypeBound(values)} which is a strict subtype of "+
+            s"the upper type bound (isNull == $isNull) of ${values.mkString(",")} " +
+                s"== ${domain.upperTypeBound(values)} which is a strict subtype of " +
                 s"the given bound $upperTypeBound"
         )
         assert(
@@ -1809,7 +1809,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                     "null"
                 } else {
                     var ss = upperTypeBound.map(_.toJava).mkString(" with ")
-                    if (!isPrecise) ss = "_ <: "+ss
+                    if (!isPrecise) ss = "_ <: " + ss
                     if (isNull.isUnknown) ss = s"{$ss, null}"
                     ss
                 }

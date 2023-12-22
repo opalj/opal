@@ -2,12 +2,11 @@
 package org.opalj
 package issues
 
-import scala.xml.Node
-import scala.xml.Group
-import scala.xml.Unparsed
-
 import play.api.libs.json.Json
 import play.api.libs.json.JsValue
+import scala.xml.Group
+import scala.xml.Node
+import scala.xml.Unparsed
 
 /**
  * Describes some issue found in source code.
@@ -57,7 +56,7 @@ case class Issue(
                 <dd>
                     <span class="analysis_id">{ analysis }</span>
                     |
-                    <span class="relevance">relevance={ relevance.value.toString+" ("+relevance.name+")" }</span>
+                    <span class="relevance">relevance={ relevance.value.toString + " (" + relevance.name + ")" }</span>
                     |
                     <span class="data_kinds">kind={ kinds.mkString(", ") }</span>
                     |
@@ -87,9 +86,9 @@ case class Issue(
         import Console.{GREEN, RESET}
 
         val primaryLocation = locations.head
-        primaryLocation.toAnsiColoredString+" "+
-            relevance.toAnsiColoredString+": "+
-            GREEN + primaryLocation.description.map(summary+" - "+_).getOrElse(summary) + RESET
+        primaryLocation.toAnsiColoredString + " " +
+            relevance.toAnsiColoredString + ": " +
+            GREEN + primaryLocation.description.map(summary + " - " + _).getOrElse(summary) + RESET
     }
 
     def toEclipseConsoleString: String = {

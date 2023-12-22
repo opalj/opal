@@ -2,23 +2,24 @@
 package org.opalj
 package ba
 
+import scala.collection.immutable.ArraySeq
+
+import org.opalj.ai.domain.l0.TypeCheckingDomain
+import org.opalj.ai.util.XHTML
+import org.opalj.bc.Assembler
+import org.opalj.bi.ACC_PUBLIC
+import org.opalj.br.BooleanType
+import org.opalj.br.ClassHierarchy
+import org.opalj.br.ExceptionHandler
+import org.opalj.br.MethodDescriptor
+import org.opalj.br.MethodDescriptor.JustTakes
+import org.opalj.br.ObjectType
+import org.opalj.br.instructions._
+import org.opalj.util.InMemoryClassLoader
+
 import org.junit.runner.RunWith
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatestplus.junit.JUnitRunner
-import org.opalj.util.InMemoryClassLoader
-import org.opalj.bi.ACC_PUBLIC
-import org.opalj.bc.Assembler
-import org.opalj.br.MethodDescriptor
-import org.opalj.br.ObjectType
-import org.opalj.br.instructions._
-import org.opalj.br.ClassHierarchy
-import org.opalj.ai.domain.l0.TypeCheckingDomain
-import org.opalj.ai.util.XHTML
-import org.opalj.br.BooleanType
-import org.opalj.br.ExceptionHandler
-import org.opalj.br.MethodDescriptor.JustTakes
-
-import scala.collection.immutable.ArraySeq
 
 /**
  * Tests the require statements and warnings of a CodeAttributeBuilder.

@@ -2,14 +2,15 @@
 package org.opalj
 
 import scala.annotation.switch
+
+import scala.collection.immutable.ArraySeq
 import scala.xml.Node
-import scala.xml.Text
 import scala.xml.NodeSeq
+import scala.xml.Text
+
 import org.opalj.bi.AccessFlags
 import org.opalj.bi.AccessFlagsContext
 import org.opalj.bi.VisibilityModifier
-
-import scala.collection.immutable.ArraySeq
 
 /**
  * Defines convenience methods related to representing certain class file elements.
@@ -83,7 +84,7 @@ package object da {
 
         val explicitAccessFlags =
             VisibilityModifier.get(access_flags) match {
-                case None => if (accessFlags.length() == 0) "default" else accessFlags+" default"
+                case None => if (accessFlags.length() == 0) "default" else accessFlags + " default"
                 case _    => accessFlags
             }
 
@@ -264,7 +265,7 @@ package object da {
     }
 
     def abbreviateType(definingType: String, memberType: String): Node = {
-        val classAttrtibute = "type "+(if (definingType.indexOf('[') == -1) "object" else "array")
+        val classAttrtibute = "type " + (if (definingType.indexOf('[') == -1) "object" else "array")
 
         val abbreviatedMemberType = org.opalj.bytecode.abbreviateType(definingType, memberType, '.')
         <span class={ classAttrtibute } data-type={ memberType }> { abbreviatedMemberType } </span>

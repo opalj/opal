@@ -4,11 +4,11 @@ package ai
 package domain
 package l1
 
-import scala.Int.{MinValue => MinInt}
 import scala.Int.{MaxValue => MaxInt}
+import scala.Int.{MinValue => MinInt}
 
-import org.opalj.value.IsIntegerValue
 import org.opalj.br.CTIntType
+import org.opalj.value.IsIntegerValue
 
 /**
  * This domain represents integer values using ranges.
@@ -593,7 +593,6 @@ trait IntegerRangeValues
             case IntegerRangeLike(rlb, rub) =>
                 left match {
                     case IntegerRangeLike(llb, lub) =>
-
                         // to identify overflows we simply do the "add" on long values
                         // and check afterwards
                         val lb = llb.toLong - rub.toLong

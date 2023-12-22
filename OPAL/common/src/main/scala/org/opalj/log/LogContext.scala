@@ -2,8 +2,8 @@
 package org.opalj
 package log
 
-import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * A log context associates log messages with a specific context and logger.

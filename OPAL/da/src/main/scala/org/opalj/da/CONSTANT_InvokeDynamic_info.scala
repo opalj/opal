@@ -3,13 +3,12 @@ package org.opalj
 package da
 
 import scala.xml.Node
+import scala.xml.NodeSeq
 import scala.xml.Text
+
 import org.opalj.bi.ConstantPoolTag
 
-import scala.xml.NodeSeq
-
 /**
- *
  * @author Michael Eichberg
  */
 case class CONSTANT_InvokeDynamic_info(
@@ -48,9 +47,9 @@ case class CONSTANT_InvokeDynamic_info(
     }
 
     override def toString(implicit cp: Constant_Pool): String = {
-        "CONSTANT_InvokeDynamic_info("+
-            s"$bootstrap_method_attr_index,"+
-            s"${cp(name_and_type_index).toString(cp)}/*$name_and_type_index */ "+
+        "CONSTANT_InvokeDynamic_info(" +
+            s"$bootstrap_method_attr_index," +
+            s"${cp(name_and_type_index).toString(cp)}/*$name_and_type_index */ " +
             ")"
     }
 }

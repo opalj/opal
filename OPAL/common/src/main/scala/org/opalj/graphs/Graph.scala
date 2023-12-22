@@ -4,10 +4,12 @@ package graphs
 
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
+
+import scala.collection.{Map => AMap}
+import scala.collection.mutable.HashMap
 import scala.collection.mutable.LinkedHashMap
 import scala.collection.mutable.Set
-import scala.collection.mutable.HashMap
-import scala.collection.{Map => AMap}
+
 import org.opalj.collection.IntIterator
 
 /**

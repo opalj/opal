@@ -17,8 +17,8 @@ object ClassFileInformation {
     def main(args: Array[String]): Unit = {
 
         if (args.length < 2) {
-            println("Usage: java …ClassFileInformation "+
-                "<JAR file containing class files> "+
+            println("Usage: java …ClassFileInformation " +
+                "<JAR file containing class files> " +
                 "<Name of classfile (incl. path) contained in the JAR file>+")
             println("Example:\n\tjava …ClassFileInformation /.../jre/lib/rt.jar java/util/ArrayList.class")
             sys.exit(-1)
@@ -37,7 +37,7 @@ object ClassFileInformation {
             println(thisType.toJava)
 
             // superclassType returns an Option, because java.lang.Object does not have a super class
-            superclassType foreach { s => println("  extends "+s.toJava) }
+            superclassType foreach { s => println("  extends " + s.toJava) }
             if (interfaceTypes.nonEmpty) {
                 println(interfaceTypes.map(_.toJava).mkString("  implement ", ", ", ""))
             }
@@ -45,7 +45,7 @@ object ClassFileInformation {
             // the source file attribute is an optional attribute and is only specified
             // if the compiler settings are such that debug information is added to the
             // compile class file.
-            sourceFile foreach { s => println("\tSOURCEFILE: "+s) }
+            sourceFile foreach { s => println("\tSOURCEFILE: " + s) }
 
             module foreach { m =>
                 println("\tMODULE: ")

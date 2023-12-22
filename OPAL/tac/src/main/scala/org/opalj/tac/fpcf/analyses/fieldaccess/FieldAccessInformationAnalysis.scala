@@ -168,4 +168,3 @@ object EagerFieldAccessInformationAnalysis extends BasicFPCFEagerAnalysisSchedul
         analysis
     }
 }
-

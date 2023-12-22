@@ -26,7 +26,7 @@ object ProjectIndexStatistics extends ProjectAnalysisApplication {
 
         BasicReport(
             project.get(ProjectIndexKey).
-                statistics().map(kv => "- "+kv._1+": "+kv._2).
+                statistics().map(kv => "- " + kv._1 + ": " + kv._2).
                 mkString("Identifier usage statistics:\n\t", "\n\t", "\n")
         )
     }

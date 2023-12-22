@@ -5,6 +5,7 @@ package analyses
 package cg
 
 import scala.annotation.tailrec
+
 import scala.collection.mutable
 
 import org.opalj.collection.mutable.ArrayMap

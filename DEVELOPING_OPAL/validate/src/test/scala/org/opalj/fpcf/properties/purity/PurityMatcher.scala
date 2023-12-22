@@ -4,24 +4,24 @@ package fpcf
 package properties
 package purity
 
-import org.opalj.collection.immutable.EmptyIntTrieSet
-import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.br.AnnotationLike
 import org.opalj.br.BooleanValue
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.br.fpcf.properties.ClassifiedImpure
 import org.opalj.br.fpcf.properties.FieldLocality
 import org.opalj.br.fpcf.properties.Purity
 import org.opalj.br.fpcf.properties.ReturnValueFreshness
-import org.opalj.br.fpcf.PropertyStoreKey
-import org.opalj.br.fpcf.properties.ClassifiedImpure
-import org.opalj.br.fpcf.properties.immutability.ClassImmutability
-import org.opalj.br.fpcf.properties.immutability.FieldImmutability
 import org.opalj.br.fpcf.properties.SimpleContextsKey
+import org.opalj.br.fpcf.properties.immutability.ClassImmutability
 import org.opalj.br.fpcf.properties.immutability.FieldAssignability
+import org.opalj.br.fpcf.properties.immutability.FieldImmutability
 import org.opalj.br.fpcf.properties.immutability.TypeImmutability
+import org.opalj.collection.immutable.EmptyIntTrieSet
+import org.opalj.collection.immutable.IntTrieSet
 
 /**
  * Base trait for matchers that match a method's `Purity` property.

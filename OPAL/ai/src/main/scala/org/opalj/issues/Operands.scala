@@ -2,19 +2,18 @@
 package org.opalj
 package issues
 
-import scala.xml.Node
-
+import play.api.libs.json.JsNull
 import play.api.libs.json.Json
 import play.api.libs.json.JsValue
-import play.api.libs.json.JsNull
+import scala.xml.Node
 
-import org.opalj.collection.mutable.Locals
-import org.opalj.br.PC
 import org.opalj.br.Code
-import org.opalj.br.instructions.SimpleConditionalBranchInstruction
+import org.opalj.br.PC
 import org.opalj.br.instructions.CompoundConditionalBranchInstruction
-import org.opalj.br.instructions.StackManagementInstruction
 import org.opalj.br.instructions.IINC
+import org.opalj.br.instructions.SimpleConditionalBranchInstruction
+import org.opalj.br.instructions.StackManagementInstruction
+import org.opalj.collection.mutable.Locals
 
 class Operands(
         val code:           Code,

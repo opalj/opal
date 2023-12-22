@@ -4,11 +4,12 @@ package bi
 package reader
 
 import scala.annotation.switch
-import java.io.DataInputStream
-import org.opalj.control.fillArraySeq
-
-import scala.collection.immutable.ArraySeq
 import scala.reflect.ClassTag
+
+import java.io.DataInputStream
+import scala.collection.immutable.ArraySeq
+
+import org.opalj.control.fillArraySeq
 
 /**
  * Generic parser for the `target_type` and `target_info` fields of type annotations.

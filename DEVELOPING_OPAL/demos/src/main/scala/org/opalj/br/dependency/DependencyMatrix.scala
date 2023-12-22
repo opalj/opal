@@ -33,7 +33,7 @@ object DependencyMatrix {
         for (arg <- args) {
             val file = new java.io.File(arg)
             if (!file.canRead() || file.isDirectory()) {
-                println(arg+" is not a valid ZIP/Jar file.");
+                println(arg + " is not a valid ZIP/Jar file.");
                 printUsage()
                 sys.exit(1)
             }
@@ -64,7 +64,7 @@ object DependencyMatrix {
                 }
             )
 
-        println("Reading all class files - "+jarFiles.mkString(", ")+".")
+        println("Reading all class files - " + jarFiles.mkString(", ") + ".")
         var count = 0
         time {
             for {
@@ -76,7 +76,7 @@ object DependencyMatrix {
             }
         } { t =>
             println(
-                s"\nReading all $count class files and building the dependency matrix took "+
+                s"\nReading all $count class files and building the dependency matrix took " +
                     t.toSeconds
             )
         }

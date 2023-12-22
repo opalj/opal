@@ -2,12 +2,12 @@
 package org.opalj.br
 package cfg
 
+import org.opalj.br.instructions.Instruction
+import org.opalj.io.writeAndOpen
+
+import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.BeforeAndAfterAll
-
-import org.opalj.io.writeAndOpen
-import org.opalj.br.instructions.Instruction
 
 /**
  * Helper methods to test the CFG related methods.
@@ -103,7 +103,7 @@ abstract class AbstractCFGTest extends AnyFunSpec with Matchers with BeforeAndAf
             f
         } catch {
             case t: Throwable =>
-                writeAndOpen(cfg.toDot, method.name+"-CFG", ".gv")
+                writeAndOpen(cfg.toDot, method.name + "-CFG", ".gv")
                 throw t
         }
     }

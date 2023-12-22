@@ -7,33 +7,33 @@ package cg
 
 import java.net.URL
 
-import com.typesafe.config.ConfigFactory
-import org.junit.runner.RunWith
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
-import org.scalatestplus.junit.JUnitRunner
-
-import org.opalj.fpcf.FinalEP
-import org.opalj.fpcf.FinalP
-import org.opalj.fpcf.PropertyStore
 import org.opalj.br.DeclaredMethod
-import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.TestSupport.allBIProjects
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.cg.ClassExtensibilityKey
 import org.opalj.br.analyses.cg.ClosedPackagesKey
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
 import org.opalj.br.analyses.cg.TypeExtensibilityKey
-import org.opalj.br.analyses.Project
+import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.cg.NoCallers
-import org.opalj.br.fpcf.ContextProviderKey
+import org.opalj.fpcf.FinalEP
+import org.opalj.fpcf.FinalP
+import org.opalj.fpcf.PropertyStore
 import org.opalj.tac.cg.CallGraph
 import org.opalj.tac.cg.CHACallGraphKey
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.cg.TypeBasedPointsToCallGraphKey
+
+import com.typesafe.config.ConfigFactory
+import org.junit.runner.RunWith
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 
 @RunWith(classOf[JUnitRunner]) // TODO: We should use JCG for some basic tests
 class CallGraphIntegrationTest extends AnyFlatSpec with Matchers {

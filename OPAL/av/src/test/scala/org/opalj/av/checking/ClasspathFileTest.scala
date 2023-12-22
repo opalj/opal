@@ -3,16 +3,15 @@ package org.opalj
 package av
 package checking
 
-import org.junit.runner.RunWith
-
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
-import org.scalatest.BeforeAndAfterAll
-import org.scalatestplus.junit.JUnitRunner
-
 import scala.util.matching.Regex
 
 import org.opalj.av.checking.Specification._
+
+import org.junit.runner.RunWith
+import org.scalatest.BeforeAndAfterAll
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Systematic tests created to check the behavior of the Specification package.

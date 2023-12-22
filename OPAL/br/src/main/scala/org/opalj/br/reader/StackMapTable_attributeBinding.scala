@@ -3,11 +3,11 @@ package org.opalj
 package br
 package reader
 
-import org.opalj.bi.reader.StackMapTable_attributeReader
-import org.opalj.bi.reader.StackMapFrameReader
-import org.opalj.bi.reader.VerificationTypeInfoReader
-
 import scala.reflect.ClassTag
+
+import org.opalj.bi.reader.StackMapFrameReader
+import org.opalj.bi.reader.StackMapTable_attributeReader
+import org.opalj.bi.reader.VerificationTypeInfoReader
 
 /**
  * Provides the factory methods to create a stack map table attribute and

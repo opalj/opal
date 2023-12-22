@@ -4,8 +4,9 @@ package br
 package analyses
 package cg
 
-import com.typesafe.config.ConfigFactory
 import org.opalj.br.TestSupport.biProject
+
+import com.typesafe.config.ConfigFactory
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 
@@ -35,7 +36,7 @@ class ClassExtensibilityTest extends AnyFunSpec with Matchers {
     val PublicEnum = TypeFixture("PublicEnum")
     val Enum = TypeFixture("Enum")
 
-    def mergeConfigString(extConf: String, pkgConf: String): String = extConf+"\n"+pkgConf
+    def mergeConfigString(extConf: String, pkgConf: String): String = extConf + "\n" + pkgConf
 
     describe("when a type is located in an open package") {
 
@@ -159,7 +160,7 @@ object ClassExtensibilityConfig {
         s"""
            |org.opalj.br.analyses.cg.ClassExtensibilityKey {
            |    analysis = "org.opalj.br.analyses.cg.ConfiguredExtensibleClasses"
-           |    extensibleClasses = [${types.map("\""+_+"\"").mkString(",")}]
+           |    extensibleClasses = [${types.map("\"" + _ + "\"").mkString(",")}]
            |}
           """.stripMargin
 
@@ -167,7 +168,7 @@ object ClassExtensibilityConfig {
         s"""
            |org.opalj.br.analyses.cg.ClassExtensibilityKey {
            |    analysis = "org.opalj.br.analyses.cg.ConfiguredFinalClasses"
-           |    finalClasses = [${types.map("\""+_+"\"").mkString(",")}]
+           |    finalClasses = [${types.map("\"" + _ + "\"").mkString(",")}]
            |}
         """.stripMargin
 

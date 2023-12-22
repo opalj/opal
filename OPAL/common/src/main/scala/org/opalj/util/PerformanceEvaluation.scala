@@ -3,13 +3,12 @@ package org.opalj
 package util
 
 import java.lang.management.ManagementFactory
-
 import scala.collection.mutable.Map
 
 import org.opalj.concurrent.Locking
-import org.opalj.log.OPALLogger
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
 
 /**
  * Measures the execution time of some code.
@@ -298,7 +297,7 @@ object PerformanceEvaluation {
                     r(t, times)
                     OPALLogger.warn(
                         "common",
-                        s"the time required by the function (${t.toString}) "+
+                        s"the time required by the function (${t.toString}) " +
                             "is too small to get meaningful measurements."
                     )(GlobalLogContext)
 

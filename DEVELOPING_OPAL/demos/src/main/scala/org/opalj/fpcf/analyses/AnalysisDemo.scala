@@ -3,10 +3,11 @@ package org.opalj
 package fpcf
 package analyses
 
-import org.opalj.br.analyses.ProjectAnalysisApplication
-import org.opalj.br.analyses.Project
 import java.net.URL
+
 import org.opalj.br.Method
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.ProjectAnalysisApplication
 
 /**
  * @author Michael Reif
@@ -38,13 +39,13 @@ trait MethodAnalysisDemo extends AnalysisDemo {
     ): Iterable[String] = {
         entities map { eps =>
             val method = eps.e.asInstanceOf[Method]
-            val methodString = getVisibilityModifier(method)+" "+method.name
+            val methodString = getVisibilityModifier(method) + " " + method.name
             val classFile = method.classFile
             val jarInfo = if (withJarInfo)
                 project.source(classFile.thisType)
             else ""
             val classVisibility = if (classFile.isPublic) "public" else ""
-            s"$jarInfo\n\t $classVisibility "+classFile.thisType.toJava+" | "+methodString
+            s"$jarInfo\n\t $classVisibility " + classFile.thisType.toJava + " | " + methodString
         }
     }
 

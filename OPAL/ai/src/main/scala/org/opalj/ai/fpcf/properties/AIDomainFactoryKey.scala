@@ -4,12 +4,12 @@ package ai
 package fpcf
 package properties
 
-import org.opalj.log.OPALLogger
-import org.opalj.log.LogContext
+import org.opalj.ai.common.DomainRegistry
 import org.opalj.br.Method
 import org.opalj.br.analyses.ProjectInformationKey
 import org.opalj.br.analyses.SomeProject
-import org.opalj.ai.common.DomainRegistry
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
 
 /**
  * Encapsulates the information which domain will be used to perform the abstract interpretations
@@ -82,7 +82,7 @@ object AIDomainFactoryKey
         if (theDomainFactories.size > 1) {
             OPALLogger.info(
                 "analysis configuration",
-                s"multiple domains ${theDomainFactories.mkString(", ")} "+
+                s"multiple domains ${theDomainFactories.mkString(", ")} " +
                     s"satisfy the requirements ${domainFactoryRequirements.mkString(", ")} "
             )
         }

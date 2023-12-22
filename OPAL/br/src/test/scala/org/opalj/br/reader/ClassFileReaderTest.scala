@@ -3,10 +3,10 @@ package org.opalj
 package br
 package reader
 
-import org.scalatest.matchers.should.Matchers
-import org.scalatest.flatspec.AnyFlatSpec
-
 import org.opalj.bi.TestResources.locateTestResources
+
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 /**
  * Tests the reading of class files.

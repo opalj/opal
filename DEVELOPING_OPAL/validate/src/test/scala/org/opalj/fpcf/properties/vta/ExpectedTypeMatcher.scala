@@ -9,8 +9,8 @@ import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.Property
-import org.opalj.fpcf.ifds.VTAResult
 import org.opalj.fpcf.ifds.VariableType
+import org.opalj.fpcf.ifds.VTAResult
 import org.opalj.tac.DUVar
 import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.TACode

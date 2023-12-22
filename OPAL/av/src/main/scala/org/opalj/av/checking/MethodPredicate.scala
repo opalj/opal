@@ -3,8 +3,8 @@ package org.opalj
 package av
 package checking
 
-import org.opalj.br.MethodDescriptor
 import org.opalj.br.Method
+import org.opalj.br.MethodDescriptor
 
 /**
  * @author Marco Torsello
@@ -45,4 +45,3 @@ case class MethodWithSignature(
     def toDescription(): String = descriptor.toJava(name)
 
 }
-

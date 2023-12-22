@@ -5,6 +5,9 @@ package fpcf
 package properties
 package fieldaccess
 
+import scala.collection.immutable.IntMap
+import scala.collection.immutable.LongMap
+
 import org.opalj.br.PC
 import org.opalj.collection.immutable.LongLinkedSet
 import org.opalj.collection.immutable.LongLinkedTrieSet
@@ -16,10 +19,8 @@ import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStore
 
-import scala.collection.immutable.IntMap
-import scala.collection.immutable.LongMap
-
-sealed trait FieldAccessInformationPropertyMetaInformation[S <: FieldAccessInformation[S]] extends PropertyMetaInformation {
+sealed trait FieldAccessInformationPropertyMetaInformation[S <: FieldAccessInformation[S]]
+    extends PropertyMetaInformation {
     final override type Self = S;
 
     /**

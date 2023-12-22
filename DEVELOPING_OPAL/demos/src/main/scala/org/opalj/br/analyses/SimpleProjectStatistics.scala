@@ -55,55 +55,53 @@ object SimpleProjectStatistics extends ProjectAnalysisApplication {
                 _.methods.size == maxMethodsInAClass
             ).map(_.thisType.toJava)
 
-        val (longestMethodInAClass, theLongestMethod) =
-            {
-                var max = 0
-                var methodName: String = null
-                for {
-                    classFile <- project.allClassFiles
-                    method <- classFile.methods
-                    if method.body.isDefined
-                    size = method.body.get.instructionsCount
-                    if size > max
-                } {
-                    max = size
-                    methodName = method.toJava
-                }
-
-                (max, methodName)
+        val (longestMethodInAClass, theLongestMethod) = {
+            var max = 0
+            var methodName: String = null
+            for {
+                classFile <- project.allClassFiles
+                method <- classFile.methods
+                if method.body.isDefined
+                size = method.body.get.instructionsCount
+                if size > max
+            } {
+                max = size
+                methodName = method.toJava
             }
 
-        val (methodWithMostRegisterVariableInAClass, theMethodWithTheMostLocalVariables) =
-            {
-                var max = 0
-                var methodName: String = null
+            (max, methodName)
+        }
 
-                for {
-                    classFile <- project.allClassFiles
-                    method <- classFile.methods
-                    if method.body.isDefined
-                    count = method.body.get.maxLocals
-                    if count > max
-                } {
-                    max = count
-                    methodName = method.toJava
-                }
+        val (methodWithMostRegisterVariableInAClass, theMethodWithTheMostLocalVariables) = {
+            var max = 0
+            var methodName: String = null
 
-                (max, methodName)
+            for {
+                classFile <- project.allClassFiles
+                method <- classFile.methods
+                if method.body.isDefined
+                count = method.body.get.maxLocals
+                if count > max
+            } {
+                max = count
+                methodName = method.toJava
             }
+
+            (max, methodName)
+        }
 
         BasicReport(
-            classFilesDistribution.mkString("classFilesDistribution:\n\t", "\n\t", "\n")+
-                "maxInstanceFieldsInAClass: "+
-                maxInstanceFieldsInAClass+"("+classWithMaxInstanceFields+")\n"+
-                "maxClassFieldsInAClass: "+
-                maxClassFieldsInAClass+"("+classWithMaxClassFields+")\n"+
-                "maxMethodsInAClass: "+
-                maxMethodsInAClass+"("+classWithMaxMethods+")\n"+
-                "longestMethodInAClass: "+
-                longestMethodInAClass+"("+theLongestMethod+")\n"+
-                "methodWithMostRegisterVariableInAClass: "+
-                methodWithMostRegisterVariableInAClass+"("+theMethodWithTheMostLocalVariables+")\n"
+            classFilesDistribution.mkString("classFilesDistribution:\n\t", "\n\t", "\n") +
+                "maxInstanceFieldsInAClass: " +
+                maxInstanceFieldsInAClass + "(" + classWithMaxInstanceFields + ")\n" +
+                "maxClassFieldsInAClass: " +
+                maxClassFieldsInAClass + "(" + classWithMaxClassFields + ")\n" +
+                "maxMethodsInAClass: " +
+                maxMethodsInAClass + "(" + classWithMaxMethods + ")\n" +
+                "longestMethodInAClass: " +
+                longestMethodInAClass + "(" + theLongestMethod + ")\n" +
+                "methodWithMostRegisterVariableInAClass: " +
+                methodWithMostRegisterVariableInAClass + "(" + theMethodWithTheMostLocalVariables + ")\n"
         )
     }
 }

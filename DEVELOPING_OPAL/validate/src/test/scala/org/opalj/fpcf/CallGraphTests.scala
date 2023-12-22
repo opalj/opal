@@ -4,15 +4,12 @@ package fpcf
 
 import java.net.URL
 
-import com.typesafe.config.Config
-import com.typesafe.config.ConfigValueFactory
-
+import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
+import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.fpcf.properties.callgraph.TypePropagationVariant
-import org.opalj.br.analyses.Project
-import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.tac.cg.CallGraphKey
 import org.opalj.tac.cg.CHACallGraphKey
 import org.opalj.tac.cg.CTACallGraphKey
@@ -20,18 +17,21 @@ import org.opalj.tac.cg.FTACallGraphKey
 import org.opalj.tac.cg.MTACallGraphKey
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.cg.XTACallGraphKey
+import org.opalj.tac.fpcf.analyses.cg.CallGraphAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.reflection.ReflectionRelatedCallsAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.rta.InstantiatedTypesAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.cg.xta.ArrayInstantiationsAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.CTASetEntitySelector
 import org.opalj.tac.fpcf.analyses.cg.xta.FTASetEntitySelector
 import org.opalj.tac.fpcf.analyses.cg.xta.InstantiatedTypesAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.MTASetEntitySelector
-import org.opalj.tac.fpcf.analyses.cg.xta.TypeSetEntitySelector
-import org.opalj.tac.fpcf.analyses.cg.xta.ArrayInstantiationsAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.TypePropagationAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.cg.xta.TypeSetEntitySelector
 import org.opalj.tac.fpcf.analyses.cg.xta.XTASetEntitySelector
-import org.opalj.tac.fpcf.analyses.cg.CallGraphAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalysis
+
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigValueFactory
 
 /**
  * Tests if the computed call graph contains (at least!) the expected call edges.
@@ -45,10 +45,10 @@ class CallGraphTests extends PropertiesTest {
         // For these tests, we want to restrict entry points to "main" methods.
         // Also, no types should be instantiated by default.
         baseConfig.withValue(
-            InitialEntryPointsKey.ConfigKeyPrefix+"analysis",
+            InitialEntryPointsKey.ConfigKeyPrefix + "analysis",
             ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.ApplicationEntryPointsFinder")
         ).withValue(
-                InitialInstantiatedTypesKey.ConfigKeyPrefix+"analysis",
+                InitialInstantiatedTypesKey.ConfigKeyPrefix + "analysis",
                 ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.ApplicationInstantiatedTypesFinder")
             )
     }

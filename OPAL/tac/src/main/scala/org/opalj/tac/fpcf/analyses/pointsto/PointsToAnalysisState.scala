@@ -7,22 +7,11 @@ package pointsto
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
-import org.opalj.log.LogContext
-import org.opalj.log.OPALLogger
-import org.opalj.log.Warn
-import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.EPK
-import org.opalj.fpcf.Property
-import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.SomeEOptionP
-import org.opalj.fpcf.SomeEPK
-import org.opalj.br.Method
-import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
+
 import org.opalj.br.ArrayType
 import org.opalj.br.DeclaredField
 import org.opalj.br.DeclaredMethod
+import org.opalj.br.Method
 import org.opalj.br.ReferenceType
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.cg.Callees
@@ -32,7 +21,19 @@ import org.opalj.br.fpcf.properties.fieldaccess.MethodFieldReadAccessInformation
 import org.opalj.br.fpcf.properties.fieldaccess.MethodFieldWriteAccessInformation
 import org.opalj.br.fpcf.properties.fieldaccess.NoMethodFieldReadAccessInformation
 import org.opalj.br.fpcf.properties.fieldaccess.NoMethodFieldWriteAccessInformation
+import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.EPK
+import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyKey
+import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.SomeEOptionP
+import org.opalj.fpcf.SomeEPK
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
+import org.opalj.log.Warn
 import org.opalj.tac.fpcf.analyses.cg.BaseAnalysisState
 import org.opalj.tac.fpcf.properties.TACAI
 
@@ -235,7 +236,7 @@ class PointsToAnalysisState[ElementType, PointsToSet <: PointsToSetLike[ElementT
         _readAccessesDependee,
         setReadAccessDependee,
         MethodFieldReadAccessInformation.key,
-        NoMethodFieldReadAccessInformation,
+        NoMethodFieldReadAccessInformation
     )
 
     def hasReadAccessDependee: Boolean = {
@@ -253,7 +254,7 @@ class PointsToAnalysisState[ElementType, PointsToSet <: PointsToSetLike[ElementT
         _writeAccessesDependee,
         setWriteAccessDependee,
         MethodFieldWriteAccessInformation.key,
-        NoMethodFieldWriteAccessInformation,
+        NoMethodFieldWriteAccessInformation
     )
 
     def hasWriteAccessDependee: Boolean = {

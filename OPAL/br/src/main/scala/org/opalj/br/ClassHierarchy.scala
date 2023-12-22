@@ -2,43 +2,42 @@
 package org.opalj
 package br
 
-import scala.language.implicitConversions
 import scala.annotation.tailrec
+import scala.language.implicitConversions
 
 import java.io.InputStream
 import java.util.concurrent.locks.ReentrantReadWriteLock
-
 import scala.collection.mutable
-import scala.jdk.CollectionConverters._
 import scala.concurrent.Await.{result => await}
+import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration.Inf
-import scala.concurrent.ExecutionContext
 import scala.io.BufferedSource
+import scala.jdk.CollectionConverters._
 
-import it.unimi.dsi.fastutil.ints.Int2IntArrayMap
-import org.opalj.control.foreachNonNullValue
-import org.opalj.graphs.Node
-import org.opalj.io.process
-import org.opalj.io.processSource
-
-import org.opalj.log.GlobalLogContext
-import org.opalj.log.LogContext
-import org.opalj.log.OPALLogger
-import org.opalj.log.Warn
-import org.opalj.concurrent.OPALUnboundedExecutionContext
-import org.opalj.collection.ForeachRefIterator
+import org.opalj.br.ObjectType.Object
+import org.opalj.collection.CompleteCollection
 import org.opalj.collection.EqualSets
+import org.opalj.collection.ForeachRefIterator
+import org.opalj.collection.IncompleteCollection
 import org.opalj.collection.IntIterator
+import org.opalj.collection.QualifiedCollection
 import org.opalj.collection.StrictSubset
 import org.opalj.collection.StrictSuperset
 import org.opalj.collection.UncomparableSets
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.immutable.UIDSet1
-import org.opalj.collection.CompleteCollection
-import org.opalj.collection.IncompleteCollection
-import org.opalj.collection.QualifiedCollection
-import org.opalj.br.ObjectType.Object
+import org.opalj.concurrent.OPALUnboundedExecutionContext
+import org.opalj.control.foreachNonNullValue
+import org.opalj.graphs.Node
+import org.opalj.io.process
+import org.opalj.io.processSource
+import org.opalj.log.GlobalLogContext
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
+import org.opalj.log.Warn
+
+import it.unimi.dsi.fastutil.ints.Int2IntArrayMap
 
 /**
  * Represents '''a project's class hierarchy'''. The class hierarchy only contains
@@ -238,8 +237,8 @@ class ClassHierarchy private (
                 subinterfaceTypes:              String
         ) {
             override def toString: String = {
-                s"$objectType \t$objectTypeId \t$isInterface \t$isFinal \t$isRootType \t$isLeafType \t"+
-                    s"$isSupertypeInformationComplete \t$superclassType \t$superinterfaceTypes \t"+
+                s"$objectType \t$objectTypeId \t$isInterface \t$isFinal \t$isRootType \t$isLeafType \t" +
+                    s"$isSupertypeInformationComplete \t$superclassType \t$superinterfaceTypes \t" +
                     s"$subclassTypes \t$subinterfaceTypes"
             }
         }
@@ -264,8 +263,8 @@ class ClassHierarchy private (
             }
 
         val header =
-            "type \tid \tinterface \tfinal"+
-                " \troot type \tleaf type \tsupertype information complete"+
+            "type \tid \tinterface \tfinal" +
+                " \troot type \tleaf type \tsupertype information complete" +
                 " \tsuper class \tsuper interfaces \tsub classes \tsub interfaces\n"
         typeInfos.sorted.mkString(header, "\n", "\n")
     }
@@ -311,7 +310,7 @@ class ClassHierarchy private (
         try {
             val ot = objectTypesMap(objectTypeId)
             if (ot eq null) {
-                throw new IllegalArgumentException("ObjectType id invalid: "+objectTypeId)
+                throw new IllegalArgumentException("ObjectType id invalid: " + objectTypeId)
             }
             ot
         } finally {
@@ -1438,7 +1437,6 @@ class ClassHierarchy private (
      *          not conclusive. The latter can happen if the class hierarchy is not
      *          complete and hence precise information about a type's supertypes
      *          is not available.
-     *
      */
     def isASubtypeOf(subtype: ObjectType, theSupertype: ObjectType): Answer = {
         if (subtype eq theSupertype)
@@ -2029,7 +2027,6 @@ class ClassHierarchy private (
      *          not conclusive. The latter can happen if the class hierarchy is not
      *          complete and hence precise information about a type's supertypes
      *          is not available.
-     *
      */
     def isASubtypeOf(
         subtype:   ClassTypeSignature,
@@ -2055,15 +2052,15 @@ class ClassHierarchy private (
      * Returns some statistical data about the class hierarchy.
      */
     def statistics: String = {
-        "Class Hierarchy Statistics:"+
-            "\n\tKnown types: "+knownTypesMap.count(_ != null)+
-            "\n\tInterface types: "+isInterfaceTypeMap.count(isInterface => isInterface)+
-            "\n\tIdentified Superclasses: "+superclassTypeMap.count(_ != null)+
-            "\n\tSuperinterfaces: "+
-            superinterfaceTypesMap.filter(_ != null).foldLeft(0)(_ + _.size)+
-            "\n\tSubclasses: "+
-            subclassTypesMap.filter(_ != null).foldLeft(0)(_ + _.size)+
-            "\n\tSubinterfaces: "+
+        "Class Hierarchy Statistics:" +
+            "\n\tKnown types: " + knownTypesMap.count(_ != null) +
+            "\n\tInterface types: " + isInterfaceTypeMap.count(isInterface => isInterface) +
+            "\n\tIdentified Superclasses: " + superclassTypeMap.count(_ != null) +
+            "\n\tSuperinterfaces: " +
+            superinterfaceTypesMap.filter(_ != null).foldLeft(0)(_ + _.size) +
+            "\n\tSubclasses: " +
+            subclassTypesMap.filter(_ != null).foldLeft(0)(_ + _.size) +
+            "\n\tSubinterfaces: " +
             subinterfaceTypesMap.filter(_ != null).foldLeft(0)(_ + _.size)
     }
 
@@ -2164,7 +2161,7 @@ class ClassHierarchy private (
 
         types filter { aType =>
             isUnknown(aType) ||
-                //!(directSubtypesOf(aType) exists { t => types.contains(t) })
+                // !(directSubtypesOf(aType) exists { t => types.contains(t) })
                 !(types exists { t => (t ne aType) && isSubtypeOf(t, aType) })
         }
     }
@@ -2266,7 +2263,8 @@ class ClassHierarchy private (
 
         if (isUnknown(upperTypeBoundA)) {
             OPALLogger.logOnce(Warn(
-                "project configuration - class hierarchy", "type unknown: "+upperTypeBoundA.toJava
+                "project configuration - class hierarchy",
+                "type unknown: " + upperTypeBoundA.toJava
             ))
             // there is nothing that we can do...
             return ClassHierarchy.JustObject;
@@ -2718,12 +2716,11 @@ object ClassHierarchy {
         implicit
         logContext: LogContext
     ): Seq[TypeDeclaration] = process(in) { in =>
-
         if (in eq null) {
             OPALLogger.error(
                 "internal - class hierarchy",
-                "loading the predefined class hierarchy failed; "+
-                    "make sure that all resources are found in the correct folders and "+
+                "loading the predefined class hierarchy failed; " +
+                    "make sure that all resources are found in the correct folders and " +
                     "try to rebuild the project using \"sbt copyResources\""
             )
             Seq.empty;
@@ -2833,7 +2830,7 @@ object ClassHierarchy {
         ): Unit = {
 
             if (isInterfaceType && isFinal) {
-                val message = s"the class file ${objectType.toJava} defines a final interface "+
+                val message = s"the class file ${objectType.toJava} defines a final interface " +
                     "which violates the JVM specification and is therefore ignored"
                 OPALLogger.error("project configuration - class hierarchy", message)
 
@@ -2891,8 +2888,8 @@ object ClassHierarchy {
                     knownTypesMap(aSuperinterfaceTypeId) = aSuperinterfaceType
                     isInterfaceTypeMap(aSuperinterfaceTypeId) = true
                 } else if (!isInterfaceTypeMap(aSuperinterfaceTypeId)) {
-                    val message = s"the class file ${objectType.toJava} defines a "+
-                        s"super interface ${knownTypesMap(aSuperinterfaceTypeId).toJava} "+
+                    val message = s"the class file ${objectType.toJava} defines a " +
+                        s"super interface ${knownTypesMap(aSuperinterfaceTypeId).toJava} " +
                         "which is actually a regular class file"
                     classesWithBrokenInterfaceInheritance +=
                         ((
@@ -2958,9 +2955,9 @@ object ClassHierarchy {
                 } else {
                     OPALLogger.warn(
                         "project configuration",
-                        s"the type declaration for ${objectType.toJava} is ignored; "+
-                            "class is already defined in the code base "+
-                            s"with superclassType ${superclassTypeMap(oid).toJava}"+
+                        s"the type declaration for ${objectType.toJava} is ignored; " +
+                            "class is already defined in the code base " +
+                            s"with superclassType ${superclassTypeMap(oid).toJava}" +
                             "or defined multiple times in the configured type hierarchy"
                     )
                 }
@@ -3362,8 +3359,8 @@ object ClassHierarchy {
                     if (subclassTypesMap(oid).nonEmpty) {
                         OPALLogger.warn(
                             "project configuration - class hierarchy",
-                            s"the final type ${knownTypesMap(oid).toJava} "+
-                                "has subclasses: "+subclassTypesMap(oid)+
+                            s"the final type ${knownTypesMap(oid).toJava} " +
+                                "has subclasses: " + subclassTypesMap(oid) +
                                 "; resetting the \"is final\" property."
                         )
                         isKnownToBeFinalMap(oid) = false
@@ -3372,8 +3369,8 @@ object ClassHierarchy {
                     if (subinterfaceTypesMap(oid).nonEmpty) {
                         OPALLogger.warn(
                             "project configuration - class hierarchy",
-                            s"the final type ${knownTypesMap(oid).toJava} "+
-                                "has subinterfaces: "+subclassTypesMap(oid)+
+                            s"the final type ${knownTypesMap(oid).toJava} " +
+                                "has subinterfaces: " + subclassTypesMap(oid) +
                                 "; resetting the \"is final\" property."
                         )
                         isKnownToBeFinalMap(oid) = false

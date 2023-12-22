@@ -5,10 +5,10 @@ package info
 
 import java.net.URL
 
-import org.opalj.br.analyses.ProjectAnalysisApplication
-import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.StringConstantsInformationKey
 import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.ProjectAnalysisApplication
+import org.opalj.br.analyses.StringConstantsInformationKey
 
 /**
  * Prints out all string constants found in the bytecode.
@@ -41,7 +41,7 @@ object StringConstants extends ProjectAnalysisApplication {
                 val pc = pcInMethod.pc
                 val method = pcInMethod.method
                 method.toJava(s"pc=$pc")
-            }.mkString("\""+escapedString+"\":\n\t - ", "\n\t - ", "\n")
+            }.mkString("\"" + escapedString + "\":\n\t - ", "\n\t - ", "\n")
         }
 
         BasicReport(mappedData.mkString(s"\nFound ${data.size} strings:\n", "\n", "\n"))

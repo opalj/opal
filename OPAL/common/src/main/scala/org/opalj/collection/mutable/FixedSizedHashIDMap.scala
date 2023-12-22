@@ -3,8 +3,9 @@ package org.opalj
 package collection
 package mutable
 
-import scala.collection.immutable.ArraySeq
 import scala.reflect.ClassTag
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Conceptually, a map where the keys have to have unique hash codes that are spread over a
@@ -129,4 +130,3 @@ object FixedSizedHashIDMap {
     }
 
 }
-

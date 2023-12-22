@@ -82,8 +82,8 @@ case class TATSupertype(supertype_index: Constant_Pool_Index) extends TypeAnnota
     final override def tag: Int = 0x10
 
     final override def description: String = {
-        "type in extends clause of class or interface declaration "+
-            "(including the direct superclass of an anonymous class declaration), "+
+        "type in extends clause of class or interface declaration " +
+            "(including the direct superclass of an anonymous class declaration), " +
             "or in implements clause of interface declaration"
     }
 
@@ -321,7 +321,7 @@ trait TATTypeArgument extends TypeAnnotationTarget {
 
     def type_argument_index: Int
 
-    /** The description of the annotated type argument as given in the JVM spec.*/
+    /** The description of the annotated type argument as given in the JVM spec. */
     def description: String
 
     final override def attribute_length: Int = 1 /*tag*/ + 2 + 1
@@ -346,7 +346,7 @@ case class TATConstructorInvocation(
     final override def tag: Int = 0x48
 
     final def description: String = {
-        "type argument for generic constructor in new expression or "+
+        "type argument for generic constructor in new expression or " +
             "explicit constructor invocation statement"
     }
 

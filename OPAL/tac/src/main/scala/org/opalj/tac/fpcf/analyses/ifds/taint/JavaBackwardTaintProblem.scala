@@ -12,9 +12,9 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.ifds.Callable
 import org.opalj.ifds.Dependees.Getter
 import org.opalj.tac.fpcf.analyses.ifds.JavaBackwardIFDSProblem
+import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem
 import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem.V
 import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
-import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem
 /**
  * Implementation of a backward taint analysis for Java code.
  *

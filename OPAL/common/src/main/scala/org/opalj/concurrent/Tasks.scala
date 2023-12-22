@@ -2,12 +2,10 @@
 package org.opalj
 package concurrent
 
+import java.util.concurrent.locks.Condition
 // OLD import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantLock
-import java.util.concurrent.locks.Condition
 import scala.concurrent.ExecutionContext
-// OLD import scala.concurrent.Future
-// OLD import scala.util.Failure
 
 import org.opalj.concurrent.Locking.withLock
 

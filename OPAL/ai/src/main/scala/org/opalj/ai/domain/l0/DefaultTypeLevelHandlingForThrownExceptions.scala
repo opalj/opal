@@ -8,7 +8,6 @@ package l0
  * Basic implementation of a `Domain`'s `abruptMethodExecution` method that does
  * nothing.
  *
- *
  * @author Michael Eichberg
  */
 trait DefaultTypeLevelHandlingForThrownExceptions extends ReturnInstructionsDomain {
@@ -18,4 +17,3 @@ trait DefaultTypeLevelHandlingForThrownExceptions extends ReturnInstructionsDoma
         /* Nothing to do. */
     }
 }
-

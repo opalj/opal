@@ -3,22 +3,23 @@ package org.opalj
 package br
 package instructions
 
-import org.junit.runner.RunWith
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.matchers.should.Matchers
-import org.scalatestplus.junit.JUnitRunner
-import org.opalj.collection.immutable.UIDSet
+import scala.collection.immutable.ArraySeq
+
 import org.opalj.bi.ACC_BRIDGE
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.TestSupport.biProject
 import org.opalj.br.analyses.Project
-import org.opalj.log.GlobalLogContext
-import com.typesafe.config.Config
 import org.opalj.br.reader.InvokedynamicRewriting
+import org.opalj.collection.immutable.UIDSet
+import org.opalj.log.GlobalLogContext
+
+import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory
-
-import scala.collection.immutable.ArraySeq
+import org.junit.runner.RunWith
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * @author Arne Lottmann
@@ -931,7 +932,7 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
                         lambdas.thisType,
                         lambdas.isInterfaceDeclaration,
                         TypeDeclaration(
-                            ObjectType(theType.toJava + '$'+"Proxy"),
+                            ObjectType(theType.toJava + '$' + "Proxy"),
                             false,
                             Some(ObjectType.Object),
                             UIDSet.empty
@@ -959,7 +960,7 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
             it("the bridge method should stack & cast parameters and call the forwarding method") {
                 val lambdas = lambdasProject.allProjectClassFiles.find(_.fqn == "lambdas/Lambdas").get
                 val receiverType = ObjectType("ClassFileFactoryTest$BridgeCast")
-                val proxyType = ObjectType(receiverType.simpleName + '$'+"Proxy")
+                val proxyType = ObjectType(receiverType.simpleName + '$' + "Proxy")
                 val methodDescriptor =
                     MethodDescriptor(ArraySeq(ObjectType.String, DoubleType), IntegerType)
                 val proxy =
@@ -1004,7 +1005,7 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
             it("should be able to add multiple bridge methods") {
                 val lambdas = lambdasProject.allProjectClassFiles.find(_.fqn == "lambdas/Lambdas").get
                 val receiverType = ObjectType("ClassFileFactoryTest$BridgeCast")
-                val proxyType = ObjectType(receiverType.simpleName + '$'+"Proxy")
+                val proxyType = ObjectType(receiverType.simpleName + '$' + "Proxy")
                 val methodDescriptor =
                     MethodDescriptor(ArraySeq(ObjectType.String, DoubleType), IntegerType)
                 val proxy =
@@ -1067,7 +1068,7 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
             ): Unit = {
                 val fields = fieldTypes.zipWithIndex.map { p =>
                     val (ft, i) = p
-                    Field(bi.ACC_PRIVATE.mask, "field"+i, ft, NoAttributes)
+                    Field(bi.ACC_PRIVATE.mask, "field" + i, ft, NoAttributes)
                 }
                 val constructor = ClassFileFactory.createConstructor(definingType, fields)
                 constructor.body shouldBe defined
@@ -1642,7 +1643,7 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
     ): Unit = {
         val calleeMethodName = calleeMethod.name
         val calleeMethodDescriptor = calleeMethod.descriptor
-        val definingTypeName = calleeType.simpleName+"$"+calleeMethodName
+        val definingTypeName = calleeType.simpleName + "$" + calleeMethodName
         val definingType =
             TypeDeclaration(
                 ObjectType(definingTypeName),
@@ -1650,7 +1651,7 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
                 Some(ObjectType.Object),
                 UIDSet.empty
             )
-        val methodName = calleeMethodName+"$Forwarded"
+        val methodName = calleeMethodName + "$Forwarded"
         val methodDescriptor = calleeMethodDescriptor
         val calleeIsInterface = repository.classFile(calleeType).get.isInterfaceDeclaration
         val (invocationInstruction: Opcode, methodHandle: MethodCallMethodHandle) =

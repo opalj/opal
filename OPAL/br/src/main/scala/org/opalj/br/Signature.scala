@@ -251,9 +251,9 @@ case class ClassSignature(
     }
 
     override def toString: String = {
-        "ClassSignature("+
-            formalTypeParameters.mkString("typeParameters=List(", ",", ")")+
-            ",superClass="+superClassSignature.toString +
+        "ClassSignature(" +
+            formalTypeParameters.mkString("typeParameters=List(", ",", ")") +
+            ",superClass=" + superClassSignature.toString +
             superInterfacesSignature.mkString(",superInterfaces=List(", ",", "))")
     }
 }
@@ -315,7 +315,7 @@ case class ArrayTypeSignature(typeSignature: TypeSignature) extends FieldTypeSig
 
     override def kindId: Int = ArrayTypeSignature.KindId
 
-    override def toJVMSignature: String = "["+typeSignature.toJVMSignature
+    override def toJVMSignature: String = "[" + typeSignature.toJVMSignature
 }
 object ArrayTypeSignature {
 
@@ -354,13 +354,13 @@ case class ClassTypeSignature(
     override def toJVMSignature: String = {
         val packageName = packageIdentifier.getOrElse("")
 
-        "L"+
+        "L" +
             packageName +
             simpleClassTypeSignature.toJVMSignature +
             (classTypeSignatureSuffix match {
                 case Nil => ""
                 case l   => l.map(_.toJVMSignature).mkString(".", ".", "")
-            })+
+            }) +
             ";"
     }
 
@@ -382,7 +382,7 @@ case class TypeVariableSignature(
 
     override def kindId: Int = TypeVariableSignature.KindId
 
-    override def toJVMSignature: String = "T"+identifier+";"
+    override def toJVMSignature: String = "T" + identifier + ";"
 
 }
 object TypeVariableSignature {
@@ -424,12 +424,12 @@ case class FormalTypeParameter(
     def toJVMSignature: String = {
         identifier +
             (classBound match {
-                case Some(x) => ":"+x.toJVMSignature
+                case Some(x) => ":" + x.toJVMSignature
                 case None    => ":"
             }) +
             (interfaceBound match {
                 case Nil => ""
-                case l   => ":"+l.map(_.toJVMSignature).mkString(":")
+                case l   => ":" + l.map(_.toJVMSignature).mkString(":")
             })
     }
 }
@@ -458,9 +458,9 @@ case class ProperTypeArgument(
     }
 
     override def toString: String = {
-        "ProperTypeArgument"+
-            "(variance="+varianceIndicator+
-            ",signature="+fieldTypeSignature+
+        "ProperTypeArgument" +
+            "(variance=" + varianceIndicator +
+            ",signature=" + fieldTypeSignature +
             ")"
     }
 }
@@ -503,7 +503,6 @@ case object ContravariantIndicator extends ContravariantIndicator
 /**
  * If a type argument is not further specified (e.g., List<?> l = …), then the
  * type argument "?" is represented by this object.
- *
  *
  * @see For matching signatures see [[Signature]].
  */
@@ -580,7 +579,6 @@ object ConcreteTypeArgument {
  *      case _ => ...
  *  }
  * }}}
- *
  *
  * @see For matching signatures see [[Signature]].
  */

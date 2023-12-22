@@ -5,16 +5,15 @@ package analyses
 
 import java.net.URL
 
-import org.opalj.log.LogContext
-import org.opalj.log.OPALLogger.info
-import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectAnalysisApplication
-import org.opalj.br.fpcf.properties.EscapeProperty
-import org.opalj.br.fpcf.properties.EscapeViaNormalAndAbnormalReturn
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.br.fpcf.properties.EscapeProperty
+import org.opalj.br.fpcf.properties.EscapeViaNormalAndAbnormalReturn
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger.info
 import org.opalj.tac.Assignment
 import org.opalj.tac.DVar
 import org.opalj.tac.MonitorEnter
@@ -24,6 +23,7 @@ import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.analyses.escape.EagerInterProceduralEscapeAnalysis
 import org.opalj.tac.fpcf.properties.TACAI
+import org.opalj.util.PerformanceEvaluation.time
 
 /**
  * Finds object references in monitorenter instructions that do not escape their thread.

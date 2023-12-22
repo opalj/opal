@@ -8,7 +8,6 @@ import scala.xml.NodeSeq
 import org.opalj.bi.ConstantPoolTag
 
 /**
- *
  * @author Michael Eichberg
  */
 case class CONSTANT_Double_info(value: Double) extends Constant_Pool_Entry {

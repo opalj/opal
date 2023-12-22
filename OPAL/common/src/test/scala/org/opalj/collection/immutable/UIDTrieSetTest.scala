@@ -3,17 +3,17 @@ package org.opalj
 package collection
 package immutable
 
-import org.junit.runner.RunWith
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.matchers.should.Matchers
-import org.scalatestplus.junit.JUnitRunner
-
 import scala.language.implicitConversions
-import org.scalacheck.Prop.propBoolean
-import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 
 import org.opalj.util.Nanoseconds
 import org.opalj.util.PerformanceEvaluation
+
+import org.junit.runner.RunWith
+import org.scalacheck.Prop.propBoolean
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
+import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 
 @RunWith(classOf[JUnitRunner])
 class UIDTrieSetTest extends AnyFunSpec with ScalaCheckDrivenPropertyChecks with Matchers {
@@ -211,7 +211,7 @@ class UIDTrieSetTest extends AnyFunSpec with ScalaCheckDrivenPropertyChecks with
                 } { t => info(s"Set[UID] took ${t.toSeconds}") }
             } { mu => info(s"Set[UID] required $mu bytes") }
 
-            info(s"overall size of sets: "+scalaS.map(_.size).sum)
+            info(s"overall size of sets: " + scalaS.map(_.size).sum)
             assert(opalS.map(_.size).sum == scalaS.map(_.size).sum)
         }
     }

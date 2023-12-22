@@ -6,39 +6,39 @@ package reader
 import scala.annotation.switch
 import scala.annotation.tailrec
 
-import net.ceedubs.ficus.Ficus._
-
-import org.opalj.collection.immutable.IntTrieSet1
-import org.opalj.log.OPALLogger.info
-import org.opalj.br.instructions.Instruction
-import org.opalj.br.instructions.GotoInstruction
 import org.opalj.br.instructions.GOTO
 import org.opalj.br.instructions.GOTO_W
-import org.opalj.br.instructions.WIDE
+import org.opalj.br.instructions.GotoInstruction
+import org.opalj.br.instructions.IF_ACMPEQ
+import org.opalj.br.instructions.IF_ACMPNE
+import org.opalj.br.instructions.IF_ICMPEQ
+import org.opalj.br.instructions.IF_ICMPGE
+import org.opalj.br.instructions.IF_ICMPGT
+import org.opalj.br.instructions.IF_ICMPLE
+import org.opalj.br.instructions.IF_ICMPLT
+import org.opalj.br.instructions.IF_ICMPNE
+import org.opalj.br.instructions.IFEQ
+import org.opalj.br.instructions.IFGE
+import org.opalj.br.instructions.IFGT
+import org.opalj.br.instructions.IFLE
+import org.opalj.br.instructions.IFLT
+import org.opalj.br.instructions.IFNE
+import org.opalj.br.instructions.IFNONNULL
+import org.opalj.br.instructions.IFNULL
+import org.opalj.br.instructions.Instruction
+import org.opalj.br.instructions.JSR
+import org.opalj.br.instructions.JSR_W
+import org.opalj.br.instructions.JSRInstruction
+import org.opalj.br.instructions.LOOKUPSWITCH
 import org.opalj.br.instructions.NOP
 import org.opalj.br.instructions.POP
 import org.opalj.br.instructions.POP2
 import org.opalj.br.instructions.TABLESWITCH
-import org.opalj.br.instructions.LOOKUPSWITCH
-import org.opalj.br.instructions.IF_ACMPNE
-import org.opalj.br.instructions.IF_ACMPEQ
-import org.opalj.br.instructions.IFNE
-import org.opalj.br.instructions.IFEQ
-import org.opalj.br.instructions.IFLT
-import org.opalj.br.instructions.IFGT
-import org.opalj.br.instructions.IFGE
-import org.opalj.br.instructions.IFLE
-import org.opalj.br.instructions.IF_ICMPNE
-import org.opalj.br.instructions.IF_ICMPEQ
-import org.opalj.br.instructions.IF_ICMPLT
-import org.opalj.br.instructions.IF_ICMPGT
-import org.opalj.br.instructions.IF_ICMPGE
-import org.opalj.br.instructions.IF_ICMPLE
-import org.opalj.br.instructions.IFNONNULL
-import org.opalj.br.instructions.IFNULL
-import org.opalj.br.instructions.JSRInstruction
-import org.opalj.br.instructions.JSR
-import org.opalj.br.instructions.JSR_W
+import org.opalj.br.instructions.WIDE
+import org.opalj.collection.immutable.IntTrieSet1
+import org.opalj.log.OPALLogger.info
+
+import net.ceedubs.ficus.Ficus._
 
 /**
  * Performs some very basic, in-place control-flow simplifications to make the code more regular.
@@ -485,12 +485,12 @@ trait BytecodeOptimizer extends MethodsBinding {
 object BytecodeOptimizer {
 
     final val BytecodeOptimizerConfigKeyPrefix = {
-        ClassFileReaderConfiguration.ConfigKeyPrefix+"BytecodeOptimizer."
+        ClassFileReaderConfiguration.ConfigKeyPrefix + "BytecodeOptimizer."
     }
 
-    final val SimplifyControlFlowKey = BytecodeOptimizerConfigKeyPrefix+"simplifyControlFlow"
+    final val SimplifyControlFlowKey = BytecodeOptimizerConfigKeyPrefix + "simplifyControlFlow"
 
     final val LogControlFlowSimplificationKey = {
-        BytecodeOptimizerConfigKeyPrefix+"logControlFlowSimplification"
+        BytecodeOptimizerConfigKeyPrefix + "logControlFlowSimplification"
     }
 }

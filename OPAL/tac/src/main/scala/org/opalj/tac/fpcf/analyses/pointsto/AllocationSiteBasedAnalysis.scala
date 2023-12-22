@@ -9,20 +9,20 @@ import scala.annotation.switch
 
 import scala.collection.immutable.IntMap
 
-import org.opalj.fpcf.PropertyKey
-import org.opalj.br.ObjectType.StringBufferId
-import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
+import org.opalj.br.ObjectType
 import org.opalj.br.ObjectType.ClassId
+import org.opalj.br.ObjectType.StringBufferId
 import org.opalj.br.ObjectType.StringBuilderId
 import org.opalj.br.ObjectType.StringId
-import org.opalj.br.fpcf.properties.pointsto.allocationSiteToLong
-import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
+import org.opalj.br.fpcf.properties.pointsto.AllocationSite
+import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
 import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet1
 import org.opalj.br.fpcf.properties.pointsto.NoAllocationSites
-import org.opalj.br.fpcf.properties.pointsto.AllocationSite
 import org.opalj.br.fpcf.properties.pointsto.allocationSiteLongToTypeId
+import org.opalj.br.fpcf.properties.pointsto.allocationSiteToLong
 import org.opalj.br.fpcf.properties.pointsto.isEmptyArrayAllocationSite
+import org.opalj.fpcf.PropertyKey
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedAnalysis.classConstPointsToSet
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedAnalysis.exceptionPointsToSets
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedAnalysis.mergeClassConstsConfigKey
@@ -121,10 +121,10 @@ object AllocationSiteBasedAnalysis {
         AllocationSitePointsToSet1(r.id.toLong << 44 | 0x7FFFFFFFFFFL, r)
 
     private val configPrefix = "org.opalj.fpcf.analyses.AllocationSiteBasedPointsToAnalysis."
-    val mergeStringBuilderBufferConfigKey: String = configPrefix+"mergeStringBuilderBuffer"
-    val mergeStringConstsConfigKey: String = configPrefix+"mergeStringConstants"
-    val mergeClassConstsConfigKey: String = configPrefix+"mergeClassConstants"
-    val mergeExceptionsConfigKey: String = configPrefix+"mergeExceptions"
+    val mergeStringBuilderBufferConfigKey: String = configPrefix + "mergeStringBuilderBuffer"
+    val mergeStringConstsConfigKey: String = configPrefix + "mergeStringConstants"
+    val mergeClassConstsConfigKey: String = configPrefix + "mergeClassConstants"
+    val mergeExceptionsConfigKey: String = configPrefix + "mergeExceptions"
 
     // TODO: Create merged pointsTo allocation site
     val stringBuilderPointsToSet: AllocationSitePointsToSet =

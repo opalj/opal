@@ -6,8 +6,8 @@ package tools
 import java.io.File
 
 import org.opalj.br.ClassFile
-import org.opalj.br.ObjectType
 import org.opalj.br.ClassHierarchy
+import org.opalj.br.ObjectType
 import org.opalj.log.GlobalLogContext
 
 /**
@@ -35,7 +35,7 @@ object ClassHierarchyExtractor {
                 ) + aType.fqn
             val superclassType = classHierarchy.superclassType(aType)
             if (superclassType.isDefined) {
-                specLine += " extends "+superclassType.get.fqn
+                specLine += " extends " + superclassType.get.fqn
                 val superinterfaceTypes = classHierarchy.superinterfaceTypes(aType)
                 if (superinterfaceTypes.isDefined && superinterfaceTypes.get.nonEmpty) {
                     specLine += superinterfaceTypes.get.map(_.fqn).mkString(" implements ", ", ", "")
@@ -81,10 +81,10 @@ object ClassHierarchyExtractor {
         }
 
         println(
-            "# Class hierarchy for: "+
-                supertypeName+
-                " limited to subclasses that start with: "+
-                "\""+filterPrefix+"\""
+            "# Class hierarchy for: " +
+                supertypeName +
+                " limited to subclasses that start with: " +
+                "\"" + filterPrefix + "\""
         )
         val allRelevantSubtypes =
             classHierarchy.allSubtypes(supertype, true).filter { candidateType =>

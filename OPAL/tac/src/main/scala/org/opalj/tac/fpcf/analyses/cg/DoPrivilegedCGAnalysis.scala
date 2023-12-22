@@ -5,6 +5,21 @@ package fpcf
 package analyses
 package cg
 
+import scala.collection.immutable.ArraySeq
+
+import org.opalj.br.ArrayType
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.MethodDescriptor
+import org.opalj.br.ObjectType
+import org.opalj.br.ReferenceType
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.VirtualFormalParametersKey
+import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
+import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EPS
@@ -16,25 +31,10 @@ import org.opalj.fpcf.PropertyComputationResult
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
-import org.opalj.value.ValueInformation
-import org.opalj.br.DeclaredMethod
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
-import org.opalj.br.ArrayType
-import org.opalj.br.MethodDescriptor
-import org.opalj.br.ObjectType
-import org.opalj.br.ReferenceType
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.analyses.VirtualFormalParametersKey
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.properties.cg.Callees
-import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.properties.TheTACAI
-
-import scala.collection.immutable.ArraySeq
+import org.opalj.value.ValueInformation
 
 /**
  * Models the behavior for `java.security.AccessController.doPrivileged*`.
@@ -299,7 +299,7 @@ class DoPrivilegedCGAnalysis private[cg] (
         if (doPrivilegedWithCombiner4.hasSingleDefinedMethod)
             analyses ::= new DoPrivilegedMethodAnalysis(doPrivilegedWithCombiner4, runMethod, p)
 
-        Results(analyses.iterator.map(_.registerAPIMethod())) //analyze()))
+        Results(analyses.iterator.map(_.registerAPIMethod())) // analyze()))
     }
 }
 

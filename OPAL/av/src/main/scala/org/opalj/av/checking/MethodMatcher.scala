@@ -4,10 +4,11 @@ package av
 package checking
 
 import scala.collection.immutable
+
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
-import org.opalj.br.analyses.SomeProject
 import org.opalj.br.VirtualSourceElement
+import org.opalj.br.analyses.SomeProject
 
 /**
  * Matches methods based on their attributes, annotations and class.
@@ -18,8 +19,7 @@ case class MethodMatcher(
         classLevelMatcher:    ClassLevelMatcher              = AllClasses,
         annotationsPredicate: AnnotationsPredicate           = AnyAnnotations,
         methodPredicate:      SourceElementPredicate[Method] = AnyMethod
-)
-    extends SourceElementsMatcher {
+) extends SourceElementsMatcher {
 
     def doesClassFileMatch(classFile: ClassFile)(implicit project: SomeProject): Boolean = {
         classLevelMatcher.doesMatch(classFile)

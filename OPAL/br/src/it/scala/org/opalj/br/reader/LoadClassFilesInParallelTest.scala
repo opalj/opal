@@ -3,10 +3,11 @@ package org.opalj
 package br
 package reader
 
+import org.opalj.bi.TestResources.allBITestJARs
+import org.opalj.bytecode.JRELibraryFolder
+
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import org.opalj.bytecode.JRELibraryFolder
-import org.opalj.bi.TestResources.allBITestJARs
 
 class LoadClassFilesInParallelTest extends AnyFlatSpec with Matchers {
 

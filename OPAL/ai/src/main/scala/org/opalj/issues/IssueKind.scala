@@ -23,7 +23,6 @@ object IssueKind {
             DubiousMethodCall,
             DubiousMethodDefinition,
             InconsistentSynchronization
-
         )
     }
 

@@ -7,7 +7,6 @@ import org.opalj.br.instructions.Instruction
 /**
  * An efficient (i.e., no (un)boxing...) representation of an instruction and its pc.
  *
- *
  * @param pc The program counter of an instruction.
  * @param i The instruction with the respective program counter.
  * @author Michael Eichberg

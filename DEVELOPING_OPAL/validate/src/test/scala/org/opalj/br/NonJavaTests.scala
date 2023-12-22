@@ -4,6 +4,7 @@ package br
 
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.analyses.Project
+
 import org.scalatest.funspec.AnyFunSpec
 
 /**

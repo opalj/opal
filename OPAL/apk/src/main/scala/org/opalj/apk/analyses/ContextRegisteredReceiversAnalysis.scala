@@ -3,6 +3,8 @@ package org.opalj
 package apk
 package analyses
 
+import scala.collection.mutable.ListBuffer
+
 import org.opalj.apk.ApkContextRegisteredReceiver
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
@@ -15,8 +17,6 @@ import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.VirtualFunctionCallStatement
 import org.opalj.value.TheStringValue
 import org.opalj.value.ValueInformation
-
-import scala.collection.mutable.ListBuffer
 
 /**
  * Analyzes code of an APK for dynamically registered Intents for Broadcast Receivers.

@@ -4,13 +4,13 @@ package ai
 
 import java.net.URL
 
+import org.opalj.ai.domain.PerformAI
+import org.opalj.br.Method
+import org.opalj.br.MethodDescriptor
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectAnalysisApplication
-import org.opalj.br.Method
 import org.opalj.br.instructions.MethodInvocationInstruction
-import org.opalj.br.MethodDescriptor
-import org.opalj.ai.domain.PerformAI
 
 /**
  * Analyzes the parameters of called methods to determine if we have more precise type

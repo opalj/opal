@@ -3,9 +3,10 @@ package org.opalj
 package br
 
 import java.net.URL
-import org.opalj.br.analyses.ProjectAnalysisApplication
+
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.ProjectAnalysisApplication
 
 import scala.collection.parallel.CollectionConverters.IterableIsParallelizable
 
@@ -27,11 +28,11 @@ object ShowInnerClassesInformation extends ProjectAnalysisApplication {
                 if classFile.innerClasses.isDefined
             } yield {
                 val header =
-                    classFile.fqn+"(ver:"+classFile.majorVersion+")"+":\n\t"+(
+                    classFile.fqn + "(ver:" + classFile.majorVersion + ")" + ":\n\t" + (
                         classFile.enclosingMethod.
                         map(_.toString).
                         getOrElse("<no enclosing method defined>")
-                    )+"\n\t"
+                    ) + "\n\t"
                 classFile.innerClasses.get.mkString(header, "\n\t", "\n")
             }
 

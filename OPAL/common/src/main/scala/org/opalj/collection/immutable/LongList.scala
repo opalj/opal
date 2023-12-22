@@ -139,7 +139,7 @@ final case class LongListNode(
                 thisList = thisList.tail
                 thatList = thatList.tail
             }
-            thisList eq thatList //... <=> true iff both lists are empty
+            thisList eq thatList // ... <=> true iff both lists are empty
         }
     }
 

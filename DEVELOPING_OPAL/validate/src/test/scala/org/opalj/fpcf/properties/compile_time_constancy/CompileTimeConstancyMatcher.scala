@@ -18,8 +18,7 @@ import org.opalj.br.fpcf.properties.CompileTimeVaryingField
  */
 sealed abstract class CompileTimeConstancyMatcher(
         val property: CompileTimeConstancy
-)
-    extends AbstractPropertyMatcher {
+) extends AbstractPropertyMatcher {
 
     def validateProperty(
         p:          SomeProject,

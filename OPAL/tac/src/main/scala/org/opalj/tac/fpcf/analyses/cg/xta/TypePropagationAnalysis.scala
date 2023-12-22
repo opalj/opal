@@ -8,6 +8,26 @@ package xta
 
 import scala.collection.mutable.ArrayBuffer
 import scala.jdk.CollectionConverters._
+
+import org.opalj.br.Code
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.DefinedField
+import org.opalj.br.DefinedMethod
+import org.opalj.br.Method
+import org.opalj.br.ObjectType
+import org.opalj.br.ReferenceType
+import org.opalj.br.analyses.DeclaredFields
+import org.opalj.br.analyses.DeclaredFieldsKey
+import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
+import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
+import org.opalj.br.fpcf.properties.fieldaccess.MethodFieldReadAccessInformation
+import org.opalj.br.fpcf.properties.fieldaccess.MethodFieldWriteAccessInformation
+import org.opalj.br.instructions.CHECKCAST
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EPS
@@ -21,25 +41,6 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.SomePartialResult
-import org.opalj.br.Code
-import org.opalj.br.DeclaredMethod
-import org.opalj.br.DefinedField
-import org.opalj.br.Method
-import org.opalj.br.ObjectType
-import org.opalj.br.ReferenceType
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.instructions.CHECKCAST
-import org.opalj.br.DefinedMethod
-import org.opalj.br.analyses.DeclaredFields
-import org.opalj.br.analyses.DeclaredFieldsKey
-import org.opalj.br.fpcf.properties.cg.Callees
-import org.opalj.br.fpcf.properties.cg.Callers
-import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
-import org.opalj.br.fpcf.properties.fieldaccess.MethodFieldReadAccessInformation
-import org.opalj.br.fpcf.properties.fieldaccess.MethodFieldWriteAccessInformation
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.properties.TACAI
 

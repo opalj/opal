@@ -4,8 +4,9 @@ package br
 package analyses
 package cg
 
-import com.typesafe.config.ConfigFactory
 import org.opalj.br.TestSupport.biProject
+
+import com.typesafe.config.ConfigFactory
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 
@@ -27,7 +28,7 @@ class TypeExtensibilityTest extends AnyFunSpec with Matchers {
      */
     val testPackage = "extensible_classes/transitivity/"
 
-    def mergeConfigString(extConf: String, pkgConf: String): String = extConf+"\n"+pkgConf
+    def mergeConfigString(extConf: String, pkgConf: String): String = extConf + "\n" + pkgConf
 
     describe("all directly extensible types") {
 
@@ -95,7 +96,7 @@ class TypeExtensibilityTest extends AnyFunSpec with Matchers {
             isExtensible(objectType) should be(Yes)
         }
 
-        it("a package visible class should NOT be transitively extensible when all subclasses"+
+        it("a package visible class should NOT be transitively extensible when all subclasses" +
             " are (effectively) final") {
             val classOt = ObjectType(s"${testPackage}case2/Class")
             val interfaceOt = ObjectType(s"${testPackage}case2/Interface")
@@ -118,7 +119,7 @@ class TypeExtensibilityTest extends AnyFunSpec with Matchers {
             isExtensible(pEfClassOt) should be(No)
         }
 
-        it("a non-final package visible class must be transitively extensible even if only one subtype"+
+        it("a non-final package visible class must be transitively extensible even if only one subtype" +
             "is extensible") {
 
             val rootOt = ObjectType(s"${testPackage}case5/TransitivelyExtensible")
@@ -132,7 +133,7 @@ class TypeExtensibilityTest extends AnyFunSpec with Matchers {
             isExtensible(rootOt) should be(Yes)
         }
 
-        it("a non-final package visible class must be transitively extensible even if only one subtype"+
+        it("a non-final package visible class must be transitively extensible even if only one subtype" +
             "is extensible and the type hierarchy is large") {
 
             val rootOt = ObjectType(s"${testPackage}case6/TransitivelyExtensible")

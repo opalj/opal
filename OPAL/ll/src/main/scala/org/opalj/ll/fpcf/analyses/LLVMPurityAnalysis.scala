@@ -9,13 +9,13 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
-import org.opalj.br.fpcf.properties.Pure
 import org.opalj.br.fpcf.properties.ImpureByAnalysis
+import org.opalj.br.fpcf.properties.Pure
 import org.opalj.br.fpcf.properties.Purity
 import org.opalj.fpcf.ProperPropertyComputationResult
-import org.opalj.fpcf.Result
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.Result
 import org.opalj.ll.LLVMProjectKey
 import org.opalj.ll.llvm.value.Function
 import org.opalj.ll.llvm.value.GlobalVariable

@@ -3,26 +3,29 @@ package org.opalj
 package br
 package analyses
 
-import scala.collection.{mutable, Map => SomeMap, Set => SomeSet}
-import com.typesafe.config.Config
-import org.opalj.log.LogContext
-import org.opalj.log.OPALLogger
-import org.opalj.log.OPALLogger.error
-import org.opalj.log.OPALLogger.info
-import org.opalj.collection.immutable.UIDSet
+import scala.collection.{Map => SomeMap}
+import scala.collection.{Set => SomeSet}
+import scala.collection.immutable.ArraySeq
+import scala.collection.mutable
+
 import org.opalj.bi.Java11MajorVersion
 import org.opalj.bi.Java1MajorVersion
+import org.opalj.br.MethodDescriptor.SignaturePolymorphicMethodBoolean
+import org.opalj.br.MethodDescriptor.SignaturePolymorphicMethodObject
+import org.opalj.br.MethodDescriptor.SignaturePolymorphicMethodVoid
 import org.opalj.br.instructions.FieldAccess
 import org.opalj.br.instructions.INVOKEINTERFACE
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.NonVirtualMethodInvocationInstruction
-import org.opalj.br.MethodDescriptor.SignaturePolymorphicMethodBoolean
-import org.opalj.br.MethodDescriptor.SignaturePolymorphicMethodObject
-import org.opalj.br.MethodDescriptor.SignaturePolymorphicMethodVoid
+import org.opalj.collection.immutable.UIDSet
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
+import org.opalj.log.OPALLogger.error
+import org.opalj.log.OPALLogger.info
 
-import scala.collection.immutable.ArraySeq
+import com.typesafe.config.Config
 import control.find
 
 /**
@@ -637,7 +640,7 @@ abstract class ProjectLike extends ClassFileRepository { project =>
      * Returns true if the method defined by the given class type is a signature polymorphic
      * method. (See JVM 9 Spec. for details.)
      */
-    //TODO add method that lookup the defining class type
+    // TODO add method that lookup the defining class type
     def isSignaturePolymorphic(definingClassType: ObjectType, method: Method): Boolean = {
         (
             (definingClassType eq ObjectType.MethodHandle) ||
@@ -889,7 +892,7 @@ abstract class ProjectLike extends ClassFileRepository { project =>
         }
         info(
             "project configuration",
-            s"${if (useJ11semantics) "" else "not "}using Java 11+ call semantics "+reason
+            s"${if (useJ11semantics) "" else "not "}using Java 11+ call semantics " + reason
         )
         useJ11semantics
     }
@@ -1156,7 +1159,7 @@ object ProjectLike {
                 if (!classFile.isInterfaceDeclaration) {
                     OPALLogger.warn(
                         "project configuration",
-                        "finding the maximally specific superinterface methods failed: "+
+                        "finding the maximally specific superinterface methods failed: " +
                             s"${superinterfaceType.toJava} is not an interface and ignored"
                     )
                     (analyzedSuperinterfaceTypes ++ superinterfaceTypes + superinterfaceType, Set.empty)
@@ -1253,7 +1256,7 @@ object ProjectLike {
                                 } else if (newMethodDeclaringClassType isSubtypeOf specificMethodDeclaringClassType) {
                                     false
                                 } else {
-                                    //... we have an incomplete class hierarchy;
+                                    // ... we have an incomplete class hierarchy;
                                     // let's keep both methods
                                     true
                                 }

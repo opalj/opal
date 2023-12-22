@@ -4,15 +4,15 @@ package ai
 package domain
 package tracing
 
-import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
-
-import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.ai.common.XHTML.dumpOnFailureDuringValidation
+import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br._
 import org.opalj.br.reader.Java8Framework.ClassFiles
+
+import org.junit.runner.RunWith
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * This test(suite) basically tests OPAL's support for tracing a property.

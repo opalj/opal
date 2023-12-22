@@ -4,10 +4,10 @@ package br
 package collection
 package mutable
 
-import org.opalj.br.instructions.Instruction
-import org.opalj.br.instructions.ConstantLengthInstruction
-
 import scala.collection.mutable.ArrayBuffer
+
+import org.opalj.br.instructions.ConstantLengthInstruction
+import org.opalj.br.instructions.Instruction
 
 /**
  * A buffer for creating bytecode arrays that automatically adds the required null entries.

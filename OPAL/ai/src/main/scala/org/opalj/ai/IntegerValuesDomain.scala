@@ -203,7 +203,6 @@ trait IntegerValuesDomain extends IntegerValuesFactory { domain =>
      *
      * @param value An integer domain value that does also, but not exclusively represents
      *      `theValue`.
-     *
      */
     def intEstablishValue(
         pc:       Int,

@@ -4,22 +4,6 @@ package br
 package fpcf
 package analyses
 
-import org.opalj.log.OPALLogger.{debug => trace}
-import org.opalj.fpcf.ELBP
-import org.opalj.fpcf.ELUBP
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.EPK
-import org.opalj.fpcf.EPS
-import org.opalj.fpcf.InterimResult
-import org.opalj.fpcf.ProperPropertyComputationResult
-import org.opalj.fpcf.Property
-import org.opalj.fpcf.PropertyBounds
-import org.opalj.fpcf.PropertyComputationResult
-import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.Result
-import org.opalj.fpcf.SomeEPS
-import org.opalj.fpcf.UBP
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.DoesNotLeakSelfReference
@@ -36,6 +20,22 @@ import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.MethodInvocationInstruction
 import org.opalj.br.instructions.PUTFIELD
 import org.opalj.br.instructions.PUTSTATIC
+import org.opalj.fpcf.ELBP
+import org.opalj.fpcf.ELUBP
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.EPK
+import org.opalj.fpcf.EPS
+import org.opalj.fpcf.InterimResult
+import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.Property
+import org.opalj.fpcf.PropertyBounds
+import org.opalj.fpcf.PropertyComputationResult
+import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.Result
+import org.opalj.fpcf.SomeEPS
+import org.opalj.fpcf.UBP
+import org.opalj.log.OPALLogger.{debug => trace}
 
 /**
  * A shallow analysis that computes the self reference leakage property.

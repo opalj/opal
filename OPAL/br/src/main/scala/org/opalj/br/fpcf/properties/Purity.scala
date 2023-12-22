@@ -6,13 +6,6 @@ package properties
 
 import scala.annotation.switch
 
-import org.opalj.collection.immutable.EmptyIntTrieSet
-import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.FallbackReason
-import org.opalj.fpcf.PropertyKey
-import org.opalj.fpcf.PropertyMetaInformation
-import org.opalj.fpcf.PropertyStore
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.analyses.ConfiguredPurityKey
 import org.opalj.br.fpcf.properties.Purity.ContextuallyPureFlags
@@ -24,6 +17,13 @@ import org.opalj.br.fpcf.properties.Purity.NotCompileTimePure
 import org.opalj.br.fpcf.properties.Purity.PerformsDomainSpecificOperations
 import org.opalj.br.fpcf.properties.Purity.PureFlags
 import org.opalj.br.fpcf.properties.Purity.SideEffectFreeFlags
+import org.opalj.collection.immutable.EmptyIntTrieSet
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.FallbackReason
+import org.opalj.fpcf.PropertyKey
+import org.opalj.fpcf.PropertyMetaInformation
+import org.opalj.fpcf.PropertyStore
 
 sealed trait PurityPropertyMetaInformation extends PropertyMetaInformation {
 
@@ -200,7 +200,7 @@ object Purity extends PurityPropertyMetaInformation {
                     if (conf.isDefined && conf.get.wasSet(dm)) conf.get.purity(dm)
                     else ImpureByLackOfInformation
                 case x =>
-                    val m = x.getClass.getSimpleName+
+                    val m = x.getClass.getSimpleName +
                         " is not an org.opalj.br.fpcf.properties.Context"
                     throw new IllegalArgumentException(m)
             }

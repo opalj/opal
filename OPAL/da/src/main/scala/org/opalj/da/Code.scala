@@ -115,9 +115,9 @@ case class Code(instructions: Array[Byte]) {
 
         def ifToString(mnemonic: String, pc: Int): Node = {
             val targetPC = in.readShort + pc
-            val targetID = "#"+id(methodIndex, targetPC)
+            val targetID = "#" + id(methodIndex, targetPC)
             <span>
-                <span class={ "instruction "+mnemonic }>{ mnemonic }</span>
+                <span class={ "instruction " + mnemonic }>{ mnemonic }</span>
                 <a href={ targetID } class="pc">{ Text(targetPC.toString) }</a>
             </span>
         }
@@ -255,14 +255,14 @@ case class Code(instructions: Array[Byte]) {
                     </span>
                 case 167 =>
                     val targetPC = in.readShort + pc
-                    val targetID = "#"+id(methodIndex, targetPC)
+                    val targetID = "#" + id(methodIndex, targetPC)
                     <span>
                         <span class="instruction goto">goto </span>
                         <a href={ targetID } class="pc">{ targetPC }</a>
                     </span>
                 case 200 =>
                     val targetPC = in.readInt + pc
-                    val targetID = "#"+id(methodIndex, targetPC)
+                    val targetID = "#" + id(methodIndex, targetPC)
                     <span>
                         <span class="instruction goto_w">goto_w </span>
                         <a href={ targetID } class="pc">{ targetPC }</a>
@@ -393,14 +393,14 @@ case class Code(instructions: Array[Byte]) {
                 case 130 => <span class="instruction ixor">ixor</span>
                 case 168 =>
                     val targetPC = in.readShort + pc
-                    val targetID = "#"+id(methodIndex, targetPC)
+                    val targetID = "#" + id(methodIndex, targetPC)
                     <span>
                         <span class="instruction jsr">jsr </span>
                         <a href={ targetID } class="pc">{ targetPC }</a>
                     </span>
                 case 201 =>
                     val targetPC = in.readInt + pc
-                    val targetID = "#"+id(methodIndex, targetPC)
+                    val targetID = "#" + id(methodIndex, targetPC)
                     <span>
                         <span class="instruction jsr_w">jsr_w </span>
                         <a href={ targetID } class="pc">{ targetPC }</a>
@@ -460,7 +460,7 @@ case class Code(instructions: Array[Byte]) {
                     val npairsCount = in.readInt
                     val table = new StringBuilder("");
                     repeat(npairsCount) {
-                        table.append("(case:"+in.readInt+","+(in.readInt + pc)+") ")
+                        table.append("(case:" + in.readInt + "," + (in.readInt + pc) + ") ")
                     }
                     <span><span class="instruction lookupswitch">lookupswitch </span>default:{ defaultTarget } [{ table }]</span>
                 case 129 => <span class="instruction lor">lor</span>
@@ -535,7 +535,7 @@ case class Code(instructions: Array[Byte]) {
                 case 170 =>
                     in.skip((3 - (pc % 4)).toLong) // skip padding bytes
                     val defaultTargetPC = in.readInt + pc
-                    val defaultTargetID = "#"+id(methodIndex, defaultTargetPC)
+                    val defaultTargetID = "#" + id(methodIndex, defaultTargetPC)
                     val defaultTarget = s"<a href='$defaultTargetID' class='pc'>$defaultTargetPC</a>"
                     val low = in.readInt
                     val high = in.readInt
@@ -543,9 +543,9 @@ case class Code(instructions: Array[Byte]) {
                     val switchTargets = new StringBuilder("");
                     repeat(high - low + 1) {
                         val targetPC = in.readInt + pc
-                        val targetID = "#"+id(methodIndex, targetPC)
+                        val targetID = "#" + id(methodIndex, targetPC)
                         val target = s"<a href='$targetID' class='pc'>$targetPC</a>"
-                        switchTargets.append("(case "+(low + offsetcounter)+" &rarr; "+target+") ")
+                        switchTargets.append("(case " + (low + offsetcounter) + " &rarr; " + target + ") ")
                         offsetcounter += 1;
                     }
                     <span><span class="instruction tableswitch">tableswitch </span>default &rarr; { Unparsed(defaultTarget) }; { Unparsed(switchTargets.toString) }</span>
@@ -554,7 +554,7 @@ case class Code(instructions: Array[Byte]) {
                     <span class="instruction wide">wide</span>
 
                 case opcode =>
-                    throw new UnknownError("unknown opcode: "+opcode)
+                    throw new UnknownError("unknown opcode: " + opcode)
             }
         }
         instructions
@@ -570,7 +570,7 @@ case class Code(instructions: Array[Byte]) {
         val exceptions: Array[Array[Node]] = new Array(exceptionTable.size)
         for { (exceptionHandler, index) <- exceptionTable.iterator.zipWithIndex } {
             val exceptionName =
-                (index + 1).toString+": "+(
+                (index + 1).toString + ": " + (
                     if (exceptionHandler.catch_type != 0)
                         cp(exceptionHandler.catch_type).toString
                     else

@@ -4,11 +4,12 @@ package av
 package checking
 
 import scala.collection.immutable
+
 import org.opalj.br.ClassFile
-import org.opalj.br.FieldType
 import org.opalj.br.Field
-import org.opalj.br.analyses.SomeProject
+import org.opalj.br.FieldType
 import org.opalj.br.VirtualSourceElement
+import org.opalj.br.analyses.SomeProject
 
 /**
  * Matches fields based on their name, type, annotations and declaring class.
@@ -21,8 +22,7 @@ case class FieldMatcher(
         annotations:    AnnotationsPredicate,
         theType:        Option[FieldType],
         theName:        Option[NamePredicate]
-)
-    extends SourceElementsMatcher {
+) extends SourceElementsMatcher {
 
     def doesClassFileMatch(classFile: ClassFile)(implicit project: SomeProject): Boolean = {
         declaringClass.doesMatch(classFile)

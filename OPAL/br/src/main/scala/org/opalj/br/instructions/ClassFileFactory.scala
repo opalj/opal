@@ -4,14 +4,15 @@ package br
 package instructions
 
 import scala.annotation.switch
-import org.opalj.log.OPALLogger
-import org.opalj.log.GlobalLogContext
+
+import scala.collection.immutable.ArraySeq
+
 import org.opalj.bi.ACC_BRIDGE
 import org.opalj.bi.ACC_PUBLIC
 import org.opalj.bi.ACC_SYNTHETIC
 import org.opalj.br.MethodDescriptor.DefaultConstructorDescriptor
-
-import scala.collection.immutable.ArraySeq
+import org.opalj.log.GlobalLogContext
+import org.opalj.log.OPALLogger
 
 /**
  * Provides helper methods to facilitate the generation of classes.
@@ -1256,7 +1257,7 @@ object ClassFileFactory {
                             instructions(currentIndex) = boxInstruction
                             currentIndex = boxInstruction.indexOfNextInstruction(currentIndex, false)
                         } else {
-                            throw new UnknownError("Should not occur: "+ft+" -> "+rt)
+                            throw new UnknownError("Should not occur: " + ft + " -> " + rt)
                         }
                     }
                 }
@@ -1268,9 +1269,9 @@ object ClassFileFactory {
         case t: Throwable =>
             OPALLogger.error(
                 "internal error",
-                s"${definingType.toJava}: failed to create parameter forwarding instructions for:\n\t"+
-                    s"forwarder descriptor = ${forwarderMethodDescriptor.toJava} =>\n\t"+
-                    s"receiver descriptor  = $receiverMethodDescriptor +\n\t "+
+                s"${definingType.toJava}: failed to create parameter forwarding instructions for:\n\t" +
+                    s"forwarder descriptor = ${forwarderMethodDescriptor.toJava} =>\n\t" +
+                    s"receiver descriptor  = $receiverMethodDescriptor +\n\t " +
                     s"static parameters    = $staticParameters (variableOffset=$variableOffset)",
                 t
             )(GlobalLogContext)
@@ -1397,7 +1398,7 @@ object ClassFileFactory {
         val returnInstruction = ReturnInstruction(bridgeMethodDescriptor.returnType)
         instructions(currentPC) = returnInstruction
 
-        val maxStack = targetMethodDescriptor.requiredRegisters + 1 //<= the receiver
+        val maxStack = targetMethodDescriptor.requiredRegisters + 1 // <= the receiver
         val maxLocals = maxStack + targetMethodDescriptor.returnType.operandSize
 
         Method(

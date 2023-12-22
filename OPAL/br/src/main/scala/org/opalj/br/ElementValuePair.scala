@@ -10,7 +10,7 @@ package br
  */
 case class ElementValuePair(name: String, value: ElementValue) {
 
-    def toJava: String = name+"="+value.toJava
+    def toJava: String = name + "=" + value.toJava
 }
 
 object ElementValuePair {

@@ -2,11 +2,11 @@
 package org.opalj
 package ba
 
+import scala.collection.immutable.ArraySeq
+
 import org.opalj.br.ClassHierarchy
 import org.opalj.br.ObjectType
 import org.opalj.collection.immutable.UShortPair
-
-import scala.collection.immutable.ArraySeq
 
 /**
  * Builder for a [[org.opalj.br.MethodTemplate]].

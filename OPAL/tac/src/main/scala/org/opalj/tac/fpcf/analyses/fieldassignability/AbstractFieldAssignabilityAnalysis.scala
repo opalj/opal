@@ -5,6 +5,45 @@ package fpcf
 package analyses
 package fieldassignability
 
+import org.opalj.br.BooleanType
+import org.opalj.br.ByteType
+import org.opalj.br.CharType
+import org.opalj.br.DeclaredField
+import org.opalj.br.DefinedMethod
+import org.opalj.br.DoubleType
+import org.opalj.br.Field
+import org.opalj.br.FloatType
+import org.opalj.br.IntegerType
+import org.opalj.br.LongType
+import org.opalj.br.Method
+import org.opalj.br.ObjectType
+import org.opalj.br.PC
+import org.opalj.br.ReferenceType
+import org.opalj.br.ShortType
+import org.opalj.br.analyses.DeclaredFields
+import org.opalj.br.analyses.DeclaredFieldsKey
+import org.opalj.br.analyses.DeclaredMethods
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.cg.ClosedPackagesKey
+import org.opalj.br.analyses.cg.TypeExtensibilityKey
+import org.opalj.br.fpcf.ContextProviderKey
+import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.FPCFAnalysisScheduler
+import org.opalj.br.fpcf.analyses.ContextProvider
+import org.opalj.br.fpcf.properties.AtMost
+import org.opalj.br.fpcf.properties.Context
+import org.opalj.br.fpcf.properties.EscapeInCallee
+import org.opalj.br.fpcf.properties.EscapeProperty
+import org.opalj.br.fpcf.properties.EscapeViaReturn
+import org.opalj.br.fpcf.properties.NoEscape
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.fieldaccess.AccessReceiver
+import org.opalj.br.fpcf.properties.fieldaccess.FieldWriteAccessInformation
+import org.opalj.br.fpcf.properties.immutability.Assignable
+import org.opalj.br.fpcf.properties.immutability.EffectivelyNonAssignable
+import org.opalj.br.fpcf.properties.immutability.FieldAssignability
+import org.opalj.br.fpcf.properties.immutability.NonAssignable
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.FinalEP
@@ -12,59 +51,20 @@ import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.InterimResult
 import org.opalj.fpcf.InterimUBP
 import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.SomeInterimEP
-import org.opalj.value.ValueInformation
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.Field
-import org.opalj.br.Method
-import org.opalj.br.analyses.DeclaredMethods
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.cg.ClosedPackagesKey
-import org.opalj.br.analyses.cg.TypeExtensibilityKey
-import org.opalj.br.fpcf.properties.Context
-import org.opalj.br.fpcf.properties.EscapeProperty
-import org.opalj.br.BooleanType
-import org.opalj.br.ByteType
-import org.opalj.br.CharType
-import org.opalj.br.DeclaredField
-import org.opalj.br.DefinedMethod
-import org.opalj.br.DoubleType
-import org.opalj.br.FloatType
-import org.opalj.br.IntegerType
-import org.opalj.br.LongType
-import org.opalj.br.ObjectType
-import org.opalj.br.PC
-import org.opalj.br.ReferenceType
-import org.opalj.br.ShortType
-import org.opalj.br.analyses.DeclaredFields
-import org.opalj.br.analyses.DeclaredFieldsKey
-import org.opalj.br.fpcf.analyses.ContextProvider
-import org.opalj.br.fpcf.properties.AtMost
-import org.opalj.br.fpcf.properties.EscapeInCallee
-import org.opalj.br.fpcf.properties.EscapeViaReturn
-import org.opalj.br.fpcf.properties.NoEscape
-import org.opalj.br.fpcf.properties.cg.Callers
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.fpcf.FPCFAnalysisScheduler
-import org.opalj.br.fpcf.properties.fieldaccess.FieldWriteAccessInformation
-import org.opalj.br.fpcf.properties.immutability.Assignable
-import org.opalj.br.fpcf.properties.immutability.EffectivelyNonAssignable
-import org.opalj.br.fpcf.properties.immutability.FieldAssignability
-import org.opalj.br.fpcf.properties.immutability.NonAssignable
-import org.opalj.br.fpcf.ContextProviderKey
-import org.opalj.br.fpcf.properties.fieldaccess.AccessReceiver
+import org.opalj.fpcf.UBP
 import org.opalj.tac.DUVar
-import org.opalj.tac.common.DefinitionSite
-import org.opalj.tac.common.DefinitionSitesKey
-import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.TACode
-import org.opalj.fpcf.PropertyBounds
-import org.opalj.fpcf.UBP
+import org.opalj.tac.common.DefinitionSite
+import org.opalj.tac.common.DefinitionSitesKey
+import org.opalj.tac.fpcf.properties.TACAI
+import org.opalj.value.ValueInformation
 
 trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
 
@@ -103,7 +103,7 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
             case field: Field =>
                 determineFieldAssignability(field)
             case _ =>
-                val m = entity.getClass.getSimpleName+" is not an org.opalj.br.Field"
+                val m = entity.getClass.getSimpleName + " is not an org.opalj.br.Field"
                 throw new IllegalArgumentException(m)
         }
     }

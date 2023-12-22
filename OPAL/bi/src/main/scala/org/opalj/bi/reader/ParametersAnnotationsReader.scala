@@ -4,9 +4,9 @@ package bi
 package reader
 
 import java.io.DataInputStream
-import org.opalj.control.fillArraySeq
-
 import scala.collection.immutable.ArraySeq
+
+import org.opalj.control.fillArraySeq
 
 /**
  * Generic parser for a method parameter's visible or invisible annotations.

@@ -55,30 +55,30 @@ object MapsEval extends App {
     // fill maps
     time {
         ls.foreach { s => jConcurrentMap.put(s, theObject) }
-    } { t => println("Java ConcurrentHashMap.add: "+t.toSeconds) }
+    } { t => println("Java ConcurrentHashMap.add: " + t.toSeconds) }
 
     time {
         ls.foreach { s => jHashMap.put(s, theObject) }
-    } { t => println("Java HashMap.add: "+t.toSeconds) }
+    } { t => println("Java HashMap.add: " + t.toSeconds) }
 
     time {
         ls.foreach { s =>
             anyRefMap += (s -> theObject) // <= faster then adding it using pairs...
-            //anyRefMap += ((s, theObject()))
+            // anyRefMap += ((s, theObject()))
         }
-    } { t => println("mutable AnyRefMap.add: "+t.toSeconds) }
+    } { t => println("mutable AnyRefMap.add: " + t.toSeconds) }
 
     time {
         ls.foreach { s => trieMap += (s -> theObject) }
-    } { t => println("concurrent mutable TrieMap.add: "+t.toSeconds) }
+    } { t => println("concurrent mutable TrieMap.add: " + t.toSeconds) }
 
     time {
         ls.foreach { s => hashMap += (s -> theObject) }
-    } { t => println("immutable HashMap.add: "+t.toSeconds) }
+    } { t => println("immutable HashMap.add: " + t.toSeconds) }
 
     time {
         ls.foreach { s => treeMap += (s -> theObject) }
-    } { t => println("immutable TreeMap.add: "+t.toSeconds) }
+    } { t => println("immutable TreeMap.add: " + t.toSeconds) }
 
     // query maps
 
@@ -94,7 +94,7 @@ object MapsEval extends App {
         })
         ts.foreach(t => t.start)
         ts.foreach(t => t.join)
-    } { t => println("Java ConcurrentHashMap.get: "+t.toSeconds) }
+    } { t => println("Java ConcurrentHashMap.get: " + t.toSeconds) }
 
     time {
         val ts = Array.fill(Threads)(new Thread() {
@@ -104,7 +104,7 @@ object MapsEval extends App {
         })
         ts.foreach(t => t.start)
         ts.foreach(t => t.join)
-    } { t => println("Java HashMap.get: "+t.toSeconds) }
+    } { t => println("Java HashMap.get: " + t.toSeconds) }
 
     time {
         val ts = Array.fill(Threads)(new Thread() {
@@ -114,7 +114,7 @@ object MapsEval extends App {
         })
         ts.foreach(t => t.start)
         ts.foreach(t => t.join)
-    } { t => println("AnyRefMap.get: "+t.toSeconds) }
+    } { t => println("AnyRefMap.get: " + t.toSeconds) }
 
     time {
         val ts = Array.fill(Threads)(new Thread() {
@@ -124,7 +124,7 @@ object MapsEval extends App {
         })
         ts.foreach(t => t.start)
         ts.foreach(t => t.join)
-    } { t => println("concurrent.TrieMap.get: "+t.toSeconds) }
+    } { t => println("concurrent.TrieMap.get: " + t.toSeconds) }
 
     time {
         val ts = Array.fill(Threads)(new Thread() {
@@ -134,7 +134,7 @@ object MapsEval extends App {
         })
         ts.foreach(t => t.start)
         ts.foreach(t => t.join)
-    } { t => println("immutable HashMap.get: "+t.toSeconds) }
+    } { t => println("immutable HashMap.get: " + t.toSeconds) }
 
     time {
         val ts = Array.fill(Threads)(new Thread() {
@@ -144,7 +144,7 @@ object MapsEval extends App {
         })
         ts.foreach(t => t.start)
         ts.foreach(t => t.join)
-    } { t => println("immutable TreeMap.get: "+t.toSeconds) }
+    } { t => println("immutable TreeMap.get: " + t.toSeconds) }
 
     println(s"\n Run: $t")
 }

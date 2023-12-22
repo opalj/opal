@@ -4,21 +4,21 @@ package ai
 package domain
 package l1
 
+import org.opalj.bi.TestResources.locateTestResources
+import org.opalj.br.ArrayType
+import org.opalj.br.ClassHierarchy
+import org.opalj.br.IntegerType
+import org.opalj.br.ObjectType
+import org.opalj.br.TestSupport.biProject
+import org.opalj.br.reader.Java8Framework.ClassFiles
+import org.opalj.collection.immutable._
+import org.opalj.collection.mutable.Locals
+import org.opalj.value.BaseReferenceValues
+
 import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
-
-import org.opalj.collection.mutable.Locals
-import org.opalj.collection.immutable._
-import org.opalj.bi.TestResources.locateTestResources
-import org.opalj.br.TestSupport.biProject
-import org.opalj.value.BaseReferenceValues
-import org.opalj.br.ObjectType
-import org.opalj.br.ArrayType
-import org.opalj.br.IntegerType
-import org.opalj.br.reader.Java8Framework.ClassFiles
-import org.opalj.br.ClassHierarchy
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests the `ReferenceValues` domain.
@@ -134,7 +134,7 @@ class DefaultReferenceValuesTest extends AnyFunSpec with Matchers {
                 v2.isMorePreciseThan(v1) should be(false)
             }
 
-            it("an ObjectValue of type java/lang/String should be more precise than "+
+            it("an ObjectValue of type java/lang/String should be more precise than " +
                 "an ObjectValue of type java/lang/Object but not vice versa") {
                 val v1 = ObjectValue(-1, Unknown, true, ObjectType("java/lang/String"), 1)
                 val v2 = ObjectValue(-1, Unknown, true, ObjectType("java/lang/Object"), 2)
@@ -149,12 +149,12 @@ class DefaultReferenceValuesTest extends AnyFunSpec with Matchers {
 
         describe("using the factory methods") {
 
-            it("it should be possible to create a representation for a non-null object "+
+            it("it should be possible to create a representation for a non-null object " +
                 "with a specific type") {
                 val ref = ReferenceValue(444, No, true, ObjectType.Object)
                 if (!ref.isNull.isNo || ref.origin != 444 || !ref.isPrecise)
-                    fail("expected a precise, non-null reference value with pc 444;"+
-                        " actual: "+ref)
+                    fail("expected a precise, non-null reference value with pc 444;" +
+                        " actual: " + ref)
             }
 
         }
@@ -282,7 +282,7 @@ class DefaultReferenceValuesTest extends AnyFunSpec with Matchers {
 
         describe("the summarize function") {
 
-            it("it should calculate a meaningful upper type bound given "+
+            it("it should calculate a meaningful upper type bound given " +
                 "multiple different types of reference values") {
                 summarize(
                     -1,
@@ -346,7 +346,7 @@ class DefaultReferenceValuesTest extends AnyFunSpec with Matchers {
                 // the values represent different values in time...
                 val update = ref1MergeRef2MergeRef3.join(-1, ref1AltMergeRef2Alt)
                 if (!update.isMetaInformationUpdate)
-                    fail("expected: MetaInformationUpdate; actual: "+update)
+                    fail("expected: MetaInformationUpdate; actual: " + update)
             }
 
             it("it should be able to join two value sets where the original set is a subset of the second set") {
@@ -431,9 +431,9 @@ class DefaultReferenceValuesTest extends AnyFunSpec with Matchers {
 
                 val mv_actual = v0.join(-1, mv1)
                 if (mv_actual != StructuralUpdate(mv_expected)) {
-                    fail(s"the join of: $v0\n"+
-                        s"with:        $mv1\n"+
-                        s"is:          $mv_actual\n"+
+                    fail(s"the join of: $v0\n" +
+                        s"with:        $mv1\n" +
+                        s"is:          $mv_actual\n" +
                         s"expected:    StructuralUpdate($mv_expected)")
                 }
             }
@@ -462,9 +462,9 @@ class DefaultReferenceValuesTest extends AnyFunSpec with Matchers {
                 val mv_actual = v0.join(-1, mv1)
 
                 if (mv_actual != StructuralUpdate(mv_expected)) {
-                    fail(s"the join of: $v0\n"+
-                        s"with:        $mv1\n"+
-                        s"is:          $mv_actual\n"+
+                    fail(s"the join of: $v0\n" +
+                        s"with:        $mv1\n" +
+                        s"is:          $mv_actual\n" +
                         s"expected:    $mv_expected")
                 }
             }
@@ -549,9 +549,9 @@ class DefaultReferenceValuesTest extends AnyFunSpec with Matchers {
                 val mv_actual = v0.join(-1, mv1)
 
                 if (mv_actual != StructuralUpdate(mv_expected)) {
-                    fail(s"the join of: $v0\n"+
-                        s"with:        $mv1\n"+
-                        s"is:          $mv_actual\n"+
+                    fail(s"the join of: $v0\n" +
+                        s"with:        $mv1\n" +
+                        s"is:          $mv_actual\n" +
                         s"expected:    $mv_expected")
                 }
             }
@@ -583,9 +583,9 @@ class DefaultReferenceValuesTest extends AnyFunSpec with Matchers {
                 mv_actual.updateType should be(StructuralUpdateType)
 
                 if (mv_actual.value != mv_expected) {
-                    fail(s"the join of: $v0\n"+
-                        s"with:        $mv1\n"+
-                        s"is:          ${mv_actual.value}\n"+
+                    fail(s"the join of: $v0\n" +
+                        s"with:        $mv1\n" +
+                        s"is:          ${mv_actual.value}\n" +
                         s"expected:    $mv_expected")
                 }
             }

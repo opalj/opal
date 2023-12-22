@@ -5,13 +5,13 @@ package fpcf
 package analyses
 package escape
 
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.PropertyStore
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.VirtualFormalParameters
 import org.opalj.br.fpcf.properties.Context
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.PropertyStore
 
 /**
  * Provides the basic information corresponding to an entity to determine its escape information.

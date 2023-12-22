@@ -29,8 +29,7 @@ abstract class NativeIFDSAnalysis[IFDSFact <: AbstractIFDSFact](
         project:     SomeProject,
         ifdsProblem: IFDSProblem[IFDSFact, NativeFunction, LLVMStatement],
         propertyKey: IFDSPropertyMetaInformation[LLVMStatement, IFDSFact]
-)
-    extends IFDSAnalysis[IFDSFact, NativeFunction, LLVMStatement](project, ifdsProblem, propertyKey)
+) extends IFDSAnalysis[IFDSFact, NativeFunction, LLVMStatement](project, ifdsProblem, propertyKey)
 
 abstract class NativeIFDSAnalysisScheduler[IFDSFact <: AbstractIFDSFact]
     extends IFDSAnalysisScheduler[IFDSFact, NativeFunction, LLVMStatement] {

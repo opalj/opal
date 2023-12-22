@@ -2,11 +2,10 @@
 package org.opalj
 package fpcf
 
+import org.opalj.fpcf.AnalysisScenario.AnalysisAutoConfigKey
+import org.opalj.graphs.Graph
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
-import org.opalj.graphs.Graph
-
-import org.opalj.fpcf.AnalysisScenario.AnalysisAutoConfigKey
 
 /**
  * Provides functionality to determine whether a set of analyses is compatible and to compute
@@ -149,7 +148,7 @@ class AnalysisScenario[A](val ps: PropertyStore) {
                 lazilyDerivedProperties.contains(collaborativelyDerivedProperty)) {
                 val pkName = PropertyKey.name(collaborativelyDerivedProperty.pk.id)
                 val m =
-                    s"can not register $cs: "+
+                    s"can not register $cs: " +
                         s"$pkName is not computed collaboratively by all analyses"
                 throw new SpecificationViolation(m)
             }
@@ -178,8 +177,8 @@ class AnalysisScenario[A](val ps: PropertyStore) {
                     case Some((deviatingPropertyBounds, css)) =>
                         val propertyName = PropertyKey.name(pk)
                         throw new IllegalArgumentException(
-                            s"different bounds ($deviatingPropertyBounds vs. $derivedProperty) "+
-                                s"are computed by $css vs. $cs "+
+                            s"different bounds ($deviatingPropertyBounds vs. $derivedProperty) " +
+                                s"are computed by $css vs. $cs " +
                                 s"for the collaboratively computed property $propertyName"
                         )
                 }

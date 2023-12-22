@@ -4,12 +4,6 @@ package br
 package fpcf
 package properties
 
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.FallbackReason
-import org.opalj.fpcf.PropertyComputation
-import org.opalj.fpcf.PropertyComputationResult
-import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.Result
 import org.opalj.br.analyses.Project
 import org.opalj.br.collection.mutable.{TypesSet => BRMutableTypesSet}
 import org.opalj.br.fpcf.properties.ThrownExceptions.MethodBodyIsNotAvailable
@@ -50,6 +44,12 @@ import org.opalj.br.instructions.MONITOREXIT
 import org.opalj.br.instructions.PUTFIELD
 import org.opalj.br.instructions.RETURN
 import org.opalj.br.instructions.StackManagementInstruction
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.FallbackReason
+import org.opalj.fpcf.PropertyComputation
+import org.opalj.fpcf.PropertyComputationResult
+import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.Result
 
 /**
  * A very straight forward flow-insensitive analysis which can successfully analyze methods
@@ -90,7 +90,7 @@ object ThrownExceptionsFallback extends ((PropertyStore, FallbackReason, Entity)
             return MethodBodyIsNotAvailable;
 
         //
-        //... when we reach this point the method is non-empty
+        // ... when we reach this point the method is non-empty
         //
         val code = body.get
         val cfJoins = code.cfJoins

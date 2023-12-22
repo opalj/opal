@@ -6,7 +6,6 @@ package l0
 
 import scala.reflect.ClassTag
 
-import org.opalj.collection.immutable.UIDSet
 import org.opalj.br.ArrayType
 import org.opalj.br.ClassHierarchy
 import org.opalj.br.Method
@@ -16,6 +15,7 @@ import org.opalj.br.UninitializedThisVariableInfo
 import org.opalj.br.UninitializedVariableInfo
 import org.opalj.br.VerificationTypeInfo
 import org.opalj.br.analyses.SomeProject
+import org.opalj.collection.immutable.UIDSet
 
 /**
  * Concrete domain that can be used to compute the information required to compute the

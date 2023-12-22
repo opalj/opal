@@ -1,11 +1,12 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 
-import scala.language.experimental.macros
 import scala.annotation.tailrec
-import scala.reflect.macros.blackbox.Context
-import scala.collection.immutable.ArraySeq
+import scala.language.experimental.macros
 import scala.reflect.ClassTag
+import scala.reflect.macros.blackbox.Context
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Defines common control abstractions.

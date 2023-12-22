@@ -2,21 +2,20 @@
 package org.opalj
 package fpcf
 
-import java.util.concurrent.ConcurrentHashMap
 import java.util.{Arrays => JArrays}
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.RejectedExecutionException
-
-import scala.util.control.ControlThrowable
 import scala.collection.mutable
+import scala.util.control.ControlThrowable
 
+import org.opalj.collection.IntIterator
+import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPKId
+import org.opalj.fpcf.PropertyKind.SupportedPropertyKinds
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
-import org.opalj.log.OPALLogger.info
 import org.opalj.log.OPALLogger.{debug => trace}
 import org.opalj.log.OPALLogger.error
-import org.opalj.collection.IntIterator
-import org.opalj.fpcf.PropertyKind.SupportedPropertyKinds
-import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPKId
+import org.opalj.log.OPALLogger.info
 
 /**
  * A property store manages the execution of computations of properties related to concrete
@@ -389,7 +388,7 @@ abstract class PropertyStore {
      */
     final def hasProperty(epk: SomeEPK): Boolean = hasProperty(epk.e, epk.pk)
 
-    /** See `hasProperty(SomeEPK)` for details. **/
+    /** See `hasProperty(SomeEPK)` for details. */
     def hasProperty(e: Entity, pk: PropertyKind): Boolean
 
     /**
@@ -433,7 +432,6 @@ abstract class PropertyStore {
     def entitiesWithLB[P <: Property](lb: P): Iterator[Entity]
 
     /**
-     *
      * @note Only to be called when the store is quiescent.
      * @note Does not trigger lazy property computations.
      */
@@ -955,7 +953,7 @@ abstract class PropertyStore {
         doTerminate = true
         shutdown()
         if (!suppressError) {
-            val storeId = "PropertyStore@"+System.identityHashCode(this).toHexString
+            val storeId = "PropertyStore@" + System.identityHashCode(this).toHexString
             error(
                 "analysis progress",
                 s"$storeId: shutting down computations due to failing analysis",
@@ -1030,7 +1028,6 @@ object PropertyStore {
 
     /**
      * Determines if new `PropertyStore` instances run with debugging or without debugging.
-     *
      */
     def updateDebug(newDebug: Boolean): Unit = {
         implicit val logContext: LogContext = GlobalLogContext

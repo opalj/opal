@@ -6,17 +6,17 @@ import scala.reflect.ClassTag
 
 import scala.collection.AbstractIterator
 
-import org.opalj.log.LogContext
-import org.opalj.log.GlobalLogContext
-import org.opalj.log.OPALLogger
-import org.opalj.util.AnyToAnyThis
-import org.opalj.collection.IntIterator
-import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.br.Code
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.Code
-import org.opalj.br.instructions.Instruction
 import org.opalj.br.PC
+import org.opalj.br.instructions.Instruction
+import org.opalj.collection.IntIterator
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.log.GlobalLogContext
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
+import org.opalj.util.AnyToAnyThis
 
 /**
  * Implementation of an abstract interpretation (ai) framework – also referred to as OPAL.
@@ -224,8 +224,8 @@ package object ai {
         val origin = ImmediateVMExceptionsOriginOffset - pc
         assert(
             origin <= ImmediateVMExceptionsOriginOffset,
-            s"[pc:$pc] "+
-                s"origin($origin) > "+
+            s"[pc:$pc] " +
+                s"origin($origin) > " +
                 s"ImmediateVMExceptionsOriginOffset($ImmediateVMExceptionsOriginOffset)"
         )
         assert(origin > MethodExternalExceptionsOriginOffset)
@@ -273,8 +273,8 @@ package object ai {
         val origin = MethodExternalExceptionsOriginOffset - pc
         assert(
             origin <= MethodExternalExceptionsOriginOffset,
-            s"[pc:$pc] "+
-                s"origin($origin) > "+
+            s"[pc:$pc] " +
+                s"origin($origin) > " +
                 s"MethodExternalExceptionsOriginOffset($MethodExternalExceptionsOriginOffset)"
         )
         assert(SpecialValuesOriginOffset < origin)
@@ -501,9 +501,9 @@ package object ai {
      *      {{{
      *      calledMethod.descriptor.parametersCount + { if (calledMethod.isStatic) 0 else 1 }
      *      }}}.
-     *      I.e., the list of operands must contain one value per parameter and – 
+     *      I.e., the list of operands must contain one value per parameter and –
      *      in case of instance methods – the receiver object. The list __must not
-     *       contain additional values__. The latter is automatically ensured if this
+     *      contain additional values__. The latter is automatically ensured if this
      *      method is called (in)directly by [[AI]] and the operands were just passed
      *      through.
      *      If two or more operands are (reference) identical then the adaptation will only
@@ -522,7 +522,7 @@ package object ai {
         assert(
             operands.size == calledMethod.actualArgumentsCount,
             (if (calledMethod.isStatic) "static " else "/*virtual*/ ") +
-                s"${calledMethod.signatureToJava()}(Arguments: ${calledMethod.actualArgumentsCount}) "+
+                s"${calledMethod.signatureToJava()}(Arguments: ${calledMethod.actualArgumentsCount}) " +
                 s"${operands.mkString("Operands(", ",", ")")}"
         )
 
@@ -567,7 +567,7 @@ package object ai {
         theOperands:  Operands[_ <: ValuesDomain#DomainValue],
         targetDomain: ValuesDomain with ValuesFactory
     ): Array[targetDomain.DomainValue] = {
-        //implicit val domainValueTag: ClassTag[targetDomain.DomainValue] = targetDomain.DomainValueTag
+        // implicit val domainValueTag: ClassTag[targetDomain.DomainValue] = targetDomain.DomainValueTag
         import targetDomain.DomainValueTag
         val operandsCount = theOperands.size
         val adaptedOperands = new Array[targetDomain.DomainValue](operandsCount)

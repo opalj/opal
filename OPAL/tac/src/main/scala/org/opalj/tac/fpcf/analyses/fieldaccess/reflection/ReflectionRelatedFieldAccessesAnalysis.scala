@@ -6,44 +6,36 @@ package analyses
 package fieldaccess
 package reflection
 
+import scala.collection.immutable.ArraySeq
+
 import org.opalj.br.ArrayType
 import org.opalj.br.BaseType
 import org.opalj.br.BooleanType
 import org.opalj.br.ByteType
 import org.opalj.br.CharType
-import org.opalj.log.Error
-import org.opalj.log.Info
-import org.opalj.log.OPALLogger.logOnce
-import org.opalj.fpcf.FinalEP
-import org.opalj.fpcf.ProperPropertyComputationResult
-import org.opalj.fpcf.PropertyBounds
-import org.opalj.fpcf.PropertyComputationResult
-import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.Results
-import org.opalj.br.analyses.SomeProject
 import org.opalj.br.DeclaredMethod
-import org.opalj.br.analyses.DeclaredFields
-import org.opalj.br.analyses.DeclaredFieldsKey
 import org.opalj.br.DoubleType
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.MethodDescriptor
-import org.opalj.br.ObjectType
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.tac.fpcf.analyses.cg.persistentUVar
 import org.opalj.br.Field
 import org.opalj.br.FieldType
 import org.opalj.br.FloatType
 import org.opalj.br.InstanceFieldAccessMethodHandle
 import org.opalj.br.IntegerType
 import org.opalj.br.LongType
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
-import org.opalj.br.analyses.ProjectIndexKey
 import org.opalj.br.Method
+import org.opalj.br.MethodDescriptor
+import org.opalj.br.ObjectType
 import org.opalj.br.PCs
 import org.opalj.br.ShortType
 import org.opalj.br.StaticFieldAccessMethodHandle
 import org.opalj.br.VoidType
+import org.opalj.br.analyses.DeclaredFields
+import org.opalj.br.analyses.DeclaredFieldsKey
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.ProjectIndexKey
+import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
+import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.cg.ForNameClasses
 import org.opalj.br.fpcf.properties.fieldaccess.AccessParameter
@@ -55,14 +47,24 @@ import org.opalj.br.fpcf.properties.fieldaccess.MethodFieldReadAccessInformation
 import org.opalj.br.fpcf.properties.fieldaccess.MethodFieldWriteAccessInformation
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPS
+import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.InterimPartialResult
+import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.PropertyBounds
+import org.opalj.fpcf.PropertyComputationResult
+import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
+import org.opalj.log.Error
+import org.opalj.log.Info
+import org.opalj.log.OPALLogger.logOnce
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.analyses.TACAIBasedAPIBasedAnalysis
 import org.opalj.tac.fpcf.analyses.cg.AllocationsUtil
 import org.opalj.tac.fpcf.analyses.cg.BaseAnalysisState
 import org.opalj.tac.fpcf.analyses.cg.TypeConsumerAnalysis
 import org.opalj.tac.fpcf.analyses.cg.TypeIteratorState
+import org.opalj.tac.fpcf.analyses.cg.persistentUVar
 import org.opalj.tac.fpcf.analyses.cg.reflection.StringUtil
 import org.opalj.tac.fpcf.analyses.cg.reflection.TypesUtil
 import org.opalj.tac.fpcf.analyses.cg.reflection.VarargsUtil
@@ -70,8 +72,6 @@ import org.opalj.tac.fpcf.analyses.fieldaccess.reflection.MatcherUtil.retrieveSu
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.TheTACAI
 import org.opalj.value.ValueInformation
-
-import scala.collection.immutable.ArraySeq
 
 /**
  * @author Maximilian Rüsch
@@ -100,7 +100,7 @@ sealed trait ReflectionAnalysis extends TACAIBasedAPIBasedAnalysis {
 
         logOnce(Info(
             "analysis configuration - field access reflection analysis",
-            "field access reflection analysis uses "+(if (activated) "high soundness mode" else "standard mode")
+            "field access reflection analysis uses " + (if (activated) "high soundness mode" else "standard mode")
         ))
         activated
     }

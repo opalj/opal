@@ -7,6 +7,20 @@ package cg
 
 import scala.collection.immutable.ArraySeq
 
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.Method
+import org.opalj.br.MethodDescriptor
+import org.opalj.br.ObjectType
+import org.opalj.br.ReferenceType
+import org.opalj.br.VoidType
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
+import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.properties.Context
+import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EPS
 import org.opalj.fpcf.FinalEP
@@ -17,24 +31,10 @@ import org.opalj.fpcf.PropertyComputationResult
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
-import org.opalj.value.IsReferenceValue
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.DeclaredMethod
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.MethodDescriptor
-import org.opalj.br.ObjectType
-import org.opalj.br.VoidType
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.Method
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
-import org.opalj.br.ReferenceType
-import org.opalj.br.fpcf.properties.Context
-import org.opalj.br.fpcf.properties.cg.Callees
-import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.TheTACAI
+import org.opalj.value.IsReferenceValue
 
 class ThreadStartAnalysisResults extends IndirectCalls with VMReachableMethodsBase
 

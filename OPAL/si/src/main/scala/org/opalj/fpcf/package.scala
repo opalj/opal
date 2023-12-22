@@ -142,7 +142,7 @@ package object fpcf {
     }
 
     def anyRefToShortString(o: AnyRef): String = {
-        o.getClass.getSimpleName+"@"+hashCodeToHexString(o)
+        o.getClass.getSimpleName + "@" + hashCodeToHexString(o)
     }
 
 }

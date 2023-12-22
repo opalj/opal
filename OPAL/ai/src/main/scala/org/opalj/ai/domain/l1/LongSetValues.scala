@@ -6,8 +6,8 @@ package l1
 
 import scala.collection.immutable.SortedSet
 
-import org.opalj.value.IsLongValue
 import org.opalj.br._
+import org.opalj.value.IsLongValue
 
 /**
  * This domain enables the tracking of long values using sets. The cardinality of
@@ -114,8 +114,9 @@ trait LongSetValues extends LongValuesDomain with ConcreteLongValues {
             case _                                       => None
         }
 
-    @inline protected final def withLongValuesOrElse[T](
-        value1: DomainValue, value2: DomainValue
+    @inline final protected def withLongValuesOrElse[T](
+        value1: DomainValue,
+        value2: DomainValue
     )(
         f: (Long, Long) => T
     )(
@@ -137,7 +138,8 @@ trait LongSetValues extends LongValuesDomain with ConcreteLongValues {
     //
     // UNARY EXPRESSIONS
     //
-    /*override*/ def lneg(pc: PC, value: DomainValue): DomainValue =
+    /*override*/
+    def lneg(pc: PC, value: DomainValue): DomainValue =
         value match {
             case LongSetLike(values) => LongSet(values.map(v => -v))
             case _                   => LongValue(origin = pc)
@@ -147,7 +149,8 @@ trait LongSetValues extends LongValuesDomain with ConcreteLongValues {
     // RELATIONAL OPERATORS
     //
 
-    /*override*/ def lcmp(pc: PC, left: DomainValue, right: DomainValue): DomainValue = {
+    /*override*/
+    def lcmp(pc: PC, left: DomainValue, right: DomainValue): DomainValue = {
         left match {
             case (LongSetLike(leftValues)) =>
                 right match {
@@ -200,7 +203,8 @@ trait LongSetValues extends LongValuesDomain with ConcreteLongValues {
     // BINARY EXPRESSIONS
     //
 
-    /*override*/ def ladd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
+    /*override*/
+    def ladd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
         (value1, value2) match {
             case (LongSetLike(leftValues), LongSetLike(rightValues)) =>
                 val results = for (l <- leftValues; r <- rightValues) yield l + r
@@ -213,7 +217,8 @@ trait LongSetValues extends LongValuesDomain with ConcreteLongValues {
         }
     }
 
-    /*override*/ def lsub(pc: PC, left: DomainValue, right: DomainValue): DomainValue = {
+    /*override*/
+    def lsub(pc: PC, left: DomainValue, right: DomainValue): DomainValue = {
         (left, right) match {
             case (LongSetLike(leftValues), LongSetLike(rightValues)) =>
                 val results = for (l <- leftValues; r <- rightValues) yield l - r
@@ -226,7 +231,8 @@ trait LongSetValues extends LongValuesDomain with ConcreteLongValues {
         }
     }
 
-    /*override*/ def lmul(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
+    /*override*/
+    def lmul(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
         value1 match {
             case (LongSetLike(leftValues)) =>
                 if (leftValues.size == 1 && leftValues.head == 0L)
@@ -288,7 +294,8 @@ trait LongSetValues extends LongValuesDomain with ConcreteLongValues {
         }
     }
 
-    /*override*/ def ldiv(
+    /*override*/
+    def ldiv(
         pc:          PC,
         numerator:   DomainValue,
         denominator: DomainValue
@@ -328,7 +335,8 @@ trait LongSetValues extends LongValuesDomain with ConcreteLongValues {
         }
     }
 
-    /*override*/ def lrem(
+    /*override*/
+    def lrem(
         pc:    PC,
         left:  DomainValue,
         right: DomainValue
@@ -369,7 +377,8 @@ trait LongSetValues extends LongValuesDomain with ConcreteLongValues {
         }
     }
 
-    /*override*/ def land(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
+    /*override*/
+    def land(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
         value1 match {
             case (LongSetLike(leftValues)) =>
                 if (leftValues.size == 1 && leftValues.head == -1L)
@@ -401,7 +410,8 @@ trait LongSetValues extends LongValuesDomain with ConcreteLongValues {
         }
     }
 
-    /*override*/ def lor(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
+    /*override*/
+    def lor(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
         value1 match {
             case (LongSetLike(leftValues)) =>
                 if (leftValues.size == 1 && leftValues.head == -1L)
@@ -433,7 +443,8 @@ trait LongSetValues extends LongValuesDomain with ConcreteLongValues {
         }
     }
 
-    /*override*/ def lxor(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
+    /*override*/
+    def lxor(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
         (value1, value2) match {
             case (LongSetLike(leftValues), LongSetLike(rightValues)) =>
                 val results = for (l <- leftValues; r <- rightValues) yield l ^ r
@@ -448,4 +459,3 @@ trait LongSetValues extends LongValuesDomain with ConcreteLongValues {
     }
 
 }
-

@@ -5,7 +5,6 @@ package da
 import scala.xml.Node
 
 /**
- *
  * @author Michael Eichberg
  * @author Wael Alkhatib
  * @author Isbel Isbel

@@ -7,10 +7,10 @@ package cg
 
 import scala.collection.mutable
 
-import org.opalj.fpcf.EOptionP
 import org.opalj.br.Method
 import org.opalj.br.ReferenceType
 import org.opalj.br.fpcf.properties.Context
+import org.opalj.fpcf.EOptionP
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**

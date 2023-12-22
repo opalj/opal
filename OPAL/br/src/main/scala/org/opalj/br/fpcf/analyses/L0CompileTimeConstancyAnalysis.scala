@@ -4,17 +4,6 @@ package br
 package fpcf
 package analyses
 
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.FinalP
-import org.opalj.fpcf.InterimResult
-import org.opalj.fpcf.ProperPropertyComputationResult
-import org.opalj.fpcf.Property
-import org.opalj.fpcf.PropertyBounds
-import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.Result
-import org.opalj.fpcf.SomeEPS
-import org.opalj.fpcf.SomeInterimEP
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.CompileTimeConstancy
@@ -25,7 +14,18 @@ import org.opalj.br.fpcf.properties.immutability.FieldAssignability
 import org.opalj.br.fpcf.properties.immutability.LazilyInitialized
 import org.opalj.br.fpcf.properties.immutability.NonAssignable
 import org.opalj.br.fpcf.properties.immutability.UnsafelyLazilyInitialized
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.FinalP
+import org.opalj.fpcf.InterimResult
 import org.opalj.fpcf.LBP
+import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.Property
+import org.opalj.fpcf.PropertyBounds
+import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.Result
+import org.opalj.fpcf.SomeEPS
+import org.opalj.fpcf.SomeInterimEP
 import org.opalj.fpcf.UBP
 
 /**

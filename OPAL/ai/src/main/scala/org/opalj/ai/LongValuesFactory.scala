@@ -30,4 +30,3 @@ trait LongValuesFactory extends ValuesDomain { domain =>
     def LongValue(origin: ValueOrigin, value: Long): DomainTypedValue[LongType]
 
 }
-

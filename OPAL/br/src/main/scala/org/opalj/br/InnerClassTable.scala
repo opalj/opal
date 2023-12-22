@@ -42,11 +42,11 @@ case class InnerClass(
 ) {
 
     override def toString(): String = {
-        "InnerClass"+
-            "(type="+innerClassType.toJava+
-            ",outerType="+outerClassType.map(_.toJava)+
-            ",innerName="+innerName+
-            ",accessFlags=\""+AccessFlags.toString(innerClassAccessFlags, AccessFlagsContexts.INNER_CLASS)+"\""+
+        "InnerClass" +
+            "(type=" + innerClassType.toJava +
+            ",outerType=" + outerClassType.map(_.toJava) +
+            ",innerName=" + innerName +
+            ",accessFlags=\"" + AccessFlags.toString(innerClassAccessFlags, AccessFlagsContexts.INNER_CLASS) + "\"" +
             ")"
     }
 }

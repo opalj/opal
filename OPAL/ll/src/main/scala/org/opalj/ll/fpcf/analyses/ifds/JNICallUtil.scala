@@ -7,7 +7,7 @@ package ifds
 
 import org.opalj.br.Method
 import org.opalj.br.analyses.DeclaredMethods
-import org.opalj.ll.llvm.value.constant.ConstantDataArray
+import org.opalj.ll.llvm.StructType
 import org.opalj.ll.llvm.value.Argument
 import org.opalj.ll.llvm.value.Call
 import org.opalj.ll.llvm.value.GetElementPtr
@@ -15,7 +15,7 @@ import org.opalj.ll.llvm.value.GlobalVariable
 import org.opalj.ll.llvm.value.Load
 import org.opalj.ll.llvm.value.Store
 import org.opalj.ll.llvm.value.Value
-import org.opalj.ll.llvm.StructType
+import org.opalj.ll.llvm.value.constant.ConstantDataArray
 
 /**
  * Collection of utility methods to handle JNI Methods
@@ -100,7 +100,7 @@ object JNICallUtil {
         val classFile = nativeMethod.classFile.fqn
             .replace("_", "_1")
             .replace('/', '_')
-        "Java_"+classFile+"_"+calleeName
+        "Java_" + classFile + "_" + calleeName
     }
 
     /**
@@ -127,7 +127,7 @@ object JNICallUtil {
 
         // decode class name
         val fqnDecoded = "_([^0-9])".r
-            .replaceAllIn(parts._1, m => "/"+m.group(1))
+            .replaceAllIn(parts._1, m => "/" + m.group(1))
             .replace("_1", "_")
 
         // decode method name

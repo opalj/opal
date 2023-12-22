@@ -6,14 +6,14 @@ package analyses
 package fieldaccess
 package reflection
 
+import scala.collection.immutable.ArraySeq
+
+import org.opalj.br.Field
+import org.opalj.br.FieldType
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.ProjectIndexKey
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.Field
-import org.opalj.br.FieldType
 import org.opalj.value.IsReferenceValue
-
-import scala.collection.immutable.ArraySeq
 
 /**
  * Used to determine whether a certain field should be considered as a target for a reflective access.

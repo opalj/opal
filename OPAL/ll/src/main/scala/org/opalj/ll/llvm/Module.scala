@@ -3,6 +3,9 @@ package org.opalj
 package ll
 package llvm
 
+import org.opalj.ll.llvm.value.Function
+import org.opalj.ll.llvm.value.Value
+
 import org.bytedeco.llvm.LLVM.LLVMModuleRef
 import org.bytedeco.llvm.LLVM.LLVMValueRef
 import org.bytedeco.llvm.global.LLVM.LLVMDisposeMessage
@@ -10,8 +13,6 @@ import org.bytedeco.llvm.global.LLVM.LLVMGetFirstFunction
 import org.bytedeco.llvm.global.LLVM.LLVMGetNamedFunction
 import org.bytedeco.llvm.global.LLVM.LLVMGetNextFunction
 import org.bytedeco.llvm.global.LLVM.LLVMPrintModuleToString
-import org.opalj.ll.llvm.value.Function
-import org.opalj.ll.llvm.value.Value
 
 /**
  * Wrapper representing a LLVM module
@@ -35,7 +36,7 @@ case class Module(ref: LLVMModuleRef) {
     def function(name: String): Function =
         Value(LLVMGetNamedFunction(ref, name)) match {
             case None =>
-                throw new IllegalArgumentException("Unknown function '"+name+"'")
+                throw new IllegalArgumentException("Unknown function '" + name + "'")
             case Some(function: Function) => function
             case Some(_) => throw new IllegalStateException(
                 "Expected LLVMGetNamedFunction to return a Function ref"

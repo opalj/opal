@@ -7,13 +7,13 @@ package jcg
 import scala.collection.immutable.ArraySeq
 import scala.collection.mutable.ArrayBuffer
 
-import org.opalj.da.ClassFile
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.MethodWithBody
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
-import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.Instruction
+import org.opalj.br.instructions.INVOKEVIRTUAL
+import org.opalj.da.ClassFile
 
 /**
  * Groups test case features that perform a polymorphic method calls over package boundaries. This is

@@ -6,32 +6,32 @@ package l1
 
 import scala.annotation.switch
 
-import org.opalj.value.TypeOfReferenceValue
-import org.opalj.br.instructions.GETFIELD
-import org.opalj.br.instructions.PUTFIELD
-import org.opalj.br.instructions.VirtualMethodInvocationInstruction
-import org.opalj.br.instructions.INVOKEVIRTUAL
-import org.opalj.br.instructions.INVOKEINTERFACE
-import org.opalj.br.instructions.AALOAD
-import org.opalj.br.instructions.BALOAD
-import org.opalj.br.instructions.CALOAD
-import org.opalj.br.instructions.SALOAD
-import org.opalj.br.instructions.IALOAD
-import org.opalj.br.instructions.LALOAD
-import org.opalj.br.instructions.FALOAD
-import org.opalj.br.instructions.DALOAD
-import org.opalj.br.instructions.AASTORE
-import org.opalj.br.instructions.BASTORE
-import org.opalj.br.instructions.CASTORE
-import org.opalj.br.instructions.SASTORE
-import org.opalj.br.instructions.IASTORE
-import org.opalj.br.instructions.LASTORE
-import org.opalj.br.instructions.FASTORE
-import org.opalj.br.instructions.DASTORE
-import org.opalj.br.instructions.ARRAYLENGTH
-import org.opalj.br.instructions.MONITORENTER
-import org.opalj.br.instructions.Instruction
 import org.opalj.br.ObjectType
+import org.opalj.br.instructions.AALOAD
+import org.opalj.br.instructions.AASTORE
+import org.opalj.br.instructions.ARRAYLENGTH
+import org.opalj.br.instructions.BALOAD
+import org.opalj.br.instructions.BASTORE
+import org.opalj.br.instructions.CALOAD
+import org.opalj.br.instructions.CASTORE
+import org.opalj.br.instructions.DALOAD
+import org.opalj.br.instructions.DASTORE
+import org.opalj.br.instructions.FALOAD
+import org.opalj.br.instructions.FASTORE
+import org.opalj.br.instructions.GETFIELD
+import org.opalj.br.instructions.IALOAD
+import org.opalj.br.instructions.IASTORE
+import org.opalj.br.instructions.Instruction
+import org.opalj.br.instructions.INVOKEINTERFACE
+import org.opalj.br.instructions.INVOKEVIRTUAL
+import org.opalj.br.instructions.LALOAD
+import org.opalj.br.instructions.LASTORE
+import org.opalj.br.instructions.MONITORENTER
+import org.opalj.br.instructions.PUTFIELD
+import org.opalj.br.instructions.SALOAD
+import org.opalj.br.instructions.SASTORE
+import org.opalj.br.instructions.VirtualMethodInvocationInstruction
+import org.opalj.value.TypeOfReferenceValue
 
 /**
  * Refines a reference's null property if the reference value may be null and

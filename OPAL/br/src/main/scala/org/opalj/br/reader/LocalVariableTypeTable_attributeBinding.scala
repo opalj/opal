@@ -3,9 +3,9 @@ package org.opalj
 package br
 package reader
 
-import org.opalj.bi.reader.LocalVariableTypeTable_attributeReader
-
 import scala.reflect.ClassTag
+
+import org.opalj.bi.reader.LocalVariableTypeTable_attributeReader
 
 /**
  * The factory methods to create local variable type tables and their entries.
@@ -50,4 +50,3 @@ trait LocalVariableTypeTable_attributeBinding
         new LocalVariableTypeTable(local_variable_type_table)
     }
 }
-

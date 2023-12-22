@@ -4,10 +4,10 @@ package br
 package analyses
 package cg
 
-import net.ceedubs.ficus.Ficus._
-
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.warn
+
+import net.ceedubs.ficus.Ficus._
 
 /**
  * Determines which packages are open or closed; that is, determines to which packages code
@@ -105,7 +105,7 @@ class OpenCodeBase(val project: SomeProject) extends ClosedPackages {
 class ClosedPackagesConfiguration(val project: SomeProject) extends ClosedPackages {
 
     private[this] val closedPackagesRegex = {
-        val configKey = ClosedPackagesKey.ConfigKeyPrefix+"closedPackages"
+        val configKey = ClosedPackagesKey.ConfigKeyPrefix + "closedPackages"
         val closedPackages = project.config.as[Option[String]](configKey)
 
         if (closedPackages.isEmpty) {

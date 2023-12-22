@@ -3,16 +3,16 @@ package org.opalj
 package br
 package fpcf
 
-import com.typesafe.config.Config
-import net.ceedubs.ficus.Ficus._
-
-import org.opalj.log.LogContext
-import org.opalj.log.OPALLogger
+import org.opalj.br.analyses.ProjectInformationKey
+import org.opalj.br.analyses.SomeProject
 import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.PropertyStoreContext
-import org.opalj.br.analyses.ProjectInformationKey
-import org.opalj.br.analyses.SomeProject
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
+
+import com.typesafe.config.Config
+import net.ceedubs.ficus.Ficus._
 
 /**
  * The ''key'' object to get the project's [[org.opalj.fpcf.PropertyStore]].
@@ -69,7 +69,7 @@ object PropertyStoreKey
                     case Some(unknown) =>
                         OPALLogger.error(
                             "analysis configuration",
-                            s"unknown PropertyStore $unknown configured,"+
+                            s"unknown PropertyStore $unknown configured," +
                                 " using PKECPropertyStore instead"
                         )
                         org.opalj.fpcf.par.PKECPropertyStore(context: _*)

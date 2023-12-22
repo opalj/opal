@@ -3,17 +3,17 @@ package org.opalj
 package br
 package fpcf
 
-import com.typesafe.config.Config
-
-import org.opalj.log.LogContext
-import org.opalj.log.OPALLogger.debug
-import org.opalj.util.PerformanceEvaluation._
 import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.AnalysisScenario
 import org.opalj.fpcf.ComputationSpecification
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Schedule
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger.debug
+import org.opalj.util.PerformanceEvaluation._
+
+import com.typesafe.config.Config
 
 /**
  * Enables the execution of a set of analyses.
@@ -54,7 +54,7 @@ class FPCFAnalysesManager private[fpcf] (val project: SomeProject) {
         val schedule = scenario.computeSchedule(propertyStore, FPCFAnalysesRegistry.defaultAnalysis)
         schedules ::= schedule
 
-        if (trace) { debug("analysis progress", "executing "+schedule) }
+        if (trace) { debug("analysis progress", "executing " + schedule) }
         val as = time {
             schedule(propertyStore, trace, afterPhaseScheduling = afterPhaseScheduling)
         } { t =>

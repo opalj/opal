@@ -4,17 +4,17 @@ package hermes
 package queries
 package jcg
 
+import scala.collection.immutable.ArraySeq
+
 import org.opalj.ai.BaseAI
 import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
 import org.opalj.br.ObjectType
 import org.opalj.br.PCAndInstruction
 import org.opalj.br.analyses.Project
-import org.opalj.br.instructions.PUTSTATIC
 import org.opalj.br.instructions.LDC
 import org.opalj.br.instructions.LDC_W
+import org.opalj.br.instructions.PUTSTATIC
 import org.opalj.da.ClassFile
-
-import scala.collection.immutable.ArraySeq
 
 /**
  * Groups test case features that test the correct recognition of static initializers.
@@ -36,7 +36,7 @@ class StaticInitializer(implicit hermes: HermesConfig) extends DefaultFeatureQue
             "SI4", /* 3 ---  reference of a final non-primitive and non-String field within an interface. */
             "SI5", /* 4 --- class creation should trigger the static initializer */
             "SI6", /* 5 --- call of a static method */
-            "SI7" /* 6 --- assignment to a static field */ ,
+            "SI7", /* 6 --- assignment to a static field */
             "SI8" /* 7 --- initialization of a class should cause initialization of super classes */
         )
     }

@@ -10,10 +10,28 @@ import scala.language.existentials
 
 import scala.collection.immutable.ArraySeq
 
-import org.opalj.log.Error
-import org.opalj.log.Info
-import org.opalj.log.OPALLogger.logOnce
-import org.opalj.log.Warn
+import org.opalj.br.ArrayType
+import org.opalj.br.BooleanType
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.InvokeInterfaceMethodHandle
+import org.opalj.br.InvokeSpecialMethodHandle
+import org.opalj.br.InvokeStaticMethodHandle
+import org.opalj.br.InvokeVirtualMethodHandle
+import org.opalj.br.Method
+import org.opalj.br.MethodDescriptor
+import org.opalj.br.NewInvokeSpecialMethodHandle
+import org.opalj.br.ObjectType
+import org.opalj.br.ReferenceType
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.ProjectIndexKey
+import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
+import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.cg.ForNameClasses
+import org.opalj.br.fpcf.properties.cg.LoadedClasses
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.Entity
@@ -31,35 +49,17 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
-import org.opalj.value.ASObjectValue
-import org.opalj.value.ValueInformation
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.DeclaredMethod
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.ArrayType
-import org.opalj.br.InvokeInterfaceMethodHandle
-import org.opalj.br.InvokeSpecialMethodHandle
-import org.opalj.br.InvokeStaticMethodHandle
-import org.opalj.br.InvokeVirtualMethodHandle
-import org.opalj.br.MethodDescriptor
-import org.opalj.br.NewInvokeSpecialMethodHandle
-import org.opalj.br.ObjectType
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.BooleanType
-import org.opalj.br.analyses.ProjectIndexKey
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
-import org.opalj.br.Method
-import org.opalj.br.ReferenceType
-import org.opalj.br.fpcf.properties.cg.Callees
-import org.opalj.br.fpcf.properties.cg.Callers
-import org.opalj.br.fpcf.properties.cg.ForNameClasses
-import org.opalj.br.fpcf.properties.cg.LoadedClasses
+import org.opalj.log.Error
+import org.opalj.log.Info
+import org.opalj.log.OPALLogger.logOnce
+import org.opalj.log.Warn
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.analyses.cg.reflection.MatcherUtil.retrieveSuitableMatcher
 import org.opalj.tac.fpcf.analyses.cg.reflection.MethodHandlesUtil.retrieveDescriptorBasedMethodMatcher
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.TheTACAI
+import org.opalj.value.ASObjectValue
+import org.opalj.value.ValueInformation
 
 sealed trait ReflectionAnalysis extends TACAIBasedAPIBasedAnalysis {
 
@@ -93,8 +93,8 @@ sealed trait ReflectionAnalysis extends TACAIBasedAPIBasedAnalysis {
 
         logOnce(Info(
             "analysis configuration",
-            "reflection analysis uses "+(
-                if (activated.nonEmpty) "high soundness mode ("+activated.mkString(",")+")"
+            "reflection analysis uses " + (
+                if (activated.nonEmpty) "high soundness mode (" + activated.mkString(",") + ")"
                 else "standard mode"
             )
         ))

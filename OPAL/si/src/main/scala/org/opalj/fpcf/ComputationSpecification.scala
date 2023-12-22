@@ -70,7 +70,7 @@ trait ComputationSpecification[A] {
 
     require(
         (derivesCollaboratively intersect derivesEagerly).isEmpty,
-        "a property either has to be derived eagerly or collaboratively, but not both: "+
+        "a property either has to be derived eagerly or collaboratively, but not both: " +
             (derivesCollaboratively intersect derivesEagerly).mkString(", ")
     )
 
@@ -106,7 +106,7 @@ trait ComputationSpecification[A] {
                 map(_.toSpecification).
                 mkString("derivesCollaboratively={", ", ", "}")
 
-        s"ComputationSpecification(name=$name,type=$computationType,"+
+        s"ComputationSpecification(name=$name,type=$computationType," +
             s"$uses,$derivesLazily,$derivesEagerly,$derivesCollaboratively)"
 
     }

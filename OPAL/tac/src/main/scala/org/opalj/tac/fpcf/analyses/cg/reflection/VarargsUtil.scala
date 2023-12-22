@@ -5,12 +5,13 @@ package fpcf
 package analyses
 package cg
 package reflection
-import org.opalj.collection.immutable.IntArraySetBuilder
-import org.opalj.br.FieldType
-import org.opalj.br.FieldTypes
+import scala.reflect.ClassTag
 
 import scala.collection.immutable.ArraySeq
-import scala.reflect.ClassTag
+
+import org.opalj.br.FieldType
+import org.opalj.br.FieldTypes
+import org.opalj.collection.immutable.IntArraySetBuilder
 
 /**
  * Utility class to retrieve types or expressions for varargs.

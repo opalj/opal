@@ -6,13 +6,13 @@ package common
 import scala.util.control.ControlThrowable
 import scala.xml.Node
 import scala.xml.NodeSeq
-import scala.xml.Unparsed
 import scala.xml.Text
+import scala.xml.Unparsed
 
-import org.opalj.io.writeAndOpen
-import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.br._
 import org.opalj.br.instructions._
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.io.writeAndOpen
 
 /**
  * Several utility methods to facilitate the development of the abstract interpreter/
@@ -63,7 +63,7 @@ object XHTML {
                 val currentTime = System.currentTimeMillis()
                 if ((currentTime - this.lastDump) > minimumDumpInterval) {
                     this.lastDump = currentTime
-                    val title = Some("Generated due to exception: "+e.getMessage())
+                    val title = Some("Generated due to exception: " + e.getMessage())
                     val code = method.body.get
                     val dump =
                         XHTML.dump(
@@ -71,7 +71,7 @@ object XHTML {
                         )(result.cfJoins, operandsArray, localsArray)
                     writeAndOpen(dump, "StateOfIncompleteAbstractInterpretation", ".html")
                 } else {
-                    Console.err.println("[info] dump suppressed: "+e.getMessage())
+                    Console.err.println("[info] dump suppressed: " + e.getMessage())
                 }
                 throw e
         }
@@ -104,14 +104,14 @@ object XHTML {
                 val currentTime = System.currentTimeMillis()
                 if ((currentTime - this.lastDump) > minimumDumpInterval) {
                     this.lastDump = currentTime
-                    val message = "Dump generated due to exception: "+e.getMessage
+                    val message = "Dump generated due to exception: " + e.getMessage
                     writeAndOpen(
                         dump(classFile.get, method.get, message, result),
                         "AIResult",
                         ".html"
                     )
                 } else {
-                    Console.err.println("dump suppressed: "+e.getMessage)
+                    Console.err.println("dump suppressed: " + e.getMessage)
                 }
                 throw e
         }
@@ -164,7 +164,7 @@ object XHTML {
 
         val title =
             classFile.
-                map(_.thisType.toJava + method.map("{ "+methodToString(_)+" }").getOrElse("")).
+                map(_.thisType.toJava + method.map("{ " + methodToString(_) + " }").getOrElse("")).
                 orElse(method.map(methodToString))
 
         val annotations = method.map(annotationsAsXHTML).getOrElse(<div class="annotations"></div>)
@@ -193,8 +193,8 @@ object XHTML {
         val exceptionHandlers =
             (
                 for ((eh, index) <- indexedExceptionHandlers) yield {
-                    "⚡: "+index+" "+eh.catchType.map(_.toJava).getOrElse("<finally>")+
-                        " ["+eh.startPC+","+eh.endPC+")"+" => "+eh.handlerPC
+                    "⚡: " + index + " " + eh.catchType.map(_.toJava).getOrElse("<finally>") +
+                        " [" + eh.startPC + "," + eh.endPC + ")" + " => " + eh.handlerPC
                 }
             ).map(eh => <p>{ eh }</p>)
 
@@ -277,7 +277,7 @@ object XHTML {
         val instrs = code.instructions.zipWithIndex.zip(operandsArray zip localsArray).filter(_._1._1 ne null)
         for (((instruction, pc), (operands, locals)) <- instrs) yield {
             var exceptionHandlers = code.handlersFor(pc).map(indexedExceptionHandlers(_)).mkString(",")
-            if (exceptionHandlers.nonEmpty) exceptionHandlers = "⚡: "+exceptionHandlers
+            if (exceptionHandlers.nonEmpty) exceptionHandlers = "⚡: " + exceptionHandlers
             dumpInstruction(
                 pc, code.lineNumber(pc), instruction, cfJoins.contains(pc),
                 belongsToSubroutine(pc),
@@ -308,9 +308,9 @@ object XHTML {
         val pcAsXHTML =
             Unparsed(
                 (if (pathsJoin) "⇉ " else "") + pc.toString +
-                    exceptionHandlers.map("<br>"+_).getOrElse("") +
-                    lineNumber.map("<br><i>l="+_+"</i>").getOrElse("") +
-                    (if (subroutineId != 0) "<br><b>⥂="+subroutineId+"</b>" else "")
+                    exceptionHandlers.map("<br>" + _).getOrElse("") +
+                    lineNumber.map("<br><i>l=" + _ + "</i>").getOrElse("") +
+                    (if (subroutineId != 0) "<br><b>⥂=" + subroutineId + "</b>" else "")
             )
 
         val properties = htmlify(domain.properties(pc, valueToString).getOrElse("<None>"))

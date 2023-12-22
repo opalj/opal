@@ -4,13 +4,13 @@ package ai
 package domain
 package l1
 
-import org.junit.runner.RunWith
-import org.scalatest.matchers.should.Matchers
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatestplus.junit.JUnitRunner
-import br._
-
 import scala.collection.immutable.ArraySeq
+
+import br._
+import org.junit.runner.RunWith
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests the ReflectiveInvoker trait.
@@ -146,6 +146,7 @@ class ReflectiveInvokerTest extends AnyFlatSpec with Matchers {
             receiver
         )
 
+        // String <String>.substring(int int)
         //String <String>.substring(int int)
         /*val result =*/ domain.invokeReflective(IrrelevantPC, declaringClass, "substring", descriptor, operands)
         val javaResult = domain.lastObject.asInstanceOf[java.lang.String]
@@ -163,7 +164,7 @@ class ReflectiveInvokerTest extends AnyFlatSpec with Matchers {
             TypedValue(IrrelevantPC, declaringClass)
         )
 
-        //void StringBuilder.ensureCapacity(int)
+        // void StringBuilder.ensureCapacity(int)
         val result = domain.invokeReflective(IrrelevantPC, declaringClass, "ensureCapacity", descriptor, operands)
         result should be(Some(ComputationWithSideEffectOnly))
     }
@@ -177,7 +178,7 @@ class ReflectiveInvokerTest extends AnyFlatSpec with Matchers {
         val descriptor = MethodDescriptor(FieldTypes.empty, IntegerType)
         val operands = List(instanceValue)
 
-        //int String.length()
+        // int String.length()
         val result = domain.invokeReflective(IrrelevantPC, declaringClass, "length", descriptor, operands)
         result should be(None)
     }
@@ -190,7 +191,7 @@ class ReflectiveInvokerTest extends AnyFlatSpec with Matchers {
         val descriptor = MethodDescriptor(FieldTypes(IntegerType), ObjectType.String)
         val operands = List(TypedValue(1, ObjectType.Object))
 
-        //String String.valueOf(int)
+        // String String.valueOf(int)
         val result = domain.invokeReflective(IrrelevantPC, declaringClass, "valueOf", descriptor, operands)
         result should be(None)
     }
@@ -247,7 +248,7 @@ class ReflectiveInvokerTest extends AnyFlatSpec with Matchers {
                 receiver
             )
 
-        //String <String>.substring(int /*lower*/, int/*upper*/)
+        // String <String>.substring(int /*lower*/, int/*upper*/)
         val result = domain.invokeReflective(IrrelevantPC, declaringClass, "substring", descriptor, operands)
         result should be(Some(ThrowsException(List(
             InitializedObjectValue(IrrelevantPC, ObjectType("java/lang/StringIndexOutOfBoundsException"))

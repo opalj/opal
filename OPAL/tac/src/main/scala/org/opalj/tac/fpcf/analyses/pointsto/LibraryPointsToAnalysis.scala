@@ -5,6 +5,24 @@ package fpcf
 package analyses
 package pointsto
 
+import org.opalj.br.ArrayType
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.Field
+import org.opalj.br.ReferenceType
+import org.opalj.br.Type
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.VirtualFormalParametersKey
+import org.opalj.br.analyses.cg.ClosedPackagesKey
+import org.opalj.br.analyses.cg.InitialEntryPointsKey
+import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
+import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.FPCFEagerAnalysisScheduler
+import org.opalj.br.fpcf.properties.NoContext
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
+import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EPK
@@ -15,24 +33,6 @@ import org.opalj.fpcf.PropertyComputationResult
 import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.UBP
-import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
-import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
-import org.opalj.br.Field
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.ArrayType
-import org.opalj.br.ReferenceType
-import org.opalj.br.analyses.cg.ClosedPackagesKey
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
-import org.opalj.br.Type
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.cg.InitialEntryPointsKey
-import org.opalj.br.DeclaredMethod
-import org.opalj.br.analyses.VirtualFormalParametersKey
-import org.opalj.br.fpcf.properties.NoContext
-import org.opalj.br.fpcf.FPCFEagerAnalysisScheduler
-import org.opalj.br.fpcf.properties.cg.Callers
 
 /**
  * Provides initial points to sets for the parameters of entry point methods, fields and arrays as

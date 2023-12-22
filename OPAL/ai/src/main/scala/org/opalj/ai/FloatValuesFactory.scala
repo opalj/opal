@@ -33,4 +33,3 @@ trait FloatValuesFactory extends ValuesDomain { domain =>
      */
     def FloatValue(valueOrigin: Int, value: Float): DomainTypedValue[FloatType]
 }
-

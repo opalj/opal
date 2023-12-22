@@ -2,12 +2,13 @@
 package org.opalj
 package issues
 
+import play.api.libs.json.Json
+import play.api.libs.json.JsString
+
 import org.junit.runner.RunWith
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
-import play.api.libs.json.JsString
-import play.api.libs.json.Json
 
 /**
  * Tests the toIDL method of Issue

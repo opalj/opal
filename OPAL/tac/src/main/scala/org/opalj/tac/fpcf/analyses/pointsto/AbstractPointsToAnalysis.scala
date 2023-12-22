@@ -6,43 +6,21 @@ package analyses
 package pointsto
 
 import scala.collection.mutable.ArrayBuffer
-import org.opalj.log.OPALLogger.logOnce
-import org.opalj.log.Warn
-import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.EPK
-import org.opalj.fpcf.EPS
-import org.opalj.fpcf.InterimPartialResult
-import org.opalj.fpcf.ProperPropertyComputationResult
-import org.opalj.fpcf.PropertyBounds
-import org.opalj.fpcf.PropertyKind
-import org.opalj.fpcf.PropertyMetaInformation
-import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.Results
-import org.opalj.fpcf.SomeEOptionP
-import org.opalj.fpcf.SomeEPK
-import org.opalj.fpcf.SomeEPS
-import org.opalj.fpcf.UBP
-import org.opalj.value.IsMultipleReferenceValue
-import org.opalj.value.IsReferenceValue
-import org.opalj.value.IsSArrayValue
-import org.opalj.value.ValueInformation
-import org.opalj.br.Method
-import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
-import org.opalj.br.ReferenceType
-import org.opalj.br.FieldType
-import org.opalj.br.ObjectType
+
 import org.opalj.br.ArrayType
 import org.opalj.br.DeclaredField
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.FieldType
+import org.opalj.br.Method
+import org.opalj.br.ObjectType
+import org.opalj.br.PC
+import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFTriggeredAnalysisScheduler
-import org.opalj.br.DeclaredMethod
 import org.opalj.br.fpcf.analyses.SimpleContextProvider
-import org.opalj.br.PC
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.Callers
@@ -52,11 +30,34 @@ import org.opalj.br.fpcf.properties.fieldaccess.MethodFieldReadAccessInformation
 import org.opalj.br.fpcf.properties.fieldaccess.MethodFieldWriteAccessInformation
 import org.opalj.br.fpcf.properties.fieldaccess.NoMethodFieldReadAccessInformation
 import org.opalj.br.fpcf.properties.fieldaccess.NoMethodFieldWriteAccessInformation
+import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.EPK
+import org.opalj.fpcf.EPS
+import org.opalj.fpcf.InterimPartialResult
+import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyKey
+import org.opalj.fpcf.PropertyKind
+import org.opalj.fpcf.PropertyMetaInformation
+import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.Results
+import org.opalj.fpcf.SomeEOptionP
+import org.opalj.fpcf.SomeEPK
+import org.opalj.fpcf.SomeEPS
+import org.opalj.fpcf.UBP
+import org.opalj.log.OPALLogger.logOnce
+import org.opalj.log.Warn
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.fpcf.analyses.cg.ReachableMethodAnalysis
 import org.opalj.tac.fpcf.analyses.cg.valueOriginsOfPCs
 import org.opalj.tac.fpcf.properties.TACAI
+import org.opalj.value.IsMultipleReferenceValue
+import org.opalj.value.IsReferenceValue
+import org.opalj.value.IsSArrayValue
+import org.opalj.value.ValueInformation
 
 /**
  * A context-insensitive points-to analysis, that uses an abstract [[PointsToSetLike]] in order to
@@ -799,4 +800,3 @@ trait AbstractPointsToAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
 
     override def triggeredBy: PropertyKind = Callers
 }
-

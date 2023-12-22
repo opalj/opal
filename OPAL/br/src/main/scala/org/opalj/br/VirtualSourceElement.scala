@@ -84,7 +84,7 @@ final case class VirtualClass(thisType: ObjectType) extends VirtualSourceElement
     override def getLineNumber(project: ClassFileRepository): Option[Int] = None
 
     override def compare(that: VirtualSourceElement): Int = {
-        //x < 0 when this < that; x == 0 when this == that; x > 0 when this > that
+        // x < 0 when this < that; x == 0 when this == that; x > 0 when this > that
         that match {
             case VirtualClass(thatType) => thisType.compare(thatType)
             case _                      => -1
@@ -125,7 +125,7 @@ final case class VirtualField(
 
     override def classType: ObjectType = declaringClassType
 
-    override def toJava: String = declaringClassType.toJava+"{ "+fieldType.toJava+" "+name+"; }"
+    override def toJava: String = declaringClassType.toJava + "{ " + fieldType.toJava + " " + name + "; }"
 
     override def getLineNumber(project: ClassFileRepository): Option[Int] = None
 
@@ -181,7 +181,7 @@ sealed class VirtualMethod(
 
     override def classType: ReferenceType = declaringClassType
 
-    override def toJava: String = declaringClassType.toJava+"{ "+descriptor.toJava(name)+"; }"
+    override def toJava: String = declaringClassType.toJava + "{ " + descriptor.toJava(name) + "; }"
 
     override def getLineNumber(project: ClassFileRepository): Option[Int] = {
         if (declaringClassType.isArrayType)
@@ -257,7 +257,7 @@ final case class VirtualForwardingMethod(
         target:                          Method
 ) extends VirtualMethod(declaringClassType, name, descriptor) {
 
-    override def toJava: String = declaringClassType.toJava+"{ "+descriptor.toJava(name)+" }"
+    override def toJava: String = declaringClassType.toJava + "{ " + descriptor.toJava(name) + " }"
 
     override def hashCode: Opcode = (target.hashCode() * 41) + super.hashCode
 
@@ -269,4 +269,3 @@ final case class VirtualForwardingMethod(
     }
 
 }
-
