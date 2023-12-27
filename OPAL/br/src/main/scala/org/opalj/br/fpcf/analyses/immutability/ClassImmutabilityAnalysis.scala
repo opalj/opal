@@ -36,7 +36,6 @@ import org.opalj.fpcf.IncrementalResult
 import org.opalj.fpcf.InterimE
 import org.opalj.fpcf.InterimResult
 import org.opalj.fpcf.LBP
-import org.opalj.fpcf.LUBP
 import org.opalj.fpcf.MultiResult
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.Property
@@ -289,8 +288,6 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
                 case UBP(MutableClass) =>
                     return Result(t, MutableClass);
 
-                case LBP(TransitivelyImmutableClass) => // the super class
-
                 case UBP(NonTransitivelyImmutableClass) => // super class is at most immutable container
                     maxLocalImmutability = NonTransitivelyImmutableClass
 
@@ -305,7 +302,7 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
                         !dependees.valuesIterator.exists(_.pk == FieldImmutability.key))
                         minLocalImmutability = NonTransitivelyImmutableClass // Lift lower bound when possible
 
-                case LUBP(MutableClass, TransitivelyImmutableClass) => // No information about superclass
+                case UBP(TransitivelyImmutableClass) => // No information about superclass
 
                 case FinalP(DependentlyImmutableField(parameter)) =>
                     if (hasNonTransitivelyImmutableFields) {
@@ -317,25 +314,19 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
                     }
 
                 // Field Immutability related dependencies:
-                case FinalP(TransitivelyImmutableField) =>
+                case UBP(MutableField) =>
+                    return Result(t, MutableClass);
 
-                case FinalP(NonTransitivelyImmutableField) =>
+                case UBP(TransitivelyImmutableField) => // no information about field mutability
+
+                case UBP(NonTransitivelyImmutableField) =>
                     maxLocalImmutability = NonTransitivelyImmutableClass
-
-                case FinalP(MutableField)                                            => return Result(t, MutableClass);
-                case UBP(MutableField)                                               => return Result(t, MutableClass);
-
-                case LBP(NonTransitivelyImmutableField | TransitivelyImmutableField) =>
-
-                case UBP(TransitivelyImmutableField)                                 => // no information about field mutability
-
-                case UBP(NonTransitivelyImmutableField)                              => maxLocalImmutability = NonTransitivelyImmutableClass
 
                 case UBP(DependentlyImmutableField(parameter)) if maxLocalImmutability != NonTransitivelyImmutableClass =>
                     genericTypeParameters ++= parameter
                     maxLocalImmutability = DependentlyImmutableClass(genericTypeParameters)
 
-                case _ => Result(t, MutableClass) //TODO
+                case _ => Result(t, MutableClass)
             }
 
             if (someEPS.isRefinable) {
