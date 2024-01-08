@@ -241,7 +241,7 @@ trait TypeImmutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(TypeImmutability)
 
-    final override def uses: Set[PropertyBounds] = PropertyBounds.lubs(ClassImmutability, TypeImmutability)
+    override final def uses: Set[PropertyBounds] = PropertyBounds.lubs(ClassImmutability, TypeImmutability)
 
     override def requiredProjectInformation: ProjectInformationKeys = Seq(TypeExtensibilityKey)
 

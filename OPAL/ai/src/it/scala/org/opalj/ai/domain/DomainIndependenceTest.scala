@@ -3,16 +3,16 @@ package org.opalj
 package ai
 package domain
 
+import org.junit.runner.RunWith
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
+
 import org.opalj.br.Code
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 
 import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParallelizable
-
-import org.junit.runner.RunWith
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
-import org.scalatestplus.junit.JUnitRunner
 
 /**
  * This system test(suite) just loads a very large number of class files and performs
@@ -31,7 +31,7 @@ import org.scalatestplus.junit.JUnitRunner
 @RunWith(classOf[JUnitRunner])
 class DomainIndependenceTest extends AnyFlatSpec with Matchers {
 
-    implicit private[this] val logContext: LogContext = GlobalLogContext
+    private[this] implicit val logContext: LogContext = GlobalLogContext
 
     // We use this domain for the comparison of the values; it has the same
     // expressive power as the other domains.

@@ -24,14 +24,14 @@ sealed abstract class PropertyBounds(val pk: PropertyKind) {
             case (false, false) => "FinalP" // Intended to be used only by transformers
         }) + '(' + PropertyKey.name(pk) + ')'
 
-    final override def equals(other: Any): Boolean = other match {
+    override final def equals(other: Any): Boolean = other match {
         case that: PropertyBounds => this.pk == that.pk
         case _                    => false
     }
 
-    final override def hashCode: Int = pk.id
+    override final def hashCode: Int = pk.id
 
-    final override def toString: String = s"PropertyBounds(pk=$pk,lowerBound=$lowerBound,upperBound=$upperBound)"
+    override final def toString: String = s"PropertyBounds(pk=$pk,lowerBound=$lowerBound,upperBound=$upperBound)"
 }
 
 object PropertyBounds {

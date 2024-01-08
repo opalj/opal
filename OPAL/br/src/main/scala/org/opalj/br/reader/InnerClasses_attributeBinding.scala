@@ -19,7 +19,7 @@ trait InnerClasses_attributeBinding
 
     type InnerClasses_attribute = br.InnerClassTable
     type InnerClassesEntry      = br.InnerClass
-    implicit override val innerClassesEntryType: ClassTag[InnerClassesEntry] = ClassTag(classOf[br.InnerClass])
+    override implicit val innerClassesEntryType: ClassTag[InnerClassesEntry] = ClassTag(classOf[br.InnerClass])
 
     def InnerClasses_attribute(
         cp:                   Constant_Pool,

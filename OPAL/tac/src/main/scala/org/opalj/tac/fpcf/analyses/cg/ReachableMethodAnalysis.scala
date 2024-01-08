@@ -32,7 +32,7 @@ import org.opalj.tac.fpcf.properties.TACAI
  */
 trait ReachableMethodAnalysis extends FPCFAnalysis with TypeConsumerAnalysis {
 
-    implicit protected val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
+    protected implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
     final def analyze(declaredMethod: DeclaredMethod): PropertyComputationResult = {
         val callersEOptP = propertyStore(declaredMethod, Callers.key)

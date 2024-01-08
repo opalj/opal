@@ -132,11 +132,11 @@ package object fpcf {
      */
     final type ComputationResults = IterableOnce[SomeFinalEP]
 
-    final private[fpcf] val AnalysisKeyName = "<internal>opalj.PartialResultUpdateComputation"
+    private[fpcf] final val AnalysisKeyName = "<internal>opalj.PartialResultUpdateComputation"
 
-    final private[fpcf] val AnalysisKey = PropertyKey.create[Entity, Null](AnalysisKeyName)
+    private[fpcf] final val AnalysisKey = PropertyKey.create[Entity, Null](AnalysisKeyName)
 
-    final private[fpcf] val AnalysisKeyId = AnalysisKey.id
+    private[fpcf] final val AnalysisKeyId = AnalysisKey.id
 
     def hashCodeToHexString(o: AnyRef): String = System.identityHashCode(o).toHexString
 

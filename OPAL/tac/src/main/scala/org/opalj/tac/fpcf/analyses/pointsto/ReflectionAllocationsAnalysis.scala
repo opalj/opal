@@ -241,7 +241,7 @@ class ReflectionAllocationsAnalysis private[analyses] (
 
 class ReflectionMethodAllocationsAnalysis(
         final val project: SomeProject,
-        final override val apiMethod: DeclaredMethod) extends PointsToAnalysisBase with AllocationSiteBasedAnalysis
+        override final val apiMethod: DeclaredMethod) extends PointsToAnalysisBase with AllocationSiteBasedAnalysis
         with APIBasedAnalysis {
 
     override def handleNewCaller(

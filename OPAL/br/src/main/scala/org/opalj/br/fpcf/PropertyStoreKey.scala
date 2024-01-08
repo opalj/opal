@@ -3,6 +3,8 @@ package org.opalj
 package br
 package fpcf
 
+import com.typesafe.config.Config
+
 import org.opalj.br.analyses.ProjectInformationKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
@@ -11,7 +13,6 @@ import org.opalj.fpcf.PropertyStoreContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 
-import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
 
 /**

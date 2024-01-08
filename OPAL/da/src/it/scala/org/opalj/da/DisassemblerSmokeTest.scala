@@ -5,17 +5,17 @@ package da
 import java.net.URL
 import java.util.concurrent.atomic.AtomicInteger
 
+import org.junit.runner.RunWith
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
+
 import org.opalj.bi.TestResources
 import org.opalj.concurrent.OPALHTBoundedExecutionContextTaskSupport
 import org.opalj.util.PerformanceEvaluation
 import org.opalj.util.Seconds
 
 import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParallelizable
-
-import org.junit.runner.RunWith
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.matchers.should.Matchers
-import org.scalatestplus.junit.JUnitRunner
 
 /**
  * This test(suite) just loads a very large number of class files and creates

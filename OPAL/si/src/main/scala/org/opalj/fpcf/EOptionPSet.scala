@@ -29,7 +29,7 @@ sealed trait EOptionPSet[E <: Entity, P <: Property] extends Iterable[EOptionP[E
 
     override def foreach[U](f: EOptionP[E, P] => U): Unit
     override def isEmpty: Boolean
-    final override def hasDefiniteSize: Boolean = true
+    override final def hasDefiniteSize: Boolean = true
 
     /** Filters the respective EOptionP values and returns a new EOptionPSet. */
     override def filter(p: EOptionP[E, P] => Boolean): EOptionPSet[E, P] =

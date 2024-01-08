@@ -4,11 +4,12 @@ package br
 package analyses
 package cg
 
-import org.opalj.br.TestSupport.biProject
-
-import com.typesafe.config.ConfigFactory
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
+
+import com.typesafe.config.ConfigFactory
+
+import org.opalj.br.TestSupport.biProject
 
 /**
  * @author Michael Reif

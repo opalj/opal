@@ -104,7 +104,7 @@ abstract class NewInstanceAnalysis private[analyses] (
 
 abstract class NewInstanceMethodAnalysis(
         final val project: SomeProject,
-        final override val apiMethod: DeclaredMethod) extends PointsToAnalysisBase with APIBasedAnalysis {
+        override final val apiMethod: DeclaredMethod) extends PointsToAnalysisBase with APIBasedAnalysis {
 
     override def handleNewCaller(
         calleeContext: ContextType,

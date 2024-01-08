@@ -16,11 +16,11 @@ import org.opalj.fpcf.PropertyStore
  */
 trait FPCFEagerAnalysisScheduler extends FPCFAnalysisScheduler {
 
-    final override def computationType: ComputationType = EagerComputation
+    override final def computationType: ComputationType = EagerComputation
 
-    final override def derivesLazily: Option[PropertyBounds] = None
+    override final def derivesLazily: Option[PropertyBounds] = None
 
-    final override def schedule(ps: PropertyStore, i: InitializationData): FPCFAnalysis =
+    override final def schedule(ps: PropertyStore, i: InitializationData): FPCFAnalysis =
         start(ps.context(classOf[SomeProject]), ps, i)
 
     /**

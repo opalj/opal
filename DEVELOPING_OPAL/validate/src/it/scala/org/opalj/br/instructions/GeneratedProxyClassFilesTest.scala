@@ -6,15 +6,15 @@ package instructions
 import java.net.URL
 import scala.collection.immutable.ArraySeq
 
-import org.opalj.ai.BaseAI
-import org.opalj.ai.domain.l0.BaseDomain
-import org.opalj.br.TestSupport.biProject
-import org.opalj.collection.immutable.UIDSet
-
 import org.junit.runner.RunWith
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
+
+import org.opalj.ai.BaseAI
+import org.opalj.ai.domain.l0.BaseDomain
+import org.opalj.br.TestSupport.biProject
+import org.opalj.collection.immutable.UIDSet
 
 /**
  * Checks that the ClassFileFactory produces valid proxy class files.

@@ -17,6 +17,6 @@ trait Java11LibraryFramework
 
 object Java11LibraryFramework extends Java11LibraryFramework {
 
-    final override def loadsInterfacesOnly: Boolean = true
+    override final def loadsInterfacesOnly: Boolean = true
 
 }

@@ -8,6 +8,10 @@ import java.io.FileOutputStream
 import java.io.PrintWriter
 import java.util.Calendar
 
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
+import com.typesafe.config.ConfigValueFactory
+
 import org.opalj.ai.Domain
 import org.opalj.ai.domain
 import org.opalj.ai.domain.RecordDefUse
@@ -76,10 +80,6 @@ import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.SystemOutLoggingAllExceptionRater
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
-
-import com.typesafe.config.Config
-import com.typesafe.config.ConfigFactory
-import com.typesafe.config.ConfigValueFactory
 /**
  * Executes a purity analysis (L2 by default) along with necessary supporting analysis.
  *

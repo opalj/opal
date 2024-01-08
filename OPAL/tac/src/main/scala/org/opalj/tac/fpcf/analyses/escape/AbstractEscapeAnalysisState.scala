@@ -46,7 +46,7 @@ trait AbstractEscapeAnalysisState {
      * Sets mostRestrictiveProperty to the greatest lower bound of its current value and the
      * given one.
      */
-    @inline final private[escape] def meetMostRestrictive(prop: EscapeProperty): Unit = {
+    @inline private[escape] final def meetMostRestrictive(prop: EscapeProperty): Unit = {
         assert {
             (_mostRestrictiveProperty meet prop).lessOrEqualRestrictive(_mostRestrictiveProperty)
         }
@@ -56,7 +56,7 @@ trait AbstractEscapeAnalysisState {
     /**
      * Adds an entity property pair (or epk) into the set of dependees.
      */
-    @inline final private[escape] def addDependency(eOptionP: EOptionP[Entity, Property]): Unit = {
+    @inline private[escape] final def addDependency(eOptionP: EOptionP[Entity, Property]): Unit = {
         assert(!_dependees.contains(eOptionP.e))
         _dependees += eOptionP.e -> eOptionP
         _dependeesSet += eOptionP
@@ -66,7 +66,7 @@ trait AbstractEscapeAnalysisState {
      * Removes the entity property pair (or epk) that correspond to the given ep from the set of
      * dependees.
      */
-    @inline final private[escape] def removeDependency(
+    @inline private[escape] final def removeDependency(
         ep: EOptionP[Entity, Property]): Unit = {
         assert(_dependees.contains(ep.e))
         val oldEOptionP = _dependees(ep.e)
@@ -77,26 +77,26 @@ trait AbstractEscapeAnalysisState {
     /**
      * Do we already registered a dependency to that entity?
      */
-    @inline final private[escape] def containsDependency(
+    @inline private[escape] final def containsDependency(
         ep: EOptionP[Entity, Property]): Boolean = _dependees.contains(ep.e)
 
-    @inline final private[escape] def getDependency(e: Entity): EOptionP[Entity, Property] = _dependees(e)
+    @inline private[escape] final def getDependency(e: Entity): EOptionP[Entity, Property] = _dependees(e)
 
     /**
      * The set of open dependees.
      */
-    final private[escape] def dependees: Set[SomeEOptionP] = _dependeesSet
+    private[escape] final def dependees: Set[SomeEOptionP] = _dependeesSet
 
     /**
      * Are there any dependees?
      */
-    final private[escape] def hasDependees: Boolean = _dependees.nonEmpty
+    private[escape] final def hasDependees: Boolean = _dependees.nonEmpty
 
     /**
      * The currently most restrictive escape property. It can get even more restrictive during the
      * analysis.
      */
-    final private[escape] def mostRestrictiveProperty: EscapeProperty = _mostRestrictiveProperty
+    private[escape] final def mostRestrictiveProperty: EscapeProperty = _mostRestrictiveProperty
 
     private[escape] def updateTACAI(
         tacai: TACode[TACMethodParameter, V]
@@ -126,7 +126,7 @@ trait AbstractEscapeAnalysisState {
      * This method is called on expressions within tac statements. We assume a flat hierarchy, so
      * the expression is expected to be a [[org.opalj.tac.Var]].
      */
-    @inline final private[escape] def usesDefSite(expr: Expr[V]): Boolean = {
+    @inline private[escape] final def usesDefSite(expr: Expr[V]): Boolean = {
         assert(expr.isVar)
         expr.asVar.definedBy.contains(_defSite)
     }
@@ -135,7 +135,7 @@ trait AbstractEscapeAnalysisState {
      * If there exists a [[org.opalj.tac.UVar]] in the params of a method call that is a use of the
      * current entity's def-site return true.
      */
-    @inline final private[escape] def anyParameterUsesDefSite(params: Seq[Expr[V]]): Boolean = {
+    @inline private[escape] final def anyParameterUsesDefSite(params: Seq[Expr[V]]): Boolean = {
         assert(params.forall(_.isVar))
         params.exists { case UVar(_, defSites) => defSites.contains(_defSite) }
     }

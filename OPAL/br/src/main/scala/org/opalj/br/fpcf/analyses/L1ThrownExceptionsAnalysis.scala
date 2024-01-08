@@ -379,7 +379,7 @@ abstract class ThrownExceptionsAnalysisScheduler extends FPCFAnalysisScheduler {
 
     override def requiredProjectInformation: ProjectInformationKeys = Seq.empty
 
-    final override def uses: Set[PropertyBounds] = Set(PropertyBounds.lub(ThrownExceptionsByOverridingMethods))
+    override final def uses: Set[PropertyBounds] = Set(PropertyBounds.lub(ThrownExceptionsByOverridingMethods))
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(ThrownExceptions)
 

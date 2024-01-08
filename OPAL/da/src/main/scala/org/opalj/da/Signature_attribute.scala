@@ -18,7 +18,7 @@ case class Signature_attribute(
     /**
      * The value of the attribute_length item is fixed; it is always 2.
      */
-    final override def attribute_length = 2
+    override final def attribute_length = 2
 
     def signature(implicit cp: Constant_Pool): String = cp(signature_index).toString
 

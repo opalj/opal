@@ -17,7 +17,7 @@ import org.opalj.fpcf.Transformer
  */
 trait FPCFTransformerScheduler extends FPCFLazyLikeAnalysisScheduler {
 
-    final override def computationType: ComputationType = Transformer
+    override final def computationType: ComputationType = Transformer
 
 }
 

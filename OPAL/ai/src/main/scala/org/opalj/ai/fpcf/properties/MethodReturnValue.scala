@@ -22,7 +22,7 @@ trait MethodReturnValue extends Property with MethodReturnValuePropertyMetaInfor
 
     def returnValue: Option[ValueInformation]
 
-    final override def key: PropertyKey[MethodReturnValue] = MethodReturnValue.key
+    override final def key: PropertyKey[MethodReturnValue] = MethodReturnValue.key
 
 }
 

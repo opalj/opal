@@ -86,7 +86,7 @@ class BaseDomainSpecificRater extends DomainSpecificRater {
  * Mixin that rates whether a call or GetStatic is part of using `System.out` or `System.err`
  */
 trait SystemOutErrRater extends DomainSpecificRater {
-    final private val printStream = ObjectType("java/io/PrintStream")
+    private final val printStream = ObjectType("java/io/PrintStream")
 
     abstract override def handleCall(
         call:     Call[V],
@@ -129,7 +129,7 @@ trait SystemOutErrRater extends DomainSpecificRater {
  */
 trait LoggingRater extends DomainSpecificRater {
 
-    final private val loggers = Set(
+    private final val loggers = Set(
         ObjectType("org/apache/logging/log4j/LogManager"),
         ObjectType("org/apache/logging/log4j/Logger"),
         ObjectType("org/slf4j/LoggerFactory"),
@@ -139,7 +139,7 @@ trait LoggingRater extends DomainSpecificRater {
         ObjectType("org/pmw/tinylog/Logger")
     )
 
-    final private val logLevels = Set(
+    private final val logLevels = Set(
         ObjectType("org/apache/logging/log4j/Level"),
         ObjectType("java/util/logging/Level")
     )
@@ -204,7 +204,7 @@ trait ExceptionRater extends DomainSpecificRater {
  */
 trait AssertionExceptionRater extends DomainSpecificRater {
 
-    final private val exceptionTypes = Set(
+    private final val exceptionTypes = Set(
         ObjectType("java/lang/AssertionError"),
         ObjectType("java/lang/IllegalArgumentException"),
         ObjectType("java/lang/IllegalStateException")

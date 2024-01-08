@@ -662,11 +662,11 @@ package object ba { ba =>
                 val br.TAOfMethodInvocation(offset, index) = typeAnnotationTarget
                 da.TATMethodInvocation(offset, index)
 
-            case 0x4a =>
+            case 0x4A =>
                 val br.TAOfConstructorInMethodReferenceExpression(offset, index) = typeAnnotationTarget
                 da.TATConstructorInMethodReferenceExpression(offset, index)
 
-            case 0x4b =>
+            case 0x4B =>
                 val br.TAOfMethodInMethodReferenceExpression(offset, index) = typeAnnotationTarget
                 da.TATMethodInMethodReferenceExpression(offset, index)
         }

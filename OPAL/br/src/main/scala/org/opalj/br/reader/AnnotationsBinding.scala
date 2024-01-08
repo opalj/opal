@@ -19,10 +19,10 @@ trait AnnotationsBinding
         with ConstantPoolBinding {
 
     type Annotation = br.Annotation
-    implicit override val annotationType: ClassTag[Annotation] = ClassTag(classOf[br.Annotation])
+    override implicit val annotationType: ClassTag[Annotation] = ClassTag(classOf[br.Annotation])
 
     type ElementValue = br.ElementValue
-    implicit override val elementValueType: ClassTag[ElementValue] = ClassTag(classOf[br.ElementValue])
+    override implicit val elementValueType: ClassTag[ElementValue] = ClassTag(classOf[br.ElementValue])
 
     type EnumValue = br.EnumValue
 
@@ -49,7 +49,7 @@ trait AnnotationsBinding
     type BooleanValue = br.BooleanValue
 
     type ElementValuePair = br.ElementValuePair
-    implicit override val elementValuePairType: ClassTag[ElementValuePair] = ClassTag(classOf[br.ElementValuePair])
+    override implicit val elementValuePairType: ClassTag[ElementValuePair] = ClassTag(classOf[br.ElementValuePair])
 
     def ElementValuePair(
         cp:                 Constant_Pool,

@@ -5,16 +5,16 @@ package domain
 
 import java.net.URL
 
+import org.junit.runner.RunWith
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
+
 import org.opalj.br.Method
 import org.opalj.br.TestSupport.createJREProject
 import org.opalj.br.analyses.MethodInfo
 import org.opalj.br.analyses.Project
 import org.opalj.concurrent.ConcurrentExceptions
-
-import org.junit.runner.RunWith
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.matchers.should.Matchers
-import org.scalatestplus.junit.JUnitRunner
 
 /**
  * This integration test(suite) just loads a very large number of class files and performs

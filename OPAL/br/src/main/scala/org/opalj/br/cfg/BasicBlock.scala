@@ -23,7 +23,7 @@ final class BasicBlock(
         this.setSuccessors(successors)
     }
 
-    final override def nodeId: Int = startPC
+    override final def nodeId: Int = startPC
 
     def copy(
         startPC:      Int = this.startPC,
@@ -36,12 +36,12 @@ final class BasicBlock(
         newBB
     }
 
-    final override def isCatchNode: Boolean              = false
-    final override def isExitNode: Boolean               = false
-    final override def isAbnormalReturnExitNode: Boolean = false
-    final override def isNormalReturnExitNode: Boolean   = false
-    final override def isBasicBlock: Boolean             = true
-    final override def asBasicBlock: this.type           = this
+    override final def isCatchNode: Boolean              = false
+    override final def isExitNode: Boolean               = false
+    override final def isAbnormalReturnExitNode: Boolean = false
+    override final def isNormalReturnExitNode: Boolean   = false
+    override final def isBasicBlock: Boolean             = true
+    override final def asBasicBlock: this.type           = this
 
     def endPC_=(pc: Int): Unit = _endPC = pc
     /**

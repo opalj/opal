@@ -15,7 +15,7 @@ case class Record(components: RecordComponents)
 
     override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = this == other
 
-    final override def apply(componentIndex: Int): RecordComponent = components(componentIndex)
+    override final def apply(componentIndex: Int): RecordComponent = components(componentIndex)
 
 }
 

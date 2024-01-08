@@ -10,6 +10,8 @@ import java.net.URL
 import java.util.Calendar
 import scala.jdk.CollectionConverters._
 
+import com.typesafe.config.ConfigValueFactory
+
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
@@ -52,8 +54,6 @@ import org.opalj.tac.fpcf.analyses.pointsto.MethodExceptions
 import org.opalj.tac.fpcf.analyses.pointsto.TamiFlexKey
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
-
-import com.typesafe.config.ConfigValueFactory
 
 /**
  * Computes a call graph and reports its size.

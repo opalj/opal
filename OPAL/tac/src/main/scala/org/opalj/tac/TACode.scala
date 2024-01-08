@@ -72,7 +72,7 @@ sealed trait TACode[P <: AnyRef, V <: Var[V]] extends Attribute with CodeSequenc
     def lineNumber(code: Code, index: Int): Option[Int] = // IMPROVE [L2] Use IntOption
         code.lineNumberTable.flatMap(_.lookupLineNumber(stmts(index).pc))
 
-    final override def equals(other: Any): Boolean = other match {
+    override final def equals(other: Any): Boolean = other match {
         case that: TACode[_, _] =>
             // Recall that the CFG is derived from the stmts and therefore necessarily
             // equal when the statements are equal; this is true independent of the
@@ -87,7 +87,7 @@ sealed trait TACode[P <: AnyRef, V <: Var[V]] extends Attribute with CodeSequenc
         case _ => false
     }
 
-    final override lazy val hashCode: Int =
+    override final lazy val hashCode: Int =
         // In the following we do not consider the CFG as it is "just" a derived
         // data structure.
         ((params.hashCode * 31 +

@@ -11,7 +11,7 @@ package mutable
  *
  * @author Michael Eichberg
  */
-final protected[opalj] class IntQueue private (
+protected[opalj] final class IntQueue private (
         private var first: QueueNode = null,
         private var last: QueueNode = null) extends Serializable { queue =>
 

@@ -68,15 +68,15 @@ object ClassFileReader
     type ClassFile = da.ClassFile
 
     type Attribute = da.Attribute
-    implicit override val attributeType: ClassTag[Attribute] = ClassTag(classOf[da.Attribute])
+    override implicit val attributeType: ClassTag[Attribute] = ClassTag(classOf[da.Attribute])
 
     type Field_Info = da.Field_Info
-    implicit override val fieldInfoType: ClassTag[Field_Info] = ClassTag(classOf[da.Field_Info])
+    override implicit val fieldInfoType: ClassTag[Field_Info] = ClassTag(classOf[da.Field_Info])
 
     type Method_Info = da.Method_Info
-    implicit override val methodInfoType: ClassTag[Method_Info] = ClassTag(classOf[da.Method_Info])
+    override implicit val methodInfoType: ClassTag[Method_Info] = ClassTag(classOf[da.Method_Info])
 
-    final override def reifyEmptyAttributes: Boolean = true
+    override final def reifyEmptyAttributes: Boolean = true
 
     def ClassFile(
         cp:            Constant_Pool,
@@ -168,10 +168,10 @@ object ClassFileReader
     type BootstrapMethods_attribute = da.BootstrapMethods_attribute
 
     type BootstrapMethod = da.BootstrapMethod
-    implicit override val bootstrapMethodType: ClassTag[BootstrapMethod] = ClassTag(classOf[BootstrapMethod])
+    override implicit val bootstrapMethodType: ClassTag[BootstrapMethod] = ClassTag(classOf[BootstrapMethod])
 
     type BootstrapArgument = da.BootstrapArgument
-    implicit override val bootstrapArgumentType: ClassTag[BootstrapArgument] = ClassTag(classOf[BootstrapArgument])
+    override implicit val bootstrapArgumentType: ClassTag[BootstrapArgument] = ClassTag(classOf[BootstrapArgument])
 
     def BootstrapMethods_attribute(
         constant_pool:        Constant_Pool,
@@ -197,7 +197,7 @@ object ClassFileReader
         classes:              InnerClasses): InnerClasses_attribute = new InnerClasses_attribute(attribute_name_index, classes)
 
     type InnerClassesEntry = da.InnerClassesEntry
-    implicit override val innerClassesEntryType: ClassTag[InnerClassesEntry] = ClassTag(classOf[da.InnerClassesEntry])
+    override implicit val innerClassesEntryType: ClassTag[InnerClassesEntry] = ClassTag(classOf[da.InnerClassesEntry])
     def InnerClassesEntry(
         cp:                       Constant_Pool,
         inner_class_info_index:   Constant_Pool_Index,
@@ -227,7 +227,7 @@ object ClassFileReader
         instructions:        Array[Byte]): Instructions = new Instructions(instructions)
 
     type ExceptionTableEntry = da.ExceptionTableEntry
-    implicit override val exceptionTableEntryType: ClassTag[ExceptionTableEntry] =
+    override implicit val exceptionTableEntryType: ClassTag[ExceptionTableEntry] =
         ClassTag(classOf[da.ExceptionTableEntry])
     def ExceptionTableEntry(
         cp:         Constant_Pool,
@@ -255,7 +255,7 @@ object ClassFileReader
         attributes
     )
 
-    final override def loadsInterfacesOnly: Boolean = false
+    override final def loadsInterfacesOnly: Boolean = false
 
     type Unknown_attribute = da.Unknown_attribute
     def Unknown_attribute(
@@ -285,7 +285,7 @@ object ClassFileReader
         new LineNumberTable_attribute(attribute_name_index, line_number_table)
 
     type LineNumberTableEntry = da.LineNumberTableEntry
-    implicit override val lineNumberTableEntryType: ClassTag[LineNumberTableEntry] =
+    override implicit val lineNumberTableEntryType: ClassTag[LineNumberTableEntry] =
         ClassTag(classOf[da.LineNumberTableEntry])
     def LineNumberTableEntry(start_pc: Int, line_number: Int): LineNumberTableEntry =
         new LineNumberTableEntry(start_pc, line_number)
@@ -300,7 +300,7 @@ object ClassFileReader
         new LocalVariableTable_attribute(attribute_name_index, local_variable_table)
 
     type LocalVariableTableEntry = da.LocalVariableTableEntry
-    implicit override val localVariableTableEntryType: ClassTag[LocalVariableTableEntry] =
+    override implicit val localVariableTableEntryType: ClassTag[LocalVariableTableEntry] =
         ClassTag(classOf[da.LocalVariableTableEntry])
     def LocalVariableTableEntry(
         cp:               Constant_Pool,
@@ -324,7 +324,7 @@ object ClassFileReader
         )
 
     type LocalVariableTypeTableEntry = da.LocalVariableTypeTableEntry
-    implicit override val localVariableTypeTableEntryType: ClassTag[LocalVariableTypeTableEntry] =
+    override implicit val localVariableTypeTableEntryType: ClassTag[LocalVariableTypeTableEntry] =
         ClassTag(classOf[da.LocalVariableTypeTableEntry])
     def LocalVariableTypeTableEntry(
         cp:              Constant_Pool,
@@ -341,10 +341,10 @@ object ClassFileReader
     )
 
     type ElementValuePair = da.ElementValuePair
-    implicit override val elementValuePairType: ClassTag[ElementValuePair] = ClassTag(classOf[da.ElementValuePair])
+    override implicit val elementValuePairType: ClassTag[ElementValuePair] = ClassTag(classOf[da.ElementValuePair])
 
     type ElementValue = da.ElementValue
-    implicit override val elementValueType: ClassTag[ElementValue] = ClassTag(classOf[da.ElementValue])
+    override implicit val elementValueType: ClassTag[ElementValue] = ClassTag(classOf[da.ElementValue])
     def ElementValuePair(
         cp:                 Constant_Pool,
         element_name_index: Constant_Pool_Index,
@@ -386,7 +386,7 @@ object ClassFileReader
         const_name_index: Constant_Pool_Index): ElementValue = new EnumValue(type_name_index, const_name_index)
 
     type Annotation = da.Annotation
-    implicit override val annotationType: ClassTag[Annotation] = ClassTag(classOf[da.Annotation])
+    override implicit val annotationType: ClassTag[Annotation] = ClassTag(classOf[da.Annotation])
     def AnnotationValue(cp: Constant_Pool, annotation: Annotation): ElementValue = new AnnotationValue(annotation)
 
     def ArrayValue(cp: Constant_Pool, values: ElementValues): ElementValue = new ArrayValue(values)
@@ -448,7 +448,7 @@ object ClassFileReader
         )
 
     type StackMapFrame = da.StackMapFrame
-    implicit override val stackMapFrameType: ClassTag[StackMapFrame] = ClassTag(classOf[da.StackMapFrame])
+    override implicit val stackMapFrameType: ClassTag[StackMapFrame] = ClassTag(classOf[da.StackMapFrame])
 
     type StackMapTable_attribute = da.StackMapTable_attribute
     def StackMapTable_attribute(
@@ -462,7 +462,7 @@ object ClassFileReader
     def SameFrame(frame_type: Int): StackMapFrame = new SameFrame(frame_type)
 
     type VerificationTypeInfo = da.VerificationTypeInfo
-    implicit override val verificationTypeInfoType: ClassTag[VerificationTypeInfo] =
+    override implicit val verificationTypeInfoType: ClassTag[VerificationTypeInfo] =
         ClassTag(classOf[da.VerificationTypeInfo])
 
     def SameLocals1StackItemFrame(
@@ -539,7 +539,7 @@ object ClassFileReader
         new MethodParameters_attribute(attribute_name_index, parameters)
 
     type MethodParameter = da.MethodParameter
-    implicit override val methodParameterType: ClassTag[MethodParameter] = ClassTag(classOf[da.MethodParameter])
+    override implicit val methodParameterType: ClassTag[MethodParameter] = ClassTag(classOf[da.MethodParameter])
     def MethodParameter(
         cp:           Constant_Pool,
         name_index:   Constant_Pool_Index,
@@ -579,7 +579,7 @@ object ClassFileReader
     def Catch(exception_table_index: Int): TypeAnnotationTarget = TATCatch(exception_table_index)
 
     type LocalvarTableEntry = da.LocalvarTableEntry
-    implicit override val localvarTableEntryType: ClassTag[LocalvarTableEntry] = ClassTag(classOf[da.LocalvarTableEntry])
+    override implicit val localvarTableEntryType: ClassTag[LocalvarTableEntry] = ClassTag(classOf[da.LocalvarTableEntry])
     def LocalvarTableEntry(
         start_pc:                   Int,
         length:                     Int,
@@ -623,7 +623,7 @@ object ClassFileReader
     def TypeAnnotationDirectlyOnType: da.TypeAnnotationDirectlyOnType.type = da.TypeAnnotationDirectlyOnType
 
     type TypeAnnotationPathElement = da.TypeAnnotationPathElement
-    implicit override val typeAnnotationPathElementType: ClassTag[TypeAnnotationPathElement] =
+    override implicit val typeAnnotationPathElementType: ClassTag[TypeAnnotationPathElement] =
         ClassTag(classOf[da.TypeAnnotationPathElement])
     def TypeAnnotationPath(path: TypeAnnotationPathElementsTable): TypeAnnotationPath = TypeAnnotationPathElements(path)
 
@@ -649,7 +649,7 @@ object ClassFileReader
         new TypeAnnotationOnTypeArgument(type_argument_index)
 
     type TypeAnnotation = da.TypeAnnotation
-    implicit override val typeAnnotationType: ClassTag[TypeAnnotation] = ClassTag(classOf[da.TypeAnnotation])
+    override implicit val typeAnnotationType: ClassTag[TypeAnnotation] = ClassTag(classOf[da.TypeAnnotation])
     def TypeAnnotation(
         cp:                  Constant_Pool,
         target:              TypeAnnotationTarget,
@@ -683,16 +683,16 @@ object ClassFileReader
     type Module_attribute = da.Module_attribute
 
     type RequiresEntry = da.RequiresEntry
-    implicit override val requiresEntryType: ClassTag[RequiresEntry] = ClassTag(classOf[da.RequiresEntry])
+    override implicit val requiresEntryType: ClassTag[RequiresEntry] = ClassTag(classOf[da.RequiresEntry])
 
     type ExportsEntry = da.ExportsEntry
-    implicit override val exportsEntryType: ClassTag[ExportsEntry] = ClassTag(classOf[da.ExportsEntry])
+    override implicit val exportsEntryType: ClassTag[ExportsEntry] = ClassTag(classOf[da.ExportsEntry])
 
     type OpensEntry = da.OpensEntry
-    implicit override val opensEntryType: ClassTag[OpensEntry] = ClassTag(classOf[da.OpensEntry])
+    override implicit val opensEntryType: ClassTag[OpensEntry] = ClassTag(classOf[da.OpensEntry])
 
     type ProvidesEntry = da.ProvidesEntry
-    implicit override val providesEntryType: ClassTag[ProvidesEntry] = ClassTag(classOf[da.ProvidesEntry])
+    override implicit val providesEntryType: ClassTag[ProvidesEntry] = ClassTag(classOf[da.ProvidesEntry])
 
     def Module_attribute(
         constant_pool:        Constant_Pool,
@@ -805,7 +805,7 @@ object ClassFileReader
         components:           RecordComponents): Record_attribute = new Record_attribute(attribute_name_index, components)
 
     type RecordComponent = da.RecordComponent
-    implicit override val recordComponentType: ClassTag[RecordComponent] = ClassTag(classOf[da.RecordComponent])
+    override implicit val recordComponentType: ClassTag[RecordComponent] = ClassTag(classOf[da.RecordComponent])
     def RecordComponent(
         cp:               Constant_Pool,
         name_index:       Constant_Pool_Index,

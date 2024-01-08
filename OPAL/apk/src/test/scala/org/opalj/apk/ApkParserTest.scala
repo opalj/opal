@@ -4,13 +4,13 @@ package apk
 
 import java.net.URL
 
-import org.opalj.apk.parser.ApkParser
-import org.opalj.br.analyses.Project
-import org.opalj.ll.LLVMProjectKey
-
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.Ignore
 import org.scalatest.funsuite.AnyFunSuite
+
+import org.opalj.apk.parser.ApkParser
+import org.opalj.br.analyses.Project
+import org.opalj.ll.LLVMProjectKey
 
 /**
  * Tests that the [[ApkParser]] works.

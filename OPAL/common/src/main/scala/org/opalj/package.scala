@@ -3,12 +3,12 @@ package org
 
 import scala.collection.immutable.ArraySeq
 
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
+
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
-
-import com.typesafe.config.Config
-import com.typesafe.config.ConfigFactory
 
 /**
  * OPAL is a Scala-based framework for the static analysis, manipulation and creation of
@@ -130,7 +130,7 @@ package object opalj {
      *      `11111111111111111111111111111111`); in other words, the long's sign bit will
      *      still be `0`.
      */
-    @inline final def i2lBitMask(value: Int): Long = (value >>> 16).toLong << 16 | (value & 0xffff).toLong
+    @inline final def i2lBitMask(value: Int): Long = (value >>> 16).toLong << 16 | (value & 0xFFFF).toLong
 
     final def notRequired(): Nothing =
         throw new UnknownError("providing an implementation was not expected to be required")

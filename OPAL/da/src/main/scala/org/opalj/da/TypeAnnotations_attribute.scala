@@ -11,7 +11,7 @@ trait TypeAnnotations_attribute extends Attribute {
 
     val typeAnnotations: TypeAnnotations
 
-    final override def attribute_length: Int = typeAnnotations.foldLeft(2 /*count*/ )(_ + _.attribute_length)
+    override final def attribute_length: Int = typeAnnotations.foldLeft(2 /*count*/ )(_ + _.attribute_length)
 
     def typeAnnotationsToXHTML(implicit cp: Constant_Pool): Node = <ul class="annotations">
             {typeAnnotations.map(ta => <li>{ta.toXHTML}</li>)}

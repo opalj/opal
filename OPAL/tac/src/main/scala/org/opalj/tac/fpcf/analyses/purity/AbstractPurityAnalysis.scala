@@ -96,9 +96,9 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
 
     val rater: DomainSpecificRater
 
-    implicit protected[this] val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
+    protected[this] implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
     private[this] val simpleContexts: Option[SimpleContexts]      = project.has(SimpleContextsKey)
-    implicit protected[this] val contextProvider: ContextProvider = project.get(ContextProviderKey)
+    protected[this] implicit val contextProvider: ContextProvider = project.get(ContextProviderKey)
 
     val configuredPurity: ConfiguredPurity = project.get(ConfiguredPurityKey)
 

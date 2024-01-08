@@ -52,7 +52,7 @@ case class INSTANCEOF(
 
     override def toString: String = s"INSTANCEOF(${referenceType.toJava})"
 
-    final override def toString(currentPC: Int): String = toString()
+    override final def toString(currentPC: Int): String = toString()
 }
 
 /**

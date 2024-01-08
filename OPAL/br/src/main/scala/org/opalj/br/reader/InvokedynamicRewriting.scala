@@ -7,6 +7,9 @@ import java.lang.invoke.LambdaMetafactory
 import scala.collection.IndexedSeqView
 import scala.collection.immutable.ArraySeq
 
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigValueFactory
+
 import org.opalj.bi.ACC_PRIVATE
 import org.opalj.bi.ACC_PUBLIC
 import org.opalj.bi.ACC_STATIC
@@ -25,9 +28,6 @@ import org.opalj.log.OPALLogger
 import org.opalj.log.OPALLogger.error
 import org.opalj.log.OPALLogger.info
 import org.opalj.log.StandardLogMessage
-
-import com.typesafe.config.Config
-import com.typesafe.config.ConfigValueFactory
 
 /**
  * Provides support for rewriting Java 8/Scala lambda or method reference expressions that

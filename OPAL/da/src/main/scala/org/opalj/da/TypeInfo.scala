@@ -42,12 +42,12 @@ case object VoidTypeInfo extends TypeInfo {
 }
 
 sealed abstract class FieldTypeInfo extends TypeInfo {
-    final override def isVoid: Boolean = false
+    override final def isVoid: Boolean = false
 }
 
 sealed abstract class PrimitiveTypeInfo protected (val asJava: String) extends FieldTypeInfo {
 
-    final override def elementTypeIsBaseType: Boolean = true
+    override final def elementTypeIsBaseType: Boolean = true
 
     override def asSpan(baseClass: String): Node = <span class={s"$baseClass primitive_type"}>{asJava}</span>
 }
@@ -67,7 +67,7 @@ case class ObjectTypeInfo(asJava: String) extends FieldTypeInfo {
 
     def asJVMType: String = asJava.replace('.', '/')
 
-    final override def elementTypeIsBaseType: Boolean = false
+    override final def elementTypeIsBaseType: Boolean = false
 
     override def asSpan(baseClass: String): Node = <span class={s"$baseClass object_type"}>{asJava}</span>
 }

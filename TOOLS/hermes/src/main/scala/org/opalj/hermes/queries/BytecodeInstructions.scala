@@ -18,7 +18,7 @@ class BytecodeInstructions(implicit hermes: HermesConfig) extends FeatureQuery {
 
     // Let's do some caching...
     final val JVMInstructions: List[(Int, String)]  = bytecode.JVMInstructions
-    final private[this] val OpcodesToOrdinalNumbers = new Array[Int](256)
+    private[this] final val OpcodesToOrdinalNumbers = new Array[Int](256)
 
     override val htmlDescription: Either[String, URL] =
         Right(URI.create("https://www.opal-project.de/bi/JVMInstructions.xml").toURL)

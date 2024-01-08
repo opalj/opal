@@ -68,7 +68,7 @@ class InstantiatedTypesAnalysis private[analyses] (
         final val project: SomeProject,
         val setEntitySelector: TypeSetEntitySelector) extends FPCFAnalysis {
 
-    implicit private[this] val contextProvider: ContextProvider = project.get(ContextProviderKey)
+    private[this] implicit val contextProvider: ContextProvider = project.get(ContextProviderKey)
 
     def analyze(declaredMethod: DeclaredMethod): PropertyComputationResult = {
 

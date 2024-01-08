@@ -43,7 +43,7 @@ sealed abstract class StackMapFrame {
 
 case class SameFrame(frame_type: Int) extends StackMapFrame {
 
-    final override def attribute_length: Int = 1
+    override final def attribute_length: Int = 1
 
     override def toXHTML(implicit
         cp:                    Constant_Pool,
@@ -67,7 +67,7 @@ case class SameLocals1StackItemFrame(
         frame_type: Int,
         verification_type_info_stack: VerificationTypeInfo) extends StackMapFrame {
 
-    final override def attribute_length: Int = 1 + verification_type_info_stack.attribute_length
+    override final def attribute_length: Int = 1 + verification_type_info_stack.attribute_length
 
     override def toXHTML(implicit
         cp:                    Constant_Pool,
@@ -95,7 +95,7 @@ case class SameLocals1StackItemFrameExtended(
         offset_delta: Int,
         verification_type_info_stack: VerificationTypeInfo) extends StackMapFrame {
 
-    final override def attribute_length: Int = 1 + 2 + verification_type_info_stack.attribute_length
+    override final def attribute_length: Int = 1 + 2 + verification_type_info_stack.attribute_length
 
     override def toXHTML(implicit
         cp:                    Constant_Pool,
@@ -120,7 +120,7 @@ case class SameLocals1StackItemFrameExtended(
 
 case class ChopFrame(frame_type: Int, offset_delta: Int) extends StackMapFrame {
 
-    final override def attribute_length: Int = 1 + 2
+    override final def attribute_length: Int = 1 + 2
 
     override def toXHTML(implicit
         cp:                    Constant_Pool,
@@ -145,7 +145,7 @@ case class ChopFrame(frame_type: Int, offset_delta: Int) extends StackMapFrame {
 
 case class SameFrameExtended(frame_type: Int = 251, offset_delta: Int) extends StackMapFrame {
 
-    final override def attribute_length: Int = 1 + 2
+    override final def attribute_length: Int = 1 + 2
 
     override def toXHTML(implicit
         cp:                    Constant_Pool,
@@ -172,7 +172,7 @@ case class AppendFrame(
         offset_delta: Int,
         verification_type_info_locals: VerificationTypeInfos) extends StackMapFrame {
 
-    final override def attribute_length: Int = {
+    override final def attribute_length: Int = {
         val initial = 1 + 2
         verification_type_info_locals.foldLeft(initial)((c, n) => c + n.attribute_length)
     }
@@ -204,7 +204,7 @@ case class FullFrame(
         verification_type_info_locals: VerificationTypeInfos,
         verification_type_info_stack: VerificationTypeInfos) extends StackMapFrame {
 
-    final override def attribute_length: Int = {
+    override final def attribute_length: Int = {
         val initial = 1 + 2
         val locals  = verification_type_info_locals.foldLeft(2 /*count*/ )(_ + _.attribute_length)
         val stack   = verification_type_info_stack.foldLeft(2 /*count*/ )(_ + _.attribute_length)

@@ -156,7 +156,7 @@ private object NoArgumentAndNoReturnValueMethodDescriptor extends MethodDescript
     // the default equals and hashCode implementations are a perfect fit
 }
 
-final private class NoArgumentMethodDescriptor(val returnType: Type) extends MethodDescriptor {
+private final class NoArgumentMethodDescriptor(val returnType: Type) extends MethodDescriptor {
 
     override def parameterTypes: FieldTypes = NoFieldTypes
 
@@ -182,7 +182,7 @@ final private class NoArgumentMethodDescriptor(val returnType: Type) extends Met
 
 }
 
-final private class SingleArgumentMethodDescriptor(
+private final class SingleArgumentMethodDescriptor(
         val parameterType: FieldType,
         val returnType: Type) extends MethodDescriptor {
 
@@ -218,7 +218,7 @@ final private class SingleArgumentMethodDescriptor(
 
 }
 
-final private class TwoArgumentsMethodDescriptor(
+private final class TwoArgumentsMethodDescriptor(
         val firstParameterType:  FieldType,
         val secondParameterType: FieldType,
         val returnType: Type) extends MethodDescriptor {
@@ -267,7 +267,7 @@ final private class TwoArgumentsMethodDescriptor(
     }
 }
 
-final private class MultiArgumentsMethodDescriptor(
+private final class MultiArgumentsMethodDescriptor(
         val parameterTypes: FieldTypes,
         val returnType: Type) extends MethodDescriptor {
 

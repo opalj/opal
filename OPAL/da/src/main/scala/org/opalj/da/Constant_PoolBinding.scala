@@ -39,7 +39,7 @@ trait Constant_PoolBinding extends Constant_PoolReader with Constant_PoolAbstrac
     //
 
     type Constant_Pool_Entry = org.opalj.da.Constant_Pool_Entry
-    implicit override val constantPoolEntryType: ClassTag[Constant_Pool_Entry] =
+    override implicit val constantPoolEntryType: ClassTag[Constant_Pool_Entry] =
         ClassTag(classOf[org.opalj.da.Constant_Pool_Entry])
 
     type CONSTANT_Class_info = org.opalj.da.CONSTANT_Class_info

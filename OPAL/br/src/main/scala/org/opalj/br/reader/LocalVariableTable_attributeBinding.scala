@@ -19,7 +19,7 @@ trait LocalVariableTable_attributeBinding
 
     type LocalVariableTable_attribute = br.LocalVariableTable
     type LocalVariableTableEntry      = br.LocalVariable
-    implicit override val localVariableTableEntryType: ClassTag[LocalVariableTableEntry] =
+    override implicit val localVariableTableEntryType: ClassTag[LocalVariableTableEntry] =
         ClassTag(classOf[br.LocalVariable])
 
     override def LocalVariableTableEntry(

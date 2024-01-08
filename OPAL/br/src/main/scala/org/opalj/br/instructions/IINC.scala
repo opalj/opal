@@ -10,9 +10,9 @@ package instructions
  */
 case class IINC(lvIndex: Int, constValue: Int) extends ArithmeticInstruction {
 
-    final override def isIINC: Boolean = true
+    override final def isIINC: Boolean = true
 
-    final override def asIINC: this.type = this
+    override final def asIINC: this.type = this
 
     final def opcode: Opcode = IINC.opcode
 

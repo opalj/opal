@@ -20,10 +20,10 @@ trait BootstrapMethods_attributeBinding
     type BootstrapMethods_attribute = BootstrapMethodTable
 
     type BootstrapMethod = br.BootstrapMethod
-    implicit override val bootstrapMethodType: ClassTag[BootstrapMethod] = ClassTag(classOf[br.BootstrapMethod])
+    override implicit val bootstrapMethodType: ClassTag[BootstrapMethod] = ClassTag(classOf[br.BootstrapMethod])
 
     type BootstrapArgument = br.BootstrapArgument
-    implicit override val bootstrapArgumentType: ClassTag[BootstrapArgument] = ClassTag(classOf[br.BootstrapArgument])
+    override implicit val bootstrapArgumentType: ClassTag[BootstrapArgument] = ClassTag(classOf[br.BootstrapArgument])
 
     def BootstrapMethods_attribute(
         cp:                  Constant_Pool,

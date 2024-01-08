@@ -98,7 +98,7 @@ trait AllocationSiteBasedAnalysis extends AbstractPointsToBasedAnalysis {
 object AllocationSiteBasedAnalysis {
 
     def mergedPointsToSetForType(r: ReferenceType): AllocationSitePointsToSet =
-        AllocationSitePointsToSet1(r.id.toLong << 44 | 0x7ffffffffffL, r)
+        AllocationSitePointsToSet1(r.id.toLong << 44 | 0x7FFFFFFFFFFL, r)
 
     private val configPrefix                      = "org.opalj.fpcf.analyses.AllocationSiteBasedPointsToAnalysis."
     val mergeStringBuilderBufferConfigKey: String = configPrefix + "mergeStringBuilderBuffer"

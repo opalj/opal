@@ -131,7 +131,7 @@ sealed trait ReflectionAnalysis extends TACAIBasedAPIBasedAnalysis {
 
 class ClassForNameAnalysis private[analyses] (
         final val project:            SomeProject,
-        final override val apiMethod: DeclaredMethod,
+        override final val apiMethod: DeclaredMethod,
         final val classNameIndex: Int = 0) extends ReflectionAnalysis with TypeConsumerAnalysis {
 
     private class State(
@@ -1107,7 +1107,7 @@ class MethodInvokeAnalysis private[analyses] (
 
 class MethodHandleInvokeAnalysis private[analyses] (
         final val project:            SomeProject,
-        final override val apiMethod: DeclaredMethod,
+        override final val apiMethod: DeclaredMethod,
         final val isSignaturePolymorphic: Boolean) extends ReflectionAnalysis with TypeConsumerAnalysis {
 
     override def processNewCaller(

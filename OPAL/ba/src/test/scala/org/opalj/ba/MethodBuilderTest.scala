@@ -8,6 +8,10 @@ import scala.reflect.runtime.universe._
 import java.io.ByteArrayInputStream
 import scala.collection.immutable.ArraySeq
 
+import org.junit.runner.RunWith
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatestplus.junit.JUnitRunner
+
 import org.opalj.bc.Assembler
 import org.opalj.bi._
 import org.opalj.br.IntegerType
@@ -17,10 +21,6 @@ import org.opalj.br.ObjectType
 import org.opalj.br.instructions._
 import org.opalj.br.reader.Java8Framework.{ClassFile => J8ClassFile}
 import org.opalj.util.InMemoryClassLoader
-
-import org.junit.runner.RunWith
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests the properties of a method in a class build with the BytecodeAssembler DSL. The class is

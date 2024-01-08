@@ -34,7 +34,7 @@ import org.opalj.fpcf.Results
 abstract class SerializationAllocationsAnalysis(
         final val project: SomeProject) extends PointsToAnalysisBase with TACAIBasedAPIBasedAnalysis { self =>
 
-    final override val apiMethod: DeclaredMethod = declaredMethods(
+    override final val apiMethod: DeclaredMethod = declaredMethods(
         ObjectType.ObjectInputStream,
         "",
         ObjectType.ObjectInputStream,

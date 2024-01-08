@@ -18,6 +18,6 @@ trait Java9LibraryFramework
 
 object Java9LibraryFramework extends Java9LibraryFramework {
 
-    final override def loadsInterfacesOnly: Boolean = true
+    override final def loadsInterfacesOnly: Boolean = true
 
 }

@@ -12,7 +12,7 @@ sealed abstract class PropertiesBoundType {
     def unapply[E <: Entity, P <: Property](e: EPS[E, P]): Option[MatchedProperties[P]]
 }
 sealed abstract class SinglePropertiesBoundType extends PropertiesBoundType {
-    final override type MatchedProperties[P] = P
+    override final type MatchedProperties[P] = P
 }
 case object LBProperties extends SinglePropertiesBoundType {
     def unapply[E <: Entity, P <: Property](e: EPS[E, P]): Option[P] = if (e.hasLBP) Some(e.lb) else None

@@ -39,7 +39,7 @@ case class RewriteLabel private (id: Long) extends InstructionLabel {
 }
 
 object RewriteLabel {
-    final private val idGenerator = new AtomicLong(0L)
+    private final val idGenerator = new AtomicLong(0L)
     def apply(): RewriteLabel = {
         val newID = idGenerator.getAndIncrement()
         if (newID == -1) {

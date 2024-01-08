@@ -4,6 +4,9 @@ package br
 
 import scala.collection.immutable.ArraySeq
 
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
+
 import org.opalj.bi.ACC_PRIVATE
 import org.opalj.bi.ACC_PROTECTED
 import org.opalj.bi.ACC_PUBLIC
@@ -11,9 +14,6 @@ import org.opalj.bi.ACC_STATIC
 import org.opalj.br.instructions.IADD
 import org.opalj.br.instructions.ICONST_1
 import org.opalj.br.instructions.IRETURN
-
-import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.matchers.should.Matchers
 
 /**
  * Tests the configuration of the similarity test.

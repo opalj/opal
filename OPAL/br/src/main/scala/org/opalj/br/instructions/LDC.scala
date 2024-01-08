@@ -114,7 +114,7 @@ final case class LoadDynamic(
 
     def computationalType: ComputationalType = descriptor.computationalType
 
-    final override def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
+    override final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
         val other = code.instructions(otherPC)
         (this eq other) || this == other
     }
@@ -131,7 +131,7 @@ case object INCOMPLETE_LDC extends LDC[Any] {
 
     final def value: Any = error
 
-    final override def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = error
+    override final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = error
 }
 
 /**

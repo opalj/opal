@@ -93,7 +93,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
     type RefId = Int
 
     final def nullRefId: RefId                  = 100
-    final private[this] val initialRefId: RefId = 101 // 101 is chosen for readability purposes
+    private[this] final val initialRefId: RefId = 101 // 101 is chosen for readability purposes
 
     /**
      * The next free reference id.
@@ -287,7 +287,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
          */
         protected def refineIf(refinements: Refinements): Boolean
 
-        final protected[this] def doPropagateRefinement(
+        protected[this] final def doPropagateRefinement(
             refinements: Refinements,
             operands:    Operands,
             locals:      Locals): (Operands, Locals) = {
@@ -337,7 +337,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         /**
          * Propagate some refinement of the value's properties.
          */
-        final protected[this] def propagateRefinement(
+        protected[this] final def propagateRefinement(
             oldValue: AReferenceValue,
             newValue: AReferenceValue,
             operands: Operands,
@@ -367,7 +367,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             with UID {
         this: DomainSingleOriginReferenceValue =>
 
-        final override def id: Int = origin
+        override final def id: Int = origin
 
         /**
          * Updates the `origin` and/or `isNull` property; keeps the reference id.
@@ -476,7 +476,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                     }
             }
 
-        final protected def doJoinWithNullValueWithSameOrigin(
+        protected final def doJoinWithNullValueWithSameOrigin(
             joinPC: Int,
             that:   DomainNullValue): Update[DomainSingleOriginReferenceValue] = this.isNull match {
             case Yes | Unknown => NoUpdate
@@ -1007,7 +1007,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             if (isNull.isYes) None
             else Some(classHierarchy.joinReferenceTypesUntilSingleUpperBound(upperTypeBound))
 
-        final override def isArrayValue: Answer =
+        override final def isArrayValue: Answer =
             // Please recall that the upperTypeBound contains exactly one value if the value
             // may be an ArrayValue. (There are no union types related to array values.)
             isNull match {
@@ -1761,14 +1761,14 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         case at: ArrayType  => ArrayValue(origin, isNull, isPrecise, at, refId)
     }
 
-    final protected[domain] def ReferenceValue( // for SObjectValue
+    protected[domain] final def ReferenceValue( // for SObjectValue
         origin:            ValueOrigin,
         isNull:            Answer,
         isPrecise:         Boolean,
         theUpperTypeBound: ReferenceType): DomainSingleOriginReferenceValue =
         ReferenceValue(origin, isNull, isPrecise, theUpperTypeBound, nextRefId())
 
-    final protected[domain] def ReferenceValue( // for S|MObjectValue
+    protected[domain] final def ReferenceValue( // for S|MObjectValue
         origin:         ValueOrigin,
         isNull:         Answer,
         isPrecise:      Boolean,

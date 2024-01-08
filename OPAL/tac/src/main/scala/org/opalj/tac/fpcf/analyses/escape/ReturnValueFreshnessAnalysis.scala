@@ -153,9 +153,9 @@ class ReturnValueFreshnessState(val context: Context) {
 class ReturnValueFreshnessAnalysis private[analyses] (
         final val project: SomeProject) extends FPCFAnalysis {
 
-    implicit private[this] val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
+    private[this] implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
     private[this] val simpleContexts: SimpleContexts            = project.get(SimpleContextsKey)
-    implicit private[this] val contextProvider: ContextProvider = project.get(ContextProviderKey)
+    private[this] implicit val contextProvider: ContextProvider = project.get(ContextProviderKey)
     private[this] val definitionSites                           = project.get(DefinitionSitesKey)
 
     /**

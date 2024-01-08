@@ -262,9 +262,9 @@ class ClassHierarchy private (
     //
 
     private[this] var objectTypesMap: Array[ObjectType] = new Array(ObjectType.objectTypesCount)
-    final private[this] val objectTypesMapRWLock        = new ReentrantReadWriteLock()
+    private[this] final val objectTypesMapRWLock        = new ReentrantReadWriteLock()
 
-    final private[this] def objectTypesCreationListener(objectType: ObjectType): Unit = {
+    private[this] final def objectTypesCreationListener(objectType: ObjectType): Unit = {
         val id        = objectType.id
         val writeLock = objectTypesMapRWLock.writeLock()
         writeLock.lock()
@@ -1543,7 +1543,7 @@ class ClassHierarchy private (
         case _                                             => No
     }
 
-    @inline @tailrec final private[this] def compareTypeArguments(
+    @inline @tailrec private[this] final def compareTypeArguments(
         subtypeArgs:   List[TypeArgument],
         supertypeArgs: List[TypeArgument]
       )(implicit
@@ -1600,7 +1600,7 @@ class ClassHierarchy private (
      * Returns the object type's class signature if the class files is available and
      * a class signature is defined.
      */
-    @inline final private[this] def getClassSignature(
+    @inline private[this] final def getClassSignature(
         ot: ObjectType
       )(implicit
         p: ClassFileRepository): Option[ClassSignature] = p.classFile(ot).flatMap(cf => cf.classSignature)
@@ -2413,7 +2413,7 @@ class ClassHierarchy private (
  */
 object ClassHierarchy {
 
-    implicit private[this] val classHierarchyEC: ExecutionContext = OPALUnboundedExecutionContext
+    private[this] implicit val classHierarchyEC: ExecutionContext = OPALUnboundedExecutionContext
 
     final val JustObject: UIDSet[ObjectType] = new UIDSet1(ObjectType.Object)
 

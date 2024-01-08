@@ -4,6 +4,8 @@ package tac
 
 import java.io.File
 
+import com.typesafe.config.ConfigValueFactory
+
 import org.opalj.ai.BaseAI
 import org.opalj.ai.Domain
 import org.opalj.ai.domain
@@ -19,8 +21,6 @@ import org.opalj.log.{Error => ErrorLogLevel}
 import org.opalj.log.ConsoleOPALLogger
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger
-
-import com.typesafe.config.ConfigValueFactory
 
 /**
  * Creates the three-address representation for some method(s) and prints it to `std out` or writes

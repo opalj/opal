@@ -31,7 +31,7 @@ trait ConstantPoolBinding extends Constant_PoolReader {
         cp: Constant_Pool): Constant_Pool_Entry = cp(index)
 
     type Constant_Pool_Entry = cp.Constant_Pool_Entry
-    implicit override val constantPoolEntryType: ClassTag[Constant_Pool_Entry] =
+    override implicit val constantPoolEntryType: ClassTag[Constant_Pool_Entry] =
         ClassTag[cp.Constant_Pool_Entry](classOf[cp.Constant_Pool_Entry])
 
     type CONSTANT_Class_info   = cp.CONSTANT_Class_info

@@ -188,9 +188,9 @@ class LBFieldValuesAnalysis private[analyses] (
             fieldInformation = relevantFields.iterator.map[(Field, Option[DomainValue])](_ -> None).toMap
         }
 
-        final override val UsedPropertiesBound: SinglePropertiesBoundType = LBProperties
+        override final val UsedPropertiesBound: SinglePropertiesBoundType = LBProperties
 
-        implicit final override def project: SomeProject = analysis.project
+        override implicit final def project: SomeProject = analysis.project
 
         def hasCandidateFields: Boolean      = fieldInformation.nonEmpty
         def candidateFields: Iterable[Field] = fieldInformation.keys

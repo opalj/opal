@@ -11,7 +11,7 @@ package instructions
 case class CHECKCAST(
         referenceType: ReferenceType) extends Instruction with ConstantLengthInstruction with NoLabels {
 
-    final override def isCheckcast: Boolean = true
+    override final def isCheckcast: Boolean = true
 
     final def opcode: Opcode = CHECKCAST.opcode
 
@@ -56,7 +56,7 @@ case class CHECKCAST(
 
     override def toString: String = "CHECKCAST(" + referenceType.toJava + ")"
 
-    final override def toString(currentPC: Int): String = toString()
+    override final def toString(currentPC: Int): String = toString()
 
 }
 

@@ -69,9 +69,9 @@ class LBMethodReturnValuesAnalysis private[analyses] (
             with RefinedTypeLevelFieldAccessInstructions
             with RefinedTypeLevelInvokeInstructions {
 
-        final override val UsedPropertiesBound: SinglePropertiesBoundType = LBProperties
+        override final val UsedPropertiesBound: SinglePropertiesBoundType = LBProperties
 
-        implicit override val project: SomeProject = analysis.project
+        override implicit val project: SomeProject = analysis.project
 
         override protected[this] def doRecordReturnedValue(pc: PC, value: Value): Boolean = {
             val isUpdated = super.doRecordReturnedValue(pc, value)

@@ -52,9 +52,9 @@ trait StringBuilderValues extends StringValues {
         assert(builder != null)
         assert((builderType eq ObjectType.StringBuffer) || (builderType eq ObjectType.StringBuilder))
 
-        final override def isNull: No.type               = No
-        final override def isPrecise: Boolean            = true
-        final override def theUpperTypeBound: ObjectType = builderType
+        override final def isNull: No.type               = No
+        override final def isPrecise: Boolean            = true
+        override final def theUpperTypeBound: ObjectType = builderType
 
         override def doJoinWithNonNullValueWithSameOrigin(
             joinPC: Int,

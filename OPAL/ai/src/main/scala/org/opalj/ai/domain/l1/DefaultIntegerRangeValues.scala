@@ -182,7 +182,7 @@ trait DefaultIntegerRangeValues extends DefaultSpecialDomainValuesBinding with I
             else s"int ∈ [$lowerBound,$upperBound]"
     }
 
-    @inline final override def IntegerRange(lb: Int, ub: Int): IntegerRange = new IntegerRange(lb, ub)
+    @inline override final def IntegerRange(lb: Int, ub: Int): IntegerRange = new IntegerRange(lb, ub)
 
     override def BooleanValue(origin: ValueOrigin): DomainTypedValue[CTIntType] = IntegerRange(0, 1)
     override def BooleanValue(origin: ValueOrigin, value: Boolean): DomainTypedValue[CTIntType] =

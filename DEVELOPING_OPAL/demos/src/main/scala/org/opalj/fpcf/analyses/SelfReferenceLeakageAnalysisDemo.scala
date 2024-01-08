@@ -5,16 +5,16 @@ package analyses
 
 import java.net.URL
 
-import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.util.Seconds
-import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.ProjectAnalysisApplication
-import org.opalj.br.analyses.Project
 import org.opalj.br.ClassFile
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.analyses.L0SelfReferenceLeakageAnalysis
 import org.opalj.br.fpcf.properties.DoesNotLeakSelfReference
 import org.opalj.br.fpcf.properties.SelfReferenceLeakage
+import org.opalj.util.PerformanceEvaluation.time
+import org.opalj.util.Seconds
 
 /**
  * Runs the default self-reference leakage analysis.
@@ -25,15 +25,13 @@ object SelfReferenceLeakageAnalysisDemo extends ProjectAnalysisApplication {
 
     override def title: String = "Analyses whether a class leaks it self-reference this"
 
-    override def description: String = {
+    override def description: String =
         "Determines if a class leaks its self reference, if not, then the method which instantiates the object has full control."
-    }
 
     def doAnalyze(
-        project: Project[URL],
-        parameters: Seq[String],
-        isInterrupted: () => Boolean
-    ): BasicReport = {
+        project:       Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () => Boolean): BasicReport = {
 
         val projectStore = project.get(PropertyStoreKey)
 

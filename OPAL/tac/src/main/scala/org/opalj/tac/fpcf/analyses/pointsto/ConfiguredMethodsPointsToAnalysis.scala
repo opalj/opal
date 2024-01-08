@@ -51,7 +51,7 @@ import org.opalj.tac.fpcf.analyses.cg.TypeConsumerAnalysis
 abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
         final val project: SomeProject) extends PointsToAnalysisBase with TypeConsumerAnalysis {
 
-    implicit private[this] val declaredMethods: DeclaredMethods = p.get(DeclaredMethodsKey)
+    private[this] implicit val declaredMethods: DeclaredMethods = p.get(DeclaredMethodsKey)
     private lazy val virtualFormalParameters                    = project.get(VirtualFormalParametersKey)
 
     private[this] val nativeMethodData: Map[DeclaredMethod, Option[Array[PointsToRelation]]] =

@@ -3,6 +3,8 @@ package org.opalj
 package fpcf
 package analyses
 
+import java.net.URL
+
 import org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.DefinedField
@@ -24,8 +26,6 @@ import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalys
 import org.opalj.tac.fpcf.analyses.fieldaccess.reflection.ReflectionRelatedFieldAccessesAnalysisScheduler
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
-
-import java.net.URL
 
 /**
  * Runs analyses for field accesses throughout a project and automatically excludes any JDK files included in the project
@@ -56,10 +56,9 @@ object FieldAccessInformationAnalysisDemo extends ProjectAnalysisApplication {
     override def description: String = "Runs analyses for field accesses (field reads and writes) throughout a project"
 
     override def doAnalyze(
-        project: Project[URL],
-        parameters: Seq[String],
-        isInterrupted: () => Boolean
-    ): BasicReport = {
+        project:       Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () => Boolean): BasicReport = {
         val result = analyze(project)
         BasicReport(result)
     }
@@ -67,14 +66,14 @@ object FieldAccessInformationAnalysisDemo extends ProjectAnalysisApplication {
     def analyze(project: Project[URL]): String = {
         val domain = classOf[DefaultPerformInvocationsDomainWithCFGAndDefUse[_]]
         project.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
-            case None => Set(domain)
+            case None               => Set(domain)
             case Some(requirements) => requirements + domain
         }
 
         val propertyStore: PropertyStore = project.get(PropertyStoreKey)
-        var analysisTime: Seconds = Seconds.None
-        val analysesManager = project.get(FPCFAnalysesManagerKey)
-        val typeIterator = XTACallGraphKey.getTypeIterator(project)
+        var analysisTime: Seconds        = Seconds.None
+        val analysesManager              = project.get(FPCFAnalysesManagerKey)
+        val typeIterator                 = XTACallGraphKey.getTypeIterator(project)
         project.updateProjectInformationKeyInitializationData(ContextProviderKey) { _ => typeIterator }
 
         time {
@@ -98,23 +97,21 @@ object FieldAccessInformationAnalysisDemo extends ProjectAnalysisApplication {
             .entities(FieldReadAccessInformation.key)
             .filter(ep =>
                 fields.contains(ep.e.asInstanceOf[DefinedField].definedField)
-                    && ep.asFinal.p != NoFieldReadAccessInformation
-            )
+                    && ep.asFinal.p != NoFieldReadAccessInformation)
             .map(_.e.asInstanceOf[DefinedField].definedField)
             .toSet
         val writtenFields = propertyStore
             .entities(FieldWriteAccessInformation.key)
             .filter(ep =>
                 fields.contains(ep.e.asInstanceOf[DefinedField].definedField)
-                    && ep.asFinal.p != NoFieldWriteAccessInformation
-            )
+                    && ep.asFinal.p != NoFieldWriteAccessInformation)
             .map(_.e.asInstanceOf[DefinedField].definedField)
             .toSet
 
         val readAndWrittenFields = readFields intersect writtenFields
-        val purelyReadFields = readFields diff readAndWrittenFields
-        val purelyWrittenFields = writtenFields diff readAndWrittenFields
-        val notAccessedFields = fields diff readFields diff writtenFields
+        val purelyReadFields     = readFields diff readAndWrittenFields
+        val purelyWrittenFields  = writtenFields diff readAndWrittenFields
+        val notAccessedFields    = fields diff readFields diff writtenFields
 
         val totalIncompleteAccessSiteCount = propertyStore
             .entities(MethodFieldReadAccessInformation.key)
@@ -122,10 +119,9 @@ object FieldAccessInformationAnalysisDemo extends ProjectAnalysisApplication {
             .map(_.asFinal.p.numIncompleteAccessSites)
             .sum
 
-        def getFieldsList(fields: Set[Field]): String = {
+        def getFieldsList(fields: Set[Field]): String =
             if (fields.size > 50) "\n|     Too many fields to display!"
             else fields.iterator.map(f => s"- ${f.name}").mkString("\n|     ", "\n|     ", "")
-        }
 
         s"""
            |

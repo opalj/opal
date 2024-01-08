@@ -28,5 +28,5 @@ class Java8FrameworkWithCaching(
         with BytecodeOptimizer
         with CodeReader {
 
-    final override def loadsInterfacesOnly: Boolean = false
+    override final def loadsInterfacesOnly: Boolean = false
 }

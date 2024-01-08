@@ -113,7 +113,7 @@ trait VirtualMethodPurityAnalysisScheduler extends FPCFAnalysisScheduler {
 
     override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
 
-    final override def uses: Set[PropertyBounds] = Set(PropertyBounds.lub(Purity))
+    override final def uses: Set[PropertyBounds] = Set(PropertyBounds.lub(Purity))
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(VirtualMethodPurity)
 

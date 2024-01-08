@@ -62,7 +62,7 @@ final class TypePropagationAnalysis private[analyses] (
 
     private type State = TypePropagationState[ContextType]
 
-    implicit private[this] val declaredFields: DeclaredFields = project.get(DeclaredFieldsKey)
+    private[this] implicit val declaredFields: DeclaredFields = project.get(DeclaredFieldsKey)
 
     override def processMethod(
         callContext: ContextType,

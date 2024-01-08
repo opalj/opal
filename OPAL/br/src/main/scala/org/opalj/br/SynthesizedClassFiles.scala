@@ -24,7 +24,7 @@ package br
 case class SynthesizedClassFiles(
         classFiles: List[(/*generated*/ ClassFile, /*reason*/ Option[AnyRef])]) extends Attribute {
 
-    final override val kindId = SynthesizedClassFiles.KindId
+    override final val kindId = SynthesizedClassFiles.KindId
 
     // TODO needs to be reconsidered when we serialize this attribute!
     override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = this == other

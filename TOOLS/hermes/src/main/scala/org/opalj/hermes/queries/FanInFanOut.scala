@@ -7,6 +7,8 @@ import scala.annotation.tailrec
 
 import scala.collection.mutable
 
+import com.typesafe.config.Config
+
 import org.opalj.br.FieldType
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
@@ -24,8 +26,6 @@ import org.opalj.da.CONSTANT_Utf8_info
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
-
-import com.typesafe.config.Config
 
 /**
  *  This metric computes the Fan-In and Fan-Out of a class.

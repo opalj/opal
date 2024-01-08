@@ -290,48 +290,48 @@ abstract class PropertyStore {
      * If a property is queried for which we have no value, then this information is used
      * to determine which kind of fallback is required.
      */
-    final protected[this] val propertyKindsComputedInEarlierPhase: Array[Boolean] = new Array(SupportedPropertyKinds)
+    protected[this] final val propertyKindsComputedInEarlierPhase: Array[Boolean] = new Array(SupportedPropertyKinds)
 
     final def alreadyComputedPropertyKindIds: IntIterator =
         IntIterator.upUntil(0, SupportedPropertyKinds).filter(propertyKindsComputedInEarlierPhase)
 
-    final protected[this] val propertyKindsComputedInThisPhase: Array[Boolean] = new Array(SupportedPropertyKinds)
+    protected[this] final val propertyKindsComputedInThisPhase: Array[Boolean] = new Array(SupportedPropertyKinds)
 
     /**
      * Used to identify situations where a property is queried, which is only going to be computed
      * in the future - in this case, the specification of an analysis is broken!
      */
-    final protected[this] val propertyKindsComputedInLaterPhase: Array[Boolean] = new Array(SupportedPropertyKinds)
+    protected[this] final val propertyKindsComputedInLaterPhase: Array[Boolean] = new Array(SupportedPropertyKinds)
 
-    final protected[this] val suppressInterimUpdates: Array[Array[Boolean]] =
+    protected[this] final val suppressInterimUpdates: Array[Array[Boolean]] =
         Array.fill(SupportedPropertyKinds) { new Array[Boolean](SupportedPropertyKinds) }
 
     /**
      * `true` if entities with a specific property kind (EP) may have dependers with suppressed
      * notifications. (I.e., suppressInteriumUpdates("depender")("EP") is `true`.)
      */
-    final protected[this] val hasSuppressedDependers: Array[Boolean] = Array.fill(SupportedPropertyKinds) { false }
+    protected[this] final val hasSuppressedDependers: Array[Boolean] = Array.fill(SupportedPropertyKinds) { false }
 
     /**
      * The order in which the property kinds will be finalized; the last phase is considered
      * the clean-up phase and will contain all remaining properties that were not explicitly
      * finalized previously.
      */
-    final protected[this] var subPhaseFinalizationOrder: Array[List[PropertyKind]] = Array.empty
+    protected[this] final var subPhaseFinalizationOrder: Array[List[PropertyKind]] = Array.empty
 
     /**
      * The set of computations that will only be scheduled if the result is required.
      */
-    final protected[this] val lazyComputations: Array[SomeProperPropertyComputation] =
+    protected[this] final val lazyComputations: Array[SomeProperPropertyComputation] =
         new Array(PropertyKind.SupportedPropertyKinds)
 
     /**
      * The set of transformers that will only be executed when required.
      */
-    final protected[this] val transformersByTargetPK
+    protected[this] final val transformersByTargetPK
         : Array[(/*source*/ PropertyKey[Property], (Entity, Property) => FinalEP[Entity, Property])] =
         new Array(PropertyKind.SupportedPropertyKinds)
-    final protected[this] val transformersBySourcePK
+    protected[this] final val transformersBySourcePK
         : Array[(/*target*/ PropertyKey[Property], (Entity, Property) => FinalEP[Entity, Property])] =
         new Array(PropertyKind.SupportedPropertyKinds)
 

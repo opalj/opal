@@ -4,6 +4,9 @@ package fpcf
 
 import java.net.URL
 
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigValueFactory
+
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
@@ -29,9 +32,6 @@ import org.opalj.tac.fpcf.analyses.cg.xta.TypePropagationAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.TypeSetEntitySelector
 import org.opalj.tac.fpcf.analyses.cg.xta.XTASetEntitySelector
 import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalysis
-
-import com.typesafe.config.Config
-import com.typesafe.config.ConfigValueFactory
 
 /**
  * Tests if the computed call graph contains (at least!) the expected call edges.

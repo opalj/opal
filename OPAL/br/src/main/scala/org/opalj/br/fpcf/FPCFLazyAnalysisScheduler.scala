@@ -16,7 +16,7 @@ import org.opalj.fpcf.PropertyStore
  */
 trait FPCFLazyAnalysisScheduler extends FPCFLazyLikeAnalysisScheduler {
 
-    final override def computationType: ComputationType = LazyComputation
+    override final def computationType: ComputationType = LazyComputation
 
 }
 

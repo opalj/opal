@@ -17,7 +17,7 @@ import org.opalj.util.Nanoseconds
 class TimeBoundedAI[D <: Domain](
         val maxEffort: Nanoseconds = new Milliseconds(150L).toNanoseconds) extends AI[D] {
 
-    final private[this] val CheckInterval = 100
+    private[this] final val CheckInterval = 100
 
     private[this] var evaluationCount = -1
 

@@ -111,7 +111,7 @@ class ActualParameterBasedFieldMatcher(val actualParam: V) extends FieldMatcher 
 
 sealed trait PropertyBasedFieldMatcher extends FieldMatcher {
 
-    final override def initialFields(implicit p: SomeProject): Iterator[Field] = p.allFields.iterator.filter(contains)
+    override final def initialFields(implicit p: SomeProject): Iterator[Field] = p.allFields.iterator.filter(contains)
     override def priority: Int = 4
 }
 

@@ -3,10 +3,10 @@ package org.opalj
 package bi
 package reader
 
+import com.typesafe.config.Config
+
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
-
-import com.typesafe.config.Config
 
 /**
  * Defines various settings related to reading/processing class files. To change

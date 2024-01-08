@@ -4,6 +4,9 @@ package fpcf
 
 import java.net.URL
 
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigValueFactory
+
 import org.opalj.ai.domain.l1.DefaultReferenceValuesDomainWithCFGAndDefUse
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.analyses.Project
@@ -16,9 +19,6 @@ import org.opalj.tac.fpcf.analyses.cg.CallGraphAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.ThreadRelatedCallsAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalysis
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedPointsToAnalysisScheduler
-
-import com.typesafe.config.Config
-import com.typesafe.config.ConfigValueFactory
 
 /**
  * Tests  ThreadRelatedCallsAnalysis

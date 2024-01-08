@@ -427,8 +427,8 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
 
     protected[this] lazy val virtualFormalParameters: VirtualFormalParameters = project.get(VirtualFormalParametersKey)
 
-    implicit protected[this] val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
-    implicit protected[this] val contextProvider: ContextProvider = project.get(ContextProviderKey)
+    protected[this] implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
+    protected[this] implicit val contextProvider: ContextProvider = project.get(ContextProviderKey)
 
     protected[this] def createContext(
         entity: (Context, Entity),

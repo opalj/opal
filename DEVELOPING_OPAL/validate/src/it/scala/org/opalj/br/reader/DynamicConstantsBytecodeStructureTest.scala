@@ -3,6 +3,11 @@ package org.opalj
 package br
 package reader
 
+import org.junit.runner.RunWith
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
+
 import org.opalj.ai.BaseAI
 import org.opalj.ai.Domain
 import org.opalj.ai.InterpretationFailedException
@@ -12,11 +17,6 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.LDCDynamic
 import org.opalj.br.instructions.WIDE
 import org.opalj.log.GlobalLogContext
-
-import org.junit.runner.RunWith
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.matchers.should.Matchers
-import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Test that code with dynamic constants is loaded without exceptions and after rewriting is still

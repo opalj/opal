@@ -13,7 +13,7 @@ import org.opalj.bi.reader.FieldsReader
 trait FieldsBinding extends FieldsReader { this: ConstantPoolBinding with AttributeBinding =>
 
     type Field_Info = br.Field
-    implicit override val fieldInfoType: ClassTag[Field_Info] = ClassTag(classOf[br.Field])
+    override implicit val fieldInfoType: ClassTag[Field_Info] = ClassTag(classOf[br.Field])
 
     def Field_Info(
         cp:               Constant_Pool,

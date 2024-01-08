@@ -42,7 +42,7 @@ sealed abstract class UIDTrieSet[T <: UID] { set =>
     // TODO: optimize implementation
     def ++(other: UIDTrieSet[T]): UIDTrieSet[T] = other.foldLeft(this)((r, e) => r add e)
 
-    final override def equals(other: Any): Boolean = other match {
+    override final def equals(other: Any): Boolean = other match {
         case that: UIDTrieSet[_] => this.equals(that)
         case _                   => false
     }
@@ -91,9 +91,9 @@ sealed abstract private[immutable] class UIDTrieSetLeaf[T <: UID]
     extends UIDTrieSet[T]
         with UIDTrieSetNode[T] {
 
-    final override private[immutable] def containsId(id: Int, key: Int): Boolean = this.containsId(id)
+    override private[immutable] final def containsId(id: Int, key: Int): Boolean = this.containsId(id)
 
-    final override private[immutable] def toString(indent: Int): String = (" " * indent) + toString()
+    override private[immutable] final def toString(indent: Int): String = (" " * indent) + toString()
 
 }
 
@@ -158,7 +158,7 @@ final class UIDTrieSet1[T <: UID](val i: T) extends UIDTrieSetLeaf[T] {
 /**
  * Represents an ordered set of two values where i1 has to be smaller than i2.
  */
-final private[immutable] class UIDTrieSet2[T <: UID] private[immutable] (
+private[immutable] final class UIDTrieSet2[T <: UID] private[immutable] (
         val i1: T,
         val i2: T) extends UIDTrieSetLeaf[T] {
 
@@ -212,7 +212,7 @@ final private[immutable] class UIDTrieSet2[T <: UID] private[immutable] (
 /**
  * Represents an ordered set of three int values: i1 < i2 < i3.
  */
-final private[immutable] class UIDTrieSet3[T <: UID] private[immutable] (
+private[immutable] final class UIDTrieSet3[T <: UID] private[immutable] (
         val i1: T,
         val i2: T,
         val i3: T) extends UIDTrieSetLeaf[T] {
@@ -383,7 +383,7 @@ final private[immutable] class UIDTrieSet3[T <: UID] private[immutable] (
 /**
  * A UIDTrieSet with four or more values.
  */
-final private[immutable] class UIDTrieSetN[T <: UID](
+private[immutable] final class UIDTrieSetN[T <: UID](
         val size: Int,
         root: UIDTrieSetNode[T]) extends UIDTrieSet[T] {
 
@@ -464,7 +464,7 @@ final private[immutable] class UIDTrieSetN[T <: UID](
 
 }
 
-final private[immutable] class UIDTrieSetNode_0_1[T <: UID](
+private[immutable] final class UIDTrieSetNode_0_1[T <: UID](
         val v:  T, // value with the current prefix...
         val _0: UIDTrieSetNode[T],
         val _1: UIDTrieSetNode[T]) extends UIDTrieSetNode[T] {
@@ -516,7 +516,7 @@ final private[immutable] class UIDTrieSetNode_0_1[T <: UID](
 
 }
 
-final private[immutable] class UIDTrieSetNode_0[T <: UID](
+private[immutable] final class UIDTrieSetNode_0[T <: UID](
         val v: T,
         val _0: UIDTrieSetNode[T]) extends UIDTrieSetNode[T] {
 
@@ -571,7 +571,7 @@ final private[immutable] class UIDTrieSetNode_0[T <: UID](
     }
 }
 
-final private[immutable] class UIDTrieSetNode_1[T <: UID](
+private[immutable] final class UIDTrieSetNode_1[T <: UID](
         val v: T,
         val _1: UIDTrieSetNode[T]) extends UIDTrieSetNode[T] {
 

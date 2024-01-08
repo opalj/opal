@@ -15,7 +15,7 @@ case class CONSTANT_Dynamic_info(
         bootstrap_method_attr_index: Int,
         name_and_type_index: Constant_Pool_Index) extends Constant_Pool_Entry {
 
-    final override def size: Int = 1 + 2 + 2
+    override final def size: Int = 1 + 2 + 2
 
     override def Constant_Type_Value: ConstantPoolTag = bi.ConstantPoolTags.CONSTANT_Dynamic
 

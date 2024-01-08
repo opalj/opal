@@ -234,7 +234,7 @@ trait L0AllocationFreenessAnalysisScheduler extends FPCFAnalysisScheduler {
 
     override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
 
-    final override def uses: Set[PropertyBounds] = Set.empty
+    override final def uses: Set[PropertyBounds] = Set.empty
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(AllocationFreeness)
 

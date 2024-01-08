@@ -14,6 +14,6 @@ trait Java16Framework extends Java11Framework with Java16LibraryFramework
 
 object Java16Framework extends Java16Framework {
 
-    final override def loadsInterfacesOnly: Boolean = false
+    override final def loadsInterfacesOnly: Boolean = false
 
 }

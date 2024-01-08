@@ -9,13 +9,13 @@ import scala.collection.mutable
 import scala.collection.mutable.AnyRefMap
 import scala.collection.mutable.ArrayBuffer
 
+import com.typesafe.config.Config
+
 import org.opalj.control.foreachWithIndex
 import org.opalj.fpcf.PropertyKind.SupportedPropertyKinds
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.{debug => trace}
 import org.opalj.log.OPALLogger.info
-
-import com.typesafe.config.Config
 
 /**
  * A reasonably optimized, complete, but non-concurrent implementation of the property store.

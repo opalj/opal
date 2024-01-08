@@ -35,11 +35,11 @@ trait AbstractPointsToBasedAnalysis extends FPCFAnalysis with ContextualAnalysis
     protected[this] type State <: TACAIBasedAnalysisState[ContextType]
     protected[this] type DependerType
 
-    implicit protected[this] val typeIterator: TypeIterator
+    protected[this] implicit val typeIterator: TypeIterator
 
-    implicit protected[this] val definitionSites: DefinitionSites          = p.get(DefinitionSitesKey)
-    implicit protected[this] val formalParameters: VirtualFormalParameters = p.get(VirtualFormalParametersKey)
-    implicit protected[this] val declaredFields: DeclaredFields            = p.get(DeclaredFieldsKey)
+    protected[this] implicit val definitionSites: DefinitionSites          = p.get(DefinitionSitesKey)
+    protected[this] implicit val formalParameters: VirtualFormalParameters = p.get(VirtualFormalParametersKey)
+    protected[this] implicit val declaredFields: DeclaredFields            = p.get(DeclaredFieldsKey)
 
     protected[this] val pointsToPropertyKey: PropertyKey[PointsToSet]
     protected[this] def emptyPointsToSet: PointsToSet

@@ -4,17 +4,17 @@ package ai
 package domain
 package l0
 
+import org.junit.runner.RunWith
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
+
 import org.opalj.ai.domain.TheProject
 import org.opalj.ai.domain.ValuesCoordinatingDomain
 import org.opalj.br.ObjectType
 import org.opalj.br.TestSupport
 import org.opalj.br.analyses.Project
 import org.opalj.collection.immutable.UIDSet2
-
-import org.junit.runner.RunWith
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
-import org.scalatestplus.junit.JUnitRunner
 
 /**
  * @author Michael Eichberg
@@ -31,7 +31,7 @@ class DefaultReferenceValuesBindingTest extends AnyFlatSpec with Matchers {
             with l0.DefaultReferenceValuesBinding
             with l0.TypeLevelDynamicLoads
             with TheProject {
-        final override val project: Project[java.net.URL] = TestSupport.createJREProject()
+        override final val project: Project[java.net.URL] = TestSupport.createJREProject()
     }
 
     behavior of "instances of domains of type l0.DomainReferenceValuesBinding"

@@ -8,6 +8,9 @@ import java.util.concurrent.ConcurrentLinkedQueue
 import scala.util.control.ControlThrowable
 import scala.xml.NodeSeq
 
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+
 import org.opalj.ai.util.XHTML
 import org.opalj.bi.TestResources
 import org.opalj.br.{TestSupport => BRTestSupport}
@@ -22,9 +25,6 @@ import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.util.PerformanceEvaluation
 
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
-
 /**
  * Provides the basic infrastructure to load a very large number of class files and to perform
  * an abstract interpretation of all methods.
@@ -38,7 +38,7 @@ import org.scalatest.matchers.should.Matchers
  */
 abstract class DomainTestInfrastructure(domainName: String) extends AnyFlatSpec with Matchers {
 
-    implicit private[this] val logContext: LogContext = GlobalLogContext
+    private[this] implicit val logContext: LogContext = GlobalLogContext
 
     type AnalyzedDomain <: Domain
 

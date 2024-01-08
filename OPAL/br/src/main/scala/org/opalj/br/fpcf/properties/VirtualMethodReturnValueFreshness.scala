@@ -9,7 +9,7 @@ import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
 
 sealed trait VirtualMethodReturnValueFreshnessMetaInformation extends PropertyMetaInformation {
-    final override type Self = VirtualMethodReturnValueFreshness
+    override final type Self = VirtualMethodReturnValueFreshness
 }
 
 /**

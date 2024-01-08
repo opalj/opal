@@ -6,6 +6,13 @@ package reader
 import java.io.File
 import scala.collection.immutable.ArraySeq
 
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
+
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
+import com.typesafe.config.ConfigValueFactory
+
 import org.opalj.bi.TestResources.{locateTestResources => locate}
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
@@ -16,12 +23,7 @@ import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 import org.opalj.log.StandardLogContext
 
-import com.typesafe.config.Config
-import com.typesafe.config.ConfigFactory
-import com.typesafe.config.ConfigValueFactory
 import org.scalactic.Equality
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.matchers.should.Matchers
 
 /**
  * Tests the rewriting of lambda expressions/method references using Java 8's infrastructure. I.e.,

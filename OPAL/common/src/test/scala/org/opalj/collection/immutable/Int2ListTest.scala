@@ -3,12 +3,12 @@ package org.opalj
 package collection
 package immutable
 
-import org.opalj.util.PerformanceEvaluation
-
 import org.junit.runner.RunWith
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
+
+import org.opalj.util.PerformanceEvaluation
 
 /**
  * Tests Int2List.

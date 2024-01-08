@@ -6,6 +6,12 @@ package dynamicConstants
 
 import scala.collection.immutable.ArraySeq
 
+import org.junit.runner.RunWith
+import org.scalatest.BeforeAndAfterAll
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
+
 import org.opalj.bc.Assembler
 import org.opalj.bi.ACC_FINAL
 import org.opalj.bi.ACC_PRIVATE
@@ -30,12 +36,6 @@ import org.opalj.da.CONSTANT_Utf8
 import org.opalj.da.ConstantValue_attribute
 import org.opalj.da.Field_Info
 import org.opalj.da.Method_Info
-
-import org.junit.runner.RunWith
-import org.scalatest.BeforeAndAfterAll
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
-import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Creates a fixture to test loading of dynamic constants.
@@ -212,10 +212,10 @@ class DynamicConstantsCreationTest extends AnyFlatSpec with Matchers with Before
                             max_locals = 1,
                             code = new Code(Array[Byte](
                                 42,                  // aload_0
-                                (0xff & 183).toByte, // invokespecial
+                                (0xFF & 183).toByte, // invokespecial
                                 0,                   //
                                 15,                  // java/lang/Object.<init>()V
-                                (0xff & 177).toByte  // return
+                                (0xFF & 177).toByte  // return
                             ))
                         ))
                     ),
@@ -231,7 +231,7 @@ class DynamicConstantsCreationTest extends AnyFlatSpec with Matchers with Before
                                 19,                 // ldc_w
                                 0,                  //
                                 29,                 // ConstantBootstraps.arrayVarHandle(String[].class)
-                                (0xff & 176).toByte // areturn
+                                (0xFF & 176).toByte // areturn
                             ))
                         ))
                     ),
@@ -247,7 +247,7 @@ class DynamicConstantsCreationTest extends AnyFlatSpec with Matchers with Before
                                 19,                 // ldc_w
                                 0,                  //
                                 39,                 // ConstantBootstraps.enumConstant(RoundingMode.DOWN)
-                                (0xff & 176).toByte // areturn
+                                (0xFF & 176).toByte // areturn
                             ))
                         ))
                     ),
@@ -263,7 +263,7 @@ class DynamicConstantsCreationTest extends AnyFlatSpec with Matchers with Before
                                 19,                 // ldc_w
                                 0,                  //
                                 48,                 // ConstantBootstraps.explicitCast(Object.class, Test.class)
-                                (0xff & 176).toByte // areturn
+                                (0xFF & 176).toByte // areturn
                             ))
                         ))
                     ),
@@ -279,7 +279,7 @@ class DynamicConstantsCreationTest extends AnyFlatSpec with Matchers with Before
                                 19,                 // ldc_w
                                 0,                  //
                                 56,                 // ConstantBootstraps.fieldVarHandle(Test.instanceField)
-                                (0xff & 176).toByte // areturn
+                                (0xFF & 176).toByte // areturn
                             ))
                         ))
                     ),
@@ -295,7 +295,7 @@ class DynamicConstantsCreationTest extends AnyFlatSpec with Matchers with Before
                                 19,                 // ldc_w
                                 0,                  //
                                 63,                 // ConstantBootstraps.getStaticFinal(Test.instanceField)
-                                (0xff & 176).toByte // areturn
+                                (0xFF & 176).toByte // areturn
                             ))
                         ))
                     ),
@@ -311,7 +311,7 @@ class DynamicConstantsCreationTest extends AnyFlatSpec with Matchers with Before
                                 19,                 // ldc_w
                                 0,                  //
                                 71,                 // ConstantBootstraps.getStaticFinal(Test.staticField)
-                                (0xff & 172).toByte // ireturn
+                                (0xFF & 172).toByte // ireturn
                             ))
                         ))
                     ),
@@ -327,7 +327,7 @@ class DynamicConstantsCreationTest extends AnyFlatSpec with Matchers with Before
                                 19,                 // ldc_w
                                 0,                  //
                                 88,                 // ConstantBootstraps.invoke(Math.max(42, 1137))
-                                (0xff & 172).toByte // ireturn
+                                (0xFF & 172).toByte // ireturn
                             ))
                         ))
                     ),
@@ -343,7 +343,7 @@ class DynamicConstantsCreationTest extends AnyFlatSpec with Matchers with Before
                                 19,                 // ldc_w
                                 0,                  // ConstantBootstraps.invoke(42,
                                 89,                 //   ConstantBootstraps.getStaticFinal(staticField))
-                                (0xff & 172).toByte // ireturn
+                                (0xFF & 172).toByte // ireturn
                             ))
                         ))
                     ),
@@ -359,7 +359,7 @@ class DynamicConstantsCreationTest extends AnyFlatSpec with Matchers with Before
                                 20,                 // ldc2_w
                                 0,                  // ConstantBootstraps.explicitCast(long.class, ConstantBootstraps.invoke(
                                 96,                 //   42, ConstantBootstraps.getStaticFinal(staticField)))
-                                (0xff & 173).toByte // lreturn
+                                (0xFF & 173).toByte // lreturn
                             ))
                         ))
                     ),
@@ -375,7 +375,7 @@ class DynamicConstantsCreationTest extends AnyFlatSpec with Matchers with Before
                                 19,                 // ldc_w
                                 0,                  //
                                 104,                // ConstantBootstraps.nullConstant(Test.class)
-                                (0xff & 176).toByte // areturn
+                                (0xFF & 176).toByte // areturn
                             ))
                         ))
                     ),
@@ -391,7 +391,7 @@ class DynamicConstantsCreationTest extends AnyFlatSpec with Matchers with Before
                                 19,                 // ldc_w
                                 0,                  //
                                 112,                // ConstantBootstraps.primitiveClass("I")
-                                (0xff & 176).toByte // areturn
+                                (0xFF & 176).toByte // areturn
                             ))
                         ))
                     ),
@@ -407,7 +407,7 @@ class DynamicConstantsCreationTest extends AnyFlatSpec with Matchers with Before
                                 19,                 // ldc_w
                                 0,                  //
                                 119,                // ConstantBootstraps.staticFieldVarHandle(Test.singletonField)
-                                (0xff & 176).toByte // areturn
+                                (0xFF & 176).toByte // areturn
                             ))
                         ))
                     )

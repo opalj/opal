@@ -21,6 +21,9 @@ import scala.collection.mutable.AnyRefMap
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.Buffer
 
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
+
 import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.INVOKESTATIC
@@ -44,9 +47,6 @@ import org.opalj.log.OPALLogger.error
 import org.opalj.log.OPALLogger.info
 import org.opalj.log.StandardLogContext
 import org.opalj.util.PerformanceEvaluation.time
-
-import com.typesafe.config.Config
-import com.typesafe.config.ConfigFactory
 
 /**
  * Primary abstraction of a Java project; i.e., a set of classes that constitute a
@@ -1453,7 +1453,7 @@ object Project {
         theLogContext: LogContext): Map[Method, immutable.Set[Method]] = time {
 
         implicit val classFileRepository: ClassFileRepository = new ClassFileRepository {
-            implicit override def logContext: LogContext = theLogContext
+            override implicit def logContext: LogContext = theLogContext
             override def classFile(objectType: ObjectType): Option[ClassFile] = objectTypeToClassFile.get(objectType)
         }
 

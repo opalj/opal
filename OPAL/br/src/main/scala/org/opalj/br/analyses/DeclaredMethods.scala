@@ -30,7 +30,7 @@ class DeclaredMethods(
         private[this] var id2method: Array[DeclaredMethod],
         private[this] var idCounter: Int) {
 
-    final private[this] val lock = new ReentrantReadWriteLock()
+    private[this] final val lock = new ReentrantReadWriteLock()
 
     private var extensionSize = 1000
 

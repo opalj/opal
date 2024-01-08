@@ -196,7 +196,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
     trait ReferenceValueLike extends super.ReferenceValue with ArrayAbstraction {
         this: AReferenceValue =>
 
-        final override def asDomainReferenceValue: DomainReferenceValue = this
+        override final def asDomainReferenceValue: DomainReferenceValue = this
 
     }
 
@@ -210,7 +210,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
 
         def theUpperTypeBound: T
 
-        final override def summarize(pc: Int): this.type = this
+        override final def summarize(pc: Int): this.type = this
 
         override def toString: String = theUpperTypeBound.toJava
 
@@ -233,14 +233,14 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
         // IMPLEMENTATION OF THE ARRAY RELATED METHODS
         //
 
-        final override def load(pc: Int, index: DomainValue): ArrayLoadResult = justThrows(VMNullPointerException(pc))
+        override final def load(pc: Int, index: DomainValue): ArrayLoadResult = justThrows(VMNullPointerException(pc))
 
-        final override def store(
+        override final def store(
             pc:    Int,
             value: DomainValue,
             index: DomainValue): ArrayStoreResult = justThrows(VMNullPointerException(pc))
 
-        final override def length(pc: Int): Computation[DomainValue, ExceptionValue] = throws(VMNullPointerException(pc))
+        override final def length(pc: Int): Computation[DomainValue, ExceptionValue] = throws(VMNullPointerException(pc))
 
         override def summarize(pc: Int): this.type = this
 
@@ -444,7 +444,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
         }
     }
 
-    final override def isValueASubtypeOf(value: DomainValue, supertype: ReferenceType): Answer =
+    override final def isValueASubtypeOf(value: DomainValue, supertype: ReferenceType): Answer =
         asReferenceValue(value).isValueASubtypeOf(supertype)
 
     /**
@@ -452,7 +452,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
      *
      * @param value A value of type `ReferenceValue`.
      */
-    final override def refIsNull(pc: Int, value: DomainValue): Answer = asReferenceValue(value).isNull
+    override final def refIsNull(pc: Int, value: DomainValue): Answer = asReferenceValue(value).isNull
 
     // -----------------------------------------------------------------------------------
     //
@@ -591,7 +591,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
 
     override def InitializedObjectValue(pc: Int, objectType: ObjectType): DomainObjectValue = ObjectValue(pc, objectType)
 
-    final override def ReferenceValue(
+    override final def ReferenceValue(
         pc:             Int,
         upperTypeBound: ReferenceType): AReferenceValue =
         if (upperTypeBound.isArrayType) ArrayValue(pc, upperTypeBound.asArrayType)

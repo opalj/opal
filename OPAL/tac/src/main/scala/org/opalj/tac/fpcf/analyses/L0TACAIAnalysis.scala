@@ -93,7 +93,7 @@ sealed trait L0TACAIAnalysisScheduler extends TACAIInitializer {
 
     override def requiredProjectInformation: ProjectInformationKeys = Seq(AIDomainFactoryKey)
 
-    final override def uses: Set[PropertyBounds] = Set(PropertyBounds.lub(BaseAIResult))
+    override final def uses: Set[PropertyBounds] = Set(PropertyBounds.lub(BaseAIResult))
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(TACAI)
 

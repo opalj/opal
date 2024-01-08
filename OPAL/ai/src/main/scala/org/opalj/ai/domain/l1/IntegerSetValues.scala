@@ -57,7 +57,7 @@ trait IntegerSetValues
             with IsIntegerValue {
         this: DomainTypedValue[CTIntType] =>
 
-        final override def leastUpperType: Option[CTIntType] = Some(CTIntType)
+        override final def leastUpperType: Option[CTIntType] = Some(CTIntType)
 
     }
 
@@ -69,9 +69,9 @@ trait IntegerSetValues
     abstract class AnIntegerValueLike extends IntegerLikeValue {
         this: DomainTypedValue[CTIntType] =>
 
-        final override def lowerBound: Int            = Int.MinValue
-        final override def upperBound: Int            = Int.MaxValue
-        final override def constantValue: Option[Int] = None
+        override final def lowerBound: Int            = Int.MinValue
+        override final def upperBound: Int            = Int.MaxValue
+        override final def constantValue: Option[Int] = None
     }
 
     /**
@@ -82,9 +82,9 @@ trait IntegerSetValues
 
         val values: SortedSet[Int]
 
-        final override def lowerBound: Int            = values.firstKey
-        final override def upperBound: Int            = values.lastKey
-        final override def constantValue: Option[Int] = if (values.size == 1) Some(values.head) else None
+        override final def lowerBound: Int            = values.firstKey
+        override final def upperBound: Int            = values.lastKey
+        override final def constantValue: Option[Int] = if (values.size == 1) Some(values.head) else None
     }
 
     /**
@@ -113,8 +113,8 @@ trait IntegerSetValues
 
     abstract class U7BitSetLike extends BaseTypesBasedSetLike { this: DomainTypedValue[CTIntType] =>
 
-        final override def lowerBound: Int = 0
-        final override def upperBound: Int = Byte.MaxValue
+        override final def lowerBound: Int = 0
+        override final def upperBound: Int = Byte.MaxValue
 
         def fuse(pc: PC, other: BaseTypesBasedSetLike): domain.DomainValue = {
             assert(this ne other)
@@ -133,8 +133,8 @@ trait IntegerSetValues
 
     abstract class U15BitSetLike extends BaseTypesBasedSetLike { this: DomainTypedValue[CTIntType] =>
 
-        final override def lowerBound: Int = 0
-        final override def upperBound: Int = Short.MaxValue
+        override final def lowerBound: Int = 0
+        override final def upperBound: Int = Short.MaxValue
 
         def fuse(pc: PC, other: BaseTypesBasedSetLike): domain.DomainValue = {
             assert(this ne other)
@@ -150,8 +150,8 @@ trait IntegerSetValues
 
     abstract class CharSetLike extends BaseTypesBasedSetLike { this: DomainTypedValue[CTIntType] =>
 
-        final override def lowerBound: Int = 0 // Char.MinValue
-        final override def upperBound: Int = Char.MaxValue
+        override final def lowerBound: Int = 0 // Char.MinValue
+        override final def upperBound: Int = Char.MaxValue
 
         def fuse(pc: PC, other: BaseTypesBasedSetLike): domain.DomainValue = {
             assert(this ne other)
@@ -163,8 +163,8 @@ trait IntegerSetValues
     }
 
     abstract class ByteSetLike extends BaseTypesBasedSetLike { this: DomainTypedValue[CTIntType] =>
-        final override def lowerBound: Int = Byte.MinValue
-        final override def upperBound: Int = Byte.MaxValue
+        override final def lowerBound: Int = Byte.MinValue
+        override final def upperBound: Int = Byte.MaxValue
         def fuse(pc: PC, other: BaseTypesBasedSetLike): domain.DomainValue = {
             assert(this ne other)
             other match {
@@ -178,8 +178,8 @@ trait IntegerSetValues
     }
 
     abstract class ShortSetLike extends BaseTypesBasedSetLike { this: DomainTypedValue[CTIntType] =>
-        final override def lowerBound: Int = Short.MinValue
-        final override def upperBound: Int = Short.MaxValue
+        override final def lowerBound: Int = Short.MinValue
+        override final def upperBound: Int = Short.MaxValue
         def fuse(pc: PC, other: BaseTypesBasedSetLike): domain.DomainValue = {
             assert(this ne other)
             other match {
@@ -248,7 +248,7 @@ trait IntegerSetValues
     // QUESTIONS ABOUT VALUES
     //
 
-    @inline final override def intValue[T](
+    @inline override final def intValue[T](
         value: DomainValue
       )(f:     Int => T
       )(orElse: => T): T = value match {
@@ -256,12 +256,12 @@ trait IntegerSetValues
         case _                                          => orElse
     }
 
-    @inline final override def intValueOption(value: DomainValue): Option[Int] = value match {
+    @inline override final def intValueOption(value: DomainValue): Option[Int] = value match {
         case IntegerSetLike(values) if values.size == 1 => Some(values.head)
         case _                                          => None
     }
 
-    @inline final protected def intValues[T](
+    @inline protected final def intValues[T](
         value1: DomainValue,
         value2: DomainValue
       )(f:      (Int, Int) => T

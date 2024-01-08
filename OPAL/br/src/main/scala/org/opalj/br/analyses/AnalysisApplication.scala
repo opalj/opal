@@ -8,6 +8,9 @@ import java.net.URL
 import scala.collection.immutable.ArraySeq
 import scala.util.control.ControlThrowable
 
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
+
 import org.opalj.br.reader.Java9LibraryFramework
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
@@ -15,9 +18,6 @@ import org.opalj.log.LogMessage
 import org.opalj.log.OPALLogger
 import org.opalj.log.OPALLogger.error
 import org.opalj.log.OPALLogger.info
-
-import com.typesafe.config.Config
-import com.typesafe.config.ConfigFactory
 
 /**
  * Provides the necessary infrastructure to easily execute a given analysis that

@@ -19,7 +19,7 @@ trait CodeAttributeBinding
         with AttributeBinding {
 
     type ExceptionTableEntry = br.ExceptionHandler
-    implicit override val exceptionTableEntryType: ClassTag[ExceptionTableEntry] = ClassTag(classOf[br.ExceptionHandler])
+    override implicit val exceptionTableEntryType: ClassTag[ExceptionTableEntry] = ClassTag(classOf[br.ExceptionHandler])
 
     type Code_attribute = br.Code
 

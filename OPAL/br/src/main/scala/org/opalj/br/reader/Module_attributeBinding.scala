@@ -22,21 +22,21 @@ trait Module_attributeBinding
     type Module_attribute = br.Module
 
     type RequiresEntry = br.Requires
-    implicit override val requiresEntryType: ClassTag[RequiresEntry] = ClassTag(classOf[br.Requires])
+    override implicit val requiresEntryType: ClassTag[RequiresEntry] = ClassTag(classOf[br.Requires])
 
     type ExportsEntry = br.Exports
-    implicit override val exportsEntryType: ClassTag[ExportsEntry] = ClassTag(classOf[br.Exports])
+    override implicit val exportsEntryType: ClassTag[ExportsEntry] = ClassTag(classOf[br.Exports])
     type ExportsToIndexEntry = String
 
     type OpensEntry = br.Opens
-    implicit override val opensEntryType: ClassTag[OpensEntry] = ClassTag(classOf[br.Opens])
+    override implicit val opensEntryType: ClassTag[OpensEntry] = ClassTag(classOf[br.Opens])
 
     type OpensToIndexEntry = String // module name
 
     type UsesEntry = ObjectType
 
     type ProvidesEntry = br.Provides
-    implicit override val providesEntryType: ClassTag[ProvidesEntry] = ClassTag(classOf[br.Provides])
+    override implicit val providesEntryType: ClassTag[ProvidesEntry] = ClassTag(classOf[br.Provides])
 
     type ProvidesWithIndexEntry = ObjectType
 

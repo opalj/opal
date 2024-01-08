@@ -11,6 +11,11 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.zip.ZipFile
 import scala.jdk.CollectionConverters._
 
+import org.junit.runner.RunWith
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
+
 import org.opalj.bi.TestResources.allBITestJARs
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.bytecode.JRELibraryFolder
@@ -18,11 +23,6 @@ import org.opalj.da.ClassFileReader.{ClassFile => LoadClassFile}
 import org.opalj.io.FailAfterByteArrayOutputStream
 
 import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParallelizable
-
-import org.junit.runner.RunWith
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
-import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests the assembler by loading and writing a large number of class files and by

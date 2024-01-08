@@ -7,15 +7,15 @@ import scala.collection
 import scala.collection.immutable
 import scala.collection.mutable
 
-import org.opalj.fpcf.fixtures._
-import org.opalj.log.GlobalLogContext
-import org.opalj.log.LogContext
-
 import org.junit.runner.RunWith
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
+
+import org.opalj.fpcf.fixtures._
+import org.opalj.log.GlobalLogContext
+import org.opalj.log.LogContext
 
 /**
  * Tests a property store implementation. All of the following tests should be passed by

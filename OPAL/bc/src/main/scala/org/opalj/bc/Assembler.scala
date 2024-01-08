@@ -357,7 +357,7 @@ object Assembler {
                     val tt = as[TATWithOffset](target_type)
                     writeShort(tt.offset)
 
-                case 0x47 | 0x48 | 0x49 | 0x4a | 0x4b =>
+                case 0x47 | 0x48 | 0x49 | 0x4A | 0x4B =>
                     val tt = as[TATTypeArgument](target_type)
                     writeShort(tt.offset)
                     writeByte(tt.type_argument_index)

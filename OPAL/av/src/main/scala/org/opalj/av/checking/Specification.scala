@@ -623,10 +623,10 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
             ) :: architectureCheckers
     }
 
-    implicit protected def EnsembleSymbolToSpecificationElementFactory(
+    protected implicit def EnsembleSymbolToSpecificationElementFactory(
         ensembleSymbol: Symbol): SpecificationFactory = SpecificationFactory(ensembleSymbol)
 
-    implicit protected def EnsembleToSourceElementMatcher(
+    protected implicit def EnsembleToSourceElementMatcher(
         ensembleSymbol: Symbol): SourceElementsMatcher = {
         if (!ensembles.contains(ensembleSymbol))
             throw SpecificationError(s"the ensemble: $ensembleSymbol is not yet defined")

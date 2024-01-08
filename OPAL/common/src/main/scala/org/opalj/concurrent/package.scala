@@ -26,7 +26,7 @@ import org.opalj.log.OPALLogger.warn
  */
 package object concurrent {
 
-    implicit private def logContext: GlobalLogContext.type = GlobalLogContext
+    private implicit def logContext: GlobalLogContext.type = GlobalLogContext
 
     final val defaultIsInterrupted = () => Thread.currentThread.isInterrupted
 
@@ -117,7 +117,7 @@ package object concurrent {
     //
     // STEP 3
     //
-    final private[concurrent] val UncaughtExceptionHandler = new Thread.UncaughtExceptionHandler {
+    private[concurrent] final val UncaughtExceptionHandler = new Thread.UncaughtExceptionHandler {
         def uncaughtException(t: Thread, e: Throwable): Unit =
             try {
                 handleUncaughtException(e)

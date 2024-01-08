@@ -223,7 +223,7 @@ trait StaticDataUsageAnalysisScheduler extends FPCFAnalysisScheduler {
         // FIXME Just seems to derive the upper bound...
         PropertyBounds.lub(StaticDataUsage)
 
-    final override def uses: Set[PropertyBounds] = Set(
+    override final def uses: Set[PropertyBounds] = Set(
         PropertyBounds.lub(StaticDataUsage),
         PropertyBounds.lub(CompileTimeConstancy)
     )

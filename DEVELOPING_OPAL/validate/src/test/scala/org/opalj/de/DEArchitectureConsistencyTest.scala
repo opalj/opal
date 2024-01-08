@@ -2,15 +2,15 @@
 package org.opalj
 package de
 
-import org.opalj.av.checking._
-import org.opalj.br.reader.InvokedynamicRewriting
-import org.opalj.util.ScalaMajorVersion
-
 import org.junit.runner.RunWith
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
+
+import org.opalj.av.checking._
+import org.opalj.br.reader.InvokedynamicRewriting
+import org.opalj.util.ScalaMajorVersion
 
 /**
  * Tests that the implemented architecture of the dependency extraction

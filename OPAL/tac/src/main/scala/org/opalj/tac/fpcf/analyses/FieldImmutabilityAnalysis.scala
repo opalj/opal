@@ -308,7 +308,7 @@ class FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
 
 trait FieldImmutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
 
-    final override def uses: Set[PropertyBounds] = Set(
+    override final def uses: Set[PropertyBounds] = Set(
         PropertyBounds.ub(FieldAssignability),
         PropertyBounds.lub(TypeImmutability),
         PropertyBounds.lub(ClassImmutability),
@@ -331,7 +331,7 @@ object EagerFieldImmutabilityAnalysis
 
     override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
 
-    final override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+    override final def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new FieldImmutabilityAnalysis(p)
         val fields   = p.allFields
         ps.scheduleEagerComputationsForEntities(fields)(analysis.determineFieldImmutability)
@@ -348,7 +348,7 @@ object LazyFieldImmutabilityAnalysis
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 
-    final override def register(
+    override final def register(
         p:      SomeProject,
         ps:     PropertyStore,
         unused: Null): FPCFAnalysis = {

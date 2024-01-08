@@ -6,12 +6,12 @@ package l1
 
 import scala.collection.immutable.SortedSet
 
-import org.opalj.br.ObjectType
-
 import org.junit.runner.RunWith
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
+
+import org.opalj.br.ObjectType
 
 /**
  * Tests the LongSets Domain.

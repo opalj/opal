@@ -84,7 +84,7 @@ class FieldLocalityAnalysis private[analyses] (
 
     implicit final val declaredMethods: DeclaredMethods         = project.get(DeclaredMethodsKey)
     implicit final val declaredFields: DeclaredFields           = project.get(DeclaredFieldsKey)
-    implicit private[this] val contextProvider: ContextProvider = project.get(ContextProviderKey)
+    private[this] implicit val contextProvider: ContextProvider = project.get(ContextProviderKey)
     final val typeExtensiblity                                  = project.get(TypeExtensibilityKey)
     final val definitionSites                                   = project.get(DefinitionSitesKey)
 
@@ -803,7 +803,7 @@ sealed trait FieldLocalityAnalysisScheduler extends FPCFAnalysisScheduler {
         DeclaredFieldsKey
     )
 
-    final override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
+    override final def uses: Set[PropertyBounds] = PropertyBounds.ubs(
         TACAI,
         EscapeProperty,
         ReturnValueFreshness,
@@ -819,7 +819,7 @@ object EagerFieldLocalityAnalysis
     extends FieldLocalityAnalysisScheduler
         with BasicFPCFEagerAnalysisScheduler {
 
-    final override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+    override final def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val allFields = p.allFields
         val analysis  = new FieldLocalityAnalysis(p)
         ps.scheduleEagerComputationsForEntities(allFields)(analysis.step1)
@@ -835,7 +835,7 @@ object LazyFieldLocalityAnalysis
     extends FieldLocalityAnalysisScheduler
         with BasicFPCFLazyAnalysisScheduler {
 
-    final override def register(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+    override final def register(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new FieldLocalityAnalysis(p)
         ps.registerLazyPropertyComputation(
             FieldLocality.key,

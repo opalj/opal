@@ -5,6 +5,9 @@ package tac
 import scala.io.Codec.UTF8
 import scala.io.Source
 
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
+
 import org.opalj.ai.BaseAI
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
@@ -13,9 +16,6 @@ import org.opalj.br.ObjectType
 import org.opalj.br.TestSupport.biProject
 import org.opalj.br.TestSupport.biProjectWithJDK
 import org.opalj.br.analyses.Project
-
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.matchers.should.Matchers
 
 /**
  * Reads the test configuration file, then creates the tac code according to the specification

@@ -25,7 +25,7 @@ class FieldValues(
 
     final def classFile: ClassFile = method.classFile
 
-    implicit private[this] def code: Code = result.code
+    private[this] implicit def code: Code = result.code
 
     private[this] def operandsArray = result.operandsArray
 

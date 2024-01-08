@@ -19,15 +19,15 @@ case class RET(
         with ConstantLengthInstruction
         with NoLabels {
 
-    final override def opcode: Opcode = RET.opcode
+    override final def opcode: Opcode = RET.opcode
 
-    final override def mnemonic: String = "ret"
+    override final def mnemonic: String = "ret"
 
-    final override def isRET: Boolean = true
+    override final def isRET: Boolean = true
 
-    final override def length: Int = 2
+    override final def length: Int = 2
 
-    final override def nextInstructions(
+    override final def nextInstructions(
         currentPC:             Int /*PC*/,
         regularSuccessorsOnly: Boolean
       )(implicit
@@ -69,24 +69,24 @@ case class RET(
         jumpTargetPCs
     }
 
-    final override def numberOfPoppedOperands(ctg: Int => ComputationalTypeCategory): Int = 0
+    override final def numberOfPoppedOperands(ctg: Int => ComputationalTypeCategory): Int = 0
 
-    final override def numberOfPushedOperands(ctg: Int => ComputationalTypeCategory): Int = 0
+    override final def numberOfPushedOperands(ctg: Int => ComputationalTypeCategory): Int = 0
 
-    final override def stackSlotsChange: Int = 0
+    override final def stackSlotsChange: Int = 0
 
-    final override def isIsomorphic(thisPC: Int, otherPC: Int)(implicit code: Code): Boolean =
+    override final def isIsomorphic(thisPC: Int, otherPC: Int)(implicit code: Code): Boolean =
         this == code.instructions(otherPC)
 
-    final override def readsLocal: Boolean = true
+    override final def readsLocal: Boolean = true
 
-    final override def indexOfReadLocal: Int = lvIndex
+    override final def indexOfReadLocal: Int = lvIndex
 
-    final override def writesLocal: Boolean = false
+    override final def writesLocal: Boolean = false
 
-    final override def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
+    override final def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
 
-    final override def toString(currentPC: Int): String = toString()
+    override final def toString(currentPC: Int): String = toString()
 }
 object RET extends InstructionMetaInformation {
 

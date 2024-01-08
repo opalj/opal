@@ -28,7 +28,7 @@ sealed abstract class BitArraySet extends BitSet { thisSet =>
     override def equals(other: Any): Boolean
     override def hashCode: Int
 
-    final override def toString: String = mkString("BitArraySet(", ",", ")")
+    override final def toString: String = mkString("BitArraySet(", ",", ")")
 
 }
 
@@ -53,7 +53,7 @@ private[immutable] object BitArraySet0 extends BitArraySet { thisSet =>
     override def hashCode: Int = 1 // from j.u.Arrays.hashCode
 }
 
-final private[immutable] class BitArraySet32(val set: Int) extends BitArraySet { thisSet =>
+private[immutable] final class BitArraySet32(val set: Int) extends BitArraySet { thisSet =>
 
     assert(set != 0L)
 
@@ -128,7 +128,7 @@ final private[immutable] class BitArraySet32(val set: Int) extends BitArraySet {
     override def hashCode: Int = 31 * set
 }
 
-final private[immutable] class BitArraySet64(val set: Long) extends BitArraySet { thisSet =>
+private[immutable] final class BitArraySet64(val set: Long) extends BitArraySet { thisSet =>
 
     assert(set != 0L)
 
@@ -202,7 +202,7 @@ final private[immutable] class BitArraySet64(val set: Long) extends BitArraySet 
     override def hashCode: Int = 31 * (set ^ (set >>> 32)).toInt // from j.u.Arrays.hashCode
 }
 
-final private[immutable] class BitArraySetN(val set: Array[Int]) extends BitArraySet { self =>
+private[immutable] final class BitArraySetN(val set: Array[Int]) extends BitArraySet { self =>
 
     override def isEmpty: Boolean = false
 
@@ -357,7 +357,7 @@ final private[immutable] class BitArraySetN(val set: Array[Int]) extends BitArra
     }
 
     override def iterator: IntIterator = new IntIterator {
-        final private[this] val max: Int = set.length * 32
+        private[this] final val max: Int = set.length * 32
         private[this] var i: Int         = -1
         private[this] def advanceIterator(): Unit = {
             val set    = self.set

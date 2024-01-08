@@ -138,7 +138,7 @@ abstract class IntIterator extends AbstractIterator[Int] { self =>
         def next(): Int      = { val v = this.v; goToNextValue(); v }
     }
 
-    final override def filter(p: Int => Boolean): IntIterator = withFilter(p)
+    override final def filter(p: Int => Boolean): IntIterator = withFilter(p)
 
     /**
      * @note This method, as well as the generic `toArray` should be overwritten when the size is

@@ -604,9 +604,9 @@ trait PointsToTypeIterator[ElementType, PointsToSet >: Null <: PointsToSetLike[E
     protected[this] def emptyPointsToSet: PointsToSet
 
     private[this] lazy val propertyStore                                        = project.get(PropertyStoreKey)
-    implicit protected[this] lazy val formalParameters: VirtualFormalParameters = project.get(VirtualFormalParametersKey)
-    implicit protected[this] lazy val definitionSites: DefinitionSites          = project.get(DefinitionSitesKey)
-    implicit private[this] val typeIterator: TypeIterator                       = this
+    protected[this] implicit lazy val formalParameters: VirtualFormalParameters = project.get(VirtualFormalParametersKey)
+    protected[this] implicit lazy val definitionSites: DefinitionSites          = project.get(DefinitionSitesKey)
+    private[this] implicit val typeIterator: TypeIterator                       = this
 
     protected[this] def createPointsToSet(
         pc: Int,

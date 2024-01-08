@@ -15,7 +15,7 @@ case class MethodParameterTable(parameters: MethodParameters)
 
     override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = this == other
 
-    final override def apply(parameterIndex: Int): MethodParameter = parameters(parameterIndex)
+    override final def apply(parameterIndex: Int): MethodParameter = parameters(parameterIndex)
 
 }
 

@@ -4,8 +4,6 @@ package collection
 
 import java.util.{Arrays => JArrays}
 
-import org.opalj.collection.immutable.IntArraySet
-
 import org.scalacheck.Arbitrary
 import org.scalacheck.Gen
 import org.scalacheck.Prop.classify
@@ -14,6 +12,8 @@ import org.scalacheck.Prop.propBoolean
 import org.scalacheck.Properties
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
+
+import org.opalj.collection.immutable.IntArraySet
 
 /**
  * Tests IntIterator.

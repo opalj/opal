@@ -33,7 +33,7 @@ abstract class FieldAccess extends Instruction with ConstantLengthInstruction wi
 
     final def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
 
-    final override def toString(currentPC: Int): String = toString()
+    override final def toString(currentPC: Int): String = toString()
 }
 
 /**

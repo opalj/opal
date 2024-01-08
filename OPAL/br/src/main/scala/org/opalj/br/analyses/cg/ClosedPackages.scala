@@ -43,7 +43,7 @@ abstract class ClosedPackages extends (String => Boolean) {
     /**
      * Returns `true` if the package with the given name is '''closed'''.
      */
-    final override def apply(packageName: String): Boolean = isClosed(packageName)
+    override final def apply(packageName: String): Boolean = isClosed(packageName)
 
     def isClosed(packageName: String): Boolean
 

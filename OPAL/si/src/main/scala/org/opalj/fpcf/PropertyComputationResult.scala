@@ -33,7 +33,7 @@ sealed abstract class PropertyComputationResult {
  *       `OnUpdateContinuation` must never return `NoResult`.
  */
 object NoResult extends PropertyComputationResult {
-    final private[fpcf] val id = 0
+    private[fpcf] final val id = 0
 }
 
 trait ProperPropertyComputationResult extends PropertyComputationResult
@@ -62,7 +62,7 @@ case class Result(finalEP: FinalEP[Entity, Property]) extends FinalPropertyCompu
 
     def this(e: Entity, p: Property) = this(FinalEP(e, p))
 
-    final private[fpcf] def id = Result.id
+    private[fpcf] final def id = Result.id
 
     override private[fpcf] def asResult: Result = this
 
@@ -76,7 +76,7 @@ object Result {
 
     def apply(e: Entity, p: Property): Result = Result(FinalEP(e, p))
 
-    final private[fpcf] val id = 1
+    private[fpcf] final val id = 1
 
 }
 
@@ -90,10 +90,10 @@ object Result {
  */
 case class MultiResult(properties: ComputationResults) extends FinalPropertyComputationResult {
 
-    final private[fpcf] def id = MultiResult.id
+    private[fpcf] final def id = MultiResult.id
 
 }
-object MultiResult { final private[fpcf] val id = 2 }
+object MultiResult { private[fpcf] final val id = 2 }
 
 /**
  * Encapsulates an intermediate result of the computation of a property.
@@ -185,7 +185,7 @@ final class InterimResult[P >: Null <: Property] private (
 
 object InterimResult {
 
-    final private[fpcf] val id = 3
+    private[fpcf] final val id = 3
 
     def apply[P >: Null <: Property](
         eps:       InterimEP[Entity, P],
@@ -255,11 +255,11 @@ case class IncrementalResult[E <: Entity](
         result: ProperPropertyComputationResult,
         nextComputations: Iterator[(PropertyComputation[E], E)]) extends ProperPropertyComputationResult {
 
-    final private[fpcf] def id = IncrementalResult.id
+    private[fpcf] final def id = IncrementalResult.id
 
 }
 
-object IncrementalResult { final private[fpcf] val id = 4 }
+object IncrementalResult { private[fpcf] final val id = 4 }
 
 /**
  * Just a collection of multiple results. The results have to be disjoint w.r.t. the underlying
@@ -267,16 +267,16 @@ object IncrementalResult { final private[fpcf] val id = 4 }
  */
 sealed abstract class Results extends ProperPropertyComputationResult {
 
-    final private[fpcf] def id = Results.id
+    private[fpcf] final def id = Results.id
 
-    final override private[fpcf] def asResults: Results = this
+    override private[fpcf] final def asResults: Results = this
 
     def foreach(f: ProperPropertyComputationResult => Unit): Unit
 
 }
 object Results {
 
-    final private[fpcf] val id = 5
+    private[fpcf] final val id = 5
 
     def unapply(r: Results): Some[Results] = Some(r)
 
@@ -349,10 +349,10 @@ case class PartialResult[E >: Null <: Entity, P >: Null <: Property](
 
     final def epk: EPK[E, P] = EPK(e, pk)
 
-    final private[fpcf] def id = PartialResult.id
+    private[fpcf] final def id = PartialResult.id
 
 }
-object PartialResult { final private[fpcf] val id = 6 }
+object PartialResult { private[fpcf] final val id = 6 }
 
 /**
  * `InterimPartialResult`s are used for properties of entities which are computed
@@ -370,12 +370,12 @@ case class InterimPartialResult[SE >: Null <: Property](
     override private[fpcf] def isInterimPartialResult: Boolean                  = true
     override private[fpcf] def asInterimPartialResult: InterimPartialResult[SE] = this
 
-    final private[fpcf] def id = InterimPartialResult.id
+    private[fpcf] final def id = InterimPartialResult.id
 
 }
 object InterimPartialResult {
 
-    final private[fpcf] val id = 8
+    private[fpcf] final val id = 8
 
     /**
      * Creates a new `InterimPartialResult` for the case where we just want to (re)register

@@ -18,7 +18,7 @@ trait MethodParameters_attributeBinding
         with AttributeBinding {
 
     type MethodParameter = br.MethodParameter
-    implicit override val methodParameterType: ClassTag[MethodParameter] = ClassTag(classOf[br.MethodParameter])
+    override implicit val methodParameterType: ClassTag[MethodParameter] = ClassTag(classOf[br.MethodParameter])
 
     type MethodParameters_attribute = br.MethodParameterTable
 

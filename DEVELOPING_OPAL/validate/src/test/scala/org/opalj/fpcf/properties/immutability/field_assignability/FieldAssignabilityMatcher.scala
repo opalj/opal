@@ -16,7 +16,7 @@ import org.opalj.br.fpcf.properties.immutability.FieldAssignability
 class FieldAssignabilityMatcher(val property: FieldAssignability)
     extends AbstractPropertyMatcher {
 
-    final private val PropertyReasonID = 0
+    private final val PropertyReasonID = 0
 
     override def isRelevant(
         p:      SomeProject,

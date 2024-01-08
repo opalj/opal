@@ -5,6 +5,12 @@ package fpcf
 import java.io.File
 import java.net.URL
 
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
+
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigValueFactory
+
 import org.opalj.bi.reader.ClassFileReader
 import org.opalj.br.Annotation
 import org.opalj.br.AnnotationLike
@@ -39,11 +45,6 @@ import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.util.ScalaMajorVersion
 
-import com.typesafe.config.Config
-import com.typesafe.config.ConfigValueFactory
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.matchers.should.Matchers
-
 /**
  * Framework to test if the properties specified in the test project (the classes in the
  * (sub-)package of org.opalj.fpcf.fixture) and the computed ones match. The actual matching
@@ -54,8 +55,8 @@ import org.scalatest.matchers.should.Matchers
  */
 abstract class PropertiesTest extends AnyFunSpec with Matchers {
 
-    final private[this] val testFilePath = s"DEVELOPING_OPAL/validate/target/scala-$ScalaMajorVersion/test-classes/"
-    final private[this] val propertyPaths = List(
+    private[this] final val testFilePath = s"DEVELOPING_OPAL/validate/target/scala-$ScalaMajorVersion/test-classes/"
+    private[this] final val propertyPaths = List(
         s"DEVELOPING_OPAL/validate/target/scala-$ScalaMajorVersion/test-classes/org/opalj/fpcf/properties",
         s"DEVELOPING_OPAL/validate/target/scala-$ScalaMajorVersion/test-classes/org/opalj/br/analyses/properties"
     )

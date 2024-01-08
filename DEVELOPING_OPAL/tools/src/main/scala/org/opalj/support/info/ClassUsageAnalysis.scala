@@ -91,7 +91,7 @@ object ClassUsageAnalysis extends ProjectAnalysisApplication {
      * The fully-qualified name of the class that is to be analyzed in a Java format, i.e., dots as
      * package / class separators.
      */
-    final private val parameterNameForClass = "-class="
+    private final val parameterNameForClass = "-class="
 
     /**
      * The analysis can run in two modes: Fine-grained or coarse-grained. Fine-grained means that
@@ -101,7 +101,7 @@ object ClassUsageAnalysis extends ProjectAnalysisApplication {
      * base object as well as the method name are equal, i.e., overloaded methods are not
      * distinguished.
      */
-    final private val parameterNameForGranularity = "-granularity="
+    private final val parameterNameForGranularity = "-granularity="
 
     override def checkAnalysisSpecificParameters(parameters: Seq[String]): Iterable[String] = {
         val remainingParameters = parameters.filter { p =>

@@ -5,6 +5,15 @@ package instructions
 
 import scala.collection.immutable.ArraySeq
 
+import org.junit.runner.RunWith
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
+
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
+import com.typesafe.config.ConfigValueFactory
+
 import org.opalj.bi.ACC_BRIDGE
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.TestSupport.biProject
@@ -12,14 +21,6 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.reader.InvokedynamicRewriting
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.log.GlobalLogContext
-
-import com.typesafe.config.Config
-import com.typesafe.config.ConfigFactory
-import com.typesafe.config.ConfigValueFactory
-import org.junit.runner.RunWith
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.matchers.should.Matchers
-import org.scalatestplus.junit.JUnitRunner
 
 /**
  * @author Arne Lottmann

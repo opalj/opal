@@ -15,7 +15,7 @@ case class LocalVariableTypeTable_attribute(
         attribute_name_index: Constant_Pool_Index,
         local_variable_type_table: Seq[LocalVariableTypeTableEntry]) extends Attribute {
 
-    final override def attribute_length: Int = 2 + (local_variable_type_table.size * 10)
+    override final def attribute_length: Int = 2 + (local_variable_type_table.size * 10)
 
     override def toXHTML(implicit cp: Constant_Pool): Node = <details>
             <summary class="attribute_name">LocalVariableTypeTable [size: {

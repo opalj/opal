@@ -203,7 +203,7 @@ class MicroPatterns(implicit hermes: HermesConfig) extends FeatureQuery {
         // initialize the final static fields!
         cl.methods.forall(m => m.isInitializer && m.descriptor.parametersCount == 0)
 
-    final private val javaLangObjectMethods: Set[String] = Set(
+    private final val javaLangObjectMethods: Set[String] = Set(
         "hashCode",
         "equals",
         "notify",

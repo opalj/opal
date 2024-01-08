@@ -52,7 +52,7 @@ abstract class APIFeatureQuery(implicit hermes: HermesConfig) extends FeatureQue
     /**
      * Returns the set of all relevant receiver types.
      */
-    final private[this] lazy val apiTypes: Set[ObjectType] =
+    private[this] final lazy val apiTypes: Set[ObjectType] =
         apiFeatures.foldLeft(Set.empty[ObjectType])(_ ++ _.apiMethods.map(_.declClass))
 
     /**

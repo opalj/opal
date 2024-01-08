@@ -88,7 +88,7 @@ object InheritedStaticMethods extends App {
                         max_stack = 1,
                         max_locals = 1,
                         code = new Code(
-                            Array[Byte](42, (0xff & 183).toByte, 0, 8, (0xff & 177).toByte)
+                            Array[Byte](42, (0xFF & 183).toByte, 0, 8, (0xFF & 177).toByte)
                         )
                     )
                 )
@@ -104,13 +104,13 @@ object InheritedStaticMethods extends App {
                         max_locals = 1,
                         code = new Code(
                             Array[Byte](
-                                (0xff & 184).toByte,
+                                (0xFF & 184).toByte,
                                 0,
                                 24, // invokestatic #24 (SubX.m())
-                                (0xff & 184).toByte,
+                                (0xFF & 184).toByte,
                                 0,
                                 10,                 // invokestatic #24 (SubIntf.m())
-                                (0xff & 177).toByte // return
+                                (0xFF & 177).toByte // return
                             )
                         )
                     )

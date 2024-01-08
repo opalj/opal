@@ -7,6 +7,13 @@ package cg
 
 import java.net.URL
 
+import org.junit.runner.RunWith
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
+
+import com.typesafe.config.ConfigFactory
+
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.TestSupport.allBIProjects
 import org.opalj.br.analyses.DeclaredMethodsKey
@@ -28,12 +35,6 @@ import org.opalj.tac.cg.CallGraph
 import org.opalj.tac.cg.CHACallGraphKey
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.cg.TypeBasedPointsToCallGraphKey
-
-import com.typesafe.config.ConfigFactory
-import org.junit.runner.RunWith
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
-import org.scalatestplus.junit.JUnitRunner
 
 @RunWith(classOf[JUnitRunner]) // TODO: We should use JCG for some basic tests
 class CallGraphIntegrationTest extends AnyFlatSpec with Matchers {

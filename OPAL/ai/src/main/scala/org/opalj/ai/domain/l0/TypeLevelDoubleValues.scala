@@ -31,7 +31,7 @@ trait TypeLevelDoubleValues extends DoubleValuesDomain {
     trait DoubleValue extends TypedValue[DoubleType] with IsDoubleValue {
         this: DomainTypedValue[DoubleType] =>
 
-        final override def leastUpperType = Some(DoubleType)
+        override final def leastUpperType = Some(DoubleType)
 
     }
 

@@ -3,14 +3,14 @@ package org.opalj
 package collection
 package mutable
 
-import org.opalj.collection.immutable.IntArraySet
-
 import org.scalacheck.Arbitrary
 import org.scalacheck.Gen
 import org.scalacheck.Prop.forAll
 //import org.scalacheck.Prop.classify
 import org.scalacheck.Prop.propBoolean
 import org.scalacheck.Properties
+
+import org.opalj.collection.immutable.IntArraySet
 
 /**
  * Tests FixedSizeBitSet.

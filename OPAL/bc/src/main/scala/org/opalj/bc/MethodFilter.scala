@@ -19,7 +19,7 @@ object MethodFilter {
 
     implicit val logContext: LogContext = GlobalLogContext
 
-    final private val Usage = "Usage: java …MethodFilter \n" +
+    private final val Usage = "Usage: java …MethodFilter \n" +
         "(1) <JAR file containing class files>\n" +
         "(2) <name of the class in binary notation (e.g. java/lang/Object>\n" +
         "(3) (+|-)<name of methods to keep/remove>\n" +

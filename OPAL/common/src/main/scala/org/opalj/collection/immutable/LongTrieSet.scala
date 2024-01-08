@@ -84,7 +84,7 @@ sealed private[immutable] trait LongTrieSetNode {
     private[immutable] def contains(value: Long, key: Long): Boolean
     private[immutable] def toString(indent: Int): String
 
-    final private[immutable] def bitsToString(bits: Int): String = bits.toBinaryString.reverse.padTo(3, '0').reverse
+    private[immutable] final def bitsToString(bits: Int): String = bits.toBinaryString.reverse.padTo(3, '0').reverse
 }
 
 /** The (potential) leaves of an IntTrie. */
@@ -98,12 +98,12 @@ sealed abstract private[immutable] class LongTrieSetLeaf
     /** The number of values stored by this leaf node. */
     def size: Int
 
-    final override private[immutable] def contains(value: Long, key: Long): Boolean = this.contains(value)
+    override private[immutable] final def contains(value: Long, key: Long): Boolean = this.contains(value)
 
-    final override private[immutable] def toString(indent: Int): String = (" " * indent) + toString()
+    override private[immutable] final def toString(indent: Int): String = (" " * indent) + toString()
 }
 
-final private[immutable] class LongTrieSet1(val i1: Long) extends LongTrieSetLeaf {
+private[immutable] final class LongTrieSet1(val i1: Long) extends LongTrieSetLeaf {
 
     override def isEmpty: Boolean        = false
     override def isSingletonSet: Boolean = true
@@ -140,7 +140,7 @@ final private[immutable] class LongTrieSet1(val i1: Long) extends LongTrieSetLea
 /**
  * Represents an ordered set of two values where i1 has to be smaller than i2.
  */
-final private[immutable] class LongTrieSet2(
+private[immutable] final class LongTrieSet2(
         val i1: Long,
         val i2: Long) extends LongTrieSetLeaf {
 
@@ -188,7 +188,7 @@ final private[immutable] class LongTrieSet2(
 /**
  * Represents an ordered set of three int values: i1 < i2 < i3.
  */
-final private[immutable] class LongTrieSet3(
+private[immutable] final class LongTrieSet3(
         val i1: Long,
         val i2: Long,
         val i3: Long) extends LongTrieSetLeaf {
@@ -401,7 +401,7 @@ final private[immutable] class LongTrieSet3(
 
 }
 
-final private[immutable] class LongTrieSetN(
+private[immutable] final class LongTrieSetN(
         final val size: Int,
         final val root: LongTrieSetNode) extends LongTrieSet {
 
@@ -529,7 +529,7 @@ final private[immutable] class LongTrieSetN(
 
 }
 
-final private[immutable] class LongTrieSetNode1(
+private[immutable] final class LongTrieSetNode1(
         final val n1Bits: Int,
         final val n1: LongTrieSetNode) extends LongTrieSetNode {
 
@@ -582,7 +582,7 @@ sealed abstract private[immutable] class LongTrieSetNode2_7 extends LongTrieSetN
      */
     def node(index: Int): LongTrieSetNode
 
-    final override private[immutable] def contains(v: Long, key: Long): Boolean = {
+    override private[immutable] final def contains(v: Long, key: Long): Boolean = {
         val vBits  = (key & 7L).toInt
         val vIndex = (lookupTable >> (vBits * 4)) & 15
         val n      = node(vIndex)
@@ -593,7 +593,7 @@ sealed abstract private[immutable] class LongTrieSetNode2_7 extends LongTrieSetN
         }
     }
 
-    final override def toString(level: Int): String = {
+    override final def toString(level: Int): String = {
         val indent = " " * level * 3
         var s      = s"N("
         var i      = 0
@@ -608,7 +608,7 @@ sealed abstract private[immutable] class LongTrieSetNode2_7 extends LongTrieSetN
         s + ")"
     }
 
-    final override def equals(other: Any): Boolean = other match {
+    override final def equals(other: Any): Boolean = other match {
         case that: LongTrieSetNode2_7 =>
             val thisLookupTable = this.lookupTable
             val thatLookupTable = that.lookupTable
@@ -635,7 +635,7 @@ sealed abstract private[immutable] class LongTrieSetNode2_7 extends LongTrieSetN
     }
 }
 
-final private[immutable] class LongTrieSetNode2(
+private[immutable] final class LongTrieSetNode2(
         final val lookupTable: Int,
         final val n1:          LongTrieSetNode,
         final val n2: LongTrieSetNode) extends LongTrieSetNode2_7 {
@@ -684,7 +684,7 @@ final private[immutable] class LongTrieSetNode2(
 
 }
 
-final private[immutable] class LongTrieSetNode3(
+private[immutable] final class LongTrieSetNode3(
         final val lookupTable: Int,
         final val n1:          LongTrieSetNode,
         final val n2:          LongTrieSetNode,
@@ -742,7 +742,7 @@ final private[immutable] class LongTrieSetNode3(
     override def hashCode: Int = n1.hashCode ^ n2.hashCode ^ n3.hashCode
 }
 
-final private[immutable] class LongTrieSetNode4(
+private[immutable] final class LongTrieSetNode4(
         final val lookupTable: Int,
         final val n1:          LongTrieSetNode,
         final val n2:          LongTrieSetNode,
@@ -811,7 +811,7 @@ final private[immutable] class LongTrieSetNode4(
     override def hashCode: Int = n1.hashCode ^ n2.hashCode ^ n3.hashCode ^ n4.hashCode
 }
 
-final private[immutable] class LongTrieSetNode5(
+private[immutable] final class LongTrieSetNode5(
         final val lookupTable: Int,
         final val n1:          LongTrieSetNode,
         final val n2:          LongTrieSetNode,
@@ -891,7 +891,7 @@ final private[immutable] class LongTrieSetNode5(
     override def hashCode: Int = n1.hashCode ^ n2.hashCode ^ n3.hashCode ^ n4.hashCode ^ n5.hashCode
 }
 
-final private[immutable] class LongTrieSetNode6(
+private[immutable] final class LongTrieSetNode6(
         final val lookupTable: Int,
         final val n1:          LongTrieSetNode,
         final val n2:          LongTrieSetNode,
@@ -987,7 +987,7 @@ final private[immutable] class LongTrieSetNode6(
     override def hashCode: Int = n1.hashCode ^ n2.hashCode ^ n3.hashCode ^ n4.hashCode ^ n5.hashCode ^ n6.hashCode
 }
 
-final private[immutable] class LongTrieSetNode7(
+private[immutable] final class LongTrieSetNode7(
         final val lookupTable: Int,
         final val n1:          LongTrieSetNode,
         final val n2:          LongTrieSetNode,
@@ -1106,7 +1106,7 @@ final private[immutable] class LongTrieSetNode7(
     }
 }
 
-final private[immutable] class LongTrieSetNode8(
+private[immutable] final class LongTrieSetNode8(
         final val n1: LongTrieSetNode,
         final val n2: LongTrieSetNode,
         final val n3: LongTrieSetNode,
@@ -1212,7 +1212,7 @@ final private[immutable] class LongTrieSetNode8(
 
     }
 
-    final override def toString(level: Int): String = {
+    override final def toString(level: Int): String = {
         val indent = " " * level * 3
         var s      = s"N("
         var i      = 0

@@ -49,7 +49,7 @@ package object bi {
     /**
      * Every Java class file starts with "0xCAFEBABE".
      */
-    final val ClassFileMagic = 0xcafebabe
+    final val ClassFileMagic = 0xCAFEBABE
 
     /**
      * Returns a textual representation of the Java version used to create the respective

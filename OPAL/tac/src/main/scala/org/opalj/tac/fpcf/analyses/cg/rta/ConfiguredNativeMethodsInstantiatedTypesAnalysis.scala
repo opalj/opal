@@ -42,7 +42,7 @@ import org.opalj.fpcf.PropertyStore
 class ConfiguredNativeMethodsInstantiatedTypesAnalysis private[analyses] (
         final val project: SomeProject) extends FPCFAnalysis {
 
-    implicit private[this] val declaredMethods: DeclaredMethods = p.get(DeclaredMethodsKey)
+    private[this] implicit val declaredMethods: DeclaredMethods = p.get(DeclaredMethodsKey)
 
     // TODO remove dependency to classes in pointsto package
     private[this] val nativeMethodData: Map[DeclaredMethod, Option[Array[PointsToRelation]]] =

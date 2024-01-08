@@ -174,11 +174,11 @@ trait TypeAnnotationTargetReader extends Constant_PoolAbstractions {
             case 0x47 => CastExpression(in.readUnsignedShort(), in.readUnsignedByte())
             case 0x48 => ConstructorInvocation(in.readUnsignedShort(), in.readUnsignedByte())
             case 0x49 => MethodInvocation(in.readUnsignedShort(), in.readUnsignedByte())
-            case 0x4a => ConstructorInMethodReferenceExpression(
+            case 0x4A => ConstructorInMethodReferenceExpression(
                     in.readUnsignedShort(),
                     in.readUnsignedByte()
                 )
-            case 0x4b => MethodInMethodReferenceExpression(in.readUnsignedShort(), in.readUnsignedByte())
+            case 0x4B => MethodInMethodReferenceExpression(in.readUnsignedShort(), in.readUnsignedByte())
         }
     }
 }

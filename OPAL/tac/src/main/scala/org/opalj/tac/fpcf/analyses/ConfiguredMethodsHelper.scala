@@ -6,6 +6,8 @@ package analyses
 
 import scala.jdk.CollectionConverters._
 
+import com.typesafe.config.Config
+
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.Field
 import org.opalj.br.FieldType
@@ -16,7 +18,6 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.analyses.VirtualFormalParameters
 
-import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ValueReader
 

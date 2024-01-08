@@ -14,9 +14,9 @@ abstract class InvocationInstruction
         with ConstantLengthInstruction
         with NoLabels {
 
-    final override def asInvocationInstruction: this.type = this
+    override final def asInvocationInstruction: this.type = this
 
-    final override def isInvocationInstruction: Boolean = true
+    override final def isInvocationInstruction: Boolean = true
 
     final def mayThrowExceptions: Boolean = true
 
@@ -87,5 +87,5 @@ abstract class InvocationInstruction
             indexOfNextInstruction(currentPC) :: exceptionHandlerPCs
         }
 
-    final override def toString(currentPC: Int): String = toString()
+    override final def toString(currentPC: Int): String = toString()
 }

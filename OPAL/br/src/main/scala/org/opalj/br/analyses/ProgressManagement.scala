@@ -90,9 +90,9 @@ object ProgressManagement {
     val None: Int => ProgressManagement = maxSteps =>
         new ProgressManagement {
 
-            final override def progress(step: Int, event: ProgressEvent, msg: Option[String]): Unit = {}
+            override final def progress(step: Int, event: ProgressEvent, msg: Option[String]): Unit = {}
 
-            final override def isInterrupted(): Boolean = false
+            override final def isInterrupted(): Boolean = false
 
         }
 }

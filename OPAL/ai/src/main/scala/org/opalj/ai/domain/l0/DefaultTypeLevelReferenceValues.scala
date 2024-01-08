@@ -175,13 +175,13 @@ trait DefaultTypeLevelReferenceValues
             if (newUpperTypeBound.isSingletonSet) StructuralUpdate(ObjectValue(pc, newUpperTypeBound.head))
             else StructuralUpdate(ObjectValue(pc, newUpperTypeBound))
 
-        final override def length(pc: Int): Computation[DomainValue, ExceptionValue] =
+        override final def length(pc: Int): Computation[DomainValue, ExceptionValue] =
             throw DomainException("arraylength not possible; this is not an array value: " + this)
 
-        final override def load(pc: Int, index: DomainValue): ArrayLoadResult =
+        override final def load(pc: Int, index: DomainValue): ArrayLoadResult =
             throw DomainException("arrayload not possible; this is not an array value: " + this)
 
-        final override def store(
+        override final def store(
             pc:    Int,
             value: DomainValue,
             index: DomainValue): ArrayStoreResult =

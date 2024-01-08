@@ -560,7 +560,7 @@ trait ValuesDomain { domain =>
      */
     class ReturnAddressValue(val address: Int) extends RETValue { this: DomainReturnAddressValue =>
 
-        final override private[ai] def asReturnAddressValue: Int = address
+        override private[ai] final def asReturnAddressValue: Int = address
 
         override protected def doJoin(pc: Int, other: DomainValue): Update[DomainValue] = other match {
             case _: RETValue => StructuralUpdate(TheReturnAddressValues)

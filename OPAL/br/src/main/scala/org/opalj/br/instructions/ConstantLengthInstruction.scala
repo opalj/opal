@@ -13,7 +13,7 @@ package instructions
  */
 trait ConstantLengthInstructionLike extends InstructionLike {
 
-    final override def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean): Int = currentPC + length
+    override final def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean): Int = currentPC + length
 
     /**
      * The number of bytes (in the [[Code]] array) used by the instruction.
@@ -23,6 +23,6 @@ trait ConstantLengthInstructionLike extends InstructionLike {
 
 trait ConstantLengthInstruction extends ConstantLengthInstructionLike with Instruction {
 
-    final override def indexOfNextInstruction(currentPC: PC)(implicit code: Code): Int =
+    override final def indexOfNextInstruction(currentPC: PC)(implicit code: Code): Int =
         indexOfNextInstruction(currentPC, false /* or true - doesn't matter at all */ )
 }

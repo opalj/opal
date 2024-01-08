@@ -20,7 +20,7 @@ trait Record_attributeBinding
     type Record_attribute = br.Record
 
     type RecordComponent = br.RecordComponent
-    implicit override val recordComponentType: ClassTag[RecordComponent] = ClassTag(classOf[br.RecordComponent])
+    override implicit val recordComponentType: ClassTag[RecordComponent] = ClassTag(classOf[br.RecordComponent])
 
     override def Record_attribute(
         cp:                   Constant_Pool,

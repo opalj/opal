@@ -30,9 +30,9 @@ sealed abstract class IntArraySet
     def max: Int
     final def last: Int = max
 
-    final override def head: Int = min
+    override final def head: Int = min
 
-    final override def toString: String = mkString("IntArraySet(", ",", ")")
+    override final def toString: String = mkString("IntArraySet(", ",", ")")
 }
 
 case object EmptyIntArraySet extends IntArraySet {

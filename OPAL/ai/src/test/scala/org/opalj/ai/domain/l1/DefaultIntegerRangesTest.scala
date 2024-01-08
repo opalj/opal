@@ -4,15 +4,15 @@ package ai
 package domain
 package l1
 
-import org.opalj.ai.domain.l1.IntegerRangeValues.AbsoluteMaxCardinalityOfIntegerRanges
-import org.opalj.br.ArrayType
-import org.opalj.br.IntegerType
-import org.opalj.br.ObjectType
-
 import org.junit.runner.RunWith
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
+
+import org.opalj.ai.domain.l1.IntegerRangeValues.AbsoluteMaxCardinalityOfIntegerRanges
+import org.opalj.br.ArrayType
+import org.opalj.br.IntegerType
+import org.opalj.br.ObjectType
 
 /**
  * Tests the IntegerRanges Domain.

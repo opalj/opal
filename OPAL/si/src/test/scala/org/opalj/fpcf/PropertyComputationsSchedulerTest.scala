@@ -2,14 +2,14 @@
 package org.opalj
 package fpcf
 
-import org.opalj.fpcf.fixtures.PropertyStoreConfigurationRecorder
-import org.opalj.log.GlobalLogContext
-
 import org.junit.runner.RunWith
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
+
+import org.opalj.fpcf.fixtures.PropertyStoreConfigurationRecorder
+import org.opalj.log.GlobalLogContext
 
 /**
  * Tests the property computations scheduler.

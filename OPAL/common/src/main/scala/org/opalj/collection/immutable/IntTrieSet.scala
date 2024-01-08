@@ -44,9 +44,9 @@ sealed abstract class IntTrieSet
     def filter(p: Int => Boolean): IntTrieSet
     override def withFilter(p: Int => Boolean): IntTrieSet
 
-    final override def subsetOf(other: IntTrieSet): Boolean = subsetOf(other, 0)
+    override final def subsetOf(other: IntTrieSet): Boolean = subsetOf(other, 0)
 
-    final override def toString: String = mkString("IntTrieSet(", ",", ")")
+    override final def toString: String = mkString("IntTrieSet(", ",", ")")
 
     /**
      * Tries to add the given method to this trie set by ''mutating the set if possible''.
@@ -71,7 +71,7 @@ sealed abstract class IntTrieSet
         if (this.size < that.size) that.++!(this)
         else this.++!(that)
 
-    final override def equals(other: Any): Boolean = other match {
+    override final def equals(other: Any): Boolean = other match {
         case that: IntTrieSet => this.equals(that)
         case _                => false
     }
@@ -144,9 +144,9 @@ final class FilteredIntTrieSet(
 /** The (potential) leaves of an IntTrie. */
 sealed abstract private[immutable] class IntTrieSetL extends IntTrieSet {
 
-    final override private[immutable] def remove(i: Int, key: Int): IntTrieSet = this.-(i)
-    final override private[immutable] def constringe(): IntTrieSet = this
-    final override private[immutable] def contains(value: Int, key: Int): Boolean = this.contains(value)
+    override private[immutable] final def remove(i: Int, key: Int): IntTrieSet = this.-(i)
+    override private[immutable] final def constringe(): IntTrieSet = this
+    override private[immutable] final def contains(value: Int, key: Int): Boolean = this.contains(value)
 }
 
 case object EmptyIntTrieSet extends IntTrieSetL {
@@ -277,7 +277,7 @@ object IntTrieSet1 {
 /**
  * Represents an ordered set of two values where i1 has to be smaller than i2.
  */
-final private[immutable] class IntTrieSet2 private[immutable] (
+private[immutable] final class IntTrieSet2 private[immutable] (
         val i1: Int,
         val i2: Int) extends IntTrieSetL {
 
@@ -373,7 +373,7 @@ final private[immutable] class IntTrieSet2 private[immutable] (
 /**
  * Represents an ordered set of three int values: i1 < i2 < i3.
  */
-final private[immutable] class IntTrieSet3 private[immutable] (
+private[immutable] final class IntTrieSet3 private[immutable] (
         val i1: Int,
         val i2: Int,
         val i3: Int) extends IntTrieSetL {
@@ -469,23 +469,23 @@ final private[immutable] class IntTrieSet3 private[immutable] (
 
 abstract private[immutable] class IntTrieSetNN extends IntTrieSet {
 
-    final override def isSingletonSet: Boolean = size == 1
-    final override def isEmpty: Boolean        = false
+    override final def isSingletonSet: Boolean = size == 1
+    override final def isEmpty: Boolean        = false
 
-    final override def map(f:   Int => Int): IntTrieSet = foldLeft(EmptyIntTrieSet: IntTrieSet)(_ +! f(_))
-    final override def map(map: Array[Int]): IntTrieSet = foldLeft(EmptyIntTrieSet: IntTrieSet)(_ +! map(_))
+    override final def map(f:   Int => Int): IntTrieSet = foldLeft(EmptyIntTrieSet: IntTrieSet)(_ +! f(_))
+    override final def map(map: Array[Int]): IntTrieSet = foldLeft(EmptyIntTrieSet: IntTrieSet)(_ +! map(_))
 
-    final override def flatMap(f: Int => IntTrieSet): IntTrieSet = foldLeft(EmptyIntTrieSet: IntTrieSet)(_ ++! f(_))
+    override final def flatMap(f: Int => IntTrieSet): IntTrieSet = foldLeft(EmptyIntTrieSet: IntTrieSet)(_ ++! f(_))
 
-    final override def withFilter(p: Int => Boolean): IntTrieSet = new FilteredIntTrieSet(this, p)
+    override final def withFilter(p: Int => Boolean): IntTrieSet = new FilteredIntTrieSet(this, p)
 
-    final override def toList: List[Int] = {
+    override final def toList: List[Int] = {
         val cb = List.newBuilder[Int]
         foreach((i: Int) => cb += i)
         cb.result()
     }
 
-    final override def equals(that: IntTrieSet): Boolean = (that eq this) || (that.size == this.size && {
+    override final def equals(that: IntTrieSet): Boolean = (that eq this) || (that.size == this.size && {
         // IMPROVE Implement a comparison directly over the trie
         // we have stable orderings!
         val thisIt   = this.iterator
@@ -497,10 +497,10 @@ abstract private[immutable] class IntTrieSetNN extends IntTrieSet {
         allEqual
     })
 
-    final override def hashCode: Int = foldLeft(1)(31 * _ + _)
+    override final def hashCode: Int = foldLeft(1)(31 * _ + _)
 }
 
-final private[immutable] class IntTrieSetN private[immutable] (
+private[immutable] final class IntTrieSetN private[immutable] (
         private[immutable] var left:  IntTrieSet, // can be empty, but never null!
         private[immutable] var right: IntTrieSet, // can be empty, but never null!
         var size: Int) extends IntTrieSetNN { intSet =>
@@ -723,7 +723,7 @@ private[immutable] object IntTrieSetN {
         else new IntTrieSetN(left, right, size)
 }
 
-final private[immutable] class IntTrieSetNJustRight private[immutable] (
+private[immutable] final class IntTrieSetNJustRight private[immutable] (
         private[immutable] var right: IntTrieSet // can't be empty, left is already empty
       ) extends IntTrieSetNN { intSet =>
 
@@ -837,7 +837,7 @@ final private[immutable] class IntTrieSetNJustRight private[immutable] (
 
 }
 
-final private[immutable] class IntTrieSetNJustLeft private[immutable] (
+private[immutable] final class IntTrieSetNJustLeft private[immutable] (
         private[immutable] var left: IntTrieSet // cannot be empty; right is empty
       ) extends IntTrieSetNN { intSet =>
 

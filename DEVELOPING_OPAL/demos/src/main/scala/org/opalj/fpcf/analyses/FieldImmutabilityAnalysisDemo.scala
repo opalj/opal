@@ -5,6 +5,9 @@ package analyses
 
 import java.net.URL
 import scala.collection.immutable.SortedSet
+
+import org.opalj.ai.domain
+import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.Field
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
@@ -12,25 +15,23 @@ import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
 import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
-import org.opalj.tac.cg.RTACallGraphKey
-import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
-import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
-import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
-import org.opalj.tac.fpcf.analyses.EagerFieldImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.immutability.LazyClassImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.immutability.LazyTypeImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.fieldassignability.LazyL2FieldAssignabilityAnalysis
-import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
-import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.util.Seconds
-import org.opalj.ai.domain
-import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.fpcf.properties.immutability.DependentlyImmutableField
 import org.opalj.br.fpcf.properties.immutability.FieldImmutability
 import org.opalj.br.fpcf.properties.immutability.MutableField
 import org.opalj.br.fpcf.properties.immutability.NonTransitivelyImmutableField
 import org.opalj.br.fpcf.properties.immutability.TransitivelyImmutableField
+import org.opalj.tac.cg.RTACallGraphKey
+import org.opalj.tac.fpcf.analyses.EagerFieldImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
+import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
+import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
 import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalysis
+import org.opalj.tac.fpcf.analyses.fieldassignability.LazyL2FieldAssignabilityAnalysis
+import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
+import org.opalj.util.PerformanceEvaluation.time
+import org.opalj.util.Seconds
 
 /**
  * Runs the EagerL0FieldImmutabilityAnalysis including all analyses needed for improving the result.
@@ -44,10 +45,9 @@ object FieldImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
     override def description: String = "Identifies (non-)transitively immutable fields"
 
     override def doAnalyze(
-        project: Project[URL],
-        parameters: Seq[String],
-        isInterrupted: () => Boolean
-    ): BasicReport = {
+        project:       Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () => Boolean): BasicReport = {
         val result = analyze(project)
         BasicReport(result)
     }
@@ -55,8 +55,8 @@ object FieldImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
     def analyze(project: Project[URL]): String = {
 
         var propertyStore: PropertyStore = null
-        var analysisTime: Seconds = Seconds.None
-        val analysesManager = project.get(FPCFAnalysesManagerKey)
+        var analysisTime: Seconds        = Seconds.None
+        val analysesManager              = project.get(FPCFAnalysesManagerKey)
         project.get(RTACallGraphKey)
 
         project.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) { _ =>
@@ -101,20 +101,20 @@ object FieldImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
             groupedResults.getOrElse(TransitivelyImmutableField, Seq.empty).toSeq.sortWith(order)
 
         s""" |
-             | Mutable Fields: ${mutableFields.size}
-             | Non Transitively Immutable Fields: ${nonTransitivelyImmutableFields.size}
-             | Dependent Immutable Fields: ${dependentImmutableFields.size}
-             | Transitively Immutable Fields: ${transitivelyImmutableFields.size}
-             |
-             | total fields: ${
-                mutableFields.size + nonTransitivelyImmutableFields.size +
-                    dependentImmutableFields.size + transitivelyImmutableFields.size
-            }
-             |
-             | took : $analysisTime seconds
-             |
-             | level: ${project.getProjectInformationKeyInitializationData(AIDomainFactoryKey)}
-             |propertyStore: ${propertyStore.getClass}
-             |""".stripMargin
+           | Mutable Fields: ${mutableFields.size}
+           | Non Transitively Immutable Fields: ${nonTransitivelyImmutableFields.size}
+           | Dependent Immutable Fields: ${dependentImmutableFields.size}
+           | Transitively Immutable Fields: ${transitivelyImmutableFields.size}
+           |
+           | total fields: ${
+                               mutableFields.size + nonTransitivelyImmutableFields.size +
+                                   dependentImmutableFields.size + transitivelyImmutableFields.size
+                           }
+           |
+           | took : $analysisTime seconds
+           |
+           | level: ${project.getProjectInformationKeyInitializationData(AIDomainFactoryKey)}
+           |propertyStore: ${propertyStore.getClass}
+           |""".stripMargin
     }
 }

@@ -44,7 +44,7 @@ sealed abstract class Long2List extends Serializable { self =>
     override def equals(other: Any): Boolean
     override def hashCode(): Int // just added to ensure that we have to override hashCode!
 
-    final override def toString = iterator.mkString("Long2List(", ", ", ")")
+    override final def toString = iterator.mkString("Long2List(", ", ", ")")
 }
 
 object Long2List {
@@ -88,8 +88,8 @@ case object Long2List0 extends Long2List {
 
 abstract private[immutable] class Long2List1_4 extends Long2List {
 
-    final override def isEmpty: Boolean  = false
-    final override def nonEmpty: Boolean = true
+    override final def isEmpty: Boolean  = false
+    override final def nonEmpty: Boolean = true
 
     private[immutable] def rest: Long2List4
 
@@ -183,7 +183,7 @@ abstract private[immutable] class Long2List1_4 extends Long2List {
     }
 }
 
-final private[immutable] class Long2List1(
+private[immutable] final class Long2List1(
         private[immutable] val v1: Long,
         private[immutable] val rest: Long2List4) extends Long2List1_4 { list =>
 
@@ -224,7 +224,7 @@ final private[immutable] class Long2List1(
 
 }
 
-final private[immutable] class Long2List2(
+private[immutable] final class Long2List2(
         private[immutable] var v1: Long,
         private[immutable] var v2: Long,
         private[immutable] var rest: Long2List4) extends Long2List1_4 { list =>
@@ -267,7 +267,7 @@ final private[immutable] class Long2List2(
     override def hashCode(): Int = JLong.hashCode(v1) * 31 + JLong.hashCode(v2) * 31 + restHashCode()
 }
 
-final private[immutable] class Long2List3(
+private[immutable] final class Long2List3(
         private[immutable] var v1: Long,
         private[immutable] var v2: Long,
         private[immutable] var v3: Long,
@@ -316,7 +316,7 @@ final private[immutable] class Long2List3(
         JLong.hashCode(v1) * 31 + JLong.hashCode(v2) * 31 + JLong.hashCode(v3) * 31 + restHashCode()
 }
 
-final private[immutable] class Long2List4(
+private[immutable] final class Long2List4(
         private[immutable] var v1: Long,
         private[immutable] var v2: Long,
         private[immutable] var v3: Long,

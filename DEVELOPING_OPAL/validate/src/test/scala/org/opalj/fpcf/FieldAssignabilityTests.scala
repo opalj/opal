@@ -4,6 +4,9 @@ package fpcf
 
 import java.net.URL
 
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
+
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
@@ -19,9 +22,6 @@ import org.opalj.tac.fpcf.analyses.fieldassignability.EagerL2FieldAssignabilityA
 import org.opalj.tac.fpcf.analyses.purity.L2PurityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.SystemOutLoggingAllExceptionRater
-
-import com.typesafe.config.Config
-import com.typesafe.config.ConfigFactory
 
 /**
  * Tests the field assignability analysis

@@ -22,7 +22,7 @@ object Disassembler {
 
     OPALLogger.updateLogger(GlobalLogContext, new ConsoleOPALLogger(true, ErrorLogLevel))
 
-    final private val Usage = "Usage: java …Disassembler \n" +
+    private final val Usage = "Usage: java …Disassembler \n" +
         "       [-help will print this help and terminate.]\n" +
         "       [-o <File> the name of the file to which the generated html page should be written]\n" +
         "       [-open the generated html page will be opened in a browser]\n" +

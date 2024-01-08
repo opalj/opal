@@ -13,7 +13,7 @@ import org.opalj.bi.reader.MethodsReader
 trait MethodsBinding extends MethodsReader { this: ConstantPoolBinding with AttributeBinding =>
 
     type Method_Info = br.Method
-    implicit override val methodInfoType: ClassTag[Method_Info] = ClassTag[Method_Info](classOf[br.Method])
+    override implicit val methodInfoType: ClassTag[Method_Info] = ClassTag[Method_Info](classOf[br.Method])
 
     def Method_Info(
         cp:               Constant_Pool,

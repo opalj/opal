@@ -52,7 +52,7 @@ trait LogContext {
         newLogContext
     }
 
-    final private[this] val messages = new ConcurrentHashMap[LogMessage, AtomicInteger]()
+    private[this] final val messages = new ConcurrentHashMap[LogMessage, AtomicInteger]()
 
     /**
      * Increments the counter for the given message and returns the new value.

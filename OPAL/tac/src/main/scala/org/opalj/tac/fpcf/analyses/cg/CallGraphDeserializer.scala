@@ -117,7 +117,7 @@ object MethodDesc {
 private class CallGraphDeserializer private[analyses] (
         final val serializedCG: File,
         final val project: SomeProject) extends FPCFAnalysis {
-    implicit private val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
+    private implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
     private val simpleContexts: SimpleContexts            = project.get(SimpleContextsKey)
 
     private val data: Map[MethodDesc, List[CallSiteDescription]] = Json.parse(

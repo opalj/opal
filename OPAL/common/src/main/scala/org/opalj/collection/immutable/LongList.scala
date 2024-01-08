@@ -35,7 +35,7 @@ sealed trait LongList extends Serializable { self =>
     /** Prepends the given value to this list. E.g., `l = 2l +: l`. */
     def +:(v: Long): LongList
 
-    final override def equals(other: Any): Boolean = other match {
+    override final def equals(other: Any): Boolean = other match {
         case l: LongList => equals(l)
         case _           => false
     }

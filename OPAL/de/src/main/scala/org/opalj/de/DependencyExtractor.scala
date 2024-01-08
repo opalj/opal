@@ -931,7 +931,7 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
  */
 private object DependencyExtractor {
 
-    final private[this] val incompleteHandlingOfInvokedynamicMessage: String =
+    private[this] final val incompleteHandlingOfInvokedynamicMessage: String =
         "for the code's invokedynamic instructions only dependencies to the runtime are resolved"
 
     @volatile private[this] var incompleteHandlingOfInvokedynamicWasLogged = false

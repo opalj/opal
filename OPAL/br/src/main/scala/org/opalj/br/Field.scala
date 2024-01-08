@@ -161,7 +161,7 @@ final class FieldTemplate private[br] (
         val fieldType:   FieldType,
         val attributes: Attributes) extends JVMField {
 
-    final override def isField: Boolean = false
+    override final def isField: Boolean = false
 
 }
 

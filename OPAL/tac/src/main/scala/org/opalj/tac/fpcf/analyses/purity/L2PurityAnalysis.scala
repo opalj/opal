@@ -909,8 +909,8 @@ trait L2PurityAnalysisScheduler extends FPCFAnalysisScheduler {
         PropertyBounds.lub(Purity)
     )
 
-    final override type InitializationData = L2PurityAnalysis
-    final override def init(p: SomeProject, ps: PropertyStore): InitializationData = new L2PurityAnalysis(p)
+    override final type InitializationData = L2PurityAnalysis
+    override final def init(p: SomeProject, ps: PropertyStore): InitializationData = new L2PurityAnalysis(p)
 
     override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
 

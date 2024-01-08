@@ -19,6 +19,6 @@ abstract class ProjectAnalysisApplication
 
     implicit def String2BasicReport(report: String): BasicReport = BasicReport(report)
 
-    final override val analysis: ProjectAnalysisApplication = this
+    override final val analysis: ProjectAnalysisApplication = this
 
 }

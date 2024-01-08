@@ -115,7 +115,7 @@ class CallGraphAnalysis private[cg] (
             returnResult(calls)(state)
     }
 
-    final override def processMethod(
+    override final def processMethod(
         callContext: ContextType,
         tacEP:       EPS[Method, TACAI]): ProperPropertyComputationResult = {
         val state = new CGState[ContextType](callContext, tacEP)
@@ -123,7 +123,7 @@ class CallGraphAnalysis private[cg] (
         else returnResult(new DirectCalls(), enforceCalleesResult = true)(state)
     }
 
-    final override val processesMethodsWithoutBody = true
+    override final val processesMethodsWithoutBody = true
 
     protected[this] def doHandleVirtualCall(
         callContext:                   ContextType,
@@ -214,7 +214,7 @@ class CallGraphAnalysis private[cg] (
         }
     }
 
-    final protected def processMethod(
+    protected final def processMethod(
         state: CGState[ContextType],
         calls: DirectCalls): ProperPropertyComputationResult = {
         val tac = state.tac
@@ -311,7 +311,7 @@ class CallGraphAnalysis private[cg] (
         else Results(results)
     }
 
-    final protected def handleCall(
+    protected final def handleCall(
         callContext:        ContextType,
         callName:           String,
         callDescriptor:     MethodDescriptor,
@@ -343,7 +343,7 @@ class CallGraphAnalysis private[cg] (
             )
         }
 
-    final protected def unknownLibraryCall(
+    protected final def unknownLibraryCall(
         callContext:         ContextType,
         callName:            String,
         callDescriptor:      MethodDescriptor,

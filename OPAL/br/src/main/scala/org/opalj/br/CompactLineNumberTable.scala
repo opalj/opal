@@ -37,7 +37,7 @@ case class CompactLineNumberTable(rawLineNumbers: Array[Byte]) extends LineNumbe
         lineNumbersBuilder.result()
     }
 
-    def asUnsignedShort(hb: Byte, lb: Byte): Int = ((hb & 0xff) << 8) | (lb & 0xff) // cf. DataInput.readUnsignedShort
+    def asUnsignedShort(hb: Byte, lb: Byte): Int = ((hb & 0xFF) << 8) | (lb & 0xFF) // cf. DataInput.readUnsignedShort
 
     def lookupLineNumber(pc: PC): Option[Int] = {
         var lastLineNumber = -1

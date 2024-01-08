@@ -154,10 +154,10 @@ trait ComputationSpecification[A] {
 
 trait SimpleComputationSpecification[A] extends ComputationSpecification[A] {
 
-    final override type InitializationData = Null
-    final override def init(ps:                 PropertyStore): Null = null
-    final override def beforeSchedule(ps:       PropertyStore): Unit = {}
-    final override def afterPhaseScheduling(ps: PropertyStore, analysis: A): Unit = {}
-    final override def afterPhaseCompletion(ps: PropertyStore, analysis: A): Unit = {}
+    override final type InitializationData = Null
+    override final def init(ps:                 PropertyStore): Null = null
+    override final def beforeSchedule(ps:       PropertyStore): Unit = {}
+    override final def afterPhaseScheduling(ps: PropertyStore, analysis: A): Unit = {}
+    override final def afterPhaseCompletion(ps: PropertyStore, analysis: A): Unit = {}
 
 }

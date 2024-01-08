@@ -15,7 +15,7 @@ case class StackMapTable_attribute(
         attribute_name_index: Constant_Pool_Index,
         stack_map_frames: StackMapFrames) extends Attribute {
 
-    final override def attribute_length: Int = stack_map_frames.foldLeft(2 /*count*/ )((c, n) => c + n.attribute_length)
+    override final def attribute_length: Int = stack_map_frames.foldLeft(2 /*count*/ )((c, n) => c + n.attribute_length)
 
     override def toXHTML(implicit cp: Constant_Pool): Node = <div>
             <details class="attribute">

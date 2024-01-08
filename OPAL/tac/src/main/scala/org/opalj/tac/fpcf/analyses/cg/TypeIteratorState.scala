@@ -93,7 +93,7 @@ trait TypeIteratorState extends AnalysisState {
     final def hasDependency(depender: Entity, dependee: EPK[Entity, Property]): Boolean =
         _dependerToDependees.contains(depender) && _dependerToDependees(depender).contains(dependee)
 
-    final private def hasDependees: Boolean = {
+    private final def hasDependees: Boolean = {
         assert(
             (_dependees.isEmpty == _dependeeToDependers.isEmpty) &&
                 (_dependeeToDependers.isEmpty == _dependerToDependees.isEmpty)

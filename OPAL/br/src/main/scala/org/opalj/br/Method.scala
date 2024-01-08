@@ -140,7 +140,7 @@ sealed abstract class JVMMethod
         compareAttributes(other.attributes, config).isEmpty
     }
 
-    final override def instructionsOption: Option[Array[Instruction]] = body.map(_.instructions)
+    override final def instructionsOption: Option[Array[Instruction]] = body.map(_.instructions)
 
     /**
      * The number of registers required to store this method's parameters (

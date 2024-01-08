@@ -120,7 +120,7 @@ trait IntegerRangeValues
             with IsIntegerValue {
         this: DomainTypedValue[CTIntType] =>
 
-        final override def leastUpperType: Option[CTIntType] = Some(CTIntType)
+        override final def leastUpperType: Option[CTIntType] = Some(CTIntType)
 
         def newInstance: DomainValue
     }
@@ -132,9 +132,9 @@ trait IntegerRangeValues
      */
     trait AnIntegerValueLike extends IntegerLikeValue {
         this: DomainTypedValue[CTIntType] =>
-        final override def lowerBound: Int                    = Int.MinValue
-        final override def upperBound: Int                    = Int.MaxValue
-        final override def constantValue: Option[ValueOrigin] = None
+        override final def lowerBound: Int                    = Int.MinValue
+        override final def upperBound: Int                    = Int.MaxValue
+        override final def constantValue: Option[ValueOrigin] = None
     }
 
     /**
@@ -187,7 +187,7 @@ trait IntegerRangeValues
     // QUESTION'S ABOUT VALUES
     //
 
-    @inline final override def intValue[T](
+    @inline override final def intValue[T](
         value: DomainValue
       )(f:     Int => T
       )(orElse: => T): T = value match {
@@ -195,13 +195,13 @@ trait IntegerRangeValues
         case _                                                   => orElse
     }
 
-    @inline final override def intValueOption(value: DomainValue): Option[Int] = // IMPROVE Define and use IntOption
+    @inline override final def intValueOption(value: DomainValue): Option[Int] = // IMPROVE Define and use IntOption
         value match {
             case v: IntegerRangeLike if v.lowerBound == v.upperBound => Some(v.lowerBound)
             case _                                                   => None
         }
 
-    @inline final protected def intValues[T](
+    @inline protected final def intValues[T](
         value1: DomainValue,
         value2: DomainValue
       )(f:      (Int, Int) => T

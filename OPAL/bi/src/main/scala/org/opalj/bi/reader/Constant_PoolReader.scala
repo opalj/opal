@@ -166,8 +166,8 @@ trait Constant_PoolReader extends Constant_PoolAbstractions {
                         val raw  = new Array[Byte](size)
                         in.readFully(raw)
                         val data = new Array[Byte](size + 2)
-                        data(0) = (0xff & (size >> 8)).toByte
-                        data(1) = (0xff & size).toByte
+                        data(0) = (0xFF & (size >> 8)).toByte
+                        data(1) = (0xFF & size).toByte
                         System.arraycopy(raw, 0, data, 2, size)
                         val tin = new DataInputStream(new ByteArrayInputStream(data))
                         CONSTANT_Utf8_info(raw, tin.readUTF)

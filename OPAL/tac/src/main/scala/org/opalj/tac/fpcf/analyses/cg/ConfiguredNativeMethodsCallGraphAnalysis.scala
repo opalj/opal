@@ -53,8 +53,8 @@ class ConfiguredNativeMethodsCallGraphAnalysis private[analyses] (
 
     val configKey = "org.opalj.fpcf.analyses.ConfiguredNativeMethodsAnalysis"
 
-    implicit private[this] val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
-    implicit private[this] val contextProvider: ContextProvider = project.get(ContextProviderKey)
+    private[this] implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
+    private[this] implicit val contextProvider: ContextProvider = project.get(ContextProviderKey)
 
     private[this] val nativeMethodData: Map[DeclaredMethod, Option[Array[MethodDescription]]] =
         ConfiguredMethods.reader.read(

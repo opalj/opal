@@ -27,8 +27,8 @@ sealed abstract class UIDSet[T <: UID]
     extends scala.collection.immutable.Set[T]
         with scala.collection.immutable.StrictOptimizedSetOps[T, Set, UIDSet[T]] { set =>
 
-    final override def empty: UIDSet[T] = UIDSet0.asInstanceOf[UIDSet[T]]
-    final override def contains(e: T): Boolean = containsId(e.id)
+    override final def empty: UIDSet[T] = UIDSet0.asInstanceOf[UIDSet[T]]
+    override final def contains(e: T): Boolean = containsId(e.id)
     override def exists(p: (T) => Boolean): Boolean
     override def forall(p: (T) => Boolean): Boolean
     override def head: T
@@ -141,8 +141,8 @@ object UIDSet0 extends UIDSet[UID] {
 
 sealed abstract class NonEmptyUIDSet[T <: UID] extends UIDSet[T] {
 
-    final override def isEmpty: Boolean      = false
-    final override def headOption: Option[T] = Some(head)
+    override final def isEmpty: Boolean      = false
+    override final def headOption: Option[T] = Some(head)
 }
 
 final case class UIDSet1[T <: UID](value: T) extends NonEmptyUIDSet[T] {

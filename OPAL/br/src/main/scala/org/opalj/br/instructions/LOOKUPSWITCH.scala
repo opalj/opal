@@ -42,9 +42,9 @@ case class LOOKUPSWITCH(
         defaultOffset: Int,
         npairs: ArraySeq[IntIntPair]) extends CompoundConditionalBranchInstruction with LOOKUPSWITCHLike {
 
-    final override def asLOOKUPSWITCH: this.type = this
+    override final def asLOOKUPSWITCH: this.type = this
 
-    final override def indexOfNextInstruction(currentPC: Int)(implicit code: Code): Int =
+    override final def indexOfNextInstruction(currentPC: Int)(implicit code: Code): Int =
         indexOfNextInstruction(currentPC, modifiedByWide = false)
 
     def toLabeledInstruction(currentPC: PC): LabeledInstruction = LabeledLOOKUPSWITCH(

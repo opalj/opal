@@ -345,7 +345,7 @@ trait L0PurityAnalysisScheduler extends FPCFAnalysisScheduler {
 
     override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey, SimpleContextsKey)
 
-    final override def uses: Set[PropertyBounds] =
+    override final def uses: Set[PropertyBounds] =
         Set(PropertyBounds.ub(TypeImmutability), PropertyBounds.ub(FieldImmutability))
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(Purity)

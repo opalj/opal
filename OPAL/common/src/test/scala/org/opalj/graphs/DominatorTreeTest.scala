@@ -2,12 +2,12 @@
 package org.opalj
 package graphs
 
-import org.opalj.util.PerformanceEvaluation.time
-
 import org.junit.runner.RunWith
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
+
+import org.opalj.util.PerformanceEvaluation.time
 
 /**
  * Test the [[DominatorTree]] implementation.

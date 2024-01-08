@@ -47,7 +47,7 @@ private[mutable] object ZeroLengthBitSet extends FixedSizeBitSet {
     override def hashCode: Int = 1 // same as Arrays.hashCode(empty long array)
 }
 
-final private[mutable] class FixedSizeBitSet64 extends FixedSizeBitSet { thisSet =>
+private[mutable] final class FixedSizeBitSet64 extends FixedSizeBitSet { thisSet =>
 
     private[mutable] var set: Long = 0L
 
@@ -85,7 +85,7 @@ final private[mutable] class FixedSizeBitSet64 extends FixedSizeBitSet { thisSet
     }
 }
 
-final private[mutable] class FixedSizeBitSet128 extends FixedSizeBitSet { thisSet =>
+private[mutable] final class FixedSizeBitSet128 extends FixedSizeBitSet { thisSet =>
 
     private[mutable] var set1: Long = 0L
     private[mutable] var set2: Long = 0L
@@ -146,7 +146,7 @@ final private[mutable] class FixedSizeBitSet128 extends FixedSizeBitSet { thisSe
     }
 }
 
-final private[mutable] class FixedSizeBitSetN private[mutable] (
+private[mutable] final class FixedSizeBitSetN private[mutable] (
         private val set: Array[Long]) extends FixedSizeBitSet { thisSet =>
 
     assert(set.length > 2)

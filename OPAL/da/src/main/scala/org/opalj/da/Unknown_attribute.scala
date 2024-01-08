@@ -11,7 +11,7 @@ case class Unknown_attribute(
         attribute_name_index: Constant_Pool_Index,
         info: Array[Byte]) extends Attribute {
 
-    final override def attribute_length: Int = info.size
+    override final def attribute_length: Int = info.size
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         val attributeName = cp(attribute_name_index).toString

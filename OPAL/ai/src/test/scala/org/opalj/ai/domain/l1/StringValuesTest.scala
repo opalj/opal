@@ -4,14 +4,14 @@ package ai
 package domain
 package l1
 
-import org.opalj.br.ObjectType
-import org.opalj.collection.immutable.UIDSet
-import org.opalj.collection.immutable.UIDSet2
-
 import org.junit.runner.RunWith
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
+
+import org.opalj.br.ObjectType
+import org.opalj.collection.immutable.UIDSet
+import org.opalj.collection.immutable.UIDSet2
 
 /**
  * Unit tests for handling `StringValues`.

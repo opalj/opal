@@ -22,11 +22,11 @@ import org.opalj.fpcf.TriggeredComputation
  */
 trait FPCFTriggeredAnalysisScheduler extends FPCFAnalysisScheduler {
 
-    final override def computationType: ComputationType = TriggeredComputation
+    override final def computationType: ComputationType = TriggeredComputation
 
-    final override def derivesLazily: Option[PropertyBounds] = None
+    override final def derivesLazily: Option[PropertyBounds] = None
 
-    final override def schedule(ps: PropertyStore, i: InitializationData): FPCFAnalysis =
+    override final def schedule(ps: PropertyStore, i: InitializationData): FPCFAnalysis =
         register(ps.context(classOf[SomeProject]), ps, i)
 
     /**

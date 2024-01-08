@@ -21,7 +21,7 @@ import org.opalj.fpcf.PropertyStore
 
 sealed trait FieldAccessInformationPropertyMetaInformation[S <: FieldAccessInformation[S]]
     extends PropertyMetaInformation {
-    final override type Self = S;
+    override final type Self = S;
 
     /**
      * Creates a property key to be associated with every field access property of the respective type. The fallback is

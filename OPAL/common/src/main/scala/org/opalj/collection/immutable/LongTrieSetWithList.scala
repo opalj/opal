@@ -63,8 +63,8 @@ private[immutable] case object LongTrieSetWithList0 extends LongTrieSetWithList 
     override def toString: String = "LongTrieSetWithList()"
 }
 
-final private[immutable] class LongTrieSetWithList1 private[immutable] (
-        final private[immutable] val i1: Long) extends LongTrieSetWithList {
+private[immutable] final class LongTrieSetWithList1 private[immutable] (
+        private[immutable] final val i1: Long) extends LongTrieSetWithList {
 
     override def isEmpty: Boolean        = false
     override def isSingletonSet: Boolean = true
@@ -99,9 +99,9 @@ final private[immutable] class LongTrieSetWithList1 private[immutable] (
 
 }
 
-final private[immutable] class LongTrieSetWithList2 private[immutable] (
-        final private[immutable] val i1: Long,
-        final private[immutable] val i2: Long) extends LongTrieSetWithList {
+private[immutable] final class LongTrieSetWithList2 private[immutable] (
+        private[immutable] final val i1: Long,
+        private[immutable] final val i2: Long) extends LongTrieSetWithList {
 
     override def isEmpty: Boolean        = false
     override def isSingletonSet: Boolean = false
@@ -140,10 +140,10 @@ final private[immutable] class LongTrieSetWithList2 private[immutable] (
 
 }
 
-final private[immutable] class LongTrieSetWithList3 private[immutable] (
-        final private[immutable] val i1: Long,
-        final private[immutable] val i2: Long,
-        final private[immutable] val i3: Long) extends LongTrieSetWithList {
+private[immutable] final class LongTrieSetWithList3 private[immutable] (
+        private[immutable] final val i1: Long,
+        private[immutable] final val i2: Long,
+        private[immutable] final val i3: Long) extends LongTrieSetWithList {
 
     override def size: Int               = 3
     override def isEmpty: Boolean        = false
@@ -187,7 +187,7 @@ final private[immutable] class LongTrieSetWithList3 private[immutable] (
 
 }
 
-final private[immutable] class LongTrieSetWithListN(
+private[immutable] final class LongTrieSetWithListN(
         final val size: Int,
         final val root: LongTrieSetNode,
         final val list: Long2List) extends LongTrieSetWithList {

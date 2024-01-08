@@ -88,7 +88,7 @@ object TACAI {
         aiVOToTACVo
     }
 
-    final private[this] val NoParameters = new Parameters(new Array[DUVar[_]](0))
+    private[this] final val NoParameters = new Parameters(new Array[DUVar[_]](0))
 
     def apply(
         project: SomeProject,

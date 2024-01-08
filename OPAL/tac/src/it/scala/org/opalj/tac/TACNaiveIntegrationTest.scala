@@ -4,17 +4,17 @@ package tac
 
 import java.io.File
 
+import org.junit.runner.RunWith
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
+
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.analyses.Project
 import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.util.PerformanceEvaluation.time
 
 import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParallelizable
-
-import org.junit.runner.RunWith
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.matchers.should.Matchers
-import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests that all methods of the JDK can be converted to a three address representation.

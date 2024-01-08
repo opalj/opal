@@ -116,12 +116,12 @@ case class If[+V <: Var[V]](
         right:     Expr[V],
         private[tac] var target: Int) extends Stmt[V] {
 
-    final override def asIf: this.type = this
-    final override def isIf: Boolean   = true
-    final override def astID: Int      = If.ASTID
+    override final def asIf: this.type = this
+    override final def isIf: Boolean   = true
+    override final def astID: Int      = If.ASTID
     final def leftExpr: Expr[V]        = left
     final def rightExpr: Expr[V]       = right
-    final override def forallSubExpressions[W >: V <: Var[W]](p: Expr[W] => Boolean): Boolean = p(left) && p(right)
+    override final def forallSubExpressions[W >: V <: Var[W]](p: Expr[W] => Boolean): Boolean = p(left) && p(right)
 
     /**
      * The target statement that is executed if the condition evaluates to `true`.
@@ -136,12 +136,12 @@ case class If[+V <: Var[V]](
         target = pcToIndex(target)
     }
 
-    final override def toCanonicalForm(
+    override final def toCanonicalForm(
         implicit
         ev: V <:< DUVar[ValueInformation]): Stmt[DUVar[ValueInformation]] =
         If(pc, left.toCanonicalForm, condition, right.toCanonicalForm, target)
 
-    final override def isSideEffectFree: Boolean = {
+    override final def isSideEffectFree: Boolean = {
         assert(left.isValueExpression && right.isValueExpression)
         true
     }
@@ -155,7 +155,7 @@ object If {
 
 trait VariableFreeStmt extends Stmt[Nothing] {
 
-    final override def toCanonicalForm(
+    override final def toCanonicalForm(
         implicit
         ev: Nothing <:< DUVar[ValueInformation]): Stmt[DUVar[ValueInformation]] = this
 
@@ -168,15 +168,15 @@ trait VariableFreeStmt extends Stmt[Nothing] {
  */
 case class Goto(pc: PC, private var target: Int) extends VariableFreeStmt {
 
-    final override def asGoto: this.type = this
-    final override def astID: Int        = Goto.ASTID
-    final override def forallSubExpressions[W >: Nothing <: Var[W]](p: Expr[W] => Boolean): Boolean = true
+    override final def asGoto: this.type = this
+    override final def astID: Int        = Goto.ASTID
+    override final def forallSubExpressions[W >: Nothing <: Var[W]](p: Expr[W] => Boolean): Boolean = true
 
     override private[tac] def remapIndexes(
         pcToIndex:                    Array[Int],
         isIndexOfCaughtExceptionStmt: Int => Boolean): Unit = target = pcToIndex(target)
 
-    final override def isSideEffectFree: Boolean = true
+    override final def isSideEffectFree: Boolean = true
 
     /**
      * @note Calling this method is only supported after the quadruples representation
@@ -203,15 +203,15 @@ object Goto {
  */
 case class Ret(pc: PC, private var returnAddresses: PCs) extends VariableFreeStmt {
 
-    final override def asRet: this.type = this
-    final override def astID: Int       = Ret.ASTID
-    final override def forallSubExpressions[W >: Nothing <: Var[W]](p: Expr[W] => Boolean): Boolean = true
+    override final def asRet: this.type = this
+    override final def astID: Int       = Ret.ASTID
+    override final def forallSubExpressions[W >: Nothing <: Var[W]](p: Expr[W] => Boolean): Boolean = true
 
     override private[tac] def remapIndexes(
         pcToIndex:                    Array[Int],
         isIndexOfCaughtExceptionStmt: Int => Boolean): Unit = returnAddresses = returnAddresses map { pcToIndex }
 
-    final override def isSideEffectFree: Boolean = true
+    override final def isSideEffectFree: Boolean = true
 
     override def toString: String = s"Ret(pc=$pc,returnAddresses=${returnAddresses.mkString("(", ",", ")")})"
 
@@ -232,15 +232,15 @@ object Ret {
  */
 case class JSR(pc: PC, private[tac] var target: Int) extends VariableFreeStmt {
 
-    final override def asJSR: this.type = this
-    final override def astID: Int       = JSR.ASTID
-    final override def forallSubExpressions[W >: Nothing <: Var[W]](p: Expr[W] => Boolean): Boolean = true
+    override final def asJSR: this.type = this
+    override final def astID: Int       = JSR.ASTID
+    override final def forallSubExpressions[W >: Nothing <: Var[W]](p: Expr[W] => Boolean): Boolean = true
 
     override private[tac] def remapIndexes(
         pcToIndex:                    Array[Int],
         isIndexOfCaughtExceptionStmt: Int => Boolean): Unit = target = pcToIndex(target)
 
-    final override def isSideEffectFree: Boolean = true
+    override final def isSideEffectFree: Boolean = true
 
     /**
      * The first statement of the called subroutine.
@@ -272,9 +272,9 @@ case class Switch[+V <: Var[V]](
         index:                     Expr[V],
         private var npairs: ArraySeq[IntIntPair /*(Case Value, Jump Target)*/ ]) extends Stmt[V] {
 
-    final override def asSwitch: this.type = this
-    final override def astID: Int          = Switch.ASTID
-    final override def forallSubExpressions[W >: V <: Var[W]](p: Expr[W] => Boolean): Boolean = p(index)
+    override final def asSwitch: this.type = this
+    override final def astID: Int          = Switch.ASTID
+    override final def forallSubExpressions[W >: V <: Var[W]](p: Expr[W] => Boolean): Boolean = p(index)
 
     override private[tac] def remapIndexes(
         pcToIndex:                    Array[Int],
@@ -288,12 +288,12 @@ case class Switch[+V <: Var[V]](
         index.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
     }
 
-    final override def toCanonicalForm(
+    override final def toCanonicalForm(
         implicit
         ev: V <:< DUVar[ValueInformation]): Stmt[DUVar[ValueInformation]] =
         Switch(pc, defaultTarget, index.toCanonicalForm, npairs)
 
-    final override def isSideEffectFree: Boolean = {
+    override final def isSideEffectFree: Boolean = {
         assert(index.isValueExpression)
         true
     }
@@ -317,7 +317,7 @@ object Switch {
 
 sealed abstract class AssignmentLikeStmt[+V <: Var[V]] extends Stmt[V] {
     def expr: Expr[V]
-    final override def asAssignmentLike: AssignmentLikeStmt[V] = this
+    override final def asAssignmentLike: AssignmentLikeStmt[V] = this
 }
 
 object AssignmentLikeStmt {
@@ -334,11 +334,11 @@ case class Assignment[+V <: Var[V]](
         targetVar: V,
         expr: Expr[V]) extends AssignmentLikeStmt[V] {
 
-    final override def asAssignment: this.type = this
-    final override def isAssignment: Boolean   = true
+    override final def asAssignment: this.type = this
+    override final def isAssignment: Boolean   = true
 
-    final override def astID: Int = Assignment.ASTID
-    final override def forallSubExpressions[W >: V <: Var[W]](p: Expr[W] => Boolean): Boolean = p(expr)
+    override final def astID: Int = Assignment.ASTID
+    override final def forallSubExpressions[W >: V <: Var[W]](p: Expr[W] => Boolean): Boolean = p(expr)
 
     override private[tac] def remapIndexes(
         pcToIndex:                    Array[Int],
@@ -347,12 +347,12 @@ case class Assignment[+V <: Var[V]](
         expr.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
     }
 
-    final override def toCanonicalForm(
+    override final def toCanonicalForm(
         implicit
         ev: V <:< DUVar[ValueInformation]): Stmt[DUVar[ValueInformation]] =
         Assignment(pc, ev(targetVar).toCanonicalForm, expr.toCanonicalForm)
 
-    final override def isSideEffectFree: Boolean = expr.isSideEffectFree
+    override final def isSideEffectFree: Boolean = expr.isSideEffectFree
 
     override def hashCode(): Opcode = (Assignment.ASTID * 1171 + pc) * 31 + expr.hashCode
 
@@ -365,20 +365,20 @@ object Assignment {
 
 case class ReturnValue[+V <: Var[V]](pc: Int, expr: Expr[V]) extends Stmt[V] {
 
-    final override def asReturnValue: this.type = this
-    final override def isReturnValue: Boolean   = true
-    final override def astID: Int               = ReturnValue.ASTID
-    final override def forallSubExpressions[W >: V <: Var[W]](p: Expr[W] => Boolean): Boolean = p(expr)
+    override final def asReturnValue: this.type = this
+    override final def isReturnValue: Boolean   = true
+    override final def astID: Int               = ReturnValue.ASTID
+    override final def forallSubExpressions[W >: V <: Var[W]](p: Expr[W] => Boolean): Boolean = p(expr)
 
     override private[tac] def remapIndexes(
         pcToIndex:                    Array[Int],
         isIndexOfCaughtExceptionStmt: Int => Boolean): Unit = expr.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
 
-    final override def toCanonicalForm(
+    override final def toCanonicalForm(
         implicit
         ev: V <:< DUVar[ValueInformation]): Stmt[DUVar[ValueInformation]] = ReturnValue(pc, expr.toCanonicalForm)
 
-    final override def isSideEffectFree: Boolean =
+    override final def isSideEffectFree: Boolean =
         // IMPROVE Check if the method does call synchronization statements; if so we may get an exception when we return from the method; otherwise the method is side-effect free
         false
 
@@ -401,11 +401,11 @@ sealed abstract class SimpleStmt extends VariableFreeStmt {
 
 case class Return(pc: Int) extends SimpleStmt {
 
-    final override def asReturn: this.type = this
-    final override def astID: Int          = Return.ASTID
-    final override def forallSubExpressions[W >: Nothing <: Var[W]](p: Expr[W] => Boolean): Boolean = true
+    override final def asReturn: this.type = this
+    override final def astID: Int          = Return.ASTID
+    override final def forallSubExpressions[W >: Nothing <: Var[W]](p: Expr[W] => Boolean): Boolean = true
 
-    final override def isSideEffectFree: Boolean =
+    override final def isSideEffectFree: Boolean =
         // IMPROVE Check if the method does call synchronization statements; if so we may get an exception when we return from the method; otherwise the method is side-effect free
         false
 
@@ -439,12 +439,12 @@ object Return {
  */
 case class Nop(pc: Int) extends SimpleStmt {
 
-    final override def asNop: this.type = this
-    final override def isNop: Boolean   = true
-    final override def astID: Int       = Nop.ASTID
-    final override def forallSubExpressions[W >: Nothing <: Var[W]](p: Expr[W] => Boolean): Boolean = true
+    override final def asNop: this.type = this
+    override final def isNop: Boolean   = true
+    override final def astID: Int       = Nop.ASTID
+    override final def forallSubExpressions[W >: Nothing <: Var[W]](p: Expr[W] => Boolean): Boolean = true
 
-    final override def isSideEffectFree: Boolean = true
+    override final def isSideEffectFree: Boolean = true
 
     override def toString: String = s"Nop(pc=$pc)"
 }
@@ -454,7 +454,7 @@ object Nop {
 
 sealed abstract class SynchronizationStmt[+V <: Var[V]] extends Stmt[V] {
 
-    final override def asSynchronizationStmt: this.type = this
+    override final def asSynchronizationStmt: this.type = this
 
     def objRef: Expr[V]
 
@@ -467,16 +467,16 @@ sealed abstract class SynchronizationStmt[+V <: Var[V]] extends Stmt[V] {
 
 case class MonitorEnter[+V <: Var[V]](pc: PC, objRef: Expr[V]) extends SynchronizationStmt[V] {
 
-    final override def asMonitorEnter: this.type = this
-    final override def isMonitorEnter: Boolean   = true
-    final override def astID: Int                = MonitorEnter.ASTID
-    final override def forallSubExpressions[W >: V <: Var[W]](p: Expr[W] => Boolean): Boolean = p(objRef)
+    override final def asMonitorEnter: this.type = this
+    override final def isMonitorEnter: Boolean   = true
+    override final def astID: Int                = MonitorEnter.ASTID
+    override final def forallSubExpressions[W >: V <: Var[W]](p: Expr[W] => Boolean): Boolean = p(objRef)
 
-    final override def isSideEffectFree: Boolean =
+    override final def isSideEffectFree: Boolean =
         // IMPROVE Is the lock as such ever used (do we potentially have concurrency)?
         false
 
-    final override def toCanonicalForm(
+    override final def toCanonicalForm(
         implicit
         ev: V <:< DUVar[ValueInformation]): Stmt[DUVar[ValueInformation]] = MonitorEnter(pc, objRef.toCanonicalForm)
 
@@ -488,16 +488,16 @@ object MonitorEnter {
 
 case class MonitorExit[+V <: Var[V]](pc: PC, objRef: Expr[V]) extends SynchronizationStmt[V] {
 
-    final override def asMonitorExit: this.type = this
-    final override def isMonitorExit: Boolean   = true
-    final override def astID: Int               = MonitorExit.ASTID
-    final override def forallSubExpressions[W >: V <: Var[W]](p: Expr[W] => Boolean): Boolean = p(objRef)
+    override final def asMonitorExit: this.type = this
+    override final def isMonitorExit: Boolean   = true
+    override final def astID: Int               = MonitorExit.ASTID
+    override final def forallSubExpressions[W >: V <: Var[W]](p: Expr[W] => Boolean): Boolean = p(objRef)
 
-    final override def isSideEffectFree: Boolean =
+    override final def isSideEffectFree: Boolean =
         // IMPROVE Is the lock as such ever used (do we potentially have concurrency)?
         false
 
-    final override def toCanonicalForm(
+    override final def toCanonicalForm(
         implicit
         ev: V <:< DUVar[ValueInformation]): Stmt[DUVar[ValueInformation]] = MonitorExit(pc, objRef.toCanonicalForm)
 
@@ -514,13 +514,13 @@ case class ArrayStore[+V <: Var[V]](
         index:    Expr[V],
         value: Expr[V]) extends Stmt[V] {
 
-    final override def asArrayStore: this.type = this
-    final override def isArrayStore: Boolean   = true
-    final override def astID: Int              = ArrayStore.ASTID
-    final override def forallSubExpressions[W >: V <: Var[W]](p: Expr[W] => Boolean): Boolean =
+    override final def asArrayStore: this.type = this
+    override final def isArrayStore: Boolean   = true
+    override final def astID: Int              = ArrayStore.ASTID
+    override final def forallSubExpressions[W >: V <: Var[W]](p: Expr[W] => Boolean): Boolean =
         p(arrayRef) && p(index) && p(value)
 
-    final override def isSideEffectFree: Boolean =
+    override final def isSideEffectFree: Boolean =
         // IMPROVE Is it a redundant write?
         false
 
@@ -532,7 +532,7 @@ case class ArrayStore[+V <: Var[V]](
         value.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
     }
 
-    final override def toCanonicalForm(
+    override final def toCanonicalForm(
         implicit
         ev: V <:< DUVar[ValueInformation]): Stmt[DUVar[ValueInformation]] =
         ArrayStore(pc, arrayRef.toCanonicalForm, index.toCanonicalForm, value.toCanonicalForm)
@@ -545,21 +545,21 @@ object ArrayStore {
 
 case class Throw[+V <: Var[V]](pc: PC, exception: Expr[V]) extends Stmt[V] {
 
-    final override def asThrow: this.type = this
-    final override def isThrow: Boolean   = true
-    final override def astID: Int         = Throw.ASTID
-    final override def forallSubExpressions[W >: V <: Var[W]](p: Expr[W] => Boolean): Boolean = p(exception)
+    override final def asThrow: this.type = this
+    override final def isThrow: Boolean   = true
+    override final def astID: Int         = Throw.ASTID
+    override final def forallSubExpressions[W >: V <: Var[W]](p: Expr[W] => Boolean): Boolean = p(exception)
 
     override private[tac] def remapIndexes(
         pcToIndex:                    Array[Int],
         isIndexOfCaughtExceptionStmt: Int => Boolean): Unit =
         exception.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
 
-    final override def toCanonicalForm(
+    override final def toCanonicalForm(
         implicit
         ev: V <:< DUVar[ValueInformation]): Stmt[DUVar[ValueInformation]] = Throw(pc, exception.toCanonicalForm)
 
-    final override def isSideEffectFree: Boolean = false
+    override final def isSideEffectFree: Boolean = false
 
     override def hashCode(): Opcode = (Throw.ASTID * 1171 + pc) * 31 + exception.hashCode
 
@@ -575,7 +575,7 @@ sealed abstract class FieldWriteAccessStmt[+V <: Var[V]] extends Stmt[V] {
     def declaredFieldType: FieldType
     def value: Expr[V]
 
-    final override def asFieldWriteAccessStmt: this.type = this
+    override final def asFieldWriteAccessStmt: this.type = this
 
     /**
      * Identifies the field if it can be found.
@@ -591,21 +591,21 @@ case class PutStatic[+V <: Var[V]](
         declaredFieldType: FieldType,
         value: Expr[V]) extends FieldWriteAccessStmt[V] {
 
-    final override def asPutStatic: this.type = this
-    final override def isPutStatic: Boolean   = true
-    final override def astID: Int             = PutStatic.ASTID
-    final override def forallSubExpressions[W >: V <: Var[W]](p: Expr[W] => Boolean): Boolean = p(value)
+    override final def asPutStatic: this.type = this
+    override final def isPutStatic: Boolean   = true
+    override final def astID: Int             = PutStatic.ASTID
+    override final def forallSubExpressions[W >: V <: Var[W]](p: Expr[W] => Boolean): Boolean = p(value)
 
     override private[tac] def remapIndexes(
         pcToIndex:                    Array[Int],
         isIndexOfCaughtExceptionStmt: Int => Boolean): Unit = value.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
 
-    final override def toCanonicalForm(
+    override final def toCanonicalForm(
         implicit
         ev: V <:< DUVar[ValueInformation]): Stmt[DUVar[ValueInformation]] =
         PutStatic(pc, declaringClass, name, declaredFieldType, value.toCanonicalForm)
 
-    final override def isSideEffectFree: Boolean =
+    override final def isSideEffectFree: Boolean =
         // IMPROVE Is it a redundant write?
         false
 
@@ -627,10 +627,10 @@ case class PutField[+V <: Var[V]](
         objRef:            Expr[V],
         value: Expr[V]) extends FieldWriteAccessStmt[V] {
 
-    final override def asPutField: this.type = this
-    final override def isPutField: Boolean   = true
-    final override def astID: Int            = PutField.ASTID
-    final override def forallSubExpressions[W >: V <: Var[W]](p: Expr[W] => Boolean): Boolean = p(objRef) && p(value)
+    override final def asPutField: this.type = this
+    override final def isPutField: Boolean   = true
+    override final def astID: Int            = PutField.ASTID
+    override final def forallSubExpressions[W >: V <: Var[W]](p: Expr[W] => Boolean): Boolean = p(objRef) && p(value)
 
     override private[tac] def remapIndexes(
         pcToIndex:                    Array[Int],
@@ -639,7 +639,7 @@ case class PutField[+V <: Var[V]](
         value.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
     }
 
-    final override def toCanonicalForm(
+    override final def toCanonicalForm(
         implicit
         ev: V <:< DUVar[ValueInformation]): Stmt[DUVar[ValueInformation]] = {
         val newObjRef = objRef.toCanonicalForm
@@ -647,7 +647,7 @@ case class PutField[+V <: Var[V]](
         PutField(pc, declaringClass, name, declaredFieldType, newObjRef, newValue)
     }
 
-    final override def isSideEffectFree: Boolean =
+    override final def isSideEffectFree: Boolean =
         // IMPROVE Is it a redundant write?
         false
 
@@ -662,21 +662,21 @@ object PutField {
 
 sealed abstract class MethodCall[+V <: Var[V]] extends Stmt[V] with Call[V] {
 
-    final override def isSideEffectFree: Boolean = false // IMPROVE Check if a call has no side-effect
-    final override def asMethodCall: this.type   = this
-    final override def isMethodCall: Boolean     = true
-    final override def isStaticCall: Boolean     = isStaticMethodCall
+    override final def isSideEffectFree: Boolean = false // IMPROVE Check if a call has no side-effect
+    override final def asMethodCall: this.type   = this
+    override final def isMethodCall: Boolean     = true
+    override final def isStaticCall: Boolean     = isStaticMethodCall
 
 }
 
 sealed abstract class InstanceMethodCall[+V <: Var[V]] extends MethodCall[V] {
 
-    final override def allParams: Seq[Expr[V]] = receiver +: params
+    override final def allParams: Seq[Expr[V]] = receiver +: params
 
     def receiver: Expr[V]
-    final override def receiverOption: Some[Expr[V]]   = Some(receiver)
-    final override def asInstanceMethodCall: this.type = this
-    final override def forallSubExpressions[W >: V <: Var[W]](p: Expr[W] => Boolean): Boolean =
+    override final def receiverOption: Some[Expr[V]]   = Some(receiver)
+    override final def asInstanceMethodCall: this.type = this
+    override final def forallSubExpressions[W >: V <: Var[W]](p: Expr[W] => Boolean): Boolean =
         p(receiver) && params.forall(param => p(param))
 
     override private[tac] def remapIndexes(
@@ -711,9 +711,9 @@ case class NonVirtualMethodCall[+V <: Var[V]](
         receiver:       Expr[V],
         params: Seq[Expr[V]]) extends InstanceMethodCall[V] {
 
-    final override def asNonVirtualMethodCall: this.type = this
-    final override def isNonVirtualMethodCall: Boolean   = true
-    final override def astID: Int                        = NonVirtualMethodCall.ASTID
+    override final def asNonVirtualMethodCall: this.type = this
+    override final def isNonVirtualMethodCall: Boolean   = true
+    override final def astID: Int                        = NonVirtualMethodCall.ASTID
 
     /**
      * Identifies the potential call target if it can be found.
@@ -730,7 +730,7 @@ case class NonVirtualMethodCall[+V <: Var[V]](
         p:  ProjectLike,
         ev: V <:< DUVar[ValueInformation]): Set[Method] = resolveCallTarget(callingContext)(p).toSet
 
-    final override def toCanonicalForm(
+    override final def toCanonicalForm(
         implicit
         ev: V <:< DUVar[ValueInformation]): Stmt[DUVar[ValueInformation]] = NonVirtualMethodCall(
         pc,
@@ -762,11 +762,11 @@ case class VirtualMethodCall[+V <: Var[V]](
         receiver:       Expr[V],
         params: Seq[Expr[V]]) extends InstanceMethodCall[V] with VirtualCall[V] {
 
-    final override def asVirtualMethodCall: this.type = this
-    final override def isVirtualMethodCall: Boolean   = true
-    final override def astID: Int                     = VirtualMethodCall.ASTID
+    override final def asVirtualMethodCall: this.type = this
+    override final def isVirtualMethodCall: Boolean   = true
+    override final def astID: Int                     = VirtualMethodCall.ASTID
 
-    final override def toCanonicalForm(
+    override final def toCanonicalForm(
         implicit
         ev: V <:< DUVar[ValueInformation]): Stmt[DUVar[ValueInformation]] = VirtualMethodCall(
         pc,
@@ -797,12 +797,12 @@ case class StaticMethodCall[+V <: Var[V]](
         descriptor:     MethodDescriptor,
         params: Seq[Expr[V]]) extends MethodCall[V] {
 
-    final override def allParams: Seq[Expr[V]]         = params
-    final override def asStaticMethodCall: this.type   = this
-    final override def isStaticMethodCall: Boolean     = true
-    final override def astID: Int                      = StaticMethodCall.ASTID
-    final override def receiverOption: Option[Expr[V]] = None
-    final override def forallSubExpressions[W >: V <: Var[W]](p: Expr[W] => Boolean): Boolean =
+    override final def allParams: Seq[Expr[V]]         = params
+    override final def asStaticMethodCall: this.type   = this
+    override final def isStaticMethodCall: Boolean     = true
+    override final def astID: Int                      = StaticMethodCall.ASTID
+    override final def receiverOption: Option[Expr[V]] = None
+    override final def forallSubExpressions[W >: V <: Var[W]](p: Expr[W] => Boolean): Boolean =
         params.forall(param => p(param))
 
     /**
@@ -826,7 +826,7 @@ case class StaticMethodCall[+V <: Var[V]](
         p.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
     }
 
-    final override def toCanonicalForm(
+    override final def toCanonicalForm(
         implicit
         ev: V <:< DUVar[ValueInformation]): Stmt[DUVar[ValueInformation]] = StaticMethodCall(
         pc,
@@ -861,11 +861,11 @@ case class InvokedynamicMethodCall[+V <: Var[V]](
         descriptor:      MethodDescriptor,
         params: Seq[Expr[V]]) extends Stmt[V] {
 
-    final override def astID: Int                           = InvokedynamicMethodCall.ASTID
-    final override def asInvokedynamicMethodCall: this.type = this
+    override final def astID: Int                           = InvokedynamicMethodCall.ASTID
+    override final def asInvokedynamicMethodCall: this.type = this
     // IMPROVE [FUTURE] Use some analysis to determine if a method call is side effect free
-    final override def isSideEffectFree: Boolean = false
-    final override def forallSubExpressions[W >: V <: Var[W]](p: Expr[W] => Boolean): Boolean =
+    override final def isSideEffectFree: Boolean = false
+    override final def forallSubExpressions[W >: V <: Var[W]](p: Expr[W] => Boolean): Boolean =
         params.forall(param => p(param))
 
     override private[tac] def remapIndexes(
@@ -881,7 +881,7 @@ case class InvokedynamicMethodCall[+V <: Var[V]](
             name.hashCode) * 31 +
             descriptor.hashCode
 
-    final override def toCanonicalForm(
+    override final def toCanonicalForm(
         implicit
         ev: V <:< DUVar[ValueInformation]): Stmt[DUVar[ValueInformation]] = InvokedynamicMethodCall(
         pc,
@@ -902,16 +902,16 @@ object InvokedynamicMethodCall { final val ASTID = 18 }
 /** An expression where the value is not further used. */
 case class ExprStmt[+V <: Var[V]](pc: Int, expr: Expr[V]) extends AssignmentLikeStmt[V] {
 
-    final override def asExprStmt: this.type = this
-    final override def isExprStmt: Boolean   = true
-    final override def astID: Int            = ExprStmt.ASTID
-    final override def forallSubExpressions[W >: V <: Var[W]](p: Expr[W] => Boolean): Boolean = p(expr)
+    override final def asExprStmt: this.type = this
+    override final def isExprStmt: Boolean   = true
+    override final def astID: Int            = ExprStmt.ASTID
+    override final def forallSubExpressions[W >: V <: Var[W]](p: Expr[W] => Boolean): Boolean = p(expr)
 
     override private[tac] def remapIndexes(
         pcToIndex:                    Array[Int],
         isIndexOfCaughtExceptionStmt: Int => Boolean): Unit = expr.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
 
-    final override def isSideEffectFree: Boolean = {
+    override final def isSideEffectFree: Boolean = {
         assert(
             !expr.isSideEffectFree,
             "useless ExprStmt - the referenced expression is side-effect free"
@@ -921,7 +921,7 @@ case class ExprStmt[+V <: Var[V]](pc: Int, expr: Expr[V]) extends AssignmentLike
 
     override def hashCode(): Opcode = (ExprStmt.ASTID * 1171 + pc) * 31 + expr.hashCode
 
-    final override def toCanonicalForm(
+    override final def toCanonicalForm(
         implicit
         ev: V <:< DUVar[ValueInformation]): Stmt[DUVar[ValueInformation]] = ExprStmt(pc, expr.toCanonicalForm)
 
@@ -982,19 +982,19 @@ case class CaughtException[+V <: Var[V]](
         exceptionType: Option[ObjectType],
         private var throwingStmts: IntTrieSet) extends Stmt[V] {
 
-    final override def isCaughtException: Boolean            = true
-    final override def asCaughtException: CaughtException[V] = this
-    final override def astID: Int                            = CaughtException.ASTID
-    final override def forallSubExpressions[W >: V <: Var[W]](p: Expr[W] => Boolean): Boolean = true
+    override final def isCaughtException: Boolean            = true
+    override final def asCaughtException: CaughtException[V] = this
+    override final def astID: Int                            = CaughtException.ASTID
+    override final def forallSubExpressions[W >: V <: Var[W]](p: Expr[W] => Boolean): Boolean = true
 
-    final override def isSideEffectFree: Boolean = false
+    override final def isSideEffectFree: Boolean = false
 
     override private[tac] def remapIndexes(
         pcToIndex:                    Array[Int],
         isIndexOfCaughtExceptionStmt: Int => Boolean): Unit =
         throwingStmts = throwingStmts map { pc => ai.remapPC(pcToIndex)(pc) }
 
-    final override def toCanonicalForm(
+    override final def toCanonicalForm(
         implicit
         ev: V <:< DUVar[ValueInformation]): Stmt[DUVar[ValueInformation]] =
         this.asInstanceOf[Stmt[DUVar[ValueInformation]]]
@@ -1047,20 +1047,20 @@ object CaughtException {
  */
 case class Checkcast[+V <: Var[V]](pc: PC, value: Expr[V], cmpTpe: ReferenceType) extends Stmt[V] {
 
-    final override def asCheckcast: this.type = this
-    final override def isCheckcast: Boolean   = true
-    final override def astID: Int             = Checkcast.ASTID
-    final override def forallSubExpressions[W >: V <: Var[W]](p: Expr[W] => Boolean): Boolean = p(value)
+    override final def asCheckcast: this.type = this
+    override final def isCheckcast: Boolean   = true
+    override final def astID: Int             = Checkcast.ASTID
+    override final def forallSubExpressions[W >: V <: Var[W]](p: Expr[W] => Boolean): Boolean = p(value)
 
     override private[tac] def remapIndexes(
         pcToIndex:                    Array[Int],
         isIndexOfCaughtExceptionStmt: Int => Boolean): Unit = value.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
 
-    final override def toCanonicalForm(
+    override final def toCanonicalForm(
         implicit
         ev: V <:< DUVar[ValueInformation]): Stmt[DUVar[ValueInformation]] = Checkcast(pc, value.toCanonicalForm, cmpTpe)
 
-    final override def isSideEffectFree: Boolean =
+    override final def isSideEffectFree: Boolean =
         // IMPROVE identify (from the JVM verifiers point-of-view) truly useless checkcasts
         // A useless checkcast is one where the static intra-procedural type information which
         // is available in the bytecode is sufficient to determine that the type is a subtype

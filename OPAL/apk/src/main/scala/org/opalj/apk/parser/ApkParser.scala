@@ -17,6 +17,8 @@ import scala.sys.process.stringToProcess
 import scala.xml.Node
 import scala.xml.XML
 
+import com.typesafe.config.Config
+
 import org.opalj.apk.ApkComponent
 import org.opalj.apk.ApkComponentsKey
 import org.opalj.apk.ApkComponentType
@@ -29,7 +31,6 @@ import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 import org.opalj.util.PerformanceEvaluation.time
 
-import com.typesafe.config.Config
 import net.dongliu.apk.parser.ApkFile
 /**
  * Parses an APK file and generates a [[Project]] for it.
@@ -46,7 +47,7 @@ import net.dongliu.apk.parser.ApkFile
  */
 class ApkParser(val apkPath: String)(implicit config: Config) {
 
-    implicit private val LogContext: LogContext = GlobalLogContext
+    private implicit val LogContext: LogContext = GlobalLogContext
     private val LogCategory                     = "APK parser"
 
     private var tmpDir: Option[File] = None
@@ -232,7 +233,7 @@ class ApkParser(val apkPath: String)(implicit config: Config) {
 
 object ApkParser {
 
-    implicit private val logContext: LogContext = GlobalLogContext
+    private implicit val logContext: LogContext = GlobalLogContext
 
     /**
      * Creates a new [[Project]] from an APK file.

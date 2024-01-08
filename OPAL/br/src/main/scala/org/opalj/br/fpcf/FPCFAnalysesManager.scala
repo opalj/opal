@@ -3,6 +3,8 @@ package org.opalj
 package br
 package fpcf
 
+import com.typesafe.config.Config
+
 import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.AnalysisScenario
 import org.opalj.fpcf.ComputationSpecification
@@ -12,8 +14,6 @@ import org.opalj.fpcf.Schedule
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.debug
 import org.opalj.util.PerformanceEvaluation._
-
-import com.typesafe.config.Config
 
 /**
  * Enables the execution of a set of analyses.
@@ -26,10 +26,10 @@ import com.typesafe.config.Config
 class FPCFAnalysesManager private[fpcf] (val project: SomeProject) {
 
     // caching (by means of using local fields) is not necessary
-    implicit final private[this] def logContext: LogContext = project.logContext
-    final private[this] def config: Config                  = project.config
-    final private[this] def propertyStore: PropertyStore    = project.get(PropertyStoreKey)
-    final private[this] def trace: Boolean                  = config.getBoolean(FPCFAnalysesManager.TraceConfigKey)
+    private[this] implicit final def logContext: LogContext = project.logContext
+    private[this] final def config: Config                  = project.config
+    private[this] final def propertyStore: PropertyStore    = project.get(PropertyStoreKey)
+    private[this] final def trace: Boolean                  = config.getBoolean(FPCFAnalysesManager.TraceConfigKey)
 
     private[this] var schedules: List[Schedule[FPCFAnalysis]] = Nil
 

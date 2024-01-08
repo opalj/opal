@@ -358,7 +358,7 @@ trait RecordCFG
      * Returns `true` if the instruction with the given `pc` was executed.
      * The `pc` has to identify a valid instruction.
      */
-    final private[this] def unsafeWasExecuted(pc: PC): Boolean =
+    private[this] final def unsafeWasExecuted(pc: PC): Boolean =
         // The following "comparatively expensive" test cannot be replace by a simple
         // operandsArray(pc) eq null test as long as we support containing subroutines.
         // In the latter case, a subroutine's (sub) operands array will contain null

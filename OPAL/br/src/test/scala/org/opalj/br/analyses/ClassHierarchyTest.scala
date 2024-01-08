@@ -5,16 +5,16 @@ package analyses
 
 import java.net.URL
 
+import org.junit.runner.RunWith
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
+
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.MethodDescriptor.NoArgsAndReturnVoid
 import org.opalj.br.reader.Java8Framework.ClassFiles
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.log.GlobalLogContext
-
-import org.junit.runner.RunWith
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
-import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Basic tests of the class hierarchy.

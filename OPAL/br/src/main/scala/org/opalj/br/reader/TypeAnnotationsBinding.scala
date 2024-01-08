@@ -24,18 +24,18 @@ trait TypeAnnotationsBinding
         with AttributeBinding {
 
     type TypeAnnotation = br.TypeAnnotation
-    implicit override val typeAnnotationType: ClassTag[TypeAnnotation] = ClassTag(classOf[br.TypeAnnotation])
+    override implicit val typeAnnotationType: ClassTag[TypeAnnotation] = ClassTag(classOf[br.TypeAnnotation])
 
     type TypeAnnotationTarget = br.TypeAnnotationTarget
 
     type TypeAnnotationPath = br.TypeAnnotationPath
 
     type TypeAnnotationPathElement = br.TypeAnnotationPathElement
-    implicit override val typeAnnotationPathElementType: ClassTag[TypeAnnotationPathElement] =
+    override implicit val typeAnnotationPathElementType: ClassTag[TypeAnnotationPathElement] =
         ClassTag(classOf[br.TypeAnnotationPathElement])
 
     type LocalvarTableEntry = br.LocalvarTableEntry
-    implicit override val localvarTableEntryType: ClassTag[LocalvarTableEntry] = ClassTag(classOf[br.LocalvarTableEntry])
+    override implicit val localvarTableEntryType: ClassTag[LocalvarTableEntry] = ClassTag(classOf[br.LocalvarTableEntry])
 
     //
     // TypeAnnotation

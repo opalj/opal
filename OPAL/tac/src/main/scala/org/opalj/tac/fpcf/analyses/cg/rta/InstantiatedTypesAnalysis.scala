@@ -50,7 +50,7 @@ import org.opalj.fpcf.SomeEPS
 class InstantiatedTypesAnalysis private[analyses] (
         final val project: SomeProject) extends FPCFAnalysis {
 
-    implicit private[this] val contextProvider: ContextProvider = project.get(ContextProviderKey)
+    private[this] implicit val contextProvider: ContextProvider = project.get(ContextProviderKey)
 
     def analyze(declaredMethod: DeclaredMethod): PropertyComputationResult = {
         val callersEOptP = propertyStore(declaredMethod, Callers.key)

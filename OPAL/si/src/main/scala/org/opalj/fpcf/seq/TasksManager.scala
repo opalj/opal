@@ -43,7 +43,7 @@ trait TasksManager {
 /**
  * Processes the task that was added last first.
  */
-final private[seq] class LIFOTasksManager extends TasksManager {
+private[seq] final class LIFOTasksManager extends TasksManager {
 
     private[this] val initialTasks: ArrayDeque[QualifiedTask] = new ArrayDeque(50000)
     private[this] val tasks: ArrayDeque[QualifiedTask]        = new ArrayDeque(50000)
@@ -73,7 +73,7 @@ final private[seq] class LIFOTasksManager extends TasksManager {
 /**
  * Processes the tasks that are scheduled for the longest time first.
  */
-final private[seq] class FIFOTasksManager extends TasksManager {
+private[seq] final class FIFOTasksManager extends TasksManager {
 
     private[this] val initialTasks: ArrayDeque[QualifiedTask] = new ArrayDeque(50000)
     private[this] val tasks: ArrayDeque[QualifiedTask]        = new ArrayDeque(50000)
@@ -132,7 +132,7 @@ trait PropertyStoreDependentTasksManager extends TasksManager {
 /**
  * Schedules tasks that have many depender and dependee relations last.
  */
-final private[seq] class ManyDirectDependenciesLastTasksManager
+private[seq] final class ManyDirectDependenciesLastTasksManager
     extends PropertyStoreDependentTasksManager {
 
     private[this] val initialTasks: ArrayDeque[QualifiedTask]     = new ArrayDeque(50000)
@@ -166,7 +166,7 @@ final private[seq] class ManyDirectDependenciesLastTasksManager
 /**
  * Schedules tasks that have many depender and dependee relations first.
  */
-final private[seq] class ManyDirectDependenciesFirstTasksManager
+private[seq] final class ManyDirectDependenciesFirstTasksManager
     extends PropertyStoreDependentTasksManager {
 
     private[this] val initialTasks: ArrayDeque[QualifiedTask]     = new ArrayDeque(50000)
@@ -197,7 +197,7 @@ final private[seq] class ManyDirectDependenciesFirstTasksManager
     override def toString: String = "ManyDirectDependenciesFirstTasksManager"
 }
 
-final private[seq] class ManyDirectDependersLastTasksManager
+private[seq] final class ManyDirectDependersLastTasksManager
     extends PropertyStoreDependentTasksManager {
 
     private[this] val initialTasks: ArrayDeque[QualifiedTask]     = new ArrayDeque(50000)
@@ -226,7 +226,7 @@ final private[seq] class ManyDirectDependersLastTasksManager
     override def toString: String = "ManyDirectDependersLastTasksManager"
 }
 
-final private[seq] class ManyDirectDependersFirstTasksManager
+private[seq] final class ManyDirectDependersFirstTasksManager
     extends PropertyStoreDependentTasksManager {
 
     private[this] val initialTasks: ArrayDeque[QualifiedTask]     = new ArrayDeque(50000)
@@ -255,7 +255,7 @@ final private[seq] class ManyDirectDependersFirstTasksManager
     override def toString: String = "ManyDirectDependersFirstTasksManager"
 }
 
-final private[seq] class ManyDependeesOfDirectDependersLastTasksManager
+private[seq] final class ManyDependeesOfDirectDependersLastTasksManager
     extends PropertyStoreDependentTasksManager {
 
     // The following insights were gained by running the IFDS taint analysis:
@@ -303,7 +303,7 @@ final private[seq] class ManyDependeesOfDirectDependersLastTasksManager
     override def toString: String = "ManyDependeesOfDirectDependersLastTasksManager"
 }
 
-final private[seq] class ManyDependeesOfDirectDependersFirstTasksManager
+private[seq] final class ManyDependeesOfDirectDependersFirstTasksManager
     extends PropertyStoreDependentTasksManager {
 
     // The following insights were gained by running the IFDS taint analysis:
@@ -356,7 +356,7 @@ final private[seq] class ManyDependeesOfDirectDependersFirstTasksManager
     override def toString: String = "ManyDependeesOfDirectDependersFirstTasksManager"
 }
 
-final private[seq] class ManyDependeesAndDependersOfDirectDependersLastTasksManager
+private[seq] final class ManyDependeesAndDependersOfDirectDependersLastTasksManager
     extends PropertyStoreDependentTasksManager {
 
     private[this] val initialTasks: ArrayDeque[QualifiedTask]     = new ArrayDeque(50000)
@@ -388,7 +388,7 @@ final private[seq] class ManyDependeesAndDependersOfDirectDependersLastTasksMana
     override def toString: String = "ManyDependeesAndDependersOfDirectDependersLastTasksManager"
 }
 
-final private[seq] class ManyDependeesAndDependersOfDirectDependersFirstTasksManager
+private[seq] final class ManyDependeesAndDependersOfDirectDependersFirstTasksManager
     extends PropertyStoreDependentTasksManager {
 
     private[this] val initialTasks: ArrayDeque[QualifiedTask]     = new ArrayDeque(50000)
@@ -420,7 +420,7 @@ final private[seq] class ManyDependeesAndDependersOfDirectDependersFirstTasksMan
     override def toString: String = "ManyDependeesAndDependersOfDirectDependersFirstTasksManager"
 }
 
-final private[seq] class AllDependeesTasksManager(
+private[seq] final class AllDependeesTasksManager(
         final val forward: Boolean = true,
         final val manyDependeesLast: Boolean = true) extends PropertyStoreDependentTasksManager {
 
