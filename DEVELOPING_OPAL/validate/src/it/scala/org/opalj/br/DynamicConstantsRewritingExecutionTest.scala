@@ -6,6 +6,11 @@ import java.io.File
 import java.math.RoundingMode
 import java.net.URL
 
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
+
+import com.typesafe.config.Config
+
 import org.opalj.ba.ProjectBasedInMemoryClassLoader
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.bi.isCurrentJREAtLeastJava11
@@ -13,10 +18,6 @@ import org.opalj.bi.isCurrentJREAtLeastJava15
 import org.opalj.br.analyses.Project
 import org.opalj.br.reader.DynamicConstantRewriting
 import org.opalj.bytecode.RTJar
-
-import com.typesafe.config.Config
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.matchers.should.Matchers
 
 /**
  * Tests if OPAL is able to rewrite dynamic constants and checks if the rewritten bytecode is

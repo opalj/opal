@@ -20,7 +20,7 @@ import org.opalj.bi.ReferenceKind
  */
 sealed abstract class MethodHandle extends ConstantValue[MethodHandle] {
 
-    final override def value: this.type = this
+    override final def value: this.type = this
 
     /**
      * Returns `ObjectType.MethodHandle`;
@@ -133,7 +133,7 @@ case class InvokeStaticMethodHandle(
 
     override def opcodeOfUnderlyingInstruction: Opcode = instructions.INVOKESTATIC.opcode
 
-    final override def isInvokeStaticMethodHandle: Boolean = true
+    override final def isInvokeStaticMethodHandle: Boolean = true
 
     override def referenceKind: ReferenceKind = REF_invokeStatic
 }
@@ -155,7 +155,7 @@ case class NewInvokeSpecialMethodHandle(
         methodDescriptor: MethodDescriptor
 ) extends MethodCallMethodHandle {
 
-    final override val name = "<init>"
+    override final val name = "<init>"
 
     override def opcodeOfUnderlyingInstruction: Opcode = instructions.INVOKESPECIAL.opcode
 

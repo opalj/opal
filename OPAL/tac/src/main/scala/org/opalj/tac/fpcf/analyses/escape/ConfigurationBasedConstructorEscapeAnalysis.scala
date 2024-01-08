@@ -43,7 +43,7 @@ trait ConfigurationBasedConstructorEscapeAnalysis extends AbstractEscapeAnalysis
         }.toMap
     }
 
-    protected[this] abstract override def handleThisLocalOfConstructor(
+    abstract override protected[this] def handleThisLocalOfConstructor(
         call: NonVirtualMethodCall[V]
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
         assert(call.name == "<init>")

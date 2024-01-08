@@ -236,7 +236,7 @@ trait StaticDataUsageAnalysisScheduler extends FPCFAnalysisScheduler {
         PropertyBounds.lub(StaticDataUsage)
     }
 
-    final override def uses: Set[PropertyBounds] = Set(
+    override final def uses: Set[PropertyBounds] = Set(
         PropertyBounds.lub(StaticDataUsage),
         PropertyBounds.lub(CompileTimeConstancy)
     )

@@ -17,7 +17,7 @@ trait JSRInstructionLike extends UnconditionalBranchInstructionLike {
 
 trait JSRInstruction extends UnconditionalBranchInstruction with JSRInstructionLike {
 
-    final override def isIsomorphic(thisPC: PC, thatPC: PC)(implicit code: Code): Boolean = {
+    override final def isIsomorphic(thisPC: PC, thatPC: PC)(implicit code: Code): Boolean = {
         val that = code.instructions(thatPC)
         (this eq that) || (
             that match {

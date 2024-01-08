@@ -39,6 +39,6 @@ trait Java7LibraryFramework
 
 object Java7LibraryFramework extends Java7LibraryFramework {
 
-    final override def loadsInterfacesOnly: Boolean = true
+    override final def loadsInterfacesOnly: Boolean = true
 
 }

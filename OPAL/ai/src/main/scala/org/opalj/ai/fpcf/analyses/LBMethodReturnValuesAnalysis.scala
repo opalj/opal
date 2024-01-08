@@ -71,7 +71,7 @@ class LBMethodReturnValuesAnalysis private[analyses] (
         with RefinedTypeLevelFieldAccessInstructions
         with RefinedTypeLevelInvokeInstructions {
 
-        final override val UsedPropertiesBound: SinglePropertiesBoundType = LBProperties
+        override final val UsedPropertiesBound: SinglePropertiesBoundType = LBProperties
 
         override implicit val project: SomeProject = analysis.project
 

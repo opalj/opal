@@ -166,7 +166,7 @@ trait L0FieldAssignabilityAnalysisScheduler extends FPCFAnalysisScheduler {
 
     override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey, DeclaredFieldsKey)
 
-    final override def uses: Set[PropertyBounds] = PropertyBounds.ubs(FieldWriteAccessInformation)
+    override final def uses: Set[PropertyBounds] = PropertyBounds.ubs(FieldWriteAccessInformation)
 
     final def derivedProperty: PropertyBounds = {
         // currently, the analysis will derive the final result in a single step

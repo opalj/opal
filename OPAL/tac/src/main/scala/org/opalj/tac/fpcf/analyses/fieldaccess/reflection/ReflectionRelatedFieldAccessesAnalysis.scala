@@ -170,7 +170,7 @@ sealed trait FieldInstanceBasedReflectiveFieldAccessAnalysis extends ReflectionA
             callerStatements: Array[Stmt[V]]
     )
 
-    final override def processNewCaller(
+    override final def processNewCaller(
         calleeContext:   ContextType,
         callerContext:   ContextType,
         accessPC:        Int,
@@ -598,7 +598,7 @@ class MethodHandleInvokeAnalysis private[analyses] (
         final val isSignaturePolymorphic: Boolean
 ) extends ReflectionAnalysis with TypeConsumerAnalysis {
 
-    final override val apiMethod =
+    override final val apiMethod =
         declaredMethods(
             ObjectType.MethodHandle,
             "",

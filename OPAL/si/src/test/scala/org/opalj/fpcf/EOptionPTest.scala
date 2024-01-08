@@ -2,9 +2,9 @@
 package org.opalj
 package fpcf
 
-import org.opalj.fpcf.fixtures.NilProperty
-
 import org.scalatest.funsuite.AnyFunSuite
+
+import org.opalj.fpcf.fixtures.NilProperty
 
 class EOptionPTest extends AnyFunSuite {
 

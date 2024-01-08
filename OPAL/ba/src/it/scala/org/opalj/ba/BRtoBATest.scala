@@ -8,6 +8,13 @@ import java.io.File
 import java.lang.Boolean.FALSE
 import java.util.concurrent.atomic.AtomicInteger
 
+import org.junit.runner.RunWith
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
+
+import com.typesafe.config.ConfigValueFactory.fromAnyRef
+
 import org.opalj.bi.TestResources.allBITestJARs
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.reader.BytecodeInstructionsCache
@@ -16,12 +23,6 @@ import org.opalj.br.reader.Java9FrameworkWithCaching
 import org.opalj.bytecode.JRELibraryFolder
 
 import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParallelizable
-
-import com.typesafe.config.ConfigValueFactory.fromAnyRef
-import org.junit.runner.RunWith
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
-import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Smoketest if we can convert every class file using the "Bytecode Representation" back to a

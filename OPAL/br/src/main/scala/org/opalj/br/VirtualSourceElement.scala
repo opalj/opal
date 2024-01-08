@@ -18,7 +18,7 @@ sealed abstract class VirtualSourceElement
 
     override def attributes: Attributes = NoAttributes
 
-    final override def isVirtual = true
+    override final def isVirtual = true
 
     /**
      * The "natural order" is VirtualClasses < VirtualFields < VirtualMethods.

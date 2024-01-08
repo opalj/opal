@@ -8,7 +8,7 @@ package org.opalj.br
  */
 case class ModulePackages(packages: Packages) extends Attribute {
 
-    final override def kindId: Int = ModulePackages.KindId
+    override final def kindId: Int = ModulePackages.KindId
 
     override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = {
         // TODO make the comparisons order independent...

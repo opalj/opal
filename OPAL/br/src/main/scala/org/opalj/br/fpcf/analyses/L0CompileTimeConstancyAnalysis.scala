@@ -96,7 +96,7 @@ trait L0CompileTimeConstancyAnalysisScheduler extends FPCFAnalysisScheduler {
 
     override def requiredProjectInformation: ProjectInformationKeys = Seq.empty
 
-    final override def uses: Set[PropertyBounds] = PropertyBounds.lubs(FieldAssignability)
+    override final def uses: Set[PropertyBounds] = PropertyBounds.lubs(FieldAssignability)
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(CompileTimeConstancy)
 

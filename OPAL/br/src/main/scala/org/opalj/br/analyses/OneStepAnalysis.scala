@@ -17,7 +17,7 @@ trait OneStepAnalysis[Source, +AnalysisResult] extends Analysis[Source, Analysis
         isInterrupted: () => Boolean
     ): AnalysisResult
 
-    final override def analyze(
+    override final def analyze(
         project:                Project[Source],
         parameters:             Seq[String]               = List.empty,
         initProgressManagement: Int => ProgressManagement = ProgressManagement.None

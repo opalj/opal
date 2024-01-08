@@ -38,7 +38,7 @@ trait IntegerValues extends IntegerValuesDomain with ConcreteIntegerValues {
         with IsIntegerValue {
         this: DomainTypedValue[CTIntType] =>
 
-        final override def leastUpperType: Option[CTIntType] = Some(CTIntType)
+        override final def leastUpperType: Option[CTIntType] = Some(CTIntType)
 
     }
 
@@ -48,9 +48,9 @@ trait IntegerValues extends IntegerValuesDomain with ConcreteIntegerValues {
      * Models the top value of this domain's lattice.
      */
     trait AnIntegerValue extends IntegerLikeValue { this: DomainTypedValue[CTIntType] =>
-        final override def lowerBound: Int = Int.MinValue
-        final override def upperBound: Int = Int.MaxValue
-        final override def constantValue: Option[Int] = None
+        override final def lowerBound: Int = Int.MinValue
+        override final def upperBound: Int = Int.MaxValue
+        override final def constantValue: Option[Int] = None
     }
 
     /**
@@ -59,8 +59,8 @@ trait IntegerValues extends IntegerValuesDomain with ConcreteIntegerValues {
     abstract class TheIntegerValue extends IntegerLikeValue { this: DomainTypedValue[CTIntType] =>
         val value: Int
 
-        final override def lowerBound: Int = value
-        final override def upperBound: Int = value
+        override final def lowerBound: Int = value
+        override final def upperBound: Int = value
     }
 
     object TheIntegerValue { def unapply(v: TheIntegerValue): Some[Int] = Some(v.value) }
@@ -75,7 +75,7 @@ trait IntegerValues extends IntegerValuesDomain with ConcreteIntegerValues {
     // QUESTIONS ABOUT VALUES
     //
 
-    @inline final override def intValue[T](
+    @inline override final def intValue[T](
         value: DomainValue
     )(
         f: Int => T
@@ -85,7 +85,7 @@ trait IntegerValues extends IntegerValuesDomain with ConcreteIntegerValues {
             case _                  => orElse
         }
 
-    @inline final override def intValueOption(value: DomainValue): Option[Int] =
+    @inline override final def intValueOption(value: DomainValue): Option[Int] =
         value match {
             case v: TheIntegerValue => Some(v.value)
             case _                  => None

@@ -147,7 +147,7 @@ abstract class DefaultGroupedFeaturesQuery(
 
     final def featureIDs: Seq[String] = groupedFeatureIDs.flatten
 
-    final override def evaluate[S](
+    override final def evaluate[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
         rawClassFiles:        Iterable[(da.ClassFile, S)]

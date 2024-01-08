@@ -3,13 +3,13 @@ package org.opalj
 package br
 package fpcf
 
-import org.opalj.br.TestSupport.biProject
-import org.opalj.br.analyses.SomeProject
-
 import org.junit.runner.RunWith
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
+
+import org.opalj.br.TestSupport.biProject
+import org.opalj.br.analyses.SomeProject
 
 /**
  * @author Michael Eichberg

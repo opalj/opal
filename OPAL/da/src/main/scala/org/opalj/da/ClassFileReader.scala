@@ -76,7 +76,7 @@ object ClassFileReader
     type Method_Info = da.Method_Info
     override implicit val methodInfoType: ClassTag[Method_Info] = ClassTag(classOf[da.Method_Info])
 
-    final override def reifyEmptyAttributes: Boolean = true
+    override final def reifyEmptyAttributes: Boolean = true
 
     def ClassFile(
         cp:            Constant_Pool,
@@ -293,7 +293,7 @@ object ClassFileReader
         )
     }
 
-    final override def loadsInterfacesOnly: Boolean = false
+    override final def loadsInterfacesOnly: Boolean = false
 
     type Unknown_attribute = da.Unknown_attribute
     def Unknown_attribute(

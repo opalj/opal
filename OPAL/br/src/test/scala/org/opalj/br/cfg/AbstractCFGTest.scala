@@ -2,12 +2,12 @@
 package org.opalj.br
 package cfg
 
-import org.opalj.br.instructions.Instruction
-import org.opalj.io.writeAndOpen
-
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
+
+import org.opalj.br.instructions.Instruction
+import org.opalj.io.writeAndOpen
 
 /**
  * Helper methods to test the CFG related methods.

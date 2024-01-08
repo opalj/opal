@@ -268,7 +268,7 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
      * a `PackagePrivateMethodContext`, in which case the equals method guarantees that it matches
      * any `PackagePrivateMethodContext` with the same signature.
      */
-    private[analyses] sealed class MethodContext(
+    sealed private[analyses] class MethodContext(
             val methodName: String,
             val descriptor: MethodDescriptor
     ) {

@@ -17,5 +17,5 @@ final case class ConstantClass(value: ReferenceType) extends ConstantValue[Refer
 
     override def runtimeValueType = ObjectType.Class
 
-    final override def toReferenceType: ReferenceType = value
+    override final def toReferenceType: ReferenceType = value
 }

@@ -17,7 +17,7 @@ case class Record(components: RecordComponents)
         this == other
     }
 
-    final override def apply(componentIndex: Int): RecordComponent = components(componentIndex)
+    override final def apply(componentIndex: Int): RecordComponent = components(componentIndex)
 
 }
 

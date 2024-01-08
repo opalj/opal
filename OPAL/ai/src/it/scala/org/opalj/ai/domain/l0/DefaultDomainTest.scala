@@ -6,14 +6,14 @@ package l0
 
 import java.net.URL
 
+import org.junit.runner.RunWith
+import org.scalatestplus.junit.JUnitRunner
+
 import org.opalj.br.ClassHierarchy
 import org.opalj.br.Code
 import org.opalj.br.Method
 import org.opalj.br.PCAndInstruction
 import org.opalj.br.analyses.Project
-
-import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
 
 /**
  * This system test(suite) just loads a very large number of class files and performs

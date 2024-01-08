@@ -46,7 +46,7 @@ sealed abstract class Ref2List[+T <: AnyRef] extends Serializable { self =>
     /** Prepends the given value to this list. E.g., `l = "x" +: l`. */
     def +:[X >: T <: AnyRef](v: X): Ref2List[X]
 
-    final override def equals(other: Any): Boolean = {
+    override final def equals(other: Any): Boolean = {
         other match {
             case l: Ref2List[AnyRef] => equals(l)
             case _                   => false

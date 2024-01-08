@@ -5,16 +5,16 @@ package domain
 
 import scala.collection.immutable.LongMap
 
+import org.junit.runner.RunWith
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
+
 import org.opalj.ai.common.XHTML.dumpOnFailureDuringValidation
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br._
 import org.opalj.br.reader.Java8Framework.ClassFiles
 import org.opalj.collection.immutable.IntTrieSet
-
-import org.junit.runner.RunWith
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
-import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Basic tests of the abstract interpreter in the presence of simple control flow

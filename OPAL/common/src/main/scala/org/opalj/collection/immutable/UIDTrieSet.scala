@@ -43,7 +43,7 @@ sealed abstract class UIDTrieSet[T <: UID] { set =>
     // TODO: optimize implementation
     def ++(other: UIDTrieSet[T]): UIDTrieSet[T] = other.foldLeft(this)((r, e) => r add e)
 
-    final override def equals(other: Any): Boolean = {
+    override final def equals(other: Any): Boolean = {
         other match {
             case that: UIDTrieSet[_] => this.equals(that)
             case _                   => false
@@ -77,7 +77,7 @@ object UIDTrieSet {
 /**
  * The common superclass of the nodes of the trie.
  */
-private[immutable] sealed trait UIDTrieSetNode[T <: UID] {
+sealed private[immutable] trait UIDTrieSetNode[T <: UID] {
 
     def foreach[U](f: T => U): Unit
     def foldLeft[B](z: B)(op: (B, T) => B): B
@@ -97,15 +97,15 @@ private[immutable] sealed trait UIDTrieSetNode[T <: UID] {
 /**
  * The common superclass of the leafs of the trie.
  */
-private[immutable] sealed abstract class UIDTrieSetLeaf[T <: UID]
+sealed abstract private[immutable] class UIDTrieSetLeaf[T <: UID]
     extends UIDTrieSet[T]
     with UIDTrieSetNode[T] {
 
-    final override private[immutable] def containsId(id: Int, key: Int): Boolean = {
+    override private[immutable] final def containsId(id: Int, key: Int): Boolean = {
         this.containsId(id)
     }
 
-    final override private[immutable] def toString(indent: Int): String = {
+    override private[immutable] final def toString(indent: Int): String = {
         (" " * indent) + toString()
     }
 

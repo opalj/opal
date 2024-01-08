@@ -60,7 +60,7 @@ trait CFGNode extends Node {
     // MANAGING SUCCESSORS
     //
 
-    final override def hasSuccessors: Boolean = _successors.nonEmpty
+    override final def hasSuccessors: Boolean = _successors.nonEmpty
 
     /**
      * Returns `true` if the last instruction of this basic block throws/may throw an exception;
@@ -70,7 +70,7 @@ trait CFGNode extends Node {
         _successors.exists(successor => successor.isCatchNode || successor.isAbnormalReturnExitNode)
     }
 
-    final override def foreachSuccessor(f: Node => Unit): Unit = _successors foreach f
+    override final def foreachSuccessor(f: Node => Unit): Unit = _successors foreach f
 
     private[this] var _successors: Set[CFGNode] = Set.empty
 

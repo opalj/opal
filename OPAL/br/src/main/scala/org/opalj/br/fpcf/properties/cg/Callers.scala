@@ -106,29 +106,29 @@ sealed trait Callers extends OrderedProperty with CallersPropertyMetaInformation
 }
 
 sealed trait CallersWithoutUnknownContext extends Callers {
-    final override def hasCallersWithUnknownContext: Boolean = false
+    override final def hasCallersWithUnknownContext: Boolean = false
 }
 
 sealed trait CallersWithUnknownContext extends Callers {
-    final override def hasCallersWithUnknownContext: Boolean = true
-    final override def updatedWithUnknownContext(): CallersWithUnknownContext = this
+    override final def hasCallersWithUnknownContext: Boolean = true
+    override final def updatedWithUnknownContext(): CallersWithUnknownContext = this
 }
 
 sealed trait CallersWithVMLevelCall extends Callers {
-    final override def hasVMLevelCallers: Boolean = true
-    final override def updatedWithVMLevelCall(): CallersWithVMLevelCall = this
+    override final def hasVMLevelCallers: Boolean = true
+    override final def updatedWithVMLevelCall(): CallersWithVMLevelCall = this
 }
 
 sealed trait CallersWithoutVMLevelCall extends Callers {
-    final override def hasVMLevelCallers: Boolean = false
+    override final def hasVMLevelCallers: Boolean = false
 }
 
 sealed trait EmptyConcreteCallers extends Callers {
-    final override def size: Int = 0
+    override final def size: Int = 0
 
-    final override def isEmpty: Boolean = true
+    override final def isEmpty: Boolean = true
 
-    final override def nonEmpty: Boolean = false
+    override final def nonEmpty: Boolean = false
 
     override def callersForContextId(calleeContextId: Int): LongLinkedSet = {
         LongLinkedTrieSet.empty
@@ -175,7 +175,7 @@ sealed trait EmptyConcreteCallers extends Callers {
             handleContext(contextProvider.newContext(method), NoContext, -1, true)
     }
 
-    final override def updated(
+    override final def updated(
         calleeContext: Context, callerContext: Context, pc: Int, isDirect: Boolean
     ): Callers = {
         val map = IntMap(calleeContext.id -> LongLinkedTrieSet(Callers.toLong(callerContext.id, pc, isDirect)))
@@ -212,15 +212,15 @@ sealed trait CallersImplementation extends Callers {
     val encodedCallers: IntMap[LongLinkedSet] /* Callee ContextID => Caller ContextId + PC + isDirect */
     override val size: Int
 
-    final override def isEmpty: Boolean = size == 0
+    override final def isEmpty: Boolean = size == 0
 
-    final override def nonEmpty: Boolean = size != 0
+    override final def nonEmpty: Boolean = size != 0
 
     override def callersForContextId(calleeContextId: Int): LongLinkedSet = {
         encodedCallers.getOrElse(calleeContextId, LongLinkedTrieSet.empty)
     }
 
-    final override def callContexts(method: DeclaredMethod)(
+    override final def callContexts(method: DeclaredMethod)(
         implicit
         contextProvider: ContextProvider
     ): IterableOnce[(Context /*Callee*/ , Context /*Caller*/ , Int /*PC*/ , Boolean /*isDirect*/ )] = {
@@ -238,7 +238,7 @@ sealed trait CallersImplementation extends Callers {
             contexts
     }
 
-    final override def calleeContexts(method: DeclaredMethod)(
+    override final def calleeContexts(method: DeclaredMethod)(
         implicit
         contextProvider: ContextProvider
     ): IterableOnce[Context] = {
@@ -253,7 +253,7 @@ sealed trait CallersImplementation extends Callers {
             contexts
     }
 
-    final override def forNewCalleeContexts(old: Callers, method: DeclaredMethod)(
+    override final def forNewCalleeContexts(old: Callers, method: DeclaredMethod)(
         handleContext: Context /*Callee*/ => Unit
     )(
         implicit
@@ -279,7 +279,7 @@ sealed trait CallersImplementation extends Callers {
                 handleContext(unknownContext)
     }
 
-    final override def forNewCallerContexts(old: Callers, method: DeclaredMethod)(
+    override final def forNewCallerContexts(old: Callers, method: DeclaredMethod)(
         handleContext: (Context /*Callee*/ , Context /*Caller*/ , Int /*PC*/ , Boolean /*isDirect*/ ) => Unit
     )(
         implicit

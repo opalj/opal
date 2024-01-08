@@ -4,12 +4,12 @@ package ai
 package domain
 package l1
 
-import org.opalj.br.ObjectType
-
 import org.junit.runner.RunWith
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
+
+import org.opalj.br.ObjectType
 
 /**
  * Tests the `ConstraintsBetweenIntegerValuesTest` Domain extension.

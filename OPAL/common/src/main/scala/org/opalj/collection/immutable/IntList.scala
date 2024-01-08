@@ -39,7 +39,7 @@ sealed trait IntList extends Serializable { self =>
     /** Prepends the given values from the other list to this list. */
     def ++:(other: IntList): IntList
 
-    final override def equals(other: Any): Boolean = {
+    override final def equals(other: Any): Boolean = {
         other match {
             case l: IntList => equals(l)
             case _          => false

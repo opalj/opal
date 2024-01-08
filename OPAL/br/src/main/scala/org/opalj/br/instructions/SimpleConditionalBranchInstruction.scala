@@ -42,8 +42,8 @@ trait SimpleConditionalBranchInstruction[T <: SimpleConditionalBranchInstruction
      */
     def negate(newBranchoffset: Int = branchoffset): SimpleConditionalBranchInstruction[_]
 
-    final override def isSimpleConditionalBranchInstruction: Boolean = true
-    final override def asSimpleConditionalBranchInstruction: this.type = this
+    override final def isSimpleConditionalBranchInstruction: Boolean = true
+    override final def asSimpleConditionalBranchInstruction: this.type = this
 
     /**
      * @inheritdoc

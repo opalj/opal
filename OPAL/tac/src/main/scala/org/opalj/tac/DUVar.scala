@@ -147,7 +147,7 @@ class DVar[+Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/ 
      * DVars additionally remap self-uses (which don't make sense, but can be a result
      * of the transformation of exception handlers) to uses of the next statement.
      */
-    private[tac] override def remapIndexes(
+    override private[tac] def remapIndexes(
         pcToIndex:                    Array[Int],
         isIndexOfCaughtExceptionStmt: Int => Boolean
     ): Unit = {
@@ -232,7 +232,7 @@ class UVar[+Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/ 
 
     final def isSideEffectFree: Boolean = true
 
-    private[tac] override def remapIndexes(
+    override private[tac] def remapIndexes(
         pcToIndex:                    Array[Int],
         isIndexOfCaughtExceptionStmt: Int => Boolean
     ): Unit = {

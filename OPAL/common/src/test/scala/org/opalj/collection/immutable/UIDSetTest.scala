@@ -5,9 +5,6 @@ package immutable
 
 import scala.language.implicitConversions
 
-import org.opalj.util.Nanoseconds
-import org.opalj.util.PerformanceEvaluation
-
 import org.junit.runner.RunWith
 import org.scalacheck.Arbitrary
 import org.scalacheck.Gen
@@ -17,6 +14,9 @@ import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
+
+import org.opalj.util.Nanoseconds
+import org.opalj.util.PerformanceEvaluation
 
 /**
  * Tests `UIDSets` by creating standard Sets and comparing

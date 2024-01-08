@@ -631,9 +631,9 @@ class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C,
 abstract class IFDSAnalysisScheduler[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C, _]]
     extends FPCFLazyAnalysisScheduler {
 
-    final override type InitializationData = IFDSAnalysis[Fact, C, S]
+    override final type InitializationData = IFDSAnalysis[Fact, C, S]
     def property: IFDSPropertyMetaInformation[S, Fact]
-    final override def derivesLazily: Some[PropertyBounds] = Some(PropertyBounds.ub(property))
+    override final def derivesLazily: Some[PropertyBounds] = Some(PropertyBounds.ub(property))
     override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
 
     override def register(

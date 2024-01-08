@@ -140,7 +140,7 @@ trait VirtualMethodThrownExceptionsAnalysisScheduler extends FPCFAnalysisSchedul
 
     override def requiredProjectInformation: ProjectInformationKeys = Seq(IsOverridableMethodKey)
 
-    final override def uses: Set[PropertyBounds] = Set(PropertyBounds.lub(ThrownExceptions))
+    override final def uses: Set[PropertyBounds] = Set(PropertyBounds.lub(ThrownExceptions))
 
     final def derivedProperty: PropertyBounds = {
         PropertyBounds.lub(ThrownExceptionsByOverridingMethods)

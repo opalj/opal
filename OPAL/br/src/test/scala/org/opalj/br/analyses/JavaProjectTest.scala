@@ -5,12 +5,12 @@ package analyses
 
 import scala.jdk.CollectionConverters._
 
-import org.opalj.bi.TestResources.locateTestResources
-
 import org.junit.runner.RunWith
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
+
+import org.opalj.bi.TestResources.locateTestResources
 
 /**
  * Tests the support for "project" related functionality.

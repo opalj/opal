@@ -99,7 +99,7 @@ class PackageLocation(
         details.map(d => <div>{ d.toXHTML(basicInfoOnly) }</div>).toList
     }
 
-    final override def toXHTML(basicInfoOnly: Boolean): Node = {
+    override final def toXHTML(basicInfoOnly: Boolean): Node = {
         Group(List(
             <dt>location</dt>,
             <dd>
@@ -114,7 +114,7 @@ class PackageLocation(
 
     def detailsAsIDL: JsValue = Json.toJson(details)
 
-    final override def toIDL: JsValue = {
+    override final def toIDL: JsValue = {
         Json.obj(
             "description" -> description,
             "location" -> locationAsIDL,

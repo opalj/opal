@@ -11,6 +11,12 @@ import java.nio.file.Paths
 import java.util.zip.GZIPInputStream
 import scala.io.Source
 
+import org.junit.runner.RunWith
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatestplus.junit.JUnitRunner
+
+import com.typesafe.config.ConfigValueFactory
+
 import org.opalj.ai.domain.l1
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.TestSupport.allBIProjects
@@ -35,11 +41,6 @@ import org.opalj.tac.fpcf.analyses.FPCFAnalysesIntegrationTest.p
 import org.opalj.tac.fpcf.analyses.FPCFAnalysesIntegrationTest.ps
 import org.opalj.util.Nanoseconds
 import org.opalj.util.PerformanceEvaluation.time
-
-import com.typesafe.config.ConfigValueFactory
-import org.junit.runner.RunWith
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Simple test to ensure that the FPFC analyses do not cause exceptions and that their results

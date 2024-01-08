@@ -3,13 +3,13 @@ package org.opalj
 package br
 package analyses
 
-import org.opalj.bi.TestResources.locateTestResources
-import org.opalj.br.reader.Java11Framework.ClassFiles
-
 import org.junit.runner.RunWith
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
+
+import org.opalj.bi.TestResources.locateTestResources
+import org.opalj.br.reader.Java11Framework.ClassFiles
 
 /**
  * Tests the support for "project" related functionality.

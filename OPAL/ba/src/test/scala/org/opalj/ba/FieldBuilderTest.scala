@@ -7,6 +7,10 @@ import scala.reflect.runtime.universe._
 
 import java.io.ByteArrayInputStream
 
+import org.junit.runner.RunWith
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatestplus.junit.JUnitRunner
+
 import org.opalj.bc.Assembler
 import org.opalj.bi.ACC_FINAL
 import org.opalj.bi.ACC_PRIVATE
@@ -14,10 +18,6 @@ import org.opalj.bi.ACC_PUBLIC
 import org.opalj.br.instructions._
 import org.opalj.br.reader.Java8Framework
 import org.opalj.util.InMemoryClassLoader
-
-import org.junit.runner.RunWith
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests the properties of fields build with the BytecodeAssembler DSL. The class is build,

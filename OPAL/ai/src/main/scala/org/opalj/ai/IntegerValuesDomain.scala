@@ -213,7 +213,6 @@ trait IntegerValuesDomain extends IntegerValuesFactory { domain =>
     ): (Operands, Locals) = (operands, locals)
 
     /**
-     *
      * @note This function is ONLY defined if a corresponding test (`value1 == value2`)
      *      returned [[org.opalj.Unknown]]. I.e., this method is only allowed to be
      *      called if there is something to establish!

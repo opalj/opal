@@ -30,7 +30,7 @@ trait TypeLevelLongValues extends LongValuesDomain {
     trait LongValue extends TypedValue[LongType] with IsLongValue {
         this: DomainTypedValue[LongType] =>
 
-        final override def leastUpperType: Option[LongType] = Some(LongType)
+        override final def leastUpperType: Option[LongType] = Some(LongType)
 
     }
 

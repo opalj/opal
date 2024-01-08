@@ -50,4 +50,3 @@ class CompileTimeConstantMatcher extends CompileTimeConstancyMatcher(CompileTime
  * property [[org.opalj.br.fpcf.properties.CompileTimeVaryingField]].
  */
 class CompileTimeVaryingMatcher extends CompileTimeConstancyMatcher(CompileTimeVaryingField)
-

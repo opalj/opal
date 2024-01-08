@@ -16,7 +16,7 @@ case class EnclosingMethod_attribute(
         method_index:         Constant_Pool_Index
 ) extends Attribute {
 
-    final override def attribute_length = 2 + 2
+    override final def attribute_length = 2 + 2
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         <div class="details enclosing_method_attribute">

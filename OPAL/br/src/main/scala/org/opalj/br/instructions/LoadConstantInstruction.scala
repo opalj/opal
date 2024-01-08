@@ -58,7 +58,7 @@ abstract class LoadConstantInstruction[T]
 
     final def expressionResult: Stack.type = Stack
 
-    final override def toString(currentPC: Int): String = toString()
+    override final def toString(currentPC: Int): String = toString()
 }
 /**
  * Defines factory methods for `LoadConstantInstruction`s.

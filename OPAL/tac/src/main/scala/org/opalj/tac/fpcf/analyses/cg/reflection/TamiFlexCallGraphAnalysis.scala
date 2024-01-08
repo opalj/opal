@@ -93,7 +93,7 @@ class TamiFlexMethodInvokeAnalysis private[analyses] (
         val key:                String
 ) extends TACAIBasedAPIBasedAnalysis with TypeConsumerAnalysis {
 
-    final private[this] val tamiFlexLogData = project.get(TamiFlexKey)
+    private[this] final val tamiFlexLogData = project.get(TamiFlexKey)
 
     override def processNewCaller(
         calleeContext:   ContextType,

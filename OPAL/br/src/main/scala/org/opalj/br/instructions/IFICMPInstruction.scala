@@ -22,7 +22,7 @@ trait IFICMPInstruction[T <: IFICMPInstruction[T]]
     extends SimpleConditionalBranchInstruction[T]
     with IFICMPInstructionLike {
 
-    final override def asIFICMPInstruction: this.type = this
+    override final def asIFICMPInstruction: this.type = this
 
 }
 

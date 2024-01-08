@@ -11,12 +11,12 @@ import org.opalj.br.instructions.InstructionLabel
  */
 case class LabelElement(label: InstructionLabel) extends PseudoInstruction {
 
-    final override def isExceptionHandlerElement: Boolean = false
+    override final def isExceptionHandlerElement: Boolean = false
 
-    final override def isTry: Boolean = false
+    override final def isTry: Boolean = false
 
-    final override def isCatch: Boolean = false
+    override final def isCatch: Boolean = false
 
-    final override def isPCLabel: Boolean = label.isPCLabel
+    override final def isPCLabel: Boolean = label.isPCLabel
 
 }

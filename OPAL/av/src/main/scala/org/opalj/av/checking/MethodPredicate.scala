@@ -11,7 +11,7 @@ import org.opalj.br.MethodDescriptor
  */
 case object AnyMethod extends SourceElementPredicate[Method] {
 
-    final override def apply(method: Method): Boolean = true
+    override final def apply(method: Method): Boolean = true
 
     def toDescription(): String = "/*any method*/"
 

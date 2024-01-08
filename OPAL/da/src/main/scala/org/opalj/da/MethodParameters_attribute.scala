@@ -18,7 +18,7 @@ case class MethodParameters_attribute(
         parameters:           ArraySeq[MethodParameter]
 ) extends Attribute {
 
-    final override def attribute_length: Int = 1 /*parameters_count*/ + parameters.size * 4
+    override final def attribute_length: Int = 1 /*parameters_count*/ + parameters.size * 4
 
     // Primarily implemented to handle the case if the attribute is not found where expected.
     override def toXHTML(implicit cp: Constant_Pool): Node = {

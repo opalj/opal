@@ -3,8 +3,6 @@ package org.opalj
 package collection
 package immutable
 
-import org.opalj.util.PerformanceEvaluation
-
 import org.junit.runner.RunWith
 import org.scalacheck.Arbitrary
 import org.scalacheck.Gen
@@ -15,6 +13,8 @@ import org.scalacheck.Properties
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
+
+import org.opalj.util.PerformanceEvaluation
 
 /**
  * Tests `IntTrieSet` by creating a standard Scala Set and comparing

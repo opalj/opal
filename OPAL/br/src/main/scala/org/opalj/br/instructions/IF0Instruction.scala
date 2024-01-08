@@ -23,7 +23,7 @@ trait IF0Instruction[T <: IF0Instruction[T]]
     extends SimpleConditionalBranchInstruction[T]
     with IF0InstructionLike {
 
-    final override def asIF0Instruction: this.type = this
+    override final def asIF0Instruction: this.type = this
 
 }
 

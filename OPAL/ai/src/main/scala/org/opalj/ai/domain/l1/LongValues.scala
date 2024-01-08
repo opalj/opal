@@ -31,7 +31,7 @@ trait LongValues extends LongValuesDomain with ConcreteLongValues {
     sealed trait LongValue extends TypedValue[LongType] with IsLongValue {
         this: DomainTypedValue[LongType] =>
 
-        final override def leastUpperType: Option[LongType] = Some(LongType)
+        override final def leastUpperType: Option[LongType] = Some(LongType)
 
     }
 
@@ -65,13 +65,13 @@ trait LongValues extends LongValuesDomain with ConcreteLongValues {
     // QUESTIONS ABOUT VALUES
     //
 
-    @inline final override def longValueOption(value: DomainValue): Option[Long] =
+    @inline override final def longValueOption(value: DomainValue): Option[Long] =
         value match {
             case v: TheLongValue => Some(v.value)
             case _               => None
         }
 
-    @inline final override def longValue[T](
+    @inline override final def longValue[T](
         value: DomainValue
     )(
         ifThen: Long => T

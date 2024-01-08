@@ -5,13 +5,13 @@ package analyses
 
 import scala.language.implicitConversions
 
-import org.opalj.collection.immutable.UIDSet
-import org.opalj.log.GlobalLogContext
-
 import org.junit.runner.RunWith
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
+
+import org.opalj.collection.immutable.UIDSet
+import org.opalj.log.GlobalLogContext
 
 /**
  * @author Tobias Becker

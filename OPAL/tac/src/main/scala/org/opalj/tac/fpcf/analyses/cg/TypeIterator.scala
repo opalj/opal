@@ -396,7 +396,7 @@ class CHATypeIterator(project: SomeProject)
             handleType(field.fieldType.asReferenceType)
     }
 
-    @inline protected[this] override def continuation(
+    @inline override protected[this] def continuation(
         use:             V,
         updatedEPS:      EPS[Entity, Nothing],
         oldEOptP:        EOptionP[Entity, Nothing],
@@ -406,7 +406,7 @@ class CHATypeIterator(project: SomeProject)
         throw new UnsupportedOperationException
     }
 
-    @inline protected[this] override def continuation(
+    @inline override protected[this] def continuation(
         field:         DeclaredField,
         updatedEPS:    EPS[Entity, Property],
         oldEOptP:      EOptionP[Entity, Property],
@@ -850,7 +850,7 @@ abstract class AbstractAllocationSitesPointsToTypeIterator(project: SomeProject)
         }
     }
 
-    @inline protected[this] override def continuationForAllocations(
+    @inline override protected[this] def continuationForAllocations(
         use:                 V,
         updatedEPS:          EPS[Entity, PropertyType],
         oldEOptP:            EOptionP[Entity, PropertyType],
@@ -1001,7 +1001,7 @@ class AllocationSitesPointsToTypeIterator(project: SomeProject)
         }
     }
 
-    @inline protected[this] override def continuation(
+    @inline override protected[this] def continuation(
         field:         DeclaredField,
         updatedEPS:    EPS[Entity, Property],
         oldEOptP:      EOptionP[Entity, Property],
@@ -1053,7 +1053,7 @@ class AllocationSitesPointsToTypeIterator(project: SomeProject)
         }
     }
 
-    @inline protected[this] override def continuationForAllocations(
+    @inline override protected[this] def continuationForAllocations(
         field:               DeclaredField,
         updatedEPS:          EPS[Entity, Property],
         oldEOptP:            EOptionP[Entity, Property],
