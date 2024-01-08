@@ -16,7 +16,6 @@ import java.lang.reflect.Proxy;
 
 import apps.flashcards.ui.Utilities;
 
-
 /**
  * This class provides the major part of the Mac OS X integration of the flashcards app.
  * <p>

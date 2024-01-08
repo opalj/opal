@@ -822,9 +822,8 @@ case class StaticMethodCall[+V <: Var[V]](
 
     override private[tac] def remapIndexes(
         pcToIndex:                    Array[Int],
-        isIndexOfCaughtExceptionStmt: Int => Boolean): Unit = params.foreach { p =>
-        p.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
-    }
+        isIndexOfCaughtExceptionStmt: Int => Boolean): Unit =
+        params.foreach { p => p.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt) }
 
     override final def toCanonicalForm(
         implicit
@@ -870,9 +869,8 @@ case class InvokedynamicMethodCall[+V <: Var[V]](
 
     override private[tac] def remapIndexes(
         pcToIndex:                    Array[Int],
-        isIndexOfCaughtExceptionStmt: Int => Boolean): Unit = params.foreach { p =>
-        p.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
-    }
+        isIndexOfCaughtExceptionStmt: Int => Boolean): Unit =
+        params.foreach { p => p.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt) }
 
     override def hashCode(): Int =
         (((InvokedynamicMethodCall.ASTID * 1171 +

@@ -1,7 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package ai.taint;
 
-
 class HiddenClass {
 	
 	HiddenClass() {

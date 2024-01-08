@@ -99,9 +99,8 @@ object HasAnnotation {
  * @author Marco Torsello
  */
 case class AnnotatedWith(
-        annotationType:    FieldType,
-        elementValuePairs: Seq[ElementValuePair])
-    extends AnnotationPredicate {
+        annotationType: FieldType,
+        elementValuePairs: Seq[ElementValuePair]) extends AnnotationPredicate {
 
     /**
      * Checks if the given annotation is as specified by this predicate.

@@ -43,6 +43,7 @@ import org.opalj.collection.immutable.EmptyIntTrieSet
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.EPK
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.InterimLUBP
@@ -53,6 +54,7 @@ import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEOptionP
+import org.opalj.fpcf.UBP
 import org.opalj.fpcf.UBPS
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger
@@ -441,14 +443,14 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
       )(implicit state: StateType): Boolean = ep match {
         // Returning immutable object is pure
         case LBP(TransitivelyImmutableType | TransitivelyImmutableClass) => true
-        case _: FinalEP[ObjectType, Property] =>
-            atMost(Pure) // Can not be compile time pure if mutable object is returned
-            if (state.ubPurity.isDeterministic) isLocal(returnValue, SideEffectFree)
-            false // Return early if we are already side-effect free
-        case _ =>
+        case UBP(TransitivelyImmutableType | TransitivelyImmutableClass) | _: EPK[_, _] =>
             reducePurityLB(SideEffectFree)
             if (state.ubPurity.isDeterministic) handleUnknownTypeImmutability(ep, returnValue)
             true
+        case _ =>
+            atMost(Pure) // Can not be compile time pure if mutable object is returned
+            if (state.ubPurity.isDeterministic) isLocal(returnValue, SideEffectFree)
+            false // Return early if we are already side-effect free
     }
 
     /**

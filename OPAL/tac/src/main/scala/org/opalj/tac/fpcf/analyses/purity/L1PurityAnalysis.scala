@@ -245,7 +245,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 ep.pk == TACAI.key
             }
         }
-    // IMPROVE: We could filter Purity/VPurity dependees with an lb not less than maxPurity
+        // IMPROVE: We could filter Purity/VPurity dependees with an lb not less than maxPurity
 
     /**
      * Continuation to handle updates to properties of dependees.

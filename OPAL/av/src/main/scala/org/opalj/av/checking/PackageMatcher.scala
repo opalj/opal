@@ -13,8 +13,7 @@ import org.opalj.br.analyses.SomeProject
  */
 case class PackageMatcher(
         namePredicate: NamePredicate,
-        classMatcher:  ClassMatcher)
-    extends ClassLevelMatcher {
+        classMatcher: ClassMatcher) extends ClassLevelMatcher {
 
     def doesMatch(classFile: ClassFile)(implicit project: SomeProject): Boolean = {
         val packageName = classFile.thisType.packageName

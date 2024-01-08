@@ -77,7 +77,8 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
             Project(
                 projectClassFilesWithSources = classFiles,
                 Iterable.empty,
-                libraryClassFilesAreInterfacesOnly = true /*actually not relevant*/ )
+                libraryClassFilesAreInterfacesOnly = true /*actually not relevant*/
+            )
         } { (t, project) =>
             import project.logContext
             val logMessage = "1. reading " + project.classFilesCount + " class files took " + t.toSeconds
@@ -472,9 +473,8 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
      *  @param methodPredicate The method to match.
      */
     case class LocalOutgoingShouldImplementMethodConstraint(
-            sourceEnsemble:  Symbol,
-            methodPredicate: SourceElementPredicate[Method])
-        extends PropertyChecker {
+            sourceEnsemble: Symbol,
+            methodPredicate: SourceElementPredicate[Method]) extends PropertyChecker {
 
         override def property: String = methodPredicate.toDescription()
 

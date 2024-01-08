@@ -110,14 +110,16 @@ object InstructionStatistics extends AnalysisApplication {
                 val normalizedInstructions = Math.max(allInstructions, 1)
                 val color                  = if (instructionsInPackage == 0) "#8080b0" else "#80c080"
 
-                (s""""id": "$rootFQPN",
+                (
+                    s""""id": "$rootFQPN",
                    "name": "$spn ∑$allInstructions ($instructionsInPackage)",
                    "data": {
                         "$$area": $normalizedInstructions,
                         "$$dim": $normalizedInstructions,
                         "$$color": "$color"
                     }""" + children,
-                 allInstructions)
+                    allInstructions
+                )
             }
 
             val theProjectStatistics = {

@@ -147,6 +147,7 @@ class ReflectiveInvokerTest extends AnyFlatSpec with Matchers {
         )
 
         // String <String>.substring(int int)
+        // String <String>.substring(int int)
         /*val result =*/
         domain.invokeReflective(IrrelevantPC, declaringClass, "substring", descriptor, operands)
         val javaResult = domain.lastObject.asInstanceOf[java.lang.String]

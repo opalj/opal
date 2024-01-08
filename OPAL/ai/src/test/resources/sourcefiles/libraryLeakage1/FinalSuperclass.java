@@ -4,7 +4,6 @@ package libraryLeakage1;
 import org.opalj.fpcf.test.annotations.CallabilityKeys;
 import org.opalj.fpcf.test.annotations.CallabilityProperty;
 
-
 /*
  * 
  * This class is cannot be overridden because it is final. Hence,

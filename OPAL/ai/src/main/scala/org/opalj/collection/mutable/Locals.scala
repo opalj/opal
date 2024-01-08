@@ -448,13 +448,14 @@ private[mutable] final class Locals2[T >: Null <: AnyRef](
 
     override final def indexOfLastNonNullValue: Int = if (v1 != null) 1 else if (v0 != null) 0 else -1
 
-    override def apply(index: Int): T = if (index == 0) v0 else v1
-    // (index: @scala.annotation.switch) match {
-    //  case 0 => v0
-    //  case 1 => v1
-    //  case _ =>
-    //   throw new IndexOutOfBoundsException("invalid index("+index+")")
-    // }
+    override def apply(index: Int): T =
+        if (index == 0) v0 else v1
+        // (index: @scala.annotation.switch) match {
+        //  case 0 => v0
+        //  case 1 => v1
+        //  case _ =>
+        //   throw new IndexOutOfBoundsException("invalid index("+index+")")
+        // }
 
     override def indexOf(other: T): Option[Int] = if (v0 eq other) Some(0) else if (v1 eq other) Some(1) else None
 

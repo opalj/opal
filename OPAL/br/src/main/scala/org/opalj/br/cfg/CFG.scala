@@ -576,14 +576,14 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
             basicBlocks.
                 filter(_ != null).
                 toSet.
-                map((bb: BasicBlock) => bb.toString+" => "+bb.successors.mkString(", ")).
+                map((bb: BasicBlock) => bb.toString + " => " + bb.successors.mkString(", ")).
                 mkString("Successors:\n", "\n", "\n")
         )
         println(
             basicBlocks.
                 filter(_ != null).
                 toSet.
-                map((bb: BasicBlock) => bb.predecessors.mkString(", ")+" => "+bb.toString).
+                map((bb: BasicBlock) => bb.predecessors.mkString(", ") + " => " + bb.toString).
                 mkString("Predecessors:\n", "\n", "\n")
         )
         println(catchNodes.mkString("CatchNodes:", ",", "\n"))

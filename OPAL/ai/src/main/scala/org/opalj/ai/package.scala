@@ -483,7 +483,7 @@ package object ai {
      *      }}}.
      *      I.e., the list of operands must contain one value per parameter and –
      *      in case of instance methods – the receiver object. The list __must not
-     *       contain additional values__. The latter is automatically ensured if this
+     *      contain additional values__. The latter is automatically ensured if this
      *      method is called (in)directly by [[AI]] and the operands were just passed
      *      through.
      *      If two or more operands are (reference) identical then the adaptation will only

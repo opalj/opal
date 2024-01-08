@@ -615,8 +615,8 @@ object ClassFileFactory {
         proxyInterfaceMethodDescriptor: MethodDescriptor): Boolean =
         (opcode == INVOKEVIRTUAL.opcode || opcode == INVOKEINTERFACE.opcode) &&
             targetMethodDescriptor.parametersCount + 1 ==
-            proxyInterfaceMethodDescriptor.parametersCount &&
-            (proxyInterfaceMethodDescriptor.parameterType(0) eq targetMethodDeclaringType)
+                proxyInterfaceMethodDescriptor.parametersCount &&
+                (proxyInterfaceMethodDescriptor.parameterType(0) eq targetMethodDeclaringType)
 
     /**
      * Creates a field of the specified type with the given name.

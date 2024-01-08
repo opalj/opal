@@ -35,8 +35,8 @@ class StaticInitializer(implicit hermes: HermesConfig) extends DefaultFeatureQue
         "SI4", /* 3 ---  reference of a final non-primitive and non-String field within an interface. */
         "SI5", /* 4 --- class creation should trigger the static initializer */
         "SI6", /* 5 --- call of a static method */
-        "SI7" /* 6 --- assignment to a static field */,
-        "SI8" /* 7 --- initialization of a class should cause initialization of super classes */
+        "SI7", /* 6 --- assignment to a static field */
+        "SI8"  /* 7 --- initialization of a class should cause initialization of super classes */
     )
 
     override def evaluate[S](

@@ -115,9 +115,8 @@ class PKECPropertyStore(
         result.iterator
     }
 
-    override def entities[P <: Property](lb: P, ub: P): Iterator[Entity] = entities { eps =>
-        eps.lb == lb && eps.ub == ub
-    }
+    override def entities[P <: Property](lb: P, ub: P): Iterator[Entity] =
+        entities { eps => eps.lb == lb && eps.ub == ub }
 
     override def entitiesWithLB[P <: Property](lb: P): Iterator[Entity] = entities { eps => eps.lb == lb }
 

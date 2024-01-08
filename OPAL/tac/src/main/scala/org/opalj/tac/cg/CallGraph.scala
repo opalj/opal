@@ -82,7 +82,6 @@ class CallGraph private[cg] ()(implicit ps: PropertyStore, typeIterator: TypeIte
         }
     }
 
-    lazy val numEdges: Int = ps.entities(Callers.key).map { cs =>
-        cs.ub.callers(cs.e.asInstanceOf[DeclaredMethod]).iterator.size
-    }.sum
+    lazy val numEdges: Int =
+        ps.entities(Callers.key).map { cs => cs.ub.callers(cs.e.asInstanceOf[DeclaredMethod]).iterator.size }.sum
 }

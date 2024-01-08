@@ -121,7 +121,7 @@ trait ConsoleTracer extends AITracer { tracer =>
         println("Number of registers:      " + code.maxLocals)
         println("Size of operand stack:    " + code.maxStack)
         println("PCs where paths join:     " + code.cfJoins.mkString(", "))
-        // println("Program counters:         "+code.programCounters.mkString(", "))
+        // println("Program counters:         " + code.programCounters.mkString(", "))
     }
 
     override def rescheduled(

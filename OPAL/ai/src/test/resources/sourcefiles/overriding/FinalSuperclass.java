@@ -4,7 +4,6 @@ package overriding;
 import org.opalj.fpa.test.annotations.OverriddenKeys;
 import org.opalj.fpa.test.annotations.OverriddenProperty;
 
-
 /*
  * 
  * This class is cannot be overridden because it is final. Hence,

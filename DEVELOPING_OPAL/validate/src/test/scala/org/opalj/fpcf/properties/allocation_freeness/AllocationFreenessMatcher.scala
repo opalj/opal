@@ -16,8 +16,7 @@ import org.opalj.br.fpcf.properties.AllocationFreeness
  * @author Dominik Helm
  */
 sealed abstract class AllocationFreenessMatcher(
-        val property: AllocationFreeness)
-    extends AbstractPropertyMatcher {
+        val property: AllocationFreeness) extends AbstractPropertyMatcher {
 
     def validateProperty(
         p:          SomeProject,

@@ -5,7 +5,6 @@ import org.opalj.fpcf.test.annotations.FactoryMethodKeys;
 import org.opalj.fpcf.test.annotations.FactoryMethodProperty;
 import org.opalj.fpcf.test.annotations.InstantiabilityProperty;
 
-
 /**
  * 
  * @author Michael Reif

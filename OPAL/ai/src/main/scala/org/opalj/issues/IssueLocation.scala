@@ -74,9 +74,8 @@ class PackageLocation(
         val thePackage: String,
         details: Seq[IssueDetails] = List.empty) extends ProjectLocation(description, theProject, details) {
 
-    def locationAsInlineXHTML(basicInfoOnly: Boolean): List[Node] = List(<span class="package">{
-        thePackage.replace('/', '.')
-    }</span>)
+    def locationAsInlineXHTML(basicInfoOnly: Boolean): List[Node] =
+        List(<span class="package">{thePackage.replace('/', '.')}</span>)
 
     def descriptionAsXHTML: List[Node] =
         if (description.isDefined) List(<br/>, Text(description.get))

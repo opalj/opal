@@ -376,7 +376,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode =>
                             //      s"$n ++  $o is $joinedDefLocals"
                             // )
                             joinedDefLocals
-                        }
+                    }
                 )
                 if (joinedDefLocals ne oldDefLocals) {
                     // assert(

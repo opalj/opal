@@ -78,7 +78,8 @@ object FieldAndArrayUsageAnalysis extends ProjectAnalysisApplication {
             manager.runAll(
                 EagerSimpleEscapeAnalysis,
                 LazyL0BaseAIAnalysis,
-                TACAITransformer /* LazyL0TACAIAnalysis */ )
+                TACAITransformer /* LazyL0TACAIAnalysis */
+            )
         } { t => info("progress", s"escape analysis took ${t.toSeconds}") }
         for {
             as           <- ass

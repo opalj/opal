@@ -825,15 +825,15 @@ final class Code private (
      */
     @inline final def pcOfNextInstruction(currentPC: Int): /*PC*/ Int =
         instructions(currentPC).indexOfNextInstruction(currentPC)(this)
-    // OLD: ITERATING OVER THE ARRAY AND CHECKING FOR NON-NULL IS NO LONGER SUPPORTED!
-    //    @inline final def pcOfNextInstruction(currentPC: PC): PC = {
-    //        val max_pc = instructions.size
-    //        var nextPC = currentPC + 1
-    //        while (nextPC < max_pc && (instructions(nextPC) eq null))
-    //            nextPC += 1
-    //
-    //        nextPC
-    //    }
+        // OLD: ITERATING OVER THE ARRAY AND CHECKING FOR NON-NULL IS NO LONGER SUPPORTED!
+        //    @inline final def pcOfNextInstruction(currentPC: PC): PC = {
+        //        val max_pc = instructions.size
+        //        var nextPC = currentPC + 1
+        //        while (nextPC < max_pc && (instructions(nextPC) eq null))
+        //            nextPC += 1
+        //
+        //        nextPC
+        //    }
 
     /**
      * Returns the program counter of the previous instruction in the code array.

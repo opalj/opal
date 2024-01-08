@@ -35,8 +35,7 @@ trait SourceElementPredicate[-S <: ConcreteSourceElement] extends (S => Boolean)
 }
 
 case class AccessFlags(
-        accessFlags: AccessFlagsMatcher)
-    extends SourceElementPredicate[ConcreteSourceElement] {
+        accessFlags: AccessFlagsMatcher) extends SourceElementPredicate[ConcreteSourceElement] {
 
     def apply(sourceElement: ConcreteSourceElement): Boolean = this.accessFlags.unapply(sourceElement.accessFlags)
 
@@ -49,8 +48,7 @@ case class AccessFlags(
  * @author Michael Eichberg
  */
 case class Attributes(
-        attributes: SourceElementAttributes)
-    extends SourceElementPredicate[ConcreteSourceElement] {
+        attributes: SourceElementAttributes) extends SourceElementPredicate[ConcreteSourceElement] {
 
     def apply(sourceElement: ConcreteSourceElement): Boolean =
         //    sourceElement.attributes.size == this.attributes.size &&

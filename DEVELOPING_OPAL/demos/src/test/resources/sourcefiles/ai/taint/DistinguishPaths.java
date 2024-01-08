@@ -1,7 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package ai.taint;
 
-
 public class DistinguishPaths {
 
 	private Class<?> sink(String name) throws ClassNotFoundException {

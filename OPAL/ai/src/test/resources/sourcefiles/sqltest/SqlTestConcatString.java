@@ -1,4 +1,3 @@
-/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package sqltest;
 
 import java.sql.Connection;

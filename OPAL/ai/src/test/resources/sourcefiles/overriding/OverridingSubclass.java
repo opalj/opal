@@ -3,7 +3,6 @@ package overriding;
 
 import org.opalj.fpa.test.annotations.OverriddenKeys;
 import org.opalj.fpa.test.annotations.OverriddenProperty;
-
 public class OverridingSubclass extends Superclass{
 
 	@OverriddenProperty

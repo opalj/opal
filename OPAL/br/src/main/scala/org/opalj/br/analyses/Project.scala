@@ -776,13 +776,11 @@ class Project[Source] private (
         groups
     }
 
-    def projectClassFilesWithSources: Iterable[(ClassFile, Source)] = projectClassFiles.view.map { classFile =>
-        (classFile, sources(classFile.thisType))
-    }
+    def projectClassFilesWithSources: Iterable[(ClassFile, Source)] =
+        projectClassFiles.view.map { classFile => (classFile, sources(classFile.thisType)) }
 
-    def libraryClassFilesWithSources: Iterable[(ClassFile, Source)] = libraryClassFiles.view.map { classFile =>
-        (classFile, sources(classFile.thisType))
-    }
+    def libraryClassFilesWithSources: Iterable[(ClassFile, Source)] =
+        libraryClassFiles.view.map { classFile => (classFile, sources(classFile.thisType)) }
 
     def classFilesWithSources: Iterable[(ClassFile, Source)] =
         projectClassFilesWithSources ++ libraryClassFilesWithSources

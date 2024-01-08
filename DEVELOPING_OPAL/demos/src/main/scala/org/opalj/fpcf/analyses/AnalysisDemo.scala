@@ -16,7 +16,8 @@ trait AnalysisDemo extends ProjectAnalysisApplication {
 
     def entitiesByProperty[P <: Property](
         property: P
-      )(implicit propertyStore: PropertyStore): Iterator[Entity] = propertyStore.entities(property, property)
+      )(implicit
+        propertyStore: PropertyStore): Iterator[Entity] = propertyStore.entities(property, property)
 
     def finalReport(infoStrings: Iterable[String], caption: String): String =
         infoStrings.mkString(s"\n$caption:", "\n\t", s"\nTotal: ${infoStrings.size}\n\n")
@@ -27,7 +28,8 @@ trait MethodAnalysisDemo extends AnalysisDemo {
     def buildMethodInfo(
         entities:    Iterable[SomeEPS],
         withJarInfo: Boolean = false
-      )(implicit project: Project[URL]): Iterable[String] = entities map { eps =>
+      )(implicit
+        project: Project[URL]): Iterable[String] = entities map { eps =>
         val method       = eps.e.asInstanceOf[Method]
         val methodString = getVisibilityModifier(method) + " " + method.name
         val classFile    = method.classFile

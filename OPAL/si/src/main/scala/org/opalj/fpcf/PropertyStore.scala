@@ -368,7 +368,7 @@ abstract class PropertyStore {
      */
     final def hasProperty(epk: SomeEPK): Boolean = hasProperty(epk.e, epk.pk)
 
-    /** See `hasProperty(SomeEPK)` for details. * */
+    /** See `hasProperty(SomeEPK)` for details. */
     def hasProperty(e: Entity, pk: PropertyKind): Boolean
 
     /**
