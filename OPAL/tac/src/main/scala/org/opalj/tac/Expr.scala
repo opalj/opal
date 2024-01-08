@@ -507,9 +507,8 @@ case class NewArray[+V <: Var[V]](pc: PC, counts: Seq[Expr[V]], tpe: ArrayType) 
 
     override private[tac] def remapIndexes(
         pcToIndex:                    Array[Int],
-        isIndexOfCaughtExceptionStmt: Int => Boolean): Unit = counts.foreach { c =>
-        c.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
-    }
+        isIndexOfCaughtExceptionStmt: Int => Boolean): Unit =
+        counts.foreach { c => c.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt) }
 
     override def toCanonicalForm(
         implicit
@@ -687,9 +686,8 @@ case class InvokedynamicFunctionCall[+V <: Var[V]](
 
     override private[tac] def remapIndexes(
         pcToIndex:                    Array[Int],
-        isIndexOfCaughtExceptionStmt: Int => Boolean): Unit = params.foreach { p =>
-        p.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
-    }
+        isIndexOfCaughtExceptionStmt: Int => Boolean): Unit =
+        params.foreach { p => p.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt) }
 
     override def toCanonicalForm(
         implicit
@@ -898,9 +896,8 @@ case class StaticFunctionCall[+V <: Var[V]](
 
     override private[tac] def remapIndexes(
         pcToIndex:                    Array[Int],
-        isIndexOfCaughtExceptionStmt: Int => Boolean): Unit = params.foreach { p =>
-        p.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
-    }
+        isIndexOfCaughtExceptionStmt: Int => Boolean): Unit =
+        params.foreach { p => p.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt) }
 
     override def toCanonicalForm(
         implicit

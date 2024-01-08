@@ -922,8 +922,9 @@ class ClassHierarchy private (
     def foreachSuperclass(
         objectType: ObjectType,
         project:    ClassFileRepository
-      )(f: ClassFile => Unit): Unit =
-        foreachSupertype(objectType) { supertype => project.classFile(supertype).foreach(f) }
+      )(f: ClassFile => Unit): Unit = foreachSupertype(objectType) { supertype =>
+        project.classFile(supertype).foreach(f)
+    }
 
     /**
      * Returns the set of all classes/interfaces from which the given type inherits

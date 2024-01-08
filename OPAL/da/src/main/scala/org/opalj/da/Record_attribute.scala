@@ -14,7 +14,7 @@ case class Record_attribute(
         components:           RecordComponents // ArraySeq[Constant_Pool_Index]
       ) extends Attribute {
 
-    override def attribute_length: Int = 2 + components.iterator.map(_.length).sum
+    override final def attribute_length: Int = 2 + components.iterator.map(_.length).sum
 
     override def toXHTML(implicit cp: Constant_Pool): Node = <details class="attribute">
             <summary>Record</summary>

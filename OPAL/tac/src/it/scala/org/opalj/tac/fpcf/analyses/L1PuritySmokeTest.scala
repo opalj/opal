@@ -26,6 +26,7 @@ import org.opalj.tac.fpcf.analyses.fieldassignability.EagerL1FieldAssignabilityA
 import org.opalj.tac.fpcf.analyses.purity.EagerL1PurityAnalysis
 import org.opalj.util.Nanoseconds
 import org.opalj.util.PerformanceEvaluation.time
+
 /**
  * Simple test to ensure that the [[org.opalj.tac.fpcf.analyses.purity.L1PurityAnalysis]] does not
  * cause any exceptions.

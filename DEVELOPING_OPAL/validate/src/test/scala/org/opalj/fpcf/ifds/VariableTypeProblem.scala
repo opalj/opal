@@ -99,8 +99,8 @@ class VariableTypeProblem(project: SomeProject, override val subsumeFacts: Boole
 
     override def nullFact: VTAFact = VTANullFact
 
-    override def entryPoints: Seq[(Method, IFDSFact[VTAFact, JavaStatement])] =
-        project.allProjectClassFiles.flatMap(cf =>
+    override def entryPoints: Seq[(Method, IFDSFact[VTAFact, JavaStatement])] = project.allProjectClassFiles.flatMap(
+        cf =>
             if (classInsideAnalysisContext(cf)) {
                 cf.methods.flatMap { m =>
                     if (isEntryPoint(m)) {
