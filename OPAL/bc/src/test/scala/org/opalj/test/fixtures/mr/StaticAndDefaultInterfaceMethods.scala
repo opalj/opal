@@ -74,10 +74,10 @@ object StaticAndDefaultInterfaceMethods extends App {
                                 Array[Byte](
                                     18, // ldc
                                     10, // #10
-                                    (0xff & 184).toByte, // invokestatic
+                                    (0xFF & 184).toByte, // invokestatic
                                     0, // -> Methodref
                                     12, // #12
-                                    (0xff & 177).toByte // return
+                                    (0xFF & 177).toByte // return
                                 )
                             )
                     )
@@ -128,10 +128,10 @@ object StaticAndDefaultInterfaceMethods extends App {
                             Array[Byte](
                                 18, // ldc
                                 10, // #10
-                                (0xff & 184).toByte, // invokestatic
+                                (0xFF & 184).toByte, // invokestatic
                                 0, // -> Methodref
                                 12, //    #12
-                                (0xff & 177).toByte // return
+                                (0xFF & 177).toByte // return
                             )
                         )
                     )

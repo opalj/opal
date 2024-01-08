@@ -65,7 +65,7 @@ import java.util.IdentityHashMap
 trait IdentityBasedCorrelationChangeDetection extends CoreDomainFunctionality {
 
     /* NOT abstract override [this trait is by purpose NOT stackable] */
-    protected[this] override def joinPostProcessing(
+    override protected[this] def joinPostProcessing(
         updateType:  UpdateType,
         pc:          Int,
         oldOperands: Operands,

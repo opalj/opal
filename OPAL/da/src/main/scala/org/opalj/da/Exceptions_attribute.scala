@@ -22,7 +22,7 @@ case class Exceptions_attribute(
         exception_index_table: ExceptionIndexTable
 ) extends Attribute {
 
-    override def attribute_length: Int = 2 /*table_size*/ + exception_index_table.size * 2
+    override final def attribute_length: Int = 2 /*table_size*/ + exception_index_table.size * 2
 
     def exceptionsSpan(implicit cp: Constant_Pool): Node = {
         if (exception_index_table.nonEmpty)

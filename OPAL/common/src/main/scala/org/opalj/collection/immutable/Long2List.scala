@@ -44,7 +44,7 @@ sealed abstract class Long2List extends Serializable { self =>
     override def equals(other: Any): Boolean
     override def hashCode(): Int // just added to ensure that we have to override hashCode!
 
-    final override def toString = iterator.mkString("Long2List(", ", ", ")")
+    override final def toString = iterator.mkString("Long2List(", ", ", ")")
 }
 
 object Long2List {
@@ -90,10 +90,10 @@ case object Long2List0 extends Long2List {
     override def hashCode(): Int = 37
 }
 
-private[immutable] abstract class Long2List1_4 extends Long2List {
+abstract private[immutable] class Long2List1_4 extends Long2List {
 
-    final override def isEmpty: Boolean = false
-    final override def nonEmpty: Boolean = true
+    override final def isEmpty: Boolean = false
+    override final def nonEmpty: Boolean = true
 
     private[immutable] def rest: Long2List4
 

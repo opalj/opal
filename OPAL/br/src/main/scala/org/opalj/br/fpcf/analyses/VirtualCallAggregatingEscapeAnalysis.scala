@@ -117,7 +117,7 @@ sealed trait VirtualCallAggregatingEscapeAnalysisScheduler extends FPCFAnalysisS
         DeclaredMethodsKey
     )
 
-    final override def uses: Set[PropertyBounds] = Set(PropertyBounds.lub(EscapeProperty))
+    override final def uses: Set[PropertyBounds] = Set(PropertyBounds.lub(EscapeProperty))
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(VirtualMethodEscapeProperty)
 

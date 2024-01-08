@@ -16,7 +16,7 @@ case class RuntimeVisibleTypeAnnotations_attribute(
         typeAnnotations:      TypeAnnotations
 ) extends TypeAnnotations_attribute {
 
-    final override def toXHTML(implicit cp: Constant_Pool): Node = {
+    override final def toXHTML(implicit cp: Constant_Pool): Node = {
         <details class="attribute type_annotations runtime_visible">
             <summary class="attribute_name">Runtime Visible Type Annotations [size: { typeAnnotations.size } item(s)]</summary>
             { typeAnnotationsToXHTML(cp) }

@@ -4,10 +4,10 @@ package br
 package fpcf
 package properties
 
-import org.opalj.collection.immutable.IntTrieSet
-
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+
+import org.opalj.collection.immutable.IntTrieSet
 
 /**
  * Tests the [[Purity]] property, especially correctness of the meet operator.

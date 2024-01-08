@@ -170,8 +170,8 @@ final class InterimResult[P >: Null <: Property] private (
 
     private[fpcf] def id: Int = InterimResult.id
 
-    private[fpcf] override def isInterimResult: Boolean = true
-    private[fpcf] override def asInterimResult: InterimResult[P] = this
+    override private[fpcf] def isInterimResult: Boolean = true
+    override private[fpcf] def asInterimResult: InterimResult[P] = this
 
     override def hashCode: Int = eps.e.hashCode * 17 + dependees.hashCode
 
@@ -292,7 +292,7 @@ sealed abstract class Results extends ProperPropertyComputationResult {
 
     private[fpcf] final def id = Results.id
 
-    private[fpcf] final override def asResults: Results = this
+    override private[fpcf] final def asResults: Results = this
 
     def foreach(f: ProperPropertyComputationResult => Unit): Unit
 

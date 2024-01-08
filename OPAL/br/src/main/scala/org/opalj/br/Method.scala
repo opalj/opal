@@ -139,7 +139,7 @@ sealed abstract class JVMMethod
         compareAttributes(other.attributes, config).isEmpty
     }
 
-    final override def instructionsOption: Option[Array[Instruction]] = body.map(_.instructions)
+    override final def instructionsOption: Option[Array[Instruction]] = body.map(_.instructions)
 
     /**
      * The number of registers required to store this method's parameters (
@@ -469,7 +469,6 @@ final class Method private[br] (
     override def asMethod: this.type = this
 
     /**
-     *
      * @return wether this class is defined as strict. Starting from Java 17, this is true by default.
      *         Strict evaluation of float expressions was also required in Java 1.0 and 1.1.
      */

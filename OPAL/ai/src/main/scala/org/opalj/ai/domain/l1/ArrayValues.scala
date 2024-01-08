@@ -45,11 +45,11 @@ trait ArrayValues extends l1.ReferenceValues {
 
         assert(length.get >= 0, "impossible length")
 
-        final override def length: Option[Int] = Some(theLength)
+        override final def length: Option[Int] = Some(theLength)
 
-        final override def isNull: No.type = No
+        override final def isNull: No.type = No
 
-        final override def isPrecise: Boolean = true
+        override final def isPrecise: Boolean = true
 
         override def updateRefId(
             refId:  RefId,

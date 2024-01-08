@@ -94,4 +94,3 @@ object EagerSimpleFieldAccessInformationAnalysis extends BasicFPCFEagerAnalysisS
         analysis
     }
 }
-

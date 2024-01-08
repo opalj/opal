@@ -12,37 +12,37 @@ import org.opalj.br.ObjectType.OutOfMemoryError
  */
 case class NEW(objectType: ObjectType) extends ConstantLengthInstruction with NoLabels {
 
-    final override def opcode: Opcode = NEW.opcode
+    override final def opcode: Opcode = NEW.opcode
 
-    final override def asNEW: NEW = this
+    override final def asNEW: NEW = this
 
-    final override def mnemonic: String = "new"
+    override final def mnemonic: String = "new"
 
-    final override def jvmExceptions: List[ObjectType] = NEW.jvmExceptions
+    override final def jvmExceptions: List[ObjectType] = NEW.jvmExceptions
 
-    final override def mayThrowExceptions: Boolean = true
+    override final def mayThrowExceptions: Boolean = true
 
-    final override def length: Int = 3
+    override final def length: Int = 3
 
-    final override def numberOfPoppedOperands(ctg: Int => ComputationalTypeCategory): Int = 0
+    override final def numberOfPoppedOperands(ctg: Int => ComputationalTypeCategory): Int = 0
 
-    final override def numberOfPushedOperands(ctg: Int => ComputationalTypeCategory): Int = 1
+    override final def numberOfPushedOperands(ctg: Int => ComputationalTypeCategory): Int = 1
 
-    final override def stackSlotsChange: Int = 1
+    override final def stackSlotsChange: Int = 1
 
-    final override def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
+    override final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
         this == code.instructions(otherPC)
     }
 
-    final override def readsLocal: Boolean = false
+    override final def readsLocal: Boolean = false
 
-    final override def indexOfReadLocal: Int = throw new UnsupportedOperationException()
+    override final def indexOfReadLocal: Int = throw new UnsupportedOperationException()
 
-    final override def writesLocal: Boolean = false
+    override final def writesLocal: Boolean = false
 
-    final override def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
+    override final def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
 
-    final override def nextInstructions(
+    override final def nextInstructions(
         currentPC:             PC,
         regularSuccessorsOnly: Boolean
     )(
@@ -56,11 +56,11 @@ case class NEW(objectType: ObjectType) extends ConstantLengthInstruction with No
             Instruction.nextInstructionOrExceptionHandler(this, currentPC, OutOfMemoryError)
     }
 
-    final override def expressionResult: Stack.type = Stack
+    override final def expressionResult: Stack.type = Stack
 
     override def toString: String = "NEW " + objectType.toJava
 
-    final override def toString(currentPC: Int): String = toString()
+    override final def toString(currentPC: Int): String = toString()
 }
 
 /**

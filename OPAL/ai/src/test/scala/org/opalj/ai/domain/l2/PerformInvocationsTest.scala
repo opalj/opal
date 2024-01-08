@@ -4,16 +4,16 @@ package ai
 package domain
 package l2
 
+import org.junit.runner.RunWith
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
+
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.TestSupport.biProject
 import org.opalj.br.analyses.Project
-
-import org.junit.runner.RunWith
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
-import org.scalatestplus.junit.JUnitRunner
 
 /**
  * @author Michael Eichberg

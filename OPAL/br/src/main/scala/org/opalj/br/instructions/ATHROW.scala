@@ -14,9 +14,9 @@ case object ATHROW extends Instruction with NoLabels {
 
     final val mnemonic = "athrow"
 
-    final override def isAthrow: Boolean = true
+    override final def isAthrow: Boolean = true
 
-    final override def asATHROW: this.type = this
+    override final def asATHROW: this.type = this
 
     final def jvmExceptions: List[ObjectType] = Instruction.justNullPointerException
 
@@ -59,5 +59,5 @@ case object ATHROW extends Instruction with NoLabels {
 
     final def expressionResult: NoExpression.type = NoExpression
 
-    final override def toString(currentPC: Int): String = toString()
+    override final def toString(currentPC: Int): String = toString()
 }

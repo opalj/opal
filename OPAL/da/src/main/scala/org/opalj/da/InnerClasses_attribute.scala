@@ -29,7 +29,7 @@ case class InnerClasses_attribute(
         classes:              Seq[InnerClassesEntry]
 ) extends Attribute {
 
-    final override def attribute_length = 2 + (classes.size * 8)
+    override final def attribute_length = 2 + (classes.size * 8)
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         throw new UnsupportedOperationException(

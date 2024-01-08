@@ -13,20 +13,20 @@ abstract class CreateNewArrayInstruction
     with ConstantLengthInstruction
     with NoLabels {
 
-    final override def asCreateNewArrayInstruction: this.type = this
+    override final def asCreateNewArrayInstruction: this.type = this
 
-    final override def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
+    override final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
         val other = code.instructions(otherPC)
         (this eq other) || (this == other)
     }
 
-    final override def jvmExceptions: List[ObjectType] = {
+    override final def jvmExceptions: List[ObjectType] = {
         CreateNewArrayInstruction.jvmExceptionsAndErrors
     }
 
     final def mayThrowExceptions: Boolean = true
 
-    final override def nextInstructions(
+    override final def nextInstructions(
         currentPC:             PC,
         regularSuccessorsOnly: Boolean
     )(
@@ -42,9 +42,9 @@ abstract class CreateNewArrayInstruction
             )
     }
 
-    final override def expressionResult: Stack.type = Stack
+    override final def expressionResult: Stack.type = Stack
 
-    final override def toString(currentPC: Int): String = toString()
+    override final def toString(currentPC: Int): String = toString()
 
     def arrayType: ArrayType
 }

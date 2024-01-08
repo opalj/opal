@@ -137,11 +137,11 @@ trait ConcreteArrayValues
 
         def values: Array[DomainValue]
 
-        final override def isNull: No.type = No
+        override final def isNull: No.type = No
 
-        final override def isPrecise: Boolean = true
+        override final def isPrecise: Boolean = true
 
-        final override def length: Some[Int] = Some(values.length)
+        override final def length: Some[Int] = Some(values.length)
 
         override def doLoad(
             loadPC:              Int,

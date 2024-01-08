@@ -40,7 +40,7 @@ trait DefaultTypeLevelDoubleValues
 
     }
 
-    final override def DoubleValue(valueOrigin: Int): DoubleValue = ADoubleValue
+    override final def DoubleValue(valueOrigin: Int): DoubleValue = ADoubleValue
 
-    final override def DoubleValue(valueOrigin: Int, value: Double): DoubleValue = ADoubleValue
+    override final def DoubleValue(valueOrigin: Int, value: Double): DoubleValue = ADoubleValue
 }

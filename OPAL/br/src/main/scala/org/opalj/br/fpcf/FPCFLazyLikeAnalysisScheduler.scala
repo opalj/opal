@@ -14,11 +14,11 @@ trait FPCFLazyLikeAnalysisScheduler extends FPCFAnalysisScheduler {
 
     override def derivesLazily: Some[PropertyBounds]
 
-    final override def derivesEagerly: Set[PropertyBounds] = Set.empty
+    override final def derivesEagerly: Set[PropertyBounds] = Set.empty
 
-    final override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
+    override final def derivesCollaboratively: Set[PropertyBounds] = Set.empty
 
-    final override def schedule(
+    override final def schedule(
         ps: PropertyStore,
         i:  InitializationData
     ): FPCFAnalysis = {

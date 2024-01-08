@@ -46,7 +46,7 @@ import control.find
  */
 abstract class ProjectLike extends ClassFileRepository { project =>
 
-    private[this] final implicit val thisProjectLike: this.type = this
+    private[this] implicit final val thisProjectLike: this.type = this
 
     implicit val classHierarchy: ClassHierarchy
     implicit val config: Config

@@ -7,6 +7,11 @@ package l1
 import scala.Iterable
 import scala.collection.immutable.SortedSet
 
+import org.junit.runner.RunWith
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
+
 import org.opalj.ai.NoUpdate
 import org.opalj.ai.domain.DefaultHandlingOfMethodResults
 import org.opalj.ai.domain.DefaultSpecialDomainValuesBinding
@@ -17,11 +22,6 @@ import org.opalj.ai.domain.ThrowAllPotentialExceptionsConfiguration
 import org.opalj.br.ArrayType
 import org.opalj.br.IntegerType
 import org.opalj.br.ObjectType
-
-import org.junit.runner.RunWith
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.matchers.should.Matchers
-import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests the IntegerSets Domain.

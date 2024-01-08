@@ -15,7 +15,7 @@ case class LineNumberTable_attribute(
         line_number_table:    Seq[LineNumberTableEntry]
 ) extends Attribute {
 
-    final override def attribute_length: Int = 2 + line_number_table.size * 4
+    override final def attribute_length: Int = 2 + line_number_table.size * 4
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         <details>

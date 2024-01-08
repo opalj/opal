@@ -229,7 +229,7 @@ abstract class TamiFlexPointsToArrayGetAnalysis(
         MethodDescriptor(ArraySeq(ObjectType.Object, IntegerType), ObjectType.Object)
     )
 
-    final private[this] val tamiFlexLogData = project.get(TamiFlexKey)
+    private[this] final val tamiFlexLogData = project.get(TamiFlexKey)
 
     override def processNewCaller(
         calleeContext:   ContextType,
@@ -274,7 +274,7 @@ abstract class TamiFlexPointsToArraySetAnalysis(
         MethodDescriptor(ArraySeq(ObjectType.Object, IntegerType, ObjectType.Object), VoidType)
     )
 
-    final private[this] val tamiFlexLogData = project.get(TamiFlexKey)
+    private[this] final val tamiFlexLogData = project.get(TamiFlexKey)
 
     override def processNewCaller(
         calleeContext:   ContextType,
@@ -316,7 +316,7 @@ abstract class TamiFlexPointsToNewInstanceAnalysis(
         val key:                String
 ) extends PointsToAnalysisBase with APIBasedAnalysis {
 
-    final private[this] val tamiFlexLogData = project.get(TamiFlexKey)
+    private[this] final val tamiFlexLogData = project.get(TamiFlexKey)
 
     override def handleNewCaller(
         calleeContext: ContextType,
@@ -352,7 +352,7 @@ abstract class TamiFlexPointsToClassGetMemberAnalysis(
         )
 ) extends PointsToAnalysisBase with APIBasedAnalysis {
 
-    final private[this] val tamiFlexLogData = project.get(TamiFlexKey)
+    private[this] final val tamiFlexLogData = project.get(TamiFlexKey)
 
     override def handleNewCaller(
         calleeContext: ContextType,
@@ -399,7 +399,7 @@ abstract class TamiFlexPointsToClassGetMembersAnalysis(
         MethodDescriptor.withNoArgs(ArrayType(memberType))
     )
 
-    final private[this] val tamiFlexLogData = project.get(TamiFlexKey)
+    private[this] final val tamiFlexLogData = project.get(TamiFlexKey)
 
     override def handleNewCaller(
         calleeContext: ContextType,
@@ -441,7 +441,7 @@ abstract class TamiFlexPointsToFieldGetAnalysis(
         MethodDescriptor(ObjectType.Object, ObjectType.Object)
     )
 
-    final private[this] val tamiFlexLogData = project.get(TamiFlexKey)
+    private[this] final val tamiFlexLogData = project.get(TamiFlexKey)
 
     override def processNewCaller(
         calleeContext:   ContextType,
@@ -486,7 +486,7 @@ abstract class TamiFlexPointsToFieldSetAnalysis(
         MethodDescriptor(ArraySeq(ObjectType.Object, ObjectType.Object), VoidType)
     )
 
-    final private[this] val tamiFlexLogData = project.get(TamiFlexKey)
+    private[this] final val tamiFlexLogData = project.get(TamiFlexKey)
 
     override def processNewCaller(
         calleeContext:   ContextType,

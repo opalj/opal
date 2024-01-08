@@ -5,10 +5,10 @@ package br
 import scala.collection.immutable.ArraySeq
 import scala.util.control.ControlThrowable
 
-import org.opalj.bi.TestResources.locateTestResources
-
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+
+import org.opalj.bi.TestResources.locateTestResources
 
 /**
  * @author Michael Eichberg

@@ -38,9 +38,9 @@ sealed abstract class TATTypeParameter extends TypeAnnotationTarget {
 
     def type_parameter_index: Int
 
-    final override def attribute_length: Int = 1 + 1
+    override final def attribute_length: Int = 1 + 1
 
-    final override def toXHTML(implicit cp: Constant_Pool): Node = {
+    override final def toXHTML(implicit cp: Constant_Pool): Node = {
         <span class="type_annotation_target">
             <b>Target</b>
             <i>{ description }[0x{ tag.toHexString }]</i>
@@ -54,9 +54,9 @@ case class TATParameterDeclarationOfClassOrInterface(
         type_parameter_index: Int
 ) extends TATTypeParameter {
 
-    final override def tag: Int = 0x00
+    override final def tag: Int = 0x00
 
-    final override def description: String = {
+    override final def description: String = {
         "type parameter declaration of generic class or interface"
     }
 }
@@ -65,9 +65,9 @@ case class TATParameterDeclarationOfMethodOrConstructor(
         type_parameter_index: Int
 ) extends TATTypeParameter {
 
-    final override def tag: Int = 0x01
+    override final def tag: Int = 0x01
 
-    final override def description: String = {
+    override final def description: String = {
         "type parameter declaration of generic method or constructor"
     }
 
@@ -77,11 +77,11 @@ case class TATParameterDeclarationOfMethodOrConstructor(
 // supertype_target
 case class TATSupertype(supertype_index: Constant_Pool_Index) extends TypeAnnotationTarget {
 
-    final override def attribute_length: Int = 1 + 2
+    override final def attribute_length: Int = 1 + 2
 
-    final override def tag: Int = 0x10
+    override final def tag: Int = 0x10
 
-    final override def description: String = {
+    override final def description: String = {
         "type in extends clause of class or interface declaration " +
             "(including the direct superclass of an anonymous class declaration), " +
             "or in implements clause of interface declaration"
@@ -103,7 +103,7 @@ sealed abstract class TATTypeParameterBound extends TypeAnnotationTarget {
 
     def description: String
 
-    final override def attribute_length: Int = 1 + 1 + 1
+    override final def attribute_length: Int = 1 + 1 + 1
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
         <span class="type_annotation_target"><i>{ description }[0x{ tag.toHexString }]</i>(type_parameter_index: { type_parameter_index }, bound index: { bound_index })</span>
@@ -115,9 +115,9 @@ case class TATTypeBoundOfParameterDeclarationOfClassOrInterface(
         bound_index:          Int
 ) extends TATTypeParameterBound {
 
-    final override def tag: Int = 0x11
+    override final def tag: Int = 0x11
 
-    final override def description: String = {
+    override final def description: String = {
         "type in bound of type parameter declaration of generic class or interface"
     }
 }
@@ -127,9 +127,9 @@ case class TATTypeBoundOfParameterDeclarationOfMethodOrConstructor(
         bound_index:          Int
 ) extends TATTypeParameterBound {
 
-    final override def tag: Int = 0x12
+    override final def tag: Int = 0x12
 
-    final override def description: String = {
+    override final def description: String = {
         "type in bound of type parameter declaration of generic method or constructor"
     }
 
@@ -139,7 +139,7 @@ case class TATTypeBoundOfParameterDeclarationOfMethodOrConstructor(
 // empty_target
 sealed abstract class TATEmpty extends TypeAnnotationTarget {
 
-    final override def attribute_length: Int = 1
+    override final def attribute_length: Int = 1
 
     /** Description of the kind of target of the annotation. (See JVM.) */
     def description: String
@@ -151,34 +151,34 @@ sealed abstract class TATEmpty extends TypeAnnotationTarget {
 
 case object TATFieldDeclaration extends TATEmpty {
 
-    final override def tag: Int = 0x13
+    override final def tag: Int = 0x13
 
-    final override def description: String = "type in field declaration"
+    override final def description: String = "type in field declaration"
 
 }
 case object TATReturnType extends TATEmpty {
 
-    final override def tag: Int = 0x14
+    override final def tag: Int = 0x14
 
-    final override def description: String = {
+    override final def description: String = {
         "return type of method, or type of newly constructed object"
     }
 
 }
 case object TATReceiverType extends TATEmpty {
 
-    final override def tag: Int = 0x15
+    override final def tag: Int = 0x15
 
-    final override def description: String = "receiver type of method or constructor"
+    override final def description: String = "receiver type of method or constructor"
 }
 
 //______________________________
 // formal_parameter_target
 case class TATFormalParameter(formal_parameter_index: Int) extends TypeAnnotationTarget {
 
-    final override def attribute_length: Int = 1 + 1
+    override final def attribute_length: Int = 1 + 1
 
-    final override def tag: Int = 0x16
+    override final def tag: Int = 0x16
 
     def description: String = {
         "type in formal parameter declaration of method, constructor, or lambda expression"
@@ -193,9 +193,9 @@ case class TATFormalParameter(formal_parameter_index: Int) extends TypeAnnotatio
 // throws_target
 case class TATThrows(throws_type_index: Int) extends TypeAnnotationTarget {
 
-    final override def attribute_length: Int = 1 + 2
+    override final def attribute_length: Int = 1 + 2
 
-    final override def tag: Int = 0x17
+    override final def tag: Int = 0x17
 
     def description: String = "type in throws clause of method or throws_target constructor"
 
@@ -226,7 +226,7 @@ trait TATLocalvar extends TypeAnnotationTarget {
      */
     def localvarTable: LocalvarTable
 
-    final override def attribute_length: Int = 1 + 2 + localvarTable.size * 6
+    override final def attribute_length: Int = 1 + 2 + localvarTable.size * 6
 
     def description: String
 
@@ -238,7 +238,7 @@ trait TATLocalvar extends TypeAnnotationTarget {
 
 case class TATLocalvarDecl(localvarTable: LocalvarTable) extends TATLocalvar {
 
-    final override def tag: Int = 0x40
+    override final def tag: Int = 0x40
 
     final def description: String = "type in local variable declaration"
 
@@ -246,7 +246,7 @@ case class TATLocalvarDecl(localvarTable: LocalvarTable) extends TATLocalvar {
 
 case class TATResourcevarDecl(localvarTable: LocalvarTable) extends TATLocalvar {
 
-    final override def tag: Int = 0x41
+    override final def tag: Int = 0x41
 
     final def description: String = "type in resource variable declaration (try-with-resources)"
 
@@ -256,13 +256,13 @@ case class TATResourcevarDecl(localvarTable: LocalvarTable) extends TATLocalvar 
 // catch_target
 case class TATCatch(exception_table_index: Int) extends TypeAnnotationTarget {
 
-    final override def attribute_length: Int = 1 + 2
+    override final def attribute_length: Int = 1 + 2
 
-    final override def tag: Int = 0x42
+    override final def tag: Int = 0x42
 
     def description: String = "type in exception parameter declaration"
 
-    final override def toXHTML(implicit cp: Constant_Pool): Node = {
+    override final def toXHTML(implicit cp: Constant_Pool): Node = {
         <span class="type_annotation_target"><i>{ description }[0x{ tag.toHexString }]</i>(exception table index: { exception_table_index })</span>
     }
 }
@@ -276,30 +276,30 @@ trait TATWithOffset extends TypeAnnotationTarget {
 
     def description: String
 
-    final override def attribute_length: Int = 1 + 2
+    override final def attribute_length: Int = 1 + 2
 
-    final override def toXHTML(implicit cp: Constant_Pool): Node = {
+    override final def toXHTML(implicit cp: Constant_Pool): Node = {
         <span class="type_annotation_target"><i>{ description }[0x{ tag.toHexString }]</i>(bytecode offset: { offset })</span>
     }
 }
 
 case class TATInstanceOf(offset: Int) extends TATWithOffset {
 
-    final override def tag: Int = 0x43
+    override final def tag: Int = 0x43
 
     final def description: String = "type in instanceof expression"
 
 }
 case class TATNew(offset: Int) extends TATWithOffset {
 
-    final override def tag: Int = 0x44
+    override final def tag: Int = 0x44
 
     final def description: String = "type in new expression"
 }
 /** A `::New` expression. */
 case class TATMethodReferenceExpressionNew(offset: Int) extends TATWithOffset {
 
-    final override def tag: Int = 0x45
+    override final def tag: Int = 0x45
 
     final def description: String = "type in method reference expression using ::new"
 
@@ -307,7 +307,7 @@ case class TATMethodReferenceExpressionNew(offset: Int) extends TATWithOffset {
 /** A `::Identifier` expression. */
 case class TATMethodReferenceExpressionIdentifier(offset: Int) extends TATWithOffset {
 
-    final override def tag: Int = 0x46
+    override final def tag: Int = 0x46
 
     final def description: String = "type in method reference expression using ::Identifier"
 }
@@ -324,16 +324,16 @@ trait TATTypeArgument extends TypeAnnotationTarget {
     /** The description of the annotated type argument as given in the JVM spec. */
     def description: String
 
-    final override def attribute_length: Int = 1 /*tag*/ + 2 + 1
+    override final def attribute_length: Int = 1 /*tag*/ + 2 + 1
 
-    final override def toXHTML(implicit cp: Constant_Pool): Node = {
+    override final def toXHTML(implicit cp: Constant_Pool): Node = {
         <span class="type_annotation_target"><i>{ description }[0x{ tag.toHexString }]</i>(bytecode offset: { offset }, type argument index: { type_argument_index })</span>
     }
 }
 
 case class TATCastExpression(offset: Int, type_argument_index: Int) extends TATTypeArgument {
 
-    final override def tag: Int = 0x47
+    override final def tag: Int = 0x47
 
     final def description: String = "type in cast expression"
 
@@ -343,7 +343,7 @@ case class TATConstructorInvocation(
         type_argument_index: Int
 ) extends TATTypeArgument {
 
-    final override def tag: Int = 0x48
+    override final def tag: Int = 0x48
 
     final def description: String = {
         "type argument for generic constructor in new expression or " +
@@ -356,7 +356,7 @@ case class TATMethodInvocation(
         type_argument_index: Int
 ) extends TATTypeArgument {
 
-    final override def tag: Int = 0x49
+    override final def tag: Int = 0x49
 
     final def description: String = {
         "type argument for generic method in method invocation expression"
@@ -368,7 +368,7 @@ case class TATConstructorInMethodReferenceExpression(
         type_argument_index: Int
 ) extends TATTypeArgument {
 
-    final override def tag: Int = 0x4a
+    override final def tag: Int = 0x4A
 
     final def description: String = {
         "type argument for generic constructor in method reference expression using ::new"
@@ -379,7 +379,7 @@ case class TATMethodInMethodReferenceExpression(
         type_argument_index: Int
 ) extends TATTypeArgument {
 
-    final override def tag: Int = 0x4b
+    override final def tag: Int = 0x4B
 
     final def description: String = {
         "type argument for generic method in method reference expression using ::Identifier"

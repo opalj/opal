@@ -2,11 +2,11 @@
 package org.opalj
 package fpcf
 
+import org.scalatest.funsuite.AnyFunSuite
+
 import org.opalj.fpcf.fixtures.NilProperty
 import org.opalj.fpcf.fixtures.Palindromes.NoPalindrome
 import org.opalj.fpcf.fixtures.Palindromes.Palindrome
-
-import org.scalatest.funsuite.AnyFunSuite
 
 class PropertyComputationResultsTest extends AnyFunSuite {
 

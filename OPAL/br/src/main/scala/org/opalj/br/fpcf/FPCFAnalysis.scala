@@ -13,7 +13,7 @@ import org.opalj.fpcf.PropertyStore
  */
 trait FPCFAnalysis extends ProjectBasedAnalysis {
 
-    final implicit val propertyStore: PropertyStore = project.get(PropertyStoreKey)
+    implicit final val propertyStore: PropertyStore = project.get(PropertyStoreKey)
 
     final def ps: PropertyStore = propertyStore
 

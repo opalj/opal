@@ -973,8 +973,8 @@ trait L2PurityAnalysisScheduler extends FPCFAnalysisScheduler {
         )
     }
 
-    final override type InitializationData = L2PurityAnalysis
-    final override def init(p: SomeProject, ps: PropertyStore): InitializationData = {
+    override final type InitializationData = L2PurityAnalysis
+    override final def init(p: SomeProject, ps: PropertyStore): InitializationData = {
         new L2PurityAnalysis(p)
     }
 

@@ -204,7 +204,7 @@ trait StringValues
         super.invokespecial(pc, declaringClass, isInterface, name, methodDescriptor, operands)
     }
 
-    final override def StringValue(origin: ValueOrigin, value: String): DomainObjectValue = {
+    override final def StringValue(origin: ValueOrigin, value: String): DomainObjectValue = {
         StringValue(origin, value, nextRefId())
     }
 

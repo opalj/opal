@@ -11,15 +11,15 @@ package instructions
  */
 trait UnconditionalBranchInstructionLike extends SimpleBranchInstructionLike {
 
-    final override def numberOfPoppedOperands(ctg: Int => ComputationalTypeCategory): Int = 0
+    override final def numberOfPoppedOperands(ctg: Int => ComputationalTypeCategory): Int = 0
 
-    final override def readsLocal: Boolean = false
+    override final def readsLocal: Boolean = false
 
-    final override def indexOfReadLocal: Int = throw new UnsupportedOperationException()
+    override final def indexOfReadLocal: Int = throw new UnsupportedOperationException()
 
-    final override def writesLocal: Boolean = false
+    override final def writesLocal: Boolean = false
 
-    final override def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
+    override final def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
 
 }
 
@@ -27,7 +27,7 @@ trait UnconditionalBranchInstruction
     extends SimpleBranchInstruction
     with UnconditionalBranchInstructionLike {
 
-    final override def nextInstructions(
+    override final def nextInstructions(
         currentPC:             PC,
         regularSuccessorsOnly: Boolean
     )(

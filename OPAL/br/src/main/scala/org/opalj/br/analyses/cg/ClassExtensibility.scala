@@ -23,7 +23,7 @@ import net.ceedubs.ficus.Ficus._
 abstract class ClassExtensibility extends (ObjectType => Answer) {
 
     /** See [[isClassExtensible]]. */
-    final override def apply(t: ObjectType): Answer = this.isClassExtensible(t)
+    override final def apply(t: ObjectType): Answer = this.isClassExtensible(t)
 
     /**
      * Determines whether the given class can directly be extended by (yet unknown) code.
@@ -174,4 +174,3 @@ class ClassHierarchyIsNotExtensible(val project: SomeProject) extends ClassExten
 
     def isClassExtensible(t: ObjectType): Answer = No
 }
-

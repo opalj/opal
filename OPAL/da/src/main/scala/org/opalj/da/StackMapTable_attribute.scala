@@ -16,7 +16,7 @@ case class StackMapTable_attribute(
         stack_map_frames:     StackMapFrames
 ) extends Attribute {
 
-    final override def attribute_length: Int = {
+    override final def attribute_length: Int = {
         stack_map_frames.foldLeft(2 /*count*/ )((c, n) => c + n.attribute_length)
     }
 

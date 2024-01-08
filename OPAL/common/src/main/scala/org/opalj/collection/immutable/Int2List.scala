@@ -46,7 +46,7 @@ sealed trait Int2List extends Serializable { self =>
     /** Prepends the given value to this list. E.g., `l = 2 +: l`. */
     def +:(v: Int): Int2List
 
-    final override def equals(other: Any): Boolean = {
+    override final def equals(other: Any): Boolean = {
         other match {
             case l: Int2List => equals(l)
             case _           => false

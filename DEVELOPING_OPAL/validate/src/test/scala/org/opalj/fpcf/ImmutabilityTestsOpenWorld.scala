@@ -4,6 +4,9 @@ package fpcf
 
 import java.net.URL
 
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
+
 import org.opalj.ai.domain.l1
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.analyses.Project
@@ -16,9 +19,6 @@ import org.opalj.tac.fpcf.analyses.EagerFieldImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazySimpleEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalysis
 import org.opalj.tac.fpcf.analyses.fieldassignability.EagerL2FieldAssignabilityAnalysis
-
-import com.typesafe.config.Config
-import com.typesafe.config.ConfigFactory
 
 /**
  * Tests the immutability analyses with an open world assumption

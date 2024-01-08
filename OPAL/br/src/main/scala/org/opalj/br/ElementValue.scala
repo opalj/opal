@@ -47,7 +47,7 @@ object ElementValue {
  */
 sealed trait BaseTypeElementValue extends ElementValue {
 
-    final override def valueType = baseType
+    override final def valueType = baseType
 
     def baseType: BaseType
 
@@ -122,7 +122,7 @@ case class IntValue(value: Int) extends BaseTypeElementValue {
 
     override def kindId: Int = IntValue.KindId
 
-    final override def asIntValue: IntValue = this
+    override final def asIntValue: IntValue = this
 
 }
 object IntValue {
@@ -169,7 +169,7 @@ case class BooleanValue(value: Boolean) extends BaseTypeElementValue {
 
     override def kindId: Int = BooleanValue.KindId
 
-    final override def asBooleanValue: BooleanValue = this
+    override final def asBooleanValue: BooleanValue = this
 
 }
 object BooleanValue {
@@ -180,7 +180,7 @@ object BooleanValue {
 
 case class StringValue(value: String) extends ElementValue {
 
-    final override def valueType = ObjectType.String
+    override final def valueType = ObjectType.String
 
     override def toJava: String = "\"" + value.toString + "\""
 
@@ -190,7 +190,7 @@ case class StringValue(value: String) extends ElementValue {
         this == other
     }
 
-    final override def asStringValue: StringValue = this
+    override final def asStringValue: StringValue = this
 
 }
 object StringValue {
@@ -201,7 +201,7 @@ object StringValue {
 
 case class ClassValue(value: Type) extends ElementValue {
 
-    final override def valueType = ObjectType.Class
+    override final def valueType = ObjectType.Class
 
     override def toJava: String = value.toJava + ".class"
 
@@ -211,7 +211,7 @@ case class ClassValue(value: Type) extends ElementValue {
         this == other
     }
 
-    final override def asClassValue: ClassValue = this
+    override final def asClassValue: ClassValue = this
 
 }
 object ClassValue {
@@ -222,7 +222,7 @@ object ClassValue {
 
 case class EnumValue(enumType: ObjectType, constName: String) extends ElementValue {
 
-    final override def valueType = enumType
+    override final def valueType = enumType
 
     override def toJava: String = enumType.toJava + "." + constName
 
@@ -232,7 +232,7 @@ case class EnumValue(enumType: ObjectType, constName: String) extends ElementVal
         this == other
     }
 
-    final override def asEnumValue: EnumValue = this
+    override final def asEnumValue: EnumValue = this
 
 }
 object EnumValue {
@@ -244,7 +244,7 @@ object EnumValue {
 case class ArrayValue(values: ElementValues) extends ElementValue {
 
     // by design/specification the first value determines the type of the Array
-    final override def valueType = ArrayType(values(0).valueType)
+    override final def valueType = ArrayType(values(0).valueType)
 
     override def toJava: String = values.map(_.toJava).mkString("{", ",", "}")
 
@@ -254,7 +254,7 @@ case class ArrayValue(values: ElementValues) extends ElementValue {
         this == other
     }
 
-    final override def asArrayValue: ArrayValue = this
+    override final def asArrayValue: ArrayValue = this
 
 }
 object ArrayValue {
@@ -265,7 +265,7 @@ object ArrayValue {
 
 case class AnnotationValue(annotation: Annotation) extends ElementValue {
 
-    final override def valueType = annotation.annotationType
+    override final def valueType = annotation.annotationType
 
     override def toJava: String = annotation.toJava
 
@@ -278,7 +278,7 @@ case class AnnotationValue(annotation: Annotation) extends ElementValue {
         }
     }
 
-    final override def asAnnotationValue: AnnotationValue = this
+    override final def asAnnotationValue: AnnotationValue = this
 }
 object AnnotationValue {
 

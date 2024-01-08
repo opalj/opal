@@ -5,10 +5,10 @@ package instructions
 
 private[instructions] trait NoLabels extends LabeledInstruction { this: Instruction =>
 
-    final override def branchTargets: Iterator[InstructionLabel] =
+    override final def branchTargets: Iterator[InstructionLabel] =
         Iterator.empty
 
-    final override def resolveJumpTargets(pc: PC, pcs: Map[InstructionLabel, PC]): this.type = this
+    override final def resolveJumpTargets(pc: PC, pcs: Map[InstructionLabel, PC]): this.type = this
 
     final def toLabeledInstruction(currentPC: PC): LabeledInstruction = this
 

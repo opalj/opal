@@ -1004,7 +1004,7 @@ object EagerL2FieldAssignabilityAnalysis extends L2FieldAssignabilityAnalysisSch
 
     override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
 
-    final override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+    override final def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new L2FieldAssignabilityAnalysis(p)
         val fields = p.allFields
         ps.scheduleEagerComputationsForEntities(fields)(analysis.determineFieldAssignability)
@@ -1020,7 +1020,7 @@ object LazyL2FieldAssignabilityAnalysis extends L2FieldAssignabilityAnalysisSche
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 
-    final override def register(
+    override final def register(
         p:      SomeProject,
         ps:     PropertyStore,
         unused: Null

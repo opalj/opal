@@ -6,11 +6,12 @@ package l1
 
 import scala.collection.immutable.ArraySeq
 
-import br._
 import org.junit.runner.RunWith
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
+
+import br._
 
 /**
  * Tests the ReflectiveInvoker trait.

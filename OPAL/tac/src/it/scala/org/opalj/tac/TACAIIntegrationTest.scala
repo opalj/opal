@@ -2,6 +2,11 @@
 package org.opalj
 package tac
 
+import org.junit.runner.RunWith
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
+
 import org.opalj.ai.BaseAI
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
@@ -13,11 +18,6 @@ import org.opalj.br.TestSupport
 import org.opalj.br.analyses.SomeProject
 import org.opalj.util.PerformanceEvaluation
 import org.opalj.util.PerformanceEvaluation.time
-
-import org.junit.runner.RunWith
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.matchers.should.Matchers
-import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests that all methods of OPAL's test projects + the JDK can be converted to the ai-based

@@ -96,7 +96,7 @@ trait SimpleEscapeAnalysisScheduler extends FPCFAnalysisScheduler {
     override def requiredProjectInformation: ProjectInformationKeys =
         Seq(DeclaredMethodsKey, VirtualFormalParametersKey, ContextProviderKey)
 
-    final override def uses: Set[PropertyBounds] = Set(
+    override final def uses: Set[PropertyBounds] = Set(
         PropertyBounds.lub(EscapeProperty),
         PropertyBounds.ub(TACAI)
     )

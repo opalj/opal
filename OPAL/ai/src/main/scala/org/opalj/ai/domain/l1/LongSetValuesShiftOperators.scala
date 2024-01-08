@@ -81,4 +81,3 @@ trait LongSetValuesShiftOperators extends LongValuesDomain {
     }
 
 }
-

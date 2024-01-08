@@ -89,7 +89,7 @@ private[immutable] case object LongTrieSet0 extends LongTrieSet {
 }
 
 /** A node of the trie. */
-private[immutable] sealed trait LongTrieSetNode {
+sealed private[immutable] trait LongTrieSetNode {
 
     def forall(p: Long => Boolean): Boolean
     def foreach[U](f: Long => U): Unit
@@ -102,13 +102,13 @@ private[immutable] sealed trait LongTrieSetNode {
     private[immutable] def contains(value: Long, key: Long): Boolean
     private[immutable] def toString(indent: Int): String
 
-    final private[immutable] def bitsToString(bits: Int): String = {
+    private[immutable] final def bitsToString(bits: Int): String = {
         bits.toBinaryString.reverse.padTo(3, '0').reverse
     }
 }
 
 /** The (potential) leaves of an IntTrie. */
-private[immutable] sealed abstract class LongTrieSetLeaf
+sealed abstract private[immutable] class LongTrieSetLeaf
     extends LongTrieSet
     with LongTrieSetNode {
 
@@ -118,11 +118,11 @@ private[immutable] sealed abstract class LongTrieSetLeaf
     /** The number of values stored by this leaf node. */
     def size: Int
 
-    final override private[immutable] def contains(value: Long, key: Long): Boolean = {
+    override private[immutable] final def contains(value: Long, key: Long): Boolean = {
         this.contains(value)
     }
 
-    final override private[immutable] def toString(indent: Int): String = {
+    override private[immutable] final def toString(indent: Int): String = {
         (" " * indent) + toString()
     }
 }
@@ -622,7 +622,7 @@ private[immutable] final class LongTrieSetNode1(
 
 }
 
-private[immutable] sealed abstract class LongTrieSetNode2_7 extends LongTrieSetNode {
+sealed abstract private[immutable] class LongTrieSetNode2_7 extends LongTrieSetNode {
 
     /**
      * The mapping between the three (relevant) bits of the value to the slot where the value
@@ -635,7 +635,7 @@ private[immutable] sealed abstract class LongTrieSetNode2_7 extends LongTrieSetN
      */
     def node(index: Int): LongTrieSetNode
 
-    final override private[immutable] def contains(v: Long, key: Long): Boolean = {
+    override private[immutable] final def contains(v: Long, key: Long): Boolean = {
         val vBits = (key & 7L).toInt
         val vIndex = (lookupTable >> (vBits * 4)) & 15
         val n = node(vIndex)
@@ -646,7 +646,7 @@ private[immutable] sealed abstract class LongTrieSetNode2_7 extends LongTrieSetN
         }
     }
 
-    final override def toString(level: Int): String = {
+    override final def toString(level: Int): String = {
         val indent = " " * level * 3
         var s = s"N("
         var i = 0
@@ -661,7 +661,7 @@ private[immutable] sealed abstract class LongTrieSetNode2_7 extends LongTrieSetN
         s + ")"
     }
 
-    final override def equals(other: Any): Boolean = {
+    override final def equals(other: Any): Boolean = {
         other match {
             case that: LongTrieSetNode2_7 =>
                 val thisLookupTable = this.lookupTable
@@ -1319,7 +1319,7 @@ private[immutable] final class LongTrieSetNode8(
         }
     }
 
-    final override def toString(level: Int): String = {
+    override final def toString(level: Int): String = {
         val indent = " " * level * 3
         var s = s"N("
         var i = 0

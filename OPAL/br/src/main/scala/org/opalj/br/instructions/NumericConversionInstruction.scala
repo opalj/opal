@@ -58,5 +58,5 @@ abstract class NumericConversionInstruction
 
     final def expressionResult: Stack.type = Stack
 
-    final override def toString(currentPC: Int): String = toString()
+    override final def toString(currentPC: Int): String = toString()
 }

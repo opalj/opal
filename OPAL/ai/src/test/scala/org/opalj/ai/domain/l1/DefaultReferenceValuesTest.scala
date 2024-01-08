@@ -4,6 +4,11 @@ package ai
 package domain
 package l1
 
+import org.junit.runner.RunWith
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
+
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.ArrayType
 import org.opalj.br.ClassHierarchy
@@ -14,11 +19,6 @@ import org.opalj.br.reader.Java8Framework.ClassFiles
 import org.opalj.collection.immutable._
 import org.opalj.collection.mutable.Locals
 import org.opalj.value.BaseReferenceValues
-
-import org.junit.runner.RunWith
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.matchers.should.Matchers
-import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests the `ReferenceValues` domain.

@@ -10,7 +10,7 @@ import scala.xml.NodeSeq
  */
 trait CONSTANT_Ref extends Constant_Pool_Entry {
 
-    final override def size: Int = 1 + 2 + 2
+    override final def size: Int = 1 + 2 + 2
 
     val class_index: Constant_Pool_Index
 

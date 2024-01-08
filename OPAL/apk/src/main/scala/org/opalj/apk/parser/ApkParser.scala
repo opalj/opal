@@ -46,7 +46,7 @@ import net.dongliu.apk.parser.ApkFile
  */
 class ApkParser(val apkPath: String)(implicit config: Config) {
 
-    implicit private val LogContext: LogContext = GlobalLogContext
+    private implicit val LogContext: LogContext = GlobalLogContext
     private val LogCategory = "APK parser"
 
     private var tmpDir: Option[File] = None
@@ -240,7 +240,7 @@ class ApkParser(val apkPath: String)(implicit config: Config) {
 
 object ApkParser {
 
-    implicit private val logContext: LogContext = GlobalLogContext
+    private implicit val logContext: LogContext = GlobalLogContext
 
     /**
      * Creates a new [[Project]] from an APK file.

@@ -7,6 +7,11 @@ import scala.reflect.ClassTag
 import play.api.libs.json.Json
 import scala.collection.immutable.ArraySeq
 
+import org.junit.runner.RunWith
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
+
 import org.opalj.br.Code
 import org.opalj.br.FieldType
 import org.opalj.br.LocalVariable
@@ -22,11 +27,6 @@ import org.opalj.br.instructions.LOOKUPSWITCH
 import org.opalj.br.instructions.NOP
 import org.opalj.collection.immutable.IntIntPair
 import org.opalj.collection.mutable.Locals
-
-import org.junit.runner.RunWith
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
-import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests the toIDL method of IssueDetails
