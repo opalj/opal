@@ -5,6 +5,9 @@ package reader
 
 import scala.collection.immutable.ArraySeq
 
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigValueFactory
+
 import org.opalj.bi.ACC_PRIVATE
 import org.opalj.bi.ACC_STATIC
 import org.opalj.bi.ACC_SYNTHETIC
@@ -19,9 +22,6 @@ import org.opalj.br.instructions.NOP
 import org.opalj.br.instructions.ReturnInstruction
 import org.opalj.log.OPALLogger.error
 import org.opalj.log.OPALLogger.info
-
-import com.typesafe.config.Config
-import com.typesafe.config.ConfigValueFactory
 
 /**
  * Provides support for rewriting Java 11 dynamic constant loading instructions.

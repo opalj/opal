@@ -58,7 +58,7 @@ sealed abstract class APIMethod(private val fID: Option[String] = None) extends 
 
     final def matches(i: MethodInvocationInstruction): Boolean = this.unapply(i)
 
-    final override val apiMethods = List(this)
+    override final val apiMethods = List(this)
 
     private def customFeatureID: Option[String] = fID
 

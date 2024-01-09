@@ -14,6 +14,10 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import scala.collection.immutable.SortedSet
 
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
+import com.typesafe.config.ConfigValueFactory
+
 import org.opalj.ai.domain
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.Field
@@ -66,10 +70,6 @@ import org.opalj.tac.fpcf.analyses.purity.L2PurityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.SystemOutLoggingAllExceptionRater
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
-
-import com.typesafe.config.Config
-import com.typesafe.config.ConfigFactory
-import com.typesafe.config.ConfigValueFactory
 
 /**
  * Determines the assignability of fields and the immutability of fields, classes and types and provides several

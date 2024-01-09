@@ -6,6 +6,9 @@ import scala.collection.mutable.Builder
 import scala.xml.Node
 import scala.xml.Text
 
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
+
 import org.opalj.bi.AccessFlags
 import org.opalj.bi.AccessFlagsContexts
 import org.opalj.collection.immutable.BitArraySet
@@ -14,9 +17,6 @@ import org.opalj.collection.immutable.UIDSet
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.info
-
-import com.typesafe.config.Config
-import com.typesafe.config.ConfigFactory
 
 /**
  * In this representation of Java bytecode references to a Java class file's constant

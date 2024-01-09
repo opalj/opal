@@ -4,9 +4,9 @@ package apk
 
 import scala.jdk.CollectionConverters.ListHasAsScala
 
-import org.opalj.apk.ApkComponentType.ApkComponentType
-
 import com.typesafe.config.Config
+
+import org.opalj.apk.ApkComponentType.ApkComponentType
 
 /**
  * Component of an APK. Each component is a potential entry point. A component is either an

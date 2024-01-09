@@ -8,6 +8,8 @@ import scala.collection.{Set => SomeSet}
 import scala.collection.immutable.ArraySeq
 import scala.collection.mutable
 
+import com.typesafe.config.Config
+
 import org.opalj.bi.Java11MajorVersion
 import org.opalj.bi.Java1MajorVersion
 import org.opalj.br.MethodDescriptor.SignaturePolymorphicMethodBoolean
@@ -25,7 +27,6 @@ import org.opalj.log.OPALLogger
 import org.opalj.log.OPALLogger.error
 import org.opalj.log.OPALLogger.info
 
-import com.typesafe.config.Config
 import control.find
 
 /**

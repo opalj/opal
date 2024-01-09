@@ -3,10 +3,10 @@ package org.opalj
 package ai
 package common
 
+import com.typesafe.config.Config
+
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
-
-import com.typesafe.config.Config
 
 /**
  * Registry for all domains that can be instantiated given a `Project`, and a `Method` with a

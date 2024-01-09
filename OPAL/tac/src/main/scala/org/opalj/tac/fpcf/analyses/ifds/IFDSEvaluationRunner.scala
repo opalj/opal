@@ -10,6 +10,8 @@ import scala.language.existentials
 import java.io.File
 import java.io.PrintWriter
 
+import com.typesafe.config.ConfigValueFactory
+
 import org.opalj.ai.domain.l0.PrimitiveTACAIDomain
 import org.opalj.ai.domain.l2
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
@@ -29,8 +31,6 @@ import org.opalj.ifds.Statistics
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.util.Milliseconds
 import org.opalj.util.PerformanceEvaluation.time
-
-import com.typesafe.config.ConfigValueFactory
 
 /**
  * Setup to run different Evaluations of IFDS Analyses

@@ -5,6 +5,9 @@ package ba
 import java.util.NoSuchElementException
 import scala.collection.mutable.ArrayBuffer
 
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
+
 import org.opalj.br.instructions.BranchoffsetOutOfBoundsException
 import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.InstructionLabel
@@ -29,8 +32,6 @@ import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.info
 
-import com.typesafe.config.Config
-import com.typesafe.config.ConfigFactory
 import it.unimi.dsi.fastutil.ints.Int2IntArrayMap
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap
 

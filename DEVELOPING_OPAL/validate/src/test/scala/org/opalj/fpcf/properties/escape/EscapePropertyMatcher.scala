@@ -12,6 +12,7 @@ import org.opalj.br.DefinedMethod
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.VirtualFormalParameter
+import org.opalj.br.fpcf.properties.AtMost
 import org.opalj.br.fpcf.properties.EscapeProperty
 import org.opalj.tac.common.DefinitionSite
 
@@ -110,31 +111,31 @@ class EscapeViaParameterAndNormalAndAbnormalReturnMatcher
     extends EscapePropertyMatcher(org.opalj.br.fpcf.properties.EscapeViaParameterAndNormalAndAbnormalReturn)
 
 class AtMostNoEscapeMatcher
-    extends EscapePropertyMatcher(org.opalj.br.fpcf.properties.AtMost(org.opalj.br.fpcf.properties.NoEscape))
+    extends EscapePropertyMatcher(AtMost(org.opalj.br.fpcf.properties.NoEscape))
 
 class AtMostEscapeInCalleeMatcher
-    extends EscapePropertyMatcher(org.opalj.br.fpcf.properties.AtMost(org.opalj.br.fpcf.properties.EscapeInCallee))
+    extends EscapePropertyMatcher(AtMost(org.opalj.br.fpcf.properties.EscapeInCallee))
 
 class AtMostEscapeViaParameterMatcher
-    extends EscapePropertyMatcher(org.opalj.br.fpcf.properties.AtMost(org.opalj.br.fpcf.properties.EscapeViaParameter))
+    extends EscapePropertyMatcher(AtMost(org.opalj.br.fpcf.properties.EscapeViaParameter))
 
 class AtMostEscapeViaReturnMatcher
-    extends EscapePropertyMatcher(org.opalj.br.fpcf.properties.AtMost(org.opalj.br.fpcf.properties.EscapeViaReturn))
+    extends EscapePropertyMatcher(AtMost(org.opalj.br.fpcf.properties.EscapeViaReturn))
 
 class AtMostEscapeViaAbnormalReturnMatcher
-    extends EscapePropertyMatcher(org.opalj.br.fpcf.properties.AtMost(org.opalj.br.fpcf.properties.EscapeViaAbnormalReturn))
+    extends EscapePropertyMatcher(AtMost(org.opalj.br.fpcf.properties.EscapeViaAbnormalReturn))
 
 class AtMostEscapeViaParameterAndReturnMatcher
-    extends EscapePropertyMatcher(org.opalj.br.fpcf.properties.AtMost(org.opalj.br.fpcf.properties.EscapeViaParameterAndReturn))
+    extends EscapePropertyMatcher(AtMost(org.opalj.br.fpcf.properties.EscapeViaParameterAndReturn))
 
 class AtMostEscapeViaParameterAndAbnormalReturnMatcher
-    extends EscapePropertyMatcher(org.opalj.br.fpcf.properties.AtMost(org.opalj.br.fpcf.properties.EscapeViaParameterAndAbnormalReturn))
+    extends EscapePropertyMatcher(AtMost(org.opalj.br.fpcf.properties.EscapeViaParameterAndAbnormalReturn))
 
 class AtMostEscapeViaNormalAndAbnormalReturnMatcher
-    extends EscapePropertyMatcher(org.opalj.br.fpcf.properties.AtMost(org.opalj.br.fpcf.properties.EscapeViaNormalAndAbnormalReturn))
+    extends EscapePropertyMatcher(AtMost(org.opalj.br.fpcf.properties.EscapeViaNormalAndAbnormalReturn))
 
 class AtMostEscapeViaParameterAndNormalAndAbnormalReturnMatcher
-    extends EscapePropertyMatcher(org.opalj.br.fpcf.properties.AtMost(org.opalj.br.fpcf.properties.EscapeViaParameterAndNormalAndAbnormalReturn))
+    extends EscapePropertyMatcher(AtMost(org.opalj.br.fpcf.properties.EscapeViaParameterAndNormalAndAbnormalReturn))
 
 class EscapeViaStaticFieldMatcher
     extends EscapePropertyMatcher(org.opalj.br.fpcf.properties.EscapeViaStaticField)
