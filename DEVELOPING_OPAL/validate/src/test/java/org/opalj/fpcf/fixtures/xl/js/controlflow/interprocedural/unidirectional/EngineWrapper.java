@@ -27,13 +27,13 @@ public class EngineWrapper {
         engine.eval("var n = w;");
         return engine.get("n");
     }
-    @PointsToSet(variableDefinition = 46,
+    @PointsToSet(variableDefinition = 45,
             expectedJavaAllocSites = {
                     @JavaMethodContextAllocSite(
                             cf = EngineWrapper.class,
                             methodName = "main",
                             methodDescriptor = "(java.lang.String[]): void",
-                            allocSiteLinenumber = 44,
+                            allocSiteLinenumber = 43,
                             allocatedType = "org.opalj.fpcf.fixtures.xl.js.testpts.SimpleContainerClass")
             }
     )

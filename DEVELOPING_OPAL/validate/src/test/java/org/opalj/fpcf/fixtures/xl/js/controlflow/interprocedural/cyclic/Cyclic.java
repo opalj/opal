@@ -1,12 +1,9 @@
 package org.opalj.fpcf.fixtures.xl.js.controlflow.interprocedural.cyclic;
 
-import org.opalj.No;
-import org.opalj.fpcf.fixtures.xl.js.controlflow.interprocedural.interleaved.JavaScriptCallsJavaFunctionOnPassedInstance;
 import org.opalj.fpcf.fixtures.xl.js.testpts.SimpleContainerClass;
 import org.opalj.fpcf.properties.pts.JavaMethodContextAllocSite;
 import org.opalj.fpcf.properties.pts.PointsToSet;
 
-import javax.script.Invocable;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
@@ -23,7 +20,7 @@ public class Cyclic {
         ScriptEngineManager sem = new ScriptEngineManager();
         c.se = sem.getEngineByName("JavaScript");
         c.se.put("jThis", c);
-        c.se.eval("function f(n){return jThis.decrement(n);}");
+        //c.se.eval("function f(n){return jThis.decrement(n);}");
         SimpleContainerClass initial = new SimpleContainerClass();
         SimpleContainerClass res = c.decrement(initial);
         System.out.println(res);
@@ -34,7 +31,7 @@ public class Cyclic {
                             cf = Cyclic.class,
                             methodName = "decrement",
                             methodDescriptor = "(org.opalj.fpcf.fixtures.xl.js.testpts.SimpleContainerClass): org.opalj.fpcf.fixtures.xl.js.testpts.SimpleContainerClass",
-                            allocSiteLinenumber = 44,
+                            allocSiteLinenumber = 41,
                             allocatedType = "org.opalj.fpcf.fixtures.xl.js.testpts.SimpleContainerClass")
             }
     )
@@ -57,7 +54,7 @@ public class Cyclic {
 
     public SimpleContainerClass callDecementThroughScriptEngine(SimpleContainerClass s) throws ScriptException, NoSuchMethodException {
         se.put("arg", s);
-        se.eval("var res = f(arg)");
+        se.eval("var res = jThis.decrement(arg)");
         SimpleContainerClass result = (SimpleContainerClass) se.get("res");
         return result;
     }

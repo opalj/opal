@@ -15,7 +15,7 @@ public class TwoEvals {
     @PointsToSet(variableDefinition = 32,
             expectedJavaAllocSites = {
                     @JavaMethodContextAllocSite(
-                            cf = JavaAllocationJSIdentity.class,
+                            cf = TwoEvals.class,
                             methodName = "main",
                             methodDescriptor = "(java.lang.String[]): void",
                             allocSiteLinenumber = 28,

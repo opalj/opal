@@ -17,7 +17,7 @@ public class JavaAllocationWriteFieldFromJS {
     @PointsToSet(variableDefinition = 34,
             expectedJavaAllocSites = {
                     @JavaMethodContextAllocSite(
-                            cf = JSAllocationWriteFieldFromJS.class,
+                            cf = JavaAllocationWriteFieldFromJS.class,
                             methodName = "main",
                             methodDescriptor = "(java.lang.String[]): void",
                             allocSiteLinenumber = 32,

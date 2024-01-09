@@ -100,13 +100,12 @@ object JavaJavaScriptTranslator {
                     }
                 })
             } else if (v.isJSJavaObject) {
-                throw new Exception("blub")
-                /*v.getObjectLabels.forEach(ol => {
+                v.getObjectLabels.forEach(ol => {
                     typesSet += ObjectType(ol.getJavaName.replace(".", "/"))
                     v.getObjectLabels.forEach(ol => {
                         jsNodes += ol.getNode
                     })
-                }) */
+                })
             } else if (v.isStrIdentifier || v.isMaybeAnyStr) {
                 typesSet += ObjectType.String
             } else if (v.isMaybeObject) {
@@ -118,8 +117,6 @@ object JavaJavaScriptTranslator {
         })
         val index = if (jsNodes.isEmpty) -50
         else -100 - jsNodes.head.getIndex
-
-        println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"+index)
 
         if (pointsToSetSet.isEmpty && typesSet.isEmpty)
             typesSet += ObjectType.Object
