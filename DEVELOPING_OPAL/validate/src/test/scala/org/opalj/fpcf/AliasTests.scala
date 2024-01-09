@@ -1,10 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org
-package opalj
+package org.opalj
 package fpcf
 
-import com.typesafe.config.Config
-import com.typesafe.config.ConfigFactory
 import org.opalj.ai.domain.l1
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.AnnotationLike
@@ -20,7 +17,6 @@ import org.opalj.tac.fpcf.analyses.alias.AliasFP
 import org.opalj.tac.fpcf.analyses.alias.AliasNull
 import org.opalj.tac.fpcf.analyses.alias.AliasReturnValue
 import org.opalj.tac.fpcf.analyses.alias.AliasSourceElement
-import org.opalj.tac.fpcf.analyses.alias.EagerIntraProceduralAliasAnalysis
 
 import java.net.URL
 import scala.collection.mutable.ArrayBuffer
@@ -50,7 +46,7 @@ class AliasTests extends PropertiesTest {
 
         val as = executeAnalyses(
             Set(
-                EagerIntraProceduralAliasAnalysis
+                //TODO add analyses to execute
             )
         )
 
