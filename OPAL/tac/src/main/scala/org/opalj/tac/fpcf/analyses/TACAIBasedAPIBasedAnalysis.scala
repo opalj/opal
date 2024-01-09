@@ -29,7 +29,7 @@ import org.opalj.tac.fpcf.properties.TheTACAI
  * @author Florian Kuebler
  */
 trait TACAIBasedAPIBasedAnalysis extends APIBasedAnalysis {
-    final override def handleNewCaller(
+    override final def handleNewCaller(
         calleeContext: ContextType, callerContext: ContextType, pc: Int, isDirect: Boolean
     ): ProperPropertyComputationResult = {
         val tacEOptP = ps(callerContext.method.definedMethod, TACAI.key)

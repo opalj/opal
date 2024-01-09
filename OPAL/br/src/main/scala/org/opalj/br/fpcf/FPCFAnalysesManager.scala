@@ -3,6 +3,8 @@ package org.opalj
 package br
 package fpcf
 
+import com.typesafe.config.Config
+
 import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.AnalysisScenario
 import org.opalj.fpcf.ComputationSpecification
@@ -12,8 +14,6 @@ import org.opalj.fpcf.Schedule
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.debug
 import org.opalj.util.PerformanceEvaluation._
-
-import com.typesafe.config.Config
 
 /**
  * Enables the execution of a set of analyses.

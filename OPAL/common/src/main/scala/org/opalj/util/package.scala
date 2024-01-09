@@ -8,11 +8,11 @@ import java.lang.management.ManagementFactory
 import java.lang.management.MemoryMXBean
 import scala.util.Properties.versionNumberString
 
-import org.opalj.log.LogContext
-import org.opalj.log.OPALLogger
-
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigRenderOptions
+
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
 
 /**
  * Utility methods.

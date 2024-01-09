@@ -38,17 +38,20 @@ import org.opalj.tac.fpcf.properties.TACAI
 class IFDSBasedVariableTypeAnalysis(project: SomeProject, subsumeFacts: Boolean = false)
     extends IFDSAnalysis(project, new VariableTypeProblem(project, subsumeFacts), VTAResult)
 
-class IFDSBasedVariableTypeAnalysisScheduler(subsumeFacts: Boolean = false) extends IFDSAnalysisScheduler[VTAFact, Method, JavaStatement] {
+class IFDSBasedVariableTypeAnalysisScheduler(subsumeFacts: Boolean = false)
+    extends IFDSAnalysisScheduler[VTAFact, Method, JavaStatement] {
     override def init(p: SomeProject, ps: PropertyStore) = new IFDSBasedVariableTypeAnalysis(p, subsumeFacts)
     override def property: IFDSPropertyMetaInformation[JavaStatement, VTAFact] = VTAResult
     override val uses: Set[PropertyBounds] = Set(PropertyBounds.finalP(TACAI), PropertyBounds.finalP(Callers))
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey, ContextProviderKey, PropertyStoreKey)
+    override def requiredProjectInformation: ProjectInformationKeys =
+        Seq(DeclaredMethodsKey, ContextProviderKey, PropertyStoreKey)
 }
 
 /**
  * The IFDSProperty for this analysis.
  */
-case class VTAResult(flows: Map[JavaStatement, Set[VTAFact]], debugData: Map[JavaStatement, Set[VTAFact]] = Map.empty) extends IFDSProperty[JavaStatement, VTAFact] {
+case class VTAResult(flows: Map[JavaStatement, Set[VTAFact]], debugData: Map[JavaStatement, Set[VTAFact]] = Map.empty)
+    extends IFDSProperty[JavaStatement, VTAFact] {
 
     override type Self = VTAResult
     override def create(result: Map[JavaStatement, Set[VTAFact]]): IFDSProperty[JavaStatement, VTAFact] = new VTAResult(result)
@@ -68,7 +71,8 @@ object VTAResult extends IFDSPropertyMetaInformation[JavaStatement, VTAFact] {
 
 class IFDSBasedVariableTypeAnalysisRunnerIFDS(subsumeFacts: Boolean = false) extends IFDSEvaluationRunner {
 
-    override def analysisClass: IFDSBasedVariableTypeAnalysisScheduler = new IFDSBasedVariableTypeAnalysisScheduler(subsumeFacts)
+    override def analysisClass: IFDSBasedVariableTypeAnalysisScheduler =
+        new IFDSBasedVariableTypeAnalysisScheduler(subsumeFacts)
 
     override protected def additionalEvaluationResult(
         analysis: IFDSAnalysis[_, _, _]

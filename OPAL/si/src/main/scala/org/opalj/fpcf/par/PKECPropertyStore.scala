@@ -12,10 +12,10 @@ import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.ListBuffer
 import scala.util.control.ControlThrowable
 
+import com.typesafe.config.Config
+
 import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPKId
 import org.opalj.log.LogContext
-
-import com.typesafe.config.Config
 
 /**
  * Yet another parallel property store.

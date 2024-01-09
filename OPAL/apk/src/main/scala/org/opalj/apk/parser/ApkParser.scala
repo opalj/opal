@@ -17,6 +17,8 @@ import scala.sys.process.stringToProcess
 import scala.xml.Node
 import scala.xml.XML
 
+import com.typesafe.config.Config
+
 import org.opalj.apk.ApkComponent
 import org.opalj.apk.ApkComponentsKey
 import org.opalj.apk.ApkComponentType
@@ -29,7 +31,6 @@ import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 import org.opalj.util.PerformanceEvaluation.time
 
-import com.typesafe.config.Config
 import net.dongliu.apk.parser.ApkFile
 /**
  * Parses an APK file and generates a [[Project]] for it.

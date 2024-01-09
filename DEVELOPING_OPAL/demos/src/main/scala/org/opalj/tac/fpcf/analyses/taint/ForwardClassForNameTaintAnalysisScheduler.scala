@@ -81,8 +81,7 @@ class ForwardClassForNameTaintProblem(project: SomeProject)
     /**
      * Create a FlowFact if Class.forName is called with a tainted variable for the first parameter.
      */
-    override protected def createFlowFact(callee: Method, call: JavaStatement,
-                                          in: TaintFact): Option[FlowFact] = {
+    override protected def createFlowFact(callee: Method, call: JavaStatement, in: TaintFact): Option[FlowFact] = {
         if (isClassForName(declaredMethods(callee)) && in == Variable(-2))
             Some(FlowFact(Seq(JavaMethod(call.method))))
         else None
@@ -115,7 +114,8 @@ object ForwardClassForNameTaintAnalysisScheduler extends IFDSAnalysisScheduler[T
 
 class ForwardClassForNameAnalysisRunnerIFDS extends IFDSEvaluationRunner {
 
-    override def analysisClass: ForwardClassForNameTaintAnalysisScheduler.type = ForwardClassForNameTaintAnalysisScheduler
+    override def analysisClass: ForwardClassForNameTaintAnalysisScheduler.type =
+        ForwardClassForNameTaintAnalysisScheduler
 
     override def printAnalysisResults(analysis: IFDSAnalysis[?, ?, ?], ps: PropertyStore): Unit =
         for {
