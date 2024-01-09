@@ -76,10 +76,10 @@ class AliasTests extends PropertiesTest {
             } else {
                 val matchingEntities = IDToEntity(getID(an)).filter(_._1 != element1)
                 if (matchingEntities.isEmpty) {
-                    throw new IllegalArgumentException()("No other entity with id " + getID(an) + " found")
+                    throw new IllegalArgumentException("No other entity with id " + getID(an) + " found")
                 }
                 if (matchingEntities.size > 1) {
-                    throw new IllegalArgumentException()("Multiple other entities with id " + getID(an) + " found")
+                    throw new IllegalArgumentException("Multiple other entities with id " + getID(an) + " found")
                 }
                 matchingEntities.head
             }
