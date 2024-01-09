@@ -45,8 +45,7 @@ class AliasTests extends PropertiesTest {
     describe("run all alias analyses") {
 
         val as = executeAnalyses(
-            Set(
-                //TODO add analyses to execute
+            Set( //TODO add analyses to execute
             )
         )
 
