@@ -65,7 +65,7 @@ trait ConstantsPoolLike {
      */
     def CPERefOfCPEMethodHandle(
         methodHandle: MethodHandle
-    ): (Int /*TAG*/ , Int /*Constant_Pool_Index*/ ) = {
+    ): (Int /*TAG*/, Int /*Constant_Pool_Index*/ ) = {
         methodHandle match {
             case GetFieldMethodHandle(declType, name, fieldType) =>
                 val cpFieldRef = CPEFieldRef(declType, name, fieldType.toJVMTypeName)

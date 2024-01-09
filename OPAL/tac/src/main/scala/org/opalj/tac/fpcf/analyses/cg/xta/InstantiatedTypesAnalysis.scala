@@ -149,7 +149,7 @@ class InstantiatedTypesAnalysis private[analyses] (
         // a constructor is called from an unknown context, there could be an initialization.
         if (!callContext.hasContext) {
             partialResults += partialResult(declaredType, ExternalWorld)
-            return ;
+            return;
         }
 
         val caller = callContext.method
@@ -157,20 +157,20 @@ class InstantiatedTypesAnalysis private[analyses] (
         // indirect calls, e.g. via reflection, are to be treated as instantiations as well
         if (!isDirect) {
             partialResults += partialResult(declaredType, caller)
-            return ;
+            return;
         }
 
         // a constructor is called by a non-constructor method, there will be an initialization.
         if (caller.name != "<init>") {
             partialResults += partialResult(declaredType, caller)
-            return ;
+            return;
         }
 
         // the constructor is called from another constructor. it is only an new instantiated
         // type if it was no super call. Thus the caller must be a subtype
         if (!classHierarchy.isSubtypeOf(caller.declaringClassType, declaredType)) {
             partialResults += partialResult(declaredType, caller)
-            return ;
+            return;
         }
 
         // actually it must be the direct subtype! -- we did the first check to return early
@@ -178,7 +178,7 @@ class InstantiatedTypesAnalysis private[analyses] (
             cf.superclassType.foreach { supertype =>
                 if (supertype != declaredType) {
                     partialResults += partialResult(declaredType, caller)
-                    return ;
+                    return;
                 }
             }
         }
@@ -186,7 +186,7 @@ class InstantiatedTypesAnalysis private[analyses] (
         // if the caller is not available, we have to assume that it was no super call
         if (!caller.hasSingleDefinedMethod) {
             partialResults += partialResult(declaredType, caller)
-            return ;
+            return;
         }
 
         val callerMethod = caller.definedMethod
@@ -194,7 +194,7 @@ class InstantiatedTypesAnalysis private[analyses] (
         // if the caller has no body, we have to assume that it was no super call
         if (callerMethod.body.isEmpty) {
             partialResults += partialResult(declaredType, caller)
-            return ;
+            return;
         }
 
         val supercall = INVOKESPECIAL(
@@ -213,7 +213,7 @@ class InstantiatedTypesAnalysis private[analyses] (
         // there can be only one super call, so there must be an explicit call
         if (pcsOfSuperCalls.size > 1) {
             partialResults += partialResult(declaredType, caller)
-            return ;
+            return;
         }
 
         // there is exactly the current call as potential super call, it still might no super
@@ -443,7 +443,7 @@ class InstantiatedTypesAnalysisScheduler(
         def initializeArrayType(at: ArrayType): Unit = {
             // If this type has already been initialized, we skip it.
             if (initializedArrayTypes.contains(at)) {
-                return ;
+                return;
             }
 
             initializedArrayTypes.add(at)

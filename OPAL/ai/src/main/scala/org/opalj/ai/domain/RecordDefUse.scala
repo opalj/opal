@@ -467,26 +467,27 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode =>
                             val receiver = operandsArray(currentPC)(mii.methodDescriptor.parametersCount)
                             var newDefOps = NoValueOrigins
                             if ( // we have to check that the handler is actually handling
-                            // (implicit) null pointer exceptions
-                            throwNullPointerExceptionOnMethodCall
-                                && refIsNull(currentPC, receiver).isYesOrUnknown
-                                && {
-                                    var foundDefinitiveHandler = false
-                                    code.handlersFor(currentPC) filter { eh =>
-                                        !foundDefinitiveHandler && (
-                                            (eh.catchType.isEmpty && { foundDefinitiveHandler = true; true }) || {
-                                                val isHandled = isASubtypeOf(ObjectType.NullPointerException, eh.catchType.get)
-                                                if (isHandled.isYes) {
-                                                    foundDefinitiveHandler = true
-                                                    true
-                                                } else if (isHandled.isYesOrUnknown)
-                                                    true
-                                                else
-                                                    false
-                                            }
-                                        )
-                                    }
-                                }.exists(eh => eh.handlerPC == successorPC)) {
+                                 // (implicit) null pointer exceptions
+                                 throwNullPointerExceptionOnMethodCall
+                                 && refIsNull(currentPC, receiver).isYesOrUnknown
+                                 && {
+                                     var foundDefinitiveHandler = false
+                                     code.handlersFor(currentPC) filter { eh =>
+                                         !foundDefinitiveHandler && (
+                                             (eh.catchType.isEmpty && { foundDefinitiveHandler = true; true }) || {
+                                                 val isHandled = isASubtypeOf(ObjectType.NullPointerException, eh.catchType.get)
+                                                 if (isHandled.isYes) {
+                                                     foundDefinitiveHandler = true
+                                                     true
+                                                 } else if (isHandled.isYesOrUnknown)
+                                                     true
+                                                 else
+                                                     false
+                                             }
+                                         )
+                                     }
+                                 }.exists(eh => eh.handlerPC == successorPC)
+                            ) {
                                 newDefOps += ValueOriginForImmediateVMException(currentPC)
                             }
                             // the configuration option:

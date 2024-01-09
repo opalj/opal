@@ -1440,14 +1440,14 @@ object InvokedynamicRewriting {
     def isJava10StringConcatInvokedynamic(invokedynamic: INVOKEDYNAMIC): Boolean = {
         invokedynamic.bootstrapMethod.handle match {
             case InvokeStaticMethodHandle(ObjectType.StringConcatFactory, _, _, _) => true
-            case _ => false
+            case _                                                                 => false
         }
     }
 
     def isObjectMethodsInvokedynamic(invokedynamic: INVOKEDYNAMIC): Boolean = {
         invokedynamic.bootstrapMethod.handle match {
             case InvokeStaticMethodHandle(ObjectType.ObjectMethods, _, _, _) => true
-            case _ => false
+            case _                                                           => false
         }
     }
 

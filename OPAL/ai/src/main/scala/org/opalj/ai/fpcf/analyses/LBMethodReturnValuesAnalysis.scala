@@ -155,7 +155,7 @@ class LBMethodReturnValuesAnalysis private[analyses] (
                 // METHOD WILL ALWAYS THROW AN EXCEPTION!
                 // || vi.get.asReferenceValue.isNull.isYes
                 // || (vi.get.asReferenceValue.isPrecise && vi.get.asReferenceValue.isNull.isNo)
-                ) {
+            ) {
                 Result(method, MethodReturnValue(vi))
             } else {
                 // We have potentially relevant dependencies (please, recall that we are currently

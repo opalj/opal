@@ -335,7 +335,7 @@ class Project[Source] private (
                 // This may happen for "broken" projects (which we find, e.g., in case of
                 // the JDK/Qualitas Corpus).
                 noSAMInterface(classFile.thisType)
-                return ;
+                return;
             }
             val interfaceType = classFile.thisType
 
@@ -644,7 +644,7 @@ class Project[Source] private (
     ): Unit = {
         val classFilesCount = classFiles.length
         if (classFilesCount == 0)
-            return ;
+            return;
 
         parForeachArrayElement(classFiles, NumberOfThreadsForCPUBoundTasks, isInterrupted)(f)
     }
@@ -734,7 +734,7 @@ class Project[Source] private (
     ): Unit = {
         val methods = this.methodsWithBodyAndContext
         if (methods.length == 0)
-            return ;
+            return;
 
         parForeachArrayElement(methods, parallelizationLevel, isInterrupted)(f)
     }
@@ -1292,7 +1292,7 @@ object Project {
             // the computation may have been scheduled multiple times; hence, if we are
             // already done, just return.
             if (methods.get(objectType).nonEmpty)
-                return ;
+                return;
 
             val superclassType = classHierarchy.superclassType(objectType)
 
@@ -1303,7 +1303,7 @@ object Project {
                         // let's postpone the processing of this object type
                         // because we will get some result in the future
                         tasks.submit(objectType)
-                        return ;
+                        return;
                     }
                     val superclassTypeMethods = methods.get(theSuperclassType)
                     if (superclassTypeMethods.nonEmpty) {
@@ -1711,7 +1711,7 @@ object Project {
         Project.apply[Source](
             projectClassFilesWithSources,
             Iterable.empty,
-            libraryClassFilesAreInterfacesOnly = false /*it actually doesn't matter*/ ,
+            libraryClassFilesAreInterfacesOnly = false /*it actually doesn't matter*/,
             virtualClassFiles = Iterable.empty
         )(projectLogger = projectLogger)
     }

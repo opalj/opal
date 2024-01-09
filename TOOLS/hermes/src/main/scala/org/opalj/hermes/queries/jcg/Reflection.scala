@@ -99,16 +99,16 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
             method @ MethodWithBody(body) <- classFile.methods
             methodLocation = MethodLocation(classFileLocation, method)
             pcAndInstruction <- body collect ({
-                case i: LoadClass => i
-                case i: LoadClass_W => i
-                case i @ INVOKEVIRTUAL(MethodT, "invoke", Invoke) => i
-                case i @ INVOKEVIRTUAL(ClassT, "getMethod", GetMethodMD) => i
-                case i @ INVOKEVIRTUAL(ClassT, "getDeclaredMethod", GetMethodMD) => i
-                case i @ INVOKEVIRTUAL(ClassT, "newInstance", JustReturnsObject) => i
-                case i @ INVOKEVIRTUAL(ConstructorT, "newInstance", NewInstanceMD) => i
-                case i @ INVOKEVIRTUAL(ClassT, "getDeclaredField", GetFieldMD) => i
-                case i @ INVOKEVIRTUAL(ClassT, "getField", GetFieldMD) => i
-                case i @ INVOKEVIRTUAL(FieldT, "get", FieldGetMD) => i
+                case i: LoadClass                                                        => i
+                case i: LoadClass_W                                                      => i
+                case i @ INVOKEVIRTUAL(MethodT, "invoke", Invoke)                        => i
+                case i @ INVOKEVIRTUAL(ClassT, "getMethod", GetMethodMD)                 => i
+                case i @ INVOKEVIRTUAL(ClassT, "getDeclaredMethod", GetMethodMD)         => i
+                case i @ INVOKEVIRTUAL(ClassT, "newInstance", JustReturnsObject)         => i
+                case i @ INVOKEVIRTUAL(ConstructorT, "newInstance", NewInstanceMD)       => i
+                case i @ INVOKEVIRTUAL(ClassT, "getDeclaredField", GetFieldMD)           => i
+                case i @ INVOKEVIRTUAL(ClassT, "getField", GetFieldMD)                   => i
+                case i @ INVOKEVIRTUAL(FieldT, "get", FieldGetMD)                        => i
                 case i @ INVOKESTATIC(ClassT, false, "forName", ForName1MD | ForName3MD) => i
             }: PartialFunction[Instruction, Instruction])
         } {

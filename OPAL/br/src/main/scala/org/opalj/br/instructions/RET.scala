@@ -29,7 +29,7 @@ case class RET(
     override final def length: Int = 2
 
     override final def nextInstructions(
-        currentPC:             Int /*PC*/ ,
+        currentPC:             Int /*PC*/,
         regularSuccessorsOnly: Boolean
     )(
         implicit

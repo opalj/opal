@@ -406,10 +406,10 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
      */
     def checkPurityOfReturn(returnValue: Expr[V])(implicit state: StateType): Unit = {
         if (returnValue.cTpe != ComputationalTypeReference)
-            return ; // Only non-primitive return values influence purity.
+            return; // Only non-primitive return values influence purity.
 
         if (!state.ubPurity.isDeterministic)
-            return ; // If the method can't be pure, the return value is not important.
+            return; // If the method can't be pure, the return value is not important.
 
         if (!returnValue.isVar) {
             // The expression could refer to further expressions in a non-flat representation. To
@@ -417,17 +417,17 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
             // the return value is not local as the analysis is intended to be used on flat
             // representations anyway.
             isLocal(returnValue, SideEffectFree)
-            return ;
+            return;
         }
 
         val value = returnValue.asVar.value.asReferenceValue
         if (value.isNull.isYes)
-            return ; // Null is immutable
+            return; // Null is immutable
 
         if (value.upperTypeBound.exists(_.isArrayType)) {
             // Arrays are always mutable
             isLocal(returnValue, SideEffectFree)
-            return ;
+            return;
         }
 
         if (value.isPrecise) { // Precise class known, use ClassImmutability

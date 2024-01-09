@@ -16,7 +16,7 @@ import org.opalj.br.ObjectType
  *
  * @author Michael Eichberg
  */
-class TypesSet( final val classHierarchy: ClassHierarchy) extends collection.TypesSet {
+class TypesSet(final val classHierarchy: ClassHierarchy) extends collection.TypesSet {
 
     import classHierarchy.isSubtypeOf
 

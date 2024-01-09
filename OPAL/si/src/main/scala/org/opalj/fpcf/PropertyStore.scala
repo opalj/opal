@@ -969,7 +969,7 @@ abstract class PropertyStore {
             if (exception != t
                 && !t.isInstanceOf[InterruptedException]
                 && !t.isInstanceOf[RejectedExecutionException] // <= used, e.g., by a ForkJoinPool
-                ) {
+            ) {
                 exception.addSuppressed(t)
             }
         } else {

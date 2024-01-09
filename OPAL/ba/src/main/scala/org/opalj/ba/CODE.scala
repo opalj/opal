@@ -191,14 +191,14 @@ object CODE {
             // the code element "0" is already marked as live..
             while (currentIndex > 0) {
                 if (isLive(currentIndex) || markedAsLive.contains(currentIndex)) {
-                    return ; // nothing to do
+                    return; // nothing to do
                 }
 
                 val currentInstruction = codeElements(currentIndex)
                 if (currentInstruction.isInstructionLikeElement) {
                     // We basically only want to mark TRYs and Jump Labels belonging to
                     // the code element with the given `index` as live.
-                    return ;
+                    return;
                 } else if (!currentInstruction.isExceptionHandlerElement) {
                     // DEBUG: println(s"[markMetaInformationAsLive] scheduling $index")
                     markedAsLive += currentIndex

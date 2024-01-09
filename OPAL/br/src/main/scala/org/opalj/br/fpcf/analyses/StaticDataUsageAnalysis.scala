@@ -41,7 +41,7 @@ import org.opalj.fpcf.SomeEPS
  *
  * @author Dominik Helm
  */
-class StaticDataUsageAnalysis private[analyses] ( final val project: SomeProject)
+class StaticDataUsageAnalysis private[analyses] (final val project: SomeProject)
     extends FPCFAnalysis {
 
     import project.nonVirtualCall

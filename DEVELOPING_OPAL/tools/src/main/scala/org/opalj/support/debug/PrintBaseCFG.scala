@@ -27,7 +27,7 @@ object PrintBaseCFG {
             println("\t1: a jar/jmod/class file or a directory containing jar/jmod/class files.")
             println("\t2: the name of a class.")
             println("\t3: the simple name or signature of a method of the class.")
-            return ;
+            return;
         }
         val fileName = args(0)
         val className = args(1)
@@ -36,13 +36,13 @@ object PrintBaseCFG {
         val file = new java.io.File(fileName)
         if (!file.exists()) {
             println(RED + "[error] the file does not exist: " + fileName + "." + RESET)
-            return ;
+            return;
         }
 
         val project = try { Project(file) } catch {
             case e: Exception =>
                 println(RED + "[error] cannot process file: " + e.getMessage + "." + RESET)
-                return ;
+                return;
         }
 
         val classFile = {
@@ -53,7 +53,7 @@ object PrintBaseCFG {
                     className
             project.allClassFiles.find(_.fqn == fqn).getOrElse {
                 println(RED + "[error] cannot find the class: " + className + "." + RESET)
-                return ;
+                return;
             }
         }
 
@@ -69,13 +69,13 @@ object PrintBaseCFG {
                     method
                 else {
                     println(RED + "[error] the method: " + methodName + " does not have a body" + RESET)
-                    return ;
+                    return;
                 }
             case None =>
                 val allMethods = classFile.methods.map(_.signatureToJava(false)).toSet
                 val altMethods = allMethods.toSeq.sorted.mkString(" Candidates: ", ", ", ".")
                 println(s"$RED[error] cannot find the method: $methodName.$RESET $altMethods")
-                return ;
+                return;
         }
 
         analyzeMethod(project, method)

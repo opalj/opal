@@ -84,7 +84,7 @@ private[immutable] final class LongTrieSetWithList1 private[immutable] (
     override def iterator: LongIterator = LongIterator(i1)
     override def foldLeft[B](z: B)(op: (B, Long) => B): B = op(z, i1)
     override def forFirstN[U](n: Int)(f: Long => U): Unit = {
-        if (n == 0) return ;
+        if (n == 0) return;
         f(i1)
     }
 
@@ -125,9 +125,9 @@ private[immutable] final class LongTrieSetWithList2 private[immutable] (
     override def iterator: LongIterator = LongIterator(i1, i2)
     override def foldLeft[B](z: B)(op: (B, Long) => B): B = op(op(z, i1), i2)
     override def forFirstN[U](n: Int)(f: Long => U): Unit = {
-        if (n == 0) return ;
+        if (n == 0) return;
         f(i1)
-        if (n == 1) return ;
+        if (n == 1) return;
         f(i2)
     }
 
@@ -172,11 +172,11 @@ private[immutable] final class LongTrieSetWithList3 private[immutable] (
     override def iterator: LongIterator = LongIterator(i1, i2, i3)
     override def foldLeft[B](z: B)(op: (B, Long) => B): B = op(op(op(z, i1), i2), i3)
     override def forFirstN[U](n: Int)(f: Long => U): Unit = {
-        if (n == 0) return ;
+        if (n == 0) return;
         f(i1)
-        if (n == 1) return ;
+        if (n == 1) return;
         f(i2)
-        if (n == 2) return ;
+        if (n == 2) return;
         f(i3)
     }
 

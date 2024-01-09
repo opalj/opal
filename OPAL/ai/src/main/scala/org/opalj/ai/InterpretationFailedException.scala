@@ -28,7 +28,7 @@ sealed trait InterpretationFailedException {
     val cfJoins: IntTrieSet
     val operandsArray: domain.OperandsArray
     val localsArray: domain.LocalsArray
-    val memoryLayoutBeforeSubroutineCall: List[(Int /*PC*/ , domain.OperandsArray, domain.LocalsArray)]
+    val memoryLayoutBeforeSubroutineCall: List[(Int /*PC*/, domain.OperandsArray, domain.LocalsArray)]
 }
 
 /**
@@ -49,7 +49,7 @@ object InterpretationFailedException {
         theEvaluatedPCs:                     IntArrayStack,
         theOperandsArray:                    theDomain.OperandsArray,
         theLocalsArray:                      theDomain.LocalsArray,
-        theMemoryLayoutBeforeSubroutineCall: List[(Int /*PC*/ , theDomain.OperandsArray, theDomain.LocalsArray)]
+        theMemoryLayoutBeforeSubroutineCall: List[(Int /*PC*/, theDomain.OperandsArray, theDomain.LocalsArray)]
     ): AIException with InterpretationFailedException = {
 
         new AIException("the interpretation failed", theCause) with InterpretationFailedException {
@@ -64,7 +64,7 @@ object InterpretationFailedException {
 
             val operandsArray: theDomain.OperandsArray = theOperandsArray
             val localsArray: theDomain.LocalsArray = theLocalsArray
-            val memoryLayoutBeforeSubroutineCall: List[(Int /*PC*/ , theDomain.OperandsArray, theDomain.LocalsArray)] = theMemoryLayoutBeforeSubroutineCall
+            val memoryLayoutBeforeSubroutineCall: List[(Int /*PC*/, theDomain.OperandsArray, theDomain.LocalsArray)] = theMemoryLayoutBeforeSubroutineCall
 
             override final def toString: String = {
                 s"InterpretationFailedException(\n\tdomain=$domain," +

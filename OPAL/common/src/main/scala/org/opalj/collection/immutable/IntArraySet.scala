@@ -389,7 +389,7 @@ case class IntArraySetN private[immutable] (
 
         val isb = new IntArraySetBuilder(max)
         var l = 0
-        while (l < i) { isb += is(l) /*the values were unchanged*/ ; l += 1 }
+        while (l < i) { isb += is(l) /*the values were unchanged*/; l += 1 }
         while (i < max) {
             isb += f(is(i))
             i += 1
@@ -632,7 +632,7 @@ class IntArraySetBuilder private[immutable] (
             // the element is NOT already found
             size += 1
             val insertionPoint = -index - 1
-            if ( /*new*/ size <= is.length) { // we have enough space
+            if (/*new*/ size <= is.length) { // we have enough space
                 arraycopy(is, insertionPoint, is, insertionPoint + 1, (size - 1) - insertionPoint)
                 is(insertionPoint) = elem
             } else {

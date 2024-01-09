@@ -625,20 +625,20 @@ trait RecordCFG
             (predecessors) => this.thePredecessors = predecessors, // to cache the result
             this
         ) {
-                val predecessors = new Array[IntTrieSet](regularSuccessors.length)
-                code.foreachPC { pc =>
-                    foreachSuccessorOf(pc) { successorPC =>
-                        val oldPredecessorsOfSuccessor = predecessors(successorPC)
-                        predecessors(successorPC) =
-                            if (oldPredecessorsOfSuccessor eq null) {
-                                IntTrieSet1(pc)
-                            } else {
-                                oldPredecessorsOfSuccessor + pc
-                            }
-                    }
+            val predecessors = new Array[IntTrieSet](regularSuccessors.length)
+            code.foreachPC { pc =>
+                foreachSuccessorOf(pc) { successorPC =>
+                    val oldPredecessorsOfSuccessor = predecessors(successorPC)
+                    predecessors(successorPC) =
+                        if (oldPredecessorsOfSuccessor eq null) {
+                            IntTrieSet1(pc)
+                        } else {
+                            oldPredecessorsOfSuccessor + pc
+                        }
                 }
-                predecessors
             }
+            predecessors
+        }
     }
 
     /**
@@ -681,22 +681,22 @@ trait RecordCFG
             dt => this.theDominatorTree = dt,
             regularSuccessors
         ) {
-                // We want to keep a non-soft reference and avoid any further useless synchronization.
-                val predecessors = this.predecessors
-                def foreachPredecessorOf(pc: Int)(f: PC => Unit): Unit = {
-                    val s = predecessors(pc)
-                    if (s ne null)
-                        s.foreach(f)
-                }
-
-                DominatorTree(
-                    startNode = 0,
-                    startNodeHasPredecessors = predecessorsOf(0).nonEmpty,
-                    foreachSuccessorOf,
-                    foreachPredecessorOf,
-                    maxNode = code.instructions.length - 1
-                )
+            // We want to keep a non-soft reference and avoid any further useless synchronization.
+            val predecessors = this.predecessors
+            def foreachPredecessorOf(pc: Int)(f: PC => Unit): Unit = {
+                val s = predecessors(pc)
+                if (s ne null)
+                    s.foreach(f)
             }
+
+            DominatorTree(
+                startNode = 0,
+                startNodeHasPredecessors = predecessorsOf(0).nonEmpty,
+                foreachSuccessorOf,
+                foreachPredecessorOf,
+                maxNode = code.instructions.length - 1
+            )
+        }
     }
 
     /**
@@ -813,11 +813,12 @@ trait RecordCFG
             case (exceptionHandler, index) =>
                 val handlerPC = exceptionHandler.handlerPC
                 if ( // 1.1.    Let's check if the handler was executed at all.
-                unsafeWasExecuted(handlerPC) &&
-                    // 1.2.    The handler may be shared by multiple try blocks, hence, we have
-                    //         to ensure the we have at least one instruction in the try block
-                    //         that jumps to the handler.
-                    handlesException(exceptionHandler)) {
+                     unsafeWasExecuted(handlerPC) &&
+                     // 1.2.    The handler may be shared by multiple try blocks, hence, we have
+                     //         to ensure the we have at least one instruction in the try block
+                     //         that jumps to the handler.
+                     handlesException(exceptionHandler)
+                ) {
                     // OLD val catchNodeCandidate = new CatchNode(exceptionHandler, index)
                     // OLD val catchNode = exceptionHandlers.getOrElseUpdate(handlerPC, catchNodeCandidate)
                     var catchNode = exceptionHandlers.get(handlerPC)

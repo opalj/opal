@@ -128,13 +128,13 @@ private[immutable] final case class Ref2ListNode[T >: Null <: AnyRef](
     override def forFirstN[U](n: Int)(f: T => U): Unit = {
         n match {
             case 0 =>
-                return ;
+                return;
             case 1 =>
                 if (h != null)
                     f(h)
                 else
                     f(t)
-                return ;
+                return;
             case _ =>
                 // ... n >= 2
                 var i = n - 1 // <= -1 for the second element "t"...

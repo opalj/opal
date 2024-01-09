@@ -58,7 +58,7 @@ trait ConstructorSensitiveEscapeAnalysis extends AbstractEscapeAnalysis {
 
         // the object constructor will not escape the this local
         if (call.declaringClass eq ObjectType.Object)
-            return ;
+            return;
 
         // resolve the constructor
         val constructor = project.specialCall(

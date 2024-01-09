@@ -37,7 +37,7 @@ import org.opalj.fpcf.Results
  *
  * @author Florian Kuebler
  */
-class FinalizerAnalysis private[analyses] ( final val project: SomeProject) extends FPCFAnalysis {
+class FinalizerAnalysis private[analyses] (final val project: SomeProject) extends FPCFAnalysis {
 
     implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 

@@ -35,7 +35,7 @@ import org.opalj.fpcf.SomeEPS
  *
  * @author Florian Kuebler
  */
-class VirtualCallAggregatingEscapeAnalysis private[analyses] ( final val project: SomeProject) extends FPCFAnalysis {
+class VirtualCallAggregatingEscapeAnalysis private[analyses] (final val project: SomeProject) extends FPCFAnalysis {
     private[this] val formalParameters = project.get(VirtualFormalParametersKey)
     private[this] val declaredMethods = project.get(DeclaredMethodsKey)
 

@@ -146,9 +146,9 @@ object TAC {
             InvokedynamicRewriting.InvokedynamicRewritingConfigKey,
             ConfigValueFactory.fromAnyRef(rewriteInvokeDynamic)
         ).withValue(
-                DynamicConstantRewriting.RewritingConfigKey,
-                ConfigValueFactory.fromAnyRef(rewriteDynamicConstants)
-            )
+            DynamicConstantRewriting.RewritingConfigKey,
+            ConfigValueFactory.fromAnyRef(rewriteDynamicConstants)
+        )
 
         val sourceFiles = cp.map(new File(_)).toArray
         val sourceLibFiles = libcp.map(new File(_)).toArray

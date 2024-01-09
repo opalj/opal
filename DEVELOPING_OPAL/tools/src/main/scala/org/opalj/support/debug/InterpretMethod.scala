@@ -73,7 +73,7 @@ object InterpretMethod {
 
         if (args.length < 3 || args.length > 5) {
             printUsage(Some("wrong number of parameters"))
-            return ;
+            return;
         }
         var remainingArgs = args.toList
         val fileName = remainingArgs.head; remainingArgs = remainingArgs.tail
@@ -109,7 +109,7 @@ object InterpretMethod {
         }
         if (remainingArgs.nonEmpty) {
             printUsage(Some(remainingArgs.mkString("unexpected arguments: ", ", ", "")))
-            return ;
+            return;
         }
 
         def createDomain[Source: reflect.ClassTag](project: SomeProject, method: Method): Domain = {
@@ -126,7 +126,7 @@ object InterpretMethod {
         val file = new java.io.File(fileName)
         if (!file.exists()) {
             println(RED + "[error] The file does not exist: " + fileName + "." + RESET)
-            return ;
+            return;
         }
 
         val project =
@@ -135,14 +135,14 @@ object InterpretMethod {
             } catch {
                 case e: Exception =>
                     println(RED + "[error] Cannot process file: " + e.getMessage + "." + RESET)
-                    return ;
+                    return;
             }
 
         val classFile = {
             val fqn = className.replace('.', '/')
             project.allClassFiles.find(_.fqn == fqn).getOrElse {
                 println(RED + "[error] Cannot find the class: " + className + "." + RESET)
-                return ;
+                return;
             }
         }
 

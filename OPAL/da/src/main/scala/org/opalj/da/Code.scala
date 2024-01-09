@@ -496,14 +496,14 @@ case class Code(instructions: Array[Byte]) {
                         <span class="instruction newarray">newarray </span>
                         {
                             in.readByte match {
-                                case 4=> "T_BOOLEAN (4)"
-                                case 5=> "T_CHAR (5)"
-                                case 6=> "T_FLOAT (6)"
-                                case 7=> "T_DOUBLE (7)"
-                                case 8=> "T_BYTE (8)"
-                                case 9=> "T_SHORT (9)"
-                                case 10=> "T_INT (10)"
-                                case 11=> "T_LONG (11)"
+                                case 4  => "T_BOOLEAN (4)"
+                                case 5  => "T_CHAR (5)"
+                                case 6  => "T_FLOAT (6)"
+                                case 7  => "T_DOUBLE (7)"
+                                case 8  => "T_BYTE (8)"
+                                case 9  => "T_SHORT (9)"
+                                case 10 => "T_INT (10)"
+                                case 11 => "T_LONG (11)"
                             }
                         }
                     </span>

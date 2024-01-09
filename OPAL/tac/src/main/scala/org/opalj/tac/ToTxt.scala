@@ -37,7 +37,7 @@ object ToTxt {
                     v.name + "/* return address */"
                 else
                     v.name
-            case Param(_ /*cTpe*/ , name)    => name
+            case Param(_ /*cTpe*/, name)     => name
             case IntConst(_, value)          => value.toString
             case LongConst(_, value)         => value.toString + "l"
             case FloatConst(_, value)        => value.toString + "f"
@@ -63,7 +63,7 @@ object ToTxt {
             case Compare(_, left, op, right) =>
                 toTxtExpr(left) + " " + op.toString + " " + toTxtExpr[V](right)
 
-            case BinaryExpr(_, _ /*cTpe*/ , op, left, right) =>
+            case BinaryExpr(_, _ /*cTpe*/, op, left, right) =>
                 toTxtExpr[V](left) + " " + op.toString + " " + toTxtExpr[V](right)
 
             case PrimitiveTypecastExpr(_, baseTpe, operand) =>
@@ -77,18 +77,18 @@ object ToTxt {
                         ("[]" * (dimensions - initializedDimensions))
                 s"new ${arrayType.drop(initializedDimensions).toJava}$initializer"
 
-            case InvokedynamicFunctionCall(_, bootstrapMethod, name, _ /*descriptor*/ , params) =>
+            case InvokedynamicFunctionCall(_, bootstrapMethod, name, _ /*descriptor*/, params) =>
                 s"invokedynamic[${bootstrapMethod.toJava}]${callToTxt(name, params)}"
 
-            case StaticFunctionCall(_, declClass, _, name, _ /*descriptor*/ , params) =>
+            case StaticFunctionCall(_, declClass, _, name, _ /*descriptor*/, params) =>
                 declClass.toJava + callToTxt[V](name, params)
 
-            case VirtualFunctionCall(_, declClass, _, name, _ /*descriptor*/ , receiver, params) =>
+            case VirtualFunctionCall(_, declClass, _, name, _ /*descriptor*/, receiver, params) =>
                 val callAsTxt = callToTxt(name, params)
                 val receiverAsTxt = toTxtExpr[V](receiver)
                 s"$receiverAsTxt/*${declClass.toJava}*/$callAsTxt"
 
-            case NonVirtualFunctionCall(_, declClass, _, name, _ /*descriptor*/ , receiver, params) =>
+            case NonVirtualFunctionCall(_, declClass, _, name, _ /*descriptor*/, receiver, params) =>
                 val call = callToTxt(name, params)
                 toTxtExpr[V](receiver) + "/*(non-virtual) " + declClass.toJava + "*/" + call
 
@@ -161,21 +161,21 @@ object ToTxt {
                 s"$pc $field = ${toTxtExpr(value)}"
 
             case StaticMethodCall.ASTID =>
-                val StaticMethodCall(_, declClass, _, name, _ /* descriptor*/ , params) = stmt
+                val StaticMethodCall(_, declClass, _, name, _ /* descriptor*/, params) = stmt
                 s"$pc ${declClass.toJava}${callToTxt(name, params)}"
 
             case VirtualMethodCall.ASTID =>
-                val VirtualMethodCall(_, declClass, _, name, _ /*desc.*/ , receiver, params) = stmt
+                val VirtualMethodCall(_, declClass, _, name, _ /*desc.*/, receiver, params) = stmt
                 val call = callToTxt(name, params)
                 s"$pc ${toTxtExpr(receiver)}/*${declClass.toJava}*/$call"
 
             case NonVirtualMethodCall.ASTID =>
-                val NonVirtualMethodCall(_, declClass, _, name, _ /*desc.*/ , rec, params) = stmt
+                val NonVirtualMethodCall(_, declClass, _, name, _ /*desc.*/, rec, params) = stmt
                 val call = callToTxt(name, params)
                 s"$pc ${toTxtExpr(rec)}/*(non-virtual) ${declClass.toJava}*/$call"
 
             case InvokedynamicMethodCall.ASTID =>
-                val InvokedynamicMethodCall(_, bootstrapMethod, name, _ /*desc.*/ , params) = stmt
+                val InvokedynamicMethodCall(_, bootstrapMethod, name, _ /*desc.*/, params) = stmt
                 s"$pc invokedynamic[${bootstrapMethod.toJava}]${callToTxt(name, params)}"
 
             case Checkcast.ASTID =>

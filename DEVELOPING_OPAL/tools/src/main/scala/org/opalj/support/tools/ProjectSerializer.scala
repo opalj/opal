@@ -71,7 +71,8 @@ object ProjectSerializer {
 
         def checkOrCreateOutputFolder(outFolder: File): Unit = {
             if ((!outFolder.exists() && !outFolder.mkdirs()) ||
-                (outFolder.exists() && !outFolder.isDirectory)) {
+                (outFolder.exists() && !outFolder.isDirectory)
+            ) {
                 Console.err.println(s"$out could not be created or is not a folder.")
                 System.exit(1)
             }

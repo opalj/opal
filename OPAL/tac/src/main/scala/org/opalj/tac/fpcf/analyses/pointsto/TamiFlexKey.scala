@@ -27,9 +27,9 @@ import org.opalj.log.OPALLogger
  * @author Florian Kuebler
  */
 class TamiFlexLogData(
-        private[this] val _classes: scala.collection.Map[(String /*Caller*/ , String /*Reflection Method*/ , Int /*Line Number*/ ), scala.collection.Set[ReferenceType]],
-        private[this] val _methods: scala.collection.Map[(String /*Caller*/ , String /*Reflection Method*/ , Int /*Line Number*/ ), scala.collection.Set[DeclaredMethod]],
-        private[this] val _fields:  scala.collection.Map[(String /*Caller*/ , String /*Reflection Method*/ , Int /*Line Number*/ ), scala.collection.Set[Field]]
+        private[this] val _classes: scala.collection.Map[(String /*Caller*/, String /*Reflection Method*/, Int /*Line Number*/), scala.collection.Set[ReferenceType]],
+        private[this] val _methods: scala.collection.Map[(String /*Caller*/, String /*Reflection Method*/, Int /*Line Number*/), scala.collection.Set[DeclaredMethod]],
+        private[this] val _fields:  scala.collection.Map[(String /*Caller*/, String /*Reflection Method*/, Int /*Line Number*/), scala.collection.Set[Field]]
 ) {
     private[this] def toMethodDesc(method: DeclaredMethod): String = {
         s"${method.declaringClassType.toJava}.${method.name}"
@@ -93,9 +93,9 @@ object TamiFlexKey extends ProjectInformationKey[TamiFlexLogData, Nothing] {
 
     override def compute(project: SomeProject): TamiFlexLogData = {
         implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
-        val classes: mutable.Map[(String /*Caller*/ , String /*Reflection Method*/ , Int /*Line Number*/ ), mutable.Set[ReferenceType]] = mutable.Map.empty
-        val methods: mutable.Map[(String /*Caller*/ , String /*Reflection Method*/ , Int /*Line Number*/ ), mutable.Set[DeclaredMethod]] = mutable.Map.empty
-        val fields: mutable.Map[(String /*Caller*/ , String /*Reflection Method*/ , Int /*Line Number*/ ), mutable.Set[Field]] = mutable.Map.empty
+        val classes: mutable.Map[(String /*Caller*/, String /*Reflection Method*/, Int /*Line Number*/), mutable.Set[ReferenceType]] = mutable.Map.empty
+        val methods: mutable.Map[(String /*Caller*/, String /*Reflection Method*/, Int /*Line Number*/), mutable.Set[DeclaredMethod]] = mutable.Map.empty
+        val fields: mutable.Map[(String /*Caller*/, String /*Reflection Method*/, Int /*Line Number*/), mutable.Set[Field]] = mutable.Map.empty
 
         @inline def addClassType(
             classType: String, sourceMethod: String, reflectionTarget: String, sourceLine: String
@@ -227,7 +227,7 @@ object TamiFlexKey extends ProjectInformationKey[TamiFlexLogData, Nothing] {
         methodDesc match {
             case regex(declaringClass, returnType, name, parameterTypes) =>
                 val declaringClassType = FieldType(toJVMType(declaringClass)).asObjectType
-                val jvmSignature = parameterTypes.split(',').map(toJVMType).mkString("(", "", ")" + toJVMType(returnType))
+                val jvmSignature = parameterTypes.split(',').map(toJVMType).mkString("(", "", ")"+toJVMType(returnType))
                 declaredMethods(declaringClassType, declaringClassType.packageName, declaringClassType, name, MethodDescriptor(jvmSignature))
         }
 

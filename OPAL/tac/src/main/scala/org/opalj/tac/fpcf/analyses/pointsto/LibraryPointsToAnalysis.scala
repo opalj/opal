@@ -43,7 +43,7 @@ import org.opalj.fpcf.UBP
  *
  * @author Dominik Helm
  */
-abstract class LibraryPointsToAnalysis( final val project: SomeProject)
+abstract class LibraryPointsToAnalysis(final val project: SomeProject)
     extends PointsToAnalysisBase {
 
     def analyze(declaredMethod: DeclaredMethod): PropertyComputationResult = {
@@ -197,7 +197,7 @@ abstract class LibraryPointsToAnalysis( final val project: SomeProject)
         def initializeArrayType(at: ArrayType): Unit = {
             // If this type has already been initialized, we skip it.
             if (initializedArrayTypes.contains(at)) {
-                return ;
+                return;
             }
 
             initializedArrayTypes.add(at)

@@ -334,7 +334,7 @@ private[seq] final class ManyDependeesOfDirectDependersLastTasksManager
         val t = this.initialTasks.pollFirst()
         if (t ne null) {
             t()
-            return ;
+            return;
         }
 
         val wt = this.tasks.poll()
@@ -386,7 +386,7 @@ private[seq] final class ManyDependeesOfDirectDependersFirstTasksManager
         val t = this.initialTasks.pollFirst()
         if (t ne null) {
             t()
-            return ;
+            return;
         }
 
         val wt = this.tasks.poll()

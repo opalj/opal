@@ -90,7 +90,7 @@ import org.opalj.fpcf.SomeEPS
  * @author Michael Eichberg
  * @author Dominik Helm
  */
-class L0PurityAnalysis private[analyses] ( final val project: SomeProject) extends FPCFAnalysis {
+class L0PurityAnalysis private[analyses] (final val project: SomeProject) extends FPCFAnalysis {
 
     import project.nonVirtualCall
     import project.resolveFieldReference

@@ -402,7 +402,7 @@ class CallersImplWithOtherCalls(
 
 object CallersImplWithOtherCalls {
     def apply(
-        encodedCallers:               IntMap[LongLinkedSet] /* Callee Context => Caller Context + PC + isDirect */ ,
+        encodedCallers:               IntMap[LongLinkedSet] /* Callee Context => Caller Context + PC + isDirect */,
         hasVMLevelCallers:            Boolean,
         hasCallersWithUnknownContext: Boolean
     ): CallersImplWithOtherCalls = {

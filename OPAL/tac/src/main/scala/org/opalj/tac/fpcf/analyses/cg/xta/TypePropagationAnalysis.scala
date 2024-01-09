@@ -372,7 +372,7 @@ final class TypePropagationAnalysis private[analyses] (
         // If we do not have any params at this point, there is no forward propagation!
         val typeFilters = params.result()
         if (typeFilters.isEmpty) {
-            return ;
+            return;
         }
 
         registerEntityForForwardPropagation(callee, typeFilters)
@@ -425,7 +425,7 @@ final class TypePropagationAnalysis private[analyses] (
         // Propagation from and to the same entity can be ignored.
         val typeSetEntity = selectTypeSetEntity(e)
         if (typeSetEntity == state.typeSetEntity) {
-            return ;
+            return;
         }
 
         val filterSetHasChanged = state.registerForwardPropagationEntity(typeSetEntity, filters)
@@ -446,7 +446,7 @@ final class TypePropagationAnalysis private[analyses] (
     ): Unit = {
         val typeSetEntity = selectTypeSetEntity(e)
         if (typeSetEntity == state.typeSetEntity) {
-            return ;
+            return;
         }
 
         val filter = UIDSet(mostPreciseUpperBound)
@@ -458,7 +458,7 @@ final class TypePropagationAnalysis private[analyses] (
             state.updateBackwardPropagationFilters(typeSetEntity, filter)
 
             if (dependee.hasNoUBP) {
-                return ;
+                return;
             }
 
             val propagation = propagateTypes(state.typeSetEntity, dependee.ub.types, filter)

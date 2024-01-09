@@ -251,7 +251,7 @@ package object da {
                                 ati.dimensions + 1,
                                 ati.elementTypeIsBaseType
                             ),
-                                index
+                            index
                         )
                     case (t, index) =>
                         (ArrayTypeInfo(t.asJava, 1, t.elementTypeIsBaseType), index)

@@ -156,34 +156,34 @@ class Library(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
 
         def analyzePotentialCBSTarget(cbsCallee: Method): Unit = {
             if (!cbsCallee.isPublic)
-                return ;
+                return;
 
             if (cbsCallee.isAbstract)
-                return ;
+                return;
 
             if (!isInheritableMethod(cbsCallee))
-                return ;
+                return;
 
             val cbsCalleeDeclaringClass = cbsCallee.classFile
 
             if (!cbsCalleeDeclaringClass.isClassDeclaration)
-                return ;
+                return;
 
             if (cbsCalleeDeclaringClass.isEffectivelyFinal)
-                return ;
+                return;
 
             val cbsCalleeDeclaringType = cbsCalleeDeclaringClass.thisType
 
             if (cbsCalleeDeclaringType eq ObjectType.Object)
-                return ;
+                return;
 
             if (project.classHierarchy.isSubtypeOf(
                 cbsCalleeDeclaringType, interfaceType
             ))
-                return ;
+                return;
 
             if (hasSubclassWhichInheritsFromInterface(cbsCalleeDeclaringType, interfaceType, methodName, methodDescriptor, project).isYes)
-                return ;
+                return;
 
             cbsTargets += cbsCallee
         }

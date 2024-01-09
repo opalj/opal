@@ -2,7 +2,7 @@
 package org.opalj
 package log
 
-case class StandardLogContext private ( final val startTime: Long) extends LogContext {
+case class StandardLogContext private (final val startTime: Long) extends LogContext {
 
     def this() = this(startTime = System.currentTimeMillis())
 

@@ -399,7 +399,7 @@ abstract class AI[D <: Domain](
     )(
         theOperandsArray:                    theDomain.OperandsArray,
         theLocalsArray:                      theDomain.LocalsArray,
-        theMemoryLayoutBeforeSubroutineCall: List[(Int /*PC*/ , theDomain.OperandsArray, theDomain.LocalsArray)],
+        theMemoryLayoutBeforeSubroutineCall: List[(Int /*PC*/, theDomain.OperandsArray, theDomain.LocalsArray)],
         theSubroutinesOperandsArray:         theDomain.OperandsArray,
         theSubroutinesLocalsArray:           theDomain.LocalsArray
     ): Unit = {
@@ -499,7 +499,7 @@ abstract class AI[D <: Domain](
         subroutinesWereEvaluated:            Boolean,
         theOperandsArray:                    theDomain.OperandsArray,
         theLocalsArray:                      theDomain.LocalsArray,
-        theMemoryLayoutBeforeSubroutineCall: List[(Int /*PC*/ , theDomain.OperandsArray, theDomain.LocalsArray)],
+        theMemoryLayoutBeforeSubroutineCall: List[(Int /*PC*/, theDomain.OperandsArray, theDomain.LocalsArray)],
         theSubroutinesOperandsArray:         theDomain.OperandsArray,
         theSubroutinesLocalsArray:           theDomain.LocalsArray
     ): AIResult { val domain: theDomain.type } = {
@@ -1187,7 +1187,7 @@ abstract class AI[D <: Domain](
                         (retPC, operands, updatedLocals)
                     }
                     // Clear all computations to make this subroutine callable again.
-                    val (_ /*subroutineId*/ , oldOperandsArray, oldLocalsArray) =
+                    val (_ /*subroutineId*/, oldOperandsArray, oldLocalsArray) =
                         memoryLayoutBeforeSubroutineCall.head
                     operandsArray = oldOperandsArray
                     localsArray = oldLocalsArray
@@ -1486,7 +1486,8 @@ abstract class AI[D <: Domain](
                                     yesConstraintId, branchTargetPC, left, right, rest, locals
                                 )
                             if (tracer.isDefined &&
-                                ((rest ne newBTOperands) || (locals ne newBTLocals))) {
+                                ((rest ne newBTOperands) || (locals ne newBTLocals))
+                            ) {
                                 tracer.get.establishedConstraint(theDomain)(
                                     pc, branchTargetPC, rest, locals, newBTOperands, newBTLocals
                                 )
@@ -1496,7 +1497,8 @@ abstract class AI[D <: Domain](
                                     noConstraintId, nextPC, left, right, rest, locals
                                 )
                             if (tracer.isDefined &&
-                                ((rest ne newFTOperands) || (locals ne newFTLocals))) {
+                                ((rest ne newFTOperands) || (locals ne newFTLocals))
+                            ) {
                                 tracer.get.establishedConstraint(theDomain)(
                                     pc, nextPC, rest, locals, newFTOperands, newFTLocals
                                 )
@@ -1623,7 +1625,8 @@ abstract class AI[D <: Domain](
                                             !theDomain.abortProcessingExceptionsOfCalledMethodsOnUnknownException
                                             ||
                                             instruction.isAthrow &&
-                                            !theDomain.abortProcessingThrownExceptionsOnUnknownException) {
+                                            !theDomain.abortProcessingThrownExceptionsOnUnknownException
+                                        ) {
                                             gotoExceptionHandler(pc, branchTarget, catchTypeOption)
                                             false
                                         } else {
@@ -2101,8 +2104,9 @@ abstract class AI[D <: Domain](
                                     if (tracer.isDefined &&
                                         (
                                             (remainingOperands ne updatedOperands) ||
-                                            (locals ne updatedLocals)
-                                        )) {
+                                                (locals ne updatedLocals)
+                                        )
+                                    ) {
                                         tracer.get.establishedConstraint(theDomain)(
                                             pc, branchTargetPC, remainingOperands, locals,
                                             updatedOperands, updatedLocals
@@ -2153,8 +2157,9 @@ abstract class AI[D <: Domain](
                                 if (tracer.isDefined &&
                                     (
                                         (remainingOperands ne updatedOperands) ||
-                                        (locals ne updatedLocals)
-                                    )) {
+                                            (locals ne updatedLocals)
+                                    )
+                                ) {
                                     tracer.get.establishedConstraint(theDomain)(
                                         pc, branchTargetPC, remainingOperands, locals,
                                         updatedOperands, updatedLocals
@@ -2622,7 +2627,8 @@ abstract class AI[D <: Domain](
                                 val lvIndexM1Local = locals(lvIndex - 1)
                                 lvIndexM1Local != null &&
                                     lvIndexM1Local.hasCategory2ComputationalType
-                            }) {
+                                }
+                            ) {
                                 // ... the previous "long or double" is no longer valid!
                                 locals.updated(lvIndex - 1, theDomain.TheIllegalValue, operands.head)
                             } else {
@@ -2638,7 +2644,8 @@ abstract class AI[D <: Domain](
                                 val lvIndexM1Local = locals(lvIndex - 1)
                                 lvIndexM1Local != null &&
                                     lvIndexM1Local.hasCategory2ComputationalType
-                            }) {
+                                }
+                            ) {
                                 // ... the previous "long or double" is no longer valid!
                                 locals.updated(
                                     lvIndex - 1,

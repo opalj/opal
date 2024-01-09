@@ -28,7 +28,7 @@ object VeryBusyExpressions extends MethodAnalysisApplication {
     final type Result = (TACAICode, Array[Facts], Facts)
 
     // We use as a replacement for variable names the IntTrieSets which identify the def-sites.
-    final type Fact = (BinaryArithmeticOperator, IntTrieSet /*Def-Sites*/ , IntTrieSet /*Def-Sites*/ )
+    final type Fact = (BinaryArithmeticOperator, IntTrieSet /*Def-Sites*/, IntTrieSet /*Def-Sites*/ )
     final type Facts = Set[Fact]
 
     override def analyzeMethod(p: Project[URL], m: Method): Result = {

@@ -15,7 +15,7 @@ object FindUsages {
     def main(args: Array[String]): Unit = {
         if (args.isEmpty) {
             println("Error: you have to specify the root folder.")
-            return ;
+            return;
         }
 
         val c = new java.util.concurrent.atomic.AtomicInteger

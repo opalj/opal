@@ -228,7 +228,7 @@ object TACAI {
 
         def killOperandBasedUsages(useSitePC: Int, valuesCount: Int): Unit = {
             if (valuesCount == 0)
-                return ;
+                return;
 
             // The value(s) is (are) not used and the expression is side effect free;
             // we now have to kill the usages to avoid "wrong" links.
@@ -309,7 +309,7 @@ object TACAI {
                 if (addExceptionHandlerInitializer)
                     // We do not have to add the NOP, because the code to initialize the
                     // variable which references the exception is already added.
-                    return ;
+                    return;
 
                 // We only add a NOP if it is the first instruction of a basic block since
                 // we want to ensure that we don't have to rewrite the CFG during the initial
