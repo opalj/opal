@@ -13,18 +13,7 @@ import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.RetentionPolicy.CLASS;
 
 /**
- * Describes a method call at a specific call site and states which methods
- * the call must be resolved to.
- * Using this annotation implies that the call edges must be
- * directly available within the call graph from the specified call site. Therefore, this annoation
- * can be used to specify monomorphic or polymorphic method calls but are not suited to specify
- * indirect call targets, e.g., reflective call targets.
- * Furthermore, it is possible to exclude certain target methods.
- *
- * Taken from JCG project. TODO: We should either depend on JCG or include the core base into OPAL.
- *
- * @author Florian Kuebler
- * @author Michael Reif
+ * Describe the expected Points-To-Set at a defsite.
  */
 @Retention(CLASS)
 @Target({METHOD, CONSTRUCTOR})

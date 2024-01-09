@@ -4,7 +4,6 @@ import org.opalj.fpcf.fixtures.xl.js.testpts.SimpleContainerClass;
 import org.opalj.fpcf.properties.pts.JavaMethodContextAllocSite;
 import org.opalj.fpcf.properties.pts.PointsToSet;
 
-import javax.script.Invocable;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
@@ -27,13 +26,13 @@ public class EngineWrapper {
         engine.eval("var n = w;");
         return engine.get("n");
     }
-    @PointsToSet(variableDefinition = 45,
+    @PointsToSet(variableDefinition = 44,
             expectedJavaAllocSites = {
                     @JavaMethodContextAllocSite(
                             cf = EngineWrapper.class,
                             methodName = "main",
                             methodDescriptor = "(java.lang.String[]): void",
-                            allocSiteLinenumber = 43,
+                            allocSiteLinenumber = 42,
                             allocatedType = "org.opalj.fpcf.fixtures.xl.js.testpts.SimpleContainerClass")
             }
     )

@@ -6,6 +6,7 @@ package xltest
 import java.net.URL
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
+import org.opalj.xl.AllocationSiteBasedTriggeredTajsConnectorScheduler
 import org.opalj.xl.javaanalyses.detector.scriptengine.AllocationSiteBasedScriptEngineDetectorScheduler
 import org.opalj.fpcf.PropertiesTest
 import org.opalj.fpcf.PropertyStore
@@ -25,12 +26,11 @@ import org.scalatest.events.{Event, SuiteCompleted, TestFailed, TestSucceeded}
 import org.scalatest.tools.Runner
 
 import scala.util.matching.Regex
-import org.opalj.xl.connector.AllocationSiteBasedTriggeredTajsConnectorScheduler
 
 object RunXLTests {
     def main(args: Array[String]): Unit = {
         //val test = new XLJavaScriptTests()
-        println(Runner.run(Array("-C", "org.opalj.fpcf.xltest.MyCustomReporter", "-s", "org.opalj.fpcf.xltest.XLJavaScriptTests")))
+        Runner.run(Array("-C", "org.opalj.fpcf.xltest.MyCustomReporter", "-s", "org.opalj.fpcf.xltest.XLJavaScriptTests"))
     }
 }
 
@@ -57,7 +57,7 @@ class MyCustomReporter extends Reporter {
     def extractCategory(testcase: String): Option[String] = {
         val parts = testcase.split('.')
         if (parts.length > 5) {
-            Some(s"${parts(2)}: ${parts(4)}")
+            Some(s"${parts(2)}${parts(4)}")
         } else {
             None
         }
@@ -67,21 +67,13 @@ class MyCustomReporter extends Reporter {
     var succeededClassnames = Set[String]()
 
     def printTestcaseSummary(): Unit = {
-        val categoriesOrder = Map(
-            "controlflow: unidirectional" -> 1,
-            "controlflow: bidirectional" -> 2,
-            "controlflow: cyclic" -> 3,
-            "stateaccess: unidirectional" -> 4,
-            "stateaccess: bidirectional" -> 5
-        )
+
         val allTestcases = failedClassnames ++ succeededClassnames
         val failedGrouped = failedClassnames.filter(extractCategory(_).isDefined).groupBy(cl => extractCategory(cl).get)
         val succeededGrouped = succeededClassnames.filter(extractCategory(_).isDefined).groupBy(cl => extractCategory(cl).get)
         val sucdfaild = allTestcases.flatMap(extractCategory).map(cat => (cat -> (
             succeededGrouped.getOrElse(cat, Set.empty[String]), failedGrouped.getOrElse(cat, Set.empty[String])
         ))).toSeq
-            .sortBy { case (category, _) => categoriesOrder.getOrElse(category, Int.MaxValue) }
-
         sucdfaild.foreach {
             case (category, (succeededTests, failedTests)) =>
                 val failedCount = failedTests.size
@@ -95,20 +87,18 @@ class MyCustomReporter extends Reporter {
                 println(s"failed:$failedString")
                 println(s"succeeded:$succeededString")
         }
-
-        println("\\begin{tabular}{lccc}")
-        println("\\toprule")
-        println("\\textbf{Pattern} & \\textbf{Succeeded Testcases}\\\\")
-        println("\\midrule")
+        var total = 0
         sucdfaild.foreach {
             case (category, (succeededTests, failedTests)) =>
                 val failedCount = failedTests.size
                 val succeededCount = succeededTests.size
-                // Assuming extractCategory returns strings like "controlflow: unidirectional"
-                // we use this string as a label in the table. Adjust if necessary.
-                println(s"$category & \\tnum{$succeededCount / ${succeededCount + failedCount}} \\\\")
+                total += succeededCount + failedCount
+                println(s"\\newcommand{\\$category}{\\tnum{$succeededCount / ${succeededCount + failedCount}}}")
+                for (failed <- failedTests) {
+                    println(s"%failed: $failed")
+                }
         }
-        println("\\end{tabular}")
+        println(s"\\newcommand{testcasecount}{\\tnum{$total}}")
 
     }
 
@@ -125,6 +115,7 @@ class XLJavaScriptTests extends PropertiesTest {
 
     override def fixtureProjectPackage: List[String] = {
         List("org/opalj/fpcf/fixtures/xl/js/")
+        //List("org/opalj/fpcf/fixtures/xl/js/stateaccess/intraprocedural/unidirectional/JSAccessJava/")
     }
 
     override def createConfig(): Config = ConfigFactory.load("reference.conf")
@@ -196,7 +187,7 @@ class XLJavaScriptTests extends PropertiesTest {
             println("points to sets: ")
             println(pts)
         }
-        validateProperties(as, methodsWithAnnotations(as.project), Set("PointsToSetIncludes"))
+        validateProperties(as, methodsWithAnnotations(as.project), Set("PointsToSetIncludes", "TAJSEnvironment"))
         // tally.
         //succeededTestcases.foreach(println)
         //failedTestcases.foreach(println)

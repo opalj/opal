@@ -14,13 +14,13 @@ import javax.script.ScriptException;
  *
  */
 public class JavaAllocationWriteFieldFromJS {
-    @PointsToSet(variableDefinition = 37,
+    @PointsToSet(variableDefinition = 36,
             expectedJavaAllocSites = {
                     @JavaMethodContextAllocSite(
-                            cf = JSAllocationWriteFieldFromJS.class,
+                            cf = JavaAllocationWriteFieldFromJS.class,
                             methodName = "main",
                             methodDescriptor = "(java.lang.String[]): void",
-                            allocSiteLinenumber = 34,
+                            allocSiteLinenumber = 33,
                             allocatedType = "java.lang.Object")
 
             }

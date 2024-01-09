@@ -1,4 +1,4 @@
-package org.opalj.fpcf.fixtures.xl.js.stateaccess.intraprocedural.unidirectional.JSAccessJava;
+package org.opalj.fpcf.fixtures.xl.js.stateaccess.intraprocedural.unidirectional.JavaAccessJS;
 
 import org.opalj.fpcf.properties.pts.JavaMethodContextAllocSite;
 import org.opalj.fpcf.properties.pts.PointsToSet;
@@ -12,11 +12,11 @@ import javax.script.ScriptException;
  *
  *
  */
-public class JSAllocationWriteFieldFromJS {
-    @PointsToSet(variableDefinition = 35,
+public class ReadStaticFieldFromJS {
+    @PointsToSet(variableDefinition = 34,
             expectedJavaAllocSites = {
             @JavaMethodContextAllocSite(
-                cf = JSAllocationWriteFieldFromJS.class,
+                cf = ReadStaticFieldFromJS.class,
                     methodName = "main",
                     methodDescriptor = "(java.lang.String[]): void",
                     allocSiteLinenumber = 30,
@@ -29,12 +29,11 @@ public class JSAllocationWriteFieldFromJS {
         ScriptEngine se = sem.getEngineByName("JavaScript");
         Object myobject = new Object();
         System.out.println(myobject);
-        se.put("myobject", myobject);
-        se.eval("var javaTestClass = Java.type(\"org.opalj.fpcf.fixtures.xl.js.stateaccess.intraprocedural.unidirectional.JSAccessJava.JSAllocationWriteFieldFromJS\"); var instance = new javaTestClass();  instance.myfield = myobject");
-        JSAllocationWriteFieldFromJS instance = (JSAllocationWriteFieldFromJS)se.get("instance");
-        Object instancefield = instance.myfield;
+        ReadStaticFieldFromJS.myfield = myobject;
+        se.eval("var javaTestClass = Java.type(\"org.opalj.fpcf.fixtures.xl.js.stateaccess.intraprocedural.unidirectional.JavaAccessJS.ReadStaticFieldFromJS\"); var x = javaTestClass.myfield;");
+        Object instancefield = se.get("x");
         System.out.println(instancefield);
 
     }
-    public Object myfield;
+    public static Object myfield;
 }

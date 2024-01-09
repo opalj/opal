@@ -2,7 +2,7 @@
 package org.opalj.fpcf.analyses
 
 import org.opalj.br.{DefinedMethod, ObjectType}
-import org.opalj.br.analyses.{BasicReport, Project, ProjectAnalysisApplication}
+import org.opalj.br.analyses.{BasicReport, Project, ProjectAnalysisApplication, VirtualFormalParameter}
 import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
 import org.opalj.br.fpcf.{FPCFAnalysesManagerKey, FPCFAnalysisScheduler, PropertyStoreKey}
 import org.opalj.fpcf.seq.PKESequentialPropertyStore
@@ -24,6 +24,7 @@ import scala.util.matching.Regex
 
 class Method(val methodId: Int, val signature: String) {
   val pcToInstances: mutable.Map[Int, Set[Instance]] = mutable.Map.empty[Int, Set[Instance]].withDefaultValue(Set.empty[Instance])
+  val paramToInstances: mutable.Map[Int, Set[Instance]] = mutable.Map.empty[Int, Set[Instance]].withDefaultValue(Set.empty[Instance])
 }
 class Allocation(classType: String)
 case class ActualAllocation(method: Method, pc: Int, classtype: String) extends Allocation(classType = classtype) {
@@ -50,12 +51,15 @@ class Dataset {
   }
 
   def addInstance(methodId: Int, pc: Int, instance: Instance): Unit = {
-    if (methods.contains(methodId)) {
       val method = methods(methodId)
       method.pcToInstances(pc) = method.pcToInstances(pc) + instance
-    }
-  }
 
+  }
+  def addParamIntance(methodId: Int, param: Int, instance: Instance): Unit = {
+      val method = methods(methodId)
+      method.paramToInstances(param) = method.paramToInstances(param) + instance
+
+  }
 }
 case class TruePositive(defsiteMethod: String, defsitePC: Int, instances: Set[Instance], allocSiteID: Long, allocsitePC: Int, allocsiteType: String) {
   override def toString: String =
@@ -119,7 +123,7 @@ object GroundTruthParser {
     val dataset = new Dataset()
 
     val methodPattern = new Regex("<method fullyqualified=\"(.+)\" id=\"(\\d+)\"/>")
-    val instancePattern = new Regex("<(allocation|traceevent) methodId=\"(\\d+)\" pc=\"(\\d+)\" instanceId=\"(\\d+)\" class=\"([^\"]+)\"/>")
+    val instancePattern = new Regex("<(allocation|traceevent) methodId=\"(\\d+)\" (param|pc)=\"([\\d-]+)\" instanceId=\"(\\d+)\" class=\"([^\"]+)\"/>")
 
     for (line <- Source.fromFile(groundTruthPath).getLines()) {
       methodPattern.findFirstMatchIn(line) match {
@@ -134,25 +138,29 @@ object GroundTruthParser {
         case Some(m) =>
           val eventtype = m.group(1)
           val methodId = m.group(2).toInt
-          val pc = m.group(3).toInt
-          val instanceId = m.group(4).toInt
-          val objClass = m.group(5)
+          val pcOrParamType = m.group(3)
+          val pcOrParam = m.group(4).toInt
+          val instanceId = m.group(5).toInt
+          val objClass = m.group(6)
 
           dataset.methods.get(methodId) match {
             case Some(method) => {
 
               if (eventtype equals "allocation") {
-                val allocation = ActualAllocation(method, pc, objClass)
-                dataset.allocations.getOrElseUpdate((method.signature, pc), allocation)
+                val allocation = ActualAllocation(method, pcOrParam, objClass)
+                dataset.allocations.getOrElseUpdate((method.signature, pcOrParam), allocation)
                 dataset.instanceIdToAllocation.put(instanceId, allocation)
               }
 
               val allocSite = dataset.instanceIdToAllocation.getOrElseUpdate(instanceId, {
-                val dummyAllocation = dataset.allocations.getOrElseUpdate((method.signature, pc), DummyAllocation(method, pc, objClass))
+                val dummyAllocation = dataset.allocations.getOrElseUpdate((method.signature, pcOrParam), DummyAllocation(method, pcOrParam, objClass))
                 dummyAllocation
               })
               val instance = new Instance(instanceId, objClass, allocSite)
-              dataset.addInstance(methodId, pc, instance)
+              if (pcOrParamType equals "pc")
+                dataset.addInstance(methodId, pcOrParam, instance)
+              else
+                dataset.addParamIntance(methodId, pcOrParam, instance)
             }
             case _ =>
           }
@@ -176,11 +184,13 @@ object GroundTruthParser {
   }
 
   def ignoreTruePositive(truePositive: TruePositive): Boolean = {
-    truePositive.allocsitePC < 0 ||
+    //truePositive.allocsitePC < 0 ||
       truePositive.defsiteMethod.contains("$string_concat$")
   }
   def ignoreFalseNegative(falseNegative: FalseNegative) : Boolean = {
-    false //falseNegative.instances.exists(_.objClass.equals("org.openjdk.nashorn.api.scripting.NashornScriptEngine"))
+    falseNegative.instances.exists(_.objClass.equals("java.io.PrintStream")) ||
+      falseNegative.defsitePC == -2 && falseNegative.defsiteMethod.contains("main(java.lang.String[])")
+    // false //falseNegative.instances.exists(_.objClass.equals("org.openjdk.nashorn.api.scripting.NashornScriptEngine"))
   }
   def ignoreFalsePositive(falsePositive: FalsePositive) : Boolean = {
     falsePositive.allocsitePC < 0 ||
@@ -209,8 +219,8 @@ object GroundTruthParser {
 
   }
 
-  def evaluate(groundTruth: Dataset, testPts: Set[(DefinedMethod, DefinitionSite, Option[AllocationSitePointsToSet])], project: Project[URL]) : Map[Int, MethodResult]= {
-    val groupedWithoutByMethod = testPts.groupBy(_._1.definedMethod.fullyQualifiedSignature)
+  def evaluate(groundTruth: Dataset, test: Set[(DefinedMethod, Int, Option[AllocationSitePointsToSet])], project: Project[URL]) : Map[Int, MethodResult]= {
+    val groupedWithoutByMethod = test.groupBy(_._1.definedMethod.fullyQualifiedSignature)
     val groundTruthData = mutable.Set[GroundTruthLogEvent]()
     val signatureToMethodId = mutable.Map[String, Int]()
     for ((methodId, method) <- groundTruth.methods) {
@@ -220,18 +230,26 @@ object GroundTruthParser {
           groundTruthData add GroundTruthLogEvent(instance.objClass, instance.instanceId, method.signature, pc)
         }
       }
+      for ((param, instances) <- method.paramToInstances) {
+        for (instance <- instances) {
+          // 'this' is -1 in ground truth, -1 in test
+          // param 0 is 0 in ground truth, -2 in test
+          groundTruthData add GroundTruthLogEvent(instance.objClass, instance.instanceId, method.signature, -2 -param)
+        }
+      }
+
     }
     val testData = mutable.Set[DefsiteData]()
     for ((methodSignature, defSite) <- groupedWithoutByMethod) {
       implicit val typeIterator: TypeIterator = project.get(TypeIteratorKey)
-      val sorted = defSite.toArray.sortBy(mdsas => mdsas._2.pc)
+      val sorted = defSite.toArray.sortBy(mdsas => mdsas._2)
       for (pts <- sorted) {
         pts._3 match {
           case Some(as) => for (allocSiteId <- as.elements.iterator) {
             val (ctx, allocSitePC, typeId) = longToAllocationSite(allocSiteId)
             val objClass = ObjectType.lookup(typeId).toJava
-            testData add DefsiteData(objClass, allocSiteId, allocSitePC, methodSignature, pts._2.pc)
-            println("<pointsto method=\"" + methodSignature + "\" pc=\"" + pts._2.pc + "\" type=\"" + objClass + "\" allocSiteId=\"" + allocSiteId + "\" allocSitePc=\"" + allocSitePC + "\" />")
+            testData add DefsiteData(objClass, allocSiteId, allocSitePC, methodSignature, pts._2)
+            println("<pointsto method=\"" + methodSignature + "\" pc=\"" + pts._2 + "\" type=\"" + objClass + "\" allocSiteId=\"" + allocSiteId + "\" allocSitePc=\"" + allocSitePC + "\" />")
           }
           case None =>
         }
@@ -250,7 +268,7 @@ object GroundTruthParser {
       var testAllocationsAtPC = Map[Int, Set[Allocation]]()
       //val testDataCoveredInstances = mutable.Set[(Int, Int)]()
       for (defsite <- testPTS) {
-        val groundTruthInstancesAtPC = groundTruthMethod.pcToInstances.getOrElse(defsite.defsitePC, Set.empty)
+        val groundTruthInstancesAtPC = groundTruthMethod.pcToInstances.getOrElse(defsite.defsitePC, Set.empty) ++ groundTruthMethod.paramToInstances.getOrElse(-defsite.defsitePC - 2, Set.empty)
 
         allocSiteToInstanceIds.get(defsite.allocSiteId) match {
           case Some(groundTruthInstanceIds) => {
@@ -273,13 +291,16 @@ object GroundTruthParser {
       }
 
       for ((pc, instancesAtPc) <- groundTruthMethod.pcToInstances) {
-        // expect 489047267 1173504361 2026371507
-
         for ((allocation, instances) <- instancesAtPc.groupBy(inst => inst.allocation)) {
           if (!testAllocationsAtPC.getOrElse(pc,Set.empty).contains(allocation)) {
-          //groundTruthAllocations = instances.map(_.instanceId).map(groundTruth.instanceIdToAllocation())
-          //if (! instances.map(inst => (pc, inst.instanceId)).subsetOf(testDataCoveredInstances)) {
             falseNegativeData += FalseNegative(method, pc, instances)
+          }
+        }
+      }
+      for ((param, instancesAtParam) <- groundTruthMethod.paramToInstances) {
+        for ((allocation, instances) <- instancesAtParam.groupBy(inst => inst.allocation)) {
+          if (!testAllocationsAtPC.getOrElse(-2 - param, Set.empty).contains(allocation)) {
+            falseNegativeData += FalseNegative(method, -2 - param, instances)
           }
         }
       }
@@ -346,9 +367,11 @@ object ComparePTS {
     for ((id) <-  evalWithoutTAJS.keys.toList.sorted) {
         val resultWithoutTAJS = evalWithoutTAJS(id)
         val resultWithTAJS = evalWithTAJS(id)
-      if (resultWithoutTAJS.falseNegative + resultWithTAJS.falsePositive + resultWithoutTAJS.truePositive > 0) {
+      if (resultWithoutTAJS.falseNegative + resultWithoutTAJS.falsePositive + resultWithoutTAJS.truePositive > 0) {
+
         print(id)
         print(": ")
+
         val withoutStr = resultWithoutTAJS.toString
         val withStr = resultWithTAJS.toString
         /*if (withStr == withoutStr){
@@ -358,7 +381,10 @@ object ComparePTS {
           println(withoutStr)
           println("with TAJS:")
           println(withStr)
-
+        if (resultWithoutTAJS.falseNegative + resultWithoutTAJS.falsePositive + resultWithoutTAJS.truePositive !=
+          resultWithTAJS.falseNegative + resultWithTAJS.falsePositive + resultWithTAJS.truePositive) {
+          println("unequal datapoint count!")
+        }
 
 
       }
@@ -392,7 +418,7 @@ object ComparePTS {
 }
 
 class PointsToAnalysisRunner extends ProjectAnalysisApplication {
-  var pts = Set[(DefinedMethod, DefinitionSite, Option[AllocationSitePointsToSet])]()
+  var pts = Set[(DefinedMethod, Int, Option[AllocationSitePointsToSet])]()
   var p: Project[URL] = null
 
   override def checkAnalysisSpecificParameters(parameters: Seq[String]): Iterable[String] = {
@@ -433,10 +459,19 @@ class PointsToAnalysisRunner extends ProjectAnalysisApplication {
     for (m <- definedMethods) {
       val dm = m.definedMethod
       val defsitesInMethod = ps1.entities(propertyFilter = _.e.isInstanceOf[DefinitionSite]).map(_.asInstanceOf[DefinitionSite]).filter(_.method == dm).toSet
-      val ptsInMethod = defsitesInMethod.toArray.map(defsite => (m, defsite, ps1.properties(defsite).map(_.toFinalEP.p).find(_.isInstanceOf[AllocationSitePointsToSet]).map(_.asInstanceOf[AllocationSitePointsToSet])))
+      val ptsInMethod = defsitesInMethod.toArray.map(defsite => (m, defsite.pc, ps1.properties(defsite).map(_.toFinalEP.p).find(_.isInstanceOf[AllocationSitePointsToSet]).map(_.asInstanceOf[AllocationSitePointsToSet])))
+
       pts ++= ptsInMethod
       results += m.name + "\n"
+
+
+      val params = ps1.entities(propertyFilter = _.e.isInstanceOf[VirtualFormalParameter]).map(_.asInstanceOf[VirtualFormalParameter]).filter(_.method == m).toList
+
+      val ptsInMethodParams = params.toArray.map(param => (m, param.origin , ps1.properties(param).map(_.toFinalEP.p).find(_.isInstanceOf[AllocationSitePointsToSet]).map(_.asInstanceOf[AllocationSitePointsToSet])))
+      pts ++= ptsInMethodParams
+
     }
+
 
     BasicReport(
       results

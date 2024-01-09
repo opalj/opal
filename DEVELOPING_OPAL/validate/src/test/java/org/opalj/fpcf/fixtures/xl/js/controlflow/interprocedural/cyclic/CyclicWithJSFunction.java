@@ -1,12 +1,9 @@
 package org.opalj.fpcf.fixtures.xl.js.controlflow.interprocedural.cyclic;
 
-import org.opalj.No;
-import org.opalj.fpcf.fixtures.xl.js.controlflow.interprocedural.interleaved.JavaScriptCallsJavaFunctionOnPassedInstance;
 import org.opalj.fpcf.fixtures.xl.js.testpts.SimpleContainerClass;
 import org.opalj.fpcf.properties.pts.JavaMethodContextAllocSite;
 import org.opalj.fpcf.properties.pts.PointsToSet;
 
-import javax.script.Invocable;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
@@ -16,13 +13,14 @@ import javax.script.ScriptException;
  * original example changed to use String (to allow pts tracking).
  * if pts were calculated correctly, pts for parameter should include defsite of value calculated below.
  */
-public class Cyclic {
+public class CyclicWithJSFunction {
     ScriptEngine se;
     public static void main(String[] args) throws ScriptException, NoSuchMethodException {
-        Cyclic c = new Cyclic();
+        CyclicWithJSFunction c = new CyclicWithJSFunction();
         ScriptEngineManager sem = new ScriptEngineManager();
         c.se = sem.getEngineByName("JavaScript");
         c.se.put("jThis", c);
+        c.se.eval("function f(n){return jThis.decrement(n);}");
         SimpleContainerClass initial = new SimpleContainerClass();
         SimpleContainerClass res = c.decrement(initial);
         System.out.println(res);
@@ -30,10 +28,10 @@ public class Cyclic {
     @PointsToSet(parameterIndex = 0,
             expectedJavaAllocSites = {
                     @JavaMethodContextAllocSite(
-                            cf = Cyclic.class,
+                            cf = CyclicWithJSFunction.class,
                             methodName = "decrement",
                             methodDescriptor = "(org.opalj.fpcf.fixtures.xl.js.testpts.SimpleContainerClass): org.opalj.fpcf.fixtures.xl.js.testpts.SimpleContainerClass",
-                            allocSiteLinenumber = 43,
+                            allocSiteLinenumber = 44,
                             allocatedType = "org.opalj.fpcf.fixtures.xl.js.testpts.SimpleContainerClass")
             }
     )
@@ -56,7 +54,7 @@ public class Cyclic {
 
     public SimpleContainerClass callDecementThroughScriptEngine(SimpleContainerClass s) throws ScriptException, NoSuchMethodException {
         se.put("arg", s);
-        se.eval("var res = jThis.decrement(arg)");
+        se.eval("var res = f(arg)");
         SimpleContainerClass result = (SimpleContainerClass) se.get("res");
         return result;
     }

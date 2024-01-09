@@ -12,11 +12,11 @@ import javax.script.ScriptException;
  *
  *
  */
-public class JSAllocationWriteFieldFromJS {
+public class JSAllocationWriteStaticFieldFromJS {
     @PointsToSet(variableDefinition = 35,
             expectedJavaAllocSites = {
             @JavaMethodContextAllocSite(
-                cf = JSAllocationWriteFieldFromJS.class,
+                cf = JSAllocationWriteStaticFieldFromJS.class,
                     methodName = "main",
                     methodDescriptor = "(java.lang.String[]): void",
                     allocSiteLinenumber = 30,
@@ -30,11 +30,11 @@ public class JSAllocationWriteFieldFromJS {
         Object myobject = new Object();
         System.out.println(myobject);
         se.put("myobject", myobject);
-        se.eval("var javaTestClass = Java.type(\"org.opalj.fpcf.fixtures.xl.js.stateaccess.intraprocedural.unidirectional.JSAccessJava.JSAllocationWriteFieldFromJS\"); var instance = new javaTestClass();  instance.myfield = myobject");
-        JSAllocationWriteFieldFromJS instance = (JSAllocationWriteFieldFromJS)se.get("instance");
-        Object instancefield = instance.myfield;
+        se.eval("var javaTestClass = Java.type(\"org.opalj.fpcf.fixtures.xl.js.stateaccess.intraprocedural.unidirectional.JSAccessJava.JSAllocationWriteStaticFieldFromJS\"); javaTestClass.myfield = myobject");
+
+        Object instancefield = JSAllocationWriteStaticFieldFromJS.myfield;
         System.out.println(instancefield);
 
     }
-    public Object myfield;
+    public static Object myfield;
 }

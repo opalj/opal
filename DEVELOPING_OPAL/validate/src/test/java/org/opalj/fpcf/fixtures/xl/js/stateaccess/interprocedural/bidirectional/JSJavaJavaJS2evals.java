@@ -6,44 +6,42 @@ import org.opalj.fpcf.properties.pts.PointsToSet;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
-
 /**
- * java instance stored in javascript field ( using eval).
- * then, javascript field stored in java field (from javascript).
+ * object stored in java field (from javascript).
+ * reference in java field stored in javascript field (from java, using eval).
 */
-public class JavaJSJSJavaSimple {
+public class JSJavaJavaJS2evals {
     @PointsToSet(variableDefinition = 37,
             expectedJavaAllocSites = {
                     @JavaMethodContextAllocSite(
-                            cf = JavaJSJSJavaSimple.class,
+                            cf = JSJavaJavaJS2evals.class,
                             methodName = "main",
                             methodDescriptor = "(java.lang.String[]): void",
-                            allocSiteLinenumber = 31,
+                            allocSiteLinenumber = 30,
                             allocatedType = "java.lang.Object")
             }
     )
     public static void main(String args[]) throws ScriptException, NoSuchMethodException {
-        JavaJSJSJavaSimple instance = new JavaJSJSJavaSimple();
+        JSJavaJavaJS2evals instance = new JSJavaJavaJS2evals();
         ScriptEngineManager sem = new ScriptEngineManager();
         ScriptEngine se = sem.getEngineByName("JavaScript");
         se.put("instance", instance);
-        se.eval("var n = {'a':'b'};");
         Object o = new Object();
         System.out.println(o);
-        // Java -> JS state
-        setJSField(se, o);
+        se.put("o", o);
         // JS -> Java state
-        se.eval("instance.myfield = n.field;");
-        Object getField = instance.myfield;
-        System.out.println(getField);
+        se.eval("var n = {'a':'b'}; instance.myfield = o;");
+        // Java -> JS state
+        setJSField(se, instance.myfield);
+        se.eval("var n_field = n.field");
+        Object n_field = se.get("n_field");
+        System.out.println(n_field);
     }
 
     private static void setJSField(ScriptEngine se, Object fieldValue) throws ScriptException {
         se.put("o", fieldValue);
         se.eval("n.field = o;");
     }
-
-
     public Object myfield;
 
 }
