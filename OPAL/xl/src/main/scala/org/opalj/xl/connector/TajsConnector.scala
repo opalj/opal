@@ -1,21 +1,23 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package xl
+package connector
+package tajs
 
 import java.io.File
 
 import scala.jdk.CollectionConverters.MapHasAsScala
 
 import dk.brics.tajs.analysis.Analysis
-import dk.brics.tajs.analysis.xl.translator.LocalTAJSAdapter
+import dk.brics.tajs.analysis.xl.adapter.LocalTAJSAdapter
 import dk.brics.tajs.lattice.Value
 import dk.brics.tajs.lattice.PKey
 import dk.brics.tajs.Main
 import dk.brics.tajs.Main.run
-import dk.brics.tajs.solver.BlockAndContext
-import dk.brics.tajs.analysis.xl.translator.TajsAdapter
-import dk.brics.tajs.flowgraph.jsnodes.JNode
+import dk.brics.tajs.analysis.xl.adapter.TajsAdapter
 import dk.brics.tajs.lattice.Context
+import dk.brics.tajs.solver.BlockAndContext
+import dk.brics.tajs.flowgraph.jsnodes.JNode
 
 import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.br.analyses.DeclaredMethodsKey
@@ -25,7 +27,6 @@ import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedAnalysis
 import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedAnalysis
-import org.opalj.tac.fpcf.properties.cg.Callees
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
@@ -71,6 +72,7 @@ import org.opalj.tac.fpcf.analyses.cg.TypeIteratorState
 import org.opalj.tac.fpcf.analyses.pointsto.PointsToAnalysisBase
 import org.opalj.tac.fpcf.analyses.pointsto.PointsToAnalysisState
 import org.opalj.tac.fpcf.analyses.pointsto.longToAllocationSite
+import org.opalj.tac.fpcf.properties.cg.Callees
 import org.opalj.tac.fpcf.properties.TheTACAI
 import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.tac.fpcf.properties.cg.OnlyCallersWithUnknownContext
