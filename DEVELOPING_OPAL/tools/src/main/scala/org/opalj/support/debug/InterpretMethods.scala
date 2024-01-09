@@ -214,7 +214,7 @@ object InterpretMethodsAnalysis {
         }
 
         if (collectedExceptions.nonEmpty) {
-            val header = <p>Generated { new java.util.Date() }</p>
+            val header = <p>Generated {new java.util.Date()}</p>
 
             val body = Seq(header) ++
                 (for ((exResource, exInstances) <- collectedExceptions.groupBy(e => e._1)) yield {
@@ -222,17 +222,17 @@ object InterpretMethodsAnalysis {
                         exInstances.map { ex =>
                             val (_, classFile, method, throwable) = ex
                             <div>
-                                <b>{ classFile.thisType.fqn }</b>
-                                <i>"{ method.signatureToJava(true) }"</i><br/>
-                                { "Length: " + method.body.get.instructions.length }
-                                <div>{ XHTML.throwableToXHTML(throwable) }</div>
+                                <b>{classFile.thisType.fqn}</b>
+                                <i>"{method.signatureToJava(true)}"</i><br/>
+                                {"Length: " + method.body.get.instructions.length}
+                                <div>{XHTML.throwableToXHTML(throwable)}</div>
                             </div>
                         }
 
                     <section>
-                        <h1>{ exResource }</h1>
-                        <p>Number of thrown exceptions: { exInstances.size }</p>
-                        { exDetails }
+                        <h1>{exResource}</h1>
+                        <p>Number of thrown exceptions: {exInstances.size}</p>
+                        {exDetails}
                     </section>
                 })
 

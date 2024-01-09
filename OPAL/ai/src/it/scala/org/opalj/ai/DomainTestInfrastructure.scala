@@ -123,17 +123,17 @@ abstract class DomainTestInfrastructure(domainName: String) extends AnyFlatSpec 
                         exInstances.map { ex =>
                             val (_, classFile, method, throwable) = ex
                             <div>
-                                <b>{ classFile.thisType.fqn }</b>
-                                <i>"{ method.signatureToJava(false) }"</i><br/>
-                                { "Length: " + method.body.get.instructions.length }
-                                <div>{ XHTML.throwableToXHTML(throwable) }</div>
+                                <b>{classFile.thisType.fqn}</b>
+                                <i>"{method.signatureToJava(false)}"</i><br/>
+                                {"Length: " + method.body.get.instructions.length}
+                                <div>{XHTML.throwableToXHTML(throwable)}</div>
                             </div>
                         }
 
                     <section>
-                        <h1>{ exResource }</h1>
-                        <p>Number of thrown exceptions: { exInstances.size }</p>
-                        { exDetails }
+                        <h1>{exResource}</h1>
+                        <p>Number of thrown exceptions: {exInstances.size}</p>
+                        {exDetails}
                     </section>
                 }
             val node = XHTML.createXHTML(Some("Thrown Exceptions"), NodeSeq.fromSeq(body.toSeq))

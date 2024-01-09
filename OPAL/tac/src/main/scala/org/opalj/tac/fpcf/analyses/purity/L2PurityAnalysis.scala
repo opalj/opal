@@ -560,7 +560,8 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                     ImpureByAnalysis,
                     param => ContextuallyPure(IntTrieSet(param)),
                     treatParamsAsFresh = true
-                ))
+                )
+            )
         case _: SomeEOptionP =>
             reducePurityLB(ImpureByAnalysis)
             state.addPurityDependee(ep.e, ep, params)

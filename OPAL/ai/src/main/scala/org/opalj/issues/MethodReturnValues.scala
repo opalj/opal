@@ -56,17 +56,17 @@ class MethodReturnValues(
                 val pc = methodData.pc
                 val details = methodData.value
                 <li>
-                    { pcNode(classFileFQN, methodJVMSignature, pc) }
+                    {pcNode(classFileFQN, methodJVMSignature, pc)}
                     &nbsp;
-                    { lineNode(classFileFQN, methodJVMSignature, pc, line(pc)) }
-                    <span class="value">{ details }</span>
+                    {lineNode(classFileFQN, methodJVMSignature, pc, line(pc))}
+                    <span class="value">{details}</span>
                 </li>
             }
 
         if (methodReturnValues.nonEmpty)
             <details class="method_return_values">
                 <summary>Method Return Values</summary>
-                <ul>{ methodReturnValues }</ul>
+                <ul>{methodReturnValues}</ul>
             </details>
         else
             Group(Nil)

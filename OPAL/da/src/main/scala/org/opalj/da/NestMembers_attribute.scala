@@ -22,7 +22,7 @@ case class NestMembers_attribute(
             <summary>NestMembers</summary>
             {
                 classes_array.map[String](p => cp(p).toString).sorted.map[NodeBuffer] { p =>
-                    <span>{ p }</span><br/>
+                    <span>{p}</span><br/>
                 }
             }
         </details>

@@ -124,18 +124,18 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
             InitialEntryPointsKey.ConfigKeyPrefix + "analysis",
             ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.AllEntryPointsFinder")
         ).withValue(
-                InitialEntryPointsKey.ConfigKeyPrefix + "AllEntryPointsFinder.projectMethodsOnly",
-                ConfigValueFactory.fromAnyRef(true)
-            )
+            InitialEntryPointsKey.ConfigKeyPrefix + "AllEntryPointsFinder.projectMethodsOnly",
+            ConfigValueFactory.fromAnyRef(true)
+        )
 
         configForEntryPoints.withValue(
             InitialInstantiatedTypesKey.ConfigKeyPrefix + "analysis",
             ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.AllInstantiatedTypesFinder")
         ).withValue(
-                InitialInstantiatedTypesKey.ConfigKeyPrefix +
-                    "AllInstantiatedTypesFinder.projectClassesOnly",
-                ConfigValueFactory.fromAnyRef(true)
-            )
+            InitialInstantiatedTypesKey.ConfigKeyPrefix +
+                "AllInstantiatedTypesFinder.projectClassesOnly",
+            ConfigValueFactory.fromAnyRef(true)
+        )
     }
 
     final val PropertyValidatorType = ObjectType("org/opalj/fpcf/properties/PropertyValidator")

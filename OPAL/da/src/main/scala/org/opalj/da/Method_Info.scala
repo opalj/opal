@@ -53,7 +53,7 @@ case class Method_Info(
         val (methodParametersAttributes, attributes1) = partitionByType(attributes0, classOf[MethodParameters_attribute])
         val declarationNode =
             <span class="method_declaration">
-                { accessFlags }{
+                {accessFlags}{
                     methodDescriptorAsInlineNode(
                         name,
                         jvmDescriptor,
@@ -82,10 +82,10 @@ case class Method_Info(
             val (lntAttributes, otherAttributes) = partitionByType(codeAttribute.attributes, classOf[LineNumberTable_attribute])
             val methodBodyHeader =
                 s"[size: $codeSize bytes, max Stack: $maxStack, max Locals: $maxLocals]"
-            <details open="" class="method" id={ name + jvmDescriptor } data-index={ index } data-name={ name } data-access-flags={ explicitAccessFlags }>
+            <details open="" class="method" id={name + jvmDescriptor} data-index={index} data-name={name} data-access-flags={explicitAccessFlags}>
                 <summary>
-                    { Seq(declarationNode, Text(methodBodyHeader)) }
-                    { signatureNode }
+                    {Seq(declarationNode, Text(methodBodyHeader))}
+                    {signatureNode}
                 </summary>
                 <div>
                     {
@@ -95,23 +95,23 @@ case class Method_Info(
                             lntAttributes.headOption.map(_.line_number_table)
                         )
                     }
-                    { codeAttribute.exception_handlersAsXHTML }
-                    { otherAttributes.map(_.toXHTML) }
+                    {codeAttribute.exception_handlersAsXHTML}
+                    {otherAttributes.map(_.toXHTML)}
                 </div>
-                { attributes3.map(_.toXHTML) }
+                {attributes3.map(_.toXHTML)}
             </details>
         } else if (attributes3.nonEmpty) {
-            <details class="method native_or_abstract" id={ name + jvmDescriptor } data-index={ index } data-name={ name } data-access-flags={ explicitAccessFlags }>
+            <details class="method native_or_abstract" id={name + jvmDescriptor} data-index={index} data-name={name} data-access-flags={explicitAccessFlags}>
                 <summary>
-                    { declarationNode }
-                    { signatureNode }
+                    {declarationNode}
+                    {signatureNode}
                 </summary>
-                { attributes3.map(_.toXHTML) }
+                {attributes3.map(_.toXHTML)}
             </details>
         } else {
-            <div class="details method native_or_abstract" id={ name + jvmDescriptor } data-index={ index } data-name={ name } data-access-flags={ explicitAccessFlags }>
-                { declarationNode }
-                { signatureNode }
+            <div class="details method native_or_abstract" id={name + jvmDescriptor} data-index={index} data-name={name} data-access-flags={explicitAccessFlags}>
+                {declarationNode}
+                {signatureNode}
             </div>
         }
     }

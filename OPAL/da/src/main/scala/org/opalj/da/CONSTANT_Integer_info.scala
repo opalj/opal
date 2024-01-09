@@ -20,7 +20,7 @@ case class CONSTANT_Integer_info(value: Int) extends Constant_Pool_Entry {
     override def asCPNode(implicit cp: Constant_Pool): Node =
         <span class="cp_entry">
             CONSTANT_Integer_info(
-            <span class="constant_value">{ value }</span>
+            <span class="constant_value">{value}</span>
             )
         </span>
 
@@ -34,13 +34,13 @@ case class CONSTANT_Integer_info(value: Int) extends Constant_Pool_Entry {
                     additionalInfo += " = Int.Max"
                 Seq(
                     Text(value.toString),
-                    <span class="comment">{ additionalInfo }</span>
+                    <span class="comment">{additionalInfo}</span>
                 )
             } else {
                 Seq(Text(value.toString))
             }
 
-        <span class="constant_value">{ repr }</span>
+        <span class="constant_value">{repr}</span>
     }
 
     override def toString(implicit cp: Constant_Pool): String = {

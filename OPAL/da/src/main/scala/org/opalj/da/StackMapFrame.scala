@@ -59,10 +59,10 @@ case class SameFrame(frame_type: Int) extends StackMapFrame {
         val newOffset = previous_frame_offset + frame_type + 1
         (
             <tr>
-                <td>{ newOffset }</td>
+                <td>{newOffset}</td>
                 <td>SameFrame</td>
-                <td>{ frame_type }</td>
-                <td>{ frame_type }</td>
+                <td>{frame_type}</td>
+                <td>{frame_type}</td>
                 <td>Stack:&nbsp;&lt;Empty&gt;<br/>Locals:&nbsp;Unchanged</td>
             </tr>,
             newOffset
@@ -86,13 +86,13 @@ case class SameLocals1StackItemFrame(
         val newOffset = previous_frame_offset + frame_type - 64 + 1
         (
             <tr>
-                <td>{ newOffset }</td>
+                <td>{newOffset}</td>
                 <td>SameLocals1StackItemFrame</td>
-                <td>{ frame_type }</td>
-                <td>{ frame_type - 64 }</td>
+                <td>{frame_type}</td>
+                <td>{frame_type - 64}</td>
                 <td>
                     Stack:&nbsp;<i>&lt;Empty&gt;</i>
-                    ,&nbsp;{ verification_type_info_stack.toXHTML(cp) }<br/>
+                    ,&nbsp;{verification_type_info_stack.toXHTML(cp)}<br/>
                     Locals:&nbsp;Unchanged
                 </td>
             </tr>,
@@ -117,13 +117,13 @@ case class SameLocals1StackItemFrameExtended(
         val newOffset = previous_frame_offset + offset_delta + 1
         (
             <tr>
-                <td>{ newOffset }</td>
+                <td>{newOffset}</td>
                 <td>SameLocals1StackItemFrameExtended</td>
                 <td>247</td>
-                <td>{ offset_delta }</td>
+                <td>{offset_delta}</td>
                 <td>
                     Stack:&nbsp;<i>&lt;Empty&gt;</i>
-                    ,&nbsp;{ verification_type_info_stack.toXHTML(cp) }<br/>
+                    ,&nbsp;{verification_type_info_stack.toXHTML(cp)}<br/>
                     Locals:&nbsp;Unchanged
                 </td>
             </tr>,
@@ -144,13 +144,13 @@ case class ChopFrame(frame_type: Int, offset_delta: Int) extends StackMapFrame {
         val newOffset = previous_frame_offset + offset_delta + 1
         (
             <tr>
-                <td>{ newOffset }</td>
+                <td>{newOffset}</td>
                 <td>ChopFrame</td>
-                <td>{ frame_type }</td>
-                <td>{ offset_delta }</td>
+                <td>{frame_type}</td>
+                <td>{offset_delta}</td>
                 <td>
                     Stack:&nbsp;<i>&lt;Empty&gt;</i><br/>
-                    Locals:&nbsp;The last&nbsp;{ 251 - frame_type }
+                    Locals:&nbsp;The last&nbsp;{251 - frame_type}
                     locals(s) are absent
                 </td>
             </tr>,
@@ -171,10 +171,10 @@ case class SameFrameExtended(frame_type: Int = 251, offset_delta: Int) extends S
         val newOffset = previous_frame_offset + offset_delta + 1
         (
             <tr>
-                <td>{ newOffset }</td>
+                <td>{newOffset}</td>
                 <td>SameFrameExtended</td>
                 <td>251</td>
-                <td>{ offset_delta }</td>
+                <td>{offset_delta}</td>
                 <td>
                     Stack:&nbsp;<i>&lt;Empty&gt;</i><br/>
                     Locals:&nbsp;Unchanged
@@ -204,13 +204,13 @@ case class AppendFrame(
         val newOffset = previous_frame_offset + offset_delta + 1
         (
             <tr>
-                <td>{ newOffset }</td>
+                <td>{newOffset}</td>
                 <td>AppendFrame</td>
-                <td>{ frame_type }</td>
-                <td>{ offset_delta }</td>
+                <td>{frame_type}</td>
+                <td>{offset_delta}</td>
                 <td>
                     Stack:&nbsp;<i>&lt;Empty&gt;</i><br/>
-                    Locals:&nbsp;{ verification_type_infos_toXHTML(verification_type_info_locals) }
+                    Locals:&nbsp;{verification_type_infos_toXHTML(verification_type_info_locals)}
                 </td>
             </tr>,
             newOffset
@@ -241,13 +241,13 @@ case class FullFrame(
         val newOffset = previous_frame_offset + offset_delta + 1
         (
             <tr>
-                <td>{ newOffset }</td>
+                <td>{newOffset}</td>
                 <td>FullFrame</td>
-                <td>{ frame_type }</td>
-                <td>{ offset_delta }</td>
+                <td>{frame_type}</td>
+                <td>{offset_delta}</td>
                 <td>
-                    Stack:&nbsp;{ verification_type_infos_toXHTML(verification_type_info_stack) }<br/>
-                    Locals:&nbsp;{ verification_type_infos_toXHTML(verification_type_info_locals) }
+                    Stack:&nbsp;{verification_type_infos_toXHTML(verification_type_info_stack)}<br/>
+                    Locals:&nbsp;{verification_type_infos_toXHTML(verification_type_info_locals)}
                 </td>
             </tr>,
             newOffset

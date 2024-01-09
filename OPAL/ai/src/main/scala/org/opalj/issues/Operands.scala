@@ -29,28 +29,28 @@ class Operands(
                 val condition =
                     if (cbi.operandCount == 1)
                         List(
-                            <span class="value">{ operands.head } </span>,
-                            <span class="operator">{ cbi.operator } </span>
+                            <span class="value">{operands.head} </span>,
+                            <span class="operator">{cbi.operator} </span>
                         )
                     else
                         List(
-                            <span class="value">{ operands.tail.head } </span>,
-                            <span class="operator">{ cbi.operator } </span>,
-                            <span class="value">{ operands.head } </span>
+                            <span class="value">{operands.tail.head} </span>,
+                            <span class="operator">{cbi.operator} </span>,
+                            <span class="value">{operands.head} </span>
                         )
                 <span class="keyword">if&nbsp;</span> :: condition
 
             case cbi: CompoundConditionalBranchInstruction =>
                 Seq(
                     <span class="keyword">switch </span>,
-                    <span class="value">{ operands.head } </span>,
-                    <span> (case values: { cbi.caseValues.mkString(", ") } )</span>
+                    <span class="value">{operands.head} </span>,
+                    <span> (case values: {cbi.caseValues.mkString(", ")} )</span>
                 )
 
             case smi: StackManagementInstruction =>
                 val representation =
-                    <span class="keyword">{ smi.mnemonic } </span> ::
-                        (operands.map(op => <span class="value">{ op } </span>))
+                    <span class="keyword">{smi.mnemonic} </span> ::
+                        (operands.map(op => <span class="value">{op} </span>))
                 representation
 
             case IINC(lvIndex, constValue) =>
@@ -59,8 +59,8 @@ class Operands(
                         <span class="keyword">iinc </span>,
                         <span class="parameters">
                             (
-                            <span class="value">{ localVariables(lvIndex) }</span>
-                            <span class="value">{ constValue } </span>
+                            <span class="value">{localVariables(lvIndex)}</span>
+                            <span class="value">{constValue} </span>
                             )
                         </span>
                     )
@@ -72,14 +72,14 @@ class Operands(
 
                 val parametersNode =
                     operands.take(operandsCount).reverse.map { op =>
-                        <span class="value">{ op } </span>
+                        <span class="value">{op} </span>
                     }
                 List(
-                    <span class="keyword">{ instruction.mnemonic } </span>,
-                    <span class="parameters">({ parametersNode })</span>
+                    <span class="keyword">{instruction.mnemonic} </span>,
+                    <span class="parameters">({parametersNode})</span>
                 )
         }
-        <div>{ detailsNodes }</div>
+        <div>{detailsNodes}</div>
     }
 
     def toAnsiColoredString: String = "" // TODO Support a better representation

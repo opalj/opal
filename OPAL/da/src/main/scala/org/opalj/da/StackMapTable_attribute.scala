@@ -23,8 +23,8 @@ case class StackMapTable_attribute(
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         <div>
             <details class="attribute">
-                <summary class="attribute_name">StackMapTable [size: { stack_map_frames.length } item(s)]</summary>
-                { stack_map_framestoXHTML(cp) }
+                <summary class="attribute_name">StackMapTable [size: {stack_map_frames.length} item(s)]</summary>
+                {stack_map_framestoXHTML(cp)}
             </details>
         </div>
     }
@@ -42,7 +42,7 @@ case class StackMapTable_attribute(
                 <tr><th>PC</th><th>Kind</th><th>Frame Type</th><th>Offset Delta</th><th>Details</th></tr>
             </thead>
             <tbody>
-                { framesAsXHTML }
+                {framesAsXHTML}
             </tbody>
         </table>
     }

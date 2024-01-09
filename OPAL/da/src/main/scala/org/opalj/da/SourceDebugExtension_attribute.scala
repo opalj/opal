@@ -18,7 +18,7 @@ case class SourceDebugExtension_attribute(
     override final def attribute_length = debug_extension.length
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span><span class="attribute_name">SourceDebugExtension</span>:{ byteArrayToNode(debug_extension) }</span>
+        <span><span class="attribute_name">SourceDebugExtension</span>:{byteArrayToNode(debug_extension)}</span>
     }
 
 }

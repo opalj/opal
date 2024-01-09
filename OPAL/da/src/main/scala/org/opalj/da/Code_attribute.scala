@@ -42,7 +42,7 @@ case class Code_attribute(
         val methodBodyHeader =
             s"Method Body (Size: $codeSize bytes, Max Stack: $max_stack, Max Locals: $max_locals)"
         <details class="method_body">
-            <summary>{ methodBodyHeader }</summary>
+            <summary>{methodBodyHeader}</summary>
             {
                 code.toXHTML(
                     methodIndex,
@@ -50,8 +50,8 @@ case class Code_attribute(
                     attributes collectFirst { case LineNumberTable_attribute(_, lnt) => lnt }
                 )
             }
-            { exception_handlersAsXHTML }
-            { attributesAsXHTML }
+            {exception_handlersAsXHTML}
+            {attributesAsXHTML}
         </details>
 
     }
@@ -64,7 +64,7 @@ case class Code_attribute(
             <details class="exception_table">
                 <summary>Exception Table:</summary>
                 <ol class="exception_table">
-                    { exceptionTable.map(_.toXHTML) }
+                    {exceptionTable.map(_.toXHTML)}
                 </ol>
             </details>
         else

@@ -22,7 +22,7 @@ case class PermittedSubclasses_attribute(
             <summary>PermittedSubclasses</summary>
             {
                 permitted_subclasses.map[String](p => cp(p).toString).sorted.map[NodeBuffer] { p =>
-                    <span>{ p }</span><br/>
+                    <span>{p}</span><br/>
                 }
             }
         </details>

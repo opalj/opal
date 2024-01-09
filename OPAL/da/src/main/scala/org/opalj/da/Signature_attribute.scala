@@ -24,13 +24,13 @@ case class Signature_attribute(
     def signature(implicit cp: Constant_Pool): String = cp(signature_index).toString
 
     def signatureSpan(implicit cp: Constant_Pool): Node = {
-        <span class="signature">{ cp(signature_index).toString }</span>
+        <span class="signature">{cp(signature_index).toString}</span>
     }
 
     // Primarily implemented to handle the case if the signature attribute is not
     // found in an expected case.
     override def toXHTML(implicit cp: Constant_Pool): Node = {
-        <details><summary class="attribute_name">Signature</summary>{ signature }</details>
+        <details><summary class="attribute_name">Signature</summary>{signature}</details>
     }
 
 }

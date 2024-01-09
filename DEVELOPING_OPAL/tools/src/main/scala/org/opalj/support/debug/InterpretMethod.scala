@@ -159,14 +159,14 @@ object InterpretMethod {
                         else {
                             println(RED +
                                 "[error] The method: " + methodName + " does not have a body" + RESET)
-                            return ;
+                            return;
                         }
                     case None =>
                         println(RED +
                             "[error] Cannot find the method: " + methodName + "." + RESET +
                             classFile.methods.map(m => m.descriptor.toJava(m.name)).toSet.
                             toSeq.sorted.mkString(" Candidates: ", ", ", "."))
-                        return ;
+                        return;
                 }
 
         var ai: AI[Domain] = null;

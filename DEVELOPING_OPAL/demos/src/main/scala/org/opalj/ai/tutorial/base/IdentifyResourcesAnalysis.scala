@@ -44,7 +44,7 @@ object IdentifyResourcesAnalysis extends ProjectAnalysisApplication {
                         case PCAndInstruction(
                             pc,
                             INVOKESPECIAL(
-                                ObjectType("java/io/File"), false /* = isInterface*/ ,
+                                ObjectType("java/io/File"), false /* = isInterface*/,
                                 "<init>",
                                 SingleArgumentMethodDescriptor((ObjectType.String, VoidType)))
                             ) => pc

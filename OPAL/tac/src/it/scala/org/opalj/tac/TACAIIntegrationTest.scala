@@ -35,7 +35,7 @@ class TACAIIntegrationTest extends AnyFunSpec with Matchers {
         performanceEvaluation: PerformanceEvaluation
     ): Unit = {
         import performanceEvaluation.time
-        if (Thread.currentThread().isInterrupted) return ;
+        if (Thread.currentThread().isInterrupted) return;
 
         var errors: List[(String, Throwable)] = Nil
         val successfullyCompleted = new java.util.concurrent.atomic.AtomicInteger(0)

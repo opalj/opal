@@ -19,12 +19,12 @@ case class CONSTANT_Float_info(value: Float) extends Constant_Pool_Entry {
     override def asCPNode(implicit cp: Constant_Pool): Node =
         <span class="cp_entry">
             CONSTANT_Float_info(
-            <span class="constant_value">{ value }f</span>
+            <span class="constant_value">{value}f</span>
             )
         </span>
 
     override def asInstructionParameter(implicit cp: Constant_Pool): NodeSeq = {
-        <span class="constant_value">{ value.toString + "f" }</span>
+        <span class="constant_value">{value.toString + "f"}</span>
     }
 
     override def toString(implicit cp: Constant_Pool): String = value.toString

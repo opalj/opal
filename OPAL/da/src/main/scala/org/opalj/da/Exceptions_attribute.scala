@@ -41,11 +41,11 @@ case class Exceptions_attribute(
     // Primarily implemented to handle the case if the attribute is not found in an expected place.
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         <details>
-            <summary class="attribute_name">Exceptions [size: { exception_index_table.size } item(s)]</summary>
+            <summary class="attribute_name">Exceptions [size: {exception_index_table.size} item(s)]</summary>
             <ol>
                 {
                     exception_index_table.map[Node] { cpIndex =>
-                        <li>{ cp(cpIndex).asInstructionParameter }</li>
+                        <li>{cp(cpIndex).asInstructionParameter}</li>
                     }
                 }
             </ol>

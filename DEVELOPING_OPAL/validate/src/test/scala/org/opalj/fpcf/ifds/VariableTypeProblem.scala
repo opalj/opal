@@ -114,7 +114,8 @@ class VariableTypeProblem(project: SomeProject, override val subsumeFacts: Boole
                 }
             } else {
                 Seq.empty
-            })
+            }
+        )
     }
 
     /**

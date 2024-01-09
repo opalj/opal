@@ -56,17 +56,17 @@ class FieldValues(
                 val pc = fieldData.pc
                 val details = fieldData.value
                 <li>
-                    { pcNode(classFileFQN, methodJVMSignature, pc) }
+                    {pcNode(classFileFQN, methodJVMSignature, pc)}
                     &nbsp;
-                    { lineNode(classFileFQN, methodJVMSignature, pc, line(pc)) }
-                    <span class="value">{ details }</span>
+                    {lineNode(classFileFQN, methodJVMSignature, pc, line(pc))}
+                    <span class="value">{details}</span>
                 </li>
             }
 
         if (readFieldValues.nonEmpty)
             <details class="field_values">
                 <summary>Read Field Value Information</summary>
-                <ul>{ readFieldValues }</ul>
+                <ul>{readFieldValues}</ul>
             </details>
         else
             Group(Nil)

@@ -33,7 +33,7 @@ class TACAIAnalysisIntegrationTest extends AnyFunSpec with Matchers {
     def analyzeProject(
         theProject: SomeProject
     ): Unit = {
-        if (Thread.currentThread().isInterrupted) return ;
+        if (Thread.currentThread().isInterrupted) return;
 
         time { //  Test lazy analysis...
             val p = theProject

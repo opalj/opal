@@ -47,39 +47,39 @@ case class Module_attribute(
         val module = s"Module(name=$name, flags=$flags, version=$version)"
 
         <details>
-            <summary class="attribute">{ module }</summary>
+            <summary class="attribute">{module}</summary>
             <div>
                 {
                     requires.view.map[String](_.toString).sorted.map[NodeBuffer] { r =>
-                        <span>{ r }</span><br/>
+                        <span>{r}</span><br/>
                     }
                 }
             </div>
             <div>
                 {
                     exports.view.map[String](_.toString).sorted.map[NodeBuffer] { r =>
-                        <span>{ r }</span><br/>
+                        <span>{r}</span><br/>
                     }
                 }
             </div>
             <div>
                 {
                     opens.view.map[String](_.toString).sorted.map[NodeBuffer] { r =>
-                        <span>{ r }</span><br/>
+                        <span>{r}</span><br/>
                     }
                 }
             </div>
             <div>
                 {
                     uses.view.map(cp(_).toString).sorted.map[NodeBuffer] { r =>
-                        <span>{ s"uses $r" }</span><br/>
+                        <span>{s"uses $r"}</span><br/>
                     }
                 }
             </div>
             <div>
                 {
                     provides.view.map[String](_.toString).sorted.map[NodeBuffer] { r =>
-                        <span>{ r }</span><br/>
+                        <span>{r}</span><br/>
                     }
                 }
             </div>

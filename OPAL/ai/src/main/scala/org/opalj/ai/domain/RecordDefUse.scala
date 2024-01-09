@@ -1333,33 +1333,33 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode =>
                     val ((os, ls), i) = e
                     val operands =
                         if (os eq null)
-                            <i>{ "N/A" }</i>
+                            <i>{"N/A"}</i>
                         else
                             os.map { o =>
-                                <li>{ if (o eq null) "N/A" else o.mkString("{", ",", "}") }</li>
+                                <li>{if (o eq null) "N/A" else o.mkString("{", ",", "}")}</li>
                             }.toList
 
                     val locals =
                         if (ls eq null)
-                            <i>{ "N/A" }</i>
+                            <i>{"N/A"}</i>
                         else
                             ls.toSeq.reverse.map { e =>
-                                <li>{ if (e eq null) "N/A" else e.mkString("{", ",", "}") }</li>
+                                <li>{if (e eq null) "N/A" else e.mkString("{", ",", "}")}</li>
                             }
 
                     val used = this.usedBy(i)
                     val usedBy = if (used eq null) "N/A" else used.mkString("{", ", ", "}")
                     <tr>
-                        <td>{ i }<br/>{ instructions(i).toString(i) }</td>
-                        <td>{ usedBy }</td>
-                        <td><ul class="Stack">{ operands }</ul></td>
-                        <td><ol start="0" class="registers">{ locals }</ol></td>
+                        <td>{i}<br/>{instructions(i).toString(i)}</td>
+                        <td>{usedBy}</td>
+                        <td><ul class="Stack">{operands}</ul></td>
+                        <td><ol start="0" class="registers">{locals}</ol></td>
                     </tr>
                 }
 
         <div>
             <h1>Unused</h1>
-            { unused.mkString("", ", ", "") }
+            {unused.mkString("", ", ", "")}
             <h1>Overview</h1>
             <table>
                 <tr>
@@ -1368,7 +1368,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode =>
                     <th class="stack">Stack</th>
                     <th class="registers">Locals</th>
                 </tr>
-                { perInstruction }
+                {perInstruction}
             </table>
         </div>
     }

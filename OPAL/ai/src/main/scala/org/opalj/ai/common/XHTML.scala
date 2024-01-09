@@ -130,7 +130,7 @@ object XHTML {
         createXHTML(
             Some(title),
             Seq[Node](
-                <h1>{ title }</h1>,
+                <h1>{title}</h1>,
                 annotationsAsXHTML(method),
                 scala.xml.Unparsed(resultHeader),
                 dumpAIState(code, domain)(cfJoins, operandsArray, localsArray)
@@ -143,7 +143,7 @@ object XHTML {
             {
                 this.annotations(method) map { annotation =>
                     val info = annotation.replace("\n", "<br>").replace("\t", "&nbsp;&nbsp;&nbsp;")
-                    <div class="annotation">{ Unparsed(info) }</div>
+                    <div class="annotation">{Unparsed(info)}</div>
                 }
             }
         </div>
@@ -172,7 +172,7 @@ object XHTML {
         createXHTML(
             title,
             Seq[Node](
-                title.map(t => <h1>{ t }</h1>).getOrElse(Text("")),
+                title.map(t => <h1>{t}</h1>).getOrElse(Text("")),
                 annotations,
                 scala.xml.Unparsed(resultHeader.getOrElse("")),
                 dumpAIState(code, domain)(cfJoins, operandsArray, localsArray)
@@ -196,7 +196,7 @@ object XHTML {
                     "⚡: " + index + " " + eh.catchType.map(_.toJava).getOrElse("<finally>") +
                         " [" + eh.startPC + "," + eh.endPC + ")" + " => " + eh.handlerPC
                 }
-            ).map(eh => <p>{ eh }</p>)
+            ).map(eh => <p>{eh}</p>)
 
         val ids = new java.util.IdentityHashMap[AnyRef, Integer]
         var nextId = 1
@@ -222,7 +222,7 @@ object XHTML {
                 NodeSeq.Empty
 
         <div>
-            { disclaimer }
+            {disclaimer}
             <table>
                 <thead>
                     <tr>
@@ -248,7 +248,7 @@ object XHTML {
                     }
                 </tbody>
             </table>
-            { exceptionHandlers }
+            {exceptionHandlers}
         </div>
     }
 
@@ -319,14 +319,14 @@ object XHTML {
             // to handle cases where the string contains "executable" (JavaScript) code
             Unparsed(Text(instruction.toString(pc)).toString.replace("\n", "<br>"))
 
-        <tr class={ if (operands eq null /*||/&& locals eq null*/ ) "not_evaluated" else "evaluated" }>
-            <td class="pc">{ pcAsXHTML }</td>
-            <td class="instruction">{ instructionAsXHTML }</td>
-            <td class="stack">{ dumpStack(operands) }</td>
+        <tr class={if (operands eq null /*||/&& locals eq null*/ ) "not_evaluated" else "evaluated"}>
+            <td class="pc">{pcAsXHTML}</td>
+            <td class="instruction">{instructionAsXHTML}</td>
+            <td class="stack">{dumpStack(operands)}</td>
             {
                 if (operandsOnly) NodeSeq.Empty else {
-                    <td class="locals">{ dumpLocals(locals) }</td>
-                    <td class="properties">{ properties }</td>
+                    <td class="locals">{dumpLocals(locals)}</td>
+                    <td class="properties">{properties}</td>
                 }
             }
         </tr>
@@ -337,7 +337,7 @@ object XHTML {
             <em>Information about operands is not available.</em>
         else {
             <ul class="Stack">
-                { operands.map(op => <li>{ valueToString(op) }</li>) }
+                {operands.map(op => <li>{valueToString(op)}</li>)}
             </ul>
         }
     }
@@ -346,16 +346,16 @@ object XHTML {
 
         def mapLocal(local: AnyRef): Node = {
             if (local eq null)
-                <li><span class="unused">{ "UNUSED" }</span></li>
+                <li><span class="unused">{"UNUSED"}</span></li>
             else
-                <li><span>{ valueToString(local) }</span></li>
+                <li><span>{valueToString(local)}</span></li>
         }
 
         if (locals eq null)
             <em>Information about the local variables is not available.</em>
         else {
             <ol start="0" class="registers">
-                { locals.map { mapLocal }.iterator }
+                {locals.map { mapLocal }.iterator}
             </ol>
         }
     }
