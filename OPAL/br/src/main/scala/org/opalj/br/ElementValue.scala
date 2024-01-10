@@ -28,6 +28,7 @@ sealed trait ElementValue extends Attribute {
     def asClassValue: ClassValue = throw new ClassCastException();
 
 }
+
 object ElementValue {
     final val minKindId = ByteValue.KindId
     final val maxKindId = AnnotationValue.KindId
@@ -63,6 +64,7 @@ case class ByteValue(value: Byte) extends BaseTypeElementValue {
     override def kindId: Int = ByteValue.KindId
 
 }
+
 object ByteValue {
 
     final val KindId = 29
@@ -78,6 +80,7 @@ case class CharValue(value: Char) extends BaseTypeElementValue {
     override def kindId: Int = CharValue.KindId
 
 }
+
 object CharValue {
 
     final val KindId = 30
@@ -93,6 +96,7 @@ case class DoubleValue(value: Double) extends BaseTypeElementValue {
     override def kindId: Int = DoubleValue.KindId
 
 }
+
 object DoubleValue {
 
     final val KindId = 31
@@ -108,6 +112,7 @@ case class FloatValue(value: Float) extends BaseTypeElementValue {
     override def kindId: Int = FloatValue.KindId
 
 }
+
 object FloatValue {
 
     final val KindId = 32
@@ -125,6 +130,7 @@ case class IntValue(value: Int) extends BaseTypeElementValue {
     override final def asIntValue: IntValue = this
 
 }
+
 object IntValue {
 
     final val KindId = 33
@@ -140,6 +146,7 @@ case class LongValue(value: Long) extends BaseTypeElementValue {
     override def kindId: Int = LongValue.KindId
 
 }
+
 object LongValue {
 
     final val KindId = 34
@@ -155,6 +162,7 @@ case class ShortValue(value: Short) extends BaseTypeElementValue {
     override def kindId: Int = ShortValue.KindId
 
 }
+
 object ShortValue {
 
     final val KindId = 35
@@ -172,6 +180,7 @@ case class BooleanValue(value: Boolean) extends BaseTypeElementValue {
     override final def asBooleanValue: BooleanValue = this
 
 }
+
 object BooleanValue {
 
     final val KindId = 36
@@ -193,6 +202,7 @@ case class StringValue(value: String) extends ElementValue {
     override final def asStringValue: StringValue = this
 
 }
+
 object StringValue {
 
     final val KindId = 37
@@ -214,6 +224,7 @@ case class ClassValue(value: Type) extends ElementValue {
     override final def asClassValue: ClassValue = this
 
 }
+
 object ClassValue {
 
     final val KindId = 38
@@ -235,6 +246,7 @@ case class EnumValue(enumType: ObjectType, constName: String) extends ElementVal
     override final def asEnumValue: EnumValue = this
 
 }
+
 object EnumValue {
 
     final val KindId = 39
@@ -257,6 +269,7 @@ case class ArrayValue(values: ElementValues) extends ElementValue {
     override final def asArrayValue: ArrayValue = this
 
 }
+
 object ArrayValue {
 
     final val KindId = 40
@@ -280,6 +293,7 @@ case class AnnotationValue(annotation: Annotation) extends ElementValue {
 
     override final def asAnnotationValue: AnnotationValue = this
 }
+
 object AnnotationValue {
 
     final val KindId = 41

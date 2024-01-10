@@ -56,6 +56,7 @@ abstract class LoadLocalVariableInstruction extends Instruction with NoLabels {
 
     override final def toString(currentPC: Int): String = toString()
 }
+
 /**
  * Defines a factory method for `LoadLocalVariableInstruction`s.
  *

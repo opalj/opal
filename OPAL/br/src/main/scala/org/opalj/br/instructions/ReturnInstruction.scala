@@ -106,6 +106,7 @@ object ReturnInstruction {
         }
 
 }
+
 /**
  * Defines extractor methods related to return instructions.
  *

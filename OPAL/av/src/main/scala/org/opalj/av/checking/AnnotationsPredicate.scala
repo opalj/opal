@@ -41,6 +41,7 @@ case class HasAtLeastTheAnnotations(
         annotationPredicates.forall(p => others.exists(a => p(a)))
     }
 }
+
 object HasAtLeastTheAnnotations {
 
     def apply(annotationPredicate: AnnotationPredicate): HasAtLeastTheAnnotations = {
@@ -61,6 +62,7 @@ case class HasTheAnnotations(
     }
 
 }
+
 object HasTheAnnotations {
 
     def apply(annotationPredicate: AnnotationPredicate): HasTheAnnotations = {

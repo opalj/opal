@@ -376,6 +376,7 @@ case object TAOnBoundOfWildcardType extends TypeAnnotationPathElement {
 case class TAOnTypeArgument(index: Int) extends TypeAnnotationPathElement {
     override final def kindId: Int = TAOnTypeArgument.KindId
 }
+
 object TAOnTypeArgument {
     final val KindId = 3
 }

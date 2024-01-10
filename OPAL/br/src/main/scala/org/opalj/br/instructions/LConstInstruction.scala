@@ -11,6 +11,7 @@ trait LConstInstruction extends LoadConstantInstruction[Long] with ImplicitValue
     override final def computationalType = ComputationalTypeLong
 
 }
+
 object LConstInstruction {
 
     def unapply(instr: LConstInstruction): Option[Long] = Some(instr.value)

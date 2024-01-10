@@ -14,6 +14,7 @@ case class RuntimeInvisibleAnnotationTable(annotations: Annotations) extends Ann
     override def kindId: Int = RuntimeInvisibleAnnotationTable.KindId
 
 }
+
 object RuntimeInvisibleAnnotationTable {
 
     final val KindId = 24

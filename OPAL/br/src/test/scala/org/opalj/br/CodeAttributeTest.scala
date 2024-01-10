@@ -214,6 +214,7 @@ class CodeAttributeTest extends AnyFlatSpec with Matchers {
     }
 
 }
+
 private object CodeAttributeTest {
 
     //

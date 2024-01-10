@@ -1008,6 +1008,7 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
     }
 
 }
+
 /**
  * @author Arne Lottmann
  * @author Michael Eichberg

@@ -29,6 +29,7 @@ case class LocalVariableTable(localVariables: LocalVariables) extends CodeAttrib
         LocalVariableTable(newLocalVariables)
     }
 }
+
 object LocalVariableTable {
 
     final val KindId = 20

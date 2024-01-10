@@ -338,6 +338,7 @@ sealed trait FieldType extends Type {
     @throws[IllegalArgumentException]("if a(n) (un)boxing to the targetType is not possible")
     def adapt[T](targetType: Type)(implicit typeConversionFactory: TypeConversionFactory[T]): T
 }
+
 /**
  * Factory to parse field type (descriptors) to get field type objects.
  */
@@ -387,6 +388,7 @@ sealed abstract class ReferenceType extends FieldType {
     def id: Int
 
 }
+
 /**
  * Factory to create instances of `ReferenceType`.
  */
@@ -1054,6 +1056,7 @@ final class ObjectType private ( // DO NOT MAKE THIS A CASE CLASS!
     override def toString: String = "ObjectType(" + fqn + ")"
 
 }
+
 /**
  * Defines factory and extractor methods for `ObjectType`s.
  *

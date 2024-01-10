@@ -61,6 +61,7 @@ class InstructionCountBoundedAI[D <: Domain](
     }
 
 }
+
 /**
  * Defines common helper methods.
  *

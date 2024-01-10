@@ -26,6 +26,7 @@ final class UShortPair private (val pair: Int) extends AnyVal {
 
     override def toString: String = s"UShortPair($minor,$major)"
 }
+
 /**
  * Factory to create `UShortPair` objects.
  */

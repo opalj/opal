@@ -22,6 +22,7 @@ import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ValueReader
 
 case class ConfiguredMethods(nativeMethods: Array[ConfiguredMethodData])
+
 object ConfiguredMethods {
     implicit val reader: ValueReader[ConfiguredMethods] = (config: Config, path: String) => {
         val c = config.getConfig(path)
@@ -71,6 +72,7 @@ object ConfiguredMethodData {
 }
 
 case class PointsToRelation(lhs: EntityDescription, rhs: EntityDescription)
+
 object PointsToRelation {
     implicit val reader: ValueReader[PointsToRelation] = (config: Config, path: String) => {
         val c = if (path.nonEmpty) config.getConfig(path) else config

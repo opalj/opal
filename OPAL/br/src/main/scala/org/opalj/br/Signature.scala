@@ -257,6 +257,7 @@ case class ClassSignature(
             superInterfacesSignature.mkString(",superInterfaces=List(", ",", "))")
     }
 }
+
 object ClassSignature {
 
     final val KindId = 12
@@ -283,6 +284,7 @@ case class MethodTypeSignature(
             returnTypeSignature.toJVMSignature +
             throwsSignature.map(s => s"^${s.toJVMSignature}").mkString("")
 }
+
 object MethodTypeSignature {
 
     final val KindId = 13
@@ -317,6 +319,7 @@ case class ArrayTypeSignature(typeSignature: TypeSignature) extends FieldTypeSig
 
     override def toJVMSignature: String = "[" + typeSignature.toJVMSignature
 }
+
 object ArrayTypeSignature {
 
     final val KindId = 14
@@ -365,6 +368,7 @@ case class ClassTypeSignature(
     }
 
 }
+
 object ClassTypeSignature {
 
     final val KindId = 15
@@ -385,6 +389,7 @@ case class TypeVariableSignature(
     override def toJVMSignature: String = "T" + identifier + ";"
 
 }
+
 object TypeVariableSignature {
 
     final val KindId = 16

@@ -60,6 +60,7 @@ abstract class LoadConstantInstruction[T]
 
     override final def toString(currentPC: Int): String = toString()
 }
+
 /**
  * Defines factory methods for `LoadConstantInstruction`s.
  *

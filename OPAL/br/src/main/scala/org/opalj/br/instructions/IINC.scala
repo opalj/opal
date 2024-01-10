@@ -71,6 +71,7 @@ case class IINC(lvIndex: Int, constValue: Int) extends ArithmeticInstruction {
     override def toString = "IINC(lvIndex=" + lvIndex + ", " + constValue + ")"
 
 }
+
 object IINC extends InstructionMetaInformation {
 
     final val opcode = 132

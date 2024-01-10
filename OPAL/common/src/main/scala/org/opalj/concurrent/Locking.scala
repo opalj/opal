@@ -31,6 +31,7 @@ trait Locking {
      */
     @inline protected[this] final def withReadLock[B](f: => B): B = Locking.withReadLock(rwLock)(f)
 }
+
 /**
  * Defines several convenience methods related to using `(Reentrant(ReadWrite))Lock`s.
  */

@@ -32,6 +32,7 @@ import org.opalj.log.OPALLogger
 import org.opalj.util.PerformanceEvaluation.time
 
 import net.dongliu.apk.parser.ApkFile
+
 /**
  * Parses an APK file and generates a [[Project]] for it.
  *

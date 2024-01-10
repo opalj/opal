@@ -150,6 +150,7 @@ class MethodsWithBranchesTest extends AnyFlatSpec with Matchers {
         }
     }
 }
+
 private object MethodsWithBranchesTest {
     val classFiles = ClassFiles(locateTestResources("ai-9.jar", "bi"))
     val classFile = classFiles.map(_._1).find(_.thisType.fqn == "ai/MethodsWithBranches").get

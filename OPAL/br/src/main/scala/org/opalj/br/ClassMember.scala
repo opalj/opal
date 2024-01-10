@@ -47,6 +47,7 @@ trait ClassMember extends ConcreteSourceElement {
      */
     def name: String
 }
+
 /**
  * Defines an extractor method for class members.
  *

@@ -13,6 +13,7 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.properties
 import org.opalj.br.fpcf.properties.immutability.ClassImmutability
 import org.opalj.br.fpcf.properties.immutability.DependentlyImmutableClass
+
 class ClassImmutabilityMatcher(val property: ClassImmutability) extends AbstractPropertyMatcher {
 
     import org.opalj.br.analyses.SomeProject

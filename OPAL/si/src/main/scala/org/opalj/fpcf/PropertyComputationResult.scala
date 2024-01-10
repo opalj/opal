@@ -75,6 +75,7 @@ case class Result(finalEP: FinalEP[Entity, Property]) extends FinalPropertyCompu
         s"Result($e@${System.identityHashCode(e).toHexString},p=$p)"
     }
 }
+
 object Result {
 
     def apply(e: Entity, p: Property): Result = Result(FinalEP(e, p))
@@ -297,6 +298,7 @@ sealed abstract class Results extends ProperPropertyComputationResult {
     def foreach(f: ProperPropertyComputationResult => Unit): Unit
 
 }
+
 object Results {
 
     private[fpcf] final val id = 5
@@ -403,6 +405,7 @@ case class InterimPartialResult[SE >: Null <: Property](
     private[fpcf] final def id = InterimPartialResult.id
 
 }
+
 object InterimPartialResult {
 
     private[fpcf] final val id = 8

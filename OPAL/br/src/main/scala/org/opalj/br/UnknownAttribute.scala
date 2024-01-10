@@ -23,6 +23,7 @@ case class UnknownAttribute(attributeName: String, info: Array[Byte]) extends At
             java.util.Arrays.equals(this.info, other.info)
     }
 }
+
 object UnknownAttribute {
 
     final val KindId = -1

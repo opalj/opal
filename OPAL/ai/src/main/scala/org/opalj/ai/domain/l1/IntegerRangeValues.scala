@@ -1162,6 +1162,7 @@ trait IntegerRangeValues
                 IntegerRange(Short.MinValue, Short.MaxValue)
         }
 }
+
 /**
  * Defines common constants related to integer ranges.
  */

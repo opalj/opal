@@ -30,6 +30,7 @@ case class ExceptionTable(exceptions: Exceptions) extends Attribute {
     }
 
 }
+
 object ExceptionTable {
 
     final val KindId = 8

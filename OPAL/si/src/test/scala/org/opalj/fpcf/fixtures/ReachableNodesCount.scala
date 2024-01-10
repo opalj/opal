@@ -31,6 +31,7 @@ case class ReachableNodesCount(value: Int) extends OrderedProperty {
 object NoNodesReachable extends ReachableNodesCount(0) {
     override def toString: String = "NoNodesReachable"
 }
+
 object TooManyNodesReachable extends ReachableNodesCount(64) {
     override def toString: String = "TooManyNodesReachable"
 }

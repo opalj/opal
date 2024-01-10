@@ -74,6 +74,7 @@ trait SimpleConditionalBranchInstruction[T <: SimpleConditionalBranchInstruction
     }
 
 }
+
 /**
  * Extractor for [[SimpleConditionalBranchInstruction]]s.
  */
