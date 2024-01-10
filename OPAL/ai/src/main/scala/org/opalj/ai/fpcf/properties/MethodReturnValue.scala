@@ -44,6 +44,7 @@ case class TheMethodReturnValue(theReturnValue: ValueInformation) extends Method
     override def returnValue: Option[ValueInformation] = Some(theReturnValue)
 
 }
+
 // Used for methods which throw an exception.
 case object NoMethodReturnValue extends MethodReturnValue {
 

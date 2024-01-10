@@ -155,6 +155,7 @@ case class If[+V <: Var[V]](
     override def toString: String = s"If(pc=$pc,$left,$condition,$right,target=$target)"
 
 }
+
 object If {
     final val ASTID = 0
 }
@@ -200,6 +201,7 @@ case class Goto(pc: PC, private var target: Int) extends VariableFreeStmt {
     override def toString: String = s"Goto(pc=$pc,target=$target)"
 
 }
+
 object Goto {
     final val ASTID = 1
 }
@@ -235,6 +237,7 @@ case class Ret(pc: PC, private var returnAddresses: PCs) extends VariableFreeStm
     }
 
 }
+
 object Ret {
     final val ASTID = 2
 }
@@ -275,6 +278,7 @@ case class JSR(pc: PC, private[tac] var target: Int) extends VariableFreeStmt {
     override def toString: String = s"JSR(pc=$pc,target=$target)"
 
 }
+
 object JSR {
     final val ASTID = 3
 }
@@ -339,6 +343,7 @@ case class Switch[+V <: Var[V]](
         s"Switch(pc=$pc,defaultTarget=$defaultTarget,index=$index,npairs=$npairs"
     }
 }
+
 object Switch {
     final val ASTID = 4
 }
@@ -395,6 +400,7 @@ case class Assignment[+V <: Var[V]](
     override def toString: String = s"Assignment(pc=$pc,$targetVar,$expr)"
 
 }
+
 object Assignment {
     final val ASTID = 5
 }
@@ -429,6 +435,7 @@ case class ReturnValue[+V <: Var[V]](pc: Int, expr: Expr[V]) extends Stmt[V] {
 
     override def toString: String = s"ReturnValue(pc=$pc,$expr)"
 }
+
 object ReturnValue {
     final val ASTID = 6
 }
@@ -459,6 +466,7 @@ case class Return(pc: Int) extends SimpleStmt {
 
     override def toString: String = s"Return(pc=$pc)"
 }
+
 object Return {
     final val ASTID = 7
 }
@@ -497,6 +505,7 @@ case class Nop(pc: Int) extends SimpleStmt {
 
     override def toString: String = s"Nop(pc=$pc)"
 }
+
 object Nop {
     final val ASTID = 8
 }
@@ -539,6 +548,7 @@ case class MonitorEnter[+V <: Var[V]](pc: PC, objRef: Expr[V]) extends Synchroni
 
     override def toString: String = s"MonitorEnter(pc=$pc,$objRef)"
 }
+
 object MonitorEnter {
     final val ASTID = 9
 }
@@ -567,6 +577,7 @@ case class MonitorExit[+V <: Var[V]](pc: PC, objRef: Expr[V]) extends Synchroniz
     override def toString: String = s"MonitorExit(pc=$pc,$objRef)"
 
 }
+
 object MonitorExit {
     final val ASTID = 10
 }
@@ -608,6 +619,7 @@ case class ArrayStore[+V <: Var[V]](
 
     override def toString: String = s"ArrayStore(pc=$pc,$arrayRef,$index,$value)"
 }
+
 object ArrayStore {
     final val ASTID = 11
 }
@@ -641,6 +653,7 @@ case class Throw[+V <: Var[V]](pc: PC, exception: Expr[V]) extends Stmt[V] {
 
     override def toString: String = s"Throw(pc=$pc,$exception)"
 }
+
 object Throw {
     final val ASTID = 12
 }
@@ -703,6 +716,7 @@ case class PutStatic[+V <: Var[V]](
         s"PutStatic(pc=$pc,${declaringClass.toJava},$name,${declaredFieldType.toJava},$value)"
     }
 }
+
 object PutStatic {
     final val ASTID = 13
 }
@@ -753,6 +767,7 @@ case class PutField[+V <: Var[V]](
         s"PutField(pc=$pc,${declaringClass.toJava},$name,${declaredFieldType.toJava},$objRef,$value)"
     }
 }
+
 object PutField {
     final val ASTID = 14
 }
@@ -857,6 +872,7 @@ case class NonVirtualMethodCall[+V <: Var[V]](
         s"NonVirtualMethodCall(pc=$pc,$declClass,isInterface=$isInterface,$sig,$receiver,$params)"
     }
 }
+
 object NonVirtualMethodCall {
     final val ASTID = 15
 }
@@ -897,6 +913,7 @@ case class VirtualMethodCall[+V <: Var[V]](
         s"VirtualMethodCall(pc=$pc,$declClass,isInterface=$isInterface,$sig,$receiver,$params)"
     }
 }
+
 object VirtualMethodCall {
     final val ASTID = 16
 }
@@ -967,6 +984,7 @@ case class StaticMethodCall[+V <: Var[V]](
         s"StaticMethodCall(pc=$pc,$declClass,isInterface=$isInterface,$sig,$params)"
     }
 }
+
 object StaticMethodCall {
     final val ASTID = 17
 }
@@ -1066,6 +1084,7 @@ case class ExprStmt[+V <: Var[V]](pc: Int, expr: Expr[V]) extends AssignmentLike
     override def toString: String = s"ExprStmt(pc=$pc,$expr)"
 
 }
+
 object ExprStmt {
     final val ASTID = 19
 }
@@ -1234,6 +1253,7 @@ case class Checkcast[+V <: Var[V]](pc: PC, value: Expr[V], cmpTpe: ReferenceType
     override def toString: String = s"Checkcast(pc=$pc,$value,${cmpTpe.toJava})"
 
 }
+
 object Checkcast {
     final val ASTID = 21
 }

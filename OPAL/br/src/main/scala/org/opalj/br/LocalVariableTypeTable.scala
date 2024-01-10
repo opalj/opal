@@ -30,6 +30,7 @@ case class LocalVariableTypeTable(localVariableTypes: LocalVariableTypes) extend
         )
     }
 }
+
 object LocalVariableTypeTable {
 
     final val KindId = 21

@@ -11,6 +11,7 @@ import org.opalj.fpcf.Entity
 import org.opalj.fpcf.OrderedProperty
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
+
 sealed trait ClassImmutabilityPropertyMetaInformation extends PropertyMetaInformation {
     final type Self = ClassImmutability
 }

@@ -11,6 +11,7 @@ trait DConstInstruction extends LoadConstantInstruction[Double] with ImplicitVal
     override final def computationalType = ComputationalTypeDouble
 
 }
+
 object DConstInstruction {
 
     def unapply(instr: DConstInstruction): Option[Double] = Some(instr.value)

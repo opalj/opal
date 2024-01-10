@@ -53,6 +53,7 @@ class TypeImmutabilityMatcher(
 
 class TransitiveImmutableTypeMatcher
     extends TypeImmutabilityMatcher(org.opalj.br.fpcf.properties.immutability.TransitivelyImmutableType)
+
 class DependentlyImmutableTypeMatcher
     extends TypeImmutabilityMatcher(org.opalj.br.fpcf.properties.immutability.DependentlyImmutableType(SortedSet.empty)) {
     override def validateProperty(
@@ -81,7 +82,9 @@ class DependentlyImmutableTypeMatcher
     }
 
 }
+
 class NonTransitiveImmutableTypeMatcher
     extends TypeImmutabilityMatcher(org.opalj.br.fpcf.properties.immutability.NonTransitivelyImmutableType)
+
 class MutableTypeMatcher
     extends TypeImmutabilityMatcher(org.opalj.br.fpcf.properties.immutability.MutableType)

@@ -156,6 +156,7 @@ case object TATFieldDeclaration extends TATEmpty {
     override final def description: String = "type in field declaration"
 
 }
+
 case object TATReturnType extends TATEmpty {
 
     override final def tag: Int = 0x14
@@ -165,6 +166,7 @@ case object TATReturnType extends TATEmpty {
     }
 
 }
+
 case object TATReceiverType extends TATEmpty {
 
     override final def tag: Int = 0x15
@@ -290,12 +292,14 @@ case class TATInstanceOf(offset: Int) extends TATWithOffset {
     final def description: String = "type in instanceof expression"
 
 }
+
 case class TATNew(offset: Int) extends TATWithOffset {
 
     override final def tag: Int = 0x44
 
     final def description: String = "type in new expression"
 }
+
 /** A `::New` expression. */
 case class TATMethodReferenceExpressionNew(offset: Int) extends TATWithOffset {
 
@@ -304,6 +308,7 @@ case class TATMethodReferenceExpressionNew(offset: Int) extends TATWithOffset {
     final def description: String = "type in method reference expression using ::new"
 
 }
+
 /** A `::Identifier` expression. */
 case class TATMethodReferenceExpressionIdentifier(offset: Int) extends TATWithOffset {
 
@@ -338,6 +343,7 @@ case class TATCastExpression(offset: Int, type_argument_index: Int) extends TATT
     final def description: String = "type in cast expression"
 
 }
+
 case class TATConstructorInvocation(
         offset:              Int,
         type_argument_index: Int
@@ -351,6 +357,7 @@ case class TATConstructorInvocation(
     }
 
 }
+
 case class TATMethodInvocation(
         offset:              Int,
         type_argument_index: Int
@@ -363,6 +370,7 @@ case class TATMethodInvocation(
     }
 
 }
+
 case class TATConstructorInMethodReferenceExpression(
         offset:              Int,
         type_argument_index: Int
@@ -374,6 +382,7 @@ case class TATConstructorInMethodReferenceExpression(
         "type argument for generic constructor in method reference expression using ::new"
     }
 }
+
 case class TATMethodInMethodReferenceExpression(
         offset:              Int,
         type_argument_index: Int

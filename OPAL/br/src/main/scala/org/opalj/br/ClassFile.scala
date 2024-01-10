@@ -903,6 +903,7 @@ final class ClassFile private (
     }
 
 }
+
 /**
  * Defines factory and extractor methods for `ClassFile` objects as well as related
  * constants.

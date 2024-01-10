@@ -38,6 +38,7 @@ class DefaultMutableNode[I](
         )
 
 }
+
 object DefaultMutableMode {
 
     val BaseVirtualPropertiers = immutable.Map("style" -> "filled", "fillcolor" -> "white")

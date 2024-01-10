@@ -133,6 +133,7 @@ class MethodsWithExceptionsTest extends AnyFlatSpec with Matchers {
     }
 
 }
+
 private object MethodsWithExceptionsTest {
 
     val classFiles = ClassFiles(locateTestResources("ai-9.jar", "bi"))

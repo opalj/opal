@@ -80,6 +80,7 @@ import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.SystemOutLoggingAllExceptionRater
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
+
 /**
  * Executes a purity analysis (L2 by default) along with necessary supporting analysis.
  *

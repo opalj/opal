@@ -42,6 +42,7 @@ case class Annotation(
     }
 
 }
+
 /**
  * Factory object to create [[Annotation]] objects.
  */

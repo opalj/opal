@@ -98,6 +98,7 @@ class MethodsWithArraysTest extends AnyFlatSpec with Matchers {
         })
     }
 }
+
 private object MethodsWithArraysTest {
 
     val classFiles = ClassFiles(locateTestResources("ai-9.jar", "bi"))

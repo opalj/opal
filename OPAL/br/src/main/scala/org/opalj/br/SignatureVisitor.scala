@@ -29,6 +29,7 @@ trait SignatureVisitor[T] {
     def visit(dt: DoubleType): T
     def visit(vt: VoidType): T
 }
+
 /**
  * This visitor's `visit` methods completely traverse all elements of a type signature.
  */

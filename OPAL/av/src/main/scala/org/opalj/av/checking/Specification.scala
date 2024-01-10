@@ -800,6 +800,7 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
     }
 
 }
+
 object Specification {
 
     def ProjectDirectory(directoryName: String): Seq[(ClassFile, URL)] = {

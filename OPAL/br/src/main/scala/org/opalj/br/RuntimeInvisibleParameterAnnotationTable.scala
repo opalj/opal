@@ -16,6 +16,7 @@ case class RuntimeInvisibleParameterAnnotationTable(
     override final def kindId: Int = RuntimeInvisibleParameterAnnotationTable.KindId
 
 }
+
 object RuntimeInvisibleParameterAnnotationTable {
 
     final val KindId = 26

@@ -50,6 +50,7 @@ class TypeAnnotationsTest extends AnyFlatSpec with Matchers {
         )
     }
 }
+
 private object TypeAnnotationsTest {
 
     //

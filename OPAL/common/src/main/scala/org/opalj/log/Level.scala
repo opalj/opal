@@ -39,6 +39,7 @@ case object Info extends Level {
 
     final val value: Int = 0
 }
+
 /**
  * Factory for warn level log messages.
  *

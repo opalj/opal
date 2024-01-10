@@ -108,6 +108,7 @@ class FixedSizedHashIDMap[K <: AnyRef, V] private (
     override def toString: String = mkString("FixedSizedHashMap(", ", ", ")")
 
 }
+
 object FixedSizedHashIDMap {
 
     def apply[K <: AnyRef: ClassTag, V: ClassTag](

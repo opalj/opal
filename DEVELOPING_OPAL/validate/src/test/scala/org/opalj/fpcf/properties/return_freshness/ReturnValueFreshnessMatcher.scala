@@ -3,6 +3,7 @@ package org.opalj
 package fpcf
 package properties
 package return_freshness
+
 import org.opalj.br.AnnotationLike
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project

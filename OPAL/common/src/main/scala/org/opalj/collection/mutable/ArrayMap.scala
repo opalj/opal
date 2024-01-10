@@ -227,6 +227,7 @@ class ArrayMap[T >: Null <: AnyRef: ClassTag] private (private var data: Array[T
     override def toString: String = mkString("ArrayMap(", ", ", ")")
 
 }
+
 object ArrayMap {
 
     /**

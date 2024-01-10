@@ -28,6 +28,7 @@ case class InnerClassTable(innerClasses: InnerClasses) extends Attribute {
     }
 
 }
+
 object InnerClassTable {
 
     final val KindId = 9

@@ -72,6 +72,7 @@ class MethodsWithLoopsTest extends AnyFlatSpec with Matchers {
     }
 
 }
+
 object MethodsWithLoopsTest {
 
     val classFiles = ClassFiles(locateTestResources("ai-9.jar", "bi"))

@@ -98,6 +98,7 @@ case class RET(
 
     override final def toString(currentPC: Int): String = toString()
 }
+
 object RET extends InstructionMetaInformation {
 
     final val opcode = 169

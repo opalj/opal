@@ -622,6 +622,7 @@ case class Code(instructions: Array[Byte]) {
         exceptions
     }
 }
+
 object Code {
 
     def id(methodIndex: Int, pc: Int): String = s"m${methodIndex}_pc$pc"
