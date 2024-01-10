@@ -105,7 +105,9 @@ sealed trait TACode[P <: AnyRef, V <: Var[V]] extends Attribute with CodeSequenc
 
     protected[this] def toString(taCodeType: String, additionalParameters: String): String = {
         val txtParams = s"params=($params)"
-        val stmtsWithIndex = stmts.iterator.zipWithIndex.map { e => val (s, i) = e; s"$i: $s" }
+        val stmtsWithIndex = stmts.iterator.zipWithIndex.map { e =>
+            val (s, i) = e; s"$i: $s"
+        }
         val txtStmts = stmtsWithIndex.mkString("stmts=(\n\t", ",\n\t", "\n)")
         val txtExceptionHandlers =
             if (exceptionHandlers.nonEmpty)

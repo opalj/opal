@@ -55,9 +55,9 @@ class IFDSFact[Fact <: AbstractIFDSFact, S <: Statement[_, _]](
         case other: IFDSFact[Fact @unchecked, S @unchecked] =>
             this.eq(other) ||
                 (this.hashCode() == other.hashCode()
-                    && this.fact == other.fact
-                    && this.isUnbalancedReturn == other.isUnbalancedReturn
-                    && this.callStmt == other.callStmt)
+                && this.fact == other.fact
+                && this.isUnbalancedReturn == other.isUnbalancedReturn
+                && this.callStmt == other.callStmt)
         case _ => false
     }
 
@@ -305,9 +305,8 @@ class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C,
      * @return A map, mapping from each exit statement to the facts, which flow into exit statement.
      */
     private def collectResult(implicit state: State): Map[S, Set[Fact]] = {
-        state.endSummaries.foldLeft(Map.empty[S, Set[Fact]])(
-            (result, entry) =>
-                result.updated(entry._1, result.getOrElse(entry._1, Set.empty[Fact]) + entry._2)
+        state.endSummaries.foldLeft(Map.empty[S, Set[Fact]])((result, entry) =>
+            result.updated(entry._1, result.getOrElse(entry._1, Set.empty[Fact]) + entry._2)
         )
     }
 
@@ -384,7 +383,7 @@ class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C,
                 case Some(outsideAnalysisHandler) =>
                     outsideAnalysisHandler
                 case None => (call: S, successor: Option[S], in: Fact, _: Seq[Callable], _: Getter) =>
-                    concreteCallFlow(call, callee, in, successor)
+                        concreteCallFlow(call, callee, in, successor)
             }
             for {
                 successor <- successors
@@ -466,7 +465,8 @@ class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C,
                 state.selfDependees.foreach(selfDependee => worklist.enqueue(selfDependee))
 
                 if (ifdsProblem.enableUnbalancedReturns &&
-                    ifdsProblem.shouldPerformUnbalancedReturn(state.source)) {
+                    ifdsProblem.shouldPerformUnbalancedReturn(state.source)
+                ) {
                     handleUnbalancedReturn(statement, in)
                 }
             }
@@ -539,7 +539,8 @@ class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C,
 
         // ifds line 9
         if (successor.isEmpty // last statement was reached, must be processed to trigger handleExit
-            || state.pathEdges.add(successor.get, out, predecessorOption)) {
+            || state.pathEdges.add(successor.get, out, predecessorOption)
+        ) {
             worklist.enqueue((successor, new IFDSFact(out), Some(predecessor)))
         }
     }
@@ -617,8 +618,7 @@ class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C,
     }
 
     private def subsumes(existingFacts: Set[Fact], newFact: Fact)(
-        implicit
-        project: SomeProject
+        implicit project: SomeProject
     ): Boolean = {
         statistics.subsumeTries += 1
         if (ifdsProblem.subsumeFacts && existingFacts.exists(_.subsumes(newFact, project))) {

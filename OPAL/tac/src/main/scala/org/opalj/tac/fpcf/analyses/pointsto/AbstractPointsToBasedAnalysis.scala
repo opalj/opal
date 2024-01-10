@@ -49,7 +49,7 @@ trait AbstractPointsToBasedAnalysis extends FPCFAnalysis with ContextualAnalysis
         callContext:   ContextType,
         allocatedType: ReferenceType,
         isConstant:    Boolean,
-        isEmptyArray:  Boolean       = false
+        isEmptyArray:  Boolean = false
     ): PointsToSet
 
     @inline protected[this] def getTypeOf(element: ElementType): ReferenceType

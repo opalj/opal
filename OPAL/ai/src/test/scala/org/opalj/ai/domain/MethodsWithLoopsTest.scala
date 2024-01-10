@@ -67,7 +67,8 @@ class MethodsWithLoopsTest extends AnyFlatSpec with Matchers {
             with IgnoreSynchronization
 
         val method = findMethod("endless")
-        /*val result =*/ BaseAI(method, MostBasicDomain)
+        /*val result =*/
+        BaseAI(method, MostBasicDomain)
         // if we reach this point, everything is OK
     }
 

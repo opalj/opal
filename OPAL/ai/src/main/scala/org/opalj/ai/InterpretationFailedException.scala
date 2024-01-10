@@ -64,7 +64,8 @@ object InterpretationFailedException {
 
             val operandsArray: theDomain.OperandsArray = theOperandsArray
             val localsArray: theDomain.LocalsArray = theLocalsArray
-            val memoryLayoutBeforeSubroutineCall: List[(Int /*PC*/, theDomain.OperandsArray, theDomain.LocalsArray)] = theMemoryLayoutBeforeSubroutineCall
+            val memoryLayoutBeforeSubroutineCall: List[(Int /*PC*/, theDomain.OperandsArray, theDomain.LocalsArray)] =
+                theMemoryLayoutBeforeSubroutineCall
 
             override final def toString: String = {
                 s"InterpretationFailedException(\n\tdomain=$domain," +
@@ -76,13 +77,13 @@ object InterpretationFailedException {
                         else
                             s"\n\toperands=N/A (the pc is invalid: $pc)"
                     ) +
-                        (
-                            if (pc < theLocalsArray.length)
-                                s"\n\tregisters=${localsArray(pc).zipWithIndex.map(_.swap).mkString(",")}"
-                            else
-                                s"\n\tregisters=N/A (the pc is invalid: $pc)"
-                        ) +
-                            s"\n)"
+                    (
+                        if (pc < theLocalsArray.length)
+                            s"\n\tregisters=${localsArray(pc).zipWithIndex.map(_.swap).mkString(",")}"
+                        else
+                            s"\n\tregisters=N/A (the pc is invalid: $pc)"
+                    ) +
+                    s"\n)"
             }
 
             override final def getMessage(): String = toString

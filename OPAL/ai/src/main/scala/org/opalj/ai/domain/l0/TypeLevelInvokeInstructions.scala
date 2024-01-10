@@ -21,7 +21,8 @@ import org.opalj.br.ReferenceType
 trait TypeLevelInvokeInstructions extends MethodCallsHandling {
     domain: ReferenceValuesDomain with TypedValuesFactory with Configuration with TheCode =>
 
-    /*override*/ def invokevirtual(
+    /*override*/
+    def invokevirtual(
         pc:               Int,
         declaringClass:   ReferenceType,
         name:             String,
@@ -31,7 +32,8 @@ trait TypeLevelInvokeInstructions extends MethodCallsHandling {
         handleInstanceBasedInvoke(pc, methodDescriptor, operands)
     }
 
-    /*override*/ def invokeinterface(
+    /*override*/
+    def invokeinterface(
         pc:               Int,
         declaringClass:   ObjectType,
         name:             String,
@@ -41,7 +43,8 @@ trait TypeLevelInvokeInstructions extends MethodCallsHandling {
         handleInstanceBasedInvoke(pc, methodDescriptor, operands)
     }
 
-    /*override*/ def invokespecial(
+    /*override*/
+    def invokespecial(
         pc:               Int,
         declaringClass:   ObjectType,
         isInterface:      Boolean,
@@ -52,7 +55,8 @@ trait TypeLevelInvokeInstructions extends MethodCallsHandling {
         handleInstanceBasedInvoke(pc, methodDescriptor, receiverIsNull = No)
     }
 
-    /*override*/ def invokestatic(
+    /*override*/
+    def invokestatic(
         pc:               Int,
         declaringClass:   ObjectType,
         isInterface:      Boolean,
@@ -63,7 +67,8 @@ trait TypeLevelInvokeInstructions extends MethodCallsHandling {
         handleInvoke(pc, methodDescriptor)
     }
 
-    /*override*/ def invokedynamic(
+    /*override*/
+    def invokedynamic(
         pc:               Int,
         bootstrapMethod:  BootstrapMethod,
         name:             String,

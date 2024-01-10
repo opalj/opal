@@ -662,9 +662,10 @@ object GenericType {
         cts match {
 
             case ClassTypeSignature(
-                _,
-                SimpleClassTypeSignature(_, typeArgs),
-                Nil) if typeArgs.nonEmpty =>
+                    _,
+                    SimpleClassTypeSignature(_, typeArgs),
+                    Nil
+                ) if typeArgs.nonEmpty =>
                 Some((cts.objectType, typeArgs))
 
             case _ =>
@@ -690,9 +691,10 @@ object GenericTypeWithClassSuffix {
         cts match {
 
             case ClassTypeSignature(
-                _,
-                SimpleClassTypeSignature(_, typeArgs),
-                suffix) if suffix.nonEmpty =>
+                    _,
+                    SimpleClassTypeSignature(_, typeArgs),
+                    suffix
+                ) if suffix.nonEmpty =>
                 Some((cts.objectType, typeArgs, suffix))
 
             case _ =>
@@ -723,11 +725,12 @@ object SimpleGenericType {
         cts match {
 
             case ClassTypeSignature(
-                cpn,
-                SimpleClassTypeSignature(
-                    csn,
-                    List(ProperTypeArgument(None, ConcreteType(tp)))),
-                Nil
+                    cpn,
+                    SimpleClassTypeSignature(
+                        csn,
+                        List(ProperTypeArgument(None, ConcreteType(tp)))
+                    ),
+                    Nil
                 ) =>
                 Some((ObjectType(cpn.getOrElse("") + csn), tp))
 

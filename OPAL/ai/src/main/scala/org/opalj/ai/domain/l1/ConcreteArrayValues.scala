@@ -131,7 +131,7 @@ trait ConcreteArrayValues
             val values: Array[DomainValue],
             refId:      RefId
     ) extends ArrayValue(origin, isNull = No, isPrecise = true, theType, refId) { ... }
-    */
+     */
 
     protected trait ConcreteArrayValue extends ArrayValue { this: DomainConcreteArrayValue =>
 
@@ -158,9 +158,7 @@ trait ConcreteArrayValues
                 );
             }
 
-            intValue[ArrayLoadResult](index) { index =>
-                ComputedValue(values(index))
-            } {
+            intValue[ArrayLoadResult](index) { index => ComputedValue(values(index)) } {
                 // This handles the case that we know that the index is not precise
                 // but it is still known to be valid.
                 super.doLoad(loadPC, index, potentialExceptions)
@@ -347,7 +345,8 @@ trait ConcreteArrayValues
                 pc * ConcreteArrayValues.MaxPossibleArraySize
         }
         val array: Array[DomainValue] = new Array[DomainValue](size)
-        var i = 0; while (i < size) {
+        var i = 0
+        while (i < size) {
             // We initialize each element with a new instance and also
             // assign each value with a unique PC.
             array(i) = DefaultValue(virtualOrigin + i, arrayType.componentType)
@@ -362,9 +361,7 @@ trait ConcreteArrayValues
         counts:    Operands,
         arrayType: ArrayType
     ): DomainArrayValue = {
-        intValue(counts.last) { length =>
-            InitializedArrayValue(origin, arrayType, length)
-        } {
+        intValue(counts.last) { length => InitializedArrayValue(origin, arrayType, length) } {
             super.NewArray(origin, counts, arrayType)
         }
     }

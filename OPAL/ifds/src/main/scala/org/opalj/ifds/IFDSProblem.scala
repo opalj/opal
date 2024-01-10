@@ -133,7 +133,13 @@ abstract class IFDSProblem[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement
     def createCallable(callable: C): Callable
 
     type OutsideAnalysisContextCallHandler = ((S, Option[S], Fact, Seq[Callable], Getter) => Set[Fact]) {
-        def apply(call: S, successor: Option[S], in: Fact, unbCallChain: Seq[Callable], dependeesGetter: Getter): Set[Fact]
+        def apply(
+            call:            S,
+            successor:       Option[S],
+            in:              Fact,
+            unbCallChain:    Seq[Callable],
+            dependeesGetter: Getter
+        ): Set[Fact]
     }
 
     /**

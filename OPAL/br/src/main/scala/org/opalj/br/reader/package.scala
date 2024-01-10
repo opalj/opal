@@ -50,7 +50,7 @@ package object reader {
     def readClassFiles(
         files:            Iterable[File],
         classFilesReader: (File, (Source, Throwable) => Unit) => Iterable[(ClassFile, URL)],
-        perFile:          File => Unit                                                      = (f: File) => { /*do nothing*/ }
+        perFile:          File => Unit = (f: File) => { /*do nothing*/ }
     ): (Iterable[(ClassFile, URL)], List[Throwable]) = {
         val exceptionsMutex = new Object
         var exceptions: List[Throwable] = Nil

@@ -44,8 +44,7 @@ sealed abstract class Stmt[+V <: Var[V]] extends ASTNode[V] {
     ): Unit
 
     override def toCanonicalForm(
-        implicit
-        ev: V <:< DUVar[ValueInformation]
+        implicit ev: V <:< DUVar[ValueInformation]
     ): Stmt[DUVar[ValueInformation]]
 
     // TYPE CONVERSION METHODS
@@ -68,8 +67,10 @@ sealed abstract class Stmt[+V <: Var[V]] extends ASTNode[V] {
     def asFieldWriteAccessStmt: FieldWriteAccessStmt[V] = throw new ClassCastException();
     def asPutStatic: PutStatic[V] = throw new ClassCastException();
     def asPutField: PutField[V] = throw new ClassCastException();
-    /*inner type*/ def asMethodCall: MethodCall[V] = throw new ClassCastException();
-    /*inner type*/ def asInstanceMethodCall: InstanceMethodCall[V] = throw new ClassCastException();
+    /*inner type*/
+    def asMethodCall: MethodCall[V] = throw new ClassCastException();
+    /*inner type*/
+    def asInstanceMethodCall: InstanceMethodCall[V] = throw new ClassCastException();
     def asNonVirtualMethodCall: NonVirtualMethodCall[V] = throw new ClassCastException();
     def asVirtualMethodCall: VirtualMethodCall[V] = throw new ClassCastException();
     def asStaticMethodCall: StaticMethodCall[V] = throw new ClassCastException();
@@ -141,8 +142,7 @@ case class If[+V <: Var[V]](
     }
 
     override final def toCanonicalForm(
-        implicit
-        ev: V <:< DUVar[ValueInformation]
+        implicit ev: V <:< DUVar[ValueInformation]
     ): Stmt[DUVar[ValueInformation]] = {
         If(pc, left.toCanonicalForm, condition, right.toCanonicalForm, target)
     }
@@ -163,8 +163,7 @@ object If {
 trait VariableFreeStmt extends Stmt[Nothing] {
 
     override final def toCanonicalForm(
-        implicit
-        ev: Nothing <:< DUVar[ValueInformation]
+        implicit ev: Nothing <:< DUVar[ValueInformation]
     ): Stmt[DUVar[ValueInformation]] = {
         this
     }
@@ -319,8 +318,7 @@ case class Switch[+V <: Var[V]](
     }
 
     override final def toCanonicalForm(
-        implicit
-        ev: V <:< DUVar[ValueInformation]
+        implicit ev: V <:< DUVar[ValueInformation]
     ): Stmt[DUVar[ValueInformation]] = {
         Switch(pc, defaultTarget, index.toCanonicalForm, npairs)
     }
@@ -387,8 +385,7 @@ case class Assignment[+V <: Var[V]](
     }
 
     override final def toCanonicalForm(
-        implicit
-        ev: V <:< DUVar[ValueInformation]
+        implicit ev: V <:< DUVar[ValueInformation]
     ): Stmt[DUVar[ValueInformation]] = {
         Assignment(pc, ev(targetVar).toCanonicalForm, expr.toCanonicalForm)
     }
@@ -422,8 +419,7 @@ case class ReturnValue[+V <: Var[V]](pc: Int, expr: Expr[V]) extends Stmt[V] {
     }
 
     override final def toCanonicalForm(
-        implicit
-        ev: V <:< DUVar[ValueInformation]
+        implicit ev: V <:< DUVar[ValueInformation]
     ): Stmt[DUVar[ValueInformation]] = {
         ReturnValue(pc, expr.toCanonicalForm)
     }
@@ -540,8 +536,7 @@ case class MonitorEnter[+V <: Var[V]](pc: PC, objRef: Expr[V]) extends Synchroni
     }
 
     override final def toCanonicalForm(
-        implicit
-        ev: V <:< DUVar[ValueInformation]
+        implicit ev: V <:< DUVar[ValueInformation]
     ): Stmt[DUVar[ValueInformation]] = {
         MonitorEnter(pc, objRef.toCanonicalForm)
     }
@@ -568,8 +563,7 @@ case class MonitorExit[+V <: Var[V]](pc: PC, objRef: Expr[V]) extends Synchroniz
     }
 
     override final def toCanonicalForm(
-        implicit
-        ev: V <:< DUVar[ValueInformation]
+        implicit ev: V <:< DUVar[ValueInformation]
     ): Stmt[DUVar[ValueInformation]] = {
         MonitorExit(pc, objRef.toCanonicalForm)
     }
@@ -611,8 +605,7 @@ case class ArrayStore[+V <: Var[V]](
     }
 
     override final def toCanonicalForm(
-        implicit
-        ev: V <:< DUVar[ValueInformation]
+        implicit ev: V <:< DUVar[ValueInformation]
     ): Stmt[DUVar[ValueInformation]] = {
         ArrayStore(pc, arrayRef.toCanonicalForm, index.toCanonicalForm, value.toCanonicalForm)
     }
@@ -641,8 +634,7 @@ case class Throw[+V <: Var[V]](pc: PC, exception: Expr[V]) extends Stmt[V] {
     }
 
     override final def toCanonicalForm(
-        implicit
-        ev: V <:< DUVar[ValueInformation]
+        implicit ev: V <:< DUVar[ValueInformation]
     ): Stmt[DUVar[ValueInformation]] = {
         Throw(pc, exception.toCanonicalForm)
     }
@@ -697,8 +689,7 @@ case class PutStatic[+V <: Var[V]](
     }
 
     override final def toCanonicalForm(
-        implicit
-        ev: V <:< DUVar[ValueInformation]
+        implicit ev: V <:< DUVar[ValueInformation]
     ): Stmt[DUVar[ValueInformation]] = {
         PutStatic(pc, declaringClass, name, declaredFieldType, value.toCanonicalForm)
     }
@@ -746,8 +737,7 @@ case class PutField[+V <: Var[V]](
     }
 
     override final def toCanonicalForm(
-        implicit
-        ev: V <:< DUVar[ValueInformation]
+        implicit ev: V <:< DUVar[ValueInformation]
     ): Stmt[DUVar[ValueInformation]] = {
         val newObjRef = objRef.toCanonicalForm
         val newValue = value.toCanonicalForm
@@ -851,8 +841,7 @@ case class NonVirtualMethodCall[+V <: Var[V]](
     }
 
     override final def toCanonicalForm(
-        implicit
-        ev: V <:< DUVar[ValueInformation]
+        implicit ev: V <:< DUVar[ValueInformation]
     ): Stmt[DUVar[ValueInformation]] = {
         NonVirtualMethodCall(
             pc,
@@ -892,8 +881,7 @@ case class VirtualMethodCall[+V <: Var[V]](
     override final def astID: Int = VirtualMethodCall.ASTID
 
     override final def toCanonicalForm(
-        implicit
-        ev: V <:< DUVar[ValueInformation]
+        implicit ev: V <:< DUVar[ValueInformation]
     ): Stmt[DUVar[ValueInformation]] = {
         VirtualMethodCall(
             pc,
@@ -964,8 +952,7 @@ case class StaticMethodCall[+V <: Var[V]](
     }
 
     override final def toCanonicalForm(
-        implicit
-        ev: V <:< DUVar[ValueInformation]
+        implicit ev: V <:< DUVar[ValueInformation]
     ): Stmt[DUVar[ValueInformation]] = {
         StaticMethodCall(
             pc,
@@ -1027,8 +1014,7 @@ case class InvokedynamicMethodCall[+V <: Var[V]](
     }
 
     override final def toCanonicalForm(
-        implicit
-        ev: V <:< DUVar[ValueInformation]
+        implicit ev: V <:< DUVar[ValueInformation]
     ): Stmt[DUVar[ValueInformation]] = {
         InvokedynamicMethodCall(
             pc,
@@ -1075,8 +1061,7 @@ case class ExprStmt[+V <: Var[V]](pc: Int, expr: Expr[V]) extends AssignmentLike
     override def hashCode(): Opcode = (ExprStmt.ASTID * 1171 + pc) * 31 + expr.hashCode
 
     override final def toCanonicalForm(
-        implicit
-        ev: V <:< DUVar[ValueInformation]
+        implicit ev: V <:< DUVar[ValueInformation]
     ): Stmt[DUVar[ValueInformation]] = {
         ExprStmt(pc, expr.toCanonicalForm)
     }
@@ -1161,8 +1146,7 @@ case class CaughtException[+V <: Var[V]](
     }
 
     override final def toCanonicalForm(
-        implicit
-        ev: V <:< DUVar[ValueInformation]
+        implicit ev: V <:< DUVar[ValueInformation]
     ): Stmt[DUVar[ValueInformation]] = {
         this.asInstanceOf[Stmt[DUVar[ValueInformation]]]
     }
@@ -1235,8 +1219,7 @@ case class Checkcast[+V <: Var[V]](pc: PC, value: Expr[V], cmpTpe: ReferenceType
     }
 
     override final def toCanonicalForm(
-        implicit
-        ev: V <:< DUVar[ValueInformation]
+        implicit ev: V <:< DUVar[ValueInformation]
     ): Stmt[DUVar[ValueInformation]] = {
         Checkcast(pc, value.toCanonicalForm, cmpTpe)
     }

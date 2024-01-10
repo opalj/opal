@@ -33,17 +33,21 @@ abstract class EscapePropertyMatcher(
         a:      AnnotationLike
     ): Boolean = {
         // check whether the analyses specified in the annotation are present
-        val analysesElementValues = getValue(p, a.annotationType.asObjectType, a.elementValuePairs, "analyses").asArrayValue.values
+        val analysesElementValues =
+            getValue(p, a.annotationType.asObjectType, a.elementValuePairs, "analyses").asArrayValue.values
         val analyses = analysesElementValues map { _.asClassValue.value.asObjectType }
         val analysisRelevant = analyses.exists(as.contains)
 
         // check whether the PerformInvokations domain or the ArrayValuesBinding domain are required
-        val requiresPerformInvokationsDomain = getValue(p, a.annotationType.asObjectType, a.elementValuePairs, "performInvokationsDomain").asInstanceOf[BooleanValue].value
-        //val requiresArrayDomain = getValue(p, a.annotationType.asObjectType, a.elementValuePairs, "arrayDomain").asInstanceOf[BooleanValue].value
+        val requiresPerformInvokationsDomain =
+            getValue(p, a.annotationType.asObjectType, a.elementValuePairs, "performInvokationsDomain")
+                .asInstanceOf[BooleanValue].value
+        // val requiresArrayDomain = getValue(p, a.annotationType.asObjectType, a.elementValuePairs, "arrayDomain").asInstanceOf[BooleanValue].value
 
         // retrieve the current method and using this the domain used for the TAC
         val m = entity match {
-            case (_, VirtualFormalParameter(dm: DefinedMethod, _)) if dm.declaringClassType == dm.definedMethod.classFile.thisType =>
+            case (_, VirtualFormalParameter(dm: DefinedMethod, _))
+                if dm.declaringClassType == dm.definedMethod.classFile.thisType =>
                 dm.definedMethod
             case (_, VirtualFormalParameter(dm: DefinedMethod, _)) => return false;
             case (_, DefinitionSite(m, _))                         => m
@@ -73,9 +77,10 @@ abstract class EscapePropertyMatcher(
         properties: Iterable[Property]
     ): Option[String] = {
         if (!properties.exists {
-            case `property` => true
-            case _          => false
-        }) {
+                case `property` => true
+                case _          => false
+            }
+        ) {
             Some(a.elementValuePairs.head.value.asStringValue.value)
         } else {
             None

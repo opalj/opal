@@ -26,8 +26,7 @@ case class Code(instructions: Array[Byte]) {
         exceptionTable:  ExceptionTable,
         lineNumberTable: Option[Seq[LineNumberTableEntry]]
     )(
-        implicit
-        cp: Constant_Pool
+        implicit cp: Constant_Pool
     ): Node = {
 
         val instructions = InstructionsToXHTML(methodIndex, this.instructions)
@@ -54,13 +53,8 @@ case class Code(instructions: Array[Byte]) {
                     pc <- (0 until instructions.length)
                     if instructions(pc) != null
                 } yield {
-                    val exceptionInfo =
-                        exceptions.foldRight(Seq.empty[Node]) { (a, b) =>
-                            Seq(a(pc)) ++ b
-                        }
-                    createTableRowForInstruction(
-                        methodIndex, instructions(pc), exceptionInfo, pc, lineNumberTable
-                    )
+                    val exceptionInfo = exceptions.foldRight(Seq.empty[Node]) { (a, b) => Seq(a(pc)) ++ b }
+                    createTableRowForInstruction(methodIndex, instructions(pc), exceptionInfo, pc, lineNumberTable)
                 }
             }
         </table>
@@ -93,8 +87,7 @@ case class Code(instructions: Array[Byte]) {
         methodIndex: Int,
         source:      Array[Byte]
     )(
-        implicit
-        cp: Constant_Pool
+        implicit cp: Constant_Pool
     ): Array[Node] = {
         import java.io.DataInputStream
         import java.io.ByteArrayInputStream
@@ -462,7 +455,9 @@ case class Code(instructions: Array[Byte]) {
                     repeat(npairsCount) {
                         table.append("(case:" + in.readInt + "," + (in.readInt + pc) + ") ")
                     }
-                    <span><span class="instruction lookupswitch">lookupswitch </span>default:{defaultTarget} [{table}]</span>
+                    <span><span class="instruction lookupswitch">lookupswitch </span>default:{defaultTarget} [{
+                        table
+                    }]</span>
                 case 129 => <span class="instruction lor">lor</span>
                 case 113 => <span class="instruction lrem">lrem</span>
                 case 173 => <span class="instruction lreturn">lreturn</span>
@@ -548,7 +543,9 @@ case class Code(instructions: Array[Byte]) {
                         switchTargets.append("(case " + (low + offsetcounter) + " &rarr; " + target + ") ")
                         offsetcounter += 1;
                     }
-                    <span><span class="instruction tableswitch">tableswitch </span>default &rarr; {Unparsed(defaultTarget)}; {Unparsed(switchTargets.toString)}</span>
+                    <span><span class="instruction tableswitch">tableswitch </span>default &rarr; {
+                        Unparsed(defaultTarget)
+                    }; {Unparsed(switchTargets.toString)}</span>
                 case 196 =>
                     wide = true
                     <span class="instruction wide">wide</span>
@@ -564,8 +561,7 @@ case class Code(instructions: Array[Byte]) {
         instructions:   Array[Node],
         exceptionTable: ExceptionTable
     )(
-        implicit
-        cp: Constant_Pool
+        implicit cp: Constant_Pool
     ): Array[Array[Node]] = {
         val exceptions: Array[Array[Node]] = new Array(exceptionTable.size)
         for { (exceptionHandler, index) <- exceptionTable.iterator.zipWithIndex } {
@@ -610,12 +606,16 @@ case class Code(instructions: Array[Byte]) {
             else
                 exceptions(index)(exceptionHandler.handler_pc) =
                     <td class="exception">
-                        <div title={exceptionName} class="exception_handler" alt="the start of the exception handler"></div>
+                        <div title={
+                            exceptionName
+                        } class="exception_handler" alt="the start of the exception handler"></div>
                     </td>
 
             exceptions(index)(exceptionPCStart) =
                 <td rowspan={exceptionPCLength.toString} class="exception">
-                    <span data-exception-index={(index + 1).toString} alt="the ranges in the code array at which the exception handler is active">{exceptionName}</span>
+                    <span data-exception-index={
+                        (index + 1).toString
+                    } alt="the ranges in the code array at which the exception handler is active">{exceptionName}</span>
                     <div class={classes} title={exceptionName}> </div>
                 </td>
         }

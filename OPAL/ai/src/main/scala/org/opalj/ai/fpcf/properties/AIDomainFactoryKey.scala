@@ -67,15 +67,15 @@ object AIDomainFactoryKey
     ): ProjectSpecificAIExecutor = {
         implicit val logContext: LogContext = project.logContext
 
-        val domainFactoryRequirements = project.
-            getProjectInformationKeyInitializationData(this).
-            getOrElse(Set.empty)
+        val domainFactoryRequirements = project.getProjectInformationKeyInitializationData(this).getOrElse(Set.empty)
 
         val theDomainFactories = domainFactories(domainFactoryRequirements)
 
         if (theDomainFactories.isEmpty) {
             val message = domainFactoryRequirements.mkString(
-                "no abstract domain that satisfies the requirements: {", ", ", "} exists."
+                "no abstract domain that satisfies the requirements: {",
+                ", ",
+                "} exists."
             )
             throw new IllegalArgumentException(message)
         }

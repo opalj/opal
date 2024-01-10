@@ -94,17 +94,11 @@ trait ComputationSpecification[A] {
         val uses = this.uses(ps).iterator.map(_.toSpecification).mkString("uses={", ", ", "}")
 
         val derivesLazily =
-            this.derivesLazily.iterator.
-                map(_.toSpecification).
-                mkString("derivesLazily={", ", ", "}")
+            this.derivesLazily.iterator.map(_.toSpecification).mkString("derivesLazily={", ", ", "}")
         val derivesEagerly =
-            this.derivesEagerly.iterator.
-                map(_.toSpecification).
-                mkString("derivesEagerly={", ", ", "}")
+            this.derivesEagerly.iterator.map(_.toSpecification).mkString("derivesEagerly={", ", ", "}")
         val derivesCollaboratively =
-            this.derivesCollaboratively.iterator.
-                map(_.toSpecification).
-                mkString("derivesCollaboratively={", ", ", "}")
+            this.derivesCollaboratively.iterator.map(_.toSpecification).mkString("derivesCollaboratively={", ", ", "}")
 
         s"ComputationSpecification(name=$name,type=$computationType," +
             s"$uses,$derivesLazily,$derivesEagerly,$derivesCollaboratively)"
@@ -168,8 +162,11 @@ trait ComputationSpecification[A] {
 trait SimpleComputationSpecification[A] extends ComputationSpecification[A] {
 
     override final type InitializationData = Null
+
     override final def init(ps: PropertyStore): Null = null
+
     override final def beforeSchedule(ps: PropertyStore): Unit = {}
+
     override final def afterPhaseScheduling(ps: PropertyStore, analysis: A): Unit = {}
     override final def afterPhaseCompletion(ps: PropertyStore, analysis: A): Unit = {}
 

@@ -60,8 +60,8 @@ object BitArraySetProperties extends Properties("BitArraySetProperties") {
             classify(s.nonEmpty && s.max < 32, "set with max value < 32") {
                 classify(s.nonEmpty && s.max >= 32 && s.max < 64, "set with max value >=32 && < 64") {
                     (bas.isEmpty == s.isEmpty) :| "isEmpty" &&
-                        bas.iterator.forall(s.contains) :| "all values in the bit array set were added" &&
-                        s.iterator.forall(bas.contains) :| "the bit array set contains all values"
+                    bas.iterator.forall(s.contains) :| "all values in the bit array set were added" &&
+                    s.iterator.forall(bas.contains) :| "the bit array set contains all values"
                 }
             }
         }
@@ -97,7 +97,7 @@ object BitArraySetProperties extends Properties("BitArraySetProperties") {
             classify(s1.nonEmpty && s2.nonEmpty && s1.max < 64 && s2.max < 64, "both sets max value < 64") {
                 classify(s1.size <= s2.size, "|s1| <= |s2|", "|s1| > |s2|") {
                     bas3.iterator.forall(s3.contains) :| "all values in the bit array set were added" &&
-                        s3.iterator.forall(bas3.contains) :| "the bit array set does not contain all values"
+                    s3.iterator.forall(bas3.contains) :| "the bit array set does not contain all values"
                 }
             }
         }

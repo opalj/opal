@@ -53,9 +53,7 @@ case class CHECKCAST(
         if (regularSuccessorsOnly)
             List(indexOfNextInstruction(currentPC))
         else
-            Instruction.nextInstructionOrExceptionHandler(
-                this, currentPC, ObjectType.ClassCastException
-            )
+            Instruction.nextInstructionOrExceptionHandler(this, currentPC, ObjectType.ClassCastException)
     }
 
     final def expressionResult: Stack.type = Stack

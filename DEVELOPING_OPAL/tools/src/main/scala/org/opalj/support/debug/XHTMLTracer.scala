@@ -138,9 +138,7 @@ trait XHTMLTracer extends AITracer {
                 val flowEntity = path.find(_.pc == pc)
                 <td>
                     {
-                        flowEntity.
-                            map(fe => instructionToNode(fe.flowId, pc, fe.instruction)).
-                            getOrElse(xml.Text(" "))
+                        flowEntity.map(fe => instructionToNode(fe.flowId, pc, fe.instruction)).getOrElse(xml.Text(" "))
                     }
                 </td>
             })
@@ -349,7 +347,9 @@ trait XHTMLTracer extends AITracer {
     override def jumpToSubroutine(
         domain: Domain
     )(
-        pc: Int, target: Int, nestingLevel: Int
+        pc:           Int,
+        target:       Int,
+        nestingLevel: Int
     ): Unit = { /* ignored */ }
 
     override def returnFromSubroutine(

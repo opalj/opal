@@ -203,8 +203,8 @@ class MethodLocation(
         super.locationAsIDL + (
             "method" -> (
                 methodToIDL(method.accessFlags, method.name, method.descriptor) +
-                ("signature" -> JsString(methodJVMSignature)) +
-                ("firstLine" -> Json.toJson(firstLineOfMethod))
+                    ("signature" -> JsString(methodJVMSignature)) +
+                    ("firstLine" -> Json.toJson(firstLineOfMethod))
             )
         )
     }

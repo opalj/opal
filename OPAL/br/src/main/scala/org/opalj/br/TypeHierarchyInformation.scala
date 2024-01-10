@@ -73,8 +73,11 @@ object SubtypeInformation {
         override final def classTypes: UIDSet[ObjectType] = UIDSet.empty
         override final def interfaceTypes: UIDSet[ObjectType] = UIDSet.empty
         override final def allTypes: UIDSet[ObjectType] = UIDSet.empty
+
         override final def contains(t: ObjectType): Boolean = false
+
         override private[br] final def containsId(objectTypeId: Int): Boolean = false
+
         override final def iterator: Iterator[ObjectType] = Iterator.empty
     }
 
@@ -190,7 +193,9 @@ object SupertypeInformation {
         override final def interfaceTypes: UIDSet[ObjectType] = UIDSet.empty
         override final def allTypes: UIDSet[ObjectType] = UIDSet.empty
         override final def iterator: Iterator[ObjectType] = Iterator.empty
+
         override final def contains(t: ObjectType): Boolean = t eq ObjectType.Object
+
         override private[br] final def containsId(objectTypeId: Int): Boolean = false
     }
 
@@ -199,7 +204,9 @@ object SupertypeInformation {
         override final def interfaceTypes: UIDSet[ObjectType] = UIDSet.empty
         override final def allTypes: UIDSet[ObjectType] = UIDSet.empty
         override final def iterator: Iterator[ObjectType] = Iterator.empty
+
         override final def contains(t: ObjectType): Boolean = false
+
         override private[br] final def containsId(objectTypeId: Int): Boolean = false
     }
 

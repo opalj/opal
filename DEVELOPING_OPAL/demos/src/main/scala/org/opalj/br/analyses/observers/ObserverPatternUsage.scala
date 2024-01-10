@@ -52,7 +52,8 @@ object ObserverPatternUsage extends ProjectAnalysisApplication {
                 // this is the Fully Qualified binary Name (fqn) e.g., java/lang/Object
                 val fqn = objectType.fqn
                 if (!observers.contains(objectType) &&
-                    (fqn.endsWith("Observer") || fqn.endsWith("Listener"))) {
+                    (fqn.endsWith("Observer") || fqn.endsWith("Listener"))
+                ) {
                     val observerTypes = allSubtypes(objectType, true)
                     observers ++= observerTypes
                     observerTypes foreach { objectType =>
@@ -87,14 +88,15 @@ object ObserverPatternUsage extends ProjectAnalysisApplication {
                         implObsIntfs.nonEmpty && (
                             observerClassFile.methods forall { method =>
                                 method.isInitializer || method.isSynthetic ||
-                                    // one of the implemented observer interfaces defines the method
-                                    implObsIntfs.exists(observerInterface =>
-                                        project.classFile(observerInterface).isDefined &&
-                                            project.resolveInterfaceMethodReference(
-                                                observerInterface,
-                                                method.name,
-                                                method.descriptor
-                                            ).isDefined)
+                                // one of the implemented observer interfaces defines the method
+                                implObsIntfs.exists(observerInterface =>
+                                    project.classFile(observerInterface).isDefined &&
+                                        project.resolveInterfaceMethodReference(
+                                            observerInterface,
+                                            method.name,
+                                            method.descriptor
+                                        ).isDefined
+                                )
                             }
                         )
                     } else
@@ -154,10 +156,11 @@ object ObserverPatternUsage extends ProjectAnalysisApplication {
             if (hasMethodObserverParameter) {
                 observerManagementMethods += ((observable, method))
             } else if (method.body.isDefined &&
-                method.body.get.instructions.exists({
-                    case FieldReadAccess(`observableType`, name, _) if omFieldNames.contains(name) => true
-                    case _ => false
-                })) {
+                       method.body.get.instructions.exists({
+                           case FieldReadAccess(`observableType`, name, _) if omFieldNames.contains(name) => true
+                           case _                                                                         => false
+                       })
+            ) {
                 observerNotificationMethods += ((observable, method))
             }
         }
@@ -167,12 +170,24 @@ object ObserverPatternUsage extends ProjectAnalysisApplication {
         // -------------------------------------------------------------------------------
         import Console.{BOLD, RESET}
         BasicReport(
-            (BOLD + "Observer types in project (" + allObserverTypes.size + "): " + RESET + allObserverTypes.map(_.toJava).mkString(", ")) +
-                (BOLD + "Observer interfaces in application (" + appObserverInterfaces.size + "): " + RESET + appObserverInterfaces.map(_.toJava).mkString(", ")) +
-                (BOLD + "Observer classes in application (" + appObserverClasses.size + "): " + RESET + appObserverClasses.map(_.toJava).mkString(", ")) +
-                (BOLD + "Fields to store observers in application (" + observerFields.size + "): " + RESET + observerFields.map(e => e._1.thisType.toJava + "{ " + e._2.fieldType.toJava + " " + e._2.name + " }").mkString(", ")) +
-                (BOLD + "Methods to manage observers in application (" + observerManagementMethods.size + "): " + RESET + observerManagementMethods.map(e => e._1.thisType.toJava + "{ " + e._2.signatureToJava(false) + " }").mkString(", ")) +
-                (BOLD + "Methods that are related to observers in application (" + observerNotificationMethods.size + "): " + RESET + observerNotificationMethods.map(e => e._1.thisType.toJava + "{ " + e._2.signatureToJava(false) + " }").mkString(", "))
+            (BOLD + "Observer types in project (" + allObserverTypes.size + "): " +
+                RESET + allObserverTypes.map(_.toJava).mkString(", ")) +
+                (BOLD + "Observer interfaces in application (" + appObserverInterfaces.size + "): " +
+                    RESET + appObserverInterfaces.map(_.toJava).mkString(", ")) +
+                (BOLD + "Observer classes in application (" + appObserverClasses.size + "): " +
+                    RESET + appObserverClasses.map(_.toJava).mkString(", ")) +
+                (BOLD + "Fields to store observers in application (" + observerFields.size + "): " +
+                    RESET + observerFields.map(e =>
+                        e._1.thisType.toJava + "{ " + e._2.fieldType.toJava + " " + e._2.name + " }"
+                    ).mkString(", ")) +
+                (BOLD + "Methods to manage observers in application (" + observerManagementMethods.size + "): " +
+                    RESET + observerManagementMethods.map(e =>
+                        e._1.thisType.toJava + "{ " + e._2.signatureToJava(false) + " }"
+                    ).mkString(", ")) +
+                (BOLD + "Methods that are related to observers in application (" + observerNotificationMethods.size + "): " +
+                    RESET + observerNotificationMethods.map(e =>
+                        e._1.thisType.toJava + "{ " + e._2.signatureToJava(false) + " }"
+                    ).mkString(", "))
         )
     }
 }

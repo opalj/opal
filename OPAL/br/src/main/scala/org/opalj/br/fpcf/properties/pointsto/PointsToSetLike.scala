@@ -16,7 +16,8 @@ import org.opalj.fpcf.Property
  * @author Dominik Helm
  * @author Florian Kuebler
  */
-trait PointsToSetLike[ElementType, PointsToSet, T <: PointsToSetLike[ElementType, PointsToSet, T]] extends Property { self: T =>
+trait PointsToSetLike[ElementType, PointsToSet, T <: PointsToSetLike[ElementType, PointsToSet, T]] extends Property {
+    self: T =>
 
     def forNewestNTypes[U](n: Int)(f: ReferenceType => U): Unit
 
@@ -37,7 +38,9 @@ trait PointsToSetLike[ElementType, PointsToSet, T <: PointsToSetLike[ElementType
     def included(other: T, typeFilter: ReferenceType => Boolean): T
 
     def included(
-        other: T, seenElements: Int, typeFilter: ReferenceType => Boolean
+        other:        T,
+        seenElements: Int,
+        typeFilter:   ReferenceType => Boolean
     ): T
 
     def filter(typeFilter: ReferenceType => Boolean): T

@@ -378,10 +378,7 @@ class DefaultLongSetsTest extends AnyFunSpec with Matchers {
                 val v1 = LongSet(SortedSet(Long.MinValue, Long.MaxValue))
                 val v2 = LongSet(SortedSet(8L, 19L))
                 val expected =
-                    SortedSet(
-                        Long.MinValue + 8L, Long.MinValue + 19L,
-                        Long.MaxValue - 19L, Long.MaxValue - 8L
-                    )
+                    SortedSet(Long.MinValue + 8L, Long.MinValue + 19L, Long.MaxValue - 19L, Long.MaxValue - 8L)
                 lxor(-1, v1, v2) should be(LongSet(expected))
                 lxor(-1, v2, v1) should be(LongSet(expected))
             }

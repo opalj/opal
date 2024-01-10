@@ -19,7 +19,7 @@ case class Method_Info(
         access_flags:     Int,
         name_index:       Constant_Pool_Index,
         descriptor_index: Constant_Pool_Index,
-        attributes:       Attributes          = NoAttributes
+        attributes:       Attributes = NoAttributes
 ) extends ClassMember {
 
     /**
@@ -79,10 +79,13 @@ case class Method_Info(
             val codeSize = code.instructions.length
             val maxStack = codeAttribute.max_stack
             val maxLocals = codeAttribute.max_locals
-            val (lntAttributes, otherAttributes) = partitionByType(codeAttribute.attributes, classOf[LineNumberTable_attribute])
+            val (lntAttributes, otherAttributes) =
+                partitionByType(codeAttribute.attributes, classOf[LineNumberTable_attribute])
             val methodBodyHeader =
                 s"[size: $codeSize bytes, max Stack: $maxStack, max Locals: $maxLocals]"
-            <details open="" class="method" id={name + jvmDescriptor} data-index={index} data-name={name} data-access-flags={explicitAccessFlags}>
+            <details open="" class="method" id={name + jvmDescriptor} data-index={index} data-name={
+                name
+            } data-access-flags={explicitAccessFlags}>
                 <summary>
                     {Seq(declarationNode, Text(methodBodyHeader))}
                     {signatureNode}
@@ -101,7 +104,9 @@ case class Method_Info(
                 {attributes3.map(_.toXHTML)}
             </details>
         } else if (attributes3.nonEmpty) {
-            <details class="method native_or_abstract" id={name + jvmDescriptor} data-index={index} data-name={name} data-access-flags={explicitAccessFlags}>
+            <details class="method native_or_abstract" id={name + jvmDescriptor} data-index={index} data-name={
+                name
+            } data-access-flags={explicitAccessFlags}>
                 <summary>
                     {declarationNode}
                     {signatureNode}
@@ -109,7 +114,9 @@ case class Method_Info(
                 {attributes3.map(_.toXHTML)}
             </details>
         } else {
-            <div class="details method native_or_abstract" id={name + jvmDescriptor} data-index={index} data-name={name} data-access-flags={explicitAccessFlags}>
+            <div class="details method native_or_abstract" id={name + jvmDescriptor} data-index={index} data-name={
+                name
+            } data-access-flags={explicitAccessFlags}>
                 {declarationNode}
                 {signatureNode}
             </div>

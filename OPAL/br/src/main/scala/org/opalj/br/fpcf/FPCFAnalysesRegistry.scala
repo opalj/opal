@@ -118,7 +118,7 @@ object FPCFAnalysesRegistry {
             registeredAnalyses foreach { a =>
                 register(a.id, a.description, a.factory)
             }
-            */
+             */
             val registeredAnalyses = config.getObject("org.opalj.fpcf.registry.analyses")
             val entriesIterator = registeredAnalyses.entrySet.iterator
             while (entriesIterator.hasNext) {
@@ -126,7 +126,8 @@ object FPCFAnalysesRegistry {
                 val id = entry.getKey
                 val metaData = entry.getValue.asInstanceOf[ConfigObject]
                 val description = metaData.getOrDefault("description", null).unwrapped.toString
-                val default = metaData.getOrDefault("default", ConfigValueFactory.fromAnyRef(false)).unwrapped().asInstanceOf[Boolean]
+                val default = metaData.getOrDefault("default", ConfigValueFactory.fromAnyRef(false))
+                    .unwrapped().asInstanceOf[Boolean]
                 val lazyFactory = metaData.getOrDefault("lazyFactory", null)
                 if (lazyFactory ne null)
                     register(id, description, lazyFactory.unwrapped.toString, true, default)

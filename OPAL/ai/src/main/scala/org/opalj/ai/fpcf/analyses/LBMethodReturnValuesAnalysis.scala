@@ -108,9 +108,10 @@ class LBMethodReturnValuesAnalysis private[analyses] (
                     // the type hierarchy is incomplete...
                     ai.interrupt()
                 } else if (returnedReferenceValue.isNull.isUnknown &&
-                    returnedValueUTB.isSingletonSet &&
-                    returnedValueUTB.head == methodReturnType &&
-                    !returnedReferenceValue.isPrecise) {
+                           returnedValueUTB.isSingletonSet &&
+                           returnedValueUTB.head == methodReturnType &&
+                           !returnedReferenceValue.isPrecise
+                ) {
                     // we don't get more precise information
                     ai.interrupt()
                 }
@@ -186,8 +187,8 @@ object EagerLBMethodReturnValuesAnalysis extends BasicFPCFEagerAnalysisScheduler
         // To ensure that subsequent analyses are able to pick-up the results of this
         // analysis, we state that the domain that has to be used when computing
         // the AIResult has to use the (partial) domain: RefinedTypeLevelInvokeInstructions.
-        p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey)(
-            i => i.getOrElse(Set.empty) + classOf[RefinedTypeLevelInvokeInstructions]
+        p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey)(i =>
+            i.getOrElse(Set.empty) + classOf[RefinedTypeLevelInvokeInstructions]
         )
         null
     }

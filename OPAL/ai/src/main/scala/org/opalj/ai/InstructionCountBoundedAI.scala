@@ -34,9 +34,9 @@ class InstructionCountBoundedAI[D <: Domain](
      *      before the evaluation of the method is automatically interrupted.
      */
     def this(
-        code:                  Code,
-        maxEvaluationFactor:   Double  = 1.5d,
-        identifyDeadVariables: Boolean = true
+            code:                  Code,
+            maxEvaluationFactor:   Double  = 1.5d,
+            identifyDeadVariables: Boolean = true
     )(implicit logContext: LogContext) = {
         this(
             InstructionCountBoundedAI.calculateMaxEvaluationCount(code, maxEvaluationFactor),
@@ -78,8 +78,7 @@ object InstructionCountBoundedAI {
         code:                Code,
         maxEvaluationFactor: Double
     )(
-        implicit
-        logContext: LogContext
+        implicit logContext: LogContext
     ): Int = {
         if (maxEvaluationFactor == Double.PositiveInfinity)
             return Int.MaxValue
@@ -98,14 +97,16 @@ object InstructionCountBoundedAI {
         upperBound = upperBound * Math.log(code.exceptionHandlers.size + 2 * Math.E)
 
         // to accommodate for analysis specific factors
-        upperBound = (
-            upperBound * maxEvaluationFactor +
-            // we want to guarantee a certain minimum length if we raise the
-            // evaluation factor
-            (maxEvaluationFactor * 250.0d)
-        )
+        upperBound =
+            (
+                upperBound * maxEvaluationFactor +
+                    // we want to guarantee a certain minimum length if we raise the
+                    // evaluation factor
+                    (maxEvaluationFactor * 250.0d)
+            )
         if (upperBound == java.lang.Double.POSITIVE_INFINITY ||
-            upperBound >= Int.MaxValue.toDouble) {
+            upperBound >= Int.MaxValue.toDouble
+        ) {
             upperBound = Int.MaxValue
             OPALLogger.warn(
                 "analysis configuration",

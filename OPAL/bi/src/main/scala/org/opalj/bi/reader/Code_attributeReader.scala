@@ -91,14 +91,15 @@ trait Code_attributeReader extends AttributeReader {
      * </pre>
      */
     private[this] def parserFactory() = (
-        cp: Constant_Pool,
-        ap: AttributeParent,
-        ap_name_index: Constant_Pool_Index,
-        ap_descriptor_index: Constant_Pool_Index,
+        cp:                   Constant_Pool,
+        ap:                   AttributeParent,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
-        in: DataInputStream
+        in:                   DataInputStream
     ) => {
-        /*val attribute_length = */ in.readInt()
+        /*val attribute_length = */
+        in.readInt()
         Code_attribute(
             cp,
             ap_name_index,
@@ -110,8 +111,10 @@ trait Code_attributeReader extends AttributeReader {
             fillArraySeq(in.readUnsignedShort()) { // "exception_table_length" times
                 ExceptionTableEntry(
                     cp,
-                    in.readUnsignedShort, in.readUnsignedShort,
-                    in.readUnsignedShort, in.readUnsignedShort
+                    in.readUnsignedShort,
+                    in.readUnsignedShort,
+                    in.readUnsignedShort,
+                    in.readUnsignedShort
                 )
             },
             Attributes(cp, AttributesParent.Code, ap_name_index, ap_descriptor_index, in)

@@ -32,7 +32,8 @@ class JavaProject(final val project: Project[java.net.URL]) {
             val cp = classPath.asScala
             Project(
                 Project.JavaClassFileReader(theLogContext = logCtx).AllClassFiles(cp),
-                Iterable.empty, true, /*true or false... doesn't matter when we have no lib. */
+                Iterable.empty,
+                true, /*true or false... doesn't matter when we have no lib. */
                 Iterable.empty,
                 Project.defaultHandlerForInconsistentProjects,
                 BaseConfig,

@@ -29,9 +29,7 @@ object ShowInnerClassesInformation extends ProjectAnalysisApplication {
             } yield {
                 val header =
                     classFile.fqn + "(ver:" + classFile.majorVersion + ")" + ":\n\t" + (
-                        classFile.enclosingMethod.
-                        map(_.toString).
-                        getOrElse("<no enclosing method defined>")
+                        classFile.enclosingMethod.map(_.toString).getOrElse("<no enclosing method defined>")
                     ) + "\n\t"
                 classFile.innerClasses.get.mkString(header, "\n\t", "\n")
             }

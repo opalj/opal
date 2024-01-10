@@ -50,8 +50,7 @@ sealed trait EOptionPSet[E <: Entity, P <: Property] extends Iterable[EOptionP[E
         e:  NewE,
         pk: PropertyKey[NewP]
     )(
-        implicit
-        ps: PropertyStore
+        implicit ps: PropertyStore
     ): EOptionP[NewE, NewP]
 
     /*
@@ -65,7 +64,7 @@ sealed trait EOptionPSet[E <: Entity, P <: Property] extends Iterable[EOptionP[E
     def remove(eOptionP: SomeEOptionP): Unit
 
     def clear(): Unit
-*/
+     */
 
     /**
      * Updates this set's EOptionP that has the same entity and PropertyKey with the given one.
@@ -135,8 +134,7 @@ private[fpcf] class MultiEOptionPSet[E <: Entity, P <: Property](
         e:  NewE,
         pk: PropertyKey[NewP]
     )(
-        implicit
-        ps: PropertyStore
+        implicit ps: PropertyStore
     ): EOptionP[NewE, NewP] = {
         val pkId = pk.id
         data.get(pkId) match {
@@ -184,7 +182,7 @@ private[fpcf] class MultiEOptionPSet[E <: Entity, P <: Property](
     def clear(): Unit = {
         data = IntMap.empty
     }
-    */
+     */
 
     override def update(eps: SomeEPS): Unit = {
         val pkId = eps.pk.id
@@ -211,9 +209,11 @@ private[fpcf] class MultiEOptionPSet[E <: Entity, P <: Property](
                     if (eOptionP.isEPK)
                         ps(eOptionP.asEPK)
                     else
-                        ps(eOptionP.toEPK))
+                        ps(eOptionP.toEPK)
+                )
                 .filterInPlace((_, eOptionP) =>
-                    eOptionP.isRefinable)
+                    eOptionP.isRefinable
+                )
         }
         data = data.filter(_._2.nonEmpty)
     }

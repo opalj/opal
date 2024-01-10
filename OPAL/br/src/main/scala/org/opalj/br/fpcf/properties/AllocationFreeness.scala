@@ -86,7 +86,8 @@ object AllocationFreeness extends AllocationFreenessPropertyMetaInformation {
                             if (method.isStatic || overwritesSelf)
                                 hasAllocation = true
                             else if (instructions(body.pcOfPreviousInstruction(currentPC)).opcode !=
-                                ALOAD_0.opcode)
+                                         ALOAD_0.opcode
+                            )
                                 hasAllocation = true
                             else
                                 mayOverwriteSelf = false

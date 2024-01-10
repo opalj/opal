@@ -136,15 +136,18 @@ object PerformInvocationsWithRecursionDetectionTestFixture {
     class InvocationDomain(
             project:                            Project[java.net.URL],
             method:                             Method,
-            val frequentEvaluationWarningLevel: Int                   = 10
+            val frequentEvaluationWarningLevel: Int = 10
     ) extends SharedInvocationDomain(project, method) {
         callingDomain =>
 
-        lazy val calledMethodsStore: CalledMethodsStore { val domain: coordinatingDomain.type; def warningIssued: Boolean } = {
+        lazy val calledMethodsStore: CalledMethodsStore {
+            val domain: coordinatingDomain.type; def warningIssued: Boolean
+        } = {
             val operands =
                 mapOperands(
                     localsArray(0).foldLeft(List.empty[DomainValue])((l, n) =>
-                        if (n ne null) n :: l else l),
+                        if (n ne null) n :: l else l
+                    ),
                     coordinatingDomain
                 )
 

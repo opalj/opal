@@ -168,9 +168,10 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
                 if (fps == null) {
                     state.meetMostRestrictive(AtMost(EscapeInCallee))
                 } else if (project.isSignaturePolymorphic(
-                    callee.method.definedMethod.classFile.thisType,
-                    callee.method.definedMethod
-                )) {
+                               callee.method.definedMethod.classFile.thisType,
+                               callee.method.definedMethod
+                           )
+                ) {
                     // IMPROVE: Signature polymorphic methods like invoke(Exact) do not escape their
                     // parameters directly and indirect effects are handled by the indirect callees
                     // code below
@@ -215,8 +216,7 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
         fp:            (Context, VirtualFormalParameter),
         hasAssignment: Boolean
     )(
-        implicit
-        state: AnalysisState
+        implicit state: AnalysisState
     ): Unit = {
         /*
          * Handling a escape state twice, does not affect the escape state
@@ -234,8 +234,7 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
         ep:            EOptionP[Entity, Property],
         hasAssignment: Boolean
     )(
-        implicit
-        state: AnalysisState
+        implicit state: AnalysisState
     ): Unit = {
         state.meetMostRestrictive(EscapeInCallee)
 
@@ -249,8 +248,7 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
         escapeState:   EOptionP[Entity, Property],
         hasAssignment: Boolean
     )(
-        implicit
-        state: AnalysisState
+        implicit state: AnalysisState
     ): Unit = {
         val e = escapeState.e.asInstanceOf[(Context, VirtualFormalParameter)]
         escapeState match {

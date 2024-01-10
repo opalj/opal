@@ -49,6 +49,6 @@ final case class IdentityPair[+T1 <: AnyRef, +T2 <: AnyRef](
         }
         hash
     }
-    */
+     */
     override def hashCode: Int = System.identityHashCode(_1) * 31 + System.identityHashCode(_2)
 }

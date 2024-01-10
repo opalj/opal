@@ -32,8 +32,7 @@ object InvokedynamicPrinter extends ProjectAnalysisApplication {
         completelyLoadLibraries: Boolean,
         fallbackConfiguration:   Config
     )(
-        implicit
-        initialLogContext: LogContext
+        implicit initialLogContext: LogContext
     ): Project[URL] = {
         val baseConfig = invokedynamicRewritingConfig(rewrite = false, logRewrites = true)
         val config = baseConfig.withFallback(fallbackConfiguration)

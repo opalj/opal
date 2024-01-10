@@ -88,10 +88,12 @@ object VeryBusyExpressions extends MethodAnalysisApplication {
 
         ToTxt(taCode).mkString("Code:\n", "\n", "\n") +
             stmtFacts
-            .map(factsToString)
-            .zipWithIndex
-            .map({ e => val (f, index) = e; s"$index: $f" })
-            .mkString("Very busy expressions (on exit):\n\t", "\n\t", "\n\n") +
+                .map(factsToString)
+                .zipWithIndex
+                .map({ e =>
+                    val (f, index) = e; s"$index: $f"
+                })
+                .mkString("Very busy expressions (on exit):\n\t", "\n\t", "\n\n") +
             "\tInit: " + factsToString(initFacts)
     }
 }

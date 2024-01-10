@@ -100,7 +100,8 @@ object TACTemplate {
         val reader = Project.JavaClassFileReader(logContext)
         val p = Project(
             reader.AllClassFiles(cp.map(new File(_))),
-            reader.AllClassFiles(libcp.map(new File(_))), libraryClassFilesAreInterfacesOnly = false
+            reader.AllClassFiles(libcp.map(new File(_))),
+            libraryClassFilesAreInterfacesOnly = false
         )
         // 4.
         // Finish the configuration of the (underlying data-flow) analyses that will be used.
@@ -125,9 +126,19 @@ object TACTemplate {
             if m.body.isDefined
             if methodSignature.isEmpty || m.signature.toJava.contains(methodSignature.get)
             c = tac(m)
-            VirtualFunctionCallStatement(VirtualFunctionCall(pc, declaringClass: ObjectType, _, name, descriptor, receiver, _)) <- c.stmts
+            VirtualFunctionCallStatement(VirtualFunctionCall(
+                pc,
+                declaringClass: ObjectType,
+                _,
+                name,
+                descriptor,
+                receiver,
+                _
+            )) <- c.stmts
         } {
-            println(m.toJava(s"$pc: virtual function call of $receiver.${descriptor.toJava(declaringClass.toJava, name)}"))
+            println(
+                m.toJava(s"$pc: virtual function call of $receiver.${descriptor.toJava(declaringClass.toJava, name)}")
+            )
         }
 
         println("Done.")

@@ -79,7 +79,9 @@ object CODE {
      * @note The code element has to be valid bytecode; i.e., a verification of the code using
      *       the old, pre Java 7 (type-inference based) bytecode verified would succeed!
      */
-    def removeDeadCode[T](codeElements: scala.collection.IndexedSeq[CodeElement[T]]): scala.collection.IndexedSeq[CodeElement[T]] = {
+    def removeDeadCode[T](
+        codeElements: scala.collection.IndexedSeq[CodeElement[T]]
+    ): scala.collection.IndexedSeq[CodeElement[T]] = {
         val codeElementsSize = codeElements.size
         if (codeElementsSize == 0)
             return codeElements;
@@ -221,7 +223,8 @@ object CODE {
             val targetInstruction = codeElements(targetIndex)
             if (targetInstruction.isPseudoInstruction &&
                 isLive(targetIndex) &&
-                targetInstruction.asPseudoInstruction.isPCLabel) {
+                targetInstruction.asPseudoInstruction.isPCLabel
+            ) {
                 targetIndex += 1
                 while (!codeElements(targetIndex).isInstructionLikeElement) {
                     targetIndex += 1
@@ -287,7 +290,8 @@ object CODE {
                                 }
                         }
                         currentIndex += 1
-                    } while (continueIteration
+                    } while (
+                        continueIteration
                         && currentIndex < codeElementsSize
                         && {
                             currentInstruction = codeElements(currentIndex)
@@ -295,7 +299,8 @@ object CODE {
                             // (in particular PCLabels)
                             // because they may have been set to live already!
                             currentInstruction.isPseudoInstruction || !isLive(currentIndex)
-                        })
+                        }
+                    )
                 }
             }
         }
@@ -354,7 +359,8 @@ object CODE {
                                             (
                                                 monitorInstructionIsUsed
                                                 || !instruction.isReturnInstruction
-                                            )) {
+                                            )
+                                        ) {
                                             isLive(index) = true
                                             isLiveCount += 1
                                             markHandlerAsLive(tryStart)
@@ -491,7 +497,7 @@ object CODE {
 
                 case e: ExceptionHandlerElement => exceptionHandlerTableBuilder.add(e, nextPC)
 
-                case l: LINENUMBER              => lineNumberTableBuilder.add(l, nextPC)
+                case l: LINENUMBER => lineNumberTableBuilder.add(l, nextPC)
             }
         }
 
@@ -536,7 +542,7 @@ object CODE {
                 i match {
                     case LabeledGOTO(label) => newCodeElements(index) = LabeledGOTO_W(label)
 
-                    case LabeledJSR(label)  => newCodeElements(index) = LabeledJSR_W(label)
+                    case LabeledJSR(label) => newCodeElements(index) = LabeledJSR_W(label)
 
                     case scbi: LabeledSimpleConditionalBranchInstruction =>
                         //          if_<cond> => y

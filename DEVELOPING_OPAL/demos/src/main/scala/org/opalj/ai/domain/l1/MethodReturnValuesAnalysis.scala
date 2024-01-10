@@ -80,9 +80,10 @@ object MethodReturnValuesAnalysis extends ProjectAnalysisApplication {
             // Test if it make sense to continue the abstract interpretation or if the
             // return value information is already not more precise than the "return type".
             theReturnedValue match {
-                case rv @ TypeOfReferenceValue(UIDSet1(`originalReturnType`)) if (
-                    rv.isNull.isUnknown && !rv.isPrecise
-                ) =>
+                case rv @ TypeOfReferenceValue(UIDSet1(`originalReturnType`))
+                    if (
+                        rv.isNull.isUnknown && !rv.isPrecise
+                    ) =>
                     // the return type will not be more precise than the original type
                     ai.interrupt()
 
@@ -103,7 +104,7 @@ object MethodReturnValuesAnalysis extends ProjectAnalysisApplication {
         parameters:    Seq[String],
         isInterrupted: () => Boolean
     ): BasicReport = {
-        val methodsWithRefinedReturnTypes = time {
+        val refinedMethods = time {
             for {
                 classFile <- theProject.allClassFiles.par
                 method <- classFile.methods
@@ -123,9 +124,7 @@ object MethodReturnValuesAnalysis extends ProjectAnalysisApplication {
         } { ns => println(s"the analysis took ${ns.toSeconds}") }
 
         BasicReport(
-            methodsWithRefinedReturnTypes.mkString(
-                "Methods with refined return types (" + methodsWithRefinedReturnTypes.size + "): \n", "\n", "\n"
-            )
+            refinedMethods.mkString("Methods with refined return types (" + refinedMethods.size + "): \n", "\n", "\n")
         )
     }
 

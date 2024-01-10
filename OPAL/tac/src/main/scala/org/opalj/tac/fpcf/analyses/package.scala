@@ -26,7 +26,8 @@ import org.opalj.value.ValueInformation
 package object analyses {
 
     final def isTypeCompatible(
-        formal: FieldType, actual: FieldType
+        formal: FieldType,
+        actual: FieldType
     )(implicit ch: ClassHierarchy): Boolean = (formal, actual) match {
         // declared type and actual type are reference types and assignable
         case (ft: ReferenceType, at: ReferenceType) =>
@@ -63,7 +64,9 @@ package object analyses {
     }
 
     final def isTypeCompatible(
-        formal: FieldType, actual: ValueInformation, requireNonNullReferenceValue: Boolean = false
+        formal:                       FieldType,
+        actual:                       ValueInformation,
+        requireNonNullReferenceValue: Boolean = false
     )(implicit classHierarchy: ClassHierarchy): Boolean = (formal, actual) match {
         // the actual type is null and the declared type is a ref type
         case (_: ReferenceType, _: IsNullValue) =>

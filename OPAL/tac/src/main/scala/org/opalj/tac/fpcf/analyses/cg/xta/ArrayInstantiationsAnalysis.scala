@@ -95,10 +95,10 @@ final class ArrayInstantiationsAnalysis(
 
         // Note: Since 'until' is an exclusive range, all array types in 'arrays' with
         // dimension 1 are not processed here.
-        for (
+        for {
             at <- arrays;
             dim <- 1 until at.dimensions
-        ) {
+        } {
 
             val targetAT = ArrayType(dim + 1, at.elementType)
             val assignedAT = targetAT.componentType.asArrayType

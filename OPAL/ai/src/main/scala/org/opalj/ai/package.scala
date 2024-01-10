@@ -64,8 +64,10 @@ package object ai {
      */
     type SomeAI[D <: Domain] = AI[_ >: D]
 
-    type PrimitiveValuesFactory = IntegerValuesFactory with LongValuesFactory with FloatValuesFactory with DoubleValuesFactory
-    type ValuesFactory = PrimitiveValuesFactory with ReferenceValuesFactory with ExceptionsFactory with TypedValuesFactory
+    type PrimitiveValuesFactory =
+        IntegerValuesFactory with LongValuesFactory with FloatValuesFactory with DoubleValuesFactory
+    type ValuesFactory =
+        PrimitiveValuesFactory with ReferenceValuesFactory with ExceptionsFactory with TypedValuesFactory
     type TargetDomain = ValuesDomain with ValuesFactory
 
     final type PCs = org.opalj.br.PCs
@@ -606,7 +608,8 @@ package object ai {
     def collectPCWithOperands[B](
         domain: ValuesDomain
     )(
-        code: Code, operandsArray: domain.OperandsArray
+        code:          Code,
+        operandsArray: domain.OperandsArray
     )(
         f: PartialFunction[(Int /*PC*/, Instruction, domain.Operands), B] // IMPROVE Use specialized data-structure to avoid (un)boxing
     ): Seq[B] = {
@@ -632,7 +635,8 @@ package object ai {
     def foreachPCWithOperands[U](
         domain: ValuesDomain
     )(
-        code: Code, operandsArray: domain.OperandsArray
+        code:          Code,
+        operandsArray: domain.OperandsArray
     )(
         f: (Int /*PC*/, Instruction, domain.Operands) => U
     ): Unit = {

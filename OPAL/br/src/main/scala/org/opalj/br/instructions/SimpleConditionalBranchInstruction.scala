@@ -83,6 +83,7 @@ object SimpleConditionalBranchInstruction {
     /**
      * Extracts the instructions branchoffset.
      */
-    def unapply(i: SimpleConditionalBranchInstruction[_ <: SimpleConditionalBranchInstruction[_]]): Some[Int] = Some(i.branchoffset)
+    def unapply(i: SimpleConditionalBranchInstruction[_ <: SimpleConditionalBranchInstruction[_]]): Some[Int] =
+        Some(i.branchoffset)
 
 }

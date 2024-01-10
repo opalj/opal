@@ -91,9 +91,11 @@ trait PerformInvocations extends MethodCallsHandling {
                 } else {
                     val returnedValue =
                         domain.returnedValueRemapped(
-                            callingDomain, callerPC
+                            callingDomain,
+                            callerPC
                         )(
-                            originalOperands, passedParameters
+                            originalOperands,
+                            passedParameters
                         )
                     if (thrownExceptions.nonEmpty) {
                         ComputedValueOrException(returnedValue.get, thrownExceptions)
@@ -105,9 +107,11 @@ trait PerformInvocations extends MethodCallsHandling {
         } else {
             val returnedValue =
                 calledMethodDomain.returnedValueRemapped(
-                    callingDomain, callerPC
+                    callingDomain,
+                    callerPC
                 )(
-                    originalOperands, passedParameters
+                    originalOperands,
+                    passedParameters
                 )
             val exceptions = callingDomain.getPotentialExceptions(callerPC)
 
@@ -160,7 +164,8 @@ trait PerformInvocations extends MethodCallsHandling {
     ): MethodCallResult = {
 
         if (project.libraryClassFilesAreInterfacesOnly &&
-            project.isLibraryType(method.classFile.thisType))
+            project.isLibraryType(method.classFile.thisType)
+        )
             return fallback();
 
         if (method.isAbstract) {
@@ -228,24 +233,32 @@ trait PerformInvocations extends MethodCallsHandling {
     ): MethodCallResult = {
         val receiver = operands(descriptor.parametersCount)
         receiver match {
-            case DomainReferenceValueTag(refValue) if refValue.isPrecise &&
-                refValue.isNull.isNo && // IMPROVE support the case that null is unknown
-                refValue.upperTypeBound.isSingletonSet &&
-                refValue.upperTypeBound.head.isObjectType =>
-
+            case DomainReferenceValueTag(refValue)
+                if refValue.isPrecise &&
+                    refValue.isNull.isNo && // IMPROVE support the case that null is unknown
+                    refValue.upperTypeBound.isSingletonSet &&
+                    refValue.upperTypeBound.head.isObjectType =>
                 val receiverClass = refValue.upperTypeBound.head.asObjectType
                 classHierarchy.isInterface(receiverClass) match {
                     case Yes =>
                         doInvokeNonVirtual(
                             pc,
-                            receiverClass, true, name, descriptor,
-                            operands, fallback
+                            receiverClass,
+                            true,
+                            name,
+                            descriptor,
+                            operands,
+                            fallback
                         )
                     case No =>
                         doInvokeNonVirtual(
                             pc,
-                            receiverClass, false, name, descriptor,
-                            operands, fallback
+                            receiverClass,
+                            false,
+                            name,
+                            descriptor,
+                            operands,
+                            fallback
                         )
                     case Unknown =>
                         fallback()
@@ -256,7 +269,9 @@ trait PerformInvocations extends MethodCallsHandling {
                     if (isInterface)
                         if (declaringClass.isObjectType)
                             project.resolveInterfaceMethodReference(
-                                declaringClass.asObjectType, name, descriptor
+                                declaringClass.asObjectType,
+                                name,
+                                descriptor
                             )
                         else None
                     else

@@ -61,9 +61,7 @@ class TypeExtensibilityTest extends AnyFunSpec with Matchers {
             if (relevantTypes.isEmpty)
                 fail("No directly extensible types found!")
 
-            relevantTypes.foreach { objectType =>
-                isExtensible(objectType) should be(Yes)
-            }
+            relevantTypes.foreach { objectType => isExtensible(objectType) should be(Yes) }
 
             // closed package
             project = Project.recreate(project, closedConf, true)

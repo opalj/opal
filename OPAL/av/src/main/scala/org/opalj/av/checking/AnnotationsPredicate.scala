@@ -58,7 +58,7 @@ case class HasTheAnnotations(
 
     def apply(others: Iterable[Annotation]): Boolean = {
         others.size == annotationPredicates.size &&
-            annotationPredicates.forall(p => others.exists(a => p(a)))
+        annotationPredicates.forall(p => others.exists(a => p(a)))
     }
 
 }

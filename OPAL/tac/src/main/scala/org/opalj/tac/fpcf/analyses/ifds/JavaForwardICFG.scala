@@ -51,6 +51,6 @@ class JavaForwardICFG(project: SomeProject)
      */
     override def isExitStatement(statement: JavaStatement): Boolean = {
         statement.index == statement.basicBlock.asBasicBlock.endPC &&
-            statement.basicBlock.successors.exists(_.isExitNode)
+        statement.basicBlock.successors.exists(_.isExitNode)
     }
 }

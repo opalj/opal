@@ -98,9 +98,7 @@ case class ProjectConfiguration(
                     libcpJARs.foldLeft(noBRClassFiles) { (classFiles, libcpJAR) =>
                         val libcpJARFile = new File(libcpJAR)
                         if (!libcpJARFile.exists || !libcpJARFile.canRead()) {
-                            error(
-                                "project configuration", s"invalid library: $libcpJARFile"
-                            )(GlobalLogContext)
+                            error("project configuration", s"invalid library: $libcpJARFile")(GlobalLogContext)
                             classFiles
                         } else
                             classFiles ++ JavaLibraryClassFileReader.ClassFiles(libcpJARFile)
@@ -121,9 +119,7 @@ case class ProjectConfiguration(
                             predefinedLibrariesClassFiles ++=
                                 br.reader.readJREClassFiles()(reader = JavaLibraryClassFileReader)
                         case unmatched =>
-                            error(
-                                "project configuration", s"unknown library: $unmatched"
-                            )(GlobalLogContext)
+                            error("project configuration", s"unknown library: $unmatched")(GlobalLogContext)
 
                     }
                     predefinedLibraries = predefinedLibraries.tail
@@ -132,7 +128,9 @@ case class ProjectConfiguration(
         }
         val brProject = Project(brProjectClassFiles, libraryClassFiles, true)
         this.synchronized {
-            theProjectStatistics ++= brProject.statistics.map { kv => val (k, v) = kv; (k, v.toDouble) }
+            theProjectStatistics ++= brProject.statistics.map { kv =>
+                val (k, v) = kv; (k, v.toDouble)
+            }
         }
 
         //

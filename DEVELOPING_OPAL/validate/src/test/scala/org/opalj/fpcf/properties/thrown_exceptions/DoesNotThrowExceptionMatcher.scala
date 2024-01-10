@@ -33,8 +33,8 @@ class DoesNotThrowExceptionMatcher extends AbstractPropertyMatcher {
         val isPropertyValid = !requiredAnalysis.exists(as.contains) ||
             properties.forall { p =>
                 p.key != ThrownExceptions.key || // If we got another key, ignore
-                    (p.isInstanceOf[ThrownExceptions] &&
-                        p.asInstanceOf[ThrownExceptions].throwsNoExceptions)
+                (p.isInstanceOf[ThrownExceptions] &&
+                p.asInstanceOf[ThrownExceptions].throwsNoExceptions)
             }
         if (isPropertyValid)
             None

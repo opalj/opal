@@ -39,11 +39,13 @@ object PrintBaseCFG {
             return;
         }
 
-        val project = try { Project(file) } catch {
-            case e: Exception =>
-                println(RED + "[error] cannot process file: " + e.getMessage + "." + RESET)
-                return;
-        }
+        val project =
+            try { Project(file) }
+            catch {
+                case e: Exception =>
+                    println(RED + "[error] cannot process file: " + e.getMessage + "." + RESET)
+                    return;
+            }
 
         val classFile = {
             val fqn =
@@ -93,7 +95,9 @@ object PrintBaseCFG {
 
         println(code.cfJoins.mkString("JoinPCs (conservative):", ", ", ""))
         val (cfJoins, _, cfForks) = code.cfPCs
-        val cfForksInfo = cfForks.map { e => val (k, v) = e; s"$k => ${v.mkString("{", ",", "}")}" }
+        val cfForksInfo = cfForks.map { e =>
+            val (k, v) = e; s"$k => ${v.mkString("{", ",", "}")}"
+        }
         println(cfJoins.mkString("CFJoins               :", ", ", ""))
         println(cfForksInfo.mkString("CFForks               :", ", ", ""))
 
@@ -101,10 +105,9 @@ object PrintBaseCFG {
         println(predecessorPCs.zipWithIndex.map(_.swap).mkString("Predecessors:\n\t", "\n\t", "\n"))
         println(exitPCs.mkString("ExitPCs:", ",", "\n"))
         val liveVariables = code.liveVariables(predecessorPCs, exitPCs, cfJoins)
-        val liveVariableInfo = liveVariables.
-            zipWithIndex.map(_.swap).filter(_._2 ne null).
-            map { e => val (pc, liveVariableInfo) = e; liveVariableInfo.mkString(s"$pc:{", ",", "}\n") }.
-            mkString("LiveVariables:\n\t", "\t", "")
+        val liveVariableInfo = liveVariables.zipWithIndex.map(_.swap).filter(_._2 ne null).map { e =>
+            val (pc, liveVariableInfo) = e; liveVariableInfo.mkString(s"$pc:{", ",", "}\n")
+        }.mkString("LiveVariables:\n\t", "\t", "")
         println(liveVariableInfo)
     }
 }

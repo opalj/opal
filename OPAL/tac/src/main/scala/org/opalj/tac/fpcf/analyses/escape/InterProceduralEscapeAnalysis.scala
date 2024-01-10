@@ -87,7 +87,8 @@ class InterProceduralEscapeAnalysis private[analyses] (
         fp._2 match {
             // if the underlying method is inherited, we avoid recomputation and query the
             // result of the method for its defining class.
-            case VirtualFormalParameter(dm: DefinedMethod, i) if fp._1.isInstanceOf[SimpleContext] && dm.declaringClassType != dm.definedMethod.classFile.thisType =>
+            case VirtualFormalParameter(dm: DefinedMethod, i)
+                if fp._1.isInstanceOf[SimpleContext] && dm.declaringClassType != dm.definedMethod.classFile.thisType =>
                 def handleEscapeState(eOptionP: SomeEOptionP): ProperPropertyComputationResult = {
                     eOptionP match {
                         case FinalP(p) =>

@@ -72,17 +72,14 @@ class DoPrivilegedMethodAnalysis private[cg] (
         if (params.nonEmpty && params.head.isDefined) {
             val param = params.head.get.asVar
 
-            implicit val state: CGState[ContextType] = new CGState[ContextType](
-                callerContext, FinalEP(callerContext.method.definedMethod, TheTACAI(tac))
-            )
+            implicit val state: CGState[ContextType] =
+                new CGState[ContextType](callerContext, FinalEP(callerContext.method.definedMethod, TheTACAI(tac)))
 
             val thisActual = persistentUVar(param)(state.tac.stmts)
 
             typeIterator.foreachType(
                 param,
-                typeIterator.typesProperty(
-                    param, callerContext, callPC.asInstanceOf[Entity], tac.stmts
-                )
+                typeIterator.typesProperty(param, callerContext, callPC.asInstanceOf[Entity], tac.stmts)
             ) { tpe => handleType(tpe, callerContext, callPC, thisActual, indirectCalls) }
 
             returnResult(param, thisActual, indirectCalls)
@@ -315,7 +312,9 @@ object DoPrivilegedAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
     override def derivesEagerly: Set[PropertyBounds] = Set.empty
 
     override def start(
-        p: SomeProject, ps: PropertyStore, unused: Null
+        p:      SomeProject,
+        ps:     PropertyStore,
+        unused: Null
     ): DoPrivilegedCGAnalysis = {
         val analysis = new DoPrivilegedCGAnalysis(p)
         ps.scheduleEagerComputationForEntity(p)(analysis.analyze)

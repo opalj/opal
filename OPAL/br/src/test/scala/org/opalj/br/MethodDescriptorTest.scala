@@ -60,13 +60,14 @@ class MethodDescriptorTest extends AnyFunSuite {
         assert(md.returnType.isArrayType)
         assert(md match {
             case MethodDescriptor(
-                Seq(
-                    _: BaseType,
-                    DoubleType,
-                    ObjectType(_),
-                    ArrayType(LongType)
+                    Seq(
+                        _: BaseType,
+                        DoubleType,
+                        ObjectType(_),
+                        ArrayType(LongType)
                     ),
-                ArrayType(ObjectType("java/lang/Object"))) => true
+                    ArrayType(ObjectType("java/lang/Object"))
+                ) => true
             case _ => false
         })
     }

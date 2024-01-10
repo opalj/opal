@@ -25,13 +25,13 @@ case class ClassFile(
         constant_pool: Constant_Pool,
         minor_version: Int,
         major_version: Int,
-        access_flags:  Int                 = ACC_PUBLIC.mask | ACC_SUPER.mask,
+        access_flags:  Int        = ACC_PUBLIC.mask | ACC_SUPER.mask,
         this_class:    Constant_Pool_Index,
         super_class:   Constant_Pool_Index,
-        interfaces:    Interfaces          = NoInterfaces,
-        fields:        Fields              = NoFields,
-        methods:       Methods             = NoMethods,
-        attributes:    Attributes          = NoAttributes
+        interfaces:    Interfaces = NoInterfaces,
+        fields:        Fields     = NoFields,
+        methods:       Methods    = NoMethods,
+        attributes:    Attributes = NoAttributes
 ) {
 
     assert({
@@ -50,10 +50,7 @@ case class ClassFile(
             {
                 val cpIt = constant_pool.iterator
                 cpIt.next() // the first entry is always empty in the class file
-                cpIt.
-                    filter(_ ne null /*handles the case of Constant_Long and Constant_Double*/ ).
-                    map(_.size).
-                    sum
+                cpIt.filter(_ ne null /*handles the case of Constant_Long and Constant_Double*/ ).map(_.size).sum
             } +
             2 + // access_flags
             2 + // this_class
@@ -93,9 +90,7 @@ case class ClassFile(
                 Seq(
                     Text("implements "),
                     asJavaObjectType(cp(interfaces.head).toString).asSpan("implements"),
-                    interfaces.tail.map { i =>
-                        Seq(Text(", "), asJavaObjectType(cp(i).toString).asSpan("implements"))
-                    }
+                    interfaces.tail.map { i => Seq(Text(", "), asJavaObjectType(cp(i).toString).asSpan("implements")) }
                 )
             else
                 NodeSeq.Empty
@@ -128,7 +123,9 @@ case class ClassFile(
     def fieldsToXHTML: Iterator[Node] = fields.iterator.map { field => field.toXHTML }
 
     def methodsToXHTML: Iterator[Node] = {
-        methods.iterator.zipWithIndex.map { mi => val (method, index) = mi; method.toXHTML(index) }
+        methods.iterator.zipWithIndex.map { mi =>
+            val (method, index) = mi; method.toXHTML(index)
+        }
     }
 
     protected def accessFlags: Node = {

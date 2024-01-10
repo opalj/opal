@@ -54,9 +54,7 @@ abstract class DomainTestInfrastructure(domainName: String) extends AnyFlatSpec 
     ): Unit = {
         // validate that we can get the computational type of each value stored on the stack
         // (this test will fail by throwing an exception)
-        result.operandsArray.forall { ops =>
-            (ops eq null) || { ops.foreach(op => op.computationalType); true }
-        }
+        result.operandsArray.forall { ops => (ops eq null) || { ops.foreach(op => op.computationalType); true } }
     }
 
     /**
@@ -96,7 +94,7 @@ abstract class DomainTestInfrastructure(domainName: String) extends AnyFlatSpec 
                 None
             } catch {
                 case ct: ControlThrowable => throw ct
-                case t: Throwable =>
+                case t: Throwable         =>
                     // basically, we want to catch everything!
                     Some((project.source(classFile).get.toString, classFile, method, t))
             }

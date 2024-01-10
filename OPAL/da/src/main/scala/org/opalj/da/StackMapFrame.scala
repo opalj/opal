@@ -30,8 +30,7 @@ sealed abstract class StackMapFrame {
     protected def verification_type_infos_toXHTML(
         verification_type_infos: VerificationTypeInfos
     )(
-        implicit
-        cp: Constant_Pool
+        implicit cp: Constant_Pool
     ): NodeSeq = {
         NodeSeq.fromSeq(
             if (verification_type_infos.isEmpty) {
@@ -102,7 +101,7 @@ case class SameLocals1StackItemFrame(
 }
 
 case class SameLocals1StackItemFrameExtended(
-        frame_type:                   Int                  = 247,
+        frame_type:                   Int = 247,
         offset_delta:                 Int,
         verification_type_info_stack: VerificationTypeInfo
 ) extends StackMapFrame {

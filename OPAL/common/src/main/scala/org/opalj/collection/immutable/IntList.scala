@@ -79,6 +79,7 @@ case object EmptyIntList extends IntList {
     override def iterator: IntIterator = IntIterator.empty
     /** Prepends the given value to this list. E.g., `l = 2 +: l`. */
     override def +:(v: Int): IntList = new IntListNode(v, this)
+
     override def ++:(other: IntList): IntList = other
 
     override def equals(that: IntList): Boolean = that eq this
@@ -133,6 +134,7 @@ final case class IntListNode(
     }
 
     override def +:(v: Int): IntList = new IntListNode(v, this)
+
     override def ++:(other: IntList): IntList = other.iterator.foldLeft(this)((list, value) => IntListNode(value, list))
 
     override def equals(that: IntList): Boolean = {

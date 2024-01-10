@@ -10,15 +10,15 @@ package cp
  */
 trait ConstantsPoolLike {
 
-    def CPEClass(referenceType: ReferenceType, requiresUByteIndex: Boolean): Int
-    def CPEFloat(value: Float, requiresUByteIndex: Boolean): Int
-    def CPEInteger(value: Int, requiresUByteIndex: Boolean): Int
-    def CPEString(value: String, requiresUByteIndex: Boolean): Int
-    def CPEMethodHandle(methodHandle: MethodHandle, requiresUByteIndex: Boolean): Int
-    def CPEMethodType(descriptor: MethodDescriptor, requiresUByteIndex: Boolean): Int
-    def CPEDouble(value: Double): Int
-    def CPELong(value: Long): Int
-    def CPEUtf8(value: String): Int
+    def CPEClass(referenceType:       ReferenceType, requiresUByteIndex:    Boolean): Int
+    def CPEFloat(value:               Float, requiresUByteIndex:            Boolean): Int
+    def CPEInteger(value:             Int, requiresUByteIndex:              Boolean): Int
+    def CPEString(value:              String, requiresUByteIndex:           Boolean): Int
+    def CPEMethodHandle(methodHandle: MethodHandle, requiresUByteIndex:     Boolean): Int
+    def CPEMethodType(descriptor:     MethodDescriptor, requiresUByteIndex: Boolean): Int
+    def CPEDouble(value:              Double): Int
+    def CPELong(value:                Long): Int
+    def CPEUtf8(value:                String): Int
 
     def CPENameAndType(name: String, tpe: String): Int
 

@@ -76,14 +76,14 @@ class InterpretMethodsAnalysis[Source] extends Analysis[Source, BasicReport] {
 
     override def analyze(
         project:                Project[Source],
-        parameters:             Seq[String]                 = List.empty,
+        parameters:             Seq[String] = List.empty,
         initProgressManagement: (Int) => ProgressManagement
     ): BasicReport = {
         implicit val logContext: LogContext = project.logContext
 
         val verbose = parameters.nonEmpty &&
             (parameters.head == "-verbose=true" ||
-                (parameters.size == 2 && parameters.tail.head == "-verbose=true"))
+            (parameters.size == 2 && parameters.tail.head == "-verbose=true"))
         val (message, detailedErrorInformationFile) =
             if (parameters.nonEmpty && parameters.head.startsWith("-domain")) {
                 InterpretMethodsAnalysis.interpret(
@@ -121,10 +121,9 @@ object InterpretMethodsAnalysis {
         domainClass:            Class[_ <: Domain],
         beVerbose:              Boolean,
         initProgressManagement: (Int) => ProgressManagement,
-        maxEvaluationFactor:    Double                      = 3d
+        maxEvaluationFactor:    Double = 3d
     )(
-        implicit
-        logContext: LogContext
+        implicit logContext: LogContext
     ): (String, Option[File]) = {
 
         // TODO Add support for reporting the progress and to interrupt the analysis.
@@ -206,9 +205,7 @@ object InterpretMethodsAnalysis {
 
         val collectedExceptions = time(Symbol("OVERALL")) {
             val results = new ConcurrentLinkedQueue[(String, ClassFile, Method, Throwable)]()
-            project.parForeachMethodWithBody() { m =>
-                analyzeMethod(m.source.toString, m.method).map(results.add)
-            }
+            project.parForeachMethodWithBody() { m => analyzeMethod(m.source.toString, m.method).map(results.add) }
             import scala.jdk.CollectionConverters._
             results.asScala
         }
@@ -238,26 +235,27 @@ object InterpretMethodsAnalysis {
 
             val node =
                 XHTML.createXHTML(
-                    Some("Exceptions Thrown During Interpretation"), NodeSeq.fromSeq(body)
+                    Some("Exceptions Thrown During Interpretation"),
+                    NodeSeq.fromSeq(body)
                 )
             val file = writeAndOpen(node, "ExceptionsOfCrashedAbstractInterpretations", ".html")
 
             (
                 "During the interpretation of " +
-                methodsCount.get + " methods (of " + project.methodsCount + ") in " +
-                project.classFilesCount + " classes (real time: " + getTime(Symbol("OVERALL")).toSeconds +
-                ", ai (∑CPU Times): " + getTime(Symbol("AI")).toSeconds +
-                ")" + collectedExceptions.size + " exceptions occured.",
+                    methodsCount.get + " methods (of " + project.methodsCount + ") in " +
+                    project.classFilesCount + " classes (real time: " + getTime(Symbol("OVERALL")).toSeconds +
+                    ", ai (∑CPU Times): " + getTime(Symbol("AI")).toSeconds +
+                    ")" + collectedExceptions.size + " exceptions occured.",
                 Some(file)
             )
         } else {
             (
                 "No exceptions occured during the interpretation of " +
-                methodsCount.get + " methods (of " + project.methodsCount + ") in " +
-                project.classFilesCount + " classes\nreal time: " + getTime(Symbol("OVERALL")).toSeconds + "\n" +
-                "ai (∑CPU Times): " + getTime(Symbol("AI")).toSeconds +
-                s"; evaluated ${instructionEvaluationsCount.get} instructions\n" +
-                "naive ai (∑CPU Times): " + getTime(Symbol("NAIVE_AI")).toSeconds + "\n",
+                    methodsCount.get + " methods (of " + project.methodsCount + ") in " +
+                    project.classFilesCount + " classes\nreal time: " + getTime(Symbol("OVERALL")).toSeconds + "\n" +
+                    "ai (∑CPU Times): " + getTime(Symbol("AI")).toSeconds +
+                    s"; evaluated ${instructionEvaluationsCount.get} instructions\n" +
+                    "naive ai (∑CPU Times): " + getTime(Symbol("NAIVE_AI")).toSeconds + "\n",
                 None
             )
         }

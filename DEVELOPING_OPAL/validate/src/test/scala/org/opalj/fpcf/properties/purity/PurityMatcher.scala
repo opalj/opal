@@ -42,7 +42,9 @@ sealed abstract class PurityMatcher(val property: Purity) extends AbstractProper
             getValue(p, annotationType, a.elementValuePairs, "analyses").asArrayValue.values
         val analyses = analysesElementValues.map(ev => ev.asClassValue.value.asObjectType)
 
-        val eps = getValue(p, annotationType, a.elementValuePairs, "eps").asArrayValue.values.map(ev => ev.asAnnotationValue.annotation)
+        val eps = getValue(p, annotationType, a.elementValuePairs, "eps").asArrayValue.values.map(ev =>
+            ev.asAnnotationValue.annotation
+        )
         val negate = getValue(p, annotationType, a.elementValuePairs, "negate").asInstanceOf[BooleanValue].value
 
         analyses.exists(as.contains) && eps.forall(negate ^ evaluateEP(p, as, _, negate))
@@ -97,11 +99,7 @@ sealed abstract class PurityMatcher(val property: Purity) extends AbstractProper
 
         if (field != "") {
             val cfo = project.classFile(classType)
-            cfo exists { cf =>
-                cf findField field exists { field =>
-                    checkProperty(propertyStore(field, pk))
-                }
-            }
+            cfo exists { cf => cf findField field exists { field => checkProperty(propertyStore(field, pk)) } }
         } else if (method != "") {
             val declaredMethods = project.get(DeclaredMethodsKey)
             val descriptorIndex = method.indexOf('(')
@@ -128,9 +126,10 @@ sealed abstract class PurityMatcher(val property: Purity) extends AbstractProper
         properties: Iterable[Property]
     ): Option[String] = {
         if (!properties.exists {
-            case `property` => true
-            case _          => false
-        }) {
+                case `property` => true
+                case _          => false
+            }
+        ) {
             // ... when we reach this point the expected property was not found.
             Some(a.elementValuePairs.head.value.asStringValue.value)
         } else {
@@ -154,16 +153,15 @@ sealed abstract class ContextualPurityMatcher(propertyConstructor: IntTrieSet =>
             getValue(p, annotationType, a.elementValuePairs, "modifies").asArrayValue.values
 
         var modifiedParams: IntTrieSet = EmptyIntTrieSet
-        annotated.foreach { param =>
-            modifiedParams = modifiedParams + param.asIntValue.value
-        }
+        annotated.foreach { param => modifiedParams = modifiedParams + param.asIntValue.value }
 
         val expected = propertyConstructor(modifiedParams)
 
         if (!properties.exists {
-            case `expected` => true
-            case _          => false
-        }) {
+                case `expected` => true
+                case _          => false
+            }
+        ) {
             // ... when we reach this point the expected property was not found.
             Some(a.elementValuePairs.head.value.asStringValue.value)
         } else {
@@ -244,9 +242,10 @@ class ImpureMatcher extends PurityMatcher(null) {
         properties: Iterable[Property]
     ): Option[String] = {
         if (!properties.exists {
-            case _: ClassifiedImpure => true
-            case _                   => false
-        }) {
+                case _: ClassifiedImpure => true
+                case _                   => false
+            }
+        ) {
             // ... when we reach this point the expected property was not found.
             Some(a.elementValuePairs.head.value.asStringValue.value)
         } else {

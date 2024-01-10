@@ -175,12 +175,17 @@ trait RecordCFG
         }
 
         super.flow(
-            currentPC, currentOperands, currentLocals,
-            successorPC, isSuccessorScheduled,
-            isExceptionalControlFlow, abruptSubroutineTerminationCount,
+            currentPC,
+            currentOperands,
+            currentLocals,
+            successorPC,
+            isSuccessorScheduled,
+            isExceptionalControlFlow,
+            abruptSubroutineTerminationCount,
             wasJoinPerformed,
             worklist,
-            operandsArray, localsArray,
+            operandsArray,
+            localsArray,
             tracer
         )
     }
@@ -373,7 +378,7 @@ trait RecordCFG
         // values directly after the analysis has finished (when the computeBBCFG is
         // potentially called) but before the subroutine results are merged.
         (regularSuccessors(pc) ne null) || (exceptionHandlerSuccessors(pc) ne null) ||
-            normalExitPCs.contains(pc) || abnormalExitPCs.contains(pc)
+        normalExitPCs.contains(pc) || abnormalExitPCs.contains(pc)
     }
 
     /**
@@ -744,7 +749,6 @@ trait RecordCFG
             val df = DominanceFrontiers(dt, wasExecuted)
 
             remainingPotentialInfiniteLoopHeaders.foreachPair { (pc1, pc2) =>
-
                 if (df.transitiveDF(pc1).contains(pc2)) {
                     // 1.a) check if a loop with header pc1 belongs to the (forward)
                     //      dominance frontier of the loop with header pc2 -
@@ -784,7 +788,9 @@ trait RecordCFG
 
     def bbCFG: CFG[Instruction, Code] = {
         getOrInitField[CFG[Instruction, Code]](
-            () => theBBCFG, cfg => theBBCFG = cfg, exceptionHandlerSuccessors
+            () => theBBCFG,
+            cfg => theBBCFG = cfg,
+            exceptionHandlerSuccessors
         ) { computeBBCFG }
     }
 
@@ -915,7 +921,8 @@ trait RecordCFG
                 }
                 if (!endRunningBB &&
                     !connectedWithNextBBs &&
-                    hasMultiplePredecessors(nextInstructionPC)) {
+                    hasMultiplePredecessors(nextInstructionPC)
+                ) {
                     endRunningBB = true
                     connect(runningBB, nextInstructionPC)
                 }
@@ -971,7 +978,7 @@ trait RecordCFG
                 predecessors(loopHeaderPC).withFilter { predecessorPC =>
                     // 1. let's ensure that the predecessor actually belongs to the loop...
                     loopHeaderPC == predecessorPC ||
-                        dominatorTree.strictlyDominates(loopHeaderPC, predecessorPC)
+                    dominatorTree.strictlyDominates(loopHeaderPC, predecessorPC)
                 }
             }
             // Now we have to ensure to select the outer most exit pcs which are dominated by

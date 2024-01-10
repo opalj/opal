@@ -60,7 +60,7 @@ class NonVirtualCalls(implicit hermes: HermesConfig) extends DefaultFeatureQuery
             val l = InstructionLocation(methodLocation, pc)
 
             val kindID = invokeKind match {
-                case _@ INVOKESTATIC(declaringClass, _, _, _) => {
+                case _ @INVOKESTATIC(declaringClass, _, _, _) => {
                     val cf = project.classFile(declaringClass)
                     if (cf.isEmpty)
                         -1

@@ -50,37 +50,27 @@ case class Module_attribute(
             <summary class="attribute">{module}</summary>
             <div>
                 {
-                    requires.view.map[String](_.toString).sorted.map[NodeBuffer] { r =>
-                        <span>{r}</span><br/>
-                    }
+                    requires.view.map[String](_.toString).sorted.map[NodeBuffer] { r => <span>{r}</span><br/> }
                 }
             </div>
             <div>
                 {
-                    exports.view.map[String](_.toString).sorted.map[NodeBuffer] { r =>
-                        <span>{r}</span><br/>
-                    }
+                    exports.view.map[String](_.toString).sorted.map[NodeBuffer] { r => <span>{r}</span><br/> }
                 }
             </div>
             <div>
                 {
-                    opens.view.map[String](_.toString).sorted.map[NodeBuffer] { r =>
-                        <span>{r}</span><br/>
-                    }
+                    opens.view.map[String](_.toString).sorted.map[NodeBuffer] { r => <span>{r}</span><br/> }
                 }
             </div>
             <div>
                 {
-                    uses.view.map(cp(_).toString).sorted.map[NodeBuffer] { r =>
-                        <span>{s"uses $r"}</span><br/>
-                    }
+                    uses.view.map(cp(_).toString).sorted.map[NodeBuffer] { r => <span>{s"uses $r"}</span><br/> }
                 }
             </div>
             <div>
                 {
-                    provides.view.map[String](_.toString).sorted.map[NodeBuffer] { r =>
-                        <span>{r}</span><br/>
-                    }
+                    provides.view.map[String](_.toString).sorted.map[NodeBuffer] { r => <span>{r}</span><br/> }
                 }
             </div>
         </details>
@@ -147,11 +137,7 @@ case class OpensEntry(
             if (opens_to_index_table.isEmpty)
                 ";"
             else
-                opens_to_index_table.
-                    view.
-                    map(cp(_).toString).
-                    sorted.
-                    mkString(" to ", ", ", ";")
+                opens_to_index_table.view.map(cp(_).toString).sorted.mkString(" to ", ", ", ";")
         }
 
         s"opens $flags ${cp(opens_index).toString(cp)}$opens_to"
@@ -167,11 +153,7 @@ case class ProvidesEntry(
 
     def toString(implicit cp: Constant_Pool): String = {
         val provides_with =
-            provides_with_index_table.
-                view.
-                map(cp(_).toString).
-                sorted.
-                mkString(" with ", ", ", ";")
+            provides_with_index_table.view.map(cp(_).toString).sorted.mkString(" with ", ", ", ";")
 
         s"provides ${cp(provides_index).toString(cp)}$provides_with"
     }

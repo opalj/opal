@@ -29,12 +29,13 @@ class MethodReturnValues(
     def collectMethodReturnValues: List[PCAndAnyRef[String]] = {
         code.foldLeft(List.empty[PCAndAnyRef[String]]) { (returnValues, pc, instruction) =>
             instruction match {
-                case instr @ MethodInvocationInstruction(declaringClassType, _, name, descriptor) if !descriptor.returnType.isVoidType && {
-                    val nextPC = instr.indexOfNextInstruction(pc)
-                    val operands = operandsArray(nextPC)
-                    operands != null &&
-                        operands.head.isMorePreciseThan(result.domain.TypedValue(pc, descriptor.returnType))
-                } =>
+                case instr @ MethodInvocationInstruction(declaringClassType, _, name, descriptor)
+                    if !descriptor.returnType.isVoidType && {
+                        val nextPC = instr.indexOfNextInstruction(pc)
+                        val operands = operandsArray(nextPC)
+                        operands != null &&
+                            operands.head.isMorePreciseThan(result.domain.TypedValue(pc, descriptor.returnType))
+                    } =>
                     val modifier = if (instr.isInstanceOf[INVOKESTATIC]) "static " else ""
                     val nextPCOperandHead = operandsArray(instr.indexOfNextInstruction(pc)).head
 

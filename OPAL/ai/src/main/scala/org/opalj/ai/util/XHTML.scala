@@ -69,8 +69,7 @@ object XHTML {
 
     def htmlify(s: String): Node = {
         scala.xml.Unparsed(
-            s.replace("<", "&lt;").replace(">", "&gt;").replace("\n", "<br>").
-                replace("\t", "&nbsp;&nbsp;")
+            s.replace("<", "&lt;").replace(">", "&gt;").replace("\n", "<br>").replace("\t", "&nbsp;&nbsp;")
         )
     }
 
@@ -84,7 +83,8 @@ object XHTML {
     def throwableToXHTML(throwable: Throwable): scala.xml.Node = {
         val node =
             if (throwable.getStackTrace == null ||
-                throwable.getStackTrace.size == 0) {
+                throwable.getStackTrace.size == 0
+            ) {
                 <div>{throwable.getClass.getSimpleName + " " + throwable.getMessage}</div>
             } else {
                 val stackElements =

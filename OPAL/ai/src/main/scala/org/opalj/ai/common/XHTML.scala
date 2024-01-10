@@ -47,7 +47,7 @@ object XHTML {
         method:              Method,
         ai:                  AI[_ >: D],
         theDomain:           D,
-        minimumDumpInterval: Long       = 500L
+        minimumDumpInterval: Long = 500L
     )(
         f: AIResult { val domain: theDomain.type } => T
     ): T = {
@@ -67,7 +67,11 @@ object XHTML {
                     val code = method.body.get
                     val dump =
                         XHTML.dump(
-                            Some(classFile), Some(method), code, title, theDomain
+                            Some(classFile),
+                            Some(method),
+                            code,
+                            title,
+                            theDomain
                         )(result.cfJoins, operandsArray, localsArray)
                     writeAndOpen(dump, "StateOfIncompleteAbstractInterpretation", ".html")
                 } else {
@@ -91,7 +95,7 @@ object XHTML {
         method:              Option[Method],
         code:                Code,
         result:              AIResult,
-        minimumDumpInterval: Long              = 500L
+        minimumDumpInterval: Long = 500L
     )(
         f: => T
     ): T = {
@@ -163,9 +167,9 @@ object XHTML {
         def methodToString(method: Method): String = method.signatureToJava(withVisibility = false)
 
         val title =
-            classFile.
-                map(_.thisType.toJava + method.map("{ " + methodToString(_) + " }").getOrElse("")).
-                orElse(method.map(methodToString))
+            classFile
+                .map(_.thisType.toJava + method.map("{ " + methodToString(_) + " }").getOrElse(""))
+                .orElse(method.map(methodToString))
 
         val annotations = method.map(annotationsAsXHTML).getOrElse(<div class="annotations"></div>)
 
@@ -217,7 +221,9 @@ object XHTML {
         val operandsOnly = rowsCount > 100000
         val disclaimer =
             if (operandsOnly) {
-                <b>Output is restricted to the operands as the number of rows would be too large otherwise: { rowsCount } </b>
+                <b>Output is restricted to the operands as the number of rows would be too large otherwise: {
+                    rowsCount
+                } </b>
             } else
                 NodeSeq.Empty
 
@@ -230,7 +236,8 @@ object XHTML {
                         <th class="instruction">Instruction</th>
                         <th class="stack">Operand Stack</th>
                         {
-                            if (operandsOnly) NodeSeq.Empty else {
+                            if (operandsOnly) NodeSeq.Empty
+                            else {
                                 <th class="registers">Registers</th>
                                 <th class="properties">Properties</th>
                             }
@@ -240,10 +247,13 @@ object XHTML {
                 <tbody>
                     {
                         dumpInstructions(
-                            code, domain, operandsOnly
+                            code,
+                            domain,
+                            operandsOnly
                         )(
                             cfJoins,
-                            operandsArray, localsArray
+                            operandsArray,
+                            localsArray
                         )(Some(idsLookup))
                     }
                 </tbody>
@@ -268,8 +278,7 @@ object XHTML {
         operandsArray: TheOperandsArray[domain.Operands],
         localsArray:   TheLocalsArray[domain.Locals]
     )(
-        implicit
-        ids: Option[AnyRef => Int]
+        implicit ids: Option[AnyRef => Int]
     ): Array[Node] = {
 
         val belongsToSubroutine = code.belongsToSubroutine()
@@ -279,7 +288,10 @@ object XHTML {
             var exceptionHandlers = code.handlersFor(pc).map(indexedExceptionHandlers(_)).mkString(",")
             if (exceptionHandlers.nonEmpty) exceptionHandlers = "⚡: " + exceptionHandlers
             dumpInstruction(
-                pc, code.lineNumber(pc), instruction, cfJoins.contains(pc),
+                pc,
+                code.lineNumber(pc),
+                instruction,
+                cfJoins.contains(pc),
                 belongsToSubroutine(pc),
                 Some(exceptionHandlers),
                 domain,
@@ -301,8 +313,7 @@ object XHTML {
         operands: domain.Operands,
         locals:   domain.Locals
     )(
-        implicit
-        ids: Option[AnyRef => Int]
+        implicit ids: Option[AnyRef => Int]
     ): Node = {
 
         val pcAsXHTML =
@@ -324,7 +335,8 @@ object XHTML {
             <td class="instruction">{instructionAsXHTML}</td>
             <td class="stack">{dumpStack(operands)}</td>
             {
-                if (operandsOnly) NodeSeq.Empty else {
+                if (operandsOnly) NodeSeq.Empty
+                else {
                     <td class="locals">{dumpLocals(locals)}</td>
                     <td class="properties">{properties}</td>
                 }

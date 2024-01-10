@@ -193,7 +193,9 @@ case class TriggeredComputationEvent(
 }
 
 case class ComputedFallbackEvent(
-        eventId: Int, ep: SomeFinalEP, why: String
+        eventId: Int,
+        ep:      SomeFinalEP,
+        why:     String
 ) extends StoreEvent {
     override def toTxt: String = {
         s"$eventId: ComputedFallback($ep,$why)"
@@ -348,7 +350,10 @@ private[par] class RecordAllPropertyStoreEvents extends PropertyStoreTracer {
         lazyPC:                 SomePropertyComputation
     ): Unit = {
         events offer ImmediatelyExecutedLazyComputationEvent(
-            nextEventId(), newEOptionP, evaluationDepthCounter, lazyPC
+            nextEventId(),
+            newEOptionP,
+            evaluationDepthCounter,
+            lazyPC
         )
     }
 
@@ -371,7 +376,11 @@ private[par] class RecordAllPropertyStoreEvents extends PropertyStoreTracer {
         c:           OnUpdateContinuation
     ): Unit = {
         events offer ScheduledOnUpdateComputationEvent(
-            nextEventId(), dependerEPK, oldEOptionP, newEOptionP, c
+            nextEventId(),
+            dependerEPK,
+            oldEOptionP,
+            newEOptionP,
+            c
         )
 
     }
@@ -383,7 +392,11 @@ private[par] class RecordAllPropertyStoreEvents extends PropertyStoreTracer {
         c:           OnUpdateContinuation
     ): Unit = {
         events offer ImmediatelyRescheduledOnUpdateComputationEvent(
-            nextEventId(), dependerEPK, oldEOptionP, newEOptionP, c
+            nextEventId(),
+            dependerEPK,
+            oldEOptionP,
+            newEOptionP,
+            c
         )
 
     }
@@ -395,7 +408,11 @@ private[par] class RecordAllPropertyStoreEvents extends PropertyStoreTracer {
         c:           OnUpdateContinuation
     ): Unit = {
         events offer ScheduledOnUpdateComputationForFinalEPEvent(
-            nextEventId(), dependerEPK, oldEOptionP, finalEP, c
+            nextEventId(),
+            dependerEPK,
+            oldEOptionP,
+            finalEP,
+            c
         )
     }
 

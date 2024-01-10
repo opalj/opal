@@ -7,7 +7,8 @@ package br
  *
  * @author Michael Eichberg
  */
-/* no case class */ final class PCAndAnyRef[T <: AnyRef](val pc: Int /* PC */, val value: T) {
+/* no case class */
+final class PCAndAnyRef[T <: AnyRef](val pc: Int /* PC */, val value: T) {
 
     override def hashCode(): Opcode = value.hashCode() * 117 + pc
 

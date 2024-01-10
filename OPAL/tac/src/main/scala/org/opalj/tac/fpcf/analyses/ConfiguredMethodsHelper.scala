@@ -40,8 +40,7 @@ case class ConfiguredMethodData(
         methodInvocations: Option[Array[MethodDescription]]
 ) {
     def method(
-        implicit
-        declaredMethods: DeclaredMethods
+        implicit declaredMethods: DeclaredMethods
     ): DeclaredMethod = {
         val classType = ObjectType(cf)
         val descriptor = MethodDescriptor(desc)
@@ -118,9 +117,7 @@ object EntityDescription {
     }
 }
 
-case class MethodDescription(
-        cf: String, name: String, desc: String
-) extends EntityDescription {
+case class MethodDescription(cf: String, name: String, desc: String) extends EntityDescription {
     def method(declaredMethods: DeclaredMethods): DeclaredMethod = {
         val classType = ObjectType(cf)
         declaredMethods(classType, classType.packageName, classType, name, MethodDescriptor(desc))
@@ -136,9 +133,7 @@ object MethodDescription {
     }
 }
 
-case class StaticFieldDescription(
-        cf: String, name: String, fieldType: String
-) extends EntityDescription {
+case class StaticFieldDescription(cf: String, name: String, fieldType: String) extends EntityDescription {
     def fieldOption(project: SomeProject): Option[Field] = {
         project.resolveFieldReference(ObjectType(cf), name, FieldType(fieldType))
     }
@@ -151,7 +146,8 @@ case class ParameterDescription(cf: String, name: String, desc: String, index: I
     }
 
     def fp(
-        method: DeclaredMethod, virtualFormalParameters: VirtualFormalParameters
+        method:                  DeclaredMethod,
+        virtualFormalParameters: VirtualFormalParameters
     ): VirtualFormalParameter = {
         val fps = virtualFormalParameters(method)
         if (fps eq null) null
@@ -172,7 +168,4 @@ case class AllocationSiteDescription(
     }
 }
 
-case class ArrayDescription(
-        array:     EntityDescription,
-        arrayType: String
-) extends EntityDescription
+case class ArrayDescription(array: EntityDescription, arrayType: String) extends EntityDescription

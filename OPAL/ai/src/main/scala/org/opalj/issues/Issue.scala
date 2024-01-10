@@ -50,7 +50,9 @@ case class Issue(
         val dataCategories =
             categories.map(_.replace(' ', '_')).mkString(" ")
 
-        <div class="an_issue" style={s"color:${relevance.toHTMLColor};"} data-relevance={relevance.value.toString} data-kind={dataKinds} data-category={dataCategories}>
+        <div class="an_issue" style={s"color:${relevance.toHTMLColor};"} data-relevance={
+            relevance.value.toString
+        } data-kind={dataKinds} data-category={dataCategories}>
             <dl>
                 <dt class="analysis">analysis</dt>
                 <dd>
@@ -92,9 +94,8 @@ case class Issue(
     }
 
     def toEclipseConsoleString: String = {
-        locations.map(_.toEclipseConsoleString).mkString(
-            s"$summary«$analysis ${relevance.toEclipseConsoleString}» ", " ", ""
-        )
+        locations.map(_.toEclipseConsoleString)
+            .mkString(s"$summary«$analysis ${relevance.toEclipseConsoleString}» ", " ", "")
     }
 
     override def toIDL: JsValue = {

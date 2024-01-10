@@ -77,9 +77,7 @@ object FieldAssignabilityAnalysisDemo extends ProjectAnalysisApplication {
 
             propertyStore.waitOnPhaseCompletion()
 
-        } { t =>
-            analysisTime = t.toSeconds
-        }
+        } { t => analysisTime = t.toSeconds }
 
         val allFieldsInProjectClassFiles = project.allProjectClassFiles.iterator.flatMap { _.fields }.toSet
 
@@ -96,18 +94,18 @@ object FieldAssignabilityAnalysisDemo extends ProjectAnalysisApplication {
         val NonAssignableFields = groupedResults(NonAssignable).toSeq.sortWith(order)
 
         s"""
-          |
-          | Assignable Fields: ${assignableFields.size}
-          | Unsafely Lazily Initialized Fields : ${unsafelyLazilyInitializedFields.size}
-          | Lazily Initialized Fields: ${lazilyInitializedFields.size}
-          | Effectively Non Assignable Fields: ${EffectivelynonAssignableFields.size}
-          | Non Assignable Fields: ${NonAssignableFields.size}
-          |
-          | total Fields: ${
-            assignableFields.size + unsafelyLazilyInitializedFields.size + lazilyInitializedFields.size +
-                EffectivelynonAssignableFields.size + NonAssignableFields.size
-        }
-          | took : $analysisTime seconds
-          |""".stripMargin
+           |
+           | Assignable Fields: ${assignableFields.size}
+           | Unsafely Lazily Initialized Fields : ${unsafelyLazilyInitializedFields.size}
+           | Lazily Initialized Fields: ${lazilyInitializedFields.size}
+           | Effectively Non Assignable Fields: ${EffectivelynonAssignableFields.size}
+           | Non Assignable Fields: ${NonAssignableFields.size}
+           |
+           | total Fields: ${
+                assignableFields.size + unsafelyLazilyInitializedFields.size + lazilyInitializedFields.size +
+                    EffectivelynonAssignableFields.size + NonAssignableFields.size
+            }
+           | took : $analysisTime seconds
+           |""".stripMargin
     }
 }

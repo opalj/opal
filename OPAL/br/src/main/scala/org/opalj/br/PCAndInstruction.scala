@@ -11,7 +11,8 @@ import org.opalj.br.instructions.Instruction
  * @param i The instruction with the respective program counter.
  * @author Michael Eichberg
  */
-/* no case class */ final class PCAndInstruction(val pc: Int /* PC */, val instruction: Instruction) {
+/* no case class */
+final class PCAndInstruction(val pc: Int /* PC */, val instruction: Instruction) {
 
     override def hashCode(): Opcode = instruction.hashCode() * 117 + pc
 

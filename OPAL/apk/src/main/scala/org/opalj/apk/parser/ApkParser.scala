@@ -80,13 +80,9 @@ class ApkParser(val apkPath: String)(implicit config: Config) {
         val services = manifestXml \ "application" \ "service"
         services.foreach(s => entryPoints.append(nodeToEntryPoint(ApkComponentType.Service, s)))
         val receivers = manifestXml \ "application" \ "receiver"
-        receivers.foreach(
-            r => entryPoints.append(nodeToEntryPoint(ApkComponentType.BroadcastReceiver, r))
-        )
+        receivers.foreach(r => entryPoints.append(nodeToEntryPoint(ApkComponentType.BroadcastReceiver, r)))
         val providers = manifestXml \ "application" \ "provider"
-        providers.foreach(
-            p => entryPoints.append(nodeToEntryPoint(ApkComponentType.ContentProvider, p))
-        )
+        providers.foreach(p => entryPoints.append(nodeToEntryPoint(ApkComponentType.ContentProvider, p)))
 
         entryPoints.toSeq
     }
@@ -138,9 +134,7 @@ class ApkParser(val apkPath: String)(implicit config: Config) {
                     }
                     OPALLogger.info(LogCategory, s"${i + 1} of ${dexFiles.length} dex code files parsed")
             }
-        } { t =>
-            OPALLogger.info(LogCategory, s"dex code parsing finished, took ${t.toSeconds}")
-        }
+        } { t => OPALLogger.info(LogCategory, s"dex code parsing finished, took ${t.toSeconds}") }
         (jarsDir, jarFiles.toSeq)
     }
 
@@ -209,9 +203,7 @@ class ApkParser(val apkPath: String)(implicit config: Config) {
                         )
                 }
 
-        } { t =>
-            OPALLogger.info(LogCategory, s"native code parsing finished, took ${t.toSeconds}")
-        }
+        } { t => OPALLogger.info(LogCategory, s"native code parsing finished, took ${t.toSeconds}") }
         Some((llvmDir, llvmFiles.toSeq))
     }
 
@@ -270,15 +262,13 @@ object ApkParser {
                 projectConfig
             )
 
-        project.updateProjectInformationKeyInitializationData(ApkComponentsKey)(
-            _ => apkParser
-        )
+        project.updateProjectInformationKeyInitializationData(ApkComponentsKey)(_ => apkParser)
         project.get(ApkComponentsKey)
 
         apkParser.parseNativeCode match {
             case Some((_, llvmModules)) =>
-                project.updateProjectInformationKeyInitializationData(LLVMProjectKey)(
-                    _ => llvmModules.map(f => f.toString)
+                project.updateProjectInformationKeyInitializationData(LLVMProjectKey)(_ =>
+                    llvmModules.map(f => f.toString)
                 )
                 project.get(LLVMProjectKey)
             case None =>

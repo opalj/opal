@@ -110,8 +110,7 @@ package object da {
     def asJavaObjectType(
         cpIndex: Constant_Pool_Index
     )(
-        implicit
-        cp: Constant_Pool
+        implicit cp: Constant_Pool
     ): ObjectTypeInfo = {
         asJavaObjectType(cp(cpIndex).toString(cp))
     }
@@ -121,8 +120,7 @@ package object da {
     def returnTypeAsJavaType(
         type_index: Constant_Pool_Index
     )(
-        implicit
-        cp: Constant_Pool
+        implicit cp: Constant_Pool
     ): TypeInfo = {
         parseReturnType(cp(type_index).toString)
     }
@@ -138,8 +136,7 @@ package object da {
     def parseFieldType(
         type_index: Constant_Pool_Index
     )(
-        implicit
-        cp: Constant_Pool
+        implicit cp: Constant_Pool
     ): FieldTypeInfo = {
         parseFieldType(cp(type_index).toString)
     }
@@ -195,8 +192,7 @@ package object da {
         descriptor:       String,
         methodParameters: Option[MethodParameters]
     )(
-        implicit
-        cp: Constant_Pool
+        implicit cp: Constant_Pool
     ): Node = {
         var index = 1 // we are not interested in the leading '('
         var parameters: IndexedSeq[FieldTypeInfo] = IndexedSeq.empty
@@ -220,9 +216,7 @@ package object da {
                                 methodParameter.toXHTML(fti)
                             }
                         }
-                    spanParameters.tail.foldLeft(List(spanParameters.head)) { (r, n) =>
-                        r ++ List(Text(", "), n)
-                    }
+                    spanParameters.tail.foldLeft(List(spanParameters.head)) { (r, n) => r ++ List(Text(", "), n) }
                 } else {
                     NodeSeq.Empty
                 }

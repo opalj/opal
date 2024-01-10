@@ -218,8 +218,13 @@ class VariableTypeProblem(project: SomeProject, override val subsumeFacts: Boole
      * If the call returns a value which is assigned to a variable, a new VariableType will be
      * created in the caller context with the returned variable's type.
      */
-    override def returnFlow(exit: JavaStatement, in: VTAFact, call: JavaStatement, successor: Option[JavaStatement],
-                            unbCallChain: Seq[Callable]): Set[VTAFact] =
+    override def returnFlow(
+        exit:         JavaStatement,
+        in:           VTAFact,
+        call:         JavaStatement,
+        successor:    Option[JavaStatement],
+        unbCallChain: Seq[Callable]
+    ): Set[VTAFact] =
         // We only create a new fact, if the call returns a value, which is assigned to a variable.
         if (exit.stmt.astID == ReturnValue.ASTID && call.stmt.astID == Assignment.ASTID) {
             val inSet = Set(in)
@@ -241,15 +246,24 @@ class VariableTypeProblem(project: SomeProject, override val subsumeFacts: Boole
      */
     override def outsideAnalysisContextCall(callee: Method): Option[OutsideAnalysisContextCallHandler] =
         if (classInsideAnalysisContext(callee.classFile) &&
-            super.outsideAnalysisContextCall(callee).isEmpty)
+            super.outsideAnalysisContextCall(callee).isEmpty
+        )
             None
         else {
-            Some(((call: JavaStatement, successor: Option[JavaStatement], in: VTAFact, unbCallChain: Seq[Callable], getter: Getter) => {
-                val returnType = callee.descriptor.returnType
-                if (call.stmt.astID == Assignment.ASTID && returnType.isReferenceType) {
-                    Set(VariableType(call.index, returnType.asReferenceType, upperBound = true))
-                } else Set.empty[VTAFact]
-            }): OutsideAnalysisContextCallHandler)
+            Some((
+                (
+                    call:         JavaStatement,
+                    successor:    Option[JavaStatement],
+                    in:           VTAFact,
+                    unbCallChain: Seq[Callable],
+                    getter:       Getter
+                ) => {
+                    val returnType = callee.descriptor.returnType
+                    if (call.stmt.astID == Assignment.ASTID && returnType.isReferenceType) {
+                        Set(VariableType(call.index, returnType.asReferenceType, upperBound = true))
+                    } else Set.empty[VTAFact]
+                }
+            ): OutsideAnalysisContextCallHandler)
         }
 
     /**
@@ -284,8 +298,9 @@ class VariableTypeProblem(project: SomeProject, override val subsumeFacts: Boole
             case ArrayLoad.ASTID =>
                 inSet.iterator.collect {
                     // When we know the array's type, we also know the type of the loaded element.
-                    case VariableType(index, t, upperBound) if isArrayOfObjectType(t) &&
-                        expression.asArrayLoad.arrayRef.asVar.definedBy.contains(index) =>
+                    case VariableType(index, t, upperBound)
+                        if isArrayOfObjectType(t) &&
+                            expression.asArrayLoad.arrayRef.asVar.definedBy.contains(index) =>
                         VariableType(statementIndex, t.asArrayType.elementType.asReferenceType, upperBound)
                 }
             case GetField.ASTID | GetStatic.ASTID =>
@@ -312,7 +327,7 @@ class VariableTypeProblem(project: SomeProject, override val subsumeFacts: Boole
      */
     @tailrec private def isArrayOfObjectType(
         t:                 FieldType,
-        includeObjectType: Boolean   = false
+        includeObjectType: Boolean = false
     ): Boolean = {
         if (t.isArrayType) isArrayOfObjectType(t.asArrayType.elementType, includeObjectType = true)
         else if (t.isObjectType && includeObjectType) true

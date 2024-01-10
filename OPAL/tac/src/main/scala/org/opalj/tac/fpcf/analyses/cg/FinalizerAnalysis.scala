@@ -71,16 +71,20 @@ class FinalizerAnalysis private[analyses] (final val project: SomeProject) exten
 
         val r = finalizers.map { finalizerMethod =>
             val finalizer = declaredMethods(finalizerMethod)
-            PartialResult[DeclaredMethod, Callers](finalizer, Callers.key, {
-                case InterimUBP(ub: Callers) =>
-                    if (!ub.hasVMLevelCallers)
-                        Some(InterimEUBP(finalizer, ub.updatedWithVMLevelCall()))
-                    else None
-                case _: EPK[_, _] =>
-                    Some(InterimEUBP(finalizer, OnlyVMLevelCallers))
-                case r =>
-                    throw new IllegalStateException(s"unexpected previous result $r")
-            })
+            PartialResult[DeclaredMethod, Callers](
+                finalizer,
+                Callers.key,
+                {
+                    case InterimUBP(ub: Callers) =>
+                        if (!ub.hasVMLevelCallers)
+                            Some(InterimEUBP(finalizer, ub.updatedWithVMLevelCall()))
+                        else None
+                    case _: EPK[_, _] =>
+                        Some(InterimEUBP(finalizer, OnlyVMLevelCallers))
+                    case r =>
+                        throw new IllegalStateException(s"unexpected previous result $r")
+                }
+            )
         }
 
         Results(r)

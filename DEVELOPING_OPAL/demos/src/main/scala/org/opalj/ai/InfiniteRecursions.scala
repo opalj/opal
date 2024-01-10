@@ -38,7 +38,7 @@ object InfiniteRecursions extends ProjectAnalysisApplication {
 
     override def doAnalyze(
         project:       Project[URL],
-        parameters:    Seq[String]   = List.empty,
+        parameters:    Seq[String] = List.empty,
         isInterrupted: () => Boolean
     ): BasicReport = {
 
@@ -139,27 +139,29 @@ object InfiniteRecursions extends ProjectAnalysisApplication {
                         // in the same manner; the idea is to reduce false positives
                         // due to non-infinite recursions due to side effects
                         if (callOperands.forall {
-                            case domain.DomainSingleOriginReferenceValueTag(v) =>
-                                if (v.origin < 0 /* === the value is a parameter*/ ||
-                                    // the value is always created anew (no sideeffect)
-                                    body.instructions(v.origin).opcode == NEW.opcode)
-                                    true
-                                else
-                                    false
-                            case v: domain.AnIntegerValue =>
-                                if (localsArray(0).exists(_ eq v))
-                                    true // the value is parameter
-                                else
-                                    false
-                            case v: domain.ALongValue =>
-                                if (localsArray(0).exists(_ eq v))
-                                    true // the value is parameter
-                                else
-                                    false
-                            case _: domain.LongSet      => true
-                            case _: domain.IntegerRange => true
-                            case _                      => false
-                        })
+                                case domain.DomainSingleOriginReferenceValueTag(v) =>
+                                    if (v.origin < 0 /* === the value is a parameter*/ ||
+                                        // the value is always created anew (no sideeffect)
+                                        body.instructions(v.origin).opcode == NEW.opcode
+                                    )
+                                        true
+                                    else
+                                        false
+                                case v: domain.AnIntegerValue =>
+                                    if (localsArray(0).exists(_ eq v))
+                                        true // the value is parameter
+                                    else
+                                        false
+                                case v: domain.ALongValue =>
+                                    if (localsArray(0).exists(_ eq v))
+                                        true // the value is parameter
+                                    else
+                                        false
+                                case _: domain.LongSet      => true
+                                case _: domain.IntegerRange => true
+                                case _                      => false
+                            }
+                        )
                             return Some(InfiniteRecursion(method, callOperands));
 
                         // these operands are not relevant...

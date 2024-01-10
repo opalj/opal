@@ -53,7 +53,7 @@ object CloseResources extends ProjectAnalysisApplication {
             val (stmtFacts, normalReturnFacts, abnormalReturnFacts) =
                 cfg.computeMOPSolution[Fs](seed, t, cfJoin)
         }
-        */
+         */
 
         issues.asScala.mkString("\n")
     }

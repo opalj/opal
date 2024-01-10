@@ -45,9 +45,7 @@ object SelfReferenceLeakageAnalysisDemo extends ProjectAnalysisApplication {
         } { t => analysisTime = t.toSeconds }
 
         val notLeakingEntities: Iterator[EPS[Entity, SelfReferenceLeakage]] =
-            projectStore.entities(SelfReferenceLeakage.Key) filter { eps =>
-                eps.lb == DoesNotLeakSelfReference
-            }
+            projectStore.entities(SelfReferenceLeakage.Key) filter { eps => eps.lb == DoesNotLeakSelfReference }
         val notLeakingClasses = notLeakingEntities map { eps =>
             val classFile = eps.e.asInstanceOf[ClassFile]
             val classType = classFile.thisType

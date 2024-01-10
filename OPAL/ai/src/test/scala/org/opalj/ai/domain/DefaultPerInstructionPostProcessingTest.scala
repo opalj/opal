@@ -118,12 +118,36 @@ class DefaultPerInstructionPostProcessingTest extends AnyFlatSpec with Matchers 
             import domain._
             allThrownExceptions should be(
                 Map(
-                    (19, Set(ObjectValue(ImmediateVMExceptionsOriginOffset - 19, No, true, ObjectType.NullPointerException))),
-                    (23, Set(
-                        ObjectValue(-1, No, false, ObjectType.Throwable),
-                        ObjectValue(ImmediateVMExceptionsOriginOffset - 11, No, true, ObjectType.NullPointerException)
-                    )),
-                    (25, Set(ObjectValue(ImmediateVMExceptionsOriginOffset - 25, No, true, ObjectType.NullPointerException)))
+                    (
+                        19,
+                        Set(ObjectValue(
+                            ImmediateVMExceptionsOriginOffset - 19,
+                            No,
+                            true,
+                            ObjectType.NullPointerException
+                        ))
+                    ),
+                    (
+                        23,
+                        Set(
+                            ObjectValue(-1, No, false, ObjectType.Throwable),
+                            ObjectValue(
+                                ImmediateVMExceptionsOriginOffset - 11,
+                                No,
+                                true,
+                                ObjectType.NullPointerException
+                            )
+                        )
+                    ),
+                    (
+                        25,
+                        Set(ObjectValue(
+                            ImmediateVMExceptionsOriginOffset - 25,
+                            No,
+                            true,
+                            ObjectType.NullPointerException
+                        ))
+                    )
                 )
             )
         }

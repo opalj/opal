@@ -41,7 +41,10 @@ class FieldBuilderTest extends AnyFlatSpec {
                 FIELD(PRIVATE, "privateField", "Z")
             ),
             methods = METHODS(
-                METHOD(PUBLIC, "<init>", "()V",
+                METHOD(
+                    PUBLIC,
+                    "<init>",
+                    "()V",
                     CODE(
                         ALOAD_0,
                         INVOKESPECIAL("java/lang/Object", false, "<init>", "()V"),
@@ -52,15 +55,22 @@ class FieldBuilderTest extends AnyFlatSpec {
                         ICONST_1,
                         PUTFIELD("test/FieldClass", "privateField", "Z"),
                         RETURN
-                    )),
-                METHOD(PUBLIC, "packageField", "()Z",
+                    )
+                ),
+                METHOD(
+                    PUBLIC,
+                    "packageField",
+                    "()Z",
                     CODE(
                         ALOAD_0,
                         GETFIELD("test/FieldClass", "privateField", "Z"),
                         IRETURN
-                    )),
+                    )
+                ),
                 METHOD(
-                    PUBLIC, "publicField", "()I",
+                    PUBLIC,
+                    "publicField",
+                    "()I",
                     CODE(
                         ALOAD_0,
                         GETFIELD("test/FieldClass", "publicField", "I"),

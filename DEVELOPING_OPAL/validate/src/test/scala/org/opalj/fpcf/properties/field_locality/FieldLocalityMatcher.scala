@@ -36,9 +36,10 @@ class FieldLocalityMatcher(val property: FieldLocality) extends AbstractProperty
         properties: Iterable[Property]
     ): Option[String] = {
         if (!properties.exists {
-            case `property` => true
-            case _          => false
-        }) {
+                case `property` => true
+                case _          => false
+            }
+        ) {
             Some(a.elementValuePairs.head.value.asStringValue.value)
         } else {
             None

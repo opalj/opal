@@ -36,8 +36,7 @@ object Feature {
         count:      Int               = 0,
         extensions: List[Location[S]] = List.empty
     )(
-        implicit
-        hermes: HermesConfig
+        implicit hermes: HermesConfig
     ): Feature[S] = {
         new Feature(id, count, extensions.take(hermes.MaxLocations)) {}
     }

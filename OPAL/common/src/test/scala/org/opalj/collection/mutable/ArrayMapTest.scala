@@ -191,7 +191,9 @@ class ArrayMapTest extends AnyFlatSpec with Matchers {
         map(1) = 1
         map(2) = 2
         map.entries.size should be(3)
-        map.entries.forall { iv => val (i, v) = iv; i == v.intValue } should be(true)
+        map.entries.forall { iv =>
+            val (i, v) = iv; i == v.intValue
+        } should be(true)
     }
 
     it should ("be able to correctly iterate over the elements of a non-continues map") in {
@@ -201,7 +203,9 @@ class ArrayMapTest extends AnyFlatSpec with Matchers {
         map(4) = 4
         map(100) = 100
         map.entries.size should be(4)
-        map.entries.forall { iv => val (i, v) = iv; i == v.intValue } should be(true)
+        map.entries.forall { iv =>
+            val (i, v) = iv; i == v.intValue
+        } should be(true)
     }
 
     it should ("create a toString representation that enables the creation of a map") in {

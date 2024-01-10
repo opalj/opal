@@ -27,9 +27,7 @@ class IssueLocationIDLTest extends AnyFlatSpec with Matchers {
     }
 
     it should "return a valid issue description for a PackageLocation with details" in {
-        val packageLocation = new PackageLocation(
-            Option("bar"), null, "baz", Seq(simpleOperands, simpleLocalVariables)
-        )
+        val packageLocation = new PackageLocation(Option("bar"), null, "baz", Seq(simpleOperands, simpleLocalVariables))
 
         packageLocation.toIDL should be(Json.obj(
             "description" -> "bar",
@@ -52,9 +50,7 @@ class IssueLocationIDLTest extends AnyFlatSpec with Matchers {
     }
 
     it should "return a valid issue description for a ClassLocation with details" in {
-        val classLocation = new ClassLocation(
-            Option("baz"), null, classFile, Seq(simpleOperands, simpleLocalVariables)
-        )
+        val classLocation = new ClassLocation(Option("baz"), null, classFile, Seq(simpleOperands, simpleLocalVariables))
 
         classLocation.toIDL should be(Json.obj(
             "description" -> "baz",
@@ -140,9 +136,7 @@ class IssueLocationIDLTest extends AnyFlatSpec with Matchers {
     }
 
     it should "return a valid issue description for an InstructionLocation in a method without parameters which returns nothing" in {
-        val instructionLocation = new InstructionLocation(
-            Option("baz"), null, methodReturnVoidNoParameters, 42
-        )
+        val instructionLocation = new InstructionLocation(Option("baz"), null, methodReturnVoidNoParameters, 42)
 
         instructionLocation.toIDL should be(Json.obj(
             "description" -> "baz",
@@ -157,9 +151,7 @@ class IssueLocationIDLTest extends AnyFlatSpec with Matchers {
     }
 
     it should "return a valid issue description for InstructionLocation with int return and 2 parameters" in {
-        val instructionLocation = new InstructionLocation(
-            Some("baz"), null, methodReturnIntTwoParameters, 42
-        )
+        val instructionLocation = new InstructionLocation(Some("baz"), null, methodReturnIntTwoParameters, 42)
 
         instructionLocation.toIDL should be(Json.obj(
             "description" -> "baz",

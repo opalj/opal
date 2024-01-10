@@ -24,13 +24,15 @@ trait ReferenceValuesDomain extends ReferenceValuesFactory { domain =>
      * specified reference type `supertype`. If the class hierarchy is not complete
      * the answer may be Unknown.
      */
-    /*ABSTRACT*/ def isASubtypeOf(subtype: ReferenceType, supertype: ReferenceType): Answer
+    /*ABSTRACT*/
+    def isASubtypeOf(subtype: ReferenceType, supertype: ReferenceType): Answer
 
     /**
      * Returns `true` if `subtype` is a known subtype of `supertype`. If the typing relation
      * is unknown OR `subtype` is not a subtype of `supertype` `false` is returned.
      */
-    /*ABSTRACT*/ def isSubtypeOf(subtype: ReferenceType, supertype: ReferenceType): Boolean
+    /*ABSTRACT*/
+    def isSubtypeOf(subtype: ReferenceType, supertype: ReferenceType): Boolean
 
     /**
      * Tries to determine – '''under the assumption that the given `value` is not
@@ -44,7 +46,8 @@ trait ReferenceValuesDomain extends ReferenceValuesFactory { domain =>
      * @note   The returned value is only meaningful if `value` does not represent
      *         the runtime value `null`.
      */
-    /*ABSTRACT*/ def isValueASubtypeOf(
+    /*ABSTRACT*/
+    def isValueASubtypeOf(
         value:     DomainValue,
         supertype: ReferenceType
     ): Answer
@@ -55,7 +58,8 @@ trait ReferenceValuesDomain extends ReferenceValuesFactory { domain =>
      *
      * @param value A value of computational type reference.
      */
-    /*ABSTRACT*/ def refIsNull(pc: Int, value: DomainValue): Answer
+    /*ABSTRACT*/
+    def refIsNull(pc: Int, value: DomainValue): Answer
 
     /**
      * Returns `Yes` if given value is never `null`, `Unknown` if the values is maybe
@@ -76,7 +80,8 @@ trait ReferenceValuesDomain extends ReferenceValuesFactory { domain =>
      * @param value1 A value of computational type reference.
      * @param value2 A value of computational type reference.
      */
-    /*ABSTRACT*/ def refAreEqual(pc: Int, value1: DomainValue, value2: DomainValue): Answer
+    /*ABSTRACT*/
+    def refAreEqual(pc: Int, value1: DomainValue, value2: DomainValue): Answer
 
     /**
      * Compares the given values for reference inequality. Returns `No` if both values
@@ -130,7 +135,8 @@ trait ReferenceValuesDomain extends ReferenceValuesFactory { domain =>
      * A domain that is able to identify aliases can use this information to propagate
      * the information to the other aliases.
      */
-    /*abstract*/ def refSetUpperTypeBoundOfTopOperand(
+    /*abstract*/
+    def refSetUpperTypeBoundOfTopOperand(
         pc:       Int,
         bound:    ReferenceType,
         operands: Operands,

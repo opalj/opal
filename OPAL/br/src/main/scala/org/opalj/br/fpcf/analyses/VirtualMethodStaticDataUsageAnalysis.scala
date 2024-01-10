@@ -89,8 +89,11 @@ class VirtualMethodStaticDataUsageAnalysis private[analyses] (
                 Result(dm, maxLevel.aggregatedProperty)
             } else {
                 InterimResult(
-                    dm, VUsesVaryingData, maxLevel.aggregatedProperty,
-                    dependees, c
+                    dm,
+                    VUsesVaryingData,
+                    maxLevel.aggregatedProperty,
+                    dependees,
+                    c
                 )
             }
         }
@@ -99,8 +102,11 @@ class VirtualMethodStaticDataUsageAnalysis private[analyses] (
             Result(dm, maxLevel.aggregatedProperty)
         } else {
             org.opalj.fpcf.InterimResult(
-                dm, VUsesVaryingData, maxLevel.aggregatedProperty,
-                dependees, c
+                dm,
+                VUsesVaryingData,
+                maxLevel.aggregatedProperty,
+                dependees,
+                c
             )
         }
     }

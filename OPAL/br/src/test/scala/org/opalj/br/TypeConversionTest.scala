@@ -136,8 +136,7 @@ class TypeConversionTest extends AnyFunSpec with Matchers {
                 it(s"should convert ${t.WrapperType.toJava} to ${t.toJava}") {
                     val instructions = t.WrapperType.unboxValue
                     instructions should be(Array(
-                        INVOKEVIRTUAL(t.WrapperType, s"${t.toJava}Value",
-                            MethodDescriptor(NoFieldTypes, t)),
+                        INVOKEVIRTUAL(t.WrapperType, s"${t.toJava}Value", MethodDescriptor(NoFieldTypes, t)),
                         null,
                         null
                     ))

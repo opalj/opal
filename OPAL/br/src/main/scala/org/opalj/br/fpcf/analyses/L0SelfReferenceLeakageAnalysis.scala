@@ -112,8 +112,9 @@ class L0SelfReferenceLeakageAnalysis(
         val doesLeakSelfReference =
             classFile.methods exists { m =>
                 if (m.isNative || (
-                    m.isNotStatic && m.isNotAbstract && potentiallyLeaksSelfReference(m)
-                )) {
+                        m.isNotStatic && m.isNotAbstract && potentiallyLeaksSelfReference(m)
+                    )
+                ) {
                     if (debug) {
                         trace("analysis result", m.toJava("leaks self reference"))
                     }
@@ -204,7 +205,8 @@ class L0SelfReferenceLeakageAnalysis(
         } else {
             InterimResult(
                 classFile,
-                lb = LeaksSelfReference, ub = DoesNotLeakSelfReference,
+                lb = LeaksSelfReference,
+                ub = DoesNotLeakSelfReference,
                 dependees.valuesIterator.toSet,
                 c
             )

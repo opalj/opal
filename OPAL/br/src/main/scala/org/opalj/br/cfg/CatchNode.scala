@@ -39,7 +39,8 @@ final class CatchNode(
         // OLD: the offset is required to ensure that catch node ids do not collide with basic
         // OLD: block ids (even if the index is zero!)
         // OLD: 0xFFFFFF + startPC + (index << 16)
-        /*-1==normal exit, -2==abnormal exit*/ -3 - index
+        /*-1==normal exit, -2==abnormal exit*/
+        -3 - index
     }
 
     def copy(

@@ -48,14 +48,14 @@ object ToTxt {
             case MethodTypeConst(_, value)   => s"""MethodType("${value.toJava}")"""
             case DynamicConst(_, bootstrapMethod, name, _) =>
                 s"DynamicConstant[${bootstrapMethod.toJava}]($name)"
-            case NullExpr(_)                   => "null"
+            case NullExpr(_) => "null"
 
             case PrefixExpr(_, _, op, operand) => op.toString + " " + toTxtExpr[V](operand)
 
             case ArrayLoad(_, index, arrayRef) => s"${toTxtExpr(arrayRef)}[${toTxtExpr(index)}]"
             case ArrayLength(_, arrayRef)      => s"${toTxtExpr(arrayRef)}.length"
 
-            case New(_, objTpe)                => s"new ${objTpe.toJava}"
+            case New(_, objTpe) => s"new ${objTpe.toJava}"
 
             case InstanceOf(_, value, tpe) =>
                 s"${toTxtExpr(value)} instanceof ${tpe.asReferenceType.toJava}"
@@ -209,10 +209,7 @@ object ToTxt {
     }
 
     def apply[P <: AnyRef, V <: Var[V]](tac: TACode[P, V]): scala.collection.Seq[String] = {
-        apply(
-            tac.params, tac.stmts, tac.cfg,
-            skipParams = false, indented = true, includePC = false
-        )
+        apply(tac.params, tac.stmts, tac.cfg, skipParams = false, indented = true, includePC = false)
     }
 
     /**
@@ -293,8 +290,9 @@ object ToTxt {
 
                 var head = (" " * (if (indented) 6 else 0)) + "// "
                 if (stmts(index).astID != Throw.ASTID && bb.successors.forall(successor => {
-                    !successor.isBasicBlock && !successor.isNormalReturnExitNode
-                }))
+                        !successor.isBasicBlock && !successor.isNormalReturnExitNode
+                    })
+                )
                     head += "⚠️ ALWAYS THROWS EXCEPTION – "
                 if (successors.nonEmpty)
                     javaLikeCode +=

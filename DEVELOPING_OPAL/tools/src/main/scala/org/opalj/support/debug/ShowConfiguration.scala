@@ -31,10 +31,10 @@ object ShowConfiguration {
     def renderConfig(config: Config): String = {
         val defaultRenderingOptions = ConfigRenderOptions.defaults()
         val renderingOptions =
-            defaultRenderingOptions.
-                setOriginComments(false).
-                setComments(true).
-                setJson(false)
+            defaultRenderingOptions
+                .setOriginComments(false)
+                .setComments(true)
+                .setJson(false)
         config.root().render(renderingOptions)
     }
 

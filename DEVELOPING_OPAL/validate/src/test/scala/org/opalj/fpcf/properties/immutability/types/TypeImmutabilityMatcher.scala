@@ -63,8 +63,7 @@ class DependentlyImmutableTypeMatcher
         a:          AnnotationLike,
         properties: Iterable[Property]
     ): Option[String] = {
-        if (!properties.exists(
-            p =>
+        if (!properties.exists(p =>
                 p match {
                     case DependentlyImmutableType(latticeParameters) =>
                         val annotationType = a.annotationType.asFieldType.asObjectType
@@ -74,7 +73,8 @@ class DependentlyImmutableTypeMatcher
                         annotationParameters.toSet.equals(latticeParameters.toSet)
                     case _ => p == property
                 }
-        )) {
+            )
+        ) {
             Some(a.elementValuePairs.head.value.asStringValue.value)
         } else {
             None

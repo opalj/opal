@@ -33,10 +33,15 @@ import org.opalj.tac.fpcf.properties.TACAI
 class FieldLocalityState(val field: Field, val thisIsCloneable: Boolean) {
 
     private[this] var declaredMethodsDependees: Set[EOptionP[Context, ReturnValueFreshness]] = Set.empty
-    private[this] var definitionSitesDependees: Map[(Context, DefinitionSiteLike), (EOptionP[(Context, DefinitionSiteLike), EscapeProperty], Boolean)] = Map.empty
+    private[this] var definitionSitesDependees: Map[
+        (Context, DefinitionSiteLike),
+        (EOptionP[(Context, DefinitionSiteLike), EscapeProperty], Boolean)
+    ] =
+        Map.empty
     private[this] var tacDependees: Map[Method, EOptionP[Method, TACAI]] = Map.empty
     private[this] var callerDependees: Map[DeclaredMethod, EOptionP[DeclaredMethod, Callers]] = Map.empty
-    private[this] val calleeDependees: mutable.Map[DeclaredMethod, (EOptionP[DeclaredMethod, Callees], IntTrieSet)] = mutable.Map()
+    private[this] val calleeDependees: mutable.Map[DeclaredMethod, (EOptionP[DeclaredMethod, Callees], IntTrieSet)] =
+        mutable.Map()
     private[this] var fieldReadAccessDependee: Option[EOptionP[DeclaredField, FieldReadAccessInformation]] = None
     private[this] var fieldWriteAccessDependee: Option[EOptionP[DeclaredField, FieldWriteAccessInformation]] = None
 
@@ -64,12 +69,12 @@ class FieldLocalityState(val field: Field, val thisIsCloneable: Boolean) {
 
     def hasNoDependees: Boolean = {
         fieldReadAccessDependee.forall(_.isFinal) &&
-            fieldWriteAccessDependee.forall(_.isFinal) &&
-            tacDependees.valuesIterator.forall(_.isFinal) &&
-            declaredMethodsDependees.isEmpty &&
-            definitionSitesDependees.isEmpty &&
-            callerDependees.valuesIterator.forall(_.isFinal) &&
-            calleeDependees.valuesIterator.forall(_._1.isFinal)
+        fieldWriteAccessDependee.forall(_.isFinal) &&
+        tacDependees.valuesIterator.forall(_.isFinal) &&
+        declaredMethodsDependees.isEmpty &&
+        definitionSitesDependees.isEmpty &&
+        callerDependees.valuesIterator.forall(_.isFinal) &&
+        calleeDependees.valuesIterator.forall(_._1.isFinal)
     }
 
     def hasTacDependees: Boolean = tacDependees.valuesIterator.exists(_.isRefinable)
@@ -140,13 +145,15 @@ class FieldLocalityState(val field: Field, val thisIsCloneable: Boolean) {
         fieldReadAccessDependee = Some(ep)
     }
 
-    def getFieldReadAccessDependee: Option[EOptionP[DeclaredField, FieldReadAccessInformation]] = fieldReadAccessDependee
+    def getFieldReadAccessDependee: Option[EOptionP[DeclaredField, FieldReadAccessInformation]] =
+        fieldReadAccessDependee
 
     def setFieldWriteAccessDependee(ep: EOptionP[DeclaredField, FieldWriteAccessInformation]): Unit = {
         fieldWriteAccessDependee = Some(ep)
     }
 
-    def getFieldWriteAccessDependee: Option[EOptionP[DeclaredField, FieldWriteAccessInformation]] = fieldWriteAccessDependee
+    def getFieldWriteAccessDependee: Option[EOptionP[DeclaredField, FieldWriteAccessInformation]] =
+        fieldWriteAccessDependee
 
     def addCallsite(
         caller: DeclaredMethod,

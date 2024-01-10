@@ -12,20 +12,20 @@ case class IncompatibleNumericConstraints(
         message:            String,
         constraint1:        NumericConstraint,
         constraint2:        NumericConstraint,
-        enableSuppression:  Boolean           = false,
-        writableStackTrace: Boolean           = true
+        enableSuppression:  Boolean = false,
+        writableStackTrace: Boolean = true
 ) extends RuntimeException(
-    if (message != null)
-        s"$message (incompatible: $constraint1 and $constraint2)"
-    else
-        s"incompatible constraints: $constraint1 and $constraint2",
-    /*cause = */ null,
-    enableSuppression,
-    writableStackTrace
-) {
+        if (message != null)
+            s"$message (incompatible: $constraint1 and $constraint2)"
+        else
+            s"incompatible constraints: $constraint1 and $constraint2",
+        /*cause = */ null,
+        enableSuppression,
+        writableStackTrace
+    ) {
 
     def this(
-        constraint1: NumericConstraint,
-        constraint2: NumericConstraint
+            constraint1: NumericConstraint,
+            constraint2: NumericConstraint
     ) = this(null, constraint1, constraint2)
 }

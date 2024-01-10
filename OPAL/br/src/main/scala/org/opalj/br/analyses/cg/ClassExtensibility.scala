@@ -77,10 +77,11 @@ abstract class AbstractClassExtensibility extends ClassExtensibility {
 
         val isClosedPackage = project.get(ClosedPackagesKey)
 
-        val configuredTypes: mutable.LongMap[Answer] = mutable.LongMap.empty[Answer] ++ configuredExtensibleClasses.map { e =>
-            val (ot, answer) = e
-            (ot.id.toLong, answer)
-        }
+        val configuredTypes: mutable.LongMap[Answer] =
+            mutable.LongMap.empty[Answer] ++ configuredExtensibleClasses.map { e =>
+                val (ot, answer) = e
+                (ot.id.toLong, answer)
+            }
 
         val allClassFiles = project.allClassFiles
         val entries = ObjectType.objectTypesCount
@@ -91,8 +92,9 @@ abstract class AbstractClassExtensibility extends ClassExtensibility {
                 if (configured.isDefined)
                     configured.get
                 else if (classFile.isEffectivelyFinal ||
-                    classFile.isEnumDeclaration ||
-                    classFile.isAnnotationDeclaration)
+                         classFile.isEnumDeclaration ||
+                         classFile.isAnnotationDeclaration
+                )
                     No
                 else if (classFile.isPublic)
                     Yes

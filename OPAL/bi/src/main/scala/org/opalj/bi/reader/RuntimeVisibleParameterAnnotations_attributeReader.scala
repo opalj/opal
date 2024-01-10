@@ -49,18 +49,23 @@ trait RuntimeVisibleParameterAnnotations_attributeReader extends AttributeReader
      * </pre>
      */
     private[this] def parserFactory() = (
-        cp: Constant_Pool,
-        ap: AttributeParent,
-        ap_name_index: Constant_Pool_Index,
-        ap_descriptor_index: Constant_Pool_Index,
+        cp:                   Constant_Pool,
+        ap:                   AttributeParent,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
-        in: DataInputStream
+        in:                   DataInputStream
     ) => {
-        /*val attribute_length =*/ in.readInt()
+        /*val attribute_length =*/
+        in.readInt()
         val parameter_annotations = ParametersAnnotations(cp, in)
         if (parameter_annotations.iterator.nonEmpty || reifyEmptyAttributes) {
             RuntimeVisibleParameterAnnotations_attribute(
-                cp, ap_name_index, ap_descriptor_index, attribute_name_index, parameter_annotations
+                cp,
+                ap_name_index,
+                ap_descriptor_index,
+                attribute_name_index,
+                parameter_annotations
             )
         } else {
             null

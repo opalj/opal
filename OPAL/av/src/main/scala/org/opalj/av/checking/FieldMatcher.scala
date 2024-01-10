@@ -32,7 +32,7 @@ case class FieldMatcher(
         (theType.isEmpty || (theType.get eq field.fieldType)) && (
             (theName.isEmpty || theName.get(field.name))
         ) &&
-            annotations(field.annotations)
+        annotations(field.annotations)
     }
 
     def extension(implicit project: SomeProject): immutable.Set[VirtualSourceElement] = {

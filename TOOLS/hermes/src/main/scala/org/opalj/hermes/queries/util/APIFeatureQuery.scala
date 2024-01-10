@@ -77,9 +77,8 @@ abstract class APIFeatureQuery(implicit hermes: HermesConfig) extends FeatureQue
             classFile.flatMap { cf => project.source(cf).map(src => ClassFileLocation(src, cf)) }
         }
 
-        var occurrencesCount = apiFeatures.foldLeft(Map.empty[String, Int])(
-            (result, feature) => result + ((feature.featureID, 0))
-        )
+        var occurrencesCount =
+            apiFeatures.foldLeft(Map.empty[String, Int])((result, feature) => result + ((feature.featureID, 0)))
 
         // TODO Use LocationsContainer
         val locations = mutable.Map.empty[String, List[Location[S]]]
@@ -113,7 +112,10 @@ abstract class APIFeatureQuery(implicit hermes: HermesConfig) extends FeatureQue
             if !isInterrupted()
             source <- project.source(cf)
             m @ MethodWithBody(code) <- cf.methods
-            pcAndInvocation <- code collect ({ case mii: MethodInvocationInstruction => mii }: PartialFunction[Instruction, MethodInvocationInstruction])
+            pcAndInvocation <- code collect ({ case mii: MethodInvocationInstruction => mii }: PartialFunction[
+                Instruction,
+                MethodInvocationInstruction
+            ])
             pc = pcAndInvocation.pc
             mii = pcAndInvocation.value
             declClass = mii.declaringClass

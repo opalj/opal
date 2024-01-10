@@ -242,12 +242,12 @@ object CFGFactory {
                     val thisSubroutineReturnPCs =
                         subroutineReturnPCs.getOrElse(subroutinePC, IntArraySet.empty)
                     subroutineReturnPCs += (
-                        subroutinePC ->
-                        (thisSubroutineReturnPCs + jsrInstr.indexOfNextInstruction(pc))
+                        subroutinePC -> (thisSubroutineReturnPCs + jsrInstr.indexOfNextInstruction(pc))
                     )
                     val currentBB = useRunningBB()
                     currentBB.endPC = pc
-                    /*val subroutineBB = */ connect(currentBB, subroutinePC)
+                    /*val subroutineBB = */
+                    connect(currentBB, subroutinePC)
                     runningBB = null // <=> the next instruction gets a new bb
 
                 case ATHROW.opcode =>
@@ -386,10 +386,6 @@ object CFGFactory {
             }
         }
 
-        CFG(
-            code,
-            normalReturnNode, abnormalReturnNode, effectiveExceptionHandlers.toList,
-            bbs
-        )
+        CFG(code, normalReturnNode, abnormalReturnNode, effectiveExceptionHandlers.toList, bbs)
     }
 }

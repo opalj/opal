@@ -84,18 +84,32 @@ class AIArchitectureConsistencyTest extends AnyFlatSpec with Matchers with Befor
                 Symbol("Domain") is_only_allowed_to (USE, Symbol("Util"), Symbol("AI"))
 
                 Symbol("DomainL0") is_only_allowed_to (USE, Symbol("Util"), Symbol("AI"), Symbol("Domain"))
-                Symbol("DomainL1") is_only_allowed_to (USE, Symbol("Util"), Symbol("AI"), Symbol("Domain"), Symbol("DomainL0"))
-                Symbol("DomainL2") is_only_allowed_to (USE, Symbol("Util"), Symbol("AI"), Symbol("Domain"), Symbol("DomainL0"), Symbol("DomainL1"))
+                Symbol("DomainL1") is_only_allowed_to
+                    (USE, Symbol("Util"), Symbol("AI"), Symbol("Domain"), Symbol("DomainL0"))
+                Symbol("DomainL2") is_only_allowed_to
+                    (USE, Symbol("Util"), Symbol("AI"), Symbol("Domain"), Symbol("DomainL0"), Symbol("DomainL1"))
 
                 Symbol("DomainTracing") is_only_allowed_to (USE, Symbol("Util"), Symbol("AI"), Symbol("Domain"))
 
-                Symbol("Project") is_only_allowed_to (USE, Symbol("Util"), Symbol("AI"), Symbol("Domain"), Symbol("DomainL0"), Symbol("DomainL1"), Symbol("DomainL2"))
+                Symbol("Project") is_only_allowed_to (
+                    USE,
+                    Symbol("Util"), Symbol("AI"), Symbol("Domain"), Symbol("DomainL0"), Symbol("DomainL1"),
+                    Symbol("DomainL2")
+                )
 
                 // we have a cyclic dependency between code in ..ai.domain.la and
                 // ai.analyses.** which is "intended" since we do fix-point
                 // computations
-                Symbol("DomainLA") is_only_allowed_to (USE, Symbol("Util"), Symbol("AI"), Symbol("Domain"), Symbol("DomainL0"), Symbol("DomainL1"), Symbol("DomainL2"), Symbol("Analyses"))
-                Symbol("Analyses") is_only_allowed_to (USE, Symbol("Util"), Symbol("AI"), Symbol("Common"), Symbol("Domain"), Symbol("DomainL0"), Symbol("DomainL1"), Symbol("DomainL2"), Symbol("DomainLA"), Symbol("Project"))
+                Symbol("DomainLA") is_only_allowed_to (
+                    USE,
+                    Symbol("Util"), Symbol("AI"), Symbol("Domain"), Symbol("DomainL0"), Symbol("DomainL1"),
+                    Symbol("DomainL2"), Symbol("Analyses")
+                )
+                Symbol("Analyses") is_only_allowed_to (
+                    USE,
+                    Symbol("Util"), Symbol("AI"), Symbol("Common"), Symbol("Domain"), Symbol("DomainL0"),
+                    Symbol("DomainL1"), Symbol("DomainL2"), Symbol("DomainLA"), Symbol("Project")
+                )
 
                 // 'Common is allowed to use everything
             }

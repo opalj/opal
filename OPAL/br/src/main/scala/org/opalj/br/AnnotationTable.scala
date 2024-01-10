@@ -32,9 +32,9 @@ trait AnnotationTable extends Attribute {
 
     def similar(other: AnnotationTable): Boolean = {
         this.isRuntimeVisible == other.isRuntimeVisible &&
-            // the order of two annotation tables does not need to be identical
-            this.annotations.size == other.annotations.size &&
-            this.annotations.forall(other.annotations.contains)
+        // the order of two annotation tables does not need to be identical
+        this.annotations.size == other.annotations.size &&
+        this.annotations.forall(other.annotations.contains)
     }
 }
 

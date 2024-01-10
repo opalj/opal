@@ -116,9 +116,21 @@ object Purity {
             "Example:\n\tjava …PurityAnalysisEvaluation -JDK -individual -closedWorld"
     }
 
-    val JDKPackages = List("java/", "javax", "javafx", "jdk", "sun", "oracle", "com/sun",
-        "netscape", "org/ietf/jgss", "org/jcp/xml/dsig/internal", "org/omg", "org/w3c/dom",
-        "org/xml/sax")
+    val JDKPackages = List(
+        "java/",
+        "javax",
+        "javafx",
+        "jdk",
+        "sun",
+        "oracle",
+        "com/sun",
+        "netscape",
+        "org/ietf/jgss",
+        "org/jcp/xml/dsig/internal",
+        "org/omg",
+        "org/w3c/dom",
+        "org/xml/sax"
+    )
 
     def evaluate(
         cp:                    File,
@@ -280,20 +292,41 @@ object Purity {
             !dm.definedMethod.isStatic && p.size == 1 && p.head == 0
         }
 
-        val compileTimePure = projectEntitiesWithPurity.collect { case FinalEP(Context(m: DefinedMethod), CompileTimePure) => m }
+        val compileTimePure =
+            projectEntitiesWithPurity.collect { case FinalEP(Context(m: DefinedMethod), CompileTimePure) => m }
         val pure = projectEntitiesWithPurity.collect { case FinalEP(Context(m: DefinedMethod), Pure) => m }
-        val sideEffectFree = projectEntitiesWithPurity.collect { case FinalEP(Context(m: DefinedMethod), SideEffectFree) => m }
-        val externallyPure = projectEntitiesWithPurity.collect { case FinalEP(Context(m: DefinedMethod), ContextuallyPure(p)) if isExternal(m, p) => m }
-        val externallySideEffectFree = projectEntitiesWithPurity.collect { case FinalEP(Context(m: DefinedMethod), ContextuallySideEffectFree(p)) if isExternal(m, p) => m }
-        val contextuallyPure = projectEntitiesWithPurity.collect { case FinalEP(Context(m: DefinedMethod), ContextuallyPure(p)) if !isExternal(m, p) => (m, p) }
-        val contextuallySideEffectFree = projectEntitiesWithPurity.collect { case FinalEP(Context(m: DefinedMethod), ContextuallySideEffectFree(p)) if !isExternal(m, p) => (m, p) }
+        val sideEffectFree =
+            projectEntitiesWithPurity.collect { case FinalEP(Context(m: DefinedMethod), SideEffectFree) => m }
+        val externallyPure = projectEntitiesWithPurity.collect {
+            case FinalEP(Context(m: DefinedMethod), ContextuallyPure(p)) if isExternal(m, p) => m
+        }
+        val externallySideEffectFree = projectEntitiesWithPurity.collect {
+            case FinalEP(Context(m: DefinedMethod), ContextuallySideEffectFree(p)) if isExternal(m, p) => m
+        }
+        val contextuallyPure = projectEntitiesWithPurity.collect {
+            case FinalEP(Context(m: DefinedMethod), ContextuallyPure(p)) if !isExternal(m, p) => (m, p)
+        }
+        val contextuallySideEffectFree = projectEntitiesWithPurity.collect {
+            case FinalEP(Context(m: DefinedMethod), ContextuallySideEffectFree(p)) if !isExternal(m, p) => (m, p)
+        }
         val dPure = projectEntitiesWithPurity.collect { case FinalEP(Context(m: DefinedMethod), DPure) => m }
-        val dSideEffectFree = projectEntitiesWithPurity.collect { case FinalEP(Context(m: DefinedMethod), DSideEffectFree) => m }
-        val dExternallyPure = projectEntitiesWithPurity.collect { case FinalEP(Context(m: DefinedMethod), DContextuallyPure(p)) if isExternal(m, p) => m }
-        val dExternallySideEffectFree = projectEntitiesWithPurity.collect { case FinalEP(Context(m: DefinedMethod), DContextuallySideEffectFree(p)) if isExternal(m, p) => m }
-        val dContextuallyPure = projectEntitiesWithPurity.collect { case FinalEP(Context(m: DefinedMethod), DContextuallyPure(p)) if !isExternal(m, p) => (m, p) }
-        val dContextuallySideEffectFree = projectEntitiesWithPurity.collect { case FinalEP(Context(m: DefinedMethod), DContextuallySideEffectFree(p)) if !isExternal(m, p) => (m, p) }
-        val lbImpure = projectEntitiesWithPurity.collect { case FinalEP(Context(m: DefinedMethod), ImpureByAnalysis) => m }
+        val dSideEffectFree =
+            projectEntitiesWithPurity.collect { case FinalEP(Context(m: DefinedMethod), DSideEffectFree) => m }
+        val dExternallyPure = projectEntitiesWithPurity.collect {
+            case FinalEP(Context(m: DefinedMethod), DContextuallyPure(p)) if isExternal(m, p) => m
+        }
+        val dExternallySideEffectFree = projectEntitiesWithPurity.collect {
+            case FinalEP(Context(m: DefinedMethod), DContextuallySideEffectFree(p)) if isExternal(m, p) => m
+        }
+        val dContextuallyPure = projectEntitiesWithPurity.collect {
+            case FinalEP(Context(m: DefinedMethod), DContextuallyPure(p)) if !isExternal(m, p) => (m, p)
+        }
+        val dContextuallySideEffectFree = projectEntitiesWithPurity.collect {
+            case FinalEP(Context(m: DefinedMethod), DContextuallySideEffectFree(p)) if !isExternal(m, p) => (m, p)
+        }
+        val lbImpure = projectEntitiesWithPurity.collect { case FinalEP(Context(m: DefinedMethod), ImpureByAnalysis) =>
+            m
+        }
 
         if (projectEvalDir.isDefined) {
 
@@ -395,7 +428,9 @@ object Purity {
                         resultsWriter.println(s"${m.definedMethod.toJava} => externally side-effect free")
                     }
                     for (m <- dExternallySideEffectFree) {
-                        resultsWriter.println(s"${m.definedMethod.toJava} => domain-specific externally side-effect free")
+                        resultsWriter.println(
+                            s"${m.definedMethod.toJava} => domain-specific externally side-effect free"
+                        )
                     }
                     for ((m, p) <- contextuallyPure) {
                         resultsWriter.println(s"${m.definedMethod.toJava} => contextually pure: $p")
@@ -407,7 +442,9 @@ object Purity {
                         resultsWriter.println(s"${m.definedMethod.toJava} => contextually side-effect free: $p")
                     }
                     for ((m, p) <- dContextuallySideEffectFree) {
-                        resultsWriter.println(s"${m.definedMethod.toJava} => domain-specific contextually side-effect free: $p")
+                        resultsWriter.println(
+                            s"${m.definedMethod.toJava} => domain-specific contextually side-effect free: $p"
+                        )
                     }
                     for (m <- lbImpure) {
                         resultsWriter.println(s"${m.definedMethod.toJava} => impure")
@@ -569,11 +606,11 @@ object Purity {
         fieldAssignabilityAnalysisName match {
             case Some("L0") if eager => support ::= EagerL0FieldAssignabilityAnalysis
 
-            case Some("L0")          => support ::= LazyL0FieldAssignabilityAnalysis
+            case Some("L0") => support ::= LazyL0FieldAssignabilityAnalysis
 
             case Some("L1") if eager => support ::= EagerL1FieldAssignabilityAnalysis
 
-            case Some("L1")          => support ::= LazyL1FieldAssignabilityAnalysis
+            case Some("L1") => support ::= LazyL1FieldAssignabilityAnalysis
 
             case Some("L2") if eager =>
                 support ::= EagerL2FieldAssignabilityAnalysis
@@ -584,10 +621,10 @@ object Purity {
             case Some("none") =>
 
             case None => analysis match {
-                case LazyL0PurityAnalysis => support ::= LazyL0FieldAssignabilityAnalysis
-                case LazyL1PurityAnalysis => support ::= LazyL1FieldAssignabilityAnalysis
-                case LazyL2PurityAnalysis => support ::= LazyL1FieldAssignabilityAnalysis
-            }
+                    case LazyL0PurityAnalysis => support ::= LazyL0FieldAssignabilityAnalysis
+                    case LazyL1PurityAnalysis => support ::= LazyL1FieldAssignabilityAnalysis
+                    case LazyL2PurityAnalysis => support ::= LazyL1FieldAssignabilityAnalysis
+                }
 
             case Some(a) =>
                 Console.println(s"unknown field assignability analysis: $a")

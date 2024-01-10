@@ -85,7 +85,9 @@ class DynamicConstantsCreationTest extends AnyFlatSpec with Matchers with Before
                     /*  29 */ CONSTANT_Dynamic_info(0, 28),
                     /*  30 */ CONSTANT_Utf8("()Ljava/lang/invoke/VarHandle;"),
                     /*  31 */ CONSTANT_Utf8("enumConstant"),
-                    /*  32 */ CONSTANT_Utf8("(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/Class;)Ljava/lang/Enum;"),
+                    /*  32 */ CONSTANT_Utf8(
+                        "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/Class;)Ljava/lang/Enum;"
+                    ),
                     /*  33 */ CONSTANT_NameAndType_info(31, 32),
                     /*  34 */ CONSTANT_Methodref_info(19, 33),
                     /*  35 */ CONSTANT_MethodHandle_info(6, 34),
@@ -111,7 +113,9 @@ class DynamicConstantsCreationTest extends AnyFlatSpec with Matchers with Before
                     /*  55 */ CONSTANT_NameAndType_info(5, 27),
                     /*  56 */ CONSTANT_Dynamic_info(3, 55),
                     /*  57 */ CONSTANT_Utf8("getStaticFinal"),
-                    /*  58 */ CONSTANT_Utf8("(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/Class;)Ljava/lang/Object;"),
+                    /*  58 */ CONSTANT_Utf8(
+                        "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/Class;)Ljava/lang/Object;"
+                    ),
                     /*  59 */ CONSTANT_NameAndType_info(57, 58),
                     /*  60 */ CONSTANT_Methodref_info(19, 59),
                     /*  61 */ CONSTANT_MethodHandle_info(6, 60),
@@ -159,7 +163,9 @@ class DynamicConstantsCreationTest extends AnyFlatSpec with Matchers with Before
                     /* 103 */ CONSTANT_NameAndType_info(99, 6),
                     /* 104 */ CONSTANT_Dynamic_info(9, 103),
                     /* 105 */ CONSTANT_Utf8("primitiveClass"),
-                    /* 106 */ CONSTANT_Utf8("(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/Class;)Ljava/lang/Class;"),
+                    /* 106 */ CONSTANT_Utf8(
+                        "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/Class;)Ljava/lang/Class;"
+                    ),
                     /* 107 */ CONSTANT_NameAndType_info(105, 106),
                     /* 108 */ CONSTANT_Methodref_info(19, 107),
                     /* 109 */ CONSTANT_MethodHandle_info(6, 108),
@@ -410,70 +416,73 @@ class DynamicConstantsCreationTest extends AnyFlatSpec with Matchers with Before
                     )
                 ),
                 attributes = ArraySeq(
-                    BootstrapMethods_attribute(17, ArraySeq(
-                        BootstrapMethod( // 0
-                            24, /*ConstantBootstraps.arrayVarHandle*/
-                            ArraySeq(BootstrapArgument(26 /*[Ljava/lang/String;*/ ))
-                        ),
-                        BootstrapMethod( // 1
-                            35, /*ConstantBootstraps.enumConstant*/
-                            Seq.empty
-                        ),
-                        BootstrapMethod( // 2
-                            45, /*ConstantBootstraps.explicitClast*/
-                            ArraySeq(BootstrapArgument(2) /*Test.class*/ )
-                        ),
-                        BootstrapMethod( // 3
-                            54, /*ConstantBootstraps.fieldVarHandle*/
-                            ArraySeq(
-                                BootstrapArgument(2), /*Test*/
-                                BootstrapArgument(2) /*Test*/
-                            )
-                        ),
-                        BootstrapMethod( // 4
-                            61, /*ConstantBootstraps.getStaticFinal(Lookup,String,Class)*/
-                            Seq.empty
-                        ),
-                        BootstrapMethod( // 5
-                            69, /*ConstantBootstraps.getStaticFinal(Lookup,String,Class,Class)*/
-                            ArraySeq(BootstrapArgument(2) /*Test*/ )
-                        ),
-                        BootstrapMethod( // 6
-                            78, /*ConstantBootstraps.invoke*/
-                            ArraySeq(
-                                BootstrapArgument(85), /*Math.max*/
-                                BootstrapArgument(86), /*42*/
-                                BootstrapArgument(11) /*getStaticFinal(Test.staticField)*/
-                            )
-                        ),
-                        BootstrapMethod( // 7
-                            78, /*ConstantBootstraps.invoke*/
-                            ArraySeq(
-                                BootstrapArgument(85), /*Math.max*/
-                                BootstrapArgument(86), /*42*/
-                                BootstrapArgument(71) /*1337*/
-                            )
-                        ),
-                        BootstrapMethod( // 8
-                            45, /*ConstantBootstraps.explicitCast*/
-                            ArraySeq(BootstrapArgument(93) /*invoke(Math.max(42,getStaticFinal(Test.staticField))*/ )
-                        ),
-                        BootstrapMethod( // 9
-                            102, /*ConstantBootstraps.nullConstant*/
-                            Seq.empty
-                        ),
-                        BootstrapMethod( // 10
-                            109, /*ConstantBootstraps.primitiveClass*/
-                            Seq.empty
-                        ),
-                        BootstrapMethod( // 11
-                            117, /*ConstantBootstraps.staticFieldVarHandle*/
-                            ArraySeq(
-                                BootstrapArgument(2) /*Test*/ ,
-                                BootstrapArgument(2) /*Test*/
+                    BootstrapMethods_attribute(
+                        17,
+                        ArraySeq(
+                            BootstrapMethod( // 0
+                                24, /*ConstantBootstraps.arrayVarHandle*/
+                                ArraySeq(BootstrapArgument(26 /*[Ljava/lang/String;*/ ))
+                            ),
+                            BootstrapMethod( // 1
+                                35, /*ConstantBootstraps.enumConstant*/
+                                Seq.empty
+                            ),
+                            BootstrapMethod( // 2
+                                45, /*ConstantBootstraps.explicitClast*/
+                                ArraySeq(BootstrapArgument(2) /*Test.class*/ )
+                            ),
+                            BootstrapMethod( // 3
+                                54, /*ConstantBootstraps.fieldVarHandle*/
+                                ArraySeq(
+                                    BootstrapArgument(2), /*Test*/
+                                    BootstrapArgument(2) /*Test*/
+                                )
+                            ),
+                            BootstrapMethod( // 4
+                                61, /*ConstantBootstraps.getStaticFinal(Lookup,String,Class)*/
+                                Seq.empty
+                            ),
+                            BootstrapMethod( // 5
+                                69, /*ConstantBootstraps.getStaticFinal(Lookup,String,Class,Class)*/
+                                ArraySeq(BootstrapArgument(2) /*Test*/ )
+                            ),
+                            BootstrapMethod( // 6
+                                78, /*ConstantBootstraps.invoke*/
+                                ArraySeq(
+                                    BootstrapArgument(85), /*Math.max*/
+                                    BootstrapArgument(86), /*42*/
+                                    BootstrapArgument(11) /*getStaticFinal(Test.staticField)*/
+                                )
+                            ),
+                            BootstrapMethod( // 7
+                                78, /*ConstantBootstraps.invoke*/
+                                ArraySeq(
+                                    BootstrapArgument(85), /*Math.max*/
+                                    BootstrapArgument(86), /*42*/
+                                    BootstrapArgument(71) /*1337*/
+                                )
+                            ),
+                            BootstrapMethod( // 8
+                                45, /*ConstantBootstraps.explicitCast*/
+                                ArraySeq(BootstrapArgument(93) /*invoke(Math.max(42,getStaticFinal(Test.staticField))*/ )
+                            ),
+                            BootstrapMethod( // 9
+                                102, /*ConstantBootstraps.nullConstant*/
+                                Seq.empty
+                            ),
+                            BootstrapMethod( // 10
+                                109, /*ConstantBootstraps.primitiveClass*/
+                                Seq.empty
+                            ),
+                            BootstrapMethod( // 11
+                                117, /*ConstantBootstraps.staticFieldVarHandle*/
+                                ArraySeq(
+                                    BootstrapArgument(2) /*Test*/,
+                                    BootstrapArgument(2) /*Test*/
+                                )
                             )
                         )
-                    ))
+                    )
                 )
             )
         )

@@ -126,7 +126,9 @@ sealed trait MethodFieldAccessInformation[S <: MethodFieldAccessInformation[S]] 
     }
 
     def indirectAccessReceiver(
-        accessContext: Context, pc: PC, field: DeclaredField
+        accessContext: Context,
+        pc:            PC,
+        field:         DeclaredField
     ): AccessReceiver = {
         _indirectAccessedReceiversByField(accessContext.id)(pc)(field.id)
     }
@@ -156,7 +158,8 @@ sealed trait MethodFieldAccessInformation[S <: MethodFieldAccessInformation[S]] 
 
     def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
         if (numDirectAccessesInAllAccessSites > other.numDirectAccessesInAllAccessSites ||
-            numIndirectAccessesInAllAccessSites > other.numIndirectAccessesInAllAccessSites) {
+            numIndirectAccessesInAllAccessSites > other.numIndirectAccessesInAllAccessSites
+        ) {
             throw new IllegalArgumentException(s"$e: illegal refinement of $other to $this")
         }
     }
@@ -232,14 +235,18 @@ case class MethodFieldReadAccessInformation(
             _incompleteAccessSites.updateWith(cId, incompleteAccessSites, (o, n) => o ++ n),
             integrateAccessedFieldsForContext(_directAccessedFields, accessContext.id, directAccessedFields),
             integrateAccessInformationForContext(
-                _directAccessedReceiversByField, cId, directAccessReceivers,
+                _directAccessedReceiversByField,
+                cId,
+                directAccessReceivers,
                 () => new UnknownError("Incompatible receivers for direct call")
             ),
             integrateAccessedFieldsForContext(_indirectAccessedFields, accessContext.id, indirectAccessedFields),
             integrateAccessInformationForContext(
-                _indirectAccessedReceiversByField, cId, indirectAccessReceivers,
+                _indirectAccessedReceiversByField,
+                cId,
+                indirectAccessReceivers,
                 () => new UnknownError("Incompatible receivers for indirect call")
-            ),
+            )
         )
     }
 }
@@ -274,22 +281,30 @@ case class MethodFieldWriteAccessInformation(
             _incompleteAccessSites.updateWith(cId, incompleteAccessSites, (o, n) => o ++ n),
             integrateAccessedFieldsForContext(_directAccessedFields, accessContext.id, directAccessedFields),
             integrateAccessInformationForContext(
-                _directAccessedReceiversByField, cId, directAccessReceivers,
+                _directAccessedReceiversByField,
+                cId,
+                directAccessReceivers,
                 () => new UnknownError("Incompatible receivers for direct call")
             ),
             integrateAccessInformationForContext(
-                _indirectAccessedParametersByField, cId, directAccessParameters,
+                _indirectAccessedParametersByField,
+                cId,
+                directAccessParameters,
                 () => new UnknownError("Incompatible parameters for direct call")
             ),
             integrateAccessedFieldsForContext(_indirectAccessedFields, accessContext.id, indirectAccessedFields),
             integrateAccessInformationForContext(
-                _indirectAccessedReceiversByField, cId, indirectAccessReceivers,
+                _indirectAccessedReceiversByField,
+                cId,
+                indirectAccessReceivers,
                 () => new UnknownError("Incompatible receivers for indirect call")
             ),
             integrateAccessInformationForContext(
-                _indirectAccessedParametersByField, cId, indirectAccessParameters,
+                _indirectAccessedParametersByField,
+                cId,
+                indirectAccessParameters,
                 () => new UnknownError("Incompatible parameters for indirect call")
-            ),
+            )
         )
     }
 }

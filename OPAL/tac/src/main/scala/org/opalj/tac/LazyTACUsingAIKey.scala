@@ -48,13 +48,16 @@ object LazyTACUsingAIKey extends TACAIKey[Nothing] {
         val aiResults = project.get(SimpleAIKey)
         val taCodes = TrieMap.empty[Method, AITACode[TACMethodParameter, ValueInformation]]
 
-        (m: Method) => taCodes.getOrElseUpdate(m, {
-            val aiResult = aiResults(m)
-            val code = TACAI(project, m, aiResult)
-            // well... the following cast is safe, because the underlying
-            // data structure is actually (at least conceptually) immutable
-            code.asInstanceOf[AITACode[TACMethodParameter, ValueInformation]]
-        })
+        (m: Method) =>
+            taCodes.getOrElseUpdate(
+                m, {
+                    val aiResult = aiResults(m)
+                    val code = TACAI(project, m, aiResult)
+                    // well... the following cast is safe, because the underlying
+                    // data structure is actually (at least conceptually) immutable
+                    code.asInstanceOf[AITACode[TACMethodParameter, ValueInformation]]
+                }
+            )
 
         /*
         def computeAndCacheTAC(m: Method) = { // never executed concurrently
@@ -79,6 +82,6 @@ object LazyTACUsingAIKey extends TACAIKey[Nothing] {
                     }
                 }
         }
-        */
+         */
     }
 }

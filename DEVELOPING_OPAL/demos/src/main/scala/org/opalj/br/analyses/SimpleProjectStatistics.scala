@@ -26,10 +26,10 @@ object SimpleProjectStatistics extends ProjectAnalysisApplication {
         // the following is highly inefficient
 
         val classFilesDistribution =
-            project.allClassFiles.
-                groupBy(cf => org.opalj.bi.jdkVersion(cf.majorVersion)).toSeq.
-                sortWith((l, r) => l._1 < r._1).
-                map { e =>
+            project.allClassFiles
+                .groupBy(cf => org.opalj.bi.jdkVersion(cf.majorVersion)).toSeq
+                .sortWith((l, r) => l._1 < r._1)
+                .map { e =>
                     val (group, es) = e
                     (group, es.size)
                 }

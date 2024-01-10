@@ -18,23 +18,23 @@ class DefaultMutableNode[I](
         theVisualProperties: immutable.Map[String, String] = immutable.Map.empty,
         theChildren:         List[DefaultMutableNode[I]]   = List.empty
 ) extends MutableNodeLike[I, DefaultMutableNode[I]](
-    theIdentifier,
-    identifierToString,
-    theVisualProperties,
-    theChildren
-) with MutableNode[I, DefaultMutableNode[I]] {
+        theIdentifier,
+        identifierToString,
+        theVisualProperties,
+        theChildren
+    ) with MutableNode[I, DefaultMutableNode[I]] {
 
     def this(
-        identifier:         I,
-        identifierToString: I => String,
-        fillcolor:          Option[String]
+            identifier:         I,
+            identifierToString: I => String,
+            fillcolor:          Option[String]
     ) =
         this(
             identifier,
             identifierToString,
             theVisualProperties =
-                fillcolor.map(c => DefaultMutableMode.BaseVirtualPropertiers + ("fillcolor" -> c)).
-                    getOrElse(DefaultMutableMode.BaseVirtualPropertiers)
+                fillcolor.map(c => DefaultMutableMode.BaseVirtualPropertiers + ("fillcolor" -> c))
+                    .getOrElse(DefaultMutableMode.BaseVirtualPropertiers)
         )
 
 }

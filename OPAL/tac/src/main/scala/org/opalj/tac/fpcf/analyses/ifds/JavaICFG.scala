@@ -124,14 +124,13 @@ abstract class JavaICFG(project: SomeProject)
      */
     private def definedMethods(declaredMethods: Iterator[DeclaredMethod]): Set[Method] = {
         declaredMethods
-            .flatMap(
-                declaredMethod =>
-                    if (declaredMethod.hasSingleDefinedMethod)
-                        Seq(declaredMethod.definedMethod)
-                    else if (declaredMethod.hasMultipleDefinedMethods)
-                        declaredMethod.definedMethods
-                    else
-                        Seq.empty
+            .flatMap(declaredMethod =>
+                if (declaredMethod.hasSingleDefinedMethod)
+                    Seq(declaredMethod.definedMethod)
+                else if (declaredMethod.hasMultipleDefinedMethods)
+                    declaredMethod.definedMethods
+                else
+                    Seq.empty
             ).toSet
     }
 

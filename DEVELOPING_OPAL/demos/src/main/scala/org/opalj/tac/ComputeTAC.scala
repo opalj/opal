@@ -30,9 +30,7 @@ object ComputeTAC {
                 (m: Method) => new org.opalj.ai.domain.l0.PrimitiveTACAIDomain(p, m)
             }
             p.get(EagerDetachedTACAIKey)
-        } { t =>
-            println("Loading the project and computing the tac for all methods took: " + t.toSeconds)
-        }
+        } { t => println("Loading the project and computing the tac for all methods took: " + t.toSeconds) }
 
         // Now, you can use the TACProvider to get the TAC for a specific method.
         println(tacProvider.asInstanceOf[scala.collection.Map[_, _]].size)

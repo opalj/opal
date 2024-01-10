@@ -55,13 +55,14 @@ class BasicLambdaExpressionsRewritingTest extends AnyFunSpec with Matchers {
             val annotations = method.runtimeVisibleAnnotations
             successFull = true
             implicit val MethodDeclarationEquality: Equality[Method] =
-                (a: Method, b: Any) => b match {
-                    case m: Method =>
-                        a.compare(m) == 0 /* <=> same name and descriptor */ &&
-                            a.visibilityModifier == m.visibilityModifier &&
-                            a.isStatic == m.isStatic
-                    case _ => false
-                }
+                (a: Method, b: Any) =>
+                    b match {
+                        case m: Method =>
+                            a.compare(m) == 0 /* <=> same name and descriptor */ &&
+                                a.visibilityModifier == m.visibilityModifier &&
+                                a.isStatic == m.isStatic
+                        case _ => false
+                    }
 
             if (annotations.exists(_.annotationType == InvokedMethods)) {
                 val invokedTarget = for {
@@ -187,9 +188,7 @@ class BasicLambdaExpressionsRewritingTest extends AnyFunSpec with Matchers {
 
         if (method.isEmpty) {
             val message =
-                annotations.
-                    filter(_.annotationType == InvokedMethod).
-                    mkString("\n\t", "\n\t", "\n")
+                annotations.filter(_.annotationType == InvokedMethod).mkString("\n\t", "\n\t", "\n")
             fail(
                 s"the specified invoked method $message is not defined " +
                     classFile.methods.map(_.name).mkString("; defined methods = {", ",", "}")
@@ -232,8 +231,8 @@ class BasicLambdaExpressionsRewritingTest extends AnyFunSpec with Matchers {
                 classFile.superclassType match {
                     case Some(superType) => findMethodRecursiveInner(project.classFile(superType).get)
                     case None => throw new IllegalStateException(
-                        s"$receiverType does not define $methodName"
-                    )
+                            s"$receiverType does not define $methodName"
+                        )
                 }
             } else {
                 methodOpt.head
@@ -315,13 +314,16 @@ class BasicLambdaExpressionsRewritingTest extends AnyFunSpec with Matchers {
         val rewritingConfigKey = InvokedynamicRewriting.InvokedynamicRewritingConfigKey
         val logLambdaConfigKey = InvokedynamicRewriting.LambdaExpressionsLogRewritingsConfigKey
         val logConcatConfigKey = InvokedynamicRewriting.StringConcatLogRewritingsConfigKey
-        val testConfig = baseConfig.
-            withValue(rewritingConfigKey, ConfigValueFactory.fromAnyRef(java.lang.Boolean.TRUE)).
-            withValue(logLambdaConfigKey, ConfigValueFactory.fromAnyRef(java.lang.Boolean.FALSE)).
-            withValue(logConcatConfigKey, ConfigValueFactory.fromAnyRef(java.lang.Boolean.FALSE))
+        val testConfig = baseConfig
+            .withValue(rewritingConfigKey, ConfigValueFactory.fromAnyRef(java.lang.Boolean.TRUE))
+            .withValue(
+                logLambdaConfigKey,
+                ConfigValueFactory.fromAnyRef(java.lang.Boolean.FALSE)
+            )
+            .withValue(logConcatConfigKey, ConfigValueFactory.fromAnyRef(java.lang.Boolean.FALSE))
         object Framework extends Java8FrameworkWithInvokedynamicSupportAndCaching(
-            new BytecodeInstructionsCache
-        ) {
+                new BytecodeInstructionsCache
+            ) {
             override def defaultConfig = testConfig
         }
 

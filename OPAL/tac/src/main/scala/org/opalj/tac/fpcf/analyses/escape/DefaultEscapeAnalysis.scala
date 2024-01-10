@@ -87,21 +87,24 @@ trait DefaultEscapeAnalysis extends AbstractEscapeAnalysis {
     }
 
     override protected[this] def handleVirtualFunctionCall(
-        call: VirtualFunctionCall[V], hasAssignment: Boolean
+        call:          VirtualFunctionCall[V],
+        hasAssignment: Boolean
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
         if (state.usesDefSite(call.receiver) || state.anyParameterUsesDefSite(call.params))
             state.meetMostRestrictive(AtMost(EscapeInCallee))
     }
 
     override protected[this] def handleNonVirtualFunctionCall(
-        call: NonVirtualFunctionCall[V], hasAssignment: Boolean
+        call:          NonVirtualFunctionCall[V],
+        hasAssignment: Boolean
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
         if (state.usesDefSite(call.receiver) || state.anyParameterUsesDefSite(call.params))
             state.meetMostRestrictive(AtMost(EscapeInCallee))
     }
 
     override protected[this] def handleStaticFunctionCall(
-        call: StaticFunctionCall[V], hasAssignment: Boolean
+        call:          StaticFunctionCall[V],
+        hasAssignment: Boolean
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
         if (state.anyParameterUsesDefSite(call.params))
             state.meetMostRestrictive(AtMost(EscapeInCallee))

@@ -81,8 +81,11 @@ class VirtualMethodPurityAnalysis private[analyses] (final val project: SomeProj
                 Result(dm, maxPurity.aggregatedProperty)
             } else {
                 InterimResult(
-                    dm, VImpureByAnalysis, maxPurity.aggregatedProperty,
-                    dependees, c
+                    dm,
+                    VImpureByAnalysis,
+                    maxPurity.aggregatedProperty,
+                    dependees,
+                    c
                 )
             }
         }
@@ -91,8 +94,11 @@ class VirtualMethodPurityAnalysis private[analyses] (final val project: SomeProj
             Result(dm, maxPurity.aggregatedProperty)
         } else {
             InterimResult(
-                dm, VImpureByAnalysis, maxPurity.aggregatedProperty,
-                dependees, c
+                dm,
+                VImpureByAnalysis,
+                maxPurity.aggregatedProperty,
+                dependees,
+                c
             )
         }
     }
@@ -128,7 +134,8 @@ object EagerVirtualMethodPurityAnalysis
     override type InitializationData = (DeclaredMethods, SimpleContexts, ConfiguredPurity)
 
     override def init(
-        p: SomeProject, ps: PropertyStore
+        p:  SomeProject,
+        ps: PropertyStore
     ): (DeclaredMethods, SimpleContexts, ConfiguredPurity) = {
         (p.get(DeclaredMethodsKey), p.get(SimpleContextsKey), p.get(ConfiguredPurityKey))
     }

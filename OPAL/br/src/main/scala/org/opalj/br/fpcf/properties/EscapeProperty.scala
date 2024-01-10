@@ -775,7 +775,8 @@ object AtMost {
     final val AtMostEscapeViaParameterAndReturn = new AtMost(EscapeViaParameterAndReturn)
     final val AtMostEscapeViaParameterAndAbnormalReturn = new AtMost(EscapeViaParameterAndAbnormalReturn)
     final val AtMostEscapeViaNormalAndAbnormalReturn = new AtMost(EscapeViaNormalAndAbnormalReturn)
-    final val AtMostEscapeViaParameterAndNormalAndAbnormalReturn = new AtMost(EscapeViaParameterAndNormalAndAbnormalReturn)
+    final val AtMostEscapeViaParameterAndNormalAndAbnormalReturn =
+        new AtMost(EscapeViaParameterAndNormalAndAbnormalReturn)
 
     /**
      * Ensures for each [[FinalEscapeProperty]] only one object will be created.

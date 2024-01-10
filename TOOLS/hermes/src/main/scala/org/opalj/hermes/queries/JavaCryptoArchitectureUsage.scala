@@ -46,9 +46,7 @@ class JavaCryptoArchitectureUsage(implicit hermes: HermesConfig) extends APIFeat
         val getInstance = "getInstance"
 
         List(
-
             StaticAPIMethod(Cipher, getInstance),
-
             APIFeatureGroup(
                 List(
                     InstanceAPIMethod(SecureRandom, init),
@@ -57,7 +55,6 @@ class JavaCryptoArchitectureUsage(implicit hermes: HermesConfig) extends APIFeat
                 ),
                 s"using SecureRandom"
             ),
-
             APIFeatureGroup(
                 List(
                     InstanceAPIMethod(MessageDigest, init),
@@ -65,7 +62,6 @@ class JavaCryptoArchitectureUsage(implicit hermes: HermesConfig) extends APIFeat
                 ),
                 s"using MessageDigest"
             ),
-
             APIFeatureGroup(
                 List(
                     InstanceAPIMethod(Signature, init),
@@ -73,7 +69,6 @@ class JavaCryptoArchitectureUsage(implicit hermes: HermesConfig) extends APIFeat
                 ),
                 s"using Signature"
             ),
-
             APIFeatureGroup(
                 List(
                     InstanceAPIMethod(Mac, init),
@@ -81,7 +76,6 @@ class JavaCryptoArchitectureUsage(implicit hermes: HermesConfig) extends APIFeat
                 ),
                 s"using Mac"
             ),
-
             APIFeatureGroup(
                 List(
                     InstanceAPIMethod(KeyFactory, init),
@@ -97,7 +91,6 @@ class JavaCryptoArchitectureUsage(implicit hermes: HermesConfig) extends APIFeat
                 ),
                 s"cryptographic key handling"
             ),
-
             APIFeatureGroup(
                 List(
                     InstanceAPIMethod(KeyStore, init),
@@ -105,7 +98,6 @@ class JavaCryptoArchitectureUsage(implicit hermes: HermesConfig) extends APIFeat
                 ),
                 s"using KeyStore"
             ),
-
             APIFeatureGroup(
                 List(
                     InstanceAPIMethod(CertificateFactory, init),

@@ -214,9 +214,7 @@ class LabeledCode(
                             explicitAttributes = explicitAttributes.filter(a => a != explicitLNT)
                             // explicit line number have precedence
                             val newLNs = new Int2IntAVLTreeMap()
-                            oldRemappedLNT.lineNumbers.foreach { ln =>
-                                newLNs.put(ln.startPC, ln.lineNumber)
-                            }
+                            oldRemappedLNT.lineNumbers.foreach { ln => newLNs.put(ln.startPC, ln.lineNumber) }
                             explicitLNs.foreach(ln => newLNs.put(ln.startPC, ln.lineNumber))
                             val finalLNs = new Array[LineNumber](newLNs.size)
                             var index = 0
@@ -230,7 +228,7 @@ class LabeledCode(
 
                 case ca: CodeAttribute => ca.remapPCs(codeSize, initialCodeAttributeBuilder.pcMapping)
 
-                case a                 => a
+                case a => a
             } ++ explicitAttributes
         )
     }

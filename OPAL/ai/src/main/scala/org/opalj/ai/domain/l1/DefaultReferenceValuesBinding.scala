@@ -79,7 +79,8 @@ trait DefaultReferenceValuesBinding extends l1.ReferenceValues with DefaultExcep
             origin,
             isNull,
             isPrecise || classHierarchy.isKnownToBeFinal(theUpperTypeBound),
-            theUpperTypeBound, refId
+            theUpperTypeBound,
+            refId
         )
     }
 

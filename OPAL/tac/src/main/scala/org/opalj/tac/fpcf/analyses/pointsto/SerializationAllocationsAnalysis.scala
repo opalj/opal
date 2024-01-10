@@ -110,8 +110,7 @@ abstract class SerializationAllocationsAnalysis(
         pc:        Int,
         stmts:     Array[Stmt[V]]
     )(
-        implicit
-        state: State
+        implicit state: State
     ): Unit = {
         val defSite = getDefSite(pc)
 

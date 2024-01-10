@@ -38,7 +38,8 @@ import org.opalj.br.ObjectType
  * @author Michael Eichberg
  */
 trait StringBuilderValues extends StringValues {
-    domain: Domain with CorrelationalDomainSupport with Configuration with IntegerValuesDomain with TypedValuesFactory =>
+    domain: Domain with CorrelationalDomainSupport with Configuration with IntegerValuesDomain
+        with TypedValuesFactory =>
 
     // TODO Move concrete class to DefaultBindingClass...
     protected class StringBuilderValue(

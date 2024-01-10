@@ -42,16 +42,21 @@ trait SourceFile_attributeReader extends AttributeReader {
      * </pre>
      */
     private[this] def parserFactory() = (
-        cp: Constant_Pool,
-        ap: AttributeParent,
-        ap_name_index: Constant_Pool_Index,
-        ap_descriptor_index: Constant_Pool_Index,
+        cp:                   Constant_Pool,
+        ap:                   AttributeParent,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
-        in: DataInputStream
+        in:                   DataInputStream
     ) => {
-        /*val attribute_length =*/ in.readInt
+        /*val attribute_length =*/
+        in.readInt
         SourceFile_attribute(
-            cp, ap_name_index, ap_descriptor_index, attribute_name_index, in.readUnsignedShort
+            cp,
+            ap_name_index,
+            ap_descriptor_index,
+            attribute_name_index,
+            in.readUnsignedShort
         )
     }
 

@@ -155,8 +155,8 @@ package object br {
      */
     def annotationsToJava(
         annotations: Annotations,
-        before:      String      = "",
-        after:       String      = ""
+        before:      String = "",
+        after:       String = ""
     ): String = {
 
         val annotationToJava: Annotation => String = { (annotation: Annotation) =>
@@ -242,7 +242,7 @@ package object br {
     def methodToXHTML(
         name:            String,
         descriptor:      MethodDescriptor,
-        abbreviateTypes: Boolean          = true
+        abbreviateTypes: Boolean = true
     ): Node = {
 
         val parameterTypes =
@@ -250,9 +250,7 @@ package object br {
                 List(Text(""))
             else {
                 val parameterTypes = descriptor.parameterTypes.map(typeToXHTML(_, abbreviateTypes))
-                parameterTypes.tail.foldLeft(List(parameterTypes.head)) { (c, r) =>
-                    r :: Text(", ") :: c
-                }.reverse
+                parameterTypes.tail.foldLeft(List(parameterTypes.head)) { (c, r) => r :: Text(", ") :: c }.reverse
             }
 
         <span class="method_signature">

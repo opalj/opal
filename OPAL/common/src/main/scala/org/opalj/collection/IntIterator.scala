@@ -284,7 +284,10 @@ object IntIterator {
     def apply(i1: Int, i2: Int): IntIterator = new IntIterator {
         private[this] var nextId = 0
         def hasNext: Boolean = nextId < 2
-        def next(): Int = { if (nextId == 0) { nextId = 1; i1 } else { nextId = 2; i2 } }
+        def next(): Int = {
+            if (nextId == 0) { nextId = 1; i1 }
+            else { nextId = 2; i2 }
+        }
         override def toArray: Array[Int] = Array(i1, i2)
         override def toSet: IntTrieSet = IntTrieSet(i1, i2)
     }

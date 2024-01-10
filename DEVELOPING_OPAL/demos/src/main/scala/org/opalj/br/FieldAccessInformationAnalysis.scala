@@ -60,8 +60,10 @@ object FieldAccessInformationAnalysis extends ProjectAnalysisApplication {
 
             val (reads, writes) = fields
                 .foldLeft((Seq.empty[(DefinedMethod, PCs)], Seq.empty[(DefinedMethod, PCs)])) { (accesses, field) =>
-                    val newReads = (accesses._1 ++ accessInformation.readAccesses(field)).asInstanceOf[Seq[(DefinedMethod, PCs)]]
-                    val newWrites = (accesses._2 ++ accessInformation.writeAccesses(field)).asInstanceOf[Seq[(DefinedMethod, PCs)]]
+                    val newReads =
+                        (accesses._1 ++ accessInformation.readAccesses(field)).asInstanceOf[Seq[(DefinedMethod, PCs)]]
+                    val newWrites =
+                        (accesses._2 ++ accessInformation.writeAccesses(field)).asInstanceOf[Seq[(DefinedMethod, PCs)]]
 
                     (newReads, newWrites)
                 }
@@ -83,9 +85,8 @@ object FieldAccessInformationAnalysis extends ProjectAnalysisApplication {
 
         } else {
             BasicReport(
-                accessInformation.statistics.mkString(
-                    s"determing field access information required $memoryUsage :\n", "\n", "\n"
-                )
+                accessInformation.statistics
+                    .mkString(s"determing field access information required $memoryUsage :\n", "\n", "\n")
             )
         }
     }

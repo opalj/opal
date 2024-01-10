@@ -243,8 +243,8 @@ sealed trait Type extends UIDValue with Ordered[Type] {
             1
     }
 
-    override def <(other: Type): Boolean = this.id < other.id
-    override def >(other: Type): Boolean = this.id > other.id
+    override def <(other:  Type): Boolean = this.id < other.id
+    override def >(other:  Type): Boolean = this.id > other.id
     override def >=(other: Type): Boolean = this.id >= other.id
     override def <=(other: Type): Boolean = this.id <= other.id
 
@@ -454,8 +454,7 @@ sealed trait BaseType extends FieldType with TypeSignature {
     override final def adapt[T](
         targetType: Type
     )(
-        implicit
-        typeConversionFactory: TypeConversionFactory[T]
+        implicit typeConversionFactory: TypeConversionFactory[T]
     ): T = {
         if ((targetType eq WrapperType) || (targetType eq ObjectType.Object)) {
             boxValue
@@ -479,8 +478,13 @@ object BaseType {
      */
     final val baseTypes: SortedSet[BaseType] =
         SortedSet[BaseType](
-            BooleanType,
-            ByteType, CharType, ShortType, IntegerType, // <= "IntLike" values
+            BooleanType, //
+
+            ByteType,
+            CharType,
+            ShortType,
+            IntegerType, // <= "IntLike" values
+
             LongType,
             FloatType,
             DoubleType
@@ -504,8 +508,7 @@ sealed abstract class NumericType protected () extends BaseType {
     def convertTo[T](
         targetType: NumericType
     )(
-        implicit
-        typeConversionFactory: TypeConversionFactory[T]
+        implicit typeConversionFactory: TypeConversionFactory[T]
     ): T
 
     /**
@@ -603,8 +606,7 @@ sealed abstract class ByteType private () extends IntLikeType {
     override def convertTo[T](
         targetType: NumericType
     )(
-        implicit
-        typeConversionFactory: TypeConversionFactory[T]
+        implicit typeConversionFactory: TypeConversionFactory[T]
     ): T = {
         import typeConversionFactory._
         (targetType.id: @scala.annotation.switch) match {
@@ -654,8 +656,7 @@ sealed abstract class CharType private () extends IntLikeType {
     override def convertTo[T](
         targetType: NumericType
     )(
-        implicit
-        typeConversionFactory: TypeConversionFactory[T]
+        implicit typeConversionFactory: TypeConversionFactory[T]
     ): T = {
         import typeConversionFactory._
         (targetType.id: @scala.annotation.switch) match {
@@ -709,8 +710,7 @@ sealed abstract class DoubleType private () extends NumericType {
     override def convertTo[T](
         targetType: NumericType
     )(
-        implicit
-        typeConversionFactory: TypeConversionFactory[T]
+        implicit typeConversionFactory: TypeConversionFactory[T]
     ): T = {
         import typeConversionFactory._
         (targetType.id: @scala.annotation.switch) match {
@@ -725,8 +725,7 @@ sealed abstract class DoubleType private () extends NumericType {
     }
 
     override def boxValue[T](
-        implicit
-        typeConversionFactory: TypeConversionFactory[T]
+        implicit typeConversionFactory: TypeConversionFactory[T]
     ): T = { typeConversionFactory.PrimitiveDoubleToLangDouble }
 
 }
@@ -766,8 +765,7 @@ sealed abstract class FloatType private () extends NumericType {
     override def convertTo[T](
         targetType: NumericType
     )(
-        implicit
-        typeConversionFactory: TypeConversionFactory[T]
+        implicit typeConversionFactory: TypeConversionFactory[T]
     ): T = {
         import typeConversionFactory._
         (targetType.id: @scala.annotation.switch) match {
@@ -817,8 +815,7 @@ sealed abstract class ShortType private () extends IntLikeType {
     override def convertTo[T](
         targetType: NumericType
     )(
-        implicit
-        typeConversionFactory: TypeConversionFactory[T]
+        implicit typeConversionFactory: TypeConversionFactory[T]
     ): T = {
         import typeConversionFactory._
         (targetType.id: @scala.annotation.switch) match {
@@ -872,8 +869,7 @@ sealed abstract class IntegerType private () extends IntLikeType {
     override def convertTo[T](
         targetType: NumericType
     )(
-        implicit
-        typeConversionFactory: TypeConversionFactory[T]
+        implicit typeConversionFactory: TypeConversionFactory[T]
     ): T = {
         import typeConversionFactory._
         (targetType.id: @scala.annotation.switch) match {
@@ -928,8 +924,7 @@ sealed abstract class LongType private () extends NumericType {
     override def convertTo[T](
         targetType: NumericType
     )(
-        implicit
-        typeConversionFactory: TypeConversionFactory[T]
+        implicit typeConversionFactory: TypeConversionFactory[T]
     ): T = {
         import typeConversionFactory._
         (targetType.id: @scala.annotation.switch) match {
@@ -1037,8 +1032,7 @@ final class ObjectType private ( // DO NOT MAKE THIS A CASE CLASS!
     override def adapt[T](
         targetType: Type
     )(
-        implicit
-        typeConversionFactory: TypeConversionFactory[T]
+        implicit typeConversionFactory: TypeConversionFactory[T]
     ): T = {
         ObjectType.unboxValue(targetType)
     }
@@ -1131,9 +1125,7 @@ object ObjectType {
             objectTypes = JArrays.copyOf(objectTypes, highestPredefinedTypeId + 1)
 
             // Refill the cache using the objectTypes array
-            objectTypes.foreach { ot =>
-                cache.put(ot.fqn, new WeakReference[ObjectType](ot))
-            }
+            objectTypes.foreach { ot => cache.put(ot.fqn, new WeakReference[ObjectType](ot)) }
 
             // Reset ID counter to highest id in the cache
             nextId.set(highestPredefinedTypeId + 1)
@@ -1404,8 +1396,7 @@ object ObjectType {
     def unboxValue[T](
         wrapperType: Type
     )(
-        implicit
-        typeConversionFactory: TypeConversionFactory[T]
+        implicit typeConversionFactory: TypeConversionFactory[T]
     ): T = {
         typeConversionFactory.unboxValue(wrapperType)
     }
@@ -1547,8 +1538,7 @@ final class ArrayType private ( // DO NOT MAKE THIS A CASE CLASS!
     override def adapt[T](
         targetType: Type
     )(
-        implicit
-        typeConversionFactory: TypeConversionFactory[T]
+        implicit typeConversionFactory: TypeConversionFactory[T]
     ): T = {
         throw new UnsupportedOperationException("adaptation of array values is not supported")
     }

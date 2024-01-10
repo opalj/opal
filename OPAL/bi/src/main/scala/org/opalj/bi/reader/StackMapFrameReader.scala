@@ -69,7 +69,7 @@ trait StackMapFrameReader extends Constant_PoolAbstractions {
                 frame_type,
                 VerificationTypeInfo(cp, in)
             )
-        } /*RESERVED FOR FUTURE USE*/ else if (frame_type < 247) {
+        } else if (frame_type < 247) { /*RESERVED FOR FUTURE USE*/
             throw new Error(s"unsupported frame type: $frame_type")
         } else if (frame_type == 247) {
             SameLocals1StackItemFrameExtended(

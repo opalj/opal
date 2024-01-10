@@ -34,14 +34,13 @@ class BoundedInterruptableAI[D <: Domain](
     private[this] var startTime: Long = -1L;
 
     def this(
-        code:                  Code,
-        maxEvaluationFactor:   Double,
-        maxEvaluationTime:     Milliseconds,
-        doInterrupt:           () => Boolean,
-        identifyDeadVariables: Boolean       = true
+            code:                  Code,
+            maxEvaluationFactor:   Double,
+            maxEvaluationTime:     Milliseconds,
+            doInterrupt:           () => Boolean,
+            identifyDeadVariables: Boolean = true
     )(
-        implicit
-        logContext: LogContext
+            implicit logContext: LogContext
     ) = {
         this(
             InstructionCountBoundedAI.calculateMaxEvaluationCount(code, maxEvaluationFactor),

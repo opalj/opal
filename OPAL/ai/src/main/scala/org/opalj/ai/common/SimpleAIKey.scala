@@ -37,7 +37,10 @@ import org.opalj.log.OPALLogger
  * @author Michael Eichberg
  */
 object SimpleAIKey
-    extends ProjectInformationKey[Method => AIResult { val domain: Domain with RecordDefUse }, /*DomainFactory*/ Method => Domain with RecordDefUse] {
+    extends ProjectInformationKey[
+        Method => AIResult { val domain: Domain with RecordDefUse },
+        /*DomainFactory*/ Method => Domain with RecordDefUse
+    ] {
 
     /**
      * The SimpleAIKey has no special prerequisites.
@@ -95,6 +98,6 @@ object SimpleAIKey
                         }
                     }
             }
-        */
+         */
     }
 }

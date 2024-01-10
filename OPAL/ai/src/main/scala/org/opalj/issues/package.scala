@@ -84,7 +84,8 @@ package object issues {
     def localVariableToString(localVariable: LocalVariable, value: AnyRef): String = {
         if ((localVariable.fieldType eq BooleanType) &&
             // SPECIAL HANDLING IF THE VALUE IS AN INTEGER RANGE VALUE
-            value.isInstanceOf[IsIntegerValue]) {
+            value.isInstanceOf[IsIntegerValue]
+        ) {
             val range = value.asInstanceOf[IsIntegerValue]
             if (/*range.lowerBound == 0 &&*/ range.upperBound == 0)
                 "false"

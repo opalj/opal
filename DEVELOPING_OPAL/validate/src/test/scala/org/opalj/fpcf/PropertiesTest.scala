@@ -162,10 +162,10 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
         val annotationClassFile = p.classFile(annotation.annotationType.asObjectType).get
         annotationClassFile.runtimeInvisibleAnnotations.collectFirst {
             case Annotation(
-                PropertyValidatorType,
-                Seq(
-                    ElementValuePair("key", StringValue(propertyKind)),
-                    ElementValuePair("validator", ClassValue(propertyMatcherType))
+                    PropertyValidatorType,
+                    Seq(
+                        ElementValuePair("key", StringValue(propertyKind)),
+                        ElementValuePair("validator", ClassValue(propertyMatcherType))
                     )
                 ) if propertyKinds.contains(propertyKind) =>
                 (annotation, propertyKind, propertyMatcherType)
@@ -182,8 +182,11 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
      *         to be tested.
      */
     def validateProperties(
-        context:       TestContext,
-        eas:           IterableOnce[(Entity, /*the processed annotation*/ String => String /* a String identifying the entity */ , Iterable[AnnotationLike])],
+        context: TestContext,
+        eas: IterableOnce[(
+            Entity, /*the processed annotation*/ String => String /* a String identifying the entity */,
+            Iterable[AnnotationLike]
+        )],
         propertyKinds: Set[String]
     ): Unit = {
         val TestContext(p: Project[URL], ps: PropertyStore, as: List[FPCFAnalysis]) = context
@@ -280,9 +283,7 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
         recreatedFixtureProject: SomeProject
     ): Iterable[(Context, String => String, Annotations)] = {
         val simpleContexts = recreatedFixtureProject.get(SimpleContextsKey)
-        declaredMethodsWithAnnotations(recreatedFixtureProject).map(
-            test => (simpleContexts(test._1), test._2, test._3)
-        )
+        declaredMethodsWithAnnotations(recreatedFixtureProject).map(test => (simpleContexts(test._1), test._2, test._3))
     }
 
     def classFilesWithAnnotations(
@@ -316,8 +317,9 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
             val fp = formalParameters(dm)(i + 1)
             (
                 fp,
-                (a: String) => s"VirtualFormalParameter: (origin ${fp.origin} in " +
-                    s"${dm.declaringClassType}#${m.toJava(s"@$a")}",
+                (a: String) =>
+                    s"VirtualFormalParameter: (origin ${fp.origin} in " +
+                        s"${dm.declaringClassType}#${m.toJava(s"@$a")}",
                 annotations
             )
         }
@@ -342,8 +344,9 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
         } yield {
             (
                 as,
-                (a: String) => s"AllocationSite: (pc ${as.pc} in " +
-                    s"${m.toJava(s"@$a").substring(24)})",
+                (a: String) =>
+                    s"AllocationSite: (pc ${as.pc} in " +
+                        s"${m.toJava(s"@$a").substring(24)})",
                 annotations
             )
         }
@@ -361,9 +364,7 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
         analysisRunners: Iterable[ComputationSpecification[FPCFAnalysis]]
     ): TestContext = {
         try {
-            val p = FixtureProject.recreate { piKeyUnidueId =>
-                piKeyUnidueId != PropertyStoreKey.uniqueId
-            } // to ensure that this project is not "polluted"
+            val p = FixtureProject.recreate { piKeyUnidueId => piKeyUnidueId != PropertyStoreKey.uniqueId } // to ensure that this project is not "polluted"
             implicit val logContext: LogContext = p.logContext
             init(p)
 

@@ -25,8 +25,8 @@ sealed abstract class Long2List extends Serializable { self =>
     def nonEmpty: Boolean
 
     def head: Long
-    def foreach[U](f: Long => U): Unit
-    def forall(p: Long => Boolean): Boolean
+    def foreach[U](f:  Long => U): Unit
+    def forall(p:      Long => Boolean): Boolean
     def foldLeft[B](z: B)(op: (B, Long) => B): B
     /** Iterates over the first N values. */
     def forFirstN[U](n: Int)(f: Long => U): Unit
@@ -75,8 +75,8 @@ case object Long2List0 extends Long2List {
     override def nonEmpty: Boolean = false
 
     override def head: Long = throw new UnsupportedOperationException
-    override def foreach[U](f: Long => U): Unit = {}
-    override def forall(p: Long => Boolean): Boolean = true
+    override def foreach[U](f:  Long => U): Unit = {}
+    override def forall(p:      Long => Boolean): Boolean = true
     override def foldLeft[B](z: B)(op: (B, Long) => B): B = z
     /** Iterates over the first N values. */
     override def forFirstN[U](n: Int)(f: Long => U): Unit = {}

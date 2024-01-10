@@ -28,9 +28,10 @@ sealed abstract class CompileTimeConstancyMatcher(
         properties: Iterable[Property]
     ): Option[String] = {
         if (!properties.exists(_ match {
-            case `property` => true
-            case _          => false
-        })) {
+                case `property` => true
+                case _          => false
+            })
+        ) {
             // ... when we reach this point the expected property was not found.
             Some(a.elementValuePairs.head.value.asStringValue.value)
         } else {

@@ -90,7 +90,10 @@ sealed trait FieldAccessInformation[S <: FieldAccessInformation[S]] extends Orde
         }
     }
 
-    def getNewestAccesses(newestDirectAccesses: Int, newestIndirectAccesses: Int): Iterator[(Int, PC, AccessReceiver, AccessParameter)] =
+    def getNewestAccesses(
+        newestDirectAccesses:   Int,
+        newestIndirectAccesses: Int
+    ): Iterator[(Int, PC, AccessReceiver, AccessParameter)] =
         getNewestNDirectAccesses(newestDirectAccesses) ++ getNewestNIndirectAccesses(newestIndirectAccesses)
 
     def getNewestNDirectAccesses(n: Int): Iterator[(Int, PC, AccessReceiver, AccessParameter)] =
@@ -119,7 +122,14 @@ sealed trait FieldAccessInformation[S <: FieldAccessInformation[S]] extends Orde
         other:                S,
         seenDirectAccesses:   Int,
         seenIndirectAccesses: Int,
-        propertyFactory:      (LongLinkedSet, LongMap[AccessReceiver], LongMap[AccessParameter], LongLinkedSet, LongMap[AccessReceiver], LongMap[AccessParameter]) => S
+        propertyFactory: (
+            LongLinkedSet,
+            LongMap[AccessReceiver],
+            LongMap[AccessParameter],
+            LongLinkedSet,
+            LongMap[AccessReceiver],
+            LongMap[AccessParameter]
+        ) => S
     ): S = {
         var newDirectAccesses = encodedDirectAccesses
         var newDirectReceivers = encodedDirectAccessReceivers
@@ -186,7 +196,11 @@ case class FieldReadAccessInformation(
 
     final def key: PropertyKey[FieldReadAccessInformation] = FieldReadAccessInformation.key
 
-    def included(other: FieldReadAccessInformation, seenDirectAccesses: Int, seenIndirectAccesses: Int): FieldReadAccessInformation =
+    def included(
+        other:                FieldReadAccessInformation,
+        seenDirectAccesses:   Int,
+        seenIndirectAccesses: Int
+    ): FieldReadAccessInformation =
         included(
             other,
             seenDirectAccesses,
@@ -213,12 +227,23 @@ case class FieldWriteAccessInformation(
 
     final def key: PropertyKey[FieldWriteAccessInformation] = FieldWriteAccessInformation.key
 
-    def included(other: FieldWriteAccessInformation, seenDirectAccesses: Int, seenIndirectAccesses: Int): FieldWriteAccessInformation =
+    def included(
+        other:                FieldWriteAccessInformation,
+        seenDirectAccesses:   Int,
+        seenIndirectAccesses: Int
+    ): FieldWriteAccessInformation =
         included(
             other,
             seenDirectAccesses,
             seenIndirectAccesses,
-            (newDirectAccesses, newDirectReceivers, newDirectParameters, newIndirectAccesses, newIndirectReceivers, newIndirectParameters) =>
+            (
+                newDirectAccesses,
+                newDirectReceivers,
+                newDirectParameters,
+                newIndirectAccesses,
+                newIndirectReceivers,
+                newIndirectParameters
+            ) =>
                 FieldWriteAccessInformation(
                     newDirectAccesses,
                     newDirectReceivers,

@@ -53,8 +53,8 @@ class NonJavaBytecode1(implicit hermes: HermesConfig) extends DefaultFeatureQuer
                     classHierarchy.allSuperinterfacetypes(declaringClass).exists { sintf =>
                         val sintfCfO = project.classFile(sintf)
                         sintfCfO.isDefined &&
-                        sintfCfO.get.findMethod(name, desc).exists(_.isStatic) &&
-                        classHierarchy.allSuperinterfacetypes(sintf).contains(declIntf.thisType)
+                            sintfCfO.get.findMethod(name, desc).exists(_.isStatic) &&
+                            classHierarchy.allSuperinterfacetypes(sintf).contains(declIntf.thisType)
                     }
                 ) {
 

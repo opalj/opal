@@ -46,8 +46,7 @@ abstract class DUVar[+Value <: ValueInformation] extends Var[DUVar[Value]] {
     def definedBy: IntTrieSet
 
     override def toCanonicalForm(
-        implicit
-        ev: DUVar[Value] <:< DUVar[ValueInformation]
+        implicit ev: DUVar[Value] <:< DUVar[ValueInformation]
     ): DUVar[ValueInformation]
 
 }
@@ -173,8 +172,7 @@ class DVar[+Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/ 
     }
 
     override def toCanonicalForm(
-        implicit
-        ev: DUVar[Value] <:< DUVar[ValueInformation]
+        implicit ev: DUVar[Value] <:< DUVar[ValueInformation]
     ): DVar[ValueInformation] = {
         new DVar(origin, value.toCanonicalForm, useSites)
     }
@@ -192,7 +190,9 @@ object DVar {
     def apply(
         d: org.opalj.ai.ValuesDomain
     )(
-        origin: ValueOrigin, value: d.DomainValue, useSites: IntTrieSet
+        origin:   ValueOrigin,
+        value:    d.DomainValue,
+        useSites: IntTrieSet
     ): DVar[d.DomainValue] = {
 
         assert(useSites != null, s"no uses (null) for $origin: $value")
@@ -251,8 +251,7 @@ class UVar[+Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/ 
     }
 
     override def toCanonicalForm(
-        implicit
-        ev: DUVar[Value] <:< DUVar[ValueInformation]
+        implicit ev: DUVar[Value] <:< DUVar[ValueInformation]
     ): UVar[ValueInformation] = {
         new UVar(value.toCanonicalForm, defSites)
     }
@@ -277,7 +276,8 @@ object UVar {
     def apply(
         d: org.opalj.ai.ValuesDomain
     )(
-        value: d.DomainValue, defSites: IntTrieSet
+        value:    d.DomainValue,
+        defSites: IntTrieSet
     ): UVar[d.DomainValue] = {
         new UVar[d.DomainValue](value, defSites)
     }

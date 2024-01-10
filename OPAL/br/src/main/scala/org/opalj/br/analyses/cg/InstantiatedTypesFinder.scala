@@ -46,12 +46,12 @@ trait LibraryInstantiatedTypesFinder extends InstantiatedTypesFinder {
         val closedPackages = project.get(ClosedPackagesKey)
         project.allClassFiles.iterator.filter { cf =>
             !cf.isInterfaceDeclaration && !cf.isAbstract &&
-                (cf.isPublic /* && cf.constructors.nonEmpty*/ ||
-                    !closedPackages.isClosed(cf.thisType.packageName)) &&
-                    cf.constructors.exists { ctor =>
-                        ctor.isPublic ||
-                            !ctor.isPrivate && !closedPackages.isClosed(cf.thisType.packageName)
-                    }
+            (cf.isPublic /* && cf.constructors.nonEmpty*/ ||
+            !closedPackages.isClosed(cf.thisType.packageName)) &&
+            cf.constructors.exists { ctor =>
+                ctor.isPublic ||
+                !ctor.isPrivate && !closedPackages.isClosed(cf.thisType.packageName)
+            }
         }.map(_.thisType).iterator.to(Iterable) ++ super.collectInstantiatedTypes(project)
     }
 }
@@ -161,8 +161,6 @@ object AllInstantiatedTypesFinder extends InstantiatedTypesFinder {
         val allClassFiles = if (project.config.as[Boolean](projectMethodsOnlyConfigKey))
             project.allProjectClassFiles
         else project.allClassFiles
-        allClassFiles.iterator.filter { cf =>
-            !cf.isInterfaceDeclaration && !cf.isAbstract
-        }.map(_.thisType).to(Iterable)
+        allClassFiles.iterator.filter { cf => !cf.isInterfaceDeclaration && !cf.isAbstract }.map(_.thisType).to(Iterable)
     }
 }

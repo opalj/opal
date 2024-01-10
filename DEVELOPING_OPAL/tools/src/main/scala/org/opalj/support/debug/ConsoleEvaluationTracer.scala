@@ -99,7 +99,9 @@ trait ConsoleEvaluationTracer extends AITracer {
     override def jumpToSubroutine(
         domain: Domain
     )(
-        pc: Int, targetPC: Int, nestingLevel: Int
+        pc:           Int,
+        targetPC:     Int,
+        nestingLevel: Int
     ): Unit = {
         println()
         printIndent()

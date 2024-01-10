@@ -25,7 +25,6 @@ class Operands(
     def toXHTML(basicInfoOnly: Boolean): Node = {
         val detailsNodes = instruction match {
             case cbi: SimpleConditionalBranchInstruction[_] =>
-
                 val condition =
                     if (cbi.operandCount == 1)
                         List(
@@ -71,9 +70,7 @@ class Operands(
                     instruction.numberOfPoppedOperands { x => throw new UnknownError() }
 
                 val parametersNode =
-                    operands.take(operandsCount).reverse.map { op =>
-                        <span class="value">{op} </span>
-                    }
+                    operands.take(operandsCount).reverse.map { op => <span class="value">{op} </span> }
                 List(
                     <span class="keyword">{instruction.mnemonic} </span>,
                     <span class="parameters">({parametersNode})</span>

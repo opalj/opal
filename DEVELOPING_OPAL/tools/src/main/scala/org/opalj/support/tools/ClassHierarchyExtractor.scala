@@ -22,8 +22,7 @@ object ClassHierarchyExtractor {
     def deriveSpecification(
         types: Iterable[ObjectType]
     )(
-        implicit
-        classHierarchy: ClassHierarchy
+        implicit classHierarchy: ClassHierarchy
     ): String = {
         val specLines = types.map { aType =>
             var specLine =

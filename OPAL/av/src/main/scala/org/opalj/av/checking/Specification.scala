@@ -72,8 +72,8 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
         this(project, useAnsiColors = false)
 
     def this(
-        classFiles:    Iterable[(ClassFile, URL)],
-        useAnsiColors: Boolean                    = false
+            classFiles:    Iterable[(ClassFile, URL)],
+            useAnsiColors: Boolean = false
     ) =
         this(
             run {
@@ -120,7 +120,10 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
         theEnsembles
 
     // calculated after all class files have been loaded
-    private[this] val theOutgoingDependencies: MutableMap[VirtualSourceElement, AMap[VirtualSourceElement, DependencyTypesSet]] =
+    private[this] val theOutgoingDependencies: MutableMap[
+        VirtualSourceElement,
+        AMap[VirtualSourceElement, DependencyTypesSet]
+    ] =
         scala.collection.mutable.HashMap.empty
 
     /**
@@ -132,7 +135,10 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
         theOutgoingDependencies
 
     // calculated after all class files have been loaded
-    private[this] val theIncomingDependencies: mutable.Map[VirtualSourceElement, immutable.Set[(VirtualSourceElement, DependencyType)]] = {
+    private[this] val theIncomingDependencies: mutable.Map[VirtualSourceElement, immutable.Set[(
+        VirtualSourceElement,
+        DependencyType
+    )]] = {
         scala.collection.mutable.HashMap.empty
     }
 
@@ -141,7 +147,8 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
      *
      * This mapping is automatically created when analyze is called.
      */
-    def incomingDependencies: AMap[VirtualSourceElement, ASet[(VirtualSourceElement, DependencyType)]] = theIncomingDependencies
+    def incomingDependencies: AMap[VirtualSourceElement, ASet[(VirtualSourceElement, DependencyType)]] =
+        theIncomingDependencies
 
     // calculated after the extension of all ensembles is determined
     private[this] val matchedSourceElements: mutable.HashSet[VirtualSourceElement] = mutable.HashSet.empty
@@ -242,7 +249,7 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
                 (incomingElement, dependencyType) <- incomingDependencies(targetEnsembleElement)
                 if !(
                     sourceEnsembleElements.contains(incomingElement) ||
-                    targetEnsembleElements.contains(incomingElement)
+                        targetEnsembleElements.contains(incomingElement)
                 )
             } yield {
                 DependencyViolation(
@@ -321,8 +328,8 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
             } else {
                 val start =
                     s"$sourceEnsemble is_not_allowed_to ${
-                        dependencyTypes.map(d => toUsageDescription(d)).mkString(" and ")
-                    } ("
+                            dependencyTypes.map(d => toUsageDescription(d)).mkString(" and ")
+                        } ("
                 targetEnsembles.mkString(start, ",", ")")
             }
         }
@@ -392,8 +399,8 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
             } else {
                 val start =
                     s"$sourceEnsemble is_only_allowed_to ${
-                        dependencyTypes.map(d => toUsageDescription(d)).mkString(" and ")
-                    } ("
+                            dependencyTypes.map(d => toUsageDescription(d)).mkString(" and ")
+                        } ("
                 targetEnsembles.mkString(start, ",", ")")
             }
         }
@@ -421,9 +428,9 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
     ) extends PropertyChecker {
 
         def this(
-            sourceEnsemble:       Symbol,
-            annotationPredicates: Seq[AnnotationPredicate],
-            matchAny:             Boolean                  = false
+                sourceEnsemble:       Symbol,
+                annotationPredicates: Seq[AnnotationPredicate],
+                matchAny:             Boolean = false
         ) =
             this(
                 sourceEnsemble,
@@ -572,7 +579,9 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
                 }
                 if sourceClassFile.superclassType.map(s =>
                     !allLocalTargetSourceElements.exists(v =>
-                        v.classType.asObjectType.equals(s))).getOrElse(false)
+                        v.classType.asObjectType.equals(s)
+                    )
+                ).getOrElse(false)
             } yield {
                 PropertyViolation(
                     project,
@@ -653,7 +662,7 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
         def every_element_should_be_annotated_with(
             property:             String,
             annotationPredicates: Seq[AnnotationPredicate],
-            matchAny:             Boolean                  = false
+            matchAny:             Boolean = false
         ): Unit = {
             architectureCheckers =
                 new LocalOutgoingAnnotatedWithConstraint(
@@ -704,12 +713,13 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
     def ensembleToString(ensembleSymbol: Symbol): String = {
         val (sourceElementsMatcher, extension) = ensembles(ensembleSymbol)
         s"$ensembleSymbol{" +
-            s"$sourceElementsMatcher  " +
-            {
+            s"$sourceElementsMatcher  " + {
                 if (extension.isEmpty)
                     "/* NO ELEMENTS */ "
                 else {
-                    extension.tail.foldLeft("\n\t//" + extension.head.toString + "\n")((s, vse) => s + "\t//" + vse.toJava + "\n")
+                    extension.tail.foldLeft("\n\t//" + extension.head.toString + "\n")((s, vse) =>
+                        s + "\t//" + vse.toJava + "\n"
+                    )
                 }
             } + "}"
     }
@@ -876,7 +886,7 @@ object Specification {
      */
     def Classpath(
         fileName:          String,
-        pathSeparatorChar: Char   = java.io.File.pathSeparatorChar
+        pathSeparatorChar: Char = java.io.File.pathSeparatorChar
     ): Iterable[String] = {
         processSource(Source.fromFile(new java.io.File(fileName))) { s =>
             s.getLines().map(_.split(pathSeparatorChar)).flatten.toSet

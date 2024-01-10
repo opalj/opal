@@ -80,7 +80,9 @@ private[xta] class TypePropagationTrace {
                 calleesEOptP.ub.callSites(typeIterator.newContext(method)).flatMap(_._2)
             else Iterator.empty
         }
-        traceMsg(s"init: ${simplifiedName(method)} (initial types: {${initialTypes.map(simplifiedName).mkString(", ")}}, initial callees: {${initialCallees.map(simplifiedName).mkString(", ")}})")
+        traceMsg(
+            s"init: ${simplifiedName(method)} (initial types: {${initialTypes.map(simplifiedName).mkString(", ")}}, initial callees: {${initialCallees.map(simplifiedName).mkString(", ")}})"
+        )
         _trace.events += TypePropagationTrace.Init(method, initialTypes, initialCallees.toSet)
     }
 
@@ -104,7 +106,9 @@ private[xta] class TypePropagationTrace {
 
     @elidable(elidable.ASSERTION)
     def traceTypeUpdate(receiver: DeclaredMethod, source: Entity, types: UIDSet[ReferenceType]): Unit = {
-        traceMsg(s"type set update: for ${simplifiedName(receiver)}, from ${simplifiedName(source)}, with types: {${types.map(simplifiedName).mkString(", ")}}")
+        traceMsg(
+            s"type set update: for ${simplifiedName(receiver)}, from ${simplifiedName(source)}, with types: {${types.map(simplifiedName).mkString(", ")}}"
+        )
         _trace.events += TypePropagationTrace.TypeSetUpdate(receiver, source, types)
     }
 
@@ -121,7 +125,8 @@ object TypePropagationTrace {
     trait Event {
         val typePropagations: mutable.ArrayBuffer[TypePropagation] = new mutable.ArrayBuffer[TypePropagation]()
     }
-    case class Init(method: DefinedMethod, initialTypes: UIDSet[ReferenceType], initialCallees: Set[Context]) extends Event
+    case class Init(method: DefinedMethod, initialTypes: UIDSet[ReferenceType], initialCallees: Set[Context])
+        extends Event
     trait UpdateEvent extends Event
     case class TypeSetUpdate(receiver: Entity, source: Entity, sourceTypes: UIDSet[ReferenceType]) extends UpdateEvent
     case class CalleesUpdate(receiver: Entity) extends UpdateEvent

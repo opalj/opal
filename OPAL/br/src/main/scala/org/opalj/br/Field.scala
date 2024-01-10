@@ -61,8 +61,11 @@ sealed abstract class JVMField extends ClassMember with Ordered[JVMField] {
     // with the respective class file.
     private[br] def prepareClassFileAttachement(): Field = {
         new Field(
-            null /*will be set by class file*/ ,
-            accessFlags, name, fieldType, attributes
+            null /*will be set by class file*/,
+            accessFlags,
+            name,
+            fieldType,
+            attributes
         )
     }
 
@@ -74,9 +77,9 @@ sealed abstract class JVMField extends ClassMember with Ordered[JVMField] {
      */
     def similar(other: JVMField, config: SimilarityTestConfiguration): Boolean = {
         this.accessFlags == other.accessFlags &&
-            (this.fieldType eq other.fieldType) &&
-            this.name == other.name &&
-            compareAttributes(other.attributes, config).isEmpty
+        (this.fieldType eq other.fieldType) &&
+        this.name == other.name &&
+        compareAttributes(other.attributes, config).isEmpty
     }
 
     def copy(
@@ -220,7 +223,9 @@ object Field {
         fieldAttributeBuilder: FieldAttributeBuilder
     ): FieldTemplate = {
         this(
-            accessFlags, name, fieldType,
+            accessFlags,
+            name,
+            fieldType,
             ArraySeq(fieldAttributeBuilder(accessFlags, name, fieldType))
         )
     }

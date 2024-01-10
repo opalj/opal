@@ -27,7 +27,7 @@ trait FPCFLazyAnalysisScheduler extends FPCFLazyLikeAnalysisScheduler {
 // TODO Rename => Simple...
 trait BasicFPCFLazyAnalysisScheduler extends FPCFLazyAnalysisScheduler {
     override type InitializationData = Null
-    override def init(p: SomeProject, ps: PropertyStore): Null = null
+    override def init(p:           SomeProject, ps: PropertyStore): Null = null
     override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
 
     override def afterPhaseScheduling(ps: PropertyStore, analysis: FPCFAnalysis): Unit = {}

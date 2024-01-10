@@ -66,7 +66,9 @@ class FieldAccessStatistics(implicit hermes: HermesConfig) extends DefaultFeatur
                         case Some(ACC_PUBLIC)    => 3
                     }
                 } else if (!field.isPrivate && allAccesses(field).forall(ac =>
-                    contextProvider.contextFromId(ac._1).method.definedMethod.classFile eq cf)) {
+                               contextProvider.contextFromId(ac._1).method.definedMethod.classFile eq cf
+                           )
+                ) {
                     field.visibilityModifier match {
                         case None                => 4
                         case Some(ACC_PROTECTED) => 5

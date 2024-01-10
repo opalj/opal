@@ -17,8 +17,8 @@ case class Code_attribute(
         max_stack:            Int,
         max_locals:           Int,
         code:                 Code,
-        exceptionTable:       ExceptionTable      = NoExceptionTable,
-        attributes:           Attributes          = NoAttributes
+        exceptionTable:       ExceptionTable = NoExceptionTable,
+        attributes:           Attributes     = NoAttributes
 ) extends Attribute {
 
     override def attribute_length: Int = {

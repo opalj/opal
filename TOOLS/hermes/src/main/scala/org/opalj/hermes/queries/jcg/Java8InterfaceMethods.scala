@@ -95,15 +95,16 @@ class Java8InterfaceMethods(implicit hermes: HermesConfig) extends DefaultFeatur
                             if (isIDM) {
                                 // if the method is resolved to an IDM we have to check whether there are multiple options
                                 // in order to check the linearization order
-                                val typeInheritMultipleIntWithSameIDM = project.classHierarchy.allSuperinterfacetypes(ot, false).count { it =>
-                                    val cf = project.classFile(it)
-                                    if (cf.nonEmpty) {
-                                        val method = cf.get.findMethod(name, md)
-                                        method.exists(_.body.nonEmpty)
-                                    } else {
-                                        false
+                                val typeInheritMultipleIntWithSameIDM =
+                                    project.classHierarchy.allSuperinterfacetypes(ot, false).count { it =>
+                                        val cf = project.classFile(it)
+                                        if (cf.nonEmpty) {
+                                            val method = cf.get.findMethod(name, md)
+                                            method.exists(_.body.nonEmpty)
+                                        } else {
+                                            false
+                                        }
                                     }
-                                }
                                 subtypeWithMultipleInterfaces |= typeInheritMultipleIntWithSameIDM > 1
                             }
                             isIDM
@@ -144,7 +145,8 @@ class Java8InterfaceMethods(implicit hermes: HermesConfig) extends DefaultFeatur
 
     // This method determines whether the called interface method might be dispatched to a default method.
     private[this] def isPotentialCallOnDefaultMethod[S](
-        mii: MethodInvocationInstruction, project: Project[S]
+        mii:     MethodInvocationInstruction,
+        project: Project[S]
     ): Boolean = {
 
         val t = mii.declaringClass
