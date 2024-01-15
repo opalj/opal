@@ -23,6 +23,7 @@ ThisBuild / version := "5.0.1-SNAPSHOT"
 ThisBuild / organization := "de.opal-project"
 ThisBuild / homepage := Some(url("https://www.opal-project.de"))
 ThisBuild / licenses := Seq("BSD-2-Clause" -> url("https://opensource.org/licenses/BSD-2-Clause"))
+
 usePgpKeyHex("80B9D3FB5A8508F6B4774932E71AFF01E234090C")
 
 ThisBuild / scalaVersion := "2.13.11"
@@ -136,8 +137,8 @@ lazy val buildSettings =
       case PathList("META-INF", "native-image", xs @ _, "jnijavacpp", "reflect-config.json") => MergeStrategy.discard
       case other => (assembly / assemblyMergeStrategy).value(other)
     }) ++
-      Seq(headerLicense :=
-          Some(HeaderLicense.Custom("BSD 2-Clause License - see OPAL/LICENSE for details.")),
+      Seq(
+          headerLicense := Some(HeaderLicense.Custom("BSD 2-Clause License - see OPAL/LICENSE for details.")),
           headerEmptyLine := false,
           headerMappings :=
               headerMappings.value ++ Seq(
