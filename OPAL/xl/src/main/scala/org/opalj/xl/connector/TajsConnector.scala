@@ -16,50 +16,17 @@ import dk.brics.tajs.analysis.xl.TajsAdapter
 import dk.brics.tajs.flowgraph.jsnodes.JNode
 import dk.brics.tajs.lattice.Context
 import dk.brics.tajs.solver.BlockAndContext
-import org.opalj.xl.detector.CrossLanguageInteraction
-import org.opalj.xl.detector.ScriptEngineInteraction
-import org.opalj.xl.translator.JavaJavaScriptTranslator
-import org.opalj.xl.translator.translator.globalObject
-import org.opalj.xl.utility.AnalysisResult
-import org.opalj.xl.utility.InterimAnalysisResult
-import org.opalj.xl.utility.Language
-import org.opalj.xl.Coordinator.ScriptEngineInstance
 import org.opalj.xl.utility
-import org.opalj.xl.utility.Bottom
 import org.opalj.xl.Coordinator
-
-import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.fpcf.PropertyMetaInformation
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
-import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
-import org.opalj.tac.cg.TypeIteratorKey
-import org.opalj.tac.common.DefinitionSitesKey
-import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedAnalysis
-import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedAnalysis
-import org.opalj.tac.fpcf.properties.cg.Callees
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
-import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.Entity
-import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.EPK
-import org.opalj.fpcf.InterimEP
-import org.opalj.fpcf.InterimEUBP
 import org.opalj.fpcf.InterimResult
-import org.opalj.fpcf.InterimUBP
-import org.opalj.fpcf.PartialResult
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.Results
-import org.opalj.fpcf.SomeEOptionP
-import org.opalj.fpcf.SomeEPK
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
 import org.opalj.br.analyses.DeclaredMethodsKey
@@ -70,8 +37,6 @@ import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
 import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.ObjectType
-import org.opalj.fpcf.SomeEPS
-import org.opalj.fpcf.UBP
 import org.opalj.xl.utility.AnalysisResult
 import org.opalj.xl.utility.InterimAnalysisResult
 import org.opalj.xl.detector.ScriptEngineInteraction
@@ -94,13 +59,10 @@ import org.opalj.br.DeclaredMethod
 import org.opalj.br.Field
 import org.opalj.br.Fields
 import org.opalj.br.Method
-import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.fpcf.properties.NoContext
 import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
 import org.opalj.br.analyses.DeclaredMethods
-import org.opalj.br.DeclaredMethod
-import org.opalj.br.Fields
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.analyses.cg.BaseAnalysisState
@@ -334,7 +296,7 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
             }
 
             override def readProperty(v: Value, propertyName: String): Value = {
-                var jsValue = Value.makeAbsent()
+                var jsValue = Value.makeUndef() //Value.makeAbsent()
                 if (v.isJavaObject) {
                     v.getObjectLabels.forEach(ol => {
                         val jNode = ol.getNode.asInstanceOf[JNode[ElementType, ContextType, IntTrieSet, TheTACAI]]
@@ -415,7 +377,7 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
             }
 
             override def callFunction(v: Value, methodName: String, parameters: java.util.List[Value]): Value = {
-                var result = Value.makeAbsent()
+                var result = Value.makeStr("Test")//Value.makeAbsent()
 
                 if (v.isJavaObject || v.isJSJavaTYPE) {
                     v.getObjectLabels.forEach(ol => {
@@ -479,7 +441,7 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
 
                                 val pointsToSet = currentPointsTo("callFunction", context, PointsToSetLike.noFilter)
 
-                                val v = java2js("returnValue", context.asInstanceOf[ContextType], pointsToSet, null, None)
+                                val v = java2js("returnValue", context, pointsToSet, null, None)
                                 result = v._2.join(result)
                             }
                         })

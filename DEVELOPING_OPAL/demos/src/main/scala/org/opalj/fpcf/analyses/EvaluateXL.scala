@@ -1,5 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf.analyses
+package org.opalj
+package fpcf
+package analyses
 
 import org.opalj.br.{DefinedMethod, ObjectType}
 import org.opalj.br.analyses.{BasicReport, Project, ProjectAnalysisApplication, VirtualFormalParameter}
@@ -14,8 +16,8 @@ import org.opalj.tac.fpcf.analyses.LazyTACAIProvider
 import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 import org.opalj.tac.fpcf.analyses.cg.xta.{TypePropagationAnalysisScheduler, XTASetEntitySelector}
 import org.opalj.tac.fpcf.analyses.pointsto.longToAllocationSite
-import org.opalj.xl.connector.tajs.AllocationSiteBasedTriggeredTajsConnectorScheduler
 import org.opalj.xl.javaanalyses.detector.scriptengine.AllocationSiteBasedScriptEngineDetectorScheduler
+import org.opalj.xl.connector.AllocationSiteBasedTriggeredTajsConnectorScheduler
 
 import java.net.URL
 import scala.collection.mutable
@@ -63,8 +65,8 @@ class Dataset {
 }
 case class TruePositive(defsiteMethod: String, defsitePC: Int, instances: Set[Instance], allocSiteID: Long, allocsitePC: Int, allocsiteType: String) {
   override def toString: String =
-    s"    TruePositive(defsitePC=$defsitePC, instances=${instances.mkString(" ")}, " +
-      s"allocSiteID=$allocSiteID, allocsitePC=$allocsitePC, allocsiteType=$allocsiteType)"
+        s"TruePositive(defsitePC=$defsitePC, instances=${instances.mkString(" ")}, " +
+        s"allocSiteID=$allocSiteID, allocsitePC=$allocsitePC, allocsiteType=$allocsiteType)"
 }
 
 case class FalsePositive(defsiteMethod: String, defsitePC: Int, allocSiteType: String, allocSiteID: Long, allocsitePC: Int) {
