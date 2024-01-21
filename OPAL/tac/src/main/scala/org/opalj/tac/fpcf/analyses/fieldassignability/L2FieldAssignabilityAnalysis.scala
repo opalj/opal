@@ -11,6 +11,7 @@ import scala.collection.mutable
 
 import org.opalj.RelationalOperators.EQ
 import org.opalj.RelationalOperators.NE
+import org.opalj.ai.isFormalParameter
 import org.opalj.br.DeclaredField
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Field
@@ -172,6 +173,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
                 stmt.isPutField && stmt.asPutField.name != state.field.name ||
                 stmt.isAssignment && stmt.asAssignment.targetVar == assignedValueObjectVar ||
                 stmt.isMethodCall && stmt.asMethodCall.name == "<init>" ||
+                // CHECK do we really need the taCode here?
                 dominates(fieldWriteInMethodIndex, index, taCode)
         })
             return true;
@@ -245,21 +247,21 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
         writes:                     Seq[(DefinedMethod, TACode[TACMethodParameter, V], Option[V], Int)]
     )(implicit state: State): Boolean = {
         writes.exists { writeAccess =>
-            fieldReadAccessInformation.accesses.count { readAccess =>
-                contextProvider.contextFromId(readAccess._1).method eq writeAccess._1
-            } > 1 &&
-                fieldReadAccessInformation.getNewestAccesses(
-                    fieldReadAccessInformation.numDirectAccesses - seenDirectAccesses,
-                    fieldReadAccessInformation.numIndirectAccesses - seenIndirectAccesses
-                ).exists { readAccess =>
-                        val method = contextProvider.contextFromId(readAccess._1).method
-                        (writeAccess._1 eq method) && {
-                            val taCode = state.tacDependees(method.asDefinedMethod).ub.tac.get
-                            val writeIndex = writeAccess._4
-                            val readIndex = taCode.pcToIndex(readAccess._2)
-                            writeIndex != readIndex && !dominates(writeIndex, readIndex, taCode)
+            fieldReadAccessInformation.getNewestAccesses(
+                fieldReadAccessInformation.numDirectAccesses - seenDirectAccesses,
+                fieldReadAccessInformation.numIndirectAccesses - seenIndirectAccesses
+            ).exists { readAccess =>
+                    val method = contextProvider.contextFromId(readAccess._1).method
+                    (writeAccess._1 eq method) && {
+                        val taCode = state.tacDependees(method.asDefinedMethod).ub.tac.get
+
+                        if (readAccess._3.isDefined && readAccess._3.get._2.exists(isFormalParameter)) {
+                            false
+                        } else {
+                            !dominates(writeAccess._4, taCode.pcToIndex(readAccess._2), taCode)
                         }
                     }
+                }
         }
     }
 
