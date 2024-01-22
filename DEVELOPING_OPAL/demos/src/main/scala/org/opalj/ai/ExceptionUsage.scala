@@ -145,10 +145,10 @@ object ExceptionUsage extends ProjectAnalysisApplication {
 }
 
 case class ExceptionUsage(
-        method:           Method,
-        definitionSite:   PC,
-        exceptionType:    String,
-        usageInformation: scala.collection.Set[UsageKind.Value]
+    method:           Method,
+    definitionSite:   PC,
+    exceptionType:    String,
+    usageInformation: scala.collection.Set[UsageKind.Value]
 ) extends scala.math.Ordered[ExceptionUsage] {
 
     override def toString: String = {

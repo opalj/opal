@@ -69,7 +69,7 @@ private[immutable] case object LongTrieSetWithList0 extends LongTrieSetWithList 
 }
 
 private[immutable] final class LongTrieSetWithList1 private[immutable] (
-        private[immutable] final val i1: Long
+    private[immutable] final val i1: Long
 ) extends LongTrieSetWithList {
 
     override def isEmpty: Boolean = false
@@ -109,8 +109,8 @@ private[immutable] final class LongTrieSetWithList1 private[immutable] (
 }
 
 private[immutable] final class LongTrieSetWithList2 private[immutable] (
-        private[immutable] final val i1: Long,
-        private[immutable] final val i2: Long
+    private[immutable] final val i1: Long,
+    private[immutable] final val i2: Long
 ) extends LongTrieSetWithList {
 
     override def isEmpty: Boolean = false
@@ -155,9 +155,9 @@ private[immutable] final class LongTrieSetWithList2 private[immutable] (
 }
 
 private[immutable] final class LongTrieSetWithList3 private[immutable] (
-        private[immutable] final val i1: Long,
-        private[immutable] final val i2: Long,
-        private[immutable] final val i3: Long
+    private[immutable] final val i1: Long,
+    private[immutable] final val i2: Long,
+    private[immutable] final val i3: Long
 ) extends LongTrieSetWithList {
 
     override def size: Int = 3
@@ -210,9 +210,9 @@ private[immutable] final class LongTrieSetWithList3 private[immutable] (
 }
 
 private[immutable] final class LongTrieSetWithListN(
-        final val size: Int,
-        final val root: LongTrieSetNode,
-        final val list: Long2List
+    final val size: Int,
+    final val root: LongTrieSetNode,
+    final val list: Long2List
 ) extends LongTrieSetWithList {
 
     // assert(size >= 4)

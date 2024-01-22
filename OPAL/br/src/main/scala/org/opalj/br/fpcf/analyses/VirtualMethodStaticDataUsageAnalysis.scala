@@ -32,7 +32,7 @@ import org.opalj.fpcf.SomeEPS
  * @author Dominik Helm
  */
 class VirtualMethodStaticDataUsageAnalysis private[analyses] (
-        final val project: SomeProject
+    final val project: SomeProject
 ) extends FPCFAnalysis {
     private[this] val declaredMethods = project.get(DeclaredMethodsKey)
 

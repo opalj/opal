@@ -19,7 +19,7 @@ sealed trait VirtualMethodPurityPropertyMetaInformation extends PropertyMetaInfo
  * @author Dominik Helm
  */
 sealed case class VirtualMethodPurity(
-        individualProperty: Purity
+    individualProperty: Purity
 ) extends AggregatedProperty[Purity, VirtualMethodPurity]
     with VirtualMethodPurityPropertyMetaInformation {
 

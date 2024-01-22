@@ -11,8 +11,8 @@ import org.opalj.bi.ConstantPoolTag
  * @author Michael Eichberg
  */
 case class CONSTANT_MethodHandle_info(
-        reference_kind:  Int,
-        reference_index: Constant_Pool_Index
+    reference_kind:  Int,
+    reference_index: Constant_Pool_Index
 ) extends Constant_Pool_Entry {
 
     override final def size: Int = 1 + 1 + 2

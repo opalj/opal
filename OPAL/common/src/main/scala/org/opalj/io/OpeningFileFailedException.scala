@@ -11,6 +11,6 @@ import java.io.File
  * @author Michael Eichberg
  */
 case class OpeningFileFailedException(
-        file:  File,
-        cause: Throwable
+    file:  File,
+    cause: Throwable
 ) extends Exception(s"cannot open file $file", cause)

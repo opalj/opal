@@ -170,11 +170,11 @@ object TACode {
 }
 
 final class AITACode[P <: AnyRef, VI <: ValueInformation](
-        val params:            Parameters[P],
-        val stmts:             Array[Stmt[DUVar[VI]]],
-        val pcToIndex:         Array[Int],
-        val cfg:               CFG[Stmt[DUVar[VI]], TACStmts[DUVar[VI]]],
-        val exceptionHandlers: ExceptionHandlers
+    val params:            Parameters[P],
+    val stmts:             Array[Stmt[DUVar[VI]]],
+    val pcToIndex:         Array[Int],
+    val cfg:               CFG[Stmt[DUVar[VI]], TACStmts[DUVar[VI]]],
+    val exceptionHandlers: ExceptionHandlers
 ) extends TACode[P, DUVar[VI]] {
 
     import AITACode.AITACodeCFG
@@ -214,11 +214,11 @@ object AITACode {
 }
 
 final class NaiveTACode[P <: AnyRef](
-        val params:            Parameters[P],
-        val stmts:             Array[Stmt[IdBasedVar]],
-        val pcToIndex:         Array[Int],
-        val cfg:               CFG[Stmt[IdBasedVar], TACStmts[IdBasedVar]],
-        val exceptionHandlers: ExceptionHandlers
+    val params:            Parameters[P],
+    val stmts:             Array[Stmt[IdBasedVar]],
+    val pcToIndex:         Array[Int],
+    val cfg:               CFG[Stmt[IdBasedVar], TACStmts[IdBasedVar]],
+    val exceptionHandlers: ExceptionHandlers
 ) extends TACode[P, IdBasedVar] {
 
     override def toString: String = toString("NaiveTACode", "")

@@ -22,9 +22,9 @@ trait DefaultClassValuesBinding extends DefaultStringValuesBinding with ClassVal
     //
 
     protected case class DefaultClassValue(
-            origin: ValueOrigin,
-            value:  Type,
-            refId:  RefId
+        origin: ValueOrigin,
+        value:  Type,
+        refId:  RefId
     ) extends ClassValue
 
     override def ClassValue(origin: ValueOrigin, value: Type): DomainClassValue = {

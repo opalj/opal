@@ -22,10 +22,10 @@ trait DefaultArrayValuesBinding extends DefaultReferenceValuesBinding with Array
     //
 
     private case class DefaultInitializedArrayValue(
-            origin:            ValueOrigin,
-            theUpperTypeBound: ArrayType,
-            theLength:         Int,
-            refId:             RefId
+        origin:            ValueOrigin,
+        theUpperTypeBound: ArrayType,
+        theLength:         Int,
+        refId:             RefId
     ) extends InitializedArrayValue
 
     override def InitializedArrayValue(

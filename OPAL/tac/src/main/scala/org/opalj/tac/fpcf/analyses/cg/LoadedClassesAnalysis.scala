@@ -41,7 +41,7 @@ import org.opalj.tac.fpcf.properties.TACAI
  * @author Florian Kuebler
  */
 class LoadedClassesAnalysis(
-        val project: SomeProject
+    val project: SomeProject
 ) extends FPCFAnalysis {
     /**
      * If the method in `callersOfMethod` has no callers

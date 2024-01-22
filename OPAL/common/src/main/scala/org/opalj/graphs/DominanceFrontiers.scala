@@ -16,7 +16,7 @@ import org.opalj.collection.mutable.IntArrayStack
  * @author Michael Eichberg
  */
 final class DominanceFrontiers private (
-        private val dfs: Array[IntArraySet] // IMPROVE Consider using an IntTrieSet (if it doesn't work, document it!)
+    private val dfs: Array[IntArraySet] // IMPROVE Consider using an IntTrieSet (if it doesn't work, document it!)
 ) extends ControlDependencies {
 
     def apply(n: Int): IntArraySet = df(n)

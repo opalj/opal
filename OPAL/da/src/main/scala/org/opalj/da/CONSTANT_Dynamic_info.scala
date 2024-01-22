@@ -12,8 +12,8 @@ import org.opalj.bi.ConstantPoolTag
  * @author Dominik Helm
  */
 case class CONSTANT_Dynamic_info(
-        bootstrap_method_attr_index: Int,
-        name_and_type_index:         Constant_Pool_Index
+    bootstrap_method_attr_index: Int,
+    name_and_type_index:         Constant_Pool_Index
 ) extends Constant_Pool_Entry {
 
     override final def size: Int = 1 + 2 + 2

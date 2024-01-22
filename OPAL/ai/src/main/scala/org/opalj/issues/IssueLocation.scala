@@ -41,9 +41,9 @@ sealed abstract class IssueLocation extends IssueRepresentations with Comparable
 }
 
 abstract class ProjectLocation(
-        val description: Option[String],
-        val theProject:  SomeProject,
-        val details:     Seq[IssueDetails] = List.empty
+    val description: Option[String],
+    val theProject:  SomeProject,
+    val details:     Seq[IssueDetails] = List.empty
 ) extends IssueLocation {
 
     def compareTo(other: IssueLocation): Int = {
@@ -78,10 +78,10 @@ abstract class ProjectLocation(
 }
 
 class PackageLocation(
-        description:    Option[String],
-        theProject:     SomeProject,
-        val thePackage: String,
-        details:        Seq[IssueDetails] = List.empty
+    description:    Option[String],
+    theProject:     SomeProject,
+    val thePackage: String,
+    details:        Seq[IssueDetails] = List.empty
 ) extends ProjectLocation(description, theProject, details) {
 
     def locationAsInlineXHTML(basicInfoOnly: Boolean): List[Node] = {
@@ -124,10 +124,10 @@ class PackageLocation(
 }
 
 class ClassLocation(
-        description:   Option[String],
-        theProject:    SomeProject,
-        val classFile: ClassFile,
-        details:       Seq[IssueDetails] = List.empty
+    description:   Option[String],
+    theProject:    SomeProject,
+    val classFile: ClassFile,
+    details:       Seq[IssueDetails] = List.empty
 ) extends PackageLocation(description, theProject, classFile.thisType.packageName, details)
     with ClassComprehension {
 
@@ -169,10 +169,10 @@ class ClassLocation(
 }
 
 class MethodLocation(
-        description: Option[String],
-        theProject:  SomeProject,
-        val method:  Method,
-        details:     Seq[IssueDetails] = List.empty
+    description: Option[String],
+    theProject:  SomeProject,
+    val method:  Method,
+    details:     Seq[IssueDetails] = List.empty
 ) extends ClassLocation(description, theProject, method.classFile, details)
     with MethodComprehension {
 
@@ -211,11 +211,11 @@ class MethodLocation(
 }
 
 class InstructionLocation(
-        description: Option[String],
-        theProject:  SomeProject,
-        method:      Method,
-        val pc:      PC,
-        details:     Seq[IssueDetails] = List.empty
+    description: Option[String],
+    theProject:  SomeProject,
+    method:      Method,
+    val pc:      PC,
+    details:     Seq[IssueDetails] = List.empty
 ) extends MethodLocation(description, theProject, method, details) with PCLineComprehension {
 
     assert(method.body.isDefined)
@@ -249,9 +249,9 @@ class InstructionLocation(
 }
 
 class FieldLocation(
-        description: Option[String],
-        theProject:  SomeProject,
-        classFile:   ClassFile,
-        val field:   Field,
-        details:     Seq[IssueDetails] = List.empty
+    description: Option[String],
+    theProject:  SomeProject,
+    classFile:   ClassFile,
+    val field:   Field,
+    details:     Seq[IssueDetails] = List.empty
 ) extends ClassLocation(description, theProject, classFile, details)

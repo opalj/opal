@@ -42,7 +42,7 @@ import org.opalj.tac.fpcf.properties.TheTACAI
  * @author Florian Kuebler
  */
 abstract class TamiFlexPointsToAnalysis private[analyses] (
-        final val project: SomeProject
+    final val project: SomeProject
 ) extends PointsToAnalysisBase { self =>
 
     trait PointsToBase extends AbstractPointsToBasedAnalysis {
@@ -240,7 +240,7 @@ object AllocationSiteBasedTamiFlexPointsToAnalysisScheduler
 }
 
 abstract class TamiFlexPointsToArrayGetAnalysis(
-        final val project: SomeProject
+    final val project: SomeProject
 ) extends PointsToAnalysisBase with TACAIBasedAPIBasedAnalysis {
 
     override val apiMethod: DeclaredMethod = declaredMethods(
@@ -286,7 +286,7 @@ abstract class TamiFlexPointsToArrayGetAnalysis(
 }
 
 abstract class TamiFlexPointsToArraySetAnalysis(
-        final val project: SomeProject
+    final val project: SomeProject
 ) extends PointsToAnalysisBase with TACAIBasedAPIBasedAnalysis {
 
     override val apiMethod: DeclaredMethod = declaredMethods(
@@ -333,9 +333,9 @@ abstract class TamiFlexPointsToArraySetAnalysis(
 }
 
 abstract class TamiFlexPointsToNewInstanceAnalysis(
-        final val project:      SomeProject,
-        override val apiMethod: DeclaredMethod,
-        val key:                String
+    final val project:      SomeProject,
+    override val apiMethod: DeclaredMethod,
+    val key:                String
 ) extends PointsToAnalysisBase with APIBasedAnalysis {
 
     private[this] final val tamiFlexLogData = project.get(TamiFlexKey)
@@ -363,17 +363,17 @@ abstract class TamiFlexPointsToNewInstanceAnalysis(
 }
 
 abstract class TamiFlexPointsToClassGetMemberAnalysis(
-        final val project: SomeProject,
-        val method:        String,
-        val memberType:    ObjectType
+    final val project: SomeProject,
+    val method:        String,
+    val memberType:    ObjectType
 )(
-        override val apiMethod: DeclaredMethod = project.get(DeclaredMethodsKey)(
-            ObjectType.Class,
-            "",
-            ObjectType.Class,
-            method,
-            MethodDescriptor(ObjectType.String, memberType)
-        )
+    override val apiMethod: DeclaredMethod = project.get(DeclaredMethodsKey)(
+        ObjectType.Class,
+        "",
+        ObjectType.Class,
+        method,
+        MethodDescriptor(ObjectType.String, memberType)
+    )
 ) extends PointsToAnalysisBase with APIBasedAnalysis {
 
     private[this] final val tamiFlexLogData = project.get(TamiFlexKey)
@@ -412,9 +412,9 @@ abstract class TamiFlexPointsToClassGetMemberAnalysis(
 }
 
 abstract class TamiFlexPointsToClassGetMembersAnalysis(
-        final val project: SomeProject,
-        method:            String,
-        val memberType:    ObjectType
+    final val project: SomeProject,
+    method:            String,
+    val memberType:    ObjectType
 ) extends PointsToAnalysisBase with APIBasedAnalysis {
 
     override val apiMethod: DeclaredMethod = project.get(DeclaredMethodsKey)(
@@ -454,7 +454,7 @@ abstract class TamiFlexPointsToClassGetMembersAnalysis(
 }
 
 abstract class TamiFlexPointsToFieldGetAnalysis(
-        final val project: SomeProject
+    final val project: SomeProject
 ) extends PointsToAnalysisBase with TACAIBasedAPIBasedAnalysis {
 
     override val apiMethod: DeclaredMethod = declaredMethods(
@@ -500,7 +500,7 @@ abstract class TamiFlexPointsToFieldGetAnalysis(
 }
 
 abstract class TamiFlexPointsToFieldSetAnalysis(
-        final val project: SomeProject
+    final val project: SomeProject
 ) extends PointsToAnalysisBase with TACAIBasedAPIBasedAnalysis {
 
     override val apiMethod: DeclaredMethod = declaredMethods(

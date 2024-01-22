@@ -268,7 +268,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
     }
 
     case class State(
-            field: Field
+        field: Field
     ) extends AbstractFieldAssignabilityAnalysisState {
         var checkLazyInit: Option[(Method, Int, Int, TACode[TACMethodParameter, V])] = None
         var openWrites = List.empty[(DefinedMethod, TACode[TACMethodParameter, V], Option[V], PC)]

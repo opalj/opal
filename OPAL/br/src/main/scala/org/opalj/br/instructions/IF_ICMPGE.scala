@@ -45,7 +45,7 @@ object IF_ICMPGE extends InstructionMetaInformation {
 }
 
 case class LabeledIF_ICMPGE(
-        branchTarget: InstructionLabel
+    branchTarget: InstructionLabel
 ) extends LabeledSimpleConditionalBranchInstruction
     with IF_ICMPGELike {
 

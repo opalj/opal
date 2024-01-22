@@ -50,7 +50,7 @@ import org.opalj.fpcf.UBPS
  * @author Andreas Bauer
  */
 class LibraryInstantiatedTypesBasedEntryPointsAnalysis private[analyses] (
-        final val project: SomeProject
+    final val project: SomeProject
 ) extends FPCFAnalysis {
 
     val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)

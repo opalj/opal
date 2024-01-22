@@ -219,8 +219,8 @@ object PerformInvocationsTestFixture {
         with TheMethod
 
     abstract class InvocationDomain(
-            val project: Project[java.net.URL],
-            val method:  Method
+        val project: Project[java.net.URL],
+        val method:  Method
     ) extends Domain
         with l0.TypeLevelInvokeInstructions
         with PerformInvocations
@@ -261,8 +261,8 @@ object PerformInvocationsTestFixture {
     }
 
     class LiInvocationDomain(
-            project: Project[java.net.URL],
-            method:  Method
+        project: Project[java.net.URL],
+        method:  Method
     ) extends InvocationDomain(project, method) with LiDomain {
 
         protected[this] def createInvocationDomain(

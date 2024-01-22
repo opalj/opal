@@ -24,11 +24,11 @@ import org.opalj.log.OPALLogger.info
  * @author Michael Eichberg
  */
 final class PKESequentialPropertyStore protected (
-        val ctx:                Map[Class[_], AnyRef],
-        val tasksManager:       TasksManager,
-        val MaxEvaluationDepth: Int
+    val ctx:                Map[Class[_], AnyRef],
+    val tasksManager:       TasksManager,
+    val MaxEvaluationDepth: Int
 )(
-        implicit val logContext: LogContext
+    implicit val logContext: LogContext
 ) extends SeqPropertyStore { store =>
 
     info("property store", s"using $tasksManager for managing tasks")

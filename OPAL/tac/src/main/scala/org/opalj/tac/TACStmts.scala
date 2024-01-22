@@ -10,7 +10,7 @@ import org.opalj.br.CodeSequence
  * @author Michael Eichberg
  */
 case class TACStmts[V <: Var[V]](
-        instructions: Array[Stmt[V]]
+    instructions: Array[Stmt[V]]
 ) extends CodeSequence[Stmt[V]] {
 
     override final def pcOfPreviousInstruction(pc: Int): Int = {

@@ -100,13 +100,13 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
      *                  checkPurityOfX methods to aggregrate the purity
      */
     class State(
-            var dependees: Set[EOptionP[Entity, Property]],
-            val method:    Method,
-            val context:   Context,
-            val declClass: ObjectType,
-            var tac:       TACode[TACMethodParameter, V] = null,
-            var lbPurity:  Purity                        = Pure,
-            var ubPurity:  Purity                        = Pure
+        var dependees: Set[EOptionP[Entity, Property]],
+        val method:    Method,
+        val context:   Context,
+        val declClass: ObjectType,
+        var tac:       TACode[TACMethodParameter, V] = null,
+        var lbPurity:  Purity                        = Pure,
+        var ubPurity:  Purity                        = Pure
     ) extends AnalysisState
 
     override type StateType = State

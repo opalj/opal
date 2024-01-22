@@ -49,7 +49,7 @@ import org.opalj.tac.fpcf.analyses.cg.TypeConsumerAnalysis
  * @author Florian Kuebler
  */
 abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
-        final val project: SomeProject
+    final val project: SomeProject
 ) extends PointsToAnalysisBase with TypeConsumerAnalysis {
 
     private[this] implicit val declaredMethods: DeclaredMethods = p.get(DeclaredMethodsKey)

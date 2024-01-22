@@ -11,8 +11,8 @@ import scala.xml.Node
  * @author Noorulla Sharief
  */
 case class RuntimeVisibleAnnotations_attribute(
-        attribute_name_index: Constant_Pool_Index,
-        annotations:          Annotations
+    attribute_name_index: Constant_Pool_Index,
+    annotations:          Annotations
 ) extends Annotations_attribute {
 
     override final def attribute_length: Int = {

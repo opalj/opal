@@ -598,7 +598,7 @@ class DefaultConcreteArraysTest extends AnyFunSpec with Matchers {
 }
 
 class DefaultConcreteArraysTestDomain(
-        override val maxCardinalityOfIntegerRanges: Long = -(Int.MinValue.toLong) + Int.MaxValue
+    override val maxCardinalityOfIntegerRanges: Long = -(Int.MinValue.toLong) + Int.MaxValue
 ) extends CorrelationalDomain
     with GlobalLogContextProvider
     with DefaultSpecialDomainValuesBinding

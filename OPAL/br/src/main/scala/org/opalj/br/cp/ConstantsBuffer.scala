@@ -26,8 +26,8 @@ import org.opalj.br.instructions.LoadString
  * @author  Michael Eichberg
  */
 class ConstantsBuffer private (
-        private var nextIndex:    Int,
-        private val constantPool: mutable.Map[Constant_Pool_Entry, Constant_Pool_Index] // IMPROVE[L3] Use ObjectToIntMap
+    private var nextIndex:    Int,
+    private val constantPool: mutable.Map[Constant_Pool_Entry, Constant_Pool_Index] // IMPROVE[L3] Use ObjectToIntMap
 ) extends ConstantsPoolLike {
 
     private[this] val bootstrapMethods = new BootstrapMethodsBuffer()

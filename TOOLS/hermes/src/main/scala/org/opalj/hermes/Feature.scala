@@ -17,9 +17,9 @@ package hermes
  * @author Michael Eichberg
  */
 abstract case class Feature[S] private (
-        id:         String,
-        count:      Int,
-        extensions: List[Location[S]]
+    id:         String,
+    count:      Int,
+    extensions: List[Location[S]]
 ) {
     assert(count >= extensions.size)
 }

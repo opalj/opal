@@ -12,8 +12,8 @@ import org.opalj.bi.ConstantPoolTags
  * @author Andre Pacak
  */
 case class CONSTANT_MethodHandle_info(
-        referenceKind:  Int,
-        referenceIndex: Constant_Pool_Index
+    referenceKind:  Int,
+    referenceIndex: Constant_Pool_Index
 ) extends Constant_Pool_Entry {
 
     override def tag: Int = ConstantPoolTags.CONSTANT_MethodHandle_ID

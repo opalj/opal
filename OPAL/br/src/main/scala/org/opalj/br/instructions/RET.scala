@@ -15,7 +15,7 @@ import org.opalj.br.cfg.CFGFactory
  * @author Michael Eichberg
  */
 case class RET(
-        lvIndex: Int
+    lvIndex: Int
 ) extends ControlTransferInstruction
     with ConstantLengthInstruction
     with NoLabels {

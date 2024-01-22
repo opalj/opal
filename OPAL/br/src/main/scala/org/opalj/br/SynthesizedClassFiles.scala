@@ -22,7 +22,7 @@ package br
  * @author  Michael Eichberg
  */
 case class SynthesizedClassFiles(
-        classFiles: List[( /*generated*/ ClassFile, /*reason*/ Option[AnyRef])]
+    classFiles: List[( /*generated*/ ClassFile, /*reason*/ Option[AnyRef])]
 ) extends Attribute {
 
     override final val kindId = SynthesizedClassFiles.KindId
