@@ -75,7 +75,7 @@ object UnnecessarySynchronizationAnalysis extends ProjectAnalysisApplication {
                 if uses exists { use =>
                     code(use) match {
                         case MonitorEnter(_, v) if v.asVar.definedBy.contains(defSite) => true
-                        case _ => false
+                        case _                                                         => false
                     }
                 }
             } yield as

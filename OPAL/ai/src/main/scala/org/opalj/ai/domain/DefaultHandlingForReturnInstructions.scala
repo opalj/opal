@@ -15,24 +15,29 @@ package domain
 trait DefaultHandlingForReturnInstructions extends ReturnInstructionsDomain {
     domain: ValuesDomain with ExceptionsFactory with Configuration =>
 
-    /*base impl.*/ def areturn(pc: Int, value: DomainValue): Computation[Nothing, ExceptionValue] = {
+    /*base impl.*/
+    def areturn(pc: Int, value: DomainValue): Computation[Nothing, ExceptionValue] = {
         handleReturn(pc)
 
     }
 
-    /*base impl.*/ def dreturn(pc: Int, value: DomainValue): Computation[Nothing, ExceptionValue] = {
+    /*base impl.*/
+    def dreturn(pc: Int, value: DomainValue): Computation[Nothing, ExceptionValue] = {
         handleReturn(pc)
     }
 
-    /*base impl.*/ def freturn(pc: Int, value: DomainValue): Computation[Nothing, ExceptionValue] = {
+    /*base impl.*/
+    def freturn(pc: Int, value: DomainValue): Computation[Nothing, ExceptionValue] = {
         handleReturn(pc)
     }
 
-    /*base impl.*/ def ireturn(pc: Int, value: DomainValue): Computation[Nothing, ExceptionValue] = {
+    /*base impl.*/
+    def ireturn(pc: Int, value: DomainValue): Computation[Nothing, ExceptionValue] = {
         handleReturn(pc)
     }
 
-    /*base impl.*/ def lreturn(pc: Int, value: DomainValue): Computation[Nothing, ExceptionValue] = {
+    /*base impl.*/
+    def lreturn(pc: Int, value: DomainValue): Computation[Nothing, ExceptionValue] = {
         handleReturn(pc)
     }
 

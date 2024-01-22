@@ -21,5 +21,5 @@ abstract class ArrayAccessInstruction extends ConstantLengthInstruction with NoL
 
     def elementTypeComputationalType: ComputationalType
 
-    final override def toString(currentPC: Int): String = toString()
+    override final def toString(currentPC: Int): String = toString()
 }

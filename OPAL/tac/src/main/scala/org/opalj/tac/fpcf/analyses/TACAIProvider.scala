@@ -32,7 +32,7 @@ import org.opalj.tac.fpcf.properties.TACAI
  */
 class TACAIProvider private[analyses] (val project: SomeProject) extends FPCFAnalysis {
 
-    final implicit val aiFactory: ProjectSpecificAIExecutor = project.get(AIDomainFactoryKey)
+    implicit final val aiFactory: ProjectSpecificAIExecutor = project.get(AIDomainFactoryKey)
 
     def computeTAC(e: Entity): ProperPropertyComputationResult = e match {
         case m: Method =>

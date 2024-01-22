@@ -4,15 +4,15 @@ package ba
 
 import scala.language.postfixOps
 
+import org.junit.runner.RunWith
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatestplus.junit.JUnitRunner
+
 import org.opalj.bc.Assembler
 import org.opalj.br.instructions.ALOAD_0
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.RETURN
 import org.opalj.util.InMemoryClassLoader
-
-import org.junit.runner.RunWith
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests annotating instructions in the BytecodeAssembler DSL.
@@ -29,19 +29,24 @@ class AnnotatedInstructionsTest extends AnyFlatSpec {
             accessModifiers = PUBLIC SUPER,
             thisType = "Test",
             methods = METHODS(
-                METHOD(PUBLIC, "<init>", "()V", CODE(
-                    Symbol("UnUsedLabel1"),
-                    ALOAD_0 -> "MarkerAnnotation1",
-                    Symbol("UnUsedLabel2"),
-                    INVOKESPECIAL("java/lang/Object", false, "<init>", "()V"),
-                    RETURN -> "MarkerAnnotation2"
-                ))
+                METHOD(
+                    PUBLIC,
+                    "<init>",
+                    "()V",
+                    CODE(
+                        Symbol("UnUsedLabel1"),
+                        ALOAD_0 -> "MarkerAnnotation1",
+                        Symbol("UnUsedLabel2"),
+                        INVOKESPECIAL("java/lang/Object", false, "<init>", "()V"),
+                        RETURN -> "MarkerAnnotation2"
+                    )
+                )
             )
         )
         val (
             daClassFile,
             methodAnnotations: Map[br.Method, (Map[br.PC, String], List[String])]
-            ) = brClassTemplate.toDA()
+        ) = brClassTemplate.toDA()
         val (pcAnnotations: List[Map[br.PC, String]], warnings) =
             methodAnnotations.values.unzip
 
@@ -53,7 +58,8 @@ class AnnotatedInstructionsTest extends AnyFlatSpec {
 
         "[String Annotated Instructions] the generated class" should "load correctly" in {
             val loader = new InMemoryClassLoader(
-                Map("Test" -> Assembler(daClassFile)), this.getClass.getClassLoader
+                Map("Test" -> Assembler(daClassFile)),
+                this.getClass.getClassLoader
             )
             assert("Test" == loader.loadClass("Test").getSimpleName)
         }
@@ -70,18 +76,23 @@ class AnnotatedInstructionsTest extends AnyFlatSpec {
         val (
             daClassFile,
             methodAnnotations: Map[br.Method, (Map[br.PC, (Symbol, String)], List[String])]
-            ) =
+        ) =
             CLASS(
                 accessModifiers = PUBLIC SUPER,
                 thisType = "Test",
                 methods = METHODS(
-                    METHOD(PUBLIC, "<init>", "()V", CODE(
-                        Symbol("UnUsedLabel1"),
-                        ALOAD_0 -> ((Symbol("L1"), "MarkerAnnotation1")),
-                        Symbol("UnUsedLabel2"),
-                        INVOKESPECIAL("java/lang/Object", false, "<init>", "()V"),
-                        RETURN -> ((Symbol("L2"), "MarkerAnnotation2"))
-                    ))
+                    METHOD(
+                        PUBLIC,
+                        "<init>",
+                        "()V",
+                        CODE(
+                            Symbol("UnUsedLabel1"),
+                            ALOAD_0 -> ((Symbol("L1"), "MarkerAnnotation1")),
+                            Symbol("UnUsedLabel2"),
+                            INVOKESPECIAL("java/lang/Object", false, "<init>", "()V"),
+                            RETURN -> ((Symbol("L2"), "MarkerAnnotation2"))
+                        )
+                    )
                 )
             ).toDA()
         val (pcAnnotations: List[Map[br.PC, (Symbol, String)]], warnings) =
@@ -93,7 +104,8 @@ class AnnotatedInstructionsTest extends AnyFlatSpec {
 
         "[Tuple Annotated Instructions] the generated class" should "load correctly" in {
             val loader = new InMemoryClassLoader(
-                Map("Test" -> Assembler(daClassFile)), this.getClass.getClassLoader
+                Map("Test" -> Assembler(daClassFile)),
+                this.getClass.getClassLoader
             )
             assert("Test" == loader.loadClass("Test").getSimpleName)
         }

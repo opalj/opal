@@ -17,7 +17,7 @@ abstract class AbstractAnnotation {
             val evpsAsXHTML = this.element_value_pairs.map(_.toXHTML)
             NodeSeq.fromSeq(Seq(
                 Text("("),
-                <ol class="element_value_pairs">{ evpsAsXHTML }</ol>,
+                <ol class="element_value_pairs">{evpsAsXHTML}</ol>,
                 Text(")")
             ))
         } else {

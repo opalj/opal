@@ -44,9 +44,9 @@ case class LOOKUPSWITCH(
         npairs:        ArraySeq[IntIntPair]
 ) extends CompoundConditionalBranchInstruction with LOOKUPSWITCHLike {
 
-    final override def asLOOKUPSWITCH: this.type = this
+    override final def asLOOKUPSWITCH: this.type = this
 
-    final override def indexOfNextInstruction(currentPC: Int)(implicit code: Code): Int = {
+    override final def indexOfNextInstruction(currentPC: Int)(implicit code: Code): Int = {
         indexOfNextInstruction(currentPC, modifiedByWide = false)
     }
 
@@ -121,9 +121,9 @@ case class LOOKUPSWITCH(
 
     override def toString(pc: Int): String = {
         "LOOKUPSWITCH(" +
-            npairs.iterator.
-            map[String](p => s"${p._1}=${pc + p._2}${if (p._2 >= 0) "↓" else "↑"}").
-            mkString(",") +
+            npairs.iterator
+                .map[String](p => s"${p._1}=${pc + p._2}${if (p._2 >= 0) "↓" else "↑"}")
+                .mkString(",") +
             s"; ifNoMatch=${(defaultOffset + pc)}${if (defaultOffset >= 0) "↓" else "↑"}" +
             ")"
     }
@@ -186,8 +186,8 @@ case class LabeledLOOKUPSWITCH(
     }
 
     override def toString(pc: Int): String = {
-        npairs.iterator.
-            map(p => s"${p._1}=${p._2}").
-            mkString("LOOKUPSWITCH(", ",", s"; ifNoMatch=$defaultBranchTarget)")
+        npairs.iterator
+            .map(p => s"${p._1}=${p._2}")
+            .mkString("LOOKUPSWITCH(", ",", s"; ifNoMatch=$defaultBranchTarget)")
     }
 }

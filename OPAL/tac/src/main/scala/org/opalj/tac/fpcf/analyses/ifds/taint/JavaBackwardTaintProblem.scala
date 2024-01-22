@@ -15,6 +15,7 @@ import org.opalj.tac.fpcf.analyses.ifds.JavaBackwardIFDSProblem
 import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem
 import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem.V
 import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
+
 /**
  * Implementation of a backward taint analysis for Java code.
  *
@@ -33,26 +34,30 @@ abstract class JavaBackwardTaintProblem(project: SomeProject)
      */
     override def normalFlow(jstmt: JavaStatement, in: TaintFact, predecessor: Option[JavaStatement]): Set[TaintFact] = {
         jstmt.stmt.astID match {
-            case Assignment.ASTID => if (in match {
-                case Variable(index)        => index == jstmt.index
-                case ArrayElement(index, _) => index == jstmt.index
-                case _                      => false
-            }) {
-                Set(in) ++ createNewTaints(jstmt.stmt.asAssignment.expr, jstmt)
-            } else Set(in)
+            case Assignment.ASTID =>
+                if (in match {
+                        case Variable(index)        => index == jstmt.index
+                        case ArrayElement(index, _) => index == jstmt.index
+                        case _                      => false
+                    }
+                ) {
+                    Set(in) ++ createNewTaints(jstmt.stmt.asAssignment.expr, jstmt)
+                } else Set(in)
             case ArrayStore.ASTID =>
                 val arrayStore = jstmt.stmt.asArrayStore
                 val arrayIndex = TaintProblem.getIntConstant(arrayStore.index, jstmt.code)
                 val arrayDefinedBy = arrayStore.arrayRef.asVar.definedBy
                 if (in match {
-                    // check if array is tainted
-                    case Variable(index) => arrayDefinedBy.contains(index) // whole variable/array is tainted
-                    case ArrayElement(index, taintedElement) => arrayDefinedBy.contains(index) && // only specific array element is tainted
-                        (arrayIndex.isEmpty || arrayIndex.get == taintedElement)
-                    case _ => false
-                }) {
+                        // check if array is tainted
+                        case Variable(index) => arrayDefinedBy.contains(index) // whole variable/array is tainted
+                        case ArrayElement(index, taintedElement) => arrayDefinedBy.contains(index) && // only specific array element is tainted
+                                (arrayIndex.isEmpty || arrayIndex.get == taintedElement)
+                        case _ => false
+                    }
+                ) {
                     if (arrayIndex.isDefined && arrayDefinedBy.size == 1 &&
-                        in == ArrayElement(arrayDefinedBy.head, arrayIndex.get)) {
+                        in == ArrayElement(arrayDefinedBy.head, arrayIndex.get)
+                    ) {
                         // tainted array element is overwritten -> untaint
                         createNewTaints(arrayStore.value, jstmt)
                     } else Set(in) ++ createNewTaints(arrayStore.value, jstmt)
@@ -61,19 +66,21 @@ abstract class JavaBackwardTaintProblem(project: SomeProject)
                 val putField = jstmt.stmt.asPutField
                 val definedBy = putField.objRef.asVar.definedBy
                 if (in match {
-                    case InstanceField(index, classType, fieldName) =>
-                        definedBy.contains(index) &&
-                            putField.declaringClass == classType &&
-                            putField.name == fieldName
-                    case _ => false
-                }) {
+                        case InstanceField(index, classType, fieldName) =>
+                            definedBy.contains(index) &&
+                                putField.declaringClass == classType &&
+                                putField.name == fieldName
+                        case _ => false
+                    }
+                ) {
                     Set(in) ++ createNewTaints(putField.value, jstmt)
                 } else Set(in)
             case PutStatic.ASTID =>
                 val putStatic = jstmt.stmt.asPutStatic
                 in match {
-                    case StaticField(classType, fieldName) if putStatic.declaringClass == classType &&
-                        putStatic.name == fieldName => Set(in) ++ createNewTaints(putStatic.value, jstmt)
+                    case StaticField(classType, fieldName)
+                        if putStatic.declaringClass == classType &&
+                            putStatic.name == fieldName => Set(in) ++ createNewTaints(putStatic.value, jstmt)
                     case _ => Set(in)
                 }
             case _ => Set(in)
@@ -94,11 +101,9 @@ abstract class JavaBackwardTaintProblem(project: SomeProject)
                 case Variable(index) if index == call.index =>
                     flow ++= createNewTaints(start.stmt.asReturnValue.expr, start)
                 case ArrayElement(index, taintedElement) if index == call.index =>
-                    flow ++= createNewArrayElementTaints(start.stmt.asReturnValue.expr, taintedElement,
-                        call)
+                    flow ++= createNewArrayElementTaints(start.stmt.asReturnValue.expr, taintedElement, call)
                 case InstanceField(index, declaringClass, name) if index == call.index =>
-                    flow ++= createNewInstanceFieldTaints(start.stmt.asReturnValue.expr, declaringClass,
-                        name, call)
+                    flow ++= createNewInstanceFieldTaints(start.stmt.asReturnValue.expr, declaringClass, name, call)
                 case _ => // Nothing to do
             }
         }
@@ -106,8 +111,10 @@ abstract class JavaBackwardTaintProblem(project: SomeProject)
         // check for tainted 'this' and pass-by-reference parameters
         val thisOffset = if (callee.isStatic) 0 else 1
         callObject.allParams.iterator.zipWithIndex
-            .filter(pair => (pair._2 == 0 && !callee.isStatic) || // this
-                callObject.descriptor.parameterTypes(pair._2 - thisOffset).isReferenceType) // pass-by-reference parameters
+            .filter(pair =>
+                (pair._2 == 0 && !callee.isStatic) || // this
+                    callObject.descriptor.parameterTypes(pair._2 - thisOffset).isReferenceType
+            ) // pass-by-reference parameters
             .foreach { pair =>
                 val param = pair._1.asVar
                 val paramIndex = pair._2
@@ -116,12 +123,14 @@ abstract class JavaBackwardTaintProblem(project: SomeProject)
                         flow += Variable(JavaIFDSProblem.remapParamAndVariableIndex(paramIndex, callee.isStatic))
                     case ArrayElement(index, taintedElement) if param.definedBy.contains(index) =>
                         flow += ArrayElement(
-                            JavaIFDSProblem.remapParamAndVariableIndex(paramIndex, callee.isStatic), taintedElement
+                            JavaIFDSProblem.remapParamAndVariableIndex(paramIndex, callee.isStatic),
+                            taintedElement
                         )
                     case InstanceField(index, declaringClass, name) if param.definedBy.contains(index) =>
                         flow += InstanceField(
                             JavaIFDSProblem.remapParamAndVariableIndex(paramIndex, callee.isStatic),
-                            declaringClass, name
+                            declaringClass,
+                            name
                         )
                     case staticField: StaticField => flow += staticField
                     case _                        => // Nothing to do
@@ -135,7 +144,13 @@ abstract class JavaBackwardTaintProblem(project: SomeProject)
      * context were tainted.
      * Does not taint anything, if the sanitize method was called.
      */
-    override def returnFlow(exit: JavaStatement, in: TaintFact, call: JavaStatement, successor: Option[JavaStatement], unbCallChain: Seq[Callable]): Set[TaintFact] = {
+    override def returnFlow(
+        exit:         JavaStatement,
+        in:           TaintFact,
+        call:         JavaStatement,
+        successor:    Option[JavaStatement],
+        unbCallChain: Seq[Callable]
+    ): Set[TaintFact] = {
         val callee = exit.callable
         if (sanitizesReturnValue(callee)) return Set.empty
 
@@ -148,17 +163,21 @@ abstract class JavaBackwardTaintProblem(project: SomeProject)
         in match {
             case Variable(index) if formalParameterIndices.contains(index) =>
                 facts.addAll(createNewTaints(
-                    callStatement.allParams(JavaIFDSProblem.remapParamAndVariableIndex(index, staticCall)), call
+                    callStatement.allParams(JavaIFDSProblem.remapParamAndVariableIndex(index, staticCall)),
+                    call
                 ))
             case ArrayElement(index, taintedElement) if formalParameterIndices.contains(index) =>
                 facts.addAll(createNewArrayElementTaints(
                     callStatement.allParams(JavaIFDSProblem.remapParamAndVariableIndex(index, staticCall)),
-                    taintedElement, call
+                    taintedElement,
+                    call
                 ))
             case InstanceField(index, declaringClass, name) if formalParameterIndices.contains(index) =>
                 facts.addAll(createNewInstanceFieldTaints(
                     callStatement.allParams(JavaIFDSProblem.remapParamAndVariableIndex(index, staticCall)),
-                    declaringClass, name, call
+                    declaringClass,
+                    name,
+                    call
                 ))
             case staticField: StaticField => facts.add(staticField)
             // If the source was reached in a callee, create a flow fact from this method to the sink.
@@ -174,8 +193,12 @@ abstract class JavaBackwardTaintProblem(project: SomeProject)
      * Adds a FlowFact, if `createFlowFactAtCall` creates one.
      * Removes taints according to `sanitizeParamters`.
      */
-    override def callToReturnFlow(call: JavaStatement, in: TaintFact, successor: Option[JavaStatement],
-                                  unbCallChain: Seq[Callable]): Set[TaintFact] = {
+    override def callToReturnFlow(
+        call:         JavaStatement,
+        in:           TaintFact,
+        successor:    Option[JavaStatement],
+        unbCallChain: Seq[Callable]
+    ): Set[TaintFact] = {
         val flowFact = createFlowFactAtCall(call, in, unbCallChain)
         val result = scala.collection.mutable.Set.empty[TaintFact]
         if (!sanitizesParameter(call, in)) result.add(in)
@@ -190,24 +213,36 @@ abstract class JavaBackwardTaintProblem(project: SomeProject)
      * @param in   The fact, which holds before the call.
      * @return Some fact, if necessary. Otherwise None.
      */
-    protected def createFlowFactAtCall(call: JavaStatement, in: TaintFact, callChain: Seq[Callable]): Option[TaintFact] = None
+    protected def createFlowFactAtCall(
+        call:      JavaStatement,
+        in:        TaintFact,
+        callChain: Seq[Callable]
+    ): Option[TaintFact] = None
 
     /**
      * If the returned value is tainted, all actual parameters will be tainted.
      */
     override def outsideAnalysisContextCall(callee: Method): Option[OutsideAnalysisContextCallHandler] = {
         super.outsideAnalysisContextCall(callee) match {
-            case Some(_) => Some((call: JavaStatement, _: Option[JavaStatement], in: TaintFact, unbCallChain: Seq[Callable], _: Getter) => {
-                val callStatement = JavaIFDSProblem.asCall(call.stmt)
-                Set(in) ++ (in match {
-                    case Variable(index) if index == call.index =>
-                        callStatement.allParams.flatMap(createNewTaints(_, call))
-                    case ArrayElement(index, _) if index == call.index =>
-                        callStatement.allParams.flatMap(createNewTaints(_, call))
-                    case InstanceField(index, _, _) if index == call.index =>
-                        callStatement.allParams.flatMap(createNewTaints(_, call))
-                })
-            })
+            case Some(_) => Some(
+                    (
+                        call:         JavaStatement,
+                        _:            Option[JavaStatement],
+                        in:           TaintFact,
+                        unbCallChain: Seq[Callable],
+                        _:            Getter
+                    ) => {
+                        val callStatement = JavaIFDSProblem.asCall(call.stmt)
+                        Set(in) ++ (in match {
+                            case Variable(index) if index == call.index =>
+                                callStatement.allParams.flatMap(createNewTaints(_, call))
+                            case ArrayElement(index, _) if index == call.index =>
+                                callStatement.allParams.flatMap(createNewTaints(_, call))
+                            case InstanceField(index, _, _) if index == call.index =>
+                                callStatement.allParams.flatMap(createNewTaints(_, call))
+                        })
+                    }
+                )
             case None => None
         }
     }
@@ -251,7 +286,8 @@ abstract class JavaBackwardTaintProblem(project: SomeProject)
             case BinaryExpr.ASTID | PrefixExpr.ASTID | Compare.ASTID |
                 PrimitiveTypecastExpr.ASTID | NewArray.ASTID | ArrayLength.ASTID =>
                 (0 until expression.subExprCount).foldLeft(Set.empty[TaintFact])((acc, subExpr) =>
-                    acc ++ createNewTaints(expression.subExpr(subExpr), statement))
+                    acc ++ createNewTaints(expression.subExpr(subExpr), statement)
+                )
             case GetField.ASTID =>
                 val getField = expression.asGetField
                 getField.objRef.asVar.definedBy
@@ -271,8 +307,11 @@ abstract class JavaBackwardTaintProblem(project: SomeProject)
      * @param statement      The statement, containing the expression.
      * @return a set of facts with preserved information about the tainted element of arrays.
      */
-    private def createNewArrayElementTaints(expression: Expr[V], taintedElement: Int,
-                                            statement: JavaStatement): Set[TaintFact] =
+    private def createNewArrayElementTaints(
+        expression:     Expr[V],
+        taintedElement: Int,
+        statement:      JavaStatement
+    ): Set[TaintFact] =
         createNewTaints(expression, statement).map {
             // Keep information about tainted array element
             case Variable(variableIndex) => ArrayElement(variableIndex, taintedElement)
@@ -288,8 +327,12 @@ abstract class JavaBackwardTaintProblem(project: SomeProject)
      * @param statement the statement containing the expression.
      * @return a set of facts with preserved information about the tainted field of instances.
      */
-    private def createNewInstanceFieldTaints(expression: Expr[V], declaringClass: ObjectType,
-                                             name: String, statement: JavaStatement): Set[TaintFact] =
+    private def createNewInstanceFieldTaints(
+        expression:     Expr[V],
+        declaringClass: ObjectType,
+        name:           String,
+        statement:      JavaStatement
+    ): Set[TaintFact] =
         createNewTaints(expression, statement).map {
             // keep information about instance field
             case Variable(variableIndex) => InstanceField(variableIndex, declaringClass, name)

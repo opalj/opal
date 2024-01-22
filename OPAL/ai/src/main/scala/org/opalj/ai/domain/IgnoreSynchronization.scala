@@ -31,7 +31,8 @@ trait IgnoreSynchronization extends MonitorInstructionsDomain {
      * @note The default implementation checks if the given value is `null` and raises
      *      an exception if it is `null` or maybe `null`.
      */
-    /*override*/ def monitorenter(
+    /*override*/
+    def monitorenter(
         pc:    Int,
         value: DomainValue
     ): Computation[Nothing, ExceptionValue] = {
@@ -44,13 +45,15 @@ trait IgnoreSynchronization extends MonitorInstructionsDomain {
      * @note The default implementation checks if the given value is `null` and raises
      *      an exception if it is `null` or maybe `null`.
      */
-    /*override*/ def monitorexit(
+    /*override*/
+    def monitorexit(
         pc:    Int,
         value: DomainValue
     ): Computation[Nothing, ExceptionValues] = {
         val result = sideEffectOnlyOrExceptions(pc, value)
         if (result.returnsNormally /* <=> the value maybe non-null*/ &&
-            throwIllegalMonitorStateException) {
+            throwIllegalMonitorStateException
+        ) {
 
             val imsException = VMIllegalMonitorStateException(pc)
             if (result.throwsException) {
@@ -63,4 +66,3 @@ trait IgnoreSynchronization extends MonitorInstructionsDomain {
         }
     }
 }
-

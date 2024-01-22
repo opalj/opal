@@ -32,7 +32,6 @@ class ReflectionAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery 
         val Proxy = ObjectType("java/lang/reflect/Proxy")
 
         List(
-
             StaticAPIMethod(Class, "forName"),
 
             // reflective instance creation
@@ -79,9 +78,7 @@ class ReflectionAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery 
             // making fields accessible using "setAccessible"
             APIFeatureGroup(
                 List(
-                    InstanceAPIMethod(
-                        Field, "setAccessible", s"([${AccessibleObject.toJVMTypeName}Z)V"
-                    ),
+                    InstanceAPIMethod(Field, "setAccessible", s"([${AccessibleObject.toJVMTypeName}Z)V"),
                     InstanceAPIMethod(Field, "setAccessible", "(Z)V")
                 ),
                 "makes fields accessible"
@@ -90,13 +87,9 @@ class ReflectionAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery 
             // setting methods or constructors accessible
             APIFeatureGroup(
                 List(
-                    InstanceAPIMethod(
-                        Method, "setAccessible", s"([${AccessibleObject.toJVMTypeName}Z)V"
-                    ),
+                    InstanceAPIMethod(Method, "setAccessible", s"([${AccessibleObject.toJVMTypeName}Z)V"),
                     InstanceAPIMethod(Method, "setAccessible", MethodDescriptor("(Z)V")),
-                    InstanceAPIMethod(
-                        Constructor, "setAccessible", s"([${AccessibleObject.toJVMTypeName}Z)V"
-                    ),
+                    InstanceAPIMethod(Constructor, "setAccessible", s"([${AccessibleObject.toJVMTypeName}Z)V"),
                     InstanceAPIMethod(Constructor, "setAccessible", MethodDescriptor("(Z)V"))
                 ),
                 "makes methods or constructors accessible"
@@ -105,9 +98,7 @@ class ReflectionAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery 
             // set an AccessibleObject accessible
             APIFeatureGroup(
                 List(
-                    InstanceAPIMethod(
-                        AccessibleObject, "setAccessible", s"([${AccessibleObject.toJVMTypeName}Z)V"
-                    ),
+                    InstanceAPIMethod(AccessibleObject, "setAccessible", s"([${AccessibleObject.toJVMTypeName}Z)V"),
                     InstanceAPIMethod(AccessibleObject, "setAccessible", "(Z)V")
                 ),
                 "makes an AccessibleObject accessible\n(exact type unknown)"
@@ -126,7 +117,6 @@ class ReflectionAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery 
 
             StaticAPIMethod(MethodHandles, "lookup"),
             StaticAPIMethod(MethodHandles, "publicLookup"),
-
             APIFeatureGroup(
                 List(
                     InstanceAPIMethod(MethodHandle, "invokeExact"),
@@ -135,7 +125,6 @@ class ReflectionAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery 
                 ),
                 "method handle invocation"
             ),
-
             StaticAPIMethod(Proxy, "newProxyInstance")
         )
     }

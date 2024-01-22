@@ -8,27 +8,28 @@ package br
  * @author Michael Eichberg
  */
 trait SignatureVisitor[T] {
-    def visit(cs: ClassSignature): T
-    def visit(mts: MethodTypeSignature): T
-    def visit(cts: ClassTypeSignature): T
-    def visit(ats: ArrayTypeSignature): T
-    def visit(tvs: TypeVariableSignature): T
+    def visit(cs:   ClassSignature): T
+    def visit(mts:  MethodTypeSignature): T
+    def visit(cts:  ClassTypeSignature): T
+    def visit(ats:  ArrayTypeSignature): T
+    def visit(tvs:  TypeVariableSignature): T
     def visit(scts: SimpleClassTypeSignature): T
-    def visit(ftp: FormalTypeParameter): T
-    def visit(pta: ProperTypeArgument): T
-    def visit(cvi: CovariantIndicator): T
-    def visit(cvi: ContravariantIndicator): T
-    def visit(wc: Wildcard): T
-    def visit(bt: BooleanType): T
-    def visit(bt: ByteType): T
-    def visit(it: IntegerType): T
-    def visit(lt: LongType): T
-    def visit(ct: CharType): T
-    def visit(st: ShortType): T
-    def visit(ft: FloatType): T
-    def visit(dt: DoubleType): T
-    def visit(vt: VoidType): T
+    def visit(ftp:  FormalTypeParameter): T
+    def visit(pta:  ProperTypeArgument): T
+    def visit(cvi:  CovariantIndicator): T
+    def visit(cvi:  ContravariantIndicator): T
+    def visit(wc:   Wildcard): T
+    def visit(bt:   BooleanType): T
+    def visit(bt:   ByteType): T
+    def visit(it:   IntegerType): T
+    def visit(lt:   LongType): T
+    def visit(ct:   CharType): T
+    def visit(st:   ShortType): T
+    def visit(ft:   FloatType): T
+    def visit(dt:   DoubleType): T
+    def visit(vt:   VoidType): T
 }
+
 /**
  * This visitor's `visit` methods completely traverse all elements of a type signature.
  */

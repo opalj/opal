@@ -46,8 +46,7 @@ package object cg {
     final def persistentUVar(
         value: V
     )(
-        implicit
-        stmts: Array[Stmt[V]]
+        implicit stmts: Array[Stmt[V]]
     ): Some[(ValueInformation, IntTrieSet)] = {
         Some((value.value, value.definedBy.map(pcOfDefSite _)))
     }
@@ -98,7 +97,9 @@ package object cg {
                     inst <- code.instructions
                 } {
                     if ((inst ne null) && inst.isLoadConstantInstruction &&
-                        inst.asInstanceOf[LoadConstantInstruction[_]].computationalType == ComputationalTypeReference) {
+                        inst.asInstanceOf[LoadConstantInstruction[_]].computationalType ==
+                            ComputationalTypeReference
+                    ) {
                         inst match {
                             case _: LoadClass | _: LoadClass_W               => constantTypes += ObjectType.Class
                             case _: LoadMethodHandle | _: LoadMethodHandle_W => constantTypes += ObjectType.MethodHandle

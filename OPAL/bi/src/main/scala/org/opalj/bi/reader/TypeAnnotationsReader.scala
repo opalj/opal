@@ -84,7 +84,7 @@ trait TypeAnnotationsReader extends AnnotationsAbstractions {
             cp,
             TypeAnnotationTarget(in),
             TypeAnnotationPath(in),
-            in.readUnsignedShort() /*type_index*/ ,
+            in.readUnsignedShort() /*type_index*/,
             ElementValuePairs(cp, in)
         )
     }

@@ -58,14 +58,15 @@ abstract class LongIterator extends AbstractIterator[Long] { self =>
 
     def foreachWhile(p: LongPredicate)(f: LongConsumer): Unit = {
         while (this.hasNext && {
-            val c = this.next()
-            if (p.test(c)) {
-                f.accept(c)
-                true
-            } else {
-                false
-            }
-        }) { /*empty*/ }
+                   val c = this.next()
+                   if (p.test(c)) {
+                       f.accept(c)
+                       true
+                   } else {
+                       false
+                   }
+               }
+        ) { /*empty*/ }
     }
 
     def map(f: Long => Long): LongIterator = {
@@ -103,7 +104,7 @@ abstract class LongIterator extends AbstractIterator[Long] { self =>
                         it = f(self.next())
                     } else {
                         it = null
-                        return ;
+                        return;
                     }
                 }
             }
@@ -121,7 +122,7 @@ abstract class LongIterator extends AbstractIterator[Long] { self =>
         private[this] def goToNextValue(): Unit = {
             while (self.hasNext) {
                 v = self.next()
-                if (p(v)) return ;
+                if (p(v)) return;
             }
             hasNextValue = false
         }
@@ -213,7 +214,10 @@ object LongIterator {
     def apply(i1: Long, i2: Long): LongIterator = new LongIterator {
         private[this] var nextId: Int = 0
         def hasNext: Boolean = nextId < 2
-        def next(): Long = { if (nextId == 0) { nextId = 1; i1 } else { nextId = 2; i2 } }
+        def next(): Long = {
+            if (nextId == 0) { nextId = 1; i1 }
+            else { nextId = 2; i2 }
+        }
         override def toArray: Array[Long] = {
             val as = new Array[Long](2)
             as(0) = i1

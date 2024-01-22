@@ -38,7 +38,7 @@ trait ClassMember extends ConcreteSourceElement {
     /**
      * `True` if the `Synthetic` access flag or attribute is used.
      */
-    final override def isSynthetic: Boolean = {
+    override final def isSynthetic: Boolean = {
         super.isSynthetic || (ACC_SYNTHETIC.mask & accessFlags) != 0
     }
 
@@ -47,6 +47,7 @@ trait ClassMember extends ConcreteSourceElement {
      */
     def name: String
 }
+
 /**
  * Defines an extractor method for class members.
  *

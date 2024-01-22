@@ -13,6 +13,7 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.properties
 import org.opalj.br.fpcf.properties.immutability.ClassImmutability
 import org.opalj.br.fpcf.properties.immutability.DependentlyImmutableClass
+
 class ClassImmutabilityMatcher(val property: ClassImmutability) extends AbstractPropertyMatcher {
 
     import org.opalj.br.analyses.SomeProject
@@ -59,15 +60,20 @@ class DependentlyImmutableClassMatcher
         a:          AnnotationLike,
         properties: Iterable[Property]
     ): Option[String] = {
-        if (!properties.exists(p => p match {
-            case DependentlyImmutableClass(latticeParameters) =>
-                val annotationType = a.annotationType.asFieldType.asObjectType
-                val annotationParameters =
-                    getValue(project, annotationType, a.elementValuePairs, "parameter").
-                        asArrayValue.values.map(x => x.asStringValue.value)
-                annotationParameters.toSet.equals(latticeParameters.toSet)
-            case _ => p == property
-        })) {
+        if (!properties.exists(p =>
+                p match {
+                    case DependentlyImmutableClass(latticeParameters) =>
+                        val annotationType = a.annotationType.asFieldType.asObjectType
+                        val annotationParameters =
+                            getValue(project, annotationType, a.elementValuePairs, "parameter").asArrayValue.values.map(
+                                x =>
+                                    x.asStringValue.value
+                            )
+                        annotationParameters.toSet.equals(latticeParameters.toSet)
+                    case _ => p == property
+                }
+            )
+        ) {
             Some(a.elementValuePairs.head.value.asStringValue.value)
         } else {
             None

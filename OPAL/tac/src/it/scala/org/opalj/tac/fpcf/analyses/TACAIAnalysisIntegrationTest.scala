@@ -6,6 +6,11 @@ package analyses
 
 import java.util.concurrent.atomic.AtomicInteger
 
+import org.junit.runner.RunWith
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
+
 import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
 import org.opalj.ai.fpcf.properties.BaseAIResult
 import org.opalj.br.TestSupport
@@ -15,11 +20,6 @@ import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.concurrent.ConcurrentExceptions
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.util.PerformanceEvaluation.time
-
-import org.junit.runner.RunWith
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.matchers.should.Matchers
-import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests that all methods of OPAL's test projects + the JDK can be converted to the ai-based
@@ -33,7 +33,7 @@ class TACAIAnalysisIntegrationTest extends AnyFunSpec with Matchers {
     def analyzeProject(
         theProject: SomeProject
     ): Unit = {
-        if (Thread.currentThread().isInterrupted) return ;
+        if (Thread.currentThread().isInterrupted) return;
 
         time { //  Test lazy analysis...
             val p = theProject

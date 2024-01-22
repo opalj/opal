@@ -85,7 +85,7 @@ class PackageLocation(
 ) extends ProjectLocation(description, theProject, details) {
 
     def locationAsInlineXHTML(basicInfoOnly: Boolean): List[Node] = {
-        List(<span class="package">{ thePackage.replace('/', '.') }</span>)
+        List(<span class="package">{thePackage.replace('/', '.')}</span>)
     }
 
     def descriptionAsXHTML: List[Node] = {
@@ -96,16 +96,16 @@ class PackageLocation(
     }
 
     def detailsAsXHTML(basicInfoOnly: Boolean): List[Node] = {
-        details.map(d => <div>{ d.toXHTML(basicInfoOnly) }</div>).toList
+        details.map(d => <div>{d.toXHTML(basicInfoOnly)}</div>).toList
     }
 
-    final override def toXHTML(basicInfoOnly: Boolean): Node = {
+    override final def toXHTML(basicInfoOnly: Boolean): Node = {
         Group(List(
             <dt>location</dt>,
             <dd>
-                { locationAsInlineXHTML(basicInfoOnly) }
-                { descriptionAsXHTML }
-                { detailsAsXHTML(basicInfoOnly) }
+                {locationAsInlineXHTML(basicInfoOnly)}
+                {descriptionAsXHTML}
+                {detailsAsXHTML(basicInfoOnly)}
             </dd>
         ))
     }
@@ -114,7 +114,7 @@ class PackageLocation(
 
     def detailsAsIDL: JsValue = Json.toJson(details)
 
-    final override def toIDL: JsValue = {
+    override final def toIDL: JsValue = {
         Json.obj(
             "description" -> description,
             "location" -> locationAsIDL,
@@ -135,8 +135,8 @@ class ClassLocation(
         val locationAsInlineXHTML = super.locationAsInlineXHTML(basicInfoOnly) ++
             List(
                 Text("."),
-                <span class="declaring_class" data-class={ classFile.fqn }>
-                    { typeToXHTML(classFile.thisType, true) }
+                <span class="declaring_class" data-class={classFile.fqn}>
+                    {typeToXHTML(classFile.thisType, true)}
                 </span>
             )
         if (basicInfoOnly || classFile.accessFlags == 0)
@@ -182,7 +182,7 @@ class MethodLocation(
 
     override def locationAsInlineXHTML(basicInfoOnly: Boolean): List[Node] = {
         var methodNode =
-            <span class="method" data-method={ methodJVMSignature }>
+            <span class="method" data-method={methodJVMSignature}>
                 {
                     if (basicInfoOnly)
                         methodToXHTML(method.name, method.descriptor, true)
@@ -203,8 +203,8 @@ class MethodLocation(
         super.locationAsIDL + (
             "method" -> (
                 methodToIDL(method.accessFlags, method.name, method.descriptor) +
-                ("signature" -> JsString(methodJVMSignature)) +
-                ("firstLine" -> Json.toJson(firstLineOfMethod))
+                    ("signature" -> JsString(methodJVMSignature)) +
+                    ("firstLine" -> Json.toJson(firstLineOfMethod))
             )
         )
     }

@@ -2,12 +2,12 @@
 package org.opalj.br
 package cfg
 
-import org.opalj.br.instructions.Instruction
-import org.opalj.io.writeAndOpen
-
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
+
+import org.opalj.br.instructions.Instruction
+import org.opalj.io.writeAndOpen
 
 /**
  * Helper methods to test the CFG related methods.
@@ -35,8 +35,7 @@ abstract class AbstractCFGTest extends AnyFunSpec with Matchers with BeforeAndAf
         code: Code,
         cfg:  CFG[Instruction, Code]
     )(
-        implicit
-        classHierarchy: ClassHierarchy
+        implicit classHierarchy: ClassHierarchy
     ): Unit = {
         // validate that cfPCs returns the same information as the CFG
         val (cfJoins, cfForks, forkTargetPCs) = code.cfPCs
@@ -44,9 +43,7 @@ abstract class AbstractCFGTest extends AnyFunSpec with Matchers with BeforeAndAf
 
         assert(cfJoins == cfJoinsAlt)
 
-        exitPCs foreach { pc =>
-            assert(cfg.bb(pc).successors.forall(_.isExitNode))
-        }
+        exitPCs foreach { pc => assert(cfg.bb(pc).successors.forall(_.isExitNode)) }
 
         cfJoins foreach { pc =>
             assert(
@@ -69,7 +66,9 @@ abstract class AbstractCFGTest extends AnyFunSpec with Matchers with BeforeAndAf
                 if (bb.predecessors.size > 1) {
                     assert(
                         cfJoins.contains(bb.startPC),
-                        m.toJava(s"; a basic block's start PC (${bb.startPC} predecessors ${bb.predecessors}) is not a join PC")
+                        m.toJava(
+                            s"; a basic block's start PC (${bb.startPC} predecessors ${bb.predecessors}) is not a join PC"
+                        )
                     )
                     allPredecessorPCs(bb.startPC).hasMultipleElements
                 }
@@ -95,8 +94,7 @@ abstract class AbstractCFGTest extends AnyFunSpec with Matchers with BeforeAndAf
     )(
         f: => Unit
     )(
-        implicit
-        classHierarchy: ClassHierarchy
+        implicit classHierarchy: ClassHierarchy
     ): Unit = {
         try {
             cfgNodesCheck(method, code, cfg)

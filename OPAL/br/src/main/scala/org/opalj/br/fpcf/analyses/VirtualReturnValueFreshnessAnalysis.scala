@@ -121,7 +121,7 @@ sealed trait VirtualReturnValueFreshnessAnalysisScheduler extends FPCFAnalysisSc
         PropertyBounds.lub(VirtualMethodReturnValueFreshness)
     }
 
-    final override def uses: Set[PropertyBounds] = Set(PropertyBounds.lub(ReturnValueFreshness))
+    override final def uses: Set[PropertyBounds] = Set(PropertyBounds.lub(ReturnValueFreshness))
 
 }
 

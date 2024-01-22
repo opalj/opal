@@ -25,11 +25,10 @@ class VTATest extends PropertiesTest {
     override def init(p: Project[URL]): Unit = {
         p.updateProjectInformationKeyInitializationData(
             AIDomainFactoryKey
-        )(
-            (_: Option[Set[Class[_ <: AnyRef]]]) =>
-                Set[Class[_ <: AnyRef]](
-                    classOf[l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[URL]]
-                )
+        )((_: Option[Set[Class[_ <: AnyRef]]]) =>
+            Set[Class[_ <: AnyRef]](
+                classOf[l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[URL]]
+            )
         )
         p.get(RTACallGraphKey)
     }

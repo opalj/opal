@@ -76,10 +76,10 @@ package object graphs {
      */
     def toDot(
         rootNodes: Iterable[_ <: Node],
-        dir:       String              = "forward",
-        ranksep:   String              = "0.8",
-        fontname:  String              = "Helvetica",
-        rankdir:   String              = "TB"
+        dir:       String = "forward",
+        ranksep:   String = "0.8",
+        fontname:  String = "Helvetica",
+        rankdir:   String = "TB"
     ): String = {
         var nodesToProcess = Set.empty[Node] ++ rootNodes
         var processedNodes = Set.empty[Node]
@@ -103,8 +103,8 @@ package object graphs {
                 )
                 s +=
                     "\t" + nextNode.nodeId +
-                    visualProperties.map(e => "\"" + e._1 + "\"=\"" + e._2 + "\"").
-                    mkString("[", ",", "];\n")
+                        visualProperties.map(e => "\"" + e._1 + "\"=\"" + e._2 + "\"")
+                            .mkString("[", ",", "];\n")
             }
 
             val f: (Node => Unit) = sn => {
@@ -145,14 +145,15 @@ package object graphs {
         val engineManager = new ScriptEngineManager()
         val engine: ScriptEngine = engineManager.getEngineByName("nashorn")
         var visJS: InputStream = null
-        val invocable: Invocable = try {
-            visJS = this.getClass.getResourceAsStream("viz-lite.js")
-            val reader = new BufferedReader(new InputStreamReader(visJS))
-            engine.eval(reader)
-            engine.asInstanceOf[Invocable]
-        } finally {
-            if (visJS ne null) visJS.close()
-        }
+        val invocable: Invocable =
+            try {
+                visJS = this.getClass.getResourceAsStream("viz-lite.js")
+                val reader = new BufferedReader(new InputStreamReader(visJS))
+                engine.eval(reader)
+                engine.asInstanceOf[Invocable]
+            } finally {
+                if (visJS ne null) visJS.close()
+            }
         OPALLogger.info(
             "setup",
             "finished initialization of JavaScript engine for rendering dot graphics"
@@ -195,9 +196,10 @@ package object graphs {
     ): List[Iterable[N]] = {
 
         val nDFSNums = new it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap[N]()
+        def dfsNum(n: N): Int = nDFSNums.getInt(n)
+
         def setDFSNum(n: N, i: Int): Unit = nDFSNums.put(n, i)
         def hasDFSNum(n: N): Boolean = nDFSNums.containsKey(n)
-        def dfsNum(n: N): Int = nDFSNums.getInt(n)
 
         // Core Idea: perform depth-first search
         val ProcessedNodeNum: Int = -1
@@ -266,7 +268,9 @@ package object graphs {
                                     es(n).forall(succN =>
                                         hasDFSNum(succN) &&
                                             dfsNum(succN) == cSCCDFSNum // <= prevents premature cscc identifications
-                                    ))) {
+                                    )
+                                )
+                            ) {
                                 cSCCs ::= path.drop(cSCCDFSNum - initialDFSNum)
                                 markPathAsProcessed()
                             }
@@ -359,12 +363,12 @@ package object graphs {
         cSCCId:    (N) => Int
     ): List[Iterable[N]] = {
         /* The following is not a strict requirement, more an expectation (however, (c)sccs
-         * not reachable from a node in ns will not be detected!
+     * not reachable from a node in ns will not be detected!
         assert(
             { val allNodes = ns.toSet; allNodes.forall { n => es(n).forall(allNodes.contains) } },
             "the graph references nodes which are not in the set of all nodes"
         )
-        */
+     */
 
         // The algorithm used to compute the closed scc is loosely inspired by:
         // Information Processing Letters 74 (2000) 107–114
@@ -380,14 +384,14 @@ package object graphs {
         var cSCCs = List.empty[Iterable[N]]
 
         /*
-         * Performs a depth-first search to locate an initial strongly connected component.
-         * If we detect a connected component, we then check for every element belonging to
-         * the connected component whether it also depends on an element which is not a member
-         * of the strongly connected component. If Yes, we continue with the checking of the
-         * other elements. If No, we perform a depth-first search based on the successor of the
-         * node that does not belong to the SCC and try to determine if it is connected to some
-         * previous SCC. If so, we merge all nodes as they belong to the same SCC.
-         */
+     * Performs a depth-first search to locate an initial strongly connected component.
+     * If we detect a connected component, we then check for every element belonging to
+     * the connected component whether it also depends on an element which is not a member
+     * of the strongly connected component. If Yes, we continue with the checking of the
+     * other elements. If No, we perform a depth-first search based on the successor of the
+     * node that does not belong to the SCC and try to determine if it is connected to some
+     * previous SCC. If so, we merge all nodes as they belong to the same SCC.
+     */
         def dfs(initialDFSNum: Int, n: N): Int = {
             if (hasDFSNum(n))
                 return initialDFSNum;
@@ -515,7 +519,7 @@ package object graphs {
 
         cSCCs
     }
-    */
+     */
 
     /**
      * Implementation of Tarjan's algorithm for finding strongly connected components. Compared
@@ -552,7 +556,7 @@ package object graphs {
     def sccs(
         ns:               Int,
         es:               Int => IntIterator,
-        filterSingletons: Boolean            = false
+        filterSingletons: Boolean = false
     ): List[List[Int]] = {
 
         /* TEXTBOOK DESCRIPTION
@@ -646,7 +650,7 @@ package object graphs {
                 sccs :&:= nextSCC
             }
         }
-        */
+         */
 
         var n = 0
         while (n < ns) {
@@ -710,7 +714,8 @@ package object graphs {
                             } while (n != w)
                             if (!filterSingletons ||
                                 nextSCC.tail.nonEmpty ||
-                                es(n).exists(_ == n)) {
+                                es(n).exists(_ == n)
+                            ) {
                                 sccs ::= nextSCC
                             }
                         }

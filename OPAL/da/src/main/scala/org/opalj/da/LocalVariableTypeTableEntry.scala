@@ -23,13 +23,13 @@ case class LocalVariableTypeTableEntry(
         val name = cp(name_index).toString(cp)
         val signature = cp(signature_index).asString // TODO "Decipher the signature"
         <div class="local_variable">
-            <span class="pc">pc=[{ start_pc } &rarr; { start_pc + length })</span>
+            <span class="pc">pc=[{start_pc} &rarr; {start_pc + length})</span>
             /
-            <span class="local_variable_index"> lv={ index }</span>
+            <span class="local_variable_index"> lv={index}</span>
             &rArr;
-            <span class="local_variable_name"> { name }</span>
+            <span class="local_variable_name"> {name}</span>
             :
-            <span class="signature"> { signature }</span>
+            <span class="signature"> {signature}</span>
         </div>
     }
 }

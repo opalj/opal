@@ -54,7 +54,7 @@ trait ConsoleEvaluationTracer extends AITracer {
         alreadyEvaluatedPCs:              IntArrayStack,
         operandsArray:                    domain.OperandsArray,
         localsArray:                      domain.LocalsArray,
-        memoryLayoutBeforeSubroutineCall: List[(Int /*PC*/ , domain.OperandsArray, domain.LocalsArray)]
+        memoryLayoutBeforeSubroutineCall: List[(Int /*PC*/, domain.OperandsArray, domain.LocalsArray)]
     ): Unit = {
         /*EMPTY*/
     }
@@ -99,7 +99,9 @@ trait ConsoleEvaluationTracer extends AITracer {
     override def jumpToSubroutine(
         domain: Domain
     )(
-        pc: Int, targetPC: Int, nestingLevel: Int
+        pc:           Int,
+        targetPC:     Int,
+        nestingLevel: Int
     ): Unit = {
         println()
         printIndent()

@@ -31,7 +31,7 @@ trait LongValues extends LongValuesDomain with ConcreteLongValues {
     sealed trait LongValue extends TypedValue[LongType] with IsLongValue {
         this: DomainTypedValue[LongType] =>
 
-        final override def leastUpperType: Option[LongType] = Some(LongType)
+        override final def leastUpperType: Option[LongType] = Some(LongType)
 
     }
 
@@ -65,13 +65,13 @@ trait LongValues extends LongValuesDomain with ConcreteLongValues {
     // QUESTIONS ABOUT VALUES
     //
 
-    @inline final override def longValueOption(value: DomainValue): Option[Long] =
+    @inline override final def longValueOption(value: DomainValue): Option[Long] =
         value match {
             case v: TheLongValue => Some(v.value)
             case _               => None
         }
 
-    @inline final override def longValue[T](
+    @inline override final def longValue[T](
         value: DomainValue
     )(
         ifThen: Long => T
@@ -92,9 +92,7 @@ trait LongValues extends LongValuesDomain with ConcreteLongValues {
         orElse: => T
     ): T = {
         longValue(value1) { v1 =>
-            longValue(value2) { v2 =>
-                ifThen(v1, v2)
-            } {
+            longValue(value2) { v2 => ifThen(v1, v2) } {
                 orElse
             }
         } {
@@ -155,14 +153,14 @@ trait LongValues extends LongValuesDomain with ConcreteLongValues {
 
     override def lmul(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = {
         (value1, value2) match {
-            case (_, TheLongValue(0L))              => value2
-            case (_, TheLongValue(1L))              => value1
-            case (TheLongValue(0L), _)              => value1
-            case (TheLongValue(1L), _)              => value2
+            case (_, TheLongValue(0L)) => value2
+            case (_, TheLongValue(1L)) => value1
+            case (TheLongValue(0L), _) => value1
+            case (TheLongValue(1L), _) => value2
 
             case (TheLongValue(l), TheLongValue(r)) => LongValue(pc, l * r)
 
-            case _                                  => LongValue(origin = pc)
+            case _ => LongValue(origin = pc)
         }
     }
 
@@ -229,27 +227,27 @@ trait LongValues extends LongValuesDomain with ConcreteLongValues {
 
     override def land(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = {
         (value1, value2) match {
-            case (_, TheLongValue(-1L))             => value1
-            case (_, TheLongValue(0L))              => value2
-            case (TheLongValue(-1L), _)             => value2
-            case (TheLongValue(0L), _)              => value1
+            case (_, TheLongValue(-1L)) => value1
+            case (_, TheLongValue(0L))  => value2
+            case (TheLongValue(-1L), _) => value2
+            case (TheLongValue(0L), _)  => value1
 
             case (TheLongValue(l), TheLongValue(r)) => LongValue(pc, l & r)
 
-            case _                                  => LongValue(origin = pc)
+            case _ => LongValue(origin = pc)
         }
     }
 
     override def lor(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = {
         (value1, value2) match {
-            case (_, TheLongValue(-1L))             => value2
-            case (_, TheLongValue(0L))              => value1
-            case (TheLongValue(-1L), _)             => value1
-            case (TheLongValue(0L), _)              => value2
+            case (_, TheLongValue(-1L)) => value2
+            case (_, TheLongValue(0L))  => value1
+            case (TheLongValue(-1L), _) => value1
+            case (TheLongValue(0L), _)  => value2
 
             case (TheLongValue(l), TheLongValue(r)) => LongValue(pc, l | r)
 
-            case _                                  => LongValue(origin = pc)
+            case _ => LongValue(origin = pc)
         }
     }
 
@@ -257,7 +255,7 @@ trait LongValues extends LongValuesDomain with ConcreteLongValues {
         (value1, value2) match {
             case (TheLongValue(l), TheLongValue(r)) => LongValue(pc, l ^ r)
 
-            case _                                  => LongValue(origin = pc)
+            case _ => LongValue(origin = pc)
         }
     }
 }

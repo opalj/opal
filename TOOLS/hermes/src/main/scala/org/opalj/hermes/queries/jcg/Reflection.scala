@@ -99,27 +99,28 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
             method @ MethodWithBody(body) <- classFile.methods
             methodLocation = MethodLocation(classFileLocation, method)
             pcAndInstruction <- body collect ({
-                case i: LoadClass => i
-                case i: LoadClass_W => i
-                case i @ INVOKEVIRTUAL(MethodT, "invoke", Invoke) => i
-                case i @ INVOKEVIRTUAL(ClassT, "getMethod", GetMethodMD) => i
-                case i @ INVOKEVIRTUAL(ClassT, "getDeclaredMethod", GetMethodMD) => i
-                case i @ INVOKEVIRTUAL(ClassT, "newInstance", JustReturnsObject) => i
-                case i @ INVOKEVIRTUAL(ConstructorT, "newInstance", NewInstanceMD) => i
-                case i @ INVOKEVIRTUAL(ClassT, "getDeclaredField", GetFieldMD) => i
-                case i @ INVOKEVIRTUAL(ClassT, "getField", GetFieldMD) => i
-                case i @ INVOKEVIRTUAL(FieldT, "get", FieldGetMD) => i
+                case i: LoadClass                                                        => i
+                case i: LoadClass_W                                                      => i
+                case i @ INVOKEVIRTUAL(MethodT, "invoke", Invoke)                        => i
+                case i @ INVOKEVIRTUAL(ClassT, "getMethod", GetMethodMD)                 => i
+                case i @ INVOKEVIRTUAL(ClassT, "getDeclaredMethod", GetMethodMD)         => i
+                case i @ INVOKEVIRTUAL(ClassT, "newInstance", JustReturnsObject)         => i
+                case i @ INVOKEVIRTUAL(ConstructorT, "newInstance", NewInstanceMD)       => i
+                case i @ INVOKEVIRTUAL(ClassT, "getDeclaredField", GetFieldMD)           => i
+                case i @ INVOKEVIRTUAL(ClassT, "getField", GetFieldMD)                   => i
+                case i @ INVOKEVIRTUAL(FieldT, "get", FieldGetMD)                        => i
                 case i @ INVOKESTATIC(ClassT, false, "forName", ForName1MD | ForName3MD) => i
             }: PartialFunction[Instruction, Instruction])
         } {
-            val tac = try {
-                tacai(method)
-            } catch {
-                case e: Exception =>
-                    implicit val logContext: LogContext = p.logContext
-                    OPALLogger.error("analysis", s"unable to create 3-address code for: ${method.toJava}")
-                    throw e
-            }
+            val tac =
+                try {
+                    tacai(method)
+                } catch {
+                    case e: Exception =>
+                        implicit val logContext: LogContext = p.logContext
+                        OPALLogger.error("analysis", s"unable to create 3-address code for: ${method.toJava}")
+                        throw e
+                }
             val pc = pcAndInstruction.pc
             val l = InstructionLocation(methodLocation, pc)
 
@@ -141,24 +142,28 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
                             call.name match {
                                 case "getMethod" =>
                                     if (stmt.astID == Assignment.ASTID &&
-                                        methodUsedForInvocation(index, stmt.asAssignment)) {
+                                        methodUsedForInvocation(index, stmt.asAssignment)
+                                    ) {
                                         locations(2 /* getMethod */ ) += l // invoke called directly
                                         handleParameterSources(call, l)
                                     }
                                 case "getDeclaredMethod" =>
                                     if (stmt.astID == Assignment.ASTID &&
-                                        methodUsedForInvocation(index, stmt.asAssignment)) {
+                                        methodUsedForInvocation(index, stmt.asAssignment)
+                                    ) {
                                         handleParameterSources(call, l)
                                     }
                                 case "newInstance" => locations(5 /* Class.newInstance */ ) += l
                                 case "getDeclaredField" =>
                                     if (stmt.astID == Assignment.ASTID &&
-                                        getFieldUsedForInvokation(index, stmt.asAssignment)) {
+                                        getFieldUsedForInvokation(index, stmt.asAssignment)
+                                    ) {
                                         handleParameterSources(call, l)
                                     }
                                 case "getField" =>
                                     if (stmt.astID == Assignment.ASTID &&
-                                        getFieldUsedForInvokation(index, stmt.asAssignment)) {
+                                        getFieldUsedForInvokation(index, stmt.asAssignment)
+                                    ) {
                                         locations(7 /* getField */ ) += l
                                         handleParameterSources(call, l)
                                     }
@@ -180,8 +185,7 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
     }
 
     def handleInvoke[S](call: VirtualFunctionCall[V], l: Location[S])(
-        implicit
-        locations: Array[LocationsContainer[S]]
+        implicit locations: Array[LocationsContainer[S]]
     ): Unit = {
         if (call.params.head.asVar.value.asReferenceValue.isNull.isYes)
             locations(0 /* static invoke */ ) += l
@@ -190,8 +194,9 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
 
         val paramTypes = call.params(1).asVar.value
         if (paramTypes.asReferenceValue.allValues.exists { v =>
-            v.isNull.isYesOrUnknown || v.asInstanceOf[ArrayValues#DomainArrayValue].length.contains(0)
-        })
+                v.isNull.isYesOrUnknown || v.asInstanceOf[ArrayValues#DomainArrayValue].length.contains(0)
+            }
+        )
             locations(3 /* method with parameters */ ) += l
     }
 
@@ -203,7 +208,8 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
     ): Unit = {
         def simpleDefinition(definedBy: IntTrieSet): Option[Assignment[V]] = {
             if (definedBy.size == 1 && definedBy.head > 0 &&
-                stmts(definedBy.head).astID == Assignment.ASTID)
+                stmts(definedBy.head).astID == Assignment.ASTID
+            )
                 Some(stmts(definedBy.head).asAssignment)
             else None
         }
@@ -216,11 +222,11 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
                         case Assignment.ASTID =>
                             use.asAssignment.expr.isVirtualFunctionCall &&
                                 (use.asAssignment.expr.asVirtualFunctionCall.name == "append" ||
-                                    use.asAssignment.expr.asVirtualFunctionCall.name == "toString")
+                                use.asAssignment.expr.asVirtualFunctionCall.name == "toString")
                         case ExprStmt.ASTID =>
                             use.asExprStmt.expr.isVirtualFunctionCall &&
                                 (use.asExprStmt.expr.asVirtualFunctionCall.name == "append" ||
-                                    use.asExprStmt.expr.asVirtualFunctionCall.name == "toString")
+                                use.asExprStmt.expr.asVirtualFunctionCall.name == "toString")
                         case NonVirtualMethodCall.ASTID =>
                             use.asNonVirtualMethodCall.name == "<init>"
                         case _ => false // might escape here
@@ -230,7 +236,11 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
 
             stmt match {
                 case Assignment(_, sb, _: New) => isNonEscaping(sb)
-                case Assignment(_, sb, VirtualFunctionCall(_, ObjectType.StringBuilder, false, "append", _, receiver, _)) =>
+                case Assignment(
+                        _,
+                        sb,
+                        VirtualFunctionCall(_, ObjectType.StringBuilder, false, "append", _, receiver, _)
+                    ) =>
                     val stringBuilder = simpleDefinition(receiver.asVar.definedBy)
                     stringBuilder.exists(isNonEscapingStringBuilder) && isNonEscaping(sb)
                 case _ => false
@@ -252,7 +262,15 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
                     } else if (definition.isGetField || definition.isGetStatic) {
                         locations(12 /* field */ ) += l
                     } else definition match {
-                        case VirtualFunctionCall(_, ObjectType.StringBuilder, false, "toString", MethodDescriptor.JustReturnsString, receiver, _) =>
+                        case VirtualFunctionCall(
+                                _,
+                                ObjectType.StringBuilder,
+                                false,
+                                "toString",
+                                MethodDescriptor.JustReturnsString,
+                                receiver,
+                                _
+                            ) =>
                             val stringBuilder = simpleDefinition(receiver.asVar.definedBy)
                             if (stringBuilder.exists(isNonEscapingStringBuilder)) {
                                 locations(10 /* StringBuilder */ ) += l
@@ -261,9 +279,11 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
                             }
                         case StaticFunctionCall(_, ObjectType.System, _, "getProperty", GetProperty1MD, _) =>
                             locations(13 /* string from Properties */ ) += l
-                        case VirtualFunctionCall(_, dc, _, "getProperty", GetProperty1MD, _, _) if ch.isSubtypeOf(dc, PropertiesT) =>
+                        case VirtualFunctionCall(_, dc, _, "getProperty", GetProperty1MD, _, _)
+                            if ch.isSubtypeOf(dc, PropertiesT) =>
                             locations(13 /* string from Properties */ ) += l
-                        case VirtualFunctionCall(_, dc, _, "getProperty", GetProperty2MD, _, _) if ch.isSubtypeOf(dc, PropertiesT) =>
+                        case VirtualFunctionCall(_, dc, _, "getProperty", GetProperty2MD, _, _)
+                            if ch.isSubtypeOf(dc, PropertiesT) =>
                             locations(13 /* string from Properties */ ) += l
                         case VirtualFunctionCall(_, dc, _, "get", GetMD, _, _) if ch.isSubtypeOf(dc, PropertiesT) =>
                             locations(13 /* string from Properties */ ) += l
@@ -284,17 +304,18 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
         stmts:   Array[Stmt[V]]
     ): Boolean = {
         if (stmt.targetVar.usedBy.exists { useSite =>
-            val stmt = stmts(useSite)
-            stmt.astID match {
-                case Assignment.ASTID =>
-                    stmt.asAssignment.expr.isVirtualFunctionCall &&
-                        stmt.asAssignment.expr.asVirtualFunctionCall.name == "invoke"
-                case ExprStmt.ASTID =>
-                    stmt.asExprStmt.expr.isVirtualFunctionCall &&
-                        stmt.asExprStmt.expr.asVirtualFunctionCall.name == "invoke"
-                case _ => false
+                val stmt = stmts(useSite)
+                stmt.astID match {
+                    case Assignment.ASTID =>
+                        stmt.asAssignment.expr.isVirtualFunctionCall &&
+                            stmt.asAssignment.expr.asVirtualFunctionCall.name == "invoke"
+                    case ExprStmt.ASTID =>
+                        stmt.asExprStmt.expr.isVirtualFunctionCall &&
+                            stmt.asExprStmt.expr.asVirtualFunctionCall.name == "invoke"
+                    case _ => false
+                }
             }
-        }) {
+        ) {
             true
         } else
             stmt.targetVar.usedBy.exists { useSite =>
@@ -335,19 +356,20 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
         assignment: Assignment[V]
     )(implicit stmts: Array[Stmt[V]]): Boolean = {
         if (assignment.targetVar.usedBy.exists { useSite =>
-            val stmt = stmts(useSite)
-            stmt.astID match {
-                case VirtualMethodCall.ASTID =>
-                    stmt.asVirtualMethodCall.receiver.asVar.definedBy.contains(pc)
-                case Assignment.ASTID =>
-                    stmt.asAssignment.expr.isVirtualFunctionCall &&
-                        stmt.asAssignment.expr.asVirtualFunctionCall.receiver.asVar.definedBy.contains(pc)
-                case ExprStmt.ASTID =>
-                    stmt.asExprStmt.expr.isVirtualFunctionCall &&
-                        stmt.asExprStmt.expr.asVirtualFunctionCall.receiver.asVar.definedBy.contains(pc)
-                case _ => false
+                val stmt = stmts(useSite)
+                stmt.astID match {
+                    case VirtualMethodCall.ASTID =>
+                        stmt.asVirtualMethodCall.receiver.asVar.definedBy.contains(pc)
+                    case Assignment.ASTID =>
+                        stmt.asAssignment.expr.isVirtualFunctionCall &&
+                            stmt.asAssignment.expr.asVirtualFunctionCall.receiver.asVar.definedBy.contains(pc)
+                    case ExprStmt.ASTID =>
+                        stmt.asExprStmt.expr.isVirtualFunctionCall &&
+                            stmt.asExprStmt.expr.asVirtualFunctionCall.receiver.asVar.definedBy.contains(pc)
+                    case _ => false
+                }
             }
-        }) {
+        ) {
             true // direct invocation
         } else
             // Value loaded from field may escape and may be receiver of a call somewhere in project
@@ -371,7 +393,7 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
                             case _ => true
                         }
                     case MonitorEnter.ASTID | MonitorExit.ASTID | If.ASTID | Checkcast.ASTID => false
-                    case _ => true
+                    case _                                                                   => true
                 }
             }
     }
@@ -386,19 +408,20 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
         stmts:   Array[Stmt[V]]
     ): Boolean = {
         if (stmt.targetVar.usedBy.exists { useSite =>
-            val stmt = stmts(useSite)
-            stmt.astID match {
-                case Assignment.ASTID =>
-                    stmt.asAssignment.expr.isVirtualFunctionCall &&
-                        stmt.asAssignment.expr.asVirtualFunctionCall.name == "get"
-                    fieldUsedForInvocation(useSite, stmt.asAssignment)
-                case ExprStmt.ASTID =>
-                    stmt.asExprStmt.expr.isVirtualFunctionCall &&
-                        stmt.asExprStmt.expr.asVirtualFunctionCall.name == "get" &&
+                val stmt = stmts(useSite)
+                stmt.astID match {
+                    case Assignment.ASTID =>
+                        stmt.asAssignment.expr.isVirtualFunctionCall &&
+                            stmt.asAssignment.expr.asVirtualFunctionCall.name == "get"
                         fieldUsedForInvocation(useSite, stmt.asAssignment)
-                case _ => false
+                    case ExprStmt.ASTID =>
+                        stmt.asExprStmt.expr.isVirtualFunctionCall &&
+                            stmt.asExprStmt.expr.asVirtualFunctionCall.name == "get" &&
+                            fieldUsedForInvocation(useSite, stmt.asAssignment)
+                    case _ => false
+                }
             }
-        }) {
+        ) {
             true
         } else
             // Field may escape and there is a non-local Field.get that might lead to an invocation
@@ -464,9 +487,7 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
                             stmt.asAssignment.expr.asVirtualFunctionCall
                         else
                             stmt.asExprStmt.expr.asVirtualFunctionCall
-                    call.receiver.asVar.definedBy.exists { defSite =>
-                        defSite < 0 || stmts(defSite).astID != New.ASTID
-                    }
+                    call.receiver.asVar.definedBy.exists { defSite => defSite < 0 || stmts(defSite).astID != New.ASTID }
                 }
             }
         }

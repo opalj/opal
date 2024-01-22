@@ -206,7 +206,7 @@ trait DefaultIntegerRangeValues extends DefaultSpecialDomainValuesBinding with I
         }
     }
 
-    @inline final override def IntegerRange(lb: Int, ub: Int): IntegerRange = {
+    @inline override final def IntegerRange(lb: Int, ub: Int): IntegerRange = {
         new IntegerRange(lb, ub)
     }
 

@@ -23,7 +23,7 @@ import net.ceedubs.ficus.Ficus._
 abstract class ClassExtensibility extends (ObjectType => Answer) {
 
     /** See [[isClassExtensible]]. */
-    final override def apply(t: ObjectType): Answer = this.isClassExtensible(t)
+    override final def apply(t: ObjectType): Answer = this.isClassExtensible(t)
 
     /**
      * Determines whether the given class can directly be extended by (yet unknown) code.
@@ -77,10 +77,11 @@ abstract class AbstractClassExtensibility extends ClassExtensibility {
 
         val isClosedPackage = project.get(ClosedPackagesKey)
 
-        val configuredTypes: mutable.LongMap[Answer] = mutable.LongMap.empty[Answer] ++ configuredExtensibleClasses.map { e =>
-            val (ot, answer) = e
-            (ot.id.toLong, answer)
-        }
+        val configuredTypes: mutable.LongMap[Answer] =
+            mutable.LongMap.empty[Answer] ++ configuredExtensibleClasses.map { e =>
+                val (ot, answer) = e
+                (ot.id.toLong, answer)
+            }
 
         val allClassFiles = project.allClassFiles
         val entries = ObjectType.objectTypesCount
@@ -91,8 +92,9 @@ abstract class AbstractClassExtensibility extends ClassExtensibility {
                 if (configured.isDefined)
                     configured.get
                 else if (classFile.isEffectivelyFinal ||
-                    classFile.isEnumDeclaration ||
-                    classFile.isAnnotationDeclaration)
+                         classFile.isEnumDeclaration ||
+                         classFile.isAnnotationDeclaration
+                )
                     No
                 else if (classFile.isPublic)
                     Yes
@@ -174,4 +176,3 @@ class ClassHierarchyIsNotExtensible(val project: SomeProject) extends ClassExten
 
     def isClassExtensible(t: ObjectType): Answer = No
 }
-

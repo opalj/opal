@@ -58,7 +58,7 @@ sealed abstract class APIMethod(private val fID: Option[String] = None) extends 
 
     final def matches(i: MethodInvocationInstruction): Boolean = this.unapply(i)
 
-    final override val apiMethods = List(this)
+    override final val apiMethods = List(this)
 
     private def customFeatureID: Option[String] = fID
 
@@ -90,14 +90,14 @@ case class InstanceAPIMethod(
         declClass:  ObjectType,
         name:       String,
         descriptor: Option[MethodDescriptor],
-        fID:        Option[String]           = None
+        fID:        Option[String] = None
 ) extends APIMethod(fID) {
 
     def unapply(i: MethodInvocationInstruction): Boolean = {
         i.isInstanceMethod &&
-            this.declClass == i.declaringClass &&
-            this.name == i.name &&
-            (this.descriptor.isEmpty || this.descriptor.get == i.methodDescriptor)
+        this.declClass == i.declaringClass &&
+        this.name == i.name &&
+        (this.descriptor.isEmpty || this.descriptor.get == i.methodDescriptor)
     }
 }
 
@@ -142,14 +142,14 @@ case class StaticAPIMethod(
         declClass:  ObjectType,
         name:       String,
         descriptor: Option[MethodDescriptor],
-        fID:        Option[String]           = None
+        fID:        Option[String] = None
 ) extends APIMethod(fID) {
 
     def unapply(i: MethodInvocationInstruction): Boolean = {
         !i.isInstanceMethod &&
-            this.declClass == i.declaringClass &&
-            this.name == i.name &&
-            (this.descriptor.isEmpty || this.descriptor.get == i.methodDescriptor)
+        this.declClass == i.declaringClass &&
+        this.name == i.name &&
+        (this.descriptor.isEmpty || this.descriptor.get == i.methodDescriptor)
     }
 }
 

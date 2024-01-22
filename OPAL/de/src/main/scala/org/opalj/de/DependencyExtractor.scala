@@ -133,22 +133,19 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
                     processSignature(vc, attribute.asInstanceOf[Signature])
 
                 // The following attributes do not create dependencies.
-                case Synthetic.KindId             => /*do nothing*/
-                case SourceFile.KindId            => /*do nothing*/
-                case Deprecated.KindId            => /*do nothing*/
-                case SourceDebugExtension.KindId  => /*do nothing*/
-
+                case Synthetic.KindId            => /*do nothing*/
+                case SourceFile.KindId           => /*do nothing*/
+                case Deprecated.KindId           => /*do nothing*/
+                case SourceDebugExtension.KindId => /*do nothing*/
                 // The Java 7 BootstrapMethodTable Attribute is resolved and related
                 // dependencies will be extracted when the respective invokedynamic
                 // instructions are processed.
 
                 // We know nothing about:
-                case UnknownAttribute.KindId      => /*do nothing*/
-
+                case UnknownAttribute.KindId => /*do nothing*/
                 // These are "custom attributes"
                 case SynthesizedClassFiles.KindId => /*ignore*/
                 case VirtualTypeFlag.KindId       => /*ignore*/
-
                 case _ =>
                     val classInfo = classFile.thisType.toJava
                     val message = s"unexpected class attribute: $attribute ($classInfo)"
@@ -184,7 +181,9 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
                     | RuntimeVisibleAnnotationTable.KindId =>
                     attribute.asInstanceOf[AnnotationTable].annotations foreach {
                         process(
-                            vf, _, /*the DECLARATION is*/ ANNOTATED_WITH, ANNOTATION_ELEMENT_TYPE
+                            vf,
+                            _, /*the DECLARATION is*/ ANNOTATED_WITH,
+                            ANNOTATION_ELEMENT_TYPE
                         )
                     }
 
@@ -215,7 +214,6 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
                 // Synthetic and Deprecated do not introduce new dependencies
                 case Synthetic.KindId  => /*do nothing*/
                 case Deprecated.KindId => /*do nothing*/
-
                 case _ =>
                     val fieldInfo = field.toJava
                     val message = s"unexpected field attribute: $attribute ($fieldInfo)"
@@ -279,15 +277,11 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
                 (attribute.kindId: @scala.annotation.switch) match {
                     case LocalVariableTable.KindId =>
                         val lvt = attribute.asInstanceOf[LocalVariableTable].localVariables
-                        lvt foreach { entry =>
-                            processDependency(vm, entry.fieldType, LOCAL_VARIABLE_TYPE)
-                        }
+                        lvt foreach { entry => processDependency(vm, entry.fieldType, LOCAL_VARIABLE_TYPE) }
 
                     case LocalVariableTypeTable.KindId =>
                         val lvtt = attribute.asInstanceOf[LocalVariableTypeTable].localVariableTypes
-                        lvtt foreach { entry =>
-                            processSignature(vm, entry.signature)
-                        }
+                        lvtt foreach { entry => processSignature(vm, entry.signature) }
 
                     case RuntimeInvisibleTypeAnnotationTable.KindId
                         | RuntimeVisibleTypeAnnotationTable.KindId =>
@@ -299,7 +293,6 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
                     // relevant dependencies.
                     case StackMapTable.KindId   => /* Do Nothing */
                     case LineNumberTable.KindId => /* Do Nothing */
-
                     case _ =>
                         val methodSignature = method.toJava
                         val message = s"unexpected code attribute: $attribute ($methodSignature)"
@@ -364,9 +357,7 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
                 // Synthetic and Deprecated do not introduce new dependencies
                 case Synthetic.KindId            => /* nothing to do */
                 case Deprecated.KindId           => /* nothing to do */
-
                 case MethodParameterTable.KindId => /* nothing to do */
-
                 case _ =>
                     val methodSignature = method.toJava
                     val message = s"unexpected method attribute: $attribute ($methodSignature)"
@@ -389,7 +380,7 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
     protected def processSignature(
         declaringElement:   VirtualSourceElement,
         signature:          SignatureElement,
-        isInTypeParameters: Boolean              = false
+        isInTypeParameters: Boolean = false
     ): Unit = {
 
         /*
@@ -410,9 +401,7 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
                 if (classBound.isDefined)
                     processSignature(declaringElement, classBound.get, true)
                 val interfaceBound = ftp.interfaceBound
-                interfaceBound.foreach { interfaceBound =>
-                    processSignature(declaringElement, interfaceBound, true)
-                }
+                interfaceBound.foreach { interfaceBound => processSignature(declaringElement, interfaceBound, true) }
             }
         }
 
@@ -458,7 +447,12 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
                 processSignature(declaringElement, superClassSignature)
                 superInterfacesSignature foreach { processSignature(declaringElement, _) }
 
-            case MethodTypeSignature(formalTypeParameters, parametersTypeSignatures, returnTypeSignature, throwsSignature) =>
+            case MethodTypeSignature(
+                    formalTypeParameters,
+                    parametersTypeSignatures,
+                    returnTypeSignature,
+                    throwsSignature
+                ) =>
                 processFormalTypeParameters(formalTypeParameters)
                 parametersTypeSignatures foreach { processSignature(declaringElement, _) }
                 processSignature(declaringElement, returnTypeSignature)
@@ -836,7 +830,7 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
         instruction:     INVOKEDYNAMIC
     ): Unit = {
 
-        val INVOKEDYNAMIC(bootstrapMethod, _ /*name*/ , methodDescriptor) = instruction
+        val INVOKEDYNAMIC(bootstrapMethod, _ /*name*/, methodDescriptor) = instruction
 
         // Dependencies related to the invokedynamic instruction's method descriptor.
         // (Most likely simply java/lang/Object for both the parameter and return types.)
@@ -992,7 +986,7 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
     ): Unit = {
 
         if (target eq VoidType)
-            return ;
+            return;
 
         target match {
             case ot: ObjectType =>
@@ -1008,6 +1002,7 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
     }
 
 }
+
 /**
  * @author Arne Lottmann
  * @author Michael Eichberg

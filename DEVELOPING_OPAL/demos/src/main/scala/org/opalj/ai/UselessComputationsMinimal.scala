@@ -52,9 +52,9 @@ object UselessComputationsMinimal extends ProjectAnalysisApplication {
             import result.domain.ConcreteIntegerValue
             collectPCWithOperands(result.domain)(method.body.get, result.operandsArray) {
                 case (
-                    pc,
-                    _: IFICMPInstruction[_],
-                    Seq(ConcreteIntegerValue(a), ConcreteIntegerValue(b), _*)
+                        pc,
+                        _: IFICMPInstruction[_],
+                        Seq(ConcreteIntegerValue(a), ConcreteIntegerValue(b), _*)
                     ) =>
                     val context = method.toJava
                     val result = s"$context: /*pc=$pc:*/ comparison of constant values: $a and $b"

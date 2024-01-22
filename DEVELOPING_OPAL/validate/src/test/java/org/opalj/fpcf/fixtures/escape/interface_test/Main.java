@@ -1,3 +1,4 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.escape.interface_test;
 
 import org.opalj.tac.fpcf.analyses.escape.InterProceduralEscapeAnalysis;

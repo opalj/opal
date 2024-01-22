@@ -29,7 +29,7 @@ import org.opalj.log.OPALLogger.error
  */
 class L0BaseAIResultAnalysis private[analyses] (val project: SomeProject) extends FPCFAnalysis {
 
-    final implicit val aiFactory: ProjectSpecificAIExecutor = project.get(AIDomainFactoryKey)
+    implicit final val aiFactory: ProjectSpecificAIExecutor = project.get(AIDomainFactoryKey)
 
     def performAI(entity: Entity): ProperPropertyComputationResult = {
         entity match {

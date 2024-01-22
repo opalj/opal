@@ -4,10 +4,10 @@ package br
 package fpcf
 package properties
 
-import org.opalj.collection.immutable.IntTrieSet
-
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+
+import org.opalj.collection.immutable.IntTrieSet
 
 /**
  * Tests the [[Purity]] property, especially correctness of the meet operator.
@@ -22,16 +22,31 @@ class PurityPropertyTest extends AnyFlatSpec with Matchers {
     val dContextuallySideEffectFree = DContextuallySideEffectFree(IntTrieSet(1))
 
     val allPurities: List[Purity] = List(
-        CompileTimePure, Pure, SideEffectFree, DPure, DSideEffectFree,
-        contextuallyPure, contextuallySideEffectFree, ImpureByAnalysis, ImpureByLackOfInformation
+        CompileTimePure,
+        Pure,
+        SideEffectFree,
+        DPure,
+        DSideEffectFree,
+        contextuallyPure,
+        contextuallySideEffectFree,
+        ImpureByAnalysis,
+        ImpureByLackOfInformation
     )
 
     val doesntModifyReceiver: Set[Purity] = Set(
-        CompileTimePure, Pure, SideEffectFree, DPure, DSideEffectFree
+        CompileTimePure,
+        Pure,
+        SideEffectFree,
+        DPure,
+        DSideEffectFree
     )
 
     val doesntModifyParams: Set[Purity] = Set(
-        CompileTimePure, Pure, SideEffectFree, DPure, DSideEffectFree
+        CompileTimePure,
+        Pure,
+        SideEffectFree,
+        DPure,
+        DSideEffectFree
     )
 
     "purity levels" should "have the right properties" in {
@@ -43,7 +58,11 @@ class PurityPropertyTest extends AnyFlatSpec with Matchers {
         }
 
         val deterministic: Set[Purity] = Set(
-            CompileTimePure, Pure, contextuallyPure, DPure, dContextuallyPure
+            CompileTimePure,
+            Pure,
+            contextuallyPure,
+            DPure,
+            dContextuallyPure
         )
 
         for (prop <- allPurities) {
@@ -54,7 +73,11 @@ class PurityPropertyTest extends AnyFlatSpec with Matchers {
         }
 
         val doesntUseDomainSpecificActions: Set[Purity] = Set(
-            CompileTimePure, Pure, SideEffectFree, contextuallyPure, contextuallySideEffectFree
+            CompileTimePure,
+            Pure,
+            SideEffectFree,
+            contextuallyPure,
+            contextuallySideEffectFree
         )
 
         for (prop <- allPurities) {

@@ -107,7 +107,8 @@ class Library(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
 
                         val itr = targets.iterator
                         while (itr.hasNext
-                            && !(publicTarget && packagePrivateTarget && subclassTarget)) {
+                               && !(publicTarget && packagePrivateTarget && subclassTarget)
+                        ) {
 
                             val target = itr.next()
                             val declClass = target.classFile
@@ -156,34 +157,43 @@ class Library(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
 
         def analyzePotentialCBSTarget(cbsCallee: Method): Unit = {
             if (!cbsCallee.isPublic)
-                return ;
+                return;
 
             if (cbsCallee.isAbstract)
-                return ;
+                return;
 
             if (!isInheritableMethod(cbsCallee))
-                return ;
+                return;
 
             val cbsCalleeDeclaringClass = cbsCallee.classFile
 
             if (!cbsCalleeDeclaringClass.isClassDeclaration)
-                return ;
+                return;
 
             if (cbsCalleeDeclaringClass.isEffectivelyFinal)
-                return ;
+                return;
 
             val cbsCalleeDeclaringType = cbsCalleeDeclaringClass.thisType
 
             if (cbsCalleeDeclaringType eq ObjectType.Object)
-                return ;
+                return;
 
             if (project.classHierarchy.isSubtypeOf(
-                cbsCalleeDeclaringType, interfaceType
-            ))
-                return ;
+                    cbsCalleeDeclaringType,
+                    interfaceType
+                )
+            )
+                return;
 
-            if (hasSubclassWhichInheritsFromInterface(cbsCalleeDeclaringType, interfaceType, methodName, methodDescriptor, project).isYes)
-                return ;
+            if (hasSubclassWhichInheritsFromInterface(
+                    cbsCalleeDeclaringType,
+                    interfaceType,
+                    methodName,
+                    methodDescriptor,
+                    project
+                ).isYes
+            )
+                return;
 
             cbsTargets += cbsCallee
         }
@@ -216,7 +226,8 @@ class Library(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
             project.classFile(subtype) match {
                 case Some(subclassFile) =>
                     if (subclassFile.findMethod(methodName, methodDescriptor).isEmpty
-                        && classHierarchy.isSubtypeOf(subtype, interfaceType))
+                        && classHierarchy.isSubtypeOf(subtype, interfaceType)
+                    )
                         return Yes;
                 case None =>
                     isUnknown = false

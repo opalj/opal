@@ -30,7 +30,7 @@ trait TypeLevelLongValues extends LongValuesDomain {
     trait LongValue extends TypedValue[LongType] with IsLongValue {
         this: DomainTypedValue[LongType] =>
 
-        final override def leastUpperType: Option[LongType] = Some(LongType)
+        override final def leastUpperType: Option[LongType] = Some(LongType)
 
     }
 
@@ -49,7 +49,8 @@ trait TypeLevelLongValues extends LongValuesDomain {
      *
      * @return The result of calling `LongValue(pc)`.
      */
-    /*override*/ def lneg(pc: Int, value: DomainValue): DomainValue = LongValue(pc)
+    /*override*/
+    def lneg(pc: Int, value: DomainValue): DomainValue = LongValue(pc)
 
     //
     // RELATIONAL OPERATORS
@@ -60,7 +61,8 @@ trait TypeLevelLongValues extends LongValuesDomain {
      *
      * @return The result of calling `IntegerValue(pc)`.
      */
-    /*override*/ def lcmp(pc: Int, left: DomainValue, right: DomainValue): DomainValue =
+    /*override*/
+    def lcmp(pc: Int, left: DomainValue, right: DomainValue): DomainValue =
         IntegerValue(pc)
 
     //
@@ -72,7 +74,8 @@ trait TypeLevelLongValues extends LongValuesDomain {
      *
      * @return The result of calling `LongValue(pc)`.
      */
-    /*override*/ def ladd(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+    /*override*/
+    def ladd(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
         LongValue(pc)
 
     /**
@@ -83,7 +86,8 @@ trait TypeLevelLongValues extends LongValuesDomain {
      *      policy is to throw an ArithmeticException if in doubt – a
      *      `ComputedValueOrException(LongValue(pc), ArithmeticException(pc))`
      */
-    /*override*/ def ldiv(
+    /*override*/
+    def ldiv(
         pc:    Int,
         left:  DomainValue,
         right: DomainValue
@@ -99,7 +103,8 @@ trait TypeLevelLongValues extends LongValuesDomain {
      *
      * @return The result of calling `LongValue(pc)`.
      */
-    /*override*/ def lmul(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+    /*override*/
+    def lmul(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
         LongValue(pc)
 
     /**
@@ -110,7 +115,8 @@ trait TypeLevelLongValues extends LongValuesDomain {
      *      policy is to throw an ArithmeticException if in doubt – a
      *      `ComputedValueOrException(LongValue(pc), ArithmeticException(pc))`
      */
-    /*override*/ def lrem(
+    /*override*/
+    def lrem(
         pc:    Int,
         left:  DomainValue,
         right: DomainValue
@@ -126,7 +132,8 @@ trait TypeLevelLongValues extends LongValuesDomain {
      *
      * @return The result of calling `LongValue(pc)`.
      */
-    /*override*/ def lsub(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+    /*override*/
+    def lsub(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
         LongValue(pc)
 
     /**
@@ -134,7 +141,8 @@ trait TypeLevelLongValues extends LongValuesDomain {
      *
      * @return The result of calling `LongValue(pc)`.
      */
-    /*override*/ def land(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+    /*override*/
+    def land(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
         LongValue(pc)
 
     /**
@@ -142,7 +150,8 @@ trait TypeLevelLongValues extends LongValuesDomain {
      *
      * @return The result of calling `LongValue(pc)`.
      */
-    /*override*/ def lor(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+    /*override*/
+    def lor(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
         LongValue(pc)
 
     /**
@@ -150,7 +159,8 @@ trait TypeLevelLongValues extends LongValuesDomain {
      *
      * @return The result of calling `LongValue(pc)`.
      */
-    /*override*/ def lxor(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+    /*override*/
+    def lxor(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
         LongValue(pc)
 
 }

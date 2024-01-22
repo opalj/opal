@@ -11,7 +11,7 @@ package cp
  */
 trait CONSTANT_FieldValue_info extends Constant_Pool_Entry {
 
-    final override def asConstantValue(cp: Constant_Pool): ConstantFieldValue[_] = {
+    override final def asConstantValue(cp: Constant_Pool): ConstantFieldValue[_] = {
         asConstantFieldValue(cp)
     }
 

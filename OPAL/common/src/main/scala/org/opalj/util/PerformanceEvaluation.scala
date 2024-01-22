@@ -144,8 +144,7 @@ object PerformanceEvaluation {
     )(
         mu: Long => Unit
     )(
-        implicit
-        logContext: Option[LogContext] = None
+        implicit logContext: Option[LogContext] = None
     ): T = {
         val memoryMXBean = ManagementFactory.getMemoryMXBean
         gc(memoryMXBean)
@@ -330,7 +329,7 @@ object PerformanceEvaluation {
                     r(t, times)
                 }
             } while (times.size < minimalNumberOfRelevantRuns ||
-                Math.abs(avg - times.head.timeSpan) > avg * e)
+            Math.abs(avg - times.head.timeSpan) > avg * e)
 
             result
 

@@ -3,14 +3,14 @@ package org.opalj
 package ai
 package domain
 
-import org.opalj.bi.TestResources.locateTestResources
-import org.opalj.br._
-import org.opalj.br.reader.Java8Framework.ClassFiles
-
 import org.junit.runner.RunWith
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
+
+import org.opalj.bi.TestResources.locateTestResources
+import org.opalj.br._
+import org.opalj.br.reader.Java8Framework.ClassFiles
 
 /**
  * Basic tests of the abstract interpreter in the presence of simple control flow
@@ -67,11 +67,13 @@ class MethodsWithLoopsTest extends AnyFlatSpec with Matchers {
             with IgnoreSynchronization
 
         val method = findMethod("endless")
-        /*val result =*/ BaseAI(method, MostBasicDomain)
+        /*val result =*/
+        BaseAI(method, MostBasicDomain)
         // if we reach this point, everything is OK
     }
 
 }
+
 object MethodsWithLoopsTest {
 
     val classFiles = ClassFiles(locateTestResources("ai-9.jar", "bi"))

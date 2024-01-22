@@ -11,7 +11,7 @@ package cfg
  * @author Erich Wittenbeck
  * @author Michael Eichberg
  */
-final class ExitNode( final val normalReturn: Boolean) extends CFGNode {
+final class ExitNode(final val normalReturn: Boolean) extends CFGNode {
 
     override def nodeId: Int = {
         // OLD: if (normalReturn) Int.MinValue else Int.MinValue + 1

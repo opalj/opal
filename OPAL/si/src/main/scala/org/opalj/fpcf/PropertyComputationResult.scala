@@ -75,6 +75,7 @@ case class Result(finalEP: FinalEP[Entity, Property]) extends FinalPropertyCompu
         s"Result($e@${System.identityHashCode(e).toHexString},p=$p)"
     }
 }
+
 object Result {
 
     def apply(e: Entity, p: Property): Result = Result(FinalEP(e, p))
@@ -170,8 +171,8 @@ final class InterimResult[P >: Null <: Property] private (
 
     private[fpcf] def id: Int = InterimResult.id
 
-    private[fpcf] override def isInterimResult: Boolean = true
-    private[fpcf] override def asInterimResult: InterimResult[P] = this
+    override private[fpcf] def isInterimResult: Boolean = true
+    override private[fpcf] def asInterimResult: InterimResult[P] = this
 
     override def hashCode: Int = eps.e.hashCode * 17 + dependees.hashCode
 
@@ -292,11 +293,12 @@ sealed abstract class Results extends ProperPropertyComputationResult {
 
     private[fpcf] final def id = Results.id
 
-    private[fpcf] final override def asResults: Results = this
+    override private[fpcf] final def asResults: Results = this
 
     def foreach(f: ProperPropertyComputationResult => Unit): Unit
 
 }
+
 object Results {
 
     private[fpcf] final val id = 5
@@ -403,6 +405,7 @@ case class InterimPartialResult[SE >: Null <: Property](
     private[fpcf] final def id = InterimPartialResult.id
 
 }
+
 object InterimPartialResult {
 
     private[fpcf] final val id = 8

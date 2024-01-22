@@ -18,9 +18,7 @@ case class ExceptionLogMessage(
                 message = exceptionToMessage(message + "\n", t.getCause)
             }
             if (t.getSuppressed != null) {
-                t.getSuppressed foreach { t =>
-                    message = exceptionToMessage(message, t)
-                }
+                t.getSuppressed foreach { t => message = exceptionToMessage(message, t) }
             }
             message
         }

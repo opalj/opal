@@ -27,9 +27,9 @@ object MethodHandlesUtil {
                 new ClassBasedFieldMatcher(Set(ObjectType.Object), onlyFieldsExactlyInClass = false)
             else if (!isStatic)
                 new ClassBasedFieldMatcher(
-                project.classHierarchy.allSubtypes(declaringClass.asObjectType, reflexive = true),
-                onlyFieldsExactlyInClass = false
-            )
+                    project.classHierarchy.allSubtypes(declaringClass.asObjectType, reflexive = true),
+                    onlyFieldsExactlyInClass = false
+                )
             else
                 new ClassBasedFieldMatcher(Set(declaringClass.asObjectType), onlyFieldsExactlyInClass = false)
         )

@@ -73,7 +73,7 @@ object InterpretMethod {
 
         if (args.length < 3 || args.length > 5) {
             printUsage(Some("wrong number of parameters"))
-            return ;
+            return;
         }
         var remainingArgs = args.toList
         val fileName = remainingArgs.head; remainingArgs = remainingArgs.tail
@@ -98,10 +98,11 @@ object InterpretMethod {
         }
         val doIdentifyDeadVariables = {
             if (remainingArgs.nonEmpty && remainingArgs.head.startsWith("-identifyDeadVariables=")) {
-                val result = (
-                    remainingArgs.head == "-identifyDeadVariables=true" ||
-                    remainingArgs.head == "-identifyDeadVariables=1"
-                )
+                val result =
+                    (
+                        remainingArgs.head == "-identifyDeadVariables=true" ||
+                            remainingArgs.head == "-identifyDeadVariables=1"
+                    )
                 remainingArgs = remainingArgs.tail
                 result
             } else
@@ -109,7 +110,7 @@ object InterpretMethod {
         }
         if (remainingArgs.nonEmpty) {
             printUsage(Some(remainingArgs.mkString("unexpected arguments: ", ", ", "")))
-            return ;
+            return;
         }
 
         def createDomain[Source: reflect.ClassTag](project: SomeProject, method: Method): Domain = {
@@ -126,7 +127,7 @@ object InterpretMethod {
         val file = new java.io.File(fileName)
         if (!file.exists()) {
             println(RED + "[error] The file does not exist: " + fileName + "." + RESET)
-            return ;
+            return;
         }
 
         val project =
@@ -135,14 +136,14 @@ object InterpretMethod {
             } catch {
                 case e: Exception =>
                     println(RED + "[error] Cannot process file: " + e.getMessage + "." + RESET)
-                    return ;
+                    return;
             }
 
         val classFile = {
             val fqn = className.replace('.', '/')
             project.allClassFiles.find(_.fqn == fqn).getOrElse {
                 println(RED + "[error] Cannot find the class: " + className + "." + RESET)
-                return ;
+                return;
             }
         }
 
@@ -153,21 +154,21 @@ object InterpretMethod {
                 else
                     classFile.methods.find(_.name == methodName)
             ) match {
-                    case Some(method) =>
-                        if (method.body.isDefined)
-                            method
-                        else {
-                            println(RED +
-                                "[error] The method: " + methodName + " does not have a body" + RESET)
-                            return ;
-                        }
-                    case None =>
+                case Some(method) =>
+                    if (method.body.isDefined)
+                        method
+                    else {
                         println(RED +
-                            "[error] Cannot find the method: " + methodName + "." + RESET +
-                            classFile.methods.map(m => m.descriptor.toJava(m.name)).toSet.
-                            toSeq.sorted.mkString(" Candidates: ", ", ", "."))
-                        return ;
-                }
+                            "[error] The method: " + methodName + " does not have a body" + RESET)
+                        return;
+                    }
+                case None =>
+                    println(RED +
+                        "[error] Cannot find the method: " + methodName + "." + RESET +
+                        classFile.methods.map(m => m.descriptor.toJava(m.name)).toSet
+                            .toSeq.sorted.mkString(" Candidates: ", ", ", "."))
+                    return;
+            }
 
         var ai: AI[Domain] = null;
         try {
@@ -233,16 +234,14 @@ object InterpretMethod {
                                 else
                                     "<u>Dead Variables are not filtered</u>.<br>"
                             ) +
-                                XHTML.instructionsToXHTML("PCs where paths join", result.cfJoins) +
-                                (
-                                    if (result.subroutinePCs.nonEmpty) {
-                                        XHTML.instructionsToXHTML(
-                                            "Subroutine instructions", result.subroutinePCs
-                                        )
-                                    } else {
-                                        ""
-                                    }
-                                ) + XHTML.evaluatedInstructionsToXHTML(result.evaluatedPCs)
+                            XHTML.instructionsToXHTML("PCs where paths join", result.cfJoins) +
+                            (
+                                if (result.subroutinePCs.nonEmpty) {
+                                    XHTML.instructionsToXHTML("Subroutine instructions", result.subroutinePCs)
+                                } else {
+                                    ""
+                                }
+                            ) + XHTML.evaluatedInstructionsToXHTML(result.evaluatedPCs)
                     ),
                     result.domain
                 )(result.cfJoins, result.operandsArray, result.localsArray),
@@ -251,7 +250,6 @@ object InterpretMethod {
             )
         } catch {
             case ife: InterpretationFailedException =>
-
                 ai match {
                     case ai: IMAI => ai.xHTMLTracer.result(null);
                     case _        => /*nothing to do*/
@@ -261,9 +259,9 @@ object InterpretMethod {
                     val domain = ife.domain
                     val parameters =
                         if (nested) {
-                            ife.localsArray(0).toSeq.reverse.
-                                filter(_ != null).map(_.toString).
-                                mkString("Parameters:<i>", ", ", "</i><br>")
+                            ife.localsArray(0).toSeq.reverse
+                                .filter(_ != null).map(_.toString)
+                                .mkString("Parameters:<i>", ", ", "</i><br>")
                         } else
                             ""
 
@@ -305,8 +303,11 @@ object InterpretMethod {
                 val resultHeader = Some(causeToString(ife, false))
                 val evaluationDump =
                     dump(
-                        Some(classFile), Some(method), method.body.get,
-                        resultHeader, ife.domain
+                        Some(classFile),
+                        Some(method),
+                        method.body.get,
+                        resultHeader,
+                        ife.domain
                     )(ife.cfJoins, ife.operandsArray, ife.localsArray)
                 writeAndOpen(evaluationDump, "StateOfCrashedAbstractInterpretation", ".html")
                 throw ife

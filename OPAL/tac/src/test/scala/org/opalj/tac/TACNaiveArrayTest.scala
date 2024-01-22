@@ -2,11 +2,11 @@
 package org.opalj
 package tac
 
-import org.opalj.br._
-import org.opalj.br.TestSupport.biProject
-
 import org.junit.runner.RunWith
 import org.scalatestplus.junit.JUnitRunner
+
+import org.opalj.br._
+import org.opalj.br.TestSupport.biProject
 
 /**
  * @author Michael Eichberg
@@ -40,15 +40,28 @@ class TACNaiveArrayTest extends TACNaiveTest {
         ) = Array(
             Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
             Assignment(0, SimpleVar(0, ComputationalTypeInt), IntConst(0, 5)),
-            Assignment(1, SimpleVar(0, ComputationalTypeReference), NewArray(1, List(SimpleVar(0, ComputationalTypeInt)), arrayType)),
+            Assignment(
+                1,
+                SimpleVar(0, ComputationalTypeReference),
+                NewArray(1, List(SimpleVar(0, ComputationalTypeInt)), arrayType)
+            ),
             Assignment(3, SimpleVar(-2, ComputationalTypeReference), SimpleVar(0, ComputationalTypeReference)),
             Assignment(4, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
             Assignment(5, SimpleVar(1, ComputationalTypeInt), IntConst(5, 4)),
             Assignment(6, SimpleVar(2, cTpe), const),
-            ArrayStore(7, SimpleVar(0, ComputationalTypeReference), SimpleVar(1, ComputationalTypeInt), SimpleVar(2, cTpe)),
+            ArrayStore(
+                7,
+                SimpleVar(0, ComputationalTypeReference),
+                SimpleVar(1, ComputationalTypeInt),
+                SimpleVar(2, cTpe)
+            ),
             Assignment(8, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
             Assignment(9, SimpleVar(1, ComputationalTypeInt), IntConst(9, 4)),
-            Assignment(10, SimpleVar(0, cTpe), ArrayLoad(10, SimpleVar(1, ComputationalTypeInt), SimpleVar(0, ComputationalTypeReference))),
+            Assignment(
+                10,
+                SimpleVar(0, cTpe),
+                ArrayLoad(10, SimpleVar(1, ComputationalTypeInt), SimpleVar(0, ComputationalTypeReference))
+            ),
             Assignment(11, SimpleVar(-3, cTpe), SimpleVar(0, cTpe)),
             Return(12)
         )
@@ -70,7 +83,8 @@ class TACNaiveArrayTest extends TACNaiveTest {
         ).mkString("\n")
 
         it("should correctly reflect reference array instructions") {
-            val stmts = TACNaive(method = RefArrayMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
+            val stmts =
+                TACNaive(method = RefArrayMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
             val javaLikeCode = ToTxt.stmtsToTxtStmt(stmts, false)
 
             assert(stmts.nonEmpty)
@@ -78,17 +92,38 @@ class TACNaiveArrayTest extends TACNaiveTest {
             stmts.shouldEqual(Array(
                 Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
                 Assignment(0, SimpleVar(0, ComputationalTypeInt), IntConst(0, 5)),
-                Assignment(1, SimpleVar(0, ComputationalTypeReference), NewArray(1, List(SimpleVar(0, ComputationalTypeInt)), ArrayType.ArrayOfObject)),
+                Assignment(
+                    1,
+                    SimpleVar(0, ComputationalTypeReference),
+                    NewArray(1, List(SimpleVar(0, ComputationalTypeInt)), ArrayType.ArrayOfObject)
+                ),
                 Assignment(4, SimpleVar(-2, ComputationalTypeReference), SimpleVar(0, ComputationalTypeReference)),
                 Assignment(5, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
                 Assignment(6, SimpleVar(1, ComputationalTypeInt), IntConst(6, 4)),
                 Assignment(7, SimpleVar(2, ComputationalTypeReference), New(7, ObjectType.Object)),
                 Nop(10),
-                NonVirtualMethodCall(11, ObjectType.Object, false, "<init>", MethodDescriptor(NoFieldTypes, VoidType), SimpleVar(2, ComputationalTypeReference), List()),
-                ArrayStore(14, SimpleVar(0, ComputationalTypeReference), SimpleVar(1, ComputationalTypeInt), SimpleVar(2, ComputationalTypeReference)),
+                NonVirtualMethodCall(
+                    11,
+                    ObjectType.Object,
+                    false,
+                    "<init>",
+                    MethodDescriptor(NoFieldTypes, VoidType),
+                    SimpleVar(2, ComputationalTypeReference),
+                    List()
+                ),
+                ArrayStore(
+                    14,
+                    SimpleVar(0, ComputationalTypeReference),
+                    SimpleVar(1, ComputationalTypeInt),
+                    SimpleVar(2, ComputationalTypeReference)
+                ),
                 Assignment(15, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
                 Assignment(16, SimpleVar(1, ComputationalTypeInt), IntConst(16, 4)),
-                Assignment(17, SimpleVar(0, ComputationalTypeReference), ArrayLoad(17, SimpleVar(1, ComputationalTypeInt), SimpleVar(0, ComputationalTypeReference))),
+                Assignment(
+                    17,
+                    SimpleVar(0, ComputationalTypeReference),
+                    ArrayLoad(17, SimpleVar(1, ComputationalTypeInt), SimpleVar(0, ComputationalTypeReference))
+                ),
                 Assignment(18, SimpleVar(-3, ComputationalTypeReference), SimpleVar(0, ComputationalTypeReference)),
                 Return(19)
             ))
@@ -114,7 +149,10 @@ class TACNaiveArrayTest extends TACNaiveTest {
         }
 
         it("should correctly reflect multidimensional array instructions") {
-            val stmts = TACNaive(method = MultidimArrayMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
+            val stmts = TACNaive(
+                method = MultidimArrayMethod,
+                classHierarchy = ClassHierarchy.PreInitializedClassHierarchy
+            ).stmts
             val javaLikeCode = ToTxt.stmtsToTxtStmt(stmts, false)
 
             assert(stmts.nonEmpty)
@@ -123,8 +161,15 @@ class TACNaiveArrayTest extends TACNaiveTest {
                 Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
                 Assignment(0, SimpleVar(0, ComputationalTypeInt), IntConst(0, 4)),
                 Assignment(1, SimpleVar(1, ComputationalTypeInt), IntConst(1, 2)),
-                Assignment(2, SimpleVar(0, ComputationalTypeReference),
-                    NewArray(2, List(SimpleVar(1, ComputationalTypeInt), SimpleVar(0, ComputationalTypeInt)), ArrayType(ArrayType(IntegerType)))),
+                Assignment(
+                    2,
+                    SimpleVar(0, ComputationalTypeReference),
+                    NewArray(
+                        2,
+                        List(SimpleVar(1, ComputationalTypeInt), SimpleVar(0, ComputationalTypeInt)),
+                        ArrayType(ArrayType(IntegerType))
+                    )
+                ),
                 Assignment(6, SimpleVar(-2, ComputationalTypeReference), SimpleVar(0, ComputationalTypeReference)),
                 Assignment(7, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
                 Assignment(8, SimpleVar(0, ComputationalTypeInt), ArrayLength(8, SimpleVar(0, ComputationalTypeReference))),
@@ -145,7 +190,8 @@ class TACNaiveArrayTest extends TACNaiveTest {
         }
 
         it("should correctly reflect double array instructions") {
-            val stmts = TACNaive(method = DoubleArrayMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
+            val stmts =
+                TACNaive(method = DoubleArrayMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
             val javaLikeCode = ToTxt.stmtsToTxtStmt(stmts, false)
 
             assert(stmts.nonEmpty)
@@ -155,7 +201,8 @@ class TACNaiveArrayTest extends TACNaiveTest {
         }
 
         it("should correctly reflect float array instructions") {
-            val stmts = TACNaive(method = FloatArrayMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
+            val stmts =
+                TACNaive(method = FloatArrayMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
             val javaLikeCode = ToTxt.stmtsToTxtStmt(stmts, false)
 
             assert(stmts.nonEmpty)
@@ -165,7 +212,8 @@ class TACNaiveArrayTest extends TACNaiveTest {
         }
 
         it("should correctly reflect int array instructions") {
-            val stmts = TACNaive(method = IntArrayMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
+            val stmts =
+                TACNaive(method = IntArrayMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
             val javaLikeCode = ToTxt.stmtsToTxtStmt(stmts, false)
 
             assert(stmts.nonEmpty)
@@ -175,7 +223,8 @@ class TACNaiveArrayTest extends TACNaiveTest {
         }
 
         it("should correctly reflect long array instructions") {
-            val stmts = TACNaive(method = LongArrayMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
+            val stmts =
+                TACNaive(method = LongArrayMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
             val javaLikeCode = ToTxt.stmtsToTxtStmt(stmts, false)
 
             assert(stmts.nonEmpty)
@@ -185,7 +234,8 @@ class TACNaiveArrayTest extends TACNaiveTest {
         }
 
         it("should correctly reflect short array instructions") {
-            val stmts = TACNaive(method = ShortArrayMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
+            val stmts =
+                TACNaive(method = ShortArrayMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
             val javaLikeCode = ToTxt.stmtsToTxtStmt(stmts, false)
 
             assert(stmts.nonEmpty)
@@ -195,7 +245,8 @@ class TACNaiveArrayTest extends TACNaiveTest {
         }
 
         it("should correctly reflect byte array instructions") {
-            val stmts = TACNaive(method = ByteArrayMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
+            val stmts =
+                TACNaive(method = ByteArrayMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
             val javaLikeCode = ToTxt.stmtsToTxtStmt(stmts, false)
 
             assert(stmts.nonEmpty)
@@ -205,7 +256,8 @@ class TACNaiveArrayTest extends TACNaiveTest {
         }
 
         it("should correctly reflect char array instructions") {
-            val stmts = TACNaive(method = CharArrayMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
+            val stmts =
+                TACNaive(method = CharArrayMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
             val javaLikeCode = ToTxt.stmtsToTxtStmt(stmts, false)
 
             assert(stmts.nonEmpty)

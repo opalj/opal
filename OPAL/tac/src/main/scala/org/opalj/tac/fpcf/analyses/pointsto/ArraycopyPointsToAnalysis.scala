@@ -41,7 +41,9 @@ abstract class ArraycopyPointsToAnalysis private[pointsto] (
 ) extends PointsToAnalysisBase with TACAIBasedAPIBasedAnalysis {
 
     override val apiMethod: DeclaredMethod = declaredMethods(
-        ObjectType.System, "", ObjectType.System,
+        ObjectType.System,
+        "",
+        ObjectType.System,
         "arraycopy",
         MethodDescriptor(
             ArraySeq(ObjectType.Object, IntegerType, ObjectType.Object, IntegerType, IntegerType),
@@ -65,7 +67,8 @@ abstract class ArraycopyPointsToAnalysis private[pointsto] (
     ): ProperPropertyComputationResult = {
         implicit val state: State =
             new PointsToAnalysisState[ElementType, PointsToSet, ContextType](
-                callerContext, FinalEP(callerContext.method.definedMethod, TheTACAI(tac))
+                callerContext,
+                FinalEP(callerContext.method.definedMethod, TheTACAI(tac))
             )
 
         val sourceArr = params.head
@@ -74,12 +77,8 @@ abstract class ArraycopyPointsToAnalysis private[pointsto] (
         if (sourceArr.isDefined && targetArr.isDefined) {
             val index = tac.properStmtIndexForPC(pc)
 
-            handleArrayLoad(
-                ArrayType.ArrayOfObject, pc, sourceArr.get.asVar.definedBy, checkForCast = false
-            )
-            handleArrayStore(
-                ArrayType.ArrayOfObject, targetArr.get.asVar.definedBy, IntTrieSet(index)
-            )
+            handleArrayLoad(ArrayType.ArrayOfObject, pc, sourceArr.get.asVar.definedBy, checkForCast = false)
+            handleArrayStore(ArrayType.ArrayOfObject, targetArr.get.asVar.definedBy, IntTrieSet(index))
         }
 
         Results(createResults(state))

@@ -3,8 +3,6 @@ package org.opalj
 package collection
 package immutable
 
-import org.opalj.util.PerformanceEvaluation
-
 import org.junit.runner.RunWith
 import org.scalacheck.Arbitrary
 import org.scalacheck.Gen
@@ -15,6 +13,8 @@ import org.scalacheck.Properties
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
+
+import org.opalj.util.PerformanceEvaluation
 
 /**
  * Tests `IntTrieSet` by creating a standard Scala Set and comparing
@@ -196,7 +196,7 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
         val mappedS = s.map(_ * 2)
         classify(mappedIts.size > 3, "using trie") {
             mappedS.size == mappedIts.size &&
-                (EmptyIntTrieSet ++ mappedS.iterator) == mappedIts
+            (EmptyIntTrieSet ++ mappedS.iterator) == mappedIts
         }
     }
 
@@ -209,7 +209,7 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
         val its = EmptyIntTrieSet ++ s.iterator
         classify(its.isEmpty, "the set is empty") {
             s.forall(v => its.exists(_ == v)) &&
-                s.forall(v => its.exists(_ != v) == s.exists(_ != v))
+            s.forall(v => its.exists(_ != v) == s.exists(_ != v))
         }
     }
 
@@ -248,14 +248,16 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
             val l = arrayOfSets.length
 
             val flatMappedITSet = arrayOfITSets(0).flatMap(v =>
-                arrayOfITSets(Math.abs(v) % l))
+                arrayOfITSets(Math.abs(v) % l)
+            )
             val flatMappedSSet = arrayOfSets(0).flatMap(v =>
-                arrayOfSets(Math.abs(v) % l))
+                arrayOfSets(Math.abs(v) % l)
+            )
 
             classify(flatMappedSSet.size > 50, "set with more than 50 elements") {
                 classify(flatMappedSSet.size < listOfSets.map(_.size).sum, "flat map is not the join of all sets") {
                     flatMappedSSet.forall(flatMappedITSet.contains) &&
-                        flatMappedSSet.size == flatMappedITSet.size
+                    flatMappedSSet.size == flatMappedITSet.size
                 }
             }
         }
@@ -329,7 +331,7 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
         val news = other.foldLeft(s)(_ - _)
         classify(news.size < s.size, "removed something") {
             (its.size == s.size) :| "the original set is unmodified" &&
-                news.forall(newits.contains) && newits.forall(news.contains)
+            news.forall(newits.contains) && newits.forall(news.contains)
         }
     }
 
@@ -524,7 +526,8 @@ class IntTrieSetTest extends AnyFunSpec with Matchers {
             assert(!s8a.subsetOf(s8b))
             assert(!s8b.subsetOf(s8a))
 
-            val s18 = IntTrieSet.empty ++ List(-127543, -104227, -103908, -103694, -100767, -90387, -86807, -80533, -78983, -14063, -10431, -10212, -6447, -298, 163, 9627, 19840, 38723)
+            val s18 = IntTrieSet.empty ++ List(-127543, -104227, -103908, -103694, -100767, -90387, -86807, -80533,
+                -78983, -14063, -10431, -10212, -6447, -298, 163, 9627, 19840, 38723)
             val s18_plus_m1 = s18 + (-1)
             assert(s18.subsetOf(s18_plus_m1), s"$s18 expected to be subset of $s18_plus_m1")
 
@@ -839,7 +842,9 @@ class IntTrieSetTest extends AnyFunSpec with Matchers {
                     largestSet = Math.max(largestSet, s.size)
                     sizeOfAllSets += s.size
                 }
-            } { t => info(s"${t.toSeconds} to create 1_000_000 sets with $sizeOfAllSets elements (largest set: $largestSet)") }
+            } { t =>
+                info(s"${t.toSeconds} to create 1_000_000 sets with $sizeOfAllSets elements (largest set: $largestSet)")
+            }
         }
 
         it("for small sets (8 to 16 elements) creation and contains check should finish in reasonable time (all values are positive)") {
@@ -864,7 +869,9 @@ class IntTrieSetTest extends AnyFunSpec with Matchers {
                     largestSet = Math.max(largestSet, s.size)
                     sizeOfAllSets += s.size
                 }
-            } { t => info(s"${t.toSeconds} to create 1_000_000 sets with $sizeOfAllSets elements (largest set: $largestSet)") }
+            } { t =>
+                info(s"${t.toSeconds} to create 1_000_000 sets with $sizeOfAllSets elements (largest set: $largestSet)")
+            }
         }
 
         it("for small sets (16 to 32 elements) creation and contains check should finish in reasonable time (all values are positive)") {
@@ -889,7 +896,9 @@ class IntTrieSetTest extends AnyFunSpec with Matchers {
                     largestSet = Math.max(largestSet, s.size)
                     sizeOfAllSets += s.size
                 }
-            } { t => info(s"${t.toSeconds} to create 1_000_000 sets with $sizeOfAllSets elements (largest set: $largestSet)") }
+            } { t =>
+                info(s"${t.toSeconds} to create 1_000_000 sets with $sizeOfAllSets elements (largest set: $largestSet)")
+            }
         }
 
         it("for sets with up to 10000 elements creation and contains check should finish in reasonable time") {
@@ -914,7 +923,9 @@ class IntTrieSetTest extends AnyFunSpec with Matchers {
                     largestSet = Math.max(largestSet, s.size)
                     sizeOfAllSets += s.size
                 }
-            } { t => info(s"${t.toSeconds} to create 10_000 sets with $sizeOfAllSets elements (largest set: $largestSet)") }
+            } { t =>
+                info(s"${t.toSeconds} to create 10_000 sets with $sizeOfAllSets elements (largest set: $largestSet)")
+            }
         }
 
         it("operations on 2500 sets with ~10000 elements each") {

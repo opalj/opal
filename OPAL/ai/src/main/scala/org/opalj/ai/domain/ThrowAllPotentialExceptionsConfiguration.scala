@@ -25,14 +25,16 @@ trait ThrowAllPotentialExceptionsConfiguration extends Configuration {
      *
      * @return `true`
      */
-    /*implements(not override!)*/ def throwNullPointerExceptionOnThrow: Boolean = true
+    /*implements(not override!)*/
+    def throwNullPointerExceptionOnThrow: Boolean = true
 
     /**
      * @inheritdoc
      *
      * @return `true`
      */
-    /*implements(not override!)*/ def throwClassCastException: Boolean = true
+    /*implements(not override!)*/
+    def throwClassCastException: Boolean = true
 
     /**
      * @inheritdoc
@@ -53,7 +55,8 @@ trait ThrowAllPotentialExceptionsConfiguration extends Configuration {
      *
      * @return `ExceptionsRaisedByCalledMethods.Any`
      */
-    /*implements(not override!)*/ def throwExceptionsOnMethodCall: ExceptionsRaisedByCalledMethod = {
+    /*implements(not override!)*/
+    def throwExceptionsOnMethodCall: ExceptionsRaisedByCalledMethod = {
         ExceptionsRaisedByCalledMethods.Any
     }
 
@@ -62,69 +65,79 @@ trait ThrowAllPotentialExceptionsConfiguration extends Configuration {
      *
      * @return `true`
      */
-    /*implements(not override!)*/ def throwNullPointerExceptionOnMethodCall: Boolean = true
+    /*implements(not override!)*/
+    def throwNullPointerExceptionOnMethodCall: Boolean = true
 
     /**
      * @inheritdoc
      *
      * @return `true`
      */
-    /*implements(not override!)*/ def throwNullPointerExceptionOnFieldAccess: Boolean = true
+    /*implements(not override!)*/
+    def throwNullPointerExceptionOnFieldAccess: Boolean = true
 
     /**
      * @inheritdoc
      *
      * @return `true`
      */
-    /*implements(not override!)*/ def throwArithmeticExceptions: Boolean = true
+    /*implements(not override!)*/
+    def throwArithmeticExceptions: Boolean = true
 
     /**
      * @inheritdoc
      *
      * @return `true`
      */
-    /*implements(not override!)*/ def throwIllegalMonitorStateException: Boolean = true
+    /*implements(not override!)*/
+    def throwIllegalMonitorStateException: Boolean = true
 
     /**
      * @inheritdoc
      *
      * @return `true`
      */
-    /*implements(not override!)*/ def throwNullPointerExceptionOnMonitorAccess: Boolean = true
+    /*implements(not override!)*/
+    def throwNullPointerExceptionOnMonitorAccess: Boolean = true
 
     /**
      * @inheritdoc
      *
      * @return `true`
      */
-    /*implements(not override!)*/ def throwNullPointerExceptionOnArrayAccess: Boolean = true
+    /*implements(not override!)*/
+    def throwNullPointerExceptionOnArrayAccess: Boolean = true
 
     /**
      * @inheritdoc
      *
      * @return `true`
      */
-    /*implements(not override!)*/ def throwArrayIndexOutOfBoundsException: Boolean = true
+    /*implements(not override!)*/
+    def throwArrayIndexOutOfBoundsException: Boolean = true
 
     /**
      * @inheritdoc
      *
      * @return `true`
      */
-    /*implements(not override!)*/ def throwArrayStoreException: Boolean = true
+    /*implements(not override!)*/
+    def throwArrayStoreException: Boolean = true
 
     /**
      * @inheritdoc
      *
      * @return `true`
      */
-    /*implements(not override!)*/ def throwNegativeArraySizeException: Boolean = true
+    /*implements(not override!)*/
+    def throwNegativeArraySizeException: Boolean = true
 
     /**
      * @inheritdoc
      *
      * @return `true`
      */
-    /*implements(not override!)*/ def throwClassNotFoundException: Boolean = true
+    /*implements(not override!)*/
+    def throwClassNotFoundException: Boolean = true
 
 }

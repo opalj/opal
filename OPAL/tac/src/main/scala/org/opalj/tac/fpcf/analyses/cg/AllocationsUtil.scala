@@ -37,7 +37,8 @@ object AllocationsUtil {
             val allocationMethod = allocationContext.method
             if (allocationPC >= 0 &&
                 allocationMethod.hasSingleDefinedMethod &&
-                allocationMethod.definedMethod.body.isDefined) {
+                allocationMethod.definedMethod.body.isDefined
+            ) {
                 val epk = EPK(allocationMethod.definedMethod, TACAI.key)
                 val tacEOptP = if (state.hasDependee(epk)) state.getProperty(epk) else ps(epk)
 
@@ -48,7 +49,10 @@ object AllocationsUtil {
 
                 if (tacEOptP.isEPS)
                     handleAllocation(
-                        allocationContext, allocationPC, tacEOptP.asEPS, failure
+                        allocationContext,
+                        allocationPC,
+                        tacEOptP.asEPS,
+                        failure
                     )(process)
             } else {
                 failure()
@@ -92,9 +96,8 @@ object AllocationsUtil {
         state:        TypeIteratorState,
         ps:           PropertyStore
     ): Unit = {
-        val allocations = typeIterator.typesProperty(
-            value, context.asInstanceOf[typeIterator.ContextType], depender, stmts
-        )
+        val allocations =
+            typeIterator.typesProperty(value, context.asInstanceOf[typeIterator.ContextType], depender, stmts)
         typeIterator.foreachAllocation(value, context, stmts, allocations) {
             (tpe, allocationContext, pc) =>
                 if (typeFilter(tpe)) {
@@ -172,13 +175,13 @@ object AllocationsUtil {
                                 eps.asInstanceOf[EPS[Method, TACAI]],
                                 () => failure(data.asInstanceOf[DataType])
                             ) { (_allocationContext, allocationIndex, _stmts) =>
-                                    process(
-                                        data.asInstanceOf[DataType],
-                                        _allocationContext.asInstanceOf[ContextType],
-                                        allocationIndex,
-                                        _stmts
-                                    )
-                                }
+                                process(
+                                    data.asInstanceOf[DataType],
+                                    _allocationContext.asInstanceOf[ContextType],
+                                    allocationIndex,
+                                    _stmts
+                                )
+                            }
 
                         case _ =>
                     }
@@ -187,20 +190,25 @@ object AllocationsUtil {
                         case data: Entity if dataType(data) =>
                             val (expr, stmts) = value(data.asInstanceOf[DataType])
                             typeIterator.continuationForAllocations(
-                                expr, eps.asInstanceOf[EPS[Entity, typeIterator.PropertyType]]
+                                expr,
+                                eps.asInstanceOf[EPS[Entity, typeIterator.PropertyType]]
                             ) { (_, allocationContext, allocationPC) =>
                                 handleAllocation(
-                                    context, expr, stmts,
-                                    allocationContext, allocationPC, data,
+                                    context,
+                                    expr,
+                                    stmts,
+                                    allocationContext,
+                                    allocationPC,
+                                    data,
                                     () => failure(data.asInstanceOf[DataType])
                                 ) { (_allocationContext, allocationIndex, _stmts) =>
-                                        process(
-                                            data.asInstanceOf[DataType],
-                                            _allocationContext.asInstanceOf[ContextType],
-                                            allocationIndex,
-                                            _stmts
-                                        )
-                                    }
+                                    process(
+                                        data.asInstanceOf[DataType],
+                                        _allocationContext.asInstanceOf[ContextType],
+                                        allocationIndex,
+                                        _stmts
+                                    )
+                                }
                             }
                         case _ =>
                     }

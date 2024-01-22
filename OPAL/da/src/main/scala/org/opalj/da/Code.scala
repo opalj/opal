@@ -26,8 +26,7 @@ case class Code(instructions: Array[Byte]) {
         exceptionTable:  ExceptionTable,
         lineNumberTable: Option[Seq[LineNumberTableEntry]]
     )(
-        implicit
-        cp: Constant_Pool
+        implicit cp: Constant_Pool
     ): Node = {
 
         val instructions = InstructionsToXHTML(methodIndex, this.instructions)
@@ -54,13 +53,8 @@ case class Code(instructions: Array[Byte]) {
                     pc <- (0 until instructions.length)
                     if instructions(pc) != null
                 } yield {
-                    val exceptionInfo =
-                        exceptions.foldRight(Seq.empty[Node]) { (a, b) =>
-                            Seq(a(pc)) ++ b
-                        }
-                    createTableRowForInstruction(
-                        methodIndex, instructions(pc), exceptionInfo, pc, lineNumberTable
-                    )
+                    val exceptionInfo = exceptions.foldRight(Seq.empty[Node]) { (a, b) => Seq(a(pc)) ++ b }
+                    createTableRowForInstruction(methodIndex, instructions(pc), exceptionInfo, pc, lineNumberTable)
                 }
             }
         </table>
@@ -75,17 +69,17 @@ case class Code(instructions: Array[Byte]) {
     ): Node = {
 
         <tr>
-            <td class="pc" id={ id(methodIndex, pc) }>{ pc }</td>
+            <td class="pc" id={id(methodIndex, pc)}>{pc}</td>
             {
                 lineNumberTable.map { lineNumberTable =>
                     val ln = lineNumberTable.find(e => e.start_pc == pc).map(_.line_number)
-                    <td class="line">{ Text(ln.map(_.toString).getOrElse("|")) }</td>
+                    <td class="line">{Text(ln.map(_.toString).getOrElse("|"))}</td>
                 }.getOrElse {
                     scala.xml.NodeSeq.Empty
                 }
             }
-            <td> { instruction }</td>
-            { exceptions }
+            <td> {instruction}</td>
+            {exceptions}
         </tr>
     }
 
@@ -93,8 +87,7 @@ case class Code(instructions: Array[Byte]) {
         methodIndex: Int,
         source:      Array[Byte]
     )(
-        implicit
-        cp: Constant_Pool
+        implicit cp: Constant_Pool
     ): Array[Node] = {
         import java.io.DataInputStream
         import java.io.ByteArrayInputStream
@@ -117,8 +110,8 @@ case class Code(instructions: Array[Byte]) {
             val targetPC = in.readShort + pc
             val targetID = "#" + id(methodIndex, targetPC)
             <span>
-                <span class={ "instruction " + mnemonic }>{ mnemonic }</span>
-                <a href={ targetID } class="pc">{ Text(targetPC.toString) }</a>
+                <span class={"instruction " + mnemonic}>{mnemonic}</span>
+                <a href={targetID} class="pc">{Text(targetPC.toString)}</a>
             </span>
         }
 
@@ -131,7 +124,7 @@ case class Code(instructions: Array[Byte]) {
                 case 25 =>
                     <span>
                         <span class="instruction aload">aload </span>
-                        <span class="lv_index">{ lvIndex }</span>
+                        <span class="lv_index">{lvIndex}</span>
                     </span>
                 case 42 => <span class="instruction aload_0">aload_0</span>
                 case 43 => <span class="instruction aload_1">aload_1</span>
@@ -140,14 +133,14 @@ case class Code(instructions: Array[Byte]) {
                 case 189 =>
                     <span>
                         <span class="instruction anewarray">anewarray </span>
-                        { asJavaObjectType(in.readUnsignedShort()).asSpan("") }
+                        {asJavaObjectType(in.readUnsignedShort()).asSpan("")}
                     </span>
                 case 176 => <span class="instruction areturn">areturn</span>
                 case 190 => <span class="instruction arraylength">arraylength</span>
                 case 58 =>
                     <span>
                         <span class="instruction astore">astore </span>
-                        <span class="lv_index">{ lvIndex }</span>
+                        <span class="lv_index">{lvIndex}</span>
                     </span>
                 case 75  => <span class="instruction astore_0">astore_0</span>
                 case 76  => <span class="instruction astore_1">astore_1</span>
@@ -159,14 +152,14 @@ case class Code(instructions: Array[Byte]) {
                 case 16 =>
                     <span>
                         <span class="instruction bipush">bipush </span>
-                        <span class="constant_value">{ in.readByte }</span>
+                        <span class="constant_value">{in.readByte}</span>
                     </span>
                 case 52 => <span class="instruction caload">caload</span>
                 case 85 => <span class="instruction castore">castore</span>
                 case 192 =>
                     <span>
                         <span class="instruction checkcast">checkcast </span>
-                        { asJavaReferenceType(in.readUnsignedShort()).asSpan("") }
+                        {asJavaReferenceType(in.readUnsignedShort()).asSpan("")}
                     </span>
                 case 144 => <span class="instruction d2f">d2f</span>
                 case 142 => <span class="instruction d2i">d2i</span>
@@ -182,7 +175,7 @@ case class Code(instructions: Array[Byte]) {
                 case 24 =>
                     <span>
                         <span class="instruction dload">dload </span>
-                        <span class="lv_index">{ lvIndex }</span>
+                        <span class="lv_index">{lvIndex}</span>
                     </span>
                 case 38  => <span class="instruction dload_0">dload_0</span>
                 case 39  => <span class="instruction dload_1">dload_1</span>
@@ -195,7 +188,7 @@ case class Code(instructions: Array[Byte]) {
                 case 57 =>
                     <span>
                         <span class="instruction dstore">dstore </span>
-                        <span class="lv_index">{ lvIndex }</span>
+                        <span class="lv_index">{lvIndex}</span>
                     </span>
                 case 71  => <span class="instruction dstore_0">dstore_0</span>
                 case 72  => <span class="instruction dstore_1">dstore_1</span>
@@ -223,7 +216,7 @@ case class Code(instructions: Array[Byte]) {
                 case 23 =>
                     <span>
                         <span class="instruction fload">fload </span>
-                        <span class="lv_index">{ lvIndex }</span>
+                        <span class="lv_index">{lvIndex}</span>
                     </span>
                 case 34  => <span class="instruction fload_0">fload_0</span>
                 case 35  => <span class="instruction fload_1">fload_1</span>
@@ -236,7 +229,7 @@ case class Code(instructions: Array[Byte]) {
                 case 56 =>
                     <span>
                         <span class="instruction fstore">fstore </span>
-                        <span class="lv_index">{ lvIndex }</span>
+                        <span class="lv_index">{lvIndex}</span>
                     </span>
                 case 67  => <span class="instruction fstore_0">fstore_0</span>
                 case 68  => <span class="instruction fstore_1">fstore_1</span>
@@ -258,14 +251,14 @@ case class Code(instructions: Array[Byte]) {
                     val targetID = "#" + id(methodIndex, targetPC)
                     <span>
                         <span class="instruction goto">goto </span>
-                        <a href={ targetID } class="pc">{ targetPC }</a>
+                        <a href={targetID} class="pc">{targetPC}</a>
                     </span>
                 case 200 =>
                     val targetPC = in.readInt + pc
                     val targetID = "#" + id(methodIndex, targetPC)
                     <span>
                         <span class="instruction goto_w">goto_w </span>
-                        <a href={ targetID } class="pc">{ targetPC }</a>
+                        <a href={targetID} class="pc">{targetPC}</a>
                     </span>
                 case 145 => <span class="instruction i2b">i2b</span>
                 case 146 => <span class="instruction i2c">i2c</span>
@@ -316,13 +309,13 @@ case class Code(instructions: Array[Byte]) {
                     }
                     <span>
                         <span class="instruction iinc">iinc </span>
-                        <span class="lv_index">{ lvIndex }</span>
-                        <span class="constant_value">{ increment }</span>
+                        <span class="lv_index">{lvIndex}</span>
+                        <span class="constant_value">{increment}</span>
                     </span>
                 case 21 =>
                     <span>
                         <span class="instruction iload">iload </span>
-                        <span class="lv_index">{ lvIndex }</span>
+                        <span class="lv_index">{lvIndex}</span>
                     </span>
                 case 26  => <span class="instruction iload_0">iload_0</span>
                 case 27  => <span class="instruction iload_1">iload_1</span>
@@ -333,7 +326,7 @@ case class Code(instructions: Array[Byte]) {
                 case 193 =>
                     <span>
                         <span class="instruction instanceof">instanceof </span>
-                        { asJavaReferenceType(in.readUnsignedShort()).asSpan("") }
+                        {asJavaReferenceType(in.readUnsignedShort()).asSpan("")}
                     </span>
                 case 186 =>
                     val c = in.readUnsignedShort()
@@ -342,7 +335,7 @@ case class Code(instructions: Array[Byte]) {
                     val signature = cp(c).asInstructionParameter
                     <span>
                         <span class="instruction invokedynamic">invokedynamic </span>
-                        { signature }
+                        {signature}
                     </span>
                 case 185 =>
                     val c = in.readUnsignedShort()
@@ -350,29 +343,29 @@ case class Code(instructions: Array[Byte]) {
                     in.readByte // ignored; fixed value
                     val signature = cp(c).asInstructionParameter
                     <span>
-                        <span class="instruction invokeinterface">invokeinterface (nargs={ count })</span>
-                        { signature }
+                        <span class="instruction invokeinterface">invokeinterface (nargs={count})</span>
+                        {signature}
                     </span>
                 case 183 =>
                     val c = in.readUnsignedShort()
                     val signature = cp(c).asInstructionParameter
                     <span>
                         <span class="instruction invokespecial">invokespecial </span>
-                        { signature }
+                        {signature}
                     </span>
                 case 184 =>
                     val c = in.readUnsignedShort()
                     val signature = cp(c).asInstructionParameter
                     <span>
                         <span class="instruction invokestatic">invokestatic  </span>
-                        { signature }
+                        {signature}
                     </span>
                 case 182 =>
                     val c = in.readUnsignedShort()
                     val signature = cp(c).asInstructionParameter
                     <span>
                         <span class="instruction invokevirtual">invokevirtual </span>
-                        { signature }
+                        {signature}
                     </span>
                 case 128 => <span class="instruction ior">ior</span>
                 case 112 => <span class="instruction irem">irem</span>
@@ -382,7 +375,7 @@ case class Code(instructions: Array[Byte]) {
                 case 54 =>
                     <span>
                         <span class="instruction istore">istore </span>
-                        <span class="lv_index">{ lvIndex }</span>
+                        <span class="lv_index">{lvIndex}</span>
                     </span>
                 case 59  => <span class="instruction istore_0">istore_0</span>
                 case 60  => <span class="instruction istore_1">istore_1</span>
@@ -396,14 +389,14 @@ case class Code(instructions: Array[Byte]) {
                     val targetID = "#" + id(methodIndex, targetPC)
                     <span>
                         <span class="instruction jsr">jsr </span>
-                        <a href={ targetID } class="pc">{ targetPC }</a>
+                        <a href={targetID} class="pc">{targetPC}</a>
                     </span>
                 case 201 =>
                     val targetPC = in.readInt + pc
                     val targetID = "#" + id(methodIndex, targetPC)
                     <span>
                         <span class="instruction jsr_w">jsr_w </span>
-                        <a href={ targetID } class="pc">{ targetPC }</a>
+                        <a href={targetID} class="pc">{targetPC}</a>
                     </span>
                 case 138 => <span class="instruction l2d">l2d</span>
                 case 137 => <span class="instruction l2d">l2f</span>
@@ -423,7 +416,7 @@ case class Code(instructions: Array[Byte]) {
                         }
                     <span>
                         <span class="instruction ldc">ldc </span>
-                        <span class="constant_value">{ constantValue }</span>
+                        <span class="constant_value">{constantValue}</span>
                     </span>
                 case 19 =>
                     val constantValue =
@@ -433,19 +426,19 @@ case class Code(instructions: Array[Byte]) {
                         }
                     <span>
                         <span class="instruction ldc_w">ldc_w </span>
-                        <span class="constant_value">{ constantValue }</span>
+                        <span class="constant_value">{constantValue}</span>
                     </span>
                 case 20 =>
                     val constantValue = cp(in.readUnsignedShort).asInstructionParameter
                     <span>
                         <span class="instruction ldc2_w">ldc2_w </span>
-                        <span class="constant_value">{ constantValue }</span>
+                        <span class="constant_value">{constantValue}</span>
                     </span>
                 case 109 => <span class="instruction ldiv">ldiv</span>
                 case 22 =>
                     <span>
                         <span class="instruction lload">lload </span>
-                        <span class="lv_index">{ lvIndex }</span>
+                        <span class="lv_index">{lvIndex}</span>
                     </span>
                 case 30  => <span class="instruction lload_0">lload_0</span>
                 case 31  => <span class="instruction lload_1">lload_1</span>
@@ -462,13 +455,15 @@ case class Code(instructions: Array[Byte]) {
                     repeat(npairsCount) {
                         table.append("(case:" + in.readInt + "," + (in.readInt + pc) + ") ")
                     }
-                    <span><span class="instruction lookupswitch">lookupswitch </span>default:{ defaultTarget } [{ table }]</span>
+                    <span><span class="instruction lookupswitch">lookupswitch </span>default:{defaultTarget} [{
+                        table
+                    }]</span>
                 case 129 => <span class="instruction lor">lor</span>
                 case 113 => <span class="instruction lrem">lrem</span>
                 case 173 => <span class="instruction lreturn">lreturn</span>
                 case 121 => <span class="instruction lshl">lshl</span>
                 case 123 => <span class="instruction lshr">lshr</span>
-                case 55  => <span><span class="instruction lstore">lstore </span>{ lvIndex }</span>
+                case 55  => <span><span class="instruction lstore">lstore </span>{lvIndex}</span>
                 case 63  => <span class="instruction lstore_0">lstore_0</span>
                 case 64  => <span class="instruction lstore_1">lstore_1</span>
                 case 65  => <span class="instruction lstore_2">lstore_2</span>
@@ -483,27 +478,27 @@ case class Code(instructions: Array[Byte]) {
                     val dim = in.readUnsignedByte
                     <span>
                         <span class="instruction multianewarray">multianewarray </span>
-                        { referenceType.asSpan("") }{ dim }
+                        {referenceType.asSpan("")}{dim}
                     </span>
                 case 187 =>
                     val objectType = asJavaObjectType(in.readUnsignedShort())
                     <span>
                         <span class="instruction new">new </span>
-                        { objectType.asSpan("") }
+                        {objectType.asSpan("")}
                     </span>
                 case 188 =>
                     <span>
                         <span class="instruction newarray">newarray </span>
                         {
                             in.readByte match {
-                                case 4=> "T_BOOLEAN (4)"
-                                case 5=> "T_CHAR (5)"
-                                case 6=> "T_FLOAT (6)"
-                                case 7=> "T_DOUBLE (7)"
-                                case 8=> "T_BYTE (8)"
-                                case 9=> "T_SHORT (9)"
-                                case 10=> "T_INT (10)"
-                                case 11=> "T_LONG (11)"
+                                case 4  => "T_BOOLEAN (4)"
+                                case 5  => "T_CHAR (5)"
+                                case 6  => "T_FLOAT (6)"
+                                case 7  => "T_DOUBLE (7)"
+                                case 8  => "T_BYTE (8)"
+                                case 9  => "T_SHORT (9)"
+                                case 10 => "T_INT (10)"
+                                case 11 => "T_LONG (11)"
                             }
                         }
                     </span>
@@ -513,15 +508,15 @@ case class Code(instructions: Array[Byte]) {
                 case 181 =>
                     val c = in.readUnsignedShort()
                     val signature = cp(c).asInstructionParameter
-                    <span><span class="instruction putfield">putfield </span>{ signature }</span>
+                    <span><span class="instruction putfield">putfield </span>{signature}</span>
                 case 179 =>
                     val c = in.readUnsignedShort()
                     val signature = cp(c).asInstructionParameter
-                    <span><span class="instruction putstatic">putstatic </span>{ signature }</span>
+                    <span><span class="instruction putstatic">putstatic </span>{signature}</span>
                 case 169 =>
                     <span>
                         <span class="instruction ret">ret </span>
-                        <span class="lv_index">{ lvIndex }</span>
+                        <span class="lv_index">{lvIndex}</span>
                     </span>
                 case 177 => <span class="instruction return">return</span>
                 case 53  => <span class="instruction saload">saload</span>
@@ -529,7 +524,7 @@ case class Code(instructions: Array[Byte]) {
                 case 17 =>
                     <span>
                         <span class="instruction sipush">sipush </span>
-                        <span class="constant_value">{ in.readShort /* value */ }</span>
+                        <span class="constant_value">{in.readShort /* value */}</span>
                     </span>
                 case 95 => <span class="instruction swap">swap</span>
                 case 170 =>
@@ -548,7 +543,9 @@ case class Code(instructions: Array[Byte]) {
                         switchTargets.append("(case " + (low + offsetcounter) + " &rarr; " + target + ") ")
                         offsetcounter += 1;
                     }
-                    <span><span class="instruction tableswitch">tableswitch </span>default &rarr; { Unparsed(defaultTarget) }; { Unparsed(switchTargets.toString) }</span>
+                    <span><span class="instruction tableswitch">tableswitch </span>default &rarr; {
+                        Unparsed(defaultTarget)
+                    }; {Unparsed(switchTargets.toString)}</span>
                 case 196 =>
                     wide = true
                     <span class="instruction wide">wide</span>
@@ -564,8 +561,7 @@ case class Code(instructions: Array[Byte]) {
         instructions:   Array[Node],
         exceptionTable: ExceptionTable
     )(
-        implicit
-        cp: Constant_Pool
+        implicit cp: Constant_Pool
     ): Array[Array[Node]] = {
         val exceptions: Array[Array[Node]] = new Array(exceptionTable.size)
         for { (exceptionHandler, index) <- exceptionTable.iterator.zipWithIndex } {
@@ -610,18 +606,23 @@ case class Code(instructions: Array[Byte]) {
             else
                 exceptions(index)(exceptionHandler.handler_pc) =
                     <td class="exception">
-                        <div title={ exceptionName } class="exception_handler" alt="the start of the exception handler"></div>
+                        <div title={
+                            exceptionName
+                        } class="exception_handler" alt="the start of the exception handler"></div>
                     </td>
 
             exceptions(index)(exceptionPCStart) =
-                <td rowspan={ exceptionPCLength.toString } class="exception">
-                    <span data-exception-index={ (index + 1).toString } alt="the ranges in the code array at which the exception handler is active">{ exceptionName }</span>
-                    <div class={ classes } title={ exceptionName }> </div>
+                <td rowspan={exceptionPCLength.toString} class="exception">
+                    <span data-exception-index={
+                        (index + 1).toString
+                    } alt="the ranges in the code array at which the exception handler is active">{exceptionName}</span>
+                    <div class={classes} title={exceptionName}> </div>
                 </td>
         }
         exceptions
     }
 }
+
 object Code {
 
     def id(methodIndex: Int, pc: Int): String = s"m${methodIndex}_pc$pc"

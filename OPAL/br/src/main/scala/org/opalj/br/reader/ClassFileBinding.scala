@@ -62,7 +62,9 @@ trait ClassFileBinding extends ClassFileReader {
         attributes:        Attributes
     ): ClassFile = {
         br.ClassFile.reify(
-            minor_version, major_version, access_flags,
+            minor_version,
+            major_version,
+            access_flags,
             cp(this_class_index).asObjectType(cp),
             // to handle the special case that this class file represents java.lang.Object
             {
@@ -93,9 +95,7 @@ trait ClassFileBinding extends ClassFileReader {
             val newAttributes = classFile.attributes.filterNot { a =>
                 if (a.kindId == SynthesizedClassFiles.KindId) {
                     val SynthesizedClassFiles(synthesizedClassFiles) = a
-                    synthesizedClassFiles.foreach { cfAndReason =>
-                        classFilesToProcess ::= cfAndReason._1
-                    }
+                    synthesizedClassFiles.foreach { cfAndReason => classFilesToProcess ::= cfAndReason._1 }
                     hasSynthesizedClassFilesAttribute = true
                     true
                 } else {
@@ -128,7 +128,8 @@ trait ClassFileBinding extends ClassFileReader {
             val attributes = classFile.attributes
             if (classFile.majorVersion > 50 /* <=> does not have BootstrapMethodTable*/ &&
                 attributes.nonEmpty &&
-                attributes.exists(_.kindId == BootstrapMethodTable.KindId)) {
+                attributes.exists(_.kindId == BootstrapMethodTable.KindId)
+            ) {
                 val newAttributes = attributes.filter(_.kindId != BootstrapMethodTable.KindId)
                 updatedClassFiles ::= classFile._UNSAFE_replaceAttributes(newAttributes)
             } else {
@@ -138,8 +139,10 @@ trait ClassFileBinding extends ClassFileReader {
         updatedClassFiles
     }
 
-    /* EXECUTED SECOND */ registerClassFilePostProcessor(removeBootstrapMethodAttribute)
-    /* EXECUTED FIRST  */ registerClassFilePostProcessor(extractSynthesizedClassFiles)
+    /* EXECUTED SECOND */
+    registerClassFilePostProcessor(removeBootstrapMethodAttribute)
+    /* EXECUTED FIRST  */
+    registerClassFilePostProcessor(extractSynthesizedClassFiles)
 }
 
 object ClassFileBinding {

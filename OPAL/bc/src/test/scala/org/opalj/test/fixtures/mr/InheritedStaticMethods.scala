@@ -72,21 +72,24 @@ object InheritedStaticMethods extends App {
         minor_version = 0,
         major_version = 52,
         access_flags = ACC_PUBLIC.mask | ACC_SUPER.mask,
-        this_class = 1 /*Test*/ ,
-        super_class = 3 /*extends java.lang.Object*/ ,
+        this_class = 1 /*Test*/,
+        super_class = 3 /*extends java.lang.Object*/,
         // Interfaces.empty,
         // Fields.empty,
         methods = ArraySeq(
             // default constructor
             Method_Info(
                 access_flags = ACC_PUBLIC.mask,
-                name_index = 5, descriptor_index = 6,
+                name_index = 5,
+                descriptor_index = 6,
                 attributes = ArraySeq(
                     Code_attribute(
-                        attribute_name_index = 7, max_stack = 1, max_locals = 1,
+                        attribute_name_index = 7,
+                        max_stack = 1,
+                        max_locals = 1,
                         code =
                             new Code(
-                                Array[Byte](42, (0xff & 183).toByte, 0, 8, (0xff & 177).toByte)
+                                Array[Byte](42, (0xFF & 183).toByte, 0, 8, (0xFF & 177).toByte)
                             )
                     )
                 )
@@ -97,13 +100,19 @@ object InheritedStaticMethods extends App {
                 descriptor_index = 15,
                 attributes = ArraySeq(
                     Code_attribute(
-                        attribute_name_index = 7, max_stack = 0, max_locals = 1,
+                        attribute_name_index = 7,
+                        max_stack = 0,
+                        max_locals = 1,
                         code =
                             new Code(
                                 Array[Byte](
-                                    (0xff & 184).toByte, 0, 24, // invokestatic #24 (SubX.m())
-                                    (0xff & 184).toByte, 0, 10, // invokestatic #24 (SubIntf.m())
-                                    (0xff & 177).toByte // return
+                                    (0xFF & 184).toByte,
+                                    0,
+                                    24, // invokestatic #24 (SubX.m())
+                                    (0xFF & 184).toByte,
+                                    0,
+                                    10, // invokestatic #24 (SubIntf.m())
+                                    (0xFF & 177).toByte // return
                                 )
                             )
                     )

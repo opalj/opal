@@ -154,81 +154,88 @@ trait Module_attributeReader extends AttributeReader {
      * </pre>
      */
     private[this] def parserFactory() = (
-        cp: Constant_Pool,
-        ap: AttributeParent,
-        ap_name_index: Constant_Pool_Index,
-        ap_descriptor_index: Constant_Pool_Index,
+        cp:                   Constant_Pool,
+        ap:                   AttributeParent,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
-        in: DataInputStream
-    ) => {
-        /*val attribute_length = */ in.readInt()
+        in:                   DataInputStream
+    ) =>
+        {
+            /*val attribute_length = */
+            in.readInt()
 
-        val name_index = in.readUnsignedShort()
-        val flags = in.readUnsignedShort()
-        val version_index = in.readUnsignedShort()
+            val name_index = in.readUnsignedShort()
+            val flags = in.readUnsignedShort()
+            val version_index = in.readUnsignedShort()
 
-        val requiresCount = in.readUnsignedShort()
-        val requires =
-            fillArraySeq(requiresCount) {
-                RequiresEntry(
-                    cp,
-                    in.readUnsignedShort(),
-                    in.readUnsignedShort(),
-                    in.readUnsignedShort()
-                )
-            }
+            val requiresCount = in.readUnsignedShort()
+            val requires =
+                fillArraySeq(requiresCount) {
+                    RequiresEntry(
+                        cp,
+                        in.readUnsignedShort(),
+                        in.readUnsignedShort(),
+                        in.readUnsignedShort()
+                    )
+                }
 
-        val exportsCount = in.readUnsignedShort()
-        val exports =
-            fillArraySeq(exportsCount) {
-                ExportsEntry(
-                    cp,
-                    in.readUnsignedShort(),
-                    in.readUnsignedShort(),
-                    {
-                        val exportsToCount = in.readUnsignedShort()
-                        fillArrayOfInt(exportsToCount) { in.readUnsignedShort() }
-                    }
-                )
-            }
+            val exportsCount = in.readUnsignedShort()
+            val exports =
+                fillArraySeq(exportsCount) {
+                    ExportsEntry(
+                        cp,
+                        in.readUnsignedShort(),
+                        in.readUnsignedShort(), {
+                            val exportsToCount = in.readUnsignedShort()
+                            fillArrayOfInt(exportsToCount) { in.readUnsignedShort() }
+                        }
+                    )
+                }
 
-        val opensCount = in.readUnsignedShort()
-        val opens =
-            fillArraySeq(opensCount) {
-                OpensEntry(
-                    cp,
-                    in.readUnsignedShort(),
-                    in.readUnsignedShort(),
-                    {
-                        val opensToCount = in.readUnsignedShort()
-                        fillArrayOfInt(opensToCount) { in.readUnsignedShort() }
-                    }
-                )
-            }
+            val opensCount = in.readUnsignedShort()
+            val opens =
+                fillArraySeq(opensCount) {
+                    OpensEntry(
+                        cp,
+                        in.readUnsignedShort(),
+                        in.readUnsignedShort(), {
+                            val opensToCount = in.readUnsignedShort()
+                            fillArrayOfInt(opensToCount) { in.readUnsignedShort() }
+                        }
+                    )
+                }
 
-        val usesCount = in.readUnsignedShort()
-        val uses = fillArrayOfInt(usesCount) { in.readUnsignedShort() }
+            val usesCount = in.readUnsignedShort()
+            val uses = fillArrayOfInt(usesCount) { in.readUnsignedShort() }
 
-        val providesCount = in.readUnsignedShort()
-        val provides =
-            fillArraySeq(providesCount) {
-                ProvidesEntry(
-                    cp,
-                    in.readUnsignedShort(),
-                    {
-                        val providesWithCount = in.readUnsignedShort()
-                        fillArrayOfInt(providesWithCount) { in.readUnsignedShort() }
-                    }
-                )
-            }
+            val providesCount = in.readUnsignedShort()
+            val provides =
+                fillArraySeq(providesCount) {
+                    ProvidesEntry(
+                        cp,
+                        in.readUnsignedShort(), {
+                            val providesWithCount = in.readUnsignedShort()
+                            fillArrayOfInt(providesWithCount) { in.readUnsignedShort() }
+                        }
+                    )
+                }
 
-        Module_attribute(
-            cp,
-            ap_name_index, ap_descriptor_index,
-            attribute_name_index,
-            name_index, flags, version_index, requires, exports, opens, uses, provides
-        )
-    }: Attribute
+            Module_attribute(
+                cp,
+                ap_name_index,
+                ap_descriptor_index,
+                attribute_name_index,
+                name_index,
+                flags,
+                version_index,
+                requires,
+                exports,
+                opens,
+                uses,
+                provides
+            )
+        }: Attribute
 
     registerAttributeReader(ModuleAttribute.Name -> parserFactory())
 }

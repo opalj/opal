@@ -56,28 +56,32 @@ object StaticAndDefaultInterfaceMethods extends App {
             /* 16 */ CONSTANT_Utf8("println"),
             /* 17 */ CONSTANT_Utf8("(Ljava/lang/String;)V")
         ),
-        minor_version = 0, major_version = 52,
+        minor_version = 0,
+        major_version = 52,
         access_flags = ACC_INTERFACE.mask | ACC_ABSTRACT.mask,
-        this_class = 1 /*mr/SuperIntf*/ , super_class = 3 /*extends java.lang.Object*/ ,
+        this_class = 1 /*mr/SuperIntf*/,
+        super_class = 3 /*extends java.lang.Object*/,
         // Interfaces.empty,
         // Fields.empty,
         methods = ArraySeq(
             Method_Info(
                 access_flags = ACC_PUBLIC.mask,
-                name_index = 7, descriptor_index = 8,
+                name_index = 7,
+                descriptor_index = 8,
                 attributes = ArraySeq(
                     Code_attribute(
                         attribute_name_index = 9,
-                        max_stack = 1, max_locals = 1,
+                        max_stack = 1,
+                        max_locals = 1,
                         code =
                             new Code(
                                 Array[Byte](
                                     18, // ldc
                                     10, // #10
-                                    (0xff & 184).toByte, // invokestatic
+                                    (0xFF & 184).toByte, // invokestatic
                                     0, // -> Methodref
                                     12, // #12
-                                    (0xff & 177).toByte // return
+                                    (0xFF & 177).toByte // return
                                 )
                             )
                     )
@@ -86,7 +90,8 @@ object StaticAndDefaultInterfaceMethods extends App {
         )
     )
     val assembledSuperIntf = Assembler(superIntfCF)
-    val assembledSuperIntfPath = Paths.get("OPAL/bc/src/test/resources/StaticAndDefaultInterfaceMethods/mr/SuperIntf.class")
+    val assembledSuperIntfPath =
+        Paths.get("OPAL/bc/src/test/resources/StaticAndDefaultInterfaceMethods/mr/SuperIntf.class")
     val assembledSuperIntfFile = Files.write(assembledSuperIntfPath, assembledSuperIntf)
     println("Created class file: " + assembledSuperIntfFile.toAbsolutePath())
 
@@ -111,27 +116,31 @@ object StaticAndDefaultInterfaceMethods extends App {
             /* 16 */ CONSTANT_Utf8("println"),
             /* 17 */ CONSTANT_Utf8("(Ljava/lang/String;)V")
         ),
-        minor_version = 0, major_version = 52,
+        minor_version = 0,
+        major_version = 52,
         access_flags = ACC_INTERFACE.mask | ACC_ABSTRACT.mask,
-        this_class = 1 /*mr/Intf*/ , super_class = 3 /*extends java.lang.Object*/ ,
-        interfaces = ArraySeq(5) /*mr/SuperIntf*/ ,
+        this_class = 1 /*mr/Intf*/,
+        super_class = 3 /*extends java.lang.Object*/,
+        interfaces = ArraySeq(5) /*mr/SuperIntf*/,
         // Fields.empty,
         methods = ArraySeq(
             Method_Info(
                 access_flags = ACC_PUBLIC.mask | ACC_STATIC.mask,
-                name_index = 7, descriptor_index = 8,
+                name_index = 7,
+                descriptor_index = 8,
                 attributes = ArraySeq(
                     Code_attribute(
                         attribute_name_index = 9,
-                        max_stack = 1, max_locals = 1,
+                        max_stack = 1,
+                        max_locals = 1,
                         code = new Code(
                             Array[Byte](
                                 18, // ldc
                                 10, // #10
-                                (0xff & 184).toByte, // invokestatic
+                                (0xFF & 184).toByte, // invokestatic
                                 0, // -> Methodref
                                 12, //    #12
-                                (0xff & 177).toByte // return
+                                (0xFF & 177).toByte // return
                             )
                         )
                     )
@@ -154,9 +163,11 @@ object StaticAndDefaultInterfaceMethods extends App {
             /*  5 */ CONSTANT_Class_info(6),
             /*  6 */ CONSTANT_Utf8("mr/Intf")
         ),
-        minor_version = 0, major_version = 52,
+        minor_version = 0,
+        major_version = 52,
         access_flags = ACC_INTERFACE.mask | ACC_ABSTRACT.mask,
-        this_class = 1 /*mr/SubIntf*/ , super_class = 3 /*extends java.lang.Object*/ ,
+        this_class = 1 /*mr/SubIntf*/,
+        super_class = 3 /*extends java.lang.Object*/,
         interfaces = ArraySeq(5) // mr/Intf
     )
     val assembledSubIntf = Assembler(subIntfCF)

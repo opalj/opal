@@ -13,7 +13,7 @@ trait CompoundConditionalBranchInstructionLike extends ConditionalBranchInstruct
 
     override def operandCount: Int = 1
 
-    final override def stackSlotsChange: Int = -1
+    override final def stackSlotsChange: Int = -1
 
     /**
      * Returns all case values that are '''not related to the default branch'''.
@@ -26,8 +26,8 @@ trait CompoundConditionalBranchInstruction
     extends ConditionalBranchInstruction
     with CompoundConditionalBranchInstructionLike {
 
-    final override def isCompoundConditionalBranchInstruction: Boolean = true
-    final override def asCompoundConditionalBranchInstruction: this.type = this
+    override final def isCompoundConditionalBranchInstruction: Boolean = true
+    override final def asCompoundConditionalBranchInstruction: this.type = this
 
     def defaultOffset: Int
 
@@ -35,7 +35,7 @@ trait CompoundConditionalBranchInstruction
     def jumpOffsets: Iterable[Int]
 
     // IMPROVE Use IntIterable or IntIterator for the return value.
-    final override def jumpTargets(
+    override final def jumpTargets(
         currentPC: PC
     )(
         implicit

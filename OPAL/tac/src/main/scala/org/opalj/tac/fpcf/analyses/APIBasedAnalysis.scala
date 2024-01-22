@@ -40,7 +40,10 @@ trait APIBasedAnalysis extends FPCFAnalysis with ContextualAnalysis {
     implicit val declaredMethods: DeclaredMethods = p.get(DeclaredMethodsKey)
 
     def handleNewCaller(
-        calleeContext: ContextType, callerContext: ContextType, pc: Int, isDirect: Boolean
+        calleeContext: ContextType,
+        callerContext: ContextType,
+        pc:            Int,
+        isDirect:      Boolean
     ): ProperPropertyComputationResult
 
     final def registerAPIMethod(): ProperPropertyComputationResult = {

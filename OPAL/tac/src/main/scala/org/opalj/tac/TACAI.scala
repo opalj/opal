@@ -127,7 +127,11 @@ object TACAI {
         aiResult:           AIResult { val domain: Domain with RecordDefUse },
         propagateConstants: Boolean
     )(
-        optimizations: List[TACOptimization[TACMethodParameter, DUVar[aiResult.domain.DomainValue], AITACode[TACMethodParameter, aiResult.domain.DomainValue]]]
+        optimizations: List[TACOptimization[
+            TACMethodParameter,
+            DUVar[aiResult.domain.DomainValue],
+            AITACode[TACMethodParameter, aiResult.domain.DomainValue]
+        ]]
     ): AITACode[TACMethodParameter, aiResult.domain.DomainValue] = {
 
         if (aiResult.wasAborted)
@@ -228,7 +232,7 @@ object TACAI {
 
         def killOperandBasedUsages(useSitePC: Int, valuesCount: Int): Unit = {
             if (valuesCount == 0)
-                return ;
+                return;
 
             // The value(s) is (are) not used and the expression is side effect free;
             // we now have to kill the usages to avoid "wrong" links.
@@ -264,7 +268,7 @@ object TACAI {
             ehs.foreach(eh => handlerPCs += eh.handlerPC)
             handlerPCs.result()
         }
-        */
+         */
         val handlerPCs: Array[Boolean] = new Array(codeSize)
         code.exceptionHandlers.foreach(eh => handlerPCs(eh.handlerPC) = true)
 
@@ -309,7 +313,7 @@ object TACAI {
                 if (addExceptionHandlerInitializer)
                     // We do not have to add the NOP, because the code to initialize the
                     // variable which references the exception is already added.
-                    return ;
+                    return;
 
                 // We only add a NOP if it is the first instruction of a basic block since
                 // we want to ensure that we don't have to rewrite the CFG during the initial
@@ -540,7 +544,8 @@ object TACAI {
                     // the if falls through. In this case the block may end with, e.g., a return
                     // instruction, and therefore the successor is the ExitNode.
                     if (successorPC == nextPC ||
-                        /*jump over a bunch of dead code */ allDead(nextPC, successorPC)) {
+                        /*jump over a bunch of dead code */ allDead(nextPC, successorPC)
+                    ) {
                         // This "if" always either falls through or "jumps" to the next
                         // instruction ... => replace it by a NOP
                         addNOPAndKillOperandBasedUsages(1)
@@ -638,7 +643,7 @@ object TACAI {
                 case DCMPL.opcode | FCMPL.opcode => compareValues(CMPL)
                 case LCMP.opcode                 => compareValues(CMP)
 
-                case SWAP.opcode                 => addNOP(pc)
+                case SWAP.opcode => addNOP(pc)
 
                 case DADD.opcode | FADD.opcode | IADD.opcode | LADD.opcode =>
                     binaryArithmeticOperation(Add)
@@ -694,9 +699,7 @@ object TACAI {
                     loadConstant(as[LoadConstantInstruction[_]](instruction))
 
                 case INVOKEINTERFACE.opcode | INVOKESPECIAL.opcode | INVOKEVIRTUAL.opcode =>
-                    val call @ MethodInvocationInstruction(
-                        declClass, isInterface,
-                        name, descriptor) = instruction
+                    val call @ MethodInvocationInstruction(declClass, isInterface, name, descriptor) = instruction
                     val parametersCount = descriptor.parametersCount
                     val params = useOperands(parametersCount).reverse
                     val receiver = operandUse(parametersCount) // this is the self reference
@@ -705,14 +708,20 @@ object TACAI {
                         if (call.isVirtualMethodCall)
                             addStmt(VirtualMethodCall(
                                 pc,
-                                declClass, isInterface, name, descriptor,
+                                declClass,
+                                isInterface,
+                                name,
+                                descriptor,
                                 receiver,
                                 params
                             ))
                         else
                             addStmt(NonVirtualMethodCall(
                                 pc,
-                                declClass.asObjectType, isInterface, name, descriptor,
+                                declClass.asObjectType,
+                                isInterface,
+                                name,
+                                descriptor,
                                 receiver,
                                 params
                             ))
@@ -721,14 +730,20 @@ object TACAI {
                             if (call.isVirtualMethodCall)
                                 VirtualFunctionCall(
                                     pc,
-                                    declClass, isInterface, name, descriptor,
+                                    declClass,
+                                    isInterface,
+                                    name,
+                                    descriptor,
                                     receiver,
                                     params
                                 )
                             else
                                 NonVirtualFunctionCall(
                                     pc,
-                                    declClass.asObjectType, isInterface, name, descriptor,
+                                    declClass.asObjectType,
+                                    isInterface,
+                                    name,
+                                    descriptor,
                                     receiver,
                                     params
                                 )
@@ -748,7 +763,10 @@ object TACAI {
                         val staticCall =
                             StaticMethodCall(
                                 pc,
-                                declaringClass, isInterface, name, descriptor,
+                                declaringClass,
+                                isInterface,
+                                name,
+                                descriptor,
                                 params
                             )
                         addStmt(staticCall)
@@ -756,7 +774,10 @@ object TACAI {
                         val expr =
                             StaticFunctionCall(
                                 pc,
-                                declaringClass, isInterface, name, descriptor,
+                                declaringClass,
+                                isInterface,
+                                name,
+                                descriptor,
                                 params
                             )
                         if (wasExecuted(nextPC)) {
@@ -899,9 +920,7 @@ object TACAI {
                     val index = operandUse(0)
                     val lookupSwitch = as[LOOKUPSWITCH](instruction)
                     val defaultTarget = pc + lookupSwitch.defaultOffset
-                    val npairs = lookupSwitch.npairs.map[IntIntPair] { npair =>
-                        npair.incrementValue(increment = pc)
-                    }
+                    val npairs = lookupSwitch.npairs.map[IntIntPair] { npair => npair.incrementValue(increment = pc) }
                     addStmt(Switch(pc, defaultTarget, index, npairs))
                 // FIXME  see general comment
 
@@ -916,9 +935,9 @@ object TACAI {
                 case I2B.opcode                           => primitiveCastOperation(ByteType)
                 case I2S.opcode                           => primitiveCastOperation(ShortType)
 
-                case ATHROW.opcode                        => addStmt(Throw(pc, operandUse(0)))
+                case ATHROW.opcode => addStmt(Throw(pc, operandUse(0)))
 
-                case WIDE.opcode                          => addNOP(pc)
+                case WIDE.opcode => addNOP(pc)
 
                 case opcode =>
                     throw BytecodeProcessingFailedException(s"unknown opcode: $opcode")
@@ -1019,7 +1038,7 @@ object TACAI {
                     // we have an obsolete exception usage; see
                     //      ai.MethodsWithexceptoins.nestedTryFinally()
                     // for an example which has dead code that leads to an obsolete exception usage
-                    */
+                     */
                     ;
                 }
             }
@@ -1064,7 +1083,11 @@ object TACAI {
             )
         val tacExceptionHandlers = updateExceptionHandlers(pcToIndex)(aiResult)
         val initialTAC = new AITACode[TACMethodParameter, ValueInformation](
-            tacParams, tacStmts, pcToIndex, tacCFG, tacExceptionHandlers
+            tacParams,
+            tacStmts,
+            pcToIndex,
+            tacCFG,
+            tacExceptionHandlers
         )
 
         // Potential Optimizations
@@ -1109,7 +1132,11 @@ object TACAI {
         // HOWEVER, THIS IS NOT DIRECTLY OBVIOUS FROM THE ABOVE CODE!
 
         if (optimizations.nonEmpty) {
-            val base = TACOptimizationResult[TACMethodParameter, DUVar[aiResult.domain.DomainValue], AITACode[TACMethodParameter, aiResult.domain.DomainValue]](initialTAC, wasTransformed = false)
+            val base = TACOptimizationResult[
+                TACMethodParameter,
+                DUVar[aiResult.domain.DomainValue],
+                AITACode[TACMethodParameter, aiResult.domain.DomainValue]
+            ](initialTAC, wasTransformed = false)
             val result = optimizations.foldLeft(base)((tac, optimization) => optimization(tac))
             result.code
         } else {

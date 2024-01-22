@@ -26,9 +26,9 @@ object CountOverridingMethods extends AnalysisApplication {
             isInterrupted: () => Boolean
         ) = {
             val overridingMethodsInfo =
-                project.overridingMethods.view.
-                    map(ms => (ms._1, ms._2 - ms._1)).
-                    filter(_._2.nonEmpty).map { ms =>
+                project.overridingMethods.view
+                    .map(ms => (ms._1, ms._2 - ms._1))
+                    .filter(_._2.nonEmpty).map { ms =>
                         val (method, allOverridingMethods) = ms
                         val overridingMethods = allOverridingMethods.map(m => m.classFile.fqn)
                         (method, (overridingMethods, overridingMethods.size))

@@ -4,17 +4,17 @@ package tac
 
 import java.io.File
 
+import org.junit.runner.RunWith
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
+
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.analyses.Project
 import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.util.PerformanceEvaluation.time
 
 import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParallelizable
-
-import org.junit.runner.RunWith
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.matchers.should.Matchers
-import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests that all methods of the JDK can be converted to a three address representation.
@@ -29,7 +29,7 @@ class TACNaiveIntegrationTest extends AnyFunSpec with Matchers {
     val biClassfilesFolder: File = locateTestResources("classfiles", "bi")
 
     def checkFolder(folder: File): Unit = {
-        if (Thread.currentThread().isInterrupted) return ;
+        if (Thread.currentThread().isInterrupted) return;
 
         var errors: List[(String, Throwable)] = Nil
         val successfullyCompleted = new java.util.concurrent.atomic.AtomicInteger(0)
@@ -55,27 +55,27 @@ class TACNaiveIntegrationTest extends AnyFunSpec with Matchers {
                 ToTxt(params, tacNaiveCode, cfg, true, true, true)
             } catch {
                 case e: Throwable => this.synchronized {
-                    val methodSignature = m.toJava
-                    mutex.synchronized {
-                        println(methodSignature + " - size: " + body.instructions.length)
-                        e.printStackTrace(Console.out)
-                        if (e.getCause != null) {
-                            println("\tcause:")
-                            e.getCause.printStackTrace()
+                        val methodSignature = m.toJava
+                        mutex.synchronized {
+                            println(methodSignature + " - size: " + body.instructions.length)
+                            e.printStackTrace(Console.out)
+                            if (e.getCause != null) {
+                                println("\tcause:")
+                                e.getCause.printStackTrace()
+                            }
+                            println(
+                                body.instructions.zipWithIndex.filter(_._1 != null).map(_.swap).mkString(
+                                    "Instructions:\n\t",
+                                    "\n\t",
+                                    "\n"
+                                )
+                            )
+                            println(
+                                body.exceptionHandlers.mkString("Exception Handlers:\n\t", "\n\t", "\n")
+                            )
+                            errors = (s"$file:$methodSignature", e) :: errors
                         }
-                        println(
-                            body.instructions.
-                                zipWithIndex.
-                                filter(_._1 != null).
-                                map(_.swap).
-                                mkString("Instructions:\n\t", "\n\t", "\n")
-                        )
-                        println(
-                            body.exceptionHandlers.mkString("Exception Handlers:\n\t", "\n\t", "\n")
-                        )
-                        errors = (s"$file:$methodSignature", e) :: errors
                     }
-                }
             }
             successfullyCompleted.incrementAndGet()
         }

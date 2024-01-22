@@ -31,7 +31,8 @@ trait TypeAnnotationsBinding
     type TypeAnnotationPath = br.TypeAnnotationPath
 
     type TypeAnnotationPathElement = br.TypeAnnotationPathElement
-    override implicit val typeAnnotationPathElementType: ClassTag[TypeAnnotationPathElement] = ClassTag(classOf[br.TypeAnnotationPathElement])
+    override implicit val typeAnnotationPathElementType: ClassTag[TypeAnnotationPathElement] =
+        ClassTag(classOf[br.TypeAnnotationPathElement])
 
     type LocalvarTableEntry = br.LocalvarTableEntry
     override implicit val localvarTableEntryType: ClassTag[LocalvarTableEntry] = ClassTag(classOf[br.LocalvarTableEntry])
@@ -54,7 +55,7 @@ trait TypeAnnotationsBinding
     // TypeAnnotationTarget
     //
 
-    //______________________________
+    // ______________________________
     // type_parameter_target
     override def ParameterDeclarationOfClassOrInterface(
         type_parameter_index: Int
@@ -68,14 +69,14 @@ trait TypeAnnotationsBinding
         TAOfParameterDeclarationOfMethodOrConstructor(type_parameter_index)
     }
 
-    //______________________________
+    // ______________________________
     // supertype_target
     override def SupertypeTarget(
         supertype_index: Int
     ): TAOfSupertype = {
         TAOfSupertype(supertype_index)
     }
-    //______________________________
+    // ______________________________
     // type_parameter_bound_target
     override def TypeBoundOfParameterDeclarationOfClassOrInterface(
         type_parameter_index: Int,
@@ -97,7 +98,7 @@ trait TypeAnnotationsBinding
         )
     }
 
-    //______________________________
+    // ______________________________
     // empty_target
     override def FieldDeclaration: TAOfFieldDeclaration.type = TAOfFieldDeclaration
 
@@ -105,21 +106,21 @@ trait TypeAnnotationsBinding
 
     override def ReceiverType: TAOfReceiverType.type = TAOfReceiverType
 
-    //______________________________
+    // ______________________________
     // formal_parameter_target
     override def FormalParameter(formal_parameter_index: Int): TAOfFormalParameter = {
         TAOfFormalParameter(formal_parameter_index)
     }
 
-    //______________________________
+    // ______________________________
     // throws_target
     override def Throws(throws_type_index: Int): TAOfThrows = TAOfThrows(throws_type_index)
 
-    //______________________________
+    // ______________________________
     // catch_target
     override def Catch(exception_table_index: Int): TAOfCatch = TAOfCatch(exception_table_index)
 
-    //______________________________
+    // ______________________________
     // localvar_target
 
     override def LocalvarTableEntry(
@@ -138,7 +139,7 @@ trait TypeAnnotationsBinding
         TAOfResourcevarDecl(localVarTable)
     }
 
-    //______________________________
+    // ______________________________
     // offset_target
     override def InstanceOf(offset: Int): TAOfInstanceOf = TAOfInstanceOf(offset)
 
@@ -156,7 +157,7 @@ trait TypeAnnotationsBinding
         TAOfMethodReferenceExpressionIdentifier(offset)
     }
 
-    //______________________________
+    // ______________________________
     // type_arguement_target
     override def CastExpression(
         offset:              Int,

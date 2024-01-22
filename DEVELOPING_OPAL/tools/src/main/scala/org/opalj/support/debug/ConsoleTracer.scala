@@ -137,7 +137,7 @@ trait ConsoleTracer extends AITracer { tracer =>
         alreadyEvaluatedPCs:              IntArrayStack,
         operandsArray:                    domain.OperandsArray,
         localsArray:                      domain.LocalsArray,
-        memoryLayoutBeforeSubroutineCall: List[(Int /*PC*/ , domain.OperandsArray, domain.LocalsArray)]
+        memoryLayoutBeforeSubroutineCall: List[(Int /*PC*/, domain.OperandsArray, domain.LocalsArray)]
     ): Unit = {
 
         println(BLACK_B + WHITE + "Starting Code Analysis" + RESET)
@@ -202,29 +202,25 @@ trait ConsoleTracer extends AITracer { tracer =>
             case u @ SomeUpdate((updatedOperands, updatedLocals)) =>
                 println(u.updateType)
                 println(
-                    thisOperands.
-                        zip(otherOperands).
-                        zip(updatedOperands).
-                        map { v =>
-                            val ((thisOp, thatOp), updatedOp) = v
-                            val s = if (thisOp eq updatedOp)
-                                "✓ " + Console.GREEN + updatedOp.toString
-                            else {
-                                "given " + correctIndent(thisOp, printOIDs) + "\n\t\t join " +
-                                    correctIndent(thatOp, printOIDs) + "\n\t\t   => " +
-                                    correctIndent(updatedOp, printOIDs)
-                            }
-                            s + Console.RESET
-                        }.
-                        mkString("\tOperands:\n\t\t", "\n\t\t", "")
+                    thisOperands.zip(otherOperands).zip(updatedOperands).map { v =>
+                        val ((thisOp, thatOp), updatedOp) = v
+                        val s = if (thisOp eq updatedOp)
+                            "✓ " + Console.GREEN + updatedOp.toString
+                        else {
+                            "given " + correctIndent(thisOp, printOIDs) + "\n\t\t join " +
+                                correctIndent(thatOp, printOIDs) + "\n\t\t   => " +
+                                correctIndent(updatedOp, printOIDs)
+                        }
+                        s + Console.RESET
+                    }.mkString("\tOperands:\n\t\t", "\n\t\t", "")
                 )
                 println(
-                    thisLocals.
-                        zip(otherLocals).
-                        zip(updatedLocals.iterator).map(v => (v._1._1, v._1._2, v._2)).
-                        zipWithIndex.map(v => (v._2, v._1._1, v._1._2, v._1._3)).
-                        filterNot(v => (v._2 eq null) && (v._3 eq null)).
-                        map(v =>
+                    thisLocals
+                        .zip(otherLocals)
+                        .zip(updatedLocals.iterator).map(v => (v._1._1, v._1._2, v._2))
+                        .zipWithIndex.map(v => (v._2, v._1._1, v._1._2, v._1._3))
+                        .filterNot(v => (v._2 eq null) && (v._3 eq null))
+                        .map { v =>
                             s"${v._1}" + {
                                 if (v._2 == v._3)
                                     if (v._2 eq v._3)
@@ -241,8 +237,9 @@ trait ConsoleTracer extends AITracer { tracer =>
                                         "\n\t\t      => "
                                 }
                             } +
-                                correctIndent(v._4, printOIDs)).
-                        mkString("\tLocals:\n\t\t", "\n\t\t" + Console.BLUE, Console.BLUE)
+                                correctIndent(v._4, printOIDs)
+                        }
+                        .mkString("\tLocals:\n\t\t", "\n\t\t" + Console.BLUE, Console.BLUE)
                 )
         }
         println(Console.RESET)
@@ -270,14 +267,15 @@ trait ConsoleTracer extends AITracer { tracer =>
         }
         val changedLocals =
             locals.zip(newLocals).zipWithIndex.map(localsWithIdx =>
-                (localsWithIdx._1._1, localsWithIdx._1._2, localsWithIdx._2)).
-                filter(ops => ops._1 ne ops._2)
+                (localsWithIdx._1._1, localsWithIdx._1._2, localsWithIdx._2)
+            ).filter(ops => ops._1 ne ops._2)
         if (changedLocals.hasNext) {
             println(YELLOW_B + BLUE + "\tUpdated Locals:")
             changedLocals.foreach(locals =>
                 print(YELLOW_B + BLUE + "\t\t" + locals._3 + ":" +
                     toStringWithOID(locals._1) + " => " +
-                    toStringWithOID(locals._2) + "\n"))
+                    toStringWithOID(locals._2) + "\n")
+            )
         }
         println(YELLOW_B + BLUE + "\tDone" + RESET)
 
@@ -299,7 +297,9 @@ trait ConsoleTracer extends AITracer { tracer =>
     override def jumpToSubroutine(
         domain: Domain
     )(
-        pc: Int, target: Int, nestingLevel: Int
+        pc:           Int,
+        target:       Int,
+        nestingLevel: Int
     ): Unit = {
         import Console._
         println(

@@ -10,5 +10,5 @@ package fixtures
  */
 object NilProperty extends Property {
     override type Self = this.type
-    final override val key = PropertyKey.create[Object, NilProperty.type]("NIL")
+    override final val key = PropertyKey.create[Object, NilProperty.type]("NIL")
 }

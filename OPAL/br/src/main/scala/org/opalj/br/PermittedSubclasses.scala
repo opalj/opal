@@ -8,7 +8,7 @@ package org.opalj.br
  */
 case class PermittedSubclasses(classes: Classes) extends Attribute {
 
-    final override def kindId: Int = PermittedSubclasses.KindId
+    override final def kindId: Int = PermittedSubclasses.KindId
 
     override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = {
         this == other

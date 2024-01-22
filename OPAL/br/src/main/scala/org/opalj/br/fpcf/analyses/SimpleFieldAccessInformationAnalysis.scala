@@ -51,10 +51,21 @@ class SimpleFieldAccessInformationAnalysis(val project: SomeProject) extends FPC
         method.body.get iterate { (pc, instruction) =>
             instruction.opcode match {
                 case GETFIELD.opcode | GETSTATIC.opcode =>
-                    fieldAccesses.addFieldRead(context, pc, declaredFields(instruction.asInstanceOf[FieldReadAccess]), None)
+                    fieldAccesses.addFieldRead(
+                        context,
+                        pc,
+                        declaredFields(instruction.asInstanceOf[FieldReadAccess]),
+                        None
+                    )
 
                 case PUTFIELD.opcode | PUTSTATIC.opcode =>
-                    fieldAccesses.addFieldWrite(context, pc, declaredFields(instruction.asInstanceOf[FieldWriteAccess]), None, None)
+                    fieldAccesses.addFieldWrite(
+                        context,
+                        pc,
+                        declaredFields(instruction.asInstanceOf[FieldWriteAccess]),
+                        None,
+                        None
+                    )
 
                 case _ => /*nothing to do*/
             }
@@ -94,4 +105,3 @@ object EagerSimpleFieldAccessInformationAnalysis extends BasicFPCFEagerAnalysisS
         analysis
     }
 }
-

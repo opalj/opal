@@ -28,7 +28,7 @@ object VeryBusyExpressions extends MethodAnalysisApplication {
     final type Result = (TACAICode, Array[Facts], Facts)
 
     // We use as a replacement for variable names the IntTrieSets which identify the def-sites.
-    final type Fact = (BinaryArithmeticOperator, IntTrieSet /*Def-Sites*/ , IntTrieSet /*Def-Sites*/ )
+    final type Fact = (BinaryArithmeticOperator, IntTrieSet /*Def-Sites*/, IntTrieSet /*Def-Sites*/ )
     final type Facts = Set[Fact]
 
     override def analyzeMethod(p: Project[URL], m: Method): Result = {
@@ -88,10 +88,12 @@ object VeryBusyExpressions extends MethodAnalysisApplication {
 
         ToTxt(taCode).mkString("Code:\n", "\n", "\n") +
             stmtFacts
-            .map(factsToString)
-            .zipWithIndex
-            .map({ e => val (f, index) = e; s"$index: $f" })
-            .mkString("Very busy expressions (on exit):\n\t", "\n\t", "\n\n") +
+                .map(factsToString)
+                .zipWithIndex
+                .map({ e =>
+                    val (f, index) = e; s"$index: $f"
+                })
+                .mkString("Very busy expressions (on exit):\n\t", "\n\t", "\n\n") +
             "\tInit: " + factsToString(initFacts)
     }
 }

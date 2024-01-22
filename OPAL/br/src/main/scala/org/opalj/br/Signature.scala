@@ -257,6 +257,7 @@ case class ClassSignature(
             superInterfacesSignature.mkString(",superInterfaces=List(", ",", "))")
     }
 }
+
 object ClassSignature {
 
     final val KindId = 12
@@ -283,6 +284,7 @@ case class MethodTypeSignature(
             returnTypeSignature.toJVMSignature +
             throwsSignature.map(s => s"^${s.toJVMSignature}").mkString("")
 }
+
 object MethodTypeSignature {
 
     final val KindId = 13
@@ -317,6 +319,7 @@ case class ArrayTypeSignature(typeSignature: TypeSignature) extends FieldTypeSig
 
     override def toJVMSignature: String = "[" + typeSignature.toJVMSignature
 }
+
 object ArrayTypeSignature {
 
     final val KindId = 14
@@ -365,6 +368,7 @@ case class ClassTypeSignature(
     }
 
 }
+
 object ClassTypeSignature {
 
     final val KindId = 15
@@ -385,6 +389,7 @@ case class TypeVariableSignature(
     override def toJVMSignature: String = "T" + identifier + ";"
 
 }
+
 object TypeVariableSignature {
 
     final val KindId = 16
@@ -586,7 +591,7 @@ object UpperTypeBound {
 
     def unapply(pta: ProperTypeArgument): Option[ObjectType] = pta match {
         case ProperTypeArgument(Some(CovariantIndicator), ConcreteType(ot)) => Some(ot)
-        case _ => None
+        case _                                                              => None
     }
 }
 
@@ -611,7 +616,7 @@ object LowerTypeBound {
 
     def unapply(pta: ProperTypeArgument): Option[ObjectType] = pta match {
         case ProperTypeArgument(Some(ContravariantIndicator), ConcreteType(ot)) => Some(ot)
-        case _ => None
+        case _                                                                  => None
     }
 }
 
@@ -639,7 +644,7 @@ object GenericTypeArgument {
     ): Option[(Option[VarianceIndicator], ClassTypeSignature)] = {
         pta match {
             case ProperTypeArgument(variance, cts: ClassTypeSignature) => Some((variance, cts))
-            case _ => None
+            case _                                                     => None
         }
     }
 }
@@ -657,9 +662,10 @@ object GenericType {
         cts match {
 
             case ClassTypeSignature(
-                _,
-                SimpleClassTypeSignature(_, typeArgs),
-                Nil) if typeArgs.nonEmpty =>
+                    _,
+                    SimpleClassTypeSignature(_, typeArgs),
+                    Nil
+                ) if typeArgs.nonEmpty =>
                 Some((cts.objectType, typeArgs))
 
             case _ =>
@@ -685,9 +691,10 @@ object GenericTypeWithClassSuffix {
         cts match {
 
             case ClassTypeSignature(
-                _,
-                SimpleClassTypeSignature(_, typeArgs),
-                suffix) if suffix.nonEmpty =>
+                    _,
+                    SimpleClassTypeSignature(_, typeArgs),
+                    suffix
+                ) if suffix.nonEmpty =>
                 Some((cts.objectType, typeArgs, suffix))
 
             case _ =>
@@ -718,11 +725,12 @@ object SimpleGenericType {
         cts match {
 
             case ClassTypeSignature(
-                cpn,
-                SimpleClassTypeSignature(
-                    csn,
-                    List(ProperTypeArgument(None, ConcreteType(tp)))),
-                Nil
+                    cpn,
+                    SimpleClassTypeSignature(
+                        csn,
+                        List(ProperTypeArgument(None, ConcreteType(tp)))
+                    ),
+                    Nil
                 ) =>
                 Some((ObjectType(cpn.getOrElse("") + csn), tp))
 

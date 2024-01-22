@@ -2,10 +2,10 @@
 package org.opalj
 package br
 
+import org.scalatest.funspec.AnyFunSpec
+
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.analyses.Project
-
-import org.scalatest.funspec.AnyFunSpec
 
 /**
  * A test for testing behavior that is valid bytecode but can not be generated from valid Java code.

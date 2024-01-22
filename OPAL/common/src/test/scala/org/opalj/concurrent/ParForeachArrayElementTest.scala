@@ -47,9 +47,7 @@ class ParForeachArrayElementTest extends AnyFunSpec with Matchers {
             def test(): Unit = {
                 val data = Array(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16)
                 try {
-                    parForeachArrayElement(data, 8) { e =>
-                        if (e == 7) return ; else processed.incrementAndGet()
-                    }
+                    parForeachArrayElement(data, 8) { e => if (e == 7) return; else processed.incrementAndGet() }
                 } catch {
                     case ce: ConcurrentExceptions =>
                         assert(ce.getSuppressed().length == 1)

@@ -5,13 +5,13 @@ package checking
 
 import scala.util.matching.Regex
 
-import org.opalj.av.checking.Specification._
-
 import org.junit.runner.RunWith
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
+
+import org.opalj.av.checking.Specification._
 
 /**
  * Systematic tests created to check the behavior of the Specification package.

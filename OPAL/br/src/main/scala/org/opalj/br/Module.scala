@@ -23,7 +23,7 @@ case class Module(
         provides:    ArraySeq[Provides]
 ) extends Attribute {
 
-    final override def kindId: Int = Module.KindId
+    override final def kindId: Int = Module.KindId
 
     override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = {
         // TODO make the comparisons order independent...

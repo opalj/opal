@@ -14,6 +14,10 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import scala.collection.immutable.SortedSet
 
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
+import com.typesafe.config.ConfigValueFactory
+
 import org.opalj.ai.domain
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.Field
@@ -66,10 +70,6 @@ import org.opalj.tac.fpcf.analyses.purity.L2PurityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.SystemOutLoggingAllExceptionRater
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
-
-import com.typesafe.config.Config
-import com.typesafe.config.ConfigFactory
-import com.typesafe.config.ConfigValueFactory
 
 /**
  * Determines the assignability of fields and the immutability of fields, classes and types and provides several
@@ -138,9 +138,7 @@ object Immutability {
                 libraryClassFilesAreInterfacesOnly = false,
                 Iterable.empty
             )
-        } { t =>
-            projectTime = t.toSeconds
-        }
+        } { t => projectTime = t.toSeconds }
 
         val allProjectClassTypes = project.allProjectClassFiles.iterator.map(_.thisType).toSet
 
@@ -190,50 +188,45 @@ object Immutability {
 
         time {
             analysesManager.runAll(
-                dependencies, {
-                (css: List[ComputationSpecification[FPCFAnalysis]]) =>
-                    analysis match {
-                        case Assignability =>
-                            if (css.contains(LazyL2FieldAssignabilityAnalysis))
-                                allFieldsInProjectClassFiles.foreach(
-                                    f => propertyStore.force(f, FieldAssignability.key)
-                                )
-                        case Fields =>
-                            if (css.contains(LazyFieldImmutabilityAnalysis))
-                                allFieldsInProjectClassFiles.foreach(
-                                    f => propertyStore.force(f, FieldImmutability.key)
-                                )
-                        case Classes =>
-                            if (css.contains(LazyClassImmutabilityAnalysis))
-                                allProjectClassTypes.foreach(
-                                    c => propertyStore.force(c, ClassImmutability.key)
-                                )
-                        case Types =>
-                            if (css.contains(LazyTypeImmutabilityAnalysis))
-                                allProjectClassTypes.foreach(
-                                    c => propertyStore.force(c, TypeImmutability.key)
-                                )
-                        case All =>
-                            if (css.contains(LazyL2FieldAssignabilityAnalysis))
-                                allFieldsInProjectClassFiles.foreach(f => {
-                                    import org.opalj.br.fpcf.properties.immutability
-                                    propertyStore.force(f, immutability.FieldAssignability.key)
-                                })
-                            if (css.contains(LazyFieldImmutabilityAnalysis))
-                                allFieldsInProjectClassFiles.foreach(
-                                    f => propertyStore.force(f, FieldImmutability.key)
-                                )
-                            if (css.contains(LazyClassImmutabilityAnalysis))
-                                allProjectClassTypes.foreach(c => {
-                                    import org.opalj.br.fpcf.properties.immutability
-                                    propertyStore.force(c, immutability.ClassImmutability.key)
-                                })
-                            if (css.contains(LazyTypeImmutabilityAnalysis))
-                                allProjectClassTypes.foreach(
-                                    c => propertyStore.force(c, TypeImmutability.key)
-                                )
-                    }
-            }
+                dependencies,
+                {
+                    (css: List[ComputationSpecification[FPCFAnalysis]]) =>
+                        analysis match {
+                            case Assignability =>
+                                if (css.contains(LazyL2FieldAssignabilityAnalysis))
+                                    allFieldsInProjectClassFiles.foreach(f =>
+                                        propertyStore.force(f, FieldAssignability.key)
+                                    )
+                            case Fields =>
+                                if (css.contains(LazyFieldImmutabilityAnalysis))
+                                    allFieldsInProjectClassFiles.foreach(f =>
+                                        propertyStore.force(f, FieldImmutability.key)
+                                    )
+                            case Classes =>
+                                if (css.contains(LazyClassImmutabilityAnalysis))
+                                    allProjectClassTypes.foreach(c => propertyStore.force(c, ClassImmutability.key))
+                            case Types =>
+                                if (css.contains(LazyTypeImmutabilityAnalysis))
+                                    allProjectClassTypes.foreach(c => propertyStore.force(c, TypeImmutability.key))
+                            case All =>
+                                if (css.contains(LazyL2FieldAssignabilityAnalysis))
+                                    allFieldsInProjectClassFiles.foreach(f => {
+                                        import org.opalj.br.fpcf.properties.immutability
+                                        propertyStore.force(f, immutability.FieldAssignability.key)
+                                    })
+                                if (css.contains(LazyFieldImmutabilityAnalysis))
+                                    allFieldsInProjectClassFiles.foreach(f =>
+                                        propertyStore.force(f, FieldImmutability.key)
+                                    )
+                                if (css.contains(LazyClassImmutabilityAnalysis))
+                                    allProjectClassTypes.foreach(c => {
+                                        import org.opalj.br.fpcf.properties.immutability
+                                        propertyStore.force(c, immutability.ClassImmutability.key)
+                                    })
+                                if (css.contains(LazyTypeImmutabilityAnalysis))
+                                    allProjectClassTypes.foreach(c => propertyStore.force(c, TypeImmutability.key))
+                        }
+                }
             )
         } { t => analysisTime = t.toSeconds }
 
@@ -295,32 +288,32 @@ object Immutability {
                 |
                 | Lazy Initialized Not Thread Safe Field:
                 | ${
-                    unsafelyLazilyInitializedFields
-                        .map(_ + " | Lazy Initialized Not Thread Safe Field")
-                        .mkString("\n")
-                }
+                        unsafelyLazilyInitializedFields
+                            .map(_ + " | Lazy Initialized Not Thread Safe Field")
+                            .mkString("\n")
+                    }
                 |
                 | Lazy Initialized Thread Safe Field:
                 | ${
-                    lazilyInitializedFields
-                        .map(_ + " | Lazy Initialized Thread Safe Field")
-                        .mkString("\n")
-                }
+                        lazilyInitializedFields
+                            .map(_ + " | Lazy Initialized Thread Safe Field")
+                            .mkString("\n")
+                    }
                 |
                 |
                 | effectively non assignable Fields:
                 |                | ${
-                    effectivelyNonAssignableFields
-                        .map(_ + " | effectively non assignable ")
-                        .mkString("\n")
-                }
+                        effectivelyNonAssignableFields
+                            .map(_ + " | effectively non assignable ")
+                            .mkString("\n")
+                    }
 
                 | non assignable Fields:
                 | ${
-                    nonAssignableFields
-                        .map(_ + " | non assignable")
-                        .mkString("\n")
-                }
+                        nonAssignableFields
+                            .map(_ + " | non assignable")
+                            .mkString("\n")
+                    }
                 |
                 |""".stripMargin
             )
@@ -372,10 +365,10 @@ object Immutability {
                 |
                 | Dependently Immutable Fields:
                 | ${
-                    dependentlyImmutableFields
-                        .map(_ + " | Dependently Immutable Field ")
-                        .mkString("\n")
-                }
+                        dependentlyImmutableFields
+                            .map(_ + " | Dependently Immutable Field ")
+                            .mkString("\n")
+                    }
                 |
                 | Transitively Immutable Fields:
                 | ${transitivelyImmutableFields.map(_ + " | Transitively Immutable Field ").mkString("\n")}
@@ -450,20 +443,20 @@ object Immutability {
                 |
                 | Dependently Immutable Classes:
                 | ${
-                    dependentlyImmutableClasses
-                        .map(_ + " | Dependently Immutable Class ")
-                        .mkString("\n")
-                }
+                        dependentlyImmutableClasses
+                            .map(_ + " | Dependently Immutable Class ")
+                            .mkString("\n")
+                    }
                 |
                 | Transitively Immutable Classes:
                 | ${transitivelyImmutableClasses.map(_ + " | Transitively Immutable Classes ").mkString("\n")}
                 |
                 | Transitively Immutable Interfaces:
                 | ${
-                    transitivelyImmutableClassesInterfaces
-                        .map(_ + " | Transitively Immutable Interfaces ")
-                        .mkString("\n")
-                }
+                        transitivelyImmutableClassesInterfaces
+                            .map(_ + " | Transitively Immutable Interfaces ")
+                            .mkString("\n")
+                    }
                 |""".stripMargin
             )
         }
@@ -546,9 +539,11 @@ object Immutability {
                 | Transitively Immutable Fields: ${transitivelyImmutableFields.size}
                 | Fields: ${allFieldsInProjectClassFiles.size}
                 | Fields with primitive Types / java.lang.String: ${
-                    allFieldsInProjectClassFiles
-                        .filter(field => !field.fieldType.isReferenceType || field.fieldType == ObjectType.String).size
-                }
+                        allFieldsInProjectClassFiles
+                            .filter(field =>
+                                !field.fieldType.isReferenceType || field.fieldType == ObjectType.String
+                            ).size
+                    }
                 |""".stripMargin
             )
         }
@@ -786,7 +781,7 @@ object Immutability {
             case Some(a) =>
                 Console.println(s"unknown call graph analysis: $a")
                 Console.println(usage)
-                return ;
+                return;
         }
 
         var nIndex = 1

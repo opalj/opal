@@ -12,7 +12,7 @@ import scala.xml.NodeSeq
  */
 case class CONSTANT_Utf8_info(raw: Array[Byte], value: String) extends Constant_Pool_Entry {
 
-    final override def size: Int = {
+    override final def size: Int = {
         // The length of the string in bytes is not equivalent to `value.length` due to the
         // usage of the modified UTF8 enconding.
         1 /* tag */ + 2 /* the length */ + raw.length /* the bytes of the string */
@@ -25,7 +25,7 @@ case class CONSTANT_Utf8_info(raw: Array[Byte], value: String) extends Constant_
     override def asString = value
 
     override def asCPNode(implicit cp: Constant_Pool): Node = {
-        <span class="cp_entry">CONSTANT_Utf8_info("<span class="constant_value">{ value }</span>")</span>
+        <span class="cp_entry">CONSTANT_Utf8_info("<span class="constant_value">{value}</span>")</span>
     }
 
     override def asInstructionParameter(implicit cp: Constant_Pool): NodeSeq = {

@@ -30,7 +30,8 @@ trait IntegerValuesDomain extends IntegerValuesFactory { domain =>
      * @param lowerBound The range's lower bound (inclusive).
      * @param upperBound The range's upper bound (inclusive).
      */
-    /*ABSTRACT*/ def intIsSomeValueInRange(
+    /*ABSTRACT*/
+    def intIsSomeValueInRange(
         pc:         Int,
         value:      DomainValue,
         lowerBound: Int,
@@ -55,7 +56,8 @@ trait IntegerValuesDomain extends IntegerValuesFactory { domain =>
      * @param lowerBound The range's lower bound (inclusive).
      * @param upperBound The range's upper bound (inclusive).
      */
-    /*ABSTRACT*/ def intIsSomeValueNotInRange(
+    /*ABSTRACT*/
+    def intIsSomeValueNotInRange(
         pc:         Int,
         value:      DomainValue,
         lowerBound: Int,
@@ -68,7 +70,8 @@ trait IntegerValuesDomain extends IntegerValuesFactory { domain =>
      * @param value1 A value with computational type integer.
      * @param value2 A value with computational type integer.
      */
-    /*ABSTRACT*/ def intAreEqual(pc: Int, value1: DomainValue, value2: DomainValue): Answer
+    /*ABSTRACT*/
+    def intAreEqual(pc: Int, value1: DomainValue, value2: DomainValue): Answer
 
     /**
      * Tests if the two given integer values are not equal.
@@ -86,7 +89,8 @@ trait IntegerValuesDomain extends IntegerValuesFactory { domain =>
      * @param smallerValue A value with computational type integer.
      * @param largerValue A value with computational type integer.
      */
-    /*ABSTRACT*/ def intIsLessThan(
+    /*ABSTRACT*/
+    def intIsLessThan(
         pc:           Int,
         smallerValue: DomainValue,
         largerValue:  DomainValue
@@ -98,7 +102,8 @@ trait IntegerValuesDomain extends IntegerValuesFactory { domain =>
      * @param smallerOrEqualValue A value with computational type integer.
      * @param equalOrLargerValue A value with computational type integer.
      */
-    /*ABSTRACT*/ def intIsLessThanOrEqualTo(
+    /*ABSTRACT*/
+    def intIsLessThanOrEqualTo(
         pc:                  Int,
         smallerOrEqualValue: DomainValue,
         equalOrLargerValue:  DomainValue
@@ -213,7 +218,6 @@ trait IntegerValuesDomain extends IntegerValuesFactory { domain =>
     ): (Operands, Locals) = (operands, locals)
 
     /**
-     *
      * @note This function is ONLY defined if a corresponding test (`value1 == value2`)
      *      returned [[org.opalj.Unknown]]. I.e., this method is only allowed to be
      *      called if there is something to establish!
@@ -302,17 +306,17 @@ trait IntegerValuesDomain extends IntegerValuesFactory { domain =>
      */
     type IntegerValueOrArithmeticException = Computation[DomainValue, ExceptionValue]
 
-    def iadd(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
-    def iand(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
-    def idiv(pc: Int, value1: DomainValue, value2: DomainValue): IntegerValueOrArithmeticException
-    def imul(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
-    def ior(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
-    def irem(pc: Int, value1: DomainValue, value2: DomainValue): IntegerValueOrArithmeticException
-    def ishl(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
-    def ishr(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
-    def isub(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
-    def iushr(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
-    def ixor(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
-    def iinc(pc: Int, value: DomainValue, increment: Int): DomainValue
+    def iadd(pc:  Int, value1: DomainValue, value2:    DomainValue): DomainValue
+    def iand(pc:  Int, value1: DomainValue, value2:    DomainValue): DomainValue
+    def idiv(pc:  Int, value1: DomainValue, value2:    DomainValue): IntegerValueOrArithmeticException
+    def imul(pc:  Int, value1: DomainValue, value2:    DomainValue): DomainValue
+    def ior(pc:   Int, value1: DomainValue, value2:    DomainValue): DomainValue
+    def irem(pc:  Int, value1: DomainValue, value2:    DomainValue): IntegerValueOrArithmeticException
+    def ishl(pc:  Int, value1: DomainValue, value2:    DomainValue): DomainValue
+    def ishr(pc:  Int, value1: DomainValue, value2:    DomainValue): DomainValue
+    def isub(pc:  Int, value1: DomainValue, value2:    DomainValue): DomainValue
+    def iushr(pc: Int, value1: DomainValue, value2:    DomainValue): DomainValue
+    def ixor(pc:  Int, value1: DomainValue, value2:    DomainValue): DomainValue
+    def iinc(pc:  Int, value:  DomainValue, increment: Int): DomainValue
 
 }

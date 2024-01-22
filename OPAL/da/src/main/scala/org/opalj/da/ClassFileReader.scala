@@ -76,7 +76,7 @@ object ClassFileReader
     type Method_Info = da.Method_Info
     override implicit val methodInfoType: ClassTag[Method_Info] = ClassTag(classOf[da.Method_Info])
 
-    final override def reifyEmptyAttributes: Boolean = true
+    override final def reifyEmptyAttributes: Boolean = true
 
     def ClassFile(
         cp:            Constant_Pool,
@@ -91,9 +91,16 @@ object ClassFileReader
         attributes:    Attributes
     ): ClassFile = {
         new ClassFile(
-            cp, minor_version, major_version, access_flags,
-            this_class, super_class, ArraySeq.from(interfaces),
-            fields, methods, attributes
+            cp,
+            minor_version,
+            major_version,
+            access_flags,
+            this_class,
+            super_class,
+            ArraySeq.from(interfaces),
+            fields,
+            methods,
+            attributes
         )
     }
 
@@ -233,7 +240,8 @@ object ClassFileReader
         inner_class_access_flags: Constant_Pool_Index
     ): InnerClassesEntry = {
         new InnerClassesEntry(
-            inner_class_info_index, outer_class_info_index,
+            inner_class_info_index,
+            outer_class_info_index,
             inner_name_index,
             inner_class_access_flags
         )
@@ -261,7 +269,8 @@ object ClassFileReader
     }
 
     type ExceptionTableEntry = da.ExceptionTableEntry
-    override implicit val exceptionTableEntryType: ClassTag[ExceptionTableEntry] = ClassTag(classOf[da.ExceptionTableEntry])
+    override implicit val exceptionTableEntryType: ClassTag[ExceptionTableEntry] =
+        ClassTag(classOf[da.ExceptionTableEntry])
     def ExceptionTableEntry(
         cp:         Constant_Pool,
         start_pc:   Int,
@@ -286,14 +295,15 @@ object ClassFileReader
     ): Code_attribute = {
         new Code_attribute(
             attribute_name_index,
-            max_stack, max_locals,
+            max_stack,
+            max_locals,
             instructions,
             exception_table,
             attributes
         )
     }
 
-    final override def loadsInterfacesOnly: Boolean = false
+    override final def loadsInterfacesOnly: Boolean = false
 
     type Unknown_attribute = da.Unknown_attribute
     def Unknown_attribute(
@@ -330,7 +340,8 @@ object ClassFileReader
     }
 
     type LineNumberTableEntry = da.LineNumberTableEntry
-    override implicit val lineNumberTableEntryType: ClassTag[LineNumberTableEntry] = ClassTag(classOf[da.LineNumberTableEntry])
+    override implicit val lineNumberTableEntryType: ClassTag[LineNumberTableEntry] =
+        ClassTag(classOf[da.LineNumberTableEntry])
     def LineNumberTableEntry(start_pc: Int, line_number: Int): LineNumberTableEntry = {
         new LineNumberTableEntry(start_pc, line_number)
     }
@@ -347,7 +358,8 @@ object ClassFileReader
     }
 
     type LocalVariableTableEntry = da.LocalVariableTableEntry
-    override implicit val localVariableTableEntryType: ClassTag[LocalVariableTableEntry] = ClassTag(classOf[da.LocalVariableTableEntry])
+    override implicit val localVariableTableEntryType: ClassTag[LocalVariableTableEntry] =
+        ClassTag(classOf[da.LocalVariableTableEntry])
     def LocalVariableTableEntry(
         cp:               Constant_Pool,
         start_pc:         Int,
@@ -367,13 +379,12 @@ object ClassFileReader
         attribute_name_index:      Constant_Pool_Index,
         local_variable_type_table: LocalVariableTypes
     ): LocalVariableTypeTable_attribute = {
-        new LocalVariableTypeTable_attribute(
-            attribute_name_index, local_variable_type_table
-        )
+        new LocalVariableTypeTable_attribute(attribute_name_index, local_variable_type_table)
     }
 
     type LocalVariableTypeTableEntry = da.LocalVariableTypeTableEntry
-    override implicit val localVariableTypeTableEntryType: ClassTag[LocalVariableTypeTableEntry] = ClassTag(classOf[da.LocalVariableTypeTableEntry])
+    override implicit val localVariableTypeTableEntryType: ClassTag[LocalVariableTypeTableEntry] =
+        ClassTag(classOf[da.LocalVariableTypeTableEntry])
     def LocalVariableTypeTableEntry(
         cp:              Constant_Pool,
         start_pc:        Int,
@@ -382,9 +393,7 @@ object ClassFileReader
         signature_index: Constant_Pool_Index,
         index:           Int
     ): LocalVariableTypeTableEntry = {
-        new LocalVariableTypeTableEntry(
-            start_pc, length, name_index, signature_index, index
-        )
+        new LocalVariableTypeTableEntry(start_pc, length, name_index, signature_index, index)
     }
 
     type ElementValuePair = da.ElementValuePair
@@ -394,7 +403,8 @@ object ClassFileReader
     override implicit val elementValueType: ClassTag[ElementValue] = ClassTag(classOf[da.ElementValue])
     def ElementValuePair(
         cp:                 Constant_Pool,
-        element_name_index: Constant_Pool_Index, element_value: ElementValue
+        element_name_index: Constant_Pool_Index,
+        element_value:      ElementValue
     ): ElementValuePair = {
         new ElementValuePair(element_name_index, element_value)
     }
@@ -504,9 +514,7 @@ object ClassFileReader
         attribute_name_index:   Constant_Pool_Index,
         parameters_annotations: ParametersAnnotations
     ): RuntimeVisibleParameterAnnotations_attribute = {
-        new RuntimeVisibleParameterAnnotations_attribute(
-            attribute_name_index, parameters_annotations
-        )
+        new RuntimeVisibleParameterAnnotations_attribute(attribute_name_index, parameters_annotations)
     }
 
     type RuntimeInvisibleParameterAnnotations_attribute = da.RuntimeInvisibleParameterAnnotations_attribute
@@ -517,9 +525,7 @@ object ClassFileReader
         attribute_name_index:   Constant_Pool_Index,
         parameters_annotations: ParametersAnnotations
     ): RuntimeInvisibleParameterAnnotations_attribute = {
-        new RuntimeInvisibleParameterAnnotations_attribute(
-            attribute_name_index, parameters_annotations
-        )
+        new RuntimeInvisibleParameterAnnotations_attribute(attribute_name_index, parameters_annotations)
     }
 
     type StackMapFrame = da.StackMapFrame
@@ -539,7 +545,8 @@ object ClassFileReader
     def SameFrame(frame_type: Int): StackMapFrame = new SameFrame(frame_type)
 
     type VerificationTypeInfo = da.VerificationTypeInfo
-    override implicit val verificationTypeInfoType: ClassTag[VerificationTypeInfo] = ClassTag(classOf[da.VerificationTypeInfo])
+    override implicit val verificationTypeInfoType: ClassTag[VerificationTypeInfo] =
+        ClassTag(classOf[da.VerificationTypeInfo])
 
     def SameLocals1StackItemFrame(
         frame_type:                   Int,
@@ -569,9 +576,7 @@ object ClassFileReader
         offset_delta:                 Int,
         verification_type_info_stack: VerificationTypeInfo
     ): StackMapFrame = {
-        new SameLocals1StackItemFrameExtended(
-            frame_type, offset_delta, verification_type_info_stack
-        )
+        new SameLocals1StackItemFrameExtended(frame_type, offset_delta, verification_type_info_stack)
     }
 
     def FullFrame(
@@ -580,9 +585,7 @@ object ClassFileReader
         verification_type_info_locals: VerificationTypeInfoLocals,
         verification_type_info_stack:  VerificationTypeInfoStack
     ): StackMapFrame = {
-        new FullFrame(
-            frame_type, offset_delta, verification_type_info_locals, verification_type_info_stack
-        )
+        new FullFrame(frame_type, offset_delta, verification_type_info_locals, verification_type_info_stack)
     }
 
     type TopVariableInfo = da.TopVariableInfo.type
@@ -746,7 +749,8 @@ object ClassFileReader
     def TypeAnnotationDirectlyOnType: da.TypeAnnotationDirectlyOnType.type = da.TypeAnnotationDirectlyOnType
 
     type TypeAnnotationPathElement = da.TypeAnnotationPathElement
-    override implicit val typeAnnotationPathElementType: ClassTag[TypeAnnotationPathElement] = ClassTag(classOf[da.TypeAnnotationPathElement])
+    override implicit val typeAnnotationPathElementType: ClassTag[TypeAnnotationPathElement] =
+        ClassTag(classOf[da.TypeAnnotationPathElement])
     def TypeAnnotationPath(path: TypeAnnotationPathElementsTable): TypeAnnotationPath = {
         TypeAnnotationPathElements(path)
     }
@@ -846,8 +850,14 @@ object ClassFileReader
     ): Module_attribute = {
         new Module_attribute(
             attribute_name_index,
-            module_name_index, module_flags, module_version_index,
-            requires, exports, opens, ArraySeq.from(uses), provides
+            module_name_index,
+            module_flags,
+            module_version_index,
+            requires,
+            exports,
+            opens,
+            ArraySeq.from(uses),
+            provides
         )
     }
 
@@ -898,9 +908,7 @@ object ClassFileReader
         attribute_name_index: Constant_Pool_Index,
         package_index_table:  PackageIndexTable
     ): ModulePackages_attribute = {
-        new ModulePackages_attribute(
-            attribute_name_index, ArraySeq.from(package_index_table)
-        )
+        new ModulePackages_attribute(attribute_name_index, ArraySeq.from(package_index_table))
     }
 
     type ModuleMainClass_attribute = da.ModuleMainClass_attribute
@@ -937,9 +945,7 @@ object ClassFileReader
         attribute_name_index: Constant_Pool_Index,
         classes_array:        ClassesArray
     ): NestMembers_attribute = {
-        new NestMembers_attribute(
-            attribute_name_index, ArraySeq.from(classes_array)
-        )
+        new NestMembers_attribute(attribute_name_index, ArraySeq.from(classes_array))
     }
 
     // --------------------------------------------------------------------------------------------

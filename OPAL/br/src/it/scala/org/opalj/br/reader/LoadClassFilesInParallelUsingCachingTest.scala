@@ -3,11 +3,11 @@ package org.opalj
 package br
 package reader
 
-import org.opalj.bi.TestResources.allBITestJARs
-import org.opalj.bytecode.JRELibraryFolder
-
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+
+import org.opalj.bi.TestResources.allBITestJARs
+import org.opalj.bytecode.JRELibraryFolder
 
 class LoadClassFilesInParallelUsingCachingTest extends AnyFlatSpec with Matchers {
 
@@ -25,7 +25,9 @@ class LoadClassFilesInParallelUsingCachingTest extends AnyFlatSpec with Matchers
         path = file.getPath
     } {
         it should s"should be able to read all classes in $path" in {
-            reader.ClassFiles(file) foreach { cs => val (cf, _) = cs; validate(cf) }
+            reader.ClassFiles(file) foreach { cs =>
+                val (cf, _) = cs; validate(cf)
+            }
         }
     }
 }

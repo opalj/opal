@@ -6,17 +6,17 @@ import java.io.ByteArrayInputStream
 import java.io.DataInputStream
 import java.util.zip.ZipFile
 
+import org.junit.runner.RunWith
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
+
 import org.opalj.bi.TestResources.allBITestJARs
 import org.opalj.br.reader._
 import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.io.process
 
 import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParallelizable
-
-import org.junit.runner.RunWith
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
-import org.scalatestplus.junit.JUnitRunner
 
 /**
  * This test(suite) just loads a very large number of class files to make sure the library

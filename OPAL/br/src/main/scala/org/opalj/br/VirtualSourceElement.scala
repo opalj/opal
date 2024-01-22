@@ -18,7 +18,7 @@ sealed abstract class VirtualSourceElement
 
     override def attributes: Attributes = NoAttributes
 
-    final override def isVirtual = true
+    override final def isVirtual = true
 
     /**
      * The "natural order" is VirtualClasses < VirtualFields < VirtualMethods.
@@ -48,8 +48,8 @@ object VirtualSourceElement {
 
     def asVirtualSourceElements(
         classFiles:     Iterable[ClassFile],
-        includeMethods: Boolean             = true,
-        includeFields:  Boolean             = true
+        includeMethods: Boolean = true,
+        includeFields:  Boolean = true
     ): Set[VirtualSourceElement] = {
         var sourceElements: Set[VirtualSourceElement] = Set.empty
 

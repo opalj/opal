@@ -109,9 +109,7 @@ object ClassUsageAnalysis extends ProjectAnalysisApplication {
 
     override def checkAnalysisSpecificParameters(parameters: Seq[String]): Iterable[String] = {
         val remainingParameters =
-            parameters.filter { p =>
-                !p.contains(parameterNameForClass) && !p.contains(parameterNameForGranularity)
-            }
+            parameters.filter { p => !p.contains(parameterNameForClass) && !p.contains(parameterNameForGranularity) }
         super.checkAnalysisSpecificParameters(remainingParameters)
     }
 
@@ -145,7 +143,9 @@ object ClassUsageAnalysis extends ProjectAnalysisApplication {
     }
 
     override def doAnalyze(
-        project: Project[URL], parameters: Seq[String], isInterrupted: () => Boolean
+        project:       Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () => Boolean
     ): ReportableAnalysisResult = {
         val (className, isFineGrainedAnalysis) = getAnalysisParameters(parameters)
         val resultMap: ConcurrentHashMap[String, AtomicInteger] = new ConcurrentHashMap()

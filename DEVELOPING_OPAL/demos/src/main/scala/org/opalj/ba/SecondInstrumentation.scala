@@ -65,7 +65,8 @@ object SecondInstrumentation extends App {
                 } {
                     modified = true
                     lCode.insert(
-                        pc, InsertionPosition.Before,
+                        pc,
+                        InsertionPosition.Before,
                         Seq(
                             DUP,
                             INVOKEVIRTUAL(ObjectType.Object, "toString", JustReturnsString),

@@ -5,6 +5,11 @@ package br
 import java.lang.{Boolean => JBoolean}
 import java.util.concurrent.atomic.AtomicInteger
 
+import org.scalatest.funsuite.AnyFunSuite
+
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigValueFactory
+
 import org.opalj.br.TestSupport.allBIProjects
 import org.opalj.br.analyses.MethodInfo
 import org.opalj.br.analyses.Project
@@ -17,10 +22,6 @@ import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.collection.immutable.IntArraySet
 import org.opalj.concurrent.ConcurrentExceptions
 import org.opalj.util.PerformanceEvaluation.timed
-
-import com.typesafe.config.Config
-import com.typesafe.config.ConfigValueFactory
-import org.scalatest.funsuite.AnyFunSuite
 
 /**
  * Just tests if we can compute various information for a wide range of methods; e.g.,
@@ -48,7 +49,6 @@ class CodePropertiesTest extends AnyFunSuite {
 
         val analyzedMethodsCount = new AtomicInteger(0)
         project.parForeachMethodWithBody() { m =>
-
             val MethodInfo(src, method) = m
             val declaringClassType = method.declaringClassFile.thisType
             val code = method.body.get

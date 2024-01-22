@@ -4,6 +4,11 @@ package tac
 package fpcf
 package analyses
 
+import org.junit.runner.RunWith
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
+
 import org.opalj.br.TestSupport.allBIProjects
 import org.opalj.br.TestSupport.createJREProject
 import org.opalj.br.analyses.SomeProject
@@ -23,10 +28,6 @@ import org.opalj.tac.fpcf.analyses.purity.EagerL1PurityAnalysis
 import org.opalj.util.Nanoseconds
 import org.opalj.util.PerformanceEvaluation.time
 
-import org.junit.runner.RunWith
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.matchers.should.Matchers
-import org.scalatestplus.junit.JUnitRunner
 /**
  * Simple test to ensure that the [[org.opalj.tac.fpcf.analyses.purity.L1PurityAnalysis]] does not
  * cause any exceptions.
@@ -65,7 +66,8 @@ class L1PuritySmokeTest extends AnyFunSpec with Matchers {
         val propertyStore = p.get(PropertyStoreKey)
         try {
             if (propertyStore.entities(Purity.key).exists(_.isRefinable) ||
-                propertyStore.entities(VirtualMethodPurity.key).exists(_.isRefinable)) {
+                propertyStore.entities(VirtualMethodPurity.key).exists(_.isRefinable)
+            ) {
                 fail("Analysis left over non-final purity results")
             }
         } finally {

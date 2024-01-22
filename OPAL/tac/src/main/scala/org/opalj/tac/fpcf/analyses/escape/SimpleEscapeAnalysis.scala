@@ -52,7 +52,7 @@ class SimpleEscapeAnalysisContext(
  *
  * @author Florian Kuebler
  */
-class SimpleEscapeAnalysis( final val project: SomeProject)
+class SimpleEscapeAnalysis(final val project: SomeProject)
     extends DefaultEscapeAnalysis
     with ConstructorSensitiveEscapeAnalysis
     with ConfigurationBasedConstructorEscapeAnalysis
@@ -96,7 +96,7 @@ trait SimpleEscapeAnalysisScheduler extends FPCFAnalysisScheduler {
     override def requiredProjectInformation: ProjectInformationKeys =
         Seq(DeclaredMethodsKey, VirtualFormalParametersKey, ContextProviderKey)
 
-    final override def uses: Set[PropertyBounds] = Set(
+    override final def uses: Set[PropertyBounds] = Set(
         PropertyBounds.lub(EscapeProperty),
         PropertyBounds.ub(TACAI)
     )

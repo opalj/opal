@@ -43,12 +43,11 @@ object MethodCallInformation extends ProjectAnalysisApplication {
 
             val code = method.body.get
             foreachPCWithOperands(domain)(code, result.operandsArray) { (pc, instruction, ops) =>
-
                 def isPotentiallyRefinable(methodDescriptor: MethodDescriptor): Boolean = {
                     methodDescriptor.parametersCount > 0 &&
-                        methodDescriptor.parameterTypes.exists { t =>
-                            t.isArrayType || (t.isObjectType && ch.hasSubtypes(t.asObjectType).isYesOrUnknown)
-                        }
+                    methodDescriptor.parameterTypes.exists { t =>
+                        t.isArrayType || (t.isObjectType && ch.hasSubtypes(t.asObjectType).isYesOrUnknown)
+                    }
                 }
 
                 instruction match {
@@ -99,6 +98,8 @@ object MethodCallInformation extends ProjectAnalysisApplication {
 
         theProject.parForeachMethodWithBody(isInterrupted)(mi => analyzeMethod(mi.method))
 
-        BasicReport(s"Found ${refinedCallsCount.get}/${callsCount.get} calls where we were able to get more precise type information.")
+        BasicReport(
+            s"Found ${refinedCallsCount.get}/${callsCount.get} calls where we were able to get more precise type information."
+        )
     }
 }

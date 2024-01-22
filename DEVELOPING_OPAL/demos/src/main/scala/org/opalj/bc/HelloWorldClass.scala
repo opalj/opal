@@ -149,8 +149,8 @@ object HelloWorldClass extends App {
         minor_version = 0,
         major_version = 46,
         access_flags = ACC_PUBLIC.mask | ACC_SUPER.mask,
-        this_class = 1 /*Test*/ ,
-        super_class = 3 /*extends java.lang.Object*/ ,
+        this_class = 1 /*Test*/,
+        super_class = 3 /*extends java.lang.Object*/,
         // Interfaces.empty,
         // Fields.empty,
         methods = ArraySeq(
@@ -167,10 +167,10 @@ object HelloWorldClass extends App {
                             new Code(
                                 Array[Byte](
                                     42, // aload_0
-                                    (0xff & 183).toByte, // invokespecial
+                                    (0xFF & 183).toByte, // invokespecial
                                     0, //                    -> Methodref
                                     8, //                       #8
-                                    (0xff & 177).toByte
+                                    (0xFF & 177).toByte
                                 )
                             )
                     )
@@ -188,15 +188,15 @@ object HelloWorldClass extends App {
                         code =
                             new Code(
                                 Array[Byte](
-                                    (0xff & 178).toByte, // getstatic
+                                    (0xFF & 178).toByte, // getstatic
                                     0,
                                     16,
                                     18, // ldc
                                     22,
-                                    (0xff & 182).toByte, // invokevirtual
+                                    (0xFF & 182).toByte, // invokevirtual
                                     0,
                                     24,
-                                    (0xff & 177).toByte // return
+                                    (0xFF & 177).toByte // return
                                 )
                             )
                     )

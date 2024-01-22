@@ -6,15 +6,15 @@ package l2
 
 import scala.language.reflectiveCalls
 
-import org.opalj.br._
-import org.opalj.br.TestSupport.biProject
-import org.opalj.br.analyses.Project
-import org.opalj.log.LogContext
-
 import org.junit.runner.RunWith
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
+
+import org.opalj.br._
+import org.opalj.br.TestSupport.biProject
+import org.opalj.br.analyses.Project
+import org.opalj.log.LogContext
 
 /**
  * Tests that we can detect situations in which a method calls itself.
@@ -136,15 +136,18 @@ object PerformInvocationsWithRecursionDetectionTestFixture {
     class InvocationDomain(
             project:                            Project[java.net.URL],
             method:                             Method,
-            val frequentEvaluationWarningLevel: Int                   = 10
+            val frequentEvaluationWarningLevel: Int = 10
     ) extends SharedInvocationDomain(project, method) {
         callingDomain =>
 
-        lazy val calledMethodsStore: CalledMethodsStore { val domain: coordinatingDomain.type; def warningIssued: Boolean } = {
+        lazy val calledMethodsStore: CalledMethodsStore {
+            val domain: coordinatingDomain.type; def warningIssued: Boolean
+        } = {
             val operands =
                 mapOperands(
                     localsArray(0).foldLeft(List.empty[DomainValue])((l, n) =>
-                        if (n ne null) n :: l else l),
+                        if (n ne null) n :: l else l
+                    ),
                     coordinatingDomain
                 )
 

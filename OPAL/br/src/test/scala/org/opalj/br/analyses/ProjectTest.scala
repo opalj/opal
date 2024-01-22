@@ -3,13 +3,13 @@ package org.opalj
 package br
 package analyses
 
-import org.opalj.bi.TestResources.locateTestResources
-import org.opalj.br.reader.Java11Framework.ClassFiles
-
 import org.junit.runner.RunWith
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
+
+import org.opalj.bi.TestResources.locateTestResources
+import org.opalj.br.reader.Java11Framework.ClassFiles
 
 /**
  * Tests the support for "project" related functionality.
@@ -81,13 +81,17 @@ class ProjectTest extends AnyFlatSpec with Matchers {
 
     it should "find a public method" in {
         resolveMethodReference(
-            SuperType, "publicMethod", MethodDescriptor("()V")
+            SuperType,
+            "publicMethod",
+            MethodDescriptor("()V")
         ) shouldBe defined
     }
 
     it should "find a private method" in {
         resolveMethodReference(
-            SuperType, "privateMethod", MethodDescriptor("()V")
+            SuperType,
+            "privateMethod",
+            MethodDescriptor("()V")
         ) shouldBe defined
     }
 
@@ -97,33 +101,43 @@ class ProjectTest extends AnyFlatSpec with Matchers {
 
     it should "find a method with default visibility" in {
         resolveMethodReference(
-            SuperType, "defaultVisibilityMethod", MethodDescriptor("()V")
+            SuperType,
+            "defaultVisibilityMethod",
+            MethodDescriptor("()V")
         ) shouldBe defined
     }
 
     it should "find the super class' static method staticDefaultVisibilityMethod" in {
         // let's make sure the method exists...
         resolveMethodReference(
-            SuperType, "staticDefaultVisibilityMethod", MethodDescriptor("()V")
+            SuperType,
+            "staticDefaultVisibilityMethod",
+            MethodDescriptor("()V")
         ) shouldBe defined
         // let's make sure the class is a super class
         project.classHierarchy.isSubtypeOf(DirectSub, SuperType) should be(true)
 
         // let's test the resolving
         resolveMethodReference(
-            DirectSub, "staticDefaultVisibilityMethod", MethodDescriptor("()V")
+            DirectSub,
+            "staticDefaultVisibilityMethod",
+            MethodDescriptor("()V")
         ) shouldBe defined
     }
 
     it should "not find Object's toString method, because we only have a partial view of the project" in {
         resolveMethodReference(
-            DirectSub, "toString", MethodDescriptor("()Ljava/lang/String;")
+            DirectSub,
+            "toString",
+            MethodDescriptor("()Ljava/lang/String;")
         ) shouldBe empty
     }
 
     it should "find a method declared by a directly implemented interface" in {
         val r = resolveMethodReference(
-            AbstractB, "someSubMethod", MethodDescriptor("()V"),
+            AbstractB,
+            "someSubMethod",
+            MethodDescriptor("()V"),
             forceLookupInSuperinterfacesOnFailure = true
         )
         r shouldBe defined
@@ -132,7 +146,9 @@ class ProjectTest extends AnyFlatSpec with Matchers {
 
     it should "find a method declared by an indirectly implemented interface" in {
         val r = resolveMethodReference(
-            AbstractB, "someMethod", MethodDescriptor("()V"),
+            AbstractB,
+            "someMethod",
+            MethodDescriptor("()V"),
             forceLookupInSuperinterfacesOnFailure = true
         )
         r shouldBe defined
@@ -220,13 +236,23 @@ class ProjectTest extends AnyFlatSpec with Matchers {
     it should "return all packages defined in the project" in {
 
         opalProject.projectPackages should be(Set(
-            "de/tud/cs/st/bat/generic/reader", "de/tud/cs/st/util/graphs",
-            "de/tud/cs/st/util/collection", "de/tud/cs/st/bat/resolved",
-            "de/tud/cs/st/util/perf", "de/tud/cs/st", "de/tud/cs/st/bat/prolog",
-            "de/tud/cs/st/bat/prolog/reader", "de/tud/cs/st/sae/parser", "de/tud/cs/st/sae",
-            "de/tud/cs/st/bat/native", "de/tud/cs/st/util/trees",
-            "de/tud/cs/st/bat/resolved/reader", "de/tud/cs/st/bat", "de/tud/cs/st/util",
-            "de/tud/cs/st/bat/native/reader", "de/tud/cs/st/prolog"
+            "de/tud/cs/st/bat/generic/reader",
+            "de/tud/cs/st/util/graphs",
+            "de/tud/cs/st/util/collection",
+            "de/tud/cs/st/bat/resolved",
+            "de/tud/cs/st/util/perf",
+            "de/tud/cs/st",
+            "de/tud/cs/st/bat/prolog",
+            "de/tud/cs/st/bat/prolog/reader",
+            "de/tud/cs/st/sae/parser",
+            "de/tud/cs/st/sae",
+            "de/tud/cs/st/bat/native",
+            "de/tud/cs/st/util/trees",
+            "de/tud/cs/st/bat/resolved/reader",
+            "de/tud/cs/st/bat",
+            "de/tud/cs/st/util",
+            "de/tud/cs/st/bat/native/reader",
+            "de/tud/cs/st/prolog"
         ))
 
     }
@@ -385,7 +411,9 @@ class ProjectTest extends AnyFlatSpec with Matchers {
 
         it should "not fail if the type cannot be found" in {
             resolveFieldReference(
-                ObjectType("NOT/DEFINED"), "NOT_DEFINED", IntegerType
+                ObjectType("NOT/DEFINED"),
+                "NOT_DEFINED",
+                IntegerType
             ) should be(None)
         }
     }
@@ -410,7 +438,10 @@ class ProjectTest extends AnyFlatSpec with Matchers {
         it should "handle the case if an interface has no implementing class" in {
             val implementingMethods =
                 methodsProject.interfaceCall(
-                    superI, superI, "someMethod", MethodDescriptor.NoArgsAndReturnVoid
+                    superI,
+                    superI,
+                    "someMethod",
+                    MethodDescriptor.NoArgsAndReturnVoid
                 )
             implementingMethods.size should be(0)
         }
@@ -419,7 +450,10 @@ class ProjectTest extends AnyFlatSpec with Matchers {
             val classType = ObjectType("methods/b/B")
             val implementingMethods =
                 methodsProject.virtualCall(
-                    classType, classType, "publicMethod", MethodDescriptor.NoArgsAndReturnVoid
+                    classType,
+                    classType,
+                    "publicMethod",
+                    MethodDescriptor.NoArgsAndReturnVoid
                 )
 
             implementingMethods.size should be(1)

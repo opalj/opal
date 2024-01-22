@@ -7,6 +7,9 @@ import java.lang.invoke.LambdaMetafactory
 import scala.collection.IndexedSeqView
 import scala.collection.immutable.ArraySeq
 
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigValueFactory
+
 import org.opalj.bi.ACC_PRIVATE
 import org.opalj.bi.ACC_PUBLIC
 import org.opalj.bi.ACC_STATIC
@@ -25,9 +28,6 @@ import org.opalj.log.OPALLogger
 import org.opalj.log.OPALLogger.error
 import org.opalj.log.OPALLogger.info
 import org.opalj.log.StandardLogMessage
-
-import com.typesafe.config.Config
-import com.typesafe.config.ConfigValueFactory
 
 /**
  * Provides support for rewriting Java 8/Scala lambda or method reference expressions that
@@ -584,18 +584,18 @@ trait InvokedynamicRewriting
         val newMethodName =
             newTargetMethodName(cp, methodNameIndex, methodDescriptorIndex, pc, "object_methods")
 
-        val (updatedClassFile, newMethodDescriptor) = createObjectMethodsTarget(
-            bootstrapMethod.arguments, targetMethodName, newMethodName, classFile
-        ).getOrElse {
-                if (logUnknownInvokeDynamics) {
-                    val t = classFile.thisType.toJava
-                    info(
-                        "load-time transformation",
-                        s"$t - unresolvable INVOKEDYNAMIC: $invokedynamic"
-                    )
+        val (updatedClassFile, newMethodDescriptor) =
+            createObjectMethodsTarget(bootstrapMethod.arguments, targetMethodName, newMethodName, classFile)
+                .getOrElse {
+                    if (logUnknownInvokeDynamics) {
+                        val t = classFile.thisType.toJava
+                        info(
+                            "load-time transformation",
+                            s"$t - unresolvable INVOKEDYNAMIC: $invokedynamic"
+                        )
+                    }
+                    return classFile;
                 }
-                return classFile;
-            }
 
         val newInvokestatic = INVOKESTATIC(
             classFile.thisType,
@@ -637,8 +637,10 @@ trait InvokedynamicRewriting
     ): ClassFile = {
         // IMPROVE Rewrite to avoid that we have to use a constant pool entry in the range [0..255]
         val INVOKEDYNAMIC(
-            bootstrapMethod, _, _ // functionalInterfaceMethodName, factoryDescriptor
-            ) = invokedynamic
+            bootstrapMethod,
+            _, // functionalInterfaceMethodName
+            _ // factoryDescriptor
+        ) = invokedynamic
         val bootstrapArguments = bootstrapMethod.arguments
 
         val newInvokestatic =
@@ -657,7 +659,9 @@ trait InvokedynamicRewriting
 
         val instructionsBuilder = new InstructionsBuilder(7)
         val (maxStack, newClassFile) = loadBootstrapArgument(
-            bootstrapArguments.head.asInstanceOf[ConstantValue[_]], instructionsBuilder, classFile
+            bootstrapArguments.head.asInstanceOf[ConstantValue[_]],
+            instructionsBuilder,
+            classFile
         )
         var updatedClassFile = newClassFile
 
@@ -800,9 +804,10 @@ trait InvokedynamicRewriting
 
         if (bootstrapArguments.nonEmpty) {
             if (bootstrapArguments exists {
-                case _: InvokeStaticMethodHandle => false // As expected, static method handle
-                case _                           => true // Unknown (dynamic) argument
-            }) {
+                    case _: InvokeStaticMethodHandle => false // As expected, static method handle
+                    case _                           => true // Unknown (dynamic) argument
+                }
+            ) {
                 if (logUnknownInvokeDynamics) {
                     val t = classFile.thisType.toJava
                     info(
@@ -877,9 +882,7 @@ trait InvokedynamicRewriting
         pc:                    PC,
         invokedynamic:         INVOKEDYNAMIC
     ): ClassFile = {
-        val INVOKEDYNAMIC(
-            bootstrapMethod, functionalInterfaceMethodName, factoryDescriptor
-            ) = invokedynamic
+        val INVOKEDYNAMIC(bootstrapMethod, functionalInterfaceMethodName, factoryDescriptor) = invokedynamic
         val bootstrapArguments = bootstrapMethod.arguments
 
         // Extract the arguments of the lambda factory.
@@ -890,7 +893,7 @@ trait InvokedynamicRewriting
             // The available information depends on the metafactory:
             // (e.g., about bridges or markers)
             altMetafactoryArgs
-            ) = bootstrapArguments match {
+        ) = bootstrapArguments match {
             case Seq(smt: MethodDescriptor, tim: MethodCallMethodHandle, imt: MethodDescriptor, ama @ _*) =>
                 (smt, tim, imt, ama)
             case _ =>
@@ -909,12 +912,9 @@ trait InvokedynamicRewriting
 
         val thisType = classFile.thisType
 
-        val (markerInterfaces, bridges, serializable) =
-            extractAltMetafactoryArguments(altMetafactoryArgs)
+        val (markerInterfaces, bridges, serializable) = extractAltMetafactoryArguments(altMetafactoryArgs)
 
-        val MethodCallMethodHandle(
-            targetMethodOwner: ObjectType, targetMethodName, targetMethodDescriptor
-            ) = implMethod
+        val MethodCallMethodHandle(targetMethodOwner: ObjectType, targetMethodName, targetMethodDescriptor) = implMethod
 
         // In case of nested classes, we have to change the invoke instruction from
         // invokespecial to invokevirtual, because the special handling used for private
@@ -941,9 +941,7 @@ trait InvokedynamicRewriting
         if (serializable) {
             superInterfaceTypesBuilder += ObjectType.Serializable
         }
-        markerInterfaces foreach { mi =>
-            superInterfaceTypesBuilder += mi.asObjectType
-        }
+        markerInterfaces foreach { mi => superInterfaceTypesBuilder += mi.asObjectType }
 
         val methodName = cp(methodNameIndex).asString
         val methodDescriptor = cp(methodDescriptorIndex).asMethodDescriptor
@@ -1018,20 +1016,23 @@ trait InvokedynamicRewriting
 
           More information:
             http://www.javaworld.com/article/2073578/java-s-synthetic-methods.html
-        */
+         */
         var receiverType =
             if (invocationInstruction != INVOKEVIRTUAL.opcode &&
-                invocationInstruction != INVOKEINTERFACE.opcode) {
+                invocationInstruction != INVOKEINTERFACE.opcode
+            ) {
                 targetMethodOwner
             } else if (invokedynamic.methodDescriptor.parameterTypes.nonEmpty &&
-                invokedynamic.methodDescriptor.parameterTypes.head.isObjectType) {
+                       invokedynamic.methodDescriptor.parameterTypes.head.isObjectType
+            ) {
                 // If we have an instance of a object and use a method reference,
                 // get the receiver type from the invokedynamic instruction.
                 // It is the first parameter of the functional interface parameter
                 // list.
                 invokedynamic.methodDescriptor.parameterTypes.head.asObjectType
             } else if (instantiatedMethodType.parameterTypes.nonEmpty &&
-                instantiatedMethodType.parameterTypes.head.isObjectType) {
+                       instantiatedMethodType.parameterTypes.head.isObjectType
+            ) {
                 // If we get a instance method reference like `LinkedHashSet::addAll`, get
                 // the receiver type from the functional interface. The first parameter is
                 // the instance where the method should be called.
@@ -1085,7 +1086,11 @@ trait InvokedynamicRewriting
 
             // Instructions to push the parameters onto the stack
             val forwardParameters = ClassFileFactory.parameterForwardingInstructions(
-                m.descriptor, m.descriptor, 1, Seq.empty, classFile.thisType
+                m.descriptor,
+                m.descriptor,
+                1,
+                Seq.empty,
+                classFile.thisType
             )
 
             val body = new InstructionsBuilder(7 + forwardParameters.length)
@@ -1145,9 +1150,7 @@ trait InvokedynamicRewriting
 
             if (m.isPrivate) {
                 if (m.isStatic || m.isConstructor) {
-                    updatedClassFile = updatedClassFile._UNSAFE_replaceMethod(
-                        targetMethod.get, lift(targetMethod.get)
-                    )
+                    updatedClassFile = updatedClassFile._UNSAFE_replaceMethod(targetMethod.get, lift(targetMethod.get))
                 } else {
                     val forwardingName = "$forward$" + m.name
 
@@ -1174,12 +1177,10 @@ trait InvokedynamicRewriting
         if (serializable) {
             val deserialize = updatedClassFile.methods.find { m =>
                 m.hasFlags(AccessFlags.ACC_SYNTHETIC_STATIC_PRIVATE) &&
-                    m.name == "$deserializeLambda$"
+                m.name == "$deserializeLambda$"
             }
             if (deserialize.isDefined)
-                updatedClassFile = updatedClassFile._UNSAFE_replaceMethod(
-                    deserialize.get, lift(deserialize.get)
-                )
+                updatedClassFile = updatedClassFile._UNSAFE_replaceMethod(deserialize.get, lift(deserialize.get))
         }
 
         val needsBridgeMethod = samMethodType != instantiatedMethodType
@@ -1372,7 +1373,10 @@ object InvokedynamicRewriting {
         import ObjectType.ScalaLambdaDeserialize
         invokedynamic.bootstrapMethod.handle match {
             case InvokeStaticMethodHandle(
-                ScalaLambdaDeserialize, false, "bootstrap", ScalaLambdaDeserializeDescriptor
+                    ScalaLambdaDeserialize,
+                    false,
+                    "bootstrap",
+                    ScalaLambdaDeserializeDescriptor
                 ) => true
             case _ => false
         }
@@ -1383,7 +1387,10 @@ object InvokedynamicRewriting {
         import ObjectType.ScalaSymbolLiteral
         invokedynamic.bootstrapMethod.handle match {
             case InvokeStaticMethodHandle(
-                ScalaSymbolLiteral, false, "bootstrap", ScalaSymbolLiteralDescriptor
+                    ScalaSymbolLiteral,
+                    false,
+                    "bootstrap",
+                    ScalaSymbolLiteralDescriptor
                 ) => true
             case _ => false
         }
@@ -1398,7 +1405,10 @@ object InvokedynamicRewriting {
         import ObjectType.ScalaStructuralCallSite
         invokedynamic.bootstrapMethod.handle match {
             case InvokeStaticMethodHandle(
-                ScalaStructuralCallSite, false, "bootstrap", ScalaStructuralCallSiteDescriptor
+                    ScalaStructuralCallSite,
+                    false,
+                    "bootstrap",
+                    ScalaStructuralCallSiteDescriptor
                 ) =>
                 pc == 0 &&
                     instructions.length == 44 &&
@@ -1411,11 +1421,11 @@ object InvokedynamicRewriting {
                             ObjectType.Method
                         )
                     ) &&
-                        instructions(31) == INVOKEVIRTUAL(
-                            ObjectType("scala/runtime/ScalaRunTime$"),
-                            "ensureAccessible",
-                            MethodDescriptor(ObjectType.Method, ObjectType.Method)
-                        )
+                    instructions(31) == INVOKEVIRTUAL(
+                        ObjectType("scala/runtime/ScalaRunTime$"),
+                        "ensureAccessible",
+                        MethodDescriptor(ObjectType.Method, ObjectType.Method)
+                    )
 
             case _ => false
         }
@@ -1440,14 +1450,14 @@ object InvokedynamicRewriting {
     def isJava10StringConcatInvokedynamic(invokedynamic: INVOKEDYNAMIC): Boolean = {
         invokedynamic.bootstrapMethod.handle match {
             case InvokeStaticMethodHandle(ObjectType.StringConcatFactory, _, _, _) => true
-            case _ => false
+            case _                                                                 => false
         }
     }
 
     def isObjectMethodsInvokedynamic(invokedynamic: INVOKEDYNAMIC): Boolean = {
         invokedynamic.bootstrapMethod.handle match {
             case InvokeStaticMethodHandle(ObjectType.ObjectMethods, _, _, _) => true
-            case _ => false
+            case _                                                           => false
         }
     }
 
@@ -1460,10 +1470,10 @@ object InvokedynamicRewriting {
         val logLambdaConfigKey = LambdaExpressionsLogRewritingsConfigKey
         val logConcatConfigKey = StringConcatLogRewritingsConfigKey
         val logObjectMethodsConfigKey = ObjectMethodsLogRewritingsConfigKey
-        BaseConfig.
-            withValue(rewritingConfigKey, ConfigValueFactory.fromAnyRef(rewrite)).
-            withValue(logLambdaConfigKey, ConfigValueFactory.fromAnyRef(logRewrites)).
-            withValue(logConcatConfigKey, ConfigValueFactory.fromAnyRef(logRewrites)).
-            withValue(logObjectMethodsConfigKey, ConfigValueFactory.fromAnyRef(logRewrites))
+        BaseConfig
+            .withValue(rewritingConfigKey, ConfigValueFactory.fromAnyRef(rewrite))
+            .withValue(logLambdaConfigKey, ConfigValueFactory.fromAnyRef(logRewrites))
+            .withValue(logConcatConfigKey, ConfigValueFactory.fromAnyRef(logRewrites))
+            .withValue(logObjectMethodsConfigKey, ConfigValueFactory.fromAnyRef(logRewrites))
     }
 }

@@ -22,7 +22,7 @@ trait MethodReturnValue extends Property with MethodReturnValuePropertyMetaInfor
 
     def returnValue: Option[ValueInformation]
 
-    final override def key: PropertyKey[MethodReturnValue] = MethodReturnValue.key
+    override final def key: PropertyKey[MethodReturnValue] = MethodReturnValue.key
 
 }
 
@@ -44,6 +44,7 @@ case class TheMethodReturnValue(theReturnValue: ValueInformation) extends Method
     override def returnValue: Option[ValueInformation] = Some(theReturnValue)
 
 }
+
 // Used for methods which throw an exception.
 case object NoMethodReturnValue extends MethodReturnValue {
 

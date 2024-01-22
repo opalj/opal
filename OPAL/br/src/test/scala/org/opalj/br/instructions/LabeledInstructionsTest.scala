@@ -20,7 +20,10 @@ class LabeledInstructionsTest extends AnyFlatSpec with Matchers {
     behavior of "LabeledInstructionsTest"
 
     val label = InstructionLabel(Symbol("TestLabel"))
-    val simpleBranchInstructionsMap: List[(LabeledSimpleConditionalBranchInstruction, InstructionLabel => LabeledSimpleConditionalBranchInstruction)] = {
+    val simpleBranchInstructionsMap: List[(
+        LabeledSimpleConditionalBranchInstruction,
+        InstructionLabel => LabeledSimpleConditionalBranchInstruction
+    )] = {
         List(
             IFEQ(label) -> LabeledIFEQ,
             IFNE(label) -> LabeledIFNE,
@@ -28,7 +31,6 @@ class LabeledInstructionsTest extends AnyFlatSpec with Matchers {
             IFGE(label) -> LabeledIFGE,
             IFGT(label) -> LabeledIFGT,
             IFLE(label) -> LabeledIFLE,
-
             IF_ICMPEQ(label) -> LabeledIF_ICMPEQ,
             IF_ICMPNE(label) -> LabeledIF_ICMPNE,
             IF_ICMPLT(label) -> LabeledIF_ICMPLT,
@@ -37,7 +39,6 @@ class LabeledInstructionsTest extends AnyFlatSpec with Matchers {
             IF_ICMPLE(label) -> LabeledIF_ICMPLE,
             IF_ACMPEQ(label) -> LabeledIF_ACMPEQ,
             IF_ACMPNE(label) -> LabeledIF_ACMPNE,
-
             IFNULL(label) -> LabeledIFNULL,
             IFNONNULL(label) -> LabeledIFNONNULL
         )

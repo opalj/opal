@@ -283,15 +283,17 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode =>
                     s"unexpected (pc:$currentPC -> pc:$successorPC): $lDefOps vs. $rDefOps;"+
                      s" original: $oldDefOps"
                 )
-                */
+                 */
 
                 val newHead = lDefOps.head
                 val oldHead = rDefOps.head
                 if (newHead.subsetOf(oldHead))
                     joinDefOps(
                         oldDefOps,
-                        lDefOps.tail, rDefOps.tail,
-                        oldIsSuperset, joinedDefOps += oldHead
+                        lDefOps.tail,
+                        rDefOps.tail,
+                        oldIsSuperset,
+                        joinedDefOps += oldHead
                     )
                 else {
                     // IMPROVE Consider using ++! (or !==!)
@@ -306,11 +308,13 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode =>
                         joinedHead.size > oldHead.size,
                         s"$newHead ++ $oldHead is $joinedHead"
                     )
-                    */
+                     */
                     joinDefOps(
                         oldDefOps,
-                        lDefOps.tail, rDefOps.tail,
-                        false, joinedDefOps += joinedHead
+                        lDefOps.tail,
+                        rDefOps.tail,
+                        false,
+                        joinedDefOps += joinedHead
                     )
                 }
             }
@@ -433,8 +437,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode =>
         currentInstruction: Instruction,
         successorPC:        PC
     )(
-        implicit
-        operandsArray: OperandsArray
+        implicit operandsArray: OperandsArray
     ): List[ValueOrigins] = {
         // The stack only contains the exception (which was created before and was explicitly
         // thrown by an athrow instruction or which resulted from a called method or which was
@@ -467,26 +470,28 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode =>
                             val receiver = operandsArray(currentPC)(mii.methodDescriptor.parametersCount)
                             var newDefOps = NoValueOrigins
                             if ( // we have to check that the handler is actually handling
-                            // (implicit) null pointer exceptions
-                            throwNullPointerExceptionOnMethodCall
-                                && refIsNull(currentPC, receiver).isYesOrUnknown
-                                && {
-                                    var foundDefinitiveHandler = false
-                                    code.handlersFor(currentPC) filter { eh =>
-                                        !foundDefinitiveHandler && (
-                                            (eh.catchType.isEmpty && { foundDefinitiveHandler = true; true }) || {
-                                                val isHandled = isASubtypeOf(ObjectType.NullPointerException, eh.catchType.get)
-                                                if (isHandled.isYes) {
-                                                    foundDefinitiveHandler = true
-                                                    true
-                                                } else if (isHandled.isYesOrUnknown)
-                                                    true
-                                                else
-                                                    false
-                                            }
-                                        )
-                                    }
-                                }.exists(eh => eh.handlerPC == successorPC)) {
+                                 // (implicit) null pointer exceptions
+                                 throwNullPointerExceptionOnMethodCall
+                                 && refIsNull(currentPC, receiver).isYesOrUnknown
+                                 && {
+                                     var foundDefinitiveHandler = false
+                                     code.handlersFor(currentPC) filter { eh =>
+                                         !foundDefinitiveHandler && (
+                                             (eh.catchType.isEmpty && { foundDefinitiveHandler = true; true }) || {
+                                                 val isHandled =
+                                                     isASubtypeOf(ObjectType.NullPointerException, eh.catchType.get)
+                                                 if (isHandled.isYes) {
+                                                     foundDefinitiveHandler = true
+                                                     true
+                                                 } else if (isHandled.isYesOrUnknown)
+                                                     true
+                                                 else
+                                                     false
+                                             }
+                                         )
+                                     }
+                                 }.exists(eh => eh.handlerPC == successorPC)
+                            ) {
                                 newDefOps += ValueOriginForImmediateVMException(currentPC)
                             }
                             // the configuration option:
@@ -588,7 +593,8 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode =>
         super.abstractInterpretationEnded(aiResult)
 
         if (aiResult.wasAborted)
-            return /* nothing to do */ ;
+            return
+        /* nothing to do */;
 
         val instructions = code.instructions
         lazy val belongsToSubroutine = code.belongsToSubroutine()
@@ -656,7 +662,8 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode =>
                     currentInstruction,
                     successorPC,
                     isExceptionalControlFlow,
-                    usedValues, pushesValue
+                    usedValues,
+                    pushesValue
                 )
             }
 
@@ -687,7 +694,8 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode =>
                     // Let's check if we have a JSR to the subroutine that we are
                     // currently executing. This can be legal in very restricted settings...
                     if (currentSubroutinePCs.nonEmpty &&
-                        currentSubroutinePCs.head.contains(successorPC)) {
+                        currentSubroutinePCs.head.contains(successorPC)
+                    ) {
                         // println(currentPC+": (RE)START OF A SUBROUTINE: "+successorPC)
                         // In this case, we treat the JSR basically in the same way as a goto.
                         // We update the retTargetPC, because the calling JSR might be different...
@@ -875,7 +883,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode =>
                     propagate(v1 :: v2 :: v1 :: rest, defLocals(currentPC))
                 case 91 /*dup_x2*/ =>
                     operandsArray(currentPC) match {
-                        case _ /*v1 @ CTC1()*/ :: (_@ CTC1()) :: _ =>
+                        case _ /*v1 @ CTC1()*/ :: (_ @CTC1()) :: _ =>
                             val v1 :: v2 :: v3 :: rest = defOps(currentPC)
                             propagate(v1 :: v2 :: v3 :: v1 :: rest, defLocals(currentPC))
                         case _ =>
@@ -884,7 +892,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode =>
                     }
                 case 92 /*dup2*/ =>
                     operandsArray(currentPC) match {
-                        case (_@ CTC1()) :: _ =>
+                        case (_ @CTC1()) :: _ =>
                             val currentDefOps = defOps(currentPC)
                             val v1 :: v2 :: _ = currentDefOps
                             propagate(v1 :: v2 :: currentDefOps, defLocals(currentPC))
@@ -894,7 +902,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode =>
                     }
                 case 93 /*dup2_x1*/ =>
                     operandsArray(currentPC) match {
-                        case (_@ CTC1()) :: _ =>
+                        case (_ @CTC1()) :: _ =>
                             val v1 :: v2 :: v3 :: rest = defOps(currentPC)
                             propagate(v1 :: v2 :: v3 :: v1 :: v2 :: rest, defLocals(currentPC))
                         case _ =>
@@ -903,14 +911,14 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode =>
                     }
                 case 94 /*dup2_x2*/ =>
                     operandsArray(currentPC) match {
-                        case (_@ CTC1()) :: (_@ CTC1()) :: (_@ CTC1()) :: _ =>
+                        case (_ @CTC1()) :: (_ @CTC1()) :: (_ @CTC1()) :: _ =>
                             val v1 :: v2 :: v3 :: v4 :: rest = defOps(currentPC)
                             val currentLocals = defLocals(currentPC)
                             propagate(v1 :: v2 :: v3 :: v4 :: v1 :: v2 :: rest, currentLocals)
-                        case (_@ CTC1()) :: (_@ CTC1()) :: _ =>
+                        case (_ @CTC1()) :: (_ @CTC1()) :: _ =>
                             val v1 :: v2 :: v3 :: rest = defOps(currentPC)
                             propagate(v1 :: v2 :: v3 :: v1 :: v2 :: rest, defLocals(currentPC))
-                        case _ /*v1 @ CTC2()*/ :: (_@ CTC1()) :: _ =>
+                        case _ /*v1 @ CTC2()*/ :: (_ @CTC1()) :: _ =>
                             val v1 :: v2 :: v3 :: rest = defOps(currentPC)
                             propagate(v1 :: v2 :: v3 :: v1 :: rest, defLocals(currentPC))
                         case _ =>
@@ -954,9 +962,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode =>
                     updateUsageInformation(op, currentPC)
                     val newDefOps =
                         if (isExceptionalControlFlow) {
-                            newDefOpsForExceptionalControlFlow(
-                                currentPC, currentInstruction, successorPC
-                            )
+                            newDefOpsForExceptionalControlFlow(currentPC, currentInstruction, successorPC)
                         } else {
                             currentDefOps
                         }
@@ -1005,7 +1011,8 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode =>
                 // We have to check if we have a nested JSR call;
                 // if the current subroutine level (root = 0) is smaller than the
                 // high of the stack then we have a (nested) subroutine call.
-                currentSubroutineLevel < jsrPCs.size) {
+                currentSubroutineLevel < jsrPCs.size
+            ) {
                 val IntRefPair(jsrPC, newJSRPCs) = jsrPCs.pop().headAndTail
                 jsrPCs.push(newJSRPCs)
                 // println("processing jsr: "+jsrPC+"; remaining: "+jsrPCs)
@@ -1032,7 +1039,8 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode =>
                     jsrInstruction,
                     successorPC,
                     isExceptionalControlFlow = false,
-                    0, pushesValue = true
+                    0,
+                    pushesValue = true
                 )
                 nextPCs.push(IntTrieSet1(successorPC))
                 nextJoinPCs.push(IntTrieSet.empty)
@@ -1163,56 +1171,58 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode =>
             //  println(" "+instructions(currentPC))
 
             def handleSuccessor(isExceptionalControlFlow: Boolean)(successorPC: Int): Unit = {
-                val scheduleNextPC = try {
-                    handleFlow(
-                        currentPC, successorPC, isExceptionalControlFlow
-                    )(
-                        cfJoins, subroutinePCs,
-                        operandsArray, localsArray
-                    )
-                } catch {
-                    case e: Throwable =>
-                        val method = analyzedEntity(aiResult.domain)
-                        var message = s"def-use computation failed for: $method\n"
-                        try {
-                            message += s"\tCurrent PC: $currentPC; Successor PC: $successorPC\n"
-                            message +=
-                                jsrPCs
-                                .reverse
-                                .zipWithIndex
-                                .map(e => s"(Level ${e._2})${e._1.mkString("{", ",", "}")})")
-                                .mkString("\tJSR PCs: ", ",", "\n")
-                            message += retPCs.mkString("\tRET PCs: ", ",", "\n")
-                            message += s"\tStack: ${defOps(currentPC)}\n"
-                            val localsDump =
-                                defLocals(currentPC).zipWithIndex.map { e =>
-                                    val (local, index) = e; s"$index: $local"
-                                }
-                            message += localsDump.mkString("\tLocals:\n\t\t", "\n\t\t", "\n")
-                            val bout = new ByteArrayOutputStream()
-                            val pout = new PrintStream(bout)
-                            e.printStackTrace(pout)
-                            pout.flush()
-                            val stacktrace = bout.toString("UTF-8")
-                            message += "\tStacktrace: \n\t" + stacktrace + "\n"
-                        } catch {
-                            case t: Throwable =>
-                                message += s"<fatal error while collecting : ${t.getMessage}>"
-                        }
-                        // val htmlMessage =
-                        // message.
-                        //     replace("\n", "<br>").
-                        //     replace("\t", "&nbsp;&nbsp;") +
-                        //     dumpDefUseInfo().toString
-                        // org.opalj.io.writeAndOpen(htmlMessage, "defuse", ".html")
-                        throw AnalysisException(message, e);
-                }
+                val scheduleNextPC =
+                    try {
+                        handleFlow(currentPC, successorPC, isExceptionalControlFlow)(
+                            cfJoins,
+                            subroutinePCs,
+                            operandsArray,
+                            localsArray
+                        )
+                    } catch {
+                        case e: Throwable =>
+                            val method = analyzedEntity(aiResult.domain)
+                            var message = s"def-use computation failed for: $method\n"
+                            try {
+                                message += s"\tCurrent PC: $currentPC; Successor PC: $successorPC\n"
+                                message +=
+                                    jsrPCs
+                                        .reverse
+                                        .zipWithIndex
+                                        .map(e => s"(Level ${e._2})${e._1.mkString("{", ",", "}")})")
+                                        .mkString("\tJSR PCs: ", ",", "\n")
+                                message += retPCs.mkString("\tRET PCs: ", ",", "\n")
+                                message += s"\tStack: ${defOps(currentPC)}\n"
+                                val localsDump =
+                                    defLocals(currentPC).zipWithIndex.map { e =>
+                                        val (local, index) = e; s"$index: $local"
+                                    }
+                                message += localsDump.mkString("\tLocals:\n\t\t", "\n\t\t", "\n")
+                                val bout = new ByteArrayOutputStream()
+                                val pout = new PrintStream(bout)
+                                e.printStackTrace(pout)
+                                pout.flush()
+                                val stacktrace = bout.toString("UTF-8")
+                                message += "\tStacktrace: \n\t" + stacktrace + "\n"
+                            } catch {
+                                case t: Throwable =>
+                                    message += s"<fatal error while collecting : ${t.getMessage}>"
+                            }
+                            // val htmlMessage =
+                            // message.
+                            //     replace("\n", "<br>").
+                            //     replace("\t", "&nbsp;&nbsp;") +
+                            //     dumpDefUseInfo().toString
+                            // org.opalj.io.writeAndOpen(htmlMessage, "defuse", ".html")
+                            throw AnalysisException(message, e);
+                    }
 
                 if (scheduleNextPC) {
                     // ... this is never (directly) true for JSR/RET; they are handled specially!
                     if (!isExceptionalControlFlow ||
                         currentSubroutineLevel == 0 ||
-                        belongsToSubroutine(currentPC) == belongsToSubroutine(successorPC)) {
+                        belongsToSubroutine(currentPC) == belongsToSubroutine(successorPC)
+                    ) {
                         if (cfJoins.contains(successorPC)) {
                             nextJoinPCs.push(nextJoinPCs.pop() + successorPC)
                         } else {
@@ -1326,39 +1336,35 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode =>
     def dumpDefUseTable(): Node = {
         val instructions = code.instructions
         val perInstruction =
-            defOps.zip(defLocals).zipWithIndex.
-                filter(e => e._1._1 != null || e._1._2 != null).
-                map { e =>
+            defOps.zip(defLocals).zipWithIndex
+                .filter(e => e._1._1 != null || e._1._2 != null)
+                .map { e =>
                     val ((os, ls), i) = e
                     val operands =
                         if (os eq null)
-                            <i>{ "N/A" }</i>
+                            <i>{"N/A"}</i>
                         else
-                            os.map { o =>
-                                <li>{ if (o eq null) "N/A" else o.mkString("{", ",", "}") }</li>
-                            }.toList
+                            os.map { o => <li>{if (o eq null) "N/A" else o.mkString("{", ",", "}")}</li> }.toList
 
                     val locals =
                         if (ls eq null)
-                            <i>{ "N/A" }</i>
+                            <i>{"N/A"}</i>
                         else
-                            ls.toSeq.reverse.map { e =>
-                                <li>{ if (e eq null) "N/A" else e.mkString("{", ",", "}") }</li>
-                            }
+                            ls.toSeq.reverse.map { e => <li>{if (e eq null) "N/A" else e.mkString("{", ",", "}")}</li> }
 
                     val used = this.usedBy(i)
                     val usedBy = if (used eq null) "N/A" else used.mkString("{", ", ", "}")
                     <tr>
-                        <td>{ i }<br/>{ instructions(i).toString(i) }</td>
-                        <td>{ usedBy }</td>
-                        <td><ul class="Stack">{ operands }</ul></td>
-                        <td><ol start="0" class="registers">{ locals }</ol></td>
+                        <td>{i}<br/>{instructions(i).toString(i)}</td>
+                        <td>{usedBy}</td>
+                        <td><ul class="Stack">{operands}</ul></td>
+                        <td><ol start="0" class="registers">{locals}</ol></td>
                     </tr>
                 }
 
         <div>
             <h1>Unused</h1>
-            { unused.mkString("", ", ", "") }
+            {unused.mkString("", ", ", "")}
             <h1>Overview</h1>
             <table>
                 <tr>
@@ -1367,7 +1373,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode =>
                     <th class="stack">Stack</th>
                     <th class="registers">Locals</th>
                 </tr>
-                { perInstruction }
+                {perInstruction}
             </table>
         </div>
     }
@@ -1402,10 +1408,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode =>
                 s"$vo: " + code.instructions(vo).toString(vo)
         }
 
-        val unusedNode =
-            new DefaultMutableNode(
-                Int.MinValue: ValueOrigin, (_: ValueOrigin) => "<NONE>", Some("pink")
-            )
+        val unusedNode = new DefaultMutableNode(Int.MinValue: ValueOrigin, (_: ValueOrigin) => "<NONE>", Some("pink"))
 
         // 1. create nodes for all local vars (i.e., the corresponding instructions)
         var nodes: Map[ValueOrigin, DefaultMutableNode[ValueOrigin]] =

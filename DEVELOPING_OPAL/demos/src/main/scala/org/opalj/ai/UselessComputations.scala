@@ -67,21 +67,21 @@ object UselessComputations extends ProjectAnalysisApplication {
                 import result._
                 val results = collectPCWithOperands(domain)(body, operandsArray) {
                     case (
-                        pc,
-                        IFNULL(_) | IFNONNULL(_),
-                        Seq(domain.DomainReferenceValueTag(value), _*)
+                            pc,
+                            IFNULL(_) | IFNONNULL(_),
+                            Seq(domain.DomainReferenceValueTag(value), _*)
                         ) if value.isNull.isYesOrNo =>
                         UselessComputation(method, pc, "useless comparison with null")
                     case (
-                        pc,
-                        _: IFICMPInstruction[_],
-                        Seq(domain.ConcreteIntegerValue(a), domain.ConcreteIntegerValue(b), _*)
+                            pc,
+                            _: IFICMPInstruction[_],
+                            Seq(domain.ConcreteIntegerValue(a), domain.ConcreteIntegerValue(b), _*)
                         ) =>
                         UselessComputation(method, pc, "comparison of constant values: " + a + ", " + b)
                     case (
-                        pc,
-                        _: IF0Instruction[_],
-                        Seq(domain.ConcreteIntegerValue(a), _*)
+                            pc,
+                            _: IF0Instruction[_],
+                            Seq(domain.ConcreteIntegerValue(a), _*)
                         ) =>
                         UselessComputation(method, pc, "comparison of 0 with constant value: " + a)
                 }

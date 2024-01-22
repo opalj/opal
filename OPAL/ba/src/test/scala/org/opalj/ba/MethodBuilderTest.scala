@@ -8,6 +8,10 @@ import scala.reflect.runtime.universe._
 import java.io.ByteArrayInputStream
 import scala.collection.immutable.ArraySeq
 
+import org.junit.runner.RunWith
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatestplus.junit.JUnitRunner
+
 import org.opalj.bc.Assembler
 import org.opalj.bi._
 import org.opalj.br.IntegerType
@@ -17,10 +21,6 @@ import org.opalj.br.ObjectType
 import org.opalj.br.instructions._
 import org.opalj.br.reader.Java8Framework.{ClassFile => J8ClassFile}
 import org.opalj.util.InMemoryClassLoader
-
-import org.junit.runner.RunWith
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests the properties of a method in a class build with the BytecodeAssembler DSL. The class is
@@ -39,7 +39,9 @@ class MethodBuilderTest extends AnyFlatSpec {
             thisType = "SimpleMethodClass",
             methods = METHODS(
                 METHOD(
-                    FINAL.SYNTHETIC.PUBLIC, "testMethod", "(Ljava/lang/String;)Ljava/lang/String;",
+                    FINAL.SYNTHETIC.PUBLIC,
+                    "testMethod",
+                    "(Ljava/lang/String;)Ljava/lang/String;",
                     CODE(ACONST_NULL, ARETURN),
                     ArraySeq[MethodAttributeBuilder](EXCEPTIONS("java/lang/Exception"), br.Deprecated)
                 )
@@ -102,7 +104,9 @@ class MethodBuilderTest extends AnyFlatSpec {
             thisType = "AttributeMethodClass",
             methods = METHODS(
                 METHOD(
-                    PUBLIC, "<init>", "()V",
+                    PUBLIC,
+                    "<init>",
+                    "()V",
                     CODE(
                         LINENUMBER(0),
                         ALOAD_0,
@@ -114,7 +118,9 @@ class MethodBuilderTest extends AnyFlatSpec {
                     ) MAXSTACK 2 MAXLOCALS 3
                 ),
                 METHOD(
-                    PUBLIC, "tryCatchFinallyTest", "(I)I",
+                    PUBLIC,
+                    "tryCatchFinallyTest",
+                    "(I)I",
                     CODE(
                         ICONST_1,
                         ISTORE_2,
@@ -300,12 +306,14 @@ class MethodBuilderTest extends AnyFlatSpec {
             ALOAD_0,
             LabelElement(PCLabel(1)),
             NOP, // INVOKESTATIC(effekt.Effekt{ void beforeEffect() })),
-            POP, ICONST_0, // INVOKEINTERFACE(run.parsers.CharParsers{ boolean alternative() })),
+            POP,
+            ICONST_0, // INVOKEINTERFACE(run.parsers.CharParsers{ boolean alternative() })),
             ICONST_0, // INVOKESTATIC(effekt.Effekt{ boolean isEffectful() })),
             LabeledIFEQ(Symbol("EPResume1")),
             POP,
             ALOAD_0,
-            POP, ACONST_NULL, // INVOKEDYNAMIC(BootstrapMethod(InvokeStaticMethodHandle(ObjectType(java/lang/invoke/LambdaMetafactory),false,metafactory,MethodDescriptor((java.lang.invoke.MethodHandles$Lookup, java.lang.String, java.lang.invoke.MethodType, java.lang.invoke.MethodType, java.lang.invoke.MethodHandle, java.lang.invoke.MethodType): java.lang.invoke.CallSite)),Vector(MethodDescriptor((): void), InvokeStaticMethodHandle(ObjectType(run/parsers/CharParsers),false,minimal$entrypoint$1,MethodDescriptor((run.parsers.CharParsers): void)), MethodDescriptor((): void))), target=effekt.Frame enter(run.parsers.CharParsers)),
+            POP,
+            ACONST_NULL, // INVOKEDYNAMIC(BootstrapMethod(InvokeStaticMethodHandle(ObjectType(java/lang/invoke/LambdaMetafactory),false,metafactory,MethodDescriptor((java.lang.invoke.MethodHandles$Lookup, java.lang.String, java.lang.invoke.MethodType, java.lang.invoke.MethodType, java.lang.invoke.MethodHandle, java.lang.invoke.MethodType): java.lang.invoke.CallSite)),Vector(MethodDescriptor((): void), InvokeStaticMethodHandle(ObjectType(run/parsers/CharParsers),false,minimal$entrypoint$1,MethodDescriptor((run.parsers.CharParsers): void)), MethodDescriptor((): void))), target=effekt.Frame enter(run.parsers.CharParsers)),
             POP, // INVOKESTATIC(effekt.Effekt{ void push(effekt.Frame) }),
             RETURN,
             LabelElement(Symbol("EP1")),
@@ -324,7 +332,8 @@ class MethodBuilderTest extends AnyFlatSpec {
             LabeledIFEQ(Symbol("EPResume2")),
             POP,
             ALOAD_0,
-            POP, ACONST_NULL, //INVOKEDYNAMIC(BootstrapMethod(InvokeStaticMethodHandle(ObjectType(java/lang/invoke/LambdaMetafactory),false,metafactory,MethodDescriptor((java.lang.invoke.MethodHandles$Lookup, java.lang.String, java.lang.invoke.MethodType, java.lang.invoke.MethodType, java.lang.invoke.MethodHandle, java.lang.invoke.MethodType): java.lang.invoke.CallSite)),Vector(MethodDescriptor((): void), InvokeStaticMethodHandle(ObjectType(run/parsers/CharParsers),false,minimal$entrypoint$2,MethodDescriptor((run.parsers.CharParsers): void)), MethodDescriptor((): void))), target=effekt.Frame enter(run.parsers.CharParsers)),
+            POP,
+            ACONST_NULL, // INVOKEDYNAMIC(BootstrapMethod(InvokeStaticMethodHandle(ObjectType(java/lang/invoke/LambdaMetafactory),false,metafactory,MethodDescriptor((java.lang.invoke.MethodHandles$Lookup, java.lang.String, java.lang.invoke.MethodType, java.lang.invoke.MethodType, java.lang.invoke.MethodHandle, java.lang.invoke.MethodType): java.lang.invoke.CallSite)),Vector(MethodDescriptor((): void), InvokeStaticMethodHandle(ObjectType(run/parsers/CharParsers),false,minimal$entrypoint$2,MethodDescriptor((run.parsers.CharParsers): void)), MethodDescriptor((): void))), target=effekt.Frame enter(run.parsers.CharParsers)),
             POP, // INVOKESTATIC(effekt.Effekt{ void push(effekt.Frame) }),
             RETURN,
             /*DEAD*/ LabelElement(Symbol("EP2")),

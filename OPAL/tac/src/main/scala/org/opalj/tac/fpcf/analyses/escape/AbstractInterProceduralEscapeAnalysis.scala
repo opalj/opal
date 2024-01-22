@@ -45,7 +45,7 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
 
     override type AnalysisState <: AbstractEscapeAnalysisState with ReturnValueUseSites
 
-    protected[this] override def handleStaticMethodCall(
+    override protected[this] def handleStaticMethodCall(
         call: StaticMethodCall[V]
     )(
         implicit
@@ -55,7 +55,7 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
         checkCall(call.pc, None, call.params, hasAssignment = false)
     }
 
-    protected[this] override def handleStaticFunctionCall(
+    override protected[this] def handleStaticFunctionCall(
         call:          StaticFunctionCall[V],
         hasAssignment: Boolean
     )(
@@ -66,7 +66,7 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
         checkCall(call.pc, None, call.params, hasAssignment)
     }
 
-    protected[this] override def handleVirtualMethodCall(
+    override protected[this] def handleVirtualMethodCall(
         call: VirtualMethodCall[V]
     )(
         implicit
@@ -76,7 +76,7 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
         checkCall(call.pc, Some(call.receiver), call.params, hasAssignment = false)
     }
 
-    protected[this] override def handleVirtualFunctionCall(
+    override protected[this] def handleVirtualFunctionCall(
         call:          VirtualFunctionCall[V],
         hasAssignment: Boolean
     )(
@@ -87,7 +87,7 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
         checkCall(call.pc, Some(call.receiver), call.params, hasAssignment)
     }
 
-    protected[this] override def handleParameterOfConstructor(
+    override protected[this] def handleParameterOfConstructor(
         call: NonVirtualMethodCall[V]
     )(
         implicit
@@ -97,7 +97,7 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
         checkCall(call.pc, None, call.params, hasAssignment = false)
     }
 
-    protected[this] override def handleNonVirtualAndNonConstructorCall(
+    override protected[this] def handleNonVirtualAndNonConstructorCall(
         call: NonVirtualMethodCall[V]
     )(
         implicit
@@ -107,7 +107,7 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
         checkCall(call.pc, Some(call.receiver), call.params, hasAssignment = false)
     }
 
-    protected[this] override def handleNonVirtualFunctionCall(
+    override protected[this] def handleNonVirtualFunctionCall(
         call:          NonVirtualFunctionCall[V],
         hasAssignment: Boolean
     )(
@@ -168,9 +168,10 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
                 if (fps == null) {
                     state.meetMostRestrictive(AtMost(EscapeInCallee))
                 } else if (project.isSignaturePolymorphic(
-                    callee.method.definedMethod.classFile.thisType,
-                    callee.method.definedMethod
-                )) {
+                               callee.method.definedMethod.classFile.thisType,
+                               callee.method.definedMethod
+                           )
+                ) {
                     // IMPROVE: Signature polymorphic methods like invoke(Exact) do not escape their
                     // parameters directly and indirect effects are handled by the indirect callees
                     // code below
@@ -215,8 +216,7 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
         fp:            (Context, VirtualFormalParameter),
         hasAssignment: Boolean
     )(
-        implicit
-        state: AnalysisState
+        implicit state: AnalysisState
     ): Unit = {
         /*
          * Handling a escape state twice, does not affect the escape state
@@ -234,8 +234,7 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
         ep:            EOptionP[Entity, Property],
         hasAssignment: Boolean
     )(
-        implicit
-        state: AnalysisState
+        implicit state: AnalysisState
     ): Unit = {
         state.meetMostRestrictive(EscapeInCallee)
 
@@ -249,8 +248,7 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
         escapeState:   EOptionP[Entity, Property],
         hasAssignment: Boolean
     )(
-        implicit
-        state: AnalysisState
+        implicit state: AnalysisState
     ): Unit = {
         val e = escapeState.e.asInstanceOf[(Context, VirtualFormalParameter)]
         escapeState match {

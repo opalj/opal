@@ -76,13 +76,14 @@ object ForNameClasses extends ForNameClassesMetaInformation {
         val name = "opalj.ForNameClasses"
         PropertyKey.create(
             name,
-            (ps: PropertyStore, reason: FallbackReason, _: Entity) => reason match {
-                case PropertyIsNotDerivedByPreviouslyExecutedAnalysis =>
-                    OPALLogger.error("call graph analysis", "no analysis executed for Class.forName")(ps.logContext)
-                    NoForNameClasses
-                case _ =>
-                    throw new IllegalStateException(s"analysis required for property: $name")
-            }
+            (ps: PropertyStore, reason: FallbackReason, _: Entity) =>
+                reason match {
+                    case PropertyIsNotDerivedByPreviouslyExecutedAnalysis =>
+                        OPALLogger.error("call graph analysis", "no analysis executed for Class.forName")(ps.logContext)
+                        NoForNameClasses
+                    case _ =>
+                        throw new IllegalStateException(s"analysis required for property: $name")
+                }
         )
     }
 }

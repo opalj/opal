@@ -39,8 +39,8 @@ class PurityTests extends PropertiesTest {
     override def withRT = true
 
     override def init(p: Project[URL]): Unit = {
-        p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey)(
-            _ => Set[Class[_ <: AnyRef]](classOf[l1.DefaultDomainWithCFGAndDefUse[URL]])
+        p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey)(_ =>
+            Set[Class[_ <: AnyRef]](classOf[l1.DefaultDomainWithCFGAndDefUse[URL]])
         )
 
         p.get(RTACallGraphKey)
@@ -89,26 +89,26 @@ class PurityTests extends PropertiesTest {
             "together with the FieldImmutabilityAnalysis and L2FieldAssignabilityAnalysis"
     ) {
 
-            L2PurityAnalysis.setRater(Some(SystemOutLoggingAllExceptionRater))
+        L2PurityAnalysis.setRater(Some(SystemOutLoggingAllExceptionRater))
 
-            val as = executeAnalyses(
-                Set(
-                    EagerL2PurityAnalysis,
-                    LazyL2FieldAssignabilityAnalysis,
-                    LazyFieldImmutabilityAnalysis,
-                    LazyClassImmutabilityAnalysis,
-                    LazyTypeImmutabilityAnalysis,
-                    LazyStaticDataUsageAnalysis,
-                    LazyL0CompileTimeConstancyAnalysis,
-                    LazyInterProceduralEscapeAnalysis,
-                    LazyReturnValueFreshnessAnalysis,
-                    LazyFieldLocalityAnalysis,
-                    LazyInterProceduralEscapeAnalysis,
-                    EagerFieldAccessInformationAnalysis
-                )
+        val as = executeAnalyses(
+            Set(
+                EagerL2PurityAnalysis,
+                LazyL2FieldAssignabilityAnalysis,
+                LazyFieldImmutabilityAnalysis,
+                LazyClassImmutabilityAnalysis,
+                LazyTypeImmutabilityAnalysis,
+                LazyStaticDataUsageAnalysis,
+                LazyL0CompileTimeConstancyAnalysis,
+                LazyInterProceduralEscapeAnalysis,
+                LazyReturnValueFreshnessAnalysis,
+                LazyFieldLocalityAnalysis,
+                LazyInterProceduralEscapeAnalysis,
+                EagerFieldAccessInformationAnalysis
             )
+        )
 
-            as.propertyStore.shutdown()
-            validateProperties(as, contextsWithAnnotations(as.project), Set("Purity"))
-        }
+        as.propertyStore.shutdown()
+        validateProperties(as, contextsWithAnnotations(as.project), Set("Purity"))
+    }
 }

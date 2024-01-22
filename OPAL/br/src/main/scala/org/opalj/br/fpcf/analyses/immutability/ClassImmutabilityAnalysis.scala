@@ -106,8 +106,8 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
                 case Some(scf) =>
                     nextComputations ::= (
                         (
-                            determineClassImmutability(t, cfImmutability, cfImmutabilityIsFinal,
-                                lazyComputation = false), scf
+                            determineClassImmutability(t, cfImmutability, cfImmutabilityIsFinal, lazyComputation = false),
+                            scf
                         )
                     )
                 case None =>
@@ -195,9 +195,7 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
 
         // Collect all fields for which we need to determine the effective immutability!
 
-        val instanceFields = cf.fields.iterator.filter { f =>
-            !f.isStatic
-        }.toList
+        val instanceFields = cf.fields.iterator.filter { f => !f.isStatic }.toList
         var hasNonTransitivelyImmutableFields = false
         var hasDependentlyImmutableFields = false
         var genericTypeParameters: SortedSet[String] = SortedSet.empty
@@ -253,7 +251,8 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
         }
 
         if (hasDependentlyImmutableFields &&
-            maxLocalImmutability != NonTransitivelyImmutableClass && maxLocalImmutability != MutableClass) {
+            maxLocalImmutability != NonTransitivelyImmutableClass && maxLocalImmutability != MutableClass
+        ) {
             maxLocalImmutability = DependentlyImmutableClass(genericTypeParameters)
         }
 
@@ -299,16 +298,17 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
 
                 case LBP(NonTransitivelyImmutableClass) => // super class is at least non-transitively immutable
                     if (minLocalImmutability != NonTransitivelyImmutableClass &&
-                        !dependees.valuesIterator.exists(_.pk == FieldImmutability.key))
+                        !dependees.valuesIterator.exists(_.pk == FieldImmutability.key)
+                    )
                         minLocalImmutability = NonTransitivelyImmutableClass // Lift lower bound when possible
 
                 case UBP(TransitivelyImmutableClass) => // No information about superclass
-
                 case FinalP(DependentlyImmutableField(parameter)) =>
                     if (hasNonTransitivelyImmutableFields) {
                         maxLocalImmutability = NonTransitivelyImmutableClass
                     } else if (maxLocalImmutability != MutableClass &&
-                        maxLocalImmutability != NonTransitivelyImmutableClass) {
+                               maxLocalImmutability != NonTransitivelyImmutableClass
+                    ) {
                         genericTypeParameters ++= parameter
                         maxLocalImmutability = DependentlyImmutableClass(genericTypeParameters)
                     }
@@ -317,12 +317,14 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
                 case UBP(MutableField) =>
                     return Result(t, MutableClass);
 
-                case UBP(TransitivelyImmutableField) => // no information about field mutability
+                case UBP(TransitivelyImmutableField) =>
+                // no information about field mutability
 
                 case UBP(NonTransitivelyImmutableField) =>
                     maxLocalImmutability = NonTransitivelyImmutableClass
 
-                case UBP(DependentlyImmutableField(parameter)) if maxLocalImmutability != NonTransitivelyImmutableClass =>
+                case UBP(DependentlyImmutableField(parameter))
+                    if maxLocalImmutability != NonTransitivelyImmutableClass =>
                     genericTypeParameters ++= parameter
                     maxLocalImmutability = DependentlyImmutableClass(genericTypeParameters)
 
@@ -360,7 +362,7 @@ trait ClassImmutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(ClassImmutability)
 
-    final override def uses: Set[PropertyBounds] =
+    override final def uses: Set[PropertyBounds] =
         PropertyBounds.lubs(ClassImmutability, FieldImmutability)
 
     override def requiredProjectInformation: ProjectInformationKeys = Seq()
@@ -396,9 +398,7 @@ trait ClassImmutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
 
         unexpectedRootClassTypes foreach { rt =>
             allSubtypes(rt, reflexive = true) foreach { ot =>
-                project.classFile(ot) foreach { cf =>
-                    set(cf.thisType, MutableClass)
-                }
+                project.classFile(ot) foreach { cf => set(cf.thisType, MutableClass) }
             }
         }
 
@@ -411,7 +411,7 @@ trait ClassImmutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
             .map(ot => (ot, project.classFile(ot)))
             .foreach {
                 case (_, Some(cf)) => cfs ::= cf
-                case (t, None) =>
+                case (t, None)     =>
                     // This handles the case where the class hierarchy is at least partially
                     // based on a pre-configured class hierarchy (*.ths file).
                     // E.g., imagine that you analyze a lib which contains a class that inherits

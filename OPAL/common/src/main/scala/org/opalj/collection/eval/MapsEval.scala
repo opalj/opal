@@ -87,9 +87,7 @@ object MapsEval extends App {
     time {
         val ts = Array.fill(Threads)(new Thread() {
             override def run(): Unit = {
-                (1 to Repetitions).foreach { i =>
-                    ls.foreach { s => t += jConcurrentMap.get(s).hashCode }
-                }
+                (1 to Repetitions).foreach { i => ls.foreach { s => t += jConcurrentMap.get(s).hashCode } }
             }
         })
         ts.foreach(t => t.start)

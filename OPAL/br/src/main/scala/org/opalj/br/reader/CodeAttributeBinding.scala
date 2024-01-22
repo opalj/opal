@@ -45,7 +45,9 @@ trait CodeAttributeBinding
         catch_type_index: Constant_Pool_Index
     ): ExceptionTableEntry = {
         new ExceptionTableEntry(
-            start_pc, end_pc, handler_pc,
+            start_pc,
+            end_pc,
+            handler_pc,
             if (catch_type_index == 0)
                 None
             else

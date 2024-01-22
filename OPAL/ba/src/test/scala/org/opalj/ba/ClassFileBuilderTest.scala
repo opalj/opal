@@ -7,6 +7,10 @@ import scala.language.postfixOps
 import java.io.ByteArrayInputStream
 import scala.collection.immutable.ArraySeq
 
+import org.junit.runner.RunWith
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatestplus.junit.JUnitRunner
+
 import org.opalj.bc.Assembler
 import org.opalj.bi.ACC_FINAL
 import org.opalj.bi.ACC_PUBLIC
@@ -20,10 +24,6 @@ import org.opalj.br.MethodDescriptor
 import org.opalj.br.reader.Java17Framework.{ClassFile => ClassFileReader}
 import org.opalj.collection.immutable.UShortPair
 import org.opalj.util.InMemoryClassLoader
-
-import org.junit.runner.RunWith
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests general properties of a classes build with the BytecodeAssembler DSL by loading and

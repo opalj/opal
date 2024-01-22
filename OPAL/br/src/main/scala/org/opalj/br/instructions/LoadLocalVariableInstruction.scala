@@ -10,9 +10,9 @@ package instructions
  */
 abstract class LoadLocalVariableInstruction extends Instruction with NoLabels {
 
-    final override def isLoadLocalVariableInstruction: Boolean = true
+    override final def isLoadLocalVariableInstruction: Boolean = true
 
-    final override def asLoadLocalVariableInstruction: this.type = this
+    override final def asLoadLocalVariableInstruction: this.type = this
 
     /**
      * The index of the local variable(register) that is loaded and put on top
@@ -29,7 +29,7 @@ abstract class LoadLocalVariableInstruction extends Instruction with NoLabels {
 
     final def mayThrowExceptions: Boolean = false
 
-    final override def nextInstructions(
+    override final def nextInstructions(
         currentPC:             PC,
         regularSuccessorsOnly: Boolean
     )(
@@ -54,8 +54,9 @@ abstract class LoadLocalVariableInstruction extends Instruction with NoLabels {
 
     final def expressionResult: NoExpression.type = NoExpression
 
-    final override def toString(currentPC: Int): String = toString()
+    override final def toString(currentPC: Int): String = toString()
 }
+
 /**
  * Defines a factory method for `LoadLocalVariableInstruction`s.
  *

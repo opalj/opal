@@ -16,7 +16,8 @@ abstract class PrimitiveArrayStoreInstruction
         PrimitiveArrayAccess.jvmExceptions
 
     final def nextInstructions(
-        currentPC: PC, regularSuccessorsOnly: Boolean
+        currentPC:             PC,
+        regularSuccessorsOnly: Boolean
     )(
         implicit
         code:           Code,
@@ -26,7 +27,9 @@ abstract class PrimitiveArrayStoreInstruction
             List(indexOfNextInstruction(currentPC))
         else
             Instruction.nextInstructionOrExceptionHandlers(
-                this, currentPC, PrimitiveArrayAccess.jvmExceptions
+                this,
+                currentPC,
+                PrimitiveArrayAccess.jvmExceptions
             )
     }
 

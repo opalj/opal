@@ -17,7 +17,7 @@ object AccessFlagsContexts extends Enumeration {
             ACC_PRIVATE,
             ACC_PROTECTED,
             ACC_STATIC,
-            ACC_SUPER /*NOT SPECIFIED IN THE JVM SPEC. - MAYBE THIS BIT IS JUST SET BY THE SCALA COMPILER!*/ ,
+            ACC_SUPER /*NOT SPECIFIED IN THE JVM SPEC. - MAYBE THIS BIT IS JUST SET BY THE SCALA COMPILER!*/,
             ACC_FINAL,
             ACC_INTERFACE,
             ACC_ABSTRACT,

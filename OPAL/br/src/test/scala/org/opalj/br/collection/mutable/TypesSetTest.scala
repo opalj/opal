@@ -4,13 +4,13 @@ package br
 package collection
 package mutable
 
-import org.opalj.br.analyses.Project
-import org.opalj.log.GlobalLogContext
-
 import org.junit.runner.RunWith
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
+
+import org.opalj.br.analyses.Project
+import org.opalj.log.GlobalLogContext
 
 /**
  * Basic tests of the TypesSet class.

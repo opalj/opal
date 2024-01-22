@@ -16,20 +16,20 @@ case class CONSTANT_Dynamic_info(
         name_and_type_index:         Constant_Pool_Index
 ) extends Constant_Pool_Entry {
 
-    final override def size: Int = 1 + 2 + 2
+    override final def size: Int = 1 + 2 + 2
 
     override def Constant_Type_Value: ConstantPoolTag = bi.ConstantPoolTags.CONSTANT_Dynamic
 
     override def asCPNode(implicit cp: Constant_Pool): Node = {
         <div class="cp_entry">
-            { this.getClass.getSimpleName }
+            {this.getClass.getSimpleName}
             (<div class="attributes_ref">
-                 bootstrap_method_attr_index={ bootstrap_method_attr_index }
+                 bootstrap_method_attr_index={bootstrap_method_attr_index}
              </div>
             <div class="cp_ref">
-                name_and_type_index={ name_and_type_index }
+                name_and_type_index={name_and_type_index}
                 &laquo;
-                { cp(name_and_type_index).asCPNode }
+                {cp(name_and_type_index).asCPNode}
                 &raquo;
             </div>
             )
@@ -43,7 +43,7 @@ case class CONSTANT_Dynamic_info(
                 ntiNode,
                 Text(s" //Bootstrap Method Attribute[$bootstrap_method_attr_index]")
             )
-        <span class="cp_entry">{ paramsNode }</span>
+        <span class="cp_entry">{paramsNode}</span>
     }
 
     override def toString(implicit cp: Constant_Pool): String = {

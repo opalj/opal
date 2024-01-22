@@ -57,7 +57,8 @@ object CovariantEqualsMethodDefined extends ProjectAnalysisApplication {
                     reports = Issue(
                         "CovariantEqualsMethodDefined",
                         Relevance.Moderate,
-                        summary = "defines a covariant equals method, but does not also define the standard equals method",
+                        summary =
+                            "defines a covariant equals method, but does not also define the standard equals method",
                         categories = Set(IssueCategory.Correctness),
                         kinds = Set(IssueKind.MethodMissing),
                         locations = List(new ClassLocation(None, project, classFile))

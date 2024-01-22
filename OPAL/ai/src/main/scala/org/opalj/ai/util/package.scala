@@ -22,7 +22,8 @@ package object util {
      * a reference comparison (`eq`).
      */
     @inline final def removeFirstUnless(
-        worklist: List[Int /*PC*/ ], pc: Int
+        worklist: List[Int /*PC*/ ],
+        pc:       Int
     )(
         test: Int => Boolean
     ): List[Int /*PC*/ ] = {

@@ -4,6 +4,11 @@ package ai
 package domain
 package l1
 
+import org.junit.runner.RunWith
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
+
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.ArrayType
 import org.opalj.br.ClassHierarchy
@@ -14,11 +19,6 @@ import org.opalj.br.reader.Java8Framework.ClassFiles
 import org.opalj.collection.immutable._
 import org.opalj.collection.mutable.Locals
 import org.opalj.value.BaseReferenceValues
-
-import org.junit.runner.RunWith
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.matchers.should.Matchers
-import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests the `ReferenceValues` domain.
@@ -176,7 +176,8 @@ class DefaultReferenceValuesTest extends AnyFunSpec with Matchers {
                 {
                     val (updatedOperands, updatedLocals) =
                         theObjectValue.refineUpperTypeBound(
-                            -1, Serializable,
+                            -1,
+                            Serializable,
                             List(theObjectValue),
                             Locals(IndexedSeq(theFileValue, theObjectValue))
                         )
@@ -197,13 +198,16 @@ class DefaultReferenceValuesTest extends AnyFunSpec with Matchers {
 
                 val v0 = NullValue(111)
                 val v1 = ObjectValue(222, Unknown, false, ObjectType("java/lang/Cloneable"), 2)
-                val v2 = ObjectValue(222, No, UIDSet(ObjectType("java/lang/Cloneable"), ObjectType("java/lang/Iterable")), 2)
+                val v2 =
+                    ObjectValue(222, No, UIDSet(ObjectType("java/lang/Cloneable"), ObjectType("java/lang/Iterable")), 2)
 
                 val mv1 =
                     MultipleReferenceValues(
                         UIDSet2[DomainSingleOriginReferenceValue](v0, v1),
                         IntTrieSet(111, 222),
-                        Unknown, false, UIDSet(ObjectType("java/lang/Cloneable"), ObjectType("java/lang/Iterable")),
+                        Unknown,
+                        false,
+                        UIDSet(ObjectType("java/lang/Cloneable"), ObjectType("java/lang/Iterable")),
                         3
                     )
 
@@ -215,17 +219,25 @@ class DefaultReferenceValuesTest extends AnyFunSpec with Matchers {
 
                 val v1 = ObjectValue(111, Unknown, true, ObjectType("java/lang/Object"), 1)
                 val v2 = ObjectValue(222, Unknown, false, ObjectType("java/lang/Cloneable"), 2)
-                val v3 = ObjectValue(222, Unknown, UIDSet(ObjectType("java/lang/Cloneable"), ObjectType("java/lang/Iterable")), 2)
+                val v3 = ObjectValue(
+                    222,
+                    Unknown,
+                    UIDSet(ObjectType("java/lang/Cloneable"), ObjectType("java/lang/Iterable")),
+                    2
+                )
 
                 val mv1 =
                     MultipleReferenceValues(
                         UIDSet2[DomainSingleOriginReferenceValue](v1, v2),
                         IntTrieSet(111, 222),
-                        Unknown, true, UIDSet(ObjectType("java/lang/Cloneable"), ObjectType("java/lang/Iterable")),
+                        Unknown,
+                        true,
+                        UIDSet(ObjectType("java/lang/Cloneable"), ObjectType("java/lang/Iterable")),
                         3
                     )
 
-                val (refinedOperands, _) = mv1.refineUpperTypeBound(-1, ObjectType("java/lang/Iterable"), List(mv1), Locals.empty)
+                val (refinedOperands, _) =
+                    mv1.refineUpperTypeBound(-1, ObjectType("java/lang/Iterable"), List(mv1), Locals.empty)
                 refinedOperands.head should be(v3)
             }
 
@@ -245,7 +257,9 @@ class DefaultReferenceValuesTest extends AnyFunSpec with Matchers {
                     MultipleReferenceValues(
                         UIDSet2[DomainSingleOriginReferenceValue](v1, v2),
                         IntTrieSet(111, 222),
-                        Unknown, false, UIDSet(Member),
+                        Unknown,
+                        false,
+                        UIDSet(Member),
                         3
                     )
 
@@ -266,7 +280,9 @@ class DefaultReferenceValuesTest extends AnyFunSpec with Matchers {
                     MultipleReferenceValues(
                         UIDSet2[DomainSingleOriginReferenceValue](v1, v2),
                         IntTrieSet(111, 222),
-                        Unknown, false, UIDSet(Throwable),
+                        Unknown,
+                        false,
+                        UIDSet(Throwable),
                         3
                     )
 
@@ -368,14 +384,18 @@ class DefaultReferenceValuesTest extends AnyFunSpec with Matchers {
                     MultipleReferenceValues(
                         UIDSet[DomainSingleOriginReferenceValue](v0, v1, v2),
                         IntTrieSet(111, 444, 555),
-                        Yes, true, UIDSet.empty,
+                        Yes,
+                        true,
+                        UIDSet.empty,
                         nextRefId()
                     )
                 val mv2 =
                     MultipleReferenceValues(
                         UIDSet2[DomainSingleOriginReferenceValue](v1, v2),
                         IntTrieSet(444, 555),
-                        No, false, UIDSet(ObjectType.Object),
+                        No,
+                        false,
+                        UIDSet(ObjectType.Object),
                         nextRefId()
                     )
 
@@ -395,14 +415,18 @@ class DefaultReferenceValuesTest extends AnyFunSpec with Matchers {
                     MultipleReferenceValues(
                         UIDSet2[DomainSingleOriginReferenceValue](v0, v1),
                         IntTrieSet(111, 222),
-                        Yes, true, UIDSet.empty,
+                        Yes,
+                        true,
+                        UIDSet.empty,
                         3
                     )
                 val mv2 =
                     MultipleReferenceValues(
                         UIDSet2[DomainSingleOriginReferenceValue](v0, v2),
                         IntTrieSet(111, 222),
-                        Unknown, true, UIDSet1(ArrayType(IntegerType)),
+                        Unknown,
+                        true,
+                        UIDSet1(ArrayType(IntegerType)),
                         3
                     )
 
@@ -418,14 +442,19 @@ class DefaultReferenceValuesTest extends AnyFunSpec with Matchers {
                     MultipleReferenceValues(
                         UIDSet2[DomainSingleOriginReferenceValue](v1, v2),
                         IntTrieSet(111, 222),
-                        isNull = Yes, true, UIDSet.empty, refId = 3
+                        isNull = Yes,
+                        true,
+                        UIDSet.empty,
+                        refId = 3
                     )
 
                 val mv_expected =
                     MultipleReferenceValues(
                         UIDSet2[DomainSingleOriginReferenceValue](v0, v1),
                         IntTrieSet(111, 222),
-                        Unknown, false, UIDSet(ObjectType.Serializable),
+                        Unknown,
+                        false,
+                        UIDSet(ObjectType.Serializable),
                         3
                     )
 
@@ -447,7 +476,9 @@ class DefaultReferenceValuesTest extends AnyFunSpec with Matchers {
                     MultipleReferenceValues(
                         UIDSet2[DomainSingleOriginReferenceValue](v1, v2),
                         IntTrieSet(111, 222),
-                        Yes, true, UIDSet.empty,
+                        Yes,
+                        true,
+                        UIDSet.empty,
                         3
                     )
 
@@ -455,7 +486,9 @@ class DefaultReferenceValuesTest extends AnyFunSpec with Matchers {
                     MultipleReferenceValues(
                         UIDSet2[DomainSingleOriginReferenceValue](v0, v1),
                         IntTrieSet(111, 222),
-                        Unknown, false, UIDSet(ArrayType(ObjectType.Serializable)),
+                        Unknown,
+                        false,
+                        UIDSet(ArrayType(ObjectType.Serializable)),
                         3
                     )
 
@@ -482,7 +515,9 @@ class DefaultReferenceValuesTest extends AnyFunSpec with Matchers {
                     MultipleReferenceValues(
                         UIDSet2[DomainSingleOriginReferenceValue](v1, v2_join_v3),
                         IntTrieSet(111, 222),
-                        Unknown, false, UIDSet(ObjectType.Object),
+                        Unknown,
+                        false,
+                        UIDSet(ObjectType.Object),
                         -1
                     )
                 val mv1_join_v3 = mv1.join(-1, v3)
@@ -521,7 +556,7 @@ class DefaultReferenceValuesTest extends AnyFunSpec with Matchers {
                 // StructuralUpdate        ({_ <: java.lang.Object, null}[t=-1;values=«{_ <: java.lang.Object, null}[↦111;t=1], {_ <: java.lang.Object, null}[↦222;t=2]»])
                 //MetaInformationUpdate   ({_ <: java.lang.Object, null}[t=-1;values=«{_ <: java.lang.Object, null}[↦111;t=1], {_ <: java.lang.Object, null}[↦222;t=2]»])
             }
-            */
+             */
 
             it("should handle a join of a refined ObjectValue with a MultipleReferenceValue that references the unrefined ObjectValue") {
 
@@ -534,7 +569,9 @@ class DefaultReferenceValuesTest extends AnyFunSpec with Matchers {
                     MultipleReferenceValues(
                         UIDSet2[DomainSingleOriginReferenceValue](v1, v2),
                         IntTrieSet(111, 555),
-                        No, true, UIDSet(SecurityException),
+                        No,
+                        true,
+                        UIDSet(SecurityException),
                         refId = 3
                     )
 
@@ -542,7 +579,9 @@ class DefaultReferenceValuesTest extends AnyFunSpec with Matchers {
                     MultipleReferenceValues(
                         UIDSet2[DomainSingleOriginReferenceValue](v1, v2),
                         IntTrieSet(111, 555),
-                        No, false, UIDSet(SecurityException),
+                        No,
+                        false,
+                        UIDSet(SecurityException),
                         3
                     )
 
@@ -566,7 +605,9 @@ class DefaultReferenceValuesTest extends AnyFunSpec with Matchers {
                     MultipleReferenceValues(
                         UIDSet2[DomainSingleOriginReferenceValue](v1, v2),
                         IntTrieSet(111, 555),
-                        No, true, UIDSet(ObjectType.Object),
+                        No,
+                        true,
+                        UIDSet(ObjectType.Object),
                         refId = 3
                     )
 
@@ -574,7 +615,9 @@ class DefaultReferenceValuesTest extends AnyFunSpec with Matchers {
                     MultipleReferenceValues(
                         UIDSet2[DomainSingleOriginReferenceValue](v0, v2),
                         IntTrieSet(111, 555),
-                        Unknown, false, UIDSet(ObjectType.Object),
+                        Unknown,
+                        false,
+                        UIDSet(ObjectType.Object),
                         3
                     )
 
@@ -726,25 +769,27 @@ class DefaultReferenceValuesTest extends AnyFunSpec with Matchers {
                 val theDomain = new TheDomain
                 val result = BaseAI(method, theDomain)
 
-                val BaseReferenceValues(values1) = result.operandsArray(43).head.asDomainReferenceValue; {
+                val BaseReferenceValues(values1) = result.operandsArray(43).head.asDomainReferenceValue;
+                {
                     // the original value is null
                     val value1 = values1.head
                     val value2 = values1.tail.head
                     assert(
                         value1.isNull != value2.isNull &&
-                            (value1.isNull.isYes || value1.isNull.isUnknown) &&
-                            (value2.isNull.isYes || value2.isNull.isUnknown)
+                        (value1.isNull.isYes || value1.isNull.isUnknown) &&
+                        (value2.isNull.isYes || value2.isNull.isUnknown)
                     )
                 }
 
-                val BaseReferenceValues(values2) = result.operandsArray(47).head.asDomainReferenceValue; {
+                val BaseReferenceValues(values2) = result.operandsArray(47).head.asDomainReferenceValue;
+                {
                     // the original value is null
                     val value1 = values2.head
                     val value2 = values2.tail.head
                     assert(
                         value1.isNull != value2.isNull &&
-                            (value1.isNull.isYes || value1.isNull.isUnknown) &&
-                            (value2.isNull.isYes || value2.isNull.isUnknown)
+                        (value1.isNull.isYes || value1.isNull.isUnknown) &&
+                        (value2.isNull.isYes || value2.isNull.isUnknown)
                     )
                 }
 

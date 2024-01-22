@@ -20,7 +20,7 @@ import org.opalj.de._
  */
 sealed trait SpecificationViolation {
 
-    final override def toString(): String = toString(useAnsiColors = false)
+    override final def toString(): String = toString(useAnsiColors = false)
 
     def toString(useAnsiColors: Boolean): String
 

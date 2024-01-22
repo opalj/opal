@@ -346,10 +346,16 @@ abstract class PropertyStore {
     /**
      * The set of transformers that will only be executed when required.
      */
-    protected[this] final val transformersByTargetPK: Array[( /*source*/ PropertyKey[Property], (Entity, Property) => FinalEP[Entity, Property])] = {
+    protected[this] final val transformersByTargetPK: Array[(
+        /*source*/ PropertyKey[Property],
+        (Entity, Property) => FinalEP[Entity, Property]
+    )] = {
         new Array(PropertyKind.SupportedPropertyKinds)
     }
-    protected[this] final val transformersBySourcePK: Array[( /*target*/ PropertyKey[Property], (Entity, Property) => FinalEP[Entity, Property])] = {
+    protected[this] final val transformersBySourcePK: Array[(
+        /*target*/ PropertyKey[Property],
+        (Entity, Property) => FinalEP[Entity, Property]
+    )] = {
         new Array(PropertyKind.SupportedPropertyKinds)
     }
 
@@ -592,16 +598,12 @@ abstract class PropertyStore {
             }
         }
         JArrays.fill(this.propertyKindsComputedInThisPhase, false)
-        propertyKindsComputedInThisPhase foreach { pk =>
-            this.propertyKindsComputedInThisPhase(pk.id) = true
-        }
+        propertyKindsComputedInThisPhase foreach { pk => this.propertyKindsComputedInThisPhase(pk.id) = true }
 
         // Step 2
         // Set the "propertyKindsComputedInLaterPhase" array to the specified values.
         JArrays.fill(this.propertyKindsComputedInLaterPhase, false)
-        propertyKindsComputedInLaterPhase foreach { pk =>
-            this.propertyKindsComputedInLaterPhase(pk.id) = true
-        }
+        propertyKindsComputedInLaterPhase foreach { pk => this.propertyKindsComputedInLaterPhase(pk.id) = true }
 
         // Step 3
         // Collect the information about which interim results should be suppressed.
@@ -969,7 +971,7 @@ abstract class PropertyStore {
             if (exception != t
                 && !t.isInstanceOf[InterruptedException]
                 && !t.isInstanceOf[RejectedExecutionException] // <= used, e.g., by a ForkJoinPool
-                ) {
+            ) {
                 exception.addSuppressed(t)
             }
         } else {
@@ -993,7 +995,8 @@ abstract class PropertyStore {
         throw t;
     }
 
-    @inline /*visibility should be package and subclasses*/ def handleExceptions[U](f: => U): U = {
+    @inline /*visibility should be package and subclasses*/
+    def handleExceptions[U](f: => U): U = {
         if (exception != null) throw exception;
 
         try {

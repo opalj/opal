@@ -4,15 +4,15 @@ package ai
 package domain
 package tracing
 
-import org.opalj.ai.common.XHTML.dumpOnFailureDuringValidation
-import org.opalj.bi.TestResources.locateTestResources
-import org.opalj.br._
-import org.opalj.br.reader.Java8Framework.ClassFiles
-
 import org.junit.runner.RunWith
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
+
+import org.opalj.ai.common.XHTML.dumpOnFailureDuringValidation
+import org.opalj.bi.TestResources.locateTestResources
+import org.opalj.br._
+import org.opalj.br.reader.Java8Framework.ClassFiles
 
 /**
  * This test(suite) basically tests OPAL's support for tracing a property.
@@ -94,50 +94,34 @@ class PropertyTracingTest extends AnyFlatSpec with Matchers {
     //
 
     it should "be able to correctly identify that the method notSanitized1 does not sanitize the value" in {
-        evaluateMethod("notSanitized1") { domain =>
-            domain.isSanitized() should be(false)
-        }
+        evaluateMethod("notSanitized1") { domain => domain.isSanitized() should be(false) }
     }
 
     it should "be able to correctly identify that the method notSanitized2 does not sanitize the value" in {
-        evaluateMethod("notSanitized2") { domain =>
-            domain.isSanitized() should be(false)
-        }
+        evaluateMethod("notSanitized2") { domain => domain.isSanitized() should be(false) }
     }
 
     it should "be able to correctly identify that the method sanitized1 does sanitize the value" in {
-        evaluateMethod("sanitized1") { domain =>
-            domain.isSanitized() should be(true)
-        }
+        evaluateMethod("sanitized1") { domain => domain.isSanitized() should be(true) }
     }
     it should "be able to correctly identify that the method sanitized2 does sanitize the value" in {
-        evaluateMethod("sanitized2") { domain =>
-            domain.isSanitized() should be(true)
-        }
+        evaluateMethod("sanitized2") { domain => domain.isSanitized() should be(true) }
     }
 
     it should "be able to correctly identify that the method sanitized3 does sanitize the value" in {
-        evaluateMethod("sanitized3") { domain =>
-            domain.isSanitized() should be(true)
-        }
+        evaluateMethod("sanitized3") { domain => domain.isSanitized() should be(true) }
     }
 
     it should "be able to correctly identify that the method sanitized4 does sanitize the value" in {
-        evaluateMethod("sanitized4") { domain =>
-            domain.isSanitized() should be(true)
-        }
+        evaluateMethod("sanitized4") { domain => domain.isSanitized() should be(true) }
     }
 
     it should "be able to correctly identify that the method sanitized5 does sanitize the value" in {
-        evaluateMethod("sanitized5") { domain =>
-            domain.isSanitized() should be(true)
-        }
+        evaluateMethod("sanitized5") { domain => domain.isSanitized() should be(true) }
     }
 
     it should "be able to correctly identify that the method sanitized6 does sanitize the value" in {
-        evaluateMethod("sanitized6") { domain =>
-            domain.isSanitized() should be(true)
-        }
+        evaluateMethod("sanitized6") { domain => domain.isSanitized() should be(true) }
     }
 
     // We can not yet identify that the value is definitively sanitized.

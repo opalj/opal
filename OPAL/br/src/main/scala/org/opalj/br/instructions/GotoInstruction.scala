@@ -34,8 +34,8 @@ object GotoInstruction {
 
 trait GotoInstruction extends UnconditionalBranchInstruction with GotoInstructionLike {
 
-    final override def isGotoInstruction: Boolean = true
+    override final def isGotoInstruction: Boolean = true
 
-    final override def asGotoInstruction: this.type = this
+    override final def asGotoInstruction: this.type = this
 
 }

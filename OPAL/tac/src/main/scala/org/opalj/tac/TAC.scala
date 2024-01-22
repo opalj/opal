@@ -4,6 +4,8 @@ package tac
 
 import java.io.File
 
+import com.typesafe.config.ConfigValueFactory
+
 import org.opalj.ai.BaseAI
 import org.opalj.ai.Domain
 import org.opalj.ai.domain
@@ -19,8 +21,6 @@ import org.opalj.log.{Error => ErrorLogLevel}
 import org.opalj.log.ConsoleOPALLogger
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger
-
-import com.typesafe.config.ConfigValueFactory
 
 /**
  * Creates the three-address representation for some method(s) and prints it to `std out` or writes
@@ -146,9 +146,9 @@ object TAC {
             InvokedynamicRewriting.InvokedynamicRewritingConfigKey,
             ConfigValueFactory.fromAnyRef(rewriteInvokeDynamic)
         ).withValue(
-                DynamicConstantRewriting.RewritingConfigKey,
-                ConfigValueFactory.fromAnyRef(rewriteDynamicConstants)
-            )
+            DynamicConstantRewriting.RewritingConfigKey,
+            ConfigValueFactory.fromAnyRef(rewriteDynamicConstants)
+        )
 
         val sourceFiles = cp.map(new File(_)).toArray
         val sourceLibFiles = libcp.map(new File(_)).toArray
@@ -189,10 +189,10 @@ object TAC {
                             new domain.l1.DefaultDomainWithCFGAndDefUse(project, m)
                         } else {
                             // ... "org.opalj.ai.domain.l0.BaseDomainWithDefUse"
-                            Class.
-                                forName(domainName.get).asInstanceOf[Class[Domain with RecordDefUse]].
-                                getConstructor(classOf[Project[_]], classOf[Method]).
-                                newInstance(project, m)
+                            Class
+                                .forName(domainName.get).asInstanceOf[Class[Domain with RecordDefUse]]
+                                .getConstructor(classOf[Project[_]], classOf[Method])
+                                .newInstance(project, m)
                         }
                         // val d = new domain.l0.BaseDomainWithDefUse(project, classFile, method)
                         val aiResult = BaseAI(m, d)

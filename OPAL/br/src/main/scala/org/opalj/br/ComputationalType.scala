@@ -18,29 +18,35 @@ sealed abstract class ComputationalType(val category: ComputationalTypeCategory)
     def isCategory2: Boolean
 
 }
+
 case object ComputationalTypeInt extends ComputationalType(Category1ComputationalTypeCategory) {
-    final override def isComputationalTypeReturnAddress: Boolean = false
-    final override def isCategory2: Boolean = false
+    override final def isComputationalTypeReturnAddress: Boolean = false
+    override final def isCategory2: Boolean = false
 }
+
 case object ComputationalTypeFloat extends ComputationalType(Category1ComputationalTypeCategory) {
-    final override def isComputationalTypeReturnAddress: Boolean = false
-    final override def isCategory2: Boolean = false
+    override final def isComputationalTypeReturnAddress: Boolean = false
+    override final def isCategory2: Boolean = false
 }
+
 case object ComputationalTypeLong extends ComputationalType(Category2ComputationalTypeCategory) {
-    final override def isComputationalTypeReturnAddress: Boolean = false
-    final override def isCategory2: Boolean = true
+    override final def isComputationalTypeReturnAddress: Boolean = false
+    override final def isCategory2: Boolean = true
 }
+
 case object ComputationalTypeDouble extends ComputationalType(Category2ComputationalTypeCategory) {
-    final override def isComputationalTypeReturnAddress: Boolean = false
-    final override def isCategory2: Boolean = true
+    override final def isComputationalTypeReturnAddress: Boolean = false
+    override final def isCategory2: Boolean = true
 }
+
 case object ComputationalTypeReference
     extends ComputationalType(Category1ComputationalTypeCategory) {
-    final override def isComputationalTypeReturnAddress: Boolean = false
-    final override def isCategory2: Boolean = false
+    override final def isComputationalTypeReturnAddress: Boolean = false
+    override final def isCategory2: Boolean = false
 }
+
 case object ComputationalTypeReturnAddress
     extends ComputationalType(Category1ComputationalTypeCategory) {
-    final override def isComputationalTypeReturnAddress: Boolean = true
-    final override def isCategory2: Boolean = false
+    override final def isComputationalTypeReturnAddress: Boolean = true
+    override final def isCategory2: Boolean = false
 }

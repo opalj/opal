@@ -101,9 +101,7 @@ class AnalysisScenario[A](val ps: PropertyStore) {
         val derivedBy: Map[PropertyBounds, Set[ComputationSpecification[A]]] = {
             var derivedBy: Map[PropertyBounds, Set[ComputationSpecification[A]]] = Map.empty
             allCS foreach { cs =>
-                cs.derives foreach { derives =>
-                    derivedBy += derives -> (derivedBy.getOrElse(derives, Set.empty) + cs)
-                }
+                cs.derives foreach { derives => derivedBy += derives -> (derivedBy.getOrElse(derives, Set.empty) + cs) }
             }
             derivedBy
         }
@@ -145,7 +143,8 @@ class AnalysisScenario[A](val ps: PropertyStore) {
 
         cs.derivesCollaboratively foreach { collaborativelyDerivedProperty =>
             if (eagerlyDerivedProperties.contains(collaborativelyDerivedProperty) ||
-                lazilyDerivedProperties.contains(collaborativelyDerivedProperty)) {
+                lazilyDerivedProperties.contains(collaborativelyDerivedProperty)
+            ) {
                 val pkName = PropertyKey.name(collaborativelyDerivedProperty.pk.id)
                 val m =
                     s"can not register $cs: " +
@@ -218,8 +217,7 @@ class AnalysisScenario[A](val ps: PropertyStore) {
         propertyStore:   PropertyStore,
         defaultAnalysis: PropertyBounds => Option[ComputationSpecification[A]] = _ => None
     )(
-        implicit
-        logContext: LogContext
+        implicit logContext: LogContext
     ): Schedule[A] = {
         if (scheduleComputed) {
             throw new IllegalStateException("schedule already computed");
@@ -255,9 +253,7 @@ class AnalysisScenario[A](val ps: PropertyStore) {
         val analysisAutoConfig = BaseConfig.getBoolean(AnalysisAutoConfigKey)
         val underivedProperties = usedProperties -- derivedProperties
         underivedProperties
-            .filterNot { underivedProperty =>
-                alreadyComputedPropertyKinds.contains(underivedProperty.pk.id)
-            }
+            .filterNot { underivedProperty => alreadyComputedPropertyKinds.contains(underivedProperty.pk.id) }
             .foreach { underivedProperty =>
                 if (!derivedProperties.contains(underivedProperty)) {
                     val propertyName = PropertyKey.name(underivedProperty.pk.id)
@@ -304,9 +300,7 @@ class AnalysisScenario[A](val ps: PropertyStore) {
         var suppressInterimUpdates: Map[PropertyKind, Set[PropertyKind]] = Map.empty
         // Interim updates have to be suppressed when an analysis uses a property for which
         // the wrong bounds/not enough bounds are computed.
-        transformersCS foreach { cs =>
-            suppressInterimUpdates += (cs.derivesLazily.get.pk -> cs.uses(ps).map(_.pk))
-        }
+        transformersCS foreach { cs => suppressInterimUpdates += (cs.derivesLazily.get.pk -> cs.uses(ps).map(_.pk)) }
 
         // 3. create the batch
         val batchBuilder = List.newBuilder[ComputationSpecification[A]]

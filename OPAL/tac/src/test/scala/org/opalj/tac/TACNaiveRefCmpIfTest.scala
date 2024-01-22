@@ -2,11 +2,11 @@
 package org.opalj
 package tac
 
-import org.opalj.br._
-import org.opalj.br.TestSupport.biProject
-
 import org.junit.runner.RunWith
 import org.scalatestplus.junit.JUnitRunner
+
+import org.opalj.br._
+import org.opalj.br.TestSupport.biProject
 
 /**
  * @author Michael Eichberg
@@ -79,7 +79,8 @@ class TACNaiveRefCmpIfTest extends TACNaiveTest {
         ).mkString("\n")
 
         it("should correctly reflect the equals case") {
-            val statements = TACNaive(method = IfACMPEQMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
+            val statements =
+                TACNaive(method = IfACMPEQMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
@@ -91,7 +92,8 @@ class TACNaiveRefCmpIfTest extends TACNaiveTest {
         }
 
         it("should correctly reflect the not-equals case") {
-            val statements = TACNaive(method = IfACMPNEMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
+            val statements =
+                TACNaive(method = IfACMPNEMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
@@ -103,7 +105,8 @@ class TACNaiveRefCmpIfTest extends TACNaiveTest {
         }
 
         it("should correctly reflect the non-null case") {
-            val statements = TACNaive(method = IfNonNullMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
+            val statements =
+                TACNaive(method = IfNonNullMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
@@ -115,7 +118,8 @@ class TACNaiveRefCmpIfTest extends TACNaiveTest {
         }
 
         it("should correctly reflect the is-null case") {
-            val statements = TACNaive(method = IfNullMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
+            val statements =
+                TACNaive(method = IfNullMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)

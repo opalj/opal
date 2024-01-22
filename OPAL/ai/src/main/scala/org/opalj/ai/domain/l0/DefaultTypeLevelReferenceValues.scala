@@ -39,7 +39,7 @@ trait DefaultTypeLevelReferenceValues
 
         override protected def doJoin(pc: Int, other: DomainValue): Update[DomainValue] = {
             other match {
-                case _: ANullValue => NoUpdate
+                case _: ANullValue         => NoUpdate
                 case _: ReferenceValueLike =>
                     // THIS domain does not track whether ReferenceValues
                     // are definitively not null!
@@ -206,15 +206,15 @@ trait DefaultTypeLevelReferenceValues
                 StructuralUpdate(ObjectValue(pc, newUpperTypeBound))
         }
 
-        final override def length(pc: Int): Computation[DomainValue, ExceptionValue] = {
+        override final def length(pc: Int): Computation[DomainValue, ExceptionValue] = {
             throw DomainException("arraylength not possible; this is not an array value: " + this)
         }
 
-        final override def load(pc: Int, index: DomainValue): ArrayLoadResult = {
+        override final def load(pc: Int, index: DomainValue): ArrayLoadResult = {
             throw DomainException("arrayload not possible; this is not an array value: " + this)
         }
 
-        final override def store(
+        override final def store(
             pc:    Int,
             value: DomainValue,
             index: DomainValue

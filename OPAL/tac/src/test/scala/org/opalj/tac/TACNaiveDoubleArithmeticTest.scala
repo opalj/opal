@@ -2,11 +2,11 @@
 package org.opalj
 package tac
 
-import org.opalj.br._
-import org.opalj.br.TestSupport.biProject
-
 import org.junit.runner.RunWith
 import org.scalatestplus.junit.JUnitRunner
+
+import org.opalj.br._
+import org.opalj.br.TestSupport.biProject
 
 /**
  * @author Michael Eichberg
@@ -55,33 +55,54 @@ class TACNaiveDoubleArithmeticTest extends TACNaiveTest {
         )
 
         it("should correctly reflect addition") {
-            val statements = TACNaive(method = DoubleAddMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
+            val statements =
+                TACNaive(method = DoubleAddMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
             statements.shouldEqual(binaryAST(
-                Assignment(2, SimpleVar(0, ComputationalTypeDouble),
-                    BinaryExpr(2, ComputationalTypeDouble, Add, SimpleVar(0, ComputationalTypeDouble), SimpleVar(2, ComputationalTypeDouble)))
+                Assignment(
+                    2,
+                    SimpleVar(0, ComputationalTypeDouble),
+                    BinaryExpr(
+                        2,
+                        ComputationalTypeDouble,
+                        Add,
+                        SimpleVar(0, ComputationalTypeDouble),
+                        SimpleVar(2, ComputationalTypeDouble)
+                    )
+                )
             ))
             javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 + op_2"))
         }
 
         it("should correctly reflect division") {
-            val statements = TACNaive(method = DoubleDivMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
+            val statements =
+                TACNaive(method = DoubleDivMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
             statements.shouldEqual(binaryAST(
-                Assignment(2, SimpleVar(0, ComputationalTypeDouble),
-                    BinaryExpr(2, ComputationalTypeDouble, Divide, SimpleVar(0, ComputationalTypeDouble), SimpleVar(2, ComputationalTypeDouble)))
+                Assignment(
+                    2,
+                    SimpleVar(0, ComputationalTypeDouble),
+                    BinaryExpr(
+                        2,
+                        ComputationalTypeDouble,
+                        Divide,
+                        SimpleVar(0, ComputationalTypeDouble),
+                        SimpleVar(2, ComputationalTypeDouble)
+                    )
+                )
             ))
             javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 / op_2"))
         }
 
         it("should correctly reflect negation") {
-            val statements = TACNaive(method = DoubleNegMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
+            val statements =
+                TACNaive(method = DoubleNegMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
@@ -90,8 +111,11 @@ class TACNaiveDoubleArithmeticTest extends TACNaiveTest {
                 Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
                 Assignment(-1, SimpleVar(-2, ComputationalTypeDouble), Param(ComputationalTypeDouble, "p_1")),
                 Assignment(0, SimpleVar(0, ComputationalTypeDouble), SimpleVar(-2, ComputationalTypeDouble)),
-                Assignment(1, SimpleVar(0, ComputationalTypeDouble),
-                    PrefixExpr(1, ComputationalTypeDouble, Negate, SimpleVar(0, ComputationalTypeDouble))),
+                Assignment(
+                    1,
+                    SimpleVar(0, ComputationalTypeDouble),
+                    PrefixExpr(1, ComputationalTypeDouble, Negate, SimpleVar(0, ComputationalTypeDouble))
+                ),
                 ReturnValue(2, SimpleVar(0, ComputationalTypeDouble))
             ))
             javaLikeCode.shouldEqual(
@@ -106,40 +130,70 @@ class TACNaiveDoubleArithmeticTest extends TACNaiveTest {
         }
 
         it("should correctly reflect multiplication") {
-            val statements = TACNaive(method = DoubleMulMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
+            val statements =
+                TACNaive(method = DoubleMulMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
             statements.shouldEqual(binaryAST(
-                Assignment(2, SimpleVar(0, ComputationalTypeDouble),
-                    BinaryExpr(2, ComputationalTypeDouble, Multiply, SimpleVar(0, ComputationalTypeDouble), SimpleVar(2, ComputationalTypeDouble)))
+                Assignment(
+                    2,
+                    SimpleVar(0, ComputationalTypeDouble),
+                    BinaryExpr(
+                        2,
+                        ComputationalTypeDouble,
+                        Multiply,
+                        SimpleVar(0, ComputationalTypeDouble),
+                        SimpleVar(2, ComputationalTypeDouble)
+                    )
+                )
             ))
             javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 * op_2"))
         }
 
         it("should correctly reflect modulo") {
-            val statements = TACNaive(method = DoubleRemMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
+            val statements =
+                TACNaive(method = DoubleRemMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
             statements.shouldEqual(binaryAST(
-                Assignment(2, SimpleVar(0, ComputationalTypeDouble),
-                    BinaryExpr(2, ComputationalTypeDouble, Modulo, SimpleVar(0, ComputationalTypeDouble), SimpleVar(2, ComputationalTypeDouble)))
+                Assignment(
+                    2,
+                    SimpleVar(0, ComputationalTypeDouble),
+                    BinaryExpr(
+                        2,
+                        ComputationalTypeDouble,
+                        Modulo,
+                        SimpleVar(0, ComputationalTypeDouble),
+                        SimpleVar(2, ComputationalTypeDouble)
+                    )
+                )
             ))
             javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 % op_2"))
         }
 
         it("should correctly reflect subtraction") {
-            val statements = TACNaive(method = DoubleSubMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
+            val statements =
+                TACNaive(method = DoubleSubMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
             statements.shouldEqual(binaryAST(
-                Assignment(2, SimpleVar(0, ComputationalTypeDouble),
-                    BinaryExpr(2, ComputationalTypeDouble, Subtract, SimpleVar(0, ComputationalTypeDouble), SimpleVar(2, ComputationalTypeDouble)))
+                Assignment(
+                    2,
+                    SimpleVar(0, ComputationalTypeDouble),
+                    BinaryExpr(
+                        2,
+                        ComputationalTypeDouble,
+                        Subtract,
+                        SimpleVar(0, ComputationalTypeDouble),
+                        SimpleVar(2, ComputationalTypeDouble)
+                    )
+                )
             ))
             javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 - op_2"))
         }

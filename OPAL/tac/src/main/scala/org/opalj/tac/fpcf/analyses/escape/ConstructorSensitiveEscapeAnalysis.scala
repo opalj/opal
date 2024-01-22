@@ -46,7 +46,7 @@ trait ConstructorSensitiveEscapeAnalysis extends AbstractEscapeAnalysis {
 
     override type AnalysisContext <: AbstractEscapeAnalysisContext with PropertyStoreContainer with VirtualFormalParametersContainer with DeclaredMethodsContainer
 
-    abstract protected[this] override def handleThisLocalOfConstructor(
+    abstract override protected[this] def handleThisLocalOfConstructor(
         call: NonVirtualMethodCall[V]
     )(
         implicit
@@ -58,25 +58,25 @@ trait ConstructorSensitiveEscapeAnalysis extends AbstractEscapeAnalysis {
 
         // the object constructor will not escape the this local
         if (call.declaringClass eq ObjectType.Object)
-            return ;
+            return;
 
         // resolve the constructor
         val constructor = project.specialCall(
             context.targetMethodDeclaringClassType,
-            call.declaringClass, call.isInterface, name = "<init>", call.descriptor
+            call.declaringClass,
+            call.isInterface,
+            name = "<init>",
+            call.descriptor
         )
         constructor match {
             case Success(callee) =>
                 // check if the this local escapes in the callee
 
                 val fp = context.virtualFormalParameters(context.declaredMethods(callee))(0)
-                val fpEntity =
-                    (
-                        contextProvider.expandContext(
-                            context.entity._1, declaredMethods(callee), call.pc
-                        ),
-                            fp
-                    )
+                val fpEntity = (
+                    contextProvider.expandContext(context.entity._1, declaredMethods(callee), call.pc),
+                    fp
+                )
                 if (fpEntity != context.entity) {
                     val escapeState = context.propertyStore(fpEntity, EscapeProperty.key)
                     if (!state.containsDependency(escapeState))
@@ -89,8 +89,7 @@ trait ConstructorSensitiveEscapeAnalysis extends AbstractEscapeAnalysis {
     private[this] def handleEscapeState(
         eOptionP: EOptionP[Entity, Property]
     )(
-        implicit
-        state: AnalysisState
+        implicit state: AnalysisState
     ): Unit = {
         eOptionP match {
             case FinalP(NoEscape) => // NOTHING TO DO

@@ -5,13 +5,13 @@ package analyses
 
 import scala.language.implicitConversions
 
-import org.opalj.collection.immutable.UIDSet
-import org.opalj.log.GlobalLogContext
-
 import org.junit.runner.RunWith
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
+
+import org.opalj.collection.immutable.UIDSet
+import org.opalj.log.GlobalLogContext
 
 /**
  * @author Tobias Becker
@@ -32,7 +32,9 @@ class JoinObjectTypesTest extends AnyFunSpec with Matchers {
     }
 
     implicit def stringToUIDSetObjectType(str: String): UIDSet[ObjectType] = UIDSet(ObjectType(str))
+
     implicit def stringToObjectType(str: String): ObjectType = ObjectType(str)
+
     implicit def setToUIDSet(s: Set[String]): UIDSet[ObjectType] = {
         UIDSet.empty[ObjectType] ++ s.map(ObjectType.apply)
     }
@@ -744,7 +746,12 @@ class JoinObjectTypesTest extends AnyFunSpec with Matchers {
                 }
 
                 it("join of interfaces with same direct superinterface and another common superinterface should result in java/lang/Object (non-reflexive)") {
-                    testJoinObjectTypesUntilSingleUpperBound("SubSubIDSubIA", "SubSubIDSubIA2", false, "java/lang/Object")
+                    testJoinObjectTypesUntilSingleUpperBound(
+                        "SubSubIDSubIA",
+                        "SubSubIDSubIA2",
+                        false,
+                        "java/lang/Object"
+                    )
                 }
 
                 it("join of interfaces with same indirect superinterface and a different superinterface should result in their common superinterface (reflexive)") {
@@ -802,15 +809,24 @@ class JoinObjectTypesTest extends AnyFunSpec with Matchers {
                 }
 
                 it("join of several interfaces with the same direct superinterface and another common superinterface should result in their common superinterface (reflexive)") {
-                    testJoinObjectTypesUntilSingleUpperBound(Set("SubID2", "SubSubIDSubIA", "SubID3", "SubSubIDSubIA2"), "ID")
+                    testJoinObjectTypesUntilSingleUpperBound(
+                        Set("SubID2", "SubSubIDSubIA", "SubID3", "SubSubIDSubIA2"),
+                        "ID"
+                    )
                 }
 
                 it("join of several interfaces with same indirect superinterface and a different superinterface should result in java/lang/Object (reflexive)") {
-                    testJoinObjectTypesUntilSingleUpperBound(Set("SubSubID2", "SubSubIDSubIA", "SubID3", "SubIB"), "java/lang/Object")
+                    testJoinObjectTypesUntilSingleUpperBound(
+                        Set("SubSubID2", "SubSubIDSubIA", "SubID3", "SubIB"),
+                        "java/lang/Object"
+                    )
                 }
 
                 it("join of several interfaces with same indirect superinterface and another common superinterface should result in indirect superinterface (reflexive)") {
-                    testJoinObjectTypesUntilSingleUpperBound(Set("SubSubID2", "SubSubIDSubIA", "SubID3", "SubIDSubIA"), "ID")
+                    testJoinObjectTypesUntilSingleUpperBound(
+                        Set("SubSubID2", "SubSubIDSubIA", "SubID3", "SubIDSubIA"),
+                        "ID"
+                    )
                 }
 
                 it("join of several interfaces with different superinterfaces should result in java/lang/Object (reflexive)") {

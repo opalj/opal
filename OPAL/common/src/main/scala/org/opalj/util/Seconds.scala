@@ -39,6 +39,7 @@ class Seconds(val timeSpan: Double) extends AnyVal with Serializable {
     override def toString: String = toString(withUnit = true)
 
 }
+
 /**
  * Common constants related to seconds.
  *

@@ -11,6 +11,12 @@ import java.nio.file.Paths
 import java.util.zip.GZIPInputStream
 import scala.io.Source
 
+import org.junit.runner.RunWith
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatestplus.junit.JUnitRunner
+
+import com.typesafe.config.ConfigValueFactory
+
 import org.opalj.ai.domain.l1
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.TestSupport.allBIProjects
@@ -36,11 +42,6 @@ import org.opalj.tac.fpcf.analyses.FPCFAnalysesIntegrationTest.ps
 import org.opalj.util.Nanoseconds
 import org.opalj.util.PerformanceEvaluation.time
 
-import com.typesafe.config.ConfigValueFactory
-import org.junit.runner.RunWith
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatestplus.junit.JUnitRunner
-
 /**
  * Simple test to ensure that the FPFC analyses do not cause exceptions and that their results
  * remain stable.
@@ -61,95 +62,95 @@ class FPCFAnalysesIntegrationTest extends AnyFunSpec {
             ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.LibraryEntryPointsFinder")
         )
     ) foreach { biProject =>
-            val (projectName, projectFactory) = biProject
+        val (projectName, projectFactory) = biProject
 
-            for ((name, analyses, properties) <- analysisConfigurations) {
-                describe(s"the analysis configuration $name for project $projectName") {
+        for ((name, analyses, properties) <- analysisConfigurations) {
+            describe(s"the analysis configuration $name for project $projectName") {
 
-                    it("should execute without exceptions") {
-                        if (factory ne projectFactory) {
-                            // Store the current factory (to distinguish the projects) and the current
-                            // project so they are available for more configurations on the same project
-                            factory = projectFactory
-                            p = projectFactory()
+                it("should execute without exceptions") {
+                    if (factory ne projectFactory) {
+                        // Store the current factory (to distinguish the projects) and the current
+                        // project so they are available for more configurations on the same project
+                        factory = projectFactory
+                        p = projectFactory()
 
-                            p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
-                                case None =>
-                                    Set(classOf[l1.DefaultDomainWithCFGAndDefUse[_]])
-                                case Some(requirements) =>
-                                    requirements + classOf[l1.DefaultDomainWithCFGAndDefUse[_]]
-                            }
-                        } else {
-                            // Recreate project keeping all ProjectInformationKeys other than the
-                            // PropertyStore as we are interested only in FPCF analysis results.
-                            p = p.recreate { id =>
-                                id != PropertyStoreKey.uniqueId &&
-                                    id != FPCFAnalysesManagerKey.uniqueId &&
-                                    id != CHACallGraphKey.uniqueId &&
-                                    id != CallGraphKey.uniqueId
-                            }
+                        p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
+                            case None =>
+                                Set(classOf[l1.DefaultDomainWithCFGAndDefUse[_]])
+                            case Some(requirements) =>
+                                requirements + classOf[l1.DefaultDomainWithCFGAndDefUse[_]]
                         }
-
-                        ps = p.get(PropertyStoreKey)
-
-                        time {
-                            // todo do not want to run this for every setting
-                            p.get(CHACallGraphKey)
-                        } { t => info(s"call graph and tac analysis took ${t.toSeconds}") }
-
-                        time { p.get(FPCFAnalysesManagerKey).runAll(analyses) }(reportAnalysisTime)
+                    } else {
+                        // Recreate project keeping all ProjectInformationKeys other than the
+                        // PropertyStore as we are interested only in FPCF analysis results.
+                        p = p.recreate { id =>
+                            id != PropertyStoreKey.uniqueId &&
+                            id != FPCFAnalysesManagerKey.uniqueId &&
+                            id != CHACallGraphKey.uniqueId &&
+                            id != CallGraphKey.uniqueId
+                        }
                     }
 
-                    it("should compute the correct properties") {
+                    ps = p.get(PropertyStoreKey)
 
-                        // Get EPs for the properties we're interested in
-                        // Filter for fallback property, as the entities with fallbacks may be different
-                        // on each execution.
-                        val actual = properties.iterator.flatMap { property =>
-                            ps.entities(property.key).filter { ep =>
-                                if (ep.isRefinable)
-                                    fail(s"intermediate results left over $ep")
-                                isRecordedProperty(property.key, ep)
-                            }.map(ep => s"${ep.e} => ${ep.ub}").toSeq.sorted
-                        }.toSeq
+                    time {
+                        // todo do not want to run this for every setting
+                        p.get(CHACallGraphKey)
+                    } { t => info(s"call graph and tac analysis took ${t.toSeconds}") }
 
-                        val actualIt = actual.iterator
+                    time { p.get(FPCFAnalysesManagerKey).runAll(analyses) }(reportAnalysisTime)
+                }
 
-                        val fileName = s"$name-$projectName.txt.gz"
+                it("should compute the correct properties") {
 
-                        val expectedStream = this.getClass.getResourceAsStream(fileName)
-                        if (expectedStream eq null)
+                    // Get EPs for the properties we're interested in
+                    // Filter for fallback property, as the entities with fallbacks may be different
+                    // on each execution.
+                    val actual = properties.iterator.flatMap { property =>
+                        ps.entities(property.key).filter { ep =>
+                            if (ep.isRefinable)
+                                fail(s"intermediate results left over $ep")
+                            isRecordedProperty(property.key, ep)
+                        }.map(ep => s"${ep.e} => ${ep.ub}").toSeq.sorted
+                    }.toSeq
+
+                    val actualIt = actual.iterator
+
+                    val fileName = s"$name-$projectName.txt.gz"
+
+                    val expectedStream = this.getClass.getResourceAsStream(fileName)
+                    if (expectedStream eq null)
+                        fail(
+                            s"missing expected results: $name; " +
+                                s"current results written to:\n" + writeActual(actual, fileName)
+                        )
+                    val expectedIt =
+                        Source.fromInputStream(new GZIPInputStream(expectedStream)).getLines()
+
+                    while (actualIt.hasNext && expectedIt.hasNext) {
+                        val actualLine = actualIt.next()
+                        val expectedLine = expectedIt.next()
+                        if (actualLine != expectedLine)
                             fail(
-                                s"missing expected results: $name; " +
-                                    s"current results written to:\n" + writeActual(actual, fileName)
-                            )
-                        val expectedIt =
-                            Source.fromInputStream(new GZIPInputStream(expectedStream)).getLines()
-
-                        while (actualIt.hasNext && expectedIt.hasNext) {
-                            val actualLine = actualIt.next()
-                            val expectedLine = expectedIt.next()
-                            if (actualLine != expectedLine)
-                                fail(
-                                    s"comparison failed:\nnew: $actualLine\n\t\t" +
-                                        s"vs.\nold: $expectedLine\n" +
-                                        "current results written to :\n" + writeActual(actual, fileName)
-                                )
-                        }
-                        if (actualIt.hasNext)
-                            fail(
-                                "actual is longer than expected - first line: " + actualIt.next() +
-                                    "\n current results written to :\n" + writeActual(actual, fileName)
-                            )
-                        if (expectedIt.hasNext)
-                            fail(
-                                "expected is longer than actual - first line: " + expectedIt.next() +
-                                    "\n current results written to :\n" + writeActual(actual, fileName)
+                                s"comparison failed:\nnew: $actualLine\n\t\t" +
+                                    s"vs.\nold: $expectedLine\n" +
+                                    "current results written to :\n" + writeActual(actual, fileName)
                             )
                     }
+                    if (actualIt.hasNext)
+                        fail(
+                            "actual is longer than expected - first line: " + actualIt.next() +
+                                "\n current results written to :\n" + writeActual(actual, fileName)
+                        )
+                    if (expectedIt.hasNext)
+                        fail(
+                            "expected is longer than actual - first line: " + expectedIt.next() +
+                                "\n current results written to :\n" + writeActual(actual, fileName)
+                        )
                 }
             }
         }
+    }
 
     def writeActual(actual: Seq[String], fileName: String): Path = {
         val path = Paths.get(fileName)
@@ -161,9 +162,9 @@ class FPCFAnalysesIntegrationTest extends AnyFunSpec {
         // fallback properties may be set for different entities on different executions
         // because they are set lazily even for eager analyses
         ep.ub != PropertyKey.fallbackProperty(ps, PropertyIsNotComputedByAnyAnalysis, ep.e, pk) &&
-            // Not analyzing the JDK, there are VirtualDeclaredMethods with Purity data
-            // preconfigured that we don't want to record as they contain no additional information
-            (ep.pk != Purity.key || ep.e.asInstanceOf[Context].method.hasSingleDefinedMethod)
+        // Not analyzing the JDK, there are VirtualDeclaredMethods with Purity data
+        // preconfigured that we don't want to record as they contain no additional information
+        (ep.pk != Purity.key || ep.e.asInstanceOf[Context].method.hasSingleDefinedMethod)
     }
 
     def reportAnalysisTime(t: Nanoseconds): Unit = { info(s"analysis took ${t.toSeconds}") }

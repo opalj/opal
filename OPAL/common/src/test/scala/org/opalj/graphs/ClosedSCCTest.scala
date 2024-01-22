@@ -4,12 +4,12 @@ package graphs
 
 import scala.collection.immutable.ArraySeq
 
-import org.opalj.util.PerformanceEvaluation
-
 import org.junit.runner.RunWith
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
+
+import org.opalj.util.PerformanceEvaluation
 
 /**
  * Tests the SCC algorithm.
@@ -57,7 +57,9 @@ class ClosedSCCTest extends AnyFlatSpec with Matchers {
     "a graph with three nodes which has two cycles and one mega-cycle" should "contain one cSCC" in {
         // models a specific failing test
         val g =
-            Graph.empty[String] addEdge ("n1", "n3") addEdge ("n1", "n2") addEdge ("n2", "n1") addEdge ("n2", "n3") addEdge ("n3", "n1")
+            Graph.empty[
+                String
+            ] addEdge ("n1", "n3") addEdge ("n1", "n2") addEdge ("n2", "n1") addEdge ("n2", "n3") addEdge ("n3", "n1")
         closedSCCs(g).head.toSet should be(Set("n1", "n2", "n3"))
     }
 
@@ -119,7 +121,8 @@ class ClosedSCCTest extends AnyFlatSpec with Matchers {
             val data = List(
                 ("a" -> "b"),
                 ("b" -> "a"),
-                ("c" -> "a"), ("c" -> "d"),
+                ("c" -> "a"),
+                ("c" -> "d"),
                 ("d" -> "e"),
                 ("e" -> "d")
             )
@@ -188,8 +191,15 @@ class ClosedSCCTest extends AnyFlatSpec with Matchers {
 
     "a complex graph with six nodes which creates one cSCC" should "contain one cSCCs" in {
         val data = List(
-            ("a" -> "b"), ("f" -> "b"), ("f" -> "a"), ("b" -> "f"), ("a" -> "e"),
-            ("e" -> "d"), ("d" -> "c"), ("c" -> "e"), ("c" -> "b")
+            ("a" -> "b"),
+            ("f" -> "b"),
+            ("f" -> "a"),
+            ("b" -> "f"),
+            ("a" -> "e"),
+            ("e" -> "d"),
+            ("d" -> "c"),
+            ("c" -> "e"),
+            ("c" -> "b")
         )
         var permutationCount = 0
         var testedCount = 0
@@ -215,10 +225,17 @@ class ClosedSCCTest extends AnyFlatSpec with Matchers {
 
     "a complex graph with several cSCCs and connected components" should "contain all cSCCs" in {
         val data = List(
-            ("a" -> "b"), ("b" -> "c"), ("c" -> "a"),
+            ("a" -> "b"),
+            ("b" -> "c"),
+            ("c" -> "a"),
             ("g" -> "f"),
             ("b" -> "d"),
-            ("a" -> "h"), ("h" -> "j"), ("j" -> "i"), ("i" -> "j"), ("i" -> "k"), ("k" -> "h")
+            ("a" -> "h"),
+            ("h" -> "j"),
+            ("j" -> "i"),
+            ("i" -> "j"),
+            ("i" -> "k"),
+            ("k" -> "h")
         )
         var permutationCount = 0
         var testedCount = 0
@@ -227,7 +244,12 @@ class ClosedSCCTest extends AnyFlatSpec with Matchers {
             permutationCount += 1
             if (random.nextInt(250000) == 1) {
                 val data = List(
-                    ("f" -> "c"), ("f" -> "g"), ("d" -> "e"), ("e" -> "d"), ("l" -> "m"), ("m" -> "l")
+                    ("f" -> "c"),
+                    ("f" -> "g"),
+                    ("d" -> "e"),
+                    ("e" -> "d"),
+                    ("l" -> "m"),
+                    ("m" -> "l")
                 ) ::: aPermutation
                 testedCount += 1
                 val g = data.foldLeft(Graph.empty[String])(_ addEdge _)
@@ -323,15 +345,23 @@ class ClosedSCCTest extends AnyFlatSpec with Matchers {
             ("h" -> "i"),
             ("j" -> "k"),
             ("k" -> "l"),
-            ("l" -> "k"), ("l" -> "n"), /*REDUNDANT:*/ "c" -> "b", /*REDUNDANT:*/ "d" -> "e",
+            ("l" -> "k"),
+            ("l" -> "n"), /*REDUNDANT:*/ "c" -> "b", /*REDUNDANT:*/ "d" -> "e",
             ("m" -> "l"),
-            ("o" -> "b"), ("o" -> "e"), ("o" -> "g"), /*REDUNDANT:*/ "o" -> "e",
-            ("p" -> "r"), ("p" -> "q"),
+            ("o" -> "b"),
+            ("o" -> "e"),
+            ("o" -> "g"), /*REDUNDANT:*/ "o" -> "e",
+            ("p" -> "r"),
+            ("p" -> "q"),
             ("q" -> "p"),
-            ("r" -> "q"), ("r" -> "s"),
-            ("s" -> "t"), ("s" -> "q"), /*REDUNDANT:*/ "o" -> "e",
+            ("r" -> "q"),
+            ("r" -> "s"),
+            ("s" -> "t"),
+            ("s" -> "q"), /*REDUNDANT:*/ "o" -> "e",
             ("t" -> "p"),
-            ("u" -> "p"), ("u" -> "v"), ("u" -> "w"),
+            ("u" -> "p"),
+            ("u" -> "v"),
+            ("u" -> "w"),
             ("v" -> "w"),
             ("w" -> "v"),
             ("x" -> "w"), /*REDUNDANT:*/ "e" -> "e",
@@ -348,7 +378,8 @@ class ClosedSCCTest extends AnyFlatSpec with Matchers {
 
         do {
             val g = {
-                val g = Graph.empty[String] addVertice ("a") addVertice ("b") addVertice ("i") addVertice ("n") addVertice ("z")
+                val g =
+                    Graph.empty[String] addVertice ("a") addVertice ("b") addVertice ("i") addVertice ("n") addVertice ("z")
                 // permutate the edges
                 var swaps = 10
                 while (swaps > 0) {
@@ -438,8 +469,16 @@ class ClosedSCCTest extends AnyFlatSpec with Matchers {
 
     "a graph with two SCCs and two cSCCs" should "contain two cSCCs" in {
         val data = List(
-            ("a" -> "c"), ("b" -> "c"), ("c" -> "d"), ("d" -> "e"), ("c" -> "f"), ("f" -> "g"),
-            ("d" -> "d"), ("e" -> "e"), ("f" -> "f"), ("g" -> "g")
+            ("a" -> "c"),
+            ("b" -> "c"),
+            ("c" -> "d"),
+            ("d" -> "e"),
+            ("c" -> "f"),
+            ("f" -> "g"),
+            ("d" -> "d"),
+            ("e" -> "e"),
+            ("f" -> "f"),
+            ("g" -> "g")
         )
         var permutationCounter = 1
         PerformanceEvaluation.time {
@@ -473,12 +512,23 @@ class ClosedSCCTest extends AnyFlatSpec with Matchers {
             val j = "n" + lis(8)
             val r = "n" + lis(9)
             val data = List(
-                a -> f, f -> h, f -> j, f -> i,
-                h -> j, j -> h, i -> j, j -> i,
-                a -> g, g -> h,
+                a -> f,
+                f -> h,
+                f -> j,
+                f -> i,
+                h -> j,
+                j -> h,
+                i -> j,
+                j -> i,
+                a -> g,
+                g -> h,
                 a -> h,
                 a -> b,
-                b -> d, d -> d, d -> e, e -> r, r -> b
+                b -> d,
+                d -> d,
+                d -> e,
+                e -> r,
+                r -> b
             )
             var permutationCounter = 1
             PerformanceEvaluation.time {

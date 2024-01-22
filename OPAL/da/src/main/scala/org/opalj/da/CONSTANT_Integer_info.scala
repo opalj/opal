@@ -13,14 +13,14 @@ import org.opalj.bi.ConstantPoolTag
  */
 case class CONSTANT_Integer_info(value: Int) extends Constant_Pool_Entry {
 
-    final override def size: Int = 1 + 4
+    override final def size: Int = 1 + 4
 
     override def Constant_Type_Value: ConstantPoolTag = bi.ConstantPoolTags.CONSTANT_Integer
 
     override def asCPNode(implicit cp: Constant_Pool): Node =
         <span class="cp_entry">
             CONSTANT_Integer_info(
-            <span class="constant_value">{ value }</span>
+            <span class="constant_value">{value}</span>
             )
         </span>
 
@@ -34,13 +34,13 @@ case class CONSTANT_Integer_info(value: Int) extends Constant_Pool_Entry {
                     additionalInfo += " = Int.Max"
                 Seq(
                     Text(value.toString),
-                    <span class="comment">{ additionalInfo }</span>
+                    <span class="comment">{additionalInfo}</span>
                 )
             } else {
                 Seq(Text(value.toString))
             }
 
-        <span class="constant_value">{ repr }</span>
+        <span class="constant_value">{repr}</span>
     }
 
     override def toString(implicit cp: Constant_Pool): String = {

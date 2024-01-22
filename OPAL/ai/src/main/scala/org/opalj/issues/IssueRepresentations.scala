@@ -64,13 +64,13 @@ trait IssueRepresentations extends ReportableAnalysisResult {
      */
     def toConsoleString: String = {
         import scala.Console._
-        toAnsiColoredString.
-            replace(RED, "").
-            replace(BLACK, "").
-            replace(YELLOW, "").
-            replace(BLUE, "").
-            replace(BOLD, "").
-            replace(RESET, "")
+        toAnsiColoredString
+            .replace(RED, "")
+            .replace(BLACK, "")
+            .replace(YELLOW, "")
+            .replace(BLUE, "")
+            .replace(BOLD, "")
+            .replace(RESET, "")
     }
 
 }

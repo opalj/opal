@@ -81,9 +81,7 @@ object FieldImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
                 )
                 ._1
             propertyStore.waitOnPhaseCompletion();
-        } { t =>
-            analysisTime = t.toSeconds
-        }
+        } { t => analysisTime = t.toSeconds }
 
         val allFieldsInProjectClassFiles = project.allProjectClassFiles.iterator.flatMap { _.fields }.toSet
 
@@ -103,21 +101,22 @@ object FieldImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
         val transitivelyImmutableFields =
             groupedResults.getOrElse(TransitivelyImmutableField, Seq.empty).toSeq.sortWith(order)
 
-        s""" |
-             | Mutable Fields: ${mutableFields.size}
-             | Non Transitively Immutable Fields: ${nonTransitivelyImmutableFields.size}
-             | Dependent Immutable Fields: ${dependentImmutableFields.size}
-             | Transitively Immutable Fields: ${transitivelyImmutableFields.size}
-             |
-             | total fields: ${
-            mutableFields.size + nonTransitivelyImmutableFields.size +
-                dependentImmutableFields.size + transitivelyImmutableFields.size
-        }
-             |
-             | took : $analysisTime seconds
-             |
-             | level: ${project.getProjectInformationKeyInitializationData(AIDomainFactoryKey)}
-             |propertyStore: ${propertyStore.getClass}
-             |""".stripMargin
+        s"""
+           |
+           | Mutable Fields: ${mutableFields.size}
+           | Non Transitively Immutable Fields: ${nonTransitivelyImmutableFields.size}
+           | Dependent Immutable Fields: ${dependentImmutableFields.size}
+           | Transitively Immutable Fields: ${transitivelyImmutableFields.size}
+           |
+           | total fields: ${
+                mutableFields.size + nonTransitivelyImmutableFields.size +
+                    dependentImmutableFields.size + transitivelyImmutableFields.size
+            }
+           |
+           | took : $analysisTime seconds
+           |
+           | level: ${project.getProjectInformationKeyInitializationData(AIDomainFactoryKey)}
+           |propertyStore: ${propertyStore.getClass}
+           |""".stripMargin
     }
 }

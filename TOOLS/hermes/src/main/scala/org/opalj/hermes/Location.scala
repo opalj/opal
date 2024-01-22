@@ -40,6 +40,7 @@ final case class PackageLocation[S](
         }
     }
 }
+
 object PackageLocation {
 
     def apply[S](source: S, packageName: String): PackageLocation[S] = {
@@ -175,6 +176,7 @@ final case class InstructionLocation[S](methodLocation: MethodLocation[S], pc: I
             s
     }
 }
+
 object InstructionLocation {
 
     def apply[S](source: S, method: Method, pc: Int): InstructionLocation[S] = {

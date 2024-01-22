@@ -5,6 +5,9 @@ package tac
 import scala.io.Codec.UTF8
 import scala.io.Source
 
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
+
 import org.opalj.ai.BaseAI
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
@@ -13,9 +16,6 @@ import org.opalj.br.ObjectType
 import org.opalj.br.TestSupport.biProject
 import org.opalj.br.TestSupport.biProjectWithJDK
 import org.opalj.br.analyses.Project
-
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.matchers.should.Matchers
 
 /**
  * Reads the test configuration file, then creates the tac code according to the specification
@@ -57,10 +57,10 @@ class TACAITest extends AnyFunSpec with Matchers {
                             fail(s"method body is empty: ${m.toJava}")
 
                         val d: Domain with RecordDefUse =
-                            Class.
-                                forName(domainName).asInstanceOf[Class[Domain with RecordDefUse]].
-                                getConstructor(classOf[Project[_]], classOf[Method]).
-                                newInstance(p, m)
+                            Class
+                                .forName(domainName).asInstanceOf[Class[Domain with RecordDefUse]]
+                                .getConstructor(classOf[Project[_]], classOf[Method])
+                                .newInstance(p, m)
                         val aiResult = BaseAI(m, d)
                         val TACode(params, code, _, cfg, _) = TACAI(m, p.classHierarchy, aiResult, false)(Nil)
                         val actual = ToTxt(params, code, cfg, skipParams = false, indented = false, true)

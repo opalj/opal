@@ -8,6 +8,9 @@ import java.net.URL
 import scala.collection.immutable.ArraySeq
 import scala.util.control.ControlThrowable
 
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
+
 import org.opalj.br.reader.Java9LibraryFramework
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
@@ -15,9 +18,6 @@ import org.opalj.log.LogMessage
 import org.opalj.log.OPALLogger
 import org.opalj.log.OPALLogger.error
 import org.opalj.log.OPALLogger.info
-
-import com.typesafe.config.Config
-import com.typesafe.config.ConfigFactory
 
 /**
  * Provides the necessary infrastructure to easily execute a given analysis that
@@ -117,7 +117,7 @@ trait AnalysisApplication {
         //
         // 1. Process args
         //
-        def splitCPath(path: String) = path.substring(path.indexOf('=') + 1).split(File.pathSeparator)
+        def splitCPath(path:    String) = path.substring(path.indexOf('=') + 1).split(File.pathSeparator)
         def splitLibCPath(path: String) = path.substring(path.indexOf('=') + 1).split(File.pathSeparator)
         args.foreach { arg =>
             if (arg == "-help") {
@@ -158,12 +158,13 @@ trait AnalysisApplication {
                 showError(s"Cannot read: $file $workingDirectory.")
                 None
             } else if (!file.isDirectory &&
-                !filename.endsWith(".jar") &&
-                !filename.endsWith(".ear") &&
-                !filename.endsWith(".war") &&
-                !filename.endsWith(".zip") &&
-                !filename.endsWith(".jmod") &&
-                !filename.endsWith(".class")) {
+                       !filename.endsWith(".jar") &&
+                       !filename.endsWith(".ear") &&
+                       !filename.endsWith(".war") &&
+                       !filename.endsWith(".zip") &&
+                       !filename.endsWith(".jmod") &&
+                       !filename.endsWith(".class")
+            ) {
                 showError(s"Input file is neither a directory nor a class or JAR/JMod file: $file.")
                 None
             } else
@@ -195,20 +196,21 @@ trait AnalysisApplication {
         //
         // 3. Setup project context
         //
-        val project: Project[URL] = try {
-            val config =
-                if (projectConfig.isEmpty)
-                    ConfigFactory.load()
-                else
-                    ConfigFactory.load(projectConfig.get)
-            setupProject(cpFiles, libcpFiles, completelyLoadLibraries, config)
-        } catch {
-            case ct: ControlThrowable => throw ct;
-            case t: Throwable =>
-                error("fatal", "setting up the project failed", t)
-                printUsage
-                sys.exit(2)
-        }
+        val project: Project[URL] =
+            try {
+                val config =
+                    if (projectConfig.isEmpty)
+                        ConfigFactory.load()
+                    else
+                        ConfigFactory.load(projectConfig.get)
+                setupProject(cpFiles, libcpFiles, completelyLoadLibraries, config)
+            } catch {
+                case ct: ControlThrowable => throw ct;
+                case t: Throwable =>
+                    error("fatal", "setting up the project failed", t)
+                    printUsage
+                    sys.exit(2)
+            }
 
         //
         // 4. execute analysis
@@ -231,7 +233,7 @@ trait AnalysisApplication {
         exceptions: Iterable[Throwable]
     ): Unit = {
         if (exceptions.isEmpty)
-            return ;
+            return;
 
         implicit val logContext: LogContext = project.logContext
         for (exception <- exceptions) {
@@ -245,8 +247,7 @@ trait AnalysisApplication {
         completelyLoadLibraries: Boolean,
         configuredConfig:        Config
     )(
-        implicit
-        initialLogContext: LogContext
+        implicit initialLogContext: LogContext
     ): Project[URL] = {
         info("creating project", "reading project class files")
         val JavaClassFileReader = Project.JavaClassFileReader(initialLogContext, configuredConfig)

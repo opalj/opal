@@ -59,11 +59,11 @@ class Classloading(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
         val hasCustomClassLoaders =
             project.allClassFiles exists { cf =>
                 classHierarchy.isSubtypeOf(cf.thisType, ClassLoaderT) &&
-                    !(cf.thisType.fqn.startsWith("java/") ||
-                        cf.thisType.fqn.startsWith("sun/") ||
-                        cf.thisType.fqn.startsWith("com/sun") ||
-                        cf.thisType.fqn.startsWith("javax/management/") ||
-                        cf.thisType.fqn.startsWith("jdk/nashorn/internal/runtime/"))
+                !(cf.thisType.fqn.startsWith("java/") ||
+                    cf.thisType.fqn.startsWith("sun/") ||
+                    cf.thisType.fqn.startsWith("com/sun") ||
+                    cf.thisType.fqn.startsWith("javax/management/") ||
+                    cf.thisType.fqn.startsWith("jdk/nashorn/internal/runtime/"))
             }
 
         for {
@@ -73,7 +73,8 @@ class Classloading(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
             method @ MethodWithBody(body) <- classFile.methods
             methodLocation = MethodLocation(classFileLocation, method)
             pcAndInvocation <- body collect ({
-                case i @ INVOKEVIRTUAL(declClass, "loadClass", loadClassMD) if classHierarchy.isSubtypeOf(declClass, ClassLoaderT) => i
+                case i @ INVOKEVIRTUAL(declClass, "loadClass", loadClassMD)
+                    if classHierarchy.isSubtypeOf(declClass, ClassLoaderT) => i
             }: PartialFunction[Instruction, Instruction])
             TACode(_, stmts, pcToIndex, _, _) = tacai(method)
         } {

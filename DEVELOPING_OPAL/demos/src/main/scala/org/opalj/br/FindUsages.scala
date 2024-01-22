@@ -15,7 +15,7 @@ object FindUsages {
     def main(args: Array[String]): Unit = {
         if (args.isEmpty) {
             println("Error: you have to specify the root folder.")
-            return ;
+            return;
         }
 
         val c = new java.util.concurrent.atomic.AtomicInteger
@@ -27,14 +27,17 @@ object FindUsages {
                     {
                         case (cf, url) =>
                             c.incrementAndGet()
-                            if (cf.methodsWithBody.exists(_.body.get.instructionIterator.exists(i => i.isMethodInvocationInstruction && i.asMethodInvocationInstruction.declaringClass.toJava.startsWith("org.bouncycastle"))))
+                            if (cf.methodsWithBody.exists(_.body.get.instructionIterator.exists(i =>
+                                    i.isMethodInvocationInstruction && i.asMethodInvocationInstruction.declaringClass.toJava.startsWith(
+                                        "org.bouncycastle"
+                                    )
+                                ))
+                            )
                                 println(s"$url ${cf.thisType.toJava}")
                     },
                     SuppressExceptionHandler
                 )
-            } { t =>
-                println(s"Done ${t.toSeconds}; analyzed class files: " + c.get)
-            }
+            } { t => println(s"Done ${t.toSeconds}; analyzed class files: " + c.get) }
         }
         m()
     }

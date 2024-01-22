@@ -51,7 +51,8 @@ package object bytecode {
 
         val rootPkg = fqnA.substring(0, pkgSeparatorIndex)
         if (pkgSeparatorIndex == fqnB.indexOf(pkgSeparatorChar) + 1 &&
-            rootPkg == fqnB.substring(0, pkgSeparatorIndex)) {
+            rootPkg == fqnB.substring(0, pkgSeparatorIndex)
+        ) {
             val commonPkg = commonPackage(
                 fqnA.substring(pkgSeparatorIndex, fqnA.length()),
                 fqnB.substring(pkgSeparatorIndex, fqnB.length())
@@ -89,7 +90,7 @@ package object bytecode {
     def abbreviateType(
         definingTypeFQN:  String,
         memberTypeFQN:    String,
-        pkgSeparatorChar: Int    = '.'
+        pkgSeparatorChar: Int = '.'
     ): String = {
 
         commonPackage(definingTypeFQN, memberTypeFQN) match {
