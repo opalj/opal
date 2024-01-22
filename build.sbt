@@ -78,10 +78,10 @@ ThisBuild / javaOptions ++= Seq(
 
 addCommandAlias(
   "compileAll",
-    "OPAL / scalafmt ; OPAL / Test / scalafmt ; " +
-    "OPAL / Test / headerCheck ; OPAL / Test / compile ;" +
-    "OPAL/ IntegrationTest/ scalafmt ; OPAL / IntegrationTest / headerCheck ; " +
-        "OPAL / IntegrationTest / compile "
+    "; copyResources ; " +
+    "OPAL / scalafmt ; OPAL / headerCheck ; " +
+    "OPAL / Test / scalafmt ; OPAL / Test / headerCheck ; OPAL / Test / compile ; " +
+    "OPAL/ IntegrationTest/ scalafmt ; OPAL / IntegrationTest / headerCheck ; OPAL / IntegrationTest / compile "
 )
 
 addCommandAlias("buildAll", "; compileAll ; unidoc ;  publishLocal ")
@@ -158,7 +158,7 @@ lazy val `OPAL` = (project in file("."))
 //  .configure(_.copy(id = "OPAL"))
   .settings(Defaults.coreDefaultSettings ++ Seq(publishArtifact := false): _*)
   .enablePlugins(ScalaUnidocPlugin)
-  .disablePlugins(HeaderPlugin)
+  .disablePlugins(HeaderPlugin) // The root project has no sources and no configured license header
   .settings(
     ScalaUnidoc / unidoc / unidocProjectFilter := inAnyProject -- inProjects(
       hermes,
