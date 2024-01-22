@@ -104,3 +104,17 @@ class CloneNonAssignableArrayWithRead {
         return newInstance;
     }
 }
+
+class CloneAssignableArrayWithNonDominatedRead {
+
+    @AssignableField("field is assignable as one of the field reads is not dominated by a write")
+    private boolean[] booleans;
+
+    public CloneAssignableArrayWithNonDominatedRead clone(){
+        CloneAssignableArrayWithNonDominatedRead newInstance = new CloneAssignableArrayWithNonDominatedRead();
+        boolean nonDominated = newInstance.booleans[0];
+        newInstance.booleans = new boolean[this.booleans.length];
+        boolean dominated = newInstance.booleans[0];
+        return newInstance;
+    }
+}
