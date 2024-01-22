@@ -1,7 +1,7 @@
 %%{ init: { 'flowchart': { 'curve': 'linear' } } }%%
 flowchart BT
     
-    common[Common \n common]
+    common[Common\n common]
 
     si[Static Analysis Infrastructure\n si]
     bi[Bytecode Infrastructure\n bi]
@@ -9,7 +9,7 @@ flowchart BT
     br[Bytecode Representation\n br]
     da[Bytecode Disassembler\n da]
 
-    ifds[IFDS]
+    ifds[IFDS\n ifds]
     ai[Abstract Interpretation Framework\n ai]
     bc[Bytecode Creator\n bc]
 
@@ -17,14 +17,15 @@ flowchart BT
     de[Dependency Extraction\n de]
     ba[Bytecode Assembler\n ba]
 
-    ll[LLVM]
+    ll[LLVM\n ll]
+    apk[APK\n apk]
     av[Architecture Validation\n av]
 
     framework[Framework]
 
     demos[Demos]
-    bp[BugPicker \n bp]
-    hermes[Hermes \n hermes]
+    bp[BugPicker\n bp]
+    hermes[Hermes\n hermes]
 
     style common fill:#9cbecc,color:black
     style framework fill:#c0ffc0
@@ -52,6 +53,9 @@ flowchart BT
     tac --> ai
 
     ll --> tac
+
+    apk --> br
+    apk --> ll
 
     ba --> ai
     ba --> bc

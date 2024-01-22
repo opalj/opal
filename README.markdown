@@ -35,13 +35,15 @@ OPAL consists of several projects:
 
 * **Demos** (OPAL/demos): Contains working code samples that demonstrate how to use OPAL. The code in the Demo project is primarily meant as a teaching resource. To start the examples, start the `sbt` console (Scala Build Tools) and change the current project to "Demos" (`project Demos`). After that you can `run` several small demo analyses.
 
-* **Hermes** (OPAL/TOOLS/hermes): A framework to run various code queries against sets of projects. 
+* **Hermes** (OPAL/TOOLS/hermes): A framework to run various code queries against sets of projects.
 
 * **BugPicker** (OPAL/TOOLS/bp): A tool to find control-/data-flow dependent issues in source code. The kind of issues that are identified range from useless defensive checks to bugs that lead to (unhandled) runtime exceptions.
 
 ### Cross Language Projects
 
-* **LLVM** (OPAL/ll) Provides support for the analysis of LLVM IR using javacpp. 
+* **LLVM** (OPAL/ll) Provides support for the analysis of LLVM IR using javacpp.
+
+* **APK** (OPAL/apk) Provides support for parsing Android APK packages, supporting DEX and native code.
 
 ## Developer Tools
 
