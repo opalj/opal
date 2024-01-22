@@ -52,7 +52,7 @@ class SimpleEscapeAnalysisContext(
  *
  * @author Florian Kuebler
  */
-class SimpleEscapeAnalysis( final val project: SomeProject)
+class SimpleEscapeAnalysis(final val project: SomeProject)
     extends DefaultEscapeAnalysis
     with ConstructorSensitiveEscapeAnalysis
     with ConfigurationBasedConstructorEscapeAnalysis

@@ -48,9 +48,9 @@ case object LongLinkedTrieSet0 extends LongLinkedTrieSet {
     override final def head: Long = throw new UnsupportedOperationException
     override final def contains(v: Long): Boolean = false
 
-    override final def foreach[U](f: Long => U): Unit = { /*nothing to do*/ }
-    override final def foldLeft[T](op: T)(f: (T, Long) => T): T = op
-    override final def forall(f: Long => Boolean): Boolean = true
+    override final def foreach[U](f:   Long => U): Unit = { /*nothing to do*/ }
+    override final def foldLeft[T](op: T)(f:   (T, Long) => T): T = op
+    override final def forall(f:       Long => Boolean): Boolean = true
     override final def forFirstN[U](n: Int)(f: Long => U): Unit = { /*nothing to do*/ }
     override final def iterator: LongIterator = LongIterator.empty
 
@@ -65,9 +65,9 @@ final case class LongLinkedTrieSet1(v1: Long) extends LongLinkedTrieSet {
     override final def head: Long = v1
     override final def contains(v: Long): Boolean = v == v1
 
-    override final def foreach[U](f: Long => U): Unit = f(v1)
-    override final def foldLeft[T](op: T)(f: (T, Long) => T): T = f(op, v1)
-    override final def forall(f: Long => Boolean): Boolean = f(v1)
+    override final def foreach[U](f:   Long => U): Unit = f(v1)
+    override final def foldLeft[T](op: T)(f:   (T, Long) => T): T = f(op, v1)
+    override final def forall(f:       Long => Boolean): Boolean = f(v1)
     override final def forFirstN[U](n: Int)(f: Long => U): Unit = if (n > 0) f(v1)
     override final def iterator: LongIterator = LongIterator(v1)
 
@@ -77,7 +77,8 @@ final case class LongLinkedTrieSet1(v1: Long) extends LongLinkedTrieSet {
 }
 
 private[immutable] final case class LongLinkedTrieSet2(
-        v1: Long, v2: Long
+        v1: Long,
+        v2: Long
 ) extends LongLinkedTrieSet {
 
     override final def size: Int = 2
@@ -87,13 +88,13 @@ private[immutable] final case class LongLinkedTrieSet2(
     override final def head: Long = v1
     override final def contains(v: Long): Boolean = v == v1 || v == v2
 
-    override final def foreach[U](f: Long => U): Unit = { f(v1); f(v2) }
-    override final def forall(f: Long => Boolean): Boolean = f(v1) && f(v2)
+    override final def foreach[U](f:  Long => U): Unit = { f(v1); f(v2) }
+    override final def forall(f:      Long => Boolean): Boolean = f(v1) && f(v2)
     override final def foldLeft[T](z: T)(f: (T, Long) => T): T = f(f(z, v1), v2)
     override final def forFirstN[U](n: Int)(f: Long => U): Unit = {
-        if (n == 0) return ;
+        if (n == 0) return;
         f(v1)
-        if (n == 1) return ;
+        if (n == 1) return;
         f(v2)
     }
     override final def iterator: LongIterator = LongIterator(v1, v2)
@@ -104,7 +105,9 @@ private[immutable] final case class LongLinkedTrieSet2(
 }
 
 private[immutable] final case class LongLinkedTrieSet3(
-        v1: Long, v2: Long, v3: Long
+        v1: Long,
+        v2: Long,
+        v3: Long
 ) extends LongLinkedTrieSet {
 
     override final def size: Int = 3
@@ -114,15 +117,15 @@ private[immutable] final case class LongLinkedTrieSet3(
     override final def head: Long = v1
     override final def contains(v: Long): Boolean = v == v1 || v == v2 || v == v3
 
-    override final def foreach[U](f: Long => U): Unit = { f(v1); f(v2); f(v3) }
-    override final def forall(f: Long => Boolean): Boolean = f(v1) && f(v2) && f(v3)
+    override final def foreach[U](f:  Long => U): Unit = { f(v1); f(v2); f(v3) }
+    override final def forall(f:      Long => Boolean): Boolean = f(v1) && f(v2) && f(v3)
     override final def foldLeft[T](z: T)(f: (T, Long) => T): T = f(f(f(z, v1), v2), v3)
     override final def forFirstN[U](n: Int)(f: Long => U): Unit = {
-        if (n == 0) return ;
+        if (n == 0) return;
         f(v1)
-        if (n == 1) return ;
+        if (n == 1) return;
         f(v2)
-        if (n == 2) return ;
+        if (n == 2) return;
         f(v3)
     }
     override final def iterator: LongIterator = LongIterator(v1, v2, v3)
@@ -687,7 +690,10 @@ private[immutable] object LongLinkedTrieSetN2 {
 
         val newLevel = level + 1
         LongLinkedTrieSetN4(
-            _0.split_0(newLevel), _1.split_0(newLevel), _0.split_1(newLevel), _1.split_1(newLevel)
+            _0.split_0(newLevel),
+            _1.split_0(newLevel),
+            _0.split_1(newLevel),
+            _1.split_1(newLevel)
         )
     }
 }
@@ -1359,13 +1365,11 @@ private[immutable] class LargeLongLinkedTrieSet(
         val triesLength = tries.length
         val bitsCount = JInt.numberOfTrailingZeros(triesLength)
         val triesString =
-            tries.
-                zipWithIndex.
-                map { e =>
-                    val (trie, index) = e
-                    s"[${index.toBinaryString.reverse.padTo(bitsCount, '0').reverse}] " + (if (trie ne null) trie.toString(0) else "N/A")
-                }.
-                mkString("\n")
+            tries.zipWithIndex.map { e =>
+                val (trie, index) = e
+                s"[${index.toBinaryString.reverse.padTo(bitsCount, '0').reverse}] " + (if (trie ne null) trie.toString(0)
+                                                                                       else "N/A")
+            }.mkString("\n")
         s"LongLinkedTrieSet(#$size,tries=\n$triesString\n)"
     }
 

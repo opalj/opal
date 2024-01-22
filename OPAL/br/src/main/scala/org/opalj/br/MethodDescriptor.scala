@@ -127,8 +127,7 @@ sealed abstract class MethodDescriptor
         val otherParametersCount = other.parametersCount
 
         (thisParametersCount < otherParametersCount) || (
-            thisParametersCount == otherParametersCount &&
-            {
+            thisParametersCount == otherParametersCount && {
                 var i = 0
                 val iMax = this.parametersCount
                 while (i < iMax) {
@@ -301,8 +300,8 @@ private final class TwoArgumentsMethodDescriptor(
 
     override def equalParameters(other: MethodDescriptor): Boolean = {
         (other.parametersCount == 2) &&
-            (other.parameterType(0) == firstParameterType) &&
-            (other.parameterType(1) == secondParameterType)
+        (other.parameterType(0) == firstParameterType) &&
+        (other.parameterType(1) == secondParameterType)
     }
 
     override lazy val hashCode: Int = {
@@ -373,8 +372,7 @@ private final class MultiArgumentsMethodDescriptor(
         other match {
             case that: MethodDescriptor =>
                 (this.returnType eq that.returnType) &&
-                    this.parametersCount == that.parametersCount &&
-                    {
+                    this.parametersCount == that.parametersCount && {
                         var i = parametersCount
                         while (i > 0) {
                             i = i - 1

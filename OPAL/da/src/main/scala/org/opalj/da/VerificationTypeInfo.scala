@@ -128,6 +128,6 @@ case class UninitializedVariableInfo(val offset: Int) extends VerificationTypeIn
     def tag: Int = VerificationTypeInfo.ITEM_Unitialized
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span class="verification_type">&lt;Uninitialized({ offset })&gt;</span>
+        <span class="verification_type">&lt;Uninitialized({offset})&gt;</span>
     }
 }

@@ -90,7 +90,8 @@ object Locking {
             }
         } finally {
             acquiredRWLocks foreach { rwLock =>
-                try { rwLock.unlock() } catch { case t: Throwable => if (error eq null) error = t }
+                try { rwLock.unlock() }
+                catch { case t: Throwable => if (error eq null) error = t }
             }
             if (error ne null) throw error;
         }

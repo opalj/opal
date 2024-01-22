@@ -38,7 +38,9 @@ abstract class CreateNewArrayInstruction
             List(indexOfNextInstruction(currentPC))
         else
             Instruction.nextInstructionOrExceptionHandlers(
-                this, currentPC, CreateNewArrayInstruction.jvmExceptionsAndErrors
+                this,
+                currentPC,
+                CreateNewArrayInstruction.jvmExceptionsAndErrors
             )
     }
 

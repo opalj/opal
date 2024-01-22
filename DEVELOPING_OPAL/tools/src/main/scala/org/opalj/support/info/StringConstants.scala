@@ -32,11 +32,8 @@ object StringConstants extends ProjectAnalysisApplication {
         val data = project.get(StringConstantsInformationKey)
         val mappedData: Iterable[String] = data.map { kv =>
             val (string, locations) = kv
-            val escapedString = string.
-                replace("\u001b", "\\u001b").
-                replace("\n", "\\n").
-                replace("\t", "\\t").
-                replace("\"", "\\\"")
+            val escapedString =
+                string.replace("\u001b", "\\u001b").replace("\n", "\\n").replace("\t", "\\t").replace("\"", "\\\"")
             locations.map { pcInMethod =>
                 val pc = pcInMethod.pc
                 val method = pcInMethod.method

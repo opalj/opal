@@ -253,7 +253,7 @@ object AIResultBuilder { builder =>
         theSubroutinesWereEvaluated:         Boolean,
         theOperandsArray:                    theDomain.OperandsArray,
         theLocalsArray:                      theDomain.LocalsArray,
-        theMemoryLayoutBeforeSubroutineCall: List[(Int /*PC*/ , theDomain.OperandsArray, theDomain.LocalsArray)], // IMPROVE Use explicit data structure for storing the state to avoid (Un)Boxing
+        theMemoryLayoutBeforeSubroutineCall: List[(Int /*PC*/, theDomain.OperandsArray, theDomain.LocalsArray)], // IMPROVE Use explicit data structure for storing the state to avoid (Un)Boxing
         theSubroutinesOperandsArray:         theDomain.OperandsArray,
         theSubroutinesLocalsArray:           theDomain.LocalsArray
     ): AIAborted { val domain: theDomain.type } = {
@@ -268,7 +268,7 @@ object AIResultBuilder { builder =>
             val subroutinesWereEvaluated: Boolean = theSubroutinesWereEvaluated
             val operandsArray: theDomain.OperandsArray = theOperandsArray
             val localsArray: theDomain.LocalsArray = theLocalsArray
-            val memoryLayoutBeforeSubroutineCall: List[(Int /*PC*/ , theDomain.OperandsArray, theDomain.LocalsArray)] =
+            val memoryLayoutBeforeSubroutineCall: List[(Int /*PC*/, theDomain.OperandsArray, theDomain.LocalsArray)] =
                 theMemoryLayoutBeforeSubroutineCall
             val subroutinesOperandsArray: theDomain.OperandsArray = theSubroutinesOperandsArray
             val subroutinesLocalsArray: theDomain.LocalsArray = theSubroutinesLocalsArray
@@ -319,7 +319,7 @@ object AIResultBuilder { builder =>
             val subroutinesWereEvaluated: Boolean = theSubroutinesWereEvaluated
             val operandsArray: theDomain.OperandsArray = theOperandsArray
             val localsArray: theDomain.LocalsArray = theLocalsArray
-            val memoryLayoutBeforeSubroutineCall: List[(Int /*PC*/ , theDomain.OperandsArray, theDomain.LocalsArray)] =
+            val memoryLayoutBeforeSubroutineCall: List[(Int /*PC*/, theDomain.OperandsArray, theDomain.LocalsArray)] =
                 Nil
             val subroutinesOperandsArray: theDomain.OperandsArray = null
             val subroutinesLocalsArray: theDomain.LocalsArray = null

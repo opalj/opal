@@ -126,8 +126,8 @@ object MatcherUtil {
         project:                   SomeProject,
         failure:                   () => Unit,
         onlyMethodsExactlyInClass: Boolean,
-        onlyObjectTypes:           Boolean        = false,
-        considerSubclasses:        Boolean        = false
+        onlyObjectTypes:           Boolean = false,
+        considerSubclasses:        Boolean = false
     )(
         implicit
         typeIterator:        TypeIterator,
@@ -136,12 +136,12 @@ object MatcherUtil {
         incompleteCallSites: IncompleteCallSites,
         highSoundness:       Boolean
     ): MethodMatcher = {
-        val typesOpt = Some(TypesUtil.getPossibleClasses(
-            context, ref, depender, stmts, failure, onlyObjectTypes
-        ).flatMap { tpe =>
-            if (considerSubclasses) project.classHierarchy.allSubtypes(tpe.asObjectType, true)
-            else Set(if (tpe.isObjectType) tpe.asObjectType else ObjectType.Object)
-        })
+        val typesOpt = Some(
+            TypesUtil.getPossibleClasses(context, ref, depender, stmts, failure, onlyObjectTypes).flatMap { tpe =>
+                if (considerSubclasses) project.classHierarchy.allSubtypes(tpe.asObjectType, true)
+                else Set(if (tpe.isObjectType) tpe.asObjectType else ObjectType.Object)
+            }
+        )
 
         retrieveSuitableMatcher[Set[ObjectType]](
             typesOpt,

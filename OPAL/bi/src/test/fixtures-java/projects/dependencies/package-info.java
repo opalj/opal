@@ -1,5 +1,4 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-
 /**
  * This class was used to create a class file with some well defined properties. The
  * created class is subsequently used by several tests.

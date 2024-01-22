@@ -34,7 +34,8 @@ class PostDominatorTreeTest extends AnyFlatSpec with Matchers {
                 (i: Int) => i == 0,
                 IntTrieSet.empty,
                 (f: (Int => Unit)) => existNodes.foreach(e => f(e)),
-                foreachSuccessorOf, foreachPredecessorOf,
+                foreachSuccessorOf,
+                foreachPredecessorOf,
                 0
             )
         } { t => info("post dominator tree computed in " + t.toSeconds) }
@@ -66,7 +67,8 @@ class PostDominatorTreeTest extends AnyFlatSpec with Matchers {
                 existNodes.contains,
                 IntTrieSet.empty,
                 (f: (Int => Unit)) => existNodes.foreach(e => f(e)),
-                foreachSuccessorOf, foreachPredecessorOf,
+                foreachSuccessorOf,
+                foreachPredecessorOf,
                 4
             )
         } { t => info("post dominator tree computed in " + t.toSeconds) }
@@ -104,7 +106,8 @@ class PostDominatorTreeTest extends AnyFlatSpec with Matchers {
                 existNodes.contains,
                 IntTrieSet.empty,
                 (f: (Int => Unit)) => existNodes.foreach(e => f(e)),
-                foreachSuccessorOf, foreachPredecessorOf,
+                foreachSuccessorOf,
+                foreachPredecessorOf,
                 4
             )
         } { t => info("post dominator tree computed in " + t.toSeconds) }
@@ -150,7 +153,8 @@ class PostDominatorTreeTest extends AnyFlatSpec with Matchers {
                 existNodes.contains,
                 IntTrieSet.empty,
                 (f: Int => Unit) => existNodes.foreach(e => f(e)),
-                foreachSuccessorOf, foreachPredecessorOf,
+                foreachSuccessorOf,
+                foreachPredecessorOf,
                 2
             )
         } { t => info("post dominator tree computed in " + t.toSeconds) }

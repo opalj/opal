@@ -31,7 +31,8 @@ trait DomainSpecificRater {
         receiver: Option[Expr[V]]
     )(
         implicit
-        project: SomeProject, code: Array[Stmt[V]]
+        project: SomeProject,
+        code:    Array[Stmt[V]]
     ): Option[Purity]
 
     /**
@@ -39,7 +40,8 @@ trait DomainSpecificRater {
      */
     def handleGetStatic(expr: GetStatic)(
         implicit
-        project: SomeProject, code: Array[Stmt[V]]
+        project: SomeProject,
+        code:    Array[Stmt[V]]
     ): Option[Purity]
 
     /**
@@ -81,7 +83,8 @@ class BaseDomainSpecificRater extends DomainSpecificRater {
         expr: GetStatic
     )(
         implicit
-        project: SomeProject, code: Array[Stmt[V]]
+        project: SomeProject,
+        code:    Array[Stmt[V]]
     ): Option[Purity] = {
         None
     }
@@ -102,7 +105,8 @@ trait SystemOutErrRater extends DomainSpecificRater {
         receiver: Option[Expr[V]]
     )(
         implicit
-        project: SomeProject, code: Array[Stmt[V]]
+        project: SomeProject,
+        code:    Array[Stmt[V]]
     ): Option[Purity] = {
         if (receiver.isDefined && call.declaringClass == printStream && isOutErr(receiver.get))
             Some(DPure)
@@ -163,7 +167,8 @@ trait LoggingRater extends DomainSpecificRater {
     )
 
     abstract override def handleCall(
-        call: Call[V], receiver: Option[Expr[V]]
+        call:     Call[V],
+        receiver: Option[Expr[V]]
     )(
         implicit
         project: SomeProject,
@@ -211,7 +216,9 @@ trait ExceptionRater extends DomainSpecificRater {
                 mdc.method.compare(
                     "fillInStackTrace",
                     MethodDescriptor.withNoArgs(ObjectType.Throwable)
-                )).exists(_.method.classFile.thisType != ObjectType.Throwable))
+                )
+            ).exists(_.method.classFile.thisType != ObjectType.Throwable)
+        )
             Some(DPure)
         else super.handleCall(call, receiver)
     }
@@ -248,11 +255,13 @@ trait AssertionExceptionRater extends DomainSpecificRater {
         receiver: Option[Expr[V]]
     )(
         implicit
-        project: SomeProject, code: Array[Stmt[V]]
+        project: SomeProject,
+        code:    Array[Stmt[V]]
     ): Option[Purity] = {
         implicit val classHierarchy: ClassHierarchy = project.classHierarchy
         if (call.declaringClass.isObjectType && call.name == "<init>" &&
-            exceptionTypes.exists(call.declaringClass.asObjectType.isSubtypeOf))
+            exceptionTypes.exists(call.declaringClass.asObjectType.isSubtypeOf)
+        )
             Some(DPure)
         else super.handleCall(call, receiver)
     }

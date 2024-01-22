@@ -161,8 +161,7 @@ object OPALLogger extends OPALLogger {
         category: String,
         message:  => String
     )(
-        implicit
-        ctx: LogContext
+        implicit ctx: LogContext
     ): Unit = {
         if (p) {
             log(Info(category, message))
@@ -231,8 +230,7 @@ object OPALLogger extends OPALLogger {
         message:  String,
         t:        Throwable
     )(
-        implicit
-        ctx: LogContext
+        implicit ctx: LogContext
     ): Unit = {
         log(Error(category, message, t))
     }

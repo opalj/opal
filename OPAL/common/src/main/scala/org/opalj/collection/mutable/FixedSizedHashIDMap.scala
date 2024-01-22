@@ -82,7 +82,10 @@ class FixedSizedHashIDMap[K <: AnyRef, V] private (
             val keys = self.theKeys
             val max = keys.length
             var i = lastIndex + 1
-            while (i < max) { if (keys(i) ne null) { return i; } else i += 1 }
+            while (i < max) {
+                if (keys(i) ne null) { return i; }
+                else i += 1
+            }
             max
         }
         private[this] var i = getNextIndex(-1)

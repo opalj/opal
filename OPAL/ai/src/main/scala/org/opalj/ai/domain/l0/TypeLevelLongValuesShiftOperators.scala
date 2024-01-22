@@ -21,7 +21,8 @@ trait TypeLevelLongValuesShiftOperators extends LongValuesDomain {
      *
      * @return The result of calling `LongValue(pc)`.
      */
-    /*override*/ def lshl(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = {
+    /*override*/
+    def lshl(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = {
         LongValue(pc)
     }
 
@@ -30,7 +31,8 @@ trait TypeLevelLongValuesShiftOperators extends LongValuesDomain {
      *
      * @return The result of calling `LongValue(pc)`.
      */
-    /*override*/ def lshr(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = {
+    /*override*/
+    def lshr(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = {
         LongValue(pc)
     }
 
@@ -39,7 +41,8 @@ trait TypeLevelLongValuesShiftOperators extends LongValuesDomain {
      *
      * @return The result of calling `LongValue(pc)`.
      */
-    /*override*/ def lushr(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = {
+    /*override*/
+    def lushr(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = {
         LongValue(pc)
     }
 

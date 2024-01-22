@@ -98,8 +98,7 @@ class BasePropertyStoreMockup extends PropertyStore {
         propertyKindsComputedInLaterPhase: Set[PropertyKind],
         suppressInterimUpdates:            Map[PropertyKind, Set[PropertyKind]],
         finalizationOrder:                 List[List[PropertyKind]]
-    ): Unit = {
-    }
+    ): Unit = {}
 }
 
 /** A simple property store which will return the values when queried consecutively */
@@ -122,7 +121,8 @@ class PropertyStoreConfigurationRecorder extends BasePropertyStoreMockup {
     // Methods containing test fixture related logic.
     //
 
-    var phaseConfigurations: List[(Set[PropertyKind], Set[PropertyKind], Map[PropertyKind, Set[PropertyKind]])] = List.empty
+    var phaseConfigurations: List[(Set[PropertyKind], Set[PropertyKind], Map[PropertyKind, Set[PropertyKind]])] =
+        List.empty
 
     override def newPhaseInitialized(
         propertyKindsComputedInThisPhase:  Set[PropertyKind],

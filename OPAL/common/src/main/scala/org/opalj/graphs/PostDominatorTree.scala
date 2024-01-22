@@ -126,13 +126,14 @@ object PostDominatorTree {
             DominatorTree.create(
                 startNode,
                 hasVirtualStartNode = false,
-                foreachPredecessorOf, foreachSuccessorOf,
+                foreachPredecessorOf,
+                foreachSuccessorOf,
                 maxNode, // unchanged, the graph is not augmented
                 (
-                    startNode: Int,
+                    startNode:           Int,
                     hasVirtualStartNode: Boolean,
-                    foreachSuccessorOf: Int => ((Int => Unit) => Unit),
-                    idom: Array[Int]
+                    foreachSuccessorOf:  Int => ((Int => Unit) => Unit),
+                    idom:                Array[Int]
                 ) => {
                     new PostDominatorTree(
                         startNode,
@@ -171,13 +172,14 @@ object PostDominatorTree {
             DominatorTree.create(
                 startNode,
                 hasVirtualStartNode = true,
-                revFGForeachSuccessorOf, revFGForeachPredecessorOf,
-                maxNode = startNode /* we have an additional node */ ,
+                revFGForeachSuccessorOf,
+                revFGForeachPredecessorOf,
+                maxNode = startNode /* we have an additional node */,
                 (
-                    startNode: Int,
+                    startNode:           Int,
                     hasVirtualStartNode: Boolean,
-                    foreachSuccessorOf: Int => ((Int => Unit) => Unit),
-                    idom: Array[Int]
+                    foreachSuccessorOf:  Int => ((Int => Unit) => Unit),
+                    idom:                Array[Int]
                 ) => {
                     new PostDominatorTree(
                         startNode,

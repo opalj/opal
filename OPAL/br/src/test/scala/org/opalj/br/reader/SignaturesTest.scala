@@ -71,7 +71,8 @@ class SignaturesTest extends AnyFunSuite {
                     assert(signature ne null)
                 }
                 case _ => ;
-            })
+            }
+        )
     }
 
     //

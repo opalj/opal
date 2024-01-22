@@ -25,7 +25,7 @@ case class CONSTANT_Utf8_info(raw: Array[Byte], value: String) extends Constant_
     override def asString = value
 
     override def asCPNode(implicit cp: Constant_Pool): Node = {
-        <span class="cp_entry">CONSTANT_Utf8_info("<span class="constant_value">{ value }</span>")</span>
+        <span class="cp_entry">CONSTANT_Utf8_info("<span class="constant_value">{value}</span>")</span>
     }
 
     override def asInstructionParameter(implicit cp: Constant_Pool): NodeSeq = {

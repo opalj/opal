@@ -65,9 +65,8 @@ class FPCFAnalysesManager private[fpcf] (val project: SomeProject) {
         if (trace) {
             debug(
                 "analysis progress",
-                scenario.allProperties.map(p => PropertyKey.name(p.pk.id)).mkString(
-                    "used and derived properties = {", ", ", "}"
-                )
+                scenario.allProperties.map(p => PropertyKey.name(p.pk.id))
+                    .mkString("used and derived properties = {", ", ", "}")
             )
         }
         (propertyStore, as)

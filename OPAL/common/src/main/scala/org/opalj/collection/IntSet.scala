@@ -26,18 +26,21 @@ trait IntSet[T <: IntSet[T]] { intSet: T =>
 
     def foreach[U](f: Int => U): Unit
     def withFilter(p: Int => Boolean): T
-    def map(f: Int => Int): T
+    def map(f:        Int => Int): T
     /**
      * Uses the keys of this set to map them to the value found in the given array at the respective index.
      */
     def map(map: Array[Int]): T
+
     def map[A <: AnyRef](f: Int => A): Set[A] = foldLeft(Set.empty[A])(_ + f(_)) // IMPROVE Consider using SetBuilder to set the initial "expected" (maximum) size
+
     def flatMap(f: Int => T): T
 
     def foldLeft[B](z: B)(f: (B, Int) => B): B
 
     def head: Int
     def contains(value: Int): Boolean
+
     def exists(p: Int => Boolean): Boolean
     def forall(f: Int => Boolean): Boolean
 

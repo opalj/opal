@@ -54,8 +54,12 @@ case class VTAResult(flows: Map[JavaStatement, Set[VTAFact]], debugData: Map[Jav
     extends IFDSProperty[JavaStatement, VTAFact] {
 
     override type Self = VTAResult
-    override def create(result: Map[JavaStatement, Set[VTAFact]]): IFDSProperty[JavaStatement, VTAFact] = new VTAResult(result)
-    override def create(result: Map[JavaStatement, Set[VTAFact]], debugData: Map[JavaStatement, Set[VTAFact]]): IFDSProperty[JavaStatement, VTAFact] = new VTAResult(result, debugData)
+    override def create(result: Map[JavaStatement, Set[VTAFact]]): IFDSProperty[JavaStatement, VTAFact] =
+        new VTAResult(result)
+    override def create(
+        result:    Map[JavaStatement, Set[VTAFact]],
+        debugData: Map[JavaStatement, Set[VTAFact]]
+    ): IFDSProperty[JavaStatement, VTAFact] = new VTAResult(result, debugData)
 
     override def key: PropertyKey[VTAResult] = VTAResult.key
 }
@@ -63,8 +67,12 @@ case class VTAResult(flows: Map[JavaStatement, Set[VTAFact]], debugData: Map[Jav
 object VTAResult extends IFDSPropertyMetaInformation[JavaStatement, VTAFact] {
 
     override type Self = VTAResult
-    override def create(result: Map[JavaStatement, Set[VTAFact]]): IFDSProperty[JavaStatement, VTAFact] = new VTAResult(result)
-    override def create(result: Map[JavaStatement, Set[VTAFact]], debugData: Map[JavaStatement, Set[VTAFact]]): IFDSProperty[JavaStatement, VTAFact] = new VTAResult(result, debugData)
+    override def create(result: Map[JavaStatement, Set[VTAFact]]): IFDSProperty[JavaStatement, VTAFact] =
+        new VTAResult(result)
+    override def create(
+        result:    Map[JavaStatement, Set[VTAFact]],
+        debugData: Map[JavaStatement, Set[VTAFact]]
+    ): IFDSProperty[JavaStatement, VTAFact] = new VTAResult(result, debugData)
 
     val key: PropertyKey[VTAResult] = PropertyKey.create("VTAnew", new VTAResult(Map.empty))
 }

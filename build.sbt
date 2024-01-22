@@ -1,8 +1,5 @@
-import com.typesafe.sbt.SbtScalariform
-import com.typesafe.sbt.SbtScalariform.ScalariformKeys
 import sbt.Test
-import scalariform.formatter.preferences._
-import sbtassembly.AssemblyPlugin.autoImport._
+import sbtassembly.AssemblyPlugin.autoImport.*
 import sbtunidoc.ScalaUnidocPlugin
 
 name := "OPAL Library"
@@ -81,9 +78,10 @@ ThisBuild / javaOptions ++= Seq(
 
 addCommandAlias(
   "compileAll",
-  "; copyResources ; scalastyle ; " +
-    "OPAL / Test / compile ; OPAL / Test / scalastyle ; " +
-    "OPAL / IntegrationTest / scalariformFormat ; OPAL / IntegrationTest / scalastyle ; OPAL / IntegrationTest / compile "
+    "; copyResources ; " +
+    "OPAL / scalafmt ; OPAL / headerCheck ; " +
+    "OPAL / Test / scalafmt ; OPAL / Test / headerCheck ; OPAL / Test / compile ; " +
+    "OPAL/ IntegrationTest/ scalafmt ; OPAL / IntegrationTest / headerCheck ; OPAL / IntegrationTest / compile "
 )
 
 addCommandAlias("buildAll", "; compileAll ; unidoc ;  publishLocal ")
@@ -112,7 +110,6 @@ lazy val IntegrationTest = config("it") extend Test
 // Default settings without scoverage
 lazy val buildSettings =
   Defaults.coreDefaultSettings ++
-    scalariformSettings ++
     PublishingOverwrite.onSnapshotOverwriteSettings ++
     Seq(libraryDependencies ++= Dependencies.testlibs) ++
     Seq(inConfig(IntegrationTest)(Defaults.testSettings): _*) ++
@@ -139,15 +136,17 @@ lazy val buildSettings =
       case PathList("META-INF", "native-image", xs @ _, "jnijavacpp", "jni-config.json") => MergeStrategy.discard
       case PathList("META-INF", "native-image", xs @ _, "jnijavacpp", "reflect-config.json") => MergeStrategy.discard
       case other => (assembly / assemblyMergeStrategy).value(other)
-    })
+    }) ++
+      Seq(
+          headerLicense := Some(HeaderLicense.Custom("BSD 2-Clause License - see OPAL/LICENSE for details.")),
+          headerEmptyLine := false,
+          headerMappings :=
+              headerMappings.value ++ Seq(
+                  (HeaderFileType.scala -> LicenseHeaderConfig.defaultHeader),
+                  (HeaderFileType.java -> LicenseHeaderConfig.defaultHeader)
+              )
+      )
 
-lazy val scalariformSettings = scalariformItSettings ++
-  Seq(ScalariformKeys.preferences := baseDirectory(getScalariformPreferences).value)
-
-def getScalariformPreferences(dir: File) = {
-  val formatterPreferencesFile = "Scalariform Formatter Preferences.properties"
-  PreferencesImporterExporter.loadPreferences(file(formatterPreferencesFile).getPath)
-}
 
 /*******************************************************************************
  *
@@ -159,6 +158,7 @@ lazy val `OPAL` = (project in file("."))
 //  .configure(_.copy(id = "OPAL"))
   .settings(Defaults.coreDefaultSettings ++ Seq(publishArtifact := false): _*)
   .enablePlugins(ScalaUnidocPlugin)
+  .disablePlugins(HeaderPlugin) // The root project has no sources and no configured license header
   .settings(
     ScalaUnidoc / unidoc / unidocProjectFilter := inAnyProject -- inProjects(
       hermes,
@@ -526,7 +526,7 @@ compile := {
 lazy val runProjectDependencyGeneration =  ThisBuild / taskKey[Unit] ("Regenerates the Project Dependencies Graphics")
 
 runProjectDependencyGeneration := {
-  import scala.sys.process._
+  import scala.sys.process.*
   val s: TaskStreams = streams.value
   val uid = "id -u".!!.stripSuffix("\n")
   val gid = "id -g".!!.stripSuffix("\n")

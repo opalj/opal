@@ -70,18 +70,14 @@ object DomainRegistry {
             val domain = domainsToAnalyze.head
             domainsToAnalyze = domainsToAnalyze.tail
             domains += domain
-            classRegistry(domain).lessPreciseDomains.foreach { d =>
-                if (!domains.contains(d)) domainsToAnalyze += d
-            }
+            classRegistry(domain).lessPreciseDomains.foreach { d => if (!domains.contains(d)) domainsToAnalyze += d }
         }
 
         domains
     }
 
     def selectCandidates(requirements: Iterable[Class[_ <: AnyRef]]): Set[Class[_ <: Domain]] = {
-        classRegistry.keys.filter { candidate =>
-            requirements.forall(r => r.isAssignableFrom(candidate))
-        }.toSet
+        classRegistry.keys.filter { candidate => requirements.forall(r => r.isAssignableFrom(candidate)) }.toSet
     }
 
     /**

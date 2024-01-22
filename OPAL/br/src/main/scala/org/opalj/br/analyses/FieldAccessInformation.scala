@@ -48,8 +48,8 @@ case class FieldAccessInformation(project: SomeProject) {
     )(implicit declaredFields: DeclaredFields): Iterator[(Int, PC, AccessReceiver, AccessParameter)] =
         getFieldAccessInformation(declaredFields(field), FieldWriteAccessInformation.key).accesses
 
-    def isRead(field: Field)(implicit declaredFields: DeclaredFields): Boolean = readAccesses(field).nonEmpty
-    def isWritten(field: Field)(implicit declaredFields: DeclaredFields): Boolean = writeAccesses(field).nonEmpty
+    def isRead(field:     Field)(implicit declaredFields: DeclaredFields): Boolean = readAccesses(field).nonEmpty
+    def isWritten(field:  Field)(implicit declaredFields: DeclaredFields): Boolean = writeAccesses(field).nonEmpty
     def isAccessed(field: Field)(implicit declaredFields: DeclaredFields): Boolean = isRead(field) || isWritten(field)
 
     /**

@@ -24,7 +24,7 @@ case class MethodParameters_attribute(
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         <details class="attribute method_paramaters">
             <summary class="attribute_name">Method Parameters</summary>
-            <ol>{ parameters.map[Node] { p => <li>{ p.toXHTML(cp) }</li> } }</ol>
+            <ol>{parameters.map[Node] { p => <li>{p.toXHTML(cp)}</li> }}</ol>
         </details>
     }
 
@@ -38,12 +38,12 @@ case class MethodParameter(
     def toXHTML(implicit cp: Constant_Pool): Seq[Node] = {
         val (accessFlags, _) = accessFlagsToXHTML(access_flags, METHOD_PARAMETERS)
         val name = if (name_index == 0) "<Formal Parameter>" else cp(name_index).toString(cp)
-        <li>{ accessFlags }<span>{ name }</span></li>
+        <li>{accessFlags}<span>{name}</span></li>
     }
 
     def toXHTML(parameterTypeInfo: FieldTypeInfo)(implicit cp: Constant_Pool): Node = {
         val (accessFlags, _) = accessFlagsToXHTML(access_flags, METHOD_PARAMETERS)
         val name = if (name_index == 0) "<Formal Parameter>" else cp(name_index).toString(cp)
-        <span>{ List(accessFlags, parameterTypeInfo.asSpan(""), <span> { name }</span>) }</span>
+        <span>{List(accessFlags, parameterTypeInfo.asSpan(""), <span> {name}</span>)}</span>
     }
 }

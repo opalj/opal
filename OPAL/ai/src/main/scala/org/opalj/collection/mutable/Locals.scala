@@ -29,31 +29,37 @@ import scala.collection.mutable
  */
 sealed trait Locals[T >: Null <: AnyRef] {
 
-    /* ABSTRACT */ def size: Int
+    /* ABSTRACT */
+    def size: Int
 
     /**
      * The index of the last value that is not `null`; if all values are `null` or if
      * we have no locals, -1 is returned.
      */
-    /* ABSTRACT */ def indexOfLastNonNullValue: Int
+    /* ABSTRACT */
+    def indexOfLastNonNullValue: Int
 
-    /* ABSTRACT */ def isEmpty: Boolean
+    /* ABSTRACT */
+    def isEmpty: Boolean
 
-    /* ABSTRACT */ def nonEmpty: Boolean
+    /* ABSTRACT */
+    def nonEmpty: Boolean
 
     /**
      * Returns the value stored at the given index.
      *
      * @note If the index is not valid the result is not defined.
      */
-    /* ABSTRACT */ def apply(index: Int): T
+    /* ABSTRACT */
+    def apply(index: Int): T
 
     /**
      * Sets the value at the given index to the given value.
      *
      * @note If the index is not valid the result is not defined.
      */
-    /* ABSTRACT */ def set(index: Int, value: T): Unit
+    /* ABSTRACT */
+    def set(index: Int, value: T): Unit
 
     final def update(index: Int, value: T): Unit = set(index, value)
 
@@ -63,29 +69,35 @@ sealed trait Locals[T >: Null <: AnyRef] {
      *
      * @note For those values which are not yet set, `null` is passed to `f`.
      */
-    /* ABSTRACT */ def update(f: T => T): Unit
+    /* ABSTRACT */
+    def update(f: T => T): Unit
 
     /**
      * Creates a new Locals object where the value stored at the given index is
      * set to the given one.
      */
-    /* ABSTRACT */ def updated(index: Int, value: T): Locals[T]
+    /* ABSTRACT */
+    def updated(index: Int, value: T): Locals[T]
 
     /**
      * Creates a new Locals object where the values stored at the given index and the
      * subsequent index are set to the given values.
      */
-    /* ABSTRACT */ def updated(index: Int, value1: T, value2: T): Locals[T]
+    /* ABSTRACT */
+    def updated(index: Int, value1: T, value2: T): Locals[T]
 
     /**
      * Creates a new Locals object where the values stored at the given index and the two
      * subsequent indexes are set to the given values.
      */
-    /* ABSTRACT */ def updated(index: Int, value1: T, value2: T, value3: T): Locals[T]
+    /* ABSTRACT */
+    def updated(index: Int, value1: T, value2: T, value3: T): Locals[T]
 
-    /* ABSTRACT */ def foreach(f: T => Unit): Unit
+    /* ABSTRACT */
+    def foreach(f: T => Unit): Unit
 
-    /* ABSTRACT */ def foreachReverse(f: T => Unit): Unit
+    /* ABSTRACT */
+    def foreachReverse(f: T => Unit): Unit
 
     /**
      * Merges this `Locals` data-structure with the given `Locals`. If
@@ -97,9 +109,11 @@ sealed trait Locals[T >: Null <: AnyRef] {
      * @param other Another `Locals` data-structure that has the the same number of
      *      elements as this `Locals` data-structure.
      */
-    /* ABSTRACT */ def fuse(other: Locals[T], onDiff: (T, T) => T): Locals[T]
+    /* ABSTRACT */
+    def fuse(other: Locals[T], onDiff: (T, T) => T): Locals[T]
 
-    /* ABSTRACT */ def map[X >: Null <: AnyRef: ClassTag](f: T => X): Locals[X]
+    /* ABSTRACT */
+    def map[X >: Null <: AnyRef: ClassTag](f: T => X): Locals[X]
 
     /**
      * Maps every key-value pair to a new value. Note, that the value may very well
@@ -107,7 +121,8 @@ sealed trait Locals[T >: Null <: AnyRef] {
      */
     def mapKV[X >: Null <: AnyRef: ClassTag](f: (Int, T) => X): Locals[X] = mapKV(0, f)
 
-    /* ABSTRACT */ protected[this] def mapKV[X >: Null <: AnyRef: ClassTag](
+    /* ABSTRACT */
+    protected[this] def mapKV[X >: Null <: AnyRef: ClassTag](
         startIndex: Int,
         f:          (Int, T) => X
     ): Locals[X]
@@ -117,7 +132,8 @@ sealed trait Locals[T >: Null <: AnyRef] {
      * before `this` is returned otherwise a new Locals object is created which contains
      * the updated values.
      */
-    /* ABSTRACT */ def mapConserve(f: T => T): Locals[T]
+    /* ABSTRACT */
+    def mapConserve(f: T => T): Locals[T]
 
     /**
      * Returns `true` if all elements satisfy the given predicate, `false` otherwise.
@@ -264,13 +280,12 @@ sealed trait Locals[T >: Null <: AnyRef] {
         }
     }
 
-    /*ABSTRACT*/ override def equals(other: Any): Boolean
+    /*ABSTRACT*/
+    override def equals(other: Any): Boolean
 
     override def hashCode: Int = {
         var hc = 1
-        foreach { e =>
-            hc = hc * 41 + { if (e ne null) e.hashCode else 0 /* === System.identityHashCode(null) */ }
-        }
+        foreach { e => hc = hc * 41 + { if (e ne null) e.hashCode else 0 /* === System.identityHashCode(null) */ } }
         hc
     }
 
@@ -1277,9 +1292,9 @@ private[mutable] final class Locals8[T >: Null <: AnyRef](
     }
 
     override def indexOf(other: T): Option[Int] =
-        vs1.indexOf(other).
-            orElse(vs2.indexOf(other).map(_ + 2)).
-            orElse(vs3.indexOf(other).map(_ + 5))
+        vs1.indexOf(other)
+            .orElse(vs2.indexOf(other).map(_ + 2))
+            .orElse(vs3.indexOf(other).map(_ + 5))
 
     override def set(index: Int, newValue: T): Unit = {
         (index: @scala.annotation.switch) match {
@@ -1436,9 +1451,9 @@ private[mutable] final class Locals9[T >: Null <: AnyRef](
     }
 
     override def indexOf(other: T): Option[Int] =
-        vs1.indexOf(other).
-            orElse(vs2.indexOf(other).map(_ + 3)).
-            orElse(vs3.indexOf(other).map(_ + 6))
+        vs1.indexOf(other)
+            .orElse(vs2.indexOf(other).map(_ + 3))
+            .orElse(vs3.indexOf(other).map(_ + 6))
 
     override def set(index: Int, newValue: T): Unit = {
         (index: @scala.annotation.switch) match {
@@ -1596,9 +1611,9 @@ private[mutable] final class Locals10[T >: Null <: AnyRef](
     }
 
     override def indexOf(other: T): Option[Int] =
-        vs1.indexOf(other).
-            orElse(vs2.indexOf(other).map(_ + 4)).
-            orElse(vs3.indexOf(other).map(_ + 7))
+        vs1.indexOf(other)
+            .orElse(vs2.indexOf(other).map(_ + 4))
+            .orElse(vs3.indexOf(other).map(_ + 7))
 
     override def set(index: Int, newValue: T): Unit = {
         (index: @scala.annotation.switch) match {
@@ -1754,9 +1769,9 @@ private[mutable] final class Locals11[T >: Null <: AnyRef](
     }
 
     override def indexOf(other: T): Option[Int] =
-        vs1.indexOf(other).
-            orElse(vs2.indexOf(other).map(_ + 4)).
-            orElse(vs3.indexOf(other).map(_ + 7))
+        vs1.indexOf(other)
+            .orElse(vs2.indexOf(other).map(_ + 4))
+            .orElse(vs3.indexOf(other).map(_ + 7))
 
     override def set(index: Int, newValue: T): Unit = {
         (index: @scala.annotation.switch) match {

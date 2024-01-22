@@ -69,13 +69,11 @@ trait BootstrapArgumentLoading {
         argument:     ConstantValue[_],
         instructions: InstructionsBuilder,
         classFile:    ClassFile,
-        boxed:        Boolean             = false
+        boxed:        Boolean = false
     ): (Int, ClassFile) = {
         argument match {
             case DynamicConstant(bootstrapMethod, name, descriptor) =>
-                loadDynamicConstant(
-                    bootstrapMethod, name, descriptor, instructions, classFile, boxed
-                )
+                loadDynamicConstant(bootstrapMethod, name, descriptor, instructions, classFile, boxed)
             case _ =>
                 instructions ++= LoadConstantInstruction(argument, wide = true)
                 if (boxed && argument.runtimeValueType.isBaseType)
@@ -103,7 +101,7 @@ trait BootstrapArgumentLoading {
         descriptor:      FieldType,
         instructions:    InstructionsBuilder,
         classFile:       ClassFile,
-        boxed:           Boolean             = false
+        boxed:           Boolean = false
     ): (Int, ClassFile) = {
 
         def dynamicLoad(): LoadConstantInstruction[_] = {
@@ -112,8 +110,10 @@ trait BootstrapArgumentLoading {
         }
 
         bootstrapMethod match {
-            case BootstrapMethod(InvokeStaticMethodHandle(ObjectType.ConstantBootstraps, false, methodName, _), args: ArraySeq[ConstantValue[_]] @unchecked) =>
-
+            case BootstrapMethod(
+                    InvokeStaticMethodHandle(ObjectType.ConstantBootstraps, false, methodName, _),
+                    args: ArraySeq[ConstantValue[_]] @unchecked
+                ) =>
                 methodName match {
                     case "arrayVarHandle" =>
                         val maxStackAndClassFile = loadClassType(args.head, instructions, classFile)
@@ -206,9 +206,7 @@ trait BootstrapArgumentLoading {
                     case "invoke" =>
                         val methodHandle = args.head
                         val arguments = args.tail
-                        invokeMethodHandle(
-                            methodHandle, arguments, descriptor, instructions, classFile, boxed
-                        )
+                        invokeMethodHandle(methodHandle, arguments, descriptor, instructions, classFile, boxed)
 
                     case "nullConstant" =>
                         instructions ++= ACONST_NULL
@@ -236,9 +234,8 @@ trait BootstrapArgumentLoading {
 
             case BootstrapMethod(InvokeStaticMethodHandle(ObjectType.ObjectMethods, false, _, _), _) =>
                 val newMethodName = s"$$object_methods$$${classFile.thisType.simpleName}:pc"
-                val (updatedClassFile, newMethodDescriptor) = createObjectMethodsTarget(
-                    bootstrapMethod.arguments, name, newMethodName, classFile
-                ).getOrElse {
+                val (updatedClassFile, newMethodDescriptor) =
+                    createObjectMethodsTarget(bootstrapMethod.arguments, name, newMethodName, classFile).getOrElse {
                         instructions ++= dynamicLoad()
                         return (descriptor.computationalType.operandSize, classFile);
                     }
@@ -305,9 +302,7 @@ trait BootstrapArgumentLoading {
             (1, classFile)
 
         case DynamicConstant(constantBSM, constantName, constantDescriptor) =>
-            loadDynamicConstant(
-                constantBSM, constantName, constantDescriptor, instructions, classFile
-            )
+            loadDynamicConstant(constantBSM, constantName, constantDescriptor, instructions, classFile)
     }
 
     /**
@@ -380,9 +375,8 @@ trait BootstrapArgumentLoading {
                 (Some(VoidType), 1, classFile)
 
             case DynamicConstant(constantBSM, constantName, constantDescriptor) =>
-                val (loadConstantStack, newClassFile) = loadDynamicConstant(
-                    constantBSM, constantName, constantDescriptor, instructions, classFile
-                )
+                val (loadConstantStack, newClassFile) =
+                    loadDynamicConstant(constantBSM, constantName, constantDescriptor, instructions, classFile)
                 (None, loadConstantStack, newClassFile)
         }
 
@@ -499,8 +493,8 @@ trait BootstrapArgumentLoading {
         // Loads a component (boxed), maxStack = 5
         def loadComponent(
             getter:           MethodHandle,
-            hasTwoParameters: Boolean      = false,
-            forSecondRecord:  Boolean      = false
+            hasTwoParameters: Boolean = false,
+            forSecondRecord:  Boolean = false
         ): Unit = {
             body ++= LoadConstantInstruction(getter, wide = true)
 

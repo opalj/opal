@@ -102,14 +102,16 @@ trait IdentityBasedCorrelationChangeDetection extends CoreDomainFunctionality {
                         if (previousLocation < 0) {
                             val v2 = newLocals(li)
                             if ((newOperands(-previousLocation - 1) ne v2) &&
-                                (v2 ne TheIllegalValue))
+                                (v2 ne TheIllegalValue)
+                            )
                                 return StructuralUpdate((newOperands, newLocals));
                         } else /*previousLocation >= 0*/ {
                             val v1 = newLocals(previousLocation)
                             val v2 = newLocals(li)
                             if ((v1 ne v2) /* <=> the alias no longer exists */ &&
                                 // but, does it matter?
-                                (v1 ne TheIllegalValue) && (v2 ne TheIllegalValue))
+                                (v1 ne TheIllegalValue) && (v2 ne TheIllegalValue)
+                            )
                                 return StructuralUpdate((newOperands, newLocals));
                         }
                     }

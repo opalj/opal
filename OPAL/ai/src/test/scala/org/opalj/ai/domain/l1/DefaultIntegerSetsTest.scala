@@ -393,8 +393,18 @@ class DefaultIntegerSetsTest extends AnyFunSpec with Matchers {
                 val v1 = IntegerSet(SortedSet[Int](Int.MinValue, Int.MaxValue))
                 val v2 = IntegerSet(SortedSet[Int](8, 19))
 
-                ixor(-1, v1, v2) should be(IntegerSet(SortedSet[Int](Int.MinValue + 8, Int.MinValue + 19, Int.MaxValue - 19, Int.MaxValue - 8)))
-                ixor(-1, v2, v1) should be(IntegerSet(SortedSet[Int](Int.MinValue + 8, Int.MinValue + 19, Int.MaxValue - 19, Int.MaxValue - 8)))
+                ixor(-1, v1, v2) should be(IntegerSet(SortedSet[Int](
+                    Int.MinValue + 8,
+                    Int.MinValue + 19,
+                    Int.MaxValue - 19,
+                    Int.MaxValue - 8
+                )))
+                ixor(-1, v2, v1) should be(IntegerSet(SortedSet[Int](
+                    Int.MinValue + 8,
+                    Int.MinValue + 19,
+                    Int.MaxValue - 19,
+                    Int.MaxValue - 8
+                )))
             }
 
             it("{Int.MaxValue-2,Int.MaxValue-1} ^ {Int.MaxValue-1,Int.MaxValue} => {0,1,2,3}") {
@@ -1265,7 +1275,8 @@ class DefaultIntegerSetsTest extends AnyFunSpec with Matchers {
                 it("it should be able to collect a switch statement's cases and use that information to calculate a result") {
                     val domain = new IntegerSetsTestDomain
                     val method = IntegerValues.findMethod("someSwitch").head
-                    /*val result =*/ BaseAI(method, domain)
+                    /*val result =*/
+                    BaseAI(method, domain)
                     if (domain.allReturnedValues.size != 1)
                         fail("expected one result; found: " + domain.allReturnedValues)
 

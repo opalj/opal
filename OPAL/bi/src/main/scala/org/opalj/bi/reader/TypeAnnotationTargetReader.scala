@@ -24,16 +24,16 @@ trait TypeAnnotationTargetReader extends Constant_PoolAbstractions {
 
     type TypeAnnotationTarget <: AnyRef
 
-    //______________________________
+    // ______________________________
     // type_parameter_target
-    def ParameterDeclarationOfClassOrInterface(type_parameter_index: Int): TypeAnnotationTarget
+    def ParameterDeclarationOfClassOrInterface(type_parameter_index:    Int): TypeAnnotationTarget
     def ParameterDeclarationOfMethodOrConstructor(type_parameter_index: Int): TypeAnnotationTarget
 
-    //______________________________
+    // ______________________________
     // supertype_target
     def SupertypeTarget(supertype_index: Int): TypeAnnotationTarget
 
-    //______________________________
+    // ______________________________
     // type_parameter_bound_target
     def TypeBoundOfParameterDeclarationOfClassOrInterface(
         type_parameter_index: Int,
@@ -44,25 +44,25 @@ trait TypeAnnotationTargetReader extends Constant_PoolAbstractions {
         bound_index:          Int
     ): TypeAnnotationTarget
 
-    //______________________________
+    // ______________________________
     // empty_target
     def FieldDeclaration: TypeAnnotationTarget
     def ReturnType: TypeAnnotationTarget
     def ReceiverType: TypeAnnotationTarget
 
-    //______________________________
+    // ______________________________
     // formal_parameter_target
     def FormalParameter(formal_parameter_index: Int): TypeAnnotationTarget
 
-    //______________________________
+    // ______________________________
     // throws_target
     def Throws(throws_type_index: Int): TypeAnnotationTarget
 
-    //______________________________
+    // ______________________________
     // catch_target
     def Catch(exception_table_index: Int): TypeAnnotationTarget
 
-    //______________________________
+    // ______________________________
     // localvar_target
     /*
      * Format
@@ -89,13 +89,13 @@ trait TypeAnnotationTargetReader extends Constant_PoolAbstractions {
         length:                     Int,
         local_variable_table_index: Int
     ): LocalvarTableEntry
-    def LocalvarDecl(localVarTable: LocalvarTable): TypeAnnotationTarget
+    def LocalvarDecl(localVarTable:    LocalvarTable): TypeAnnotationTarget
     def ResourcevarDecl(localVarTable: LocalvarTable): TypeAnnotationTarget
 
-    //______________________________
+    // ______________________________
     // offset_target
     def InstanceOf(offset: Int): TypeAnnotationTarget
-    def New(offset: Int): TypeAnnotationTarget
+    def New(offset:        Int): TypeAnnotationTarget
     def MethodReferenceExpressionNew /*::New*/ (
         offset: Int
     ): TypeAnnotationTarget
@@ -103,7 +103,7 @@ trait TypeAnnotationTargetReader extends Constant_PoolAbstractions {
         offset: Int
     ): TypeAnnotationTarget
 
-    //______________________________
+    // ______________________________
     // type_argument_target
     def CastExpression(
         offset:              Int,

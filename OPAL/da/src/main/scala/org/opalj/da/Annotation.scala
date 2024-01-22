@@ -12,7 +12,7 @@ import scala.xml.Node
  */
 case class Annotation(
         type_index:          Constant_Pool_Index,
-        element_value_pairs: ElementValuePairs   = NoElementValuePairs
+        element_value_pairs: ElementValuePairs = NoElementValuePairs
 ) extends AbstractAnnotation {
 
     final def attribute_length: Int = {
@@ -22,8 +22,8 @@ case class Annotation(
     def toXHTML(implicit cp: Constant_Pool): Node = {
         val annotationType = parseFieldType(cp(type_index).toString)
         <div class="annotation">
-            { annotationType.asSpan("annotation_type") }
-            { evps }
+            {annotationType.asSpan("annotation_type")}
+            {evps}
         </div>
     }
 }

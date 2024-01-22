@@ -242,9 +242,7 @@ trait HermesCore extends HermesConfig {
     def exportStatistics(writer: BufferedWriter, exportProjectStatistics: Boolean): Unit = {
         // Create the set of all names of all project-wide statistics
         var projectStatisticsIDs = Set.empty[String]
-        featureMatrix.forEach { pf =>
-            projectStatisticsIDs ++= pf.projectConfiguration.statistics.keySet
-        }
+        featureMatrix.forEach { pf => projectStatisticsIDs ++= pf.projectConfiguration.statistics.keySet }
 
         // Logic to create the csv file:
         val csvSchemaBuilder = CsvSchema.builder().addColumn("Project")
@@ -252,12 +250,9 @@ trait HermesCore extends HermesConfig {
             projectStatisticsIDs.foreach { id => csvSchemaBuilder.addColumn(id) }
         }
         val csvSchema =
-            featureIDs.
-                foldLeft(csvSchemaBuilder) { (schema, feature) =>
-                    schema.addColumn(feature._1, CsvSchema.ColumnType.NUMBER)
-                }.
-                setUseHeader(true).
-                build()
+            featureIDs.foldLeft(csvSchemaBuilder) { (schema, feature) =>
+                schema.addColumn(feature._1, CsvSchema.ColumnType.NUMBER)
+            }.setUseHeader(true).build()
 
         val csvGenerator = new CsvFactory().createGenerator(writer)
         csvGenerator.setSchema(csvSchema)
@@ -312,9 +307,7 @@ trait HermesCore extends HermesConfig {
         projectConfigurations.iterator foreach { pc =>
             featureMatrix.forEach { pf =>
                 val projectFile = new File(s"${dir.path}/${pf.id.getValue}.tsv")
-                io.process(new BufferedWriter(new FileWriter(projectFile))) { writer =>
-                    exportLocations(writer, pf)
-                }
+                io.process(new BufferedWriter(new FileWriter(projectFile))) { writer => exportLocations(writer, pf) }
             }
         }
     }
@@ -341,11 +334,11 @@ trait HermesCore extends HermesConfig {
         def writeEntry[S](
             source:           Option[S],
             pn:               String,
-            cls:              String    = "",
-            methodName:       String    = "",
-            methodDescriptor: String    = "",
-            inst:             String    = "",
-            field:            String    = ""
+            cls:              String = "",
+            methodName:       String = "",
+            methodDescriptor: String = "",
+            inst:             String = "",
+            field:            String = ""
         ): Unit = {
             csvGenerator.writeString(source.map(_.toString).getOrElse(""))
             csvGenerator.writeString(pn)

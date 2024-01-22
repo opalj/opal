@@ -65,20 +65,21 @@ object TACAI extends TACAIPropertyMetaInformation {
      */
     final val key: PropertyKey[TACAI] = PropertyKey.create[Method, TACAI](
         "opalj.TACAI",
-        (ps: PropertyStore, r: FallbackReason, m: Method) => {
-            r match {
-                case PropertyIsNotDerivedByPreviouslyExecutedAnalysis =>
-                    NoTACAI
+        (ps: PropertyStore, r: FallbackReason, m: Method) =>
+            {
+                r match {
+                    case PropertyIsNotDerivedByPreviouslyExecutedAnalysis =>
+                        NoTACAI
 
-                case PropertyIsNotComputedByAnyAnalysis =>
-                    val p = ps.context(classOf[SomeProject])
-                    val d = new PrimitiveTACAIDomain(p.classHierarchy, m)
-                    val taCode = TACAIFactory(p, m)(d)
-                    TheTACAI(
-                        // the following cast is safe - see TACode for details
-                        taCode.asInstanceOf[TACode[TACMethodParameter, DUVar[ValueInformation]]]
-                    )
-            }
-        }: TACAI
+                    case PropertyIsNotComputedByAnyAnalysis =>
+                        val p = ps.context(classOf[SomeProject])
+                        val d = new PrimitiveTACAIDomain(p.classHierarchy, m)
+                        val taCode = TACAIFactory(p, m)(d)
+                        TheTACAI(
+                            // the following cast is safe - see TACode for details
+                            taCode.asInstanceOf[TACode[TACMethodParameter, DUVar[ValueInformation]]]
+                        )
+                }
+            }: TACAI
     )
 }

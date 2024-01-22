@@ -19,7 +19,9 @@ package object pointsto {
      * entity to be used to attach/retrieve points-to information from.
      */
     def toEntity(
-        defSite: Int, context: Context, stmts: Array[Stmt[DUVar[ValueInformation]]]
+        defSite: Int,
+        context: Context,
+        stmts:   Array[Stmt[DUVar[ValueInformation]]]
     )(
         implicit
         formalParameters: VirtualFormalParameters,

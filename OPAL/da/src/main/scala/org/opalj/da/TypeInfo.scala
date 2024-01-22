@@ -39,7 +39,7 @@ case object VoidTypeInfo extends TypeInfo {
 
     override def isVoid: Boolean = true
 
-    override def asSpan(baseClass: String): Node = <span class={ s"$baseClass void_type" }>void</span>
+    override def asSpan(baseClass: String): Node = <span class={s"$baseClass void_type"}>void</span>
 
 }
 
@@ -52,7 +52,7 @@ sealed abstract class PrimitiveTypeInfo protected (val asJava: String) extends F
     override final def elementTypeIsBaseType: Boolean = true
 
     override def asSpan(baseClass: String): Node = {
-        <span class={ s"$baseClass primitive_type" }>{ asJava }</span>
+        <span class={s"$baseClass primitive_type"}>{asJava}</span>
     }
 }
 
@@ -74,7 +74,7 @@ case class ObjectTypeInfo(asJava: String) extends FieldTypeInfo {
     override final def elementTypeIsBaseType: Boolean = false
 
     override def asSpan(baseClass: String): Node = {
-        <span class={ s"$baseClass object_type" }>{ asJava }</span>
+        <span class={s"$baseClass object_type"}>{asJava}</span>
     }
 }
 
@@ -90,8 +90,8 @@ case class ArrayTypeInfo(
 
     override def asSpan(baseClass: String): Node = {
         if (elementTypeIsBaseType)
-            <span class={ s"$baseClass array primitive_type" }>{ asJava }</span>
+            <span class={s"$baseClass array primitive_type"}>{asJava}</span>
         else
-            <span class={ s"$baseClass array object_type" }>{ asJava }</span>
+            <span class={s"$baseClass array object_type"}>{asJava}</span>
     }
 }

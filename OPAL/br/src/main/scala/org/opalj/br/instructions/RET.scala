@@ -29,7 +29,7 @@ case class RET(
     override final def length: Int = 2
 
     override final def nextInstructions(
-        currentPC:             Int /*PC*/ ,
+        currentPC:             Int /*PC*/,
         regularSuccessorsOnly: Boolean
     )(
         implicit
@@ -50,10 +50,10 @@ case class RET(
     }
 
     final def nextInstructions(
-        currentPC: Int, cfg: () => CFG[Instruction, Code]
+        currentPC: Int,
+        cfg:       () => CFG[Instruction, Code]
     )(
-        implicit
-        code: Code
+        implicit code: Code
     ): List[Int /*PC*/ ] = {
 
         // If we have just one subroutine it is sufficient to collect the

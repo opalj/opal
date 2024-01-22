@@ -25,8 +25,8 @@ case class Annotation(
 
     def similar(other: Annotation): Boolean = {
         (this.annotationType eq other.annotationType) &&
-            this.elementValuePairs.size == other.elementValuePairs.size &&
-            this.elementValuePairs.forall(other.elementValuePairs.contains)
+        this.elementValuePairs.size == other.elementValuePairs.size &&
+        this.elementValuePairs.forall(other.elementValuePairs.contains)
     }
 
     def toJava: String = {

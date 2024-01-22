@@ -565,8 +565,7 @@ trait IsReferenceValue extends KnownTypedValue {
     def isValueASubtypeOf(
         referenceType: ReferenceType
     )(
-        implicit
-        classHierarchy: ClassHierarchy
+        implicit classHierarchy: ClassHierarchy
     ): Answer
 
     /**
@@ -627,8 +626,7 @@ trait IsNullValue extends IsBaseReferenceValue {
     override final def isValueASubtypeOf(
         referenceType: ReferenceType
     )(
-        implicit
-        classHierarchy: ClassHierarchy
+        implicit classHierarchy: ClassHierarchy
     ): Answer = {
         throw new IllegalStateException("null value")
     }
@@ -674,8 +672,7 @@ trait IsMObjectValue extends IsBaseReferenceValue {
     override def isValueASubtypeOf(
         supertype: ReferenceType
     )(
-        implicit
-        classHierarchy: ClassHierarchy
+        implicit classHierarchy: ClassHierarchy
     ): Answer = {
         var isASubtypeOf: Answer = No
         upperTypeBound foreach { anUpperTypeBound =>
@@ -699,9 +696,7 @@ trait IsMObjectValue extends IsBaseReferenceValue {
         isASubtypeOf match {
             // Yes is not possible here!
 
-            case No if (
-                supertype.isArrayType && upperTypeBound != ObjectType.SerializableAndCloneable
-            ) =>
+            case No if (supertype.isArrayType && upperTypeBound != ObjectType.SerializableAndCloneable) =>
                 // even if the upper bound is not precise we are now 100% sure
                 // that this value is not a subtype of the given supertype
                 No
@@ -750,21 +745,21 @@ trait IsSObjectValue extends IsSReferenceValue[ObjectType] {
     override def isValueASubtypeOf(
         supertype: ReferenceType
     )(
-        implicit
-        classHierarchy: ClassHierarchy
+        implicit classHierarchy: ClassHierarchy
     ): Answer = {
         val subtype = theUpperTypeBound
         classHierarchy.isASubtypeOf(subtype, supertype) match {
             case Yes =>
                 Yes
-            case No if isPrecise
-                || (
-                    supertype.isArrayType &&
-                    // and it is impossible that this value is actually an array...
-                    (subtype ne ObjectType.Object) &&
-                    (subtype ne ObjectType.Serializable) &&
-                    (subtype ne ObjectType.Cloneable)
-                ) || (
+            case No
+                if isPrecise
+                    || (
+                        supertype.isArrayType &&
+                        // and it is impossible that this value is actually an array...
+                        (subtype ne ObjectType.Object) &&
+                        (subtype ne ObjectType.Serializable) &&
+                        (subtype ne ObjectType.Cloneable)
+                    ) || (
                         // If both types represent class types and it is not
                         // possible that some value of this type may be a subtype
                         // of the given supertype, the answer "No" is correct.
@@ -776,9 +771,10 @@ trait IsSObjectValue extends IsSReferenceValue[ObjectType] {
                         classHierarchy.isASubtypeOf(supertype, subtype).isNo
                     ) =>
                 No
-            case _ if isPrecise &&
-                // Note "reflexivity" is already captured by the first isSubtypeOf call
-                classHierarchy.isSubtypeOf(supertype, subtype) =>
+            case _
+                if isPrecise &&
+                    // Note "reflexivity" is already captured by the first isSubtypeOf call
+                    classHierarchy.isSubtypeOf(supertype, subtype) =>
                 No
             case _ =>
                 Unknown
@@ -832,24 +828,24 @@ trait IsSArrayValue extends IsSReferenceValue[ArrayType] {
     override def isValueASubtypeOf(
         supertype: ReferenceType
     )(
-        implicit
-        classHierarchy: ClassHierarchy
+        implicit classHierarchy: ClassHierarchy
     ): Answer = {
         classHierarchy.isASubtypeOf(theUpperTypeBound, supertype) match {
             case Yes => Yes
-            case No if isPrecise ||
-                // the array's supertypes: Object, Serializable and Cloneable
-                // are handled by domain.isASubtypeOf
-                supertype.isObjectType ||
-                theUpperTypeBound.elementType.isBaseType ||
-                (
-                    supertype.isArrayType &&
-                    supertype.asArrayType.elementType.isBaseType &&
+            case No
+                if isPrecise ||
+                    // the array's supertypes: Object, Serializable and Cloneable
+                    // are handled by domain.isASubtypeOf
+                    supertype.isObjectType ||
+                    theUpperTypeBound.elementType.isBaseType ||
                     (
-                        theUpperTypeBound.dimensions >= supertype.asArrayType.dimensions ||
-                        (theUpperTypeBound.componentType ne ObjectType.Object)
-                    )
-                ) => No
+                        supertype.isArrayType &&
+                        supertype.asArrayType.elementType.isBaseType &&
+                        (
+                            theUpperTypeBound.dimensions >= supertype.asArrayType.dimensions ||
+                            (theUpperTypeBound.componentType ne ObjectType.Object)
+                        )
+                    ) => No
             case _ => Unknown
         }
     }
@@ -908,8 +904,7 @@ trait IsStringValue
     override final def isValueASubtypeOf(
         supertype: ReferenceType
     )(
-        implicit
-        classHierarchy: ClassHierarchy
+        implicit classHierarchy: ClassHierarchy
     ): Answer = {
         supertype.id match {
             case ObjectType.ObjectId
@@ -952,8 +947,7 @@ trait IsClassValue
     override final def isValueASubtypeOf(
         supertype: ReferenceType
     )(
-        implicit
-        classHierarchy: ClassHierarchy
+        implicit classHierarchy: ClassHierarchy
     ): Answer = {
         supertype.id match {
             case ObjectType.ObjectId
@@ -1007,8 +1001,7 @@ trait IsMultipleReferenceValue extends IsReferenceValue {
     override def isValueASubtypeOf(
         supertype: ReferenceType
     )(
-        implicit
-        classHierarchy: ClassHierarchy
+        implicit classHierarchy: ClassHierarchy
     ): Answer = {
         // Recall that the client has to make an "isNull" check before calling
         // isValueASubtypeOf. Hence, at least one of the possible reference values
@@ -1045,7 +1038,8 @@ trait IsMultipleReferenceValue extends IsReferenceValue {
         if (uniqueBaseValues.size == 1 &&
             uniqueBaseValues.head.isNull == this.isNull &&
             uniqueBaseValues.head.isPrecise == this.isPrecise &&
-            uniqueBaseValues.head.upperTypeBound == this.upperTypeBound) {
+            uniqueBaseValues.head.upperTypeBound == this.upperTypeBound
+        ) {
             uniqueBaseValues.head
         } else {
             AMultipleReferenceValue(

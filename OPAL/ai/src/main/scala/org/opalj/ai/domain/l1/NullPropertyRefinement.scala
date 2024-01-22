@@ -56,31 +56,46 @@ trait NullPropertyRefinement extends CoreDomainFunctionality {
 
         @inline def default() =
             super.afterEvaluation(
-                pc, instruction, oldOperands, oldLocals,
-                targetPC, isExceptionalControlFlow, forceJoin, newOperands, newLocals
+                pc,
+                instruction,
+                oldOperands,
+                oldLocals,
+                targetPC,
+                isExceptionalControlFlow,
+                forceJoin,
+                newOperands,
+                newLocals
             )
 
         def establishNullProperty(objectRef: DomainValue): (Operands, Locals) = {
             if (refIsNull(pc, objectRef).isUnknown) {
                 if (isExceptionalControlFlow && {
-                    // the NullPointerException was created by the JVM, because
-                    // the objectRef is (assumed to be) null
-                    val exception = newOperands.head
-                    val TypeOfReferenceValue(utb) = exception
-                    (utb.head eq ObjectType.NullPointerException) && {
-                        val origins = originsIterator(exception)
-                        origins.nonEmpty && {
-                            val origin = origins.next()
-                            isImmediateVMException(origin) && pcOfImmediateVMException(origin) == pc &&
-                                !origins.hasNext
+                        // the NullPointerException was created by the JVM, because
+                        // the objectRef is (assumed to be) null
+                        val exception = newOperands.head
+                        val TypeOfReferenceValue(utb) = exception
+                        (utb.head eq ObjectType.NullPointerException) && {
+                            val origins = originsIterator(exception)
+                            origins.nonEmpty && {
+                                val origin = origins.next()
+                                isImmediateVMException(origin) && pcOfImmediateVMException(origin) == pc &&
+                                    !origins.hasNext
+                            }
                         }
                     }
-                }) {
+                ) {
                     val (operands2, locals2) =
                         refEstablishIsNull(targetPC, objectRef, newOperands, newLocals)
                     super.afterEvaluation(
-                        pc, instruction, oldOperands, oldLocals,
-                        targetPC, isExceptionalControlFlow, forceJoin, operands2, locals2
+                        pc,
+                        instruction,
+                        oldOperands,
+                        oldLocals,
+                        targetPC,
+                        isExceptionalControlFlow,
+                        forceJoin,
+                        operands2,
+                        locals2
                     )
                 } else {
                     // ... the value is not null... even if an exception was thrown,
@@ -88,8 +103,15 @@ trait NullPropertyRefinement extends CoreDomainFunctionality {
                     val (operands2, locals2) =
                         refEstablishIsNonNull(targetPC, objectRef, newOperands, newLocals)
                     super.afterEvaluation(
-                        pc, instruction, oldOperands, oldLocals,
-                        targetPC, isExceptionalControlFlow, forceJoin, operands2, locals2
+                        pc,
+                        instruction,
+                        oldOperands,
+                        oldLocals,
+                        targetPC,
+                        isExceptionalControlFlow,
+                        forceJoin,
+                        operands2,
+                        locals2
                     )
                 }
             } else {

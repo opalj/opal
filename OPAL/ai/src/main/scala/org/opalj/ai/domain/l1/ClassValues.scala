@@ -147,7 +147,8 @@ trait ClassValues
             val elementType = classValue.asArrayType.elementType
             if (elementType.isBaseType ||
                 classHierarchy.isKnown(elementType.asObjectType) ||
-                !throwClassNotFoundException) {
+                !throwClassNotFoundException
+            ) {
                 ComputedValue(ClassValue(pc, classValue))
             } else {
                 ComputedValueOrException(
@@ -227,7 +228,7 @@ trait ClassValues
                 case ObjectType.Float     => ComputedValue(ClassValue(pc, FloatType))
                 case ObjectType.Double    => ComputedValue(ClassValue(pc, DoubleType))
 
-                case _                    => super.getstatic(pc, declaringClass, name, fieldType)
+                case _ => super.getstatic(pc, declaringClass, name, fieldType)
             }
         } else {
             super.getstatic(pc, declaringClass, name, fieldType)
@@ -242,7 +243,15 @@ trait ClassValues
     ): Computation[DomainValue, Nothing] = {
 
         bootstrapMethod match {
-            case BootstrapMethod(InvokeStaticMethodHandle(ObjectType.ConstantBootstraps, false, "primitiveClass", ConstantBootstrapsPrimitiveClassDescriptor), ArraySeq()) =>
+            case BootstrapMethod(
+                    InvokeStaticMethodHandle(
+                        ObjectType.ConstantBootstraps,
+                        false,
+                        "primitiveClass",
+                        ConstantBootstrapsPrimitiveClassDescriptor
+                    ),
+                    ArraySeq()
+                ) =>
                 ComputedValue(ClassValue(pc, FieldType(name)))
             case _ =>
                 super.loadDynamic(pc, bootstrapMethod, name, descriptor)

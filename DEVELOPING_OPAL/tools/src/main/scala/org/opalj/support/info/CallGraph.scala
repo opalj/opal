@@ -113,23 +113,23 @@ object CallGraph extends ProjectAnalysisApplication {
         val remainingParameters =
             parameters.filter { p =>
                 !p.matches(algorithmRegex.regex) &&
-                    !p.startsWith("-domain=") &&
-                    !p.startsWith("-callers=") &&
-                    !p.startsWith("-callees=") &&
-                    !p.startsWith("-analysisName=") &&
-                    !p.startsWith("-schedulingStrategy=") &&
-                    !p.startsWith("-writeCG=") &&
-                    !p.startsWith("-writeOutput=") &&
-                    !p.startsWith("-main=") &&
-                    !p.startsWith("-j=") &&
-                    !p.startsWith("-tamiflex-log=") &&
-                    !p.startsWith("-finalizerAnalysis=") &&
-                    !p.startsWith("-loadedClassesAnalysis=") &&
-                    !p.startsWith("-staticInitializerAnalysis=") &&
-                    !p.startsWith("-reflectionAnalysis=") &&
-                    !p.startsWith("-serializationAnalysis=") &&
-                    !p.startsWith("-threadRelatedCallsAnalysis=") &&
-                    !p.startsWith("-configuredNativeMethodsAnalysis=")
+                !p.startsWith("-domain=") &&
+                !p.startsWith("-callers=") &&
+                !p.startsWith("-callees=") &&
+                !p.startsWith("-analysisName=") &&
+                !p.startsWith("-schedulingStrategy=") &&
+                !p.startsWith("-writeCG=") &&
+                !p.startsWith("-writeOutput=") &&
+                !p.startsWith("-main=") &&
+                !p.startsWith("-j=") &&
+                !p.startsWith("-tamiflex-log=") &&
+                !p.startsWith("-finalizerAnalysis=") &&
+                !p.startsWith("-loadedClassesAnalysis=") &&
+                !p.startsWith("-staticInitializerAnalysis=") &&
+                !p.startsWith("-reflectionAnalysis=") &&
+                !p.startsWith("-serializationAnalysis=") &&
+                !p.startsWith("-threadRelatedCallsAnalysis=") &&
+                !p.startsWith("-configuredNativeMethodsAnalysis=")
             }
         super.checkAnalysisSpecificParameters(remainingParameters)
     }
@@ -163,15 +163,13 @@ object CallGraph extends ProjectAnalysisApplication {
         implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
         val allMethods = declaredMethods.declaredMethods.filter { dm =>
             dm.hasSingleDefinedMethod &&
-                (dm.definedMethod.classFile.thisType eq dm.declaringClassType)
+            (dm.definedMethod.classFile.thisType eq dm.declaringClassType)
         }.to(Iterable)
 
         var propertyStoreTime: Seconds = Seconds.None
         var callGraphTime: Seconds = Seconds.None
 
-        implicit val ps: PropertyStore = time { project.get(PropertyStoreKey) } { t =>
-            propertyStoreTime = t.toSeconds
-        }
+        implicit val ps: PropertyStore = time { project.get(PropertyStoreKey) } { t => propertyStoreTime = t.toSeconds }
 
         val cg = time {
             cgAlgorithm match {
@@ -226,7 +224,9 @@ object CallGraph extends ProjectAnalysisApplication {
             println(s"Instance Field PTS entries: ${getEntries(classOf[Tuple2[Long, Field]])}")
             println(s"Static Field PTS entries: ${getEntries(classOf[Field])}")
             println(s"Array PTS entries: ${getEntries(classOf[ArrayEntity[Long]])}")
-            println(s"Return PTS entries: ${getEntries(classOf[DefinedMethod]) + getEntries(classOf[VirtualDeclaredMethod])}")
+            println(
+                s"Return PTS entries: ${getEntries(classOf[DefinedMethod]) + getEntries(classOf[VirtualDeclaredMethod])}"
+            )
             println(s"MethodException PTS entries: ${getEntries(classOf[MethodExceptions])}")
             println(s"CallException PTS entries: ${getEntries(classOf[CallExceptions])}")
         }

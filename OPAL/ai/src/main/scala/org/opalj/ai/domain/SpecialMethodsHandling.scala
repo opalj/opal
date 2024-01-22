@@ -39,9 +39,10 @@ trait SpecialMethodsHandling extends MethodCallsHandling {
     ): MethodCallResult = {
 
         if (!(
-            (declaringType eq ObjectType.System) &&
-            name == "arraycopy" && descriptor == SystemArraycopyDescriptor
-        )) {
+                (declaringType eq ObjectType.System) &&
+                    name == "arraycopy" && descriptor == SystemArraycopyDescriptor
+            )
+        ) {
             return super.invokestatic(pc, declaringType, isInterface, name, descriptor, operands);
         }
 
@@ -72,7 +73,8 @@ trait SpecialMethodsHandling extends MethodCallsHandling {
             )
         if (intIsSomeValueInRange(pc, sourcePos, 0, Int.MaxValue).isNo ||
             intIsSomeValueInRange(pc, destPos, 0, Int.MaxValue).isNo ||
-            intIsSomeValueInRange(pc, length, 0, Int.MaxValue).isNo)
+            intIsSomeValueInRange(pc, length, 0, Int.MaxValue).isNo
+        )
             ThrowsException(exceptions);
         else
             MethodCallResult(exceptions)

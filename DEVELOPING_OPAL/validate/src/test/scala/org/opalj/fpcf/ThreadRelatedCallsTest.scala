@@ -47,9 +47,9 @@ class ThreadRelatedCallsTest extends PropertiesTest {
             InitialEntryPointsKey.ConfigKeyPrefix + "analysis",
             ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.ApplicationEntryPointsFinder")
         ).withValue(
-                InitialInstantiatedTypesKey.ConfigKeyPrefix + "analysis",
-                ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.ApplicationInstantiatedTypesFinder")
-            )
+            InitialInstantiatedTypesKey.ConfigKeyPrefix + "analysis",
+            ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.ApplicationInstantiatedTypesFinder")
+        )
     }
 
     override def fixtureProjectPackage: List[String] = {

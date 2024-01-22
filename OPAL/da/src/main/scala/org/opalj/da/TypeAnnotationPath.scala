@@ -42,10 +42,10 @@ case class TypeAnnotationPathElements(
     override final def attribute_length: Int = 1 + path.length * 2
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        val path = <ol>{ this.path.map(pe => <li>{ pe.toXHTML(cp) }</li>) }</ol>
+        val path = <ol>{this.path.map(pe => <li>{pe.toXHTML(cp)}</li>)}</ol>
 
         // return node (this comment is a necessary technical artifact...)
-        <div class="type_annotation_path"><b>Path</b>{ path }</div>
+        <div class="type_annotation_path"><b>Path</b>{path}</div>
     }
 }
 
@@ -90,6 +90,6 @@ case class TypeAnnotationOnTypeArgument(type_argument_index: Int) extends TypeAn
     override final def type_path_kind: Int = 3
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        <div class="type_annotation_path_element">OnTypeArgument: { type_argument_index }</div>
+        <div class="type_annotation_path_element">OnTypeArgument: {type_argument_index}</div>
     }
 }

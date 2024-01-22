@@ -29,14 +29,14 @@ class METHOD[T](
         classFileVersion:   UShortPair,
         declaringClassType: ObjectType
     )(
-        implicit
-        classHierarchy: ClassHierarchy = br.ClassHierarchy.PreInitializedClassHierarchy
+        implicit classHierarchy: ClassHierarchy = br.ClassHierarchy.PreInitializedClassHierarchy
     ): (br.MethodTemplate, Option[T]) = {
         val descriptor = br.MethodDescriptor(this.descriptor)
         val accessFlags = accessModifiers.accessFlags
 
         val attributes = this.attributes.map[br.Attribute](attributeBuilder =>
-            attributeBuilder(accessFlags, name, descriptor))
+            attributeBuilder(accessFlags, name, descriptor)
+        )
 
         if (code.isDefined) {
             val (attribute, annotations) =

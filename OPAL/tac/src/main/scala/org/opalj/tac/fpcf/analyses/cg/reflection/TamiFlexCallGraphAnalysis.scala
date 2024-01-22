@@ -54,9 +54,7 @@ class TamiFlexCallGraphAnalysis private[analyses] (
                     "",
                     ObjectType.Method,
                     "invoke",
-                    MethodDescriptor.apply(
-                        ArraySeq(ObjectType.Object, ArrayType.ArrayOfObject), ObjectType.Object
-                    )
+                    MethodDescriptor.apply(ArraySeq(ObjectType.Object, ArrayType.ArrayOfObject), ObjectType.Object)
                 ),
                 "Method.invoke"
             ),
@@ -125,7 +123,7 @@ class TamiFlexMethodInvokeAnalysis private[analyses] (
         val line = context.method.definedMethod.body.flatMap(b => b.lineNumber(pc)).getOrElse(-1)
         val targets = tamiFlexLogData.methods(context.method, key, line)
         if (targets.isEmpty)
-            return ;
+            return;
 
         val (methodInvokeReceiver, methodInvokeActualParamsOpt) = if (methodParams.size == 2) { // Method.invoke
             // TODO we should probably match the method receiver information (e.g. points-to) to

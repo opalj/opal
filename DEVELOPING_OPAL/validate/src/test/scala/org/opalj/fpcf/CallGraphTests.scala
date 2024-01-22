@@ -48,9 +48,9 @@ class CallGraphTests extends PropertiesTest {
             InitialEntryPointsKey.ConfigKeyPrefix + "analysis",
             ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.ApplicationEntryPointsFinder")
         ).withValue(
-                InitialInstantiatedTypesKey.ConfigKeyPrefix + "analysis",
-                ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.ApplicationInstantiatedTypesFinder")
-            )
+            InitialInstantiatedTypesKey.ConfigKeyPrefix + "analysis",
+            ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.ApplicationInstantiatedTypesFinder")
+        )
     }
 
     override def fixtureProjectPackage: List[String] = {
@@ -97,7 +97,9 @@ class CallGraphTests extends PropertiesTest {
         )
     }
 
-    def schedulersForPropagationBasedAlgorithms(selector: TypeSetEntitySelector): Set[ComputationSpecification[FPCFAnalysis]] = {
+    def schedulersForPropagationBasedAlgorithms(
+        selector: TypeSetEntitySelector
+    ): Set[ComputationSpecification[FPCFAnalysis]] = {
         Set(
             // Handles array instantiations.
             new ArrayInstantiationsAnalysisScheduler(selector),
@@ -121,9 +123,7 @@ class CallGraphTests extends PropertiesTest {
         as.propertyStore.shutdown()
         // We need to manually store which variant was executed. Otherwise, there is no good way
         // to get this information in the property matcher.
-        as.propertyStore.getOrCreateInformation(
-            TypePropagationVariant.tag, TypePropagationVariant.XTA
-        )
+        as.propertyStore.getOrCreateInformation(TypePropagationVariant.tag, TypePropagationVariant.XTA)
 
         validateProperties(
             as,
@@ -140,9 +140,7 @@ class CallGraphTests extends PropertiesTest {
         val as = executeAnalyses(schedulersForPropagationBasedAlgorithms(MTASetEntitySelector))
 
         as.propertyStore.shutdown()
-        as.propertyStore.getOrCreateInformation(
-            TypePropagationVariant.tag, TypePropagationVariant.MTA
-        )
+        as.propertyStore.getOrCreateInformation(TypePropagationVariant.tag, TypePropagationVariant.MTA)
 
         validateProperties(
             as,
@@ -159,9 +157,7 @@ class CallGraphTests extends PropertiesTest {
         val as = executeAnalyses(schedulersForPropagationBasedAlgorithms(FTASetEntitySelector))
 
         as.propertyStore.shutdown()
-        as.propertyStore.getOrCreateInformation(
-            TypePropagationVariant.tag, TypePropagationVariant.FTA
-        )
+        as.propertyStore.getOrCreateInformation(TypePropagationVariant.tag, TypePropagationVariant.FTA)
 
         validateProperties(
             as,
@@ -178,9 +174,7 @@ class CallGraphTests extends PropertiesTest {
         val as = executeAnalyses(schedulersForPropagationBasedAlgorithms(CTASetEntitySelector))
 
         as.propertyStore.shutdown()
-        as.propertyStore.getOrCreateInformation(
-            TypePropagationVariant.tag, TypePropagationVariant.CTA
-        )
+        as.propertyStore.getOrCreateInformation(TypePropagationVariant.tag, TypePropagationVariant.CTA)
 
         validateProperties(
             as,

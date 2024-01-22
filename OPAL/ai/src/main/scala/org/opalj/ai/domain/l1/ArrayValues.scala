@@ -157,9 +157,7 @@ trait ArrayValues extends l1.ReferenceValues {
         length:    DomainValue,
         arrayType: ArrayType
     ): DomainArrayValue = {
-        this.intValue(length) { length =>
-            InitializedArrayValue(pc, arrayType, length)
-        } {
+        this.intValue(length) { length => InitializedArrayValue(pc, arrayType, length) } {
             super.NewArray(pc, length, arrayType)
         }
     }
@@ -173,9 +171,7 @@ trait ArrayValues extends l1.ReferenceValues {
         lengths:   Operands,
         arrayType: ArrayType
     ): DomainArrayValue = {
-        intValue(lengths.last) { length =>
-            InitializedArrayValue(pc, arrayType, length)
-        } {
+        intValue(lengths.last) { length => InitializedArrayValue(pc, arrayType, length) } {
             super.NewArray(pc, lengths, arrayType)
         }
     }

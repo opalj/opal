@@ -63,10 +63,10 @@ object PurityAnalysisDemo extends ProjectAnalysisApplication {
             r = time[() => String](5, 10, 5, analyze(project, parallelismLevel))(handleResults)
             println(
                 s"Results with $parallelismLevel threads:\n" +
-                    performanceData.values.
-                    map(v => v.map(_.toSeconds.toString(false))).
-                    map(v => List("setup\t", "analysis\t").zip(v).map(e => e._1 + e._2).mkString("", "\n", "\n")).
-                    mkString("\n")
+                    performanceData.values
+                        .map(v => v.map(_.toSeconds.toString(false)))
+                        .map(v => List("setup\t", "analysis\t").zip(v).map(e => e._1 + e._2).mkString("", "\n", "\n"))
+                        .mkString("\n")
             )
 
             gc()

@@ -108,13 +108,33 @@ trait AttributesReader
      * The returned function is allowed to return null; in this case the attribute
      * will be discarded.
      */
-    private[this] var attributeReaders: Map[String, (Constant_Pool, AttributeParent, Constant_Pool_Index, Constant_Pool_Index, Constant_Pool_Index, DataInputStream) => Attribute] = Map()
+    private[this] var attributeReaders: Map[
+        String,
+        (
+            Constant_Pool,
+            AttributeParent,
+            Constant_Pool_Index,
+            Constant_Pool_Index,
+            Constant_Pool_Index,
+            DataInputStream
+        ) => Attribute
+    ] = Map()
 
     /**
      * See `AttributeReader.registerAttributeReader` for details.
      */
     def registerAttributeReader(
-        reader: (String, (Constant_Pool, AttributeParent, Constant_Pool_Index, Constant_Pool_Index, Constant_Pool_Index, DataInputStream) => Attribute)
+        reader: (
+            String,
+            (
+                Constant_Pool,
+                AttributeParent,
+                Constant_Pool_Index,
+                Constant_Pool_Index,
+                Constant_Pool_Index,
+                DataInputStream
+            ) => Attribute
+        )
     ): Unit = {
         attributeReaders += reader
     }

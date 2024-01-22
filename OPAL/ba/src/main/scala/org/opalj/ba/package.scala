@@ -187,8 +187,7 @@ package object ba { ba =>
     def toDA(
         classFile: br.ClassFile
     )(
-        implicit
-        toDAConfig: ToDAConfig = ToDAConfig.RetainAllAttributes
+        implicit toDAConfig: ToDAConfig = ToDAConfig.RetainAllAttributes
     ): da.ClassFile = {
         implicit val constantsBuffer: ConstantsBuffer = ConstantsBuffer(ConstantsBuffer.collectLDCs(classFile))
         val thisTypeCPRef = constantsBuffer.CPEClass(classFile.thisType, false)
@@ -293,11 +292,9 @@ package object ba { ba =>
                     FSTORE_0.opcode | FSTORE_1.opcode | FSTORE_2.opcode | FSTORE_3.opcode |
                     LLOAD_0.opcode | LLOAD_1.opcode | LLOAD_2.opcode | LLOAD_3.opcode |
                     LSTORE_0.opcode | LSTORE_1.opcode | LSTORE_2.opcode | LSTORE_3.opcode |
-
                     IRETURN.opcode | LRETURN.opcode | FRETURN.opcode | DRETURN.opcode |
                     ARETURN.opcode |
                     RETURN.opcode |
-
                     ARRAYLENGTH.opcode |
                     AASTORE.opcode |
                     IASTORE.opcode | SASTORE.opcode | BASTORE.opcode | CASTORE.opcode |
@@ -307,21 +304,18 @@ package object ba { ba =>
                     AALOAD.opcode |
                     DALOAD.opcode | FALOAD.opcode |
                     IALOAD.opcode | LALOAD.opcode | SALOAD.opcode | BALOAD.opcode | CALOAD.opcode |
-
                     DADD.opcode | FADD.opcode | IADD.opcode | LADD.opcode |
                     DDIV.opcode | FDIV.opcode | IDIV.opcode | LDIV.opcode |
                     DNEG.opcode | FNEG.opcode | INEG.opcode | LNEG.opcode |
                     DMUL.opcode | FMUL.opcode | IMUL.opcode | LMUL.opcode |
                     DREM.opcode | FREM.opcode | IREM.opcode | LREM.opcode |
                     DSUB.opcode | FSUB.opcode | ISUB.opcode | LSUB.opcode |
-
                     IAND.opcode | LAND.opcode |
                     IOR.opcode | LOR.opcode |
                     IXOR.opcode | LXOR.opcode |
                     ISHL.opcode | LSHL.opcode |
                     ISHR.opcode | LSHR.opcode |
                     IUSHR.opcode | LUSHR.opcode |
-
                     ICONST_0.opcode | ICONST_1.opcode |
                     ICONST_2.opcode | ICONST_3.opcode |
                     ICONST_4.opcode | ICONST_5.opcode |
@@ -332,7 +326,6 @@ package object ba { ba =>
                     LCONST_0.opcode | LCONST_1.opcode |
                     DCMPG.opcode | FCMPG.opcode | DCMPL.opcode | FCMPL.opcode |
                     LCMP.opcode |
-
                     NOP.opcode |
                     POP.opcode | POP2.opcode |
                     SWAP.opcode |
@@ -343,9 +336,7 @@ package object ba { ba =>
                     D2L.opcode | I2L.opcode | F2L.opcode |
                     F2D.opcode | I2D.opcode | L2D.opcode |
                     I2C.opcode | I2B.opcode | I2S.opcode |
-
                     MONITORENTER.opcode | MONITOREXIT.opcode |
-
                     ATHROW.opcode =>
                 // Nothing to do; the opcode is already written!
 
@@ -455,10 +446,10 @@ package object ba { ba =>
                 case LDC_W.opcode =>
                     instructions.writeShort(
                         i match {
-                            case LoadInt_W(value)          => CPEInteger(value, false)
-                            case LoadFloat_W(value)        => CPEFloat(value, false)
-                            case LoadClass_W(value)        => CPEClass(value, false)
-                            case LoadString_W(value)       => CPEString(value, false)
+                            case LoadInt_W(value)    => CPEInteger(value, false)
+                            case LoadFloat_W(value)  => CPEFloat(value, false)
+                            case LoadClass_W(value)  => CPEClass(value, false)
+                            case LoadString_W(value) => CPEString(value, false)
 
                             case LoadMethodHandle_W(value) => CPEMethodHandle(value, false)
                             case LoadMethodType_W(value)   => CPEMethodType(value, false)
@@ -534,8 +525,7 @@ package object ba { ba =>
     def toDA(
         exceptionHandler: br.ExceptionHandler
     )(
-        implicit
-        constantsBuffer: ConstantsBuffer
+        implicit constantsBuffer: ConstantsBuffer
     ): da.ExceptionTableEntry = {
         val index = if (exceptionHandler.catchType.isDefined) {
             constantsBuffer.CPEClass(exceptionHandler.catchType.get, false)
@@ -652,13 +642,13 @@ package object ba { ba =>
                 val br.TAOfTypeBoundOfParameterDeclarationOfClassOrInterface(
                     typeIndex,
                     boundIndex
-                    ) = typeAnnotationTarget
+                ) = typeAnnotationTarget
                 da.TATTypeBoundOfParameterDeclarationOfClassOrInterface(typeIndex, boundIndex)
             case 0x12 =>
                 val br.TAOfTypeBoundOfParameterDeclarationOfMethodOrConstructor(
                     typeIndex,
                     boundIndex
-                    ) = typeAnnotationTarget
+                ) = typeAnnotationTarget
                 da.TATTypeBoundOfParameterDeclarationOfMethodOrConstructor(typeIndex, boundIndex)
 
             case 0x13 => da.TATFieldDeclaration
@@ -977,7 +967,12 @@ package object ba { ba =>
                         da.AppendFrame(frameType, offsetDelta, vtis.map[da.VerificationTypeInfo](toDA))
                     } else if (frameType == 255) {
                         val br.FullFrame(offsetDelta, vtiLocals, vtiStack) = f
-                        da.FullFrame(255, offsetDelta, vtiLocals.map[da.VerificationTypeInfo](toDA), vtiStack.map[da.VerificationTypeInfo](toDA))
+                        da.FullFrame(
+                            255,
+                            offsetDelta,
+                            vtiLocals.map[da.VerificationTypeInfo](toDA),
+                            vtiStack.map[da.VerificationTypeInfo](toDA)
+                        )
                     } else {
                         throw new Error(s"frame type out of range[0..255] $frameType")
                     }
@@ -1080,26 +1075,31 @@ package object ba { ba =>
                             CPEModule(require.requires),
                             require.flags,
                             require.version.map(CPEUtf8).getOrElse(0)
-                        )),
+                        )
+                    ),
                     exports.map[da.ExportsEntry](export =>
                         da.ExportsEntry(
                             CPEPackage(export.exports),
                             export.flags,
                             export.exportsTo.map(CPEModule _)
-                        )),
+                        )
+                    ),
                     opens.map[da.OpensEntry](open =>
                         da.OpensEntry(
                             CPEPackage(open.opens),
                             open.flags,
                             open.toPackages.map(CPEModule _)
-                        )),
+                        )
+                    ),
                     uses.map(use => CPEClass(use, false)),
                     provides.map[da.ProvidesEntry](provide =>
                         da.ProvidesEntry(
                             CPEClass(provide.provides, false),
                             provide.withInterfaces.map(withInterface =>
-                                CPEClass(withInterface, false)): ArraySeq[Int]
-                        ))
+                                CPEClass(withInterface, false)
+                            ): ArraySeq[Int]
+                        )
+                    )
                 ))
 
             case br.NestHost.KindId =>

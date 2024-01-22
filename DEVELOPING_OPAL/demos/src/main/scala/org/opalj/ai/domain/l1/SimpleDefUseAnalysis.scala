@@ -66,7 +66,8 @@ object SimpleDefUseAnalysis extends ProjectAnalysisApplication {
                                 if (method.isStatic ||
                                     method.isPrivate ||
                                     // TODO check that the method parameter is never used... across all implementations of the method... only then report it...||
-                                    method.name == "<init>") {
+                                    method.name == "<init>"
+                                ) {
                                     if (vo == -1) {
                                         values += "this"
                                     } else {
@@ -81,9 +82,9 @@ object SimpleDefUseAnalysis extends ProjectAnalysisApplication {
                                         val invoke = instruction.asInstanceOf[MethodInvocationInstruction]
                                         values +=
                                             vo.toString + ": invoke " + invoke.declaringClass.toJava +
-                                            "{ " +
-                                            invoke.methodDescriptor.toJava(invoke.name) +
-                                            " }"
+                                                "{ " +
+                                                invoke.methodDescriptor.toJava(invoke.name) +
+                                                " }"
                                     case _ =>
                                         values += vo.toString + ": " + instruction.toString(vo)
                                 }

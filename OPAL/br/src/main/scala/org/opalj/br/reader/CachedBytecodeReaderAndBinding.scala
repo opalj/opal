@@ -238,15 +238,19 @@ trait CachedBytecodeReaderAndBinding extends InstructionsDeserializer {
                     val methodRef = cp(in.readUnsignedShort).asMethodref(cp)
                     val (declaringClass, isInterface, name, methodDescriptor) = methodRef
                     INVOKESPECIAL(
-                        declaringClass.asObjectType, isInterface,
-                        cache.MethodName(name), methodDescriptor
+                        declaringClass.asObjectType,
+                        isInterface,
+                        cache.MethodName(name),
+                        methodDescriptor
                     )
                 case 184 =>
                     val methodRef = cp(in.readUnsignedShort).asMethodref(cp)
                     val (declaringClass, isInterface, name, methodDescriptor) = methodRef
                     INVOKESTATIC(
-                        declaringClass.asObjectType, isInterface,
-                        cache.MethodName(name), methodDescriptor
+                        declaringClass.asObjectType,
+                        isInterface,
+                        cache.MethodName(name),
+                        methodDescriptor
                     )
                 case 182 =>
                     val methodRef = cp(in.readUnsignedShort).asMethodref(cp)

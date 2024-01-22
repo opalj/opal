@@ -41,7 +41,8 @@ class EscapeAnalysisTests extends PropertiesTest {
     }
 
     private[this] def mapEntities(
-        p: Project[URL], es: Iterable[(Entity, String => String, Iterable[AnnotationLike])]
+        p:  Project[URL],
+        es: Iterable[(Entity, String => String, Iterable[AnnotationLike])]
     ): Iterable[(Entity, String => String, Iterable[AnnotationLike])] = {
         val declaredMethods = p.get(DeclaredMethodsKey)
         val simpleContexts = p.get(SimpleContextsKey)

@@ -100,15 +100,19 @@ object MoreCheckers {
     def analyze(jarFiles: Array[String]): Unit = {
         var classFilesCount = 0
         val classFiles = memory {
-            val cf = for (
+            val cf = for {
                 zipFile <- jarFiles; // if { println("Reading: "+zipFile); true };
                 (classFile, _ /* drop urls */ ) <- ClassFiles(new java.io.File(zipFile))
-            ) yield {
+            } yield {
                 classFilesCount += 1
                 classFile
             }
             cf
-        }(mu => println("Memory required for the bytecode representation (" + classFilesCount + "): " + (mu / 1024.0 / 1024.0) + " MByte"))
+        }(mu =>
+            println(
+                "Memory required for the bytecode representation (" + classFilesCount + "): " + (mu / 1024.0 / 1024.0) + " MByte"
+            )
+        )
         val classHierarchy = ClassHierarchy(classFiles)(GlobalLogContext)
 
         val getClassFile: Map[ObjectType, ClassFile] = classFiles.map(cf => (cf.thisType, cf)).toMap // SAME AS IN PROJECT
@@ -118,10 +122,10 @@ object MoreCheckers {
 
         // FINDBUGS: CI: Class is final but declares protected field (CI_CONFUSED_INHERITANCE) // http://code.google.com/p/findbugs/source/browse/branches/2.0_gui_rework/findbugs/src/java/edu/umd/cs/findbugs/detect/ConfusedInheritance.java
         val protectedFields = time {
-            for (
+            for {
                 classFile <- classFiles if classFile.isFinal;
                 field <- classFile.fields if field.isProtected
-            ) yield (classFile, field)
+            } yield (classFile, field)
         } { t => collect("CI_CONFUSED_INHERITANCE", t /*nsToSecs(t)*/ ) }
         println(", " /*"\tViolations: "*/ + protectedFields.size)
 
@@ -136,7 +140,7 @@ object MoreCheckers {
                     classFile <- getClassFile.get(cloneable).toList
                     if !classFile.methods.exists({
                         case Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object)) => true
-                        case _ => false
+                        case _                                                              => false
                     })
                 } yield classFile.thisType.fqn
             } else
@@ -155,9 +159,9 @@ object MoreCheckers {
                 if !method.isAbstract
                 if !method.body.get.instructions.exists {
                     case INVOKESPECIAL(`superClass`, _, "clone", JustReturnsObject) => true
-                    case _ => false
+                    case _                                                          => false
                 }
-            } yield (classFile /*.thisClass.className*/ , method /*.name*/ )
+            } yield (classFile /*.thisClass.className*/, method /*.name*/ )
         } { t => collect("CN_IDIOM_NO_SUPER_CALL", t /*nsToSecs(t)*/ ) }
         println(", " /*"\tViolations: "*/ + cloneDoesNotCallSuperClone.length /*+": "+cloneDoesNotCallSuperClone.mkString("; ")*/ )
 
@@ -194,11 +198,12 @@ object MoreCheckers {
         var garbageCollectingMethods: List[(ClassFile, Method, Instruction)] = Nil
         time {
             import MethodDescriptor.NoArgsAndReturnVoid
-            for ( // we don't care about gc calls in java.lang and also about gc calls that happen inside of methods related to garbage collection (heuristic)
+            for { // we don't care about gc calls in java.lang and also about gc calls that happen inside of methods related to garbage collection (heuristic)
                 classFile <- classFiles if !classFile.thisType.fqn.startsWith("java/lang");
-                method <- classFile.methods if method.body.isDefined && !"(^gc)|(gc$)".r.findFirstIn(method.name).isDefined;
+                method <- classFile.methods
+                if method.body.isDefined && !"(^gc)|(gc$)".r.findFirstIn(method.name).isDefined;
                 instruction <- method.body.get.instructions
-            ) {
+            } {
                 instruction match {
                     case INVOKESTATIC(ObjectType("java/lang/System"), false, "gc", NoArgsAndReturnVoid) |
                         INVOKEVIRTUAL(ObjectType("java/lang/Runtime"), "gc", NoArgsAndReturnVoid) =>
@@ -213,15 +218,16 @@ object MoreCheckers {
         var methodsThatCallRunFinalizersOnExit: List[(ClassFile, Method, Instruction)] = Nil
         time {
             val JustTakesBoolean = MethodDescriptor(BooleanType, VoidType)
-            for (
+            for {
                 classFile <- classFiles;
                 method <- classFile.methods if method.body.isDefined;
                 instruction <- method.body.get.instructions
-            ) {
+            } {
                 instruction match {
                     case INVOKESTATIC(ObjectType("java/lang/System"), false, "runFinalizersOnExit", JustTakesBoolean) |
                         INVOKESTATIC(ObjectType("java/lang/Runtime"), false, "runFinalizersOnExit", JustTakesBoolean) =>
-                        methodsThatCallRunFinalizersOnExit = (classFile, method, instruction) :: methodsThatCallRunFinalizersOnExit
+                        methodsThatCallRunFinalizersOnExit =
+                            (classFile, method, instruction) :: methodsThatCallRunFinalizersOnExit
                     case _ =>
                 }
             }
@@ -240,10 +246,11 @@ object MoreCheckers {
         //        //abstractClassThatDefinesCovariantEquals.foreach((t) => {println(t._1.thisClass.className+ " "+ t._2.name)});
         // FINDBUGS: EQ_ABSTRACT_SELF - a covariant equals method that is abstract (the following reflects the implemented checker)
         val abstractCovariantEquals = time {
-            for (
+            for {
                 classFile <- classFiles;
-                method @ Method(_, "equals", MethodDescriptor(Seq(classFile.thisType), BooleanType)) <- classFile.methods if method.isAbstract
-            ) yield (classFile, method);
+                method @ Method(_, "equals", MethodDescriptor(Seq(classFile.thisType), BooleanType)) <-
+                    classFile.methods if method.isAbstract
+            } yield (classFile, method);
         }(t => collect("EQ_ABSTRACT_SELF", t /*nsToSecs(t)*/ ))
         println(", " /*"\tViolations: "*/ + abstractCovariantEquals.size)
 
@@ -251,7 +258,9 @@ object MoreCheckers {
         val classesWithPublicFinalizeMethods = time {
             for {
                 classFile <- classFiles
-                if classFile.methods.exists(_ match { case Method(ACC_PUBLIC(), "finalize", HasNoArgsAndReturnsVoid()) => true; case _ => false })
+                if classFile.methods.exists(_ match {
+                    case Method(ACC_PUBLIC(), "finalize", HasNoArgsAndReturnsVoid()) => true; case _ => false
+                })
             } yield classFile
         }(t => collect("FI_PUBLIC_SHOULD_BE_PROTECTED", t /*nsToSecs(t)*/ ))
         println(", " /*"\tViolations: "*/ + classesWithPublicFinalizeMethods.length)
@@ -341,7 +350,8 @@ object MoreCheckers {
             for {
                 classFile <- classFiles if classFile.isClassDeclaration
                 method @ MethodWithBody(body) <- classFile.methods
-                exceptionHandler <- body.exceptionHandlers if exceptionHandler.catchType == Some(IllegalMonitorStateExceptionType)
+                exceptionHandler <- body.exceptionHandlers
+                if exceptionHandler.catchType == Some(IllegalMonitorStateExceptionType)
             } yield (classFile, method)
         }(t => collect("IMSE_DONT_CATCH_IMSE", t /*nsToSecs(t)*/ ))
         println(", " /*"\tViolations: "*/ + catchesIllegalMonitorStateException.size)

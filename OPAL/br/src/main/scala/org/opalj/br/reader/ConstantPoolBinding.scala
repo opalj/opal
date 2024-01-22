@@ -28,8 +28,7 @@ trait ConstantPoolBinding extends Constant_PoolReader {
     implicit def cpIndexTocpEntry(
         index: Constant_Pool_Index
     )(
-        implicit
-        cp: Constant_Pool
+        implicit cp: Constant_Pool
     ): Constant_Pool_Entry = {
         cp(index)
     }

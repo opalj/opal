@@ -112,10 +112,9 @@ object CalledMethodsStore {
 
     def empty(
         theDomain:                         BaseDomain,
-        theFrequentEvaluationWarningLevel: Int        = 10
+        theFrequentEvaluationWarningLevel: Int = 10
     )(
-        implicit
-        theLogContext: LogContext
+        implicit theLogContext: LogContext
     ): CalledMethodsStore { val domain: theDomain.type } = {
         new CalledMethodsStore {
             val domain: theDomain.type = theDomain
@@ -127,13 +126,12 @@ object CalledMethodsStore {
 
     def apply(
         theDomain:                         BaseDomain,
-        theFrequentEvaluationWarningLevel: Int        = 10
+        theFrequentEvaluationWarningLevel: Int = 10
     )(
         method:   Method,
         operands: Array[theDomain.DomainValue]
     )(
-        implicit
-        theLogContext: LogContext
+        implicit theLogContext: LogContext
     ): CalledMethodsStore { val domain: theDomain.type } = {
         new CalledMethodsStore {
             val domain: theDomain.type = theDomain

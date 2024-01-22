@@ -29,6 +29,6 @@ trait ParametersAnnotations_attribute extends Attribute {
             } yield annotation.toXHTML(cp)
         }
 
-        <div>{ ans }</div>
+        <div>{ans}</div>
     }
 }

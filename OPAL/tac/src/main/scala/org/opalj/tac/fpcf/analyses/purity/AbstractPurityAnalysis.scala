@@ -153,7 +153,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
 
                 case StaticFunctionCall.ASTID => false
 
-                case _                        => true
+                case _ => true
             }
         }
 
@@ -170,9 +170,9 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
 
             case Assignment.ASTID => evaluationMayCauseVMLevelException(stmt.asAssignment.expr)
 
-            case ExprStmt.ASTID   => evaluationMayCauseVMLevelException(stmt.asExprStmt.expr)
+            case ExprStmt.ASTID => evaluationMayCauseVMLevelException(stmt.asExprStmt.expr)
 
-            case _                => true
+            case _ => true
         }
     }
 
@@ -341,7 +341,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
      */
     def checkMethodPurity(
         ep:     EOptionP[Context, Purity],
-        params: Seq[Expr[V]]              = Seq.empty
+        params: Seq[Expr[V]] = Seq.empty
     )(implicit state: StateType): Boolean
 
     /**
@@ -359,7 +359,8 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
                     checkFieldAssignability(propertyStore(field, FieldAssignability.key), None)
                 case Some(field) =>
                     checkFieldAssignability(
-                        propertyStore(field, FieldAssignability.key), Some(fieldRef.asGetField.objRef)
+                        propertyStore(field, FieldAssignability.key),
+                        Some(fieldRef.asGetField.objRef)
                     )
                 case _ => // Unknown field
                     if (fieldRef.isGetField) isLocal(fieldRef.asGetField.objRef, SideEffectFree)
@@ -406,10 +407,10 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
      */
     def checkPurityOfReturn(returnValue: Expr[V])(implicit state: StateType): Unit = {
         if (returnValue.cTpe != ComputationalTypeReference)
-            return ; // Only non-primitive return values influence purity.
+            return; // Only non-primitive return values influence purity.
 
         if (!state.ubPurity.isDeterministic)
-            return ; // If the method can't be pure, the return value is not important.
+            return; // If the method can't be pure, the return value is not important.
 
         if (!returnValue.isVar) {
             // The expression could refer to further expressions in a non-flat representation. To
@@ -417,17 +418,17 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
             // the return value is not local as the analysis is intended to be used on flat
             // representations anyway.
             isLocal(returnValue, SideEffectFree)
-            return ;
+            return;
         }
 
         val value = returnValue.asVar.value.asReferenceValue
         if (value.isNull.isYes)
-            return ; // Null is immutable
+            return; // Null is immutable
 
         if (value.upperTypeBound.exists(_.isArrayType)) {
             // Arrays are always mutable
             isLocal(returnValue, SideEffectFree)
-            return ;
+            return;
         }
 
         if (value.isPrecise) { // Precise class known, use ClassImmutability
@@ -492,8 +493,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
     def checkPurityOfCallees(
         calleesEOptP: EOptionP[DeclaredMethod, Callees]
     )(
-        implicit
-        state: StateType
+        implicit state: StateType
     ): Boolean = {
         handleCalleesUpdate(calleesEOptP)
         calleesEOptP match {
@@ -547,9 +547,8 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
                                 callees.forall { callee =>
                                     checkPurityOfMethod(
                                         callee,
-                                        p.indirectCallReceiver(state.context, pc, callee).map(
-                                            receiver =>
-                                                uVarForDefSites(receiver, state.tac.pcToIndex)
+                                        p.indirectCallReceiver(state.context, pc, callee).map(receiver =>
+                                            uVarForDefSites(receiver, state.tac.pcToIndex)
                                         ).orNull +:
                                             p.indirectCallParameters(state.context, pc, callee).map {
                                                 paramO =>

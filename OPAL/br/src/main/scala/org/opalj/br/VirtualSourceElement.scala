@@ -48,8 +48,8 @@ object VirtualSourceElement {
 
     def asVirtualSourceElements(
         classFiles:     Iterable[ClassFile],
-        includeMethods: Boolean             = true,
-        includeFields:  Boolean             = true
+        includeMethods: Boolean = true,
+        includeFields:  Boolean = true
     ): Set[VirtualSourceElement] = {
         var sourceElements: Set[VirtualSourceElement] = Set.empty
 

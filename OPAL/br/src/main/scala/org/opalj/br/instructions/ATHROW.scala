@@ -46,10 +46,12 @@ case object ATHROW extends Instruction with NoLabels {
     final def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean): Int = currentPC + 1
 
     final def nextInstructions(
-        currentPC: PC, regularSuccessorsOnly: Boolean
+        currentPC:             PC,
+        regularSuccessorsOnly: Boolean
     )(
         implicit
-        code: Code, classHierarchy: ClassHierarchy
+        code:           Code,
+        classHierarchy: ClassHierarchy
     ): List[PC] = {
         if (regularSuccessorsOnly)
             List.empty

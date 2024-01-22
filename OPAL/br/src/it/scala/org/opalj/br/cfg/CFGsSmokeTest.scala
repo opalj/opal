@@ -145,7 +145,9 @@ class CFGsSmokeTest extends AbstractCFGTest {
 
     def analyzeProject(project: SomeProject): Unit = {
         time {
-            try { doAnalyzeProject(project) } catch {
+            try {
+                doAnalyzeProject(project)
+            } catch {
                 case ce: ConcurrentExceptions => ce.printStackTrace(Console.err)
             }
         } { t => info("the analysis took " + t.toSeconds) }

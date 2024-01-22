@@ -39,22 +39,24 @@ object MethodHandlesUtil {
             new NameBasedMethodMatcher(Set(name)),
             if (receiver.isArrayType)
                 new ClassBasedMethodMatcher(
-                Set(ObjectType.Object), onlyMethodsExactlyInClass = false
-            )
-            else if (isVirtual)
-                if (actualReceiverTypes.isDefined)
-                new ClassBasedMethodMatcher(
-                actualReceiverTypes.get,
-                onlyMethodsExactlyInClass = false
-            )
-            else
-                new ClassBasedMethodMatcher(
-                    project.classHierarchy.allSubtypes(receiver.asObjectType, true),
+                    Set(ObjectType.Object),
                     onlyMethodsExactlyInClass = false
                 )
+            else if (isVirtual)
+                if (actualReceiverTypes.isDefined)
+                    new ClassBasedMethodMatcher(
+                        actualReceiverTypes.get,
+                        onlyMethodsExactlyInClass = false
+                    )
+                else
+                    new ClassBasedMethodMatcher(
+                        project.classHierarchy.allSubtypes(receiver.asObjectType, true),
+                        onlyMethodsExactlyInClass = false
+                    )
             else
                 new ClassBasedMethodMatcher(
-                    Set(receiver.asObjectType), onlyMethodsExactlyInClass = false
+                    Set(receiver.asObjectType),
+                    onlyMethodsExactlyInClass = false
                 )
         )
     }
@@ -86,9 +88,7 @@ object MethodHandlesUtil {
         val actualDescriptorOpt =
             if (isConstructor)
                 // for constructor
-                descriptorsOpt.map(_.map { md =>
-                    MethodDescriptor(md.parameterTypes, VoidType)
-                })
+                descriptorsOpt.map(_.map { md => MethodDescriptor(md.parameterTypes, VoidType) })
             else
                 descriptorsOpt
 
@@ -113,8 +113,8 @@ object MethodHandlesUtil {
 
         def isMethodType(expr: Expr[V]): Boolean = {
             expr.isStaticFunctionCall &&
-                (expr.asStaticFunctionCall.declaringClass eq ObjectType.MethodType) &&
-                expr.asStaticFunctionCall.name == "methodType"
+            (expr.asStaticFunctionCall.declaringClass eq ObjectType.MethodType) &&
+            expr.asStaticFunctionCall.name == "methodType"
         }
 
         val defSitesIterator = value.asVar.definedBy.iterator
@@ -137,9 +137,7 @@ object MethodHandlesUtil {
                     Iterator(stmts(defSite).asAssignment.expr.asMethodTypeConst.value)
             else {
                 val call = expr.asStaticFunctionCall
-                val pmtOpt = getPossibleMethodTypes(
-                    call.params, call.descriptor, stmts, project
-                )
+                val pmtOpt = getPossibleMethodTypes(call.params, call.descriptor, stmts, project)
                 if (pmtOpt.isEmpty) {
                     return None;
                 }

@@ -71,7 +71,7 @@ abstract class IntIterator extends AbstractIterator[Int] { self =>
             if (p(e)) {
                 f(e)
             } else {
-                return ;
+                return;
             }
         }
     }
@@ -101,7 +101,7 @@ abstract class IntIterator extends AbstractIterator[Int] { self =>
                     it = f(self.next())
                 } else {
                     it = null
-                    return ;
+                    return;
                 }
             }
         }
@@ -118,7 +118,7 @@ abstract class IntIterator extends AbstractIterator[Int] { self =>
                     it = f(self.next())
                 } else {
                     it = null
-                    return ;
+                    return;
                 }
             }
         }
@@ -133,7 +133,7 @@ abstract class IntIterator extends AbstractIterator[Int] { self =>
         private[this] def goToNextValue(): Unit = {
             while (self.hasNext) {
                 v = self.next()
-                if (p(v)) return ;
+                if (p(v)) return;
             }
             hasNextValue = false
         }
@@ -284,7 +284,10 @@ object IntIterator {
     def apply(i1: Int, i2: Int): IntIterator = new IntIterator {
         private[this] var nextId = 0
         def hasNext: Boolean = nextId < 2
-        def next(): Int = { if (nextId == 0) { nextId = 1; i1 } else { nextId = 2; i2 } }
+        def next(): Int = {
+            if (nextId == 0) { nextId = 1; i1 }
+            else { nextId = 2; i2 }
+        }
         override def toArray: Array[Int] = Array(i1, i2)
         override def toSet: IntTrieSet = IntTrieSet(i1, i2)
     }

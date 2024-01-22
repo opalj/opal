@@ -91,7 +91,8 @@ class GeneratedProxyClassFilesTest extends AnyFunSpec with Matchers {
                         definingType,
                         proxyMethodName,
                         m.descriptor,
-                        t, tIsInterface,
+                        t,
+                        tIsInterface,
                         methodHandle,
                         invocationInstruction,
                         MethodDescriptor.NoArgsAndReturnVoid, // <= not tested...

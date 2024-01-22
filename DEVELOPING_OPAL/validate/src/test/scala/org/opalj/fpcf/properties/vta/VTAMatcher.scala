@@ -47,16 +47,27 @@ abstract class VTAMatcher extends AbstractPropertyMatcher {
         }
         val result = a.elementValuePairs(0).value.asArrayValue.values
             .map(annotationValue =>
-                validateSingleAnnotation(p, entity, taCode, method,
-                    annotationValue.asAnnotationValue.annotation, properties)).filter(_.isDefined)
+                validateSingleAnnotation(
+                    p,
+                    entity,
+                    taCode,
+                    method,
+                    annotationValue.asAnnotationValue.annotation,
+                    properties
+                )
+            ).filter(_.isDefined)
         if (result.isEmpty) None
         else Some(result.map(_.get).mkString(", "))
     }
 
-    def validateSingleAnnotation(project: SomeProject, entity: Entity,
-                                 taCode: TACode[TACMethodParameter, DUVar[ValueInformation]],
-                                 method: Method, annotation: AnnotationLike,
-                                 properties: Iterable[Property]): Option[String]
+    def validateSingleAnnotation(
+        project:    SomeProject,
+        entity:     Entity,
+        taCode:     TACode[TACMethodParameter, DUVar[ValueInformation]],
+        method:     Method,
+        annotation: AnnotationLike,
+        properties: Iterable[Property]
+    ): Option[String]
 
     def referenceTypeToString(t: ReferenceType): String = t match {
         case objectType: ObjectType => objectType.simpleName

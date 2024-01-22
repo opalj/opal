@@ -42,11 +42,13 @@ object IdentifyResourcesAnalysis extends ProjectAnalysisApplication {
                 val pcs =
                     m.body.get.collectWithIndex {
                         case PCAndInstruction(
-                            pc,
-                            INVOKESPECIAL(
-                                ObjectType("java/io/File"), false /* = isInterface*/ ,
-                                "<init>",
-                                SingleArgumentMethodDescriptor((ObjectType.String, VoidType)))
+                                pc,
+                                INVOKESPECIAL(
+                                    ObjectType("java/io/File"),
+                                    false /* = isInterface*/,
+                                    "<init>",
+                                    SingleArgumentMethodDescriptor((ObjectType.String, VoidType))
+                                )
                             ) => pc
                     }
                 (m, pcs)

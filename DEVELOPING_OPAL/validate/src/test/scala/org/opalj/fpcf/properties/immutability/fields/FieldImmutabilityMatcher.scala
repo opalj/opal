@@ -59,9 +59,11 @@ class FieldImmutabilityMatcher(val property: FieldImmutability) extends Abstract
 
 class MutableFieldMatcher extends FieldImmutabilityMatcher(br.fpcf.properties.immutability.MutableField)
 
-class NonTransitiveImmutableFieldMatcher extends FieldImmutabilityMatcher(br.fpcf.properties.immutability.NonTransitivelyImmutableField)
+class NonTransitiveImmutableFieldMatcher
+    extends FieldImmutabilityMatcher(br.fpcf.properties.immutability.NonTransitivelyImmutableField)
 
-class DependentlyImmutableFieldMatcher extends FieldImmutabilityMatcher(br.fpcf.properties.immutability.DependentlyImmutableField(SortedSet.empty)) {
+class DependentlyImmutableFieldMatcher
+    extends FieldImmutabilityMatcher(br.fpcf.properties.immutability.DependentlyImmutableField(SortedSet.empty)) {
     override def validateProperty(
         project:    SomeProject,
         as:         Set[ObjectType],
@@ -70,15 +72,20 @@ class DependentlyImmutableFieldMatcher extends FieldImmutabilityMatcher(br.fpcf.
         properties: Iterable[Property]
     ): Option[String] = {
 
-        if (!properties.exists(p => p match {
-            case DependentlyImmutableField(annotationParameters) =>
-                val annotationType = a.annotationType.asFieldType.asObjectType
-                val analysisParameters =
-                    getValue(project, annotationType, a.elementValuePairs, "parameter").
-                        asArrayValue.values.map(x => x.asStringValue.value)
-                annotationParameters.equals(analysisParameters.toSet)
-            case _ => p == property
-        })) {
+        if (!properties.exists(p =>
+                p match {
+                    case DependentlyImmutableField(annotationParameters) =>
+                        val annotationType = a.annotationType.asFieldType.asObjectType
+                        val analysisParameters =
+                            getValue(project, annotationType, a.elementValuePairs, "parameter").asArrayValue.values.map(
+                                x =>
+                                    x.asStringValue.value
+                            )
+                        annotationParameters.equals(analysisParameters.toSet)
+                    case _ => p == property
+                }
+            )
+        ) {
             // ... when we reach this point the expected property was not found.
             Some(a.elementValuePairs(0).value.asStringValue.value)
         } else {
@@ -87,4 +94,5 @@ class DependentlyImmutableFieldMatcher extends FieldImmutabilityMatcher(br.fpcf.
     }
 }
 
-class TransitiveImmutableFieldMatcher extends FieldImmutabilityMatcher(br.fpcf.properties.immutability.TransitivelyImmutableField)
+class TransitiveImmutableFieldMatcher
+    extends FieldImmutabilityMatcher(br.fpcf.properties.immutability.TransitivelyImmutableField)

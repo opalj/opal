@@ -39,7 +39,7 @@ trait DefaultTypeLevelReferenceValues
 
         override protected def doJoin(pc: Int, other: DomainValue): Update[DomainValue] = {
             other match {
-                case _: ANullValue => NoUpdate
+                case _: ANullValue         => NoUpdate
                 case _: ReferenceValueLike =>
                     // THIS domain does not track whether ReferenceValues
                     // are definitively not null!

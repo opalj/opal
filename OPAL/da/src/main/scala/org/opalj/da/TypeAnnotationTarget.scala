@@ -43,8 +43,8 @@ sealed abstract class TATTypeParameter extends TypeAnnotationTarget {
     override final def toXHTML(implicit cp: Constant_Pool): Node = {
         <span class="type_annotation_target">
             <b>Target</b>
-            <i>{ description }[0x{ tag.toHexString }]</i>
-            (type parameter index:{ type_parameter_index }
+            <i>{description}[0x{tag.toHexString}]</i>
+            (type parameter index:{type_parameter_index}
             )
         </span>
     }
@@ -88,7 +88,9 @@ case class TATSupertype(supertype_index: Constant_Pool_Index) extends TypeAnnota
     }
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span class="type_annotation_target"><i>{ description }[0x{ tag.toHexString }]</i>(supertype index: { supertype_index })</span>
+        <span class="type_annotation_target"><i>{description}[0x{tag.toHexString}]</i>(supertype index: {
+            supertype_index
+        })</span>
     }
 }
 
@@ -106,7 +108,9 @@ sealed abstract class TATTypeParameterBound extends TypeAnnotationTarget {
     override final def attribute_length: Int = 1 + 1 + 1
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span class="type_annotation_target"><i>{ description }[0x{ tag.toHexString }]</i>(type_parameter_index: { type_parameter_index }, bound index: { bound_index })</span>
+        <span class="type_annotation_target"><i>{description}[0x{tag.toHexString}]</i>(type_parameter_index: {
+            type_parameter_index
+        }, bound index: {bound_index})</span>
     }
 }
 
@@ -145,7 +149,7 @@ sealed abstract class TATEmpty extends TypeAnnotationTarget {
     def description: String
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span class="type_annotation_target"><i>{ description }[0x{ tag.toHexString }]</i></span>
+        <span class="type_annotation_target"><i>{description}[0x{tag.toHexString}]</i></span>
     }
 }
 
@@ -187,7 +191,9 @@ case class TATFormalParameter(formal_parameter_index: Int) extends TypeAnnotatio
     }
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span class="type_annotation_target"><i>{ description }[0x{ tag.toHexString }]</i>(formal parameter index: { formal_parameter_index })</span>
+        <span class="type_annotation_target"><i>{description}[0x{tag.toHexString}]</i>(formal parameter index: {
+            formal_parameter_index
+        })</span>
     }
 }
 
@@ -202,7 +208,9 @@ case class TATThrows(throws_type_index: Int) extends TypeAnnotationTarget {
     def description: String = "type in throws clause of method or throws_target constructor"
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span class="type_annotation_target"><i>{ description }[0x{ tag.toHexString }]</i>(throws type index: { throws_type_index })</span>
+        <span class="type_annotation_target"><i>{description}[0x{tag.toHexString}]</i>(throws type index: {
+            throws_type_index
+        })</span>
     }
 }
 
@@ -212,7 +220,7 @@ case class TATThrows(throws_type_index: Int) extends TypeAnnotationTarget {
 case class LocalvarTableEntry(start_pc: Int, length: Int, index: Int) {
 
     def toXHTML: Node = {
-        <span>(start pc: { start_pc }, length: { length }, variable index: { index })</span>
+        <span>(start pc: {start_pc}, length: {length}, variable index: {index})</span>
     }
 
 }
@@ -233,7 +241,9 @@ trait TATLocalvar extends TypeAnnotationTarget {
     def description: String
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span class="type_annotation_target"><i>{ description }[0x{ tag.toHexString }]</i>(local variable occurences:{ localvarTable.map(_.toXHTML) })</span>
+        <span class="type_annotation_target"><i>{description}[0x{tag.toHexString}]</i>(local variable occurences:{
+            localvarTable.map(_.toXHTML)
+        })</span>
     }
 
 }
@@ -265,7 +275,9 @@ case class TATCatch(exception_table_index: Int) extends TypeAnnotationTarget {
     def description: String = "type in exception parameter declaration"
 
     override final def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span class="type_annotation_target"><i>{ description }[0x{ tag.toHexString }]</i>(exception table index: { exception_table_index })</span>
+        <span class="type_annotation_target"><i>{description}[0x{tag.toHexString}]</i>(exception table index: {
+            exception_table_index
+        })</span>
     }
 }
 
@@ -281,7 +293,7 @@ trait TATWithOffset extends TypeAnnotationTarget {
     override final def attribute_length: Int = 1 + 2
 
     override final def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span class="type_annotation_target"><i>{ description }[0x{ tag.toHexString }]</i>(bytecode offset: { offset })</span>
+        <span class="type_annotation_target"><i>{description}[0x{tag.toHexString}]</i>(bytecode offset: {offset})</span>
     }
 }
 
@@ -332,7 +344,9 @@ trait TATTypeArgument extends TypeAnnotationTarget {
     override final def attribute_length: Int = 1 /*tag*/ + 2 + 1
 
     override final def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span class="type_annotation_target"><i>{ description }[0x{ tag.toHexString }]</i>(bytecode offset: { offset }, type argument index: { type_argument_index })</span>
+        <span class="type_annotation_target"><i>{description}[0x{tag.toHexString}]</i>(bytecode offset: {
+            offset
+        }, type argument index: {type_argument_index})</span>
     }
 }
 

@@ -35,7 +35,7 @@ import org.opalj.fpcf.SomeEPS
  *
  * @author Florian Kuebler
  */
-class VirtualCallAggregatingEscapeAnalysis private[analyses] ( final val project: SomeProject) extends FPCFAnalysis {
+class VirtualCallAggregatingEscapeAnalysis private[analyses] (final val project: SomeProject) extends FPCFAnalysis {
     private[this] val formalParameters = project.get(VirtualFormalParametersKey)
     private[this] val declaredMethods = project.get(DeclaredMethodsKey)
 
@@ -90,8 +90,11 @@ class VirtualCallAggregatingEscapeAnalysis private[analyses] ( final val project
                     Result(fp, escapeState.asAggregatedProperty)
             else
                 InterimResult(
-                    fp, GlobalEscape.asAggregatedProperty, escapeState.asAggregatedProperty,
-                    dependees, c
+                    fp,
+                    GlobalEscape.asAggregatedProperty,
+                    escapeState.asAggregatedProperty,
+                    dependees,
+                    c
                 )
         }
 

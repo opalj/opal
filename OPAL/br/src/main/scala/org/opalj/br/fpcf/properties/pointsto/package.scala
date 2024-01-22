@@ -15,7 +15,7 @@ package object pointsto {
         context:      Context,
         pc:           Int,
         tpe:          ReferenceType,
-        isEmptyArray: Boolean       = false
+        isEmptyArray: Boolean = false
     ): Long = {
         val contextId = if (context eq NoContext) 0x3FFFFFF else context.id
         val typeId = tpe.id
@@ -37,8 +37,7 @@ package object pointsto {
     @inline def longToAllocationSite(
         encodedAllocationSite: AllocationSite
     )(
-        implicit
-        contextProvider: ContextProvider
+        implicit contextProvider: ContextProvider
     ): (Context, PC, Int) /* method, pc, typeid */ = {
         val contextID = encodedAllocationSite.toInt & 0x3FFFFFF
         val pc = (encodedAllocationSite >> 26).toInt & 0x1FFFF

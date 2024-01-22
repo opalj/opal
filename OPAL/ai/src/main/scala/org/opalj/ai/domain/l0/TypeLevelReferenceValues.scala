@@ -136,7 +136,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
                 ComputationWithSideEffectOrException(mergeMultipleExceptionValues(pc, e1, e2))
             case (ComputationWithException(_), _ /*ComputationWithoutException*/ ) =>
                 c1
-            case (_ /*ComputationWithoutException*/ , ComputationWithException(_)) =>
+            case (_ /*ComputationWithoutException*/, ComputationWithException(_)) =>
                 c2
             case _ =>
                 ComputationWithSideEffectOnly
@@ -160,7 +160,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
                 c2 match {
                     case ComputationWithResultAndException(r2, e2) =>
                         ComputedValueOrException(
-                            mergeDomainValues(pc, r1, r2) /*Value*/ ,
+                            mergeDomainValues(pc, r1, r2) /*Value*/,
                             mergeDomainValues(pc, e1, e2).asInstanceOf[ExceptionValue]
                         )
                     case ComputationWithResult(r2) =>
@@ -311,7 +311,8 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
          * Returns `Yes` if we can statically determine that the given value can
          * be stored in the array represented by this `ArrayValue`.
          */
-        /*ABSTRACT*/ def isAssignable(value: DomainValue): Answer
+        /*ABSTRACT*/
+        def isAssignable(value: DomainValue): Answer
 
         override def toCanonicalForm: IsSArrayValue = {
             ASArrayValue(isNull, isPrecise, theUpperTypeBound)
@@ -320,7 +321,8 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
         /**
          * Called by the load method if the index is potentially valid.
          */
-        /*ABSTRACT*/ protected def doLoad(
+        /*ABSTRACT*/
+        protected def doLoad(
             pc:                  Int,
             index:               DomainValue,
             potentialExceptions: ExceptionValues
@@ -363,7 +365,8 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
          * Called by the store method if the value is potentially assignable and if
          * the index is potentially valid.
          */
-        /*ABSTRACT*/ protected def doStore(
+        /*ABSTRACT*/
+        protected def doStore(
             pc:               Int,
             value:            DomainValue,
             index:            DomainValue,
@@ -494,7 +497,8 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
                     // still be implemented by the same class and, hence, the references
                     // can still be equal
                     v1UTB.exists(t => t.isObjectType && ch.isInterface(t.asObjectType).isNo) &&
-                    v2UTB.exists(t => t.isObjectType && ch.isInterface(t.asObjectType).isNo))
+                    v2UTB.exists(t => t.isObjectType && ch.isInterface(t.asObjectType).isNo)
+                )
                     No
                 else
                     Unknown

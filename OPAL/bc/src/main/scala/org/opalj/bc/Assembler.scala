@@ -28,7 +28,8 @@ object Assembler {
             ci: CONSTANT_Class_info
         )(
             implicit
-            out: DataOutputStream, segmentInformation: (String, Int) => Unit
+            out:                DataOutputStream,
+            segmentInformation: (String, Int) => Unit
         ): Unit = {
             import ci._
             import out._
@@ -42,7 +43,8 @@ object Assembler {
             cr: CONSTANT_Ref
         )(
             implicit
-            out: DataOutputStream, segmentInformation: (String, Int) => Unit
+            out:                DataOutputStream,
+            segmentInformation: (String, Int) => Unit
         ): Unit = {
             import cr._
             import out._
@@ -57,7 +59,8 @@ object Assembler {
             ci: CONSTANT_String_info
         )(
             implicit
-            out: DataOutputStream, segmentInformation: (String, Int) => Unit
+            out:                DataOutputStream,
+            segmentInformation: (String, Int) => Unit
         ): Unit = {
             import ci._
             import out._
@@ -71,7 +74,8 @@ object Assembler {
             ci: CONSTANT_Integer_info
         )(
             implicit
-            out: DataOutputStream, segmentInformation: (String, Int) => Unit
+            out:                DataOutputStream,
+            segmentInformation: (String, Int) => Unit
         ): Unit = {
             import ci._
             import out._
@@ -85,7 +89,8 @@ object Assembler {
             ci: CONSTANT_Float_info
         )(
             implicit
-            out: DataOutputStream, segmentInformation: (String, Int) => Unit
+            out:                DataOutputStream,
+            segmentInformation: (String, Int) => Unit
         ): Unit = {
             import ci._
             import out._
@@ -99,7 +104,8 @@ object Assembler {
             ci: CONSTANT_Long_info
         )(
             implicit
-            out: DataOutputStream, segmentInformation: (String, Int) => Unit
+            out:                DataOutputStream,
+            segmentInformation: (String, Int) => Unit
         ): Unit = {
             import ci._
             import out._
@@ -113,7 +119,8 @@ object Assembler {
             ci: CONSTANT_Double_info
         )(
             implicit
-            out: DataOutputStream, segmentInformation: (String, Int) => Unit
+            out:                DataOutputStream,
+            segmentInformation: (String, Int) => Unit
         ): Unit = {
             import ci._
             import out._
@@ -128,7 +135,8 @@ object Assembler {
             ci: CONSTANT_NameAndType_info
         )(
             implicit
-            out: DataOutputStream, segmentInformation: (String, Int) => Unit
+            out:                DataOutputStream,
+            segmentInformation: (String, Int) => Unit
         ): Unit = {
             import ci._
             import out._
@@ -145,7 +153,8 @@ object Assembler {
             ci: CONSTANT_Utf8_info
         )(
             implicit
-            out: DataOutputStream, segmentInformation: (String, Int) => Unit
+            out:                DataOutputStream,
+            segmentInformation: (String, Int) => Unit
         ): Unit = {
             import ci._
             import out._
@@ -160,7 +169,8 @@ object Assembler {
             ci: CONSTANT_MethodHandle_info
         )(
             implicit
-            out: DataOutputStream, segmentInformation: (String, Int) => Unit
+            out:                DataOutputStream,
+            segmentInformation: (String, Int) => Unit
         ): Unit = {
             import ci._
             import out._
@@ -176,7 +186,8 @@ object Assembler {
             ci: CONSTANT_MethodType_info
         )(
             implicit
-            out: DataOutputStream, segmentInformation: (String, Int) => Unit
+            out:                DataOutputStream,
+            segmentInformation: (String, Int) => Unit
         ): Unit = {
             import ci._
             import out._
@@ -191,7 +202,8 @@ object Assembler {
             ci: CONSTANT_InvokeDynamic_info
         )(
             implicit
-            out: DataOutputStream, segmentInformation: (String, Int) => Unit
+            out:                DataOutputStream,
+            segmentInformation: (String, Int) => Unit
         ): Unit = {
             import ci._
             import out._
@@ -206,7 +218,8 @@ object Assembler {
             ci: CONSTANT_Module_info
         )(
             implicit
-            out: DataOutputStream, segmentInformation: (String, Int) => Unit
+            out:                DataOutputStream,
+            segmentInformation: (String, Int) => Unit
         ): Unit = {
             import ci._
             import out._
@@ -220,7 +233,8 @@ object Assembler {
             ci: CONSTANT_Package_info
         )(
             implicit
-            out: DataOutputStream, segmentInformation: (String, Int) => Unit
+            out:                DataOutputStream,
+            segmentInformation: (String, Int) => Unit
         ): Unit = {
             import ci._
             import out._
@@ -234,7 +248,8 @@ object Assembler {
             ci: CONSTANT_Dynamic_info
         )(
             implicit
-            out: DataOutputStream, segmentInformation: (String, Int) => Unit
+            out:                DataOutputStream,
+            segmentInformation: (String, Int) => Unit
         ): Unit = {
             import ci._
             import out._
@@ -249,7 +264,8 @@ object Assembler {
             cpe: Constant_Pool_Entry
         )(
             implicit
-            out: DataOutputStream, segmentInformation: (String, Int) => Unit
+            out:                DataOutputStream,
+            segmentInformation: (String, Int) => Unit
         ): Unit = {
             cpe.Constant_Type_Value.id match {
                 case CPTags.CONSTANT_Utf8_ID        => serializeAs[CONSTANT_Utf8_info](cpe)
@@ -320,7 +336,8 @@ object Assembler {
             a: Annotation
         )(
             implicit
-            out: DataOutputStream, segmentInformation: (String, Int) => Unit
+            out:                DataOutputStream,
+            segmentInformation: (String, Int) => Unit
         ): Unit = {
             import a._
             import out._
@@ -338,7 +355,8 @@ object Assembler {
             ta: TypeAnnotation
         )(
             implicit
-            out: DataOutputStream, segmentInformation: (String, Int) => Unit
+            out:                DataOutputStream,
+            segmentInformation: (String, Int) => Unit
         ): Unit = {
             import out._
             val target_type = ta.target_type
@@ -422,7 +440,8 @@ object Assembler {
             vti: VerificationTypeInfo
         )(
             implicit
-            out: DataOutputStream, segmentInformation: (String, Int) => Unit
+            out:                DataOutputStream,
+            segmentInformation: (String, Int) => Unit
         ): Unit = {
             import out._
             val tag = vti.tag
@@ -447,7 +466,8 @@ object Assembler {
             a: Attribute
         )(
             implicit
-            out: DataOutputStream, segmentInformation: (String, Int) => Unit
+            out:                DataOutputStream,
+            segmentInformation: (String, Int) => Unit
         ): Unit = {
             import a._
             import out._
@@ -605,13 +625,12 @@ object Assembler {
 
                 case a: AnnotationDefault_attribute => serialize(a.element_value)
 
-                case a: SourceFile_attribute        => writeShort(a.sourceFile_index)
-                case a: Signature_attribute         => writeShort(a.signature_index)
-                case a: ConstantValue_attribute     => writeShort(a.constantValue_index)
+                case a: SourceFile_attribute    => writeShort(a.sourceFile_index)
+                case a: Signature_attribute     => writeShort(a.signature_index)
+                case a: ConstantValue_attribute => writeShort(a.constantValue_index)
 
-                case _: Deprecated_attribute        => // nothing more to do
-                case _: Synthetic_attribute         => // nothing more to do
-
+                case _: Deprecated_attribute => // nothing more to do
+                case _: Synthetic_attribute  => // nothing more to do
                 case a: Module_attribute =>
                     writeShort(a.module_name_index)
                     writeShort(a.module_flags)
@@ -687,7 +706,8 @@ object Assembler {
             f: Field_Info
         )(
             implicit
-            out: DataOutputStream, segmentInformation: (String, Int) => Unit
+            out:                DataOutputStream,
+            segmentInformation: (String, Int) => Unit
         ): Unit = {
             import f._
             import out._
@@ -704,7 +724,8 @@ object Assembler {
             m: Method_Info
         )(
             implicit
-            out: DataOutputStream, segmentInformation: (String, Int) => Unit
+            out:                DataOutputStream,
+            segmentInformation: (String, Int) => Unit
         ): Unit = {
             import m._
             import out._
@@ -722,7 +743,8 @@ object Assembler {
             classFile: ClassFile
         )(
             implicit
-            out: DataOutputStream, segmentInformation: (String, Int) => Unit
+            out:                DataOutputStream,
+            segmentInformation: (String, Int) => Unit
         ): Unit = {
             import classFile._
             import out._
@@ -755,8 +777,13 @@ object Assembler {
             writeShort(methods.size)
             methods foreach { m =>
                 serialize(m)
-                if ((ACC_STRICT.mask & m.access_flags) != 0 && (classFile.major_version < 46 || classFile.major_version > 60)) {
-                    OPALLogger.warn("assembler", s"Writing out ACC_STRICT flag for a method in a classfile of version ${classFile.major_version}, which is not interpreted in class files of version < 46 or > 60")
+                if (
+                    (ACC_STRICT.mask & m.access_flags) != 0 && (classFile.major_version < 46 || classFile.major_version > 60)
+                ) {
+                    OPALLogger.warn(
+                        "assembler",
+                        s"Writing out ACC_STRICT flag for a method in a classfile of version ${classFile.major_version}, which is not interpreted in class files of version < 46 or > 60"
+                    )
                 }
                 segmentInformation("Method: " + cp(m.name_index).toString, out.size)
             }

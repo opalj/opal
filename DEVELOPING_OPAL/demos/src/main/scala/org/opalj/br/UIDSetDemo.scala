@@ -75,7 +75,7 @@ object UIDSetDemo extends App {
             }
             println("Using +:   "+NS(System.nanoTime - t).toSeconds)
         }
-        */
+         */
 
         { // using +! method (by means of a builder)
             val r = new java.util.Random(10002323323L)
@@ -195,7 +195,7 @@ object UIDSetDemo extends App {
             }
             removedValuesByTail += sizeBeforeTail - s.size
             timeForXTailCalls += (System.nanoTime - t)
-            */
+             */
 
             runs += 1
         }
@@ -204,7 +204,8 @@ object UIDSetDemo extends App {
             s"${factory.getClass.getSimpleName} - runs executed: $runs in $time" +
                 s"\n\tadded: $addedValues; unique: $uniqueValues - " + NS(timeForAddingValues).toSeconds +
                 s"\n\tfiltered: $filteredValues - " + NS(timeForFilteringValues).toSeconds +
-                s"\n\tsuccessful contains: $containsSucceeded; failed contains: $containsFailed - " + NS(timeForContainsCheck).toSeconds +
+                s"\n\tsuccessful contains: $containsSucceeded; failed contains: $containsFailed - " +
+                NS(timeForContainsCheck).toSeconds +
                 // s"\n\ttail: $removedValuesByTail - "+NS(timeForXTailCalls).toSeconds+
                 s"\n\tremoved: $removedValues - " + NS(timeForRemovingValues).toSeconds
         )

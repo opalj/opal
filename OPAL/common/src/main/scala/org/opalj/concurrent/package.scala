@@ -242,7 +242,7 @@ package object concurrent {
         val dataLength = data.length
 
         if (dataLength == 0)
-            return ;
+            return;
 
         val index = new AtomicInteger(0)
         var exceptions: ConcurrentExceptions = null

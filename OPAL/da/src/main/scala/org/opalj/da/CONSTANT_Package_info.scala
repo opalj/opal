@@ -22,10 +22,10 @@ case class CONSTANT_Package_info(name_index: Constant_Pool_Index) extends Consta
     override def asCPNode(implicit cp: Constant_Pool): Node = {
         <span class="cp_entry">
             CONSTANT_Package_info(name_index=
-            { name_index }
+            {name_index}
             &laquo;
             <span class="cp_ref">
-                { cp(name_index).asCPNode }
+                {cp(name_index).asCPNode}
             </span>
             &raquo;
             )

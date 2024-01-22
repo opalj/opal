@@ -39,9 +39,10 @@ object ComputeTACAIKey extends TACAIKey[Method => Domain with RecordDefUse] {
     override def compute(
         project: SomeProject
     ): Method => AITACode[TACMethodParameter, ValueInformation] = {
-        val domainFactory = project.
-            getProjectInformationKeyInitializationData(this).
-            getOrElse((m: Method) => new DefaultDomainWithCFGAndDefUse(project, m))
+        val domainFactory =
+            project
+                .getProjectInformationKeyInitializationData(this)
+                .getOrElse((m: Method) => new DefaultDomainWithCFGAndDefUse(project, m))
 
         (m: Method) => {
             val domain = domainFactory(m)

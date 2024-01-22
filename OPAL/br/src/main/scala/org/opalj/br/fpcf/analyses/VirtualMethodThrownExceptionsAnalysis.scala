@@ -96,9 +96,7 @@ class VirtualMethodThrownExceptionsAnalysis private[analyses] (
         var exceptions = initialExceptions.toImmutableTypesSet
 
         def c(eps: SomeEPS): ProperPropertyComputationResult = {
-            dependees = dependees.filter { d =>
-                d.e != eps.e || d.pk != eps.pk
-            }
+            dependees = dependees.filter { d => d.e != eps.e || d.pk != eps.pk }
             // If the property is not final we want to keep updated of new values
             if (eps.isRefinable) {
                 dependees = dependees + eps

@@ -52,28 +52,30 @@ trait PermittedSubclasses_attributeReader extends AttributeReader {
      * </pre>
      */
     private[this] def parserFactory() = (
-        cp: Constant_Pool,
-        ap: AttributeParent,
-        ap_name_index: Constant_Pool_Index,
-        ap_descriptor_index: Constant_Pool_Index,
+        cp:                   Constant_Pool,
+        ap:                   AttributeParent,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
-        in: DataInputStream
-    ) => {
-        /*val attribute_length =*/ in.readInt()
-        val classes_count = in.readUnsignedShort
-        if (classes_count > 0 || reifyEmptyAttributes) {
-            val classesArray = fillArrayOfInt(classes_count) { in.readUnsignedShort() }
-            PermittedSubclasses_attribute(
-                cp,
-                ap_name_index,
-                ap_descriptor_index,
-                attribute_name_index,
-                classesArray
-            )
-        } else {
-            null
-        }
-    }: PermittedSubclasses_attribute
+        in:                   DataInputStream
+    ) =>
+        {
+            /*val attribute_length =*/
+            in.readInt()
+            val classes_count = in.readUnsignedShort
+            if (classes_count > 0 || reifyEmptyAttributes) {
+                val classesArray = fillArrayOfInt(classes_count) { in.readUnsignedShort() }
+                PermittedSubclasses_attribute(
+                    cp,
+                    ap_name_index,
+                    ap_descriptor_index,
+                    attribute_name_index,
+                    classesArray
+                )
+            } else {
+                null
+            }
+        }: PermittedSubclasses_attribute
 
     registerAttributeReader(PermittedSubclassesAttribute.Name -> parserFactory())
 

@@ -173,8 +173,8 @@ class MicroPatterns(implicit hermes: HermesConfig) extends FeatureQuery {
                 cl.interfaceTypes.size == 1 && cl.methods.isEmpty
             } else {
                 cl.thisType != ObjectType.Object /*this test is not necessary, but is fast */ &&
-                    cl.interfaceTypes.isEmpty &&
-                    cl.methods.forall(_.isInitializer)
+                cl.interfaceTypes.isEmpty &&
+                cl.methods.forall(_.isInitializer)
             }
         }
     }
@@ -192,12 +192,12 @@ class MicroPatterns(implicit hermes: HermesConfig) extends FeatureQuery {
             cl.interfaceTypes.size > 1 && cl.fields.isEmpty && cl.methods.isEmpty
         } else {
             cl.interfaceTypes.nonEmpty &&
-                cl.methods.forall(m => m.isInitializer) && (
-                    cl.fields match {
-                        case Seq() | Seq(Field(_, "serialVersionUID", LongType)) => true
-                        case _                                                   => false
-                    }
-                )
+            cl.methods.forall(m => m.isInitializer) && (
+                cl.fields match {
+                    case Seq() | Seq(Field(_, "serialVersionUID", LongType)) => true
+                    case _                                                   => false
+                }
+            )
         }
     }
 
@@ -210,16 +210,13 @@ class MicroPatterns(implicit hermes: HermesConfig) extends FeatureQuery {
      */
     def isPool(cl: ClassFile): Boolean = {
         cl.fields.nonEmpty && cl.fields.forall(f => f.isFinal && f.isStatic) &&
-            // We also (have to) accept a static initializer, because that one will
-            // initialize the final static fields!
-            cl.methods.forall(m => m.isInitializer && m.descriptor.parametersCount == 0)
+        // We also (have to) accept a static initializer, because that one will
+        // initialize the final static fields!
+        cl.methods.forall(m => m.isInitializer && m.descriptor.parametersCount == 0)
     }
 
-    private final val javaLangObjectMethods: Set[String] = Set(
-        "hashCode", "equals",
-        "notify", "notifyAll", "wait",
-        "getClass", "clone", "toString", "finalize"
-    )
+    private final val javaLangObjectMethods: Set[String] =
+        Set("hashCode", "equals", "notify", "notifyAll", "wait", "getClass", "clone", "toString", "finalize")
 
     def isObjectMethod(method: Method): Boolean = {
         // TODO This just checks the name, why don't we check the full signature?
@@ -229,39 +226,37 @@ class MicroPatterns(implicit hermes: HermesConfig) extends FeatureQuery {
     def isFunctionPointer(cl: ClassFile): Boolean = {
         !cl.isInterfaceDeclaration && !cl.isAbstract && cl.methods.count { m =>
             !isInitMethod(m)
-        } == 1 && cl.methods.count { m =>
-            m.isPublic
-        } == 1 && !cl.methods.exists(m => m.isStatic &&
-            !m.isStaticInitializer) && cl.fields.isEmpty
+        } == 1 && cl.methods.count { m => m.isPublic } == 1 && !cl.methods.exists(m =>
+            m.isStatic &&
+                !m.isStaticInitializer
+        ) && cl.fields.isEmpty
     }
 
     def isFunctionObject(cl: ClassFile): Boolean = {
         cl.fields.nonEmpty &&
-            cl.fields.forall { f => !f.isStatic } &&
-            cl.methods.count { m => !isInitMethod(m) && m.isPublic } == 1 &&
-            !cl.methods.filter(m => !isInitMethod(m)).exists(m => m.isStatic)
+        cl.fields.forall { f => !f.isStatic } &&
+        cl.methods.count { m => !isInitMethod(m) && m.isPublic } == 1 &&
+        !cl.methods.filter(m => !isInitMethod(m)).exists(m => m.isStatic)
     }
 
     def isCobolLike(cl: ClassFile): Boolean = {
-        !cl.methods.exists { m =>
-            !isInitMethod(m)
-        } && cl.methods.count { m =>
+        !cl.methods.exists { m => !isInitMethod(m) } && cl.methods.count { m =>
             !isInitMethod(m) &&
-                m.isStatic
+            m.isStatic
         } == 1 &&
-            !cl.fields.exists { f => !f.isStatic } && cl.fields.exists(f => f.isStatic)
+        !cl.fields.exists { f => !f.isStatic } && cl.fields.exists(f => f.isStatic)
     }
 
     def isStateless(cl: ClassFile): Boolean = {
         !cl.isInterfaceDeclaration && !cl.isAbstract &&
-            !cl.fields.exists { f => !(f.isFinal && f.isStatic) } &&
-            cl.methods.count(m => !isInitMethod(m) && !isObjectMethod(m)) > 1
+        !cl.fields.exists { f => !(f.isFinal && f.isStatic) } &&
+        cl.methods.count(m => !isInitMethod(m) && !isObjectMethod(m)) > 1
     }
 
     def isCommonState(cl: ClassFile): Boolean = {
         !cl.isInterfaceDeclaration &&
-            cl.fields.nonEmpty && cl.fields.forall { f => f.isStatic } &&
-            cl.fields.exists { f => !f.isFinal }
+        cl.fields.nonEmpty && cl.fields.forall { f => f.isStatic } &&
+        cl.fields.exists { f => !f.isFinal }
     }
 
     def isImmutable(cl: ClassFile, fa: FieldAccessInformation)(
@@ -270,26 +265,26 @@ class MicroPatterns(implicit hermes: HermesConfig) extends FeatureQuery {
         declaredFields:  DeclaredFields
     ): Boolean = {
         !cl.isInterfaceDeclaration &&
-            !cl.isAbstract && cl.fields.count { f => !f.isStatic } > 1 &&
-            cl.fields.forall(f => f.isPrivate && !f.isStatic) &&
-            cl.fields.forall { f =>
-                fa.writeAccesses(f).forall(p => isInitMethod(contextProvider.contextFromId(p._1).method.definedMethod))
-            }
+        !cl.isAbstract && cl.fields.count { f => !f.isStatic } > 1 &&
+        cl.fields.forall(f => f.isPrivate && !f.isStatic) &&
+        cl.fields.forall { f =>
+            fa.writeAccesses(f).forall(p => isInitMethod(contextProvider.contextFromId(p._1).method.definedMethod))
+        }
     }
 
     def isRestrictedCreation(cl: ClassFile): Boolean = {
         !cl.isInterfaceDeclaration &&
-            cl.fields.exists { f => f.isStatic && !f.isFinal && f.fieldType == cl.thisType } &&
-            cl.methods.filter { m => m.isConstructor }.forall { m => m.isPrivate }
+        cl.fields.exists { f => f.isStatic && !f.isFinal && f.fieldType == cl.thisType } &&
+        cl.methods.filter { m => m.isConstructor }.forall { m => m.isPrivate }
     }
 
     def isSampler(cl: ClassFile): Boolean = {
         !cl.isInterfaceDeclaration &&
-            cl.methods.filter { m => m.isConstructor }.exists { m => m.isPublic } &&
-            cl.fields.exists { f =>
-                f.isStatic &&
-                    f.fieldType.toJava.equals(cl.thisType.toJava)
-            }
+        cl.methods.filter { m => m.isConstructor }.exists { m => m.isPublic } &&
+        cl.fields.exists { f =>
+            f.isStatic &&
+            f.fieldType.toJava.equals(cl.thisType.toJava)
+        }
     }
 
     def isBox(cl: ClassFile, fa: FieldAccessInformation)(
@@ -298,10 +293,13 @@ class MicroPatterns(implicit hermes: HermesConfig) extends FeatureQuery {
         declaredFields:  DeclaredFields
     ): Boolean = {
         !cl.isInterfaceDeclaration &&
-            cl.fields.count { f => !f.isStatic } == 1 &&
-            cl.fields.count { f => !f.isFinal } == 1 &&
-            cl.fields.exists(f => fa.writeAccesses(f).exists(t =>
-                cl.methods.contains(contextProvider.contextFromId(t._1).method.definedMethod)))
+        cl.fields.count { f => !f.isStatic } == 1 &&
+        cl.fields.count { f => !f.isFinal } == 1 &&
+        cl.fields.exists(f =>
+            fa.writeAccesses(f).exists(t =>
+                cl.methods.contains(contextProvider.contextFromId(t._1).method.definedMethod)
+            )
+        )
     }
 
     def isCompoundBox(cl: ClassFile, fa: FieldAccessInformation)(
@@ -310,10 +308,13 @@ class MicroPatterns(implicit hermes: HermesConfig) extends FeatureQuery {
         declaredFields:  DeclaredFields
     ): Boolean = {
         !cl.isInterfaceDeclaration &&
-            cl.fields.count(f => f.fieldType.isReferenceType && !f.isStatic &&
+        cl.fields.count(f =>
+            f.fieldType.isReferenceType && !f.isStatic &&
                 !f.isFinal && fa.writeAccesses(f).exists(t =>
-                    cl.methods.contains(contextProvider.contextFromId(t._1).method.definedMethod))) == 1 &&
-            cl.fields.count(f => !f.isStatic && !f.fieldType.isReferenceType) + 1 == cl.fields.size
+                    cl.methods.contains(contextProvider.contextFromId(t._1).method.definedMethod)
+                )
+        ) == 1 &&
+        cl.fields.count(f => !f.isStatic && !f.fieldType.isReferenceType) + 1 == cl.fields.size
     }
 
     def isCanopy(cl: ClassFile, fa: FieldAccessInformation)(
@@ -322,136 +323,135 @@ class MicroPatterns(implicit hermes: HermesConfig) extends FeatureQuery {
         declaredFields:  DeclaredFields
     ): Boolean = {
         !cl.isInterfaceDeclaration &&
-            cl.fields.count { f => !f.isStatic } == 1 &&
-            cl.fields.count { f => !f.isStatic && !f.isPublic } == 1 &&
-            cl.fields.exists { f =>
-                !f.isStatic && fa.writeAccesses(f).forall(p =>
-                    isInitMethod(contextProvider.contextFromId(p._1).method.definedMethod))
-            }
+        cl.fields.count { f => !f.isStatic } == 1 &&
+        cl.fields.count { f => !f.isStatic && !f.isPublic } == 1 &&
+        cl.fields.exists { f =>
+            !f.isStatic && fa.writeAccesses(f).forall(p =>
+                isInitMethod(contextProvider.contextFromId(p._1).method.definedMethod)
+            )
+        }
     }
 
     def isRecord(cl: ClassFile): Boolean = {
         !cl.isInterfaceDeclaration && cl.fields.nonEmpty &&
-            cl.fields.forall { f => f.isPublic } && cl.fields.exists(f => !f.isStatic) && cl.methods.forall(m => isInitMethod(m) || isObjectMethod(m))
+        cl.fields.forall { f => f.isPublic } && cl.fields.exists(f => !f.isStatic) && cl.methods.forall(m =>
+            isInitMethod(m) || isObjectMethod(m)
+        )
     }
 
     def isSink(cl: ClassFile): Boolean = {
         !cl.isInterfaceDeclaration &&
-            cl.methods.exists { m => !isInitMethod(m) } &&
-            cl.methods.forall { m =>
-                m.body.isEmpty ||
-                    m.body.get.instructions.filter(i => i.isInstanceOf[MethodInvocationInstruction]).forall { i =>
-                        !i.asInstanceOf[MethodInvocationInstruction].declaringClass.isObjectType ||
-                            i.asInstanceOf[MethodInvocationInstruction].declaringClass.asObjectType.equals(cl.thisType)
-                    }
+        cl.methods.exists { m => !isInitMethod(m) } &&
+        cl.methods.forall { m =>
+            m.body.isEmpty ||
+            m.body.get.instructions.filter(i => i.isInstanceOf[MethodInvocationInstruction]).forall { i =>
+                !i.asInstanceOf[MethodInvocationInstruction].declaringClass.isObjectType ||
+                i.asInstanceOf[MethodInvocationInstruction].declaringClass.asObjectType.equals(cl.thisType)
             }
+        }
     }
 
     def isOutline(cl: ClassFile): Boolean = {
         !cl.isInterfaceDeclaration && cl.isAbstract && cl.methods.count { m =>
             m.body.isDefined &&
-                m.body.get.instructions.exists { i =>
-                    i.isInstanceOf[VirtualMethodInvocationInstruction] &&
-                        i.asInstanceOf[VirtualMethodInvocationInstruction].declaringClass.equals(cl.thisType) &&
-                        cl.methods.filter { x => x.isAbstract }.exists { x =>
-                            x.name.equals(i.asInstanceOf[VirtualMethodInvocationInstruction].name) &&
-                                x.descriptor.equals(i.asInstanceOf[VirtualMethodInvocationInstruction].methodDescriptor)
-                        }
+            m.body.get.instructions.exists { i =>
+                i.isInstanceOf[VirtualMethodInvocationInstruction] &&
+                i.asInstanceOf[VirtualMethodInvocationInstruction].declaringClass.equals(cl.thisType) &&
+                cl.methods.filter { x => x.isAbstract }.exists { x =>
+                    x.name.equals(i.asInstanceOf[VirtualMethodInvocationInstruction].name) &&
+                    x.descriptor.equals(i.asInstanceOf[VirtualMethodInvocationInstruction].methodDescriptor)
                 }
+            }
         } > 1
     }
 
     def isTrait(cl: ClassFile): Boolean = {
         !cl.isInterfaceDeclaration && cl.isAbstract &&
-            cl.fields.isEmpty &&
-            cl.methods.exists(m => m.isAbstract)
+        cl.fields.isEmpty &&
+        cl.methods.exists(m => m.isAbstract)
     }
 
     def isStateMachine(cl: ClassFile): Boolean = {
         cl.methods.count(m => !isInitMethod(m)) > 1 &&
-            cl.fields.nonEmpty &&
-            cl.methods.forall { m => m.descriptor.parametersCount == 0 }
+        cl.fields.nonEmpty &&
+        cl.methods.forall { m => m.descriptor.parametersCount == 0 }
     }
 
     def isPureType(cl: ClassFile): Boolean = {
         (
             (
                 cl.isAbstract && cl.methods.nonEmpty &&
-                cl.methods.forall { m => m.isAbstract && !m.isStatic }
+                    cl.methods.forall { m => m.isAbstract && !m.isStatic }
             ) ||
                 (
                     cl.isInterfaceDeclaration && cl.methods.nonEmpty && cl.methods.forall { m => !m.isStatic }
                 )
         ) &&
-                    cl.fields.isEmpty
+        cl.fields.isEmpty
     }
 
     def isAugmentedType(cl: ClassFile): Boolean = {
         !cl.isInterfaceDeclaration && cl.isAbstract &&
-            cl.methods.forall { m => m.isAbstract } && cl.fields.size >= 3 &&
-            cl.fields.forall { f => f.isFinal && f.isStatic } &&
-            cl.fields.map { f => f.fieldType }.toSet.size == 1
+        cl.methods.forall { m => m.isAbstract } && cl.fields.size >= 3 &&
+        cl.fields.forall { f => f.isFinal && f.isStatic } &&
+        cl.fields.map { f => f.fieldType }.toSet.size == 1
     }
 
     def isPseudoClass(cl: ClassFile): Boolean = {
         !cl.isInterfaceDeclaration &&
-            cl.fields.forall { f => f.isStatic } && cl.methods.nonEmpty &&
-            cl.methods.forall { m => m.isAbstract || m.isStatic }
+        cl.fields.forall { f => f.isStatic } && cl.methods.nonEmpty &&
+        cl.methods.forall { m => m.isAbstract || m.isStatic }
     }
 
     def isImplementor[S](cl: ClassFile, theProject: Project[S]): Boolean = {
         !cl.isInterfaceDeclaration &&
-            !cl.isAbstract && cl.methods.exists { m =>
-                m.isPublic &&
-                    !isInitMethod(m)
-            } && cl.methods.forall { m =>
-                isInitMethod(m) || !m.isPublic ||
-                    (theProject.resolveMethodReference(cl.thisType, m.name, m.descriptor) match {
-                        case Some(a) => (a.isAbstract || a.body.isEmpty) && (
-                            (hasExplicitSuperType(cl) && a.classFile != null &&
-                                a.classFile.thisType == cl.superclassType.get) ||
-                                cl.interfaceTypes.exists(it => a.classFile != null && a.classFile.thisType == it)
-                        )
-                        case None => false
-                    })
-            }
+        !cl.isAbstract && cl.methods.exists { m =>
+            m.isPublic &&
+            !isInitMethod(m)
+        } && cl.methods.forall { m =>
+            isInitMethod(m) || !m.isPublic ||
+            (theProject.resolveMethodReference(cl.thisType, m.name, m.descriptor) match {
+                case Some(a) => (a.isAbstract || a.body.isEmpty) && (
+                        (hasExplicitSuperType(cl) && a.classFile != null &&
+                            a.classFile.thisType == cl.superclassType.get) ||
+                        cl.interfaceTypes.exists(it => a.classFile != null && a.classFile.thisType == it)
+                    )
+                case None => false
+            })
+        }
     }
 
     def isInitMethod(method: Method): Boolean = method.isInitializer
 
     def isOverrider[S](cl: ClassFile, theProject: Project[S]): Boolean = {
         !cl.isInterfaceDeclaration && !cl.isAbstract &&
-            cl.methods.exists { m =>
-                !isInitMethod(m)
-            } && cl.methods.forall { m =>
-                m.isInitializer ||
-                    (theProject.resolveMethodReference(cl.thisType, m.name, m.descriptor) match {
-                        case Some(a) => (!a.isAbstract && a.body.isDefined && m.body.nonEmpty) && (
-                            (hasExplicitSuperType(cl) && a.classFile != null &&
-                                a.classFile.thisType == cl.superclassType.get) ||
-                                cl.interfaceTypes.exists(it => a.classFile != null && a.classFile.thisType == it)
-                        )
-                        case None => false
-                    })
-            }
+        cl.methods.exists { m => !isInitMethod(m) } && cl.methods.forall { m =>
+            m.isInitializer ||
+            (theProject.resolveMethodReference(cl.thisType, m.name, m.descriptor) match {
+                case Some(a) => (!a.isAbstract && a.body.isDefined && m.body.nonEmpty) && (
+                        (hasExplicitSuperType(cl) && a.classFile != null &&
+                            a.classFile.thisType == cl.superclassType.get) ||
+                        cl.interfaceTypes.exists(it => a.classFile != null && a.classFile.thisType == it)
+                    )
+                case None => false
+            })
+        }
     }
 
     def isExtender[S](cl: ClassFile)(implicit theProject: Project[S]): Boolean = {
         !cl.isInterfaceDeclaration &&
-            cl.methods.exists(m => !isInitMethod(m)) && hasExplicitSuperType(cl) && cl.methods.forall { m =>
-                isInitMethod(m) ||
-                    theProject.resolveMethodReference(cl.thisType, m.name, m.descriptor).isEmpty
-            }
+        cl.methods.exists(m => !isInitMethod(m)) && hasExplicitSuperType(cl) && cl.methods.forall { m =>
+            isInitMethod(m) ||
+            theProject.resolveMethodReference(cl.thisType, m.name, m.descriptor).isEmpty
+        }
     }
 
     def isDataManager[S](cl: ClassFile)(implicit theProject: Project[S]): Boolean = {
         !cl.isInterfaceDeclaration &&
-            !cl.isAbstract &&
-            cl.fields.nonEmpty &&
-            cl.methods.count(m => !isInitMethod(m) && !isObjectMethod(m)) > 1 &&
-            cl.methods.filter(m => !isInitMethod(m) && !isObjectMethod(m)).forall { m =>
-                isSetter(m) || isGetter(m)
-            }
+        !cl.isAbstract &&
+        cl.fields.nonEmpty &&
+        cl.methods.count(m => !isInitMethod(m) && !isObjectMethod(m)) > 1 &&
+        cl.methods.filter(m => !isInitMethod(m) && !isObjectMethod(m)).forall { m => isSetter(m) || isGetter(m) }
     }
 
     class AnalysisDomain[S](val project: Project[S], val method: Method)
@@ -475,41 +475,47 @@ class MicroPatterns(implicit hermes: HermesConfig) extends FeatureQuery {
 
     def isGetter[S](method: Method)(implicit theProject: Project[S]): Boolean = {
         if (!method.isPublic || method.returnType.isVoidType || method.body.isEmpty ||
-            !method.body.get.instructions.exists { i => i.isInstanceOf[FieldReadAccess] }) {
+            !method.body.get.instructions.exists { i => i.isInstanceOf[FieldReadAccess] }
+        ) {
             return false
         }
         val instructions = method.body.get.foldLeft(Map.empty[PC, Instruction])((m, pc, i) => m + ((pc, i)))
         val result = BaseAI(method, new AnalysisDomain(theProject, method))
         val returns = instructions.filter(i => i._2.isInstanceOf[ReturnValueInstruction])
 
-        returns.forall(r => result.domain.operandOrigin(r._1, 0).forall { u =>
-            instructions.contains(u) && (instructions(u).isInstanceOf[FieldReadAccess] ||
+        returns.forall(r =>
+            result.domain.operandOrigin(r._1, 0).forall { u =>
+                instructions.contains(u) && (instructions(u).isInstanceOf[FieldReadAccess] ||
                 instructions(u).isInstanceOf[ArrayLoadInstruction] ||
                 instructions(u).isInstanceOf[LoadConstantInstruction[_]])
-        })
+            }
+        )
     }
 
     def isSetter[S](method: Method)(implicit theProject: Project[S]): Boolean = {
         if (!method.isPublic || !method.returnType.isVoidType ||
             method.descriptor.parametersCount == 0 || method.body.isEmpty ||
             (method.body.isDefined && method.body.isEmpty) ||
-            !method.body.get.instructions.exists { i => i.isInstanceOf[FieldWriteAccess] }) {
+            !method.body.get.instructions.exists { i => i.isInstanceOf[FieldWriteAccess] }
+        ) {
             return false
         }
         val instructions = method.body.get.foldLeft(Map.empty[PC, Instruction])((m, pc, i) => m + ((pc, i)))
         val result = BaseAI(method, new AnalysisDomain(theProject, method))
         val puts = instructions.filter(i => i._2.isInstanceOf[FieldWriteAccess])
 
-        puts.forall(p => (p._2.isInstanceOf[PUTSTATIC] &&
-            result.domain.operandOrigin(p._1, 0).forall { x =>
-                x < 0 || (instructions.contains(x) &&
+        puts.forall(p =>
+            (p._2.isInstanceOf[PUTSTATIC] &&
+                result.domain.operandOrigin(p._1, 0).forall { x =>
+                    x < 0 || (instructions.contains(x) &&
                     instructions(x).isInstanceOf[LoadConstantInstruction[_]])
-            }) ||
-            (p._2.isInstanceOf[PUTFIELD] &&
+                }) ||
+                (p._2.isInstanceOf[PUTFIELD] &&
                 result.domain.operandOrigin(p._1, 1).forall { x =>
                     x < 0 || (instructions.contains(x) &&
-                        instructions(x).isInstanceOf[LoadConstantInstruction[_]])
-                }))
+                    instructions(x).isInstanceOf[LoadConstantInstruction[_]])
+                })
+        )
     }
 
 }

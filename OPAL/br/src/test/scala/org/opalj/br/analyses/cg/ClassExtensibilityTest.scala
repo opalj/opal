@@ -109,8 +109,8 @@ class ClassExtensibilityTest extends AnyFunSpec with Matchers {
 
     describe("when a type is configured as extensible") {
 
-        val forcedExtensibleClasses = List(PublicFinalClass, PublicClassWithPrivateConstructor).
-            map(_.fqn.replaceAll("[.]", "/"))
+        val forcedExtensibleClasses =
+            List(PublicFinalClass, PublicClassWithPrivateConstructor).map(_.fqn.replaceAll("[.]", "/"))
 
         val confString = mergeConfigString(
             ClassExtensibilityConfig.configuredExtensibleClasses(forcedExtensibleClasses),
@@ -129,8 +129,7 @@ class ClassExtensibilityTest extends AnyFunSpec with Matchers {
 
     describe("when a type is configured as final") {
 
-        val forcedExtensibleClasses = List(PublicClass, PublicInterface).
-            map(_.fqn.replaceAll("[.]", "/"))
+        val forcedExtensibleClasses = List(PublicClass, PublicInterface).map(_.fqn.replaceAll("[.]", "/"))
 
         val confString = mergeConfigString(
             ClassExtensibilityConfig.configuredFinalClasses(forcedExtensibleClasses),

@@ -60,42 +60,57 @@ class MethodsWithArraysTest extends AnyFlatSpec with Matchers {
     behavior of "the abstract interpreter"
 
     it should "be able to analyze a method that processes a byte array" in {
-        evaluateMethod("byteArrays", domain => {
-            import domain._
-            domain.allReturnedValues should be(
-                Map((15 -> AByteValue))
-            )
-        })
+        evaluateMethod(
+            "byteArrays",
+            domain => {
+                import domain._
+                domain.allReturnedValues should be(
+                    Map((15 -> AByteValue))
+                )
+            }
+        )
     }
 
     it should "be able to analyze a method that processes a boolean array" in {
-        evaluateMethod("booleanArrays", domain => {
-            import domain._
-            domain.allReturnedValues should be(
-                Map((14 -> ABooleanValue))
-            )
-        })
+        evaluateMethod(
+            "booleanArrays",
+            domain => {
+                import domain._
+                domain.allReturnedValues should be(
+                    Map((14 -> ABooleanValue))
+                )
+            }
+        )
     }
 
     it should "be able to analyze a method that uses the Java feature that arrays are covariant" in {
-        evaluateMethod("covariantArrays", domain => {
-            domain.allReturnedValues.size should be(1)
-            domain.isValueASubtypeOf(
-                domain.allReturnedValues(24), ObjectType.Object
-            ) should be(Yes)
-        })
+        evaluateMethod(
+            "covariantArrays",
+            domain => {
+                domain.allReturnedValues.size should be(1)
+                domain.isValueASubtypeOf(
+                    domain.allReturnedValues(24),
+                    ObjectType.Object
+                ) should be(Yes)
+            }
+        )
     }
 
     it should "be able to analyze a method that does various (complex) type casts related to arrays" in {
-        evaluateMethod("integerArraysFrenzy", domain => {
-            domain.allReturnedValues.size should be(2)
-            domain.isValueASubtypeOf(
-                domain.allReturnedValues(78), ArrayType(IntegerType)
-            ) should be(Yes)
-            domain.isValueASubtypeOf(
-                domain.allReturnedValues(76), ArrayType(ByteType)
-            ) should be(Yes)
-        })
+        evaluateMethod(
+            "integerArraysFrenzy",
+            domain => {
+                domain.allReturnedValues.size should be(2)
+                domain.isValueASubtypeOf(
+                    domain.allReturnedValues(78),
+                    ArrayType(IntegerType)
+                ) should be(Yes)
+                domain.isValueASubtypeOf(
+                    domain.allReturnedValues(76),
+                    ArrayType(ByteType)
+                ) should be(Yes)
+            }
+        )
     }
 }
 

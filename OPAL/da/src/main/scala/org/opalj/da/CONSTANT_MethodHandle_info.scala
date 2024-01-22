@@ -49,14 +49,14 @@ case class CONSTANT_MethodHandle_info(
 
     override def asCPNode(implicit cp: Constant_Pool): Node =
         <span class="cp_entry">
-            { this.getClass.getSimpleName }
-            (reference_kind={ reference_kind }
+            {this.getClass.getSimpleName}
+            (reference_kind={reference_kind}
             /*
-            { refrenceKindAsNode }
+            {refrenceKindAsNode}
             */,
-            reference_index={ reference_index }
+            reference_index={reference_index}
             /*
-            <span class="cp_ref">{ cp(reference_index).asCPNode }</span>
+            <span class="cp_ref">{cp(reference_index).asCPNode}</span>
             */)
         </span>
 

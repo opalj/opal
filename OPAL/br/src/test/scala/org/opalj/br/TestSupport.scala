@@ -92,12 +92,14 @@ object TestSupport {
             if (config ne BaseConfig) config
             else if (project.getParentFile.getName == "classfiles") BaseConfig
             else BaseConfig.withValue(
-                InitialEntryPointsKey.ConfigKey, ConfigValueFactory.fromAnyRef(
+                InitialEntryPointsKey.ConfigKey,
+                ConfigValueFactory.fromAnyRef(
                     "org.opalj.br.analyses.cg.AllEntryPointsFinder"
                 )
             ).withValue(
-                    AllEntryPointsFinder.ConfigKey, ConfigValueFactory.fromAnyRef(true)
-                )
+                AllEntryPointsFinder.ConfigKey,
+                ConfigValueFactory.fromAnyRef(true)
+            )
         }
 
         jreReader match {

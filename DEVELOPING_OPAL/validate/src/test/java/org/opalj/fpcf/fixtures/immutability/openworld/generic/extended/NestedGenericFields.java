@@ -1,3 +1,4 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.immutability.openworld.generic.extended;
 
 import org.opalj.fpcf.fixtures.immutability.openworld.general.ClassWithMutableFields;

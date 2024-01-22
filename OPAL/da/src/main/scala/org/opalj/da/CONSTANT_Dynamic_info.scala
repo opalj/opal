@@ -22,14 +22,14 @@ case class CONSTANT_Dynamic_info(
 
     override def asCPNode(implicit cp: Constant_Pool): Node = {
         <div class="cp_entry">
-            { this.getClass.getSimpleName }
+            {this.getClass.getSimpleName}
             (<div class="attributes_ref">
-                 bootstrap_method_attr_index={ bootstrap_method_attr_index }
+                 bootstrap_method_attr_index={bootstrap_method_attr_index}
              </div>
             <div class="cp_ref">
-                name_and_type_index={ name_and_type_index }
+                name_and_type_index={name_and_type_index}
                 &laquo;
-                { cp(name_and_type_index).asCPNode }
+                {cp(name_and_type_index).asCPNode}
                 &raquo;
             </div>
             )
@@ -43,7 +43,7 @@ case class CONSTANT_Dynamic_info(
                 ntiNode,
                 Text(s" //Bootstrap Method Attribute[$bootstrap_method_attr_index]")
             )
-        <span class="cp_entry">{ paramsNode }</span>
+        <span class="cp_entry">{paramsNode}</span>
     }
 
     override def toString(implicit cp: Constant_Pool): String = {

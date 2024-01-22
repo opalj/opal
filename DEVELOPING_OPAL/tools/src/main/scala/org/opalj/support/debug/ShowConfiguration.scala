@@ -31,10 +31,10 @@ object ShowConfiguration {
     def renderConfig(config: Config): String = {
         val defaultRenderingOptions = ConfigRenderOptions.defaults()
         val renderingOptions =
-            defaultRenderingOptions.
-                setOriginComments(false).
-                setComments(true).
-                setJson(false)
+            defaultRenderingOptions
+                .setOriginComments(false)
+                .setComments(true)
+                .setJson(false)
         config.root().render(renderingOptions)
     }
 
@@ -58,7 +58,7 @@ object ShowConfiguration {
                 case e: Exception =>
                     err.println("failed while reading \"java.home\"")
                     e.printStackTrace(err)
-                    return ;
+                    return;
             }
         val javaVersion = System.getProperty("java.version")
 
@@ -67,7 +67,7 @@ object ShowConfiguration {
         println("\t$JAVA_VERSION = " + javaVersion)
         if (!javaHome.contains(javaVersion)) {
             err.println("\tJava runtime environment does not match with read java.security file.")
-            return ;
+            return;
         }
 
         //

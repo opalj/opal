@@ -77,7 +77,8 @@ object ThirdInstrumentation extends App {
                         val cleanStackAndReturn = new Array[CodeElement[AnyRef]](stackDepth + 1)
                         Arrays.fill(
                             cleanStackAndReturn.asInstanceOf[Array[Object]],
-                            0, stackDepth,
+                            0,
+                            stackDepth,
                             InstructionElement(POP)
                         )
                         cleanStackAndReturn(stackDepth) = RETURN
@@ -90,17 +91,21 @@ object ThirdInstrumentation extends App {
                     } {
                         // NOTE: when we throw an exception, we don't have to take of the
                         //       size of the stack!
-                        lCode.insert(pc, InsertionPosition.After, Seq(
-                            NEW(RuntimeExceptionType),
-                            DUP,
-                            INVOKESPECIAL(
-                                RuntimeExceptionType,
-                                isInterface = false,
-                                "<init>",
-                                MethodDescriptor.NoArgsAndReturnVoid
-                            ),
-                            ATHROW
-                        ))
+                        lCode.insert(
+                            pc,
+                            InsertionPosition.After,
+                            Seq(
+                                NEW(RuntimeExceptionType),
+                                DUP,
+                                INVOKESPECIAL(
+                                    RuntimeExceptionType,
+                                    isInterface = false,
+                                    "<init>",
+                                    MethodDescriptor.NoArgsAndReturnVoid
+                                ),
+                                ATHROW
+                            )
+                        )
                     }
                     removeDeadCode = true
                 }
@@ -113,7 +118,8 @@ object ThirdInstrumentation extends App {
                     // } while(...)
                     // It could happen that the output would be printed each time the loop
                     // is evaluated.
-                    0, InsertionPosition.At,
+                    0,
+                    InsertionPosition.At,
                     Seq(
                         GETSTATIC(SystemType, "out", PrintStreamType),
                         LoadString(m.toJava),
@@ -136,7 +142,8 @@ object ThirdInstrumentation extends App {
                     if aiResult.operandsArray(pc).head.asDomainReferenceValue.isValueASubtypeOf(CollectionType).isYes
                 } {
                     lCode.insert(
-                        pc, InsertionPosition.Before,
+                        pc,
+                        InsertionPosition.Before,
                         Seq(
                             DUP,
                             GETSTATIC(SystemType, "out", PrintStreamType),
@@ -152,7 +159,8 @@ object ThirdInstrumentation extends App {
                     val gtTarget = Symbol(s"$pc:>")
                     val printlnTarget = Symbol(s"$pc:println")
                     lCode.insert(
-                        pc, InsertionPosition.Before,
+                        pc,
+                        InsertionPosition.Before,
                         Seq(
                             DUP, // duplicate the value
                             GETSTATIC(SystemType, "out", PrintStreamType), // receiver

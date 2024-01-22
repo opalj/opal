@@ -63,13 +63,16 @@ class JVMCalls(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
                 locations(1) += methodLocation
             } else if (method.body.nonEmpty) {
                 val body = method.body.get
-                val pcAndInvocation = body collect ({ case mii: VirtualMethodInvocationInstruction => mii }: PartialFunction[Instruction, VirtualMethodInvocationInstruction])
+                val pcAndInvocation = body collect ({ case mii: VirtualMethodInvocationInstruction =>
+                    mii
+                }: PartialFunction[Instruction, VirtualMethodInvocationInstruction])
                 pcAndInvocation.foreach { pcAndInvocation =>
                     val pc = pcAndInvocation.pc
                     val mii = pcAndInvocation.value
                     val declClass = mii.declaringClass
                     if (declClass.isObjectType
-                        && relevantTypes.contains(declClass.asObjectType)) {
+                        && relevantTypes.contains(declClass.asObjectType)
+                    ) {
                         val name = mii.name
                         if (name eq "addShutdownHook") {
                             val instructionLocation = InstructionLocation(methodLocation, pc)

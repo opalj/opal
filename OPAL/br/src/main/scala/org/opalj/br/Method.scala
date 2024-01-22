@@ -80,8 +80,12 @@ sealed abstract class JVMMethod
     // with the respective class file.
     private[br] def prepareClassFileAttachement(): Method = {
         new Method(
-            null /*will be set by class file*/ ,
-            accessFlags, name, descriptor, body, attributes
+            null /*will be set by class file*/,
+            accessFlags,
+            name,
+            descriptor,
+            body,
+            attributes
         )
     }
 
@@ -121,18 +125,20 @@ sealed abstract class JVMMethod
         // IMPROVE Define a method "findDissimilarity" as in case of ClassFile to report the difference
         if (this.accessFlags != other.accessFlags ||
             this.name != other.name ||
-            this.descriptor != other.descriptor) {
+            this.descriptor != other.descriptor
+        ) {
             return false;
         }
 
         val (thisBody, otherBody) = config.compareCode(this, this.body, other.body)
         if (!(
-            (thisBody.isEmpty && otherBody.isEmpty) ||
-            (
-                thisBody.nonEmpty && otherBody.nonEmpty &&
-                thisBody.get.similar(otherBody.get, config)
+                (thisBody.isEmpty && otherBody.isEmpty) ||
+                    (
+                        thisBody.nonEmpty && otherBody.nonEmpty &&
+                        thisBody.get.similar(otherBody.get, config)
+                    )
             )
-        )) {
+        ) {
             return false;
         }
 
@@ -291,7 +297,7 @@ sealed abstract class JVMMethod
      */
     final def isVirtualCallTarget: Boolean = {
         isNotAbstract && !isPrivate && !isStatic && !isInitializer &&
-            !isStaticInitializer // before Java 8 <clinit> was not required to be static
+        !isStaticInitializer // before Java 8 <clinit> was not required to be static
     }
 
     /**
@@ -300,7 +306,7 @@ sealed abstract class JVMMethod
      */
     final def isVirtualMethodDeclaration: Boolean = {
         !isPrivate && !isStatic && !isInitializer &&
-            !isStaticInitializer // before Java 8 <clinit> was not required to be static
+        !isStaticInitializer // before Java 8 <clinit> was not required to be static
     }
 
     def returnType: Type = descriptor.returnType
@@ -482,8 +488,7 @@ final class Method private[br] (
         objectType: ObjectType,
         nests:      SomeMap[ObjectType, ObjectType]
     )(
-        implicit
-        classHierarchy: ClassHierarchy
+        implicit classHierarchy: ClassHierarchy
     ): Boolean = {
         visibilityModifier match {
             // TODO Respect Java 9 modules
@@ -553,16 +558,16 @@ object Method {
             (name == "writeReplace" && descriptor == JustReturnsObject) ||
             ((
                 (name == "readObject" && descriptor == ReadObjectDescriptor) ||
-                (name == "writeObject" && descriptor == WriteObjectDescriptor)
+                    (name == "writeObject" && descriptor == WriteObjectDescriptor)
             ) && isInheritedBySerializableOnlyClass.isYesOrUnknown) ||
+            (
+                method.isPublic /*we are implementing an interface...*/ &&
                 (
-                    method.isPublic /*we are implementing an interface...*/ &&
-                    (
-                        (name == "readExternal" && descriptor == ReadObjectInputDescriptor) ||
-                        (name == "writeExternal" && descriptor == WriteObjectOutputDescriptor)
-                    ) &&
-                        isInheritedByExternalizableClass.isYesOrUnknown
-                )
+                    (name == "readExternal" && descriptor == ReadObjectInputDescriptor) ||
+                    (name == "writeExternal" && descriptor == WriteObjectOutputDescriptor)
+                ) &&
+                isInheritedByExternalizableClass.isYesOrUnknown
+            )
     }
 
     /**

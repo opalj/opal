@@ -24,7 +24,7 @@ case class SourceFile_attribute(
         <div class="simple_attribute">
             <span class="attribute_name">SourceFile</span>
             -
-            { sourceFile }
+            {sourceFile}
         </div>
     }
 

@@ -161,9 +161,8 @@ object DependencyAnalysis extends AnalysisApplication {
                     source:   VirtualSourceElement,
                     baseType: BaseType,
                     dType:    DependencyType
-                ): Unit = {
+                ): Unit = {}
 
-                }
                 def processDependency(
                     source:    VirtualSourceElement,
                     arrayType: ArrayType,
@@ -204,10 +203,10 @@ object DependencyAnalysis extends AnalysisApplication {
 
             val maxCount = dependencyProcessor.currentMaxDependencyCount
 
-            var data = ("[" + packages.foldRight("")(
-                (p1, l1) => "[" +
-                    packages.foldRight("")(
-                        (p2, l2) => s"${dependencyProcessor.currentDependencyCount(p1, p2) / maxCount},$l2"
+            var data = ("[" + packages.foldRight("")((p1, l1) =>
+                "[" +
+                    packages.foldRight("")((p2, l2) =>
+                        s"${dependencyProcessor.currentDependencyCount(p1, p2) / maxCount},$l2"
                     ) + "]," + l1
             ) + "]").replaceAll(",]", "]")
 
@@ -218,10 +217,12 @@ object DependencyAnalysis extends AnalysisApplication {
 
             val addOut =
                 if (debug)
-                    ("<table> <tr><th" + cS + "></th>" + packages.foldRight("</tr>")((p, l) => "<th" + cS + ">" + p + "</th>" + l) + packages.foldRight("</table>")(
-                        (p1, l1) => "<tr><td" + cS + "><b>" + p1 + "</b></td>" +
-                            packages.foldRight("</tr>\n")(
-                                (p2, l2) => "<td" + cS + ">" + (dependencyProcessor.currentDependencyCount(p1, p2)) + "</td>" + l2
+                    ("<table> <tr><th" + cS + "></th>" + packages.foldRight("</tr>")((p, l) =>
+                        "<th" + cS + ">" + p + "</th>" + l
+                    ) + packages.foldRight("</table>")((p1, l1) =>
+                        "<tr><td" + cS + "><b>" + p1 + "</b></td>" +
+                            packages.foldRight("</tr>\n")((p2, l2) =>
+                                "<td" + cS + ">" + (dependencyProcessor.currentDependencyCount(p1, p2)) + "</td>" + l2
                             ) + l1
                     ))
                 else
@@ -241,10 +242,12 @@ object DependencyAnalysis extends AnalysisApplication {
 
             htmlDocument = htmlDocument.replace("<%ADDITIONAL_OUTPUT%>", addOut)
 
-            htmlDocument = htmlDocument.replace("<%PACKAGES%>", "[" + packages.foldRight("")(
-                (name, json) =>
+            htmlDocument = htmlDocument.replace(
+                "<%PACKAGES%>",
+                "[" + packages.foldRight("")((name, json) =>
                     s"""{ "name": "$name", "color": "${Random.shuffle(colors.toList).head}"},\n""" + json
-            ) + "]")
+                ) + "]"
+            )
             writeAndOpen(checkDocument(htmlDocument), "DependencyAnalysis", ".html")
 
             pm.progress(3, ProgressEvents.End, None)

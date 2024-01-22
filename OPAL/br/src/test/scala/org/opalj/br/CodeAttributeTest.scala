@@ -38,15 +38,18 @@ class CodeAttributeTest extends AnyFlatSpec with Matchers {
     behavior of "the \"Code\" attribute's collect method"
 
     it should "be able to correctly collect all matching instructions" in {
-        codeOfPut collect ({ case DUP => DUP }: PartialFunction[Instruction, Instruction]) should equal(Seq(PCAndAnyRef(31, DUP)))
+        codeOfPut collect ({ case DUP => DUP }: PartialFunction[Instruction, Instruction]) should
+            equal(Seq(PCAndAnyRef(31, DUP)))
 
         codeOfPut collect ({
             case ICONST_1 => ICONST_1
-        }: PartialFunction[Instruction, Instruction]) should equal(Seq(PCAndAnyRef(20, ICONST_1), PCAndAnyRef(35, ICONST_1)))
+        }: PartialFunction[Instruction, Instruction]) should
+            equal(Seq(PCAndAnyRef(20, ICONST_1), PCAndAnyRef(35, ICONST_1)))
 
         codeOfPut collect ({
             case GETFIELD(declaringClass, "last", _) => declaringClass
-        }: PartialFunction[Instruction, ObjectType]) should equal(Seq(PCAndAnyRef(17, boundedBufferClass), PCAndAnyRef(45, boundedBufferClass)))
+        }: PartialFunction[Instruction, ObjectType]) should
+            equal(Seq(PCAndAnyRef(17, boundedBufferClass), PCAndAnyRef(45, boundedBufferClass)))
 
         codeOfPut collect ({
             case RETURN => "The very last instruction."
@@ -232,9 +235,8 @@ private object CodeAttributeTest {
         )
 
     val nestedCatch =
-        project.
-            classFile(ObjectType("controlflow/ExceptionCode")).get.
-            methods.find(_.name == "nestedCatch").get.body.get
+        project.classFile(ObjectType("controlflow/ExceptionCode")).get.methods
+            .find(_.name == "nestedCatch").get.body.get
 
     val boundedBufferClass = ObjectType("code/BoundedBuffer")
     val immutbleListClass = ObjectType("code/ImmutableList")

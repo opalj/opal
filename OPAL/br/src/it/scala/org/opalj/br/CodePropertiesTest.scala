@@ -49,7 +49,6 @@ class CodePropertiesTest extends AnyFunSuite {
 
         val analyzedMethodsCount = new AtomicInteger(0)
         project.parForeachMethodWithBody() { m =>
-
             val MethodInfo(src, method) = m
             val declaringClassType = method.declaringClassFile.thisType
             val code = method.body.get

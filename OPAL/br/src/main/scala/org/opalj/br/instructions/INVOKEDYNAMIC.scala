@@ -13,7 +13,8 @@ import org.opalj.bytecode.BytecodeProcessingFailedException
  */
 trait INVOKEDYNAMIC extends InvocationInstruction {
 
-    /*abstract*/ def bootstrapMethod: BootstrapMethod
+    /*abstract*/
+    def bootstrapMethod: BootstrapMethod
 
     override final def opcode: Opcode = INVOKEDYNAMIC.opcode
 

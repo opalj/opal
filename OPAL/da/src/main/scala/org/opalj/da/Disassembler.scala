@@ -121,8 +121,10 @@ object Disassembler {
 
         val (classFile, source) =
             ClassFileReader.findClassFile(
-                sourceFiles, (if (showProgress) println else (f) => {}),
-                classFileFilter, (cf: ClassFile) => cf.thisType.asJava
+                sourceFiles,
+                (if (showProgress) println else (f) => {}),
+                classFileFilter,
+                (cf: ClassFile) => cf.thisType.asJava
             ) match {
                 case Left(cfSource) => cfSource
                 case Right(altClassNames) =>
@@ -130,9 +132,7 @@ object Disassembler {
                         handleError(sources.mkString("cannot find class files in: ", ", ", ""))
                     } else {
                         val allClassNames: List[(Int, String)] =
-                            altClassNames.map { cf =>
-                                (getLevenshteinDistance()(className, cf).intValue, cf)
-                            }.toList
+                            altClassNames.map { cf => (getLevenshteinDistance()(className, cf).intValue, cf) }.toList
                         val mostRelated = allClassNames.sortWith((l, r) => l._1 < r._1).map(_._2).take(15)
                         val ending = if (mostRelated.length > 15) ", ...)" else ")"
                         val messageHeader = "can't find: " + className

@@ -35,9 +35,9 @@ object MethodAnnotationsPrinter extends AnalysisApplication {
                     annotation <- method.runtimeVisibleAnnotations ++ method.runtimeInvisibleAnnotations
                 } yield {
                     method.toJava +
-                        annotation.elementValuePairs.
-                        map { pair => "%-15s: %s".format(pair.name, pair.value.toJava) }.
-                        mkString(s"\n\t@${annotation.annotationType.toJava}\n\t", "\n\t", "\n")
+                        annotation.elementValuePairs.map { pair =>
+                            "%-15s: %s".format(pair.name, pair.value.toJava)
+                        }.mkString(s"\n\t@${annotation.annotationType.toJava}\n\t", "\n\t", "\n")
                 }
 
             BasicReport(

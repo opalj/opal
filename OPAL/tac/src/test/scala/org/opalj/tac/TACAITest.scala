@@ -57,10 +57,10 @@ class TACAITest extends AnyFunSpec with Matchers {
                             fail(s"method body is empty: ${m.toJava}")
 
                         val d: Domain with RecordDefUse =
-                            Class.
-                                forName(domainName).asInstanceOf[Class[Domain with RecordDefUse]].
-                                getConstructor(classOf[Project[_]], classOf[Method]).
-                                newInstance(p, m)
+                            Class
+                                .forName(domainName).asInstanceOf[Class[Domain with RecordDefUse]]
+                                .getConstructor(classOf[Project[_]], classOf[Method])
+                                .newInstance(p, m)
                         val aiResult = BaseAI(m, d)
                         val TACode(params, code, _, cfg, _) = TACAI(m, p.classHierarchy, aiResult, false)(Nil)
                         val actual = ToTxt(params, code, cfg, skipParams = false, indented = false, true)

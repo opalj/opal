@@ -105,11 +105,9 @@ class RecordDefUseTest extends AnyFunSpec with Matchers {
                 val useInstruction = instructions(useSite)
                 val poppedOperands = useInstruction.numberOfPoppedOperands(NotRequired)
                 val hasDefSite =
-                    (0 until poppedOperands).exists { poIndex =>
-                        d.operandOrigin(useSite, poIndex).contains(pc)
-                    } || {
+                    (0 until poppedOperands).exists { poIndex => d.operandOrigin(useSite, poIndex).contains(pc) } || {
                         useInstruction.readsLocal &&
-                            d.localOrigin(useSite, useInstruction.indexOfReadLocal).contains(pc)
+                        d.localOrigin(useSite, useInstruction.indexOfReadLocal).contains(pc)
                     }
                 if (!hasDefSite) {
                     fail(s"use at $useSite has no def site $pc ($instruction)")
@@ -126,7 +124,7 @@ class RecordDefUseTest extends AnyFunSpec with Matchers {
                             defSites.contains(ai.ValueOriginForImmediateVMException(pc))
                     } || {
                         useInstruction.readsLocal &&
-                            d.localOrigin(useSite, useInstruction.indexOfReadLocal).contains(pc)
+                        d.localOrigin(useSite, useInstruction.indexOfReadLocal).contains(pc)
                     }
                 if (!hasDefSite) {
                     fail(s"exception use at $useSite has no def site $pc ($instruction)")
@@ -147,9 +145,10 @@ class RecordDefUseTest extends AnyFunSpec with Matchers {
                 val domainOrigins = d.origins(op)
                 domainOrigins foreach { o =>
                     if (!(
-                        defUseOrigins.contains(o) ||
-                        defUseOrigins.exists(duo => ehs.exists(_.handlerPC == duo))
-                    )) {
+                            defUseOrigins.contains(o) ||
+                                defUseOrigins.exists(duo => ehs.exists(_.handlerPC == duo))
+                        )
+                    ) {
                         val instruction = code.instructions(pc)
                         val isHandler = code.exceptionHandlers.exists(_.handlerPC == pc)
                         val message =
@@ -172,7 +171,8 @@ class RecordDefUseTest extends AnyFunSpec with Matchers {
                 // is a relevant use-site
                 if (opIndex < usedOperands &&
                     // we already tested: !instruction.isStackManagementInstruction
-                    !instruction.isStoreLocalVariableInstruction) {
+                    !instruction.isStoreLocalVariableInstruction
+                ) {
                     defUseOrigins foreach { defUseOrigin => // the origins of a value...
                         val defUseUseSites = d.usedBy(defUseOrigin)
                         if (defUseUseSites == null) {

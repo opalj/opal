@@ -90,7 +90,8 @@ object IfNullParameterAnalysis extends ProjectAnalysisApplication {
                 val domain1 =
                     new DefaultDomain(theProject, method) with domain.RecordAllThrownExceptions
                 ai.performInterpretation(method.body.get, domain1)(
-                    ai.initialOperands(method, domain1), ai.initialLocals(method, domain1)(None)
+                    ai.initialOperands(method, domain1),
+                    ai.initialLocals(method, domain1)(None)
                 )
 
                 // 2. Interpretation under the assumption that all values are non-null
@@ -98,7 +99,8 @@ object IfNullParameterAnalysis extends ProjectAnalysisApplication {
                     new DefaultDomain(theProject, method) with domain.RecordAllThrownExceptions
                 val nonNullLocals = setToNonNull(domain2)(ai.initialLocals(method, domain2)(None))
                 ai.performInterpretation(method.body.get, domain2)(
-                    ai.initialOperands(method, domain2), nonNullLocals
+                    ai.initialOperands(method, domain2),
+                    nonNullLocals
                 )
 
                 // Let's calculate the diff. The basic idea is to iterate over
@@ -118,7 +120,8 @@ object IfNullParameterAnalysis extends ProjectAnalysisApplication {
                                     // We need to keep the original location, otherwise
                                     // the correlation analysis would miserably fail!
                                     ex.asInstanceOf[domain2.DomainSingleOriginReferenceValue].origin
-                                ).asInstanceOf[domain1.ExceptionValue]).toSet[domain1.DomainReferenceValue]
+                                ).asInstanceOf[domain1.ExceptionValue]
+                            ).toSet[domain1.DomainReferenceValue]
                         val diff =
                             d1thrownException.diff(adaptedD2ThrownException) ++
                                 adaptedD2ThrownException.diff(d1thrownException)

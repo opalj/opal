@@ -28,14 +28,14 @@ class ControlAbstractionsTest extends AnyFlatSpec with Matchers {
         foreachNonNullValue[String] {
             if (initialized) fail(); initialized = true; new Array(0)
         } {
-            (i, e) => /*nothing*/ ;
+            (i, e) => /*nothing*/
         }
 
         initialized = false
         foreachNonNullValue[String] {
             if (initialized) fail(); initialized = true; Array("a", "b", "c", null, null, "d")
         } {
-            (i, e) => /*nothing*/ ;
+            (i, e) => /*nothing*/
         }
     }
 

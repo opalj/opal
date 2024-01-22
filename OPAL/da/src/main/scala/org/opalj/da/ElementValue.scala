@@ -33,7 +33,7 @@ trait BaseElementValue extends ElementValue {
     def const_value_index: Constant_Pool_Index
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        <div class="constant_value">{ cp(const_value_index).asInstructionParameter }</div>
+        <div class="constant_value">{cp(const_value_index).asInstructionParameter}</div>
     }
 
 }
@@ -85,7 +85,7 @@ case class StringValue(const_value_index: Constant_Pool_Index) extends ElementVa
     override final def tag: Int = StringValue.tag.toInt
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        <div class="constant_value">"{ cp(const_value_index).toString }"</div>
+        <div class="constant_value">"{cp(const_value_index).toString}"</div>
     }
 }
 object StringValue { final val tag: Int = 's' }
@@ -97,7 +97,7 @@ case class ClassValue(class_info_index: Constant_Pool_Index) extends ElementValu
     override final def tag: Int = ClassValue.tag.toInt
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        <div class="constant_value type">{ returnTypeAsJavaType(class_info_index).asSpan("") }.class</div>
+        <div class="constant_value type">{returnTypeAsJavaType(class_info_index).asSpan("")}.class</div>
     }
 
 }
@@ -117,7 +117,7 @@ case class EnumValue(
         val et = parseFieldType(type_name_index).asSpan("")
         val ec = cp(const_name_index).toString
 
-        <div class="constant_value">{ et }.<span class="field_name">{ ec }</span></div>
+        <div class="constant_value">{et}.<span class="field_name">{ec}</span></div>
     }
 
 }
@@ -130,7 +130,7 @@ case class AnnotationValue(annotation: Annotation) extends StructuredElementValu
     override final def tag: Int = AnnotationValue.tag.toInt
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        <div class="constant_value">{ annotation.toXHTML }</div>
+        <div class="constant_value">{annotation.toXHTML}</div>
     }
 
 }
@@ -150,7 +150,7 @@ case class ArrayValue(values: Seq[ElementValue]) extends StructuredElementValue 
                 this.values.map(v => Seq(v.toXHTML)).reduce((c, n) => c ++: (Text(", ") +: n))
             else
                 NodeSeq.Empty
-        <div class="constant_value">[{ valueNodes }]</div>
+        <div class="constant_value">[{valueNodes}]</div>
     }
 
 }

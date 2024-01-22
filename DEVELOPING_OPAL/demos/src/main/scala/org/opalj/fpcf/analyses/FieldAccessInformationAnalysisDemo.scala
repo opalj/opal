@@ -35,9 +35,22 @@ import org.opalj.util.Seconds
  */
 object FieldAccessInformationAnalysisDemo extends ProjectAnalysisApplication {
 
-    private val JDKPackages = List("java/", "javax", "javafx", "jdk", "sun", "oracle", "com/sun",
-        "netscape", "org/ietf/jgss", "org/jcp/xml/dsig/internal", "org/omg", "org/w3c/dom",
-        "org/xml/sax")
+    private val JDKPackages =
+        List(
+            "java/",
+            "javax",
+            "javafx",
+            "jdk",
+            "sun",
+            "oracle",
+            "com/sun",
+            "netscape",
+            "org/ietf/jgss",
+            "org/jcp/xml/dsig/internal",
+            "org/omg",
+            "org/w3c/dom",
+            "org/xml/sax"
+        )
 
     override def title: String = "Determines field accesses"
 
@@ -75,9 +88,7 @@ object FieldAccessInformationAnalysisDemo extends ProjectAnalysisApplication {
                         )
                 )
             propertyStore.waitOnPhaseCompletion()
-        } { t =>
-            analysisTime = t.toSeconds
-        }
+        } { t => analysisTime = t.toSeconds }
 
         val projectClassFiles = project.allProjectClassFiles.iterator.filter { cf =>
             !JDKPackages.exists(cf.thisType.packageName.startsWith)
@@ -86,14 +97,18 @@ object FieldAccessInformationAnalysisDemo extends ProjectAnalysisApplication {
 
         val readFields = propertyStore
             .entities(FieldReadAccessInformation.key)
-            .filter(ep => fields.contains(ep.e.asInstanceOf[DefinedField].definedField)
-                && ep.asFinal.p != NoFieldReadAccessInformation)
+            .filter(ep =>
+                fields.contains(ep.e.asInstanceOf[DefinedField].definedField)
+                    && ep.asFinal.p != NoFieldReadAccessInformation
+            )
             .map(_.e.asInstanceOf[DefinedField].definedField)
             .toSet
         val writtenFields = propertyStore
             .entities(FieldWriteAccessInformation.key)
-            .filter(ep => fields.contains(ep.e.asInstanceOf[DefinedField].definedField)
-                && ep.asFinal.p != NoFieldWriteAccessInformation)
+            .filter(ep =>
+                fields.contains(ep.e.asInstanceOf[DefinedField].definedField)
+                    && ep.asFinal.p != NoFieldWriteAccessInformation
+            )
             .map(_.e.asInstanceOf[DefinedField].definedField)
             .toSet
 

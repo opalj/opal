@@ -49,10 +49,10 @@ class CallGraphIntegrationTest extends AnyFlatSpec with Matchers {
     allBIProjects(
         config = ConfigFactory.load("CommandLineProject.conf")
     ) foreach { biProject =>
-            val (name, projectFactory) = biProject
-            if (!ignoredProjects.contains(name))
-                checkProject(name, projectFactory)
-        }
+        val (name, projectFactory) = biProject
+        if (!ignoredProjects.contains(name))
+            checkProject(name, projectFactory)
+    }
 
     def checkProject(projectName: String, projectFactory: () => Project[URL]): Unit = {
 
@@ -136,7 +136,8 @@ class CallGraphIntegrationTest extends AnyFlatSpec with Matchers {
                         val callees = lessPreciseCG.calleesPropertyOf(callSite._1)
                         !callSite._3 &&
                             callees.isIncompleteCallSite(context, callSite._2)(lessPreciseCGPS)
-                }) {
+                }
+            ) {
                 unexpectedCalls ::= UnexpectedCallTarget(null, method, -1)
             } else if (callersMPCG.hasVMLevelCallers && !callersLPCG.hasVMLevelCallers) {
                 unexpectedCalls ::= UnexpectedCallTarget(null, method, -1)
@@ -171,7 +172,9 @@ class CallGraphIntegrationTest extends AnyFlatSpec with Matchers {
             callee <- tgts
         } {
             val FinalP(callersProperty) = propertyStore(callee.method, Callers.key).asFinal
-            assert(callersProperty.callers(dm).iterator.map(caller => (caller._1, caller._2)).iterator.to(Set).contains(dm -> pc))
+            assert(callersProperty.callers(dm).iterator
+                .map(caller => (caller._1, caller._2)).iterator
+                .to(Set).contains(dm -> pc))
         }
 
         for {

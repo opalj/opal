@@ -46,9 +46,7 @@ class TasksTest extends AnyFunSpec with Matchers {
 
         it("it should be possible to reuse tasks after join") {
             val counter = new AtomicInteger(0)
-            val tasks = Tasks { (tasks: Tasks[Int], i: Int) =>
-                counter.incrementAndGet()
-            }
+            val tasks = Tasks { (tasks: Tasks[Int], i: Int) => counter.incrementAndGet() }
             tasks.submit(1)
             while (tasks.currentTasksCount > 0) {
                 Thread.sleep(50);

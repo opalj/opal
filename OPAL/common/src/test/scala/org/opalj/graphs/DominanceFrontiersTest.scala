@@ -32,7 +32,7 @@ class DominanceFrontiersTest extends AnyFlatSpec with Matchers {
         startNode:                Int,
         g:                        Graph[Int],
         maxNode:                  Int,
-        startNodeHasPredecessors: Boolean    = false
+        startNodeHasPredecessors: Boolean = false
     ): DominanceFrontiers = {
         setUpDominanceFrontiers(
             startNode,
@@ -52,13 +52,10 @@ class DominanceFrontiersTest extends AnyFlatSpec with Matchers {
     ): DominanceFrontiers = {
         val dominatorTree =
             DominatorTree(
-                startNode, startNodeHasPredecessors,
-                (n: Int) => { (f: (Int => Unit)) =>
-                    g.successors.getOrElse(n, List.empty).foreach[Unit](e => f(e))
-                },
-                (n: Int) => { (f: (Int => Unit)) =>
-                    g.predecessors.getOrElse(n, List.empty).foreach[Unit](e => f(e))
-                },
+                startNode,
+                startNodeHasPredecessors,
+                (n: Int) => { (f: (Int => Unit)) => g.successors.getOrElse(n, List.empty).foreach[Unit](e => f(e)) },
+                (n: Int) => { (f: (Int => Unit)) => g.predecessors.getOrElse(n, List.empty).foreach[Unit](e => f(e)) },
                 maxNode
             )
         try {

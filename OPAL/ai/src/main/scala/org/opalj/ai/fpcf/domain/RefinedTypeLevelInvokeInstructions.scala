@@ -64,7 +64,7 @@ trait RefinedTypeLevelInvokeInstructions
         val returnType = method.returnType
         if (!returnType.isObjectType ||
             returnType != invokeMethodDescriptor.returnType // <= to handle MethodHandle.invoke(Exact) calls
-            ) {
+        ) {
             return fallback();
         }
 
@@ -134,13 +134,9 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling {
             // IMPROVE Use project.instanceMethods ....
             classHierarchy.isInterface(receiverType) match {
                 case Yes =>
-                    doNonVirtualInvoke(
-                        pc, receiverType, true, name, descriptor, operands, fallback
-                    )
+                    doNonVirtualInvoke(pc, receiverType, true, name, descriptor, operands, fallback)
                 case No =>
-                    doNonVirtualInvoke(
-                        pc, receiverType, false, name, descriptor, operands, fallback
-                    )
+                    doNonVirtualInvoke(pc, receiverType, false, name, descriptor, operands, fallback)
                 case Unknown =>
                     fallback()
             }
@@ -207,7 +203,9 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling {
                 OPALLogger.error(
                     "internal, project configuration",
                     "resolving the method reference resulted in an exception: " +
-                        project.classFile(declaringType).map(cf => if (cf.isInterfaceDeclaration) "interface " else "class ").getOrElse("") +
+                        project.classFile(declaringType).map(cf =>
+                            if (cf.isInterfaceDeclaration) "interface " else "class "
+                        ).getOrElse("") +
                         declaringType.toJava + "{ /*non virtual*/ " + descriptor.toJava(name) + "}",
                     t
                 )

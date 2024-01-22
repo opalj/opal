@@ -123,12 +123,17 @@ trait PropertyTracing extends CoreDomainFunctionality with CustomInitialization 
                 worklist
             }
         super.flow(
-            currentPC, currentOperands, currentLocals,
-            successorPC, newIsSuccessorScheduled,
-            isExceptionalControlFlow, abruptSubroutineTerminationCount,
+            currentPC,
+            currentOperands,
+            currentLocals,
+            successorPC,
+            newIsSuccessorScheduled,
+            isExceptionalControlFlow,
+            abruptSubroutineTerminationCount,
             wasJoinPerformed,
             newWorklist,
-            operandsArray, localsArray,
+            operandsArray,
+            localsArray,
             tracer
         )
     }

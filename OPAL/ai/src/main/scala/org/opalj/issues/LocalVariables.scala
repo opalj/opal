@@ -41,7 +41,7 @@ class LocalVariables(
                         Text(localVariableToString(theLV, localValue))
 
                 <tr>
-                    <td>{ index }</td><td>{ theLV.name }</td><td>{ localValueAsXHTML }</td>
+                    <td>{index}</td><td>{theLV.name}</td><td>{localValueAsXHTML}</td>
                 </tr>
             }
 
@@ -49,7 +49,7 @@ class LocalVariables(
             <summary>Local Variable State</summary>
             <table>
                 <tr><th>Index</th><th>Name</th><th>Value</th></tr>
-                { lvsAsXHTML }
+                {lvsAsXHTML}
             </table>
         </details>
 

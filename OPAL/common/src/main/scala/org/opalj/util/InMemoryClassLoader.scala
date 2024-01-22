@@ -13,7 +13,7 @@ package util
  */
 class InMemoryClassLoader(
         private[this] var rawClasses: Map[String, Array[Byte]],
-        parent:                       ClassLoader              = ClassLoader.getSystemClassLoader
+        parent:                       ClassLoader = ClassLoader.getSystemClassLoader
 ) extends ClassLoader(parent) {
 
     /**

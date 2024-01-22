@@ -19,7 +19,7 @@ case class Record_attribute(
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         <details class="attribute">
             <summary>Record</summary>
-            <ol>{ components.map[Node] { c => <li>{ c.toXHTML(cp) }</li> } }</ol>
+            <ol>{components.map[Node] { c => <li>{c.toXHTML(cp)}</li> }}</ol>
         </details>
     }
 
@@ -36,7 +36,7 @@ case class RecordComponent(
     def toXHTML(implicit cp: Constant_Pool): Seq[Node] = {
         val name = cp(name_index).toString(cp)
         val descriptor = cp(descriptor_index).toString
-        <li>{ attributes.map(_.toXHTML) }{ descriptor }<span>{ name }</span></li>
+        <li>{attributes.map(_.toXHTML)}{descriptor}<span>{name}</span></li>
     }
 
 }

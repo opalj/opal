@@ -334,7 +334,7 @@ private[seq] final class ManyDependeesOfDirectDependersLastTasksManager
         val t = this.initialTasks.pollFirst()
         if (t ne null) {
             t()
-            return ;
+            return;
         }
 
         val wt = this.tasks.poll()
@@ -386,7 +386,7 @@ private[seq] final class ManyDependeesOfDirectDependersFirstTasksManager
         val t = this.initialTasks.pollFirst()
         if (t ne null) {
             t()
-            return ;
+            return;
         }
 
         val wt = this.tasks.poll()
@@ -423,9 +423,7 @@ private[seq] final class ManyDependeesAndDependersOfDirectDependersLastTasksMana
         currentDependers: Iterable[SomeEPK]
     ): Unit = {
         var weight = 0
-        currentDependers foreach { epk =>
-            weight += ps.dependeesCount(epk) + ps.dependersCount(epk)
-        }
+        currentDependers foreach { epk => weight += ps.dependeesCount(epk) + ps.dependersCount(epk) }
         this.tasks.add(new WeightedQualifiedTask(task, weight))
     }
 
@@ -462,9 +460,7 @@ private[seq] final class ManyDependeesAndDependersOfDirectDependersFirstTasksMan
         currentDependers: Iterable[SomeEPK]
     ): Unit = {
         var weight = 0
-        currentDependers foreach { epk =>
-            weight -= ps.dependeesCount(epk) + ps.dependersCount(epk)
-        }
+        currentDependers foreach { epk => weight -= ps.dependeesCount(epk) + ps.dependersCount(epk) }
         this.tasks.add(new WeightedQualifiedTask(task, weight))
     }
 

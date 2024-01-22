@@ -24,8 +24,8 @@ object DependencyMatrix {
     def main(args: Array[String]): Unit = {
 
         if (args.length == 0 ||
-            !args.forall(arg => arg.endsWith(".zip") ||
-                arg.endsWith(".jar"))) {
+            !args.forall(arg => arg.endsWith(".zip") || arg.endsWith(".jar"))
+        ) {
             printUsage()
             sys.exit(1)
         }

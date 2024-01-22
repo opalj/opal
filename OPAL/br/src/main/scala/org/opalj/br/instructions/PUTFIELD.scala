@@ -41,7 +41,9 @@ case class PUTFIELD(
             List(indexOfNextInstruction(currentPC))
         else
             Instruction.nextInstructionOrExceptionHandler(
-                this, currentPC, ObjectType.NullPointerException
+                this,
+                currentPC,
+                ObjectType.NullPointerException
             )
     }
 

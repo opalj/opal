@@ -62,7 +62,8 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 val ps = new PropertyStoreConfigurationRecorder()
                 val scenario = AnalysisScenario(Set.empty, ps)
                 val schedule = scenario.computeSchedule(ps)
-                /*smoke test: */ schedule(ps, trace = false)
+                /*smoke test: */
+                schedule(ps, trace = false)
                 schedule.batches should be(Symbol("Empty"))
                 ps.phaseConfigurations.head should be((Set.empty, Set.empty, Map.empty))
             }

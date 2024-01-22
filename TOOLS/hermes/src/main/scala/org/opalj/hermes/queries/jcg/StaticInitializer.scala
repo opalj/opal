@@ -62,9 +62,7 @@ class StaticInitializer(implicit hermes: HermesConfig) extends DefaultFeatureQue
                 if (hasStaticMethod) {
                     classLocations(1) += classFileLocation
                 }
-                val hasDefaultMethod = classFile.instanceMethods.exists { m =>
-                    m.body.nonEmpty && m.isPublic
-                }
+                val hasDefaultMethod = classFile.instanceMethods.exists { m => m.body.nonEmpty && m.isPublic }
 
                 if (hasStaticField) {
                     if (hasDefaultMethod) {
