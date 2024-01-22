@@ -255,7 +255,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
                     (writeAccess._1 eq method) && {
                         val taCode = state.tacDependees(method.asDefinedMethod).ub.tac.get
 
-                        if (readAccess._3.isDefined && readAccess._3.get._2.exists(isFormalParameter)) {
+                        if (readAccess._3.isDefined && readAccess._3.get._2.forall(isFormalParameter)) {
                             false
                         } else {
                             !dominates(writeAccess._4, taCode.pcToIndex(readAccess._2), taCode)
