@@ -51,7 +51,7 @@ object ClassHierarchyExtractor {
         import org.opalj.br.reader.Java8Framework.ClassFiles
 
         if (args.length < 3 ||
-            !args.drop(2).forall(arg => arg.endsWith(".jar") || arg.endsWith(".jmod"))
+                !args.drop(2).forall(arg => arg.endsWith(".jar") || arg.endsWith(".jmod"))
         ) {
             println("Usage:     java …ClassHierarchy supertype filterprefix <JAR|JMOD file>+")
             println("Example:   … java.lang.Enum \"\" .../rt.jar")

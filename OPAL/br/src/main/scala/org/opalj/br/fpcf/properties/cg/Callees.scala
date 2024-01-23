@@ -380,7 +380,7 @@ sealed class ConcreteCallees(
 
     override def containsCall(callerContext: Context, pc: Int, calleeContext: Context): Boolean = {
         containsDirectCall(callerContext, pc, calleeContext) ||
-        containsIndirectCall(callerContext, pc, calleeContext)
+            containsIndirectCall(callerContext, pc, calleeContext)
     }
 
     override def containsDirectCall(

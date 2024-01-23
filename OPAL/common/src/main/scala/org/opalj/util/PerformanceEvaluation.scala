@@ -329,7 +329,7 @@ object PerformanceEvaluation {
                     r(t, times)
                 }
             } while (times.size < minimalNumberOfRelevantRuns ||
-            Math.abs(avg - times.head.timeSpan) > avg * e)
+                Math.abs(avg - times.head.timeSpan) > avg * e)
 
             result
 

@@ -157,9 +157,9 @@ class PointsToAnalysisState[
 
         assert(
             !_dependerToDependees.contains(depender) ||
-            !_dependerToDependees(depender).exists(other =>
-                other._1.e == dependee.e && other._1.pk.id == dependee.pk.id
-            )
+                !_dependerToDependees(depender).exists(other =>
+                    other._1.e == dependee.e && other._1.pk.id == dependee.pk.id
+                )
         )
         assert(!_dependees.contains(dependeeEPK) || _dependees(dependeeEPK) == dependee)
         if (_dependerToDependees.contains(depender)) {
@@ -183,7 +183,7 @@ class PointsToAnalysisState[
     // IMPROVE: potentially inefficient exists check
     final def hasDependency(depender: Entity, dependee: SomeEPK): Boolean = {
         _dependerToDependees.contains(depender) &&
-        _dependerToDependees(depender).exists(other => other._1.e == dependee.e && other._1.pk.id == dependee.pk.id)
+            _dependerToDependees(depender).exists(other => other._1.e == dependee.e && other._1.pk.id == dependee.pk.id)
     }
 
     // IMPROVE: make it efficient

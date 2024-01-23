@@ -151,8 +151,8 @@ class RecordCFGTest extends AnyFunSpec with Matchers {
 
                 evaluatedInstructions.iterator.foreach { pc =>
                     if (pc != dt.startNode &&
-                        (dt.dom(pc) != dt.startNode) &&
-                        !evaluatedInstructions.contains(dt.dom(pc))
+                            (dt.dom(pc) != dt.startNode) &&
+                            !evaluatedInstructions.contains(dt.dom(pc))
                     ) {
                         fail(
                             s"the dominator instruction ${dt.dom(pc)} of instruction $pc " +
@@ -161,8 +161,8 @@ class RecordCFGTest extends AnyFunSpec with Matchers {
                         )
                     }
                     if (pc != postDT.startNode &&
-                        postDT.dom(pc) != postDT.startNode &&
-                        !evaluatedInstructions.contains(postDT.dom(pc))
+                            postDT.dom(pc) != postDT.startNode &&
+                            !evaluatedInstructions.contains(postDT.dom(pc))
                     ) {
                         fail(s"the post-dominator ${postDT.dom(pc)} of $pc was not evaluated")
                     }

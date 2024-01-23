@@ -40,7 +40,7 @@ object ContextRegisteredReceiversAnalysis {
             m.body.get.instructionIterator.foreach {
                 case i: MethodInvocationInstruction =>
                     if (!alreadyFoundCall && i.name.equals(RegisterReceiverMethod) &&
-                        classHierarchyMatches(project, i.declaringClass.mostPreciseObjectType)
+                            classHierarchyMatches(project, i.declaringClass.mostPreciseObjectType)
                     ) {
                         // potential further calls are found in TAC, remaining bytecode instructions must not be analyzed
                         alreadyFoundCall = true
@@ -50,7 +50,7 @@ object ContextRegisteredReceiversAnalysis {
                         tacMethod.stmts.foreach {
                             case s @ VirtualFunctionCallStatement(call) =>
                                 if (call.name.equals(RegisterReceiverMethod) &&
-                                    classHierarchyMatches(project, call.declaringClass.mostPreciseObjectType)
+                                        classHierarchyMatches(project, call.declaringClass.mostPreciseObjectType)
                                 ) {
                                     val receiverType = call.params.head.asVar.value.asReferenceValue.upperTypeBound
                                     // check if broadcast receiver param is null
@@ -88,7 +88,7 @@ object ContextRegisteredReceiversAnalysis {
 
     private def classMatches(clazz: ObjectType): Boolean = {
         clazz == ContextClass || clazz == LocalBroadcastManagerClass ||
-        clazz == ActivityClass
+            clazz == ActivityClass
     }
 
     private def classHierarchyMatches(project: Project[_], clazz: ObjectType): Boolean = {
@@ -116,7 +116,7 @@ object ContextRegisteredReceiversAnalysis {
         val foundActions: ListBuffer[String] = ListBuffer.empty
         val foundCategories: ListBuffer[String] = ListBuffer.empty
         if (intentDef.isAssignment && intentDef.asAssignment.expr.isNew &&
-            intentDef.asAssignment.expr.asNew.tpe == IntentFilterClass
+                intentDef.asAssignment.expr.asNew.tpe == IntentFilterClass
         ) {
             intentDef.asAssignment.targetVar.usedBy
                 .foreach(tacMethod.stmts(_) match {

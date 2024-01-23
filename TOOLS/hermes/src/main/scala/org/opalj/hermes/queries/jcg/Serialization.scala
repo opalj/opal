@@ -184,39 +184,39 @@ class Serialization(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
             locations(11) += l
         } else if (param.isPrecise) {
             if (param.isNull.isNo &&
-                hasMethod(param.asReferenceType, "writeObject", WriteObjectDescriptor) &&
-                !classHierarchy.isSubtypeOf(param.asReferenceType, ObjectType.Externalizable)
+                    hasMethod(param.asReferenceType, "writeObject", WriteObjectDescriptor) &&
+                    !classHierarchy.isSubtypeOf(param.asReferenceType, ObjectType.Externalizable)
             )
                 locations(0) += l
             else if (param.isNull.isNo &&
-                     classHierarchy.isSubtypeOf(param.asReferenceType, ObjectType.Externalizable)
+                         classHierarchy.isSubtypeOf(param.asReferenceType, ObjectType.Externalizable)
             )
                 locations(9) += l
 
             if (param.isNull.isNo &&
-                hasMethod(param.asReferenceType, "writeReplace", JustReturnsObject)
+                    hasMethod(param.asReferenceType, "writeReplace", JustReturnsObject)
             )
                 locations(5) += l
 
         } else if (param.allValues.forall(_.isPrecise)) {
             if (param.allValues.exists { pt =>
                     pt.isNull.isNo &&
-                    hasMethod(pt.asReferenceType, "writeObject", WriteObjectDescriptor) &&
-                    !classHierarchy.isSubtypeOf(pt.asReferenceType, ObjectType.Externalizable)
+                        hasMethod(pt.asReferenceType, "writeObject", WriteObjectDescriptor) &&
+                        !classHierarchy.isSubtypeOf(pt.asReferenceType, ObjectType.Externalizable)
                 }
             )
                 locations(1) += l
 
             if (param.allValues.exists { pt =>
                     pt.isNull.isNo &&
-                    hasMethod(pt.asReferenceType, "writeReplace", JustReturnsObject)
+                        hasMethod(pt.asReferenceType, "writeReplace", JustReturnsObject)
                 }
             )
                 locations(5) += l
 
             if (param.allValues.exists { pt =>
                     pt.isNull.isNo &&
-                    classHierarchy.isSubtypeOf(pt.asReferenceType, ObjectType.Externalizable)
+                        classHierarchy.isSubtypeOf(pt.asReferenceType, ObjectType.Externalizable)
                 }
             )
                 locations(9) += l
@@ -267,7 +267,7 @@ class Serialization(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
         } else {
             if (castTypes.exists { cType =>
                     hasMethod(cType, "readObject", ReadObjectDescriptor) &&
-                    !classHierarchy.isSubtypeOf(cType, ObjectType.Externalizable)
+                        !classHierarchy.isSubtypeOf(cType, ObjectType.Externalizable)
                 }
             )
                 locations(4) += l
@@ -280,10 +280,10 @@ class Serialization(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
 
             if (castTypes.exists { cType =>
                     classHierarchy.isSubtypeOf(cType, ObjectType.Externalizable) ||
-                    cType.isObjectType &&
-                    classHierarchy.allSubclassTypes(cType.asObjectType, reflexive = false).exists {
-                        classHierarchy.isSubtypeOf(_, ObjectType.Externalizable)
-                    }
+                        cType.isObjectType &&
+                        classHierarchy.allSubclassTypes(cType.asObjectType, reflexive = false).exists {
+                            classHierarchy.isSubtypeOf(_, ObjectType.Externalizable)
+                        }
                 }
             ) {
                 locations(10) += l

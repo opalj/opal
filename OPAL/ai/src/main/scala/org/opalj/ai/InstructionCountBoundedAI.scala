@@ -105,7 +105,7 @@ object InstructionCountBoundedAI {
                     (maxEvaluationFactor * 250.0d)
             )
         if (upperBound == java.lang.Double.POSITIVE_INFINITY ||
-            upperBound >= Int.MaxValue.toDouble
+                upperBound >= Int.MaxValue.toDouble
         ) {
             upperBound = Int.MaxValue
             OPALLogger.warn(

@@ -202,13 +202,13 @@ object ClassFileFactory {
 
         val receiverField =
             if (invocationInstruction == INVOKESTATIC.opcode ||
-                isNewInvokeSpecial(invocationInstruction, implMethod.name) ||
-                isVirtualMethodReference(
-                    invocationInstruction,
-                    receiverType,
-                    implMethod.methodDescriptor,
-                    methodDescriptor
-                )
+                    isNewInvokeSpecial(invocationInstruction, implMethod.name) ||
+                    isVirtualMethodReference(
+                        invocationInstruction,
+                        receiverType,
+                        implMethod.methodDescriptor,
+                        methodDescriptor
+                    )
             ) {
                 ArraySeq.empty
             } else {
@@ -619,8 +619,8 @@ object ClassFileFactory {
         proxyInterfaceMethodDescriptor: MethodDescriptor
     ): Boolean = {
         (opcode == INVOKEVIRTUAL.opcode || opcode == INVOKEINTERFACE.opcode) &&
-        targetMethodDescriptor.parametersCount + 1 == proxyInterfaceMethodDescriptor.parametersCount &&
-        (proxyInterfaceMethodDescriptor.parameterType(0) eq targetMethodDeclaringType)
+            targetMethodDescriptor.parametersCount + 1 == proxyInterfaceMethodDescriptor.parametersCount &&
+            (proxyInterfaceMethodDescriptor.parameterType(0) eq targetMethodDeclaringType)
     }
 
     /**
@@ -1265,7 +1265,7 @@ object ClassFileFactory {
                         if (rt != ft) {
                             if (rt.isBaseType && ft.isBaseType) {
                                 if (rt.isIntLikeType && ft.isIntLikeType &&
-                                    rt.asIntLikeType.isWiderThan(ft.asIntLikeType)
+                                        rt.asIntLikeType.isWiderThan(ft.asIntLikeType)
                                 ) {
                                     0 // smaller int values can directly be stored in "wider" types
                                 } else {
@@ -1392,8 +1392,8 @@ object ClassFileFactory {
             } else if (typeOnStack.isObjectType && toBeReturnedType.isBooleanType) {
                 typeOnStack.asObjectType.unboxValue
             } else if (typeOnStack.isArrayType && (typeOnStack.asArrayType.elementType eq ObjectType.Object)
-                       && toBeReturnedType.isArrayType &&
-                       typeOnStack.asArrayType.dimensions <= toBeReturnedType.asArrayType.dimensions
+                           && toBeReturnedType.isArrayType &&
+                           typeOnStack.asArrayType.dimensions <= toBeReturnedType.asArrayType.dimensions
             ) {
                 Array(CHECKCAST(toBeReturnedType.asReferenceType), null, null)
             } else {

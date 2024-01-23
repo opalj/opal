@@ -83,7 +83,7 @@ class InterpretMethodsAnalysis[Source] extends Analysis[Source, BasicReport] {
 
         val verbose = parameters.nonEmpty &&
             (parameters.head == "-verbose=true" ||
-            (parameters.size == 2 && parameters.tail.head == "-verbose=true"))
+                (parameters.size == 2 && parameters.tail.head == "-verbose=true"))
         val (message, detailedErrorInformationFile) =
             if (parameters.nonEmpty && parameters.head.startsWith("-domain")) {
                 InterpretMethodsAnalysis.interpret(

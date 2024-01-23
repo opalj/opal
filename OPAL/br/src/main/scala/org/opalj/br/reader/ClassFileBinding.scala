@@ -127,8 +127,8 @@ trait ClassFileBinding extends ClassFileReader {
 
             val attributes = classFile.attributes
             if (classFile.majorVersion > 50 /* <=> does not have BootstrapMethodTable*/ &&
-                attributes.nonEmpty &&
-                attributes.exists(_.kindId == BootstrapMethodTable.KindId)
+                    attributes.nonEmpty &&
+                    attributes.exists(_.kindId == BootstrapMethodTable.KindId)
             ) {
                 val newAttributes = attributes.filter(_.kindId != BootstrapMethodTable.KindId)
                 updatedClassFiles ::= classFile._UNSAFE_replaceAttributes(newAttributes)

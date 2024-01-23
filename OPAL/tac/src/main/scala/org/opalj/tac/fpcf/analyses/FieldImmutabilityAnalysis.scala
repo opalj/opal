@@ -192,8 +192,8 @@ class FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
             case ep @ EUBPS(t, DependentlyImmutableType(_), _) =>
                 // if the inner type of a generic field is dependently immutable
                 if (state.innerTypes.contains(t.asReferenceType) ||
-                    // or there are no generic information it is over-approximated to non-transitively immutable
-                    (state.genericTypeParameters.isEmpty && state.innerTypes.isEmpty)
+                        // or there are no generic information it is over-approximated to non-transitively immutable
+                        (state.genericTypeParameters.isEmpty && state.innerTypes.isEmpty)
                 )
                     state.upperBound = NonTransitivelyImmutableField
                 else if (ep.isRefinable)
@@ -224,8 +224,8 @@ class FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
                 case ep @ EUBP(t, DependentlyImmutableClass(_)) =>
                     // if the inner type of a generic field is dependently immutable
                     if (state.innerTypes.contains(t.asReferenceType) ||
-                        // or there are no generic information it is over-approximated to non-transitively immutable
-                        (state.genericTypeParameters.isEmpty && state.innerTypes.isEmpty)
+                            // or there are no generic information it is over-approximated to non-transitively immutable
+                            (state.genericTypeParameters.isEmpty && state.innerTypes.isEmpty)
                     )
                         state.upperBound = NonTransitivelyImmutableField
                     else if (ep.isRefinable)

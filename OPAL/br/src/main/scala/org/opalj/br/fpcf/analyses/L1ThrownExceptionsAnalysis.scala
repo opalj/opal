@@ -140,10 +140,10 @@ class L1ThrownExceptionsAnalysis private[analyses] (
 
                     if ((declaringClass eq ObjectType.Object) && (
                             (name == "<init>" && descriptor == MethodDescriptor.NoArgsAndReturnVoid) ||
-                            (name == "hashCode" && descriptor == MethodDescriptor.JustReturnsInteger) ||
-                            (name == "equals" &&
-                            descriptor == ThrownExceptionsFallback.ObjectEqualsMethodDescriptor) ||
-                            (name == "toString" && descriptor == MethodDescriptor.JustReturnsString)
+                                (name == "hashCode" && descriptor == MethodDescriptor.JustReturnsInteger) ||
+                                (name == "equals" &&
+                                    descriptor == ThrownExceptionsFallback.ObjectEqualsMethodDescriptor) ||
+                                (name == "toString" && descriptor == MethodDescriptor.JustReturnsString)
                         )
                     ) {
                         true
@@ -333,7 +333,7 @@ class L1ThrownExceptionsAnalysis private[analyses] (
             return Result(m, result);
         }
         if (fieldAccessMayThrowNullPointerException ||
-            (isFieldAccessed && isLocalVariable0Updated)
+                (isFieldAccessed && isLocalVariable0Updated)
         ) {
             initialExceptions += ObjectType.NullPointerException
         }

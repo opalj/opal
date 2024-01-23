@@ -52,7 +52,7 @@ trait IgnoreSynchronization extends MonitorInstructionsDomain {
     ): Computation[Nothing, ExceptionValues] = {
         val result = sideEffectOnlyOrExceptions(pc, value)
         if (result.returnsNormally /* <=> the value maybe non-null*/ &&
-            throwIllegalMonitorStateException
+                throwIllegalMonitorStateException
         ) {
 
             val imsException = VMIllegalMonitorStateException(pc)

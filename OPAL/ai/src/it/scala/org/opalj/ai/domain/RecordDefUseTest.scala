@@ -107,7 +107,7 @@ class RecordDefUseTest extends AnyFunSpec with Matchers {
                 val hasDefSite =
                     (0 until poppedOperands).exists { poIndex => d.operandOrigin(useSite, poIndex).contains(pc) } || {
                         useInstruction.readsLocal &&
-                        d.localOrigin(useSite, useInstruction.indexOfReadLocal).contains(pc)
+                            d.localOrigin(useSite, useInstruction.indexOfReadLocal).contains(pc)
                     }
                 if (!hasDefSite) {
                     fail(s"use at $useSite has no def site $pc ($instruction)")
@@ -124,7 +124,7 @@ class RecordDefUseTest extends AnyFunSpec with Matchers {
                             defSites.contains(ai.ValueOriginForImmediateVMException(pc))
                     } || {
                         useInstruction.readsLocal &&
-                        d.localOrigin(useSite, useInstruction.indexOfReadLocal).contains(pc)
+                            d.localOrigin(useSite, useInstruction.indexOfReadLocal).contains(pc)
                     }
                 if (!hasDefSite) {
                     fail(s"exception use at $useSite has no def site $pc ($instruction)")
@@ -170,8 +170,8 @@ class RecordDefUseTest extends AnyFunSpec with Matchers {
                 // expected to pop-up in the def-sites... and only if the instruction
                 // is a relevant use-site
                 if (opIndex < usedOperands &&
-                    // we already tested: !instruction.isStackManagementInstruction
-                    !instruction.isStoreLocalVariableInstruction
+                        // we already tested: !instruction.isStackManagementInstruction
+                        !instruction.isStoreLocalVariableInstruction
                 ) {
                     defUseOrigins foreach { defUseOrigin => // the origins of a value...
                         val defUseUseSites = d.usedBy(defUseOrigin)

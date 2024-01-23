@@ -222,8 +222,8 @@ object CODE {
             // live though the real instruction is not (yet) live.
             val targetInstruction = codeElements(targetIndex)
             if (targetInstruction.isPseudoInstruction &&
-                isLive(targetIndex) &&
-                targetInstruction.asPseudoInstruction.isPCLabel
+                    isLive(targetIndex) &&
+                    targetInstruction.asPseudoInstruction.isPCLabel
             ) {
                 targetIndex += 1
                 while (!codeElements(targetIndex).isInstructionLikeElement) {
@@ -292,14 +292,14 @@ object CODE {
                         currentIndex += 1
                     } while (
                         continueIteration
-                        && currentIndex < codeElementsSize
-                        && {
-                            currentInstruction = codeElements(currentIndex)
-                            // In the following we ignore pseudo instructions
-                            // (in particular PCLabels)
-                            // because they may have been set to live already!
-                            currentInstruction.isPseudoInstruction || !isLive(currentIndex)
-                        }
+                            && currentIndex < codeElementsSize
+                            && {
+                                currentInstruction = codeElements(currentIndex)
+                                // In the following we ignore pseudo instructions
+                                // (in particular PCLabels)
+                                // because they may have been set to live already!
+                                currentInstruction.isPseudoInstruction || !isLive(currentIndex)
+                            }
                     )
                 }
             }
@@ -355,11 +355,11 @@ object CODE {
                                     case i: InstructionLikeElement[T] =>
                                         val instruction = i.instruction
                                         if (isLive(nextIndex) &&
-                                            instruction.mayThrowExceptions &&
-                                            (
-                                                monitorInstructionIsUsed
-                                                || !instruction.isReturnInstruction
-                                            )
+                                                instruction.mayThrowExceptions &&
+                                                (
+                                                    monitorInstructionIsUsed
+                                                        || !instruction.isReturnInstruction
+                                                )
                                         ) {
                                             isLive(index) = true
                                             isLiveCount += 1

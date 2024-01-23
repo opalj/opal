@@ -342,7 +342,7 @@ class L0PurityAnalysis private[analyses] (final val project: SomeProject) extend
         // If this is not the method's declaration, but a non-overwritten method in a subtype,
         // don't re-analyze the code
         if ((method.classFile.thisType ne context.method.declaringClassType) &&
-            context.isInstanceOf[SimpleContext]
+                context.isInstanceOf[SimpleContext]
         )
             return baseMethodPurity(context);
 

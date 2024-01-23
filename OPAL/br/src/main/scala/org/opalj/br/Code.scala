@@ -259,7 +259,7 @@ final class Code private (
 
             remainingExceptionHandlers = remainingExceptionHandlers filter { eh =>
                 subroutineIds(eh.handlerPC) == -1 && // we did not already analyze the handler
-                !belongsToCurrentSubroutine(eh.startPC, eh.endPC, eh.handlerPC)
+                    !belongsToCurrentSubroutine(eh.startPC, eh.endPC, eh.handlerPC)
             }
         }
 
@@ -1738,7 +1738,7 @@ object Code {
                 if (i.writesLocal) {
                     var lastRegisterIndex = i.indexOfWrittenLocal
                     if (i.isStoreLocalVariableInstruction &&
-                        i.asStoreLocalVariableInstruction.computationalType.operandSize == 2
+                            i.asStoreLocalVariableInstruction.computationalType.operandSize == 2
                     ) {
                         // i.e., not IINC...
                         lastRegisterIndex += 1

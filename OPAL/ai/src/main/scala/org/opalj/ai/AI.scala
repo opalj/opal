@@ -1440,7 +1440,7 @@ abstract class AI[D <: Domain](
                                     locals
                                 )
                             if (tracer.isDefined &&
-                                ((rest ne newBTOperands) || (locals ne newBTLocals))
+                                    ((rest ne newBTOperands) || (locals ne newBTLocals))
                             ) {
                                 tracer.get.establishedConstraint(theDomain)(
                                     pc,
@@ -1461,7 +1461,7 @@ abstract class AI[D <: Domain](
                                     locals
                                 )
                             if (tracer.isDefined &&
-                                ((rest ne newFTOperands) || (locals ne newFTLocals))
+                                    ((rest ne newFTOperands) || (locals ne newFTLocals))
                             ) {
                                 tracer.get.establishedConstraint(theDomain)(
                                     pc,
@@ -1644,7 +1644,7 @@ abstract class AI[D <: Domain](
                                     locals
                                 )
                             if (tracer.isDefined &&
-                                ((rest ne newBTOperands) || (locals ne newBTLocals))
+                                    ((rest ne newBTOperands) || (locals ne newBTLocals))
                             ) {
                                 tracer.get.establishedConstraint(theDomain)(
                                     pc,
@@ -1665,7 +1665,7 @@ abstract class AI[D <: Domain](
                                     locals
                                 )
                             if (tracer.isDefined &&
-                                ((rest ne newFTOperands) || (locals ne newFTLocals))
+                                    ((rest ne newFTOperands) || (locals ne newFTLocals))
                             ) {
                                 tracer.get.establishedConstraint(theDomain)(
                                     pc,
@@ -1823,10 +1823,10 @@ abstract class AI[D <: Domain](
                                         // assumption that "all" exceptions are (transitively) thrown.
 
                                         if (instruction.isInvocationInstruction &&
-                                            !theDomain.abortProcessingExceptionsOfCalledMethodsOnUnknownException
-                                            ||
-                                            instruction.isAthrow &&
-                                            !theDomain.abortProcessingThrownExceptionsOnUnknownException
+                                                !theDomain.abortProcessingExceptionsOfCalledMethodsOnUnknownException
+                                                ||
+                                                instruction.isAthrow &&
+                                                !theDomain.abortProcessingThrownExceptionsOnUnknownException
                                         ) {
                                             gotoExceptionHandler(pc, branchTarget, catchTypeOption)
                                             false
@@ -2354,10 +2354,10 @@ abstract class AI[D <: Domain](
                                             locals
                                         )
                                     if (tracer.isDefined &&
-                                        (
-                                            (remainingOperands ne updatedOperands) ||
-                                            (locals ne updatedLocals)
-                                        )
+                                            (
+                                                (remainingOperands ne updatedOperands) ||
+                                                    (locals ne updatedLocals)
+                                            )
                                     ) {
                                         tracer.get.establishedConstraint(theDomain)(
                                             pc,
@@ -2383,7 +2383,7 @@ abstract class AI[D <: Domain](
                             }
 
                             if (branchToDefaultRequired ||
-                                intIsSomeValueNotInRange(pc, index, firstKey, npairs.last._1).isYesOrUnknown
+                                    intIsSomeValueNotInRange(pc, index, firstKey, npairs.last._1).isYesOrUnknown
                             ) {
                                 val defaultBranchTargetPC = pc + switch.defaultOffset
 
@@ -2424,10 +2424,10 @@ abstract class AI[D <: Domain](
                                         locals
                                     )
                                 if (tracer.isDefined &&
-                                    (
-                                        (remainingOperands ne updatedOperands) ||
-                                        (locals ne updatedLocals)
-                                    )
+                                        (
+                                            (remainingOperands ne updatedOperands) ||
+                                                (locals ne updatedLocals)
+                                        )
                                 ) {
                                     tracer.get.establishedConstraint(theDomain)(
                                         pc,

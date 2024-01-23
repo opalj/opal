@@ -85,9 +85,9 @@ class FPCFAnalysesIntegrationTest extends AnyFunSpec {
                         // PropertyStore as we are interested only in FPCF analysis results.
                         p = p.recreate { id =>
                             id != PropertyStoreKey.uniqueId &&
-                            id != FPCFAnalysesManagerKey.uniqueId &&
-                            id != CHACallGraphKey.uniqueId &&
-                            id != CallGraphKey.uniqueId
+                                id != FPCFAnalysesManagerKey.uniqueId &&
+                                id != CHACallGraphKey.uniqueId &&
+                                id != CallGraphKey.uniqueId
                         }
                     }
 
@@ -162,9 +162,9 @@ class FPCFAnalysesIntegrationTest extends AnyFunSpec {
         // fallback properties may be set for different entities on different executions
         // because they are set lazily even for eager analyses
         ep.ub != PropertyKey.fallbackProperty(ps, PropertyIsNotComputedByAnyAnalysis, ep.e, pk) &&
-        // Not analyzing the JDK, there are VirtualDeclaredMethods with Purity data
-        // preconfigured that we don't want to record as they contain no additional information
-        (ep.pk != Purity.key || ep.e.asInstanceOf[Context].method.hasSingleDefinedMethod)
+            // Not analyzing the JDK, there are VirtualDeclaredMethods with Purity data
+            // preconfigured that we don't want to record as they contain no additional information
+            (ep.pk != Purity.key || ep.e.asInstanceOf[Context].method.hasSingleDefinedMethod)
     }
 
     def reportAnalysisTime(t: Nanoseconds): Unit = { info(s"analysis took ${t.toSeconds}") }

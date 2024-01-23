@@ -624,7 +624,7 @@ class DefaultConcreteArraysTestDomain(
     // array, hence we can track the contents
     override protected def reifyArray(pc: Int, count: Int, arrayType: ArrayType): Boolean = {
         super.reifyArray(pc, count, arrayType) ||
-        arrayType.componentType.isObjectType && count < maxTrackedArraySize
+            arrayType.componentType.isObjectType && count < maxTrackedArraySize
     }
 }
 

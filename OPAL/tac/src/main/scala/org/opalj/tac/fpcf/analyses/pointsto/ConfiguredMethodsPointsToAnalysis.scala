@@ -83,7 +83,7 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
             if (nativeMethodData.contains(dm) && nativeMethodData(dm).nonEmpty)
                 handleCallers(callers, null, nativeMethodData(dm).get)
             else if (dm.hasSingleDefinedMethod && dm.definedMethod.body.isEmpty &&
-                     dm.descriptor.returnType.isReferenceType
+                         dm.descriptor.returnType.isReferenceType
             ) {
                 val m = dm.definedMethod
                 val cf = m.classFile.thisType.fqn
@@ -92,7 +92,7 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
                 val tpe = m.returnType.asReferenceType.toJVMTypeName
                 val arrayTypes = // TODO We should probably handle ArrayTypes as well
                     if (m.returnType.isArrayType &&
-                        m.returnType.asArrayType.elementType.isObjectType
+                            m.returnType.asArrayType.elementType.isObjectType
                     )
                         Seq(m.returnType.asArrayType.elementType.asObjectType.fqn)
                     else Seq.empty

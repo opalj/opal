@@ -969,8 +969,8 @@ abstract class PropertyStore {
     protected[fpcf] def collectException(t: Throwable): Unit = {
         if (exception != null) {
             if (exception != t
-                && !t.isInstanceOf[InterruptedException]
-                && !t.isInstanceOf[RejectedExecutionException] // <= used, e.g., by a ForkJoinPool
+                    && !t.isInstanceOf[InterruptedException]
+                    && !t.isInstanceOf[RejectedExecutionException] // <= used, e.g., by a ForkJoinPool
             ) {
                 exception.addSuppressed(t)
             }

@@ -145,7 +145,7 @@ class CallGraphAnalysis private[cg] (
 
         val cbsTargets: Set[ReferenceType] =
             if (!isPrecise && resovleCallBySignature && call.isInterface &&
-                call.declaringClass.isObjectType
+                    call.declaringClass.isObjectType
             ) {
                 val cf = project.classFile(call.declaringClass.asObjectType)
                 cf.flatMap { _.findMethod(call.name, call.descriptor) }.map {

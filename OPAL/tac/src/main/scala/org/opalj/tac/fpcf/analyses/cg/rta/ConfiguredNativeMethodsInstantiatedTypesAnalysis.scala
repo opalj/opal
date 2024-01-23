@@ -96,7 +96,7 @@ class ConfiguredNativeMethodsInstantiatedTypesAnalysis private[analyses] (
                         FieldType(as.instantiatedType).asReferenceType
             }.flatten
         } else if (dm.hasSingleDefinedMethod && dm.definedMethod.body.isEmpty &&
-                   dm.descriptor.returnType.isReferenceType
+                       dm.descriptor.returnType.isReferenceType
         ) {
             val m = dm.definedMethod
             val returnType = m.returnType.asReferenceType

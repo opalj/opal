@@ -286,11 +286,11 @@ abstract class TypeIterator(val project: SomeProject) extends ContextProvider {
                         tpe eq tub
                     } else {
                         ch.isSubtypeOf(tpe, tub) &&
-                        // Exclude unknown types even if the upper bound is Object for
-                        // consistency with CHA and bounds != Object
-                        ((tub ne ObjectType.Object) || tpe.isArrayType ||
-                        project.classFile(tpe.asObjectType).isDefined) &&
-                        ch.isASubtypeOf(tpe, use.value.asReferenceValue.upperTypeBound).isNotNo
+                            // Exclude unknown types even if the upper bound is Object for
+                            // consistency with CHA and bounds != Object
+                            ((tub ne ObjectType.Object) || tpe.isArrayType ||
+                                project.classFile(tpe.asObjectType).isDefined) &&
+                            ch.isASubtypeOf(tpe, use.value.asReferenceValue.upperTypeBound).isNotNo
                     }
 
                 case mv: IsMObjectValue =>
@@ -933,7 +933,7 @@ abstract class AbstractAllocationSitesPointsToTypeIterator(project: SomeProject)
                     createNewPointsToSet()
             case _ =>
                 if (mergeExceptions &&
-                    project.classHierarchy.isSubtypeOf(allocatedType, ObjectType.Throwable)
+                        project.classHierarchy.isSubtypeOf(allocatedType, ObjectType.Throwable)
                 ) {
                     val ptsO = exceptionPointsToSets.get(allocatedType.id)
                     if (ptsO.isDefined)

@@ -246,7 +246,7 @@ class VariableTypeProblem(project: SomeProject, override val subsumeFacts: Boole
      */
     override def outsideAnalysisContextCall(callee: Method): Option[OutsideAnalysisContextCallHandler] =
         if (classInsideAnalysisContext(callee.classFile) &&
-            super.outsideAnalysisContextCall(callee).isEmpty
+                super.outsideAnalysisContextCall(callee).isEmpty
         )
             None
         else {

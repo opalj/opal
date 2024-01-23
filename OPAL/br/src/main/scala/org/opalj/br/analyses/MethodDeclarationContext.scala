@@ -130,8 +130,8 @@ final class MethodDeclarationContext(val method: Method) extends Ordered[MethodD
 
         mc == ma || (
             mc.name == ma.name &&
-            mc.descriptor == ma.descriptor &&
-            canDirectlyOverride(ma.visibilityModifier, that.packageName)
+                mc.descriptor == ma.descriptor &&
+                canDirectlyOverride(ma.visibilityModifier, that.packageName)
         )
     }
 

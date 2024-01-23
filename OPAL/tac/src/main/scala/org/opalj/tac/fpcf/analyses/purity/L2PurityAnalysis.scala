@@ -331,7 +331,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         // Primitive values are always local (required for parameters of contextually pure calls)
         // TODO (value is null for the self reference of a throwable constructor...)
         if (expr.asVar.value != null &&
-            (expr.asVar.value.computationalType ne ComputationalTypeReference)
+                (expr.asVar.value.computationalType ne ComputationalTypeReference)
         )
             return true;
 
@@ -706,8 +706,8 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         if (state.staticDataUsage.isDefined) newLowerBound = newLowerBound meet Pure
 
         if (state.fieldAssignabilityDependees.nonEmpty ||
-            state.classImmutabilityDependees.nonEmpty ||
-            state.typeImmutabilityDependees.nonEmpty
+                state.classImmutabilityDependees.nonEmpty ||
+                state.typeImmutabilityDependees.nonEmpty
         ) {
             newLowerBound = newLowerBound meet SideEffectFree
         }

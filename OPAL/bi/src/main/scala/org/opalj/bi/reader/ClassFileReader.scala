@@ -249,7 +249,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
 
         if (major_version > LatestSupportedJavaMajorVersion || (
                 major_version == LatestSupportedJavaMajorVersion
-                && minor_version > LatestSupportedJavaVersion.minor
+                    && minor_version > LatestSupportedJavaVersion.minor
             )
         ) {
             // Just log an error message for newer version, we might still be able to handle the
@@ -726,7 +726,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
 
                 if (isClassFileRepository(filename, None)) {
                     if (!filename.endsWith("-javadoc.jar") &&
-                        !filename.endsWith("-sources.jar")
+                            !filename.endsWith("-sources.jar")
                     ) {
                         progressReporter(file)
                         processJar(file, exceptionHandler).foreach(classFileProcessor)
@@ -774,7 +774,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
                 (
                     if (isClassFileRepository(filename, None)) {
                         if (!filename.endsWith("-javadoc.jar") &&
-                            !filename.endsWith("-sources.jar")
+                                !filename.endsWith("-sources.jar")
                         ) {
                             progressReporter(file)
                             processJar(file, exceptionHandler)

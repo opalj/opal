@@ -23,7 +23,7 @@ sealed abstract class LDC_W[T] extends LoadConstantInstruction[T] with Instructi
         val other = code.instructions(otherPC)
         (this eq other) || (
             LDC_W.opcode == other.opcode &&
-            this.value == other.asInstanceOf[LDC_W[_]].value
+                this.value == other.asInstanceOf[LDC_W[_]].value
         )
     }
 

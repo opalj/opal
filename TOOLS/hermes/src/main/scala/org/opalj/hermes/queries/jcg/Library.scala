@@ -107,7 +107,7 @@ class Library(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
 
                         val itr = targets.iterator
                         while (itr.hasNext
-                               && !(publicTarget && packagePrivateTarget && subclassTarget)
+                                   && !(publicTarget && packagePrivateTarget && subclassTarget)
                         ) {
 
                             val target = itr.next()
@@ -226,7 +226,7 @@ class Library(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
             project.classFile(subtype) match {
                 case Some(subclassFile) =>
                     if (subclassFile.findMethod(methodName, methodDescriptor).isEmpty
-                        && classHierarchy.isSubtypeOf(subtype, interfaceType)
+                            && classHierarchy.isSubtypeOf(subtype, interfaceType)
                     )
                         return Yes;
                 case None =>

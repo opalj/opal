@@ -90,10 +90,10 @@ class ReturnValueFreshnessState(val context: Context) {
 
     def hasDependees: Boolean = {
         returnValueDependees.nonEmpty ||
-        fieldDependees.nonEmpty ||
-        defSiteDependees.nonEmpty ||
-        tacaiDependee.nonEmpty ||
-        _calleesDependee.exists(_.isRefinable)
+            fieldDependees.nonEmpty ||
+            defSiteDependees.nonEmpty ||
+            tacaiDependee.nonEmpty ||
+            _calleesDependee.exists(_.isRefinable)
     }
 
     def hasTacaiDependee: Boolean = tacaiDependee.isDefined
@@ -190,7 +190,7 @@ class ReturnValueFreshnessAnalysis private[analyses] (
         case context: Context if context.method.hasSingleDefinedMethod =>
             val dm = context.method
             if (dm.definedMethod.classFile.thisType == dm.declaringClassType ||
-                !context.isInstanceOf[SimpleContext]
+                    !context.isInstanceOf[SimpleContext]
             )
                 doDetermineFreshness(context)
             else {
@@ -351,10 +351,10 @@ class ReturnValueFreshnessAnalysis private[analyses] (
         } else {
             calleesEP.ub.callees(callerContext, pc).exists { callee =>
                 (callee ne callerContext) && // Recursive calls don't influence return value freshness
-                {
-                    val rvf = propertyStore(callee, ReturnValueFreshness.key)
-                    !state.containsMethodDependee(rvf) && handleReturnValueFreshness(rvf)
-                }
+                    {
+                        val rvf = propertyStore(callee, ReturnValueFreshness.key)
+                        !state.containsMethodDependee(rvf) && handleReturnValueFreshness(rvf)
+                    }
             }
         }
     }

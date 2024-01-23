@@ -46,12 +46,12 @@ trait LibraryInstantiatedTypesFinder extends InstantiatedTypesFinder {
         val closedPackages = project.get(ClosedPackagesKey)
         project.allClassFiles.iterator.filter { cf =>
             !cf.isInterfaceDeclaration && !cf.isAbstract &&
-            (cf.isPublic /* && cf.constructors.nonEmpty*/ ||
-            !closedPackages.isClosed(cf.thisType.packageName)) &&
-            cf.constructors.exists { ctor =>
-                ctor.isPublic ||
-                !ctor.isPrivate && !closedPackages.isClosed(cf.thisType.packageName)
-            }
+                (cf.isPublic /* && cf.constructors.nonEmpty*/ ||
+                    !closedPackages.isClosed(cf.thisType.packageName)) &&
+                cf.constructors.exists { ctor =>
+                    ctor.isPublic ||
+                        !ctor.isPrivate && !closedPackages.isClosed(cf.thisType.packageName)
+                }
         }.map(_.thisType).iterator.to(Iterable) ++ super.collectInstantiatedTypes(project)
     }
 }

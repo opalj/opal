@@ -108,9 +108,9 @@ class LBMethodReturnValuesAnalysis private[analyses] (
                     // the type hierarchy is incomplete...
                     ai.interrupt()
                 } else if (returnedReferenceValue.isNull.isUnknown &&
-                           returnedValueUTB.isSingletonSet &&
-                           returnedValueUTB.head == methodReturnType &&
-                           !returnedReferenceValue.isPrecise
+                               returnedValueUTB.isSingletonSet &&
+                               returnedValueUTB.head == methodReturnType &&
+                               !returnedReferenceValue.isPrecise
                 ) {
                     // we don't get more precise information
                     ai.interrupt()
@@ -150,12 +150,12 @@ class LBMethodReturnValuesAnalysis private[analyses] (
         if (!aiResult.wasAborted) {
             val vi: Option[ValueInformation] = aiResult.domain.returnedValue.map(_.toCanonicalForm)
             if (dependees.isEmpty
-                || vi.isEmpty // <=> the method always ends with an exception or not at all
-                // THE FOLLOWING TESTS WOULD REQUIRE ADDITIONAL KNOWLEDGE ABOUT THE DEPENDEES!
-                // IN GENERAL, EVERY POSSIBLE REFINEMENT COULD LEAD TO THE CASE THAT THE CURRENT
-                // METHOD WILL ALWAYS THROW AN EXCEPTION!
-                // || vi.get.asReferenceValue.isNull.isYes
-                // || (vi.get.asReferenceValue.isPrecise && vi.get.asReferenceValue.isNull.isNo)
+                    || vi.isEmpty // <=> the method always ends with an exception or not at all
+                    // THE FOLLOWING TESTS WOULD REQUIRE ADDITIONAL KNOWLEDGE ABOUT THE DEPENDEES!
+                    // IN GENERAL, EVERY POSSIBLE REFINEMENT COULD LEAD TO THE CASE THAT THE CURRENT
+                    // METHOD WILL ALWAYS THROW AN EXCEPTION!
+                    // || vi.get.asReferenceValue.isNull.isYes
+                    // || (vi.get.asReferenceValue.isPrecise && vi.get.asReferenceValue.isNull.isNo)
             ) {
                 Result(method, MethodReturnValue(vi))
             } else {

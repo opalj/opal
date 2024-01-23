@@ -472,25 +472,25 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode =>
                             if ( // we have to check that the handler is actually handling
                                  // (implicit) null pointer exceptions
                                  throwNullPointerExceptionOnMethodCall
-                                 && refIsNull(currentPC, receiver).isYesOrUnknown
-                                 && {
-                                     var foundDefinitiveHandler = false
-                                     code.handlersFor(currentPC) filter { eh =>
-                                         !foundDefinitiveHandler && (
-                                             (eh.catchType.isEmpty && { foundDefinitiveHandler = true; true }) || {
-                                                 val isHandled =
-                                                     isASubtypeOf(ObjectType.NullPointerException, eh.catchType.get)
-                                                 if (isHandled.isYes) {
-                                                     foundDefinitiveHandler = true
-                                                     true
-                                                 } else if (isHandled.isYesOrUnknown)
-                                                     true
-                                                 else
-                                                     false
-                                             }
-                                         )
-                                     }
-                                 }.exists(eh => eh.handlerPC == successorPC)
+                                     && refIsNull(currentPC, receiver).isYesOrUnknown
+                                     && {
+                                         var foundDefinitiveHandler = false
+                                         code.handlersFor(currentPC) filter { eh =>
+                                             !foundDefinitiveHandler && (
+                                                 (eh.catchType.isEmpty && { foundDefinitiveHandler = true; true }) || {
+                                                     val isHandled =
+                                                         isASubtypeOf(ObjectType.NullPointerException, eh.catchType.get)
+                                                     if (isHandled.isYes) {
+                                                         foundDefinitiveHandler = true
+                                                         true
+                                                     } else if (isHandled.isYesOrUnknown)
+                                                         true
+                                                     else
+                                                         false
+                                                 }
+                                             )
+                                         }
+                                     }.exists(eh => eh.handlerPC == successorPC)
                             ) {
                                 newDefOps += ValueOriginForImmediateVMException(currentPC)
                             }
@@ -694,7 +694,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode =>
                     // Let's check if we have a JSR to the subroutine that we are
                     // currently executing. This can be legal in very restricted settings...
                     if (currentSubroutinePCs.nonEmpty &&
-                        currentSubroutinePCs.head.contains(successorPC)
+                            currentSubroutinePCs.head.contains(successorPC)
                     ) {
                         // println(currentPC+": (RE)START OF A SUBROUTINE: "+successorPC)
                         // In this case, we treat the JSR basically in the same way as a goto.
@@ -1008,10 +1008,10 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode =>
             assert(currentSubroutineLevel == currentSubroutinePCs.size)
             assert(currentSubroutineLevel == subroutineIDs.size)
             if (jsrPCs.top.nonEmpty &&
-                // We have to check if we have a nested JSR call;
-                // if the current subroutine level (root = 0) is smaller than the
-                // high of the stack then we have a (nested) subroutine call.
-                currentSubroutineLevel < jsrPCs.size
+                    // We have to check if we have a nested JSR call;
+                    // if the current subroutine level (root = 0) is smaller than the
+                    // high of the stack then we have a (nested) subroutine call.
+                    currentSubroutineLevel < jsrPCs.size
             ) {
                 val IntRefPair(jsrPC, newJSRPCs) = jsrPCs.pop().headAndTail
                 jsrPCs.push(newJSRPCs)
@@ -1220,8 +1220,8 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode =>
                 if (scheduleNextPC) {
                     // ... this is never (directly) true for JSR/RET; they are handled specially!
                     if (!isExceptionalControlFlow ||
-                        currentSubroutineLevel == 0 ||
-                        belongsToSubroutine(currentPC) == belongsToSubroutine(successorPC)
+                            currentSubroutineLevel == 0 ||
+                            belongsToSubroutine(currentPC) == belongsToSubroutine(successorPC)
                     ) {
                         if (cfJoins.contains(successorPC)) {
                             nextJoinPCs.push(nextJoinPCs.pop() + successorPC)

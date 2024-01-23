@@ -489,7 +489,7 @@ final class ClassFile private (
                             // it does not give information about some other inner class of this type:
                             (
                                 innerClass.outerClassType.isEmpty ||
-                                (innerClass.outerClassType.get eq thisType)
+                                    (innerClass.outerClassType.get eq thisType)
                             )
                     )
                     .map[ObjectType](_.innerClassType)
@@ -538,8 +538,8 @@ final class ClassFile private (
                     // (indirect) outertype (they cannot be innerclasses of this class..)
                     var nestedClassesOfOuterClass = outerClass.nestedClasses(classFileRepository)
                     while (nestedClassesOfOuterClass.nonEmpty &&
-                           !nestedClassesOfOuterClass.contains(thisType) &&
-                           !nestedClassesOfOuterClass.exists(nestedClassesCandidates.contains)
+                               !nestedClassesOfOuterClass.contains(thisType) &&
+                               !nestedClassesOfOuterClass.exists(nestedClassesCandidates.contains)
                     ) {
                         // We are still lacking sufficient information to make a decision
                         // which class is a nested class of which other class
@@ -698,8 +698,8 @@ final class ClassFile private (
             val methodNameComparison = method.name.compareTo("<clinit>")
 
             if (methodNameComparison == 0 &&
-                method.descriptor == noArgsAndReturnVoidDescriptor &&
-                (majorVersion < 51 || method.isStatic)
+                    method.descriptor == noArgsAndReturnVoidDescriptor &&
+                    (majorVersion < 51 || method.isStatic)
             )
                 return Some(method);
             else if (methodNameComparison < 0)
@@ -845,7 +845,7 @@ final class ClassFile private (
             case Some(candidateMethod) =>
                 import VisibilityModifier.isAtLeastAsVisibleAs
                 if (Method.canDirectlyOverride(thisType.packageName, visibility, packageName) &&
-                    isAtLeastAsVisibleAs(candidateMethod.visibilityModifier, visibility)
+                        isAtLeastAsVisibleAs(candidateMethod.visibilityModifier, visibility)
                 )
                     Success(candidateMethod)
                 else

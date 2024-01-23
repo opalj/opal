@@ -45,9 +45,9 @@ object MethodCallInformation extends ProjectAnalysisApplication {
             foreachPCWithOperands(domain)(code, result.operandsArray) { (pc, instruction, ops) =>
                 def isPotentiallyRefinable(methodDescriptor: MethodDescriptor): Boolean = {
                     methodDescriptor.parametersCount > 0 &&
-                    methodDescriptor.parameterTypes.exists { t =>
-                        t.isArrayType || (t.isObjectType && ch.hasSubtypes(t.asObjectType).isYesOrUnknown)
-                    }
+                        methodDescriptor.parameterTypes.exists { t =>
+                            t.isArrayType || (t.isObjectType && ch.hasSubtypes(t.asObjectType).isYesOrUnknown)
+                        }
                 }
 
                 instruction match {

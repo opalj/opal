@@ -53,24 +53,24 @@ private[analyses] class IsOverridableMethodAnalysis(
                 val cf = project.classFile(ot)
                 val subtypeMethod = cf.flatMap(_.findMethod(methodName, methodDescriptor))
                 if (subtypeMethod.isEmpty || !subtypeMethod.get.isFinal ||
-                    subtypeMethod.get.isPrivate || // private methods don't override
-                    (
-                        // let's test if this "final override", is for a different method...
-                        method.isPackagePrivate &&
-                        subtypeMethod.get.declaringClassFile.thisType.packageName !=
-                            objectType.packageName &&
-                            !subtypeMethod.get.isPackagePrivate /**/ && {
-                                // ... the original method is package private
-                                // ... both methods are defined in different packages
-                                // ... the subtypeMethod is protected or public
-                                val candidateMethods = instanceMethods(ot).iterator.filter(mdc =>
-                                    mdc.name == methodName && mdc.descriptor == methodDescriptor
-                                )
-                                // if we still have the original method in the list then this method
-                                // does not override that method...
-                                candidateMethods.exists(mdc => mdc.packageName == methodPackageName)
-                            }
-                    )
+                        subtypeMethod.get.isPrivate || // private methods don't override
+                        (
+                            // let's test if this "final override", is for a different method...
+                            method.isPackagePrivate &&
+                                subtypeMethod.get.declaringClassFile.thisType.packageName !=
+                                objectType.packageName &&
+                                !subtypeMethod.get.isPackagePrivate /**/ && {
+                                    // ... the original method is package private
+                                    // ... both methods are defined in different packages
+                                    // ... the subtypeMethod is protected or public
+                                    val candidateMethods = instanceMethods(ot).iterator.filter(mdc =>
+                                        mdc.name == methodName && mdc.descriptor == methodDescriptor
+                                    )
+                                    // if we still have the original method in the list then this method
+                                    // does not override that method...
+                                    candidateMethods.exists(mdc => mdc.packageName == methodPackageName)
+                                }
+                        )
                 ) {
                     // the type as a whole is extensible and
                     // the method is not (finally) overridden by this type...

@@ -156,7 +156,7 @@ class FieldLocalityAnalysis private[analyses] (
             val subtypes = classHierarchy.allSubtypes(thisType, reflexive = false)
             val existsCloneableSubtypeWithoutClone = subtypes.exists { subtype =>
                 isCloneable(subtype) &&
-                !project.classFile(subtype).exists(_.methodsWithBody.exists(isClone))
+                    !project.classFile(subtype).exists(_.methodsWithBody.exists(isClone))
             }
 
             state.overridesClone = false
@@ -262,7 +262,7 @@ class FieldLocalityAnalysis private[analyses] (
         tacai:   TACode[TACMethodParameter, V]
     )(implicit state: FieldLocalityState): Boolean = {
         value.isEmpty ||
-        !checkFreshnessAndEscapeOfValue(uVarForDefSites(value.get, tacai.pcToIndex), pc, tacai.stmts, context)
+            !checkFreshnessAndEscapeOfValue(uVarForDefSites(value.get, tacai.pcToIndex), pc, tacai.stmts, context)
     }
 
     /**
@@ -275,7 +275,7 @@ class FieldLocalityAnalysis private[analyses] (
     )(implicit state: FieldLocalityState): Boolean = {
         def callsSuperClone(call: NonVirtualFunctionCall[V]): Boolean = {
             call.name == "clone" && call.descriptor.parametersCount == 0 &&
-            state.field.classFile.superclassType.get == call.declaringClass
+                state.field.classFile.superclassType.get == call.declaringClass
         }
 
         val method = context.method.definedMethod
@@ -448,7 +448,7 @@ class FieldLocalityAnalysis private[analyses] (
                 } else {
                     callees.callees(callerContext, pc).exists { callee =>
                         callee.method.descriptor.returnType.isReferenceType &&
-                        !isFreshReturnValue(propertyStore(callee, ReturnValueFreshness.key))
+                            !isFreshReturnValue(propertyStore(callee, ReturnValueFreshness.key))
                     }
                 }
             }

@@ -544,7 +544,7 @@ object TACAI {
                     // the if falls through. In this case the block may end with, e.g., a return
                     // instruction, and therefore the successor is the ExitNode.
                     if (successorPC == nextPC ||
-                        /*jump over a bunch of dead code */ allDead(nextPC, successorPC)
+                            /*jump over a bunch of dead code */ allDead(nextPC, successorPC)
                     ) {
                         // This "if" always either falls through or "jumps" to the next
                         // instruction ... => replace it by a NOP

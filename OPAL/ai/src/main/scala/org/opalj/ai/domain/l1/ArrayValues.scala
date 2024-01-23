@@ -131,9 +131,9 @@ trait ArrayValues extends l1.ReferenceValues {
             case DomainInitializedArrayValueTag(that) =>
                 (that eq this) || (
                     (that canEqual this) &&
-                    this.origin == that.origin &&
-                    this.theLength == that.theLength &&
-                    (this.theUpperTypeBound eq that.theUpperTypeBound)
+                        this.origin == that.origin &&
+                        this.theLength == that.theLength &&
+                        (this.theUpperTypeBound eq that.theUpperTypeBound)
                 )
             case _ =>
                 false

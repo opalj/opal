@@ -437,9 +437,9 @@ final class UIDSet3[T <: UID](value1: T, value2: T, value3: T) extends NonEmptyU
             case that: UIDSet[_] =>
                 (that eq this) || {
                     that.size == 3 &&
-                    that.containsId(value1.id) &&
-                    that.containsId(value2.id) &&
-                    that.containsId(value3.id)
+                        that.containsId(value1.id) &&
+                        that.containsId(value2.id) &&
+                        that.containsId(value3.id)
                 }
             case _ => false
         }
@@ -869,8 +869,8 @@ sealed abstract private[immutable] class UIDSetNodeLike[T <: UID] extends NonEmp
             else {
                 val newShiftedEId = shiftedEId >>> 1
                 if ((newLeft eq null) &&
-                    (valueId >>> level & 1) == 0 &&
-                    !newRight.containsId(eId, newShiftedEId)
+                        (valueId >>> level & 1) == 0 &&
+                        !newRight.containsId(eId, newShiftedEId)
                 ) {
                     // we can move the current value to the empty left branch...
                     return new UIDSetInnerNode(size + 1, e, new UIDSetLeaf(value), newRight);
@@ -886,8 +886,8 @@ sealed abstract private[immutable] class UIDSetNodeLike[T <: UID] extends NonEmp
             else {
                 val newShiftedEId = shiftedEId >>> 1
                 if ((newRight eq null) &&
-                    (valueId >>> level & 1) == 1 &&
-                    !newLeft.containsId(eId, newShiftedEId)
+                        (valueId >>> level & 1) == 1 &&
+                        !newLeft.containsId(eId, newShiftedEId)
                 ) {
                     // we can move the current value to the empty right branch...
                     return new UIDSetInnerNode(size + 1, e, newLeft, new UIDSetLeaf(value));
@@ -1065,8 +1065,8 @@ final class UIDSetInnerNode[T <: UID] private[immutable] (
                 this.right = new UIDSetLeaf(e)
                 this.theSize += 1
             } else if ((left eq null) &&
-                       (valueId >>> level & 1) == 0 &&
-                       !right.containsId(eId, shiftedEId >>> 1)
+                           (valueId >>> level & 1) == 0 &&
+                           !right.containsId(eId, shiftedEId >>> 1)
             ) {
                 this.left = new UIDSetLeaf(value)
                 this.value = e
@@ -1082,8 +1082,8 @@ final class UIDSetInnerNode[T <: UID] private[immutable] (
                 this.left = new UIDSetLeaf(e)
                 this.theSize += 1
             } else if ((right eq null) &&
-                       (valueId >>> level & 1) == 1 &&
-                       !left.containsId(eId, shiftedEId >>> 1)
+                           (valueId >>> level & 1) == 1 &&
+                           !left.containsId(eId, shiftedEId >>> 1)
             ) {
                 this.right = new UIDSetLeaf(value)
                 this.value = e

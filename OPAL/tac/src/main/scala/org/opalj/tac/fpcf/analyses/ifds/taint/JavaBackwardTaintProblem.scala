@@ -56,7 +56,7 @@ abstract class JavaBackwardTaintProblem(project: SomeProject)
                     }
                 ) {
                     if (arrayIndex.isDefined && arrayDefinedBy.size == 1 &&
-                        in == ArrayElement(arrayDefinedBy.head, arrayIndex.get)
+                            in == ArrayElement(arrayDefinedBy.head, arrayIndex.get)
                     ) {
                         // tainted array element is overwritten -> untaint
                         createNewTaints(arrayStore.value, jstmt)

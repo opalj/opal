@@ -114,13 +114,13 @@ object TypesUtil {
 
         def isForName(expr: Expr[V]): Boolean = { // static call to Class.forName
             expr.isStaticFunctionCall &&
-            (expr.asStaticFunctionCall.declaringClass eq ObjectType.Class) &&
-            expr.asStaticFunctionCall.name == "forName"
+                (expr.asStaticFunctionCall.declaringClass eq ObjectType.Class) &&
+                expr.asStaticFunctionCall.name == "forName"
         }
 
         def isGetClass(expr: Expr[V]): Boolean = { // virtual call to Object.getClass
             expr.isVirtualFunctionCall && expr.asVirtualFunctionCall.name == "getClass" &&
-            expr.asVirtualFunctionCall.descriptor ==
+                expr.asVirtualFunctionCall.descriptor ==
                 MethodDescriptor.withNoArgs(ObjectType.Class)
         }
 
@@ -273,13 +273,13 @@ object TypesUtil {
 
     private[this] def isForName(expr: Expr[V]): Boolean = { // static call to Class.forName
         expr.isStaticFunctionCall &&
-        (expr.asStaticFunctionCall.declaringClass eq ObjectType.Class) &&
-        expr.asStaticFunctionCall.name == "forName"
+            (expr.asStaticFunctionCall.declaringClass eq ObjectType.Class) &&
+            expr.asStaticFunctionCall.name == "forName"
     }
 
     private[this] def isGetClass(expr: Expr[V]): Boolean = { // virtual call to Object.getClass
         expr.isVirtualFunctionCall && expr.asVirtualFunctionCall.name == "getClass" &&
-        expr.asVirtualFunctionCall.descriptor == MethodDescriptor.withNoArgs(ObjectType.Class)
+            expr.asVirtualFunctionCall.descriptor == MethodDescriptor.withNoArgs(ObjectType.Class)
     }
 
     /**

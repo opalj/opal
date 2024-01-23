@@ -31,7 +31,7 @@ final case class LoadLong(value: Long) extends LDC2_W[Long] {
         val other = code.instructions(otherPC)
         (this eq other) || (
             LDC2_W.opcode == other.opcode && other.isInstanceOf[LoadLong] &&
-            this.value == other.asInstanceOf[LoadLong].value
+                this.value == other.asInstanceOf[LoadLong].value
         )
     }
 

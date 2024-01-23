@@ -79,7 +79,7 @@ object GetReceivers extends ProjectAnalysisApplication {
                         value.upperTypeBound.isSingletonSet &&
                         !value.upperTypeBound.head.isArrayType && (
                             p.classFile(value.upperTypeBound.head.asObjectType).get.isFinal ||
-                            p.classHierarchy.hasSubtypes(value.upperTypeBound.head.asObjectType).isNoOrUnknown
+                                p.classHierarchy.hasSubtypes(value.upperTypeBound.head.asObjectType).isNoOrUnknown
                         )
                 if (triviallyPrecise)
                     s += " (trivially)"

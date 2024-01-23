@@ -300,8 +300,8 @@ private final class TwoArgumentsMethodDescriptor(
 
     override def equalParameters(other: MethodDescriptor): Boolean = {
         (other.parametersCount == 2) &&
-        (other.parameterType(0) == firstParameterType) &&
-        (other.parameterType(1) == secondParameterType)
+            (other.parameterType(0) == firstParameterType) &&
+            (other.parameterType(1) == secondParameterType)
     }
 
     override lazy val hashCode: Int = {

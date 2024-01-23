@@ -321,7 +321,7 @@ abstract class ProjectLike extends ClassFileRepository { project =>
                 // we have to avoid endless recursion if we can't find the target method
                 if ((MethodHandleSubtypes.contains(receiverType) ||
                         VarHandleSubtypes.contains(receiverType)) &&
-                    !isSignaturePolymorphic(receiverType, descriptor)
+                        !isSignaturePolymorphic(receiverType, descriptor)
                 ) {
                     // At least in Java 15 the signature polymorphic methods are not overloaded and
                     // it actually doesn't make sense to do so. Therefore we decided to only
@@ -625,9 +625,9 @@ abstract class ProjectLike extends ClassFileRepository { project =>
                     methods match {
                         case List(method) =>
                             if (method.isNativeAndVarargs &&
-                                (method.descriptor == SignaturePolymorphicMethodObject ||
-                                method.descriptor == SignaturePolymorphicMethodVoid ||
-                                method.descriptor == SignaturePolymorphicMethodBoolean)
+                                    (method.descriptor == SignaturePolymorphicMethodObject ||
+                                        method.descriptor == SignaturePolymorphicMethodVoid ||
+                                        method.descriptor == SignaturePolymorphicMethodBoolean)
                             )
                                 Success(method) // the resolved method is signature polymorphic
                             else if (method.descriptor == descriptor)
@@ -662,9 +662,9 @@ abstract class ProjectLike extends ClassFileRepository { project =>
             (definingClassType eq ObjectType.MethodHandle) ||
                 (definingClassType eq ObjectType.VarHandle)
         ) &&
-        method.descriptor.parametersCount == 1 &&
-        method.descriptor.parameterType(0) == ArrayType.ArrayOfObject &&
-        method.isNativeAndVarargs
+            method.descriptor.parametersCount == 1 &&
+            method.descriptor.parameterType(0) == ArrayType.ArrayOfObject &&
+            method.isNativeAndVarargs
     }
 
     /**
@@ -676,11 +676,11 @@ abstract class ProjectLike extends ClassFileRepository { project =>
         descriptor:        MethodDescriptor
     ): Boolean = {
         (definingClassType eq ObjectType.MethodHandle) &&
-        descriptor == SignaturePolymorphicMethodObject ||
-        (definingClassType eq ObjectType.VarHandle) &&
-        (descriptor == SignaturePolymorphicMethodObject ||
-        descriptor == SignaturePolymorphicMethodVoid ||
-        descriptor == SignaturePolymorphicMethodBoolean)
+            descriptor == SignaturePolymorphicMethodObject ||
+            (definingClassType eq ObjectType.VarHandle) &&
+            (descriptor == SignaturePolymorphicMethodObject ||
+                descriptor == SignaturePolymorphicMethodVoid ||
+                descriptor == SignaturePolymorphicMethodBoolean)
     }
 
     /**
@@ -693,12 +693,12 @@ abstract class ProjectLike extends ClassFileRepository { project =>
         descriptor:        MethodDescriptor
     ): Boolean = {
         (definingClassType eq ObjectType.MethodHandle) &&
-        descriptor == SignaturePolymorphicMethodObject &&
-        (name == "invoke" || name == "invokeExact") ||
-        (definingClassType eq ObjectType.VarHandle) &&
-        (descriptor == SignaturePolymorphicMethodObject ||
-        descriptor == SignaturePolymorphicMethodVoid ||
-        descriptor == SignaturePolymorphicMethodBoolean)
+            descriptor == SignaturePolymorphicMethodObject &&
+            (name == "invoke" || name == "invokeExact") ||
+            (definingClassType eq ObjectType.VarHandle) &&
+            (descriptor == SignaturePolymorphicMethodObject ||
+                descriptor == SignaturePolymorphicMethodVoid ||
+                descriptor == SignaturePolymorphicMethodBoolean)
     }
 
     /**
@@ -793,8 +793,8 @@ abstract class ProjectLike extends ClassFileRepository { project =>
          */
         val declaringClassType =
             if (name != "<init>" &&
-                (callerClassType ne initialDeclaringClassType) && // <= handles private calls
-                classHierarchy.isInterface(initialDeclaringClassType).isNo
+                    (callerClassType ne initialDeclaringClassType) && // <= handles private calls
+                    classHierarchy.isInterface(initialDeclaringClassType).isNo
             ) {
                 // Let's select the direct superclass (if it is available; otherwise we use the
                 // declared class as a fallback.)
@@ -1067,7 +1067,7 @@ abstract class ProjectLike extends ClassFileRepository { project =>
                         mdc.compareAccessibilityAware(callerPackageName, name, descriptor)
                     }
                     if (mdcOption.nonEmpty && (mdcOption.get.method ne method)
-                        && !mdcOption.get.method.isPrivate
+                            && !mdcOption.get.method.isPrivate
                     ) {
                         methods ++= overriddenBy(mdcOption.get.method)
                         false // we don't have to look into furthersubtypes

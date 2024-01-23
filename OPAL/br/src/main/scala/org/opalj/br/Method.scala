@@ -124,8 +124,8 @@ sealed abstract class JVMMethod
     def similar(other: JVMMethod, config: SimilarityTestConfiguration): Boolean = {
         // IMPROVE Define a method "findDissimilarity" as in case of ClassFile to report the difference
         if (this.accessFlags != other.accessFlags ||
-            this.name != other.name ||
-            this.descriptor != other.descriptor
+                this.name != other.name ||
+                this.descriptor != other.descriptor
         ) {
             return false;
         }
@@ -135,7 +135,7 @@ sealed abstract class JVMMethod
                 (thisBody.isEmpty && otherBody.isEmpty) ||
                     (
                         thisBody.nonEmpty && otherBody.nonEmpty &&
-                        thisBody.get.similar(otherBody.get, config)
+                            thisBody.get.similar(otherBody.get, config)
                     )
             )
         ) {
@@ -297,7 +297,7 @@ sealed abstract class JVMMethod
      */
     final def isVirtualCallTarget: Boolean = {
         isNotAbstract && !isPrivate && !isStatic && !isInitializer &&
-        !isStaticInitializer // before Java 8 <clinit> was not required to be static
+            !isStaticInitializer // before Java 8 <clinit> was not required to be static
     }
 
     /**
@@ -306,7 +306,7 @@ sealed abstract class JVMMethod
      */
     final def isVirtualMethodDeclaration: Boolean = {
         !isPrivate && !isStatic && !isInitializer &&
-        !isStaticInitializer // before Java 8 <clinit> was not required to be static
+            !isStaticInitializer // before Java 8 <clinit> was not required to be static
     }
 
     def returnType: Type = descriptor.returnType
@@ -562,11 +562,11 @@ object Method {
             ) && isInheritedBySerializableOnlyClass.isYesOrUnknown) ||
             (
                 method.isPublic /*we are implementing an interface...*/ &&
-                (
-                    (name == "readExternal" && descriptor == ReadObjectInputDescriptor) ||
-                    (name == "writeExternal" && descriptor == WriteObjectOutputDescriptor)
-                ) &&
-                isInheritedByExternalizableClass.isYesOrUnknown
+                    (
+                        (name == "readExternal" && descriptor == ReadObjectInputDescriptor) ||
+                            (name == "writeExternal" && descriptor == WriteObjectOutputDescriptor)
+                    ) &&
+                    isInheritedByExternalizableClass.isYesOrUnknown
             )
     }
 

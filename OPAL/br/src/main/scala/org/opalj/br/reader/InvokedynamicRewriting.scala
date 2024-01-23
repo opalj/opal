@@ -1019,11 +1019,11 @@ trait InvokedynamicRewriting
          */
         var receiverType =
             if (invocationInstruction != INVOKEVIRTUAL.opcode &&
-                invocationInstruction != INVOKEINTERFACE.opcode
+                    invocationInstruction != INVOKEINTERFACE.opcode
             ) {
                 targetMethodOwner
             } else if (invokedynamic.methodDescriptor.parameterTypes.nonEmpty &&
-                       invokedynamic.methodDescriptor.parameterTypes.head.isObjectType
+                           invokedynamic.methodDescriptor.parameterTypes.head.isObjectType
             ) {
                 // If we have an instance of a object and use a method reference,
                 // get the receiver type from the invokedynamic instruction.
@@ -1031,7 +1031,7 @@ trait InvokedynamicRewriting
                 // list.
                 invokedynamic.methodDescriptor.parameterTypes.head.asObjectType
             } else if (instantiatedMethodType.parameterTypes.nonEmpty &&
-                       instantiatedMethodType.parameterTypes.head.isObjectType
+                           instantiatedMethodType.parameterTypes.head.isObjectType
             ) {
                 // If we get a instance method reference like `LinkedHashSet::addAll`, get
                 // the receiver type from the functional interface. The first parameter is
@@ -1177,7 +1177,7 @@ trait InvokedynamicRewriting
         if (serializable) {
             val deserialize = updatedClassFile.methods.find { m =>
                 m.hasFlags(AccessFlags.ACC_SYNTHETIC_STATIC_PRIVATE) &&
-                m.name == "$deserializeLambda$"
+                    m.name == "$deserializeLambda$"
             }
             if (deserialize.isDefined)
                 updatedClassFile = updatedClassFile._UNSAFE_replaceMethod(deserialize.get, lift(deserialize.get))

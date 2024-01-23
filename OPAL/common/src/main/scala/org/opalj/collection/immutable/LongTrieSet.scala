@@ -551,13 +551,13 @@ private[immutable] final class LongTrieSetN(
             case that: LongTrieSetN =>
                 (that eq this) || (
                     that.size == this.size &&
-                    // Recall that the iteration order of the values is dependent on the
-                    // insertion order, but the shape of the tree – reflected by the size
-                    // of nodes and also the captured bit patterns has to be equal. Hence,
-                    // comparison can be done by traversing both trees in parallel which
-                    // is more efficient than iterating over this (or that) tree and
-                    // performing a contains check for each element (the naive approach).
-                    this.root == that.root
+                        // Recall that the iteration order of the values is dependent on the
+                        // insertion order, but the shape of the tree – reflected by the size
+                        // of nodes and also the captured bit patterns has to be equal. Hence,
+                        // comparison can be done by traversing both trees in parallel which
+                        // is more efficient than iterating over this (or that) tree and
+                        // performing a contains check for each element (the naive approach).
+                        this.root == that.root
                 )
             case _ => false
         }
@@ -1003,11 +1003,11 @@ private[immutable] final class LongTrieSetNode6(
 
     override def forall(p: Long => Boolean): Boolean = {
         n1.forall(p) &&
-        n2.forall(p) &&
-        n3.forall(p) &&
-        n4.forall(p) &&
-        n5.forall(p) &&
-        n6.forall(p)
+            n2.forall(p) &&
+            n3.forall(p) &&
+            n4.forall(p) &&
+            n5.forall(p) &&
+            n6.forall(p)
     }
 
     override def foldLeft[B](z: B)(op: (B, Long) => B): B = {
@@ -1108,12 +1108,12 @@ private[immutable] final class LongTrieSetNode7(
 
     override def forall(p: Long => Boolean): Boolean = {
         n1.forall(p) &&
-        n2.forall(p) &&
-        n3.forall(p) &&
-        n4.forall(p) &&
-        n5.forall(p) &&
-        n6.forall(p) &&
-        n7.forall(p)
+            n2.forall(p) &&
+            n3.forall(p) &&
+            n4.forall(p) &&
+            n5.forall(p) &&
+            n6.forall(p) &&
+            n7.forall(p)
     }
 
     override def foldLeft[B](z: B)(op: (B, Long) => B): B = {
@@ -1233,13 +1233,13 @@ private[immutable] final class LongTrieSetNode8(
 
     override def forall(p: Long => Boolean): Boolean = {
         n1.forall(p) &&
-        n2.forall(p) &&
-        n3.forall(p) &&
-        n4.forall(p) &&
-        n5.forall(p) &&
-        n6.forall(p) &&
-        n7.forall(p) &&
-        n8.forall(p)
+            n2.forall(p) &&
+            n3.forall(p) &&
+            n4.forall(p) &&
+            n5.forall(p) &&
+            n6.forall(p) &&
+            n7.forall(p) &&
+            n8.forall(p)
     }
 
     override def foldLeft[B](z: B)(op: (B, Long) => B): B = {

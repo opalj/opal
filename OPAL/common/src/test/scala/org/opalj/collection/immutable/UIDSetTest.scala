@@ -62,8 +62,8 @@ class UIDSetTest extends AnyFunSpec with Matchers with ScalaCheckDrivenPropertyC
             forAll { (i: Int, j: Int) =>
                 i != j ==> {
                     UIDSet[SUID](i, j).tail.isSingletonSet :| "tail" &&
-                    (UIDSet[SUID](i) + j).filter(_ == SUID(i)).isSingletonSet :| "filter first value" &&
-                    (UIDSet[SUID](i) + j).filter(_ == SUID(j)).isSingletonSet :| "filter second value"
+                        (UIDSet[SUID](i) + j).filter(_ == SUID(i)).isSingletonSet :| "filter first value" &&
+                        (UIDSet[SUID](i) + j).filter(_ == SUID(j)).isSingletonSet :| "filter second value"
                 }
             }
         }
@@ -145,7 +145,7 @@ class UIDSetTest extends AnyFunSpec with Matchers with ScalaCheckDrivenPropertyC
                 val us2 = UIDSet.empty[SUID] ++ s2.map(SUID(_))
                 classify(s1 == s2, "both sets are equal") {
                     (s1 == s2) == (us1 == us2) &&
-                    (us1 != us2 || us1.hashCode() == us2.hashCode())
+                        (us1 != us2 || us1.hashCode() == us2.hashCode())
                 }
             }
         }
@@ -236,7 +236,7 @@ class UIDSetTest extends AnyFunSpec with Matchers with ScalaCheckDrivenPropertyC
                 classify(s.isEmpty, "the set is empty") {
                     (s.isEmpty && us.compare(EmptyUIDSet) == EqualSets) || (
                         (s.tail.inits.forall(init => toSUIDSet(init).compare(us) == StrictSubset)) &&
-                        (s.tail.inits.forall(init => us.compare(toSUIDSet(init)) == StrictSuperset))
+                            (s.tail.inits.forall(init => us.compare(toSUIDSet(init)) == StrictSuperset))
                     )
                 }
             }
@@ -348,7 +348,7 @@ class UIDSetTest extends AnyFunSpec with Matchers with ScalaCheckDrivenPropertyC
                 classify(orig.size > 20, "original set is large") {
                     classify(sTransformed.size > 20, "transformed set is large") {
                         usTransformed.forall(sTransformed.contains) :| "us <= s" &&
-                        sTransformed.forall(usTransformed.contains) :| "s <= us"
+                            sTransformed.forall(usTransformed.contains) :| "s <= us"
                     }
                 }
             }
@@ -396,7 +396,7 @@ class UIDSetTest extends AnyFunSpec with Matchers with ScalaCheckDrivenPropertyC
                 classify(base.size > 25000, s"original set is very large (>25000)") {
                     classify(sTransformed.size > 25000, "transformed set is still very large (>25000)") {
                         usTransformed.forall(sTransformed.contains) :| "us <= s" &&
-                        sTransformed.forall(usTransformed.contains) :| "s <= us"
+                            sTransformed.forall(usTransformed.contains) :| "s <= us"
                     }
                 }
             }
@@ -422,7 +422,7 @@ class UIDSetTest extends AnyFunSpec with Matchers with ScalaCheckDrivenPropertyC
                 classify(newA.size == 0, "new A is now empty") {
                     classify(newA.size < a.size, "new A is smaller than a") {
                         newAUS.size == newA.size &&
-                        newAUS.iterator.map[Int](_.id).toSet == newA
+                            newAUS.iterator.map[Int](_.id).toSet == newA
                     }
                 }
             }

@@ -36,8 +36,8 @@ object AllocationsUtil {
         } else {
             val allocationMethod = allocationContext.method
             if (allocationPC >= 0 &&
-                allocationMethod.hasSingleDefinedMethod &&
-                allocationMethod.definedMethod.body.isDefined
+                    allocationMethod.hasSingleDefinedMethod &&
+                    allocationMethod.definedMethod.body.isDefined
             ) {
                 val epk = EPK(allocationMethod.definedMethod, TACAI.key)
                 val tacEOptP = if (state.hasDependee(epk)) state.getProperty(epk) else ps(epk)

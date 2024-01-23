@@ -121,9 +121,9 @@ object ThrownExceptionsFallback extends ((PropertyStore, FallbackReason, Entity)
                     val INVOKESPECIAL(declaringClass, _, name, descriptor) = instruction
                     if ((declaringClass eq ObjectType.Object) && (
                             (name == "<init>" && descriptor == MethodDescriptor.NoArgsAndReturnVoid) ||
-                            (name == "hashCode" && descriptor == MethodDescriptor.JustReturnsInteger) ||
-                            (name == "equals" && descriptor == ObjectEqualsMethodDescriptor) ||
-                            (name == "toString" && descriptor == MethodDescriptor.JustReturnsString)
+                                (name == "hashCode" && descriptor == MethodDescriptor.JustReturnsInteger) ||
+                                (name == "equals" && descriptor == ObjectEqualsMethodDescriptor) ||
+                                (name == "toString" && descriptor == MethodDescriptor.JustReturnsString)
                         )
                     ) {
                         true
@@ -242,7 +242,7 @@ object ThrownExceptionsFallback extends ((PropertyStore, FallbackReason, Entity)
             return result;
         }
         if (fieldAccessMayThrowNullPointerException ||
-            (isFieldAccessed && isLocalVariable0Updated)
+                (isFieldAccessed && isLocalVariable0Updated)
         ) {
             exceptions += ObjectType.NullPointerException
         }

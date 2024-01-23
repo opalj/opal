@@ -82,7 +82,7 @@ class Java8Invokedynamics(
                     } else if (isScalaSymbolExpression(invDyn)) {
                         13 /* Lambda7 */
                     } else if (m.instructionsOption.nonEmpty
-                               && isScalaStructuralCallSite(invDyn, m.instructionsOption.get, pc)
+                                   && isScalaStructuralCallSite(invDyn, m.instructionsOption.get, pc)
                     ) {
                         14 /* Lambda8 */
                     } else if (isGroovyInvokedynamic(invDyn)) {
@@ -94,7 +94,7 @@ class Java8Invokedynamics(
                         if (bm.handle.isInvokeStaticMethodHandle) {
                             val InvokeStaticMethodHandle(LambdaMetafactory, false, name, descriptor) = bm.handle
                             if (descriptor == MethodDescriptor.LambdaAltMetafactoryDescriptor &&
-                                name == "altMetafactory"
+                                    name == "altMetafactory"
                             ) {
                                 10 /*Lambda4 */
                             } else if (code.pcOfNextInstruction(pc) != -1) {

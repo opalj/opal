@@ -196,7 +196,7 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
         val mappedS = s.map(_ * 2)
         classify(mappedIts.size > 3, "using trie") {
             mappedS.size == mappedIts.size &&
-            (EmptyIntTrieSet ++ mappedS.iterator) == mappedIts
+                (EmptyIntTrieSet ++ mappedS.iterator) == mappedIts
         }
     }
 
@@ -209,7 +209,7 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
         val its = EmptyIntTrieSet ++ s.iterator
         classify(its.isEmpty, "the set is empty") {
             s.forall(v => its.exists(_ == v)) &&
-            s.forall(v => its.exists(_ != v) == s.exists(_ != v))
+                s.forall(v => its.exists(_ != v) == s.exists(_ != v))
         }
     }
 
@@ -257,7 +257,7 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
             classify(flatMappedSSet.size > 50, "set with more than 50 elements") {
                 classify(flatMappedSSet.size < listOfSets.map(_.size).sum, "flat map is not the join of all sets") {
                     flatMappedSSet.forall(flatMappedITSet.contains) &&
-                    flatMappedSSet.size == flatMappedITSet.size
+                        flatMappedSSet.size == flatMappedITSet.size
                 }
             }
         }
@@ -331,7 +331,7 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
         val news = other.foldLeft(s)(_ - _)
         classify(news.size < s.size, "removed something") {
             (its.size == s.size) :| "the original set is unmodified" &&
-            news.forall(newits.contains) && newits.forall(news.contains)
+                news.forall(newits.contains) && newits.forall(news.contains)
         }
     }
 

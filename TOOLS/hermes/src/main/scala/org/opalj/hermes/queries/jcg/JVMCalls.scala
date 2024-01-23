@@ -71,7 +71,7 @@ class JVMCalls(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
                     val mii = pcAndInvocation.value
                     val declClass = mii.declaringClass
                     if (declClass.isObjectType
-                        && relevantTypes.contains(declClass.asObjectType)
+                            && relevantTypes.contains(declClass.asObjectType)
                     ) {
                         val name = mii.name
                         if (name eq "addShutdownHook") {

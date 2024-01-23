@@ -755,20 +755,20 @@ trait IsSObjectValue extends IsSReferenceValue[ObjectType] {
                 if isPrecise
                     || (
                         supertype.isArrayType &&
-                        // and it is impossible that this value is actually an array...
-                        (subtype ne ObjectType.Object) &&
-                        (subtype ne ObjectType.Serializable) &&
-                        (subtype ne ObjectType.Cloneable)
+                            // and it is impossible that this value is actually an array...
+                            (subtype ne ObjectType.Object) &&
+                            (subtype ne ObjectType.Serializable) &&
+                            (subtype ne ObjectType.Cloneable)
                     ) || (
                         // If both types represent class types and it is not
                         // possible that some value of this type may be a subtype
                         // of the given supertype, the answer "No" is correct.
                         supertype.isObjectType &&
-                        classHierarchy.isKnown(supertype.asObjectType) &&
-                        classHierarchy.isKnown(subtype) &&
-                        classHierarchy.isInterface(supertype.asObjectType).isNo &&
-                        classHierarchy.isInterface(subtype).isNo &&
-                        classHierarchy.isASubtypeOf(supertype, subtype).isNo
+                            classHierarchy.isKnown(supertype.asObjectType) &&
+                            classHierarchy.isKnown(subtype) &&
+                            classHierarchy.isInterface(supertype.asObjectType).isNo &&
+                            classHierarchy.isInterface(subtype).isNo &&
+                            classHierarchy.isASubtypeOf(supertype, subtype).isNo
                     ) =>
                 No
             case _
@@ -840,11 +840,11 @@ trait IsSArrayValue extends IsSReferenceValue[ArrayType] {
                     theUpperTypeBound.elementType.isBaseType ||
                     (
                         supertype.isArrayType &&
-                        supertype.asArrayType.elementType.isBaseType &&
-                        (
-                            theUpperTypeBound.dimensions >= supertype.asArrayType.dimensions ||
-                            (theUpperTypeBound.componentType ne ObjectType.Object)
-                        )
+                            supertype.asArrayType.elementType.isBaseType &&
+                            (
+                                theUpperTypeBound.dimensions >= supertype.asArrayType.dimensions ||
+                                    (theUpperTypeBound.componentType ne ObjectType.Object)
+                            )
                     ) => No
             case _ => Unknown
         }
@@ -1036,9 +1036,9 @@ trait IsMultipleReferenceValue extends IsReferenceValue {
         // ...toSet is required because we potentially drop domain specific information
         // and afterwards the values are identical.
         if (uniqueBaseValues.size == 1 &&
-            uniqueBaseValues.head.isNull == this.isNull &&
-            uniqueBaseValues.head.isPrecise == this.isPrecise &&
-            uniqueBaseValues.head.upperTypeBound == this.upperTypeBound
+                uniqueBaseValues.head.isNull == this.isNull &&
+                uniqueBaseValues.head.isPrecise == this.isPrecise &&
+                uniqueBaseValues.head.upperTypeBound == this.upperTypeBound
         ) {
             uniqueBaseValues.head
         } else {

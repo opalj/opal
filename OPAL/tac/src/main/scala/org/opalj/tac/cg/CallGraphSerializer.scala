@@ -94,7 +94,7 @@ object CallGraphSerializer {
 
                         val (directCallees, indirectCallees) = targets.partition { callee =>
                             callee.method.name == name && // TODO check descriptor correctly for refinement
-                            callee.method.descriptor.parametersCount == desc.parametersCount
+                                callee.method.descriptor.parametersCount == desc.parametersCount
                         }
 
                         for (tgt <- indirectCallees) {
