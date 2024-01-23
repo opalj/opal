@@ -377,7 +377,7 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
             }
 
             override def callFunction(v: Value, methodName: String, parameters: java.util.List[Value]): Value = {
-                var result = Value.makeStr("Test")//Value.makeAbsent()
+                var result = Value.makeAbsent()
 
                 if (v.isJavaObject || v.isJSJavaTYPE) {
                     v.getObjectLabels.forEach(ol => {
@@ -425,7 +425,7 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
                                 if (parameter.isJavaObject) {
                                     parameter.getObjectLabels.forEach(ol =>
                                         parameterPointsToSet = ol.getNode.asInstanceOf[JNode[PointsToSet, ContextType, IntTrieSet, TheTACAI]].getPointsToSet)
-                                }
+                                } //TODO merge pointsto sets
                                 val paramType = declaredMethod.descriptor.parameterType(paramIndex)
                                 val fp = getFormalParameter(paramIndex + 1, fps, context)
                                 val filter = (t: ReferenceType) => classHierarchy.isSubtypeOf(t, paramType.asReferenceType)
