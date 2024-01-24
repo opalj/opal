@@ -99,8 +99,12 @@ class CloneNonAssignableArrayWithRead {
 
     public CloneNonAssignableArrayWithRead clone(){
         CloneNonAssignableArrayWithRead newInstance = new CloneNonAssignableArrayWithRead();
+
         newInstance.booleans = new boolean[this.booleans.length];
+
         boolean dominated = newInstance.booleans[0];
+        System.out.println(dominated);
+
         return newInstance;
     }
 }
@@ -112,9 +116,15 @@ class CloneAssignableArrayWithNonDominatedRead {
 
     public CloneAssignableArrayWithNonDominatedRead clone(){
         CloneAssignableArrayWithNonDominatedRead newInstance = new CloneAssignableArrayWithNonDominatedRead();
+
         boolean nonDominated = newInstance.booleans[0];
+        System.out.println(nonDominated);
+
         newInstance.booleans = new boolean[this.booleans.length];
+
         boolean dominated = newInstance.booleans[0];
+        System.out.println(dominated);
+
         return newInstance;
     }
 }
