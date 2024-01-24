@@ -3,18 +3,18 @@ package org.opalj
 package hermes
 package queries
 
-import org.opalj.bi.ACC_PUBLIC
+import scala.collection.immutable.ArraySeq
+
 import org.opalj.bi.ACC_PRIVATE
 import org.opalj.bi.ACC_PROTECTED
+import org.opalj.bi.ACC_PUBLIC
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredFields
 import org.opalj.br.analyses.DeclaredFieldsKey
-import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.FieldAccessInformationKey
+import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.br.fpcf.analyses.ContextProvider
-
-import scala.collection.immutable.ArraySeq
 
 /**
  * Counts how often fields are accessed.
@@ -66,7 +66,9 @@ class FieldAccessStatistics(implicit hermes: HermesConfig) extends DefaultFeatur
                         case Some(ACC_PUBLIC)    => 3
                     }
                 } else if (!field.isPrivate && allAccesses(field).forall(ac =>
-                    contextProvider.contextFromId(ac._1).method.definedMethod.classFile eq cf)) {
+                               contextProvider.contextFromId(ac._1).method.definedMethod.classFile eq cf
+                           )
+                ) {
                     field.visibilityModifier match {
                         case None                => 4
                         case Some(ACC_PROTECTED) => 5

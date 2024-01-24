@@ -2,9 +2,9 @@
 package org.opalj
 package graphs
 
-import org.opalj.collection.mutable.IntArrayStack
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.IntTrieSet1
+import org.opalj.collection.mutable.IntArrayStack
 
 /**
  * A (standard) dominator tree.
@@ -58,10 +58,10 @@ object DominatorTree {
             foreachPredecessorOf,
             maxNode,
             (
-                startNode: Int,
+                startNode:           Int,
                 hasVirtualStartNode: Boolean,
-                foreachSuccessorOf: Int => ((Int => Unit) => Unit),
-                idom: Array[Int]
+                foreachSuccessorOf:  Int => ((Int => Unit) => Unit),
+                idom:                Array[Int]
             ) => {
                 new DominatorTree(startNode, hasVirtualStartNode, foreachSuccessorOf, idom)
             }
@@ -108,7 +108,10 @@ object DominatorTree {
         foreachSuccessorOf:       Int => ((Int => Unit) => Unit),
         foreachPredecessorOf:     Int => ((Int => Unit) => Unit),
         maxNode:                  Int,
-        dominatorTreeFactory:     ( /*startNode*/ Int, /*hasVirtualStartNode*/ Boolean, /*foreachSuccessorOf*/ Int => ((Int => Unit) => Unit), Array[Int]) => D
+        dominatorTreeFactory: (
+            /*startNode*/ Int, /*hasVirtualStartNode*/ Boolean, /*foreachSuccessorOf*/ Int => ((Int => Unit) => Unit),
+            Array[Int]
+        ) => D
     ): D = {
 
         if (startNodeHasPredecessors) {
@@ -151,7 +154,10 @@ object DominatorTree {
         foreachSuccessorOf:   Int => ((Int => Unit) => Unit),
         foreachPredecessorOf: Int => ((Int => Unit) => Unit),
         maxNode:              Int,
-        dominatorTreeFactory: ( /*startNode*/ Int, /*hasVirtualStartNode*/ Boolean, /*foreachSuccessorOf*/ Int => ((Int => Unit) => Unit), Array[Int]) => D
+        dominatorTreeFactory: (
+            /*startNode*/ Int, /*hasVirtualStartNode*/ Boolean, /*foreachSuccessorOf*/ Int => ((Int => Unit) => Unit),
+            Array[Int]
+        ) => D
     ): D = {
         val max = maxNode + 1
 
@@ -252,7 +258,7 @@ object DominatorTree {
 
             val v = vertex(semi(w))
             val b = bucket(v)
-            bucket(v) = if (b ne null) { b + w } else { IntTrieSet1(w) }
+            bucket(v) = if (b ne null) b + w else IntTrieSet1(w)
 
             ancestor(w) = parent(w)
 

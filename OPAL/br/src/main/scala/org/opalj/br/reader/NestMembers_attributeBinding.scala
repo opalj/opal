@@ -3,9 +3,9 @@ package org.opalj
 package br
 package reader
 
-import org.opalj.bi.reader.NestMembers_attributeReader
-
 import scala.collection.immutable.ArraySeq
+
+import org.opalj.bi.reader.NestMembers_attributeReader
 
 /**
  * The factory method to create the `NestMembers` attribute (Java 11).
@@ -32,4 +32,3 @@ trait NestMembers_attributeBinding
     }
 
 }
-

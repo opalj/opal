@@ -5,6 +5,16 @@ package fpcf
 package analyses
 package cg
 
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.Method
+import org.opalj.br.ObjectType
+import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
+import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.cg.LoadedClasses
+import org.opalj.br.fpcf.properties.cg.NoCallers
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
@@ -22,16 +32,6 @@ import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
-import org.opalj.br.DeclaredMethod
-import org.opalj.br.Method
-import org.opalj.br.ObjectType
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.properties.cg.Callers
-import org.opalj.br.fpcf.properties.cg.LoadedClasses
-import org.opalj.br.fpcf.properties.cg.NoCallers
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
@@ -54,7 +54,6 @@ class LoadedClassesAnalysis(
      * and handle the method as being newly reachable (i.e. analyse the field accesses of the method
      * and update its declaring class type as reachable)
      * Here we add ne classes as being loaded.
-     *
      */
     def handleCaller(
         declaredMethod: DeclaredMethod
@@ -91,7 +90,9 @@ class LoadedClassesAnalysis(
                             getSuperclassesNotYetLoaded(declClassType, currentLoadedClasses)
 
                         PartialResult[SomeProject, LoadedClasses](
-                            project, LoadedClasses.key, update(newLoadedClasses)
+                            project,
+                            LoadedClasses.key,
+                            update(newLoadedClasses)
                         )
                     } else {
                         NoResult
@@ -127,7 +128,8 @@ class LoadedClassesAnalysis(
     }
 
     private[this] def processMethod(
-        declaredMethod: DeclaredMethod, tacaiEP: EPS[Method, TACAI]
+        declaredMethod: DeclaredMethod,
+        tacaiEP:        EPS[Method, TACAI]
     ): PropertyComputationResult = {
         assert(tacaiEP.hasUBP && tacaiEP.ub.tac.isDefined)
 
@@ -146,7 +148,9 @@ class LoadedClassesAnalysis(
             )
         } else if (newLoadedClasses.nonEmpty) {
             PartialResult[SomeProject, LoadedClasses](
-                project, LoadedClasses.key, update(newLoadedClasses)
+                project,
+                LoadedClasses.key,
+                update(newLoadedClasses)
             )
         } else {
             NoResult
@@ -183,10 +187,10 @@ class LoadedClassesAnalysis(
      * Furthermore, the method may access static fields, which again may lead to class loading.
      *
      * @return The set of classes being loaded.
-     *
      */
     def handleNewReachableMethod(
-        declClassType: ObjectType, stmts: Array[Stmt[V]]
+        declClassType: ObjectType,
+        stmts:         Array[Stmt[V]]
     ): UIDSet[ObjectType] = {
         var newLoadedClasses = UIDSet.empty[ObjectType]
         val currentLoadedClasses = getCurrentLoadedClasses()
@@ -196,15 +200,15 @@ class LoadedClassesAnalysis(
         }
 
         // whenever a method is called the first time, its declaring class gets loaded
-        //TODO what about resolution A <- B <- C: C::foo() and foo is def. in A.
+        // TODO what about resolution A <- B <- C: C::foo() and foo is def. in A.
         if (isNewLoadedClass(declClassType)) {
-            //TODO only for interfaces with default methods
+            // TODO only for interfaces with default methods
             newLoadedClasses ++= getSuperclassesNotYetLoaded(declClassType, currentLoadedClasses)
         }
 
         for (stmt <- stmts) {
             stmt match {
-                //TODO is dc sufficient?
+                // TODO is dc sufficient?
                 case PutStatic(_, dc, _, _, _) if isNewLoadedClass(dc) =>
                     newLoadedClasses += dc
                 case Assignment(_, _, GetStatic(_, dc, _, _)) if isNewLoadedClass(dc) =>
@@ -219,7 +223,8 @@ class LoadedClassesAnalysis(
     }
 
     private[this] def getSuperclassesNotYetLoaded(
-        declClassType: ObjectType, currentLoadedClasses: UIDSet[ObjectType]
+        declClassType:        ObjectType,
+        currentLoadedClasses: UIDSet[ObjectType]
     ): UIDSet[ObjectType] = {
         ch.allSupertypes(declClassType, reflexive = true).filterNot(currentLoadedClasses.contains)
     }

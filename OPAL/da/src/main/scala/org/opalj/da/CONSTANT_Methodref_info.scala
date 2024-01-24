@@ -7,7 +7,6 @@ import scala.xml.NodeSeq
 import org.opalj.bi.ConstantPoolTag
 
 /**
- *
  * @author Michael Eichberg
  */
 case class CONSTANT_Methodref_info(

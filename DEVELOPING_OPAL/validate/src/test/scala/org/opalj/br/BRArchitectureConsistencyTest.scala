@@ -3,10 +3,11 @@ package org.opalj
 package br
 
 import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
-import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.BeforeAndAfterAll
+import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
+
 import org.opalj.av.checking.Specification
 import org.opalj.util.ScalaMajorVersion
 
@@ -59,7 +60,8 @@ class BRArchitectureConsistencyTest extends AnyFlatSpec with Matchers with Befor
                 Symbol("CFG") is_only_allowed_to (USE, Symbol("Br"), Symbol("Instructions"))
 
                 Symbol("Reader") is_only_allowed_to (USE, Symbol("Br"), Symbol("Instructions"))
-                Symbol("Analyses") is_only_allowed_to (USE, Symbol("Br"), Symbol("CFG"), Symbol("Instructions"), Symbol("Reader"))
+                Symbol("Analyses") is_only_allowed_to
+                    (USE, Symbol("Br"), Symbol("CFG"), Symbol("Instructions"), Symbol("Reader"))
 
                 // 'Reader is allowed to use everything
 
@@ -67,7 +69,7 @@ class BRArchitectureConsistencyTest extends AnyFlatSpec with Matchers with Befor
 
         val result = expected.analyze()
         if (result.nonEmpty) {
-            println("Violations:\n\t"+result.map(_.toString(useAnsiColors = true)).mkString("\n\t"))
+            println("Violations:\n\t" + result.map(_.toString(useAnsiColors = true)).mkString("\n\t"))
             fail("The implemented and the specified architecture are not consistent (see the console for details).")
         }
     }

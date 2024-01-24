@@ -2,13 +2,13 @@
 package org.opalj
 package br
 
+import scala.collection.immutable.ArraySeq
+import scala.util.control.ControlThrowable
+
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
-import scala.util.control.ControlThrowable
 import org.opalj.bi.TestResources.locateTestResources
-
-import scala.collection.immutable.ArraySeq
 
 /**
  * @author Michael Eichberg
@@ -33,9 +33,7 @@ class ClassFileTest extends AnyFunSuite with Matchers {
         assert(
             immutableList.findMethod(
                 "<init>",
-                MethodDescriptor(
-                    ArraySeq(ObjectType.Object, ObjectType("code/ImmutableList")), VoidType
-                )
+                MethodDescriptor(ArraySeq(ObjectType.Object, ObjectType("code/ImmutableList")), VoidType)
             ).isDefined
         )
     }
@@ -47,26 +45,27 @@ class ClassFileTest extends AnyFunSuite with Matchers {
     test("test that it can find all other methods") {
         assert(
             immutableList.findMethod(
-                "getNext", MethodDescriptor(NoFieldTypes, ObjectType("code/ImmutableList"))
+                "getNext",
+                MethodDescriptor(NoFieldTypes, ObjectType("code/ImmutableList"))
             ).isDefined
         )
 
         assert(
             immutableList.findMethod(
-                "prepend", MethodDescriptor(ObjectType.Object, ObjectType("code/ImmutableList"))
+                "prepend",
+                MethodDescriptor(ObjectType.Object, ObjectType("code/ImmutableList"))
             ).isDefined
         )
 
         assert(
             immutableList.findMethod(
-                "getIterator", MethodDescriptor(NoFieldTypes, ObjectType("java/util/Iterator"))
+                "getIterator",
+                MethodDescriptor(NoFieldTypes, ObjectType("java/util/Iterator"))
             ).isDefined
         )
 
         assert(
-            immutableList.findMethod(
-                "get", MethodDescriptor(NoFieldTypes, ObjectType.Object)
-            ).isDefined
+            immutableList.findMethod("get", MethodDescriptor(NoFieldTypes, ObjectType.Object)).isDefined
         )
 
         assert(immutableList.instanceMethods.size == 4)
@@ -79,7 +78,7 @@ class ClassFileTest extends AnyFunSuite with Matchers {
 
     test("that findField finds all fields") {
         if (boundedBuffer.fields.size != 5)
-            fail("expected five fields; found: "+boundedBuffer.fields)
+            fail("expected five fields; found: " + boundedBuffer.fields)
 
         boundedBuffer.findField("buffer") should not be (Symbol("Empty"))
         boundedBuffer.findField("first") should not be (Symbol("Empty"))
@@ -90,7 +89,7 @@ class ClassFileTest extends AnyFunSuite with Matchers {
 
     test("that findField does not find non-existing fields") {
         if (boundedBuffer.fields.size != 5)
-            fail("expected five fields; found: "+boundedBuffer.fields)
+            fail("expected five fields; found: " + boundedBuffer.fields)
 
         boundedBuffer.findField("BUFFER") should be(List.empty)
         boundedBuffer.findField("firsT") should be(List.empty)
@@ -101,7 +100,8 @@ class ClassFileTest extends AnyFunSuite with Matchers {
 
     lazy val innerclassesProject = TestSupport.biProject("innerclasses-1.8-g-parameters-genericsignature.jar")
     lazy val outerClass = innerclassesProject.classFile(ObjectType("innerclasses/MyRootClass")).get
-    lazy val innerPrinterOfXClass = innerclassesProject.classFile(ObjectType("innerclasses/MyRootClass$InnerPrinterOfX")).get
+    lazy val innerPrinterOfXClass =
+        innerclassesProject.classFile(ObjectType("innerclasses/MyRootClass$InnerPrinterOfX")).get
     lazy val formatterClass = innerclassesProject.classFile(ObjectType("innerclasses/MyRootClass$Formatter")).get
 
     test("that all direct nested classes of a top-level class are correctly identified") {

@@ -3,27 +3,30 @@ package org.opalj
 package hermes
 
 import scala.reflect.io.Directory
-import java.io.File
-import java.net.URL
-import java.io.FileWriter
+
 import java.io.BufferedWriter
+import java.io.File
+import java.io.FileWriter
+import java.net.URL
 import java.util.concurrent.atomic.AtomicInteger
 import scala.jdk.CollectionConverters._
-import net.ceedubs.ficus.Ficus._
-import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-import com.fasterxml.jackson.dataformat.csv.CsvSchema
-import com.fasterxml.jackson.dataformat.csv.CsvFactory
-import javafx.collections.FXCollections
-import javafx.collections.ObservableList
-import javafx.beans.property.BooleanProperty
-import javafx.beans.property.SimpleBooleanProperty
-import javafx.beans.property.IntegerProperty
-import javafx.beans.property.SimpleIntegerProperty
-import javafx.beans.property.LongProperty
-import javafx.beans.property.SimpleLongProperty
+
 import org.opalj.br.analyses.Project
 
 import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParallelizable
+
+import com.fasterxml.jackson.dataformat.csv.CsvFactory
+import com.fasterxml.jackson.dataformat.csv.CsvSchema
+import javafx.beans.property.BooleanProperty
+import javafx.beans.property.IntegerProperty
+import javafx.beans.property.LongProperty
+import javafx.beans.property.SimpleBooleanProperty
+import javafx.beans.property.SimpleIntegerProperty
+import javafx.beans.property.SimpleLongProperty
+import javafx.collections.FXCollections
+import javafx.collections.ObservableList
+import net.ceedubs.ficus.Ficus._
+import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
 /**
  * Implements the core functionality to evaluate a set of feature queries against a set of
@@ -148,7 +151,7 @@ trait HermesCore extends HermesConfig {
             projectAnalysisStartTime: Long
         ): Boolean = {
             if (project.projectClassFilesCount == 0) {
-                updateProjectData { projectFeatures.id.setValue("! "+projectFeatures.id.getValue()) }
+                updateProjectData { projectFeatures.id.setValue("! " + projectFeatures.id.getValue()) }
                 false
             } else {
                 true
@@ -239,9 +242,7 @@ trait HermesCore extends HermesConfig {
     def exportStatistics(writer: BufferedWriter, exportProjectStatistics: Boolean): Unit = {
         // Create the set of all names of all project-wide statistics
         var projectStatisticsIDs = Set.empty[String]
-        featureMatrix.forEach { pf =>
-            projectStatisticsIDs ++= pf.projectConfiguration.statistics.keySet
-        }
+        featureMatrix.forEach { pf => projectStatisticsIDs ++= pf.projectConfiguration.statistics.keySet }
 
         // Logic to create the csv file:
         val csvSchemaBuilder = CsvSchema.builder().addColumn("Project")
@@ -249,12 +250,9 @@ trait HermesCore extends HermesConfig {
             projectStatisticsIDs.foreach { id => csvSchemaBuilder.addColumn(id) }
         }
         val csvSchema =
-            featureIDs.
-                foldLeft(csvSchemaBuilder) { (schema, feature) =>
-                    schema.addColumn(feature._1, CsvSchema.ColumnType.NUMBER)
-                }.
-                setUseHeader(true).
-                build()
+            featureIDs.foldLeft(csvSchemaBuilder) { (schema, feature) =>
+                schema.addColumn(feature._1, CsvSchema.ColumnType.NUMBER)
+            }.setUseHeader(true).build()
 
         val csvGenerator = new CsvFactory().createGenerator(writer)
         csvGenerator.setSchema(csvSchema)
@@ -309,9 +307,7 @@ trait HermesCore extends HermesConfig {
         projectConfigurations.iterator foreach { pc =>
             featureMatrix.forEach { pf =>
                 val projectFile = new File(s"${dir.path}/${pf.id.getValue}.tsv")
-                io.process(new BufferedWriter(new FileWriter(projectFile))) { writer =>
-                    exportLocations(writer, pf)
-                }
+                io.process(new BufferedWriter(new FileWriter(projectFile))) { writer => exportLocations(writer, pf) }
             }
         }
     }
@@ -338,11 +334,11 @@ trait HermesCore extends HermesConfig {
         def writeEntry[S](
             source:           Option[S],
             pn:               String,
-            cls:              String    = "",
-            methodName:       String    = "",
-            methodDescriptor: String    = "",
-            inst:             String    = "",
-            field:            String    = ""
+            cls:              String = "",
+            methodName:       String = "",
+            methodDescriptor: String = "",
+            inst:             String = "",
+            field:            String = ""
         ): Unit = {
             csvGenerator.writeString(source.map(_.toString).getOrElse(""))
             csvGenerator.writeString(pn)

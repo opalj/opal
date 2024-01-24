@@ -4,8 +4,8 @@ package hermes
 package queries
 
 import org.opalj.br.analyses.Project
-import org.opalj.da.CONSTANT_Utf8_info
 import org.opalj.da.ClassFile
+import org.opalj.da.CONSTANT_Utf8_info
 
 /**
  * Scans a class file's constant pool to check whether it refers to packages that belong to an API

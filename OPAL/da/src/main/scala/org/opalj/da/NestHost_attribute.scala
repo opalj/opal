@@ -19,7 +19,7 @@ case class NestHost_attribute(
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         <div class="simple_attribute">
             <span class="attribute_name">NestHost</span>
-            :&nbsp;{ cp(host_class_index).toString(cp) }
+            :&nbsp;{cp(host_class_index).toString(cp)}
         </div>
     }
 }

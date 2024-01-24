@@ -197,7 +197,7 @@ class EOptionPSetTest extends AnyFunSuite {
         // the following query is passed through to the property store...
         assert(set.getOrQueryAndUpdate(e2, Palindromes.PalindromeKey) == ie2Pal)
     }
-    */
+     */
 
     test("filters filters the respective value") {
         val e1 = "e1"

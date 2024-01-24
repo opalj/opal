@@ -9,6 +9,7 @@ sealed trait FallbackReason {
     def propertyIsNotComputedByAnyAnalysis: Boolean
     def propertyIsNotDerivedByPreviouslyExecutedAnalysis: Boolean
 }
+
 /**
  * The fallback is used, because the property was queried, but was not explicitly computed in the
  * past, is not computed now and will also not be computed in the future.

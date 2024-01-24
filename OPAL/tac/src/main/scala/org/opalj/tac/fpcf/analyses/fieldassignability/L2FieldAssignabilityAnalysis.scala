@@ -9,37 +9,37 @@ import scala.annotation.switch
 
 import scala.collection.mutable
 
+import org.opalj.RelationalOperators.EQ
+import org.opalj.RelationalOperators.NE
+import org.opalj.ai.isFormalParameter
+import org.opalj.br.DeclaredField
+import org.opalj.br.DefinedMethod
+import org.opalj.br.Field
+import org.opalj.br.FieldType
 import org.opalj.br.Method
+import org.opalj.br.ObjectType
+import org.opalj.br.PC
 import org.opalj.br.PCs
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.cfg.BasicBlock
+import org.opalj.br.cfg.CFGNode
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.BasicFPCFLazyAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.fpcf.PropertyBounds
-import org.opalj.fpcf.PropertyStore
-import org.opalj.br.fpcf.properties.immutability.FieldAssignability
-import org.opalj.br.fpcf.properties.immutability.LazilyInitialized
-import org.opalj.RelationalOperators.EQ
-import org.opalj.RelationalOperators.NE
-
-import org.opalj.br.DeclaredField
-import org.opalj.br.DefinedMethod
-import org.opalj.br.cfg.BasicBlock
-import org.opalj.br.cfg.CFGNode
-import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.br.ObjectType
-import org.opalj.br.FieldType
-import org.opalj.br.fpcf.properties.immutability.Assignable
-import org.opalj.br.fpcf.properties.immutability.UnsafelyLazilyInitialized
-import org.opalj.br.Field
 import org.opalj.br.fpcf.properties.cg.Callers
-import org.opalj.br.PC
 import org.opalj.br.fpcf.properties.fieldaccess.AccessParameter
 import org.opalj.br.fpcf.properties.fieldaccess.AccessReceiver
 import org.opalj.br.fpcf.properties.fieldaccess.FieldReadAccessInformation
 import org.opalj.br.fpcf.properties.fieldaccess.FieldWriteAccessInformation
+import org.opalj.br.fpcf.properties.immutability.Assignable
+import org.opalj.br.fpcf.properties.immutability.FieldAssignability
+import org.opalj.br.fpcf.properties.immutability.LazilyInitialized
+import org.opalj.br.fpcf.properties.immutability.UnsafelyLazilyInitialized
+import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.PropertyBounds
+import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.SomeEPS
@@ -64,7 +64,6 @@ import org.opalj.tac.VirtualFunctionCall
 import org.opalj.tac.fpcf.analyses.cg.uVarForDefSites
 
 /**
- *
  * Determines the assignability of a field.
  *
  * @note Requires that the 3-address code's expressions are not deeply nested.
@@ -72,7 +71,6 @@ import org.opalj.tac.fpcf.analyses.cg.uVarForDefSites
  * @author Dominik Helm
  * @author Florian Kübler
  * @author Michael Eichberg
- *
  */
 class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
     extends AbstractFieldAssignabilityAnalysis
@@ -111,14 +109,14 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
                 // We consider lazy initialization if there is only single write
                 // outside an initializer, so we can ignore synchronization
                 state.fieldAssignability == LazilyInitialized ||
-                    state.fieldAssignability == UnsafelyLazilyInitialized ||
-                    // A field written outside an initializer must be lazily initialized or it is assignable
-                    {
-                        if (considerLazyInitialization) {
-                            isAssignable(index, getDefaultValues(), method, taCode)
-                        } else
-                            true
-                    }
+                state.fieldAssignability == UnsafelyLazilyInitialized ||
+                // A field written outside an initializer must be lazily initialized or it is assignable
+                {
+                    if (considerLazyInitialization) {
+                        isAssignable(index, getDefaultValues(), method, taCode)
+                    } else
+                        true
+                }
             } else if (receiverVar.isDefined && !referenceHasNotEscaped(receiverVar.get, stmts, definedMethod, callers)) {
                 // Here the clone pattern is determined among others
                 //
@@ -149,9 +147,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
         val stmts = taCode.stmts
 
         val writes = state.fieldWriteAccessDependee.get.ub.accesses
-        val writesInMethod = writes.filter { w =>
-            contextProvider.contextFromId(w._1).method eq definedMethod
-        }.toSeq
+        val writesInMethod = writes.filter { w => contextProvider.contextFromId(w._1).method eq definedMethod }.toSeq
 
         if (writesInMethod.distinctBy(_._2).size > 1)
             return true; // Field is written in multiple locations, thus must be assignable
@@ -168,15 +164,17 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
 
         val fieldWriteInMethodIndex = taCode.pcToIndex(writesInMethod.head._2)
         if (assignedValueObjectVar != null && !assignedValueObjectVar.usedBy.forall { index =>
-            val stmt = stmts(index)
+                val stmt = stmts(index)
 
-            fieldWriteInMethodIndex == index || // The value is itself written to another object
-                // IMPROVE: Can we use field access information to care about reflective accesses here?
-                stmt.isPutField && stmt.asPutField.name != state.field.name ||
-                stmt.isAssignment && stmt.asAssignment.targetVar == assignedValueObjectVar ||
-                stmt.isMethodCall && stmt.asMethodCall.name == "<init>" ||
-                dominates(fieldWriteInMethodIndex, index, taCode)
-        })
+                fieldWriteInMethodIndex == index || // The value is itself written to another object
+                    // IMPROVE: Can we use field access information to care about reflective accesses here?
+                    stmt.isPutField && stmt.asPutField.name != state.field.name ||
+                    stmt.isAssignment && stmt.asAssignment.targetVar == assignedValueObjectVar ||
+                    stmt.isMethodCall && stmt.asMethodCall.name == "<init>" ||
+                    // CHECK do we really need the taCode here?
+                    dominates(fieldWriteInMethodIndex, index, taCode)
+            }
+        )
             return true;
 
         val writeAccess = (definedMethod, taCode, receiverVar, index)
@@ -212,11 +210,16 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
                 if (state.checkLazyInit.isDefined) {
                     val (method, guardIndex, writeIndex, taCode) = state.checkLazyInit.get
                     if (doFieldReadsEscape(
-                        reads.getNewestAccesses(
-                            reads.numDirectAccesses - seenDirectAccesses,
-                            reads.numIndirectAccesses - seenIndirectAccesses
-                        ).toSeq, method, guardIndex, writeIndex, taCode
-                    ))
+                            reads.getNewestAccesses(
+                                reads.numDirectAccesses - seenDirectAccesses,
+                                reads.numIndirectAccesses - seenIndirectAccesses
+                            ).toSeq,
+                            method,
+                            guardIndex,
+                            writeIndex,
+                            taCode
+                        )
+                    )
                         return Result(state.field, Assignable);
                 }
 
@@ -248,21 +251,21 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
         writes:                     Seq[(DefinedMethod, TACode[TACMethodParameter, V], Option[V], Int)]
     )(implicit state: State): Boolean = {
         writes.exists { writeAccess =>
-            fieldReadAccessInformation.accesses.count { readAccess =>
-                contextProvider.contextFromId(readAccess._1).method eq writeAccess._1
-            } > 1 &&
-                fieldReadAccessInformation.getNewestAccesses(
-                    fieldReadAccessInformation.numDirectAccesses - seenDirectAccesses,
-                    fieldReadAccessInformation.numIndirectAccesses - seenIndirectAccesses
-                ).exists { readAccess =>
-                        val method = contextProvider.contextFromId(readAccess._1).method
-                        (writeAccess._1 eq method) && {
-                            val taCode = state.tacDependees(method.asDefinedMethod).ub.tac.get
-                            val writeIndex = writeAccess._4
-                            val readIndex = taCode.pcToIndex(readAccess._2)
-                            writeIndex != readIndex && !dominates(writeIndex, readIndex, taCode)
-                        }
+            fieldReadAccessInformation.getNewestAccesses(
+                fieldReadAccessInformation.numDirectAccesses - seenDirectAccesses,
+                fieldReadAccessInformation.numIndirectAccesses - seenIndirectAccesses
+            ).exists { readAccess =>
+                val method = contextProvider.contextFromId(readAccess._1).method
+                (writeAccess._1 eq method) && {
+                    val taCode = state.tacDependees(method.asDefinedMethod).ub.tac.get
+
+                    if (readAccess._3.isDefined && readAccess._3.get._2.forall(isFormalParameter)) {
+                        false
+                    } else {
+                        !dominates(writeAccess._4, taCode.pcToIndex(readAccess._2), taCode)
                     }
+                }
+            }
         }
     }
 
@@ -299,7 +302,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
             bbPotentiallyDominator == bbPotentiallyDominated && potentiallyDominatorIndex < potentiallyDominatedIndex
     }
 
-    //lazy initialization:
+    // lazy initialization:
 
     /**
      * Handles the lazy initialization determination for a field write in a given method
@@ -357,7 +360,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
                     resultCatchesAndThrows._2.exists {
                         case (throwPC, throwDefinitionSites) =>
                             dominates(taCode.pcToIndex(catchPC), taCode.pcToIndex(throwPC), taCode) &&
-                                throwDefinitionSites == originsCaughtException //throwing and catching same exceptions
+                                throwDefinitionSites == originsCaughtException // throwing and catching same exceptions
                     }
             }
 
@@ -367,7 +370,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
         if (findGuardsResult.isEmpty)
             return Assignable;
 
-        //guardIndex: for debugging purpose
+        // guardIndex: for debugging purpose
         val (readIndex, guardIndex, defaultCaseIndex, elseCaseIndex) = findGuardsResult.head
 
         // The field has to be written when the guard is in the default-case branch
@@ -384,23 +387,23 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
             // prevents that another value than the field value is returned with the same type
             if (!isFieldValueReturned(write, writeIndex, readIndex, taCode, findGuardsResult))
                 return Assignable;
-            //prevents that the field is seen with another value
+            // prevents that the field is seen with another value
             if ( // potentially unsound with method.returnType == state.field.fieldType
-            // TODO comment it out and look at appearing cases
-            taCode.stmts.exists(
-                stmt =>
-                    stmt.isReturnValue && !isTransitivePredecessor(
-                        writeBB,
-                        cfg.bb(taCode.pcToIndex(stmt.pc))
-                    ) &&
-                        findGuardsResult.forall { //TODO check...
-                            case (indexOfFieldRead, _, _, _) =>
-                                !isTransitivePredecessor(
-                                    cfg.bb(indexOfFieldRead),
-                                    cfg.bb(taCode.pcToIndex(stmt.pc))
-                                )
-                        }
-            ))
+                 // TODO comment it out and look at appearing cases
+                 taCode.stmts.exists(stmt =>
+                     stmt.isReturnValue && !isTransitivePredecessor(
+                         writeBB,
+                         cfg.bb(taCode.pcToIndex(stmt.pc))
+                     ) &&
+                         findGuardsResult.forall { // TODO check...
+                             case (indexOfFieldRead, _, _, _) =>
+                                 !isTransitivePredecessor(
+                                     cfg.bb(indexOfFieldRead),
+                                     cfg.bb(taCode.pcToIndex(stmt.pc))
+                                 )
+                         }
+                 )
+            )
                 return Assignable;
         }
 
@@ -417,7 +420,8 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
         state.checkLazyInit = Some((method, guardIndex, writeIndex, taCode))
 
         if (write.value.asVar.definedBy.forall { _ >= 0 } &&
-            dominates(defaultCaseIndex, writeIndex, taCode) && noInterferingExceptions()) {
+            dominates(defaultCaseIndex, writeIndex, taCode) && noInterferingExceptions()
+        ) {
             if (method.isSynchronized)
                 LazilyInitialized
             else {
@@ -464,27 +468,28 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
                                 seen += st
                                 !(
                                     st.isReturnValue || st.isIf ||
-                                    dominates(guardIndex, i, taCode) &&
-                                    isTransitivePredecessor(cfg.bb(writeIndex), cfg.bb(i)) ||
-                                    (st match {
-                                        case AssignmentLikeStmt(_, expr) =>
-                                            (expr.isCompare || expr.isFunctionCall && {
-                                                val functionCall = expr.asFunctionCall
-                                                state.field.fieldType match {
-                                                    case ObjectType.Byte    => functionCall.name == "byteValue"
-                                                    case ObjectType.Short   => functionCall.name == "shortValue"
-                                                    case ObjectType.Integer => functionCall.name == "intValue"
-                                                    case ObjectType.Long    => functionCall.name == "longValue"
-                                                    case ObjectType.Float   => functionCall.name == "floatValue"
-                                                    case ObjectType.Double  => functionCall.name == "doubleValue"
-                                                    case _                  => false
-                                                }
-                                            }) && !doUsesEscape(st.asAssignment.targetVar.usedBy)
-                                        case _ => false
-                                    })
+                                        dominates(guardIndex, i, taCode) &&
+                                        isTransitivePredecessor(cfg.bb(writeIndex), cfg.bb(i)) ||
+                                        (st match {
+                                            case AssignmentLikeStmt(_, expr) =>
+                                                (expr.isCompare || expr.isFunctionCall && {
+                                                    val functionCall = expr.asFunctionCall
+                                                    state.field.fieldType match {
+                                                        case ObjectType.Byte    => functionCall.name == "byteValue"
+                                                        case ObjectType.Short   => functionCall.name == "shortValue"
+                                                        case ObjectType.Integer => functionCall.name == "intValue"
+                                                        case ObjectType.Long    => functionCall.name == "longValue"
+                                                        case ObjectType.Float   => functionCall.name == "floatValue"
+                                                        case ObjectType.Double  => functionCall.name == "doubleValue"
+                                                        case _                  => false
+                                                    }
+                                                }) && !doUsesEscape(st.asAssignment.targetVar.usedBy)
+                                            case _ => false
+                                        })
                                 )
                             } else false
-                        })
+                        }
+                    )
                 } else false
             })
         }
@@ -493,7 +498,6 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
     }
 
     /**
-     *
      * This method returns the information about catch blocks, throw statements and return nodes
      *
      * @note It requires still determined taCode
@@ -555,18 +559,17 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
          * When determining the lazy initialization of an instance fields, it allows
          * synchronized(this) and synchronized(Foo.class). Independent of which class Foo is.
          * In case of an instance field the second case is even stronger than synchronized(this).
-         *
          */
         def checkMonitor(v: V)(implicit state: State): Boolean = {
             v.definedBy.forall(definedByIndex => {
                 if (definedByIndex >= 0) {
                     tacCode.stmts(definedByIndex) match {
-                        //synchronized(Foo.class)
+                        // synchronized(Foo.class)
                         case Assignment(_, _, _: ClassConst) => true
                         case _                               => false
                     }
                 } else {
-                    //synchronized(this)
+                    // synchronized(this)
                     state.field.isNotStatic && IntTrieSet(definedByIndex) == SelfReferenceParameter
                 }
             })
@@ -575,7 +578,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
         var monitorEnterQueuedBBs: Set[CFGNode] = startBB.predecessors
         var worklistMonitorEnter = getPredecessors(startBB, Set.empty)
 
-        //find monitorenter
+        // find monitorenter
         while (worklistMonitorEnter.nonEmpty) {
             val curBB = worklistMonitorEnter.head
             worklistMonitorEnter = worklistMonitorEnter.tail
@@ -599,7 +602,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
                 monitorEnterQueuedBBs ++= predecessor
             }
         }
-        //find monitorexit
+        // find monitorexit
         while (worklistMonitorExit.nonEmpty) {
             val curBB = worklistMonitorExit.head
 
@@ -658,23 +661,26 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
                     case If.ASTID =>
                         val ifStmt = cfStmt.asIf
                         if (ifStmt.condition.equals(EQ) && curBB != startBB && isGuard(
-                            ifStmt,
-                            defaultValues,
-                            code,
-                            taCode
-                        )) {
+                                ifStmt,
+                                defaultValues,
+                                code,
+                                taCode
+                            )
+                        ) {
                             result = (endPC, ifStmt.targetStmt, endPC + 1) :: result
                         } else if (ifStmt.condition.equals(NE) && curBB != startBB && isGuard(
-                            ifStmt,
-                            defaultValues,
-                            code,
-                            taCode
-                        )) {
+                                       ifStmt,
+                                       defaultValues,
+                                       code,
+                                       taCode
+                                   )
+                        ) {
                             result = (endPC, endPC + 1, ifStmt.targetStmt) :: result
                         } else {
                             if ((cfg.bb(fieldWrite) != cfg.bb(ifStmt.target) || fieldWrite < ifStmt.target) &&
-                                isTransitivePredecessor(cfg.bb(fieldWrite), cfg.bb(ifStmt.target))) {
-                                return List.empty //in cases where other if-statements destroy
+                                isTransitivePredecessor(cfg.bb(fieldWrite), cfg.bb(ifStmt.target))
+                            ) {
+                                return List.empty // in cases where other if-statements destroy
                             }
                         }
                         val predecessors = getPredecessors(curBB, enqueuedBBs)
@@ -753,9 +759,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
                 false
             else {
                 visited += node
-                node.predecessors.exists(
-                    currentNode => isTransitivePredecessorInternal(possiblePredecessor, currentNode)
-                )
+                node.predecessors.exists(currentNode => isTransitivePredecessorInternal(possiblePredecessor, currentNode))
             }
         }
         isTransitivePredecessorInternal(possiblePredecessor, node)
@@ -809,7 +813,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
                     .forall(index => index >= 0 && tacCode.stmts(index).asAssignment.expr.isConst) &&
                     rightExpr.asVar.definedBy.forall(isExprReadOfCurrentField) ||
                     rightExpr.asVar.definedBy
-                    .forall(index => index >= 0 && tacCode.stmts(index).asAssignment.expr.isConst) &&
+                        .forall(index => index >= 0 && tacCode.stmts(index).asAssignment.expr.isConst) &&
                     leftExpr.asVar.definedBy.forall(isExprReadOfCurrentField)
 
             case VirtualFunctionCall.ASTID =>
@@ -851,11 +855,11 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
             } else {
                 // default value check
                 expr.isIntConst && defaultValues.contains(expr.asIntConst.value) ||
-                    expr.isFloatConst && defaultValues.contains(expr.asFloatConst.value) ||
-                    expr.isDoubleConst && defaultValues.contains(expr.asDoubleConst.value) ||
-                    expr.isLongConst && defaultValues.contains(expr.asLongConst.value) ||
-                    expr.isStringConst && defaultValues.contains(expr.asStringConst.value) ||
-                    expr.isNullExpr && defaultValues.contains(null)
+                expr.isFloatConst && defaultValues.contains(expr.asFloatConst.value) ||
+                expr.isDoubleConst && defaultValues.contains(expr.asDoubleConst.value) ||
+                expr.isLongConst && defaultValues.contains(expr.asLongConst.value) ||
+                expr.isStringConst && defaultValues.contains(expr.asStringConst.value) ||
+                expr.isNullExpr && defaultValues.contains(null)
             }
         }
 
@@ -872,13 +876,12 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
                     false // If the value is from a parameter, this can not be the guard
                 else {
                     val expression = code(index).asAssignment.expr
-                    //in case of Integer etc.... .initValue()
+                    // in case of Integer etc.... .initValue()
                     if (expression.isVirtualFunctionCall) {
                         val virtualFunctionCall = expression.asVirtualFunctionCall
-                        virtualFunctionCall.receiver.asVar.definedBy.forall(
-                            receiverDefSite =>
-                                receiverDefSite >= 0 &&
-                                    isReadOfCurrentField(code(receiverDefSite).asAssignment.expr, tacCode, index)
+                        virtualFunctionCall.receiver.asVar.definedBy.forall(receiverDefSite =>
+                            receiverDefSite >= 0 &&
+                                isReadOfCurrentField(code(receiverDefSite).asAssignment.expr, tacCode, index)
                         )
                     } else
                         isReadOfCurrentField(expression, tacCode, index)
@@ -886,13 +889,14 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
             }
         }
 
-        //Special handling for these types needed because of compare function in bytecode
+        // Special handling for these types needed because of compare function in bytecode
         def hasFloatDoubleOrLongType(fieldType: FieldType): Boolean =
             fieldType.isFloatType || fieldType.isDoubleType || fieldType.isLongType
 
         if (ifStmt.rightExpr.isVar && hasFloatDoubleOrLongType(state.field.fieldType) &&
             ifStmt.rightExpr.asVar.definedBy.head > 0 &&
-            tacCode.stmts(ifStmt.rightExpr.asVar.definedBy.head).asAssignment.expr.isCompare) {
+            tacCode.stmts(ifStmt.rightExpr.asVar.definedBy.head).asAssignment.expr.isCompare
+        ) {
 
             val left =
                 tacCode.stmts(ifStmt.rightExpr.asVar.definedBy.head).asAssignment.expr.asCompare.left.asVar
@@ -905,13 +909,14 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
             else (rightExpr.isGetField || rightExpr.isGetStatic) && isDefaultConst(leftExpr)
 
         } else if (ifStmt.leftExpr.isVar && ifStmt.rightExpr.isVar && ifStmt.leftExpr.asVar.definedBy.head >= 0 &&
-            ifStmt.rightExpr.asVar.definedBy.head >= 0 &&
-            hasFloatDoubleOrLongType(state.field.fieldType) && tacCode
-            .stmts(ifStmt.leftExpr.asVar.definedBy.head)
-            .asAssignment
-            .expr
-            .isCompare &&
-            ifStmt.leftExpr.isVar && ifStmt.rightExpr.isVar) {
+                   ifStmt.rightExpr.asVar.definedBy.head >= 0 &&
+                   hasFloatDoubleOrLongType(state.field.fieldType) && tacCode
+                       .stmts(ifStmt.leftExpr.asVar.definedBy.head)
+                       .asAssignment
+                       .expr
+                       .isCompare &&
+                   ifStmt.leftExpr.isVar && ifStmt.rightExpr.isVar
+        ) {
 
             val left =
                 tacCode.stmts(ifStmt.leftExpr.asVar.definedBy.head).asAssignment.expr.asCompare.left.asVar
@@ -953,7 +958,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
 
                 case GetStatic.ASTID => expr.asGetStatic.resolveField(project).contains(state.field)
 
-                case _               => false
+                case _ => false
             }
 
         taCode.stmts.forall { stmt =>
@@ -968,25 +973,25 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
                             case (_, guardIndex, defaultCase, _) =>
                                 dominates(guardIndex, returnValueDefs.head, taCode) &&
                                     (!dominates(defaultCase, returnValueDefs.head, taCode) ||
-                                        dominates(writeIndex, returnValueDefs.head, taCode))
+                                    dominates(writeIndex, returnValueDefs.head, taCode))
                         }
-                    } //The field is either read before the guard and returned or
+                    } // The field is either read before the guard and returned or
                     // the value assigned to the field is returned
                     else {
                         returnValueDefs.size == 2 && assignedValueDefSite.size == 1 &&
-                            returnValueDefs.contains(readIndex) && {
-                                returnValueDefs.contains(assignedValueDefSite.head) || {
-                                    val potentiallyReadIndex = returnValueDefs.filter(_ != readIndex).head
-                                    val expr = taCode.stmts(potentiallyReadIndex).asAssignment.expr
-                                    isSimpleReadOfField(expr) &&
-                                        guardIndexes.exists {
-                                            case (_, guardIndex, defaultCase, _) =>
-                                                dominates(guardIndex, potentiallyReadIndex, taCode) &&
-                                                    (!dominates(defaultCase, returnValueDefs.head, taCode) ||
-                                                        dominates(writeIndex, returnValueDefs.head, taCode))
-                                        }
-                                }
+                        returnValueDefs.contains(readIndex) && {
+                            returnValueDefs.contains(assignedValueDefSite.head) || {
+                                val potentiallyReadIndex = returnValueDefs.filter(_ != readIndex).head
+                                val expr = taCode.stmts(potentiallyReadIndex).asAssignment.expr
+                                isSimpleReadOfField(expr) &&
+                                    guardIndexes.exists {
+                                        case (_, guardIndex, defaultCase, _) =>
+                                            dominates(guardIndex, potentiallyReadIndex, taCode) &&
+                                                (!dominates(defaultCase, returnValueDefs.head, taCode) ||
+                                                dominates(writeIndex, returnValueDefs.head, taCode))
+                                    }
                             }
+                        }
                     }
                 }
             }
@@ -1009,7 +1014,7 @@ object EagerL2FieldAssignabilityAnalysis extends L2FieldAssignabilityAnalysisSch
 
     override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
 
-    final override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+    override final def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new L2FieldAssignabilityAnalysis(p)
         val fields = p.allFields
         ps.scheduleEagerComputationsForEntities(fields)(analysis.determineFieldAssignability)
@@ -1025,7 +1030,7 @@ object LazyL2FieldAssignabilityAnalysis extends L2FieldAssignabilityAnalysisSche
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 
-    final override def register(
+    override final def register(
         p:      SomeProject,
         ps:     PropertyStore,
         unused: Null

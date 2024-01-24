@@ -5,8 +5,9 @@ package domain
 package l1
 
 import scala.reflect.ClassTag
-import org.opalj.value.IsClassValue
-import org.opalj.value.TheClassValue
+
+import scala.collection.immutable.ArraySeq
+
 import org.opalj.br.BooleanType
 import org.opalj.br.BootstrapMethod
 import org.opalj.br.ByteType
@@ -23,8 +24,8 @@ import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.ShortType
 import org.opalj.br.Type
-
-import scala.collection.immutable.ArraySeq
+import org.opalj.value.IsClassValue
+import org.opalj.value.TheClassValue
 
 /**
  * Enables the tracking of concrete `Class` values.
@@ -146,7 +147,8 @@ trait ClassValues
             val elementType = classValue.asArrayType.elementType
             if (elementType.isBaseType ||
                 classHierarchy.isKnown(elementType.asObjectType) ||
-                !throwClassNotFoundException) {
+                !throwClassNotFoundException
+            ) {
                 ComputedValue(ClassValue(pc, classValue))
             } else {
                 ComputedValueOrException(
@@ -226,7 +228,7 @@ trait ClassValues
                 case ObjectType.Float     => ComputedValue(ClassValue(pc, FloatType))
                 case ObjectType.Double    => ComputedValue(ClassValue(pc, DoubleType))
 
-                case _                    => super.getstatic(pc, declaringClass, name, fieldType)
+                case _ => super.getstatic(pc, declaringClass, name, fieldType)
             }
         } else {
             super.getstatic(pc, declaringClass, name, fieldType)
@@ -241,7 +243,15 @@ trait ClassValues
     ): Computation[DomainValue, Nothing] = {
 
         bootstrapMethod match {
-            case BootstrapMethod(InvokeStaticMethodHandle(ObjectType.ConstantBootstraps, false, "primitiveClass", ConstantBootstrapsPrimitiveClassDescriptor), ArraySeq()) =>
+            case BootstrapMethod(
+                    InvokeStaticMethodHandle(
+                        ObjectType.ConstantBootstraps,
+                        false,
+                        "primitiveClass",
+                        ConstantBootstrapsPrimitiveClassDescriptor
+                    ),
+                    ArraySeq()
+                ) =>
                 ComputedValue(ClassValue(pc, FieldType(name)))
             case _ =>
                 super.loadDynamic(pc, bootstrapMethod, name, descriptor)

@@ -35,6 +35,7 @@ case class StackMapTable(stackMapFrames: StackMapFrames) extends Attribute {
     }
 
 }
+
 object StackMapTable {
 
     final val KindId = 7

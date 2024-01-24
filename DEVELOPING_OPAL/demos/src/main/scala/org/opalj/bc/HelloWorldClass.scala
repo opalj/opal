@@ -2,25 +2,25 @@
 package org.opalj
 package bc
 
-import org.opalj.bi.ACC_PUBLIC
-import org.opalj.bi.ACC_SUPER
-import org.opalj.bi.ACC_STATIC
-import org.opalj.da.ClassFile
-import org.opalj.da.Method_Info
-import org.opalj.da.Constant_Pool_Entry
-import org.opalj.da.SourceFile_attribute
-import org.opalj.da.CONSTANT_Class_info
-import org.opalj.da.CONSTANT_Utf8
-import org.opalj.da.CONSTANT_NameAndType_info
-import org.opalj.da.CONSTANT_Methodref_info
-import org.opalj.da.CONSTANT_Fieldref_info
-import org.opalj.da.CONSTANT_String_info
-import org.opalj.da.Code_attribute
-import org.opalj.da.Code
-
 import java.nio.file.Files
 import java.nio.file.Paths
 import scala.collection.immutable.ArraySeq
+
+import org.opalj.bi.ACC_PUBLIC
+import org.opalj.bi.ACC_STATIC
+import org.opalj.bi.ACC_SUPER
+import org.opalj.da.ClassFile
+import org.opalj.da.Code
+import org.opalj.da.Code_attribute
+import org.opalj.da.CONSTANT_Class_info
+import org.opalj.da.CONSTANT_Fieldref_info
+import org.opalj.da.CONSTANT_Methodref_info
+import org.opalj.da.CONSTANT_NameAndType_info
+import org.opalj.da.Constant_Pool_Entry
+import org.opalj.da.CONSTANT_String_info
+import org.opalj.da.CONSTANT_Utf8
+import org.opalj.da.Method_Info
+import org.opalj.da.SourceFile_attribute
 
 /**
  * Demonstrates how to create a "HelloWorld" class which basically has the following code:
@@ -107,7 +107,7 @@ object HelloWorldClass extends App {
         fields:        Fields,
         methods:       Methods,
         attributes:    Attributes
-        */
+     */
 
     val cf = ClassFile(
         Array[Constant_Pool_Entry](
@@ -149,8 +149,8 @@ object HelloWorldClass extends App {
         minor_version = 0,
         major_version = 46,
         access_flags = ACC_PUBLIC.mask | ACC_SUPER.mask,
-        this_class = 1 /*Test*/ ,
-        super_class = 3 /*extends java.lang.Object*/ ,
+        this_class = 1 /*Test*/,
+        super_class = 3 /*extends java.lang.Object*/,
         // Interfaces.empty,
         // Fields.empty,
         methods = ArraySeq(
@@ -167,10 +167,10 @@ object HelloWorldClass extends App {
                             new Code(
                                 Array[Byte](
                                     42, // aload_0
-                                    (0xff & 183).toByte, // invokespecial
+                                    (0xFF & 183).toByte, // invokespecial
                                     0, //                    -> Methodref
                                     8, //                       #8
-                                    (0xff & 177).toByte
+                                    (0xFF & 177).toByte
                                 )
                             )
                     )
@@ -188,15 +188,15 @@ object HelloWorldClass extends App {
                         code =
                             new Code(
                                 Array[Byte](
-                                    (0xff & 178).toByte, // getstatic
+                                    (0xFF & 178).toByte, // getstatic
                                     0,
                                     16,
                                     18, // ldc
                                     22,
-                                    (0xff & 182).toByte, // invokevirtual
+                                    (0xFF & 182).toByte, // invokevirtual
                                     0,
                                     24,
-                                    (0xff & 177).toByte // return
+                                    (0xFF & 177).toByte // return
                                 )
                             )
                     )
@@ -206,6 +206,5 @@ object HelloWorldClass extends App {
         attributes = ArraySeq(SourceFile_attribute(32, 33))
     )
 
-    println("Created class file: "+Files.write(Paths.get("Test.class"), Assembler(cf)).toAbsolutePath())
+    println("Created class file: " + Files.write(Paths.get("Test.class"), Assembler(cf)).toAbsolutePath())
 }
-

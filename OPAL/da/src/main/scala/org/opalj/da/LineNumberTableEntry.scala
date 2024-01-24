@@ -16,6 +16,6 @@ case class LineNumberTableEntry(
 ) {
 
     def toXHTML(): Node = {
-        <div>start_pc: { start_pc }, line_number: { line_number }</div>
+        <div>start_pc: {start_pc}, line_number: {line_number}</div>
     }
 }

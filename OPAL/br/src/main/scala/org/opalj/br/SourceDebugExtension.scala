@@ -27,6 +27,7 @@ case class SourceDebugExtension(debug_extension: Array[Byte]) extends Attribute 
     }
 
 }
+
 object SourceDebugExtension {
 
     final val KindId = 18

@@ -8,7 +8,12 @@ package field_assignability
 import org.opalj.br.AnnotationLike
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.properties.immutability.Assignable
+import org.opalj.br.fpcf.properties.immutability.EffectivelyNonAssignable
 import org.opalj.br.fpcf.properties.immutability.FieldAssignability
+import org.opalj.br.fpcf.properties.immutability.LazilyInitialized
+import org.opalj.br.fpcf.properties.immutability.NonAssignable
+import org.opalj.br.fpcf.properties.immutability.UnsafelyLazilyInitialized
 
 /**
  * @author Tobias Roth
@@ -16,7 +21,7 @@ import org.opalj.br.fpcf.properties.immutability.FieldAssignability
 class FieldAssignabilityMatcher(val property: FieldAssignability)
     extends AbstractPropertyMatcher {
 
-    final private val PropertyReasonID = 0
+    private final val PropertyReasonID = 0
 
     override def isRelevant(
         p:      SomeProject,
@@ -49,12 +54,12 @@ class FieldAssignabilityMatcher(val property: FieldAssignability)
     }
 }
 
-class AssignableFieldMatcher extends FieldAssignabilityMatcher(br.fpcf.properties.immutability.Assignable)
+class AssignableFieldMatcher extends FieldAssignabilityMatcher(Assignable)
 
-class LazilyInitializedFieldMatcher extends FieldAssignabilityMatcher(br.fpcf.properties.immutability.LazilyInitialized)
+class LazilyInitializedFieldMatcher extends FieldAssignabilityMatcher(LazilyInitialized)
 
-class UnsafelyLazilyInitializedFieldMatcher extends FieldAssignabilityMatcher(br.fpcf.properties.immutability.UnsafelyLazilyInitialized)
+class UnsafelyLazilyInitializedFieldMatcher extends FieldAssignabilityMatcher(UnsafelyLazilyInitialized)
 
-class EffectivelyNonAssignableFieldMatcher extends FieldAssignabilityMatcher(br.fpcf.properties.immutability.EffectivelyNonAssignable)
+class EffectivelyNonAssignableFieldMatcher extends FieldAssignabilityMatcher(EffectivelyNonAssignable)
 
-class NonAssignableFieldMatcher extends FieldAssignabilityMatcher(br.fpcf.properties.immutability.NonAssignable)
+class NonAssignableFieldMatcher extends FieldAssignabilityMatcher(NonAssignable)

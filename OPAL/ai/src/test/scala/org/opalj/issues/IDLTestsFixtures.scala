@@ -2,30 +2,30 @@
 package org.opalj
 package issues
 
+import play.api.libs.json.JsNull
 import play.api.libs.json.JsObject
 import play.api.libs.json.Json
-import play.api.libs.json.JsNull
 
-import org.opalj.collection.mutable.Locals
 import org.opalj.bi.ACC_PUBLIC
 import org.opalj.bi.ACC_STATIC
 import org.opalj.br.ArrayType
+import org.opalj.br.Attributes
 import org.opalj.br.ByteType
 import org.opalj.br.ClassFile
 import org.opalj.br.Code
-import org.opalj.br.Attributes
-import org.opalj.br.Methods
-import org.opalj.br.NoAttributes
-import org.opalj.br.NoInterfaces
-import org.opalj.br.NoFieldTemplates
-import org.opalj.br.FieldTypes
-import org.opalj.br.NoFieldTypes
 import org.opalj.br.CompactLineNumberTable
+import org.opalj.br.FieldTypes
 import org.opalj.br.IntegerType
 import org.opalj.br.Method
+import org.opalj.br.Methods
+import org.opalj.br.NoAttributes
+import org.opalj.br.NoFieldTemplates
+import org.opalj.br.NoFieldTypes
+import org.opalj.br.NoInterfaces
 import org.opalj.br.ObjectType
 import org.opalj.br.VoidType
 import org.opalj.br.instructions.IFEQ
+import org.opalj.collection.mutable.Locals
 
 /**
  * Commonly used helper methods and definitions.

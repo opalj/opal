@@ -6,13 +6,12 @@ package analyses
 package cg
 package xta
 
-import java.util.{HashSet => JHashSet}
 import java.util.{HashMap => JHashMap}
+import java.util.{HashSet => JHashSet}
 import java.util.{Set => JSet}
+import scala.collection.immutable.IntMap
 import scala.jdk.CollectionConverters._
-import org.opalj.collection.immutable.UIDSet
-import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.SomeEOptionP
+
 import org.opalj.br.ClassHierarchy
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.Method
@@ -23,10 +22,11 @@ import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
 import org.opalj.br.fpcf.properties.fieldaccess.MethodFieldReadAccessInformation
 import org.opalj.br.fpcf.properties.fieldaccess.MethodFieldWriteAccessInformation
+import org.opalj.collection.immutable.UIDSet
+import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.SomeEOptionP
 import org.opalj.tac.fpcf.analyses.cg.BaseAnalysisState
 import org.opalj.tac.fpcf.properties.TACAI
-
-import scala.collection.immutable.IntMap
 
 /**
  * Manages the state of each method analyzed by [[TypePropagationAnalysis]].
@@ -38,10 +38,9 @@ import scala.collection.immutable.IntMap
  * @param _calleeDependee Dependee for the callee property of the method.
  */
 final class TypePropagationState[ContextType <: Context](
-        override val callContext:                  ContextType,
-        val typeSetEntity:                         TypeSetEntity,
-        override protected[this] var _tacDependee: EOptionP[Method, TACAI],
-
+        override val callContext:                        ContextType,
+        val typeSetEntity:                               TypeSetEntity,
+        override protected[this] var _tacDependee:       EOptionP[Method, TACAI],
         private[this] var _ownInstantiatedTypesDependee: EOptionP[TypeSetEntity, InstantiatedTypes],
         private[this] var _calleeDependee:               EOptionP[DeclaredMethod, Callees],
         private[this] var _readAccessDependee:           EOptionP[Method, MethodFieldReadAccessInformation],
@@ -158,8 +157,7 @@ final class TypePropagationState[ContextType <: Context](
         typeSetEntity: TypeSetEntity,
         typeFilters:   UIDSet[ReferenceType]
     )(
-        implicit
-        classHierarchy: ClassHierarchy
+        implicit classHierarchy: ClassHierarchy
     ): Boolean = {
         assert(typeFilters.nonEmpty)
         val alreadyExists = _forwardPropagationEntities.contains(typeSetEntity)
@@ -205,8 +203,7 @@ final class TypePropagationState[ContextType <: Context](
         typeSetEntity: TypeSetEntity,
         typeFilters:   UIDSet[ReferenceType]
     )(
-        implicit
-        classHierarchy: ClassHierarchy
+        implicit classHierarchy: ClassHierarchy
     ): Boolean = {
         assert(typeFilters.nonEmpty)
         val alreadyExists = _backwardPropagationFilters.containsKey(typeSetEntity)
@@ -242,9 +239,9 @@ final class TypePropagationState[ContextType <: Context](
 
     override def hasOpenDependencies: Boolean = {
         super.hasOpenDependencies ||
-            _ownInstantiatedTypesDependee.isRefinable ||
-            _calleeDependee.isRefinable ||
-            !_backwardPropagationDependees.isEmpty
+        _ownInstantiatedTypesDependee.isRefinable ||
+        _calleeDependee.isRefinable ||
+        !_backwardPropagationDependees.isEmpty
     }
 
     override def dependees: Set[SomeEOptionP] = {
@@ -286,8 +283,7 @@ final class TypePropagationState[ContextType <: Context](
     private[this] def rootTypes(
         types: UIDSet[ReferenceType]
     )(
-        implicit
-        classHierarchy: ClassHierarchy
+        implicit classHierarchy: ClassHierarchy
     ): UIDSet[ReferenceType] = {
         if (types.size <= 1)
             return types;

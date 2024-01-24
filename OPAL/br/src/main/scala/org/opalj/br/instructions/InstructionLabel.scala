@@ -3,9 +3,9 @@ package org.opalj
 package br
 package instructions
 
-import java.util.concurrent.atomic.AtomicLong
-
 import scala.language.implicitConversions
+
+import java.util.concurrent.atomic.AtomicLong
 
 /**
  * A label that identifies an instruction.
@@ -30,7 +30,6 @@ case class PCLabel(pc: Int) extends InstructionLabel {
 }
 
 /**
- *
  * @param id A globally unique id.
  */
 case class RewriteLabel private (id: Long) extends InstructionLabel {
@@ -58,12 +57,11 @@ case class NamedLabel(name: String) extends InstructionLabel {
 
 object InstructionLabel {
 
-    final implicit def symbolToInstructionLabel(l: Symbol): InstructionLabel = InstructionLabel(l)
-    final implicit def nameToInstructionLabel(l: String): InstructionLabel = InstructionLabel(l)
-    final implicit def pcToInstructionLabel(l: PC): InstructionLabel = InstructionLabel(l)
+    implicit final def symbolToInstructionLabel(l: Symbol): InstructionLabel = InstructionLabel(l)
+    implicit final def nameToInstructionLabel(l:   String): InstructionLabel = InstructionLabel(l)
+    implicit final def pcToInstructionLabel(l:     PC): InstructionLabel = InstructionLabel(l)
 
-    def apply(s: Symbol): NamedLabel = new NamedLabel(s.name)
+    def apply(s:    Symbol): NamedLabel = new NamedLabel(s.name)
     def apply(name: String): NamedLabel = new NamedLabel(name)
-    def apply(pc: Int): PCLabel = new PCLabel(pc)
+    def apply(pc:   Int): PCLabel = new PCLabel(pc)
 }
-

@@ -26,4 +26,3 @@ final case class IntIntPair(_1: Int, _2: Int) {
         new IntIntPair(_1, _2 + increment)
     }
 }
-

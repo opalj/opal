@@ -6,9 +6,9 @@ package domain
 import scala.collection.Set
 import scala.collection.immutable
 
+import org.opalj.br.ObjectType
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.immutable.UIDSet1
-import org.opalj.br.ObjectType
 
 /**
  * Records the results of the evaluation of the `current` method such that the results
@@ -92,7 +92,7 @@ trait RecordMethodCallResults
                 val mappedBackValue = originalOperands.reverse(nthParameter)
                 Some(mappedBackValue)
             }
-            */
+             */
 
             // If we have multiple return sites where some refer to parameters and
             // some to local variables, we map back the information regarding
@@ -123,7 +123,7 @@ trait RecordMethodCallResults
     // IMPROVE Remap returned exceptions
     def thrownExceptions(target: TargetDomain, callerPC: Int): target.ExceptionValues = {
 
-        val allThrownExceptions = this.allThrownExceptions //: Map[PC, ThrownException]
+        val allThrownExceptions = this.allThrownExceptions // : Map[PC, ThrownException]
         if (allThrownExceptions.isEmpty) {
             Iterable.empty
         } else {
@@ -134,16 +134,12 @@ trait RecordMethodCallResults
                     case EmptyUpperTypeBound =>
                         exceptionValuesPerType = exceptionValuesPerType.updated(
                             ObjectType.Throwable,
-                            exceptionValuesPerType.getOrElse(
-                                ObjectType.Throwable, immutable.Set.empty
-                            ) + exceptionValue
+                            exceptionValuesPerType.getOrElse(ObjectType.Throwable, immutable.Set.empty) + exceptionValue
                         )
                     case UIDSet1(exceptionType: ObjectType) =>
                         exceptionValuesPerType = exceptionValuesPerType.updated(
                             exceptionType,
-                            exceptionValuesPerType.getOrElse(
-                                exceptionType, immutable.Set.empty
-                            ) + exceptionValue
+                            exceptionValuesPerType.getOrElse(exceptionType, immutable.Set.empty) + exceptionValue
                         )
                     case utb =>
                         val exceptionType =
@@ -152,9 +148,7 @@ trait RecordMethodCallResults
                             )
                         exceptionValuesPerType = exceptionValuesPerType.updated(
                             exceptionType,
-                            exceptionValuesPerType.getOrElse(
-                                exceptionType, immutable.Set.empty
-                            ) + exceptionValue
+                            exceptionValuesPerType.getOrElse(exceptionType, immutable.Set.empty) + exceptionValue
                         )
                 }
             }

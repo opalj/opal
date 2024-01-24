@@ -102,8 +102,8 @@ object MatcherUtil {
         project:                  SomeProject,
         failure:                  () => Unit,
         onlyFieldsExactlyInClass: Boolean,
-        onlyObjectTypes:          Boolean        = false,
-        considerSubclasses:       Boolean        = false
+        onlyObjectTypes:          Boolean = false,
+        considerSubclasses:       Boolean = false
     )(
         implicit
         typeIterator:            TypeIterator,
@@ -112,12 +112,12 @@ object MatcherUtil {
         highSoundness:           Boolean,
         incompleteFieldAccesses: IncompleteFieldAccesses
     ): FieldMatcher = {
-        val typesOpt = Some(TypesUtil.getPossibleClasses(
-            context, ref, depender, stmts, failure, onlyObjectTypes
-        ).flatMap { tpe =>
-            if (considerSubclasses) project.classHierarchy.allSubtypes(tpe.asObjectType, reflexive = true)
-            else Set(if (tpe.isObjectType) tpe.asObjectType else ObjectType.Object)
-        })
+        val typesOpt = Some(
+            TypesUtil.getPossibleClasses(context, ref, depender, stmts, failure, onlyObjectTypes).flatMap { tpe =>
+                if (considerSubclasses) project.classHierarchy.allSubtypes(tpe.asObjectType, reflexive = true)
+                else Set(if (tpe.isObjectType) tpe.asObjectType else ObjectType.Object)
+            }
+        )
 
         retrieveSuitableMatcher[Set[ObjectType]](
             typesOpt,

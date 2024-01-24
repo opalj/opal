@@ -3,8 +3,8 @@ package org.opalj
 package br
 package reader
 
-import org.scalatest.matchers.should.Matchers
 import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 import org.opalj.bi.TestResources.locateTestResources
 

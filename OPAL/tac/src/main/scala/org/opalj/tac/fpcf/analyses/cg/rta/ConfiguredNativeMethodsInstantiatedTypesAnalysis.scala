@@ -6,16 +6,8 @@ package analyses
 package cg
 package rta
 
-import org.opalj.collection.immutable.UIDSet
-import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.EPS
-import org.opalj.fpcf.FinalP
-import org.opalj.fpcf.NoResult
-import org.opalj.fpcf.PartialResult
-import org.opalj.fpcf.PropertyBounds
-import org.opalj.fpcf.PropertyComputationResult
-import org.opalj.fpcf.PropertyKind
-import org.opalj.fpcf.PropertyStore
+import scala.collection.immutable.ArraySeq
+
 import org.opalj.br.ArrayType
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.FieldType
@@ -30,8 +22,16 @@ import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
 import org.opalj.br.fpcf.properties.cg.NoCallers
-
-import scala.collection.immutable.ArraySeq
+import org.opalj.collection.immutable.UIDSet
+import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.EPS
+import org.opalj.fpcf.FinalP
+import org.opalj.fpcf.NoResult
+import org.opalj.fpcf.PartialResult
+import org.opalj.fpcf.PropertyBounds
+import org.opalj.fpcf.PropertyComputationResult
+import org.opalj.fpcf.PropertyKind
+import org.opalj.fpcf.PropertyStore
 
 /**
  * Handles the effect of certain (configured native methods) to the set of instantiated types.
@@ -47,9 +47,9 @@ class ConfiguredNativeMethodsInstantiatedTypesAnalysis private[analyses] (
 
     // TODO remove dependency to classes in pointsto package
     private[this] val nativeMethodData: Map[DeclaredMethod, Option[Array[PointsToRelation]]] = {
-        ConfiguredMethods.reader.read(
-            p.config, "org.opalj.fpcf.analyses.ConfiguredNativeMethodsAnalysis"
-        ).nativeMethods.map { v => (v.method, v.pointsTo) }.toMap
+        ConfiguredMethods.reader
+            .read(p.config, "org.opalj.fpcf.analyses.ConfiguredNativeMethodsAnalysis")
+            .nativeMethods.map { v => (v.method, v.pointsTo) }.toMap
     }
 
     def getInstantiatedTypesUB(
@@ -96,7 +96,8 @@ class ConfiguredNativeMethodsInstantiatedTypesAnalysis private[analyses] (
                         FieldType(as.instantiatedType).asReferenceType
             }.flatten
         } else if (dm.hasSingleDefinedMethod && dm.definedMethod.body.isEmpty &&
-            dm.descriptor.returnType.isReferenceType) {
+                   dm.descriptor.returnType.isReferenceType
+        ) {
             val m = dm.definedMethod
             val returnType = m.returnType.asReferenceType
             // TODO We should probably handle ArrayTypes as well
@@ -139,7 +140,9 @@ object ConfiguredNativeMethodsInstantiatedTypesAnalysisScheduler extends BasicFP
     override def derivesEagerly: Set[PropertyBounds] = Set.empty
 
     override def register(
-        p: SomeProject, ps: PropertyStore, unused: Null
+        p:      SomeProject,
+        ps:     PropertyStore,
+        unused: Null
     ): ConfiguredNativeMethodsInstantiatedTypesAnalysis = {
         val analysis = new ConfiguredNativeMethodsInstantiatedTypesAnalysis(p)
 

@@ -17,7 +17,7 @@ case class MethodParameterTable(parameters: MethodParameters)
         this == other
     }
 
-    final override def apply(parameterIndex: Int): MethodParameter = parameters(parameterIndex)
+    override final def apply(parameterIndex: Int): MethodParameter = parameters(parameterIndex)
 
 }
 

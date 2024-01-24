@@ -10,9 +10,9 @@ package instructions
  */
 abstract class StoreLocalVariableInstruction extends Instruction with NoLabels {
 
-    final override def isStoreLocalVariableInstruction: Boolean = true
+    override final def isStoreLocalVariableInstruction: Boolean = true
 
-    final override def asStoreLocalVariableInstruction: this.type = this
+    override final def asStoreLocalVariableInstruction: this.type = this
 
     def lvIndex: Int
 
@@ -47,7 +47,7 @@ abstract class StoreLocalVariableInstruction extends Instruction with NoLabels {
 
     final def expressionResult: NoExpression.type = NoExpression
 
-    final override def toString(currentPC: Int): String = toString()
+    override final def toString(currentPC: Int): String = toString()
 }
 
 /**

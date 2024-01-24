@@ -4,16 +4,6 @@ package br
 package fpcf
 package analyses
 
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.InterimResult
-import org.opalj.fpcf.ProperPropertyComputationResult
-import org.opalj.fpcf.PropertyBounds
-import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.Result
-import org.opalj.fpcf.SomeEOptionP
-import org.opalj.fpcf.SomeEPS
-import org.opalj.fpcf.UBP
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
@@ -27,13 +17,23 @@ import org.opalj.br.fpcf.properties.SimpleContextsKey
 import org.opalj.br.fpcf.properties.VirtualMethodPurity
 import org.opalj.br.fpcf.properties.VirtualMethodPurity.VImpureByAnalysis
 import org.opalj.br.fpcf.properties.VirtualMethodPurity.VImpureByLackOfInformation
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.InterimResult
+import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.PropertyBounds
+import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.Result
+import org.opalj.fpcf.SomeEOptionP
+import org.opalj.fpcf.SomeEPS
+import org.opalj.fpcf.UBP
 
 /**
  * Determines the aggregated purity for virtual methods.
  *
  * @author Dominik Helm
  */
-class VirtualMethodPurityAnalysis private[analyses] ( final val project: SomeProject) extends FPCFAnalysis {
+class VirtualMethodPurityAnalysis private[analyses] (final val project: SomeProject) extends FPCFAnalysis {
     private[this] val declaredMethods = project.get(DeclaredMethodsKey)
     private[this] val simpleContexts = project.get(SimpleContextsKey)
 
@@ -81,8 +81,11 @@ class VirtualMethodPurityAnalysis private[analyses] ( final val project: SomePro
                 Result(dm, maxPurity.aggregatedProperty)
             } else {
                 InterimResult(
-                    dm, VImpureByAnalysis, maxPurity.aggregatedProperty,
-                    dependees, c
+                    dm,
+                    VImpureByAnalysis,
+                    maxPurity.aggregatedProperty,
+                    dependees,
+                    c
                 )
             }
         }
@@ -91,8 +94,11 @@ class VirtualMethodPurityAnalysis private[analyses] ( final val project: SomePro
             Result(dm, maxPurity.aggregatedProperty)
         } else {
             InterimResult(
-                dm, VImpureByAnalysis, maxPurity.aggregatedProperty,
-                dependees, c
+                dm,
+                VImpureByAnalysis,
+                maxPurity.aggregatedProperty,
+                dependees,
+                c
             )
         }
     }
@@ -111,7 +117,7 @@ trait VirtualMethodPurityAnalysisScheduler extends FPCFAnalysisScheduler {
 
     override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
 
-    final override def uses: Set[PropertyBounds] = Set(PropertyBounds.lub(Purity))
+    override final def uses: Set[PropertyBounds] = Set(PropertyBounds.lub(Purity))
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(VirtualMethodPurity)
 
@@ -128,7 +134,8 @@ object EagerVirtualMethodPurityAnalysis
     override type InitializationData = (DeclaredMethods, SimpleContexts, ConfiguredPurity)
 
     override def init(
-        p: SomeProject, ps: PropertyStore
+        p:  SomeProject,
+        ps: PropertyStore
     ): (DeclaredMethods, SimpleContexts, ConfiguredPurity) = {
         (p.get(DeclaredMethodsKey), p.get(SimpleContextsKey), p.get(ConfiguredPurityKey))
     }

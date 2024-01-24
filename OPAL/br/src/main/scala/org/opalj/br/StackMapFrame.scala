@@ -49,6 +49,7 @@ sealed trait ChopFrame extends StackMapFrame {
     def offsetDelta: Int
     final def offset(previousOffset: Int): Int = previousOffset + offsetDelta + 1
 }
+
 object ChopFrame {
 
     def apply(frameType: Int, offsetDelta: Int): ChopFrame = {

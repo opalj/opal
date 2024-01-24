@@ -2,7 +2,7 @@
 package immutability;
 
 import immutability.helperclasses.MutableClass;
-import immutability.annotations.ConditionallyImmutable;;
+import immutability.annotations.ConditionallyImmutable;
 
 /**
  * A conditionally immutable class with a final field which references a mutable object.

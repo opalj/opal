@@ -51,4 +51,3 @@ object FieldAccessInformationKey extends ProjectInformationKey[FieldAccessInform
         FieldAccessInformation(project)
     }
 }
-

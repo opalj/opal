@@ -2,8 +2,8 @@
 package org.opalj
 package tac
 
-import org.opalj.value.ValueInformation
 import org.opalj.br._
+import org.opalj.value.ValueInformation
 
 /**
  * Id based variables are named based on the position of the corresponding stack/register value.
@@ -30,8 +30,8 @@ sealed trait IdBasedVar extends Var[IdBasedVar] {
 
     def name: String =
         if (id == Int.MinValue) "t"
-        else if (id >= 0) "op_"+id.toString
-        else "r_"+(-(id + 1))
+        else if (id >= 0) "op_" + id.toString
+        else "r_" + (-(id + 1))
 
     /**
      * Creates a new variable that has the same identifier etc. but an updated

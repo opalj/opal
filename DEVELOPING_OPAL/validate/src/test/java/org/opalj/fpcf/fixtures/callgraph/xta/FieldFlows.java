@@ -1,3 +1,4 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.callgraph.xta;
 
 import org.opalj.fpcf.properties.callgraph.AvailableTypes;

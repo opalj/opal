@@ -11,26 +11,26 @@ import java.io.File
 import java.io.PrintWriter
 
 import com.typesafe.config.ConfigValueFactory
-import org.opalj.bytecode
 
-import org.opalj.util.Milliseconds
-import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.fpcf.FinalEP
-import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.seq.PKESequentialPropertyStore
+import org.opalj.ai.domain.l0.PrimitiveTACAIDomain
+import org.opalj.ai.domain.l2
+import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.properties.cg.Callers
-import org.opalj.ai.domain.l0.PrimitiveTACAIDomain
-import org.opalj.ai.domain.l2
-import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
-import org.opalj.tac.cg.RTACallGraphKey
+import org.opalj.bytecode
+import org.opalj.fpcf.FinalEP
+import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.seq.PKESequentialPropertyStore
 import org.opalj.ifds.IFDSAnalysis
 import org.opalj.ifds.IFDSAnalysisScheduler
 import org.opalj.ifds.Statistics
+import org.opalj.tac.cg.RTACallGraphKey
+import org.opalj.util.Milliseconds
+import org.opalj.util.PerformanceEvaluation.time
 
 /**
  * Setup to run different Evaluations of IFDS Analyses
@@ -71,7 +71,7 @@ abstract class IFDSEvaluationRunner {
             val ps = p.get(PropertyStoreKey)
             var analysisTime: Milliseconds = Milliseconds.None
             p.get(RTACallGraphKey)
-            println("Start: "+new java.util.Date)
+            println("Start: " + new java.util.Date)
             org.opalj.util.gc()
             val analysis =
                 time {

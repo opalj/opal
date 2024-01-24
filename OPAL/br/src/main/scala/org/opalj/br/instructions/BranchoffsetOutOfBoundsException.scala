@@ -6,5 +6,5 @@ package instructions
 case class BranchoffsetOutOfBoundsException(
         labeledInstruction: LabeledInstruction
 ) extends RuntimeException(
-    s"resolving the branchoffset of $labeledInstruction resulted in an invalid branchoffset"
-)
+        s"resolving the branchoffset of $labeledInstruction resulted in an invalid branchoffset"
+    )

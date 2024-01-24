@@ -3,10 +3,11 @@ package org.opalj
 package br
 package reader
 
+import scala.collection.immutable.ArraySeq
+
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory
-import org.opalj.log.OPALLogger.error
-import org.opalj.log.OPALLogger.info
+
 import org.opalj.bi.ACC_PRIVATE
 import org.opalj.bi.ACC_STATIC
 import org.opalj.bi.ACC_SYNTHETIC
@@ -19,8 +20,8 @@ import org.opalj.br.instructions.LoadDynamic2_W
 import org.opalj.br.instructions.LoadDynamic_W
 import org.opalj.br.instructions.NOP
 import org.opalj.br.instructions.ReturnInstruction
-
-import scala.collection.immutable.ArraySeq
+import org.opalj.log.OPALLogger.error
+import org.opalj.log.OPALLogger.info
 
 /**
  * Provides support for rewriting Java 11 dynamic constant loading instructions.
@@ -88,7 +89,8 @@ trait DynamicConstantRewriting
                 case t: Throwable =>
                     error(
                         "class file reader",
-                        s"couldn't read: $LogUnknownDynamicConstantsConfigKey", t
+                        s"couldn't read: $LogUnknownDynamicConstantsConfigKey",
+                        t
                     )
                     false
             }
@@ -107,7 +109,8 @@ trait DynamicConstantRewriting
                 case t: Throwable =>
                     error(
                         "class file reader",
-                        s"couldn't read: $LogUnresolvedDynamicConstantsConfigKey", t
+                        s"couldn't read: $LogUnresolvedDynamicConstantsConfigKey",
+                        t
                     )
                     false
             }
@@ -158,7 +161,8 @@ trait DynamicConstantRewriting
 
         val head = newInstructions.head
         if (newLength == 3 && // There might not be an actual replacement
-            (head.isInstanceOf[LoadDynamic_W] || head.isInstanceOf[LoadDynamic2_W])) {
+            (head.isInstanceOf[LoadDynamic_W] || head.isInstanceOf[LoadDynamic2_W])
+        ) {
             if (logUnknownDynamicConstants) {
                 val t = classFile.thisType.toJava
                 info(
@@ -175,9 +179,8 @@ trait DynamicConstantRewriting
             if (logRewrites)
                 info("rewriting dynamic constant", s"Java: $load => $head")
         } else if (instructionLength == 3) { // Replace ldc(2)_w with invocation
-            val newMethodName = newTargetMethodName(
-                cp, methodNameIndex, methodDescriptorIndex, pc, "load_dynamic_contstant"
-            )
+            val newMethodName =
+                newTargetMethodName(cp, methodNameIndex, methodDescriptorIndex, pc, "load_dynamic_contstant")
             val newMethod = Method(
                 ACC_SYNTHETIC.mask | ACC_PRIVATE.mask | ACC_STATIC.mask,
                 newMethodName,
@@ -210,23 +213,23 @@ trait DynamicConstantRewriting
 object DynamicConstantRewriting {
 
     final val DynamicConstantKeyPrefix = {
-        ClassFileReaderConfiguration.ConfigKeyPrefix+"DynamicConstants."
+        ClassFileReaderConfiguration.ConfigKeyPrefix + "DynamicConstants."
     }
 
-    final val RewritingConfigKey = DynamicConstantKeyPrefix+"rewrite"
-    final val LogRewritingsConfigKey = DynamicConstantKeyPrefix+"logRewrites"
+    final val RewritingConfigKey = DynamicConstantKeyPrefix + "rewrite"
+    final val LogRewritingsConfigKey = DynamicConstantKeyPrefix + "logRewrites"
     final val LogUnknownDynamicConstantsConfigKey =
-        DynamicConstantKeyPrefix+"logUnknownDynamicConstants"
+        DynamicConstantKeyPrefix + "logUnknownDynamicConstants"
     final val LogUnresolvedDynamicConstantsConfigKey =
-        DynamicConstantKeyPrefix+"logUnresolvedDynamicConstants"
+        DynamicConstantKeyPrefix + "logUnresolvedDynamicConstants"
 
     /**
      * Returns the default config where the settings for rewriting and logging rewrites are
      * set to the specified values.
      */
     def defaultConfig(rewrite: Boolean, logRewrites: Boolean): Config = {
-        BaseConfig.
-            withValue(RewritingConfigKey, ConfigValueFactory.fromAnyRef(rewrite)).
-            withValue(LogRewritingsConfigKey, ConfigValueFactory.fromAnyRef(logRewrites))
+        BaseConfig
+            .withValue(RewritingConfigKey, ConfigValueFactory.fromAnyRef(rewrite))
+            .withValue(LogRewritingsConfigKey, ConfigValueFactory.fromAnyRef(logRewrites))
     }
 }

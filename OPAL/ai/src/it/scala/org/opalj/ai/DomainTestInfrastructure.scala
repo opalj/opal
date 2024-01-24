@@ -5,26 +5,25 @@ package domain
 
 import java.net.URL
 import java.util.concurrent.ConcurrentLinkedQueue
-
 import scala.util.control.ControlThrowable
 import scala.xml.NodeSeq
 
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
-import org.opalj.util.PerformanceEvaluation
-import org.opalj.io.writeAndOpen
-import org.opalj.log.LogContext
-import org.opalj.log.GlobalLogContext
+import org.opalj.ai.util.XHTML
 import org.opalj.bi.TestResources
 import org.opalj.br.{TestSupport => BRTestSupport}
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
+import org.opalj.br.analyses.MethodInfo
 import org.opalj.br.analyses.Project
 import org.opalj.br.reader.BytecodeInstructionsCache
-import org.opalj.br.analyses.MethodInfo
 import org.opalj.br.reader.Java9FrameworkWithInvokedynamicSupportAndCaching
-import org.opalj.ai.util.XHTML
+import org.opalj.io.writeAndOpen
+import org.opalj.log.GlobalLogContext
+import org.opalj.log.LogContext
+import org.opalj.util.PerformanceEvaluation
 
 /**
  * Provides the basic infrastructure to load a very large number of class files and to perform
@@ -55,9 +54,7 @@ abstract class DomainTestInfrastructure(domainName: String) extends AnyFlatSpec 
     ): Unit = {
         // validate that we can get the computational type of each value stored on the stack
         // (this test will fail by throwing an exception)
-        result.operandsArray.forall { ops =>
-            (ops eq null) || { ops.foreach(op => op.computationalType); true }
-        }
+        result.operandsArray.forall { ops => (ops eq null) || { ops.foreach(op => op.computationalType); true } }
     }
 
     /**
@@ -86,7 +83,7 @@ abstract class DomainTestInfrastructure(domainName: String) extends AnyFlatSpec 
                     val result = ai(method, Domain(project, method))
                     if (result.wasAborted) {
                         throw new InterruptedException(
-                            s"evaluation bound (max=${ai.maxEvaluationCount} exceeded"+
+                            s"evaluation bound (max=${ai.maxEvaluationCount} exceeded" +
                                 s" (maxStack=${body.maxStack}; maxLocals=${body.maxLocals})"
                         )
                     } else {
@@ -97,7 +94,7 @@ abstract class DomainTestInfrastructure(domainName: String) extends AnyFlatSpec 
                 None
             } catch {
                 case ct: ControlThrowable => throw ct
-                case t: Throwable =>
+                case t: Throwable         =>
                     // basically, we want to catch everything!
                     Some((project.source(classFile).get.toString, classFile, method, t))
             }
@@ -124,37 +121,37 @@ abstract class DomainTestInfrastructure(domainName: String) extends AnyFlatSpec 
                         exInstances.map { ex =>
                             val (_, classFile, method, throwable) = ex
                             <div>
-                                <b>{ classFile.thisType.fqn }</b>
-                                <i>"{ method.signatureToJava(false) }"</i><br/>
-                                { "Length: "+method.body.get.instructions.length }
-                                <div>{ XHTML.throwableToXHTML(throwable) }</div>
+                                <b>{classFile.thisType.fqn}</b>
+                                <i>"{method.signatureToJava(false)}"</i><br/>
+                                {"Length: " + method.body.get.instructions.length}
+                                <div>{XHTML.throwableToXHTML(throwable)}</div>
                             </div>
                         }
 
                     <section>
-                        <h1>{ exResource }</h1>
-                        <p>Number of thrown exceptions: { exInstances.size }</p>
-                        { exDetails }
+                        <h1>{exResource}</h1>
+                        <p>Number of thrown exceptions: {exInstances.size}</p>
+                        {exDetails}
                     </section>
                 }
             val node = XHTML.createXHTML(Some("Thrown Exceptions"), NodeSeq.fromSeq(body.toSeq))
-            val file = writeAndOpen(node, "FailedAbstractInterpretations-"+projectName, ".html")
+            val file = writeAndOpen(node, "FailedAbstractInterpretations-" + projectName, ".html")
 
             fail(
-                projectName+": "+
-                    "During the interpretation of "+
-                    methodsCount.get+" methods (of "+project.methodsCount+") in "+
-                    project.classFilesCount+" classes (real time: "+getTime(Symbol("OVERALL")).toSeconds+
-                    ", ai (∑CPU Times): "+getTime(Symbol("AI")).toSeconds+
-                    ")"+collectedExceptions.size+
-                    " exceptions occured (details: "+file.toString+")."
+                projectName + ": " +
+                    "During the interpretation of " +
+                    methodsCount.get + " methods (of " + project.methodsCount + ") in " +
+                    project.classFilesCount + " classes (real time: " + getTime(Symbol("OVERALL")).toSeconds +
+                    ", ai (∑CPU Times): " + getTime(Symbol("AI")).toSeconds +
+                    ")" + collectedExceptions.size +
+                    " exceptions occured (details: " + file.toString + ")."
             )
         } else {
             info(
-                s"$projectName: no exceptions occured during the interpretation of "+
-                    methodsCount.get+" methods (of "+project.methodsCount+") in "+
-                    project.classFilesCount+" classes (real time: "+getTime(Symbol("OVERALL")).toSeconds+
-                    ", ai (∑CPU Times): "+getTime(Symbol("AI")).toSeconds+")"
+                s"$projectName: no exceptions occured during the interpretation of " +
+                    methodsCount.get + " methods (of " + project.methodsCount + ") in " +
+                    project.classFilesCount + " classes (real time: " + getTime(Symbol("OVERALL")).toSeconds +
+                    ", ai (∑CPU Times): " + getTime(Symbol("AI")).toSeconds + ")"
             )
         }
     }

@@ -5,6 +5,32 @@ package fpcf
 package analyses
 package escape
 
+import org.opalj.br.DefinedMethod
+import org.opalj.br.Method
+import org.opalj.br.VirtualDeclaredMethod
+import org.opalj.br.analyses.DeclaredMethods
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.VirtualFormalParameter
+import org.opalj.br.analyses.VirtualFormalParameters
+import org.opalj.br.analyses.VirtualFormalParametersKey
+import org.opalj.br.analyses.cg.IsOverridableMethodKey
+import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
+import org.opalj.br.fpcf.BasicFPCFLazyAnalysisScheduler
+import org.opalj.br.fpcf.ContextProviderKey
+import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.FPCFAnalysisScheduler
+import org.opalj.br.fpcf.analyses.ContextProvider
+import org.opalj.br.fpcf.properties._
+import org.opalj.br.fpcf.properties.Context
+import org.opalj.br.fpcf.properties.EscapeProperty
+import org.opalj.br.fpcf.properties.GlobalEscape
+import org.opalj.br.fpcf.properties.NoEscape
+import org.opalj.br.fpcf.properties.SimpleContext
+import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.cg.NoCallers
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.InterimLUBP
@@ -14,35 +40,9 @@ import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEOptionP
-import org.opalj.value.ValueInformation
-import org.opalj.br.fpcf.properties._
-import org.opalj.br.DefinedMethod
-import org.opalj.br.Method
-import org.opalj.br.VirtualDeclaredMethod
-import org.opalj.br.analyses.DeclaredMethods
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.VirtualFormalParameter
-import org.opalj.br.analyses.VirtualFormalParameters
-import org.opalj.br.analyses.VirtualFormalParametersKey
-import org.opalj.br.analyses.cg.IsOverridableMethodKey
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.fpcf.properties.EscapeProperty
-import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.FPCFAnalysisScheduler
-import org.opalj.br.fpcf.properties.GlobalEscape
-import org.opalj.br.fpcf.properties.NoEscape
-import org.opalj.br.fpcf.BasicFPCFLazyAnalysisScheduler
-import org.opalj.br.fpcf.analyses.ContextProvider
-import org.opalj.br.fpcf.properties.Context
-import org.opalj.br.fpcf.properties.SimpleContext
-import org.opalj.br.fpcf.ContextProviderKey
-import org.opalj.br.fpcf.properties.cg.Callees
-import org.opalj.br.fpcf.properties.cg.Callers
-import org.opalj.br.fpcf.properties.cg.NoCallers
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.properties.TACAI
+import org.opalj.value.ValueInformation
 
 class InterProceduralEscapeAnalysisContext(
         val entity:                  (Context, Entity),
@@ -87,7 +87,8 @@ class InterProceduralEscapeAnalysis private[analyses] (
         fp._2 match {
             // if the underlying method is inherited, we avoid recomputation and query the
             // result of the method for its defining class.
-            case VirtualFormalParameter(dm: DefinedMethod, i) if fp._1.isInstanceOf[SimpleContext] && dm.declaringClassType != dm.definedMethod.classFile.thisType =>
+            case VirtualFormalParameter(dm: DefinedMethod, i)
+                if fp._1.isInstanceOf[SimpleContext] && dm.declaringClassType != dm.definedMethod.classFile.thisType =>
                 def handleEscapeState(eOptionP: SomeEOptionP): ProperPropertyComputationResult = {
                     eOptionP match {
                         case FinalP(p) =>

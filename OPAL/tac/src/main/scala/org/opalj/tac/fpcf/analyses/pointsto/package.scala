@@ -4,13 +4,13 @@ package tac
 package fpcf
 package analyses
 
-import org.opalj.fpcf.Entity
-import org.opalj.value.ValueInformation
 import org.opalj.br.analyses.VirtualFormalParameters
-import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.br.fpcf.analyses.SimpleContextProvider
+import org.opalj.br.fpcf.properties.Context
+import org.opalj.fpcf.Entity
 import org.opalj.tac.common.DefinitionSites
+import org.opalj.value.ValueInformation
 
 package object pointsto {
 
@@ -19,7 +19,9 @@ package object pointsto {
      * entity to be used to attach/retrieve points-to information from.
      */
     def toEntity(
-        defSite: Int, context: Context, stmts: Array[Stmt[DUVar[ValueInformation]]]
+        defSite: Int,
+        context: Context,
+        stmts:   Array[Stmt[DUVar[ValueInformation]]]
     )(
         implicit
         formalParameters: VirtualFormalParameters,

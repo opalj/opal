@@ -3,7 +3,6 @@ package org.opalj
 package tac
 
 import java.net.URL
-
 import scala.jdk.CollectionConverters._
 
 // import org.opalj.log.OPALLogger.info
@@ -54,7 +53,7 @@ object CloseResources extends ProjectAnalysisApplication {
             val (stmtFacts, normalReturnFacts, abnormalReturnFacts) =
                 cfg.computeMOPSolution[Fs](seed, t, cfJoin)
         }
-        */
+         */
 
         issues.asScala.mkString("\n")
     }

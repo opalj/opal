@@ -6,6 +6,8 @@ package analyses
 package cg
 package xta
 
+import scala.collection.mutable
+
 import org.opalj.br.ArrayType
 import org.opalj.br.Method
 import org.opalj.br.analyses.ProjectInformationKeys
@@ -25,8 +27,6 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.properties.TACAI
-
-import scala.collection.mutable
 
 /**
  * Updates InstantiatedTypes attached to a method's set for each array allocation
@@ -95,10 +95,10 @@ final class ArrayInstantiationsAnalysis(
 
         // Note: Since 'until' is an exclusive range, all array types in 'arrays' with
         // dimension 1 are not processed here.
-        for (
+        for {
             at <- arrays;
             dim <- 1 until at.dimensions
-        ) {
+        } {
 
             val targetAT = ArrayType(dim + 1, at.elementType)
             val assignedAT = targetAT.componentType.asArrayType

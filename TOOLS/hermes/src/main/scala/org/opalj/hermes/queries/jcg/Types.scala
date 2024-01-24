@@ -4,19 +4,19 @@ package hermes
 package queries
 package jcg
 
+import scala.collection.immutable.ArraySeq
+
 import org.opalj.ai.BaseAI
 import org.opalj.ai.domain.l0.BaseDomain
-import org.opalj.br.ObjectType
 import org.opalj.br.MethodWithBody
+import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.CHECKCAST
-import org.opalj.br.instructions.INVOKEVIRTUAL
-import org.opalj.br.instructions.INSTANCEOF
 import org.opalj.br.instructions.IF_ACMPEQ
 import org.opalj.br.instructions.IF_ACMPNE
+import org.opalj.br.instructions.INSTANCEOF
+import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.da.ClassFile
-
-import scala.collection.immutable.ArraySeq
 
 /**
  * Groups features that somehow rely on Javas type cast API given by either jvm instructions or

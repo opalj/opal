@@ -7,25 +7,25 @@ import scala.reflect.runtime.universe.runtimeMirror
 
 import scala.jdk.CollectionConverters._
 
-import org.opalj.log.LogContext
-import org.opalj.log.OPALLogger
-import org.opalj.log.OPALLogger.error
-import org.opalj.fpcf.PropertyStore
+import org.opalj.ai.domain.RecordCFG
+import org.opalj.ai.domain.RecordDefUse
+import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKey
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.CallBySignatureKey
+import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
 import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.analyses.ContextProvider
-import org.opalj.ai.domain.RecordCFG
-import org.opalj.ai.domain.RecordDefUse
-import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
+import org.opalj.fpcf.PropertyStore
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
+import org.opalj.log.OPALLogger.error
 import org.opalj.tac.fpcf.analyses.LazyTACAIProvider
 import org.opalj.tac.fpcf.analyses.cg.CallGraphAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.TypeIterator
@@ -165,7 +165,8 @@ trait CallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
     private[this] def requiresCallBySignatureKey(p: SomeProject): ProjectInformationKeys = {
         val config = p.config
         if (config.hasPath(CallBySignatureConfigKey)
-            && config.getBoolean(CallBySignatureConfigKey)) {
+            && config.getBoolean(CallBySignatureConfigKey)
+        ) {
             return Seq(CallBySignatureKey);
         }
         Seq.empty

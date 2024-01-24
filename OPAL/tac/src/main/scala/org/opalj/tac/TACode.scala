@@ -4,14 +4,14 @@ package tac
 
 import java.util.{Arrays => JArrays}
 
-import org.opalj.value.ValueInformation
 import org.opalj.br.Attribute
+import org.opalj.br.Code
 import org.opalj.br.CodeSequence
 import org.opalj.br.ExceptionHandlers
+import org.opalj.br.PC
 import org.opalj.br.SimilarityTestConfiguration
 import org.opalj.br.cfg.CFG
-import org.opalj.br.Code
-import org.opalj.br.PC
+import org.opalj.value.ValueInformation
 
 /**
  * Contains the 3-address code (like) representation of a method.
@@ -77,7 +77,7 @@ sealed trait TACode[P <: AnyRef, V <: Var[V]] extends Attribute with CodeSequenc
         code.lineNumberTable.flatMap(_.lookupLineNumber(stmts(index).pc))
     }
 
-    final override def equals(other: Any): Boolean = {
+    override final def equals(other: Any): Boolean = {
         other match {
             case that: TACode[_, _] =>
                 // Recall that the CFG is derived from the stmts and therefore necessarily
@@ -94,7 +94,7 @@ sealed trait TACode[P <: AnyRef, V <: Var[V]] extends Attribute with CodeSequenc
         }
     }
 
-    final override lazy val hashCode: Int = {
+    override final lazy val hashCode: Int = {
         // In the following we do not consider the CFG as it is "just" a derived
         // data structure.
         ((params.hashCode * 31 +
@@ -105,7 +105,9 @@ sealed trait TACode[P <: AnyRef, V <: Var[V]] extends Attribute with CodeSequenc
 
     protected[this] def toString(taCodeType: String, additionalParameters: String): String = {
         val txtParams = s"params=($params)"
-        val stmtsWithIndex = stmts.iterator.zipWithIndex.map { e => val (s, i) = e; s"$i: $s" }
+        val stmtsWithIndex = stmts.iterator.zipWithIndex.map { e =>
+            val (s, i) = e; s"$i: $s"
+        }
         val txtStmts = stmtsWithIndex.mkString("stmts=(\n\t", ",\n\t", "\n)")
         val txtExceptionHandlers =
             if (exceptionHandlers.nonEmpty)
@@ -222,4 +224,3 @@ final class NaiveTACode[P <: AnyRef](
     override def toString: String = toString("NaiveTACode", "")
 
 }
-

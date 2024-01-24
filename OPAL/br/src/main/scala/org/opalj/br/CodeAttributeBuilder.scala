@@ -32,8 +32,7 @@ trait CodeAttributeBuilder[T] {
         name:               String,
         descriptor:         MethodDescriptor
     )(
-        implicit
-        classHierarchy: ClassHierarchy
+        implicit classHierarchy: ClassHierarchy
     ): (Attribute, T)
 
 }

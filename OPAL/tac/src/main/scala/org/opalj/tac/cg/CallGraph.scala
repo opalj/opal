@@ -3,13 +3,13 @@ package org.opalj
 package tac
 package cg
 
-import org.opalj.fpcf.EUBP
-import org.opalj.fpcf.PropertyStore
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.cg.NoCallers
+import org.opalj.fpcf.EUBP
+import org.opalj.fpcf.PropertyStore
 import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 
 /**

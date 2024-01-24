@@ -23,13 +23,13 @@ case class LocalVariableTableEntry(
         val name = cp(name_index).toString(cp)
         val descriptor = parseFieldType(cp(descriptor_index).asString)
         <div class="local_variable">
-            <span class="pc">pc=[{ start_pc } &rarr; { start_pc + length })</span>
+            <span class="pc">pc=[{start_pc} &rarr; {start_pc + length})</span>
             /
-            <span class="index"> lv={ index }</span>
+            <span class="index"> lv={index}</span>
             &rArr;
-            { descriptor.asSpan("") }
+            {descriptor.asSpan("")}
             &nbsp;
-            <span class="name"> { name }</span>
+            <span class="name"> {name}</span>
         </div>
     }
 

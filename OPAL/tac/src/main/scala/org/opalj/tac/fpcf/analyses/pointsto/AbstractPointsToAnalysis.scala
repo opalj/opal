@@ -6,45 +6,21 @@ package analyses
 package pointsto
 
 import scala.collection.mutable.ArrayBuffer
-import org.opalj.log.OPALLogger.logOnce
-import org.opalj.log.Warn
-import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.EPK
-import org.opalj.fpcf.EPS
-import org.opalj.fpcf.InterimPartialResult
-import org.opalj.fpcf.ProperPropertyComputationResult
-import org.opalj.fpcf.PropertyBounds
-import org.opalj.fpcf.PropertyKind
-import org.opalj.fpcf.PropertyMetaInformation
-import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.Results
-import org.opalj.fpcf.SomeEOptionP
-import org.opalj.fpcf.SomeEPK
-import org.opalj.fpcf.SomeEPS
-import org.opalj.fpcf.UBP
-import org.opalj.value.IsMultipleReferenceValue
-import org.opalj.value.IsReferenceValue
-import org.opalj.value.IsSArrayValue
-import org.opalj.value.ValueInformation
-import org.opalj.br.Method
-import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
-import org.opalj.br.ReferenceType
-import org.opalj.br.FieldType
-import org.opalj.br.ObjectType
+
 import org.opalj.br.ArrayType
 import org.opalj.br.DeclaredField
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.FieldType
+import org.opalj.br.Method
+import org.opalj.br.ObjectType
+import org.opalj.br.PC
+import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFTriggeredAnalysisScheduler
-import org.opalj.br.DeclaredMethod
 import org.opalj.br.fpcf.analyses.SimpleContextProvider
-import org.opalj.br.PC
-import org.opalj.br.analyses.DeclaredFieldsKey
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.Callers
@@ -54,13 +30,34 @@ import org.opalj.br.fpcf.properties.fieldaccess.MethodFieldReadAccessInformation
 import org.opalj.br.fpcf.properties.fieldaccess.MethodFieldWriteAccessInformation
 import org.opalj.br.fpcf.properties.fieldaccess.NoMethodFieldReadAccessInformation
 import org.opalj.br.fpcf.properties.fieldaccess.NoMethodFieldWriteAccessInformation
+import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.EPK
+import org.opalj.fpcf.EPS
+import org.opalj.fpcf.InterimPartialResult
+import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyKey
-import org.opalj.tac.cg.TypeIteratorKey
+import org.opalj.fpcf.PropertyKind
+import org.opalj.fpcf.PropertyMetaInformation
+import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.Results
+import org.opalj.fpcf.SomeEOptionP
+import org.opalj.fpcf.SomeEPK
+import org.opalj.fpcf.SomeEPS
+import org.opalj.fpcf.UBP
+import org.opalj.log.OPALLogger.logOnce
+import org.opalj.log.Warn
 import org.opalj.tac.common.DefinitionSite
-import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.analyses.cg.ReachableMethodAnalysis
 import org.opalj.tac.fpcf.analyses.cg.valueOriginsOfPCs
 import org.opalj.tac.fpcf.properties.TACAI
+import org.opalj.value.IsMultipleReferenceValue
+import org.opalj.value.IsReferenceValue
+import org.opalj.value.IsSArrayValue
+import org.opalj.value.ValueInformation
 
 /**
  * A context-insensitive points-to analysis, that uses an abstract [[PointsToSetLike]] in order to
@@ -71,7 +68,8 @@ import org.opalj.tac.fpcf.properties.TACAI
 trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethodAnalysis {
 
     override def processMethod(
-        callContext: ContextType, tacEP: EPS[Method, TACAI]
+        callContext: ContextType,
+        tacEP:       EPS[Method, TACAI]
     ): ProperPropertyComputationResult = {
         doProcessMethod(
             new PointsToAnalysisState[ElementType, PointsToSet, ContextType](callContext, tacEP)
@@ -79,8 +77,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
     }
 
     private[this] def doProcessMethod(
-        implicit
-        state: State
+        implicit state: State
     ): ProperPropertyComputationResult = {
         if (state.hasTACDependee)
             throw new IllegalStateException("points to analysis does not support refinement based tac")
@@ -103,7 +100,9 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                     val filter = (t: ReferenceType) =>
                         classHierarchy.isSubtypeOf(t, ObjectType.Throwable)
                     state.includeSharedPointsToSets(
-                        entity, currentPointsToOfDefSites(entity, defSites, filter), filter
+                        entity,
+                        currentPointsToOfDefSites(entity, defSites, filter),
+                        filter
                     )
 
                 case Assignment(_, _, _: Call[_]) | ExprStmt(_, _: Call[_]) | _: Call[_] =>
@@ -112,7 +111,9 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                     val filter = (t: ReferenceType) =>
                         classHierarchy.isSubtypeOf(t, ObjectType.Throwable)
                     state.includeSharedPointsToSet(
-                        entity, currentPointsTo(entity, callSite, filter), filter
+                        entity,
+                        currentPointsTo(entity, callSite, filter),
+                        filter
                     )
 
                 case _ =>
@@ -139,7 +140,10 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                     // note, this is wrong for alias analyses
                     else
                         createPointsToSet(
-                            pc, state.callContext, const.tpe.asObjectType, isConstant = true
+                            pc,
+                            state.callContext,
+                            const.tpe.asObjectType,
+                            isConstant = true
                         )
                 )
 
@@ -160,17 +164,29 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                     filter
                 )
 
-            case Assignment(pc, _, GetField(_, declaringClass, name, fieldType: ReferenceType, UVar(_, objRefDefSites))) =>
+            case Assignment(
+                    pc,
+                    _,
+                    GetField(_, declaringClass, name, fieldType: ReferenceType, UVar(_, objRefDefSites))
+                ) =>
                 handleGetField(Some(declaredFields(declaringClass, name, fieldType)), pc, objRefDefSites)
 
             case Assignment(pc, _, GetStatic(_, declaringClass, name, fieldType: ReferenceType)) =>
                 handleGetStatic(declaredFields(declaringClass, name, fieldType), pc)
 
-            case Assignment(pc, DVar(_: IsReferenceValue, _), ArrayLoad(_, _, UVar(av: IsSArrayValue, arrayDefSites))) =>
+            case Assignment(
+                    pc,
+                    DVar(_: IsReferenceValue, _),
+                    ArrayLoad(_, _, UVar(av: IsSArrayValue, arrayDefSites))
+                ) =>
                 val arrayType = av.theUpperTypeBound
                 handleArrayLoad(arrayType, pc, arrayDefSites)
 
-            case Assignment(pc, DVar(_: IsReferenceValue, _), ArrayLoad(_, _, UVar(av: IsMultipleReferenceValue, arrayDefSites))) =>
+            case Assignment(
+                    pc,
+                    DVar(_: IsReferenceValue, _),
+                    ArrayLoad(_, _, UVar(av: IsMultipleReferenceValue, arrayDefSites))
+                ) =>
                 val arrayType = av.leastUpperType.get.asArrayType
                 handleArrayLoad(arrayType, pc, arrayDefSites)
 
@@ -230,7 +246,14 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
             case ExprStmt(pc, call: Call[_]) =>
                 handleCall(call.asInstanceOf[Call[DUVar[ValueInformation]]], pc)
 
-            case PutField(_, declaringClass, name, fieldType: ReferenceType, UVar(_, objRefDefSites), UVar(_, defSites)) =>
+            case PutField(
+                    _,
+                    declaringClass,
+                    name,
+                    fieldType: ReferenceType,
+                    UVar(_, objRefDefSites),
+                    UVar(_, defSites)
+                ) =>
                 handlePutField(Some(declaredFields(declaringClass, name, fieldType)), objRefDefSites, defSites)
 
             case PutStatic(_, declaringClass, name, fieldType: ReferenceType, UVar(_, defSites)) =>
@@ -240,15 +263,18 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                 val arrayType = av.theUpperTypeBound
                 handleArrayStore(arrayType, arrayDefSites, defSites)
 
-            case ArrayStore(_, UVar(av: IsMultipleReferenceValue, arrayDefSites), _, UVar(_: IsReferenceValue, defSites)) =>
+            case ArrayStore(
+                    _,
+                    UVar(av: IsMultipleReferenceValue, arrayDefSites),
+                    _,
+                    UVar(_: IsReferenceValue, defSites)
+                ) =>
                 val arrayType = av.leastUpperType.get.asArrayType
                 handleArrayStore(arrayType, arrayDefSites, defSites)
 
             case ReturnValue(_, UVar(_: IsReferenceValue, defSites)) =>
                 val filter = (t: ReferenceType) =>
-                    classHierarchy.isSubtypeOf(
-                        t, state.callContext.method.descriptor.returnType.asReferenceType
-                    )
+                    classHierarchy.isSubtypeOf(t, state.callContext.method.descriptor.returnType.asReferenceType)
                 state.includeSharedPointsToSets(
                     state.callContext,
                     currentPointsToOfDefSites(state.callContext, defSites, filter),
@@ -272,7 +298,8 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
     }
 
     @inline private[this] def handleAllocation(
-        pc: Int, tpe: ReferenceType
+        pc:  Int,
+        tpe: ReferenceType
     )(implicit state: State): Unit = {
         val defSite = getDefSite(pc)
         if (!state.hasAllocationSitePointsToSet(defSite)) {
@@ -284,22 +311,22 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
     }
 
     @inline private[this] def handleArrayAllocation(
-        pc: Int, counts: Seq[Expr[V]], tpe: ArrayType
+        pc:     Int,
+        counts: Seq[Expr[V]],
+        tpe:    ArrayType
     )(implicit state: State): Unit = {
         val defSite = getDefSite(pc)
         if (!state.hasAllocationSitePointsToSet(defSite)) {
             @inline def countIsZero(theCounts: Seq[Expr[V]]): Boolean = {
                 theCounts.head.asVar.definedBy.forall { ds =>
                     ds >= 0 &&
-                        state.tac.stmts(ds).asAssignment.expr.isIntConst &&
-                        state.tac.stmts(ds).asAssignment.expr.asIntConst.value == 0
+                    state.tac.stmts(ds).asAssignment.expr.isIntConst &&
+                    state.tac.stmts(ds).asAssignment.expr.asIntConst.value == 0
                 }
             }
 
             val isEmptyArray = countIsZero(counts)
-            var arrayReferencePTS = createPointsToSet(
-                pc, state.callContext, tpe, isConstant = false, isEmptyArray
-            )
+            var arrayReferencePTS = createPointsToSet(pc, state.callContext, tpe, isConstant = false, isEmptyArray)
             state.setAllocationSitePointsToSet(
                 defSite,
                 arrayReferencePTS
@@ -335,7 +362,8 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
 
     // maps the points-to set of actual parameters (including *this*) the the formal parameters
     private[this] def handleCall(
-        call: Call[DUVar[ValueInformation]], pc: Int
+        call: Call[DUVar[ValueInformation]],
+        pc:   Int
     )(implicit state: State): Unit = {
         val tac = state.tac
         val callees: Callees = state.callees(ps)
@@ -354,7 +382,8 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
             val targetExceptions = MethodExceptions(target)
             state.includeSharedPointsToSet(
                 callExceptions,
-                currentPointsTo(callExceptions, targetExceptions, filter), filter
+                currentPointsTo(callExceptions, targetExceptions, filter),
+                filter
             )
         }
         if (state.hasCalleesDepenedee) {
@@ -368,7 +397,9 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
     }
 
     private[this] def handleDirectCall(
-        call: Call[V], pc: Int, target: Context
+        call:   Call[V],
+        pc:     Int,
+        target: Context
     )(implicit state: State): Unit = {
         val receiverOpt: Option[Expr[DUVar[ValueInformation]]] = call.receiverOption
         val fps = formalParameters(target.method)
@@ -378,7 +409,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
             if (receiverOpt.isDefined) {
                 val isNonVirtualCall = call match {
                     case _: NonVirtualFunctionCall[V] | _: NonVirtualMethodCall[V] => true
-                    case _ => false
+                    case _                                                         => false
                 }
                 handleCallReceiver(receiverOpt.get.asVar.definedBy, target, isNonVirtualCall)
             }
@@ -466,17 +497,17 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
         val readAccesses = state.readAccesses(ps)
         val writeAccesses = state.writeAccesses(ps)
 
-        for (
+        for {
             pc <- readAccesses.getAccessSites(state.callContext);
             target <- readAccesses.getIndirectAccessedFields(state.callContext, pc)
-        ) {
+        } {
             handleIndirectFieldReadAccess(pc, target, readAccesses, tac)
         }
 
-        for (
+        for {
             pc <- writeAccesses.getAccessSites(state.callContext);
             target <- writeAccesses.getIndirectAccessedFields(state.callContext, pc)
-        ) {
+        } {
             handleIndirectFieldWriteAccess(pc, target, writeAccesses, tac)
         }
     }
@@ -497,7 +528,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                 handleGetField(
                     Some(target),
                     pc,
-                    valueOriginsOfPCs(receiverOpt.get._2, tac.pcToIndex),
+                    valueOriginsOfPCs(receiverOpt.get._2, tac.pcToIndex)
                 )
             }
         }
@@ -536,8 +567,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
     }
 
     override protected[this] def createResults(
-        implicit
-        state: State
+        implicit state: State
     ): ArrayBuffer[ProperPropertyComputationResult] = {
         val results = super.createResults(state)
 
@@ -548,7 +578,8 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                 continuationForCallees(
                     calleesDependee,
                     new PointsToAnalysisState[ElementType, PointsToSet, ContextType](
-                        state.callContext, state.tacDependee
+                        state.callContext,
+                        state.tacDependee
                     )
                 )
             )
@@ -562,9 +593,13 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                     readAccessDependee,
                     NoMethodFieldReadAccessInformation,
                     MethodFieldReadAccessInformation.key,
-                    (pc, target, newAccesses, tac, state) => handleIndirectFieldReadAccess(pc, target, newAccesses, tac)(state),
-                    newDependee => state.setReadAccessDependee(newDependee),
-                    new PointsToAnalysisState[ElementType, PointsToSet, ContextType](state.callContext, state.tacDependee)
+                    (pc, target, newAccesses, tac, state) =>
+                        handleIndirectFieldReadAccess(pc, target, newAccesses, tac)(state),
+                    (currentState, newDependee) => currentState.setReadAccessDependee(newDependee),
+                    new PointsToAnalysisState[ElementType, PointsToSet, ContextType](
+                        state.callContext,
+                        state.tacDependee
+                    )
                 )
             )
         }
@@ -577,9 +612,13 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                     writeAccessDependee,
                     NoMethodFieldWriteAccessInformation,
                     MethodFieldWriteAccessInformation.key,
-                    (pc, target, newAccesses, tac, state) => handleIndirectFieldWriteAccess(pc, target, newAccesses, tac)(state),
-                    newDependee => state.setWriteAccessDependee(newDependee),
-                    new PointsToAnalysisState[ElementType, PointsToSet, ContextType](state.callContext, state.tacDependee)
+                    (pc, target, newAccesses, tac, state) =>
+                        handleIndirectFieldWriteAccess(pc, target, newAccesses, tac)(state),
+                    (currentState, newDependee) => currentState.setWriteAccessDependee(newDependee),
+                    new PointsToAnalysisState[ElementType, PointsToSet, ContextType](
+                        state.callContext,
+                        state.tacDependee
+                    )
                 )
             )
         }
@@ -588,7 +627,9 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
     }
 
     override protected[this] def continuationForShared(
-        e: Entity, dependees: Map[SomeEPK, (SomeEOptionP, ReferenceType => Boolean)], state: State
+        e:         Entity,
+        dependees: Map[SomeEPK, (SomeEOptionP, ReferenceType => Boolean)],
+        state:     State
     )(eps: SomeEPS): ProperPropertyComputationResult = {
         // The shared entities are not affected by changes of the tac and use partial results.
         // Thus, we could simply recompute them on updates for the tac
@@ -614,7 +655,8 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                     // otherwise, it might still be the case that we processed it before but it is
                     // final and thus not part of dependees anymore
                     if (dependeeIsExceptions ||
-                        target.method.descriptor.returnType.isReferenceType) {
+                        target.method.descriptor.returnType.isReferenceType
+                    ) {
                         if (!dependees.contains(EPK(entity, pointsToPropertyKey))) {
                             val p2s = ps(entity, pointsToPropertyKey)
                             if (p2s.isRefinable) {
@@ -629,9 +671,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                     e,
                     newPointsToSet,
                     newDependees,
-                    { old =>
-                        old.included(newPointsToSet, typeFilter)
-                    },
+                    { old => old.included(newPointsToSet, typeFilter) },
                     true
                 )(state)
 
@@ -668,9 +708,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                     e,
                     newPointsToSet,
                     newDependees,
-                    { old =>
-                        old.included(newPointsToSet, typeFilter)
-                    },
+                    { old => old.included(newPointsToSet, typeFilter) },
                     true
                 )(state)
 
@@ -723,12 +761,18 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
     }
 
     private def continuationForFieldAccesses[P <: MethodFieldAccessInformation[P]](
-        oldAccessEOptP:            EOptionP[Method, P],
-        noAccesses:                P,
-        key:                       PropertyKey[P],
-        handleIndirectFieldAccess: (PC, DeclaredField, P, TACode[TACMethodParameter, DUVar[ValueInformation]], State) => Unit,
-        setDependee:               EOptionP[Method, P] => Unit,
-        state:                     State
+        oldAccessEOptP: EOptionP[Method, P],
+        noAccesses:     P,
+        key:            PropertyKey[P],
+        handleIndirectFieldAccess: (
+            PC,
+            DeclaredField,
+            P,
+            TACode[TACMethodParameter, DUVar[ValueInformation]],
+            State
+        ) => Unit,
+        setDependee: (State, EOptionP[Method, P]) => Unit,
+        state:       State
     )(eps: SomeEPS): ProperPropertyComputationResult = {
         eps.pk match {
             case `key` =>
@@ -748,7 +792,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                     handleIndirectFieldAccess(pc, target, newAccesses, tac, state)
                 }
 
-                setDependee(eps.asInstanceOf[EPS[Method, P]])
+                setDependee(state, eps.asInstanceOf[EPS[Method, P]])
 
                 Results(createResults(state))
             case _ => throw new IllegalArgumentException(s"unexpected eps $eps")
@@ -763,7 +807,7 @@ trait AbstractPointsToAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
     override type InitializationData = Null
 
     override def requiredProjectInformation: ProjectInformationKeys =
-        Seq(DeclaredMethodsKey, DeclaredFieldsKey, VirtualFormalParametersKey, DefinitionSitesKey, TypeIteratorKey)
+        AbstractPointsToBasedAnalysis.requiredProjectInformation :+ DeclaredMethodsKey
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
         Callers,
@@ -785,7 +829,9 @@ trait AbstractPointsToAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
     override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
 
     override def register(
-        p: SomeProject, ps: PropertyStore, unused: Null
+        p:      SomeProject,
+        ps:     PropertyStore,
+        unused: Null
     ): AbstractPointsToAnalysis = {
         val analysis = createAnalysis(p)
         // register the analysis for initial values for callers (i.e. methods becoming reachable)
@@ -803,4 +849,3 @@ trait AbstractPointsToAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
 
     override def triggeredBy: PropertyKind = Callers
 }
-

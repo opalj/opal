@@ -8,19 +8,17 @@ import java.net.URL
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
-
 import scala.util.control.ControlThrowable
 import scala.xml.NodeSeq
 
-import org.opalj.log.LogContext
-import org.opalj.io.writeAndOpen
-
-import org.opalj.br._
-import org.opalj.br.analyses._
-import org.opalj.ai.util.XHTML
-import org.opalj.ai.domain
 import org.opalj.ai.Domain
 import org.opalj.ai.InstructionCountBoundedAI
+import org.opalj.ai.domain
+import org.opalj.ai.util.XHTML
+import org.opalj.br._
+import org.opalj.br.analyses._
+import org.opalj.io.writeAndOpen
+import org.opalj.log.LogContext
 
 /**
  * Performs an abstract interpretation of all methods of the given class file(s) using
@@ -33,7 +31,7 @@ import org.opalj.ai.InstructionCountBoundedAI
 object InterpretMethods extends AnalysisApplication {
 
     override def analysisSpecificParametersDescription: String =
-        "[-domain=<Class of the domain that should be used for the abstract interpretation>]\n"+
+        "[-domain=<Class of the domain that should be used for the abstract interpretation>]\n" +
             "[-verbose={true,false} If true, extensive information is shown.]\n"
 
     override def checkAnalysisSpecificParameters(parameters: Seq[String]): Iterable[String] = {
@@ -48,12 +46,12 @@ object InterpretMethods extends AnalysisApplication {
                 if (isDomainParameter(parameter) || isVerbose(parameter))
                     Iterable.empty
                 else
-                    Iterable("unknown parameter: "+parameter)
+                    Iterable("unknown parameter: " + parameter)
             case Seq(parameter1, parameter2) =>
                 if (!isDomainParameter(parameter1))
-                    Seq("the first parameter does not specify the domain: "+parameter1)
+                    Seq("the first parameter does not specify the domain: " + parameter1)
                 else if (!isVerbose(parameter2))
-                    Seq("the second parameter has to be \"verbose\": "+parameter2)
+                    Seq("the second parameter has to be \"verbose\": " + parameter2)
                 else
                     Iterable.empty
 
@@ -78,14 +76,14 @@ class InterpretMethodsAnalysis[Source] extends Analysis[Source, BasicReport] {
 
     override def analyze(
         project:                Project[Source],
-        parameters:             Seq[String]                 = List.empty,
+        parameters:             Seq[String] = List.empty,
         initProgressManagement: (Int) => ProgressManagement
     ): BasicReport = {
         implicit val logContext: LogContext = project.logContext
 
         val verbose = parameters.nonEmpty &&
             (parameters.head == "-verbose=true" ||
-                (parameters.size == 2 && parameters.tail.head == "-verbose=true"))
+            (parameters.size == 2 && parameters.tail.head == "-verbose=true"))
         val (message, detailedErrorInformationFile) =
             if (parameters.nonEmpty && parameters.head.startsWith("-domain")) {
                 InterpretMethodsAnalysis.interpret(
@@ -106,7 +104,7 @@ class InterpretMethodsAnalysis[Source] extends Analysis[Source, BasicReport] {
 
             }
         BasicReport(
-            message + detailedErrorInformationFile.map(" (See "+_+" for details.)").getOrElse("")
+            message + detailedErrorInformationFile.map(" (See " + _ + " for details.)").getOrElse("")
         )
     }
 }
@@ -123,10 +121,9 @@ object InterpretMethodsAnalysis {
         domainClass:            Class[_ <: Domain],
         beVerbose:              Boolean,
         initProgressManagement: (Int) => ProgressManagement,
-        maxEvaluationFactor:    Double                      = 3d
+        maxEvaluationFactor:    Double = 3d
     )(
-        implicit
-        logContext: LogContext
+        implicit logContext: LogContext
     ): (String, Option[File]) = {
 
         // TODO Add support for reporting the progress and to interrupt the analysis.
@@ -151,7 +148,7 @@ object InterpretMethodsAnalysis {
 
             val body = method.body.get
             try {
-                if (beVerbose) println(method.toJava(YELLOW+"[started]"+RESET))
+                if (beVerbose) println(method.toJava(YELLOW + "[started]" + RESET))
 
                 val evaluatedCount = time(Symbol("AI")) {
                     val ai = new InstructionCountBoundedAI[Domain](body, maxEvaluationFactor, true)
@@ -161,11 +158,11 @@ object InterpretMethodsAnalysis {
                         if (beVerbose)
                             println(
                                 method.toJava(
-                                    RED+"[aborted after evaluating "+
-                                        ai.currentEvaluationCount+
-                                        " instructions (size of instructions array="+
-                                        body.instructions.size+
-                                        "; max="+ai.maxEvaluationCount+")]"+
+                                    RED + "[aborted after evaluating " +
+                                        ai.currentEvaluationCount +
+                                        " instructions (size of instructions array=" +
+                                        body.instructions.size +
+                                        "; max=" + ai.maxEvaluationCount + ")]" +
                                         RESET
                                 )
                             )
@@ -187,18 +184,18 @@ object InterpretMethodsAnalysis {
                 if (beVerbose && naiveEvaluatedCount > evaluatedCount) {
                     val codeLength = body.instructions.length
                     val message = method.toJava(
-                        s"evaluation steps (code size:$codeLength): "+
+                        s"evaluation steps (code size:$codeLength): " +
                             s"$naiveEvaluatedCount (w/o dead variables analysis) vs. $evaluatedCount"
                     )
                     println(message)
                 }
 
-                if (beVerbose) println(method.toJava(GREEN+"[finished]"+RESET))
+                if (beVerbose) println(method.toJava(GREEN + "[finished]" + RESET))
                 methodsCount.incrementAndGet()
                 None
             } catch {
                 case ct: ControlThrowable => throw ct
-                case t: Throwable =>
+                case t: Throwable         =>
                     // basically, we want to catch everything!
                     val classFile = method.classFile
                     val source = project.source(classFile.thisType).get.toString
@@ -208,15 +205,13 @@ object InterpretMethodsAnalysis {
 
         val collectedExceptions = time(Symbol("OVERALL")) {
             val results = new ConcurrentLinkedQueue[(String, ClassFile, Method, Throwable)]()
-            project.parForeachMethodWithBody() { m =>
-                analyzeMethod(m.source.toString, m.method).map(results.add)
-            }
+            project.parForeachMethodWithBody() { m => analyzeMethod(m.source.toString, m.method).map(results.add) }
             import scala.jdk.CollectionConverters._
             results.asScala
         }
 
         if (collectedExceptions.nonEmpty) {
-            val header = <p>Generated { new java.util.Date() }</p>
+            val header = <p>Generated {new java.util.Date()}</p>
 
             val body = Seq(header) ++
                 (for ((exResource, exInstances) <- collectedExceptions.groupBy(e => e._1)) yield {
@@ -224,42 +219,43 @@ object InterpretMethodsAnalysis {
                         exInstances.map { ex =>
                             val (_, classFile, method, throwable) = ex
                             <div>
-                                <b>{ classFile.thisType.fqn }</b>
-                                <i>"{ method.signatureToJava(true) }"</i><br/>
-                                { "Length: "+method.body.get.instructions.length }
-                                <div>{ XHTML.throwableToXHTML(throwable) }</div>
+                                <b>{classFile.thisType.fqn}</b>
+                                <i>"{method.signatureToJava(true)}"</i><br/>
+                                {"Length: " + method.body.get.instructions.length}
+                                <div>{XHTML.throwableToXHTML(throwable)}</div>
                             </div>
                         }
 
                     <section>
-                        <h1>{ exResource }</h1>
-                        <p>Number of thrown exceptions: { exInstances.size }</p>
-                        { exDetails }
+                        <h1>{exResource}</h1>
+                        <p>Number of thrown exceptions: {exInstances.size}</p>
+                        {exDetails}
                     </section>
                 })
 
             val node =
                 XHTML.createXHTML(
-                    Some("Exceptions Thrown During Interpretation"), NodeSeq.fromSeq(body)
+                    Some("Exceptions Thrown During Interpretation"),
+                    NodeSeq.fromSeq(body)
                 )
             val file = writeAndOpen(node, "ExceptionsOfCrashedAbstractInterpretations", ".html")
 
             (
-                "During the interpretation of "+
-                methodsCount.get+" methods (of "+project.methodsCount+") in "+
-                project.classFilesCount+" classes (real time: "+getTime(Symbol("OVERALL")).toSeconds+
-                ", ai (∑CPU Times): "+getTime(Symbol("AI")).toSeconds+
-                ")"+collectedExceptions.size+" exceptions occured.",
+                "During the interpretation of " +
+                    methodsCount.get + " methods (of " + project.methodsCount + ") in " +
+                    project.classFilesCount + " classes (real time: " + getTime(Symbol("OVERALL")).toSeconds +
+                    ", ai (∑CPU Times): " + getTime(Symbol("AI")).toSeconds +
+                    ")" + collectedExceptions.size + " exceptions occured.",
                 Some(file)
             )
         } else {
             (
-                "No exceptions occured during the interpretation of "+
-                methodsCount.get+" methods (of "+project.methodsCount+") in "+
-                project.classFilesCount+" classes\nreal time: "+getTime(Symbol("OVERALL")).toSeconds+"\n"+
-                "ai (∑CPU Times): "+getTime(Symbol("AI")).toSeconds +
-                s"; evaluated ${instructionEvaluationsCount.get} instructions\n"+
-                "naive ai (∑CPU Times): "+getTime(Symbol("NAIVE_AI")).toSeconds+"\n",
+                "No exceptions occured during the interpretation of " +
+                    methodsCount.get + " methods (of " + project.methodsCount + ") in " +
+                    project.classFilesCount + " classes\nreal time: " + getTime(Symbol("OVERALL")).toSeconds + "\n" +
+                    "ai (∑CPU Times): " + getTime(Symbol("AI")).toSeconds +
+                    s"; evaluated ${instructionEvaluationsCount.get} instructions\n" +
+                    "naive ai (∑CPU Times): " + getTime(Symbol("NAIVE_AI")).toSeconds + "\n",
                 None
             )
         }

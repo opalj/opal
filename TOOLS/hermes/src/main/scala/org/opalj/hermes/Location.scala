@@ -2,12 +2,12 @@
 package org.opalj
 package hermes
 
-import org.opalj.br.Method
-import org.opalj.br.Field
 import org.opalj.br.ClassFile
-import org.opalj.br.ObjectType
+import org.opalj.br.Field
 import org.opalj.br.FieldType
+import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
+import org.opalj.br.ObjectType
 import org.opalj.br.analyses.MethodInfo
 import org.opalj.br.analyses.Project
 
@@ -40,6 +40,7 @@ final case class PackageLocation[S](
         }
     }
 }
+
 object PackageLocation {
 
     def apply[S](source: S, packageName: String): PackageLocation[S] = {
@@ -175,6 +176,7 @@ final case class InstructionLocation[S](methodLocation: MethodLocation[S], pc: I
             s
     }
 }
+
 object InstructionLocation {
 
     def apply[S](source: S, method: Method, pc: Int): InstructionLocation[S] = {

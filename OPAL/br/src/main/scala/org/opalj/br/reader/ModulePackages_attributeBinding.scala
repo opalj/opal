@@ -3,9 +3,9 @@ package org.opalj
 package br
 package reader
 
-import org.opalj.bi.reader.ModulePackages_attributeReader
-
 import scala.collection.immutable.ArraySeq
+
+import org.opalj.bi.reader.ModulePackages_attributeReader
 
 /**
  * The factory method to create the `ModulePackages` attribute (Java 9).
@@ -32,4 +32,3 @@ trait ModulePackages_attributeBinding
     }
 
 }
-

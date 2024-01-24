@@ -4,10 +4,11 @@ package de
 
 import scala.collection.Map
 import scala.collection.Set
-import org.opalj.util.PerformanceEvaluation.time
+
+import org.opalj.br._
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
-import org.opalj.br._
+import org.opalj.util.PerformanceEvaluation.time
 
 import scala.collection.parallel.CollectionConverters.IterableIsParallelizable
 
@@ -31,8 +32,7 @@ object DependencyStore {
         classFiles:                Iterable[ClassFile],
         createDependencyExtractor: (DependencyProcessor) => DependencyExtractor
     )(
-        implicit
-        logContext: LogContext
+        implicit logContext: LogContext
     ): DependencyStore = {
 
         val dc = time {
@@ -40,22 +40,17 @@ object DependencyStore {
             val de = createDependencyExtractor(dc)
             classFiles.par.foreach { de.process(_) }
             dc
-        } { ns =>
-            OPALLogger.info("progress", "collecting dependencies took "+ns.toSeconds)
-        }
+        } { ns => OPALLogger.info("progress", "collecting dependencies took " + ns.toSeconds) }
 
         time {
             dc.toStore
-        } { ns =>
-            OPALLogger.info("progress", "creating the dependencies store took "+ns.toSeconds)
-        }
+        } { ns => OPALLogger.info("progress", "creating the dependencies store took " + ns.toSeconds) }
     }
 
     def apply[Source](
         classFiles: Iterable[ClassFile]
     )(
-        implicit
-        logContext: LogContext
+        implicit logContext: LogContext
     ): DependencyStore = {
         val createDependencyExtractor = (dp) => new DependencyExtractor(dp)
         apply(classFiles, createDependencyExtractor)

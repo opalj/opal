@@ -4,10 +4,12 @@ package br
 package analyses
 package cg
 
-import com.typesafe.config.ConfigFactory
-import org.opalj.br.TestSupport.biProject
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
+
+import com.typesafe.config.ConfigFactory
+
+import org.opalj.br.TestSupport.biProject
 
 /**
  * @author Michael Reif
@@ -35,7 +37,7 @@ class ClassExtensibilityTest extends AnyFunSpec with Matchers {
     val PublicEnum = TypeFixture("PublicEnum")
     val Enum = TypeFixture("Enum")
 
-    def mergeConfigString(extConf: String, pkgConf: String): String = extConf+"\n"+pkgConf
+    def mergeConfigString(extConf: String, pkgConf: String): String = extConf + "\n" + pkgConf
 
     describe("when a type is located in an open package") {
 
@@ -107,8 +109,8 @@ class ClassExtensibilityTest extends AnyFunSpec with Matchers {
 
     describe("when a type is configured as extensible") {
 
-        val forcedExtensibleClasses = List(PublicFinalClass, PublicClassWithPrivateConstructor).
-            map(_.fqn.replaceAll("[.]", "/"))
+        val forcedExtensibleClasses =
+            List(PublicFinalClass, PublicClassWithPrivateConstructor).map(_.fqn.replaceAll("[.]", "/"))
 
         val confString = mergeConfigString(
             ClassExtensibilityConfig.configuredExtensibleClasses(forcedExtensibleClasses),
@@ -127,8 +129,7 @@ class ClassExtensibilityTest extends AnyFunSpec with Matchers {
 
     describe("when a type is configured as final") {
 
-        val forcedExtensibleClasses = List(PublicClass, PublicInterface).
-            map(_.fqn.replaceAll("[.]", "/"))
+        val forcedExtensibleClasses = List(PublicClass, PublicInterface).map(_.fqn.replaceAll("[.]", "/"))
 
         val confString = mergeConfigString(
             ClassExtensibilityConfig.configuredFinalClasses(forcedExtensibleClasses),
@@ -159,7 +160,7 @@ object ClassExtensibilityConfig {
         s"""
            |org.opalj.br.analyses.cg.ClassExtensibilityKey {
            |    analysis = "org.opalj.br.analyses.cg.ConfiguredExtensibleClasses"
-           |    extensibleClasses = [${types.map("\""+_+"\"").mkString(",")}]
+           |    extensibleClasses = [${types.map("\"" + _ + "\"").mkString(",")}]
            |}
           """.stripMargin
 
@@ -167,7 +168,7 @@ object ClassExtensibilityConfig {
         s"""
            |org.opalj.br.analyses.cg.ClassExtensibilityKey {
            |    analysis = "org.opalj.br.analyses.cg.ConfiguredFinalClasses"
-           |    finalClasses = [${types.map("\""+_+"\"").mkString(",")}]
+           |    finalClasses = [${types.map("\"" + _ + "\"").mkString(",")}]
            |}
         """.stripMargin
 

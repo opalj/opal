@@ -10,9 +10,9 @@ package instructions
  */
 case class IINC(lvIndex: Int, constValue: Int) extends ArithmeticInstruction {
 
-    final override def isIINC: Boolean = true
+    override final def isIINC: Boolean = true
 
-    final override def asIINC: this.type = this
+    override final def asIINC: this.type = this
 
     final def opcode: Opcode = IINC.opcode
 
@@ -24,7 +24,7 @@ case class IINC(lvIndex: Int, constValue: Int) extends ArithmeticInstruction {
 
     final def computationalType: ComputationalType = ComputationalTypeInt
 
-    final def operator: String = "+ "+constValue
+    final def operator: String = "+ " + constValue
 
     final def isPrefixOperator: Boolean = false
 
@@ -68,9 +68,10 @@ case class IINC(lvIndex: Int, constValue: Int) extends ArithmeticInstruction {
 
     final def expressionResult: Register = Register(lvIndex)
 
-    override def toString = "IINC(lvIndex="+lvIndex+", "+constValue+")"
+    override def toString = "IINC(lvIndex=" + lvIndex + ", " + constValue + ")"
 
 }
+
 object IINC extends InstructionMetaInformation {
 
     final val opcode = 132

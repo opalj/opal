@@ -5,7 +5,6 @@ package common
 
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
-
 import scala.jdk.CollectionConverters._
 
 import org.opalj.br.Method

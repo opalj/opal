@@ -4,6 +4,15 @@ package br
 package fpcf
 package analyses
 
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.properties.AllocationFreeMethod
+import org.opalj.br.fpcf.properties.AllocationFreeness
+import org.opalj.br.fpcf.properties.MethodWithAllocations
+import org.opalj.br.fpcf.properties.VirtualMethodAllocationFreeness
+import org.opalj.br.fpcf.properties.VirtualMethodAllocationFreeness.VAllocationFreeMethod
+import org.opalj.br.fpcf.properties.VirtualMethodAllocationFreeness.VMethodWithAllocations
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.FinalP
@@ -14,15 +23,6 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.SomeEPS
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.properties.AllocationFreeMethod
-import org.opalj.br.fpcf.properties.AllocationFreeness
-import org.opalj.br.fpcf.properties.MethodWithAllocations
-import org.opalj.br.fpcf.properties.VirtualMethodAllocationFreeness
-import org.opalj.br.fpcf.properties.VirtualMethodAllocationFreeness.VAllocationFreeMethod
-import org.opalj.br.fpcf.properties.VirtualMethodAllocationFreeness.VMethodWithAllocations
 
 /**
  * Determines the aggregated allocation freeness for virtual methods.
@@ -103,7 +103,7 @@ trait VirtualMethodAllocationFreenessAnalysisScheduler extends FPCFAnalysisSched
 
     override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
 
-    final override def uses: Set[PropertyBounds] = Set(PropertyBounds.lub(AllocationFreeness))
+    override final def uses: Set[PropertyBounds] = Set(PropertyBounds.lub(AllocationFreeness))
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(VirtualMethodAllocationFreeness)
 

@@ -14,11 +14,11 @@ abstract class StackManagementInstruction
     with NoLabels
     with InstructionMetaInformation {
 
-    final override def isStackManagementInstruction: Boolean = true
+    override final def isStackManagementInstruction: Boolean = true
 
-    final override def length: Int = 1
+    override final def length: Int = 1
 
-    final override def nextInstructions(
+    override final def nextInstructions(
         currentPC:             PC,
         regularSuccessorsOnly: Boolean
     )(
@@ -29,25 +29,25 @@ abstract class StackManagementInstruction
         List(indexOfNextInstruction(currentPC))
     }
 
-    final override def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
+    override final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
         val other = code.instructions(otherPC)
         (this eq other) || this == other
     }
 
-    final override def readsLocal: Boolean = false
+    override final def readsLocal: Boolean = false
 
-    final override def indexOfReadLocal: Int = throw new UnsupportedOperationException()
+    override final def indexOfReadLocal: Int = throw new UnsupportedOperationException()
 
-    final override def writesLocal: Boolean = false
+    override final def writesLocal: Boolean = false
 
-    final override def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
+    override final def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
 
-    final override def expressionResult: NoExpression.type = NoExpression
+    override final def expressionResult: NoExpression.type = NoExpression
 
-    final override def toString(currentPC: Int): String = toString()
+    override final def toString(currentPC: Int): String = toString()
 
-    final override def jvmExceptions: List[ObjectType] = Nil
+    override final def jvmExceptions: List[ObjectType] = Nil
 
-    final override def mayThrowExceptions: Boolean = false
+    override final def mayThrowExceptions: Boolean = false
 
 }

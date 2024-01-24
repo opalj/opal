@@ -15,15 +15,13 @@ case class NestMembers_attribute(
         classes_array:        ClassesArray // Array[Constant_Pool_Index]
 ) extends Attribute {
 
-    override def attribute_length: Int = 2 + classes_array.size * 2
+    override final def attribute_length: Int = 2 + classes_array.size * 2
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         <details class="attribute">
             <summary>NestMembers</summary>
             {
-                classes_array.map[String](p => cp(p).toString).sorted.map[NodeBuffer] { p =>
-                    <span>{ p }</span><br/>
-                }
+                classes_array.map[String](p => cp(p).toString).sorted.map[NodeBuffer] { p => <span>{p}</span><br/> }
             }
         </details>
     }

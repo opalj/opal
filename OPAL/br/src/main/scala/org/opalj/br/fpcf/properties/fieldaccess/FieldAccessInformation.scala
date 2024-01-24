@@ -5,6 +5,9 @@ package fpcf
 package properties
 package fieldaccess
 
+import scala.collection.immutable.IntMap
+import scala.collection.immutable.LongMap
+
 import org.opalj.br.PC
 import org.opalj.collection.immutable.LongLinkedSet
 import org.opalj.collection.immutable.LongLinkedTrieSet
@@ -16,11 +19,9 @@ import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStore
 
-import scala.collection.immutable.IntMap
-import scala.collection.immutable.LongMap
-
-sealed trait FieldAccessInformationPropertyMetaInformation[S <: FieldAccessInformation[S]] extends PropertyMetaInformation {
-    final override type Self = S;
+sealed trait FieldAccessInformationPropertyMetaInformation[S <: FieldAccessInformation[S]]
+    extends PropertyMetaInformation {
+    override final type Self = S;
 
     /**
      * Creates a property key to be associated with every field access property of the respective type. The fallback is
@@ -89,7 +90,10 @@ sealed trait FieldAccessInformation[S <: FieldAccessInformation[S]] extends Orde
         }
     }
 
-    def getNewestAccesses(newestDirectAccesses: Int, newestIndirectAccesses: Int): Iterator[(Int, PC, AccessReceiver, AccessParameter)] =
+    def getNewestAccesses(
+        newestDirectAccesses:   Int,
+        newestIndirectAccesses: Int
+    ): Iterator[(Int, PC, AccessReceiver, AccessParameter)] =
         getNewestNDirectAccesses(newestDirectAccesses) ++ getNewestNIndirectAccesses(newestIndirectAccesses)
 
     def getNewestNDirectAccesses(n: Int): Iterator[(Int, PC, AccessReceiver, AccessParameter)] =
@@ -118,7 +122,14 @@ sealed trait FieldAccessInformation[S <: FieldAccessInformation[S]] extends Orde
         other:                S,
         seenDirectAccesses:   Int,
         seenIndirectAccesses: Int,
-        propertyFactory:      (LongLinkedSet, LongMap[AccessReceiver], LongMap[AccessParameter], LongLinkedSet, LongMap[AccessReceiver], LongMap[AccessParameter]) => S
+        propertyFactory: (
+            LongLinkedSet,
+            LongMap[AccessReceiver],
+            LongMap[AccessParameter],
+            LongLinkedSet,
+            LongMap[AccessReceiver],
+            LongMap[AccessParameter]
+        ) => S
     ): S = {
         var newDirectAccesses = encodedDirectAccesses
         var newDirectReceivers = encodedDirectAccessReceivers
@@ -185,7 +196,11 @@ case class FieldReadAccessInformation(
 
     final def key: PropertyKey[FieldReadAccessInformation] = FieldReadAccessInformation.key
 
-    def included(other: FieldReadAccessInformation, seenDirectAccesses: Int, seenIndirectAccesses: Int): FieldReadAccessInformation =
+    def included(
+        other:                FieldReadAccessInformation,
+        seenDirectAccesses:   Int,
+        seenIndirectAccesses: Int
+    ): FieldReadAccessInformation =
         included(
             other,
             seenDirectAccesses,
@@ -212,12 +227,23 @@ case class FieldWriteAccessInformation(
 
     final def key: PropertyKey[FieldWriteAccessInformation] = FieldWriteAccessInformation.key
 
-    def included(other: FieldWriteAccessInformation, seenDirectAccesses: Int, seenIndirectAccesses: Int): FieldWriteAccessInformation =
+    def included(
+        other:                FieldWriteAccessInformation,
+        seenDirectAccesses:   Int,
+        seenIndirectAccesses: Int
+    ): FieldWriteAccessInformation =
         included(
             other,
             seenDirectAccesses,
             seenIndirectAccesses,
-            (newDirectAccesses, newDirectReceivers, newDirectParameters, newIndirectAccesses, newIndirectReceivers, newIndirectParameters) =>
+            (
+                newDirectAccesses,
+                newDirectReceivers,
+                newDirectParameters,
+                newIndirectAccesses,
+                newIndirectReceivers,
+                newIndirectParameters
+            ) =>
                 FieldWriteAccessInformation(
                     newDirectAccesses,
                     newDirectReceivers,
@@ -273,6 +299,7 @@ object FieldWriteAccessInformation
 
 object NoFieldReadAccessInformation
     extends FieldReadAccessInformation(LongLinkedTrieSet.empty, LongMap.empty, LongLinkedTrieSet.empty, LongMap.empty)
+
 object NoFieldWriteAccessInformation
     extends FieldWriteAccessInformation(
         LongLinkedTrieSet.empty,

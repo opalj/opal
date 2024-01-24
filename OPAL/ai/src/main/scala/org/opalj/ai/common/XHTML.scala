@@ -6,13 +6,13 @@ package common
 import scala.util.control.ControlThrowable
 import scala.xml.Node
 import scala.xml.NodeSeq
-import scala.xml.Unparsed
 import scala.xml.Text
+import scala.xml.Unparsed
 
-import org.opalj.io.writeAndOpen
-import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.br._
 import org.opalj.br.instructions._
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.io.writeAndOpen
 
 /**
  * Several utility methods to facilitate the development of the abstract interpreter/
@@ -47,7 +47,7 @@ object XHTML {
         method:              Method,
         ai:                  AI[_ >: D],
         theDomain:           D,
-        minimumDumpInterval: Long       = 500L
+        minimumDumpInterval: Long = 500L
     )(
         f: AIResult { val domain: theDomain.type } => T
     ): T = {
@@ -63,15 +63,19 @@ object XHTML {
                 val currentTime = System.currentTimeMillis()
                 if ((currentTime - this.lastDump) > minimumDumpInterval) {
                     this.lastDump = currentTime
-                    val title = Some("Generated due to exception: "+e.getMessage())
+                    val title = Some("Generated due to exception: " + e.getMessage())
                     val code = method.body.get
                     val dump =
                         XHTML.dump(
-                            Some(classFile), Some(method), code, title, theDomain
+                            Some(classFile),
+                            Some(method),
+                            code,
+                            title,
+                            theDomain
                         )(result.cfJoins, operandsArray, localsArray)
                     writeAndOpen(dump, "StateOfIncompleteAbstractInterpretation", ".html")
                 } else {
-                    Console.err.println("[info] dump suppressed: "+e.getMessage())
+                    Console.err.println("[info] dump suppressed: " + e.getMessage())
                 }
                 throw e
         }
@@ -91,7 +95,7 @@ object XHTML {
         method:              Option[Method],
         code:                Code,
         result:              AIResult,
-        minimumDumpInterval: Long              = 500L
+        minimumDumpInterval: Long = 500L
     )(
         f: => T
     ): T = {
@@ -104,14 +108,14 @@ object XHTML {
                 val currentTime = System.currentTimeMillis()
                 if ((currentTime - this.lastDump) > minimumDumpInterval) {
                     this.lastDump = currentTime
-                    val message = "Dump generated due to exception: "+e.getMessage
+                    val message = "Dump generated due to exception: " + e.getMessage
                     writeAndOpen(
                         dump(classFile.get, method.get, message, result),
                         "AIResult",
                         ".html"
                     )
                 } else {
-                    Console.err.println("dump suppressed: "+e.getMessage)
+                    Console.err.println("dump suppressed: " + e.getMessage)
                 }
                 throw e
         }
@@ -130,7 +134,7 @@ object XHTML {
         createXHTML(
             Some(title),
             Seq[Node](
-                <h1>{ title }</h1>,
+                <h1>{title}</h1>,
                 annotationsAsXHTML(method),
                 scala.xml.Unparsed(resultHeader),
                 dumpAIState(code, domain)(cfJoins, operandsArray, localsArray)
@@ -143,7 +147,7 @@ object XHTML {
             {
                 this.annotations(method) map { annotation =>
                     val info = annotation.replace("\n", "<br>").replace("\t", "&nbsp;&nbsp;&nbsp;")
-                    <div class="annotation">{ Unparsed(info) }</div>
+                    <div class="annotation">{Unparsed(info)}</div>
                 }
             }
         </div>
@@ -163,16 +167,16 @@ object XHTML {
         def methodToString(method: Method): String = method.signatureToJava(withVisibility = false)
 
         val title =
-            classFile.
-                map(_.thisType.toJava + method.map("{ "+methodToString(_)+" }").getOrElse("")).
-                orElse(method.map(methodToString))
+            classFile
+                .map(_.thisType.toJava + method.map("{ " + methodToString(_) + " }").getOrElse(""))
+                .orElse(method.map(methodToString))
 
         val annotations = method.map(annotationsAsXHTML).getOrElse(<div class="annotations"></div>)
 
         createXHTML(
             title,
             Seq[Node](
-                title.map(t => <h1>{ t }</h1>).getOrElse(Text("")),
+                title.map(t => <h1>{t}</h1>).getOrElse(Text("")),
                 annotations,
                 scala.xml.Unparsed(resultHeader.getOrElse("")),
                 dumpAIState(code, domain)(cfJoins, operandsArray, localsArray)
@@ -193,10 +197,10 @@ object XHTML {
         val exceptionHandlers =
             (
                 for ((eh, index) <- indexedExceptionHandlers) yield {
-                    "⚡: "+index+" "+eh.catchType.map(_.toJava).getOrElse("<finally>")+
-                        " ["+eh.startPC+","+eh.endPC+")"+" => "+eh.handlerPC
+                    "⚡: " + index + " " + eh.catchType.map(_.toJava).getOrElse("<finally>") +
+                        " [" + eh.startPC + "," + eh.endPC + ")" + " => " + eh.handlerPC
                 }
-            ).map(eh => <p>{ eh }</p>)
+            ).map(eh => <p>{eh}</p>)
 
         val ids = new java.util.IdentityHashMap[AnyRef, Integer]
         var nextId = 1
@@ -217,12 +221,14 @@ object XHTML {
         val operandsOnly = rowsCount > 100000
         val disclaimer =
             if (operandsOnly) {
-                <b>Output is restricted to the operands as the number of rows would be too large otherwise: { rowsCount } </b>
+                <b>Output is restricted to the operands as the number of rows would be too large otherwise: {
+                    rowsCount
+                } </b>
             } else
                 NodeSeq.Empty
 
         <div>
-            { disclaimer }
+            {disclaimer}
             <table>
                 <thead>
                     <tr>
@@ -230,7 +236,8 @@ object XHTML {
                         <th class="instruction">Instruction</th>
                         <th class="stack">Operand Stack</th>
                         {
-                            if (operandsOnly) NodeSeq.Empty else {
+                            if (operandsOnly) NodeSeq.Empty
+                            else {
                                 <th class="registers">Registers</th>
                                 <th class="properties">Properties</th>
                             }
@@ -240,15 +247,18 @@ object XHTML {
                 <tbody>
                     {
                         dumpInstructions(
-                            code, domain, operandsOnly
+                            code,
+                            domain,
+                            operandsOnly
                         )(
                             cfJoins,
-                            operandsArray, localsArray
+                            operandsArray,
+                            localsArray
                         )(Some(idsLookup))
                     }
                 </tbody>
             </table>
-            { exceptionHandlers }
+            {exceptionHandlers}
         </div>
     }
 
@@ -268,8 +278,7 @@ object XHTML {
         operandsArray: TheOperandsArray[domain.Operands],
         localsArray:   TheLocalsArray[domain.Locals]
     )(
-        implicit
-        ids: Option[AnyRef => Int]
+        implicit ids: Option[AnyRef => Int]
     ): Array[Node] = {
 
         val belongsToSubroutine = code.belongsToSubroutine()
@@ -277,9 +286,12 @@ object XHTML {
         val instrs = code.instructions.zipWithIndex.zip(operandsArray zip localsArray).filter(_._1._1 ne null)
         for (((instruction, pc), (operands, locals)) <- instrs) yield {
             var exceptionHandlers = code.handlersFor(pc).map(indexedExceptionHandlers(_)).mkString(",")
-            if (exceptionHandlers.nonEmpty) exceptionHandlers = "⚡: "+exceptionHandlers
+            if (exceptionHandlers.nonEmpty) exceptionHandlers = "⚡: " + exceptionHandlers
             dumpInstruction(
-                pc, code.lineNumber(pc), instruction, cfJoins.contains(pc),
+                pc,
+                code.lineNumber(pc),
+                instruction,
+                cfJoins.contains(pc),
                 belongsToSubroutine(pc),
                 Some(exceptionHandlers),
                 domain,
@@ -301,16 +313,15 @@ object XHTML {
         operands: domain.Operands,
         locals:   domain.Locals
     )(
-        implicit
-        ids: Option[AnyRef => Int]
+        implicit ids: Option[AnyRef => Int]
     ): Node = {
 
         val pcAsXHTML =
             Unparsed(
                 (if (pathsJoin) "⇉ " else "") + pc.toString +
-                    exceptionHandlers.map("<br>"+_).getOrElse("") +
-                    lineNumber.map("<br><i>l="+_+"</i>").getOrElse("") +
-                    (if (subroutineId != 0) "<br><b>⥂="+subroutineId+"</b>" else "")
+                    exceptionHandlers.map("<br>" + _).getOrElse("") +
+                    lineNumber.map("<br><i>l=" + _ + "</i>").getOrElse("") +
+                    (if (subroutineId != 0) "<br><b>⥂=" + subroutineId + "</b>" else "")
             )
 
         val properties = htmlify(domain.properties(pc, valueToString).getOrElse("<None>"))
@@ -319,14 +330,15 @@ object XHTML {
             // to handle cases where the string contains "executable" (JavaScript) code
             Unparsed(Text(instruction.toString(pc)).toString.replace("\n", "<br>"))
 
-        <tr class={ if (operands eq null /*||/&& locals eq null*/ ) "not_evaluated" else "evaluated" }>
-            <td class="pc">{ pcAsXHTML }</td>
-            <td class="instruction">{ instructionAsXHTML }</td>
-            <td class="stack">{ dumpStack(operands) }</td>
+        <tr class={if (operands eq null /*||/&& locals eq null*/ ) "not_evaluated" else "evaluated"}>
+            <td class="pc">{pcAsXHTML}</td>
+            <td class="instruction">{instructionAsXHTML}</td>
+            <td class="stack">{dumpStack(operands)}</td>
             {
-                if (operandsOnly) NodeSeq.Empty else {
-                    <td class="locals">{ dumpLocals(locals) }</td>
-                    <td class="properties">{ properties }</td>
+                if (operandsOnly) NodeSeq.Empty
+                else {
+                    <td class="locals">{dumpLocals(locals)}</td>
+                    <td class="properties">{properties}</td>
                 }
             }
         </tr>
@@ -337,7 +349,7 @@ object XHTML {
             <em>Information about operands is not available.</em>
         else {
             <ul class="Stack">
-                { operands.map(op => <li>{ valueToString(op) }</li>) }
+                {operands.map(op => <li>{valueToString(op)}</li>)}
             </ul>
         }
     }
@@ -346,16 +358,16 @@ object XHTML {
 
         def mapLocal(local: AnyRef): Node = {
             if (local eq null)
-                <li><span class="unused">{ "UNUSED" }</span></li>
+                <li><span class="unused">{"UNUSED"}</span></li>
             else
-                <li><span>{ valueToString(local) }</span></li>
+                <li><span>{valueToString(local)}</span></li>
         }
 
         if (locals eq null)
             <em>Information about the local variables is not available.</em>
         else {
             <ol start="0" class="registers">
-                { locals.map { mapLocal }.iterator }
+                {locals.map { mapLocal }.iterator}
             </ol>
         }
     }

@@ -5,7 +5,6 @@ package fpcf
 package properties
 package cg
 
-import org.opalj.log.OPALLogger
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.FallbackReason
@@ -14,6 +13,7 @@ import org.opalj.fpcf.PropertyIsNotDerivedByPreviouslyExecutedAnalysis
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStore
+import org.opalj.log.OPALLogger
 
 sealed trait ForNameClassesMetaInformation extends PropertyMetaInformation {
     final type Self = ForNameClasses
@@ -76,13 +76,14 @@ object ForNameClasses extends ForNameClassesMetaInformation {
         val name = "opalj.ForNameClasses"
         PropertyKey.create(
             name,
-            (ps: PropertyStore, reason: FallbackReason, _: Entity) => reason match {
-                case PropertyIsNotDerivedByPreviouslyExecutedAnalysis =>
-                    OPALLogger.error("call graph analysis", "no analysis executed for Class.forName")(ps.logContext)
-                    NoForNameClasses
-                case _ =>
-                    throw new IllegalStateException(s"analysis required for property: $name")
-            }
+            (ps: PropertyStore, reason: FallbackReason, _: Entity) =>
+                reason match {
+                    case PropertyIsNotDerivedByPreviouslyExecutedAnalysis =>
+                        OPALLogger.error("call graph analysis", "no analysis executed for Class.forName")(ps.logContext)
+                        NoForNameClasses
+                    case _ =>
+                        throw new IllegalStateException(s"analysis required for property: $name")
+                }
         )
     }
 }

@@ -71,13 +71,27 @@ trait PostEvaluationMemoryManagement extends CoreDomainFunctionality {
             this.newValueAfterException = null
 
             super.afterEvaluation(
-                pc, instruction, oldOperands, oldLocals,
-                targetPC, isExceptionalControlFlow, forceJoin, operands1, locals1
+                pc,
+                instruction,
+                oldOperands,
+                oldLocals,
+                targetPC,
+                isExceptionalControlFlow,
+                forceJoin,
+                operands1,
+                locals1
             )
         } else {
             super.afterEvaluation(
-                pc, instruction, oldOperands, oldLocals,
-                targetPC, isExceptionalControlFlow, forceJoin, newOperands, newLocals
+                pc,
+                instruction,
+                oldOperands,
+                oldLocals,
+                targetPC,
+                isExceptionalControlFlow,
+                forceJoin,
+                newOperands,
+                newLocals
             )
         }
     }

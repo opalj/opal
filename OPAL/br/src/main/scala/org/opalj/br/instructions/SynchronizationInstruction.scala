@@ -13,32 +13,32 @@ abstract class SynchronizationInstruction
     with ConstantLengthInstruction
     with NoLabels {
 
-    final override def length: Int = 1
+    override final def length: Int = 1
 
-    final override def isMonitorInstruction: Boolean = true
+    override final def isMonitorInstruction: Boolean = true
 
-    final override def mayThrowExceptions: Boolean = true
+    override final def mayThrowExceptions: Boolean = true
 
-    final override def numberOfPoppedOperands(ctg: Int => ComputationalTypeCategory): Int = 1
+    override final def numberOfPoppedOperands(ctg: Int => ComputationalTypeCategory): Int = 1
 
-    final override def numberOfPushedOperands(ctg: Int => ComputationalTypeCategory): Int = 0
+    override final def numberOfPushedOperands(ctg: Int => ComputationalTypeCategory): Int = 0
 
-    final override def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
+    override final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
         val other = code.instructions(otherPC)
         (this eq other) || this == other
     }
 
-    final override def readsLocal: Boolean = false
+    override final def readsLocal: Boolean = false
 
-    final override def indexOfReadLocal: Int = throw new UnsupportedOperationException()
+    override final def indexOfReadLocal: Int = throw new UnsupportedOperationException()
 
-    final override def writesLocal: Boolean = false
+    override final def writesLocal: Boolean = false
 
-    final override def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
+    override final def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
 
-    final override def expressionResult: NoExpression.type = NoExpression
+    override final def expressionResult: NoExpression.type = NoExpression
 
-    final override def toString(currentPC: Int): String = toString()
+    override final def toString(currentPC: Int): String = toString()
 }
 
 object SynchronizationInstruction {

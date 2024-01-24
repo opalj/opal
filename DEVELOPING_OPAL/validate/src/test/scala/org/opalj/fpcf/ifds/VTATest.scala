@@ -3,6 +3,8 @@ package org.opalj
 package fpcf
 package ifds
 
+import java.net.URL
+
 import org.opalj.ai.domain.l2
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.analyses.Project
@@ -12,8 +14,6 @@ import org.opalj.fpcf.properties.vta.ExpectedType
 import org.opalj.ifds.IFDSAnalysis
 import org.opalj.ifds.IFDSFact
 import org.opalj.tac.cg.RTACallGraphKey
-
-import java.net.URL
 
 /**
  * Tests the IFDS based variable type analysis
@@ -25,11 +25,10 @@ class VTATest extends PropertiesTest {
     override def init(p: Project[URL]): Unit = {
         p.updateProjectInformationKeyInitializationData(
             AIDomainFactoryKey
-        )(
-            (_: Option[Set[Class[_ <: AnyRef]]]) =>
-                Set[Class[_ <: AnyRef]](
-                    classOf[l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[URL]]
-                )
+        )((_: Option[Set[Class[_ <: AnyRef]]]) =>
+            Set[Class[_ <: AnyRef]](
+                classOf[l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[URL]]
+            )
         )
         p.get(RTACallGraphKey)
     }

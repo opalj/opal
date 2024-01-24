@@ -6,21 +6,21 @@ import java.io.File
 
 import com.typesafe.config.ConfigValueFactory
 
-import org.opalj.io.writeAndOpen
-import org.opalj.br.analyses.Project
-import org.opalj.ai.domain
 import org.opalj.ai.BaseAI
 import org.opalj.ai.Domain
+import org.opalj.ai.domain
 import org.opalj.ai.domain.RecordDefUse
-import org.opalj.br.Method
-import org.opalj.log.GlobalLogContext
-import org.opalj.log.ConsoleOPALLogger
-import org.opalj.log.OPALLogger
-import org.opalj.log.{Error => ErrorLogLevel}
-import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.br.BaseConfig
-import org.opalj.br.reader.InvokedynamicRewriting
+import org.opalj.br.Method
+import org.opalj.br.analyses.Project
 import org.opalj.br.reader.DynamicConstantRewriting
+import org.opalj.br.reader.InvokedynamicRewriting
+import org.opalj.bytecode.JRELibraryFolder
+import org.opalj.io.writeAndOpen
+import org.opalj.log.{Error => ErrorLogLevel}
+import org.opalj.log.ConsoleOPALLogger
+import org.opalj.log.GlobalLogContext
+import org.opalj.log.OPALLogger
 
 /**
  * Creates the three-address representation for some method(s) and prints it to `std out` or writes
@@ -61,21 +61,21 @@ object TAC {
     def error(message: String): String = s"Error: $message \n$usage"
 
     def usage: String = {
-        "Usage: java …TAC \n"+
-            "-cp <JAR file/Folder containing class files> OR -JDK\n"+
-            "[-libcp <JAR file/Folder containing library class files>]* (generally required to get precise/correct type information\n"+
-            "[-domainValueInformation] (prints detailed information about domain values)\n"+
-            "[-class <class file name>] (filters the set of classes)\n"+
-            "[-method <method name/signature using Java notation>] (filters the set of methods)\n"+
-            "[-naive] (the naive representation is generated)\n"+
-            "[-domain <class name of the domain>]\n"+
-            "[-cfg] (print control-flow graph)\n"+
-            "[-open] (the generated representations will be written to disk and opened)\n"+
-            "[-toString] (uses the \"toString\" method to print the object graph)\n"+
-            "[-performConstantPropagation] (performs constant propagation)\n"+
-            "[-rewriteInvokeDynamic] (rewrites InvokeDynamic bytecode instructions)\n"+
-            "[-rewriteDynamicConstants] (rewrites dynamic constants)\n+"+
-            "[-rewriteAll] (rewrites InvokeDynamicInstructions and dynamic constants)"+
+        "Usage: java …TAC \n" +
+            "-cp <JAR file/Folder containing class files> OR -JDK\n" +
+            "[-libcp <JAR file/Folder containing library class files>]* (generally required to get precise/correct type information\n" +
+            "[-domainValueInformation] (prints detailed information about domain values)\n" +
+            "[-class <class file name>] (filters the set of classes)\n" +
+            "[-method <method name/signature using Java notation>] (filters the set of methods)\n" +
+            "[-naive] (the naive representation is generated)\n" +
+            "[-domain <class name of the domain>]\n" +
+            "[-cfg] (print control-flow graph)\n" +
+            "[-open] (the generated representations will be written to disk and opened)\n" +
+            "[-toString] (uses the \"toString\" method to print the object graph)\n" +
+            "[-performConstantPropagation] (performs constant propagation)\n" +
+            "[-rewriteInvokeDynamic] (rewrites InvokeDynamic bytecode instructions)\n" +
+            "[-rewriteDynamicConstants] (rewrites dynamic constants)\n+" +
+            "[-rewriteAll] (rewrites InvokeDynamicInstructions and dynamic constants)" +
             "Example:\n\tjava …TAC -cp /Library/jre/lib/rt.jar -class java.util.ArrayList -method toString"
     }
 
@@ -146,9 +146,9 @@ object TAC {
             InvokedynamicRewriting.InvokedynamicRewritingConfigKey,
             ConfigValueFactory.fromAnyRef(rewriteInvokeDynamic)
         ).withValue(
-                DynamicConstantRewriting.RewritingConfigKey,
-                ConfigValueFactory.fromAnyRef(rewriteDynamicConstants)
-            )
+            DynamicConstantRewriting.RewritingConfigKey,
+            ConfigValueFactory.fromAnyRef(rewriteDynamicConstants)
+        )
 
         val sourceFiles = cp.map(new File(_)).toArray
         val sourceLibFiles = libcp.map(new File(_)).toArray
@@ -189,10 +189,10 @@ object TAC {
                             new domain.l1.DefaultDomainWithCFGAndDefUse(project, m)
                         } else {
                             // ... "org.opalj.ai.domain.l0.BaseDomainWithDefUse"
-                            Class.
-                                forName(domainName.get).asInstanceOf[Class[Domain with RecordDefUse]].
-                                getConstructor(classOf[Project[_]], classOf[Method]).
-                                newInstance(project, m)
+                            Class
+                                .forName(domainName.get).asInstanceOf[Class[Domain with RecordDefUse]]
+                                .getConstructor(classOf[Project[_]], classOf[Method])
+                                .newInstance(project, m)
                         }
                         // val d = new domain.l0.BaseDomainWithDefUse(project, classFile, method)
                         val aiResult = BaseAI(m, d)
@@ -218,7 +218,7 @@ object TAC {
                 if (printCFG) {
                     if (doOpen) {
                         Console.println(
-                            "wrote cfg to: "+writeAndOpen(cfg, m.toJava, ".cfg.gv")
+                            "wrote cfg to: " + writeAndOpen(cfg, m.toJava, ".cfg.gv")
                         )
                     } else {
                         methodsAsTAC.append("\n/* - CFG")
@@ -233,7 +233,7 @@ object TAC {
                 val prefix = cf.thisType.toJava
                 val suffix = if (naive) ".naive-tac.txt" else ".ai-tac.txt"
                 val targetFile = writeAndOpen(methodsAsTAC.toString(), prefix, suffix)
-                Console.println("wrote tac code to: "+targetFile)
+                Console.println("wrote tac code to: " + targetFile)
             } else {
                 Console.println(methodsAsTAC.toString())
             }

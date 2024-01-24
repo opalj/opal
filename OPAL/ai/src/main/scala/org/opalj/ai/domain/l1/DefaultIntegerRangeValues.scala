@@ -200,13 +200,13 @@ trait DefaultIntegerRangeValues extends DefaultSpecialDomainValuesBinding with I
 
         override def toString: String = {
             if (lowerBound == upperBound)
-                "int = "+lowerBound
+                "int = " + lowerBound
             else
                 s"int ∈ [$lowerBound,$upperBound]"
         }
     }
 
-    @inline final override def IntegerRange(lb: Int, ub: Int): IntegerRange = {
+    @inline override final def IntegerRange(lb: Int, ub: Int): IntegerRange = {
         new IntegerRange(lb, ub)
     }
 

@@ -15,10 +15,11 @@ import org.opalj.tac.fpcf.analyses.cg.TypesBasedPointsToTypeIterator
 import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalysis
 import org.opalj.tac.fpcf.analyses.fieldaccess.reflection.ReflectionRelatedFieldAccessesAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedArraycopyPointsToAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedPointsToAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedConfiguredMethodsPointsToAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedLibraryPointsToAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedNewInstanceAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedPointsToAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedSerializationAllocationsAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedTamiFlexPointsToAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedUnsafePointsToAnalysisScheduler
 
@@ -52,6 +53,7 @@ object TypeBasedPointsToCallGraphKey extends CallGraphKey {
             TypeBasedUnsafePointsToAnalysisScheduler,
             TypeBasedNewInstanceAnalysisScheduler,
             EagerFieldAccessInformationAnalysis,
+            TypeBasedSerializationAllocationsAnalysisScheduler,
             ReflectionRelatedFieldAccessesAnalysisScheduler
         ) ::: (if (isLibrary) List(TypeBasedLibraryPointsToAnalysisScheduler) else Nil)
     }

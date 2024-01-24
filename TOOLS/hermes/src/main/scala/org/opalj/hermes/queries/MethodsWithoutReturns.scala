@@ -4,8 +4,8 @@ package hermes
 package queries
 
 import org.opalj.br.analyses.Project
-import org.opalj.br.instructions.ReturnInstruction
 import org.opalj.br.cfg.CFGFactory
+import org.opalj.br.instructions.ReturnInstruction
 
 /**
  * Counts the number of methods without regular returns.

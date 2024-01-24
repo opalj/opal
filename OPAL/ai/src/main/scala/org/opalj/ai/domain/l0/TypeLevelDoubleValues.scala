@@ -4,8 +4,8 @@ package ai
 package domain
 package l0
 
-import org.opalj.value.IsDoubleValue
 import org.opalj.br.DoubleType
+import org.opalj.value.IsDoubleValue
 
 /**
  * This partial `Domain` performs all computations related to primitive double
@@ -31,7 +31,7 @@ trait TypeLevelDoubleValues extends DoubleValuesDomain {
     trait DoubleValue extends TypedValue[DoubleType] with IsDoubleValue {
         this: DomainTypedValue[DoubleType] =>
 
-        final override def leastUpperType = Some(DoubleType)
+        override final def leastUpperType = Some(DoubleType)
 
     }
 

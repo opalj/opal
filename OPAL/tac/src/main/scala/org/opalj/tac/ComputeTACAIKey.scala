@@ -2,14 +2,14 @@
 package org.opalj
 package tac
 
-import org.opalj.value.ValueInformation
+import org.opalj.ai.BaseAI
+import org.opalj.ai.Domain
+import org.opalj.ai.domain.RecordDefUse
+import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
 import org.opalj.br.Method
 import org.opalj.br.analyses.ProjectInformationKey
 import org.opalj.br.analyses.SomeProject
-import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
-import org.opalj.ai.BaseAI
-import org.opalj.ai.domain.RecordDefUse
-import org.opalj.ai.Domain
+import org.opalj.value.ValueInformation
 
 /**
  * ''Key'' to compute the 3-address based code of a method computed using the configured
@@ -39,9 +39,10 @@ object ComputeTACAIKey extends TACAIKey[Method => Domain with RecordDefUse] {
     override def compute(
         project: SomeProject
     ): Method => AITACode[TACMethodParameter, ValueInformation] = {
-        val domainFactory = project.
-            getProjectInformationKeyInitializationData(this).
-            getOrElse((m: Method) => new DefaultDomainWithCFGAndDefUse(project, m))
+        val domainFactory =
+            project
+                .getProjectInformationKeyInitializationData(this)
+                .getOrElse((m: Method) => new DefaultDomainWithCFGAndDefUse(project, m))
 
         (m: Method) => {
             val domain = domainFactory(m)

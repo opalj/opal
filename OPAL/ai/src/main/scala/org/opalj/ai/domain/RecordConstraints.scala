@@ -23,4 +23,3 @@ trait RecordConstraints extends ReifiedConstraints { domain: ValuesDomain =>
         constraints += constraint
     }
 }
-

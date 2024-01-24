@@ -4,6 +4,8 @@ package fpcf
 package properties
 package callgraph
 
+import scala.collection.mutable
+
 import org.opalj.br.AnnotationLike
 import org.opalj.br.ElementValue
 import org.opalj.br.ObjectType
@@ -14,8 +16,6 @@ import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
-
-import scala.collection.mutable
 
 /**
  * Matches AvailableTypes annotations to the values computed cooperatively by a
@@ -59,7 +59,10 @@ class AvailableTypesMatcher extends AbstractPropertyMatcher {
                     prop.asInstanceOf[InstantiatedTypes].types
                 case None =>
                     implicit val ctx: LogContext = p.logContext
-                    OPALLogger.warn("property matcher", s"Expected property InstantiatedTypes was not computed for $entity.")
+                    OPALLogger.warn(
+                        "property matcher",
+                        s"Expected property InstantiatedTypes was not computed for $entity."
+                    )
                     UIDSet.empty[ReferenceType]
             }
         }.toSet

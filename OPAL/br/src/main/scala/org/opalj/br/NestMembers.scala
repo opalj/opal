@@ -9,7 +9,7 @@ package br
  */
 case class NestMembers(classes: Classes) extends Attribute {
 
-    final override def kindId: Int = NestMembers.KindId
+    override final def kindId: Int = NestMembers.KindId
 
     override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = {
         this == other

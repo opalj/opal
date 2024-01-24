@@ -7,29 +7,30 @@ package cg
 
 import java.net.URL
 
-import com.typesafe.config.ConfigFactory
 import org.junit.runner.RunWith
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
 
-import org.opalj.fpcf.FinalEP
-import org.opalj.fpcf.FinalP
-import org.opalj.fpcf.PropertyStore
+import com.typesafe.config.ConfigFactory
+
 import org.opalj.br.DeclaredMethod
-import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.TestSupport.allBIProjects
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.cg.ClassExtensibilityKey
 import org.opalj.br.analyses.cg.ClosedPackagesKey
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
 import org.opalj.br.analyses.cg.TypeExtensibilityKey
-import org.opalj.br.analyses.Project
+import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.cg.NoCallers
-import org.opalj.br.fpcf.ContextProviderKey
+import org.opalj.fpcf.FinalEP
+import org.opalj.fpcf.FinalP
+import org.opalj.fpcf.PropertyStore
 import org.opalj.tac.cg.CallGraph
 import org.opalj.tac.cg.CHACallGraphKey
 import org.opalj.tac.cg.RTACallGraphKey
@@ -48,10 +49,10 @@ class CallGraphIntegrationTest extends AnyFlatSpec with Matchers {
     allBIProjects(
         config = ConfigFactory.load("CommandLineProject.conf")
     ) foreach { biProject =>
-            val (name, projectFactory) = biProject
-            if (!ignoredProjects.contains(name))
-                checkProject(name, projectFactory)
-        }
+        val (name, projectFactory) = biProject
+        if (!ignoredProjects.contains(name))
+            checkProject(name, projectFactory)
+    }
 
     def checkProject(projectName: String, projectFactory: () => Project[URL]): Unit = {
 
@@ -135,7 +136,8 @@ class CallGraphIntegrationTest extends AnyFlatSpec with Matchers {
                         val callees = lessPreciseCG.calleesPropertyOf(callSite._1)
                         !callSite._3 &&
                             callees.isIncompleteCallSite(context, callSite._2)(lessPreciseCGPS)
-                }) {
+                }
+            ) {
                 unexpectedCalls ::= UnexpectedCallTarget(null, method, -1)
             } else if (callersMPCG.hasVMLevelCallers && !callersLPCG.hasVMLevelCallers) {
                 unexpectedCalls ::= UnexpectedCallTarget(null, method, -1)
@@ -170,7 +172,9 @@ class CallGraphIntegrationTest extends AnyFlatSpec with Matchers {
             callee <- tgts
         } {
             val FinalP(callersProperty) = propertyStore(callee.method, Callers.key).asFinal
-            assert(callersProperty.callers(dm).iterator.map(caller => (caller._1, caller._2)).iterator.to(Set).contains(dm -> pc))
+            assert(callersProperty.callers(dm).iterator
+                .map(caller => (caller._1, caller._2)).iterator
+                .to(Set).contains(dm -> pc))
         }
 
         for {

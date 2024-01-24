@@ -10,10 +10,10 @@ package ba
  */
 case class LINENUMBER(lineNumber: Int) extends PseudoInstruction {
 
-    final override def isExceptionHandlerElement: Boolean = false
+    override final def isExceptionHandlerElement: Boolean = false
 
-    final override def isTry: Boolean = false
+    override final def isTry: Boolean = false
 
-    final override def isCatch: Boolean = false
+    override final def isCatch: Boolean = false
 
 }

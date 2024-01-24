@@ -3,6 +3,8 @@ package org.opalj
 package br
 package analyses
 
+import scala.collection.Map
+
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.properties.fieldaccess
 import org.opalj.br.fpcf.properties.fieldaccess.AccessParameter
@@ -12,8 +14,6 @@ import org.opalj.br.fpcf.properties.fieldaccess.FieldWriteAccessInformation
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.SomeInterimEP
-
-import scala.collection.Map
 
 /**
  * Acts as a proxy for the propertyStore, accessing [[FieldReadAccessInformation]] and [[FieldWriteAccessInformation]].
@@ -48,8 +48,8 @@ case class FieldAccessInformation(project: SomeProject) {
     )(implicit declaredFields: DeclaredFields): Iterator[(Int, PC, AccessReceiver, AccessParameter)] =
         getFieldAccessInformation(declaredFields(field), FieldWriteAccessInformation.key).accesses
 
-    def isRead(field: Field)(implicit declaredFields: DeclaredFields): Boolean = readAccesses(field).nonEmpty
-    def isWritten(field: Field)(implicit declaredFields: DeclaredFields): Boolean = writeAccesses(field).nonEmpty
+    def isRead(field:     Field)(implicit declaredFields: DeclaredFields): Boolean = readAccesses(field).nonEmpty
+    def isWritten(field:  Field)(implicit declaredFields: DeclaredFields): Boolean = writeAccesses(field).nonEmpty
     def isAccessed(field: Field)(implicit declaredFields: DeclaredFields): Boolean = isRead(field) || isWritten(field)
 
     /**

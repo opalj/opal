@@ -5,11 +5,11 @@ package fpcf
 package analyses
 package pointsto
 
-import org.opalj.collection.immutable.UIDSet
-import org.opalj.fpcf.PropertyKey
 import org.opalj.br.ReferenceType
 import org.opalj.br.fpcf.properties.pointsto.NoTypes
 import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
+import org.opalj.collection.immutable.UIDSet
+import org.opalj.fpcf.PropertyKey
 
 /**
  * Mix-in trait for points-to analyses using typesets ([[TypeBasedPointsToSet]]) as points-to sets.
@@ -32,7 +32,7 @@ trait TypeBasedAnalysis extends AbstractPointsToBasedAnalysis {
         callContext:   ContextType,
         allocatedType: ReferenceType,
         isConstant:    Boolean,
-        isEmptyArray:  Boolean       = false
+        isEmptyArray:  Boolean = false
     ): TypeBasedPointsToSet = TypeBasedPointsToSet(UIDSet(allocatedType))
 
     @inline protected[this] def getTypeOf(element: ReferenceType): ReferenceType = element

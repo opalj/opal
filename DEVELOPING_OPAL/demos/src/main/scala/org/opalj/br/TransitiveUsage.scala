@@ -4,11 +4,10 @@ package br
 
 import java.net.URL
 
-import org.opalj.br.analyses.OneStepAnalysis
-import org.opalj.br.analyses.Project
-
 import org.opalj.br.analyses.AnalysisApplication
 import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.OneStepAnalysis
+import org.opalj.br.analyses.Project
 import org.opalj.de.DependencyExtractor
 import org.opalj.de.DependencyProcessorAdapter
 import org.opalj.de.DependencyType
@@ -73,13 +72,13 @@ object TransitiveUsage extends AnalysisApplication {
         if (parameters.size == 1 && parameters.head.startsWith("-class="))
             Seq.empty
         else
-            parameters.filterNot(_.startsWith("-class=")).map("unknown parameter: "+_)
+            parameters.filterNot(_.startsWith("-class=")).map("unknown parameter: " + _)
     }
 
     override val analysis = new OneStepAnalysis[URL, BasicReport] {
 
         override val description: String =
-            "Calculates the transitive closure of all classes used by a specific class. "+
+            "Calculates the transitive closure of all classes used by a specific class. " +
                 "(Does not take reflective usages into relation)."
 
         override def doAnalyze(
@@ -99,8 +98,8 @@ object TransitiveUsage extends AnalysisApplication {
             }
 
             BasicReport(
-                "To compile: "+baseType.toJava+
-                    " the following "+visitedTypes.size+" classes are required:\n"+
+                "To compile: " + baseType.toJava +
+                    " the following " + visitedTypes.size + " classes are required:\n" +
                     visitedTypes.map(_.toJava).mkString("\n")
             )
         }

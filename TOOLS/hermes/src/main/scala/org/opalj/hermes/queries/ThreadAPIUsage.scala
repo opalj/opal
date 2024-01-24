@@ -4,9 +4,9 @@ package hermes
 package queries
 
 import org.opalj.br.ObjectType
+import org.opalj.hermes.queries.util.APIFeature
 import org.opalj.hermes.queries.util.APIFeatureGroup
 import org.opalj.hermes.queries.util.APIFeatureQuery
-import org.opalj.hermes.queries.util.APIFeature
 import org.opalj.hermes.queries.util.InstanceAPIMethod
 import org.opalj.hermes.queries.util.StaticAPIMethod
 
@@ -25,7 +25,6 @@ class ThreadAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery {
         val constructor = "<init>"
 
         List(
-
             // PROCESS
 
             APIFeatureGroup(
@@ -36,7 +35,6 @@ class ThreadAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery {
                 ),
                 "Object-based Thread Notification"
             ),
-
             APIFeatureGroup(
                 List(
                     InstanceAPIMethod(Thread, constructor),
@@ -53,7 +51,6 @@ class ThreadAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery {
                 ),
                 "Usage of Thread API"
             ),
-
             APIFeatureGroup(
                 List(
                     InstanceAPIMethod(ThreadGroup, constructor),
@@ -66,7 +63,6 @@ class ThreadAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery {
                 ),
                 "Usage of ThreadGroup API"
             )
-
         )
     }
 

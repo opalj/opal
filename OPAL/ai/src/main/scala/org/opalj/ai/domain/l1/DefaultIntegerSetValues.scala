@@ -8,11 +8,10 @@ import scala.reflect.ClassTag
 
 import java.lang.Math.max
 import java.lang.Math.min
-
 import scala.collection.immutable.SortedSet
 
-import org.opalj.value.IsIntegerValue
 import org.opalj.br.CTIntType
+import org.opalj.value.IsIntegerValue
 
 /**
  * This domain implements the tracking of integer values using sets.
@@ -125,7 +124,7 @@ trait DefaultIntegerSetValues extends DefaultSpecialDomainValuesBinding with Int
             }
         }
 
-        override def toString: String = "IntegerSet("+values.mkString(",")+")"
+        override def toString: String = "IntegerSet(" + values.mkString(",") + ")"
     }
 
     // NOTE: IF WE HAVE TWO VALUES THAT ARE REFERENCE EQUAL, THEN THE

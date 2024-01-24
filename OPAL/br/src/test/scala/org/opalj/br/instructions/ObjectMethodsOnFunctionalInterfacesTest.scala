@@ -102,9 +102,7 @@ class ObjectMethodsOnFunctionalInterfacesTest extends AnyFunSpec with Matchers {
     }
 
     private def getReturnType(pairs: ElementValuePairs): Type = {
-        pairs.find(_.name == "returnType").map { p =>
-            p.value.asInstanceOf[ClassValue].value
-        }.getOrElse(VoidType)
+        pairs.find(_.name == "returnType").map { p => p.value.asInstanceOf[ClassValue].value }.getOrElse(VoidType)
     }
 
     describe("invocations of inherited methods on instances of functional interfaces") {

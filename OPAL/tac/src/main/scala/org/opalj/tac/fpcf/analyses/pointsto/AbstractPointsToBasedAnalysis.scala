@@ -5,16 +5,18 @@ package fpcf
 package analyses
 package pointsto
 
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.PropertyKey
+import org.opalj.br.ReferenceType
+import org.opalj.br.analyses.DeclaredFields
+import org.opalj.br.analyses.DeclaredFieldsKey
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.VirtualFormalParameters
 import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
-import org.opalj.br.ReferenceType
-import org.opalj.br.analyses.DeclaredFields
-import org.opalj.br.analyses.DeclaredFieldsKey
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.PropertyKey
+import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.common.DefinitionSites
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.analyses.cg.ContextualAnalysis
@@ -47,7 +49,7 @@ trait AbstractPointsToBasedAnalysis extends FPCFAnalysis with ContextualAnalysis
         callContext:   ContextType,
         allocatedType: ReferenceType,
         isConstant:    Boolean,
-        isEmptyArray:  Boolean       = false
+        isEmptyArray:  Boolean = false
     ): PointsToSet
 
     @inline protected[this] def getTypeOf(element: ElementType): ReferenceType
@@ -62,4 +64,9 @@ trait AbstractPointsToBasedAnalysis extends FPCFAnalysis with ContextualAnalysis
         else
             emptyPointsToSet
     }
+}
+
+object AbstractPointsToBasedAnalysis {
+    val requiredProjectInformation: ProjectInformationKeys =
+        Seq(TypeIteratorKey, DefinitionSitesKey, VirtualFormalParametersKey, DeclaredFieldsKey)
 }

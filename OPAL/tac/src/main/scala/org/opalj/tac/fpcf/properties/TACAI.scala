@@ -4,6 +4,9 @@ package tac
 package fpcf
 package properties
 
+import org.opalj.ai.domain.l0.PrimitiveTACAIDomain
+import org.opalj.br.Method
+import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.FallbackReason
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyIsNotComputedByAnyAnalysis
@@ -11,11 +14,8 @@ import org.opalj.fpcf.PropertyIsNotDerivedByPreviouslyExecutedAnalysis
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStore
-import org.opalj.value.ValueInformation
-import org.opalj.br.Method
-import org.opalj.br.analyses.SomeProject
-import org.opalj.ai.domain.l0.PrimitiveTACAIDomain
 import org.opalj.tac.{TACAI => TACAIFactory}
+import org.opalj.value.ValueInformation
 
 sealed trait TACAIPropertyMetaInformation extends PropertyMetaInformation {
 
@@ -65,20 +65,21 @@ object TACAI extends TACAIPropertyMetaInformation {
      */
     final val key: PropertyKey[TACAI] = PropertyKey.create[Method, TACAI](
         "opalj.TACAI",
-        (ps: PropertyStore, r: FallbackReason, m: Method) => {
-            r match {
-                case PropertyIsNotDerivedByPreviouslyExecutedAnalysis =>
-                    NoTACAI
+        (ps: PropertyStore, r: FallbackReason, m: Method) =>
+            {
+                r match {
+                    case PropertyIsNotDerivedByPreviouslyExecutedAnalysis =>
+                        NoTACAI
 
-                case PropertyIsNotComputedByAnyAnalysis =>
-                    val p = ps.context(classOf[SomeProject])
-                    val d = new PrimitiveTACAIDomain(p.classHierarchy, m)
-                    val taCode = TACAIFactory(p, m)(d)
-                    TheTACAI(
-                        // the following cast is safe - see TACode for details
-                        taCode.asInstanceOf[TACode[TACMethodParameter, DUVar[ValueInformation]]]
-                    )
-            }
-        }: TACAI
+                    case PropertyIsNotComputedByAnyAnalysis =>
+                        val p = ps.context(classOf[SomeProject])
+                        val d = new PrimitiveTACAIDomain(p.classHierarchy, m)
+                        val taCode = TACAIFactory(p, m)(d)
+                        TheTACAI(
+                            // the following cast is safe - see TACode for details
+                            taCode.asInstanceOf[TACode[TACMethodParameter, DUVar[ValueInformation]]]
+                        )
+                }
+            }: TACAI
     )
 }

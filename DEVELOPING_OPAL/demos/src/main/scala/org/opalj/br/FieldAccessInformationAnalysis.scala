@@ -3,14 +3,15 @@ package org.opalj
 package br
 
 import java.net.URL
-import org.opalj.util.asMB
-import org.opalj.util.PerformanceEvaluation.memory
-import org.opalj.br.analyses.ProjectAnalysisApplication
+
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DeclaredFields
 import org.opalj.br.analyses.DeclaredFieldsKey
-import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.FieldAccessInformationKey
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.ProjectAnalysisApplication
+import org.opalj.util.PerformanceEvaluation.memory
+import org.opalj.util.asMB
 
 /**
  * Basic field access information.
@@ -27,7 +28,7 @@ object FieldAccessInformationAnalysis extends ProjectAnalysisApplication {
     override def description: String = "provides information about field accesses"
 
     override def analysisSpecificParametersDescription: String = {
-        "[-field=\"<The field for which we want read/write access information "+
+        "[-field=\"<The field for which we want read/write access information " +
             "(e.g., -field=\"java.util.HashMap entrySet\">\"]"
     }
 
@@ -35,7 +36,7 @@ object FieldAccessInformationAnalysis extends ProjectAnalysisApplication {
         if (parameters.isEmpty || (parameters.size == 1 && parameters.head.startsWith("-field="))) {
             Seq.empty
         } else {
-            Seq("unknown parameters: "+parameters.mkString(" "))
+            Seq("unknown parameters: " + parameters.mkString(" "))
         }
     }
 
@@ -59,8 +60,10 @@ object FieldAccessInformationAnalysis extends ProjectAnalysisApplication {
 
             val (reads, writes) = fields
                 .foldLeft((Seq.empty[(DefinedMethod, PCs)], Seq.empty[(DefinedMethod, PCs)])) { (accesses, field) =>
-                    val newReads = (accesses._1 ++ accessInformation.readAccesses(field)).asInstanceOf[Seq[(DefinedMethod, PCs)]]
-                    val newWrites = (accesses._2 ++ accessInformation.writeAccesses(field)).asInstanceOf[Seq[(DefinedMethod, PCs)]]
+                    val newReads =
+                        (accesses._1 ++ accessInformation.readAccesses(field)).asInstanceOf[Seq[(DefinedMethod, PCs)]]
+                    val newWrites =
+                        (accesses._2 ++ accessInformation.writeAccesses(field)).asInstanceOf[Seq[(DefinedMethod, PCs)]]
 
                     (newReads, newWrites)
                 }
@@ -75,16 +78,15 @@ object FieldAccessInformationAnalysis extends ProjectAnalysisApplication {
             }
 
             BasicReport(
-                declaringClassName+" "+fieldName+"\n"+
-                    "writes:\n"+accessInformationToString(writes)+
-                    "reads:\n"+accessInformationToString(reads)
+                declaringClassName + " " + fieldName + "\n" +
+                    "writes:\n" + accessInformationToString(writes) +
+                    "reads:\n" + accessInformationToString(reads)
             )
 
         } else {
             BasicReport(
-                accessInformation.statistics.mkString(
-                    s"determing field access information required $memoryUsage :\n", "\n", "\n"
-                )
+                accessInformation.statistics
+                    .mkString(s"determing field access information required $memoryUsage :\n", "\n", "\n")
             )
         }
     }

@@ -2,8 +2,8 @@
 package org.opalj
 package ai
 
-import org.opalj.log.LogContext
 import org.opalj.log.GlobalLogContext
+import org.opalj.log.LogContext
 
 /**
  * Provides log context information.

@@ -3,6 +3,7 @@ package org.opalj
 package apk
 
 import com.typesafe.config.Config
+
 import org.opalj.UShort
 import org.opalj.br.Method
 

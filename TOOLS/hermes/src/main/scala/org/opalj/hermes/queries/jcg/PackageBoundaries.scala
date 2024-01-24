@@ -7,13 +7,13 @@ package jcg
 import scala.collection.immutable.ArraySeq
 import scala.collection.mutable.ArrayBuffer
 
-import org.opalj.da.ClassFile
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.MethodWithBody
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
-import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.Instruction
+import org.opalj.br.instructions.INVOKEVIRTUAL
+import org.opalj.da.ClassFile
 
 /**
  * Groups test case features that perform a polymorphic method calls over package boundaries. This is
@@ -79,11 +79,12 @@ class PackageBoundaries(implicit hermes: HermesConfig) extends DefaultFeatureQue
 
                 if (matchesPreconditions) {
                     if (project.classHierarchy.existsSubclass(rtOt, project) { cf =>
-                        val ot = cf.thisType
-                        if (ot.packageName eq callerPackage) {
-                            isMethodOverriddenInDiffPackage(rtOt, ot, name, methodDescriptor, project)
-                        } else false
-                    }) {
+                            val ot = cf.thisType
+                            if (ot.packageName eq callerPackage) {
+                                isMethodOverriddenInDiffPackage(rtOt, ot, name, methodDescriptor, project)
+                            } else false
+                        }
+                    ) {
                         instructionsLocations(1) += l
                         1 /* it exists a subtype `S` within the same package as the declared typed `D`
                         that inherits transitively from type `D`, such that `S` <: `S'` <: `D` where
@@ -108,7 +109,7 @@ class PackageBoundaries(implicit hermes: HermesConfig) extends DefaultFeatureQue
     ) = {
         project.classHierarchy.existsSubclass(rtOt, project) { sot =>
             (sot.thisType.packageName ne callerPackage) &&
-                sot.findMethod(name, methodDescriptor).map(_.isPackagePrivate).getOrElse(false)
+            sot.findMethod(name, methodDescriptor).map(_.isPackagePrivate).getOrElse(false)
         }
     }
 
@@ -124,9 +125,7 @@ class PackageBoundaries(implicit hermes: HermesConfig) extends DefaultFeatureQue
         val callingPackage = declaredType.packageName
 
         val worklist = ArrayBuffer[Int]()
-        classHierarchy.directSupertypes(targetType).foreach { sot =>
-            worklist.append(sot.id)
-        }
+        classHierarchy.directSupertypes(targetType).foreach { sot => worklist.append(sot.id) }
         while (worklist.nonEmpty) {
             val cur = worklist.remove(0)
             val ot = classHierarchy.getObjectType(cur)
@@ -137,9 +136,7 @@ class PackageBoundaries(implicit hermes: HermesConfig) extends DefaultFeatureQue
                     return true;
                 }
             }
-            classHierarchy.directSupertypes(ot).foreach { sot =>
-                worklist.append(sot.id)
-            }
+            classHierarchy.directSupertypes(ot).foreach { sot => worklist.append(sot.id) }
         }
 
         false

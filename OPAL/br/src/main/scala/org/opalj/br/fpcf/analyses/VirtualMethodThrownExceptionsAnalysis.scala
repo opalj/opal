@@ -4,20 +4,9 @@ package br
 package fpcf
 package analyses
 
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.EPS
-import org.opalj.fpcf.InterimResult
-import org.opalj.fpcf.ProperPropertyComputationResult
-import org.opalj.fpcf.Property
-import org.opalj.fpcf.PropertyBounds
-import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.Result
-import org.opalj.fpcf.SomeEPS
-import org.opalj.fpcf.UBP
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
-import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.collection.mutable.{TypesSet => BRMutableTypesSet}
 import org.opalj.br.fpcf.properties.ThrownExceptions
 import org.opalj.br.fpcf.properties.ThrownExceptions.AnalysisLimitation
@@ -29,6 +18,17 @@ import org.opalj.br.fpcf.properties.ThrownExceptions.UnresolvedInvokeDynamicInst
 import org.opalj.br.fpcf.properties.ThrownExceptionsByOverridingMethods
 import org.opalj.br.fpcf.properties.ThrownExceptionsByOverridingMethods.MethodIsOverridable
 import org.opalj.br.fpcf.properties.ThrownExceptionsByOverridingMethods.SomeException
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.EPS
+import org.opalj.fpcf.InterimResult
+import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.Property
+import org.opalj.fpcf.PropertyBounds
+import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.Result
+import org.opalj.fpcf.SomeEPS
+import org.opalj.fpcf.UBP
 
 /**
  * Aggregates the exceptions thrown by a method over all methods which override the respective
@@ -96,9 +96,7 @@ class VirtualMethodThrownExceptionsAnalysis private[analyses] (
         var exceptions = initialExceptions.toImmutableTypesSet
 
         def c(eps: SomeEPS): ProperPropertyComputationResult = {
-            dependees = dependees.filter { d =>
-                d.e != eps.e || d.pk != eps.pk
-            }
+            dependees = dependees.filter { d => d.e != eps.e || d.pk != eps.pk }
             // If the property is not final we want to keep updated of new values
             if (eps.isRefinable) {
                 dependees = dependees + eps
@@ -140,7 +138,7 @@ trait VirtualMethodThrownExceptionsAnalysisScheduler extends FPCFAnalysisSchedul
 
     override def requiredProjectInformation: ProjectInformationKeys = Seq(IsOverridableMethodKey)
 
-    final override def uses: Set[PropertyBounds] = Set(PropertyBounds.lub(ThrownExceptions))
+    override final def uses: Set[PropertyBounds] = Set(PropertyBounds.lub(ThrownExceptions))
 
     final def derivedProperty: PropertyBounds = {
         PropertyBounds.lub(ThrownExceptionsByOverridingMethods)
