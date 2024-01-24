@@ -22,6 +22,7 @@ import org.opalj.br.fpcf.properties.Purity
 import org.opalj.br.fpcf.properties.VirtualMethodPurity
 import org.opalj.fpcf.ComputationSpecification
 import org.opalj.tac.cg.RTACallGraphKey
+import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalysis
 import org.opalj.tac.fpcf.analyses.fieldassignability.EagerL1FieldAssignabilityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.EagerL1PurityAnalysis
 import org.opalj.util.Nanoseconds
@@ -41,7 +42,8 @@ class L1PuritySmokeTest extends AnyFunSpec with Matchers {
 
     val primaryAnalyses: Set[ComputationSpecification[FPCFAnalysis]] = Set(
         EagerL1PurityAnalysis,
-        EagerVirtualMethodPurityAnalysis
+        EagerVirtualMethodPurityAnalysis,
+        EagerFieldAccessInformationAnalysis
     )
 
     val supportAnalyses: Set[ComputationSpecification[FPCFAnalysis]] = Set(
