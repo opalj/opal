@@ -26,11 +26,11 @@ import org.opalj.fpcf.FinalEP
  * @author Patrick Mell
  */
 class IntraproceduralNonVirtualMethodCallInterpreter(
-        cfg:         CFG[Stmt[V], TACStmts[V]],
-        exprHandler: IntraproceduralInterpretationHandler
+                                                        cfg:         CFG[Stmt[SEntity], TACStmts[SEntity]],
+                                                        exprHandler: IntraproceduralInterpretationHandler
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
 
-    override type T = NonVirtualMethodCall[V]
+    override type T = NonVirtualMethodCall[SEntity]
 
     /**
      * Currently, this function supports the interpretation of the following non virtual methods:
@@ -50,8 +50,8 @@ class IntraproceduralNonVirtualMethodCallInterpreter(
      * @see [[AbstractStringInterpreter.interpret]]
      */
     override def interpret(
-        instr:   NonVirtualMethodCall[V],
-        defSite: Int
+                              instr:   NonVirtualMethodCall[SEntity],
+                              defSite: Int
     ): EOptionP[Entity, StringConstancyProperty] = {
         val prop = instr.name match {
             case "<init>" => interpretInit(instr)
@@ -67,7 +67,7 @@ class IntraproceduralNonVirtualMethodCallInterpreter(
      * [[StringBuffer]] and [[StringBuilder]], have only constructors with <= 1 arguments and only
      * these are currently interpreted).
      */
-    private def interpretInit(init: NonVirtualMethodCall[V]): StringConstancyProperty = {
+    private def interpretInit(init: NonVirtualMethodCall[SEntity]): StringConstancyProperty = {
         init.params.size match {
             case 0 => StringConstancyProperty.getNeutralElement
             case _ =>

@@ -73,17 +73,17 @@ class IntraproceduralStringAnalysis(
      * have all required information ready for a final result.
      */
     private case class ComputationState(
-            // The lean path that was computed
-            computedLeanPath: Path,
-            // A mapping from DUVar elements to the corresponding indices of the FlatPathElements
-            var2IndexMapping: mutable.Map[V, Int],
-            // A mapping from values of FlatPathElements to StringConstancyInformation
-            fpe2sci: mutable.Map[Int, StringConstancyInformation],
-            // The three-address code of the method in which the entity under analysis resides
-            tac: TACode[TACMethodParameter, DUVar[ValueInformation]]
+                                           // The lean path that was computed
+                                           computedLeanPath: Path,
+                                           // A mapping from DUVar elements to the corresponding indices of the FlatPathElements
+                                           var2IndexMapping: mutable.Map[SEntity, Int],
+                                           // A mapping from values of FlatPathElements to StringConstancyInformation
+                                           fpe2sci: mutable.Map[Int, StringConstancyInformation],
+                                           // The three-address code of the method in which the entity under analysis resides
+                                           tac: TACode[TACMethodParameter, DUVar[ValueInformation]]
     )
 
-    def analyze(data: P): ProperPropertyComputationResult = {
+    def analyze(data: SContext): ProperPropertyComputationResult = {
         // sci stores the final StringConstancyInformation (if it can be determined now at all)
         var sci = StringConstancyProperty.lb.stringConstancyInformation
 
@@ -181,16 +181,16 @@ class IntraproceduralStringAnalysis(
      * [[FinalP]].
      */
     private def processFinalP(
-        data:      P,
-        dependees: Iterable[EOptionP[Entity, Property]],
-        state:     ComputationState,
-        e:         Entity,
-        p:         Property
+                                 data:      SContext,
+                                 dependees: Iterable[EOptionP[Entity, Property]],
+                                 state:     ComputationState,
+                                 e:         Entity,
+                                 p:         Property
     ): ProperPropertyComputationResult = {
         // Add mapping information (which will be used for computing the final result)
         val retrievedProperty = p.asInstanceOf[StringConstancyProperty]
         val currentSci = retrievedProperty.stringConstancyInformation
-        state.fpe2sci.put(state.var2IndexMapping(e.asInstanceOf[P]._1), currentSci)
+        state.fpe2sci.put(state.var2IndexMapping(e.asInstanceOf[SContext]._1), currentSci)
 
         // No more dependees => Return the result for this analysis run
         val remDependees = dependees.filter(_.e != e)
@@ -222,9 +222,9 @@ class IntraproceduralStringAnalysis(
      * @return This function can either produce a final result or another intermediate result.
      */
     private def continuation(
-        data:      P,
-        dependees: Iterable[EOptionP[Entity, Property]],
-        state:     ComputationState
+                                data:      SContext,
+                                dependees: Iterable[EOptionP[Entity, Property]],
+                                state:     ComputationState
     )(eps: SomeEPS): ProperPropertyComputationResult = eps match {
         case FinalP(p) => processFinalP(data, dependees, state, eps.e, p)
         case InterimLUBP(lb, ub) => InterimResult(
@@ -243,12 +243,12 @@ class IntraproceduralStringAnalysis(
      * [[FlatPathElement.element]] in which it occurs.
      */
     private def findDependeesAcc(
-        subpath:           SubPath,
-        stmts:             Array[Stmt[V]],
-        target:            V,
-        foundDependees:    ListBuffer[(V, Int)],
-        hasTargetBeenSeen: Boolean
-    ): (ListBuffer[(V, Int)], Boolean) = {
+                                    subpath:           SubPath,
+                                    stmts:             Array[Stmt[SEntity]],
+                                    target:            SEntity,
+                                    foundDependees:    ListBuffer[(SEntity, Int)],
+                                    hasTargetBeenSeen: Boolean
+    ): (ListBuffer[(SEntity, Int)], Boolean) = {
         var encounteredTarget = false
         subpath match {
             case fpe: FlatPathElement =>
@@ -303,11 +303,11 @@ class IntraproceduralStringAnalysis(
      *       this variable as `ignore`.
      */
     private def findDependentVars(
-        path:   Path,
-        stmts:  Array[Stmt[V]],
-        ignore: V
-    ): mutable.LinkedHashMap[V, Int] = {
-        val dependees = mutable.LinkedHashMap[V, Int]()
+                                     path:   Path,
+                                     stmts:  Array[Stmt[SEntity]],
+                                     ignore: SEntity
+    ): mutable.LinkedHashMap[SEntity, Int] = {
+        val dependees = mutable.LinkedHashMap[SEntity, Int]()
         val ignoreNews = InterpretationHandler.findNewOfVar(ignore, stmts)
         var wasTargetSeen = false
 

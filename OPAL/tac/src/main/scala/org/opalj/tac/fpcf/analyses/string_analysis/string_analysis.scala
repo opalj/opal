@@ -19,17 +19,17 @@ import org.opalj.value.ValueInformation
 package object string_analysis {
 
     /**
-     * The type of entities the [[IntraproceduralStringAnalysis]] processes.
+     * The type of entities the [[IntraproceduralStringAnalysis]] and the [[InterproceduralStringAnalysis]] process.
      *
-     * @note The analysis requires further context information, see [[P]].
+     * @note The analysis require further context information, see [[SContext]].
      */
-    type V = DUVar[ValueInformation]
+    type SEntity = DUVar[ValueInformation]
 
     /**
-     * [[IntraproceduralStringAnalysis]] processes a local variable within the context of a
-     * particular context, i.e., the method in which it is used.
+     * [[IntraproceduralStringAnalysis]] and [[InterproceduralStringAnalysis]] process a local variable within a
+     * particular context, i.e. the method in which it is used. TODO should this be "context"?
      */
-    type P = (V, Method)
+    type SContext = (SEntity, Method)
 
     /**
      * This type indicates how (non-final) parameters of functions are represented. The outer-most
@@ -42,11 +42,11 @@ package object string_analysis {
 
     /**
      * This type serves as a lookup mechanism to find out which functions parameters map to which
-     * argument position. That is, the element of type [[P]] of the inner map maps from this entity
+     * argument position. That is, the element of type [[SContext]] of the inner map maps from this entity
      * to its position in a data structure of type [[NonFinalFunctionArgs]]. The outer map is
      * necessary to uniquely identify a position as an entity might be used for different function
      * calls.
      */
-    type NonFinalFunctionArgsPos = mutable.Map[FunctionCall[V], mutable.Map[P, (Int, Int, Int)]]
+    type NonFinalFunctionArgsPos = mutable.Map[FunctionCall[SEntity], mutable.Map[SContext, (Int, Int, Int)]]
 
 }

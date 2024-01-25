@@ -25,11 +25,11 @@ import org.opalj.fpcf.FinalEP
  * @author Patrick Mell
  */
 class IntraproceduralArrayInterpreter(
-        cfg:         CFG[Stmt[V], TACStmts[V]],
-        exprHandler: IntraproceduralInterpretationHandler
+                                         cfg:         CFG[Stmt[SEntity], TACStmts[SEntity]],
+                                         exprHandler: IntraproceduralInterpretationHandler
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
 
-    override type T = ArrayLoad[V]
+    override type T = ArrayLoad[SEntity]
 
     /**
      * @note For this implementation, `defSite` does not play a role.
@@ -46,7 +46,7 @@ class IntraproceduralArrayInterpreter(
             val sortedArrDeclUses = arrDecl.asAssignment.targetVar.usedBy.toArray.sorted
             // Process ArrayStores
             sortedArrDeclUses.filter {
-                stmts(_).isInstanceOf[ArrayStore[V]]
+                stmts(_).isInstanceOf[ArrayStore[SEntity]]
             } foreach { f: Int =>
                 val sortedDefs = stmts(f).asArrayStore.value.asVar.definedBy.toArray.sorted
                 children.appendAll(sortedDefs.map { exprHandler.processDefSite(_) }.map { n =>
@@ -56,7 +56,7 @@ class IntraproceduralArrayInterpreter(
             // Process ArrayLoads
             sortedArrDeclUses.filter {
                 stmts(_) match {
-                    case Assignment(_, _, _: ArrayLoad[V]) => true
+                    case Assignment(_, _, _: ArrayLoad[SEntity]) => true
                     case _                                 => false
                 }
             } foreach { f: Int =>

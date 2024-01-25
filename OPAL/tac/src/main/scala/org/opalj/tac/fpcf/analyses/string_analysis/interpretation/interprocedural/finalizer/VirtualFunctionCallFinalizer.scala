@@ -19,10 +19,10 @@ import org.opalj.br.fpcf.properties.string_definition.StringConstancyType
  */
 class VirtualFunctionCallFinalizer(
         state: InterproceduralComputationState,
-        cfg:   CFG[Stmt[V], TACStmts[V]]
+        cfg:   CFG[Stmt[SEntity], TACStmts[SEntity]]
 ) extends AbstractFinalizer(state) {
 
-    override type T = VirtualFunctionCall[V]
+    override type T = VirtualFunctionCall[SEntity]
 
     /**
      * Finalizes [[VirtualFunctionCall]]s. Currently, this finalizer supports only the "append" and
@@ -121,7 +121,7 @@ object VirtualFunctionCallFinalizer {
 
     def apply(
         state: InterproceduralComputationState,
-        cfg:   CFG[Stmt[V], TACStmts[V]]
+        cfg:   CFG[Stmt[SEntity], TACStmts[SEntity]]
     ): VirtualFunctionCallFinalizer = new VirtualFunctionCallFinalizer(state, cfg)
 
 }

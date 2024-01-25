@@ -27,13 +27,13 @@ import org.opalj.fpcf.FinalEP
  * @author Patrick Mell
  */
 class NewArrayPreparer(
-        cfg:         CFG[Stmt[V], TACStmts[V]],
-        exprHandler: InterproceduralInterpretationHandler,
-        state:       InterproceduralComputationState,
-        params:      List[Seq[StringConstancyInformation]]
+                          cfg:         CFG[Stmt[SEntity], TACStmts[SEntity]],
+                          exprHandler: InterproceduralInterpretationHandler,
+                          state:       InterproceduralComputationState,
+                          params:      List[Seq[StringConstancyInformation]]
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
 
-    override type T = NewArray[V]
+    override type T = NewArray[SEntity]
 
     /**
      * @note This implementation will extend [[state.fpe2sci]] in a way that it adds the string
@@ -55,7 +55,7 @@ class NewArrayPreparer(
         val arrValuesDefSites =
             state.tac.stmts(defSite).asAssignment.targetVar.asVar.usedBy.toArray.toList.sorted
         var allResults = arrValuesDefSites.filter {
-            ds => ds >= 0 && state.tac.stmts(ds).isInstanceOf[ArrayStore[V]]
+            ds => ds >= 0 && state.tac.stmts(ds).isInstanceOf[ArrayStore[SEntity]]
         }.flatMap { ds =>
             // ds holds a site an of array stores; these need to be evaluated for the actual values
             state.tac.stmts(ds).asArrayStore.value.asVar.definedBy.toArray.toList.sorted.map { d =>

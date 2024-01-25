@@ -35,16 +35,16 @@ import org.opalj.tac.fpcf.analyses.cg.TypeIterator
  * @author Patrick Mell
  */
 class VirtualFunctionCallPreparationInterpreter(
-        cfg:             CFG[Stmt[V], TACStmts[V]],
-        exprHandler:     InterproceduralInterpretationHandler,
-        ps:              PropertyStore,
-        state:           InterproceduralComputationState,
-        declaredMethods: DeclaredMethods,
-        params:          List[Seq[StringConstancyInformation]],
-        typeIterator:    TypeIterator
+                                                   cfg:             CFG[Stmt[SEntity], TACStmts[SEntity]],
+                                                   exprHandler:     InterproceduralInterpretationHandler,
+                                                   ps:              PropertyStore,
+                                                   state:           InterproceduralComputationState,
+                                                   declaredMethods: DeclaredMethods,
+                                                   params:          List[Seq[StringConstancyInformation]],
+                                                   typeIterator:    TypeIterator
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
 
-    override type T = VirtualFunctionCall[V]
+    override type T = VirtualFunctionCall[SEntity]
 
     /**
      * Currently, this implementation supports the interpretation of the following function calls:
@@ -158,18 +158,18 @@ class VirtualFunctionCallPreparationInterpreter(
             val (_, tac) = getTACAI(ps, nextMethod, state)
             if (tac.isDefined) {
                 state.methodPrep2defSite.remove(nextMethod)
-                val returns = tac.get.stmts.filter(_.isInstanceOf[ReturnValue[V]])
+                val returns = tac.get.stmts.filter(_.isInstanceOf[ReturnValue[SEntity]])
                 if (returns.isEmpty) {
                     // It might be that a function has no return value, e. g., in case it is
                     // guaranteed to throw an exception
                     FinalEP(instr, StringConstancyProperty.lb)
                 } else {
                     val results = returns.map { ret =>
-                        val entity = (ret.asInstanceOf[ReturnValue[V]].expr.asVar, nextMethod)
+                        val entity = (ret.asInstanceOf[ReturnValue[SEntity]].expr.asVar, nextMethod)
                         InterproceduralStringAnalysis.registerParams(entity, evaluatedParams)
                         val eps = ps(entity, StringConstancyProperty.key)
                         eps match {
-                            case r: FinalEP[P, StringConstancyProperty] =>
+                            case r: FinalEP[SContext, StringConstancyProperty] =>
                                 state.appendToFpe2Sci(defSite, r.p.stringConstancyInformation)
                                 r
                             case _ =>
@@ -201,8 +201,8 @@ class VirtualFunctionCallPreparationInterpreter(
      * the expected behavior cannot be guaranteed.
      */
     private def interpretAppendCall(
-        appendCall: VirtualFunctionCall[V],
-        defSite:    Int
+                                       appendCall: VirtualFunctionCall[SEntity],
+                                       defSite:    Int
     ): EOptionP[Entity, StringConstancyProperty] = {
         val receiverResults = receiverValuesOfAppendCall(appendCall, state)
         val appendResult = valueOfAppendCall(appendCall, state)
@@ -264,8 +264,8 @@ class VirtualFunctionCallPreparationInterpreter(
      *       returned list contains an [[org.opalj.fpcf.InterimResult]].
      */
     private def receiverValuesOfAppendCall(
-        call:  VirtualFunctionCall[V],
-        state: InterproceduralComputationState
+                                              call:  VirtualFunctionCall[SEntity],
+                                              state: InterproceduralComputationState
     ): List[EOptionP[Entity, StringConstancyProperty]] = {
         val defSites = call.receiver.asVar.definedBy.toArray.sorted
 
@@ -298,8 +298,8 @@ class VirtualFunctionCallPreparationInterpreter(
      * This function can process string constants as well as function calls as argument to append.
      */
     private def valueOfAppendCall(
-        call:  VirtualFunctionCall[V],
-        state: InterproceduralComputationState
+                                     call:  VirtualFunctionCall[SEntity],
+                                     state: InterproceduralComputationState
     ): EOptionP[Entity, StringConstancyProperty] = {
         // .head because we want to evaluate only the first argument of append
         val param = call.params.head.asVar
@@ -378,7 +378,7 @@ class VirtualFunctionCallPreparationInterpreter(
      * the expected behavior cannot be guaranteed.
      */
     private def interpretToStringCall(
-        call: VirtualFunctionCall[V]
+        call: VirtualFunctionCall[SEntity]
     ): EOptionP[Entity, StringConstancyProperty] =
         // TODO: Can it produce an intermediate result???
         exprHandler.processDefSite(call.receiver.asVar.definedBy.head, params)
@@ -389,7 +389,7 @@ class VirtualFunctionCallPreparationInterpreter(
      * bound of [[StringConstancyProperty]]).
      */
     private def interpretReplaceCall(
-        instr: VirtualFunctionCall[V]
+        instr: VirtualFunctionCall[SEntity]
     ): EOptionP[Entity, StringConstancyProperty] =
         FinalEP(instr, InterpretationHandler.getStringConstancyPropertyForReplace)
 

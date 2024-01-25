@@ -24,11 +24,11 @@ import org.opalj.fpcf.FinalEP
  * @author Patrick Mell
  */
 class IntraproceduralFieldInterpreter(
-        cfg:         CFG[Stmt[V], TACStmts[V]],
-        exprHandler: IntraproceduralInterpretationHandler
+                                         cfg:         CFG[Stmt[SEntity], TACStmts[SEntity]],
+                                         exprHandler: IntraproceduralInterpretationHandler
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
 
-    override type T = GetField[V]
+    override type T = GetField[SEntity]
 
     /**
      * Fields are not suppoerted by this implementation. Thus, this function always returns a result

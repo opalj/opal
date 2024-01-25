@@ -83,7 +83,7 @@ case class Path(elements: List[SubPath]) {
      */
     private def getAllDefAndUseSites(
         obj:   DUVar[ValueInformation],
-        stmts: Array[Stmt[V]]
+        stmts: Array[Stmt[SEntity]]
     ): List[Int] = {
         val defAndUses = ListBuffer[Int]()
         val stack = mutable.Stack[Int](obj.definedBy.toList: _*)
@@ -94,12 +94,12 @@ case class Path(elements: List[SubPath]) {
                 defAndUses.append(popped)
 
                 stmts(popped) match {
-                    case a: Assignment[V] if a.expr.isInstanceOf[VirtualFunctionCall[V]] =>
+                    case a: Assignment[SEntity] if a.expr.isInstanceOf[VirtualFunctionCall[SEntity]] =>
                         val receiver = a.expr.asVirtualFunctionCall.receiver.asVar
                         stack.pushAll(receiver.asVar.definedBy.filter(_ >= 0).toArray)
                         // TODO: Does the following line add too much (in some cases)???
                         stack.pushAll(a.targetVar.asVar.usedBy.toArray)
-                    case a: Assignment[V] if a.expr.isInstanceOf[New] =>
+                    case a: Assignment[SEntity] if a.expr.isInstanceOf[New] =>
                         stack.pushAll(a.targetVar.usedBy.toArray)
                     case _ =>
                 }
@@ -266,15 +266,15 @@ case class Path(elements: List[SubPath]) {
      *       elements for the lean path will be copied, i.e., `this` instance and the returned
      *       instance do not share any references.
      */
-    def makeLeanPath(obj: DUVar[ValueInformation], stmts: Array[Stmt[V]]): Path = {
+    def makeLeanPath(obj: DUVar[ValueInformation], stmts: Array[Stmt[SEntity]]): Path = {
         val newOfObj = InterpretationHandler.findNewOfVar(obj, stmts)
         // Transform the list of relevant sites into a map to have a constant access time
         val siteMap = getAllDefAndUseSites(obj, stmts).filter { nextSite =>
             stmts(nextSite) match {
-                case Assignment(_, _, expr: VirtualFunctionCall[V]) =>
+                case Assignment(_, _, expr: VirtualFunctionCall[SEntity]) =>
                     val news = InterpretationHandler.findNewOfVar(expr.receiver.asVar, stmts)
                     newOfObj == news || news.exists(newOfObj.contains)
-                case ExprStmt(_, expr: VirtualFunctionCall[V]) =>
+                case ExprStmt(_, expr: VirtualFunctionCall[SEntity]) =>
                     val news = InterpretationHandler.findNewOfVar(expr.receiver.asVar, stmts)
                     newOfObj == news || news.exists(newOfObj.contains)
                 case _ => true

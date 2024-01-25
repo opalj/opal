@@ -26,14 +26,14 @@ import org.opalj.fpcf.PropertyStore
  * @author Patrick Mell
  */
 class InterproceduralNonVirtualMethodCallInterpreter(
-        cfg:             CFG[Stmt[V], TACStmts[V]],
-        exprHandler:     InterproceduralInterpretationHandler,
-        ps:              PropertyStore,
-        state:           InterproceduralComputationState,
-        declaredMethods: DeclaredMethods
+                                                        cfg:             CFG[Stmt[SEntity], TACStmts[SEntity]],
+                                                        exprHandler:     InterproceduralInterpretationHandler,
+                                                        ps:              PropertyStore,
+                                                        state:           InterproceduralComputationState,
+                                                        declaredMethods: DeclaredMethods
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
 
-    override type T = NonVirtualMethodCall[V]
+    override type T = NonVirtualMethodCall[SEntity]
 
     /**
      * Currently, this function supports the interpretation of the following non virtual methods:
@@ -51,8 +51,8 @@ class InterproceduralNonVirtualMethodCallInterpreter(
      * @see [[AbstractStringInterpreter.interpret]]
      */
     override def interpret(
-        instr:   NonVirtualMethodCall[V],
-        defSite: Int
+                              instr:   NonVirtualMethodCall[SEntity],
+                              defSite: Int
     ): EOptionP[Entity, StringConstancyProperty] = {
         val e: Integer = defSite
         instr.name match {
@@ -69,8 +69,8 @@ class InterproceduralNonVirtualMethodCallInterpreter(
      * these are currently interpreted).
      */
     private def interpretInit(
-        init:    NonVirtualMethodCall[V],
-        defSite: Integer
+                                 init:    NonVirtualMethodCall[SEntity],
+                                 defSite: Integer
     ): EOptionP[Entity, StringConstancyProperty] = {
         init.params.size match {
             case 0 => FinalEP(defSite, StringConstancyProperty.getNeutralElement)

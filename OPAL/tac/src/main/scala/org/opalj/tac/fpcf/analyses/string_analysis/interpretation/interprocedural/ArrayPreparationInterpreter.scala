@@ -30,13 +30,13 @@ import org.opalj.fpcf.FinalEP
  * @author Patrick Mell
  */
 class ArrayPreparationInterpreter(
-        cfg:         CFG[Stmt[V], TACStmts[V]],
-        exprHandler: InterproceduralInterpretationHandler,
-        state:       InterproceduralComputationState,
-        params:      List[Seq[StringConstancyInformation]]
+                                     cfg:         CFG[Stmt[SEntity], TACStmts[SEntity]],
+                                     exprHandler: InterproceduralInterpretationHandler,
+                                     state:       InterproceduralComputationState,
+                                     params:      List[Seq[StringConstancyInformation]]
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
 
-    override type T = ArrayLoad[V]
+    override type T = ArrayLoad[SEntity]
 
     /**
      * @note This implementation will extend [[state.fpe2sci]] in a way that it adds the string
@@ -105,7 +105,7 @@ class ArrayPreparationInterpreter(
 
 object ArrayPreparationInterpreter {
 
-    type T = ArrayLoad[V]
+    type T = ArrayLoad[SEntity]
 
     /**
      * This function retrieves all definition sites of the array stores and array loads that belong
@@ -116,7 +116,7 @@ object ArrayPreparationInterpreter {
      * @return Returns all definition sites associated with the array stores and array loads of the
      *         given instruction. The result list is sorted in ascending order.
      */
-    def getStoreAndLoadDefSites(instr: T, stmts: Array[Stmt[V]]): List[Int] = {
+    def getStoreAndLoadDefSites(instr: T, stmts: Array[Stmt[SEntity]]): List[Int] = {
         val allDefSites = ListBuffer[Int]()
         val defSites = instr.arrayRef.asVar.definedBy.toArray
 
@@ -125,12 +125,12 @@ object ArrayPreparationInterpreter {
             val sortedArrDeclUses = arrDecl.asAssignment.targetVar.usedBy.toArray.sorted
             // For ArrayStores
             sortedArrDeclUses.filter {
-                stmts(_).isInstanceOf[ArrayStore[V]]
+                stmts(_).isInstanceOf[ArrayStore[SEntity]]
             } foreach { f: Int => allDefSites.appendAll(stmts(f).asArrayStore.value.asVar.definedBy.toArray) }
             // For ArrayLoads
             sortedArrDeclUses.filter {
                 stmts(_) match {
-                    case Assignment(_, _, _: ArrayLoad[V]) => true
+                    case Assignment(_, _, _: ArrayLoad[SEntity]) => true
                     case _                                 => false
                 }
             } foreach { f: Int =>

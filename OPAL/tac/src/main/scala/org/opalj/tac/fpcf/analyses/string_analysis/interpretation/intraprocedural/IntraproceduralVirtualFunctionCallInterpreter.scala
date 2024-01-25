@@ -32,11 +32,11 @@ import org.opalj.fpcf.FinalEP
  * @author Patrick Mell
  */
 class IntraproceduralVirtualFunctionCallInterpreter(
-        cfg:         CFG[Stmt[V], TACStmts[V]],
-        exprHandler: IntraproceduralInterpretationHandler
+                                                       cfg:         CFG[Stmt[SEntity], TACStmts[SEntity]],
+                                                       exprHandler: IntraproceduralInterpretationHandler
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
 
-    override type T = VirtualFunctionCall[V]
+    override type T = VirtualFunctionCall[SEntity]
 
     /**
      * Currently, this implementation supports the interpretation of the following function calls:
@@ -93,7 +93,7 @@ class IntraproceduralVirtualFunctionCallInterpreter(
      * the expected behavior cannot be guaranteed.
      */
     private def interpretAppendCall(
-        appendCall: VirtualFunctionCall[V]
+        appendCall: VirtualFunctionCall[SEntity]
     ): StringConstancyProperty = {
         val receiverSci = receiverValuesOfAppendCall(appendCall).stringConstancyInformation
         val appendSci = valueOfAppendCall(appendCall).stringConstancyInformation
@@ -130,7 +130,7 @@ class IntraproceduralVirtualFunctionCallInterpreter(
      * This function determines the current value of the receiver object of an `append` call.
      */
     private def receiverValuesOfAppendCall(
-        call: VirtualFunctionCall[V]
+        call: VirtualFunctionCall[SEntity]
     ): StringConstancyProperty = {
         // There might be several receivers, thus the map; from the processed sites, however, use
         // only the head as a single receiver interpretation will produce one element
@@ -149,7 +149,7 @@ class IntraproceduralVirtualFunctionCallInterpreter(
      * This function can process string constants as well as function calls as argument to append.
      */
     private def valueOfAppendCall(
-        call: VirtualFunctionCall[V]
+        call: VirtualFunctionCall[SEntity]
     ): StringConstancyProperty = {
         val param = call.params.head.asVar
         // .head because we want to evaluate only the first argument of append
@@ -200,7 +200,7 @@ class IntraproceduralVirtualFunctionCallInterpreter(
      * the expected behavior cannot be guaranteed.
      */
     private def interpretToStringCall(
-        call: VirtualFunctionCall[V]
+        call: VirtualFunctionCall[SEntity]
     ): StringConstancyProperty = {
         val finalEP = exprHandler.processDefSite(call.receiver.asVar.definedBy.head).asFinal
         finalEP.p.asInstanceOf[StringConstancyProperty]
@@ -212,7 +212,7 @@ class IntraproceduralVirtualFunctionCallInterpreter(
      * bound of [[StringConstancyProperty]]).
      */
     private def interpretReplaceCall(
-        instr: VirtualFunctionCall[V]
+        instr: VirtualFunctionCall[SEntity]
     ): StringConstancyProperty = InterpretationHandler.getStringConstancyPropertyForReplace
 
 }

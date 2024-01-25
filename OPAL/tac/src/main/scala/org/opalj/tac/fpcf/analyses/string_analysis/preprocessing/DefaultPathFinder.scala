@@ -23,7 +23,7 @@ import org.opalj.br.cfg.CFG
  *       jumps within the bytecode might lead to a different order than the one computed by this
  *       class!
  */
-class DefaultPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) extends AbstractPathFinder(cfg) {
+class DefaultPathFinder(cfg: CFG[Stmt[SEntity], TACStmts[SEntity]]) extends AbstractPathFinder(cfg) {
 
     /**
      * This implementation finds all paths based on an a naive / intuitive traversing of the `cfg`

@@ -24,11 +24,11 @@ import org.opalj.fpcf.FinalEP
  * @author Patrick Mell
  */
 class IntraproceduralStaticFunctionCallInterpreter(
-        cfg:         CFG[Stmt[V], TACStmts[V]],
-        exprHandler: IntraproceduralInterpretationHandler
+                                                      cfg:         CFG[Stmt[SEntity], TACStmts[SEntity]],
+                                                      exprHandler: IntraproceduralInterpretationHandler
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
 
-    override type T = StaticFunctionCall[V]
+    override type T = StaticFunctionCall[SEntity]
 
     /**
      * This function always returns a result containing [[StringConstancyProperty.lb]].

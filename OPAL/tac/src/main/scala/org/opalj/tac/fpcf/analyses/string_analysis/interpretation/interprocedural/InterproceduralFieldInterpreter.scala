@@ -40,7 +40,7 @@ class InterproceduralFieldInterpreter(
         implicit val contextProvider: ContextProvider
 ) extends AbstractStringInterpreter(state.tac.cfg, exprHandler) {
 
-    override type T = FieldRead[V]
+    override type T = FieldRead[SEntity]
 
     /**
      * Currently, fields are approximated using the following approach. If a field of a type not

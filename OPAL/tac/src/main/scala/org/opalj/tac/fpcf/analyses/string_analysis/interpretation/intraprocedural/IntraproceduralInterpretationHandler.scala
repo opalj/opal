@@ -65,36 +65,36 @@ class IntraproceduralInterpretationHandler(
                 new FloatValueInterpreter(cfg, this).interpret(expr, defSite)
             case Assignment(_, _, expr: DoubleConst) =>
                 new DoubleValueInterpreter(cfg, this).interpret(expr, defSite)
-            case Assignment(_, _, expr: ArrayLoad[V]) =>
+            case Assignment(_, _, expr: ArrayLoad[SEntity]) =>
                 new IntraproceduralArrayInterpreter(cfg, this).interpret(expr, defSite)
             case Assignment(_, _, expr: New) =>
                 new NewInterpreter(cfg, this).interpret(expr, defSite)
-            case Assignment(_, _, expr: VirtualFunctionCall[V]) =>
+            case Assignment(_, _, expr: VirtualFunctionCall[SEntity]) =>
                 new IntraproceduralVirtualFunctionCallInterpreter(
                     cfg,
                     this
                 ).interpret(expr, defSite)
-            case Assignment(_, _, expr: StaticFunctionCall[V]) =>
+            case Assignment(_, _, expr: StaticFunctionCall[SEntity]) =>
                 new IntraproceduralStaticFunctionCallInterpreter(cfg, this).interpret(expr, defSite)
-            case Assignment(_, _, expr: BinaryExpr[V]) =>
+            case Assignment(_, _, expr: BinaryExpr[SEntity]) =>
                 new BinaryExprInterpreter(cfg, this).interpret(expr, defSite)
-            case Assignment(_, _, expr: NonVirtualFunctionCall[V]) =>
+            case Assignment(_, _, expr: NonVirtualFunctionCall[SEntity]) =>
                 new IntraproceduralNonVirtualFunctionCallInterpreter(
                     cfg,
                     this
                 ).interpret(expr, defSite)
-            case Assignment(_, _, expr: GetField[V]) =>
+            case Assignment(_, _, expr: GetField[SEntity]) =>
                 new IntraproceduralFieldInterpreter(cfg, this).interpret(expr, defSite)
-            case ExprStmt(_, expr: VirtualFunctionCall[V]) =>
+            case ExprStmt(_, expr: VirtualFunctionCall[SEntity]) =>
                 new IntraproceduralVirtualFunctionCallInterpreter(
                     cfg,
                     this
                 ).interpret(expr, defSite)
-            case ExprStmt(_, expr: StaticFunctionCall[V]) =>
+            case ExprStmt(_, expr: StaticFunctionCall[SEntity]) =>
                 new IntraproceduralStaticFunctionCallInterpreter(cfg, this).interpret(expr, defSite)
-            case vmc: VirtualMethodCall[V] =>
+            case vmc: VirtualMethodCall[SEntity] =>
                 new IntraproceduralVirtualMethodCallInterpreter(cfg, this).interpret(vmc, defSite)
-            case nvmc: NonVirtualMethodCall[V] =>
+            case nvmc: NonVirtualMethodCall[SEntity] =>
                 new IntraproceduralNonVirtualMethodCallInterpreter(
                     cfg,
                     this

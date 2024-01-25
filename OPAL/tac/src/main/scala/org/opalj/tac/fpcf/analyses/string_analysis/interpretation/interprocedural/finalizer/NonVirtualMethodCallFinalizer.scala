@@ -18,7 +18,7 @@ class NonVirtualMethodCallFinalizer(
         state: InterproceduralComputationState
 ) extends AbstractFinalizer(state) {
 
-    override type T = NonVirtualMethodCall[V]
+    override type T = NonVirtualMethodCall[SEntity]
 
     /**
      * Finalizes [[NonVirtualMethodCall]]s.

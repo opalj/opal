@@ -29,7 +29,7 @@ import org.opalj.value.ValueInformation
  * @param fieldWriteThreshold See the documentation of
  *                            [[InterproceduralStringAnalysis#fieldWriteThreshold]].
  */
-case class InterproceduralComputationState(dm: DeclaredMethod, entity: P, fieldWriteThreshold: Int = 100) {
+case class InterproceduralComputationState(dm: DeclaredMethod, entity: SContext, fieldWriteThreshold: Int = 100) {
     /**
      * The Three-Address Code of the entity's method
      */
@@ -70,7 +70,7 @@ case class InterproceduralComputationState(dm: DeclaredMethod, entity: P, fieldW
     /**
      * A mapping from DUVar elements to the corresponding indices of the FlatPathElements
      */
-    val var2IndexMapping: mutable.Map[V, ListBuffer[Int]] = mutable.Map()
+    val var2IndexMapping: mutable.Map[SEntity, ListBuffer[Int]] = mutable.Map()
 
     /**
      * A mapping from values / indices of FlatPathElements to StringConstancyInformation
@@ -88,7 +88,7 @@ case class InterproceduralComputationState(dm: DeclaredMethod, entity: P, fieldW
      * [[interimFpe2sci]]. For a discussion of the necessity, see the documentation of
      * [[interimFpe2sci]].
      */
-    private val entity2lastInterimFpe2SciValue: mutable.Map[V, StringConstancyInformation] =
+    private val entity2lastInterimFpe2SciValue: mutable.Map[SEntity, StringConstancyInformation] =
         mutable.Map()
 
     /**
@@ -110,7 +110,7 @@ case class InterproceduralComputationState(dm: DeclaredMethod, entity: P, fieldW
      * Analysis was started recursively; the value is a pair where the first value indicates the
      * index of the method and the second value the position of the parameter.
      */
-    val paramResultPositions: mutable.Map[P, (Int, Int)] = mutable.Map()
+    val paramResultPositions: mutable.Map[SContext, (Int, Int)] = mutable.Map()
 
     /**
      * Parameter values of a method / function. The structure of this field is as follows: Each item
@@ -132,13 +132,13 @@ case class InterproceduralComputationState(dm: DeclaredMethod, entity: P, fieldW
      * This map is used to actually store the interpretations of parameters passed to functions.
      * For further information, see [[NonFinalFunctionArgs]].
      */
-    val nonFinalFunctionArgs: mutable.Map[FunctionCall[V], NonFinalFunctionArgs] = mutable.Map()
+    val nonFinalFunctionArgs: mutable.Map[FunctionCall[SEntity], NonFinalFunctionArgs] = mutable.Map()
 
     /**
      * During the process of updating the [[nonFinalFunctionArgs]] map, it is necessary to find out
      * to which function an entity belongs. We use the following map to do this in constant time.
      */
-    val entity2Function: mutable.Map[P, ListBuffer[FunctionCall[V]]] = mutable.Map()
+    val entity2Function: mutable.Map[SContext, ListBuffer[FunctionCall[SEntity]]] = mutable.Map()
 
     /**
      * A mapping from a method to definition sites which indicates that a method is still prepared,
@@ -150,7 +150,7 @@ case class InterproceduralComputationState(dm: DeclaredMethod, entity: P, fieldW
     /**
      * A mapping which indicates whether a virtual function call is fully prepared.
      */
-    val isVFCFullyPrepared: mutable.Map[VirtualFunctionCall[V], Boolean] = mutable.Map()
+    val isVFCFullyPrepared: mutable.Map[VirtualFunctionCall[SEntity], Boolean] = mutable.Map()
 
     /**
      * Takes a definition site as well as [[StringConstancyInformation]] and extends the [[fpe2sci]]
@@ -198,7 +198,7 @@ case class InterproceduralComputationState(dm: DeclaredMethod, entity: P, fieldW
     def appendToInterimFpe2Sci(
         defSite: Int,
         sci:     StringConstancyInformation,
-        entity:  Option[V] = None
+        entity:  Option[SEntity] = None
     ): Unit = {
         val numElements = var2IndexMapping.values.flatten.count(_ == defSite)
         var addedNewList = false
@@ -229,7 +229,7 @@ case class InterproceduralComputationState(dm: DeclaredMethod, entity: P, fieldW
     /**
      * Takes an entity as well as a definition site and append it to [[var2IndexMapping]].
      */
-    def appendToVar2IndexMapping(entity: V, defSite: Int): Unit = {
+    def appendToVar2IndexMapping(entity: SEntity, defSite: Int): Unit = {
         if (!var2IndexMapping.contains(entity)) {
             var2IndexMapping(entity) = ListBuffer()
         }

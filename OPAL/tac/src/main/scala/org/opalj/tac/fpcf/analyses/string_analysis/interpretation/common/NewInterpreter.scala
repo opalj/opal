@@ -23,8 +23,8 @@ import org.opalj.fpcf.FinalEP
  * @author Patrick Mell
  */
 class NewInterpreter(
-        cfg:         CFG[Stmt[V], TACStmts[V]],
-        exprHandler: InterpretationHandler
+                        cfg:         CFG[Stmt[SEntity], TACStmts[SEntity]],
+                        exprHandler: InterpretationHandler
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
 
     override type T = New

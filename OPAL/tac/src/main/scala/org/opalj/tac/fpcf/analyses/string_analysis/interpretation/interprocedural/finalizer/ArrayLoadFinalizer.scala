@@ -18,10 +18,10 @@ import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
  */
 class ArrayLoadFinalizer(
         state: InterproceduralComputationState,
-        cfg:   CFG[Stmt[V], TACStmts[V]]
+        cfg:   CFG[Stmt[SEntity], TACStmts[SEntity]]
 ) extends AbstractFinalizer(state) {
 
-    override type T = ArrayLoad[V]
+    override type T = ArrayLoad[SEntity]
 
     /**
      * Finalizes [[ArrayLoad]]s.
@@ -51,7 +51,7 @@ object ArrayLoadFinalizer {
 
     def apply(
         state: InterproceduralComputationState,
-        cfg:   CFG[Stmt[V], TACStmts[V]]
+        cfg:   CFG[Stmt[SEntity], TACStmts[SEntity]]
     ): ArrayLoadFinalizer = new ArrayLoadFinalizer(state, cfg)
 
 }

@@ -22,7 +22,7 @@ import org.opalj.tac.VirtualMethodCall
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.string_analysis.LazyInterproceduralStringAnalysis
 import org.opalj.tac.fpcf.analyses.string_analysis.LazyIntraproceduralStringAnalysis
-import org.opalj.tac.fpcf.analyses.string_analysis.V
+import org.opalj.tac.fpcf.analyses.string_analysis.SEntity
 
 /**
  * @param fqTestMethodsClass The fully-qualified name of the class that contains the test methods.
@@ -64,8 +64,8 @@ sealed class StringAnalysisTestRunner(
 
     def determineEntitiesToAnalyze(
         project: Project[URL]
-    ): Iterable[(V, Method)] = {
-        val entitiesToAnalyze = ListBuffer[(V, Method)]()
+    ): Iterable[(SEntity, Method)] = {
+        val entitiesToAnalyze = ListBuffer[(SEntity, Method)]()
         val tacProvider = project.get(EagerDetachedTACAIKey)
         project.allMethodsWithBody.filter {
             _.runtimeInvisibleAnnotations.foldLeft(false)((exists, a) =>
@@ -82,9 +82,9 @@ sealed class StringAnalysisTestRunner(
     }
 
     def determineEAS(
-        entities: Iterable[(V, Method)],
-        project:  Project[URL]
-    ): Iterable[((V, Method), String => String, List[Annotation])] = {
+                        entities: Iterable[(SEntity, Method)],
+                        project:  Project[URL]
+    ): Iterable[((SEntity, Method), String => String, List[Annotation])] = {
         val m2e = entities.groupBy(_._2).iterator.map(e => e._1 -> e._2.map(k => k._1)).toMap
         // As entity, we need not the method but a tuple (DUVar, Method), thus this transformation
 
@@ -128,10 +128,10 @@ object StringAnalysisTestRunner {
      *         order in which they occurred in the given statements.
      */
     def extractUVars(
-        cfg:                CFG[Stmt[V], TACStmts[V]],
-        fqTestMethodsClass: String,
-        nameTestMethod:     String
-    ): List[V] = {
+                        cfg:                CFG[Stmt[SEntity], TACStmts[SEntity]],
+                        fqTestMethodsClass: String,
+                        nameTestMethod:     String
+    ): List[SEntity] = {
         cfg.code.instructions.filter {
             case VirtualMethodCall(_, declClass, _, name, _, _, _) =>
                 declClass.toJavaClass.getName == fqTestMethodsClass && name == nameTestMethod

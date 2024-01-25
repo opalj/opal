@@ -15,10 +15,10 @@ import org.opalj.br.cfg.CFG
  */
 class NewArrayFinalizer(
         state: InterproceduralComputationState,
-        cfg:   CFG[Stmt[V], TACStmts[V]]
+        cfg:   CFG[Stmt[SEntity], TACStmts[SEntity]]
 ) extends AbstractFinalizer(state) {
 
-    override type T = NewArray[V]
+    override type T = NewArray[SEntity]
 
     /**
      * Finalizes [[NewArray]]s.
@@ -35,7 +35,7 @@ object NewArrayFinalizer {
 
     def apply(
         state: InterproceduralComputationState,
-        cfg:   CFG[Stmt[V], TACStmts[V]]
+        cfg:   CFG[Stmt[SEntity], TACStmts[SEntity]]
     ): NewArrayFinalizer = new NewArrayFinalizer(state, cfg)
 
 }

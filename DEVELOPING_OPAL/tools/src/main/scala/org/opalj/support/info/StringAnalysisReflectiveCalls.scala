@@ -39,8 +39,8 @@ import org.opalj.tac.VirtualFunctionCall
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.string_analysis.LazyInterproceduralStringAnalysis
 import org.opalj.tac.fpcf.analyses.string_analysis.LazyIntraproceduralStringAnalysis
-import org.opalj.tac.fpcf.analyses.string_analysis.P
-import org.opalj.tac.fpcf.analyses.string_analysis.V
+import org.opalj.tac.fpcf.analyses.string_analysis.SContext
+import org.opalj.tac.fpcf.analyses.string_analysis.SEntity
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
@@ -107,7 +107,7 @@ object StringAnalysisReflectiveCalls extends ProjectAnalysisApplication {
      * analysis and the second element corresponds to the method name in which the entity occurred,
      * i.e., a value in [[relevantMethodNames]].
      */
-    private val entityContext = ListBuffer[(P, String)]()
+    private val entityContext = ListBuffer[(SContext, String)]()
 
     /**
      * A list of fully-qualified method names that are to be skipped, e.g., because they make an
@@ -178,10 +178,10 @@ object StringAnalysisReflectiveCalls extends ProjectAnalysisApplication {
      * analysis using the property store, `ps`, to finally store it in the given `resultMap`.
      */
     private def processFunctionCall(
-        ps:        PropertyStore,
-        method:    Method,
-        call:      Call[V],
-        resultMap: ResultMapType
+                                       ps:        PropertyStore,
+                                       method:    Method,
+                                       call:      Call[SEntity],
+                                       resultMap: ResultMapType
     ): Unit = {
         if (isRelevantCall(call.declaringClass, call.name)) {
             val fqnMethodName = buildFQMethodName(method.classFile.thisType, method.name)
@@ -233,25 +233,25 @@ object StringAnalysisReflectiveCalls extends ProjectAnalysisApplication {
     }
 
     private def processStatements(
-        ps:        PropertyStore,
-        stmts:     Array[Stmt[V]],
-        m:         Method,
-        resultMap: ResultMapType
+                                     ps:        PropertyStore,
+                                     stmts:     Array[Stmt[SEntity]],
+                                     m:         Method,
+                                     resultMap: ResultMapType
     ): Unit = {
         stmts.foreach { stmt =>
             // Using the following switch speeds up the whole process
             (stmt.astID: @switch) match {
                 case Assignment.ASTID => stmt match {
-                        case Assignment(_, _, c: StaticFunctionCall[V]) =>
+                        case Assignment(_, _, c: StaticFunctionCall[SEntity]) =>
                             processFunctionCall(ps, m, c, resultMap)
-                        case Assignment(_, _, c: VirtualFunctionCall[V]) =>
+                        case Assignment(_, _, c: VirtualFunctionCall[SEntity]) =>
                             processFunctionCall(ps, m, c, resultMap)
                         case _ =>
                     }
                 case ExprStmt.ASTID => stmt match {
-                        case ExprStmt(_, c: StaticFunctionCall[V]) =>
+                        case ExprStmt(_, c: StaticFunctionCall[SEntity]) =>
                             processFunctionCall(ps, m, c, resultMap)
-                        case ExprStmt(_, c: VirtualFunctionCall[V]) =>
+                        case ExprStmt(_, c: VirtualFunctionCall[SEntity]) =>
                             processFunctionCall(ps, m, c, resultMap)
                         case _ =>
                     }

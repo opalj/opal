@@ -22,7 +22,7 @@ import org.opalj.br.cfg.CFG
  *       jumps within the bytecode might lead to a different order than the one computed by this
  *       class!
  */
-class WindowPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) extends AbstractPathFinder(cfg) {
+class WindowPathFinder(cfg: CFG[Stmt[SEntity], TACStmts[SEntity]]) extends AbstractPathFinder(cfg) {
 
     /**
      * This implementation finds all paths based on an a naive / intuitive traversing of the `cfg`
@@ -42,9 +42,9 @@ class WindowPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) extends AbstractPathFinde
             var nextStmt = startSites.min
             while (nextStmt >= 0 && startSite.isEmpty) {
                 cfg.code.instructions(nextStmt) match {
-                    case iff: If[V] if startSites.contains(iff.targetStmt) =>
+                    case iff: If[SEntity] if startSites.contains(iff.targetStmt) =>
                         startSite = Some(nextStmt)
-                    case _: Switch[V] =>
+                    case _: Switch[SEntity] =>
                         val (startSwitch, endSwitch, _) = processSwitch(nextStmt)
                         val isParentSwitch = startSites.forall {
                             nextStartSite => nextStartSite >= startSwitch && nextStartSite <= endSwitch
