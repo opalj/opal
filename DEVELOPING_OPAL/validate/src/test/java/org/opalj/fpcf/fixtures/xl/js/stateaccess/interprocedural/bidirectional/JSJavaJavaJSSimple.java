@@ -17,7 +17,7 @@ public class JSJavaJavaJSSimple {
                             cf = JSJavaJavaJSSimple.class,
                             methodName = "main",
                             methodDescriptor = "(java.lang.String[]): void",
-                            allocSiteLinenumber = 30,
+                            allocSiteLinenumber = 29,
                             allocatedType = "java.lang.Object")
             }
     )
@@ -25,23 +25,23 @@ public class JSJavaJavaJSSimple {
         JSJavaJavaJSSimple instance = new JSJavaJavaJSSimple();
         ScriptEngineManager sem = new ScriptEngineManager();
         ScriptEngine se = sem.getEngineByName("JavaScript");
-        //se.put("instance", instance);
-        //Object o = new Object();
-        //System.out.println(o);
-        //se.put("o", o);
+        se.put("instance", instance);
+        Object o = new Object();
+        System.out.println(o);
+        se.put("o", o);
         // JS -> Java state
-       // se.eval("var n = {'a':'b'}; instance.myfield = o; var b = instance.myfield; var n_field = {}");
+        se.eval("var n = {'a':'b'}; instance.myfield = o; var b = instance.myfield; var n_field = b;");
         // Java -> JS state
-       // setJSField(se, instance.myfield);
+       setJSField(se, instance.myfield);
        // se.eval("");
         Object n_field = se.get("n_field");
         System.out.println(n_field);
     }
 
-    /*private static void setJSField(ScriptEngine se, Object fieldValue) throws ScriptException {
+    private static void setJSField(ScriptEngine se, Object fieldValue) throws ScriptException {
         se.put("o", fieldValue);
         se.eval("n.field = o;");
-    } */
+    }
     public Object myfield;
 
 }

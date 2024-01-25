@@ -17,7 +17,7 @@ public class JSJavaJavaJS2evals {
                             cf = JSJavaJavaJS2evals.class,
                             methodName = "main",
                             methodDescriptor = "(java.lang.String[]): void",
-                            allocSiteLinenumber = 30,
+                            allocSiteLinenumber = 29,
                             allocatedType = "java.lang.Object")
             }
     )

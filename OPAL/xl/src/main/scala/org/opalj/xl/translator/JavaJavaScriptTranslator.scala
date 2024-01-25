@@ -52,6 +52,10 @@ object JavaJavaScriptTranslator {
                         )
                         val javaObjectLabel = ObjectLabel.make(jNode, ObjectLabel.Kind.JAVAOBJECT)
 
+                        if (tpe == ObjectType.Object) {
+                            defaultValue.join(Value.makeObject(ObjectLabel.make(jNode, ObjectLabel.Kind.OBJECT)))
+                        }
+
                         pointsToSetLike.forNewestNTypes(pointsToSetLike.numElements) { tpe =>
                             {
                                 javaObjectLabel.setJavaName(tpe.toJava)
