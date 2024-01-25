@@ -86,11 +86,5 @@ object OperandVar {
         SimpleVar(0, cTpe)
     }
 
-    final val IntReturnValue = OperandVar.bottom(ComputationalTypeInt)
-    final val LongReturnValue = OperandVar.bottom(ComputationalTypeLong)
-    final val FloatReturnValue = OperandVar.bottom(ComputationalTypeFloat)
-    final val DoubleReturnValue = OperandVar.bottom(ComputationalTypeDouble)
-    final val ReferenceReturnValue = OperandVar.bottom(ComputationalTypeReference)
-
     final val HandledException = OperandVar.bottom(ComputationalTypeReference)
 }
