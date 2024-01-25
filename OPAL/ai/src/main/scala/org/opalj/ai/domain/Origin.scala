@@ -5,8 +5,8 @@ package domain
 
 import org.opalj.br.ComputationalType
 import org.opalj.collection.IntIterator
-import org.opalj.collection.immutable.IntTrieSet1
 import org.opalj.collection.immutable.EmptyIntTrieSet
+import org.opalj.collection.immutable.IntTrieSet1
 
 /**
  * Provides information about the origin (that is, def-site) of a value iff the underlying domain

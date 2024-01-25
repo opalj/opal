@@ -46,7 +46,7 @@ sealed abstract class Ref2List[+T <: AnyRef] extends Serializable { self =>
     /** Prepends the given value to this list. E.g., `l = "x" +: l`. */
     def +:[X >: T <: AnyRef](v: X): Ref2List[X]
 
-    final override def equals(other: Any): Boolean = {
+    override final def equals(other: Any): Boolean = {
         other match {
             case l: Ref2List[AnyRef] => equals(l)
             case _                   => false
@@ -128,13 +128,13 @@ private[immutable] final case class Ref2ListNode[T >: Null <: AnyRef](
     override def forFirstN[U](n: Int)(f: T => U): Unit = {
         n match {
             case 0 =>
-                return ;
+                return;
             case 1 =>
                 if (h != null)
                     f(h)
                 else
                     f(t)
-                return ;
+                return;
             case _ =>
                 // ... n >= 2
                 var i = n - 1 // <= -1 for the second element "t"...
@@ -186,7 +186,7 @@ private[immutable] final case class Ref2ListNode[T >: Null <: AnyRef](
                 thisList = thisList.rest
                 thatList = thatList.rest
             }
-            thisList eq thatList //... <=> true iff both lists are empty
+            thisList eq thatList // ... <=> true iff both lists are empty
         }
     }
 

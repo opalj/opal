@@ -3,9 +3,9 @@ package org.opalj
 package br
 package reader
 
-import org.opalj.bi.reader.PermittedSubclasses_attributeReader
-
 import scala.collection.immutable.ArraySeq
+
+import org.opalj.bi.reader.PermittedSubclasses_attributeReader
 
 /**
  * Implements the factory methods to create the `PermittedSubclasses` attribute (Java 17).

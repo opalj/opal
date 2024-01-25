@@ -11,10 +11,10 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
 
-import org.opalj.log.LogContext
 import org.opalj.br._
-import org.opalj.br.analyses.Project
 import org.opalj.br.TestSupport.biProject
+import org.opalj.br.analyses.Project
+import org.opalj.log.LogContext
 
 /**
  * Tests that we can detect situations in which a method calls itself.
@@ -40,10 +40,10 @@ class PerformInvocationsWithRecursionDetectionTest extends AnyFlatSpec with Matc
         val domain = new InvocationDomain(project, method)
         BaseAI(method, domain)
         if (domain.allReturnedValues.nonEmpty)
-            fail("the method never returns, but the following result was produced: "+
+            fail("the method never returns, but the following result was produced: " +
                 domain.allReturnedValues)
         if (domain.allThrownExceptions.nonEmpty)
-            fail("the method never returns, but the following exceptions were thrown: "+
+            fail("the method never returns, but the following exceptions were thrown: " +
                 domain.allThrownExceptions)
     }
 
@@ -52,10 +52,10 @@ class PerformInvocationsWithRecursionDetectionTest extends AnyFlatSpec with Matc
         val domain = new InvocationDomain(project, method)
         BaseAI(method, domain)
         if (domain.allReturnedValues.nonEmpty)
-            fail("the method never returns, but the following result was produced: "+
+            fail("the method never returns, but the following result was produced: " +
                 domain.allReturnedValues)
         if (domain.allThrownExceptions.nonEmpty)
-            fail("the method never returns, but the following exceptions were thrown: "+
+            fail("the method never returns, but the following exceptions were thrown: " +
                 domain.allThrownExceptions)
     }
 
@@ -117,7 +117,7 @@ object PerformInvocationsWithRecursionDetectionTestFixture {
         with l0.TypeLevelPrimitiveValuesConversions
         with l0.TypeLevelLongValuesShiftOperators
         with IgnoreSynchronization
-        //with DefaultHandlingOfMethodResults
+        // with DefaultHandlingOfMethodResults
         with l0.DefaultTypeLevelHandlingOfMethodResults
         with PerformInvocationsWithRecursionDetection
         with DefaultRecordMethodCallResults {
@@ -136,15 +136,18 @@ object PerformInvocationsWithRecursionDetectionTestFixture {
     class InvocationDomain(
             project:                            Project[java.net.URL],
             method:                             Method,
-            val frequentEvaluationWarningLevel: Int                   = 10
+            val frequentEvaluationWarningLevel: Int = 10
     ) extends SharedInvocationDomain(project, method) {
         callingDomain =>
 
-        lazy val calledMethodsStore: CalledMethodsStore { val domain: coordinatingDomain.type; def warningIssued: Boolean } = {
+        lazy val calledMethodsStore: CalledMethodsStore {
+            val domain: coordinatingDomain.type; def warningIssued: Boolean
+        } = {
             val operands =
                 mapOperands(
                     localsArray(0).foldLeft(List.empty[DomainValue])((l, n) =>
-                        if (n ne null) n :: l else l),
+                        if (n ne null) n :: l else l
+                    ),
                     coordinatingDomain
                 )
 
@@ -160,7 +163,7 @@ object PerformInvocationsWithRecursionDetectionTestFixture {
                     method:      Method,
                     operandsSet: List[Array[domain.DomainValue]]
                 ): Unit = {
-                    //super.frequentEvalution(definingClass, method, operandsSet)
+                    // super.frequentEvalution(definingClass, method, operandsSet)
                     warningIssued = true
                 }
 

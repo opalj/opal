@@ -4,11 +4,11 @@ package tac
 package fpcf
 package analyses
 
-import org.opalj.fpcf.PropertyStore
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.FPCFAnalysisScheduler
+import org.opalj.fpcf.PropertyStore
 
 /**
  * Transforms an aiResult to the 3-address code.

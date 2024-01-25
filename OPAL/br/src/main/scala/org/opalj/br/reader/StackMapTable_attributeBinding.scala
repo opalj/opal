@@ -3,11 +3,11 @@ package org.opalj
 package br
 package reader
 
-import org.opalj.bi.reader.StackMapTable_attributeReader
-import org.opalj.bi.reader.StackMapFrameReader
-import org.opalj.bi.reader.VerificationTypeInfoReader
-
 import scala.reflect.ClassTag
+
+import org.opalj.bi.reader.StackMapFrameReader
+import org.opalj.bi.reader.StackMapTable_attributeReader
+import org.opalj.bi.reader.VerificationTypeInfoReader
 
 /**
  * Provides the factory methods to create a stack map table attribute and
@@ -23,7 +23,8 @@ trait StackMapTable_attributeBinding
     with AttributeBinding {
 
     type VerificationTypeInfo = br.VerificationTypeInfo
-    override implicit val verificationTypeInfoType: ClassTag[VerificationTypeInfo] = ClassTag(classOf[br.VerificationTypeInfo])
+    override implicit val verificationTypeInfoType: ClassTag[VerificationTypeInfo] =
+        ClassTag(classOf[br.VerificationTypeInfo])
     type StackMapTable_attribute = br.StackMapTable
     type StackMapFrame = br.StackMapFrame
     override implicit val stackMapFrameType: ClassTag[StackMapFrame] = ClassTag(classOf[br.StackMapFrame])

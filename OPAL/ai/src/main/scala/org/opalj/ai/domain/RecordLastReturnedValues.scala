@@ -29,4 +29,3 @@ trait RecordLastReturnedValues extends RecordReturnedValues {
     ): ReturnedValue = value
 
 }
-

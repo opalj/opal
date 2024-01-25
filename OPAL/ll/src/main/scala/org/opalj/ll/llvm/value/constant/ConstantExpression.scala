@@ -5,12 +5,13 @@ package llvm
 package value
 package constant
 
-import org.bytedeco.llvm.LLVM.LLVMValueRef
-import org.bytedeco.llvm.global.LLVM.LLVMGetConstOpcode
-import org.bytedeco.llvm.global.LLVM.LLVMGetValueKind
-import org.bytedeco.llvm.global.LLVM.LLVMConstantExprValueKind
-import org.bytedeco.llvm.global.LLVM.LLVMGetElementPtr
 import org.opalj.ll.llvm.value.User
+
+import org.bytedeco.llvm.LLVM.LLVMValueRef
+import org.bytedeco.llvm.global.LLVM.LLVMConstantExprValueKind
+import org.bytedeco.llvm.global.LLVM.LLVMGetConstOpcode
+import org.bytedeco.llvm.global.LLVM.LLVMGetElementPtr
+import org.bytedeco.llvm.global.LLVM.LLVMGetValueKind
 
 /**
  * Gets the corresponding constant expression for a LLVM value.
@@ -90,7 +91,7 @@ object ConstantExpression {
             // case LLVMCatchPad       => CatchPadConst(ref)
             // case LLVMCleanupPad     => CleanupPadConst(ref)
             // case LLVMCatchSwitch    => CatchSwitchConst(ref)
-            case opCode            => throw new IllegalArgumentException("unknown instruction opcode: "+opCode)
+            case opCode            => throw new IllegalArgumentException("unknown instruction opcode: " + opCode)
         }
     }
 }

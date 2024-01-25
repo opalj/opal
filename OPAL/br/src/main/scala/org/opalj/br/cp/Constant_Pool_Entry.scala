@@ -41,12 +41,12 @@ trait Constant_Pool_Entry extends bi.reader.ConstantPoolEntry {
 
     def asConstantValue(cp: Constant_Pool): ConstantValue[_] =
         throw new BytecodeProcessingFailedException(
-            "conversion of "+this.getClass.getSimpleName+" to constant value is not supported"
+            "conversion of " + this.getClass.getSimpleName + " to constant value is not supported"
         )
 
     def asConstantFieldValue(cp: Constant_Pool): ConstantFieldValue[_] =
         throw new BytecodeProcessingFailedException(
-            "conversion of "+this.getClass.getSimpleName+" to constant field value is not supported"
+            "conversion of " + this.getClass.getSimpleName + " to constant field value is not supported"
         )
 
     def asFieldref(cp: Constant_Pool): (ObjectType, String, FieldType) =
@@ -54,7 +54,7 @@ trait Constant_Pool_Entry extends bi.reader.ConstantPoolEntry {
 
     def asMethodref(
         cp: Constant_Pool
-    ): (ReferenceType, Boolean /*InterfaceMethodRef*/ , String, MethodDescriptor) =
+    ): (ReferenceType, Boolean /*InterfaceMethodRef*/, String, MethodDescriptor) =
         throw new BytecodeProcessingFailedException("conversion to method ref is not supported")
 
     def asObjectType(cp: Constant_Pool): ObjectType =

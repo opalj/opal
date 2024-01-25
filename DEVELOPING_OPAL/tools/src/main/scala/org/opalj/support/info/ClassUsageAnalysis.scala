@@ -7,11 +7,13 @@ import scala.annotation.switch
 import java.net.URL
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
+
 import org.opalj.log.GlobalLogContext
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.ReportableAnalysisResult
+import org.opalj.log.GlobalLogContext
 import org.opalj.tac.Assignment
 import org.opalj.tac.Call
 import org.opalj.tac.ExprStmt
@@ -91,7 +93,7 @@ object ClassUsageAnalysis extends ProjectAnalysisApplication {
     }
 
     override def analysisSpecificParametersDescription: String = {
-        "-class=<fully-qualified class name> \n"+
+        "-class=<fully-qualified class name> \n" +
             "[-granularity=<fine|coarse> (Default: coarse)]"
     }
 
@@ -113,9 +115,7 @@ object ClassUsageAnalysis extends ProjectAnalysisApplication {
 
     override def checkAnalysisSpecificParameters(parameters: Seq[String]): Iterable[String] = {
         val remainingParameters =
-            parameters.filter { p =>
-                !p.contains(parameterNameForClass) && !p.contains(parameterNameForGranularity)
-            }
+            parameters.filter { p => !p.contains(parameterNameForClass) && !p.contains(parameterNameForGranularity) }
         super.checkAnalysisSpecificParameters(remainingParameters)
     }
 
@@ -149,7 +149,9 @@ object ClassUsageAnalysis extends ProjectAnalysisApplication {
     }
 
     override def doAnalyze(
-        project: Project[URL], parameters: Seq[String], isInterrupted: () => Boolean
+        project:       Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () => Boolean
     ): ReportableAnalysisResult = {
         getAnalysisParameters(parameters)
         val resultMap = mutable.Map[String, Int]()

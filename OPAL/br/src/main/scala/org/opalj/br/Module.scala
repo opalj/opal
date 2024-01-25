@@ -2,10 +2,10 @@
 package org.opalj
 package br
 
-import org.opalj.bi.AccessFlagsContexts
-import org.opalj.bi.AccessFlags
-
 import scala.collection.immutable.ArraySeq
+
+import org.opalj.bi.AccessFlags
+import org.opalj.bi.AccessFlagsContexts
 
 /**
  * Definition of a Java 9 module.
@@ -23,7 +23,7 @@ case class Module(
         provides:    ArraySeq[Provides]
 ) extends Attribute {
 
-    final override def kindId: Int = Module.KindId
+    override final def kindId: Int = Module.KindId
 
     override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = {
         // TODO make the comparisons order independent...

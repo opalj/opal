@@ -2,12 +2,15 @@
 package org.opalj
 package ifds
 
+import scala.collection.{Set => SomeSet}
+import scala.collection.mutable
+
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFLazyAnalysisScheduler
+import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
-import org.opalj.fpcf.Entity
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.InterimEUBP
 import org.opalj.fpcf.InterimResult
@@ -21,9 +24,6 @@ import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.SomeEPK
 import org.opalj.fpcf.SomeEPS
 import org.opalj.ifds.Dependees.Getter
-
-import scala.collection.mutable
-import scala.collection.{Set => SomeSet}
 
 /**
  * A container for a data flow fact, holding also information for unbalanced returns.
@@ -55,9 +55,9 @@ class IFDSFact[Fact <: AbstractIFDSFact, S <: Statement[_, _]](
         case other: IFDSFact[Fact @unchecked, S @unchecked] =>
             this.eq(other) ||
                 (this.hashCode() == other.hashCode()
-                    && this.fact == other.fact
-                    && this.isUnbalancedReturn == other.isUnbalancedReturn
-                    && this.callStmt == other.callStmt)
+                && this.fact == other.fact
+                && this.isUnbalancedReturn == other.isUnbalancedReturn
+                && this.callStmt == other.callStmt)
         case _ => false
     }
 
@@ -278,7 +278,6 @@ class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C,
      *         the statement, based on the current results. If the analysis is still waiting for its
      *         method's TAC or call graph or the result of another method-fact-pair, an interim
      *         result will be returned.
-     *
      */
     private def createResult()(implicit state: State): ProperPropertyComputationResult = {
         val propertyValue = createPropertyValue()
@@ -294,7 +293,7 @@ class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C,
      * @return An IFDSProperty containing the `result`.
      */
     private def createPropertyValue()(implicit state: State): IFDSProperty[S, Fact] = {
-        if (project.config.getBoolean(ConfigKeyPrefix+"debug"))
+        if (project.config.getBoolean(ConfigKeyPrefix + "debug"))
             propertyKey.create(collectResult, state.pathEdges.debugData)
         else
             propertyKey.create(collectResult)
@@ -306,9 +305,8 @@ class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C,
      * @return A map, mapping from each exit statement to the facts, which flow into exit statement.
      */
     private def collectResult(implicit state: State): Map[S, Set[Fact]] = {
-        state.endSummaries.foldLeft(Map.empty[S, Set[Fact]])(
-            (result, entry) =>
-                result.updated(entry._1, result.getOrElse(entry._1, Set.empty[Fact]) + entry._2)
+        state.endSummaries.foldLeft(Map.empty[S, Set[Fact]])((result, entry) =>
+            result.updated(entry._1, result.getOrElse(entry._1, Set.empty[Fact]) + entry._2)
         )
     }
 
@@ -385,7 +383,7 @@ class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C,
                 case Some(outsideAnalysisHandler) =>
                     outsideAnalysisHandler
                 case None => (call: S, successor: Option[S], in: Fact, _: Seq[Callable], _: Getter) =>
-                    concreteCallFlow(call, callee, in, successor)
+                        concreteCallFlow(call, callee, in, successor)
             }
             for {
                 successor <- successors
@@ -467,7 +465,8 @@ class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C,
                 state.selfDependees.foreach(selfDependee => worklist.enqueue(selfDependee))
 
                 if (ifdsProblem.enableUnbalancedReturns &&
-                    ifdsProblem.shouldPerformUnbalancedReturn(state.source)) {
+                    ifdsProblem.shouldPerformUnbalancedReturn(state.source)
+                ) {
                     handleUnbalancedReturn(statement, in)
                 }
             }
@@ -540,7 +539,8 @@ class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C,
 
         // ifds line 9
         if (successor.isEmpty // last statement was reached, must be processed to trigger handleExit
-            || state.pathEdges.add(successor.get, out, predecessorOption)) {
+            || state.pathEdges.add(successor.get, out, predecessorOption)
+        ) {
             worklist.enqueue((successor, new IFDSFact(out), Some(predecessor)))
         }
     }
@@ -618,8 +618,7 @@ class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C,
     }
 
     private def subsumes(existingFacts: Set[Fact], newFact: Fact)(
-        implicit
-        project: SomeProject
+        implicit project: SomeProject
     ): Boolean = {
         statistics.subsumeTries += 1
         if (ifdsProblem.subsumeFacts && existingFacts.exists(_.subsumes(newFact, project))) {
@@ -632,9 +631,9 @@ class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C,
 abstract class IFDSAnalysisScheduler[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C, _]]
     extends FPCFLazyAnalysisScheduler {
 
-    final override type InitializationData = IFDSAnalysis[Fact, C, S]
+    override final type InitializationData = IFDSAnalysis[Fact, C, S]
     def property: IFDSPropertyMetaInformation[S, Fact]
-    final override def derivesLazily: Some[PropertyBounds] = Some(PropertyBounds.ub(property))
+    override final def derivesLazily: Some[PropertyBounds] = Some(PropertyBounds.ub(property))
     override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
 
     override def register(

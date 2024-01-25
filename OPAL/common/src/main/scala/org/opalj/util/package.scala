@@ -2,18 +2,17 @@
 package org
 package opalj
 
-import java.lang.management.MemoryMXBean
-import java.lang.management.ManagementFactory
+import scala.annotation.nowarn
 
+import java.lang.management.ManagementFactory
+import java.lang.management.MemoryMXBean
 import scala.util.Properties.versionNumberString
 
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigRenderOptions
 
-import org.opalj.log.OPALLogger
 import org.opalj.log.LogContext
-
-import scala.annotation.nowarn
+import org.opalj.log.OPALLogger
 
 /**
  * Utility methods.
@@ -62,8 +61,7 @@ package object util {
         memoryMXBean: MemoryMXBean = ManagementFactory.getMemoryMXBean,
         maxGCTime:    Milliseconds = new Milliseconds(333)
     )(
-        implicit
-        logContext: Option[LogContext] = None
+        implicit logContext: Option[LogContext] = None
     ): Unit = {
         val startTime = System.nanoTime()
         var run = 0
@@ -86,15 +84,12 @@ package object util {
             }
             run += 1
         } while (memoryMXBean.getObjectPendingFinalizationCount() > 0 &&
-            ns2ms(System.nanoTime() - startTime) < maxGCTime.timeSpan)
+        ns2ms(System.nanoTime() - startTime) < maxGCTime.timeSpan)
     }
 
     def renderConfig(config: Config, withComments: Boolean = true): String = {
-        val renderingOptions = ConfigRenderOptions.
-            defaults().
-            setOriginComments(false).
-            setComments(withComments).
-            setJson(false)
+        val renderingOptions =
+            ConfigRenderOptions.defaults().setOriginComments(false).setComments(withComments).setJson(false)
         val opalConf = config.withOnlyPath("org")
         opalConf.root().render(renderingOptions)
     }

@@ -4,8 +4,6 @@ package br
 
 import java.net.URL
 
-import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParallelizable
-
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectAnalysisApplication
@@ -14,6 +12,8 @@ import org.opalj.br.instructions.LoadMethodHandle
 import org.opalj.br.instructions.LoadMethodHandle_W
 import org.opalj.br.instructions.LoadMethodType
 import org.opalj.br.instructions.LoadMethodType_W
+
+import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParallelizable
 
 /**
  * @author Michael Eichberg

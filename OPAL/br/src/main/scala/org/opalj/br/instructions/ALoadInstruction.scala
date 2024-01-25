@@ -15,6 +15,7 @@ trait ALoadInstruction extends LoadLocalVariableInstruction {
     final def stackSlotsChange: Int = +1
 
 }
+
 object ALoadInstruction {
 
     /**

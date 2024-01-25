@@ -3,9 +3,9 @@ package org.opalj
 package tac
 package common
 
+import org.opalj.br.Method
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.value.ValueInformation
-import org.opalj.br.Method
 
 /**
  * Identifies a definition site object in a method in the bytecode using its program counter.

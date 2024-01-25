@@ -3,11 +3,12 @@ package org.opalj
 package bi
 package reader
 
-import java.io.DataInputStream
-import org.opalj.control.fillArraySeq
-
-import scala.collection.immutable.ArraySeq
 import scala.reflect.ClassTag
+
+import java.io.DataInputStream
+import scala.collection.immutable.ArraySeq
+
+import org.opalj.control.fillArraySeq
 
 /**
  * Template method to read the (Java 7) ''BootstrapMethods'' attribute.
@@ -84,14 +85,15 @@ trait BootstrapMethods_attributeReader extends AttributeReader {
      * </pre>
      */
     private[this] def parserFactory() = (
-        cp: Constant_Pool,
-        ap: AttributeParent,
-        ap_name_index: Constant_Pool_Index,
-        ap_descriptor_index: Constant_Pool_Index,
+        cp:                   Constant_Pool,
+        ap:                   AttributeParent,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
-        in: DataInputStream
+        in:                   DataInputStream
     ) => {
-        /*val attribute_length =*/ in.readInt
+        /*val attribute_length =*/
+        in.readInt
         val num_bootstrap_methods = in.readUnsignedShort
         if (num_bootstrap_methods > 0 || reifyEmptyAttributes) {
             BootstrapMethods_attribute(

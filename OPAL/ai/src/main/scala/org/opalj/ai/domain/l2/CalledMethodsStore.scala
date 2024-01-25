@@ -6,9 +6,9 @@ package l2
 
 import scala.util.control.ControlThrowable
 
-import org.opalj.log.OPALLogger
-import org.opalj.log.LogContext
 import org.opalj.br.Method
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
 
 /**
  * Stores information about how methods were called.
@@ -99,7 +99,7 @@ trait CalledMethodsStore { rootStore =>
         OPALLogger.info(
             "analysis configuration",
             method.toJava(
-                "is frequently evaluated using different operands ("+operandsSet.size+"): "+
+                "is frequently evaluated using different operands (" + operandsSet.size + "): " +
                     operandsSet.map(_.mkString("[", ",", "]")).mkString("( ", " ; ", " )")
             )
         )
@@ -112,10 +112,9 @@ object CalledMethodsStore {
 
     def empty(
         theDomain:                         BaseDomain,
-        theFrequentEvaluationWarningLevel: Int        = 10
+        theFrequentEvaluationWarningLevel: Int = 10
     )(
-        implicit
-        theLogContext: LogContext
+        implicit theLogContext: LogContext
     ): CalledMethodsStore { val domain: theDomain.type } = {
         new CalledMethodsStore {
             val domain: theDomain.type = theDomain
@@ -127,13 +126,12 @@ object CalledMethodsStore {
 
     def apply(
         theDomain:                         BaseDomain,
-        theFrequentEvaluationWarningLevel: Int        = 10
+        theFrequentEvaluationWarningLevel: Int = 10
     )(
         method:   Method,
         operands: Array[theDomain.DomainValue]
     )(
-        implicit
-        theLogContext: LogContext
+        implicit theLogContext: LogContext
     ): CalledMethodsStore { val domain: theDomain.type } = {
         new CalledMethodsStore {
             val domain: theDomain.type = theDomain

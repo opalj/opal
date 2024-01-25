@@ -83,17 +83,23 @@ trait Signature_attributeReader extends AttributeReader with ClassFileReaderConf
         attribute_name_index: Constant_Pool_Index,
         in:                   DataInputStream
     ): Signature_attribute = {
-        /*val attribute_length =*/ in.readInt
+        /*val attribute_length =*/
+        in.readInt
         val signature_index = in.readUnsignedShort
         try {
             Signature_attribute(
-                cp, ap, ap_name_index, ap_descriptor_index, attribute_name_index, signature_index
+                cp,
+                ap,
+                ap_name_index,
+                ap_descriptor_index,
+                attribute_name_index,
+                signature_index
             )
         } catch {
             case iae: IllegalArgumentException =>
                 OPALLogger.error(
                     "parsing bytecode",
-                    s"skipping ${ap.toString().toLowerCase()} signature: "+iae.getMessage
+                    s"skipping ${ap.toString().toLowerCase()} signature: " + iae.getMessage
                 )
                 if (throwIllegalArgumentException) throw iae else null
         }

@@ -4,10 +4,12 @@ package graphs
 
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
+
+import scala.collection.{Map => AMap}
+import scala.collection.mutable.HashMap
 import scala.collection.mutable.LinkedHashMap
 import scala.collection.mutable.Set
-import scala.collection.mutable.HashMap
-import scala.collection.{Map => AMap}
+
 import org.opalj.collection.IntIterator
 
 /**
@@ -97,9 +99,7 @@ class Graph[@specialized(Int) N: ClassTag] private (
             }
         }
 
-        org.opalj.graphs.sccs(size, es, filterSingletons).iterator.map { scc =>
-            scc.iterator.map(indexToN)
-        }
+        org.opalj.graphs.sccs(size, es, filterSingletons).iterator.map { scc => scc.iterator.map(indexToN) }
     }
 }
 
@@ -120,9 +120,7 @@ object Graph {
         val g = Graph.empty[N]
         edges foreach { e =>
             val (s, ts) = e
-            ts foreach { t =>
-                g addEdge (s -> t)
-            }
+            ts foreach { t => g addEdge (s -> t) }
         }
         g
     }

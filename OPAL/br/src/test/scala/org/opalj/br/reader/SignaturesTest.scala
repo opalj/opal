@@ -4,6 +4,7 @@ package br
 package reader
 
 import org.scalatest.funsuite.AnyFunSuite
+
 import org.opalj.bi.TestResources.locateTestResources
 
 import scala.collection.parallel.CollectionConverters.ArrayIsParallelizable
@@ -70,7 +71,8 @@ class SignaturesTest extends AnyFunSuite {
                     assert(signature ne null)
                 }
                 case _ => ;
-            })
+            }
+        )
     }
 
     //

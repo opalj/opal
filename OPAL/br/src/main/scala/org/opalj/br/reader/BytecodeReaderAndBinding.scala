@@ -5,11 +5,11 @@ package reader
 
 import scala.annotation.switch
 
+import org.opalj.br.instructions._
+import org.opalj.bytecode.BytecodeProcessingFailedException
+import org.opalj.collection.immutable.IntIntPair
 import org.opalj.control.fillArraySeq
 import org.opalj.control.fillIntArray
-import org.opalj.bytecode.BytecodeProcessingFailedException
-import org.opalj.br.instructions._
-import org.opalj.collection.immutable.IntIntPair
 
 /**
  * Defines a method to parse an array of bytes (containing Java bytecode instructions) and

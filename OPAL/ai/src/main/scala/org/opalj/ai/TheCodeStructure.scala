@@ -2,8 +2,8 @@
 package org.opalj
 package ai
 
-import org.opalj.br.instructions.Instruction
 import org.opalj.br.LiveVariables
+import org.opalj.br.instructions.Instruction
 import org.opalj.collection.immutable.IntTrieSet
 
 /**

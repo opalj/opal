@@ -21,7 +21,8 @@ trait TypeLevelFieldAccessInstructions extends FieldAccessesDomain {
     // FIELD READ ACCESS
     //
 
-    /*override*/ def getfield(
+    /*override*/
+    def getfield(
         pc:             Int,
         objectref:      DomainValue,
         declaringClass: ObjectType,
@@ -31,7 +32,8 @@ trait TypeLevelFieldAccessInstructions extends FieldAccessesDomain {
         doGetfield(pc, objectref, TypedValue(pc, fieldType))
     }
 
-    /*override*/ def doGetfield(
+    /*override*/
+    def doGetfield(
         pc:         Int,
         objectref:  DomainValue,
         fieldValue: DomainValue
@@ -45,7 +47,8 @@ trait TypeLevelFieldAccessInstructions extends FieldAccessesDomain {
         }
     }
 
-    /*override*/ def getstatic(
+    /*override*/
+    def getstatic(
         pc:             Int,
         declaringClass: ObjectType,
         fieldName:      String,
@@ -54,7 +57,8 @@ trait TypeLevelFieldAccessInstructions extends FieldAccessesDomain {
         doGetstatic(pc, TypedValue(pc, fieldType))
     }
 
-    /*override*/ def doGetstatic(
+    /*override*/
+    def doGetstatic(
         pc:         Int,
         fieldValue: DomainValue
     ): Computation[DomainValue, Nothing] = {
@@ -65,7 +69,8 @@ trait TypeLevelFieldAccessInstructions extends FieldAccessesDomain {
     // FIELD WRITE ACCESS
     //
 
-    /*override*/ def putfield(
+    /*override*/
+    def putfield(
         pc:             Int,
         objectref:      DomainValue,
         value:          DomainValue,
@@ -81,7 +86,8 @@ trait TypeLevelFieldAccessInstructions extends FieldAccessesDomain {
         }
     }
 
-    /*override*/ def putstatic(
+    /*override*/
+    def putstatic(
         pc:             Int,
         value:          DomainValue,
         declaringClass: ObjectType,

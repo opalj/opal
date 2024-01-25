@@ -3,8 +3,9 @@ package org.opalj
 package bi
 package reader
 
-import java.io.DataInputStream
 import scala.reflect.ClassTag
+
+import java.io.DataInputStream
 
 /**
  * Annotation related definitions.

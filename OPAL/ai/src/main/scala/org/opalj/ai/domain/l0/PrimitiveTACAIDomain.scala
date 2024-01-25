@@ -26,4 +26,3 @@ class PrimitiveTACAIDomain(
     def this(project: SomeProject, method: Method) =
         this(project.classHierarchy, method)
 }
-

@@ -4,8 +4,8 @@ package ai
 package domain
 
 import org.opalj.br.ClassFile
-import org.opalj.br.Method
 import org.opalj.br.Code
+import org.opalj.br.Method
 
 /**
  * Provides information about the method that is currently analyzed.

@@ -9,7 +9,7 @@ package br
  */
 case class ModuleMainClass(mainClassType: ObjectType) extends Attribute {
 
-    final override def kindId: Int = ModuleMainClass.KindId
+    override final def kindId: Int = ModuleMainClass.KindId
 
     override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = {
         this == other

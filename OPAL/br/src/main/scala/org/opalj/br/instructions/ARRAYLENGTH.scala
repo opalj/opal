@@ -49,12 +49,10 @@ case object ARRAYLENGTH extends Instruction with ConstantLengthInstruction with 
         if (regularSuccessorsOnly)
             List(indexOfNextInstruction(currentPC))
         else
-            Instruction.nextInstructionOrExceptionHandler(
-                this, currentPC, ObjectType.NullPointerException
-            )
+            Instruction.nextInstructionOrExceptionHandler(this, currentPC, ObjectType.NullPointerException)
     }
 
     final def expressionResult: Stack.type = Stack
 
-    final override def toString(currentPC: Int): String = toString()
+    override final def toString(currentPC: Int): String = toString()
 }

@@ -16,6 +16,6 @@ trait Java17LibraryFramework
 
 object Java17LibraryFramework extends Java17LibraryFramework {
 
-    final override def loadsInterfacesOnly: Boolean = true
+    override final def loadsInterfacesOnly: Boolean = true
 
 }

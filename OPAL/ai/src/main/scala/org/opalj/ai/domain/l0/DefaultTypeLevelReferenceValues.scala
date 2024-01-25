@@ -4,6 +4,9 @@ package ai
 package domain
 package l0
 
+import org.opalj.br.ArrayType
+import org.opalj.br.ObjectType
+import org.opalj.br.ReferenceType
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.immutable.UIDSet1
 import org.opalj.value.IsMObjectValue
@@ -11,9 +14,6 @@ import org.opalj.value.IsPrimitiveValue
 import org.opalj.value.IsSArrayValue
 import org.opalj.value.IsSObjectValue
 import org.opalj.value.TypeOfReferenceValue
-import org.opalj.br.ArrayType
-import org.opalj.br.ObjectType
-import org.opalj.br.ReferenceType
 
 /**
  * Default implementation for handling reference values.
@@ -39,7 +39,7 @@ trait DefaultTypeLevelReferenceValues
 
         override protected def doJoin(pc: Int, other: DomainValue): Update[DomainValue] = {
             other match {
-                case _: ANullValue => NoUpdate
+                case _: ANullValue         => NoUpdate
                 case _: ReferenceValueLike =>
                     // THIS domain does not track whether ReferenceValues
                     // are definitively not null!
@@ -206,20 +206,20 @@ trait DefaultTypeLevelReferenceValues
                 StructuralUpdate(ObjectValue(pc, newUpperTypeBound))
         }
 
-        final override def length(pc: Int): Computation[DomainValue, ExceptionValue] = {
-            throw DomainException("arraylength not possible; this is not an array value: "+this)
+        override final def length(pc: Int): Computation[DomainValue, ExceptionValue] = {
+            throw DomainException("arraylength not possible; this is not an array value: " + this)
         }
 
-        final override def load(pc: Int, index: DomainValue): ArrayLoadResult = {
-            throw DomainException("arrayload not possible; this is not an array value: "+this)
+        override final def load(pc: Int, index: DomainValue): ArrayLoadResult = {
+            throw DomainException("arrayload not possible; this is not an array value: " + this)
         }
 
-        final override def store(
+        override final def store(
             pc:    Int,
             value: DomainValue,
             index: DomainValue
         ): ArrayStoreResult = {
-            throw DomainException("arraystore not possible; this is not an array value: "+this)
+            throw DomainException("arraystore not possible; this is not an array value: " + this)
         }
 
     }

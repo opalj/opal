@@ -17,6 +17,7 @@ import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedConfiguredMethods
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedLibraryPointsToAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedNewInstanceAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedPointsToAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedSerializationAllocationsAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedTamiFlexPointsToAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedUnsafePointsToAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.ReflectionAllocationsAnalysisScheduler
@@ -49,6 +50,7 @@ object AllocationSiteBasedPointsToCallGraphKey extends CallGraphKey {
             AllocationSiteBasedArraycopyPointsToAnalysisScheduler,
             AllocationSiteBasedUnsafePointsToAnalysisScheduler,
             ReflectionAllocationsAnalysisScheduler,
+            AllocationSiteBasedSerializationAllocationsAnalysisScheduler,
             AllocationSiteBasedNewInstanceAnalysisScheduler,
             EagerFieldAccessInformationAnalysis,
             ReflectionRelatedFieldAccessesAnalysisScheduler

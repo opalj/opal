@@ -9,8 +9,8 @@ import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.Property
-import org.opalj.fpcf.ifds.VTAResult
 import org.opalj.fpcf.ifds.VariableType
+import org.opalj.fpcf.ifds.VTAResult
 import org.opalj.tac.DUVar
 import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.TACode
@@ -23,10 +23,14 @@ import org.opalj.value.ValueInformation
  */
 class ExpectedTypeMatcher extends VTAMatcher {
 
-    def validateSingleAnnotation(project: SomeProject, entity: Entity,
-                                 taCode: TACode[TACMethodParameter, DUVar[ValueInformation]],
-                                 method: Method, annotation: AnnotationLike,
-                                 properties: Iterable[Property]): Option[String] = {
+    def validateSingleAnnotation(
+        project:    SomeProject,
+        entity:     Entity,
+        taCode:     TACode[TACMethodParameter, DUVar[ValueInformation]],
+        method:     Method,
+        annotation: AnnotationLike,
+        properties: Iterable[Property]
+    ): Option[String] = {
         val elementValuePairs = annotation.elementValuePairs
         val expected = (
             elementValuePairs.head.value.asIntValue.value,
@@ -40,8 +44,7 @@ class ExpectedTypeMatcher extends VTAMatcher {
             .fold(Set.empty)((acc, facts) => acc ++ facts)
             .collect {
                 case VariableType(definedBy, t, upperBound) =>
-                    (taCode.lineNumber(method.body.get, definedBy).get, referenceTypeToString(t),
-                        upperBound)
+                    (taCode.lineNumber(method.body.get, definedBy).get, referenceTypeToString(t), upperBound)
             }
         if (result.contains(expected)) None
         else Some(expected.toString)

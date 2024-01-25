@@ -7,13 +7,13 @@ import java.net.URL
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory
 
+import org.opalj.ai.domain.l1.DefaultReferenceValuesDomainWithCFGAndDefUse
+import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
-import org.opalj.ai.domain.l1.DefaultReferenceValuesDomainWithCFGAndDefUse
-import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
+import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.tac.cg.CHACallGraphKey
-import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.analyses.LazyTACAIProvider
 import org.opalj.tac.fpcf.analyses.cg.CallGraphAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.ThreadRelatedCallsAnalysisScheduler
@@ -28,7 +28,7 @@ import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedPointsToAnalysisS
 class ThreadRelatedCallsTest extends PropertiesTest {
 
     override def init(p: Project[URL]): Unit = {
-        p.updateProjectInformationKeyInitializationData(TypeIteratorKey) {
+        p.updateProjectInformationKeyInitializationData(ContextProviderKey) {
             case Some(_) => throw new IllegalArgumentException()
             case None    => CHACallGraphKey.getTypeIterator(p)
         }
@@ -44,12 +44,12 @@ class ThreadRelatedCallsTest extends PropertiesTest {
         // For these tests, we want to restrict entry points to "main" methods.
         // Also, no types should be instantiated by default.
         baseConfig.withValue(
-            InitialEntryPointsKey.ConfigKeyPrefix+"analysis",
+            InitialEntryPointsKey.ConfigKeyPrefix + "analysis",
             ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.ApplicationEntryPointsFinder")
         ).withValue(
-                InitialInstantiatedTypesKey.ConfigKeyPrefix+"analysis",
-                ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.ApplicationInstantiatedTypesFinder")
-            )
+            InitialInstantiatedTypesKey.ConfigKeyPrefix + "analysis",
+            ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.ApplicationInstantiatedTypesFinder")
+        )
     }
 
     override def fixtureProjectPackage: List[String] = {

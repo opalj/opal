@@ -7,6 +7,18 @@ package cg
 
 import scala.language.existentials
 
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.DefinedMethod
+import org.opalj.br.ObjectType
+import org.opalj.br.analyses.DeclaredMethods
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
+import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.cg.LoadedClasses
+import org.opalj.br.fpcf.properties.cg.OnlyVMLevelCallers
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.EPS
@@ -22,18 +34,6 @@ import org.opalj.fpcf.PropertyComputationResult
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
-import org.opalj.br.DeclaredMethod
-import org.opalj.br.DefinedMethod
-import org.opalj.br.ObjectType
-import org.opalj.br.analyses.DeclaredMethods
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.properties.cg.Callers
-import org.opalj.br.fpcf.properties.cg.LoadedClasses
-import org.opalj.br.fpcf.properties.cg.OnlyVMLevelCallers
 
 /**
  * Extends the call graph analysis to include calls to static initializers from within the JVM for
@@ -67,16 +67,13 @@ class StaticInitializerAnalysis(val project: SomeProject) extends FPCFAnalysis {
             case epk                                            => Some(epk) -> None
         }
 
-        implicit val state: LCState = LCState(
-            lcDependee, loadedClassesUB, 0
-        )
+        implicit val state: LCState = LCState(lcDependee, loadedClassesUB, 0)
 
         handleLoadedClasses()
     }
 
     private[this] def handleLoadedClasses()(
-        implicit
-        state: LCState
+        implicit state: LCState
     ): PropertyComputationResult = {
         val (unseenLoadedClasses, seenClasses) =
             if (state.loadedClassesUB.isDefined) {
@@ -107,7 +104,7 @@ class StaticInitializerAnalysis(val project: SomeProject) extends FPCFAnalysis {
                             case InterimUBP(ub: Callers) if !ub.hasVMLevelCallers =>
                                 Some(InterimEUBP(clInit, ub.updatedWithVMLevelCall()))
 
-                            case _: InterimEP[_, _]  => None
+                            case _: InterimEP[_, _] => None
 
                             case _: EPK[_, _]        => Some(InterimEUBP(clInit, OnlyVMLevelCallers))
                             case epk @ FinalEP(_, _) => throw new MatchError(epk)
@@ -122,8 +119,7 @@ class StaticInitializerAnalysis(val project: SomeProject) extends FPCFAnalysis {
     private[this] def continuation(
         someEPS: SomeEPS
     )(
-        implicit
-        state: LCState
+        implicit state: LCState
     ): PropertyComputationResult = {
         (someEPS: @unchecked) match {
 

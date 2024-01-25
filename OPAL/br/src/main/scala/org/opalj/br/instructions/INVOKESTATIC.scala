@@ -15,7 +15,7 @@ case class INVOKESTATIC(
         methodDescriptor: MethodDescriptor
 ) extends NonVirtualMethodInvocationInstruction {
 
-    final override def isInvokeStatic: Boolean = true
+    override final def isInvokeStatic: Boolean = true
 
     final def isInterfaceCall: Boolean = isInterface
 
@@ -41,7 +41,7 @@ case class INVOKESTATIC(
 
     override def toString: String = {
         if (isInterface)
-            "/* interface */"+super.toString
+            "/* interface */" + super.toString
         else
             super.toString
     }

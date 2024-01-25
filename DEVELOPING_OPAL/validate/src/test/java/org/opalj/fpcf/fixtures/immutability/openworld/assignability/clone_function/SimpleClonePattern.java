@@ -2,6 +2,7 @@
 package org.opalj.fpcf.fixtures.immutability.openworld.assignability.clone_function;
 
 import org.opalj.fpcf.properties.immutability.classes.TransitivelyImmutableClass;
+import org.opalj.fpcf.properties.immutability.field_assignability.AssignableField;
 import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.field_assignability.EffectivelyNonAssignableField;
 import org.opalj.fpcf.properties.immutability.types.TransitivelyImmutableType;
@@ -87,6 +88,43 @@ class ConstructorWithParameter {
     public ConstructorWithParameter clone(Integer integer){
         ConstructorWithParameter newInstance = new ConstructorWithParameter(integer);
         newInstance.integer = this.integer;
+        return newInstance;
+    }
+}
+
+class CloneNonAssignableArrayWithRead {
+
+    @EffectivelyNonAssignableField("field is only assigned once due to the clone function pattern")
+    private boolean[] booleans;
+
+    public CloneNonAssignableArrayWithRead clone(){
+        CloneNonAssignableArrayWithRead newInstance = new CloneNonAssignableArrayWithRead();
+
+        newInstance.booleans = new boolean[this.booleans.length];
+
+        boolean dominated = newInstance.booleans[0];
+        System.out.println(dominated);
+
+        return newInstance;
+    }
+}
+
+class CloneAssignableArrayWithNonDominatedRead {
+
+    @AssignableField("field is assignable as one of the field reads is not dominated by a write")
+    private boolean[] booleans;
+
+    public CloneAssignableArrayWithNonDominatedRead clone(){
+        CloneAssignableArrayWithNonDominatedRead newInstance = new CloneAssignableArrayWithNonDominatedRead();
+
+        boolean nonDominated = newInstance.booleans[0];
+        System.out.println(nonDominated);
+
+        newInstance.booleans = new boolean[this.booleans.length];
+
+        boolean dominated = newInstance.booleans[0];
+        System.out.println(dominated);
+
         return newInstance;
     }
 }

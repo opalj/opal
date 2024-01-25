@@ -3,11 +3,12 @@ package org.opalj
 package bi
 package reader
 
-import java.io.DataInputStream
-import org.opalj.control.fillArraySeq
-
-import scala.collection.immutable.ArraySeq
 import scala.reflect.ClassTag
+
+import java.io.DataInputStream
+import scala.collection.immutable.ArraySeq
+
+import org.opalj.control.fillArraySeq
 
 /**
  * Implementation of a template method to read in the StackMapTable attribute.
@@ -51,19 +52,24 @@ trait StackMapTable_attributeReader extends AttributeReader {
      * </pre>
      */
     private[this] def parserFactory() = (
-        cp: Constant_Pool,
-        ap: AttributeParent,
-        ap_name_index: Constant_Pool_Index,
-        ap_descriptor_index: Constant_Pool_Index,
+        cp:                   Constant_Pool,
+        ap:                   AttributeParent,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
-        in: DataInputStream
+        in:                   DataInputStream
     ) => {
-        /*val attribute_length =*/ in.readInt()
+        /*val attribute_length =*/
+        in.readInt()
         val number_of_entries = in.readUnsignedShort()
         if (number_of_entries > 0 || reifyEmptyAttributes) {
             val frames = fillArraySeq(number_of_entries) { StackMapFrame(cp, in) }
             StackMapTable_attribute(
-                cp, ap_name_index, ap_descriptor_index, attribute_name_index, frames
+                cp,
+                ap_name_index,
+                ap_descriptor_index,
+                attribute_name_index,
+                frames
             )
         } else {
             null

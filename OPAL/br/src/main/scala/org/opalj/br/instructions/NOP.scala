@@ -51,5 +51,5 @@ case object NOP extends ConstantLengthInstruction with NoLabels with Instruction
 
     final def expressionResult: NoExpression.type = NoExpression
 
-    final override def toString(currentPC: Int): String = toString()
+    override final def toString(currentPC: Int): String = toString()
 }

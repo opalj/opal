@@ -21,7 +21,6 @@ package analyses
  *       reflects the position of the parameter value on the tac; see
  *       [[org.opalj.ai.parameterIndexToValueOrigin]].'''
  *
- *
  * @param method The virtual method which contains the formal parameter.
  * @param origin The origin associated with the parameter. See the general description for
  *               further details.

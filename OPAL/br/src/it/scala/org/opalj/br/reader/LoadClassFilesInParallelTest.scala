@@ -5,8 +5,9 @@ package reader
 
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import org.opalj.bytecode.JRELibraryFolder
+
 import org.opalj.bi.TestResources.allBITestJARs
+import org.opalj.bytecode.JRELibraryFolder
 
 class LoadClassFilesInParallelTest extends AnyFlatSpec with Matchers {
 
@@ -28,7 +29,9 @@ class LoadClassFilesInParallelTest extends AnyFlatSpec with Matchers {
         path = file.getPath
     } {
         it should s"it should be able to reify all class files in $path" in {
-            Java8Framework.ClassFiles(file) foreach { e => val (cf, _) = e; commonValidator(cf) }
+            Java8Framework.ClassFiles(file) foreach { e =>
+                val (cf, _) = e; commonValidator(cf)
+            }
         }
 
         it should s"it should be able to reify only the signatures of all methods in $path" in {

@@ -41,11 +41,13 @@ case class PUTFIELD(
             List(indexOfNextInstruction(currentPC))
         else
             Instruction.nextInstructionOrExceptionHandler(
-                this, currentPC, ObjectType.NullPointerException
+                this,
+                currentPC,
+                ObjectType.NullPointerException
             )
     }
 
-    override def toString = "put "+declaringClass.toJava+"."+name+" : "+fieldType.toJava
+    override def toString = "put " + declaringClass.toJava + "." + name + " : " + fieldType.toJava
 
 }
 

@@ -3,29 +3,27 @@ package org.opalj
 package issues
 
 import java.lang.Comparable
-
+import play.api.libs.json.JsNull
+import play.api.libs.json.JsNumber
+import play.api.libs.json.JsObject
+import play.api.libs.json.Json
+import play.api.libs.json.JsString
+import play.api.libs.json.JsValue
+import scala.xml.Group
 import scala.xml.Node
 import scala.xml.Text
-import scala.xml.Group
 import scala.xml.UnprefixedAttribute
 
-import play.api.libs.json.Json
-import play.api.libs.json.JsObject
-import play.api.libs.json.JsValue
-import play.api.libs.json.JsNull
-import play.api.libs.json.JsString
-import play.api.libs.json.JsNumber
-
-import org.opalj.br.PC
 import org.opalj.br.ClassFile
-import org.opalj.br.Method
 import org.opalj.br.Code
 import org.opalj.br.Field
-import org.opalj.br.methodToXHTML
-import org.opalj.br.typeToXHTML
+import org.opalj.br.Method
+import org.opalj.br.PC
+import org.opalj.br.analyses.SomeProject
 import org.opalj.br.classAccessFlagsToString
 import org.opalj.br.classAccessFlagsToXHTML
-import org.opalj.br.analyses.SomeProject
+import org.opalj.br.methodToXHTML
+import org.opalj.br.typeToXHTML
 
 /**
  * The location of an issue.
@@ -87,7 +85,7 @@ class PackageLocation(
 ) extends ProjectLocation(description, theProject, details) {
 
     def locationAsInlineXHTML(basicInfoOnly: Boolean): List[Node] = {
-        List(<span class="package">{ thePackage.replace('/', '.') }</span>)
+        List(<span class="package">{thePackage.replace('/', '.')}</span>)
     }
 
     def descriptionAsXHTML: List[Node] = {
@@ -98,16 +96,16 @@ class PackageLocation(
     }
 
     def detailsAsXHTML(basicInfoOnly: Boolean): List[Node] = {
-        details.map(d => <div>{ d.toXHTML(basicInfoOnly) }</div>).toList
+        details.map(d => <div>{d.toXHTML(basicInfoOnly)}</div>).toList
     }
 
-    final override def toXHTML(basicInfoOnly: Boolean): Node = {
+    override final def toXHTML(basicInfoOnly: Boolean): Node = {
         Group(List(
             <dt>location</dt>,
             <dd>
-                { locationAsInlineXHTML(basicInfoOnly) }
-                { descriptionAsXHTML }
-                { detailsAsXHTML(basicInfoOnly) }
+                {locationAsInlineXHTML(basicInfoOnly)}
+                {descriptionAsXHTML}
+                {detailsAsXHTML(basicInfoOnly)}
             </dd>
         ))
     }
@@ -116,7 +114,7 @@ class PackageLocation(
 
     def detailsAsIDL: JsValue = Json.toJson(details)
 
-    final override def toIDL: JsValue = {
+    override final def toIDL: JsValue = {
         Json.obj(
             "description" -> description,
             "location" -> locationAsIDL,
@@ -137,8 +135,8 @@ class ClassLocation(
         val locationAsInlineXHTML = super.locationAsInlineXHTML(basicInfoOnly) ++
             List(
                 Text("."),
-                <span class="declaring_class" data-class={ classFile.fqn }>
-                    { typeToXHTML(classFile.thisType, true) }
+                <span class="declaring_class" data-class={classFile.fqn}>
+                    {typeToXHTML(classFile.thisType, true)}
                 </span>
             )
         if (basicInfoOnly || classFile.accessFlags == 0)
@@ -148,7 +146,7 @@ class ClassLocation(
     }
 
     override def toAnsiColoredString: String = {
-        theProject.source(classFile.thisType).map(_.toString).getOrElse("<No Source>")+":"
+        theProject.source(classFile.thisType).map(_.toString).getOrElse("<No Source>") + ":"
     }
 
     override def locationAsIDL: JsObject = {
@@ -184,7 +182,7 @@ class MethodLocation(
 
     override def locationAsInlineXHTML(basicInfoOnly: Boolean): List[Node] = {
         var methodNode =
-            <span class="method" data-method={ methodJVMSignature }>
+            <span class="method" data-method={methodJVMSignature}>
                 {
                     if (basicInfoOnly)
                         methodToXHTML(method.name, method.descriptor, true)
@@ -205,8 +203,8 @@ class MethodLocation(
         super.locationAsIDL + (
             "method" -> (
                 methodToIDL(method.accessFlags, method.name, method.descriptor) +
-                ("signature" -> JsString(methodJVMSignature)) +
-                ("firstLine" -> Json.toJson(firstLineOfMethod))
+                    ("signature" -> JsString(methodJVMSignature)) +
+                    ("firstLine" -> Json.toJson(firstLineOfMethod))
             )
         )
     }
@@ -240,11 +238,11 @@ class InstructionLocation(
     override def toEclipseConsoleString: String = {
         val source = classFile.thisType.toJava.split('$').head
         val line = this.line.map(line => s":$line").getOrElse("")
-        "("+source+".java"+line+") "
+        "(" + source + ".java" + line + ") "
     }
 
     override def toAnsiColoredString: String = {
-        theProject.source(classFile.thisType).map(_.toString).getOrElse("<No Source>")+":"+
+        theProject.source(classFile.thisType).map(_.toString).getOrElse("<No Source>") + ":" +
             line.map(line => s"$line: ").getOrElse(" ")
     }
 

@@ -52,6 +52,6 @@ class SharedDefaultDomain[Source](
     with l1.LongValuesShiftOperators
     with l1.ConcretePrimitiveValuesConversions {
 
-    override def toString: String = super.toString()+"("+method.toJava+")"
+    override def toString: String = super.toString() + "(" + method.toJava + ")"
 
 }

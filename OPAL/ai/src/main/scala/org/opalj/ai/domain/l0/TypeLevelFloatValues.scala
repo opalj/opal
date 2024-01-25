@@ -4,8 +4,8 @@ package ai
 package domain
 package l0
 
-import org.opalj.value.IsFloatValue
 import org.opalj.br.FloatType
+import org.opalj.value.IsFloatValue
 
 /**
  * This partial `Domain` performs all computations related to primitive float
@@ -31,7 +31,7 @@ trait TypeLevelFloatValues extends FloatValuesDomain {
     trait FloatValue extends TypedValue[FloatType] with IsFloatValue {
         this: DomainTypedValue[FloatType] =>
 
-        final override def leastUpperType: Option[FloatType] = Some(FloatType)
+        override final def leastUpperType: Option[FloatType] = Some(FloatType)
 
     }
 

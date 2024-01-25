@@ -6,18 +6,18 @@ package jcg
 
 import scala.collection.immutable.ArraySeq
 
-import org.opalj.value.KnownTypedValue
-import org.opalj.da.ClassFile
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.MethodWithBody
 import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.Project
-import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.Instruction
+import org.opalj.br.instructions.INVOKEVIRTUAL
+import org.opalj.da.ClassFile
 import org.opalj.tac.DUVar
 import org.opalj.tac.LazyTACUsingAIKey
 import org.opalj.tac.TACode
+import org.opalj.value.KnownTypedValue
 
 /**
  * Groups test case features that perform classloading.
@@ -59,11 +59,11 @@ class Classloading(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
         val hasCustomClassLoaders =
             project.allClassFiles exists { cf =>
                 classHierarchy.isSubtypeOf(cf.thisType, ClassLoaderT) &&
-                    !(cf.thisType.fqn.startsWith("java/") ||
-                        cf.thisType.fqn.startsWith("sun/") ||
-                        cf.thisType.fqn.startsWith("com/sun") ||
-                        cf.thisType.fqn.startsWith("javax/management/") ||
-                        cf.thisType.fqn.startsWith("jdk/nashorn/internal/runtime/"))
+                !(cf.thisType.fqn.startsWith("java/") ||
+                    cf.thisType.fqn.startsWith("sun/") ||
+                    cf.thisType.fqn.startsWith("com/sun") ||
+                    cf.thisType.fqn.startsWith("javax/management/") ||
+                    cf.thisType.fqn.startsWith("jdk/nashorn/internal/runtime/"))
             }
 
         for {
@@ -73,7 +73,8 @@ class Classloading(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
             method @ MethodWithBody(body) <- classFile.methods
             methodLocation = MethodLocation(classFileLocation, method)
             pcAndInvocation <- body collect ({
-                case i @ INVOKEVIRTUAL(declClass, "loadClass", loadClassMD) if classHierarchy.isSubtypeOf(declClass, ClassLoaderT) => i
+                case i @ INVOKEVIRTUAL(declClass, "loadClass", loadClassMD)
+                    if classHierarchy.isSubtypeOf(declClass, ClassLoaderT) => i
             }: PartialFunction[Instruction, Instruction])
             TACode(_, stmts, pcToIndex, _, _) = tacai(method)
         } {

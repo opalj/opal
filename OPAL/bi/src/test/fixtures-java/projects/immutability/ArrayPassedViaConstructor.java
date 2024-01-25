@@ -1,7 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package immutability;
 
-import immutability.annotations.ConditionallyImmutable;;
+import immutability.annotations.ConditionallyImmutable;
 
 /**
  * A conditionally immutable class which references an array which is set via the constructor.

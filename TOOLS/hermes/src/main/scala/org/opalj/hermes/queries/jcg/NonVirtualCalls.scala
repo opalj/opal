@@ -6,13 +6,13 @@ package jcg
 
 import scala.collection.immutable.ArraySeq
 
-import org.opalj.da.ClassFile
 import org.opalj.br.MethodWithBody
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
+import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.INVOKESTATIC
-import org.opalj.br.instructions.Instruction
+import org.opalj.da.ClassFile
 
 /**
  * Groups test case features that perform a direct method call.
@@ -60,7 +60,7 @@ class NonVirtualCalls(implicit hermes: HermesConfig) extends DefaultFeatureQuery
             val l = InstructionLocation(methodLocation, pc)
 
             val kindID = invokeKind match {
-                case _@ INVOKESTATIC(declaringClass, _, _, _) => {
+                case _ @INVOKESTATIC(declaringClass, _, _, _) => {
                     val cf = project.classFile(declaringClass)
                     if (cf.isEmpty)
                         -1

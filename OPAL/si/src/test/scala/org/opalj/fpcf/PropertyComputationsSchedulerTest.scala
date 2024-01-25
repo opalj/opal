@@ -3,13 +3,13 @@ package org.opalj
 package fpcf
 
 import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
-import org.scalatest.matchers.should.Matchers
-import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.BeforeAndAfterEach
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 
-import org.opalj.log.GlobalLogContext
 import org.opalj.fpcf.fixtures.PropertyStoreConfigurationRecorder
+import org.opalj.log.GlobalLogContext
 
 /**
  * Tests the property computations scheduler.
@@ -35,7 +35,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
     }
 
     val pks: Array[PropertyKind] = new Array[PropertyKind](12)
-    (0 to 11).foreach { i => pks(i) = PropertyKey.create[Null, Null]("p"+(i)) }
+    (0 to 11).foreach { i => pks(i) = PropertyKey.create[Null, Null]("p" + (i)) }
 
     val c1 = BasicComputationSpecification(
         "c1",
@@ -44,7 +44,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
         derivesEagerly = Set(PropertyBounds.lub(pks(1)))
     )
 
-    //**********************************************************************************************
+    // **********************************************************************************************
     //
     // TESTS
 
@@ -62,7 +62,8 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 val ps = new PropertyStoreConfigurationRecorder()
                 val scenario = AnalysisScenario(Set.empty, ps)
                 val schedule = scenario.computeSchedule(ps)
-                /*smoke test: */ schedule(ps, trace = false)
+                /*smoke test: */
+                schedule(ps, trace = false)
                 schedule.batches should be(Symbol("Empty"))
                 ps.phaseConfigurations.head should be((Set.empty, Set.empty, Map.empty))
             }
@@ -70,4 +71,3 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
         }
     }
 }
-

@@ -40,7 +40,7 @@ case class GETSTATIC(
     }
 
     override def toString =
-        "get static "+declaringClass.toJava+"."+name+" : "+fieldType.toJava
+        "get static " + declaringClass.toJava + "." + name + " : " + fieldType.toJava
 
 }
 

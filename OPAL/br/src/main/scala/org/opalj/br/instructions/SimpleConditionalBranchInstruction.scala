@@ -42,8 +42,8 @@ trait SimpleConditionalBranchInstruction[T <: SimpleConditionalBranchInstruction
      */
     def negate(newBranchoffset: Int = branchoffset): SimpleConditionalBranchInstruction[_]
 
-    final override def isSimpleConditionalBranchInstruction: Boolean = true
-    final override def asSimpleConditionalBranchInstruction: this.type = this
+    override final def isSimpleConditionalBranchInstruction: Boolean = true
+    override final def asSimpleConditionalBranchInstruction: this.type = this
 
     /**
      * @inheritdoc
@@ -74,6 +74,7 @@ trait SimpleConditionalBranchInstruction[T <: SimpleConditionalBranchInstruction
     }
 
 }
+
 /**
  * Extractor for [[SimpleConditionalBranchInstruction]]s.
  */
@@ -82,6 +83,7 @@ object SimpleConditionalBranchInstruction {
     /**
      * Extracts the instructions branchoffset.
      */
-    def unapply(i: SimpleConditionalBranchInstruction[_ <: SimpleConditionalBranchInstruction[_]]): Some[Int] = Some(i.branchoffset)
+    def unapply(i: SimpleConditionalBranchInstruction[_ <: SimpleConditionalBranchInstruction[_]]): Some[Int] =
+        Some(i.branchoffset)
 
 }

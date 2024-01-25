@@ -2,17 +2,19 @@
 package org.opalj
 package br
 
-import java.util.zip.ZipFile
-import java.io.DataInputStream
 import java.io.ByteArrayInputStream
+import java.io.DataInputStream
+import java.util.zip.ZipFile
+
+import org.junit.runner.RunWith
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import org.junit.runner.RunWith
 import org.scalatestplus.junit.JUnitRunner
-import org.opalj.io.process
-import org.opalj.br.reader._
+
 import org.opalj.bi.TestResources.allBITestJARs
+import org.opalj.br.reader._
 import org.opalj.bytecode.JRELibraryFolder
+import org.opalj.io.process
 
 import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParallelizable
 
@@ -46,11 +48,11 @@ class TestClassFilesTest extends AnyFlatSpec with Matchers /*INTENTIONALLY NOT P
 
                 val selfDiff = classFile.findDissimilarity(classFile)
                 if (selfDiff.nonEmpty)
-                    fail(s"the $classFile is not jvm equal to itself: "+selfDiff.get)
+                    fail(s"the $classFile is not jvm equal to itself: " + selfDiff.get)
 
                 val twinDiff = classFile.findDissimilarity(classFileTwin)
                 if (twinDiff.nonEmpty)
-                    fail(s"the $classFile is not jvm equal to its twin: "+twinDiff.get)
+                    fail(s"the $classFile is not jvm equal to its twin: " + twinDiff.get)
 
                 for (MethodWithBody(body) <- classFile.methods.par) {
                     body.belongsToSubroutine() should not be (null)

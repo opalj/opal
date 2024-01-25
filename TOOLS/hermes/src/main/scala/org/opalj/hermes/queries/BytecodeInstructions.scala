@@ -6,8 +6,8 @@ package queries
 import java.net.URI
 import java.net.URL
 
-import org.opalj.br.analyses.Project
 import org.opalj.br.MethodWithBody
+import org.opalj.br.analyses.Project
 
 /**
  * Counts the number of occurrences of each bytecode instruction.

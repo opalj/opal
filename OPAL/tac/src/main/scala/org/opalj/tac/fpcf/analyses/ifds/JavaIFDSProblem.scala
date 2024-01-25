@@ -9,18 +9,18 @@ import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.cfg.CFG
 import org.opalj.br.cfg.CFGNode
-import org.opalj.ifds.Dependees.Getter
 import org.opalj.ifds.AbstractIFDSFact
 import org.opalj.ifds.Callable
+import org.opalj.ifds.Dependees.Getter
 import org.opalj.ifds.IFDSProblem
 import org.opalj.ifds.Statement
-import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem.V
 import org.opalj.tac.Assignment
 import org.opalj.tac.Call
 import org.opalj.tac.DUVar
 import org.opalj.tac.ExprStmt
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACStmts
+import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem.V
 import org.opalj.value.ValueInformation
 
 /**
@@ -73,7 +73,9 @@ abstract class JavaIFDSProblem[Fact <: AbstractIFDSFact](override val icfg: Java
 
     override def outsideAnalysisContextCall(callee: Method): Option[OutsideAnalysisContextCallHandler] =
         if (callee.body.isDefined) None
-        else Some((_: JavaStatement, _: Option[JavaStatement], in: Fact, unbCallChain: Seq[Callable], _: Getter) => Set(in))
+        else Some((_: JavaStatement, _: Option[JavaStatement], in: Fact, unbCallChain: Seq[Callable], _: Getter) =>
+            Set(in)
+        )
 
     override def outsideAnalysisContextUnbReturn(callee: Method): Option[OutsideAnalysisContextUnbReturnHandler] = None
 }

@@ -7,21 +7,23 @@ package cg
 package xta
 
 import scala.annotation.elidable
+
 import java.io.File
 import java.io.FileOutputStream
 import java.io.PrintWriter
 import java.time.Instant
 import scala.collection.mutable
-import org.opalj.collection.immutable.UIDSet
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.PropertyStore
-import org.opalj.br.DefinedMethod
-import org.opalj.br.ReferenceType
+
 import org.opalj.br.DeclaredMethod
+import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
+import org.opalj.br.ReferenceType
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
+import org.opalj.collection.immutable.UIDSet
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.PropertyStore
 import org.opalj.tac.fpcf.analyses.cg.xta.TypePropagationTrace.Trace
 
 /**
@@ -78,7 +80,9 @@ private[xta] class TypePropagationTrace {
                 calleesEOptP.ub.callSites(typeIterator.newContext(method)).flatMap(_._2)
             else Iterator.empty
         }
-        traceMsg(s"init: ${simplifiedName(method)} (initial types: {${initialTypes.map(simplifiedName).mkString(", ")}}, initial callees: {${initialCallees.map(simplifiedName).mkString(", ")}})")
+        traceMsg(
+            s"init: ${simplifiedName(method)} (initial types: {${initialTypes.map(simplifiedName).mkString(", ")}}, initial callees: {${initialCallees.map(simplifiedName).mkString(", ")}})"
+        )
         _trace.events += TypePropagationTrace.Init(method, initialTypes, initialCallees.toSet)
     }
 
@@ -102,7 +106,9 @@ private[xta] class TypePropagationTrace {
 
     @elidable(elidable.ASSERTION)
     def traceTypeUpdate(receiver: DeclaredMethod, source: Entity, types: UIDSet[ReferenceType]): Unit = {
-        traceMsg(s"type set update: for ${simplifiedName(receiver)}, from ${simplifiedName(source)}, with types: {${types.map(simplifiedName).mkString(", ")}}")
+        traceMsg(
+            s"type set update: for ${simplifiedName(receiver)}, from ${simplifiedName(source)}, with types: {${types.map(simplifiedName).mkString(", ")}}"
+        )
         _trace.events += TypePropagationTrace.TypeSetUpdate(receiver, source, types)
     }
 
@@ -119,7 +125,8 @@ object TypePropagationTrace {
     trait Event {
         val typePropagations: mutable.ArrayBuffer[TypePropagation] = new mutable.ArrayBuffer[TypePropagation]()
     }
-    case class Init(method: DefinedMethod, initialTypes: UIDSet[ReferenceType], initialCallees: Set[Context]) extends Event
+    case class Init(method: DefinedMethod, initialTypes: UIDSet[ReferenceType], initialCallees: Set[Context])
+        extends Event
     trait UpdateEvent extends Event
     case class TypeSetUpdate(receiver: Entity, source: Entity, sourceTypes: UIDSet[ReferenceType]) extends UpdateEvent
     case class CalleesUpdate(receiver: Entity) extends UpdateEvent

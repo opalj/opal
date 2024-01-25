@@ -5,8 +5,8 @@ package domain
 package l1
 
 import org.junit.runner.RunWith
-import org.scalatest.matchers.should.Matchers
 import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
 
 import org.opalj.br.ObjectType

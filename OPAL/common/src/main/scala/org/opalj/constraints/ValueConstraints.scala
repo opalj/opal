@@ -55,7 +55,7 @@ case class ObjectConstraint(
  */
 case class ArrayConstraint(
         arrayReference: ReferenceValueConstraint,
-        arraySize:      NumericValueConstraint   = NumericRange.PositiveIntegerValue,
+        arraySize:      NumericValueConstraint = NumericRange.PositiveIntegerValue,
         arrayValues:    ValueConstraint
 ) extends ReferenceValueConstraint
 

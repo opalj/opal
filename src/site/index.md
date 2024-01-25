@@ -13,7 +13,7 @@ Look [here](/UsingOPAL.html) for information on how to use OPAL in your project.
 
 In-depth tutorials on developing static analyses with OPAL can be found in the navigation menu on the left, in particular starting with an introduction to [writing fixed-point analyses](/tutorial/FixedPointAnalyses.html).
 
-Publications about OPAL's core concepts and about uses of OPAL in scientific research can be found [here](/Publications.html)
+Publications about OPAL's core concepts and about uses of OPAL in scientific research can be found [here](/Publications.html).
 
 [comment]: ## "OPAL based Tools"
 

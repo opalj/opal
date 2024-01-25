@@ -4,8 +4,8 @@ package de
 
 import java.util.zip.ZipFile
 
-import org.scalatest.matchers.should.Matchers
 import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 import org.opalj.bi.TestResources.allManagedBITestJARs
 import org.opalj.br.reader.Java8Framework.{ClassFile => ClassFileReader}

@@ -4,14 +4,14 @@ package tac
 package fpcf
 package analyses
 
-import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.SomeEOptionP
-import org.opalj.value.ValueInformation
 import org.opalj.br.Method
 import org.opalj.br.fpcf.properties.Context
+import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.SomeEOptionP
 import org.opalj.tac.fpcf.analyses.cg.AnalysisState
 import org.opalj.tac.fpcf.analyses.cg.ContextualAnalysis
 import org.opalj.tac.fpcf.properties.TACAI
+import org.opalj.value.ValueInformation
 
 /**
  * A base class for the state of FPCF analyses operating on the three-address code of methods.

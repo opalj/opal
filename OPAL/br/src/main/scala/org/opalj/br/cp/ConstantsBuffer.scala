@@ -7,13 +7,13 @@ import scala.collection.mutable
 
 import org.opalj.br.instructions.INCOMPLETE_LDC
 import org.opalj.br.instructions.LDC
-import org.opalj.br.instructions.LoadInt
-import org.opalj.br.instructions.LoadFloat
-import org.opalj.br.instructions.LoadString
 import org.opalj.br.instructions.LoadClass
 import org.opalj.br.instructions.LoadDynamic
+import org.opalj.br.instructions.LoadFloat
+import org.opalj.br.instructions.LoadInt
 import org.opalj.br.instructions.LoadMethodHandle
 import org.opalj.br.instructions.LoadMethodType
+import org.opalj.br.instructions.LoadString
 
 /**
  * This class can be used to (re)build a [[org.opalj.br.ClassFile]]'s constant pool.
@@ -35,8 +35,7 @@ class ConstantsBuffer private (
 
     private[this] def getOrElseUpdate(cpEntry: Constant_Pool_Entry, entry_size: Int): Int = {
         constantPool.getOrElseUpdate(
-            cpEntry,
-            {
+            cpEntry, {
                 val index = nextIndex
                 nextIndex += entry_size
                 index
@@ -186,7 +185,7 @@ class ConstantsBuffer private (
         if (bootstrapMethodAttributeNameIndex == 0)
             bootstrapMethodAttributeNameIndex = CPEUtf8(bi.BootstrapMethodsAttribute.Name)
 
-        //need to build up bootstrap_methods
+        // need to build up bootstrap_methods
         var indexOfBootstrapMethod = bootstrapMethods.indexOf(bootstrapMethod)
         if (indexOfBootstrapMethod == -1) {
             bootstrapMethods += bootstrapMethod
@@ -249,7 +248,7 @@ class ConstantsBuffer private (
         if (bootstrapMethodAttributeNameIndex == 0)
             bootstrapMethodAttributeNameIndex = CPEUtf8(bi.BootstrapMethodsAttribute.Name)
 
-        //need to build up bootstrap_methods
+        // need to build up bootstrap_methods
         var indexOfBootstrapMethod = bootstrapMethods.indexOf(bootstrapMethod)
         if (indexOfBootstrapMethod == -1) {
             bootstrapMethods += bootstrapMethod
@@ -353,7 +352,7 @@ object ConstantsBuffer {
     def apply(ldcs: Set[LDC[_]]): ConstantsBuffer = {
         // IMPROVE Use Object2IntMap..
         val buffer = mutable.HashMap.empty[Constant_Pool_Entry, Constant_Pool_Index]
-        //the first item is null because the constant_pool starts with the index 1
+        // the first item is null because the constant_pool starts with the index 1
         buffer(null) = 0
 
         /*
@@ -371,7 +370,7 @@ object ConstantsBuffer {
         to dynamic constants (using two byte references), but the same constant pool entries might
         be used by a one byte reference from an LDC. Thus, we first create the LDC related entries,
         then create the bootstrap argument entries at the end.
-        */
+         */
         val (ldClasses, ldOtherConstants) = ldcs partition { ldc => ldc.isInstanceOf[LoadClass] }
 
         // 1. let's add the referenced CONSTANT_UTF8 entries required by LoadClass instructions
@@ -415,7 +414,7 @@ object ConstantsBuffer {
 
         assert(
             buffer.size == constantsBuffer.nextIndex,
-            "constant pool contains holes:\n\t"+
+            "constant pool contains holes:\n\t" +
                 ldcs.mkString("LDCs={", ", ", "}\n\t") +
                 buffer.toList.map(_.swap).sortBy(e => e._1).mkString("Buffer=[\n\t", "\n\t", "]\n")
         )

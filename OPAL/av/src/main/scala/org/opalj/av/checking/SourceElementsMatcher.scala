@@ -3,10 +3,10 @@ package org.opalj
 package av
 package checking
 
+import scala.collection.immutable
+
 import org.opalj.br._
 import org.opalj.br.analyses.SomeProject
-
-import scala.collection.immutable
 
 /**
  * A source element matcher determines a set of source elements that matches a given query.

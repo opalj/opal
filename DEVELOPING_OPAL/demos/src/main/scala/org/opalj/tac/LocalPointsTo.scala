@@ -45,9 +45,9 @@ object LocalPointsTo {
         } {
             if (defSite >= 0) {
                 val Assignment(_, _, expr) = tac.stmts(defSite) // a def site is always an assignment
-                println(s"call@$stmtIndex(param=$paramIndex) is "+expr)
+                println(s"call@$stmtIndex(param=$paramIndex) is " + expr)
             } else {
-                println(s"call@$stmtIndex(param=$paramIndex) takes param "+(-defSite - 1))
+                println(s"call@$stmtIndex(param=$paramIndex) takes param " + (-defSite - 1))
             }
         }
 

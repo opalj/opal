@@ -3,11 +3,12 @@ package org.opalj
 package bi
 package reader
 
-import java.io.DataInputStream
-import org.opalj.control.fillArraySeq
-
-import scala.collection.immutable.ArraySeq
 import scala.reflect.ClassTag
+
+import java.io.DataInputStream
+import scala.collection.immutable.ArraySeq
+
+import org.opalj.control.fillArraySeq
 
 trait StackMapFrameReader extends Constant_PoolAbstractions {
 
@@ -68,7 +69,7 @@ trait StackMapFrameReader extends Constant_PoolAbstractions {
                 frame_type,
                 VerificationTypeInfo(cp, in)
             )
-        } /*RESERVED FOR FUTURE USE*/ else if (frame_type < 247) {
+        } else if (frame_type < 247) { /*RESERVED FOR FUTURE USE*/
             throw new Error(s"unsupported frame type: $frame_type")
         } else if (frame_type == 247) {
             SameLocals1StackItemFrameExtended(

@@ -2,19 +2,18 @@
 package org.opalj
 package issues
 
-import scala.xml.Node
-
+import play.api.libs.json.JsNull
 import play.api.libs.json.Json
 import play.api.libs.json.JsValue
-import play.api.libs.json.JsNull
+import scala.xml.Node
 
-import org.opalj.collection.mutable.Locals
-import org.opalj.br.PC
 import org.opalj.br.Code
-import org.opalj.br.instructions.SimpleConditionalBranchInstruction
+import org.opalj.br.PC
 import org.opalj.br.instructions.CompoundConditionalBranchInstruction
-import org.opalj.br.instructions.StackManagementInstruction
 import org.opalj.br.instructions.IINC
+import org.opalj.br.instructions.SimpleConditionalBranchInstruction
+import org.opalj.br.instructions.StackManagementInstruction
+import org.opalj.collection.mutable.Locals
 
 class Operands(
         val code:           Code,
@@ -26,32 +25,31 @@ class Operands(
     def toXHTML(basicInfoOnly: Boolean): Node = {
         val detailsNodes = instruction match {
             case cbi: SimpleConditionalBranchInstruction[_] =>
-
                 val condition =
                     if (cbi.operandCount == 1)
                         List(
-                            <span class="value">{ operands.head } </span>,
-                            <span class="operator">{ cbi.operator } </span>
+                            <span class="value">{operands.head} </span>,
+                            <span class="operator">{cbi.operator} </span>
                         )
                     else
                         List(
-                            <span class="value">{ operands.tail.head } </span>,
-                            <span class="operator">{ cbi.operator } </span>,
-                            <span class="value">{ operands.head } </span>
+                            <span class="value">{operands.tail.head} </span>,
+                            <span class="operator">{cbi.operator} </span>,
+                            <span class="value">{operands.head} </span>
                         )
                 <span class="keyword">if&nbsp;</span> :: condition
 
             case cbi: CompoundConditionalBranchInstruction =>
                 Seq(
                     <span class="keyword">switch </span>,
-                    <span class="value">{ operands.head } </span>,
-                    <span> (case values: { cbi.caseValues.mkString(", ") } )</span>
+                    <span class="value">{operands.head} </span>,
+                    <span> (case values: {cbi.caseValues.mkString(", ")} )</span>
                 )
 
             case smi: StackManagementInstruction =>
                 val representation =
-                    <span class="keyword">{ smi.mnemonic } </span> ::
-                        (operands.map(op => <span class="value">{ op } </span>))
+                    <span class="keyword">{smi.mnemonic} </span> ::
+                        (operands.map(op => <span class="value">{op} </span>))
                 representation
 
             case IINC(lvIndex, constValue) =>
@@ -60,8 +58,8 @@ class Operands(
                         <span class="keyword">iinc </span>,
                         <span class="parameters">
                             (
-                            <span class="value">{ localVariables(lvIndex) }</span>
-                            <span class="value">{ constValue } </span>
+                            <span class="value">{localVariables(lvIndex)}</span>
+                            <span class="value">{constValue} </span>
                             )
                         </span>
                     )
@@ -72,15 +70,13 @@ class Operands(
                     instruction.numberOfPoppedOperands { x => throw new UnknownError() }
 
                 val parametersNode =
-                    operands.take(operandsCount).reverse.map { op =>
-                        <span class="value">{ op } </span>
-                    }
+                    operands.take(operandsCount).reverse.map { op => <span class="value">{op} </span> }
                 List(
-                    <span class="keyword">{ instruction.mnemonic } </span>,
-                    <span class="parameters">({ parametersNode })</span>
+                    <span class="keyword">{instruction.mnemonic} </span>,
+                    <span class="parameters">({parametersNode})</span>
                 )
         }
-        <div>{ detailsNodes }</div>
+        <div>{detailsNodes}</div>
     }
 
     def toAnsiColoredString: String = "" // TODO Support a better representation

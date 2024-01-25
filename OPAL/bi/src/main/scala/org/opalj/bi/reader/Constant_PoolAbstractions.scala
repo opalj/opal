@@ -3,8 +3,9 @@ package org.opalj
 package bi
 package reader
 
-import scala.collection.mutable
 import scala.reflect.ClassTag
+
+import scala.collection.mutable
 
 /**
  * Constant pool related type definitions.

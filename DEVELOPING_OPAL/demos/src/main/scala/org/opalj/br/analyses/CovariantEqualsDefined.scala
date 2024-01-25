@@ -4,11 +4,12 @@ package br
 package analyses
 
 import java.net.URL
-import org.opalj.issues.Relevance
+
+import org.opalj.issues.ClassLocation
 import org.opalj.issues.Issue
 import org.opalj.issues.IssueCategory
 import org.opalj.issues.IssueKind
-import org.opalj.issues.ClassLocation
+import org.opalj.issues.Relevance
 
 /**
  * Finds classes that define only a co-variant `equals` method (an equals method
@@ -56,7 +57,8 @@ object CovariantEqualsMethodDefined extends ProjectAnalysisApplication {
                     reports = Issue(
                         "CovariantEqualsMethodDefined",
                         Relevance.Moderate,
-                        summary = "defines a covariant equals method, but does not also define the standard equals method",
+                        summary =
+                            "defines a covariant equals method, but does not also define the standard equals method",
                         categories = Set(IssueCategory.Correctness),
                         kinds = Set(IssueKind.MethodMissing),
                         locations = List(new ClassLocation(None, project, classFile))

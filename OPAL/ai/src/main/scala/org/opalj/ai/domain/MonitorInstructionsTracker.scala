@@ -50,4 +50,3 @@ trait MonitorInstructionsTracker extends MonitorInstructionsDomain with CustomIn
     }
 
 }
-

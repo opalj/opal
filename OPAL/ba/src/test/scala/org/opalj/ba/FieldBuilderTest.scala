@@ -3,6 +3,7 @@ package org.opalj
 package ba
 
 import scala.language.postfixOps
+import scala.reflect.runtime.universe._
 
 import java.io.ByteArrayInputStream
 
@@ -10,12 +11,10 @@ import org.junit.runner.RunWith
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatestplus.junit.JUnitRunner
 
-import scala.reflect.runtime.universe._
-
+import org.opalj.bc.Assembler
 import org.opalj.bi.ACC_FINAL
 import org.opalj.bi.ACC_PRIVATE
 import org.opalj.bi.ACC_PUBLIC
-import org.opalj.bc.Assembler
 import org.opalj.br.instructions._
 import org.opalj.br.reader.Java8Framework
 import org.opalj.util.InMemoryClassLoader
@@ -42,7 +41,10 @@ class FieldBuilderTest extends AnyFlatSpec {
                 FIELD(PRIVATE, "privateField", "Z")
             ),
             methods = METHODS(
-                METHOD(PUBLIC, "<init>", "()V",
+                METHOD(
+                    PUBLIC,
+                    "<init>",
+                    "()V",
                     CODE(
                         ALOAD_0,
                         INVOKESPECIAL("java/lang/Object", false, "<init>", "()V"),
@@ -53,15 +55,22 @@ class FieldBuilderTest extends AnyFlatSpec {
                         ICONST_1,
                         PUTFIELD("test/FieldClass", "privateField", "Z"),
                         RETURN
-                    )),
-                METHOD(PUBLIC, "packageField", "()Z",
+                    )
+                ),
+                METHOD(
+                    PUBLIC,
+                    "packageField",
+                    "()Z",
                     CODE(
                         ALOAD_0,
                         GETFIELD("test/FieldClass", "privateField", "Z"),
                         IRETURN
-                    )),
+                    )
+                ),
                 METHOD(
-                    PUBLIC, "publicField", "()I",
+                    PUBLIC,
+                    "publicField",
+                    "()I",
                     CODE(
                         ALOAD_0,
                         GETFIELD("test/FieldClass", "publicField", "I"),

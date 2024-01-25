@@ -5,11 +5,11 @@ package fpcf
 
 import java.util.concurrent.atomic.AtomicInteger
 
+import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.ComputationSpecification
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.analyses.SomeProject
 
 /**
  * Specification of the properties of an analysis.
@@ -38,19 +38,19 @@ trait FPCFAnalysisScheduler extends ComputationSpecification[FPCFAnalysis] {
      */
     final val uniqueId: Int = FPCFAnalysisScheduler.nextId
 
-    final override def init(ps: PropertyStore): InitializationData = {
+    override final def init(ps: PropertyStore): InitializationData = {
         init(ps.context(classOf[SomeProject]), ps)
     }
 
-    final override def uses(ps: PropertyStore): Set[PropertyBounds] = {
+    override final def uses(ps: PropertyStore): Set[PropertyBounds] = {
         uses ++ uses(ps.context(classOf[SomeProject]), ps)
     }
 
-    final override def beforeSchedule(ps: PropertyStore): Unit = {
+    override final def beforeSchedule(ps: PropertyStore): Unit = {
         beforeSchedule(ps.context(classOf[SomeProject]), ps)
     }
 
-    final override def afterPhaseCompletion(ps: PropertyStore, analysis: FPCFAnalysis): Unit = {
+    override final def afterPhaseCompletion(ps: PropertyStore, analysis: FPCFAnalysis): Unit = {
         afterPhaseCompletion(ps.context(classOf[SomeProject]), ps, analysis)
     }
 

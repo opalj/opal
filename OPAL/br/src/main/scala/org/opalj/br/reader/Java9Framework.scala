@@ -14,6 +14,6 @@ trait Java9Framework extends Java8Framework with Java9LibraryFramework
 
 object Java9Framework extends Java9Framework {
 
-    final override def loadsInterfacesOnly: Boolean = false
+    override final def loadsInterfacesOnly: Boolean = false
 
 }

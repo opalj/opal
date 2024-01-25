@@ -51,5 +51,5 @@ case object WIDE extends Instruction with ConstantLengthInstruction with NoLabel
 
     final def expressionResult: NoExpression.type = NoExpression
 
-    final override def toString(currentPC: Int): String = toString()
+    override final def toString(currentPC: Int): String = toString()
 }

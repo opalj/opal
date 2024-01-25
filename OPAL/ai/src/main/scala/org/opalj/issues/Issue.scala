@@ -2,12 +2,11 @@
 package org.opalj
 package issues
 
-import scala.xml.Node
-import scala.xml.Group
-import scala.xml.Unparsed
-
 import play.api.libs.json.Json
 import play.api.libs.json.JsValue
+import scala.xml.Group
+import scala.xml.Node
+import scala.xml.Unparsed
 
 /**
  * Describes some issue found in source code.
@@ -51,29 +50,31 @@ case class Issue(
         val dataCategories =
             categories.map(_.replace(' ', '_')).mkString(" ")
 
-        <div class="an_issue" style={ s"color:${relevance.toHTMLColor};" } data-relevance={ relevance.value.toString } data-kind={ dataKinds } data-category={ dataCategories }>
+        <div class="an_issue" style={s"color:${relevance.toHTMLColor};"} data-relevance={
+            relevance.value.toString
+        } data-kind={dataKinds} data-category={dataCategories}>
             <dl>
                 <dt class="analysis">analysis</dt>
                 <dd>
-                    <span class="analysis_id">{ analysis }</span>
+                    <span class="analysis_id">{analysis}</span>
                     |
-                    <span class="relevance">relevance={ relevance.value.toString+" ("+relevance.name+")" }</span>
+                    <span class="relevance">relevance={relevance.value.toString + " (" + relevance.name + ")"}</span>
                     |
-                    <span class="data_kinds">kind={ kinds.mkString(", ") }</span>
+                    <span class="data_kinds">kind={kinds.mkString(", ")}</span>
                     |
-                    <span class="data_categories">category={ categories.mkString(", ") }</span>
+                    <span class="data_categories">category={categories.mkString(", ")}</span>
                 </dd>
                 <dt>summary</dt>
                 <dd>
-                    <span class="issue_summary">{ Unparsed(summary.replace("\n", "<br>")) }</span>
+                    <span class="issue_summary">{Unparsed(summary.replace("\n", "<br>"))}</span>
                 </dd>
-                { locations.map(_.toXHTML(basicInfoOnly)) }
+                {locations.map(_.toXHTML(basicInfoOnly))}
                 {
                     if (!basicInfoOnly && details.nonEmpty)
                         List(
                             <dt>facts</dt>,
                             <dd>
-                                { details.map(_.toXHTML(false)) }
+                                {details.map(_.toXHTML(false))}
                             </dd>
                         )
                     else
@@ -87,15 +88,14 @@ case class Issue(
         import Console.{GREEN, RESET}
 
         val primaryLocation = locations.head
-        primaryLocation.toAnsiColoredString+" "+
-            relevance.toAnsiColoredString+": "+
-            GREEN + primaryLocation.description.map(summary+" - "+_).getOrElse(summary) + RESET
+        primaryLocation.toAnsiColoredString + " " +
+            relevance.toAnsiColoredString + ": " +
+            GREEN + primaryLocation.description.map(summary + " - " + _).getOrElse(summary) + RESET
     }
 
     def toEclipseConsoleString: String = {
-        locations.map(_.toEclipseConsoleString).mkString(
-            s"$summary«$analysis ${relevance.toEclipseConsoleString}» ", " ", ""
-        )
+        locations.map(_.toEclipseConsoleString)
+            .mkString(s"$summary«$analysis ${relevance.toEclipseConsoleString}» ", " ", "")
     }
 
     override def toIDL: JsValue = {

@@ -42,20 +42,25 @@ class DefaultDomain[Source](
     lazy val calledMethodsStore: CalledMethodsStore { val domain: coordinatingDomain.type } = {
         val operands =
             localsArray(0).foldLeft(List.empty[DomainValue])((l, n) =>
-                if (n ne null) n :: l else l)
+                if (n ne null) n :: l else l
+            )
         CalledMethodsStore(
-            coordinatingDomain, callingDomain.frequentEvaluationWarningLevel
+            coordinatingDomain,
+            callingDomain.frequentEvaluationWarningLevel
         )(
-            method, mapOperands(operands, coordinatingDomain)
+            method,
+            mapOperands(operands, coordinatingDomain)
         )
     }
 
 }
 
 class ChildDefaultDomain[Source](
-        project:                Project[Source],
-        method:                 Method,
-        val callerDomain:       PerformInvocationsWithRecursionDetection { type CalledMethodDomain = ChildDefaultDomain[Source] },
+        project: Project[Source],
+        method:  Method,
+        val callerDomain: PerformInvocationsWithRecursionDetection {
+            type CalledMethodDomain = ChildDefaultDomain[Source]
+        },
         val maxCallChainLength: Int
 ) extends SharedDefaultDomain[Source](project, method)
     with ChildPerformInvocationsWithRecursionDetection

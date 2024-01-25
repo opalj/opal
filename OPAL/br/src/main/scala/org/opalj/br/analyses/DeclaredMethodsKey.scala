@@ -6,14 +6,14 @@ package analyses
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.function.{Function => JFunction}
-import org.opalj.br.ObjectType.MethodHandle
-import org.opalj.br.ObjectType.VarHandle
+import scala.collection.immutable.ArraySeq
+import scala.jdk.CollectionConverters._
+
 import org.opalj.br.MethodDescriptor.SignaturePolymorphicMethodBoolean
 import org.opalj.br.MethodDescriptor.SignaturePolymorphicMethodObject
 import org.opalj.br.MethodDescriptor.SignaturePolymorphicMethodVoid
-
-import scala.collection.immutable.ArraySeq
-import scala.jdk.CollectionConverters._
+import org.opalj.br.ObjectType.MethodHandle
+import org.opalj.br.ObjectType.VarHandle
 
 /**
  * The ''key'' object to get information about all declared methods.
@@ -94,10 +94,13 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
             computeDeclaredMethod: Int => DeclaredMethod
         ): Unit = {
             var computedDM: DeclaredMethod = null
-            val oldDm = dms.computeIfAbsent(context, _ => {
-                computedDM = computeDeclaredMethod(idCounter.getAndIncrement())
-                computedDM
-            })
+            val oldDm = dms.computeIfAbsent(
+                context,
+                _ => {
+                    computedDM = computeDeclaredMethod(idCounter.getAndIncrement())
+                    computedDM
+                }
+            )
 
             assert(
                 (computedDM ne null) || {
@@ -113,7 +116,7 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
                         case _: VirtualDeclaredMethod => true
                     }
                 },
-                "creation of declared methods failed:\n\t"+
+                "creation of declared methods failed:\n\t" +
                     s"$oldDm\n\t\tvs.(new)\n\t$computedDM}"
             )
         }
@@ -155,11 +158,12 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
                                         insertDeclaredMethod(
                                             subtypeDms,
                                             new MethodContext(m.name, m.descriptor),
-                                            id => new MultipleDefinedMethods(
-                                                subtype,
-                                                methods,
-                                                id
-                                            )
+                                            id =>
+                                                new MultipleDefinedMethods(
+                                                    subtype,
+                                                    methods,
+                                                    id
+                                                )
                                         )
                                 }
 
@@ -169,7 +173,8 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
                             }
                     }
                 } else if (m.isStatic && !m.isPrivate &&
-                    !m.isStaticInitializer && !cf.isInterfaceDeclaration) {
+                           !m.isStaticInitializer && !cf.isInterfaceDeclaration
+                ) {
                     // Static methods are inherited as well - they can be invoked on subtypes
                     // this is not true for static initializers and static methods on interfaces
                     p.classHierarchy.processSubtypes(classType)(initial = null) {
@@ -225,9 +230,11 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
             val dms = result.computeIfAbsent(MethodHandle, _ => new ConcurrentHashMap)
             for (name <- methodHandleSignaturePolymorphicMethods) {
                 val context = new MethodContext(name, SignaturePolymorphicMethodObject)
-                insertDeclaredMethod(dms, context, id => new VirtualDeclaredMethod(
-                    MethodHandle, name, SignaturePolymorphicMethodObject, id
-                ))
+                insertDeclaredMethod(
+                    dms,
+                    context,
+                    id => new VirtualDeclaredMethod(MethodHandle, name, SignaturePolymorphicMethodObject, id)
+                )
             }
         }
         if (p.VarHandleClassFile.isEmpty) {
@@ -240,13 +247,9 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
                 else if (name.startsWith("get") || name.startsWith("compare"))
                     SignaturePolymorphicMethodObject
                 else
-                    throw new IllegalArgumentException(
-                        s"Unexpected signature polymorphic method $name"
-                    )
+                    throw new IllegalArgumentException(s"Unexpected signature polymorphic method $name")
                 val context = new MethodContext(name, descriptor)
-                insertDeclaredMethod(dms, context, id => new VirtualDeclaredMethod(
-                    VarHandle, name, descriptor, id
-                ))
+                insertDeclaredMethod(dms, context, id => new VirtualDeclaredMethod(VarHandle, name, descriptor, id))
             }
         }
 
@@ -268,7 +271,7 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
      * a `PackagePrivateMethodContext`, in which case the equals method guarantees that it matches
      * any `PackagePrivateMethodContext` with the same signature.
      */
-    private[analyses] sealed class MethodContext(
+    sealed private[analyses] class MethodContext(
             val methodName: String,
             val descriptor: MethodDescriptor
     ) {
@@ -315,7 +318,8 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
             if (isPackagePrivate)
                 new PackagePrivateMethodContext(declaringPackage, methodName, descriptor)
             else if (project.classFile(objectType).isDefined &&
-                project.hasInstanceMethod(objectType, methodName, descriptor, true))
+                     project.hasInstanceMethod(objectType, methodName, descriptor, true)
+            )
                 new ShadowsPackagePrivateMethodContext(methodName, descriptor)
             else
                 new MethodContext(methodName, descriptor)

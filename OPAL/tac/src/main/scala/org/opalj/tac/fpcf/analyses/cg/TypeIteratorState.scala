@@ -107,7 +107,7 @@ trait TypeIteratorState extends AnalysisState {
     private final def hasDependees: Boolean = {
         assert(
             (_dependees.isEmpty == _dependeeToDependers.isEmpty) &&
-                (_dependeeToDependers.isEmpty == _dependerToDependees.isEmpty)
+            (_dependeeToDependers.isEmpty == _dependerToDependees.isEmpty)
         )
         _dependees.nonEmpty
     }

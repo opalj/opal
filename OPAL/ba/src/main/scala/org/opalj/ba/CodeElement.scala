@@ -3,6 +3,7 @@ package org.opalj
 package ba
 
 import scala.language.implicitConversions
+
 import org.opalj.br.instructions.LabeledInstruction
 
 /**

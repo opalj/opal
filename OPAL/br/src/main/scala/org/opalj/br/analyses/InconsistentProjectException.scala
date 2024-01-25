@@ -13,5 +13,5 @@ import org.opalj.log.Warn
  */
 case class InconsistentProjectException(
         message:  String,
-        severity: Level  = Warn
+        severity: Level = Warn
 ) extends Exception(message)

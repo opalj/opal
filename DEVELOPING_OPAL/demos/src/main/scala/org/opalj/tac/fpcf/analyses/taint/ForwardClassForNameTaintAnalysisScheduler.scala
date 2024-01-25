@@ -7,16 +7,22 @@ package taint
 
 import java.io.File
 
-import org.opalj.fpcf.PropertyBounds
-import org.opalj.fpcf.PropertyStore
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.Method
+import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.properties.cg.Callers
-import org.opalj.br.DeclaredMethod
-import org.opalj.br.Method
-import org.opalj.br.ObjectType
+import org.opalj.fpcf.PropertyBounds
+import org.opalj.fpcf.PropertyStore
+import org.opalj.ifds.Callable
+import org.opalj.ifds.IFDSAnalysis
+import org.opalj.ifds.IFDSAnalysisScheduler
+import org.opalj.ifds.IFDSFact
+import org.opalj.ifds.IFDSProperty
+import org.opalj.ifds.IFDSPropertyMetaInformation
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.analyses.ifds.IFDSEvaluationRunner
@@ -29,12 +35,6 @@ import org.opalj.tac.fpcf.analyses.ifds.taint.TaintProblem
 import org.opalj.tac.fpcf.analyses.ifds.taint.Variable
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.Taint
-import org.opalj.ifds.Callable
-import org.opalj.ifds.IFDSAnalysis
-import org.opalj.ifds.IFDSAnalysisScheduler
-import org.opalj.ifds.IFDSFact
-import org.opalj.ifds.IFDSProperty
-import org.opalj.ifds.IFDSPropertyMetaInformation
 
 /**
  * A forward IFDS taint analysis which tracks the String parameters of all methods of the rt.jar
@@ -81,14 +81,14 @@ class ForwardClassForNameTaintProblem(project: SomeProject)
     /**
      * Create a FlowFact if Class.forName is called with a tainted variable for the first parameter.
      */
-    override protected def createFlowFact(callee: Method, call: JavaStatement,
-                                          in: TaintFact): Option[FlowFact] = {
+    override protected def createFlowFact(callee: Method, call: JavaStatement, in: TaintFact): Option[FlowFact] = {
         if (isClassForName(declaredMethods(callee)) && in == Variable(-2))
             Some(FlowFact(Seq(JavaMethod(call.method))))
         else None
     }
 
-    override def createFlowFactAtExit(callee: Method, in: TaintFact, unbCallChain: Seq[Callable]): Option[TaintFact] = None
+    override def createFlowFactAtExit(callee: Method, in: TaintFact, unbCallChain: Seq[Callable]): Option[TaintFact] =
+        None
 
     /**
      * Checks if a `method` is Class.forName.
@@ -106,14 +106,16 @@ object ForwardClassForNameTaintAnalysisScheduler extends IFDSAnalysisScheduler[T
 
     override def property: IFDSPropertyMetaInformation[JavaStatement, TaintFact] = Taint
 
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey, TypeIteratorKey, PropertyStoreKey, RTACallGraphKey)
+    override def requiredProjectInformation: ProjectInformationKeys =
+        Seq(DeclaredMethodsKey, TypeIteratorKey, PropertyStoreKey, RTACallGraphKey)
 
     override def uses: Set[PropertyBounds] = Set(PropertyBounds.finalP(TACAI), PropertyBounds.finalP(Callers))
 }
 
 class ForwardClassForNameAnalysisRunnerIFDS extends IFDSEvaluationRunner {
 
-    override def analysisClass: ForwardClassForNameTaintAnalysisScheduler.type = ForwardClassForNameTaintAnalysisScheduler
+    override def analysisClass: ForwardClassForNameTaintAnalysisScheduler.type =
+        ForwardClassForNameTaintAnalysisScheduler
 
     override def printAnalysisResults(analysis: IFDSAnalysis[?, ?, ?], ps: PropertyStore): Unit =
         for {
@@ -122,7 +124,7 @@ class ForwardClassForNameAnalysisRunnerIFDS extends IFDSEvaluationRunner {
             fact <- flows.ub.asInstanceOf[IFDSProperty[JavaStatement, TaintFact]].flows.values.flatten.toSet[TaintFact]
         } {
             fact match {
-                case FlowFact(flow) => println(s"flow: "+flow.asInstanceOf[Set[Method]].map(_.toJava).mkString(", "))
+                case FlowFact(flow) => println(s"flow: " + flow.asInstanceOf[Set[Method]].map(_.toJava).mkString(", "))
                 case _              =>
             }
         }

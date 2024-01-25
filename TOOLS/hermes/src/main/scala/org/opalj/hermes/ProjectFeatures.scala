@@ -2,9 +2,9 @@
 package org.opalj
 package hermes
 
-import javafx.beans.property.StringProperty
-import javafx.beans.property.SimpleStringProperty
 import javafx.beans.property.ObjectProperty
+import javafx.beans.property.SimpleStringProperty
+import javafx.beans.property.StringProperty
 
 /**
  * The feature objects associated with every project.

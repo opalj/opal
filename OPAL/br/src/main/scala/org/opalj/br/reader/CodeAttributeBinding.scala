@@ -3,9 +3,9 @@ package org.opalj
 package br
 package reader
 
-import org.opalj.bi.reader.Code_attributeReader
-
 import scala.reflect.ClassTag
+
+import org.opalj.bi.reader.Code_attributeReader
 
 /**
  * Binding for the code attribute.
@@ -45,7 +45,9 @@ trait CodeAttributeBinding
         catch_type_index: Constant_Pool_Index
     ): ExceptionTableEntry = {
         new ExceptionTableEntry(
-            start_pc, end_pc, handler_pc,
+            start_pc,
+            end_pc,
+            handler_pc,
             if (catch_type_index == 0)
                 None
             else

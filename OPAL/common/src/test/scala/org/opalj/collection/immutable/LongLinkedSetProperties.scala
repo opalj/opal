@@ -4,9 +4,9 @@ package collection
 package immutable
 
 import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
 import org.scalacheck.Prop.forAll
 import org.scalacheck.Prop.propBoolean
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Generic Tests for `LongSet`s.

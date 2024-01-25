@@ -24,10 +24,11 @@ case class InnerClassTable(innerClasses: InnerClasses) extends Attribute {
     def similar(other: InnerClassTable): Boolean = {
         // the order of two inner classes tables does not need to be identical
         this.innerClasses.size == other.innerClasses.size &&
-            this.innerClasses.forall(other.innerClasses.contains)
+        this.innerClasses.forall(other.innerClasses.contains)
     }
 
 }
+
 object InnerClassTable {
 
     final val KindId = 9
@@ -42,11 +43,11 @@ case class InnerClass(
 ) {
 
     override def toString(): String = {
-        "InnerClass"+
-            "(type="+innerClassType.toJava+
-            ",outerType="+outerClassType.map(_.toJava)+
-            ",innerName="+innerName+
-            ",accessFlags=\""+AccessFlags.toString(innerClassAccessFlags, AccessFlagsContexts.INNER_CLASS)+"\""+
+        "InnerClass" +
+            "(type=" + innerClassType.toJava +
+            ",outerType=" + outerClassType.map(_.toJava) +
+            ",innerName=" + innerName +
+            ",accessFlags=\"" + AccessFlags.toString(innerClassAccessFlags, AccessFlagsContexts.INNER_CLASS) + "\"" +
             ")"
     }
 }

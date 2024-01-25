@@ -12,11 +12,10 @@ import org.scalatestplus.junit.JUnitRunner
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
-import org.opalj.br.analyses.Project
 import org.opalj.br.TestSupport.biProject
+import org.opalj.br.analyses.Project
 
 /**
- *
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
@@ -47,7 +46,7 @@ class PerformInvocationsTest extends AnyFlatSpec with Matchers {
         if (exs.size != 1) fail(exs.mkString("expected one exception: ", ", ", "."))
         exs forall {
             case domain.SObjectValueLike(ObjectType("java/lang/UnsupportedOperationException")) => true
-            case _ => false
+            case _                                                                              => false
         } should be(true)
     }
 
@@ -61,7 +60,7 @@ class PerformInvocationsTest extends AnyFlatSpec with Matchers {
         if (exs.size != 1) fail(exs.mkString("expected one exception: ", ", ", "."))
         exs forall {
             case domain.SObjectValueLike(ObjectType("java/lang/UnsupportedOperationException")) => true
-            case _ => false
+            case _                                                                              => false
         } should be(true)
     }
 
@@ -86,7 +85,8 @@ class PerformInvocationsTest extends AnyFlatSpec with Matchers {
     it should ("be able to analyze a static method that processes the results of other static methods") in {
         val method = StaticCalls.findMethod("callComplexMult").head
         val domain = new LiInvocationDomain(PerformInvocationsTestFixture.project, method)
-        /*val result =*/ BaseAI(method, domain)
+        /*val result =*/
+        BaseAI(method, domain)
         domain.returnedNormally should be(true)
         domain.allThrownExceptions should be(empty)
         domain.returnedValue(domain, -1).flatMap(domain.intValueOption(_)) should equal(Some(110))
@@ -98,7 +98,7 @@ class PerformInvocationsTest extends AnyFlatSpec with Matchers {
         val result = BaseAI(method, domain)
         domain.returnedNormally should be(false)
         val exs = domain.thrownExceptions(result.domain, -1)
-        if (exs.size != 4) fail("too many exceptions: "+exs)
+        if (exs.size != 4) fail("too many exceptions: " + exs)
         var foundUnknownError = false
         var foundUnsupportedOperationException = false
         var foundNullPointerException = false
@@ -119,13 +119,14 @@ class PerformInvocationsTest extends AnyFlatSpec with Matchers {
                     foundIllegalArgumentException = true
                     true
                 case _ =>
-                    fail("unexpected exception: "+ex)
+                    fail("unexpected exception: " + ex)
             }
         } should be(true)
         if (!(foundUnknownError &&
-            foundUnsupportedOperationException &&
-            foundIllegalArgumentException &&
-            foundNullPointerException)) fail("Not all expected exceptions were thrown")
+                foundUnsupportedOperationException &&
+                foundIllegalArgumentException &&
+                foundNullPointerException)
+        ) fail("Not all expected exceptions were thrown")
     }
 
     it should ("be able to analyze a static method that calls another static method that calls ...") in {
@@ -142,20 +143,23 @@ class PerformInvocationsTest extends AnyFlatSpec with Matchers {
     it should ("be able to analyze a method that analyzes the correlation between values") in {
         val method = StaticCalls.findMethod("callAreEqual").head
         val domain = new L1InvocationDomain(PerformInvocationsTestFixture.project, method)
-        /*val result =*/ BaseAI(method, domain)
+        /*val result =*/
+        BaseAI(method, domain)
         domain.returnedNormally should be(true)
         domain.allThrownExceptions.size should be(2) // the ArithmeticExceptions due to "%"
 
         domain.allReturnedValues.size should be(2)
         if (!domain.allReturnedValues.forall {
-            e => domain.intValueOption(e._2).map(_ == 1).getOrElse(false)
-        }) fail("unexpected result: "+domain.allReturnedValues)
+                e => domain.intValueOption(e._2).map(_ == 1).getOrElse(false)
+            }
+        ) fail("unexpected result: " + domain.allReturnedValues)
     }
 
     it should ("be able to identify the situation where a passed value is returned as is") in {
         val method = StaticCalls.findMethod("uselessReferenceTest").head
         val domain = new L1InvocationDomain(PerformInvocationsTestFixture.project, method)
-        /*val result =*/ BaseAI(method, domain)
+        /*val result =*/
+        BaseAI(method, domain)
         domain.returnedNormally should be(true)
         domain.allThrownExceptions.size should be(0)
 

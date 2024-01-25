@@ -34,52 +34,52 @@ trait ConstantValue[T >: Nothing] extends BootstrapArgument {
 
     def toBoolean: Boolean =
         throw new BytecodeProcessingFailedException(
-            className+" cannot be converted to a boolean value"
+            className + " cannot be converted to a boolean value"
         )
 
     def toByte: Byte =
         throw new BytecodeProcessingFailedException(
-            className+" cannot be converted to a byte value"
+            className + " cannot be converted to a byte value"
         )
 
     def toChar: Char =
         throw new BytecodeProcessingFailedException(
-            className+" cannot be converted to an char value"
+            className + " cannot be converted to an char value"
         )
 
     def toShort: Short =
         throw new BytecodeProcessingFailedException(
-            className+" cannot be converted to a short value"
+            className + " cannot be converted to a short value"
         )
 
     def toInt: Int =
         throw new BytecodeProcessingFailedException(
-            className+" cannot be converted to an int value"
+            className + " cannot be converted to an int value"
         )
 
     def toLong: Long =
         throw new BytecodeProcessingFailedException(
-            className+" cannot be converted to a long value"
+            className + " cannot be converted to a long value"
         )
 
     def toFloat: Float =
         throw new BytecodeProcessingFailedException(
-            className+" cannot be converted to a float value"
+            className + " cannot be converted to a float value"
         )
 
     def toDouble: Double =
         throw new BytecodeProcessingFailedException(
-            className+" cannot be converted to a double value"
+            className + " cannot be converted to a double value"
         )
 
     def toUTF8: String =
         throw new BytecodeProcessingFailedException(
-            className+" cannot be converted to a String(UTF8) value"
+            className + " cannot be converted to a String(UTF8) value"
         )
 
     def toReferenceType: ReferenceType =
         throw new BytecodeProcessingFailedException(
-            className+" cannot be converted to a reference type"
+            className + " cannot be converted to a reference type"
         )
 }
 

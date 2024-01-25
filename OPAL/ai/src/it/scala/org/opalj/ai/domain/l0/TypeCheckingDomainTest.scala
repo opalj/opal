@@ -4,9 +4,10 @@ package ai
 package domain
 package l0
 
+import java.net.URL
+
 import org.junit.runner.RunWith
 import org.scalatestplus.junit.JUnitRunner
-import java.net.URL
 
 import org.opalj.br.Method
 import org.opalj.br.analyses.Project

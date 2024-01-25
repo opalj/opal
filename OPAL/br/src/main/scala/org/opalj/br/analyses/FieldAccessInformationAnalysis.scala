@@ -5,19 +5,18 @@ package analyses
 
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
-
 import scala.collection.mutable.AnyRefMap
 
-import org.opalj.log.OPALLogger
-import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.br.instructions.FieldReadAccess
 import org.opalj.br.instructions.FieldWriteAccess
 import org.opalj.br.instructions.GETFIELD
 import org.opalj.br.instructions.GETSTATIC
+import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.PUTFIELD
 import org.opalj.br.instructions.PUTSTATIC
-import org.opalj.br.instructions.Instruction
+import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.IntTrieSetBuilder
+import org.opalj.log.OPALLogger
 
 /**
  * This analysis determines where each field is accessed.

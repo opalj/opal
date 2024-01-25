@@ -7,8 +7,6 @@ package analyses
 import scala.jdk.CollectionConverters._
 
 import com.typesafe.config.Config
-import net.ceedubs.ficus.Ficus._
-import net.ceedubs.ficus.readers.ValueReader
 
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.Field
@@ -20,7 +18,11 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.analyses.VirtualFormalParameters
 
+import net.ceedubs.ficus.Ficus._
+import net.ceedubs.ficus.readers.ValueReader
+
 case class ConfiguredMethods(nativeMethods: Array[ConfiguredMethodData])
+
 object ConfiguredMethods {
     implicit val reader: ValueReader[ConfiguredMethods] = (config: Config, path: String) => {
         val c = config.getConfig(path)
@@ -38,8 +40,7 @@ case class ConfiguredMethodData(
         methodInvocations: Option[Array[MethodDescription]]
 ) {
     def method(
-        implicit
-        declaredMethods: DeclaredMethods
+        implicit declaredMethods: DeclaredMethods
     ): DeclaredMethod = {
         val classType = ObjectType(cf)
         val descriptor = MethodDescriptor(desc)
@@ -70,6 +71,7 @@ object ConfiguredMethodData {
 }
 
 case class PointsToRelation(lhs: EntityDescription, rhs: EntityDescription)
+
 object PointsToRelation {
     implicit val reader: ValueReader[PointsToRelation] = (config: Config, path: String) => {
         val c = if (path.nonEmpty) config.getConfig(path) else config
@@ -115,9 +117,7 @@ object EntityDescription {
     }
 }
 
-case class MethodDescription(
-        cf: String, name: String, desc: String
-) extends EntityDescription {
+case class MethodDescription(cf: String, name: String, desc: String) extends EntityDescription {
     def method(declaredMethods: DeclaredMethods): DeclaredMethod = {
         val classType = ObjectType(cf)
         declaredMethods(classType, classType.packageName, classType, name, MethodDescriptor(desc))
@@ -133,9 +133,7 @@ object MethodDescription {
     }
 }
 
-case class StaticFieldDescription(
-        cf: String, name: String, fieldType: String
-) extends EntityDescription {
+case class StaticFieldDescription(cf: String, name: String, fieldType: String) extends EntityDescription {
     def fieldOption(project: SomeProject): Option[Field] = {
         project.resolveFieldReference(ObjectType(cf), name, FieldType(fieldType))
     }
@@ -148,7 +146,8 @@ case class ParameterDescription(cf: String, name: String, desc: String, index: I
     }
 
     def fp(
-        method: DeclaredMethod, virtualFormalParameters: VirtualFormalParameters
+        method:                  DeclaredMethod,
+        virtualFormalParameters: VirtualFormalParameters
     ): VirtualFormalParameter = {
         val fps = virtualFormalParameters(method)
         if (fps eq null) null
@@ -169,7 +168,4 @@ case class AllocationSiteDescription(
     }
 }
 
-case class ArrayDescription(
-        array:     EntityDescription,
-        arrayType: String
-) extends EntityDescription
+case class ArrayDescription(array: EntityDescription, arrayType: String) extends EntityDescription

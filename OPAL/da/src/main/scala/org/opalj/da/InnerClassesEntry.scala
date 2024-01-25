@@ -3,6 +3,7 @@ package org.opalj
 package da
 
 import scala.xml.Node
+
 import org.opalj.bi.AccessFlags
 import org.opalj.bi.AccessFlagsContexts
 
@@ -38,12 +39,12 @@ case class InnerClassesEntry(
             <div class="inner_class">
                 ...
                 {{
-                <span class="access_flags">{ accessFlags } </span>
+                <span class="access_flags">{accessFlags} </span>
                 <span class="sn tooltip">
-                    { innerName }
+                    {innerName}
                     <span>
                         Defined Type:
-                        <span class="fqn">{ definedType }</span>
+                        <span class="fqn">{definedType}</span>
                     </span>
                 </span>
                 }}
@@ -65,25 +66,25 @@ case class InnerClassesEntry(
                         else if (outerName.length == definingClassFQN.length)
                             "..."
                         else
-                            "..."+outerName.substring(definingClassFQN.length(), outerName.length() - 1)
+                            "..." + outerName.substring(definingClassFQN.length(), outerName.length() - 1)
                     }
                 } else
                     outerClassFQN
 
-            <div class={ "inner_class"+{ if (definedType == definingClassFQN) " selfref" else "" } }>
+            <div class={"inner_class" + { if (definedType == definingClassFQN) " selfref" else "" }}>
                 <span class="fqn">
-                    { outerName }
+                    {outerName}
                     {{
-                    <span class="access_flags">{ accessFlags } </span>
+                    <span class="access_flags">{accessFlags} </span>
                     {
                         if (innerName != "") {
                             <span class="sn tooltip">
-                                { innerName }
-                                <span class="fqn">{ definedType }</span>
+                                {innerName}
+                                <span class="fqn">{definedType}</span>
                             </span>
                         } else {
                             <span class="fqn tooltip">
-                                { definedType }
+                                {definedType}
                                 <span>Anonymous Type</span>
                             </span>
                         }

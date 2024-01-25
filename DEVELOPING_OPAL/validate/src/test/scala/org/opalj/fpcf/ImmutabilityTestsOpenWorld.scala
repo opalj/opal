@@ -7,16 +7,16 @@ import java.net.URL
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 
+import org.opalj.ai.domain.l1
+import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
 import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
 import org.opalj.br.fpcf.analyses.immutability.EagerClassImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.immutability.EagerTypeImmutabilityAnalysis
-import org.opalj.ai.domain.l1
-import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.tac.cg.RTACallGraphKey
-import org.opalj.tac.fpcf.analyses.escape.LazySimpleEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.EagerFieldImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.escape.LazySimpleEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalysis
 import org.opalj.tac.fpcf.analyses.fieldassignability.EagerL2FieldAssignabilityAnalysis
 
@@ -38,7 +38,6 @@ class ImmutabilityTestsOpenWorld extends PropertiesTest {
     override def init(p: Project[URL]): Unit = {
 
         p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) { _ =>
-
             Set[Class[_ <: AnyRef]](classOf[l1.DefaultDomainWithCFGAndDefUse[URL]])
         }
 

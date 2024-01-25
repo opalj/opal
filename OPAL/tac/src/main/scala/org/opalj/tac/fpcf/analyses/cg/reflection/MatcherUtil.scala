@@ -6,12 +6,12 @@ package analyses
 package cg
 package reflection
 
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.PropertyStore
+import org.opalj.br.FieldTypes
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.FieldTypes
 import org.opalj.br.fpcf.properties.Context
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.PropertyStore
 
 object MatcherUtil {
 
@@ -126,8 +126,8 @@ object MatcherUtil {
         project:                   SomeProject,
         failure:                   () => Unit,
         onlyMethodsExactlyInClass: Boolean,
-        onlyObjectTypes:           Boolean        = false,
-        considerSubclasses:        Boolean        = false
+        onlyObjectTypes:           Boolean = false,
+        considerSubclasses:        Boolean = false
     )(
         implicit
         typeIterator:        TypeIterator,
@@ -136,12 +136,12 @@ object MatcherUtil {
         incompleteCallSites: IncompleteCallSites,
         highSoundness:       Boolean
     ): MethodMatcher = {
-        val typesOpt = Some(TypesUtil.getPossibleClasses(
-            context, ref, depender, stmts, failure, onlyObjectTypes
-        ).flatMap { tpe =>
-            if (considerSubclasses) project.classHierarchy.allSubtypes(tpe.asObjectType, true)
-            else Set(if (tpe.isObjectType) tpe.asObjectType else ObjectType.Object)
-        })
+        val typesOpt = Some(
+            TypesUtil.getPossibleClasses(context, ref, depender, stmts, failure, onlyObjectTypes).flatMap { tpe =>
+                if (considerSubclasses) project.classHierarchy.allSubtypes(tpe.asObjectType, true)
+                else Set(if (tpe.isObjectType) tpe.asObjectType else ObjectType.Object)
+            }
+        )
 
         retrieveSuitableMatcher[Set[ObjectType]](
             typesOpt,

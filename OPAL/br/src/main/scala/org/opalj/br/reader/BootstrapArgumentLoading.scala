@@ -3,48 +3,48 @@ package org.opalj
 package br
 package reader
 
+import scala.collection.immutable.ArraySeq
+
 import org.opalj.bi.ACC_PRIVATE
 import org.opalj.bi.ACC_STATIC
 import org.opalj.bi.ACC_SYNTHETIC
+import org.opalj.br.MethodDescriptor.JustReturnsString
 import org.opalj.br.collection.mutable.InstructionsBuilder
+import org.opalj.br.cp.Constant_Pool
 import org.opalj.br.instructions.AASTORE
 import org.opalj.br.instructions.ACONST_NULL
-import org.opalj.br.instructions.ALOAD_1
-import org.opalj.br.instructions.ANEWARRAY
-import org.opalj.br.instructions.CHECKCAST
-import org.opalj.br.instructions.DUP
-import org.opalj.br.instructions.GETSTATIC
-import org.opalj.br.instructions.IAND
-import org.opalj.br.instructions.ICONST_0
-import org.opalj.br.instructions.ICONST_1
-import org.opalj.br.instructions.IFNE
-import org.opalj.br.instructions.INVOKESTATIC
-import org.opalj.br.instructions.INVOKEVIRTUAL
-import org.opalj.br.instructions.LoadClass_W
-import org.opalj.br.instructions.LoadConstantInstruction
-import org.opalj.br.instructions.LoadDynamic2_W
-import org.opalj.br.instructions.LoadDynamic_W
-import org.opalj.br.instructions.LoadMethodHandle_W
-import org.opalj.br.instructions.LoadString_W
-import org.opalj.br.instructions.TypeConversionInstructions
-import org.opalj.br.MethodDescriptor.JustReturnsString
-import org.opalj.br.cp.Constant_Pool
 import org.opalj.br.instructions.ALOAD_0
+import org.opalj.br.instructions.ALOAD_1
 import org.opalj.br.instructions.ALOAD_2
+import org.opalj.br.instructions.ANEWARRAY
 import org.opalj.br.instructions.ARETURN
 import org.opalj.br.instructions.ASTORE_1
 import org.opalj.br.instructions.ASTORE_2
 import org.opalj.br.instructions.BIPUSH
+import org.opalj.br.instructions.CHECKCAST
+import org.opalj.br.instructions.DUP
+import org.opalj.br.instructions.GETSTATIC
 import org.opalj.br.instructions.IADD
+import org.opalj.br.instructions.IAND
+import org.opalj.br.instructions.ICONST_0
+import org.opalj.br.instructions.ICONST_1
 import org.opalj.br.instructions.IFEQ
+import org.opalj.br.instructions.IFNE
 import org.opalj.br.instructions.IMUL
 import org.opalj.br.instructions.INSTANCEOF
 import org.opalj.br.instructions.INVOKESPECIAL
+import org.opalj.br.instructions.INVOKESTATIC
+import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.IRETURN
+import org.opalj.br.instructions.LoadClass_W
+import org.opalj.br.instructions.LoadConstantInstruction
+import org.opalj.br.instructions.LoadDynamic2_W
+import org.opalj.br.instructions.LoadDynamic_W
 import org.opalj.br.instructions.LoadInt_W
+import org.opalj.br.instructions.LoadMethodHandle_W
+import org.opalj.br.instructions.LoadString_W
 import org.opalj.br.instructions.NEW
-
-import scala.collection.immutable.ArraySeq
+import org.opalj.br.instructions.TypeConversionInstructions
 
 /**
  * Provides functionality to produce bytecode that loads a bootstrap argument. Loading of dynamic
@@ -69,13 +69,11 @@ trait BootstrapArgumentLoading {
         argument:     ConstantValue[_],
         instructions: InstructionsBuilder,
         classFile:    ClassFile,
-        boxed:        Boolean             = false
+        boxed:        Boolean = false
     ): (Int, ClassFile) = {
         argument match {
             case DynamicConstant(bootstrapMethod, name, descriptor) =>
-                loadDynamicConstant(
-                    bootstrapMethod, name, descriptor, instructions, classFile, boxed
-                )
+                loadDynamicConstant(bootstrapMethod, name, descriptor, instructions, classFile, boxed)
             case _ =>
                 instructions ++= LoadConstantInstruction(argument, wide = true)
                 if (boxed && argument.runtimeValueType.isBaseType)
@@ -103,7 +101,7 @@ trait BootstrapArgumentLoading {
         descriptor:      FieldType,
         instructions:    InstructionsBuilder,
         classFile:       ClassFile,
-        boxed:           Boolean             = false
+        boxed:           Boolean = false
     ): (Int, ClassFile) = {
 
         def dynamicLoad(): LoadConstantInstruction[_] = {
@@ -112,8 +110,10 @@ trait BootstrapArgumentLoading {
         }
 
         bootstrapMethod match {
-            case BootstrapMethod(InvokeStaticMethodHandle(ObjectType.ConstantBootstraps, false, methodName, _), args: ArraySeq[ConstantValue[_]] @unchecked) =>
-
+            case BootstrapMethod(
+                    InvokeStaticMethodHandle(ObjectType.ConstantBootstraps, false, methodName, _),
+                    args: ArraySeq[ConstantValue[_]] @unchecked
+                ) =>
                 methodName match {
                     case "arrayVarHandle" =>
                         val maxStackAndClassFile = loadClassType(args.head, instructions, classFile)
@@ -206,9 +206,7 @@ trait BootstrapArgumentLoading {
                     case "invoke" =>
                         val methodHandle = args.head
                         val arguments = args.tail
-                        invokeMethodHandle(
-                            methodHandle, arguments, descriptor, instructions, classFile, boxed
-                        )
+                        invokeMethodHandle(methodHandle, arguments, descriptor, instructions, classFile, boxed)
 
                     case "nullConstant" =>
                         instructions ++= ACONST_NULL
@@ -236,9 +234,8 @@ trait BootstrapArgumentLoading {
 
             case BootstrapMethod(InvokeStaticMethodHandle(ObjectType.ObjectMethods, false, _, _), _) =>
                 val newMethodName = s"$$object_methods$$${classFile.thisType.simpleName}:pc"
-                val (updatedClassFile, newMethodDescriptor) = createObjectMethodsTarget(
-                    bootstrapMethod.arguments, name, newMethodName, classFile
-                ).getOrElse {
+                val (updatedClassFile, newMethodDescriptor) =
+                    createObjectMethodsTarget(bootstrapMethod.arguments, name, newMethodName, classFile).getOrElse {
                         instructions ++= dynamicLoad()
                         return (descriptor.computationalType.operandSize, classFile);
                     }
@@ -305,9 +302,7 @@ trait BootstrapArgumentLoading {
             (1, classFile)
 
         case DynamicConstant(constantBSM, constantName, constantDescriptor) =>
-            loadDynamicConstant(
-                constantBSM, constantName, constantDescriptor, instructions, classFile
-            )
+            loadDynamicConstant(constantBSM, constantName, constantDescriptor, instructions, classFile)
     }
 
     /**
@@ -380,9 +375,8 @@ trait BootstrapArgumentLoading {
                 (Some(VoidType), 1, classFile)
 
             case DynamicConstant(constantBSM, constantName, constantDescriptor) =>
-                val (loadConstantStack, newClassFile) = loadDynamicConstant(
-                    constantBSM, constantName, constantDescriptor, instructions, classFile
-                )
+                val (loadConstantStack, newClassFile) =
+                    loadDynamicConstant(constantBSM, constantName, constantDescriptor, instructions, classFile)
                 (None, loadConstantStack, newClassFile)
         }
 
@@ -499,8 +493,8 @@ trait BootstrapArgumentLoading {
         // Loads a component (boxed), maxStack = 5
         def loadComponent(
             getter:           MethodHandle,
-            hasTwoParameters: Boolean      = false,
-            forSecondRecord:  Boolean      = false
+            hasTwoParameters: Boolean = false,
+            forSecondRecord:  Boolean = false
         ): Unit = {
             body ++= LoadConstantInstruction(getter, wide = true)
 

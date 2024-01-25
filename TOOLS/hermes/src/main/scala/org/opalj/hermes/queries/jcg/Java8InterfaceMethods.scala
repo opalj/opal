@@ -5,17 +5,16 @@ package queries
 package jcg
 
 import java.util.concurrent.ConcurrentHashMap
-
 import scala.collection.immutable.ArraySeq
 
-import org.opalj.da.ClassFile
 import org.opalj.br.MethodWithBody
 import org.opalj.br.analyses.Project
+import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.INVOKEINTERFACE
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.INVOKEVIRTUAL
-import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.MethodInvocationInstruction
+import org.opalj.da.ClassFile
 
 /**
  * Groups test case features that perform a method calls that are related to Java 8
@@ -37,7 +36,7 @@ class Java8InterfaceMethods(implicit hermes: HermesConfig) extends DefaultFeatur
             "J8DIM3", /* 2 --- call on class which transitively calls an method that potentially could target an IDM */
             "J8DIM4", /* 3 --- call on class type which must be resolved to an IDM */
             "J8DIM5", /* 4 --- call that's dispatched to IDM where the class inherits from multiple interfaces with that idm (sig. wise) */
-            "J8SIM1" /* 5 --- call to static interface method */ ,
+            "J8SIM1", /* 5 --- call to static interface method */
             "J10SIM2" /* 6 --- call to a private static interface method (from Java 10) */
         )
     }
@@ -96,15 +95,16 @@ class Java8InterfaceMethods(implicit hermes: HermesConfig) extends DefaultFeatur
                             if (isIDM) {
                                 // if the method is resolved to an IDM we have to check whether there are multiple options
                                 // in order to check the linearization order
-                                val typeInheritMultipleIntWithSameIDM = project.classHierarchy.allSuperinterfacetypes(ot, false).count { it =>
-                                    val cf = project.classFile(it)
-                                    if (cf.nonEmpty) {
-                                        val method = cf.get.findMethod(name, md)
-                                        method.exists(_.body.nonEmpty)
-                                    } else {
-                                        false
+                                val typeInheritMultipleIntWithSameIDM =
+                                    project.classHierarchy.allSuperinterfacetypes(ot, false).count { it =>
+                                        val cf = project.classFile(it)
+                                        if (cf.nonEmpty) {
+                                            val method = cf.get.findMethod(name, md)
+                                            method.exists(_.body.nonEmpty)
+                                        } else {
+                                            false
+                                        }
                                     }
-                                }
                                 subtypeWithMultipleInterfaces |= typeInheritMultipleIntWithSameIDM > 1
                             }
                             isIDM
@@ -145,7 +145,8 @@ class Java8InterfaceMethods(implicit hermes: HermesConfig) extends DefaultFeatur
 
     // This method determines whether the called interface method might be dispatched to a default method.
     private[this] def isPotentialCallOnDefaultMethod[S](
-        mii: MethodInvocationInstruction, project: Project[S]
+        mii:     MethodInvocationInstruction,
+        project: Project[S]
     ): Boolean = {
 
         val t = mii.declaringClass

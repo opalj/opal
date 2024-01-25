@@ -4,12 +4,12 @@ package hermes
 package queries
 package jcg
 
+import scala.collection.immutable.ArraySeq
+
 import org.opalj.br.MethodWithBody
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.INVOKEINTERFACE
 import org.opalj.da.ClassFile
-
-import scala.collection.immutable.ArraySeq
 
 /**
  * Test case feature that performs an interface call for a default method where an intermediate
@@ -55,7 +55,8 @@ class NonJavaBytecode1(implicit hermes: HermesConfig) extends DefaultFeatureQuer
                         sintfCfO.isDefined &&
                             sintfCfO.get.findMethod(name, desc).exists(_.isStatic) &&
                             classHierarchy.allSuperinterfacetypes(sintf).contains(declIntf.thisType)
-                    }) {
+                    }
+                ) {
 
                     val pc = pcAndInstruction.pc
                     val l = InstructionLocation(methodLocation, pc)

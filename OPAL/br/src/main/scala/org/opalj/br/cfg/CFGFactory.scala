@@ -5,27 +5,27 @@ package cfg
 
 import scala.annotation.switch
 
-import scala.collection.immutable.IntMap
 import scala.collection.immutable.HashMap
+import scala.collection.immutable.IntMap
 
-import org.opalj.collection.immutable.IntArraySet
-import org.opalj.br.instructions.Instruction
-import org.opalj.br.instructions.JSRInstruction
-import org.opalj.br.instructions.UnconditionalBranchInstruction
-import org.opalj.br.instructions.CompoundConditionalBranchInstruction
-import org.opalj.br.instructions.TABLESWITCH
-import org.opalj.br.instructions.LOOKUPSWITCH
 import org.opalj.br.instructions.ATHROW
-import org.opalj.br.instructions.JSR
-import org.opalj.br.instructions.JSR_W
-import org.opalj.br.instructions.RET
+import org.opalj.br.instructions.CompoundConditionalBranchInstruction
 import org.opalj.br.instructions.GOTO
 import org.opalj.br.instructions.GOTO_W
-import org.opalj.br.instructions.INVOKESTATIC
-import org.opalj.br.instructions.INVOKEINTERFACE
-import org.opalj.br.instructions.INVOKEVIRTUAL
-import org.opalj.br.instructions.INVOKESPECIAL
+import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.INVOKEDYNAMIC
+import org.opalj.br.instructions.INVOKEINTERFACE
+import org.opalj.br.instructions.INVOKESPECIAL
+import org.opalj.br.instructions.INVOKESTATIC
+import org.opalj.br.instructions.INVOKEVIRTUAL
+import org.opalj.br.instructions.JSR
+import org.opalj.br.instructions.JSR_W
+import org.opalj.br.instructions.JSRInstruction
+import org.opalj.br.instructions.LOOKUPSWITCH
+import org.opalj.br.instructions.RET
+import org.opalj.br.instructions.TABLESWITCH
+import org.opalj.br.instructions.UnconditionalBranchInstruction
+import org.opalj.collection.immutable.IntArraySet
 
 /**
  * A factory for computing control flow graphs for methods.
@@ -242,12 +242,12 @@ object CFGFactory {
                     val thisSubroutineReturnPCs =
                         subroutineReturnPCs.getOrElse(subroutinePC, IntArraySet.empty)
                     subroutineReturnPCs += (
-                        subroutinePC ->
-                        (thisSubroutineReturnPCs + jsrInstr.indexOfNextInstruction(pc))
+                        subroutinePC -> (thisSubroutineReturnPCs + jsrInstr.indexOfNextInstruction(pc))
                     )
                     val currentBB = useRunningBB()
                     currentBB.endPC = pc
-                    /*val subroutineBB = */ connect(currentBB, subroutinePC)
+                    /*val subroutineBB = */
+                    connect(currentBB, subroutinePC)
                     runningBB = null // <=> the next instruction gets a new bb
 
                 case ATHROW.opcode =>
@@ -386,10 +386,6 @@ object CFGFactory {
             }
         }
 
-        CFG(
-            code,
-            normalReturnNode, abnormalReturnNode, effectiveExceptionHandlers.toList,
-            bbs
-        )
+        CFG(code, normalReturnNode, abnormalReturnNode, effectiveExceptionHandlers.toList, bbs)
     }
 }

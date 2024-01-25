@@ -61,9 +61,10 @@ case class HasAnnotation(annotationType: FieldType) extends AnnotationPredicate 
         sourceElement.annotations.exists(this(_))
     }
 
-    override def toDescription(): String = "@"+annotationType.toJava
+    override def toDescription(): String = "@" + annotationType.toJava
 
 }
+
 /**
  * Factory methods to create [[AnnotatedWith]] predicates.
  */
@@ -105,8 +106,7 @@ object HasAnnotation {
 case class AnnotatedWith(
         annotationType:    FieldType,
         elementValuePairs: Seq[ElementValuePair]
-)
-    extends AnnotationPredicate {
+) extends AnnotationPredicate {
 
     /**
      * Checks if the given annotation is as specified by this predicate.
@@ -141,9 +141,7 @@ case class AnnotatedWith(
     }
 
     override def toDescription(): String = {
-        elementValuePairs.
-            map(_.toJava).
-            mkString("@"+annotationType.toJava+"(", ",", ")")
+        elementValuePairs.map(_.toJava).mkString("@" + annotationType.toJava + "(", ",", ")")
     }
 
 }

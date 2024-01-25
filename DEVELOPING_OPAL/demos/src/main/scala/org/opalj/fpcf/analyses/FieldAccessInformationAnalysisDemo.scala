@@ -3,6 +3,8 @@ package org.opalj
 package fpcf
 package analyses
 
+import java.net.URL
+
 import org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.DefinedField
@@ -25,8 +27,6 @@ import org.opalj.tac.fpcf.analyses.fieldaccess.reflection.ReflectionRelatedField
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
 
-import java.net.URL
-
 /**
  * Runs analyses for field accesses throughout a project and automatically excludes any JDK files included in the project
  * files from the summary at the end.
@@ -35,9 +35,22 @@ import java.net.URL
  */
 object FieldAccessInformationAnalysisDemo extends ProjectAnalysisApplication {
 
-    private val JDKPackages = List("java/", "javax", "javafx", "jdk", "sun", "oracle", "com/sun",
-        "netscape", "org/ietf/jgss", "org/jcp/xml/dsig/internal", "org/omg", "org/w3c/dom",
-        "org/xml/sax")
+    private val JDKPackages =
+        List(
+            "java/",
+            "javax",
+            "javafx",
+            "jdk",
+            "sun",
+            "oracle",
+            "com/sun",
+            "netscape",
+            "org/ietf/jgss",
+            "org/jcp/xml/dsig/internal",
+            "org/omg",
+            "org/w3c/dom",
+            "org/xml/sax"
+        )
 
     override def title: String = "Determines field accesses"
 
@@ -75,9 +88,7 @@ object FieldAccessInformationAnalysisDemo extends ProjectAnalysisApplication {
                         )
                 )
             propertyStore.waitOnPhaseCompletion()
-        } { t =>
-            analysisTime = t.toSeconds
-        }
+        } { t => analysisTime = t.toSeconds }
 
         val projectClassFiles = project.allProjectClassFiles.iterator.filter { cf =>
             !JDKPackages.exists(cf.thisType.packageName.startsWith)
@@ -86,14 +97,18 @@ object FieldAccessInformationAnalysisDemo extends ProjectAnalysisApplication {
 
         val readFields = propertyStore
             .entities(FieldReadAccessInformation.key)
-            .filter(ep => fields.contains(ep.e.asInstanceOf[DefinedField].definedField)
-                && ep.asFinal.p != NoFieldReadAccessInformation)
+            .filter(ep =>
+                fields.contains(ep.e.asInstanceOf[DefinedField].definedField)
+                    && ep.asFinal.p != NoFieldReadAccessInformation
+            )
             .map(_.e.asInstanceOf[DefinedField].definedField)
             .toSet
         val writtenFields = propertyStore
             .entities(FieldWriteAccessInformation.key)
-            .filter(ep => fields.contains(ep.e.asInstanceOf[DefinedField].definedField)
-                && ep.asFinal.p != NoFieldWriteAccessInformation)
+            .filter(ep =>
+                fields.contains(ep.e.asInstanceOf[DefinedField].definedField)
+                    && ep.asFinal.p != NoFieldWriteAccessInformation
+            )
             .map(_.e.asInstanceOf[DefinedField].definedField)
             .toSet
 

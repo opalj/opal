@@ -49,11 +49,13 @@ case class GETFIELD(
             List(indexOfNextInstruction(currentPC))
         else
             Instruction.nextInstructionOrExceptionHandler(
-                this, currentPC, ObjectType.NullPointerException
+                this,
+                currentPC,
+                ObjectType.NullPointerException
             )
     }
 
-    override def toString = "get "+declaringClass.toJava+"."+name+" : "+fieldType.toJava
+    override def toString = "get " + declaringClass.toJava + "." + name + " : " + fieldType.toJava
 
 }
 

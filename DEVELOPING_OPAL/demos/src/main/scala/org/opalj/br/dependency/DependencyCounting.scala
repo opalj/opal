@@ -3,6 +3,7 @@ package org.opalj
 package de
 
 import java.net.URL
+
 import org.opalj.br.analyses._
 
 import scala.collection.parallel.CollectionConverters.IterableIsParallelizable
@@ -37,7 +38,7 @@ object DependencyCounting extends AnalysisApplication with OneStepAnalysis[URL, 
 
         BasicReport(
             (f"Number of inter source-element dependencies: ${counter.currentDependencyCount}%,9d%n") +
-                f"Number of dependencies on primitive types:   ${counter.currentDependencyOnPrimitivesCount}%,9d%n"+
+                f"Number of dependencies on primitive types:   ${counter.currentDependencyOnPrimitivesCount}%,9d%n" +
                 f"Number of dependencies on array types:       ${counter.currentDependencyOnArraysCount}%,9d%n"
         )
     }

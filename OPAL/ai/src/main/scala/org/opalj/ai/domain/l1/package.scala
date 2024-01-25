@@ -3,10 +3,10 @@ package org.opalj
 package ai
 package domain
 
-import org.opalj.br.Code
-import org.opalj.br.instructions.NEW
-import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.ai.collectPCWithOperands
+import org.opalj.br.Code
+import org.opalj.br.instructions.INVOKESPECIAL
+import org.opalj.br.instructions.NEW
 
 /**
  * Commonly useful methods.
@@ -48,8 +48,9 @@ package object l1 {
         // be one constructor call
 
         collectPCWithOperands(domain)(code, operandsArray) {
-            case (pc, INVOKESPECIAL(_, _, "<init>", md), operands) if operands.size >= md.parametersCount &&
-                domain.asObjectValue(operands(md.parametersCount)).origin == receiverOriginPC => pc
+            case (pc, INVOKESPECIAL(_, _, "<init>", md), operands)
+                if operands.size >= md.parametersCount &&
+                    domain.asObjectValue(operands(md.parametersCount)).origin == receiverOriginPC => pc
         }
     }
 }

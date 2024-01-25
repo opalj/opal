@@ -50,7 +50,6 @@ class SystemAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery {
         val ProcessBuilder = ObjectType("java/lang/ProcessBuilder")
 
         List(
-
             // PROCESS
 
             APIFeatureGroup(
@@ -107,7 +106,8 @@ class SystemAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery {
                     InstanceAPIMethod(Sound.TargetDataLine, "start"),
                     InstanceAPIMethod(Sound.SourceDataLine, "start"),
                     InstanceAPIMethod(Sound.MediaPlayer, "play")
-                ), "Sound"
+                ),
+                "Sound"
             ),
 
             // NETWORK

@@ -2,13 +2,13 @@
 package org.opalj
 package graphs
 
+import scala.collection.immutable.ArraySeq
+
 import org.opalj.collection.immutable.IntArraySet
-import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.IntRefPair
+import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.mutable.FixedSizeBitSet
 import org.opalj.collection.mutable.IntArrayStack
-
-import scala.collection.immutable.ArraySeq
 
 /**
  * Representation of the dominance frontiers.
@@ -126,7 +126,6 @@ object DominanceFrontiers {
      * val df = org.opalj.graphs.DominanceFrontiers(dt,isValidNode)
      * org.opalj.io.writeAndOpen(df.toDot(),"g",".df.gv")
      *
-     *
      * // A degenerated graph which consists of a single node that has a self-reference.
      * val g = org.opalj.graphs.Graph.empty[Int] += (0 -> 0)
      * val foreachSuccessor = (n: Int) => g.successors.getOrElse(n, List.empty).foreach _
@@ -241,7 +240,7 @@ object DominanceFrontiers {
                     }
 
                 case _: DominatorTree =>
-                //nothing special to do
+                // nothing special to do
 
                 case dt =>
                     org.opalj.log.OPALLogger.warn(

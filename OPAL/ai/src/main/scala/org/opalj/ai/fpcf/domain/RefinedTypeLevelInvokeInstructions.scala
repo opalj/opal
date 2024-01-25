@@ -6,21 +6,20 @@ package domain
 
 import scala.util.control.ControlThrowable
 
-import org.opalj.log.OPALLogger
-import org.opalj.log.Warn
-import org.opalj.fpcf.PropertyKind
+import org.opalj.ai.domain.MethodCallsHandling
+import org.opalj.ai.domain.TheCode
+import org.opalj.ai.domain.TheProject
+import org.opalj.ai.fpcf.properties.MethodReturnValue
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.PC
 import org.opalj.br.ReferenceType
-import org.opalj.ai.domain.MethodCallsHandling
-import org.opalj.ai.domain.TheCode
-import org.opalj.ai.domain.TheProject
-import org.opalj.ai.fpcf.properties.MethodReturnValue
+import org.opalj.fpcf.PropertyKind
+import org.opalj.log.OPALLogger
+import org.opalj.log.Warn
 
 /**
- *
  * @author Michael Eichberg
  */
 trait RefinedTypeLevelInvokeInstructions
@@ -65,7 +64,7 @@ trait RefinedTypeLevelInvokeInstructions
         val returnType = method.returnType
         if (!returnType.isObjectType ||
             returnType != invokeMethodDescriptor.returnType // <= to handle MethodHandle.invoke(Exact) calls
-            ) {
+        ) {
             return fallback();
         }
 
@@ -88,7 +87,6 @@ trait RefinedTypeLevelInvokeInstructions
 }
 
 /**
- *
  * @author Michael Eichberg
  */
 trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling {
@@ -136,13 +134,9 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling {
             // IMPROVE Use project.instanceMethods ....
             classHierarchy.isInterface(receiverType) match {
                 case Yes =>
-                    doNonVirtualInvoke(
-                        pc, receiverType, true, name, descriptor, operands, fallback
-                    )
+                    doNonVirtualInvoke(pc, receiverType, true, name, descriptor, operands, fallback)
                 case No =>
-                    doNonVirtualInvoke(
-                        pc, receiverType, false, name, descriptor, operands, fallback
-                    )
+                    doNonVirtualInvoke(pc, receiverType, false, name, descriptor, operands, fallback)
                 case Unknown =>
                     fallback()
             }
@@ -197,9 +191,9 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling {
                 case _ =>
                     OPALLogger.logOnce(Warn(
                         "project configuration",
-                        "method reference cannot be resolved: "+
-                            declaringType.toJava+
-                            "{ /*non virtual*/ "+descriptor.toJava(name)+"}"
+                        "method reference cannot be resolved: " +
+                            declaringType.toJava +
+                            "{ /*non virtual*/ " + descriptor.toJava(name) + "}"
                     ))
                     fallback()
             }
@@ -208,9 +202,11 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling {
             case t: Throwable =>
                 OPALLogger.error(
                     "internal, project configuration",
-                    "resolving the method reference resulted in an exception: "+
-                        project.classFile(declaringType).map(cf => if (cf.isInterfaceDeclaration) "interface " else "class ").getOrElse("") +
-                        declaringType.toJava+"{ /*non virtual*/ "+descriptor.toJava(name)+"}",
+                    "resolving the method reference resulted in an exception: " +
+                        project.classFile(declaringType).map(cf =>
+                            if (cf.isInterfaceDeclaration) "interface " else "class "
+                        ).getOrElse("") +
+                        declaringType.toJava + "{ /*non virtual*/ " + descriptor.toJava(name) + "}",
                     t
                 )
                 fallback()
@@ -322,4 +318,3 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling {
     }
 
 }
-

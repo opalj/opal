@@ -3,12 +3,11 @@ package org.opalj
 package br
 package reader
 
-import org.opalj.bi.reader.FieldsReader
-
 import scala.reflect.ClassTag
 
+import org.opalj.bi.reader.FieldsReader
+
 /**
- *
  * @author Michael Eichberg
  */
 trait FieldsBinding extends FieldsReader { this: ConstantPoolBinding with AttributeBinding =>

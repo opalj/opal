@@ -3,12 +3,12 @@ package org.opalj
 package br
 package analyses
 
+import scala.jdk.CollectionConverters._
+
 import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-
-import scala.jdk.CollectionConverters._
+import org.scalatestplus.junit.JUnitRunner
 
 import org.opalj.bi.TestResources.locateTestResources
 
