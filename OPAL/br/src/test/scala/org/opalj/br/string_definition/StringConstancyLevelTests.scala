@@ -3,11 +3,12 @@ package org.opalj
 package br
 package string_definition
 
+import org.scalatest.funsuite.AnyFunSuite
+
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel.CONSTANT
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel.DYNAMIC
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel.PARTIALLY_CONSTANT
-import org.scalatest.funsuite.AnyFunSuite
 
 /**
  * Tests for [[StringConstancyLevel]] methods.
@@ -21,7 +22,8 @@ class StringConstancyLevelTests extends AnyFunSuite {
         // Trivial cases
         assert(StringConstancyLevel.determineMoreGeneral(DYNAMIC, DYNAMIC) == DYNAMIC)
         assert(StringConstancyLevel.determineMoreGeneral(
-            PARTIALLY_CONSTANT, PARTIALLY_CONSTANT
+            PARTIALLY_CONSTANT,
+            PARTIALLY_CONSTANT
         ) == PARTIALLY_CONSTANT)
         assert(StringConstancyLevel.determineMoreGeneral(CONSTANT, CONSTANT) == CONSTANT)
 
@@ -35,10 +37,12 @@ class StringConstancyLevelTests extends AnyFunSuite {
 
         // { PARTIALLY_CONSTANT, CONSTANT }
         assert(StringConstancyLevel.determineMoreGeneral(
-            PARTIALLY_CONSTANT, CONSTANT
+            PARTIALLY_CONSTANT,
+            CONSTANT
         ) == PARTIALLY_CONSTANT)
         assert(StringConstancyLevel.determineMoreGeneral(
-            CONSTANT, PARTIALLY_CONSTANT
+            CONSTANT,
+            PARTIALLY_CONSTANT
         ) == PARTIALLY_CONSTANT)
     }
 

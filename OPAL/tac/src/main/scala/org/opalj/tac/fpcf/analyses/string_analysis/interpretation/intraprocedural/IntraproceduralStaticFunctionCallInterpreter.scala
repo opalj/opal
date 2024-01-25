@@ -7,11 +7,11 @@ package string_analysis
 package interpretation
 package intraprocedural
 
+import org.opalj.br.cfg.CFG
+import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.FinalEP
-import org.opalj.br.cfg.CFG
-import org.opalj.br.fpcf.properties.StringConstancyProperty
 
 /**
  * The `IntraproceduralStaticFunctionCallInterpreter` is responsible for processing

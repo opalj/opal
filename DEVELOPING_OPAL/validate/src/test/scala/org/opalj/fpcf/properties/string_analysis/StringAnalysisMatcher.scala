@@ -4,9 +4,9 @@ package fpcf
 package properties
 package string_analysis
 
-import org.opalj.br.analyses.Project
 import org.opalj.br.AnnotationLike
 import org.opalj.br.ObjectType
+import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 
 /**
@@ -29,8 +29,8 @@ class StringAnalysisMatcher extends AbstractPropertyMatcher {
         a.elementValuePairs.find(_.name == "expectedLevel") match {
             case Some(el) => el.value.asEnumValue.constName
             case None => throw new IllegalArgumentException(
-                "Can only extract the constancy level from a StringDefinitions annotation"
-            )
+                    "Can only extract the constancy level from a StringDefinitions annotation"
+                )
         }
     }
 
@@ -46,8 +46,8 @@ class StringAnalysisMatcher extends AbstractPropertyMatcher {
         a.elementValuePairs.find(_.name == "expectedStrings") match {
             case Some(el) => el.value.asStringValue.value
             case None => throw new IllegalArgumentException(
-                "Can only extract the possible strings from a StringDefinitions annotation"
-            )
+                    "Can only extract the possible strings from a StringDefinitions annotation"
+                )
         }
     }
 

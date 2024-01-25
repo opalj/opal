@@ -7,19 +7,19 @@ package string_analysis
 package interpretation
 package interprocedural
 
-import org.opalj.br.analyses.DeclaredFields
-
 import scala.collection.mutable.ListBuffer
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.EPK
-import org.opalj.fpcf.FinalEP
-import org.opalj.fpcf.PropertyStore
+
+import org.opalj.br.analyses.DeclaredFields
 import org.opalj.br.analyses.FieldAccessInformation
 import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.EPK
+import org.opalj.fpcf.FinalEP
+import org.opalj.fpcf.PropertyStore
 import org.opalj.tac.fpcf.analyses.cg.uVarForDefSites
 
 /**
@@ -111,12 +111,14 @@ class InterproceduralFieldInterpreter(
         if (results.isEmpty) {
             // No methods, which write the field, were found => Field could either be null or
             // any value
-            val possibleStrings = "(^null$|"+StringConstancyInformation.UnknownWordSymbol+")"
+            val possibleStrings = "(^null$|" + StringConstancyInformation.UnknownWordSymbol + ")"
             val sci = StringConstancyInformation(
-                StringConstancyLevel.DYNAMIC, possibleStrings = possibleStrings
+                StringConstancyLevel.DYNAMIC,
+                possibleStrings = possibleStrings
             )
             state.appendToFpe2Sci(
-                defSitEntity, StringConstancyProperty.lb.stringConstancyInformation
+                defSitEntity,
+                StringConstancyProperty.lb.stringConstancyInformation
             )
             FinalEP(defSitEntity, StringConstancyProperty(sci))
         } else {
@@ -128,7 +130,8 @@ class InterproceduralFieldInterpreter(
                 // statement is guaranteed to be executed prior to the field read
                 if (!hasInit) {
                     results.append(FinalEP(
-                        instr, StringConstancyProperty(StringConstancyInformation.getNullElement)
+                        instr,
+                        StringConstancyProperty(StringConstancyInformation.getNullElement)
                     ))
                 }
                 val finalSci = StringConstancyInformation.reduceMultiple(results.map {

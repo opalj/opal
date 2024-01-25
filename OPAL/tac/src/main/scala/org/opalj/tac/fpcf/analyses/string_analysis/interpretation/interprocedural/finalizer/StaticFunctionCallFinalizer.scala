@@ -8,8 +8,8 @@ package interpretation
 package interprocedural
 package finalizer
 
-import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.br.fpcf.properties.StringConstancyProperty
+import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 
 /**
  * @author Patrick Mell

@@ -7,17 +7,18 @@ package string_analysis
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.Property
-import org.opalj.value.ValueInformation
-import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
+
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.Method
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.Callers
-import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.Path
+import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.Property
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural.InterproceduralInterpretationHandler
+import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.Path
+import org.opalj.value.ValueInformation
 
 /**
  * This class is to be used to store state information that are required at a later point in
@@ -157,7 +158,9 @@ case class InterproceduralComputationState(dm: DeclaredMethod, entity: P, fieldW
      * the list of `defSite`.
      */
     def appendToFpe2Sci(
-        defSite: Int, sci: StringConstancyInformation, reset: Boolean = false
+        defSite: Int,
+        sci:     StringConstancyInformation,
+        reset:   Boolean = false
     ): Unit = {
         if (reset || !fpe2sci.contains(defSite)) {
             fpe2sci(defSite) = ListBuffer()
@@ -193,7 +196,9 @@ case class InterproceduralComputationState(dm: DeclaredMethod, entity: P, fieldW
      * @param entity Optional. The entity for which the `sci` element was computed.
      */
     def appendToInterimFpe2Sci(
-        defSite: Int, sci: StringConstancyInformation, entity: Option[V] = None
+        defSite: Int,
+        sci:     StringConstancyInformation,
+        entity:  Option[V] = None
     ): Unit = {
         val numElements = var2IndexMapping.values.flatten.count(_ == defSite)
         var addedNewList = false
@@ -210,7 +215,8 @@ case class InterproceduralComputationState(dm: DeclaredMethod, entity: P, fieldW
             interimFpe2sci(defSite).append(sci)
         } else if (!containsSci && entity.nonEmpty) {
             if (!entity2lastInterimFpe2SciValue.contains(entity.get) ||
-                entity2lastInterimFpe2SciValue(entity.get) == StringConstancyInformation.lb) {
+                entity2lastInterimFpe2SciValue(entity.get) == StringConstancyInformation.lb
+            ) {
                 entity2lastInterimFpe2SciValue(entity.get) = sci
                 if (interimFpe2sci(defSite).nonEmpty) {
                     interimFpe2sci(defSite).remove(0)

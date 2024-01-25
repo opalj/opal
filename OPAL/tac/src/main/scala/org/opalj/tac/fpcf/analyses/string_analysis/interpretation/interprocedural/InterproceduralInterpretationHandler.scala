@@ -7,20 +7,19 @@ package string_analysis
 package interpretation
 package interprocedural
 
+import org.opalj.ai.ImmediateVMExceptionsOriginOffset
+import org.opalj.br.analyses.DeclaredFields
+import org.opalj.br.analyses.DeclaredMethods
+import org.opalj.br.analyses.FieldAccessInformation
+import org.opalj.br.fpcf.properties.StringConstancyProperty
+import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
-import org.opalj.value.ValueInformation
-import org.opalj.br.analyses.DeclaredMethods
-import org.opalj.br.analyses.FieldAccessInformation
-import org.opalj.br.fpcf.properties.StringConstancyProperty
-import org.opalj.br.fpcf.properties.cg.Callees
-import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
-import org.opalj.ai.ImmediateVMExceptionsOriginOffset
-import org.opalj.br.analyses.DeclaredFields
 import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.common.BinaryExprInterpreter
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.common.DoubleValueInterpreter
@@ -29,11 +28,12 @@ import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.common.Integer
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.common.NewInterpreter
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.common.StringConstInterpreter
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural.finalizer.ArrayLoadFinalizer
-import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural.finalizer.NonVirtualMethodCallFinalizer
-import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural.finalizer.VirtualFunctionCallFinalizer
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural.finalizer.GetFieldFinalizer
-import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural.finalizer.StaticFunctionCallFinalizer
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural.finalizer.NewArrayFinalizer
+import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural.finalizer.NonVirtualMethodCallFinalizer
+import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural.finalizer.StaticFunctionCallFinalizer
+import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural.finalizer.VirtualFunctionCallFinalizer
+import org.opalj.value.ValueInformation
 
 /**
  * `InterproceduralInterpretationHandler` is responsible for processing expressions that are
@@ -63,7 +63,8 @@ class InterproceduralInterpretationHandler(
      * @inheritdoc
      */
     override def processDefSite(
-        defSite: Int, params: List[Seq[StringConstancyInformation]] = List()
+        defSite: Int,
+        params:  List[Seq[StringConstancyInformation]] = List()
     ): EOptionP[Entity, StringConstancyProperty] = {
         // Without doing the following conversion, the following compile error will occur: "the
         // result type of an implicit conversion must be more specific than org.opalj.fpcf.Entity"
@@ -71,7 +72,8 @@ class InterproceduralInterpretationHandler(
         // Function parameters are not evaluated when none are present (this always includes the
         // implicit parameter for "this" and for exceptions thrown outside the current function)
         if (defSite < 0 &&
-            (params.isEmpty || defSite == -1 || defSite <= ImmediateVMExceptionsOriginOffset)) {
+            (params.isEmpty || defSite == -1 || defSite <= ImmediateVMExceptionsOriginOffset)
+        ) {
             state.appendToInterimFpe2Sci(defSite, StringConstancyInformation.lb)
             return FinalEP(e, StringConstancyProperty.lb)
         } else if (defSite < 0) {
@@ -122,15 +124,17 @@ class InterproceduralInterpretationHandler(
      * [[DoubleConst]].
      */
     private def processConstExpr(
-        constExpr: SimpleValueConst, defSite: Int
+        constExpr: SimpleValueConst,
+        defSite:   Int
     ): EOptionP[Entity, StringConstancyProperty] = {
         val finalEP = constExpr match {
             case ic: IntConst    => new IntegerValueInterpreter(cfg, this).interpret(ic, defSite)
             case fc: FloatConst  => new FloatValueInterpreter(cfg, this).interpret(fc, defSite)
             case dc: DoubleConst => new DoubleValueInterpreter(cfg, this).interpret(dc, defSite)
             case sc => new StringConstInterpreter(cfg, this).interpret(
-                sc.asInstanceOf[StringConst], defSite
-            )
+                    sc.asInstanceOf[StringConst],
+                    defSite
+                )
         }
         val sci = finalEP.asFinal.p.stringConstancyInformation
         state.appendToFpe2Sci(defSite, sci)
@@ -143,10 +147,15 @@ class InterproceduralInterpretationHandler(
      * Helper / utility function for processing [[ArrayLoad]]s.
      */
     private def processArrayLoad(
-        expr: ArrayLoad[V], defSite: Int, params: List[Seq[StringConstancyInformation]]
+        expr:    ArrayLoad[V],
+        defSite: Int,
+        params:  List[Seq[StringConstancyInformation]]
     ): EOptionP[Entity, StringConstancyProperty] = {
         val r = new ArrayPreparationInterpreter(
-            cfg, this, state, params
+            cfg,
+            this,
+            state,
+            params
         ).interpret(expr, defSite)
         val sci = if (r.isFinal) {
             r.asFinal.p.asInstanceOf[StringConstancyProperty].stringConstancyInformation
@@ -162,10 +171,15 @@ class InterproceduralInterpretationHandler(
      * Helper / utility function for processing [[NewArray]]s.
      */
     private def processNewArray(
-        expr: NewArray[V], defSite: Int, params: List[Seq[StringConstancyInformation]]
+        expr:    NewArray[V],
+        defSite: Int,
+        params:  List[Seq[StringConstancyInformation]]
     ): EOptionP[Entity, StringConstancyProperty] = {
         val r = new NewArrayPreparer(
-            cfg, this, state, params
+            cfg,
+            this,
+            state,
+            params
         ).interpret(expr, defSite)
         val sci = if (r.isFinal) {
             r.asFinal.p.asInstanceOf[StringConstancyProperty].stringConstancyInformation
@@ -182,7 +196,8 @@ class InterproceduralInterpretationHandler(
      */
     private def processNew(expr: New, defSite: Int): EOptionP[Entity, StringConstancyProperty] = {
         val finalEP = new NewInterpreter(cfg, this).interpret(
-            expr, defSite
+            expr,
+            defSite
         )
         val sci = finalEP.asFinal.p.stringConstancyInformation
         state.appendToFpe2Sci(defSite, sci)
@@ -199,7 +214,13 @@ class InterproceduralInterpretationHandler(
         params:  List[Seq[StringConstancyInformation]]
     ): EOptionP[Entity, StringConstancyProperty] = {
         val r = new VirtualFunctionCallPreparationInterpreter(
-            cfg, this, ps, state, declaredMethods, params, typeIterator
+            cfg,
+            this,
+            ps,
+            state,
+            declaredMethods,
+            params,
+            typeIterator
         ).interpret(expr, defSite)
         // Set whether the virtual function call is fully prepared. This is the case if 1) the
         // call was not fully prepared before (no final result available) or 2) the preparation is
@@ -221,7 +242,8 @@ class InterproceduralInterpretationHandler(
         // prepared in the same way as other calls are as toString does not take any arguments that
         // might need to be prepared (however, toString needs a finalization procedure)
         if (expr.name == "toString" &&
-            (state.nonFinalFunctionArgs.contains(expr) || !isFinalResult)) {
+            (state.nonFinalFunctionArgs.contains(expr) || !isFinalResult)
+        ) {
             processedDefSites.remove(defSite)
         } else if (state.nonFinalFunctionArgs.contains(expr) || !isPrepDone) {
             processedDefSites.remove(defSite)
@@ -235,10 +257,18 @@ class InterproceduralInterpretationHandler(
      * Helper / utility function for processing [[StaticFunctionCall]]s.
      */
     private def processStaticFunctionCall(
-        expr: StaticFunctionCall[V], defSite: Int, params: List[Seq[StringConstancyInformation]]
+        expr:    StaticFunctionCall[V],
+        defSite: Int,
+        params:  List[Seq[StringConstancyInformation]]
     ): EOptionP[Entity, StringConstancyProperty] = {
         val r = new InterproceduralStaticFunctionCallInterpreter(
-            cfg, this, ps, state, params, declaredMethods, typeIterator
+            cfg,
+            this,
+            ps,
+            state,
+            params,
+            declaredMethods,
+            typeIterator
         ).interpret(expr, defSite)
         if (!r.isInstanceOf[Result] || state.nonFinalFunctionArgs.contains(expr)) {
             processedDefSites.remove(defSite)
@@ -252,7 +282,8 @@ class InterproceduralInterpretationHandler(
      * Helper / utility function for processing [[BinaryExpr]]s.
      */
     private def processBinaryExpr(
-        expr: BinaryExpr[V], defSite: Int
+        expr:    BinaryExpr[V],
+        defSite: Int
     ): EOptionP[Entity, StringConstancyProperty] = {
         // TODO: For binary expressions, use the underlying domain to retrieve the result of such
         //  expressions
@@ -267,10 +298,16 @@ class InterproceduralInterpretationHandler(
      * Helper / utility function for processing [[GetField]]s.
      */
     private def processGetField(
-        expr: FieldRead[V], defSite: Int
+        expr:    FieldRead[V],
+        defSite: Int
     ): EOptionP[Entity, StringConstancyProperty] = {
         val r = new InterproceduralFieldInterpreter(
-            state, this, ps, fieldAccessInformation, declaredFields, typeIterator
+            state,
+            this,
+            ps,
+            fieldAccessInformation,
+            declaredFields,
+            typeIterator
         ).interpret(expr, defSite)
         if (r.isRefinable) {
             processedDefSites.remove(defSite)
@@ -283,10 +320,16 @@ class InterproceduralInterpretationHandler(
      * Helper / utility function for processing [[NonVirtualMethodCall]]s.
      */
     private def processNonVirtualFunctionCall(
-        expr: NonVirtualFunctionCall[V], defSite: Int
+        expr:    NonVirtualFunctionCall[V],
+        defSite: Int
     ): EOptionP[Entity, StringConstancyProperty] = {
         val r = new InterproceduralNonVirtualFunctionCallInterpreter(
-            cfg, this, ps, state, declaredMethods, typeIterator
+            cfg,
+            this,
+            ps,
+            state,
+            declaredMethods,
+            typeIterator
         ).interpret(expr, defSite)
         if (r.isRefinable || state.nonFinalFunctionArgs.contains(expr)) {
             processedDefSites.remove(defSite)
@@ -299,10 +342,14 @@ class InterproceduralInterpretationHandler(
      * Helper / utility function for processing [[VirtualMethodCall]]s.
      */
     def processVirtualMethodCall(
-        expr: VirtualMethodCall[V], defSite: Int, callees: Callees
+        expr:    VirtualMethodCall[V],
+        defSite: Int,
+        callees: Callees
     ): EOptionP[Entity, StringConstancyProperty] = {
         val r = new InterproceduralVirtualMethodCallInterpreter(
-            cfg, this, callees
+            cfg,
+            this,
+            callees
         ).interpret(expr, defSite)
         doInterimResultHandling(r, defSite)
         r
@@ -312,10 +359,15 @@ class InterproceduralInterpretationHandler(
      * Helper / utility function for processing [[NonVirtualMethodCall]]s.
      */
     private def processNonVirtualMethodCall(
-        nvmc: NonVirtualMethodCall[V], defSite: Int
+        nvmc:    NonVirtualMethodCall[V],
+        defSite: Int
     ): EOptionP[Entity, StringConstancyProperty] = {
         val r = new InterproceduralNonVirtualMethodCallInterpreter(
-            cfg, this, ps, state, declaredMethods
+            cfg,
+            this,
+            ps,
+            state,
+            declaredMethods
         ).interpret(nvmc, defSite)
         r match {
             case FinalEP(_, p: StringConstancyProperty) =>
@@ -334,7 +386,8 @@ class InterproceduralInterpretationHandler(
      * results.
      */
     private def doInterimResultHandling(
-        result: EOptionP[Entity, Property], defSite: Int
+        result:  EOptionP[Entity, Property],
+        defSite: Int
     ): Unit = {
         val sci = if (result.isFinal) {
             result.asFinal.p.asInstanceOf[StringConstancyProperty].stringConstancyInformation
@@ -349,7 +402,8 @@ class InterproceduralInterpretationHandler(
      * the given list of parameters. Note that `defSite` is required to be <= -2.
      */
     private def getParam(
-        params: Seq[Seq[StringConstancyInformation]], defSite: Int
+        params:  Seq[Seq[StringConstancyInformation]],
+        defSite: Int
     ): StringConstancyInformation = {
         val paramPos = Math.abs(defSite + 2)
         if (params.exists(_.length <= paramPos)) {
@@ -364,7 +418,8 @@ class InterproceduralInterpretationHandler(
      * Finalized a given definition state.
      */
     def finalizeDefSite(
-        defSite: Int, state: InterproceduralComputationState
+        defSite: Int,
+        state:   InterproceduralComputationState
     ): Unit = {
         if (defSite < 0) {
             state.appendToFpe2Sci(defSite, getParam(state.params.toSeq.map(_.toSeq), defSite), reset = true)
@@ -389,8 +444,10 @@ class InterproceduralInterpretationHandler(
                 case ExprStmt(_, sfc: StaticFunctionCall[V]) =>
                     StaticFunctionCallFinalizer(state).finalizeInterpretation(sfc, defSite)
                 case _ => state.appendToFpe2Sci(
-                    defSite, StringConstancyProperty.lb.stringConstancyInformation, reset = true
-                )
+                        defSite,
+                        StringConstancyProperty.lb.stringConstancyInformation,
+                        reset = true
+                    )
             }
         }
     }
@@ -411,6 +468,12 @@ object InterproceduralInterpretationHandler {
         state:                  InterproceduralComputationState,
         typeIterator:           TypeIterator
     ): InterproceduralInterpretationHandler = new InterproceduralInterpretationHandler(
-        tac, ps, declaredMethods, declaredFields, fieldAccessInformation, state, typeIterator
+        tac,
+        ps,
+        declaredMethods,
+        declaredFields,
+        fieldAccessInformation,
+        state,
+        typeIterator
     )
 }

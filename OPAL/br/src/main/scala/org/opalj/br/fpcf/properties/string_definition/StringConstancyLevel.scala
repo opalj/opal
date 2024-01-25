@@ -42,7 +42,8 @@ object StringConstancyLevel extends Enumeration {
      * @return Returns the more general level of both given inputs.
      */
     def determineMoreGeneral(
-        level1: StringConstancyLevel, level2: StringConstancyLevel
+        level1: StringConstancyLevel,
+        level2: StringConstancyLevel
     ): StringConstancyLevel = {
         if (level1 == DYNAMIC || level2 == DYNAMIC) {
             DYNAMIC
@@ -65,12 +66,14 @@ object StringConstancyLevel extends Enumeration {
      * @return Returns the level for a concatenation.
      */
     def determineForConcat(
-        level1: StringConstancyLevel, level2: StringConstancyLevel
+        level1: StringConstancyLevel,
+        level2: StringConstancyLevel
     ): StringConstancyLevel = {
         if (level1 == PARTIALLY_CONSTANT || level2 == PARTIALLY_CONSTANT) {
             PARTIALLY_CONSTANT
         } else if ((level1 == CONSTANT && level2 == DYNAMIC) ||
-            (level1 == DYNAMIC && level2 == CONSTANT)) {
+                   (level1 == DYNAMIC && level2 == CONSTANT)
+        ) {
             PARTIALLY_CONSTANT
         } else {
             level1

@@ -9,12 +9,12 @@ package intraprocedural
 
 import scala.collection.mutable.ListBuffer
 
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.FinalEP
 import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.FinalEP
 
 /**
  * The `IntraproceduralArrayInterpreter` is responsible for processing [[ArrayLoad]] as well as
@@ -72,11 +72,14 @@ class IntraproceduralArrayInterpreter(
             children.append(StringConstancyProperty.lb.stringConstancyInformation)
         }
 
-        FinalEP(instr, StringConstancyProperty(
-            StringConstancyInformation.reduceMultiple(
-                children.filter(!_.isTheNeutralElement)
+        FinalEP(
+            instr,
+            StringConstancyProperty(
+                StringConstancyInformation.reduceMultiple(
+                    children.filter(!_.isTheNeutralElement)
+                )
             )
-        ))
+        )
     }
 
 }

@@ -9,12 +9,12 @@ package interprocedural
 
 import scala.collection.mutable.ListBuffer
 
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.FinalEP
 import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.FinalEP
 
 /**
  * The `ArrayPreparationInterpreter` is responsible for preparing [[ArrayLoad]] as well as
@@ -53,7 +53,8 @@ class ArrayPreparationInterpreter(
 
         val defSites = instr.arrayRef.asVar.definedBy.toArray
         val allDefSites = ArrayPreparationInterpreter.getStoreAndLoadDefSites(
-            instr, state.tac.stmts
+            instr,
+            state.tac.stmts
         )
 
         allDefSites.map { ds => (ds, exprHandler.processDefSite(ds)) }.foreach {
@@ -90,7 +91,8 @@ class ArrayPreparationInterpreter(
             }
             if (results.isEmpty) {
                 results.append(FinalEP(
-                    (instr.arrayRef.asVar, state.entity._2), StringConstancyProperty(resultSci)
+                    (instr.arrayRef.asVar, state.entity._2),
+                    StringConstancyProperty(resultSci)
                 ))
             }
 
@@ -124,9 +126,7 @@ object ArrayPreparationInterpreter {
             // For ArrayStores
             sortedArrDeclUses.filter {
                 stmts(_).isInstanceOf[ArrayStore[V]]
-            } foreach { f: Int =>
-                allDefSites.appendAll(stmts(f).asArrayStore.value.asVar.definedBy.toArray)
-            }
+            } foreach { f: Int => allDefSites.appendAll(stmts(f).asArrayStore.value.asVar.definedBy.toArray) }
             // For ArrayLoads
             sortedArrDeclUses.filter {
                 stmts(_) match {

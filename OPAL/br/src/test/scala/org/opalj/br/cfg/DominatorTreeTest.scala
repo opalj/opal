@@ -4,16 +4,18 @@ package br
 package cfg
 
 import java.net.URL
+
 import org.junit.runner.RunWith
-import org.opalj.br.analyses.Project
+import org.scalatestplus.junit.JUnitRunner
+
 import org.opalj.br.ClassHierarchy
 import org.opalj.br.ObjectType
 import org.opalj.br.TestSupport.biProject
+import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.IF_ICMPNE
-import org.opalj.br.instructions.IFNE
 import org.opalj.br.instructions.IFEQ
+import org.opalj.br.instructions.IFNE
 import org.opalj.br.instructions.ILOAD
-import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Computes the dominator tree of CFGs of a couple of methods and checks their sanity.
@@ -47,7 +49,7 @@ class DominatorTreeTest extends AbstractCFGTest {
 
         implicit val testClassHierarchy: ClassHierarchy = testProject.classHierarchy
 
-        it("the dominator tree of a CFG with no control flow should be a tree where each "+
+        it("the dominator tree of a CFG with no control flow should be a tree where each " +
             "instruction is strictly dominator by its previous instruction (except for the root)") {
             val m = boringTestClassFile.findMethod("singleBlock").head
             val code = m.body.get
@@ -66,8 +68,8 @@ class DominatorTreeTest extends AbstractCFGTest {
             }
         }
 
-        it("in a dominator tree of a CFG with control instructions, the first instruction within "+
-            "that control structure should be dominated by the controlling instruction (like "+
+        it("in a dominator tree of a CFG with control instructions, the first instruction within " +
+            "that control structure should be dominated by the controlling instruction (like " +
             "an if)") {
             val m = boringTestClassFile.findMethod("conditionalTwoReturns").head
             val code = m.body.get
@@ -88,7 +90,7 @@ class DominatorTreeTest extends AbstractCFGTest {
             }
         }
 
-        it("in a dominator tree of a CFG with an if-else right before the return, the return "+
+        it("in a dominator tree of a CFG with an if-else right before the return, the return " +
             "should be dominated by the if check of the if-else") {
             val m = boringTestClassFile.findMethod("conditionalOneReturn").head
             val code = m.body.get

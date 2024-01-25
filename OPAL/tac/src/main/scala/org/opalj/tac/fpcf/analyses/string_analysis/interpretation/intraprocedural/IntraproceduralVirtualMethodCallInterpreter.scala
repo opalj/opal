@@ -7,14 +7,14 @@ package string_analysis
 package interpretation
 package intraprocedural
 
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.FinalEP
 import org.opalj.br.cfg.CFG
+import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyType
-import org.opalj.br.fpcf.properties.StringConstancyProperty
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.FinalEP
 
 /**
  * The `IntraproceduralVirtualMethodCallInterpreter` is responsible for processing
@@ -53,8 +53,9 @@ class IntraproceduralVirtualMethodCallInterpreter(
     override def interpret(instr: T, defSite: Int): EOptionP[Entity, StringConstancyProperty] = {
         val sci = instr.name match {
             case "setLength" => StringConstancyInformation(
-                StringConstancyLevel.CONSTANT, StringConstancyType.RESET
-            )
+                    StringConstancyLevel.CONSTANT,
+                    StringConstancyType.RESET
+                )
             case _ => StringConstancyInformation.getNeutralElement
         }
         FinalEP(instr, StringConstancyProperty(sci))

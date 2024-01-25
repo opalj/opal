@@ -7,12 +7,12 @@ package string_analysis
 package interpretation
 package interprocedural
 
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.FinalEP
 import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.FinalEP
 
 /**
  * The `NewArrayPreparer` is responsible for preparing [[NewArray]] expressions.
@@ -99,4 +99,3 @@ class NewArrayPreparer(
     }
 
 }
-

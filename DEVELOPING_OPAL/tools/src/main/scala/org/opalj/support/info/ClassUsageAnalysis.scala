@@ -4,11 +4,11 @@ package support
 package info
 
 import scala.annotation.switch
+
 import java.net.URL
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
-import org.opalj.log.GlobalLogContext
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectAnalysisApplication
@@ -16,10 +16,10 @@ import org.opalj.br.analyses.ReportableAnalysisResult
 import org.opalj.log.GlobalLogContext
 import org.opalj.tac.Assignment
 import org.opalj.tac.Call
-import org.opalj.tac.ExprStmt
-import org.opalj.tac.VirtualFunctionCall
-import org.opalj.tac.V
 import org.opalj.tac.EagerDetachedTACAIKey
+import org.opalj.tac.ExprStmt
+import org.opalj.tac.V
+import org.opalj.tac.VirtualFunctionCall
 
 /**
  * Analyzes a project for how a particular class is used within that project. Collects information
@@ -39,7 +39,7 @@ object ClassUsageAnalysis extends ProjectAnalysisApplication {
     override def title: String = "Class Usage Analysis"
 
     override def description: String = {
-        "Analysis a project for how a particular class is used, i.e., which methods are called "+
+        "Analysis a project for how a particular class is used, i.e., which methods are called " +
             "on it"
     }
 
@@ -161,15 +161,15 @@ object ClassUsageAnalysis extends ProjectAnalysisApplication {
             tacProvider(m).stmts.foreach { stmt =>
                 (stmt.astID: @switch) match {
                     case Assignment.ASTID => stmt match {
-                        case Assignment(_, _, c: VirtualFunctionCall[V]) =>
-                            processFunctionCall(c, resultMap)
-                        case _ =>
-                    }
+                            case Assignment(_, _, c: VirtualFunctionCall[V]) =>
+                                processFunctionCall(c, resultMap)
+                            case _ =>
+                        }
                     case ExprStmt.ASTID => stmt match {
-                        case ExprStmt(_, c: VirtualFunctionCall[V]) =>
-                            processFunctionCall(c, resultMap)
-                        case _ =>
-                    }
+                            case ExprStmt(_, c: VirtualFunctionCall[V]) =>
+                                processFunctionCall(c, resultMap)
+                            case _ =>
+                        }
                     case _ =>
                 }
             }

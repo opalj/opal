@@ -8,15 +8,17 @@ package interpretation
 package interprocedural
 
 import scala.util.Try
+
+import org.opalj.br.analyses.DeclaredMethods
+import org.opalj.br.cfg.CFG
+import org.opalj.br.fpcf.properties.NoContext
+import org.opalj.br.fpcf.properties.StringConstancyProperty
+import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.PropertyStore
-import org.opalj.br.analyses.DeclaredMethods
-import org.opalj.br.cfg.CFG
-import org.opalj.br.fpcf.properties.{NoContext, StringConstancyProperty}
-import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 
 /**
@@ -78,9 +80,7 @@ class InterproceduralStaticFunctionCallInterpreter(
             interim.get
         } else {
             // For char values, we need to do a conversion (as the returned results are integers)
-            val scis = results.map { r =>
-                r.asFinal.p.asInstanceOf[StringConstancyProperty].stringConstancyInformation
-            }
+            val scis = results.map { r => r.asFinal.p.asInstanceOf[StringConstancyProperty].stringConstancyInformation }
             val finalScis = if (call.descriptor.parameterType(0).toJava == "char") {
                 scis.map { sci =>
                     if (Try(sci.possibleStrings.toInt).isSuccess) {
@@ -101,10 +101,14 @@ class InterproceduralStaticFunctionCallInterpreter(
      * This function interprets an arbitrary static function call.
      */
     private def processArbitraryCall(
-        instr: StaticFunctionCall[V], defSite: Int
+        instr:   StaticFunctionCall[V],
+        defSite: Int
     ): EOptionP[Entity, StringConstancyProperty] = {
         val methods, _ = getMethodsForPC(
-            instr.pc, ps, state.callees, typeIterator
+            instr.pc,
+            ps,
+            state.callees,
+            typeIterator
         )
 
         // Static methods cannot be overwritten, thus 1) we do not need the second return value of
@@ -121,7 +125,8 @@ class InterproceduralStaticFunctionCallInterpreter(
         val relevantPCs = directCallSites.filter {
             case (_, calledMethods) =>
                 calledMethods.exists(m =>
-                    m.method.name == instr.name && m.method.declaringClassType == instr.declaringClass)
+                    m.method.name == instr.name && m.method.declaringClassType == instr.declaringClass
+                )
         }.keys
 
         // Collect all parameters; either from the state if the interpretation of instr was started

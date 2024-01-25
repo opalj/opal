@@ -7,21 +7,22 @@ package string_analysis
 package interpretation
 package interprocedural
 
+import org.opalj.br.ComputationalTypeFloat
+import org.opalj.br.ComputationalTypeInt
+import org.opalj.br.ObjectType
+import org.opalj.br.analyses.DeclaredMethods
+import org.opalj.br.cfg.CFG
+import org.opalj.br.fpcf.properties.NoContext
+import org.opalj.br.fpcf.properties.StringConstancyProperty
+import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
+import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
+import org.opalj.br.fpcf.properties.string_definition.StringConstancyType
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
-import org.opalj.br.cfg.CFG
-import org.opalj.br.ComputationalTypeFloat
-import org.opalj.br.ComputationalTypeInt
-import org.opalj.br.ObjectType
-import org.opalj.br.analyses.DeclaredMethods
-import org.opalj.br.fpcf.properties.{NoContext, StringConstancyProperty}
-import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
-import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
-import org.opalj.br.fpcf.properties.string_definition.StringConstancyType
 import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 
 /**
@@ -104,25 +105,29 @@ class VirtualFunctionCallPreparationInterpreter(
      * finalized later on.
      */
     private def interpretArbitraryCall(
-        instr: T, defSite: Int
+        instr:   T,
+        defSite: Int
     ): EOptionP[Entity, StringConstancyProperty] = {
         val (methods, _) = getMethodsForPC(
-            instr.pc, ps, state.callees, typeIterator
+            instr.pc,
+            ps,
+            state.callees,
+            typeIterator
         )
 
         if (methods.isEmpty) {
             return FinalEP(instr, StringConstancyProperty.lb)
         }
-        //TODO: Type Iterator!
+        // TODO: Type Iterator!
         val directCallSites = state.callees.directCallSites(NoContext)(ps, typeIterator)
         val instrClassName =
             instr.receiver.asVar.value.asReferenceValue.asReferenceType.mostPreciseObjectType.toJava
 
         val relevantPCs = directCallSites.filter {
             case (_, calledMethods) => calledMethods.exists { m =>
-                val mClassName = m.method.declaringClassType.toJava
-                m.method.name == instr.name && mClassName == instrClassName
-            }
+                    val mClassName = m.method.declaringClassType.toJava
+                    m.method.name == instr.name && mClassName == instrClassName
+                }
         }.keys
 
         // Collect all parameters; either from the state, if the interpretation of instr was started
@@ -196,7 +201,8 @@ class VirtualFunctionCallPreparationInterpreter(
      * the expected behavior cannot be guaranteed.
      */
     private def interpretAppendCall(
-        appendCall: VirtualFunctionCall[V], defSite: Int
+        appendCall: VirtualFunctionCall[V],
+        defSite:    Int
     ): EOptionP[Entity, StringConstancyProperty] = {
         val receiverResults = receiverValuesOfAppendCall(appendCall, state)
         val appendResult = valueOfAppendCall(appendCall, state)
@@ -235,7 +241,8 @@ class VirtualFunctionCallPreparationInterpreter(
             val receiverSci = StringConstancyInformation.reduceMultiple(receiverScis)
             StringConstancyInformation(
                 StringConstancyLevel.determineForConcat(
-                    receiverSci.constancyLevel, appendSci.constancyLevel
+                    receiverSci.constancyLevel,
+                    appendSci.constancyLevel
                 ),
                 StringConstancyType.APPEND,
                 receiverSci.possibleStrings + appendSci.possibleStrings
@@ -257,7 +264,8 @@ class VirtualFunctionCallPreparationInterpreter(
      *       returned list contains an [[org.opalj.fpcf.InterimResult]].
      */
     private def receiverValuesOfAppendCall(
-        call: VirtualFunctionCall[V], state: InterproceduralComputationState
+        call:  VirtualFunctionCall[V],
+        state: InterproceduralComputationState
     ): List[EOptionP[Entity, StringConstancyProperty]] = {
         val defSites = call.receiver.asVar.definedBy.toArray.sorted
 
@@ -290,7 +298,8 @@ class VirtualFunctionCallPreparationInterpreter(
      * This function can process string constants as well as function calls as argument to append.
      */
     private def valueOfAppendCall(
-        call: VirtualFunctionCall[V], state: InterproceduralComputationState
+        call:  VirtualFunctionCall[V],
+        state: InterproceduralComputationState
     ): EOptionP[Entity, StringConstancyProperty] = {
         // .head because we want to evaluate only the first argument of append
         val param = call.params.head.asVar
@@ -334,7 +343,8 @@ class VirtualFunctionCallPreparationInterpreter(
                 // The value was already computed above; however, we need to check whether the
                 // append takes an int value or a char (if it is a constant char, convert it)
                 if (call.descriptor.parameterType(0).isCharType &&
-                    defSitesValueSci.constancyLevel == StringConstancyLevel.CONSTANT) {
+                    defSitesValueSci.constancyLevel == StringConstancyLevel.CONSTANT
+                ) {
                     if (defSitesValueSci.isTheNeutralElement) {
                         StringConstancyProperty.lb.stringConstancyInformation
                     } else {

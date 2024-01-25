@@ -9,8 +9,8 @@ package preprocessing
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
-import org.opalj.value.ValueInformation
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
+import org.opalj.value.ValueInformation
 
 /**
  * @author Patrick Mell
@@ -82,7 +82,8 @@ case class Path(elements: List[SubPath]) {
      * sorted list.
      */
     private def getAllDefAndUseSites(
-        obj: DUVar[ValueInformation], stmts: Array[Stmt[V]]
+        obj:   DUVar[ValueInformation],
+        stmts: Array[Stmt[V]]
     ): List[Int] = {
         val defAndUses = ListBuffer[Int]()
         val stack = mutable.Stack[Int](obj.definedBy.toList: _*)
@@ -119,7 +120,7 @@ case class Path(elements: List[SubPath]) {
                 case fpe: FlatPathElement   => fpe.element == element
                 case npe: NestedPathElement => containsPathElement(npe, element)
                 // For the SubPath type (should never be the case, but the compiler wants it)
-                case _                      => false
+                case _ => false
             })
         }
     }
@@ -147,7 +148,8 @@ case class Path(elements: List[SubPath]) {
      * well.
      */
     private def stripUnnecessaryBranches(
-        npe: NestedPathElement, endSite: Int
+        npe:     NestedPathElement,
+        endSite: Int
     ): NestedPathElement = {
         npe.element.foreach {
             case innerNpe: NestedPathElement =>
@@ -189,13 +191,13 @@ case class Path(elements: List[SubPath]) {
         toProcess:           NestedPathElement,
         siteMap:             Map[Int, Unit],
         endSite:             Int,
-        includeAlternatives: Boolean           = false
+        includeAlternatives: Boolean = false
     ): (Option[NestedPathElement], Boolean) = {
         val elements = ListBuffer[SubPath]()
         var stop = false
         var hasTargetBeenSeen = false
         val isTryCatch = includeAlternatives || (toProcess.elementType.isDefined &&
-            toProcess.elementType.get == NestedPathType.TryCatchFinally)
+        toProcess.elementType.get == NestedPathType.TryCatchFinally)
 
         toProcess.element.foreach { next =>
             // The stop flag is used to make sure that within a sub-path only the elements up to the
@@ -212,7 +214,10 @@ case class Path(elements: List[SubPath]) {
                         }
                     case npe: NestedPathElement if isTryCatch =>
                         val (leanedSubPath, _) = makeLeanPathAcc(
-                            npe, siteMap, endSite, includeAlternatives = true
+                            npe,
+                            siteMap,
+                            endSite,
+                            includeAlternatives = true
                         )
                         if (leanedSubPath.isDefined) {
                             elements.append(leanedSubPath.get)
@@ -220,7 +225,9 @@ case class Path(elements: List[SubPath]) {
                     case npe: NestedPathElement =>
                         if (!hasTargetBeenSeen) {
                             val (leanedSubPath, wasTargetSeen) = makeLeanPathAcc(
-                                npe, siteMap, endSite
+                                npe,
+                                siteMap,
+                                endSite
                             )
                             if (leanedSubPath.isDefined) {
                                 elements.append(leanedSubPath.get)
@@ -288,7 +295,8 @@ case class Path(elements: List[SubPath]) {
                     case npe: NestedPathElement =>
                         val (leanedPath, wasTargetSeen) = makeLeanPathAcc(npe, siteMap, endSite)
                         if (npe.elementType.isDefined &&
-                            npe.elementType.get != NestedPathType.TryCatchFinally) {
+                            npe.elementType.get != NestedPathType.TryCatchFinally
+                        ) {
                             reachedEndSite = wasTargetSeen
                         }
                         if (leanedPath.isDefined) {
@@ -304,8 +312,9 @@ case class Path(elements: List[SubPath]) {
         // body in any case (as there is no alternative branch to consider)
         if (leanPath.tail.isEmpty) {
             leanPath.head match {
-                case npe: NestedPathElement if npe.elementType.get == NestedPathType.Repetition ||
-                    npe.element.tail.isEmpty =>
+                case npe: NestedPathElement
+                    if npe.elementType.get == NestedPathType.Repetition ||
+                        npe.element.tail.isEmpty =>
                     leanPath = removeOuterBranching(npe)
                 case _ =>
             }
@@ -313,8 +322,9 @@ case class Path(elements: List[SubPath]) {
             // If the last element is a conditional, keep only the relevant branch (the other is not
             // necessary and stripping it simplifies further steps; explicitly exclude try-catch)
             leanPath.last match {
-                case npe: NestedPathElement if npe.elementType.isDefined &&
-                    (npe.elementType.get != NestedPathType.TryCatchFinally) =>
+                case npe: NestedPathElement
+                    if npe.elementType.isDefined &&
+                        (npe.elementType.get != NestedPathType.TryCatchFinally) =>
                     val newLast = stripUnnecessaryBranches(npe, endSite)
                     leanPath.remove(leanPath.size - 1)
                     leanPath.append(newLast)

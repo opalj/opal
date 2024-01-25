@@ -8,6 +8,8 @@ package preprocessing
 
 import scala.collection.mutable.ListBuffer
 import scala.collection.mutable.Map
+
+import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.br.fpcf.properties.string_definition.StringTree
 import org.opalj.br.fpcf.properties.string_definition.StringTreeConcat
@@ -15,7 +17,6 @@ import org.opalj.br.fpcf.properties.string_definition.StringTreeCond
 import org.opalj.br.fpcf.properties.string_definition.StringTreeConst
 import org.opalj.br.fpcf.properties.string_definition.StringTreeOr
 import org.opalj.br.fpcf.properties.string_definition.StringTreeRepetition
-import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 
 /**
@@ -36,7 +37,8 @@ class PathTransformer(val interpretationHandler: InterpretationHandler) {
      * Accumulator function for transforming a path into a StringTree element.
      */
     private def pathToTreeAcc(
-        subpath: SubPath, fpe2Sci: Map[Int, ListBuffer[StringConstancyInformation]]
+        subpath: SubPath,
+        fpe2Sci: Map[Int, ListBuffer[StringConstancyInformation]]
     ): Option[StringTree] = {
         subpath match {
             case fpe: FlatPathElement =>
@@ -73,13 +75,14 @@ class PathTransformer(val interpretationHandler: InterpretationHandler) {
                     npe.elementType.get match {
                         case NestedPathType.Repetition =>
                             val processedSubPath = pathToStringTree(
-                                Path(npe.element.toList), fpe2Sci, resetExprHandler = false
+                                Path(npe.element.toList),
+                                fpe2Sci,
+                                resetExprHandler = false
                             )
                             Some(StringTreeRepetition(processedSubPath))
                         case _ =>
-                            val processedSubPaths = npe.element.map { ne =>
-                                pathToTreeAcc(ne, fpe2Sci)
-                            }.filter(_.isDefined).map(_.get)
+                            val processedSubPaths =
+                                npe.element.map { ne => pathToTreeAcc(ne, fpe2Sci) }.filter(_.isDefined).map(_.get)
                             if (processedSubPaths.nonEmpty) {
                                 npe.elementType.get match {
                                     case NestedPathType.CondWithAlternative |
@@ -105,9 +108,8 @@ class PathTransformer(val interpretationHandler: InterpretationHandler) {
                         case 0 => None
                         case 1 => pathToTreeAcc(npe.element.head, fpe2Sci)
                         case _ =>
-                            val processed = npe.element.map { ne =>
-                                pathToTreeAcc(ne, fpe2Sci)
-                            }.filter(_.isDefined).map(_.get)
+                            val processed =
+                                npe.element.map { ne => pathToTreeAcc(ne, fpe2Sci) }.filter(_.isDefined).map(_.get)
                             if (processed.isEmpty) {
                                 None
                             } else {

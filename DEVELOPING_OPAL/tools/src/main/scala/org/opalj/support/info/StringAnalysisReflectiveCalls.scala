@@ -4,9 +4,24 @@ package support
 package info
 
 import scala.annotation.switch
+
 import java.net.URL
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
+
+import org.opalj.br.Method
+import org.opalj.br.ReferenceType
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.ProjectAnalysisApplication
+import org.opalj.br.analyses.ReportableAnalysisResult
+import org.opalj.br.fpcf.FPCFAnalysesManagerKey
+import org.opalj.br.fpcf.properties.StringConstancyProperty
+import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
+import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
+import org.opalj.br.instructions.Instruction
+import org.opalj.br.instructions.INVOKESTATIC
+import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.InterimELUBP
 import org.opalj.fpcf.InterimLUBP
@@ -15,28 +30,18 @@ import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEPS
-import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.ReportableAnalysisResult
-import org.opalj.br.instructions.Instruction
-import org.opalj.br.instructions.INVOKESTATIC
-import org.opalj.br.ReferenceType
-import org.opalj.br.instructions.INVOKEVIRTUAL
-import org.opalj.br.Method
-import org.opalj.br.analyses.ProjectAnalysisApplication
-import org.opalj.br.fpcf.properties.StringConstancyProperty
-import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
-import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
-import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.tac.Assignment
 import org.opalj.tac.Call
 import org.opalj.tac.ExprStmt
 import org.opalj.tac.StaticFunctionCall
-import org.opalj.tac.VirtualFunctionCall
-import org.opalj.tac.fpcf.analyses.string_analysis.{LazyInterproceduralStringAnalysis, LazyIntraproceduralStringAnalysis, P, V}
-import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.Stmt
+import org.opalj.tac.VirtualFunctionCall
 import org.opalj.tac.cg.RTACallGraphKey
+import org.opalj.tac.fpcf.analyses.string_analysis.LazyInterproceduralStringAnalysis
+import org.opalj.tac.fpcf.analyses.string_analysis.LazyIntraproceduralStringAnalysis
+import org.opalj.tac.fpcf.analyses.string_analysis.P
+import org.opalj.tac.fpcf.analyses.string_analysis.V
+import org.opalj.tac.fpcf.properties.TACAI
 
 /**
  * Analyzes a project for calls provided by the Java Reflection API and tries to determine which
@@ -59,19 +64,29 @@ object StringAnalysisReflectiveCalls extends ProjectAnalysisApplication {
     private type ResultMapType = mutable.Map[String, ListBuffer[StringConstancyInformation]]
 
     private val relevantCryptoMethodNames = List(
-        "javax.crypto.Cipher#getInstance", "javax.crypto.Cipher#getMaxAllowedKeyLength",
-        "javax.crypto.Cipher#getMaxAllowedParameterSpec", "javax.crypto.Cipher#unwrap",
-        "javax.crypto.CipherSpi#engineSetMode", "javax.crypto.CipherSpi#engineSetPadding",
-        "javax.crypto.CipherSpi#engineUnwrap", "javax.crypto.EncryptedPrivateKeyInfo#getKeySpec",
-        "javax.crypto.ExemptionMechanism#getInstance", "javax.crypto.KeyAgreement#getInstance",
-        "javax.crypto.KeyGenerator#getInstance", "javax.crypto.Mac#getInstance",
-        "javax.crypto.SealedObject#getObject", "javax.crypto.SecretKeyFactory#getInstance"
+        "javax.crypto.Cipher#getInstance",
+        "javax.crypto.Cipher#getMaxAllowedKeyLength",
+        "javax.crypto.Cipher#getMaxAllowedParameterSpec",
+        "javax.crypto.Cipher#unwrap",
+        "javax.crypto.CipherSpi#engineSetMode",
+        "javax.crypto.CipherSpi#engineSetPadding",
+        "javax.crypto.CipherSpi#engineUnwrap",
+        "javax.crypto.EncryptedPrivateKeyInfo#getKeySpec",
+        "javax.crypto.ExemptionMechanism#getInstance",
+        "javax.crypto.KeyAgreement#getInstance",
+        "javax.crypto.KeyGenerator#getInstance",
+        "javax.crypto.Mac#getInstance",
+        "javax.crypto.SealedObject#getObject",
+        "javax.crypto.SecretKeyFactory#getInstance"
     )
 
     private val relevantReflectionMethodNames = List(
-        "java.lang.Class#forName", "java.lang.ClassLoader#loadClass",
-        "java.lang.Class#getField", "java.lang.Class#getDeclaredField",
-        "java.lang.Class#getMethod", "java.lang.Class#getDeclaredMethod"
+        "java.lang.Class#forName",
+        "java.lang.ClassLoader#loadClass",
+        "java.lang.Class#getField",
+        "java.lang.Class#getDeclaredField",
+        "java.lang.Class#getMethod",
+        "java.lang.Class#getDeclaredMethod"
     )
 
     private var includeCrypto = false
@@ -111,7 +126,7 @@ object StringAnalysisReflectiveCalls extends ProjectAnalysisApplication {
     override def title: String = "String Analysis for Reflective Calls"
 
     override def description: String = {
-        "Finds calls to methods provided by the Java Reflection API and tries to resolve passed "+
+        "Finds calls to methods provided by the Java Reflection API and tries to resolve passed " +
             "string values"
     }
 
@@ -163,7 +178,10 @@ object StringAnalysisReflectiveCalls extends ProjectAnalysisApplication {
      * analysis using the property store, `ps`, to finally store it in the given `resultMap`.
      */
     private def processFunctionCall(
-        ps: PropertyStore, method: Method, call: Call[V], resultMap: ResultMapType
+        ps:        PropertyStore,
+        method:    Method,
+        call:      Call[V],
+        resultMap: ResultMapType
     ): Unit = {
         if (isRelevantCall(call.declaringClass, call.name)) {
             val fqnMethodName = buildFQMethodName(method.classFile.thisType, method.name)
@@ -224,26 +242,28 @@ object StringAnalysisReflectiveCalls extends ProjectAnalysisApplication {
             // Using the following switch speeds up the whole process
             (stmt.astID: @switch) match {
                 case Assignment.ASTID => stmt match {
-                    case Assignment(_, _, c: StaticFunctionCall[V]) =>
-                        processFunctionCall(ps, m, c, resultMap)
-                    case Assignment(_, _, c: VirtualFunctionCall[V]) =>
-                        processFunctionCall(ps, m, c, resultMap)
-                    case _ =>
-                }
+                        case Assignment(_, _, c: StaticFunctionCall[V]) =>
+                            processFunctionCall(ps, m, c, resultMap)
+                        case Assignment(_, _, c: VirtualFunctionCall[V]) =>
+                            processFunctionCall(ps, m, c, resultMap)
+                        case _ =>
+                    }
                 case ExprStmt.ASTID => stmt match {
-                    case ExprStmt(_, c: StaticFunctionCall[V]) =>
-                        processFunctionCall(ps, m, c, resultMap)
-                    case ExprStmt(_, c: VirtualFunctionCall[V]) =>
-                        processFunctionCall(ps, m, c, resultMap)
-                    case _ =>
-                }
+                        case ExprStmt(_, c: StaticFunctionCall[V]) =>
+                            processFunctionCall(ps, m, c, resultMap)
+                        case ExprStmt(_, c: VirtualFunctionCall[V]) =>
+                            processFunctionCall(ps, m, c, resultMap)
+                        case _ =>
+                    }
                 case _ =>
             }
         }
     }
 
     private def continuation(
-        ps: PropertyStore, m: Method, resultMap: ResultMapType
+        ps:        PropertyStore,
+        m:         Method,
+        resultMap: ResultMapType
     )(eps: SomeEPS): ProperPropertyComputationResult = {
         eps match {
             case FinalP(tac: TACAI) =>
@@ -251,7 +271,11 @@ object StringAnalysisReflectiveCalls extends ProjectAnalysisApplication {
                 Result(m, tac)
             case InterimLUBP(lb, ub) =>
                 InterimResult(
-                    m, lb, ub, Set(eps), continuation(ps, m, resultMap)
+                    m,
+                    lb,
+                    ub,
+                    Set(eps),
+                    continuation(ps, m, resultMap)
                 )
             case _ => throw new IllegalStateException("should never happen!")
         }
@@ -270,7 +294,9 @@ object StringAnalysisReflectiveCalls extends ProjectAnalysisApplication {
     }
 
     override def doAnalyze(
-        project: Project[URL], parameters: Seq[String], isInterrupted: () => Boolean
+        project:       Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () => Boolean
     ): ReportableAnalysisResult = {
 
         // Check whether string-consuming methods of the javax.crypto API should be considered. Default is false.
@@ -323,7 +349,7 @@ object StringAnalysisReflectiveCalls extends ProjectAnalysisApplication {
                     case InterimELUBP(_, _, ub: StringConstancyProperty) =>
                         resultMap(callName).append(ub.stringConstancyInformation)
                     case _ =>
-                        println(s"Neither a final nor an interim result for $e in $callName; "+
+                        println(s"Neither a final nor an interim result for $e in $callName; " +
                             "this should never be the case!")
                 }
         }

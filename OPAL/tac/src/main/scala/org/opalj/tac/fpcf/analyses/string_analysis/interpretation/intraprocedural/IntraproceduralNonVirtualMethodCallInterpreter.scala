@@ -9,12 +9,12 @@ package intraprocedural
 
 import scala.collection.mutable.ListBuffer
 
+import org.opalj.br.cfg.CFG
+import org.opalj.br.fpcf.properties.StringConstancyProperty
+import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.FinalEP
-import org.opalj.br.cfg.CFG
-import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
-import org.opalj.br.fpcf.properties.StringConstancyProperty
 
 /**
  * The `IntraproceduralNonVirtualMethodCallInterpreter` is responsible for processing
@@ -50,7 +50,8 @@ class IntraproceduralNonVirtualMethodCallInterpreter(
      * @see [[AbstractStringInterpreter.interpret]]
      */
     override def interpret(
-        instr: NonVirtualMethodCall[V], defSite: Int
+        instr:   NonVirtualMethodCall[V],
+        defSite: Int
     ): EOptionP[Entity, StringConstancyProperty] = {
         val prop = instr.name match {
             case "<init>" => interpretInit(instr)

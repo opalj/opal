@@ -2,9 +2,9 @@
 package org.opalj
 package graphs
 
-import org.opalj.collection.immutable.IntTrieSet
-
 import scala.collection.mutable.ListBuffer
+
+import org.opalj.collection.immutable.IntTrieSet
 
 /**
  * A representation of a post-dominator tree (see [[PostDominatorTree$#apply*]]

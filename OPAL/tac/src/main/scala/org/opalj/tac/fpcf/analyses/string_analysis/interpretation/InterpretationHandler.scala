@@ -9,15 +9,15 @@ package interpretation
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
+import org.opalj.br.cfg.CFG
+import org.opalj.br.fpcf.properties.StringConstancyProperty
+import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
+import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
+import org.opalj.br.fpcf.properties.string_definition.StringConstancyType
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.Property
 import org.opalj.value.ValueInformation
-import org.opalj.br.cfg.CFG
-import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
-import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
-import org.opalj.br.fpcf.properties.string_definition.StringConstancyType
-import org.opalj.br.fpcf.properties.StringConstancyProperty
 
 abstract class InterpretationHandler(tac: TACode[TACMethodParameter, DUVar[ValueInformation]]) {
 
@@ -140,7 +140,8 @@ object InterpretationHandler {
      * Helper function for [[findDefSiteOfInit]].
      */
     private def findDefSiteOfInitAcc(
-        toString: VirtualFunctionCall[V], stmts: Array[Stmt[V]]
+        toString: VirtualFunctionCall[V],
+        stmts:    Array[Stmt[V]]
     ): List[Int] = {
         // TODO: Check that we deal with an instance of AbstractStringBuilder
         if (toString.name != "toString") {
@@ -192,7 +193,7 @@ object InterpretationHandler {
             defSites.appendAll(stmts(ds).asAssignment.expr match {
                 case vfc: VirtualFunctionCall[V] => findDefSiteOfInitAcc(vfc, stmts)
                 // The following case is, e.g., for {NonVirtual, Static}FunctionCalls
-                case _                           => List(ds)
+                case _ => List(ds)
             })
         }
         // If no init sites could be determined, use the definition sites of the UVar

@@ -4,25 +4,24 @@ package fpcf
 
 import java.io.File
 import java.net.URL
-
 import scala.collection.mutable.ListBuffer
 
-import org.opalj.br.analyses.Project
 import org.opalj.br.Annotation
-import org.opalj.br.Method
-import org.opalj.br.cfg.CFG
 import org.opalj.br.Annotations
-import org.opalj.br.fpcf.properties.StringConstancyProperty
+import org.opalj.br.Method
+import org.opalj.br.analyses.Project
+import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.br.fpcf.properties.StringConstancyProperty
+import org.opalj.tac.EagerDetachedTACAIKey
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACStmts
 import org.opalj.tac.VirtualMethodCall
+import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.string_analysis.LazyInterproceduralStringAnalysis
 import org.opalj.tac.fpcf.analyses.string_analysis.LazyIntraproceduralStringAnalysis
-import org.opalj.tac.EagerDetachedTACAIKey
-import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.string_analysis.V
 
 /**
@@ -44,7 +43,7 @@ sealed class StringAnalysisTestRunner(
         val necessaryFiles = Array(
             "properties/string_analysis/StringDefinitions.class"
         ) ++ filesToLoad
-        val basePath = System.getProperty("user.dir")+
+        val basePath = System.getProperty("user.dir") +
             "/DEVELOPING_OPAL/validate/target/scala-2.13/test-classes/org/opalj/fpcf/" // TODO anti-hardcode
 
         necessaryFiles.map { filePath => new File(basePath + filePath) }
@@ -69,15 +68,15 @@ sealed class StringAnalysisTestRunner(
         val entitiesToAnalyze = ListBuffer[(V, Method)]()
         val tacProvider = project.get(EagerDetachedTACAIKey)
         project.allMethodsWithBody.filter {
-            _.runtimeInvisibleAnnotations.foldLeft(false)(
-                (exists, a) => exists || StringAnalysisTestRunner.isStringUsageAnnotation(a)
+            _.runtimeInvisibleAnnotations.foldLeft(false)((exists, a) =>
+                exists || StringAnalysisTestRunner.isStringUsageAnnotation(a)
             )
         } foreach { m =>
             StringAnalysisTestRunner.extractUVars(
-                tacProvider(m).cfg, fqTestMethodsClass, nameTestMethod
-            ).foreach { uvar =>
-                    entitiesToAnalyze.append((uvar, m))
-                }
+                tacProvider(m).cfg,
+                fqTestMethodsClass,
+                nameTestMethod
+            ).foreach { uvar => entitiesToAnalyze.append((uvar, m)) }
         }
         entitiesToAnalyze
     }

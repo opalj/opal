@@ -9,16 +9,17 @@ package interprocedural
 package finalizer
 
 import org.opalj.br.cfg.CFG
+import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyType
-import org.opalj.br.fpcf.properties.StringConstancyProperty
 
 /**
  * @author Patrick Mell
  */
 class VirtualFunctionCallFinalizer(
-        state: InterproceduralComputationState, cfg: CFG[Stmt[V], TACStmts[V]]
+        state: InterproceduralComputationState,
+        cfg:   CFG[Stmt[V], TACStmts[V]]
 ) extends AbstractFinalizer(state) {
 
     override type T = VirtualFunctionCall[V]
@@ -34,8 +35,10 @@ class VirtualFunctionCallFinalizer(
             case "append"   => finalizeAppend(instr, defSite)
             case "toString" => finalizeToString(instr, defSite)
             case _ => state.appendToFpe2Sci(
-                defSite, StringConstancyProperty.lb.stringConstancyInformation, reset = true
-            )
+                    defSite,
+                    StringConstancyProperty.lb.stringConstancyInformation,
+                    reset = true
+                )
         }
     }
 
@@ -83,7 +86,8 @@ class VirtualFunctionCallFinalizer(
         } else {
             StringConstancyInformation(
                 StringConstancyLevel.determineForConcat(
-                    receiverSci.constancyLevel, appendSci.constancyLevel
+                    receiverSci.constancyLevel,
+                    appendSci.constancyLevel
                 ),
                 StringConstancyType.APPEND,
                 receiverSci.possibleStrings + appendSci.possibleStrings
@@ -116,7 +120,8 @@ class VirtualFunctionCallFinalizer(
 object VirtualFunctionCallFinalizer {
 
     def apply(
-        state: InterproceduralComputationState, cfg: CFG[Stmt[V], TACStmts[V]]
+        state: InterproceduralComputationState,
+        cfg:   CFG[Stmt[V], TACStmts[V]]
     ): VirtualFunctionCallFinalizer = new VirtualFunctionCallFinalizer(state, cfg)
 
 }

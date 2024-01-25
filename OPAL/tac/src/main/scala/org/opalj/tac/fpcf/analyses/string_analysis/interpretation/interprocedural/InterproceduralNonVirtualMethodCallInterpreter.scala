@@ -7,14 +7,14 @@ package string_analysis
 package interpretation
 package interprocedural
 
+import org.opalj.br.analyses.DeclaredMethods
+import org.opalj.br.cfg.CFG
+import org.opalj.br.fpcf.properties.StringConstancyProperty
+import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.PropertyStore
-import org.opalj.br.analyses.DeclaredMethods
-import org.opalj.br.cfg.CFG
-import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
-import org.opalj.br.fpcf.properties.StringConstancyProperty
 
 /**
  * The `InterproceduralNonVirtualMethodCallInterpreter` is responsible for processing
@@ -51,7 +51,8 @@ class InterproceduralNonVirtualMethodCallInterpreter(
      * @see [[AbstractStringInterpreter.interpret]]
      */
     override def interpret(
-        instr: NonVirtualMethodCall[V], defSite: Int
+        instr:   NonVirtualMethodCall[V],
+        defSite: Int
     ): EOptionP[Entity, StringConstancyProperty] = {
         val e: Integer = defSite
         instr.name match {
@@ -68,7 +69,8 @@ class InterproceduralNonVirtualMethodCallInterpreter(
      * these are currently interpreted).
      */
     private def interpretInit(
-        init: NonVirtualMethodCall[V], defSite: Integer
+        init:    NonVirtualMethodCall[V],
+        defSite: Integer
     ): EOptionP[Entity, StringConstancyProperty] = {
         init.params.size match {
             case 0 => FinalEP(defSite, StringConstancyProperty.getNeutralElement)
@@ -92,7 +94,9 @@ class InterproceduralNonVirtualMethodCallInterpreter(
                             if (r.isFinal) {
                                 val p = r.asFinal.p.asInstanceOf[StringConstancyProperty]
                                 state.appendToFpe2Sci(
-                                    ds, p.stringConstancyInformation, reset = true
+                                    ds,
+                                    p.stringConstancyInformation,
+                                    reset = true
                                 )
                             }
                         case _ =>

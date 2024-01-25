@@ -25,18 +25,21 @@ sealed abstract class StringTree(val children: ListBuffer[StringTree]) { // ques
      * is passed).
      */
     private def processReduceCondOrReduceOr(
-        children: List[StringTree], processOr: Boolean = true
+        children:  List[StringTree],
+        processOr: Boolean = true
     ): List[StringConstancyInformation] = {
         val reduced = children.flatMap(reduceAcc)
         val resetElement = reduced.find(_.constancyType == StringConstancyType.RESET)
         val replaceElement = reduced.find(_.constancyType == StringConstancyType.REPLACE)
         val appendElements = reduced.filter { _.constancyType == StringConstancyType.APPEND }
         val appendSci = if (appendElements.nonEmpty) {
-            Some(appendElements.reduceLeft((o, n) => StringConstancyInformation(
-                StringConstancyLevel.determineMoreGeneral(o.constancyLevel, n.constancyLevel),
-                StringConstancyType.APPEND,
-                s"${o.possibleStrings}|${n.possibleStrings}"
-            )))
+            Some(appendElements.reduceLeft((o, n) =>
+                StringConstancyInformation(
+                    StringConstancyLevel.determineMoreGeneral(o.constancyLevel, n.constancyLevel),
+                    StringConstancyType.APPEND,
+                    s"${o.possibleStrings}|${n.possibleStrings}"
+                )
+            ))
         } else {
             None
         }
@@ -53,7 +56,9 @@ sealed abstract class StringTree(val children: ListBuffer[StringTree]) { // ques
                 possibleStrings = s"(${appendSci.get.possibleStrings})?"
             }
             scis.append(StringConstancyInformation(
-                appendSci.get.constancyLevel, appendSci.get.constancyType, possibleStrings
+                appendSci.get.constancyLevel,
+                appendSci.get.constancyType,
+                possibleStrings
             ))
         }
         if (resetElement.isDefined) {
@@ -112,7 +117,8 @@ sealed abstract class StringTree(val children: ListBuffer[StringTree]) { // ques
                             case (innerSci, index) =>
                                 val collapsed = StringConstancyInformation(
                                     StringConstancyLevel.determineForConcat(
-                                        innerSci.constancyLevel, nextSci.constancyLevel
+                                        innerSci.constancyLevel,
+                                        nextSci.constancyLevel
                                     ),
                                     StringConstancyType.APPEND,
                                     innerSci.possibleStrings + nextSci.possibleStrings
@@ -142,9 +148,11 @@ sealed abstract class StringTree(val children: ListBuffer[StringTree]) { // ques
         subtree match {
             case StringTreeRepetition(c, lowerBound, upperBound) =>
                 val times = if (lowerBound.isDefined && upperBound.isDefined)
-                    (upperBound.get - lowerBound.get).toString else InfiniteRepetitionSymbol
+                    (upperBound.get - lowerBound.get).toString
+                else InfiniteRepetitionSymbol
                 val reducedAcc = reduceAcc(c)
-                val reduced = if (reducedAcc.nonEmpty) reducedAcc.head else
+                val reduced = if (reducedAcc.nonEmpty) reducedAcc.head
+                else
                     StringConstancyInformation.lb
                 List(StringConstancyInformation(
                     reduced.constancyLevel,

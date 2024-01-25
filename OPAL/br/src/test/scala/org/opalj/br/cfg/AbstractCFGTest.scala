@@ -5,10 +5,10 @@ package cfg
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.BeforeAndAfterAll
-import org.opalj.io.writeAndOpen
+
 import org.opalj.br.instructions.Instruction
 import org.opalj.graphs.DominatorTree
+import org.opalj.io.writeAndOpen
 
 /**
  * Helper methods to test the CFG related methods.
@@ -95,7 +95,7 @@ abstract class AbstractCFGTest extends AnyFunSpec with Matchers with BeforeAndAf
         method:  Method,
         code:    Code,
         cfg:     CFG[Instruction, Code],
-        domTree: Option[DominatorTree]  = None
+        domTree: Option[DominatorTree] = None
     )(
         f: => Unit
     )(
@@ -108,7 +108,7 @@ abstract class AbstractCFGTest extends AnyFunSpec with Matchers with BeforeAndAf
             case t: Throwable =>
                 writeAndOpen(cfg.toDot, method.name + "-CFG", ".gv")
                 if (domTree.isDefined) {
-                    writeAndOpen(domTree.get.toDot(), method.name+"-DomTree", ".gv")
+                    writeAndOpen(domTree.get.toDot(), method.name + "-DomTree", ".gv")
                 }
                 throw t
         }

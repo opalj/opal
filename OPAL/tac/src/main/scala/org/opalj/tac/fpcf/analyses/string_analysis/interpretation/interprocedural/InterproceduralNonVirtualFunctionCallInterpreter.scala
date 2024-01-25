@@ -7,15 +7,15 @@ package string_analysis
 package interpretation
 package interprocedural
 
+import org.opalj.br.analyses.DeclaredMethods
+import org.opalj.br.cfg.CFG
+import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
-import org.opalj.br.analyses.DeclaredMethods
-import org.opalj.br.cfg.CFG
-import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 
 /**

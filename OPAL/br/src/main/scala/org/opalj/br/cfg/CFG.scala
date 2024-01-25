@@ -6,12 +6,12 @@ package cfg
 import scala.reflect.ClassTag
 
 import java.util.Arrays
-
-import org.opalj.collection.immutable.EmptyIntTrieSet
-
 import scala.collection.{Set => SomeSet}
 import scala.collection.AbstractIterator
+import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 
+import org.opalj.collection.immutable.EmptyIntTrieSet
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.IntTrieSet1
 import org.opalj.collection.mutable.FixedSizedHashIDMap
@@ -23,9 +23,6 @@ import org.opalj.graphs.PostDominatorTree
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.info
-
-import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
 
 /**
  * Represents the control flow graph of a method.
@@ -812,12 +809,15 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
         // Additional exit nodes are empty if there is only one exit node. Otherwise, they are collected as all nodes
         // leading into artificial ExitNodes that are NOT the "normalReturnNode", i.e. abnormal termination.
         // TODO: Verify this is intended behavior for PostDominatorTrees
-        val additionalExitNodes = if (uniqueExitNode.isDefined) EmptyIntTrieSet else {
+        val additionalExitNodes = if (uniqueExitNode.isDefined) EmptyIntTrieSet
+        else {
             IntTrieSet(
                 basicBlocks
                     .zipWithIndex
                     .filter { next =>
-                        next._1.successors.size == 1 && next._1.successors.head.isInstanceOf[ExitNode] && !next._1.successors.head.equals(normalReturnNode)
+                        next._1.successors.size == 1 && next._1.successors.head.isInstanceOf[
+                            ExitNode
+                        ] && !next._1.successors.head.equals(normalReturnNode)
                     }
                     .map(_._2)
             )
@@ -833,9 +833,7 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
             (f: Int => Unit) => exitNodes.foreach(e => f(e)),
             foreachSuccessor,
             foreachPredecessor,
-            basicBlocks.foldLeft(0) { (prevMaxNode: Int, next: BasicBlock) =>
-                math.max(prevMaxNode, next.endPC)
-            }
+            basicBlocks.foldLeft(0) { (prevMaxNode: Int, next: BasicBlock) => math.max(prevMaxNode, next.endPC) }
         )
     }
 

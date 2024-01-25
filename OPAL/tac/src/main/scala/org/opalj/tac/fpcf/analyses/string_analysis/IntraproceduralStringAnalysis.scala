@@ -7,6 +7,15 @@ package string_analysis
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
+
+import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.FPCFAnalysisScheduler
+import org.opalj.br.fpcf.FPCFLazyAnalysisScheduler
+import org.opalj.br.fpcf.properties.StringConstancyProperty
+import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.FinalP
@@ -18,14 +27,6 @@ import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEPS
-import org.opalj.value.ValueInformation
-import org.opalj.br.analyses.{ProjectInformationKeys, SomeProject}
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.FPCFAnalysisScheduler
-import org.opalj.br.fpcf.FPCFLazyAnalysisScheduler
-import org.opalj.br.fpcf.properties.StringConstancyProperty
-import org.opalj.br.fpcf.properties.cg.Callees
-import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.intraprocedural.IntraproceduralInterpretationHandler
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.AbstractPathFinder
@@ -36,6 +37,7 @@ import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.PathTransformer
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.SubPath
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.WindowPathFinder
 import org.opalj.tac.fpcf.properties.TACAI
+import org.opalj.value.ValueInformation
 
 /**
  * IntraproceduralStringAnalysis processes a read operation of a local string variable at a program
@@ -195,7 +197,8 @@ class IntraproceduralStringAnalysis(
         if (remDependees.isEmpty) {
             val interpretationHandler = IntraproceduralInterpretationHandler(state.tac)
             val finalSci = new PathTransformer(interpretationHandler).pathToStringTree(
-                state.computedLeanPath, state.fpe2sci.map { case (k, v) => (k, ListBuffer(v)) }
+                state.computedLeanPath,
+                state.fpe2sci.map { case (k, v) => (k, ListBuffer(v)) }
             ).reduce(true)
             Result(data, StringConstancyProperty(finalSci))
         } else {
@@ -225,8 +228,12 @@ class IntraproceduralStringAnalysis(
     )(eps: SomeEPS): ProperPropertyComputationResult = eps match {
         case FinalP(p) => processFinalP(data, dependees, state, eps.e, p)
         case InterimLUBP(lb, ub) => InterimResult(
-            data, lb, ub, dependees.toSet, continuation(data, dependees, state)
-        )
+                data,
+                lb,
+                ub,
+                dependees.toSet,
+                continuation(data, dependees, state)
+            )
         case _ => throw new IllegalStateException("Could not process the continuation successfully.")
     }
 
@@ -271,7 +278,11 @@ class IntraproceduralStringAnalysis(
                 npe.element.foreach { nextSubpath =>
                     if (!encounteredTarget) {
                         val (_, seen) = findDependeesAcc(
-                            nextSubpath, stmts, target, foundDependees, encounteredTarget
+                            nextSubpath,
+                            stmts,
+                            target,
+                            foundDependees,
+                            encounteredTarget
                         )
                         encounteredTarget = seen
                     }
@@ -292,7 +303,9 @@ class IntraproceduralStringAnalysis(
      *       this variable as `ignore`.
      */
     private def findDependentVars(
-        path: Path, stmts: Array[Stmt[V]], ignore: V
+        path:   Path,
+        stmts:  Array[Stmt[V]],
+        ignore: V
     ): mutable.LinkedHashMap[V, Int] = {
         val dependees = mutable.LinkedHashMap[V, Int]()
         val ignoreNews = InterpretationHandler.findNewOfVar(ignore, stmts)
@@ -301,7 +314,11 @@ class IntraproceduralStringAnalysis(
         path.elements.foreach { nextSubpath =>
             if (!wasTargetSeen) {
                 val (currentDeps, encounteredTarget) = findDependeesAcc(
-                    nextSubpath, stmts, ignore, ListBuffer(), hasTargetBeenSeen = false
+                    nextSubpath,
+                    stmts,
+                    ignore,
+                    ListBuffer(),
+                    hasTargetBeenSeen = false
                 )
                 wasTargetSeen = encounteredTarget
                 currentDeps.foreach { nextPair =>
@@ -321,14 +338,14 @@ sealed trait IntraproceduralStringAnalysisScheduler extends FPCFAnalysisSchedule
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(StringConstancyProperty)
 
-    final override def uses: Set[PropertyBounds] = Set(
+    override final def uses: Set[PropertyBounds] = Set(
         PropertyBounds.ub(TACAI),
         PropertyBounds.ub(Callees),
         PropertyBounds.lub(StringConstancyProperty)
     )
 
-    final override type InitializationData = IntraproceduralStringAnalysis
-    final override def init(p: SomeProject, ps: PropertyStore): InitializationData = {
+    override final type InitializationData = IntraproceduralStringAnalysis
+    override final def init(p: SomeProject, ps: PropertyStore): InitializationData = {
         new IntraproceduralStringAnalysis(p)
     }
 
@@ -351,7 +368,9 @@ object LazyIntraproceduralStringAnalysis
     extends IntraproceduralStringAnalysisScheduler with FPCFLazyAnalysisScheduler {
 
     override def register(
-        p: SomeProject, ps: PropertyStore, analysis: InitializationData
+        p:        SomeProject,
+        ps:       PropertyStore,
+        analysis: InitializationData
     ): FPCFAnalysis = {
         val analysis = new IntraproceduralStringAnalysis(p)
         ps.registerLazyPropertyComputation(StringConstancyProperty.key, analysis.analyze)

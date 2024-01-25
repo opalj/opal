@@ -7,6 +7,21 @@ package string_analysis
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
+
+import org.opalj.br.FieldType
+import org.opalj.br.analyses.DeclaredFieldsKey
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.FieldAccessInformationKey
+import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.FPCFAnalysisScheduler
+import org.opalj.br.fpcf.FPCFLazyAnalysisScheduler
+import org.opalj.br.fpcf.properties.StringConstancyProperty
+import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
+import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.FinalP
@@ -18,31 +33,21 @@ import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEPS
-import org.opalj.value.ValueInformation
-import org.opalj.br.analyses.{DeclaredMethodsKey, FieldAccessInformationKey, ProjectInformationKeys, SomeProject}
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.FPCFAnalysisScheduler
-import org.opalj.br.fpcf.FPCFLazyAnalysisScheduler
-import org.opalj.br.fpcf.properties.StringConstancyProperty
-import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
-import org.opalj.br.FieldType
-import org.opalj.br.analyses.DeclaredFieldsKey
-import org.opalj.br.fpcf.properties.cg.Callers
-import org.opalj.br.fpcf.properties.cg.Callees
-import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
-import org.opalj.tac.fpcf.properties.TACAI
+import org.opalj.tac.fpcf.analyses.cg.RTATypeIterator
+import org.opalj.tac.fpcf.analyses.cg.TypeIterator
+import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
+import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural.ArrayPreparationInterpreter
+import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural.InterproceduralInterpretationHandler
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.AbstractPathFinder
+import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.FlatPathElement
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.NestedPathElement
+import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.NestedPathType
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.Path
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.PathTransformer
-import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.WindowPathFinder
-import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
-import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural.InterproceduralInterpretationHandler
-import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.FlatPathElement
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.SubPath
-import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.NestedPathType
-import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural.ArrayPreparationInterpreter
-import org.opalj.tac.fpcf.analyses.cg.{RTATypeIterator, TypeIterator}
+import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.WindowPathFinder
+import org.opalj.tac.fpcf.properties.TACAI
+import org.opalj.value.ValueInformation
 
 /**
  * InterproceduralStringAnalysis processes a read operation of a string variable at a program
@@ -73,7 +78,7 @@ class InterproceduralStringAnalysis(
         val project: SomeProject
 ) extends FPCFAnalysis {
 
-    //TODO: How do we pass the type iterator along? How do we decide which to use?
+    // TODO: How do we pass the type iterator along? How do we decide which to use?
     private val typeIterator: TypeIterator = new RTATypeIterator(project)
 
     // TODO: Is it possible to make the following two parameters configurable from the outside?
@@ -117,7 +122,8 @@ class InterproceduralStringAnalysis(
     ): StringConstancyProperty = {
         if (state.computedLeanPath != null) {
             StringConstancyProperty(new PathTransformer(state.interimIHandler).pathToStringTree(
-                state.computedLeanPath, state.interimFpe2sci
+                state.computedLeanPath,
+                state.interimFpe2sci
             ).reduce(true))
         } else {
             StringConstancyProperty.lb
@@ -177,7 +183,13 @@ class InterproceduralStringAnalysis(
 
         if (state.iHandler == null) {
             state.iHandler = InterproceduralInterpretationHandler(
-                state.tac, ps, declaredMethods, declaredFields, fieldAccessInformation, state, typeIterator
+                state.tac,
+                ps,
+                declaredMethods,
+                declaredFields,
+                fieldAccessInformation,
+                state,
+                typeIterator
             )
             val interimState = state.copy()
             interimState.tac = state.tac
@@ -186,7 +198,13 @@ class InterproceduralStringAnalysis(
             interimState.callers = state.callers
             interimState.params = state.params
             state.interimIHandler = InterproceduralInterpretationHandler(
-                state.tac, ps, declaredMethods, declaredFields, fieldAccessInformation, interimState, typeIterator
+                state.tac,
+                ps,
+                declaredMethods,
+                declaredFields,
+                fieldAccessInformation,
+                interimState,
+                typeIterator
             )
         }
 
@@ -203,8 +221,7 @@ class InterproceduralStringAnalysis(
                     hasCallersOrParamInfo
                 } else if (InterproceduralStringAnalysis.isSupportedPrimitiveNumberType(uvar)) {
                     val numType = uvar.value.asPrimitiveValue.primitiveType.toJava
-                    val sci = InterproceduralStringAnalysis.
-                        getDynamicStringInformationForNumberType(numType)
+                    val sci = InterproceduralStringAnalysis.getDynamicStringInformationForNumberType(numType)
                     return Result(state.entity, StringConstancyProperty(sci))
                 } else {
                     // StringBuilders as parameters are currently not evaluated
@@ -301,7 +318,8 @@ class InterproceduralStringAnalysis(
                     StringConstancyInformation.getNeutralElement
                 } else {
                     new PathTransformer(state.iHandler).pathToStringTree(
-                        state.computedLeanPath, state.fpe2sci
+                        state.computedLeanPath,
+                        state.fpe2sci
                     ).reduce(true)
                 }
             }
@@ -370,7 +388,8 @@ class InterproceduralStringAnalysis(
                 // If necessary, update parameter information of function calls
                 if (state.entity2Function.contains(e)) {
                     state.var2IndexMapping(e._1).foreach(state.appendToFpe2Sci(
-                        _, p.stringConstancyInformation
+                        _,
+                        p.stringConstancyInformation
                     ))
                     // Update the state
                     state.entity2Function(e).foreach { f =>
@@ -405,12 +424,15 @@ class InterproceduralStringAnalysis(
                 } else {
                     determinePossibleStrings(state)
                 }
-            case InterimLUBP(_: StringConstancyProperty, ub: StringConstancyProperty) if eps.pk.equals(StringConstancyProperty.key) =>
+            case InterimLUBP(_: StringConstancyProperty, ub: StringConstancyProperty)
+                if eps.pk.equals(StringConstancyProperty.key) =>
                 state.dependees = eps :: state.dependees
                 val uvar = eps.e.asInstanceOf[P]._1
                 state.var2IndexMapping(uvar).foreach { i =>
                     state.appendToInterimFpe2Sci(
-                        i, ub.stringConstancyInformation, Some(uvar)
+                        i,
+                        ub.stringConstancyInformation,
+                        Some(uvar)
                     )
                 }
                 getInterimResult(state)
@@ -450,7 +472,9 @@ class InterproceduralStringAnalysis(
     private def computeFinalResult(state: InterproceduralComputationState): Result = {
         finalizePreparations(state.computedLeanPath, state, state.iHandler)
         val finalSci = new PathTransformer(state.iHandler).pathToStringTree(
-            state.computedLeanPath, state.fpe2sci, resetExprHandler = false
+            state.computedLeanPath,
+            state.fpe2sci,
+            resetExprHandler = false
         ).reduce(true)
         InterproceduralStringAnalysis.unregisterParams(state.entity)
         Result(state.entity, StringConstancyProperty(finalSci))
@@ -520,7 +544,8 @@ class InterproceduralStringAnalysis(
                         // parameters there are)
                         if (state.params.length <= methodIndex) {
                             state.params.append(ListBuffer.from(params.indices.map(_ =>
-                                StringConstancyInformation.getNeutralElement)))
+                                StringConstancyInformation.getNeutralElement
+                            )))
                         }
                         // Recursively analyze supported types
                         if (InterproceduralStringAnalysis.isSupportedType(p.asVar)) {
@@ -578,7 +603,8 @@ class InterproceduralStringAnalysis(
                 }
             case npe: NestedPathElement =>
                 val subFinalResult = computeResultsForPath(
-                    Path(npe.element.toList), state
+                    Path(npe.element.toList),
+                    state
                 )
                 if (hasFinalResult) {
                     hasFinalResult = subFinalResult
@@ -594,7 +620,8 @@ class InterproceduralStringAnalysis(
      * [[computeLeanPathForStringBuilder]].
      */
     private def computeLeanPath(
-        duvar: V, tac: TACode[TACMethodParameter, DUVar[ValueInformation]]
+        duvar: V,
+        tac:   TACode[TACMethodParameter, DUVar[ValueInformation]]
     ): Path = {
         val defSites = duvar.definedBy.toArray.sorted
         if (defSites.head < 0) {
@@ -623,9 +650,7 @@ class InterproceduralStringAnalysis(
             // For > 1 definition sites, create a nest path element with |defSites| many
             // children where each child is a NestPathElement(FlatPathElement)
             val children = ListBuffer[SubPath]()
-            defSites.foreach { ds =>
-                children.append(NestedPathElement(ListBuffer(FlatPathElement(ds)), None))
-            }
+            defSites.foreach { ds => children.append(NestedPathElement(ListBuffer(FlatPathElement(ds)), None)) }
             Path(List(NestedPathElement(children, Some(NestedPathType.CondWithAlternative))))
         }
     }
@@ -640,7 +665,8 @@ class InterproceduralStringAnalysis(
      * `(null, false)` and otherwise `(computed lean path, true)`.
      */
     private def computeLeanPathForStringBuilder(
-        duvar: V, tac: TACode[TACMethodParameter, DUVar[ValueInformation]]
+        duvar: V,
+        tac:   TACode[TACMethodParameter, DUVar[ValueInformation]]
     ): (Path, Boolean) = {
         val pathFinder: AbstractPathFinder = new WindowPathFinder(tac.cfg)
         val initDefSites = InterpretationHandler.findDefSiteOfInit(duvar, tac.stmts)
@@ -665,10 +691,10 @@ class InterproceduralStringAnalysis(
 
         path.elements.exists {
             case FlatPathElement(index) => stmts(index) match {
-                case Assignment(_, _, expr) => hasExprParamUsage(expr)
-                case ExprStmt(_, expr)      => hasExprParamUsage(expr)
-                case _                      => false
-            }
+                    case Assignment(_, _, expr) => hasExprParamUsage(expr)
+                    case ExprStmt(_, expr)      => hasExprParamUsage(expr)
+                    case _                      => false
+                }
             case NestedPathElement(subPath, _) => hasParamUsageAlongPath(Path(subPath.toList), stmts)
             case _                             => false
         }
@@ -715,7 +741,11 @@ class InterproceduralStringAnalysis(
                 npe.element.foreach { nextSubpath =>
                     if (!encounteredTarget) {
                         val (_, seen) = findDependeesAcc(
-                            nextSubpath, stmts, target, foundDependees, encounteredTarget
+                            nextSubpath,
+                            stmts,
+                            target,
+                            foundDependees,
+                            encounteredTarget
                         )
                         encounteredTarget = seen
                     }
@@ -736,7 +766,9 @@ class InterproceduralStringAnalysis(
      *       this variable as `ignore`.
      */
     private def findDependentVars(
-        path: Path, stmts: Array[Stmt[V]], ignore: V
+        path:   Path,
+        stmts:  Array[Stmt[V]],
+        ignore: V
     ): mutable.LinkedHashMap[V, Int] = {
         val dependees = mutable.LinkedHashMap[V, Int]()
         val ignoreNews = InterpretationHandler.findNewOfVar(ignore, stmts)
@@ -745,7 +777,11 @@ class InterproceduralStringAnalysis(
         path.elements.foreach { nextSubpath =>
             if (!wasTargetSeen) {
                 val (currentDeps, encounteredTarget) = findDependeesAcc(
-                    nextSubpath, stmts, ignore, ListBuffer(), hasTargetBeenSeen = false
+                    nextSubpath,
+                    stmts,
+                    ignore,
+                    ListBuffer(),
+                    hasTargetBeenSeen = false
                 )
                 wasTargetSeen = encounteredTarget
                 currentDeps.foreach { nextPair =>
@@ -871,14 +907,14 @@ sealed trait InterproceduralStringAnalysisScheduler extends FPCFAnalysisSchedule
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(StringConstancyProperty)
 
-    final override def uses: Set[PropertyBounds] = Set(
+    override final def uses: Set[PropertyBounds] = Set(
         PropertyBounds.ub(TACAI),
         PropertyBounds.ub(Callees),
         PropertyBounds.lub(StringConstancyProperty)
     )
 
-    final override type InitializationData = InterproceduralStringAnalysis
-    final override def init(p: SomeProject, ps: PropertyStore): InitializationData = {
+    override final type InitializationData = InterproceduralStringAnalysis
+    override final def init(p: SomeProject, ps: PropertyStore): InitializationData = {
         new InterproceduralStringAnalysis(p)
     }
 
@@ -901,7 +937,9 @@ object LazyInterproceduralStringAnalysis
     extends InterproceduralStringAnalysisScheduler with FPCFLazyAnalysisScheduler {
 
     override def register(
-        p: SomeProject, ps: PropertyStore, analysis: InitializationData
+        p:        SomeProject,
+        ps:       PropertyStore,
+        analysis: InitializationData
     ): FPCFAnalysis = {
         val analysis = new InterproceduralStringAnalysis(p)
         ps.registerLazyPropertyComputation(StringConstancyProperty.key, analysis.analyze)
@@ -910,6 +948,6 @@ object LazyInterproceduralStringAnalysis
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 
-    //TODO: Needs TAC key??
+    // TODO: Needs TAC key??
     override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey, FieldAccessInformationKey)
 }

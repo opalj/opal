@@ -8,20 +8,22 @@ package interpretation
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
+
+import org.opalj.br.DefinedMethod
+import org.opalj.br.Method
+import org.opalj.br.cfg.CFG
+import org.opalj.br.fpcf.properties.NoContext
+import org.opalj.br.fpcf.properties.StringConstancyProperty
+import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyStore
-import org.opalj.value.ValueInformation
-import org.opalj.br.cfg.CFG
-import org.opalj.br.Method
-import org.opalj.br.DefinedMethod
-import org.opalj.br.fpcf.properties.{NoContext, StringConstancyProperty}
-import org.opalj.br.fpcf.properties.cg.Callees
-import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
-import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural.InterproceduralInterpretationHandler
+import org.opalj.tac.fpcf.properties.TACAI
+import org.opalj.value.ValueInformation
 
 /**
  * @param cfg The control flow graph that underlies the instruction to interpret.
@@ -76,7 +78,10 @@ abstract class AbstractStringInterpreter(
      */
     protected def getMethodsForPC(
         implicit
-        pc: Int, ps: PropertyStore, callees: Callees, typeIt: TypeIterator
+        pc:      Int,
+        ps:      PropertyStore,
+        callees: Callees,
+        typeIt:  TypeIterator
     ): (List[Method], Boolean) = {
         var hasMethodWithUnknownBody = false
         val methods = ListBuffer[Method]()
@@ -182,7 +187,6 @@ abstract class AbstractStringInterpreter(
     })
 
     /**
-     *
      * @param instr The instruction that is to be interpreted. It is the responsibility of
      *              implementations to make sure that an instruction is properly and comprehensively
      *              evaluated.

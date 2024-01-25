@@ -85,14 +85,18 @@ object StringConstancyInformation {
                 val reduced = relScis.reduceLeft((o, n) =>
                     StringConstancyInformation(
                         StringConstancyLevel.determineMoreGeneral(
-                            o.constancyLevel, n.constancyLevel
+                            o.constancyLevel,
+                            n.constancyLevel
                         ),
                         StringConstancyType.APPEND,
                         s"${o.possibleStrings}|${n.possibleStrings}"
-                    ))
+                    )
+                )
                 // Add parentheses to possibleStrings value (to indicate a choice)
                 StringConstancyInformation(
-                    reduced.constancyLevel, reduced.constancyType, s"(${reduced.possibleStrings})"
+                    reduced.constancyLevel,
+                    reduced.constancyType,
+                    s"(${reduced.possibleStrings})"
                 )
         }
     }

@@ -4,15 +4,15 @@ package br
 package fpcf
 package properties
 
+import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
+import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
+import org.opalj.br.fpcf.properties.string_definition.StringConstancyType
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.FallbackReason
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStore
-import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
-import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
-import org.opalj.br.fpcf.properties.string_definition.StringConstancyType
 
 sealed trait StringConstancyPropertyMetaInformation extends PropertyMetaInformation {
     final type Self = StringConstancyProperty
@@ -76,7 +76,8 @@ object StringConstancyProperty extends Property with StringConstancyPropertyMeta
      */
     def ub: StringConstancyProperty =
         StringConstancyProperty(StringConstancyInformation(
-            StringConstancyLevel.CONSTANT, StringConstancyType.APPEND
+            StringConstancyLevel.CONSTANT,
+            StringConstancyType.APPEND
         ))
 
     /**

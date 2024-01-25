@@ -7,20 +7,20 @@ package string_analysis
 package interpretation
 package intraprocedural
 
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.FinalEP
-import org.opalj.br.cfg.CFG
+import org.opalj.br.ComputationalTypeDouble
 import org.opalj.br.ComputationalTypeFloat
 import org.opalj.br.ComputationalTypeInt
+import org.opalj.br.DoubleType
+import org.opalj.br.FloatType
 import org.opalj.br.ObjectType
+import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyType
-import org.opalj.br.ComputationalTypeDouble
-import org.opalj.br.DoubleType
-import org.opalj.br.FloatType
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.FinalEP
 
 /**
  * The `IntraproceduralVirtualFunctionCallInterpreter` is responsible for processing
@@ -115,7 +115,8 @@ class IntraproceduralVirtualFunctionCallInterpreter(
         else {
             StringConstancyInformation(
                 StringConstancyLevel.determineForConcat(
-                    receiverSci.constancyLevel, appendSci.constancyLevel
+                    receiverSci.constancyLevel,
+                    appendSci.constancyLevel
                 ),
                 StringConstancyType.APPEND,
                 receiverSci.possibleStrings + appendSci.possibleStrings
@@ -137,7 +138,8 @@ class IntraproceduralVirtualFunctionCallInterpreter(
             val r = exprHandler.processDefSite(ds)
             r.asFinal.p.asInstanceOf[StringConstancyProperty].stringConstancyInformation
         }.filter { sci => !sci.isTheNeutralElement }
-        val sci = if (scis.isEmpty) StringConstancyInformation.getNeutralElement else
+        val sci = if (scis.isEmpty) StringConstancyInformation.getNeutralElement
+        else
             scis.head
         StringConstancyProperty(sci)
     }
@@ -170,7 +172,8 @@ class IntraproceduralVirtualFunctionCallInterpreter(
                 // The value was already computed above; however, we need to check whether the
                 // append takes an int value or a char (if it is a constant char, convert it)
                 if (call.descriptor.parameterType(0).isCharType &&
-                    sci.constancyLevel == StringConstancyLevel.CONSTANT) {
+                    sci.constancyLevel == StringConstancyLevel.CONSTANT
+                ) {
                     sci.copy(
                         possibleStrings = sci.possibleStrings.toInt.toChar.toString
                     )

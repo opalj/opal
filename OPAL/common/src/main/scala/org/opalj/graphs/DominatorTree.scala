@@ -36,7 +36,8 @@ final class DominatorTree private (
      *         identified by `possibleDominator`. Otherwise, false will be returned.
      */
     def doesDominate(
-        possibleDominator: Int, toCheck: Int
+        possibleDominator: Int,
+        toCheck:           Int
     ): Boolean = doesDominate(Array(possibleDominator), toCheck)
 
     /**
@@ -50,7 +51,8 @@ final class DominatorTree private (
      *       number of possible dominators.
      */
     def doesDominate(
-        possibleDominators: Array[Int], toCheck: Int
+        possibleDominators: Array[Int],
+        toCheck:            Int
     ): Boolean = {
         var nextToCheck = toCheck
         var pd = possibleDominators.filter(_ < nextToCheck)

@@ -7,14 +7,14 @@ package string_analysis
 package interpretation
 package common
 
+import org.opalj.br.cfg.CFG
+import org.opalj.br.fpcf.properties.StringConstancyProperty
+import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
+import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
+import org.opalj.br.fpcf.properties.string_definition.StringConstancyType
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.FinalEP
-import org.opalj.br.cfg.CFG
-import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
-import org.opalj.br.fpcf.properties.StringConstancyProperty
-import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
-import org.opalj.br.fpcf.properties.string_definition.StringConstancyType
 
 /**
  * The `DoubleValueInterpreter` is responsible for processing [[DoubleConst]]s.
@@ -38,10 +38,13 @@ class DoubleValueInterpreter(
      * @see [[AbstractStringInterpreter.interpret]]
      */
     override def interpret(instr: T, defSite: Int): EOptionP[Entity, StringConstancyProperty] =
-        FinalEP(instr, StringConstancyProperty(StringConstancyInformation(
-            StringConstancyLevel.CONSTANT,
-            StringConstancyType.APPEND,
-            instr.value.toString
-        )))
+        FinalEP(
+            instr,
+            StringConstancyProperty(StringConstancyInformation(
+                StringConstancyLevel.CONSTANT,
+                StringConstancyType.APPEND,
+                instr.value.toString
+            ))
+        )
 
 }
