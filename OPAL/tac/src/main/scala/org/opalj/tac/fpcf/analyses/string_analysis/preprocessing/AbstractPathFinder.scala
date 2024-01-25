@@ -22,7 +22,7 @@ import org.opalj.br.cfg.CFGNode
  *
  * @author Patrick Mell
  */
-abstract class AbstractPathFinder(cfg: CFG[Stmt[SEntity], TACStmts[SEntity]]) {
+abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
 
     /**
      * CSInfo stores information regarding control structures (CS) in the form: Index of the start
@@ -79,7 +79,7 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[SEntity], TACStmts[SEntity]]) {
             }.max
             var containsIf = false
             for (i <- cfg.bb(nextBlock).startPC.to(cfg.bb(nextBlock).endPC)) {
-                if (cfg.code.instructions(i).isInstanceOf[If[SEntity]]) {
+                if (cfg.code.instructions(i).isInstanceOf[If[V]]) {
                     processedIfs(i) = ()
                     containsIf = true
                 }
@@ -134,11 +134,11 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[SEntity], TACStmts[SEntity]]) {
                         }
                     case _ =>
                         // No goto available => Jump after next block
-                        var nextIf: Option[If[SEntity]] = None
+                        var nextIf: Option[If[V]] = None
                         var i = nextBlock
                         while (i < cfg.code.instructions.length && nextIf.isEmpty) {
                             cfg.code.instructions(i) match {
-                                case iff: If[SEntity] =>
+                                case iff: If[V] =>
                                     nextIf = Some(iff)
                                     processedIfs(i) = ()
                                 case _ =>
@@ -189,11 +189,11 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[SEntity], TACStmts[SEntity]]) {
         }.max
 
         var nextIfIndex = -1
-        val ifTarget = cfg.code.instructions(branchingSite).asInstanceOf[If[SEntity]].targetStmt
+        val ifTarget = cfg.code.instructions(branchingSite).asInstanceOf[If[V]].targetStmt
         for (i <- cfg.bb(nextPossibleIfBlock).startPC.to(cfg.bb(nextPossibleIfBlock).endPC)) {
             // The second condition is necessary to detect two consecutive "if"s (not in an else-if
             // relation)
-            if (cfg.code.instructions(i).isInstanceOf[If[SEntity]] && ifTarget != i) {
+            if (cfg.code.instructions(i).isInstanceOf[If[V]] && ifTarget != i) {
                 nextIfIndex = i
             }
         }
@@ -246,7 +246,7 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[SEntity], TACStmts[SEntity]]) {
         cfg.bb(ifTarget).predecessors.foreach {
             case pred: BasicBlock =>
                 for (i <- pred.startPC.to(pred.endPC)) {
-                    if (cfg.code.instructions(i).isInstanceOf[If[SEntity]]) {
+                    if (cfg.code.instructions(i).isInstanceOf[If[V]]) {
                         processedIfs(i) = ()
                     }
                 }
@@ -268,7 +268,7 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[SEntity], TACStmts[SEntity]]) {
         var returnPos = startPos
         var foundReturn = false
         while (!foundReturn && returnPos < cfg.code.instructions.length) {
-            if (cfg.code.instructions(returnPos).isInstanceOf[ReturnValue[SEntity]]) {
+            if (cfg.code.instructions(returnPos).isInstanceOf[ReturnValue[V]]) {
                 foundReturn = true
             } else {
                 returnPos += 1
@@ -451,7 +451,7 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[SEntity], TACStmts[SEntity]]) {
                 if (pathType == NestedPathType.CondWithAlternative && nextBlock > end) {
                     nextBlock = popped + 1
                     while (nextBlock < cfg.code.instructions.length - 1 &&
-                           !cfg.code.instructions(nextBlock).isInstanceOf[If[SEntity]]
+                           !cfg.code.instructions(nextBlock).isInstanceOf[If[V]]
                     ) {
                         nextBlock += 1
                     }
@@ -459,7 +459,7 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[SEntity], TACStmts[SEntity]]) {
 
                 var containsIf = false
                 for (i <- cfg.bb(nextBlock).startPC.to(cfg.bb(nextBlock).endPC)) {
-                    if (cfg.code.instructions(i).isInstanceOf[If[SEntity]]) {
+                    if (cfg.code.instructions(i).isInstanceOf[If[V]]) {
                         containsIf = true
                     }
                 }
@@ -643,11 +643,11 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[SEntity], TACStmts[SEntity]]) {
                     // case it refers to a loop. If so, use the "if" to find the end
                     var indexFirstAfterCatch = goto.targetStmt
                     if (indexFirstAfterCatch < cn.startPC) {
-                        var iff: Option[If[SEntity]] = None
+                        var iff: Option[If[V]] = None
                         var i = indexFirstAfterCatch
                         while (iff.isEmpty) {
                             cfg.code.instructions(i) match {
-                                case foundIf: If[SEntity] => iff = Some(foundIf)
+                                case foundIf: If[V] => iff = Some(foundIf)
                                 case _              =>
                             }
                             i += 1
@@ -708,7 +708,7 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[SEntity], TACStmts[SEntity]]) {
     protected def isHeadOfLoop(
         site:  Int,
         loops: List[List[Int]],
-        cfg:   CFG[Stmt[SEntity], TACStmts[SEntity]]
+        cfg:   CFG[Stmt[V], TACStmts[V]]
     ): Boolean = {
         var belongsToLoopHeader = false
 
@@ -730,7 +730,7 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[SEntity], TACStmts[SEntity]]) {
                 if (!belongsToLoopHeader) {
                     val start = nextLoop.head
                     var end = start
-                    while (!cfg.code.instructions(end).isInstanceOf[If[SEntity]]) {
+                    while (!cfg.code.instructions(end).isInstanceOf[If[V]]) {
                         end += 1
                     }
                     if (site >= start && site <= end && end < nextLoop.last) {
@@ -781,7 +781,7 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[SEntity], TACStmts[SEntity]]) {
      */
     protected def isCondWithoutElse(
                                        branchingSite: Int,
-                                       cfg:           CFG[Stmt[SEntity], TACStmts[SEntity]],
+                                       cfg:           CFG[Stmt[V], TACStmts[V]],
                                        processedIfs:  mutable.Map[Int, Unit]
     ): Boolean = {
         val successorBlocks = cfg.bb(branchingSite).successors
@@ -813,7 +813,7 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[SEntity], TACStmts[SEntity]]) {
         val indexIf = cfg.bb(lastEle) match {
             case bb: BasicBlock =>
                 val ifPos = bb.startPC.to(bb.endPC).filter(
-                    cfg.code.instructions(_).isInstanceOf[If[SEntity]]
+                    cfg.code.instructions(_).isInstanceOf[If[V]]
                 )
                 if (ifPos.nonEmpty && !isHeadOfLoop(ifPos.head, cfg.findNaturalLoops(), cfg)) {
                     ifPos.head
@@ -1057,10 +1057,10 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[SEntity], TACStmts[SEntity]]) {
                 case bb: BasicBlock =>
                     for (i <- bb.startPC.to(bb.endPC)) {
                         cfg.code.instructions(i) match {
-                            case _: If[SEntity] if !processedIfs.contains(i) =>
+                            case _: If[V] if !processedIfs.contains(i) =>
                                 foundCS.append(processIf(i, processedIfs))
                                 processedIfs(i) = ()
-                            case _: Switch[SEntity] if !processedSwitches.contains(i) =>
+                            case _: Switch[V] if !processedSwitches.contains(i) =>
                                 foundCS.append(processSwitch(i))
                                 processedSwitches(i) = ()
                             case _ =>
@@ -1126,7 +1126,7 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[SEntity], TACStmts[SEntity]]) {
         val element = toTransform.hierarchy.head._1.get
         val start = element._1
         val end = element._2
-        if (cfg.code.instructions(start).isInstanceOf[Switch[SEntity]]) {
+        if (cfg.code.instructions(start).isInstanceOf[Switch[V]]) {
             buildPathForSwitch(start, end, fill)
         } else {
             element._3 match {

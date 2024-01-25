@@ -5,19 +5,18 @@ package fpcf
 import java.io.File
 import java.net.URL
 import scala.collection.mutable.ListBuffer
-
 import org.opalj.br.Annotation
 import org.opalj.br.Annotations
 import org.opalj.br.Method
 import org.opalj.br.analyses.Project
-import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.tac.EagerDetachedTACAIKey
-import org.opalj.tac.Stmt
-import org.opalj.tac.TACStmts
+import org.opalj.tac.TACMethodParameter
+import org.opalj.tac.TACode
+import org.opalj.tac.V
 import org.opalj.tac.VirtualMethodCall
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.string_analysis.LazyInterproceduralStringAnalysis
@@ -73,10 +72,10 @@ sealed class StringAnalysisTestRunner(
             )
         } foreach { m =>
             StringAnalysisTestRunner.extractUVars(
-                tacProvider(m).cfg,
+                tacProvider(m),
                 fqTestMethodsClass,
                 nameTestMethod
-            ).foreach { uvar => entitiesToAnalyze.append((uvar, m)) }
+            ).foreach { puVar => entitiesToAnalyze.append((puVar, m)) }
         }
         entitiesToAnalyze
     }
@@ -128,15 +127,15 @@ object StringAnalysisTestRunner {
      *         order in which they occurred in the given statements.
      */
     def extractUVars(
-                        cfg:                CFG[Stmt[SEntity], TACStmts[SEntity]],
-                        fqTestMethodsClass: String,
-                        nameTestMethod:     String
+        tac:                TACode[TACMethodParameter, V],
+        fqTestMethodsClass: String,
+        nameTestMethod:     String
     ): List[SEntity] = {
-        cfg.code.instructions.filter {
+        tac.cfg.code.instructions.filter {
             case VirtualMethodCall(_, declClass, _, name, _, _, _) =>
                 declClass.toJavaClass.getName == fqTestMethodsClass && name == nameTestMethod
             case _ => false
-        }.map(_.asVirtualMethodCall.params.head.asVar).toList
+        }.map(_.asVirtualMethodCall.params.head.asVar.toPersistentForm(tac.stmts)).toList
     }
 
 }

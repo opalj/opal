@@ -23,7 +23,7 @@ import org.opalj.fpcf.FinalEP
  * @author Patrick Mell
  */
 class NewInterpreter(
-                        cfg:         CFG[Stmt[SEntity], TACStmts[SEntity]],
+                        cfg:         CFG[Stmt[V], TACStmts[V]],
                         exprHandler: InterpretationHandler
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
 

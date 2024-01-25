@@ -26,14 +26,14 @@ import org.opalj.fpcf.PropertyStore
  * @author Patrick Mell
  */
 class InterproceduralNonVirtualMethodCallInterpreter(
-                                                        cfg:             CFG[Stmt[SEntity], TACStmts[SEntity]],
+                                                        cfg:             CFG[Stmt[V], TACStmts[V]],
                                                         exprHandler:     InterproceduralInterpretationHandler,
                                                         ps:              PropertyStore,
                                                         state:           InterproceduralComputationState,
                                                         declaredMethods: DeclaredMethods
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
 
-    override type T = NonVirtualMethodCall[SEntity]
+    override type T = NonVirtualMethodCall[V]
 
     /**
      * Currently, this function supports the interpretation of the following non virtual methods:
@@ -51,7 +51,7 @@ class InterproceduralNonVirtualMethodCallInterpreter(
      * @see [[AbstractStringInterpreter.interpret]]
      */
     override def interpret(
-                              instr:   NonVirtualMethodCall[SEntity],
+                              instr:   T,
                               defSite: Int
     ): EOptionP[Entity, StringConstancyProperty] = {
         val e: Integer = defSite
@@ -69,7 +69,7 @@ class InterproceduralNonVirtualMethodCallInterpreter(
      * these are currently interpreted).
      */
     private def interpretInit(
-                                 init:    NonVirtualMethodCall[SEntity],
+                                 init:    T,
                                  defSite: Integer
     ): EOptionP[Entity, StringConstancyProperty] = {
         init.params.size match {
@@ -81,8 +81,7 @@ class InterproceduralNonVirtualMethodCallInterpreter(
                 if (results.forall(_._2.isFinal)) {
                     // Final result is available
                     val reduced = StringConstancyInformation.reduceMultiple(results.map { r =>
-                        val prop = r._2.asFinal.p.asInstanceOf[StringConstancyProperty]
-                        prop.stringConstancyInformation
+                        r._2.asFinal.p.stringConstancyInformation
                     })
                     FinalEP(defSite, StringConstancyProperty(reduced))
                 } else {
@@ -92,10 +91,9 @@ class InterproceduralNonVirtualMethodCallInterpreter(
                     results.foreach {
                         case (ds, r) =>
                             if (r.isFinal) {
-                                val p = r.asFinal.p.asInstanceOf[StringConstancyProperty]
                                 state.appendToFpe2Sci(
                                     ds,
-                                    p.stringConstancyInformation,
+                                    r.asFinal.p.stringConstancyInformation,
                                     reset = true
                                 )
                             }

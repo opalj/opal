@@ -27,12 +27,12 @@ import org.opalj.fpcf.FinalEP
  * @author Patrick Mell
  */
 class InterproceduralVirtualMethodCallInterpreter(
-                                                     cfg:         CFG[Stmt[SEntity], TACStmts[SEntity]],
+                                                     cfg:         CFG[Stmt[V], TACStmts[V]],
                                                      exprHandler: InterproceduralInterpretationHandler,
                                                      callees:     Callees
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
 
-    override type T = VirtualMethodCall[SEntity]
+    override type T = VirtualMethodCall[V]
 
     /**
      * Currently, this function supports the interpretation of the following virtual methods:

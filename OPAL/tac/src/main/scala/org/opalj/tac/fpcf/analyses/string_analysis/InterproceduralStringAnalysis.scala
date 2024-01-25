@@ -165,11 +165,10 @@ class InterproceduralStringAnalysis(
      * the possible string values. This method returns either a final [[Result]] or an
      * [[InterimResult]] depending on whether other information needs to be computed first.
      */
-    private def determinePossibleStrings(
-        state: InterproceduralComputationState
-    ): ProperPropertyComputationResult = {
-        val uvar = state.entity._1
-        val defSites = uvar.definedBy.toArray.sorted
+    private def determinePossibleStrings(state: InterproceduralComputationState): ProperPropertyComputationResult = {
+        val puVar = state.entity._1
+        val uVar = puVar.toValueOriginForm(state.tac.pcToIndex)
+        val defSites = uVar.definedBy.toArray.sorted
 
         if (state.tac == null || state.callees == null) {
             return getInterimResult(state)
@@ -178,7 +177,7 @@ class InterproceduralStringAnalysis(
         val stmts = state.tac.stmts
 
         if (state.computedLeanPath == null) {
-            state.computedLeanPath = computeLeanPath(uvar, state.tac)
+            state.computedLeanPath = computeLeanPath(uVar, state.tac)
         }
 
         if (state.iHandler == null) {
@@ -217,10 +216,10 @@ class InterproceduralStringAnalysis(
             // (but only once and only if the expressions is not a local string)
             val hasCallersOrParamInfo = state.callers == null && state.params.isEmpty
             requiresCallersInfo = if (defSites.exists(_ < 0)) {
-                if (InterpretationHandler.isStringConstExpression(uvar)) {
+                if (InterpretationHandler.isStringConstExpression(uVar)) {
                     hasCallersOrParamInfo
-                } else if (InterproceduralStringAnalysis.isSupportedPrimitiveNumberType(uvar)) {
-                    val numType = uvar.value.asPrimitiveValue.primitiveType.toJava
+                } else if (InterproceduralStringAnalysis.isSupportedPrimitiveNumberType(uVar)) {
+                    val numType = uVar.value.asPrimitiveValue.primitiveType.toJava
                     val sci = InterproceduralStringAnalysis.getDynamicStringInformationForNumberType(numType)
                     return Result(state.entity, StringConstancyProperty(sci))
                 } else {
@@ -230,7 +229,7 @@ class InterproceduralStringAnalysis(
             } else {
                 val call = stmts(defSites.head).asAssignment.expr
                 if (InterpretationHandler.isStringBuilderBufferToStringCall(call)) {
-                    val (_, hasInitDefSites) = computeLeanPathForStringBuilder(uvar, state.tac)
+                    val (_, hasInitDefSites) = computeLeanPathForStringBuilder(uVar, state.tac)
                     if (!hasInitDefSites) {
                         return Result(state.entity, StringConstancyProperty.lb)
                     }
@@ -273,23 +272,21 @@ class InterproceduralStringAnalysis(
         // Interpret a function / method parameter using the parameter information in state
         if (defSites.head < 0) {
             val r = state.iHandler.processDefSite(defSites.head, state.params.toList.map(_.toList))
-            val sci = r.asFinal.p.asInstanceOf[StringConstancyProperty].stringConstancyInformation
-            return Result(state.entity, StringConstancyProperty(sci))
+            return Result(state.entity, StringConstancyProperty(r.asFinal.p.stringConstancyInformation))
         }
 
         val call = stmts(defSites.head).asAssignment.expr
         var attemptFinalResultComputation = false
         if (InterpretationHandler.isStringBuilderBufferToStringCall(call)) {
             // Find DUVars, that the analysis of the current entity depends on
-            val dependentVars = findDependentVars(state.computedLeanPath, stmts, uvar)
+            val dependentVars = findDependentVars(state.computedLeanPath, stmts, puVar)(state.tac)
             if (dependentVars.nonEmpty) {
                 dependentVars.keys.foreach { nextVar =>
-                    val toAnalyze = (nextVar, state.entity._2)
                     dependentVars.foreach { case (k, v) => state.appendToVar2IndexMapping(k, v) }
-                    val ep = propertyStore(toAnalyze, StringConstancyProperty.key)
+                    val ep = propertyStore((nextVar, state.entity._2), StringConstancyProperty.key)
                     ep match {
-                        case FinalP(p) => return processFinalP(state, ep.e, p)
-                        case _         => state.dependees = ep :: state.dependees
+                        case FinalEP(e, p) => return processFinalP(state, e, p)
+                        case _             => state.dependees = ep :: state.dependees
                     }
                 }
             } else {
@@ -531,11 +528,11 @@ class InterproceduralStringAnalysis(
             case ((m, pc, _), methodIndex) =>
                 val tac = propertyStore(m.definedMethod, TACAI.key).ub.tac.get
                 val params = tac.stmts(tac.pcToIndex(pc)) match {
-                    case Assignment(_, _, fc: FunctionCall[SEntity]) => fc.params
-                    case Assignment(_, _, mc: MethodCall[SEntity])   => mc.params
-                    case ExprStmt(_, fc: FunctionCall[SEntity])      => fc.params
-                    case ExprStmt(_, fc: MethodCall[SEntity])        => fc.params
-                    case mc: MethodCall[SEntity]                     => mc.params
+                    case Assignment(_, _, fc: FunctionCall[V]) => fc.params
+                    case Assignment(_, _, mc: MethodCall[V])   => mc.params
+                    case ExprStmt(_, fc: FunctionCall[V])      => fc.params
+                    case ExprStmt(_, fc: MethodCall[V])        => fc.params
+                    case mc: MethodCall[V]                     => mc.params
                     case _                                     => List()
                 }
                 params.zipWithIndex.foreach {
@@ -549,7 +546,7 @@ class InterproceduralStringAnalysis(
                         }
                         // Recursively analyze supported types
                         if (InterproceduralStringAnalysis.isSupportedType(p.asVar)) {
-                            val paramEntity = (p.asVar, m.definedMethod)
+                            val paramEntity = (p.asVar.toPersistentForm(state.tac.stmts), m.definedMethod)
                             val eps = propertyStore(paramEntity, StringConstancyProperty.key)
                             state.appendToVar2IndexMapping(paramEntity._1, paramIndex)
                             eps match {
@@ -595,8 +592,7 @@ class InterproceduralStringAnalysis(
                 if (!state.fpe2sci.contains(index)) {
                     val eOptP = state.iHandler.processDefSite(index, state.params.toList.map(_.toSeq))
                     if (eOptP.isFinal) {
-                        val p = eOptP.asFinal.p.asInstanceOf[StringConstancyProperty]
-                        state.appendToFpe2Sci(index, p.stringConstancyInformation, reset = true)
+                        state.appendToFpe2Sci(index, eOptP.asFinal.p.stringConstancyInformation, reset = true)
                     } else {
                         hasFinalResult = false
                     }
@@ -620,19 +616,19 @@ class InterproceduralStringAnalysis(
      * [[computeLeanPathForStringBuilder]].
      */
     private def computeLeanPath(
-                                   duvar: SEntity,
+                                   value: V,
                                    tac:   TACode[TACMethodParameter, DUVar[ValueInformation]]
     ): Path = {
-        val defSites = duvar.definedBy.toArray.sorted
+        val defSites = value.definedBy.toArray.sorted
         if (defSites.head < 0) {
-            computeLeanPathForStringConst(duvar)
+            computeLeanPathForStringConst(value)
         } else {
             val call = tac.stmts(defSites.head).asAssignment.expr
             if (InterpretationHandler.isStringBuilderBufferToStringCall(call)) {
-                val (leanPath, _) = computeLeanPathForStringBuilder(duvar, tac)
+                val (leanPath, _) = computeLeanPathForStringBuilder(value, tac)
                 leanPath
             } else {
-                computeLeanPathForStringConst(duvar)
+                computeLeanPathForStringConst(value)
             }
         }
     }
@@ -641,8 +637,8 @@ class InterproceduralStringAnalysis(
      * This function computes the lean path for a [[DUVar]] which is required to be a string
      * expressions.
      */
-    private def computeLeanPathForStringConst(duvar: SEntity): Path = {
-        val defSites = duvar.definedBy.toArray.sorted
+    private def computeLeanPathForStringConst(value: V): Path = {
+        val defSites = value.definedBy.toArray.sorted
         if (defSites.length == 1) {
             // Trivial case for just one element
             Path(List(FlatPathElement(defSites.head)))
@@ -665,27 +661,26 @@ class InterproceduralStringAnalysis(
      * `(null, false)` and otherwise `(computed lean path, true)`.
      */
     private def computeLeanPathForStringBuilder(
-                                                   duvar: SEntity,
+                                                   value: V,
                                                    tac:   TACode[TACMethodParameter, DUVar[ValueInformation]]
     ): (Path, Boolean) = {
         val pathFinder: AbstractPathFinder = new WindowPathFinder(tac.cfg)
-        val initDefSites = InterpretationHandler.findDefSiteOfInit(duvar, tac.stmts)
+        val initDefSites = InterpretationHandler.findDefSiteOfInit(value, tac.stmts)
         if (initDefSites.isEmpty) {
             (null, false)
         } else {
-            val paths = pathFinder.findPaths(initDefSites, duvar.definedBy.toArray.max)
-            (paths.makeLeanPath(duvar, tac.stmts), true)
+            val paths = pathFinder.findPaths(initDefSites, value.definedBy.toArray.max)
+            (paths.makeLeanPath(value, tac.stmts), true)
         }
     }
 
-    private def hasParamUsageAlongPath(path: Path, stmts: Array[Stmt[SEntity]]): Boolean = {
-        def hasExprParamUsage(expr: Expr[SEntity]): Boolean = expr match {
-            case al: ArrayLoad[SEntity] =>
-                ArrayPreparationInterpreter.getStoreAndLoadDefSites(al, stmts).exists(_ < 0)
-            case duvar: SEntity            => duvar.definedBy.exists(_ < 0)
-            case fc: FunctionCall[SEntity] => fc.params.exists(hasExprParamUsage)
-            case mc: MethodCall[SEntity]   => mc.params.exists(hasExprParamUsage)
-            case be: BinaryExpr[SEntity]   => hasExprParamUsage(be.left) || hasExprParamUsage(be.right)
+    private def hasParamUsageAlongPath(path: Path, stmts: Array[Stmt[V]]): Boolean = {
+        def hasExprParamUsage(expr: Expr[V]): Boolean = expr match {
+            case al: ArrayLoad[V]    => ArrayPreparationInterpreter.getStoreAndLoadDefSites(al, stmts).exists(_ < 0)
+            case duVar: V            => duVar.definedBy.exists(_ < 0)
+            case fc: FunctionCall[V] => fc.params.exists(hasExprParamUsage)
+            case mc: MethodCall[V]   => mc.params.exists(hasExprParamUsage)
+            case be: BinaryExpr[V]   => hasExprParamUsage(be.left) || hasExprParamUsage(be.right)
             case _                   => false
         }
 
@@ -707,15 +702,15 @@ class InterproceduralStringAnalysis(
      */
     private def findDependeesAcc(
                                     subpath:           SubPath,
-                                    stmts:             Array[Stmt[SEntity]],
+                                    stmts:             Array[Stmt[V]],
                                     target:            SEntity,
                                     foundDependees:    ListBuffer[(SEntity, Int)],
                                     hasTargetBeenSeen: Boolean
-    ): (ListBuffer[(SEntity, Int)], Boolean) = {
+    )(implicit tac: TACode[TACMethodParameter, V]): (ListBuffer[(SEntity, Int)], Boolean) = {
         var encounteredTarget = false
         subpath match {
             case fpe: FlatPathElement =>
-                if (target.definedBy.contains(fpe.element)) {
+                if (target.toValueOriginForm(tac.pcToIndex).definedBy.contains(fpe.element)) {
                     encounteredTarget = true
                 }
                 // For FlatPathElements, search for DUVars on which the toString method is called
@@ -728,7 +723,7 @@ class InterproceduralStringAnalysis(
                                 val expr = stmts(ds).asAssignment.expr
                                 if (InterpretationHandler.isStringBuilderBufferToStringCall(expr)) {
                                     foundDependees.append((
-                                        outerExpr.asVirtualFunctionCall.params.head.asVar,
+                                        outerExpr.asVirtualFunctionCall.params.head.asVar.toPersistentForm(tac.stmts),
                                         fpe.element
                                     ))
                                 }
@@ -767,11 +762,11 @@ class InterproceduralStringAnalysis(
      */
     private def findDependentVars(
                                      path:   Path,
-                                     stmts:  Array[Stmt[SEntity]],
+                                     stmts:  Array[Stmt[V]],
                                      ignore: SEntity
-    ): mutable.LinkedHashMap[SEntity, Int] = {
+    )(implicit tac: TACode[TACMethodParameter, V]): mutable.LinkedHashMap[SEntity, Int] = {
         val dependees = mutable.LinkedHashMap[SEntity, Int]()
-        val ignoreNews = InterpretationHandler.findNewOfVar(ignore, stmts)
+        val ignoreNews = InterpretationHandler.findNewOfVar(ignore.toValueOriginForm(tac.pcToIndex), stmts)
         var wasTargetSeen = false
 
         path.elements.foreach { nextSubpath =>
@@ -785,7 +780,7 @@ class InterproceduralStringAnalysis(
                 )
                 wasTargetSeen = encounteredTarget
                 currentDeps.foreach { nextPair =>
-                    val newExpressions = InterpretationHandler.findNewOfVar(nextPair._1, stmts)
+                    val newExpressions = InterpretationHandler.findNewOfVar(nextPair._1.toValueOriginForm(tac.pcToIndex), stmts)
                     if (ignore != nextPair._1 && ignoreNews != newExpressions) {
                         dependees.put(nextPair._1, nextPair._2)
                     }
@@ -827,14 +822,8 @@ object InterproceduralStringAnalysis {
      * This function checks whether a given type is a supported primitive type. Supported currently
      * means short, int, float, or double.
      */
-    def isSupportedPrimitiveNumberType(v: SEntity): Boolean = {
-        val value = v.value
-        if (value.isPrimitiveValue) {
-            isSupportedPrimitiveNumberType(value.asPrimitiveValue.primitiveType.toJava)
-        } else {
-            false
-        }
-    }
+    def isSupportedPrimitiveNumberType(v: V): Boolean =
+        v.value.isPrimitiveValue && isSupportedPrimitiveNumberType(v.value.asPrimitiveValue.primitiveType.toJava)
 
     /**
      * This function checks whether a given type is a supported primitive type. Supported currently
@@ -858,13 +847,13 @@ object InterproceduralStringAnalysis {
             typeName == "java.lang.String" || typeName == "java.lang.String[]"
 
     /**
-     * Determines whether a given [[SEntity]] element ([[DUVar]]) is supported by the string analysis.
+     * Determines whether a given element is supported by the string analysis.
      *
      * @param v The element to check.
      * @return Returns true if the given [[FieldType]] is of a supported type. For supported types,
      *         see [[InterproceduralStringAnalysis.isSupportedType(String)]].
      */
-    def isSupportedType(v: SEntity): Boolean =
+    def isSupportedType(v: V): Boolean =
         if (v.value.isPrimitiveValue) {
             isSupportedType(v.value.asPrimitiveValue.primitiveType.toJava)
         } else {

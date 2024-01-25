@@ -4,11 +4,9 @@ package support
 package info
 
 import scala.annotation.switch
-
 import java.net.URL
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
-
 import org.opalj.br.Method
 import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.BasicReport
@@ -35,12 +33,14 @@ import org.opalj.tac.Call
 import org.opalj.tac.ExprStmt
 import org.opalj.tac.StaticFunctionCall
 import org.opalj.tac.Stmt
+import org.opalj.tac.TACMethodParameter
+import org.opalj.tac.TACode
+import org.opalj.tac.V
 import org.opalj.tac.VirtualFunctionCall
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.string_analysis.LazyInterproceduralStringAnalysis
 import org.opalj.tac.fpcf.analyses.string_analysis.LazyIntraproceduralStringAnalysis
 import org.opalj.tac.fpcf.analyses.string_analysis.SContext
-import org.opalj.tac.fpcf.analyses.string_analysis.SEntity
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
@@ -180,9 +180,9 @@ object StringAnalysisReflectiveCalls extends ProjectAnalysisApplication {
     private def processFunctionCall(
                                        ps:        PropertyStore,
                                        method:    Method,
-                                       call:      Call[SEntity],
+                                       call:      Call[V],
                                        resultMap: ResultMapType
-    ): Unit = {
+    )(implicit stmts: Array[Stmt[V]]): Unit = {
         if (isRelevantCall(call.declaringClass, call.name)) {
             val fqnMethodName = buildFQMethodName(method.classFile.thisType, method.name)
             if (!ignoreMethods.contains(fqnMethodName)) {
@@ -194,8 +194,7 @@ object StringAnalysisReflectiveCalls extends ProjectAnalysisApplication {
                     call.descriptor.parameterTypes.zipWithIndex.foreach {
                         case (ft, index) =>
                             if (ft.toJava == "java.lang.String") {
-                                val duvar = call.params(index).asVar
-                                val e = (duvar, method)
+                                val e = (call.params(index).asVar.toPersistentForm, method)
                                 ps.force(e, StringConstancyProperty.key)
                                 entityContext.append(
                                     (e, buildFQMethodName(call.declaringClass, call.name))
@@ -233,25 +232,26 @@ object StringAnalysisReflectiveCalls extends ProjectAnalysisApplication {
     }
 
     private def processStatements(
-                                     ps:        PropertyStore,
-                                     stmts:     Array[Stmt[SEntity]],
-                                     m:         Method,
-                                     resultMap: ResultMapType
+         ps:        PropertyStore,
+         tac:     TACode[TACMethodParameter, V],
+         m:         Method,
+         resultMap: ResultMapType
     ): Unit = {
+        implicit val stmts: Array[Stmt[V]] = tac.stmts
         stmts.foreach { stmt =>
             // Using the following switch speeds up the whole process
             (stmt.astID: @switch) match {
                 case Assignment.ASTID => stmt match {
-                        case Assignment(_, _, c: StaticFunctionCall[SEntity]) =>
+                        case Assignment(_, _, c: StaticFunctionCall[V]) =>
                             processFunctionCall(ps, m, c, resultMap)
-                        case Assignment(_, _, c: VirtualFunctionCall[SEntity]) =>
+                        case Assignment(_, _, c: VirtualFunctionCall[V]) =>
                             processFunctionCall(ps, m, c, resultMap)
                         case _ =>
                     }
                 case ExprStmt.ASTID => stmt match {
-                        case ExprStmt(_, c: StaticFunctionCall[SEntity]) =>
+                        case ExprStmt(_, c: StaticFunctionCall[V]) =>
                             processFunctionCall(ps, m, c, resultMap)
-                        case ExprStmt(_, c: VirtualFunctionCall[SEntity]) =>
+                        case ExprStmt(_, c: VirtualFunctionCall[V]) =>
                             processFunctionCall(ps, m, c, resultMap)
                         case _ =>
                     }
@@ -267,7 +267,7 @@ object StringAnalysisReflectiveCalls extends ProjectAnalysisApplication {
     )(eps: SomeEPS): ProperPropertyComputationResult = {
         eps match {
             case FinalP(tac: TACAI) =>
-                processStatements(ps, tac.tac.get.stmts, m, resultMap)
+                processStatements(ps, tac.tac.get, m, resultMap)
                 Result(m, tac)
             case InterimLUBP(lb, ub) =>
                 InterimResult(
@@ -324,8 +324,7 @@ object StringAnalysisReflectiveCalls extends ProjectAnalysisApplication {
                         // No TAC available, e.g., because the method has no body
                         println(s"No body for method: ${m.classFile.fqn}#${m.name}")
                     } else {
-                        val tac = tacaiEOptP.ub.tac.get
-                        processStatements(propertyStore, tac.stmts, m, resultMap)
+                        processStatements(propertyStore, tacaiEOptP.ub.tac.get, m, resultMap)
                     }
                 } else {
                     InterimResult(

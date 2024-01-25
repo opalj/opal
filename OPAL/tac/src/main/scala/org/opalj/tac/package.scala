@@ -31,6 +31,7 @@ import org.opalj.value.ValueInformation
 package object tac {
 
     type V = DUVar[ValueInformation]
+    type PV = PDUVar[ValueInformation]
 
     final def pcOfDefSite(valueOrigin: ValueOrigin)(implicit stmts: Array[Stmt[V]]): Int = {
         if (valueOrigin >= 0)

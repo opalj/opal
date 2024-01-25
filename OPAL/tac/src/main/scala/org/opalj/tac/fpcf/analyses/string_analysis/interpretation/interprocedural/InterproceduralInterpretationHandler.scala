@@ -93,26 +93,24 @@ class InterproceduralInterpretationHandler(
             case Assignment(_, _, expr: IntConst)    => processConstExpr(expr, defSite)
             case Assignment(_, _, expr: FloatConst)  => processConstExpr(expr, defSite)
             case Assignment(_, _, expr: DoubleConst) => processConstExpr(expr, defSite)
-            case Assignment(_, _, expr: ArrayLoad[SEntity]) =>
-                processArrayLoad(expr, defSite, params)
-            case Assignment(_, _, expr: NewArray[SEntity]) =>
-                processNewArray(expr, defSite, params)
+            case Assignment(_, _, expr: ArrayLoad[V]) => processArrayLoad(expr, defSite, params)
+            case Assignment(_, _, expr: NewArray[V]) => processNewArray(expr, defSite, params)
             case Assignment(_, _, expr: New)                    => processNew(expr, defSite)
             case Assignment(_, _, expr: GetStatic)              => processGetField(expr, defSite)
             case ExprStmt(_, expr: GetStatic)                   => processGetField(expr, defSite)
-            case Assignment(_, _, expr: VirtualFunctionCall[SEntity]) => processVFC(expr, defSite, params)
-            case ExprStmt(_, expr: VirtualFunctionCall[SEntity])      => processVFC(expr, defSite, params)
-            case Assignment(_, _, expr: StaticFunctionCall[SEntity]) =>
+            case Assignment(_, _, expr: VirtualFunctionCall[V]) => processVFC(expr, defSite, params)
+            case ExprStmt(_, expr: VirtualFunctionCall[V])      => processVFC(expr, defSite, params)
+            case Assignment(_, _, expr: StaticFunctionCall[V]) =>
                 processStaticFunctionCall(expr, defSite, params)
-            case ExprStmt(_, expr: StaticFunctionCall[SEntity]) =>
+            case ExprStmt(_, expr: StaticFunctionCall[V]) =>
                 processStaticFunctionCall(expr, defSite, params)
-            case Assignment(_, _, expr: BinaryExpr[SEntity]) => processBinaryExpr(expr, defSite)
-            case Assignment(_, _, expr: NonVirtualFunctionCall[SEntity]) =>
+            case Assignment(_, _, expr: BinaryExpr[V]) => processBinaryExpr(expr, defSite)
+            case Assignment(_, _, expr: NonVirtualFunctionCall[V]) =>
                 processNonVirtualFunctionCall(expr, defSite)
-            case Assignment(_, _, expr: GetField[SEntity]) => processGetField(expr, defSite)
-            case vmc: VirtualMethodCall[SEntity] =>
+            case Assignment(_, _, expr: GetField[V]) => processGetField(expr, defSite)
+            case vmc: VirtualMethodCall[V] =>
                 processVirtualMethodCall(vmc, defSite, callees)
-            case nvmc: NonVirtualMethodCall[SEntity] => processNonVirtualMethodCall(nvmc, defSite)
+            case nvmc: NonVirtualMethodCall[V] => processNonVirtualMethodCall(nvmc, defSite)
             case _ =>
                 state.appendToInterimFpe2Sci(defSite, StringConstancyInformation.getNeutralElement)
                 FinalEP(e, StringConstancyProperty.getNeutralElement)
@@ -147,7 +145,7 @@ class InterproceduralInterpretationHandler(
      * Helper / utility function for processing [[ArrayLoad]]s.
      */
     private def processArrayLoad(
-                                    expr:    ArrayLoad[SEntity],
+                                    expr:    ArrayLoad[V],
                                     defSite: Int,
                                     params:  List[Seq[StringConstancyInformation]]
     ): EOptionP[Entity, StringConstancyProperty] = {
@@ -171,7 +169,7 @@ class InterproceduralInterpretationHandler(
      * Helper / utility function for processing [[NewArray]]s.
      */
     private def processNewArray(
-                                   expr:    NewArray[SEntity],
+                                   expr:    NewArray[V],
                                    defSite: Int,
                                    params:  List[Seq[StringConstancyInformation]]
     ): EOptionP[Entity, StringConstancyProperty] = {
@@ -209,7 +207,7 @@ class InterproceduralInterpretationHandler(
      * Helper / utility function for interpreting [[VirtualFunctionCall]]s.
      */
     private def processVFC(
-                              expr:    VirtualFunctionCall[SEntity],
+                              expr:    VirtualFunctionCall[V],
                               defSite: Int,
                               params:  List[Seq[StringConstancyInformation]]
     ): EOptionP[Entity, StringConstancyProperty] = {
@@ -257,7 +255,7 @@ class InterproceduralInterpretationHandler(
      * Helper / utility function for processing [[StaticFunctionCall]]s.
      */
     private def processStaticFunctionCall(
-                                             expr:    StaticFunctionCall[SEntity],
+                                             expr:    StaticFunctionCall[V],
                                              defSite: Int,
                                              params:  List[Seq[StringConstancyInformation]]
     ): EOptionP[Entity, StringConstancyProperty] = {
@@ -282,7 +280,7 @@ class InterproceduralInterpretationHandler(
      * Helper / utility function for processing [[BinaryExpr]]s.
      */
     private def processBinaryExpr(
-                                     expr:    BinaryExpr[SEntity],
+                                     expr:    BinaryExpr[V],
                                      defSite: Int
     ): EOptionP[Entity, StringConstancyProperty] = {
         // TODO: For binary expressions, use the underlying domain to retrieve the result of such
@@ -298,7 +296,7 @@ class InterproceduralInterpretationHandler(
      * Helper / utility function for processing [[GetField]]s.
      */
     private def processGetField(
-                                   expr:    FieldRead[SEntity],
+                                   expr:    FieldRead[V],
                                    defSite: Int
     ): EOptionP[Entity, StringConstancyProperty] = {
         val r = new InterproceduralFieldInterpreter(
@@ -320,7 +318,7 @@ class InterproceduralInterpretationHandler(
      * Helper / utility function for processing [[NonVirtualMethodCall]]s.
      */
     private def processNonVirtualFunctionCall(
-                                                 expr:    NonVirtualFunctionCall[SEntity],
+                                                 expr:    NonVirtualFunctionCall[V],
                                                  defSite: Int
     ): EOptionP[Entity, StringConstancyProperty] = {
         val r = new InterproceduralNonVirtualFunctionCallInterpreter(
@@ -342,7 +340,7 @@ class InterproceduralInterpretationHandler(
      * Helper / utility function for processing [[VirtualMethodCall]]s.
      */
     def processVirtualMethodCall(
-                                    expr:    VirtualMethodCall[SEntity],
+                                    expr:    VirtualMethodCall[V],
                                     defSite: Int,
                                     callees: Callees
     ): EOptionP[Entity, StringConstancyProperty] = {
@@ -359,7 +357,7 @@ class InterproceduralInterpretationHandler(
      * Helper / utility function for processing [[NonVirtualMethodCall]]s.
      */
     private def processNonVirtualMethodCall(
-                                               nvmc:    NonVirtualMethodCall[SEntity],
+                                               nvmc:    NonVirtualMethodCall[V],
                                                defSite: Int
     ): EOptionP[Entity, StringConstancyProperty] = {
         val r = new InterproceduralNonVirtualMethodCallInterpreter(
@@ -425,23 +423,23 @@ class InterproceduralInterpretationHandler(
             state.appendToFpe2Sci(defSite, getParam(state.params.toSeq.map(_.toSeq), defSite), reset = true)
         } else {
             stmts(defSite) match {
-                case nvmc: NonVirtualMethodCall[SEntity] =>
+                case nvmc: NonVirtualMethodCall[V] =>
                     NonVirtualMethodCallFinalizer(state).finalizeInterpretation(nvmc, defSite)
-                case Assignment(_, _, al: ArrayLoad[SEntity]) =>
+                case Assignment(_, _, al: ArrayLoad[V]) =>
                     ArrayLoadFinalizer(state, cfg).finalizeInterpretation(al, defSite)
-                case Assignment(_, _, na: NewArray[SEntity]) =>
+                case Assignment(_, _, na: NewArray[V]) =>
                     NewArrayFinalizer(state, cfg).finalizeInterpretation(na, defSite)
-                case Assignment(_, _, vfc: VirtualFunctionCall[SEntity]) =>
+                case Assignment(_, _, vfc: VirtualFunctionCall[V]) =>
                     VirtualFunctionCallFinalizer(state, cfg).finalizeInterpretation(vfc, defSite)
-                case ExprStmt(_, vfc: VirtualFunctionCall[SEntity]) =>
+                case ExprStmt(_, vfc: VirtualFunctionCall[V]) =>
                     VirtualFunctionCallFinalizer(state, cfg).finalizeInterpretation(vfc, defSite)
-                case Assignment(_, _, fr: FieldRead[SEntity]) =>
+                case Assignment(_, _, fr: FieldRead[V]) =>
                     GetFieldFinalizer(state).finalizeInterpretation(fr, defSite)
-                case ExprStmt(_, fr: FieldRead[SEntity]) =>
+                case ExprStmt(_, fr: FieldRead[V]) =>
                     GetFieldFinalizer(state).finalizeInterpretation(fr, defSite)
-                case Assignment(_, _, sfc: StaticFunctionCall[SEntity]) =>
+                case Assignment(_, _, sfc: StaticFunctionCall[V]) =>
                     StaticFunctionCallFinalizer(state).finalizeInterpretation(sfc, defSite)
-                case ExprStmt(_, sfc: StaticFunctionCall[SEntity]) =>
+                case ExprStmt(_, sfc: StaticFunctionCall[V]) =>
                     StaticFunctionCallFinalizer(state).finalizeInterpretation(sfc, defSite)
                 case _ => state.appendToFpe2Sci(
                         defSite,

@@ -73,14 +73,14 @@ class IntraproceduralStringAnalysis(
      * have all required information ready for a final result.
      */
     private case class ComputationState(
-                                           // The lean path that was computed
-                                           computedLeanPath: Path,
-                                           // A mapping from DUVar elements to the corresponding indices of the FlatPathElements
-                                           var2IndexMapping: mutable.Map[SEntity, Int],
-                                           // A mapping from values of FlatPathElements to StringConstancyInformation
-                                           fpe2sci: mutable.Map[Int, StringConstancyInformation],
-                                           // The three-address code of the method in which the entity under analysis resides
-                                           tac: TACode[TACMethodParameter, DUVar[ValueInformation]]
+       // The lean path that was computed
+       computedLeanPath: Path,
+       // A mapping from DUVar elements to the corresponding indices of the FlatPathElements
+       var2IndexMapping: mutable.Map[SEntity, Int],
+       // A mapping from values of FlatPathElements to StringConstancyInformation
+       fpe2sci: mutable.Map[Int, StringConstancyInformation],
+       // The three-address code of the method in which the entity under analysis resides
+       tac: TACode[TACMethodParameter, DUVar[ValueInformation]]
     )
 
     def analyze(data: SContext): ProperPropertyComputationResult = {
@@ -93,7 +93,7 @@ class IntraproceduralStringAnalysis(
         if (tacaiEOptP.hasUBP) {
             if (tacaiEOptP.ub.tac.isEmpty) {
                 // No TAC available, e.g., because the method has no body
-                return Result(data, StringConstancyProperty.lb)
+                return Result(data, StringConstancyProperty.lb) // TODO add continuation
             } else {
                 tac = tacaiEOptP.ub.tac.get
             }
@@ -101,8 +101,9 @@ class IntraproceduralStringAnalysis(
         val cfg = tac.cfg
         val stmts = tac.stmts
 
-        val uvar = data._1
-        val defSites = uvar.definedBy.toArray.sorted
+        val puVar = data._1
+        val uVar = puVar.toValueOriginForm(tac.pcToIndex)
+        val defSites = uVar.definedBy.toArray.sorted
         // Function parameters are currently regarded as dynamic value; the following if finds read
         // operations of strings (not String{Builder, Buffer}s, they will be handles further down
         if (defSites.head < 0) {
@@ -119,17 +120,17 @@ class IntraproceduralStringAnalysis(
 
         val call = stmts(defSites.head).asAssignment.expr
         if (InterpretationHandler.isStringBuilderBufferToStringCall(call)) {
-            val initDefSites = InterpretationHandler.findDefSiteOfInit(uvar, stmts)
+            val initDefSites = InterpretationHandler.findDefSiteOfInit(uVar, stmts)
             // initDefSites empty => String{Builder,Buffer} from method parameter is to be evaluated
             if (initDefSites.isEmpty) {
                 return Result(data, StringConstancyProperty.lb)
             }
 
-            val paths = pathFinder.findPaths(initDefSites, uvar.definedBy.head)
-            val leanPaths = paths.makeLeanPath(uvar, stmts)
+            val paths = pathFinder.findPaths(initDefSites, uVar.definedBy.head)
+            val leanPaths = paths.makeLeanPath(uVar, stmts)
 
             // Find DUVars, that the analysis of the current entity depends on
-            val dependentVars = findDependentVars(leanPaths, stmts, uvar)
+            val dependentVars = findDependentVars(leanPaths, stmts, puVar)(tac)
             if (dependentVars.nonEmpty) {
                 dependentVars.keys.foreach { nextVar =>
                     val toAnalyze = (nextVar, data._2)
@@ -156,7 +157,7 @@ class IntraproceduralStringAnalysis(
         else {
             val interHandler = IntraproceduralInterpretationHandler(tac)
             sci = StringConstancyInformation.reduceMultiple(
-                uvar.definedBy.toArray.sorted.map { ds =>
+                uVar.definedBy.toArray.sorted.map { ds =>
                     val r = interHandler.processDefSite(ds).asFinal
                     r.p.asInstanceOf[StringConstancyProperty].stringConstancyInformation
                 }
@@ -243,16 +244,16 @@ class IntraproceduralStringAnalysis(
      * [[FlatPathElement.element]] in which it occurs.
      */
     private def findDependeesAcc(
-                                    subpath:           SubPath,
-                                    stmts:             Array[Stmt[SEntity]],
-                                    target:            SEntity,
-                                    foundDependees:    ListBuffer[(SEntity, Int)],
-                                    hasTargetBeenSeen: Boolean
-    ): (ListBuffer[(SEntity, Int)], Boolean) = {
+        subpath:           SubPath,
+        stmts:             Array[Stmt[V]],
+        target:            SEntity,
+        foundDependees:    ListBuffer[(SEntity, Int)],
+        hasTargetBeenSeen: Boolean
+    )(implicit tac: TACode[TACMethodParameter, V]): (ListBuffer[(SEntity, Int)], Boolean) = {
         var encounteredTarget = false
         subpath match {
             case fpe: FlatPathElement =>
-                if (target.definedBy.contains(fpe.element)) {
+                if (target.toValueOriginForm(tac.pcToIndex).definedBy.contains(fpe.element)) {
                     encounteredTarget = true
                 }
                 // For FlatPathElements, search for DUVars on which the toString method is called
@@ -265,7 +266,7 @@ class IntraproceduralStringAnalysis(
                                 val expr = stmts(ds).asAssignment.expr
                                 if (InterpretationHandler.isStringBuilderBufferToStringCall(expr)) {
                                     foundDependees.append((
-                                        outerExpr.asVirtualFunctionCall.params.head.asVar,
+                                        outerExpr.asVirtualFunctionCall.params.head.asVar.toPersistentForm(tac.stmts),
                                         fpe.element
                                     ))
                                 }
@@ -303,12 +304,12 @@ class IntraproceduralStringAnalysis(
      *       this variable as `ignore`.
      */
     private def findDependentVars(
-                                     path:   Path,
-                                     stmts:  Array[Stmt[SEntity]],
-                                     ignore: SEntity
-    ): mutable.LinkedHashMap[SEntity, Int] = {
+         path:   Path,
+         stmts:  Array[Stmt[V]],
+         ignore: SEntity
+    )(implicit tac: TACode[TACMethodParameter, V]): mutable.LinkedHashMap[SEntity, Int] = {
         val dependees = mutable.LinkedHashMap[SEntity, Int]()
-        val ignoreNews = InterpretationHandler.findNewOfVar(ignore, stmts)
+        val ignoreNews = InterpretationHandler.findNewOfVar(ignore.toValueOriginForm(tac.pcToIndex), stmts)
         var wasTargetSeen = false
 
         path.elements.foreach { nextSubpath =>
@@ -322,7 +323,10 @@ class IntraproceduralStringAnalysis(
                 )
                 wasTargetSeen = encounteredTarget
                 currentDeps.foreach { nextPair =>
-                    val newExpressions = InterpretationHandler.findNewOfVar(nextPair._1, stmts)
+                    val newExpressions = InterpretationHandler.findNewOfVar(
+                        nextPair._1.toValueOriginForm(tac.pcToIndex),
+                        stmts
+                    )
                     if (ignore != nextPair._1 && ignoreNews != newExpressions) {
                         dependees.put(nextPair._1, nextPair._2)
                     }

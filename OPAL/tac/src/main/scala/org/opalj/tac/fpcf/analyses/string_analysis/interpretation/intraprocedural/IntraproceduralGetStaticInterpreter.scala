@@ -24,7 +24,7 @@ import org.opalj.fpcf.FinalEP
  * @author Patrick Mell
  */
 class IntraproceduralGetStaticInterpreter(
-                                             cfg:         CFG[Stmt[SEntity], TACStmts[SEntity]],
+                                             cfg:         CFG[Stmt[V], TACStmts[V]],
                                              exprHandler: IntraproceduralInterpretationHandler
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
 

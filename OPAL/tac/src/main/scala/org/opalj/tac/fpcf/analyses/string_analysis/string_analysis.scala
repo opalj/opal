@@ -11,7 +11,6 @@ import org.opalj.br.Method
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
-import org.opalj.value.ValueInformation
 
 /**
  * @author Patrick Mell
@@ -23,11 +22,11 @@ package object string_analysis {
      *
      * @note The analysis require further context information, see [[SContext]].
      */
-    type SEntity = DUVar[ValueInformation]
+    type SEntity = PV
 
     /**
      * [[IntraproceduralStringAnalysis]] and [[InterproceduralStringAnalysis]] process a local variable within a
-     * particular context, i.e. the method in which it is used. TODO should this be "context"?
+     * particular context, i.e. the method in which it is used.
      */
     type SContext = (SEntity, Method)
 
@@ -47,6 +46,6 @@ package object string_analysis {
      * necessary to uniquely identify a position as an entity might be used for different function
      * calls.
      */
-    type NonFinalFunctionArgsPos = mutable.Map[FunctionCall[SEntity], mutable.Map[SContext, (Int, Int, Int)]]
+    type NonFinalFunctionArgsPos = mutable.Map[FunctionCall[V], mutable.Map[SContext, (Int, Int, Int)]]
 
 }

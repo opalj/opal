@@ -18,7 +18,7 @@ class StaticFunctionCallFinalizer(
         state: InterproceduralComputationState
 ) extends AbstractFinalizer(state) {
 
-    override type T = StaticFunctionCall[SEntity]
+    override type T = StaticFunctionCall[V]
 
     /**
      * Finalizes [[StaticFunctionCall]]s.

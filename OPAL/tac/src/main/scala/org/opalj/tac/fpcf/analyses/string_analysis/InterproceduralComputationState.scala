@@ -132,13 +132,13 @@ case class InterproceduralComputationState(dm: DeclaredMethod, entity: SContext,
      * This map is used to actually store the interpretations of parameters passed to functions.
      * For further information, see [[NonFinalFunctionArgs]].
      */
-    val nonFinalFunctionArgs: mutable.Map[FunctionCall[SEntity], NonFinalFunctionArgs] = mutable.Map()
+    val nonFinalFunctionArgs: mutable.Map[FunctionCall[V], NonFinalFunctionArgs] = mutable.Map()
 
     /**
      * During the process of updating the [[nonFinalFunctionArgs]] map, it is necessary to find out
      * to which function an entity belongs. We use the following map to do this in constant time.
      */
-    val entity2Function: mutable.Map[SContext, ListBuffer[FunctionCall[SEntity]]] = mutable.Map()
+    val entity2Function: mutable.Map[SContext, ListBuffer[FunctionCall[V]]] = mutable.Map()
 
     /**
      * A mapping from a method to definition sites which indicates that a method is still prepared,
@@ -150,7 +150,7 @@ case class InterproceduralComputationState(dm: DeclaredMethod, entity: SContext,
     /**
      * A mapping which indicates whether a virtual function call is fully prepared.
      */
-    val isVFCFullyPrepared: mutable.Map[VirtualFunctionCall[SEntity], Boolean] = mutable.Map()
+    val isVFCFullyPrepared: mutable.Map[VirtualFunctionCall[V], Boolean] = mutable.Map()
 
     /**
      * Takes a definition site as well as [[StringConstancyInformation]] and extends the [[fpe2sci]]

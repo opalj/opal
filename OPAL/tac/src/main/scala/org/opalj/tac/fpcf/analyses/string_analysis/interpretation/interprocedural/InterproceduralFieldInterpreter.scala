@@ -20,7 +20,6 @@ import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.PropertyStore
-import org.opalj.tac.fpcf.analyses.cg.uVarForDefSites
 
 /**
  * The `InterproceduralFieldInterpreter` is responsible for processing instances of [[FieldRead]]s.
@@ -40,7 +39,7 @@ class InterproceduralFieldInterpreter(
         implicit val contextProvider: ContextProvider
 ) extends AbstractStringInterpreter(state.tac.cfg, exprHandler) {
 
-    override type T = FieldRead[SEntity]
+    override type T = FieldRead[V]
 
     /**
      * Currently, fields are approximated using the following approach. If a field of a type not
@@ -88,7 +87,7 @@ class InterproceduralFieldInterpreter(
                 } else {
                     tac match {
                         case Some(methodTac) =>
-                            val entity = (uVarForDefSites(parameter.get, methodTac.pcToIndex), method)
+                            val entity = (PUVar(parameter.get._1, parameter.get._2), method)
                             val eps = ps(entity, StringConstancyProperty.key)
                             if (eps.isRefinable) {
                                 state.dependees = eps :: state.dependees

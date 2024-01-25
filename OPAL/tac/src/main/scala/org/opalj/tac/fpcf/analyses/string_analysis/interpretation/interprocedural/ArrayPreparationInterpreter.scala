@@ -30,13 +30,13 @@ import org.opalj.fpcf.FinalEP
  * @author Patrick Mell
  */
 class ArrayPreparationInterpreter(
-                                     cfg:         CFG[Stmt[SEntity], TACStmts[SEntity]],
+                                     cfg:         CFG[Stmt[V], TACStmts[V]],
                                      exprHandler: InterproceduralInterpretationHandler,
                                      state:       InterproceduralComputationState,
                                      params:      List[Seq[StringConstancyInformation]]
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
 
-    override type T = ArrayLoad[SEntity]
+    override type T = ArrayLoad[V]
 
     /**
      * @note This implementation will extend [[state.fpe2sci]] in a way that it adds the string
@@ -59,10 +59,8 @@ class ArrayPreparationInterpreter(
 
         allDefSites.map { ds => (ds, exprHandler.processDefSite(ds)) }.foreach {
             case (ds, ep) =>
-                if (ep.isFinal) {
-                    val p = ep.asFinal.p.asInstanceOf[StringConstancyProperty]
-                    state.appendToFpe2Sci(ds, p.stringConstancyInformation)
-                }
+                if (ep.isFinal)
+                    state.appendToFpe2Sci(ds, ep.asFinal.p.stringConstancyInformation)
                 results.append(ep)
         }
 
@@ -82,7 +80,7 @@ class ArrayPreparationInterpreter(
             interims.get
         } else {
             var resultSci = StringConstancyInformation.reduceMultiple(results.map {
-                _.asFinal.p.asInstanceOf[StringConstancyProperty].stringConstancyInformation
+                _.asFinal.p.stringConstancyInformation
             })
             // It might be that there are no results; in such a case, set the string information to
             // the lower bound and manually add an entry to the results list
@@ -105,7 +103,7 @@ class ArrayPreparationInterpreter(
 
 object ArrayPreparationInterpreter {
 
-    type T = ArrayLoad[SEntity]
+    type T = ArrayLoad[V]
 
     /**
      * This function retrieves all definition sites of the array stores and array loads that belong
@@ -116,7 +114,7 @@ object ArrayPreparationInterpreter {
      * @return Returns all definition sites associated with the array stores and array loads of the
      *         given instruction. The result list is sorted in ascending order.
      */
-    def getStoreAndLoadDefSites(instr: T, stmts: Array[Stmt[SEntity]]): List[Int] = {
+    def getStoreAndLoadDefSites(instr: T, stmts: Array[Stmt[V]]): List[Int] = {
         val allDefSites = ListBuffer[Int]()
         val defSites = instr.arrayRef.asVar.definedBy.toArray
 
@@ -125,12 +123,12 @@ object ArrayPreparationInterpreter {
             val sortedArrDeclUses = arrDecl.asAssignment.targetVar.usedBy.toArray.sorted
             // For ArrayStores
             sortedArrDeclUses.filter {
-                stmts(_).isInstanceOf[ArrayStore[SEntity]]
+                stmts(_).isInstanceOf[ArrayStore[V]]
             } foreach { f: Int => allDefSites.appendAll(stmts(f).asArrayStore.value.asVar.definedBy.toArray) }
             // For ArrayLoads
             sortedArrDeclUses.filter {
                 stmts(_) match {
-                    case Assignment(_, _, _: ArrayLoad[SEntity]) => true
+                    case Assignment(_, _, _: ArrayLoad[V]) => true
                     case _                                 => false
                 }
             } foreach { f: Int =>

@@ -27,13 +27,13 @@ import org.opalj.fpcf.FinalEP
  * @author Patrick Mell
  */
 class NewArrayPreparer(
-                          cfg:         CFG[Stmt[SEntity], TACStmts[SEntity]],
+                          cfg:         CFG[Stmt[V], TACStmts[V]],
                           exprHandler: InterproceduralInterpretationHandler,
                           state:       InterproceduralComputationState,
                           params:      List[Seq[StringConstancyInformation]]
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
 
-    override type T = NewArray[SEntity]
+    override type T = NewArray[V]
 
     /**
      * @note This implementation will extend [[state.fpe2sci]] in a way that it adds the string
@@ -55,7 +55,7 @@ class NewArrayPreparer(
         val arrValuesDefSites =
             state.tac.stmts(defSite).asAssignment.targetVar.asVar.usedBy.toArray.toList.sorted
         var allResults = arrValuesDefSites.filter {
-            ds => ds >= 0 && state.tac.stmts(ds).isInstanceOf[ArrayStore[SEntity]]
+            ds => ds >= 0 && state.tac.stmts(ds).isInstanceOf[ArrayStore[V]]
         }.flatMap { ds =>
             // ds holds a site an of array stores; these need to be evaluated for the actual values
             state.tac.stmts(ds).asArrayStore.value.asVar.definedBy.toArray.toList.sorted.map { d =>
@@ -82,7 +82,7 @@ class NewArrayPreparer(
             interims.get
         } else {
             var resultSci = StringConstancyInformation.reduceMultiple(allResults.map {
-                _.asFinal.p.asInstanceOf[StringConstancyProperty].stringConstancyInformation
+                _.asFinal.p.stringConstancyInformation
             })
             // It might be that there are no results; in such a case, set the string information to
             // the lower bound and manually add an entry to the results list

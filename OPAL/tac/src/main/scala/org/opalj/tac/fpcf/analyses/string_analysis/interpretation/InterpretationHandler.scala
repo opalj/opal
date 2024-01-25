@@ -81,7 +81,7 @@ object InterpretationHandler {
      * @return Returns true if `expr` is a call to `toString` of [[StringBuilder]] or
      *         [[StringBuffer]].
      */
-    def isStringBuilderBufferToStringCall(expr: Expr[SEntity]): Boolean =
+    def isStringBuilderBufferToStringCall(expr: Expr[V]): Boolean =
         expr match {
             case VirtualFunctionCall(_, clazz, _, "toString", _, _, _) =>
                 val className = clazz.mostPreciseObjectType.fqn
@@ -96,7 +96,7 @@ object InterpretationHandler {
      * @return Returns `true` if the given expression  is a string constant / literal and `false`
      *         otherwise.
      */
-    def isStringConstExpression(expr: Expr[SEntity]): Boolean = if (expr.isStringConst) {
+    def isStringConstExpression(expr: Expr[V]): Boolean = if (expr.isStringConst) {
         true
     } else {
         if (expr.isVar) {
@@ -112,7 +112,7 @@ object InterpretationHandler {
     /**
      * Returns `true` if the given expressions is a primitive number type
      */
-    def isPrimitiveNumberTypeExpression(expr: Expr[SEntity]): Boolean =
+    def isPrimitiveNumberTypeExpression(expr: Expr[V]): Boolean =
         expr.asVar.value.isPrimitiveValue &&
             InterproceduralStringAnalysis.isSupportedPrimitiveNumberType(
                 expr.asVar.value.asPrimitiveValue.primitiveType.toJava
@@ -126,7 +126,7 @@ object InterpretationHandler {
      * @return Returns true if `expr` is a call to `append` of [[StringBuilder]] or
      *         [[StringBuffer]].
      */
-    def isStringBuilderBufferAppendCall(expr: Expr[SEntity]): Boolean = {
+    def isStringBuilderBufferAppendCall(expr: Expr[V]): Boolean = {
         expr match {
             case VirtualFunctionCall(_, clazz, _, name, _, _, _) =>
                 val className = clazz.toJavaClass.getName
@@ -140,8 +140,8 @@ object InterpretationHandler {
      * Helper function for [[findDefSiteOfInit]].
      */
     private def findDefSiteOfInitAcc(
-                                        toString: VirtualFunctionCall[SEntity],
-                                        stmts:    Array[Stmt[SEntity]]
+        toString: VirtualFunctionCall[V],
+        stmts:    Array[Stmt[V]]
     ): List[Int] = {
         // TODO: Check that we deal with an instance of AbstractStringBuilder
         if (toString.name != "toString") {
@@ -154,11 +154,11 @@ object InterpretationHandler {
         while (stack.nonEmpty) {
             val next = stack.pop()
             stmts(next) match {
-                case a: Assignment[SEntity] =>
+                case a: Assignment[V] =>
                     a.expr match {
                         case _: New =>
                             defSites.append(next)
-                        case vfc: VirtualFunctionCall[SEntity] =>
+                        case vfc: VirtualFunctionCall[V] =>
                             val recDefSites = vfc.receiver.asVar.definedBy.filter(_ >= 0).toArray
                             // recDefSites.isEmpty => Definition site is a parameter => Use the
                             // current function call as a def site
@@ -167,7 +167,7 @@ object InterpretationHandler {
                             } else {
                                 defSites.append(next)
                             }
-                        case _: GetField[SEntity] =>
+                        case _: GetField[V] =>
                             defSites.append(next)
                         case _ => // E.g., NullExpr
                     }
@@ -187,18 +187,18 @@ object InterpretationHandler {
      * @param stmts The search context for finding the relevant information.
      * @return Returns the definition sites of the base object.
      */
-    def findDefSiteOfInit(duvar: SEntity, stmts: Array[Stmt[SEntity]]): List[Int] = {
+    def findDefSiteOfInit(value: V, stmts: Array[Stmt[V]]): List[Int] = {
         val defSites = ListBuffer[Int]()
-        duvar.definedBy.foreach { ds =>
+        value.definedBy.foreach { ds =>
             defSites.appendAll(stmts(ds).asAssignment.expr match {
-                case vfc: VirtualFunctionCall[SEntity] => findDefSiteOfInitAcc(vfc, stmts)
+                case vfc: VirtualFunctionCall[V] => findDefSiteOfInitAcc(vfc, stmts)
                 // The following case is, e.g., for {NonVirtual, Static}FunctionCalls
                 case _ => List(ds)
             })
         }
         // If no init sites could be determined, use the definition sites of the UVar
         if (defSites.isEmpty) {
-            defSites.appendAll(duvar.definedBy.toArray)
+            defSites.appendAll(value.definedBy.toArray)
         }
 
         defSites.distinct.sorted.toList
@@ -211,22 +211,22 @@ object InterpretationHandler {
      * @param stmts The context to search in, e.g., the surrounding method.
      * @return Returns all found [[New]] expressions.
      */
-    def findNewOfVar(duvar: SEntity, stmts: Array[Stmt[SEntity]]): List[New] = {
+    def findNewOfVar(value: V, stmts: Array[Stmt[V]]): List[New] = {
         val news = ListBuffer[New]()
 
         // HINT: It might be that the search has to be extended to further cases
-        duvar.definedBy.filter(_ >= 0).foreach { ds =>
+        value.definedBy.filter(_ >= 0).foreach { ds =>
             stmts(ds) match {
                 // E.g., a call to `toString` or `append`
-                case Assignment(_, _, vfc: VirtualFunctionCall[SEntity]) =>
+                case Assignment(_, _, vfc: VirtualFunctionCall[V]) =>
                     vfc.receiver.asVar.definedBy.filter(_ >= 0).foreach { innerDs =>
                         stmts(innerDs) match {
                             case Assignment(_, _, expr: New) =>
                                 news.append(expr)
-                            case Assignment(_, _, expr: VirtualFunctionCall[SEntity]) =>
+                            case Assignment(_, _, expr: VirtualFunctionCall[V]) =>
                                 val exprReceiverVar = expr.receiver.asVar
                                 // The "if" is to avoid endless recursion
-                                if (duvar.definedBy != exprReceiverVar.definedBy) {
+                                if (value.definedBy != exprReceiverVar.definedBy) {
                                     news.appendAll(findNewOfVar(exprReceiverVar, stmts))
                                 }
                             case _ =>

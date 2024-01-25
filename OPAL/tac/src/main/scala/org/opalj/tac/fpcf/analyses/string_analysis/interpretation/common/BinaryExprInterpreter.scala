@@ -27,11 +27,11 @@ import org.opalj.fpcf.FinalEP
  * @author Patrick Mell
  */
 class BinaryExprInterpreter(
-                               cfg:         CFG[Stmt[SEntity], TACStmts[SEntity]],
+                               cfg:         CFG[Stmt[V], TACStmts[V]],
                                exprHandler: InterpretationHandler
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
 
-    override type T = BinaryExpr[SEntity]
+    override type T = BinaryExpr[V]
 
     /**
      * Currently, this implementation supports the interpretation of the following binary

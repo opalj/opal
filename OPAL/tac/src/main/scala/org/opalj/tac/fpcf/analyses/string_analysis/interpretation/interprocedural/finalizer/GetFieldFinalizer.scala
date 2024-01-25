@@ -12,7 +12,7 @@ class GetFieldFinalizer(
         state: InterproceduralComputationState
 ) extends AbstractFinalizer(state) {
 
-    override protected type T = FieldRead[SEntity]
+    override protected type T = FieldRead[V]
 
     /**
      * Finalizes [[FieldRead]]s.

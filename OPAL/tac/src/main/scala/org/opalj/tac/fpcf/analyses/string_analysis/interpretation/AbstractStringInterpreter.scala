@@ -38,7 +38,7 @@ import org.opalj.value.ValueInformation
  * @author Patrick Mell
  */
 abstract class AbstractStringInterpreter(
-                                            protected val cfg:         CFG[Stmt[SEntity], TACStmts[SEntity]],
+                                            protected val cfg:         CFG[Stmt[V], TACStmts[V]],
                                             protected val exprHandler: InterpretationHandler
 ) {
 
@@ -59,7 +59,7 @@ abstract class AbstractStringInterpreter(
         ps: PropertyStore,
         m:  Method,
         s:  InterproceduralComputationState
-    ): (EOptionP[Method, TACAI], Option[TACode[TACMethodParameter, SEntity]]) = {
+    ): (EOptionP[Method, TACAI], Option[TACode[TACMethodParameter, V]]) = {
         val tacai = ps(m, TACAI.key)
         if (tacai.hasUBP) {
             (tacai, tacai.ub.tac)
@@ -102,12 +102,12 @@ abstract class AbstractStringInterpreter(
     protected def getParametersForPCs(
         pcs: Iterable[Int],
         tac: TACode[TACMethodParameter, DUVar[ValueInformation]]
-    ): List[Seq[Expr[SEntity]]] = {
-        val paramLists = ListBuffer[Seq[Expr[SEntity]]]()
+    ): List[Seq[Expr[V]]] = {
+        val paramLists = ListBuffer[Seq[Expr[V]]]()
         pcs.map(tac.pcToIndex).foreach { stmtIndex =>
             val params = tac.stmts(stmtIndex) match {
-                case ExprStmt(_, vfc: FunctionCall[SEntity])     => vfc.params
-                case Assignment(_, _, fc: FunctionCall[SEntity]) => fc.params
+                case ExprStmt(_, vfc: FunctionCall[V])     => vfc.params
+                case Assignment(_, _, fc: FunctionCall[V]) => fc.params
                 case _                                     => Seq()
             }
             if (params.nonEmpty) {
@@ -130,11 +130,11 @@ abstract class AbstractStringInterpreter(
      * entities to functions, `entity2function`.
      */
     protected def evaluateParameters(
-                                        params:          List[Seq[Expr[SEntity]]],
+                                        params:          List[Seq[Expr[V]]],
                                         iHandler:        InterproceduralInterpretationHandler,
-                                        funCall:         FunctionCall[SEntity],
+                                        funCall:         FunctionCall[V],
                                         functionArgsPos: NonFinalFunctionArgsPos,
-                                        entity2function: mutable.Map[SContext, ListBuffer[FunctionCall[SEntity]]]
+                                        entity2function: mutable.Map[SContext, ListBuffer[FunctionCall[V]]]
     ): NonFinalFunctionArgs = ListBuffer.from(params.zipWithIndex.map {
         case (nextParamList, outerIndex) =>
             ListBuffer.from(nextParamList.zipWithIndex.map {

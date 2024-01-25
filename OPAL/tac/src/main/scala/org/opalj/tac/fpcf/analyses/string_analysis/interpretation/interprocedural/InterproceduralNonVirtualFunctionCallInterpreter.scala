@@ -27,7 +27,7 @@ import org.opalj.tac.fpcf.analyses.cg.TypeIterator
  * @author Patrick Mell
  */
 class InterproceduralNonVirtualFunctionCallInterpreter(
-                                                          cfg:             CFG[Stmt[SEntity], TACStmts[SEntity]],
+                                                          cfg:             CFG[Stmt[V], TACStmts[V]],
                                                           exprHandler:     InterproceduralInterpretationHandler,
                                                           ps:              PropertyStore,
                                                           state:           InterproceduralComputationState,
@@ -35,7 +35,7 @@ class InterproceduralNonVirtualFunctionCallInterpreter(
                                                           typeIterator:    TypeIterator
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
 
-    override type T = NonVirtualFunctionCall[SEntity]
+    override type T = NonVirtualFunctionCall[V]
 
     /**
      * Currently, [[NonVirtualFunctionCall]]s are not supported. Thus, this function always returns
@@ -60,20 +60,20 @@ class InterproceduralNonVirtualFunctionCallInterpreter(
         if (tac.isDefined) {
             state.removeFromMethodPrep2defSite(m, defSite)
             // TAC available => Get return UVars and start the string analysis
-            val returns = tac.get.stmts.filter(_.isInstanceOf[ReturnValue[SEntity]])
+            val returns = tac.get.stmts.filter(_.isInstanceOf[ReturnValue[V]])
             if (returns.isEmpty) {
                 // A function without returns, e.g., because it is guaranteed to throw an exception,
                 // is approximated with the lower bound
                 FinalEP(instr, StringConstancyProperty.lb)
             } else {
                 val results = returns.map { ret =>
-                    val uvar = ret.asInstanceOf[ReturnValue[SEntity]].expr.asVar
-                    val entity = (uvar, m)
+                    val puVar = ret.asInstanceOf[ReturnValue[V]].expr.asVar.toPersistentForm(tac.get.stmts)
+                    val entity = (puVar, m)
 
                     val eps = ps(entity, StringConstancyProperty.key)
                     if (eps.isRefinable) {
                         state.dependees = eps :: state.dependees
-                        state.appendToVar2IndexMapping(uvar, defSite)
+                        state.appendToVar2IndexMapping(puVar, defSite)
                     }
                     eps
                 }

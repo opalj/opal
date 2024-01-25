@@ -22,11 +22,11 @@ import org.opalj.fpcf.FinalEP
  * @author Patrick Mell
  */
 class IntraproceduralNonVirtualFunctionCallInterpreter(
-                                                          cfg:         CFG[Stmt[SEntity], TACStmts[SEntity]],
+                                                          cfg:         CFG[Stmt[V], TACStmts[V]],
                                                           exprHandler: IntraproceduralInterpretationHandler
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
 
-    override type T = NonVirtualFunctionCall[SEntity]
+    override type T = NonVirtualFunctionCall[V]
 
     /**
      * This function always returns a result that contains [[StringConstancyProperty.lb]].
