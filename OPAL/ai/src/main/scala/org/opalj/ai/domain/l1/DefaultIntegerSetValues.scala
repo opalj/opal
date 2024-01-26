@@ -103,15 +103,14 @@ trait DefaultIntegerSetValues extends DefaultSpecialDomainValuesBinding with Int
         override def summarize(pc: Int): DomainValue = this
 
         override def adapt(target: TargetDomain, pc: Int): target.DomainValue = {
-            if (target.isInstanceOf[IntegerSetValues]) {
-                val thatDomain = target.asInstanceOf[IntegerSetValues]
-                thatDomain.IntegerSet(this.values).asInstanceOf[target.DomainValue]
-            } else if (target.isInstanceOf[IntegerRangeValues]) {
-                val thatDomain = target.asInstanceOf[IntegerRangeValues]
-                val value = thatDomain.IntegerRange(this.values.firstKey, this.values.lastKey)
-                value.asInstanceOf[target.DomainValue]
-            } else {
-                target.IntegerValue(pc)
+            target match {
+                case thatDomain: IntegerSetValues =>
+                    thatDomain.IntegerSet(this.values).asInstanceOf[target.DomainValue]
+                case thatDomain: IntegerRangeValues =>
+                    val value = thatDomain.IntegerRange(this.values.firstKey, this.values.lastKey)
+                    value.asInstanceOf[target.DomainValue]
+                case _ =>
+                    target.IntegerValue(pc)
             }
         }
 

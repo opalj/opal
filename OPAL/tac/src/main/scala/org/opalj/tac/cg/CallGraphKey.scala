@@ -44,7 +44,7 @@ trait CallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
 
     private val CallBySignatureConfigKey = "org.opalj.br.analyses.cg.callBySignatureResolution"
 
-    private var typeIterator: TypeIterator = null
+    private var typeIterator: TypeIterator = _
 
     /**
      * Lists the call graph specific schedulers that must be run to compute the respective call

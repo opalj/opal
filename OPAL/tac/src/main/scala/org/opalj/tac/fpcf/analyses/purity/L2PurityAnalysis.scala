@@ -111,7 +111,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
      * @param method The currently analyzed method
      * @param context The corresponding Context we report results for
      * @param declClass The declaring class of the currently analyzed method
-     * @param code The code of the currently analyzed method
+     * @param tac The code of the currently analyzed method
      */
     class State(
         val method:    Method,

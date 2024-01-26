@@ -261,7 +261,7 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
                         }
                     parameters.foreach { requiredParameter =>
                         val remainingInstructions =
-                            instructions.slice(currentInstruction, instructions.size)
+                            instructions.slice(currentInstruction, instructions.length)
                         val consumedInstructions =
                             requiredParameter match {
                                 case IntegerType      => requireIntLoad(remainingInstructions)

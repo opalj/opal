@@ -23,11 +23,11 @@ trait PerformInvocationsWithRecursionDetection extends PerformInvocations with T
 
     def frequentEvaluationWarningLevel: Int
 
-    def calledMethodsStore: CalledMethodsStore { val domain: coordinatingDomain.type }
+    def calledMethodsStore: CalledMethodsStore = { val domain: coordinatingDomain.type }
 
     // The childCalledMethodsStore is valid for one invocation only and is set by
     // doInvoke...
-    private[l2] var childCalledMethodsStore: CalledMethodsStore { val domain: coordinatingDomain.type } = null
+    private[l2] var childCalledMethodsStore: CalledMethodsStore { val domain: coordinatingDomain.type } = _
 
     override protected def doInvoke(
         pc:       Int,

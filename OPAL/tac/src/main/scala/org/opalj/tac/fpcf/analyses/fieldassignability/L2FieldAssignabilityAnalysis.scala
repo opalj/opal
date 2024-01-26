@@ -159,6 +159,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
         val assignedValueObjectVar = stmts(assignedValueObject.definedBy.head).asAssignment.targetVar.asVar
 
         val fieldWriteInMethodIndex = taCode.pcToIndex(writesInMethod.head._2)
+
         if (assignedValueObjectVar != null && !assignedValueObjectVar.usedBy.forall { index =>
                 val stmt = stmts(index)
 

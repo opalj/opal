@@ -209,7 +209,7 @@ class DomainIndependenceTest extends AnyFlatSpec with Matchers {
                     info(
                         classFile.thisType.toJava + "{ " +
                             method.signatureToJava(false) +
-                            "(Instructions " + method.body.get.instructions.size + ")}\n" +
+                            "(Instructions " + method.body.get.instructions.length + ")}\n" +
                             Console.BLUE + "\t// domain r1 is not deterministic (concurrency bug?)\n" +
                             Console.RESET
                     )
@@ -217,7 +217,7 @@ class DomainIndependenceTest extends AnyFlatSpec with Matchers {
                     info(
                         classFile.thisType.toJava + "{ " +
                             method.signatureToJava(false) +
-                            "(Instructions " + method.body.get.instructions.size + ")} \n" +
+                            "(Instructions " + method.body.get.instructions.length + ")} \n" +
                             "\t// the results of r1 and r2 do not correspond\n" +
                             "\t// " + Console.BOLD + m + Console.RESET + "\n"
                     )
@@ -229,7 +229,9 @@ class DomainIndependenceTest extends AnyFlatSpec with Matchers {
                 failed.incrementAndGet()
                 info(
                     classFile.thisType.toJava + "{ " +
-                        method.signatureToJava(false) + "(Instructions " + method.body.get.instructions.size + ")} \n" +
+                        method.signatureToJava(
+                            false
+                        ) + "(Instructions " + method.body.get.instructions.length + ")} \n" +
                         "\t// the results of r2 and r3 do not correspond\n" +
                         "\t// " + Console.BOLD + m + Console.RESET + "\n"
                 )

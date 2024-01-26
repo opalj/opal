@@ -17,7 +17,7 @@ import scalax.collection.edges.DiEdge
 import scalax.collection.generic.Edge
 import scalax.collection.hyperedges.DiHyperEdge
 import scalax.collection.immutable.Graph
-import scalax.collection.mutable.{Graph => MutableGraph}
+import scalax.collection.mutable.Graph as MutableGraph
 
 /**
  * An algorithm that identifies several different types of flow regions in a given flow graph and reduces them to a

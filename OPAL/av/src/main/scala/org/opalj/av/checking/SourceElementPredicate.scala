@@ -62,7 +62,7 @@ case class Attributes(
 
     def apply(sourceElement: ConcreteSourceElement): Boolean = {
         //    sourceElement.attributes.size == this.attributes.size &&
-        this.attributes.forall(a => sourceElement.attributes.exists(_ == a))
+        this.attributes.forall(a => sourceElement.attributes.contains(a))
     }
 
     def toDescription: String = {

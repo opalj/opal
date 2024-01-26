@@ -96,7 +96,7 @@ class LocalsTest extends AnyFlatSpec with Matchers {
                 v = v.updated(i, i)
             }
             val l1 = v.map(String.valueOf(_)).iterator.toList
-            val l2 = (0 until size).map(String.valueOf(_))
+            val l2 = (0 until size).map { String.valueOf }
             l1 should equal(l2)
         }
     }

@@ -50,7 +50,7 @@ case class Code(instructions: Array[Byte]) {
             </tr>
             { // One instruction per row
                 for {
-                    pc <- (0 until instructions.length)
+                    pc <- instructions.indices
                     if instructions(pc) != null
                 } yield {
                     val exceptionInfo = exceptions.foldRight(Seq.empty[Node]) { (a, b) => Seq(a(pc)) ++ b }
@@ -93,7 +93,7 @@ case class Code(instructions: Array[Byte]) {
         import java.io.ByteArrayInputStream
         val bas = new ByteArrayInputStream(source)
         val in = new DataInputStream(bas)
-        val codeLength = source.size
+        val codeLength = source.length
         val instructions = new Array[Node](codeLength)
 
         var wide: Boolean = false

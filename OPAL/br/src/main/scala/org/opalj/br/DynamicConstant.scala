@@ -14,7 +14,7 @@ final class DynamicConstant(
     val descriptor:       FieldType,
     private val bsmIndex: Int
 ) extends ConstantValue[Any] {
-    private var bsm: BootstrapMethod = null
+    private var bsm: BootstrapMethod = _
 
     def fillInBootstrapMethod(bootstrapMethods: BootstrapMethods): Unit = {
         if (bsm eq null) bsm = bootstrapMethods(bsmIndex)

@@ -86,7 +86,7 @@ object InstructionCountBoundedAI {
         // If this method is just a convenience wrapper we want to ensure that
         // we can still analyze the called methods if we also analyze the called
         // methods.
-        val instructionsSize = Math.max(code.instructions.size, 100).toDouble
+        val instructionsSize = Math.max(code.instructions.length, 100).toDouble
         // this is roughly the number of instructions * ~2
         var upperBound: Double = instructionsSize
 
@@ -111,7 +111,7 @@ object InstructionCountBoundedAI {
             OPALLogger.warn(
                 "analysis configuration",
                 "effectively unbounded evaluation" +
-                    "; instructions size=" + code.instructions.size +
+                    "; instructions size=" + code.instructions.length +
                     "; exception handlers=" + code.exceptionHandlers.size +
                     "; maxEvaluationFactor=" + maxEvaluationFactor
             )
@@ -122,7 +122,7 @@ object InstructionCountBoundedAI {
                 "analysis configuration",
                 "evaluation (up to: " + upperBound.toInt +
                     " instructions) may take execessively long" +
-                    "; instructions size=" + code.instructions.size +
+                    "; instructions size=" + code.instructions.length +
                     "; exception handlers=" + code.exceptionHandlers.size +
                     "; maxEvaluationFactor=" + maxEvaluationFactor
             )

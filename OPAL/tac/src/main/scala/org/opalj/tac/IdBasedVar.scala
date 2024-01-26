@@ -34,7 +34,7 @@ sealed trait IdBasedVar extends Var[IdBasedVar] {
      *
      * This operation is not supported for local variables!
      */
-    def updated(cTpe: ComputationalType): SimpleVar = { new SimpleVar(id, cTpe) }
+    def updated(cTpe: ComputationalType): SimpleVar = { SimpleVar(id, cTpe) }
 
     def toCanonicalForm(implicit ev: IdBasedVar <:< DUVar[ValueInformation]): Nothing = {
         throw new IncompatibleClassChangeError(

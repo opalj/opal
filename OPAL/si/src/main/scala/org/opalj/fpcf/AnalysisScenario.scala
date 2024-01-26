@@ -132,7 +132,7 @@ class AnalysisScenario[A](val ps: PropertyStore) {
             if (derivedProperties.contains(lazilyDerivedProperty)) {
                 val pkName = PropertyKey.name(lazilyDerivedProperty.pk.id)
                 val m = s"can not register $cs: $pkName is already computed by another analysis"
-                throw new SpecificationViolation(m)
+                throw SpecificationViolation(m)
             }
         }
 
@@ -144,7 +144,7 @@ class AnalysisScenario[A](val ps: PropertyStore) {
                 val m =
                     s"can not register $cs: " +
                         s"$pkName is not computed collaboratively by all analyses"
-                throw new SpecificationViolation(m)
+                throw SpecificationViolation(m)
             }
         }
 
@@ -152,7 +152,7 @@ class AnalysisScenario[A](val ps: PropertyStore) {
             if (derivedProperties.contains(eagerlyDerivedProperty)) {
                 val pkName = PropertyKey.name(eagerlyDerivedProperty.pk.id)
                 val m = s"can not register $cs: $pkName is already computed by another analysis"
-                throw new SpecificationViolation(m)
+                throw SpecificationViolation(m)
             }
         }
 
@@ -231,7 +231,7 @@ class AnalysisScenario[A](val ps: PropertyStore) {
                     if (alreadyComputedPropertyKinds.contains(derivedProperty.pk.id)) {
                         val pkName = PropertyKey.name(derivedProperty.pk.id)
                         val m = s"can not register $cs: $pkName was computed in a previous phase"
-                        throw new SpecificationViolation(m)
+                        throw SpecificationViolation(m)
                     }
                 }
             }

@@ -65,7 +65,7 @@ object FixedSizeBitSetProperties extends Properties("FixedSizeBitSet") {
 
             var ias = initialIas
             val as = initialIas.iterator.toArray
-            (0 until as.length).forall { i =>
+            as.indices.forall { i =>
                 val v = as(r.nextInt(as.length))
                 ias -= v
                 bs -= v

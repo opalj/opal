@@ -24,7 +24,7 @@ case class ConfigList(entries: ListBuffer[ConfigNode], var comment: Documentatio
         pageHTML: StringBuilder
     )(implicit project: SomeProject): Unit = {
         for (entry <- entries) {
-            entry.toHTML(exporter, "", pageHTML)
+            entry.createHTML(exporter, "", pageHTML)
             pageHTML ++= "\n"
         }
     }

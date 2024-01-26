@@ -106,7 +106,7 @@ abstract class DomainTestInfrastructure(domainName: String) extends AnyFlatSpec 
             val exceptions = new ConcurrentLinkedQueue[(String, ClassFile, Method, Throwable)]()
             project.parForeachMethodWithBody() { (m) =>
                 val MethodInfo(source, method) = m
-                analyzeClassFile(source.toString, method) foreach { exceptions.add(_) }
+                analyzeClassFile(source.toString, method) foreach { exceptions.add }
             }
             import scala.jdk.CollectionConverters.*
             exceptions.asScala

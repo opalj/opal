@@ -105,6 +105,6 @@ object SimplePropagation extends TACOptimization[Param, IdBasedVar, NaiveTACode[
             cfg,
             taCode.exceptionHandlers
         )
-        new TACOptimizationResult(newTACode, wasTransformed)
+        TACOptimizationResult(newTACode, wasTransformed)
     }
 }

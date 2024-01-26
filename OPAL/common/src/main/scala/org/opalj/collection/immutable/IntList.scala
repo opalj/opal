@@ -54,10 +54,10 @@ object IntList {
 
     def empty: IntList = EmptyIntList
 
-    def apply(v: Int): IntList = new IntListNode(v, EmptyIntList)
+    def apply(v: Int): IntList = IntListNode(v, EmptyIntList)
 
     def apply(head: Int, last: Int): IntList = {
-        new IntListNode(head, new IntListNode(last, EmptyIntList))
+        IntListNode(head, IntListNode(last, EmptyIntList))
     }
 
 }
@@ -78,7 +78,7 @@ case object EmptyIntList extends IntList {
     override def forFirstN[U](n: Int)(f: Int => U): Unit = {}
     override def iterator: IntIterator = IntIterator.empty
     /** Prepends the given value to this list. E.g., `l = 2 +: l`. */
-    override def +:(v: Int): IntList = new IntListNode(v, this)
+    override def +:(v: Int): IntList = IntListNode(v, this)
 
     override def ++:(other: IntList): IntList = other
 
@@ -135,7 +135,7 @@ final case class IntListNode(
         }
     }
 
-    override def +:(v: Int): IntList = new IntListNode(v, this)
+    override def +:(v: Int): IntList = IntListNode(v, this)
 
     override def ++:(other: IntList): IntList = other.iterator.foldLeft(this)((list, value) => IntListNode(value, list))
 

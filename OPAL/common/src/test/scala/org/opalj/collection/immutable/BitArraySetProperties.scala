@@ -105,9 +105,11 @@ object BitArraySetProperties extends Properties("BitArraySetProperties") {
 
     property("adding a subset of this set to this set should return this set") = forAll {
         (s: IntArraySet) =>
-            val bas1 = s.foldLeft(BitArraySet.empty)(_ + _)
-            val bas2 = s.foldLeft(BitArraySet.empty)(_ + _)
-            (bas1 ++ bas2) eq bas1
+            {
+                val bas1 = s.foldLeft(BitArraySet.empty)(_ + _)
+                val bas2 = s.foldLeft(BitArraySet.empty)(_ + _)
+                (bas1 ++ bas2) eq bas1
+            }
     }
 
     property("adding this set to another set of which this set is a subset of should return the other set") = forAll {

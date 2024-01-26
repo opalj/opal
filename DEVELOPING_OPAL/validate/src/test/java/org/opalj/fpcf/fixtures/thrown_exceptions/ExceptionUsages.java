@@ -110,12 +110,12 @@ public class ExceptionUsages {
     }
 
     @ExpectedExceptions()
-    public static final int staticFinalThrowsException() {
+    public static int staticFinalThrowsException() {
         throw new NullPointerException();
     }
 
     @ExpectedExceptions()
-    public static final int staticFinalCallThrowsException() {
+    public static int staticFinalCallThrowsException() {
         staticThrowsException();
         return 42;
     }

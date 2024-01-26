@@ -19,9 +19,9 @@ import org.opalj.collection.immutable.IntTrieSet
  */
 trait TheCodeStructure { domain: ValuesDomain =>
 
-    private var theInstructions: Array[Instruction] = null
+    private var theInstructions: Array[Instruction] = _
 
-    private var theCFJoins: IntTrieSet = null
+    private var theCFJoins: IntTrieSet = _
 
     def instructions: Array[Instruction] = theInstructions
 

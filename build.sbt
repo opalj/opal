@@ -500,7 +500,7 @@ lazy val `Demos` = (project in file("DEVELOPING_OPAL/demos"))
 lazy val ce = `ConfigurationExplorer`
 
 lazy val `ConfigurationExplorer` = (project in file("TOOLS/ce"))
-    .settings(buildSettings: _*)
+    .settings(buildSettings *)
     .settings(
         fork := true,
         javaOptions += s"-Dbuild.version=${version.value}",

@@ -1201,7 +1201,7 @@ sealed abstract class PropertyStoreTest[PS <: PropertyStore]
                 val dropCount = (System.nanoTime() % 10000).toInt
                 var count = -1
                 val nodeEntitiesPermutations = nodeEntities.toList.permutations
-                for (nodeEntitiesPermutation <- nodeEntitiesPermutations.drop(dropCount).take(1000)) {
+                for (nodeEntitiesPermutation <- nodeEntitiesPermutations.slice(dropCount, dropCount + 1000)) {
                     count += 1
                     if (count % 99 == 0) {
                         val ps = createPropertyStore()

@@ -219,7 +219,7 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
                     )
                     state.includeSharedPointsToSet(defSiteObject, pts, PointsToSetLike.noFilter)
                     if (asd.arrayComponentTypes.nonEmpty) {
-                        val arrayEntity = ArrayEntity(pts.getNewestElement())
+                        val arrayEntity = ArrayEntity(pts.getNewestElement)
                         var arrayPTS: PointsToSet = emptyPointsToSet
                         asd.arrayComponentTypes.foreach { componentTypeString =>
                             val componentType = ClassType(componentTypeString)

@@ -121,7 +121,7 @@ case class ObjectVariableInfo(cpool_index: Int) extends VerificationTypeInfo {
     }
 }
 
-case class UninitializedVariableInfo(val offset: Int) extends VerificationTypeInfo {
+case class UninitializedVariableInfo(offset: Int) extends VerificationTypeInfo {
 
     override final def attribute_length: Int = 1 + 2
 

@@ -24,7 +24,7 @@ final class BinaryString private (private val string: String) {
 
     override def hashCode: Int = string.hashCode()
 
-    override def toString: String = string.toString()
+    override def toString: String = string
 }
 
 object BinaryString {

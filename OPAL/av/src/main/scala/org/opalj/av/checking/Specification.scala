@@ -577,11 +577,9 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
                     case s: VirtualClass => project.classFile(s.classType.asClassType).get
                     case _               => throw SpecificationError(sourceElement.toJava + " is not a class")
                 }
-                if sourceClassFile.superclassType.exists(s =>
-                    !allLocalTargetSourceElements.exists(v =>
-                        v.classType.asClassType.equals(s)
-                    )
-                )
+                if sourceClassFile.superclassType.exists { s =>
+                    !allLocalTargetSourceElements.exists(v => v.classType.asClassType.equals(s))
+                }
             } yield {
                 PropertyViolation(
                     project,
@@ -665,7 +663,7 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
             matchAny:             Boolean = false
         ): Unit = {
             architectureCheckers =
-                new LocalOutgoingAnnotatedWithConstraint(
+                LocalOutgoingAnnotatedWithConstraint(
                     contextEnsembleSymbol,
                     annotationPredicates,
                     property,
@@ -677,7 +675,7 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
             methodPredicate: SourceElementPredicate[Method]
         ): Unit = {
             architectureCheckers =
-                new LocalOutgoingShouldImplementMethodConstraint(
+                LocalOutgoingShouldImplementMethodConstraint(
                     contextEnsembleSymbol,
                     methodPredicate
                 ) :: architectureCheckers

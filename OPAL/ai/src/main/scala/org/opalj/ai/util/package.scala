@@ -137,7 +137,7 @@ package object util {
             else {
                 val nextPC = tailWorklist.head
                 if (nextPC == pc)
-                    return worklist; // unchanged
+                    worklist // unchanged
                 else if (nextPC == prefixEnd)
                     prepend(headWorklist, pc :: tailWorklist)
                 else

@@ -20,7 +20,7 @@ case class Query(query: String, private var activate: Boolean = true) derives Co
 
     def isEnabled: Boolean = activate
 
-    private var reifiedQuery: Option[FeatureQuery] = null
+    private var reifiedQuery: Option[FeatureQuery] = _
 
     def reify(implicit hermes: HermesConfig): Option[FeatureQuery] = this.synchronized {
         if (reifiedQuery ne null) {

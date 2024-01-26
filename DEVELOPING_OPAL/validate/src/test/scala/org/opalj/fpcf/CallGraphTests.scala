@@ -54,7 +54,7 @@ class CallGraphTests extends PropertiesTest {
         List("org/opalj/fpcf/fixtures/callgraph/")
     }
 
-    var cgKey: CallGraphKey = null
+    var cgKey: CallGraphKey = _
 
     override def init(p: Project[URL]): Unit = {
         p.updateProjectInformationKeyInitializationData(ContextProviderKey) {

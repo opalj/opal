@@ -36,7 +36,7 @@ class ClassFileVersion(implicit hermes: HermesConfig) extends FeatureQuery {
 
         for {
             (classFile, source) <- project.projectClassFilesWithSources
-            if !isInterrupted()
+            if !isInterrupted
         } {
             val version = classFile.majorVersion
             val normalizedVersion = if (version < Java5MajorVersion) Java1MajorVersion else version

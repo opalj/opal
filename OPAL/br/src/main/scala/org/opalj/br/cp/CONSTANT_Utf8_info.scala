@@ -21,13 +21,13 @@ case class CONSTANT_Utf8_info(value: String) extends Constant_Pool_Entry {
 
     override def asString = value
 
-    private var methodDescriptor: MethodDescriptor = null // to cache the result
+    private var methodDescriptor: MethodDescriptor = _ // to cache the result
     override def asMethodDescriptor = {
         if (methodDescriptor eq null) { methodDescriptor = MethodDescriptor(value) };
         methodDescriptor
     }
 
-    private var fieldType: FieldType = null // to cache the result
+    private var fieldType: FieldType = _ // to cache the result
     override def asFieldType = {
         if (fieldType eq null) { fieldType = FieldType(value) };
         fieldType
@@ -47,7 +47,7 @@ case class CONSTANT_Utf8_info(value: String) extends Constant_Pool_Entry {
             case AttributesParent.Method    => SignatureParser.parseMethodTypeSignature(value)
             case AttributesParent.Code      =>
                 val message = s"code attribute has an unexpected signature attribute: $value"
-                throw new BytecodeProcessingFailedException(message)
+                throw BytecodeProcessingFailedException(message)
         }
     }
 

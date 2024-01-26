@@ -334,7 +334,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
             var continue = !isEmptyArray
             while (remainingCounts.nonEmpty && allocatedType.isArrayType && continue) {
                 val theType = allocatedType.asArrayType
-                val arrayEntity = ArrayEntity(arrayReferencePTS.getNewestElement())
+                val arrayEntity = ArrayEntity(arrayReferencePTS.getNewestElement)
 
                 if (countIsZero(remainingCounts))
                     continue = false

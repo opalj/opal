@@ -66,7 +66,7 @@ object InstructionStatistics extends ProjectsAnalysisApplication {
                         processPackage(
                             childPN,
                             (
-                                if (rootFQPN.length() == 0)
+                                if (rootFQPN.isEmpty)
                                     childPN
                                 else
                                     childPN.substring(rootFQPN.length() + 1)

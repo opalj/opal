@@ -107,7 +107,7 @@ class PackageBoundaries(implicit hermes: HermesConfig) extends DefaultFeatureQue
     ) = {
         project.classHierarchy.existsSubclass(rtCt, project) { sct =>
             (sct.thisType.packageName ne callerPackage) &&
-            sct.findMethod(name, methodDescriptor).map(_.isPackagePrivate).getOrElse(false)
+            sct.findMethod(name, methodDescriptor).exists(_.isPackagePrivate)
         }
     }
 

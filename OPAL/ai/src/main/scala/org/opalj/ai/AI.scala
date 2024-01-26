@@ -1073,8 +1073,8 @@ abstract class AI[D <: Domain](
                 }
 
             assert(
-                worklist.exists(_ == targetPC) == isTargetScheduled.isYesOrUnknown ||
-                    worklist.forall(_ != targetPC) == isTargetScheduled.isNoOrUnknown,
+                worklist.contains(targetPC) == isTargetScheduled.isYesOrUnknown ||
+                    !worklist.contains(targetPC) == isTargetScheduled.isNoOrUnknown,
                 s"worklist=$worklist; target=$targetPC; scheduled=$isTargetScheduled " +
                     s"(join=$wasJoinPerformed,exceptional=$isExceptionalControlFlow)"
             )

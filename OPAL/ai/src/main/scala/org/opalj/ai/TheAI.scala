@@ -17,7 +17,7 @@ package ai
  */
 trait TheAI[D <: Domain] {
 
-    private var theAI: AI[D] = null
+    private var theAI: AI[D] = _
 
     private[ai] def setAI(ai: AI[D]): Unit = {
         this.theAI = ai

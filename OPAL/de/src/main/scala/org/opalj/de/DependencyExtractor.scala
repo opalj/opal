@@ -284,7 +284,7 @@ class DependencyExtractor(protected val dependencyProcessor: DependencyProcessor
                 case _                 =>
                     val fieldInfo = vf.toJava
                     val message = s"unexpected field attribute: $attribute ($fieldInfo)"
-                    throw new BytecodeProcessingFailedException(message)
+                    throw BytecodeProcessingFailedException(message)
             }
         }
     }

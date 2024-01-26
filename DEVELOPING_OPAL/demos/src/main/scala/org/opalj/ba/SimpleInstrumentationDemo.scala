@@ -10,14 +10,14 @@ class SimpleInstrumentationDemo {
     }
 
     def callsToString(): Unit = {
-        println("the length of the toString representation is: " + this.toString().length())
+        println("the length of the toString representation is: " + this.toString.length())
     }
 
     def returnsValue(i: Int): Int = {
         if (i % 2 == 0)
-            return -1;
+            -1
         else
-            return 2;
+            2
     }
 
     def playingWithTypes(a: AnyRef): Unit = {

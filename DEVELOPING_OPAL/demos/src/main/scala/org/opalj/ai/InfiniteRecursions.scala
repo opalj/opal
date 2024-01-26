@@ -117,7 +117,7 @@ object InfiniteRecursions extends ProjectsAnalysisApplication {
                 nextCallOperands: domain.Operands = operandsArray(pc).take(parametersCount)
             } {
                 // IntegerRangeValues and ReferenceValues have useable equals semantics
-                if (!callOperandsList.exists { _ == nextCallOperands })
+                if (!callOperandsList.contains(nextCallOperands))
                     callOperandsList = nextCallOperands :: callOperandsList
             }
             callOperandsList

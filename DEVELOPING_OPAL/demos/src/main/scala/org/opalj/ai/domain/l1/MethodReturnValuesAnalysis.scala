@@ -68,7 +68,7 @@ object MethodReturnValuesAnalysis extends ProjectsAnalysisApplication {
         private val originalReturnType: ReferenceType =
             method.descriptor.returnType.asReferenceType
 
-        private var theReturnedValue: DomainValue = null
+        private var theReturnedValue: DomainValue = _
 
         // e.g., a method that always throws an exception...
         def returnedValue: Option[DomainValue] = Option(theReturnedValue)
@@ -146,7 +146,7 @@ object MethodReturnValuesAnalysis extends ProjectsAnalysisApplication {
 
 case class RefinedReturnType(method: Method, refinedType: Option[Domain#DomainValue]) {
 
-    override def toString(): String = {
+    override def toString: String = {
         import Console.*
         "Refined the return type of " + BOLD + BLUE + method.toJava + " => " +
             GREEN + refinedType.getOrElse("\"NONE\" (the method does not return normally)") + RESET

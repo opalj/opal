@@ -20,7 +20,7 @@ trait AsMethodref extends Constant_Pool_Entry {
     def isInterfaceMethodRef: Boolean
 
     // to cache the result
-    @volatile private var methodref: (ReferenceType, Boolean, String, MethodDescriptor) = null
+    @volatile private var methodref: (ReferenceType, Boolean, String, MethodDescriptor) = _
     override def asMethodref(
         cp: Constant_Pool
     ): (ReferenceType, Boolean /* isInterface*/, String, MethodDescriptor) = {

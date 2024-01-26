@@ -19,14 +19,14 @@ import org.opalj.br.PC
  */
 trait TheMemoryLayout { domain: ValuesDomain =>
 
-    private var theOperandsArray: OperandsArray = null
+    private var theOperandsArray: OperandsArray = _
 
-    private var theLocalsArray: LocalsArray = null
+    private var theLocalsArray: LocalsArray = _
 
-    private var theMemoryLayoutBeforeSubroutineCall: List[(PC, OperandsArray, LocalsArray)] = null
+    private var theMemoryLayoutBeforeSubroutineCall: List[(PC, OperandsArray, LocalsArray)] = _
 
-    private var theSubroutinesOperandsArray: OperandsArray = null
-    private var theSubroutinesLocalsArray: LocalsArray = null
+    private var theSubroutinesOperandsArray: OperandsArray = _
+    private var theSubroutinesLocalsArray: LocalsArray = _
 
     private[ai] def setMemoryLayout(
         theOperandsArray:                    this.OperandsArray,

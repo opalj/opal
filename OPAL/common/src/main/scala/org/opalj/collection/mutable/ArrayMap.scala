@@ -153,7 +153,7 @@ class ArrayMap[T >: Null <: AnyRef: ClassTag] private (private var data: Array[T
                     if (data(i) ne null)
                         return i;
                 }
-                return max;
+                max
             }
 
             private var i = getNextIndex(-1)

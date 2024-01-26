@@ -322,7 +322,7 @@ final class PKESequentialPropertyStore protected (
         pc: PropertyComputation[E]
     ): Unit = handleExceptions {
         scheduledTasksCounter += 1
-        tasksManager.push(new PropertyComputationTask(this, e, pc))
+        tasksManager.push(PropertyComputationTask(this, e, pc))
     }
 
     override def doScheduleEagerComputationForEntity[E <: Entity](
@@ -331,7 +331,7 @@ final class PKESequentialPropertyStore protected (
         pc: PropertyComputation[E]
     ): Unit = handleExceptions {
         scheduledTasksCounter += 1
-        tasksManager.push(new PropertyComputationTask(this, e, pc))
+        tasksManager.push(PropertyComputationTask(this, e, pc))
     }
 
     private def removeDependerFromDependees(dependerEPK: SomeEPK): Unit = {
@@ -397,9 +397,9 @@ final class PKESequentialPropertyStore protected (
                     if (isFinal || !suppressInterimUpdates(dependerEPK.pk.id)(pkId)) {
                         val t: QualifiedTask =
                             if (isFinal) {
-                                new OnFinalUpdateComputationTask(this, eps.asFinal, c)
+                                OnFinalUpdateComputationTask(this, eps.asFinal, c)
                             } else {
-                                new OnUpdateComputationTask(this, eps.toEPK, c)
+                                OnUpdateComputationTask(this, eps.toEPK, c)
                             }
                         tasksManager.push(t, dependerEPK, eps, newDependees, currentDependers)
                         scheduledOnUpdateComputationsCounter += 1
@@ -740,7 +740,7 @@ final class PKESequentialPropertyStore protected (
                             .filter { eOptionP =>
                                 eOptionP.isEPK &&
                                 // There is no suppression; i.e., we have no dependees
-                                dependees(pkId).get(eOptionP.e).isEmpty
+                                !dependees(pkId).contains(eOptionP.e)
                             }
                     continueComputation |= epkIterator.hasNext
                     epkIterator.foreach { eOptionP =>

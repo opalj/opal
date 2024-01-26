@@ -3,9 +3,9 @@ package org.opalj
 package ide
 package solver
 
-import scala.collection.mutable.{Map => MutableMap}
-import scala.collection.mutable.{Queue => MutableQueue}
-import scala.collection.mutable.{Set => MutableSet}
+import scala.collection.mutable.Map as MutableMap
+import scala.collection.mutable.Queue as MutableQueue
+import scala.collection.mutable.Set as MutableSet
 
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFAnalysis

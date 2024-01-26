@@ -20,7 +20,7 @@ trait DefaultLongSetValues
     with LongSetValues {
     domain: IntegerRangeValuesFactory & Configuration & ExceptionsFactory =>
 
-    class ALongValue() extends super.ALongValueLike {
+    class ALongValue extends super.ALongValueLike {
 
         override def constantValue: Option[Long] = None
 

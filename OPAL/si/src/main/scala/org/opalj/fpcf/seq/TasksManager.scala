@@ -141,7 +141,7 @@ private class ExtendedQualifiedTask(
 
 trait PropertyStoreDependentTasksManager extends TasksManager {
 
-    protected var ps: PKESequentialPropertyStore = null
+    protected var ps: PKESequentialPropertyStore = _
 
     private[seq] def setSeqPropertyStore(ps: PKESequentialPropertyStore): Unit = {
         if (this.ps != null)

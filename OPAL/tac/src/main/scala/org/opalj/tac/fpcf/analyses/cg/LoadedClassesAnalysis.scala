@@ -82,7 +82,7 @@ class LoadedClassesAnalysis(
                 if (declClassType ne method.classFile.thisType)
                     return NoResult;
 
-                val currentLoadedClasses = getCurrentLoadedClasses()
+                val currentLoadedClasses = getCurrentLoadedClasses
                 if (method.body.isEmpty) {
                     if (!currentLoadedClasses.contains(declClassType)) {
                         // todo only for interfaces with default methods
@@ -193,7 +193,7 @@ class LoadedClassesAnalysis(
         stmts:         Array[Stmt[V]]
     ): UIDSet[ClassType] = {
         var newLoadedClasses = UIDSet.empty[ClassType]
-        val currentLoadedClasses = getCurrentLoadedClasses()
+        val currentLoadedClasses = getCurrentLoadedClasses
 
         @inline def isNewLoadedClass(dc: ClassType): Boolean = {
             !currentLoadedClasses.contains(dc) && !newLoadedClasses.contains(dc)
@@ -229,7 +229,7 @@ class LoadedClassesAnalysis(
         ch.allSupertypes(declClassType, reflexive = true).filterNot(currentLoadedClasses.contains)
     }
 
-    private def getCurrentLoadedClasses(): UIDSet[ClassType] = {
+    private def getCurrentLoadedClasses: UIDSet[ClassType] = {
         val currentLoadedClassesEPS: EOptionP[SomeProject, LoadedClasses] =
             propertyStore(project, LoadedClasses.key)
 

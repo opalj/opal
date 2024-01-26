@@ -29,7 +29,6 @@ class HTMLExporter(config: Config) {
      * The following parameters are all read from the Configuration Explorer config, however, the CE config was not handed over due to namespace conflicts with the internally used ConfigNode.
      * @param configList A list of parsed Configuration Files.
      * @param templatePath A path to the HTML Template that should be used.
-     * @param config The config of the ConfigurationExplorer in order to read necessary values from it directly.
      * @param exportFile A path to the file that the Config shall be written to.
      */
     def exportHTML(configList: Iterable[ConfigNode], templatePath: Path, exportFile: File)(implicit
@@ -42,7 +41,7 @@ class HTMLExporter(config: Config) {
         val template = Using(Source.fromFile(templatePath.toFile)) { _.mkString }.getOrElse("")
         for (config <- configList) {
             if (!config.isEmpty) {
-                config.toHTML(this, "", pageHTML)
+                config.createHTML(this, "", pageHTML)
                 pageHTML ++= "<hr>\n"
             }
         }

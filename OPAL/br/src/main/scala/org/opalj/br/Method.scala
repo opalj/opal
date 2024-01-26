@@ -4,7 +4,6 @@ package br
 
 import scala.collection.Map as SomeMap
 import scala.collection.immutable.ArraySeq
-import scala.math.Ordered
 
 import org.opalj.bi.ACC_ABSTRACT
 import org.opalj.bi.ACC_BRIDGE
@@ -201,7 +200,7 @@ sealed abstract class JVMMethod
         this.hasSignature(name, descriptor, false)
     }
 
-    def signature: MethodSignature = new MethodSignature(name, descriptor)
+    def signature: MethodSignature = MethodSignature(name, descriptor)
 
     def runtimeVisibleParameterAnnotations: ParameterAnnotations = {
         attributes.collectFirst { case RuntimeVisibleParameterAnnotationTable(as) => as } match {
@@ -545,8 +544,8 @@ object Method {
         import MethodDescriptor.JustReturnsObject
         import MethodDescriptor.NoArgsAndReturnVoid
         import MethodDescriptor.ReadObjectDescriptor
-        import MethodDescriptor.WriteObjectDescriptor
         import MethodDescriptor.ReadObjectInputDescriptor
+        import MethodDescriptor.WriteObjectDescriptor
         import MethodDescriptor.WriteObjectOutputDescriptor
 
         val name = method.name

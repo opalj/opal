@@ -35,7 +35,7 @@ trait ConstraintsBetweenIntegerValues
     //
 
     // We store the constraints that are in effect for each instruction
-    private var constraints: Array[ConstraintsStore] = null
+    private var constraints: Array[ConstraintsStore] = _
 
     abstract override def setCodeStructure(
         theInstructions: Array[Instruction],

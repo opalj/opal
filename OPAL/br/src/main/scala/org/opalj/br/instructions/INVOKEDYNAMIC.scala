@@ -62,7 +62,7 @@ case object INCOMPLETE_INVOKEDYNAMIC extends INVOKEDYNAMIC {
 
     private def error: Nothing = {
         val message = "this invokedynamic is incomplete"
-        throw new BytecodeProcessingFailedException(message)
+        throw BytecodeProcessingFailedException(message)
     }
 
     override final def bootstrapMethod: BootstrapMethod = error

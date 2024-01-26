@@ -82,12 +82,12 @@ object Disassembler {
         }
         while (i < args.length) {
             args(i) match {
-                case "-help" | "--help" => { Console.out.println(Usage); return }
+                case "-help" | "--help" => Console.out.println(Usage); return
                 case "-o"               => toFile = Some(readNextArg())
                 case "-open"            => openHTMLFile = true
                 case "-noDefaultCSS"    => noDefaultCSS = true
                 case "-noMethodsFilter" => noMethodsFilter = true
-                case "-noHeader"        => { noHeader = true; noMethodsFilter = true; noDefaultCSS = true }
+                case "-noHeader"        => noHeader = true; noMethodsFilter = true; noDefaultCSS = true
                 case "-css"             => css = Some(readNextArg())
                 case "-js"              => js = Some(readNextArg())
                 case "-source"          => sources ::= readNextArg()
@@ -169,7 +169,7 @@ object Disassembler {
 
         targetFile match {
             case Some(f) =>
-                Files.write(f.toPath, xHTML.toString.getBytes("UTF-8"))
+                Files.write(f.toPath, xHTML.getBytes("UTF-8"))
                 println("wrote: " + f)
                 if (openHTMLFile) org.opalj.io.open(f)
             case None =>

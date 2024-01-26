@@ -42,26 +42,17 @@ object SimpleProjectStatistics extends ProjectsAnalysisApplication {
                     (group, es.size)
                 }
 
-        val maxInstanceFieldsInAClass =
-            project.allClassFiles.map(_.fields.filter(f => !f.isStatic).size).max
-        val classWithMaxInstanceFields =
-            project.allClassFiles.find(
-                _.fields.filter(f => !f.isStatic).size == maxInstanceFieldsInAClass
-            ).map(_.thisType.toJava)
+        val maxInstanceFieldsInAClass = project.allClassFiles.map(_.fields.count(f => !f.isStatic)).max
+        val classWithMaxInstanceFields = project.allClassFiles
+            .find(_.fields.count(f => !f.isStatic) == maxInstanceFieldsInAClass).map(_.thisType.toJava)
 
-        val maxClassFieldsInAClass =
-            project.allClassFiles.map(_.fields.filter(f => f.isStatic).size).max
-        val classWithMaxClassFields =
-            project.allClassFiles.find(
-                _.fields.filter(f => f.isStatic).size == maxClassFieldsInAClass
-            ).map(_.thisType.toJava)
+        val maxClassFieldsInAClass = project.allClassFiles.map(_.fields.count(f => f.isStatic)).max
+        val classWithMaxClassFields = project.allClassFiles
+            .find(_.fields.count(f => f.isStatic) == maxClassFieldsInAClass).map(_.thisType.toJava)
 
-        val maxMethodsInAClass =
-            project.allClassFiles.map(_.methods.size).max
-        val classWithMaxMethods =
-            project.allClassFiles.find(
-                _.methods.size == maxMethodsInAClass
-            ).map(_.thisType.toJava)
+        val maxMethodsInAClass = project.allClassFiles.map(_.methods.size).max
+        val classWithMaxMethods = project.allClassFiles
+            .find(_.methods.size == maxMethodsInAClass).map(_.thisType.toJava)
 
         val (longestMethodInAClass, theLongestMethod) = {
             var max = 0

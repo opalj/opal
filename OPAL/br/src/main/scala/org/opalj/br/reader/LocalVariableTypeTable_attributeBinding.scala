@@ -27,7 +27,7 @@ trait LocalVariableTypeTable_attributeBinding
         signature_index: Constant_Pool_Index,
         index:           Int
     ): LocalVariableType = {
-        new LocalVariableType(
+        LocalVariableType(
             start_pc,
             length,
             cp(name_index).asString,

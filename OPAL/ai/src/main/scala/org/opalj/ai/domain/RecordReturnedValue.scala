@@ -18,7 +18,7 @@ package domain
 trait RecordReturnedValue extends RecordReturnedValuesInfrastructure {
     domain: ValuesDomain =>
 
-    protected var theReturnedValue: DomainValue = null
+    protected var theReturnedValue: DomainValue = _
 
     def returnedValue: Option[DomainValue] = Option(theReturnedValue)
 

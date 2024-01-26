@@ -19,9 +19,9 @@ import org.opalj.br.instructions.Instruction
  */
 trait PostEvaluationMemoryManagement extends CoreDomainFunctionality {
 
-    private var oldValue: DomainValue = null
-    private var newValueAfterEvaluation: DomainValue = null
-    private var newValueAfterException: DomainValue = null
+    private var oldValue: DomainValue = _
+    private var newValueAfterEvaluation: DomainValue = _
+    private var newValueAfterException: DomainValue = _
 
     protected def updateAfterExecution(
         oldValue:                DomainValue,

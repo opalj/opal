@@ -39,7 +39,7 @@ class ClassTypes(implicit hermes: HermesConfig) extends FeatureQuery {
 
         for {
             (classFile, source) <- project.projectClassFilesWithSources
-            if !isInterrupted()
+            if !isInterrupted
         } {
             val location = ClassFileLocation(source, classFile)
 

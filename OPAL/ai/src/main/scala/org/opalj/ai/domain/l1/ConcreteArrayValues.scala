@@ -296,7 +296,7 @@ trait ConcreteArrayValues
                             that.canEqual(this) &&
                             this.origin == that.origin &&
                             (this.theUpperTypeBound eq that.theUpperTypeBound) &&
-                            this.values == that.values
+                            (this.values sameElements that.values)
                         )
 
                 case _ => false
@@ -311,7 +311,7 @@ trait ConcreteArrayValues
 
         override def toString: String = {
             val valuesAsString = values.mkString("«", ", ", "»")
-            s"${theUpperTypeBound.toJava}[@$origin;length=${values.size};refId=$refId,$valuesAsString]"
+            s"${theUpperTypeBound.toJava}[@$origin;length=${values.length};refId=$refId,$valuesAsString]"
         }
     }
 

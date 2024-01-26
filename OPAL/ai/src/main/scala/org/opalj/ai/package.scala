@@ -657,7 +657,7 @@ package object ai {
         f: (Int /*PC*/, Instruction, domain.Operands) => U
     ): Unit = {
         val instructions = code.instructions
-        val max_pc = instructions.size
+        val max_pc = instructions.length
         var pc = 0
         while (pc < max_pc) {
             val instruction = instructions(pc)

@@ -895,7 +895,7 @@ trait InvokedynamicRewriting
             // (e.g., about bridges or markers)
             altMetafactoryArgs
         ) = bootstrapArguments match {
-            case Seq(smt: MethodDescriptor, tim: MethodCallMethodHandle, imt: MethodDescriptor, ama*) =>
+            case Seq(smt: MethodDescriptor, tim: MethodCallMethodHandle, imt: MethodDescriptor, ama @ _*) =>
                 (smt, tim, imt, ama)
             case _ =>
                 if (logUnknownInvokeDynamics) {

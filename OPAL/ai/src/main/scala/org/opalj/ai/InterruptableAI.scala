@@ -12,7 +12,7 @@ class InterruptableAI[D <: Domain] extends AI[D] {
 
     @volatile private var doInterrupt: Boolean = false
 
-    override def isInterrupted = doInterrupt || Thread.currentThread().isInterrupted()
+    override def isInterrupted = doInterrupt || Thread.currentThread().isInterrupted
 
     /**
      * After a call of this method the abstract interpretation of the current method

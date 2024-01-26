@@ -169,7 +169,7 @@ private[mutable] final class FixedSizeBitSet128 extends FixedSizeBitSet { thisSe
         val set1Hash = (set1 ^ (set1 >>> 32)).toInt
         if (set1Hash != 0) result = 31 + set1Hash
         val set2Hash = (set2 ^ (set2 >>> 32)).toInt
-        if (set2Hash != 0) 31 * result + set2Hash
+        if (set2Hash != 0) result = 31 * result + set2Hash
         result
     }
 }

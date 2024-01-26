@@ -355,7 +355,7 @@ class MethodBuilderTest extends AnyFlatSpec {
             LabelElement(PCLabel(22))
         )
 
-        assert(c.instructions.size == 45)
+        assert(c.instructions.length == 45)
     }
 
     it should "aggressively remove useless try markers if no exceptions are thrown" in {
@@ -408,7 +408,7 @@ class MethodBuilderTest extends AnyFlatSpec {
             LabelElement(PCLabel(23))
         )
 
-        assert(c.instructions.size == 12)
+        assert(c.instructions.length == 12)
     }
 
     it should "not remove live code in nested exception handlers" in {
@@ -463,7 +463,7 @@ class MethodBuilderTest extends AnyFlatSpec {
             LabelElement(PCLabel(23))
         )
 
-        assert(c.instructions.size == 26)
+        assert(c.instructions.length == 26)
     }
 
 }

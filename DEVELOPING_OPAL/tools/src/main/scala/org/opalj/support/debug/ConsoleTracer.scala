@@ -9,8 +9,8 @@ import org.opalj.ai.Domain
 import org.opalj.ai.NoUpdate
 import org.opalj.ai.SomeUpdate
 import org.opalj.ai.Update
-import org.opalj.ai.domain
 import org.opalj.ai.domain.TheCode
+import org.opalj.ai.domain.l1.ReferenceValues
 import org.opalj.br.Code
 import org.opalj.br.instructions.Instruction
 import org.opalj.collection.mutable.IntArrayStack
@@ -68,10 +68,10 @@ trait ConsoleTracer extends AITracer { tracer =>
                 case rv: IsReferenceValue if rv.allValues.size > 1 =>
                     val values = rv.allValues
                     val t =
-                        if (rv.isInstanceOf[domain.l1.ReferenceValues#TheReferenceValue])
-                            s";refId=${rv.asInstanceOf[org.opalj.ai.domain.l1.ReferenceValues#TheReferenceValue].refId}"
-                        else
-                            ""
+                        rv match {
+                            case value1: ReferenceValues#TheReferenceValue => s";refId=${value1.refId}"
+                            case _                                         => ""
+                        }
                     values.map(toStringWithOID(_)).mkString("OneOf[" + values.size + "](", ",", ")") +
                         rv.upperTypeBound.map(_.toJava).mkString(";lutb=", " with ", ";") +
                         s"isPrecise=${rv.isPrecise};isNull=${rv.isNull}$t " +
@@ -115,7 +115,7 @@ trait ConsoleTracer extends AITracer { tracer =>
 
         val ps = {
             val ps = domain.properties(pc)
-            if ((ps eq null) || ps == None)
+            if ((ps eq null) || ps.isEmpty)
                 ""
             else {
                 s"\tproperties: ${ps.get}\n"
@@ -173,7 +173,7 @@ trait ConsoleTracer extends AITracer { tracer =>
 
     override def deadLocalVariable(domain: Domain)(pc: Int, lvIndex: Int): Unit = {
         println(
-            pc.toString + line(domain, pc).toString + ":" +
+            pc.toString + line(domain, pc) + ":" +
                 Console.BLACK_B + Console.WHITE + s"local variable $lvIndex is dead"
         )
     }
@@ -382,7 +382,7 @@ trait ConsoleTracer extends AITracer { tracer =>
     ): Unit = {
         val loc = pc.map(pc => s"$pc:").getOrElse("<NO PC>")
         println(
-            s"$loc[Domain:${source.getSimpleName().split('$')(0)} - $typeID] $message"
+            s"$loc[Domain:${source.getSimpleName.split('$')(0)} - $typeID] $message"
         )
     }
 }

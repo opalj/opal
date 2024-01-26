@@ -197,7 +197,7 @@ class FPCFAnalysesIntegrationTest extends AnyFunSpec {
             } else if (line.startsWith("=>")) {
                 readProperties = true
             } else {
-                if (!line.isEmpty) {
+                if (line.nonEmpty) {
                     if (curConfig != null) configurations :+= curConfig
                     curConfig = (line, Set.empty, Seq.empty)
                 }

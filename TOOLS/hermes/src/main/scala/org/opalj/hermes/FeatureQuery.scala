@@ -25,7 +25,7 @@ abstract class FeatureQuery(implicit hermes: HermesConfig) {
     /**
      * Queries should regularly check if they are interrupted using this method.
      */
-    final def isInterrupted(): Boolean = Thread.currentThread().isInterrupted()
+    final def isInterrupted: Boolean = Thread.currentThread().isInterrupted
 
     // ================================ ABSTRACT FUNCTIONALITY ================================
 

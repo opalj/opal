@@ -998,7 +998,7 @@ final class ClassType private ( // DO NOT MAKE THIS A CASE CLASS!
 
     override def toJVMTypeName: String = s"L$fqn;"
 
-    override def toJavaClass: java.lang.Class[?] = classOf[Type].getClassLoader().loadClass(toJava)
+    override def toJavaClass: java.lang.Class[?] = classOf[Type].getClassLoader.loadClass(toJava)
 
     def unboxValue[T](implicit typeConversionFactory: TypeConversionFactory[T]): T = {
         ClassType.unboxValue(this)
@@ -1114,7 +1114,7 @@ object ClassType {
     private val cacheRWLock = new ReentrantReadWriteLock();
     private val cache = new WeakHashMap[String, WeakReference[ClassType]]()
 
-    @volatile private var classTypeCreationListener: ClassType => Unit = null
+    @volatile private var classTypeCreationListener: ClassType => Unit = _
 
     /**
      * Sets the listener and immediately calls it (multiple times) to inform the listener

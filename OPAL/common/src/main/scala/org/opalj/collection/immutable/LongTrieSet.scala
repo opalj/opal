@@ -289,7 +289,7 @@ private[immutable] final class LongTrieSet3(
             if (i1_7L == i3_7L) {
                 if (i1_7L == i_7L) {
                     // they all have the same 3 bits used for branching purposes...
-                    new LongTrieSetNode1(i1_7L.toInt, grow(i, level + 3))
+                    new LongTrieSetNode1(i1_7L, grow(i, level + 3))
                 } else {
                     new LongTrieSetNode2(
                         1 << (i_7L * 4) | 2 << (i1_7L * 4) /*lookuptable*/,
@@ -459,7 +459,7 @@ private[immutable] final class LongTrieSetN(
     override def foreach[U](f:   Long => U): Unit = root.foreach(f)
 
     override def iterator: LongIterator = new LongIterator {
-        private var leafNode: LongTrieSetLeaf = null
+        private var leafNode: LongTrieSetLeaf = _
         private var index = 0
         private val nodes =
             new scala.collection.mutable.Stack(initialSize = Math.min(16, LongTrieSetN.this.size / 2)) += root

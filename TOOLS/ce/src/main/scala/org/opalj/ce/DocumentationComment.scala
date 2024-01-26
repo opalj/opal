@@ -26,7 +26,7 @@ case class DocumentationComment(
      * Converts the Comment object into HTML syntax.
      * @param pageHTML The method will add the export to this StringBuilder.
      */
-    def toHTML(pageHTML: StringBuilder): Unit = {
+    def createHTML(pageHTML: StringBuilder): Unit = {
         if (!isEmpty) {
             if (description.mkString("").trim.nonEmpty) {
                 pageHTML ++= "<p><b> Description: </b> <br>\n"

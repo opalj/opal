@@ -60,7 +60,7 @@ class TACNaiveCmpToZeroIfTest extends TACNaiveTest {
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
-            assert(javaLikeCode.length > 0)
+            assert(javaLikeCode.nonEmpty)
             statements.shouldEqual(resultAST(
                 If(1, SimpleVar(0, ComputationalTypeInt), NE, IntConst(-1, 0), 6)
             ))
@@ -73,7 +73,7 @@ class TACNaiveCmpToZeroIfTest extends TACNaiveTest {
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
-            assert(javaLikeCode.length > 0)
+            assert(javaLikeCode.nonEmpty)
             statements.shouldEqual(resultAST(
                 If(1, SimpleVar(0, ComputationalTypeInt), EQ, IntConst(-1, 0), 6)
             ))
@@ -86,7 +86,7 @@ class TACNaiveCmpToZeroIfTest extends TACNaiveTest {
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
-            assert(javaLikeCode.length > 0)
+            assert(javaLikeCode.nonEmpty)
             statements.shouldEqual(resultAST(
                 If(1, SimpleVar(0, ComputationalTypeInt), GE, IntConst(-1, 0), 6)
             ))
@@ -99,7 +99,7 @@ class TACNaiveCmpToZeroIfTest extends TACNaiveTest {
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
-            assert(javaLikeCode.length > 0)
+            assert(javaLikeCode.nonEmpty)
             statements.shouldEqual(resultAST(
                 If(1, SimpleVar(0, ComputationalTypeInt), LT, IntConst(-1, 0), 6)
             ))
@@ -112,7 +112,7 @@ class TACNaiveCmpToZeroIfTest extends TACNaiveTest {
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
-            assert(javaLikeCode.length > 0)
+            assert(javaLikeCode.nonEmpty)
             statements.shouldEqual(resultAST(
                 If(1, SimpleVar(0, ComputationalTypeInt), LE, IntConst(-1, 0), 6)
             ))
@@ -125,7 +125,7 @@ class TACNaiveCmpToZeroIfTest extends TACNaiveTest {
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
-            assert(javaLikeCode.length > 0)
+            assert(javaLikeCode.nonEmpty)
             statements.shouldEqual(resultAST(
                 If(1, SimpleVar(0, ComputationalTypeInt), GT, IntConst(-1, 0), 6)
             ))

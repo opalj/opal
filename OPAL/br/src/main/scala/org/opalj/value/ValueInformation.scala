@@ -740,7 +740,7 @@ trait IsSReferenceValue[T <: ReferenceType] extends IsBaseReferenceValue {
 
     override final def leastUpperType: Option[ReferenceType] = Some(theUpperTypeBound)
 
-    override final def upperTypeBound: UIDSet[T] = new UIDSet1(theUpperTypeBound)
+    override final def upperTypeBound: UIDSet[T] = UIDSet1(theUpperTypeBound)
 
 }
 

@@ -6,7 +6,7 @@ package analyses
 package ide
 package solver
 
-import scala.collection.mutable.{Map => MutableMap}
+import scala.collection.mutable.Map as MutableMap
 
 import org.opalj.br.Method
 import org.opalj.br.analyses.DeclaredMethods

@@ -121,7 +121,7 @@ object InterpretMethodsAnalysis {
                                     RED + "[aborted after evaluating " +
                                         ai.currentEvaluationCount +
                                         " instructions (size of instructions array=" +
-                                        body.instructions.size +
+                                        body.instructions.length +
                                         "; max=" + ai.maxEvaluationCount + ")]" +
                                         RESET
                                 )

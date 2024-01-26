@@ -191,7 +191,7 @@ case class StringValue(value: String) extends ElementValue {
 
     override final def valueType: ClassType = ClassType.String
 
-    override def toJava: String = "\"" + value.toString + "\""
+    override def toJava: String = "\"" + value + "\""
 
     override def kindId: Int = StringValue.KindId
 

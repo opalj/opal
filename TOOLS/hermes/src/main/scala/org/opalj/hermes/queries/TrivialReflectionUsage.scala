@@ -40,7 +40,7 @@ class TrivialReflectionUsage(implicit hermes: HermesConfig) extends FeatureQuery
         val trivialLocations = new LocationsContainer[S]
         val nontrivialLocations = new LocationsContainer[S]
 
-        project.parForeachMethodWithBody(isInterrupted = () => this.isInterrupted()) { mi =>
+        project.parForeachMethodWithBody(isInterrupted = () => this.isInterrupted) { mi =>
             val MethodInfo(source, m @ MethodWithBody(body)) = mi: @unchecked
             val classForNameCalls = body.collect({
                 case i @ INVOKESTATIC(Class, false, "forName", ForName1MD | ForName3MD) => i

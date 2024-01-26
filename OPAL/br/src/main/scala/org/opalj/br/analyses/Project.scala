@@ -621,7 +621,7 @@ class Project[Source] private (
                     // java is not a root package of "javax"...
                     val (_, lastPackage) = rootPackages.last
                     if (nextPackage.startsWith(lastPackage) &&
-                        nextPackage.charAt(lastPackage.size) == '/'
+                        nextPackage.charAt(lastPackage.length) == '/'
                     )
                         rootPackages + ((nextPackage, lastPackage))
                     else
@@ -784,7 +784,7 @@ class Project[Source] private (
      *
      * @note This method is intended to be used by Java projects that want to interact with OPAL.
      */
-    def toJavaMap(): java.util.HashMap[ClassType, ClassFile] = {
+    def toJavaMap: java.util.HashMap[ClassType, ClassFile] = {
         val map = new java.util.HashMap[ClassType, ClassFile]
         for (classFile <- allClassFiles) map.put(classFile.thisType, classFile)
         map
@@ -1842,7 +1842,7 @@ object Project {
                         logContext,
                         InconsistentProjectException(
                             s"${projectType.toJava} is defined by multiple class files:\n\t" +
-                                sources.get(projectType).getOrElse("<VIRTUAL>") + " and\n\t" +
+                                sources.getOrElse(projectType, "<VIRTUAL>") + " and\n\t" +
                                 source.map(_.toString).getOrElse("<VIRTUAL>") +
                                 "\n\tkeeping the first one."
                         )

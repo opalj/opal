@@ -175,7 +175,7 @@ class LBFieldValuesAnalysis private[analyses] (
         final val thisClassType: ClassType = classFile.thisType
 
         // Map of fieldNames (that are potentially relevant) and the (refined) value information
-        var fieldInformation: Map[Field, Option[DomainValue]] = null
+        var fieldInformation: Map[Field, Option[DomainValue]] = _
 
         // Map between the method and the ones called by the method which could successfully
         // be resolved.
@@ -197,7 +197,7 @@ class LBFieldValuesAnalysis private[analyses] (
         def hasCandidateFields: Boolean = fieldInformation.nonEmpty
         def candidateFields: Iterable[Field] = fieldInformation.keys
 
-        private var currentCode: Code = null
+        private var currentCode: Code = _
 
         /**
          * Sets the method that is currently analyzed. This method '''must not be called'''
@@ -310,7 +310,6 @@ class LBFieldValuesAnalysis private[analyses] (
                     // relevant field, but obviously no writes were found...
                     val dv = domain.DefaultValue(-1, f.fieldType)
                     val fv = ValueBasedFieldValueInformation(dv)
-                    // println(f.toJava+"!!!!!!>>>>>> "+fv)
                     Result(FinalEP(f, fv))
 
                 case Some(Some(domain.DomainReferenceValueTag(dv))) =>
@@ -319,7 +318,6 @@ class LBFieldValuesAnalysis private[analyses] (
                          )
                     ) {
                         val vi = ValueBasedFieldValueInformation(dv.toCanonicalForm)
-                        // println(f.toJava+"!!!!!!>>>>>> "+vi)
                         Result(FinalEP(f, vi))
                     } else {
                         // IMPROVE Consider using the CFG to determine if the read fields are relevant at all; currently the analysis is flow insensitive.
@@ -372,12 +370,11 @@ class LBFieldValuesAnalysis private[analyses] (
                                 // the field is no longer written...
                                 OPALLogger.error(
                                     "analysis state",
-                                    s"the field values analysis for ${f} failed miserably: "
+                                    s"the field values analysis for $f failed miserably: "
                                 )(using project.logContext)
                             }
                             val domain.DomainReferenceValueTag(dv) = dvOption.get: @unchecked
                             val vi = ValueBasedFieldValueInformation(dv.toCanonicalForm)
-                            // println("======>>>>>>\n\t\t"+vi+"\n\t\t"+relevantDependees)
                             if (newDependees.isEmpty ||
                                 dv.isNull.isYes ||
                                 classHierarchy.isKnownToBeFinal(dv.leastUpperType.get)
@@ -390,10 +387,8 @@ class LBFieldValuesAnalysis private[analyses] (
 
                         val vi = ValueBasedFieldValueInformation(dv.toCanonicalForm)
                         if (relevantDependees.isEmpty) {
-                            //   println(f.toJava+"!!!!!!>>>>>> "+vi)
                             Result(FinalEP(f, vi))
                         } else {
-                            //   println(f.toJava+"======>>>>>>\n\t\t"+vi+"\n\t\t"+relevantDependees)
                             InterimResult.forLB(f, vi, relevantDependees.toSet, c)
                         }
                     }

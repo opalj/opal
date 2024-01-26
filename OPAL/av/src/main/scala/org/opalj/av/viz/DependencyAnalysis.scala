@@ -62,13 +62,12 @@ object DependencyAnalysis extends ProjectsAnalysisApplication {
         val pattern = "<%[A-Z_]+%>".r
         val option = pattern findFirstIn doc
         option match {
-            case Some(o) => {
+            case Some(o) =>
                 println(
                     Console.YELLOW +
                         "[warn] HtmlDocument has at least one unset option " + o +
                         Console.RESET
                 )
-            }
             case None =>
         }
         doc

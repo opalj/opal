@@ -68,7 +68,7 @@ object Locking {
             rwLocks.iterator.forall { rwLock =>
                 try {
                     val l = rwLock.writeLock
-                    l.lock
+                    l.lock()
                     acquiredRWLocks ::= l
                     true
                 } catch {

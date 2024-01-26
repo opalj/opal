@@ -21,7 +21,7 @@ class JoinClassTypesTest extends AnyFunSpec with Matchers {
 
     final val classhierachy = {
         // val thisClass = classOf[org.opalj.br.analyses.JoinClassTypesTest]
-        val thisClass = this.getClass()
+        val thisClass = this.getClass
         val in = thisClass.getResourceAsStream("ClassHierarchyUpperBounds.ths")
         if (in == null)
             throw new UnknownError("class hierarchy could not be loaded")
@@ -52,8 +52,8 @@ class JoinClassTypesTest extends AnyFunSpec with Matchers {
         val result = classhierachy.joinClassTypes(param1, param2, reflexive)
         if (result != expected)
             fail(
-                s"${param1} join${if (reflexive) "(reflexive)" else ""}" +
-                    s" ${param2} is ${mkString(result)};" +
+                s"$param1 join${if (reflexive) "(reflexive)" else ""}" +
+                    s" $param2 is ${mkString(result)};" +
                     s" expected ${mkString(expected)}"
             )
     }
@@ -82,8 +82,8 @@ class JoinClassTypesTest extends AnyFunSpec with Matchers {
         val result = classhierachy.joinClassTypesUntilSingleUpperBound(param1, param2, reflexive)
         if (result != expected)
             fail(s"$param1 join $param2 ${if (reflexive) "(reflexive)" else ""}" +
-                s" with joinClassTypesUntilSingleUpperBound(ClassType, ClassType, Boolean) is ${result};" +
-                s" expected ${expected}")
+                s" with joinObjectTypesUntilSingleUpperBound(ClassType, ObjectType, Boolean) is $result;" +
+                s" expected $expected")
     }
 
     def testJoinClassTypesUntilSingleUpperBound(
@@ -93,8 +93,8 @@ class JoinClassTypesTest extends AnyFunSpec with Matchers {
         val result = classhierachy.joinClassTypesUntilSingleUpperBound(param)
         if (result != expected)
             fail(s"join of ${mkString(param)}" +
-                s" using joinClassTypesUntilSingleUpperBound(UIDSet[ClassType]) is ${result};" +
-                s" expected ${expected}")
+                s" using joinObjectTypesUntilSingleUpperBound(UIDSet[ClassType]) is $result;" +
+                s" expected $expected")
 
     }
 

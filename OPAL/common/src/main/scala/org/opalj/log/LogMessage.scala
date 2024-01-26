@@ -50,7 +50,7 @@ trait LogMessage {
         message.split('\n').map { ln =>
             var cr = ""
             var rawln = ln
-            if (ln.length > 0 && ln.charAt(0) == '\r') {
+            if (ln.nonEmpty && ln.charAt(0) == '\r') {
                 cr = "\r"
                 rawln = ln.substring(1)
             }
