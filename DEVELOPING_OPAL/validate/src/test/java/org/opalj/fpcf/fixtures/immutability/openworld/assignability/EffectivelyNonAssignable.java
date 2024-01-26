@@ -67,7 +67,7 @@ public class EffectivelyNonAssignable {
 
     @TransitivelyImmutableField("The field is effectively non assignable and has a primitive type")
     @EffectivelyNonAssignableField("The field is not written after initialization")
-    private Long simpleLong = 5l;
+    private Long simpleLong = 5L;
 
     @TransitivelyImmutableField("The concrete assigned object is known to be deep immutable")
     @EffectivelyNonAssignableField("The field is not written after initialization")
