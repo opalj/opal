@@ -75,7 +75,7 @@ package object graphs {
      * Requires that `Node` implements a content-based `equals` and `hashCode` method.
      */
     def toDot(
-        rootNodes: Iterable[_ <: Node],
+        rootNodes: Iterable[? <: Node],
         dir:       String = "forward",
         ranksep:   String = "0.8",
         fontname:  String = "Helvetica",

@@ -97,7 +97,7 @@ package object cg {
                     inst <- code.instructions
                 } {
                     if ((inst ne null) && inst.isLoadConstantInstruction &&
-                        inst.asInstanceOf[LoadConstantInstruction[_]].computationalType ==
+                        inst.asInstanceOf[LoadConstantInstruction[?]].computationalType ==
                             ComputationalTypeReference
                     ) {
                         inst match {

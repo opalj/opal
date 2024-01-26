@@ -5,7 +5,7 @@ package tac
 import org.junit.runner.RunWith
 import org.scalatestplus.junit.JUnitRunner
 
-import org.opalj.br._
+import org.opalj.br.*
 import org.opalj.br.TestSupport.biProject
 
 /**
@@ -21,8 +21,8 @@ class TACNaiveLongArithmeticTest extends TACNaiveTest {
 
     val ArithmeticExpressionsClassFile = project.classFile(ArithmeticExpressionsType).get
 
-    import BinaryArithmeticOperators._
-    import UnaryArithmeticOperators._
+    import BinaryArithmeticOperators.*
+    import UnaryArithmeticOperators.*
 
     val LongAddMethod = ArithmeticExpressionsClassFile.findMethod("longAdd").head
     val LongAndMethod = ArithmeticExpressionsClassFile.findMethod("longAnd").head

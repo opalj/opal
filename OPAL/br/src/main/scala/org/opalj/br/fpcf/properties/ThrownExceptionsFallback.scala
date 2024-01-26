@@ -5,7 +5,7 @@ package fpcf
 package properties
 
 import org.opalj.br.analyses.Project
-import org.opalj.br.collection.mutable.{TypesSet => BRMutableTypesSet}
+import org.opalj.br.collection.mutable.TypesSet as BRMutableTypesSet
 import org.opalj.br.fpcf.properties.ThrownExceptions.MethodBodyIsNotAvailable
 import org.opalj.br.fpcf.properties.ThrownExceptions.MethodIsNative
 import org.opalj.br.fpcf.properties.ThrownExceptions.NoExceptions
@@ -97,7 +97,7 @@ object ThrownExceptionsFallback extends ((PropertyStore, FallbackReason, Entity)
         val instructions = code.instructions
         val isStaticMethod = m.isStatic
 
-        val exceptions = new BRMutableTypesSet(ps.context(classOf[Project[_]]).classHierarchy)
+        val exceptions = new BRMutableTypesSet(ps.context(classOf[Project[?]]).classHierarchy)
 
         var result: ThrownExceptions = null
 

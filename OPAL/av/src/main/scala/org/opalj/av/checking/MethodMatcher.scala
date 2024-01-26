@@ -50,13 +50,13 @@ case class MethodMatcher(
  */
 object MethodMatcher {
 
-    def apply(methodPredicate: SourceElementPredicate[_ >: Method]): MethodMatcher = {
+    def apply(methodPredicate: SourceElementPredicate[? >: Method]): MethodMatcher = {
         new MethodMatcher(methodPredicate = methodPredicate)
     }
 
     def apply(
         annotationsPredicate: AnnotationsPredicate,
-        methodPredicate:      SourceElementPredicate[_ >: Method]
+        methodPredicate:      SourceElementPredicate[? >: Method]
     ): MethodMatcher = {
         new MethodMatcher(annotationsPredicate = annotationsPredicate, methodPredicate = methodPredicate)
     }

@@ -26,8 +26,8 @@ import org.opalj.io.writeAndOpen
 case class FlowEntity(
     pc:          Int,
     instruction: Instruction,
-    operands:    Operands[_ >: Null <: Domain#DomainValue],
-    locals:      Locals[_ >: Null <: Domain#DomainValue],
+    operands:    Operands[? >: Null <: Domain#DomainValue],
+    locals:      Locals[? >: Null <: Domain#DomainValue],
     properties:  Option[String]
 ) {
     val flowId = FlowEntity.nextFlowId
@@ -387,7 +387,7 @@ trait XHTMLTracer extends AITracer {
 
     override def domainMessage(
         domain:  Domain,
-        source:  Class[_],
+        source:  Class[?],
         typeID:  String,
         pc:      Option[Int],
         message: => String

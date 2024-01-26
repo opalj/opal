@@ -2,7 +2,7 @@
 package org.opalj
 package tac
 
-import org.opalj.br._
+import org.opalj.br.*
 import org.opalj.value.ValueInformation
 
 /**

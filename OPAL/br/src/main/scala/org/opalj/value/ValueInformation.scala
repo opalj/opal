@@ -60,7 +60,7 @@ trait ValueInformation {
      * @throws IllegalStateException if this value is illegal.
      */
     def isPrimitiveValue: Boolean
-    def asPrimitiveValue: IsPrimitiveValue[_ <: BaseType] = throw new ClassCastException();
+    def asPrimitiveValue: IsPrimitiveValue[? <: BaseType] = throw new ClassCastException();
 
     /**
      * Returns `true` if the value has a reference type.
@@ -483,7 +483,7 @@ trait IsReferenceValue extends KnownTypedValue {
      *      inheritance relation – if we would analyze the complete project – are part
      *      of the upper type bound.
      */
-    def upperTypeBound: UIDSet[_ <: ReferenceType]
+    def upperTypeBound: UIDSet[? <: ReferenceType]
 
     /**
      * If `Yes` the value is known to always be `null` at runtime. In this
@@ -619,7 +619,7 @@ trait IsNullValue extends IsBaseReferenceValue {
 
     override final def isNull: Answer = Yes
     override final def isPrecise: Boolean = true
-    override final def upperTypeBound: UIDSet[_ <: ReferenceType] = UIDSet.empty
+    override final def upperTypeBound: UIDSet[? <: ReferenceType] = UIDSet.empty
     override final def leastUpperType: None.type = None
     override final def verificationTypeInfo: VerificationTypeInfo = NullVariableInfo
 
@@ -980,7 +980,7 @@ case class TheClassValue(value: Type) extends IsClassValue {
  */
 object TypeOfReferenceValue {
 
-    def unapply(rv: IsReferenceValue): Some[UIDSet[_ <: ReferenceType]] = Some(rv.upperTypeBound)
+    def unapply(rv: IsReferenceValue): Some[UIDSet[? <: ReferenceType]] = Some(rv.upperTypeBound)
 
 }
 
@@ -1057,7 +1057,7 @@ case class AMultipleReferenceValue(
     baseValues:     Iterable[IsReferenceValue],
     isNull:         Answer,
     isPrecise:      Boolean,
-    upperTypeBound: UIDSet[_ <: ReferenceType],
+    upperTypeBound: UIDSet[? <: ReferenceType],
     leastUpperType: Option[ReferenceType] // None in case of "null"
 ) extends IsMultipleReferenceValue {
 

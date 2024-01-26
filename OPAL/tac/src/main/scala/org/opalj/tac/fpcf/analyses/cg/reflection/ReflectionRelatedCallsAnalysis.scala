@@ -378,7 +378,7 @@ class ClassNewInstanceAnalysis private[analyses] (
                 MatcherUtil.constructorMatcher,
                 new ParameterTypesBasedMethodMatcher(ArraySeq.empty),
                 new ClassBasedMethodMatcher(
-                    eps.asInstanceOf[EPS[_, ForNameClasses]].ub.classes.collect {
+                    eps.asInstanceOf[EPS[?, ForNameClasses]].ub.classes.collect {
                         case ot: ObjectType => ot
                     },
                     true
@@ -531,7 +531,7 @@ class ConstructorNewInstanceAnalysis private[analyses] (
 
             val (callPC, params, matchers, _, _) = state.dependersOf(epk).head.asInstanceOf[classDependerType]
 
-            val classes = eps.asInstanceOf[EPS[_, ForNameClasses]].ub.classes.collect {
+            val classes = eps.asInstanceOf[EPS[?, ForNameClasses]].ub.classes.collect {
                 case ot: ObjectType => ot
             }
 
@@ -543,7 +543,7 @@ class ConstructorNewInstanceAnalysis private[analyses] (
                 eps,
                 state.callContext,
                 _ => (constructor, state.tac.stmts),
-                _.isInstanceOf[(_, _, _)],
+                _.isInstanceOf[(?, ?, ?)],
                 data => failure("method", data._1, data._2, data._3)
             ) { (data, allocationContext, allocationIndex, stmts) =>
                 val allMatchers =
@@ -555,7 +555,7 @@ class ConstructorNewInstanceAnalysis private[analyses] (
                 eps,
                 state.callContext,
                 data => (data._4, data._5),
-                _.isInstanceOf[(_, _, _, _, _)],
+                _.isInstanceOf[(?, ?, ?, ?, ?)],
                 data => failure("class", data._1, data._2, data._3)
             ) { (data, allocationContext, allocationIndex, stmts) =>
                 val classes = TypesUtil
@@ -794,7 +794,7 @@ class MethodInvokeAnalysis private[analyses] (
         if (epk.pk == ForNameClasses.key) {
             val (callPC, receiver, params, matchers, _, _) = state.dependersOf(epk).head.asInstanceOf[classDependerType]
 
-            val classes = eps.asInstanceOf[EPS[_, ForNameClasses]].ub.classes.map { tpe =>
+            val classes = eps.asInstanceOf[EPS[?, ForNameClasses]].ub.classes.map { tpe =>
                 if (tpe.isObjectType) tpe.asObjectType else ObjectType.Object
             }
 
@@ -809,7 +809,7 @@ class MethodInvokeAnalysis private[analyses] (
                 eps,
                 state.callContext,
                 _ => (methodVar, state.tac.stmts),
-                _.isInstanceOf[(_, _, _, _)],
+                _.isInstanceOf[(?, ?, ?, ?)],
                 data => failure("method", data._1, data._2, data._3, data._4)
             ) { (data, allocationContext, allocationIndex, stmts) =>
                 val allMatchers =
@@ -821,7 +821,7 @@ class MethodInvokeAnalysis private[analyses] (
                 eps,
                 state.callContext,
                 data => (data._5, data._6),
-                _.isInstanceOf[(_, _, _, _, _, _, _, _)],
+                _.isInstanceOf[(?, ?, ?, ?, ?, ?, ?, ?)],
                 data => {
                     val allMatchers = data._4 + getClassMatcher(data, data._4)
                     failure("method", data._1, data._2, data._3, allMatchers)
@@ -845,7 +845,7 @@ class MethodInvokeAnalysis private[analyses] (
                 eps,
                 state.callContext,
                 data => (data._5, data._6),
-                _.isInstanceOf[(_, _, _, _, _, _)],
+                _.isInstanceOf[(?, ?, ?, ?, ?, ?)],
                 data => failure("class", data._1, data._2, data._3, data._4)
             ) { (data, allocationContext, allocationIndex, stmts) =>
                 val classes = TypesUtil.getPossibleClasses(
@@ -1125,7 +1125,7 @@ class MethodHandleInvokeAnalysis private[analyses] (
         if (epk.pk == ForNameClasses.key) {
             val (callPC, isVirtual, params, matchers, _, _) = state.dependersOf(epk).head.asInstanceOf[classDependerType]
 
-            val classes = eps.asInstanceOf[EPS[_, ForNameClasses]].ub.classes.flatMap {
+            val classes = eps.asInstanceOf[EPS[?, ForNameClasses]].ub.classes.flatMap {
                 case ot: ObjectType if isVirtual => project.classHierarchy.allSubtypes(ot, true)
                 case ot: ObjectType              => Set(ot)
                 case _: ArrayType                => Set(ObjectType.Object)
@@ -1141,7 +1141,7 @@ class MethodHandleInvokeAnalysis private[analyses] (
                 eps,
                 state.callContext,
                 _ => (methodHandle, state.tac.stmts),
-                _.isInstanceOf[(_, _, _, _, _)],
+                _.isInstanceOf[(?, ?, ?, ?, ?)],
                 data => failure("method", data._1, data._4, data._5)
             ) { (data, allocationContext, allocationIndex, stmts) =>
                 val allMatchers = handleGetMethodHandle(
@@ -1161,7 +1161,7 @@ class MethodHandleInvokeAnalysis private[analyses] (
                 eps,
                 state.callContext,
                 data => (data._5, data._6),
-                _.isInstanceOf[(_, _, _, _, _, _, _, _)],
+                _.isInstanceOf[(?, ?, ?, ?, ?, ?, ?, ?)],
                 data => {
                     val allMatchers = data._4 + getClassMatcher(data, data._4)
                     failure("method", data._1, data._3, allMatchers)
@@ -1186,7 +1186,7 @@ class MethodHandleInvokeAnalysis private[analyses] (
                 eps,
                 state.callContext,
                 data => (data._5, data._6),
-                _.isInstanceOf[(_, _, _, _, _, _)],
+                _.isInstanceOf[(?, ?, ?, ?, ?, ?)],
                 data => failure("class", data._1, data._3, data._4)
             ) { (data, allocationContext, allocationIndex, stmts) =>
                 val classes = TypesUtil.getPossibleClasses(

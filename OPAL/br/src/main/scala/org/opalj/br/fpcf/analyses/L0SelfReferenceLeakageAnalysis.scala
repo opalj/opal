@@ -35,7 +35,7 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
-import org.opalj.log.OPALLogger.{debug => trace}
+import org.opalj.log.OPALLogger.debug as trace
 
 /**
  * A shallow analysis that computes the self reference leakage property.

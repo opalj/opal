@@ -71,7 +71,7 @@ trait ValuesDomain { domain =>
      * Abstracts over the concrete type of `Value`. Needs to be refined by traits that
      * inherit from `Domain` and which extend `Domain`'s `Value` trait.
      */
-    type DomainValue >: Null <: Value with AnyRef
+    type DomainValue >: Null <: Value & AnyRef
 
     /**
      * The class tag for the type `DomainValue`.
@@ -393,7 +393,7 @@ trait ValuesDomain { domain =>
 
     }
 
-    type DomainReferenceValue >: Null <: ReferenceValue with DomainTypedValue[ReferenceType]
+    type DomainReferenceValue >: Null <: ReferenceValue & DomainTypedValue[ReferenceType]
 
     /**
      * The class tag can be used to create type safe arrays or to extract the concrete type
@@ -507,7 +507,7 @@ trait ValuesDomain { domain =>
      * This type needs to be refined whenever the class `IllegalValue`
      * is refined or the type `DomainValue` is refined.
      */
-    type DomainIllegalValue <: IllegalValue with DomainValue
+    type DomainIllegalValue <: IllegalValue & DomainValue
 
     /**
      * The '''singleton''' instance of the `IllegalValue`.
@@ -564,7 +564,7 @@ trait ValuesDomain { domain =>
         override def toString: String = "ReturnAddresses"
 
     }
-    type DomainReturnAddressValues <: ReturnAddressValues with DomainValue
+    type DomainReturnAddressValues <: ReturnAddressValues & DomainValue
 
     /**
      *  The singleton instance of `ReturnAddressValues`
@@ -613,7 +613,7 @@ trait ValuesDomain { domain =>
      * type DomainReturnAddressValue = ReturnAddressValue
      * }}}
      */
-    type DomainReturnAddressValue <: ReturnAddressValue with DomainValue
+    type DomainReturnAddressValue <: ReturnAddressValue & DomainValue
 
     /**
      * Factory method to create an instance of a `ReturnAddressValue`.

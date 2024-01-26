@@ -15,8 +15,8 @@ import org.opalj.ai.Domain
 import org.opalj.ai.InstructionCountBoundedAI
 import org.opalj.ai.domain
 import org.opalj.ai.util.XHTML
-import org.opalj.br._
-import org.opalj.br.analyses._
+import org.opalj.br.*
+import org.opalj.br.analyses.*
 import org.opalj.io.writeAndOpen
 import org.opalj.log.LogContext
 
@@ -88,7 +88,7 @@ class InterpretMethodsAnalysis[Source] extends Analysis[Source, BasicReport] {
             if (parameters.nonEmpty && parameters.head.startsWith("-domain")) {
                 InterpretMethodsAnalysis.interpret(
                     project,
-                    Class.forName(parameters.head.substring(8)).asInstanceOf[Class[_ <: Domain]],
+                    Class.forName(parameters.head.substring(8)).asInstanceOf[Class[? <: Domain]],
                     verbose,
                     initProgressManagement,
                     6d
@@ -118,7 +118,7 @@ object InterpretMethodsAnalysis {
 
     def interpret[Source](
         project:                Project[Source],
-        domainClass:            Class[_ <: Domain],
+        domainClass:            Class[? <: Domain],
         beVerbose:              Boolean,
         initProgressManagement: (Int) => ProgressManagement,
         maxEvaluationFactor:    Double = 3d
@@ -206,7 +206,7 @@ object InterpretMethodsAnalysis {
         val collectedExceptions = time(Symbol("OVERALL")) {
             val results = new ConcurrentLinkedQueue[(String, ClassFile, Method, Throwable)]()
             project.parForeachMethodWithBody() { m => analyzeMethod(m.source.toString, m.method).map(results.add) }
-            import scala.jdk.CollectionConverters._
+            import scala.jdk.CollectionConverters.*
             results.asScala
         }
 

@@ -66,7 +66,7 @@ trait BootstrapArgumentLoading {
      *         new!) class file
      */
     def loadBootstrapArgument(
-        argument:     ConstantValue[_],
+        argument:     ConstantValue[?],
         instructions: InstructionsBuilder,
         classFile:    ClassFile,
         boxed:        Boolean = false
@@ -104,7 +104,7 @@ trait BootstrapArgumentLoading {
         boxed:           Boolean = false
     ): (Int, ClassFile) = {
 
-        def dynamicLoad(): LoadConstantInstruction[_] = {
+        def dynamicLoad(): LoadConstantInstruction[?] = {
             if (descriptor.computationalType.isCategory2) LoadDynamic2_W(bootstrapMethod, name, descriptor)
             else LoadDynamic_W(bootstrapMethod, name, descriptor)
         }
@@ -353,8 +353,8 @@ trait BootstrapArgumentLoading {
      * Generate instructions to invoke a given MethodHandle.
      */
     private def invokeMethodHandle(
-        methodHandle: ConstantValue[_],
-        arguments:    ArraySeq[ConstantValue[_]],
+        methodHandle: ConstantValue[?],
+        arguments:    ArraySeq[ConstantValue[?]],
         returnType:   FieldType,
         instructions: InstructionsBuilder,
         classFile:    ClassFile,

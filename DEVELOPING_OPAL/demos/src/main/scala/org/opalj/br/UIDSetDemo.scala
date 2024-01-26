@@ -2,8 +2,8 @@
 package org.opalj
 package br
 
-import org.opalj.collection.immutable._
-import org.opalj.util.{Nanoseconds => NS}
+import org.opalj.collection.immutable.*
+import org.opalj.util.Nanoseconds as NS
 
 object UIDSetDemo extends App {
 

@@ -8,9 +8,9 @@ import scala.Console.BOLD
 import scala.Console.RED
 import scala.Console.RESET
 
-import org.opalj.br._
+import org.opalj.br.*
 import org.opalj.br.analyses.SomeProject
-import org.opalj.de._
+import org.opalj.de.*
 
 /**
  * Used to report deviations between the specified and the implemented architecture.

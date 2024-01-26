@@ -651,7 +651,7 @@ class PropagationBasedTypeIterator(
  * Functionality for providing types based on individual points-to information, e.g., CFA.
  * Points-to information is stored per variable.
  */
-trait PointsToTypeIterator[ElementType, PointsToSet >: Null <: PointsToSetLike[ElementType, _, PointsToSet]]
+trait PointsToTypeIterator[ElementType, PointsToSet >: Null <: PointsToSetLike[ElementType, ?, PointsToSet]]
     extends TypeIterator {
 
     override type InformationType = PointsToSet
@@ -1081,8 +1081,8 @@ class AllocationSitesPointsToTypeIterator(project: SomeProject)
                 val theTAC = tac.theTAC
                 state.dependersOf(updatedEPS.toEPK).foreach {
                     case (depender: Entity, definedMethod: DefinedMethod, receiver: AnyRef)
-                        if receiver.isInstanceOf[Option[_]] &&
-                            receiver.asInstanceOf[Option[_]].isDefined =>
+                        if receiver.isInstanceOf[Option[?]] &&
+                            receiver.asInstanceOf[Option[?]].isDefined =>
                         handleAllocationTacUpdate(
                             depender,
                             definedMethod,
@@ -1133,8 +1133,8 @@ class AllocationSitesPointsToTypeIterator(project: SomeProject)
             case tac: TheTACAI =>
                 state.dependersOf(updatedEPS.toEPK).foreach {
                     case (depender: Entity, definedMethod: DefinedMethod, receiver: AnyRef)
-                        if receiver.isInstanceOf[Option[_]] &&
-                            receiver.asInstanceOf[Option[_]].isDefined =>
+                        if receiver.isInstanceOf[Option[?]] &&
+                            receiver.asInstanceOf[Option[?]].isDefined =>
                         handleAllocationTacUpdate(
                             depender,
                             definedMethod,

@@ -19,7 +19,7 @@ import scala.collection.immutable
  * @author Michael Eichberg
  */
 trait RecordAllThrownExceptions extends RecordThrownExceptions {
-    domain: ValuesDomain with Configuration with ExceptionsFactory =>
+    domain: ValuesDomain & Configuration & ExceptionsFactory =>
 
     type ThrownException = immutable.Set[ExceptionValue]
 

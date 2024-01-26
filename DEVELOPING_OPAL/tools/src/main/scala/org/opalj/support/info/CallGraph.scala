@@ -8,7 +8,7 @@ import java.io.FileOutputStream
 import java.io.PrintWriter
 import java.net.URL
 import java.util.Calendar
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 import com.typesafe.config.ConfigValueFactory
 
@@ -152,10 +152,10 @@ object CallGraph extends ProjectAnalysisApplication {
                 val threads =
                     numThreads.getOrElse(org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks)
                 if (threads == 0) {
-                    org.opalj.fpcf.seq.PKESequentialPropertyStore(context: _*)
+                    org.opalj.fpcf.seq.PKESequentialPropertyStore(context*)
                 } else {
                     org.opalj.fpcf.par.PKECPropertyStore.MaxThreads = threads
-                    org.opalj.fpcf.par.PKECPropertyStore(context: _*)
+                    org.opalj.fpcf.par.PKECPropertyStore(context*)
                 }
             }
         )
@@ -202,11 +202,11 @@ object CallGraph extends ProjectAnalysisApplication {
 
             val byType = ptss.groupBy(_.e.getClass)
 
-            def getNum(tpe: Class[_ <: Entity]): Int = {
+            def getNum(tpe: Class[? <: Entity]): Int = {
                 byType.get(tpe).map(_.size).getOrElse(0)
             }
 
-            def getEntries(tpe: Class[_ <: Entity]): Int = {
+            def getEntries(tpe: Class[? <: Entity]): Int = {
                 byType.get(tpe).map(_.map(_.ub.numElements).sum).getOrElse(0)
             }
 
@@ -457,14 +457,14 @@ object CallGraph extends ProjectAnalysisApplication {
         } { t => projectTime = t.toSeconds }
 
         val domainFQN = tacDomain.getOrElse("org.opalj.ai.domain.l0.PrimitiveTACAIDomain")
-        val domain = Class.forName(domainFQN).asInstanceOf[Class[Domain with RecordDefUse]]
+        val domain = Class.forName(domainFQN).asInstanceOf[Class[Domain & RecordDefUse]]
         newProject.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
             case None               => Set(domain)
             case Some(requirements) => requirements + domain
         }
 
         if (analysisName.isEmpty) {
-            analysisName = Some(s"RUN-${Calendar.getInstance().getTime().toString}")
+            analysisName = Some(s"RUN-${Calendar.getInstance().getTime.toString}")
         }
 
         performAnalysis(

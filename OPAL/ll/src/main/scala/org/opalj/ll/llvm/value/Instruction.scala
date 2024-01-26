@@ -9,7 +9,7 @@ import org.opalj.ll.llvm.Type
 import org.opalj.ll.llvm.value.constant.ConstantIntValue
 
 import org.bytedeco.llvm.LLVM.LLVMValueRef
-import org.bytedeco.llvm.global.LLVM._
+import org.bytedeco.llvm.global.LLVM.*
 
 object OptionalInstruction {
     def apply(ref: LLVMValueRef): Option[Instruction] = {

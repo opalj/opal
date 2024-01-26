@@ -4,7 +4,7 @@ package ai
 package domain
 package l1
 
-import java.lang.{StringBuilder => JStringBuilder}
+import java.lang.StringBuilder as JStringBuilder
 
 import org.opalj.br.ObjectType
 
@@ -38,8 +38,7 @@ import org.opalj.br.ObjectType
  * @author Michael Eichberg
  */
 trait StringBuilderValues extends StringValues {
-    domain: Domain with CorrelationalDomainSupport with Configuration with IntegerValuesDomain
-        with TypedValuesFactory =>
+    domain: Domain & CorrelationalDomainSupport & Configuration & IntegerValuesDomain & TypedValuesFactory =>
 
     // TODO Move concrete class to DefaultBindingClass...
     protected class StringBuilderValue(

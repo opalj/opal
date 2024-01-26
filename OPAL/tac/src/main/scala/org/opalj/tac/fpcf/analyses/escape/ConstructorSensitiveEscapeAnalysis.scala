@@ -44,7 +44,7 @@ import org.opalj.fpcf.SomeInterimEP
  */
 trait ConstructorSensitiveEscapeAnalysis extends AbstractEscapeAnalysis {
 
-    override type AnalysisContext <: AbstractEscapeAnalysisContext with PropertyStoreContainer with VirtualFormalParametersContainer with DeclaredMethodsContainer
+    override type AnalysisContext <: AbstractEscapeAnalysisContext & PropertyStoreContainer & VirtualFormalParametersContainer & DeclaredMethodsContainer
 
     abstract override protected[this] def handleThisLocalOfConstructor(
         call: NonVirtualMethodCall[V]

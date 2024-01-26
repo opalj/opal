@@ -4,9 +4,9 @@ package ai
 
 import java.net.URL
 
-import org.opalj.br._
-import org.opalj.br.analyses._
-import org.opalj.br.instructions._
+import org.opalj.br.*
+import org.opalj.br.analyses.*
+import org.opalj.br.instructions.*
 
 import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParallelizable
 
@@ -39,10 +39,10 @@ object ExceptionUsage extends ProjectAnalysisApplication {
 
         val usages = (for {
             classFile <- theProject.allProjectClassFiles.par
-            method @ MethodWithBody(body) <- classFile.methods
+            case method @ MethodWithBody(body) <- classFile.methods
             result = BaseAI(method, new ExceptionUsageAnalysisDomain(theProject, method))
         } yield {
-            import scala.collection.mutable._
+            import scala.collection.mutable.*
 
             def typeName(value: result.domain.DomainSingleOriginReferenceValue): String =
                 value.upperTypeBound.map(_.toJava).mkString(" with ")
@@ -153,7 +153,7 @@ case class ExceptionUsage(
 
     override def toString: String = {
         val lineNumber = method.body.get.lineNumber(definitionSite).map("line=" + _ + ";").getOrElse("")
-        import Console._
+        import Console.*
         method.toJava(
             usageInformation.mkString(s"$BOLD[$lineNumber;pc=$definitionSite]$exceptionType => ", ", ", RESET)
         )

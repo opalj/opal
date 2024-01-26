@@ -25,9 +25,9 @@ import org.opalj.br.VoidType
  * @author Michael Eichberg
  */
 trait SpecialMethodsHandling extends MethodCallsHandling {
-    callingDomain: ValuesFactory with ReferenceValuesDomain with IntegerValuesDomain with Configuration with TheCode =>
+    callingDomain: ValuesFactory & ReferenceValuesDomain & IntegerValuesDomain & Configuration & TheCode =>
 
-    import SpecialMethodsHandling._
+    import SpecialMethodsHandling.*
 
     abstract override def invokestatic(
         pc:            Int,

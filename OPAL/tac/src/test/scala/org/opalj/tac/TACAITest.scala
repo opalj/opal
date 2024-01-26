@@ -40,7 +40,7 @@ class TACAITest extends AnyFunSpec with Matchers {
                     case "complete" => biProjectWithJDK(projectName, jdkAPIOnly = false)
                     case "api"      => biProjectWithJDK(projectName, jdkAPIOnly = true)
                 }
-                for { Seq(_, _, className, methodName, test, domainName) <- tests } {
+                for { case Seq(_, _, className, methodName, test, domainName) <- tests } {
                     it(test + s" ($className.$methodName using $domainName)") {
 
                         val cfOption = p.classFile(ObjectType(className.replace('.', '/')))
@@ -56,10 +56,10 @@ class TACAITest extends AnyFunSpec with Matchers {
                         if (m.body.isEmpty)
                             fail(s"method body is empty: ${m.toJava}")
 
-                        val d: Domain with RecordDefUse =
+                        val d: Domain & RecordDefUse =
                             Class
-                                .forName(domainName).asInstanceOf[Class[Domain with RecordDefUse]]
-                                .getConstructor(classOf[Project[_]], classOf[Method])
+                                .forName(domainName).asInstanceOf[Class[Domain & RecordDefUse]]
+                                .getConstructor(classOf[Project[?]], classOf[Method])
                                 .newInstance(p, m)
                         val aiResult = BaseAI(m, d)
                         val TACode(params, code, _, cfg, _) = TACAI(m, p.classHierarchy, aiResult, false)(Nil)

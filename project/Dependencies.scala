@@ -1,6 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 
-import sbt._
+import sbt.*
 
 /**
  * Manages the library dependencies of the subprojects of OPAL.
@@ -67,7 +67,7 @@ object Dependencies {
     val scalacheck =     "org.scalatestplus" %% "scalacheck-1-16" % version.scalacheck     % "test,it"
   }
 
-  import library._
+  import library.*
 
   val testlibs: Seq[ModuleID] = Seq(junit, scalatest, scalatestjunit, scalacheck)
 

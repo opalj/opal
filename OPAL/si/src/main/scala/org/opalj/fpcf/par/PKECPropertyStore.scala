@@ -28,7 +28,7 @@ import org.opalj.log.LogContext
  * @author Dominik Helm
  */
 class PKECPropertyStore(
-    final val ctx:                   Map[Class[_], AnyRef],
+    final val ctx:                   Map[Class[?], AnyRef],
     val taskManager:                 PKECTaskManager,
     val THREAD_COUNT:                Int,
     override val MaxEvaluationDepth: Int
@@ -355,7 +355,7 @@ class PKECPropertyStore(
     }
 
     private[this] def handleInterimResult(
-        interimEP: InterimEP[Entity, _ >: Null <: Property],
+        interimEP: InterimEP[Entity, ? >: Null <: Property],
         c:         ProperOnUpdateContinuation,
         dependees: Set[SomeEOptionP]
     ): Unit = {
@@ -998,11 +998,11 @@ object PKECPropertyStore extends PropertyStoreFactory[PKECPropertyStore] {
     @volatile var MaxThreads: Int = org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
 
     def apply(
-        context: PropertyStoreContext[_ <: AnyRef]*
+        context: PropertyStoreContext[? <: AnyRef]*
     )(
         implicit logContext: LogContext
     ): PKECPropertyStore = {
-        val contextMap: Map[Class[_], AnyRef] = context.map(_.asTuple).toMap
+        val contextMap: Map[Class[?], AnyRef] = context.map(_.asTuple).toMap
 
         val config =
             contextMap.get(classOf[Config]) match {

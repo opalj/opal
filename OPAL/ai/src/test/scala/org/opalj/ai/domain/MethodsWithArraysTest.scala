@@ -9,9 +9,9 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
 
 import org.opalj.ai.common.XHTML.dumpOnFailureDuringValidation
-import org.opalj.ai.domain.l0._
+import org.opalj.ai.domain.l0.*
 import org.opalj.bi.TestResources.locateTestResources
-import org.opalj.br._
+import org.opalj.br.*
 import org.opalj.br.reader.Java8Framework.ClassFiles
 
 /**
@@ -22,7 +22,7 @@ import org.opalj.br.reader.Java8Framework.ClassFiles
 @RunWith(classOf[JUnitRunner])
 class MethodsWithArraysTest extends AnyFlatSpec with Matchers {
 
-    import MethodsWithArraysTest._
+    import MethodsWithArraysTest.*
 
     class TestDomain
         extends Domain
@@ -63,7 +63,7 @@ class MethodsWithArraysTest extends AnyFlatSpec with Matchers {
         evaluateMethod(
             "byteArrays",
             domain => {
-                import domain._
+                import domain.*
                 domain.allReturnedValues should be(
                     Map((15 -> AByteValue))
                 )
@@ -75,7 +75,7 @@ class MethodsWithArraysTest extends AnyFlatSpec with Matchers {
         evaluateMethod(
             "booleanArrays",
             domain => {
-                import domain._
+                import domain.*
                 domain.allReturnedValues should be(
                     Map((14 -> ABooleanValue))
                 )

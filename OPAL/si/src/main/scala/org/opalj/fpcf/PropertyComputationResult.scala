@@ -14,12 +14,12 @@ sealed abstract class PropertyComputationResult {
     private[fpcf] def id: Int
 
     private[fpcf] def isInterimResult: Boolean = false
-    private[fpcf] def asInterimResult: InterimResult[_ >: Null <: Property] = {
+    private[fpcf] def asInterimResult: InterimResult[? >: Null <: Property] = {
         throw new ClassCastException();
     }
 
     private[fpcf] def isInterimPartialResult: Boolean = false
-    private[fpcf] def asInterimPartialResult: InterimPartialResult[_ >: Null <: Property] = {
+    private[fpcf] def asInterimPartialResult: InterimPartialResult[? >: Null <: Property] = {
         throw new ClassCastException();
     }
 

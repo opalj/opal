@@ -304,7 +304,7 @@ final class ClassFile private (
 
     def methodBodies: Iterator[Code] = methods.iterator.flatMap(_.body)
 
-    import ClassFile._
+    import ClassFile.*
 
     def minorVersion: UShort = version.minor
 
@@ -982,7 +982,7 @@ object ClassFile {
     def unapply(
         classFile: ClassFile
     ): Option[(Int, ObjectType, Option[ObjectType], Seq[ObjectType])] = {
-        import classFile._
+        import classFile.*
         Some((accessFlags, thisType, superclassType, interfaceTypes))
     }
 }

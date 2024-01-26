@@ -15,7 +15,7 @@ import org.scalatestplus.junit.JUnitRunner
 @RunWith(classOf[JUnitRunner])
 class AccessFlagsMatcherTest extends AnyFlatSpec with Matchers {
 
-    import AccessFlagsMatcher._
+    import AccessFlagsMatcher.*
 
     behavior of "an AccessFlagsMatcher"
 

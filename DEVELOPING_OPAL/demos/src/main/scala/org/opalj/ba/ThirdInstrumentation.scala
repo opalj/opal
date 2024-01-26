@@ -71,7 +71,7 @@ object ThirdInstrumentation extends App {
                 var removeDeadCode = false
                 if (m.name == "killMe1") {
                     for {
-                        PCAndInstruction(pc, LoadString("kill me")) <- code // the search can be done either based on the original code or the lcode
+                        case PCAndInstruction(pc, LoadString("kill me")) <- code // the search can be done either based on the original code or the lcode
                     } {
                         val stackDepth = code.stackDepthAt(pc, cfg)
                         val cleanStackAndReturn = new Array[CodeElement[AnyRef]](stackDepth + 1)
@@ -87,7 +87,7 @@ object ThirdInstrumentation extends App {
                     removeDeadCode = true
                 } else if (m.name == "killMe2") {
                     for {
-                        PCAndInstruction(pc, LoadString("kill me")) <- code
+                        case PCAndInstruction(pc, LoadString("kill me")) <- code
                     } {
                         // NOTE: when we throw an exception, we don't have to take of the
                         //       size of the stack!
@@ -132,13 +132,13 @@ object ThirdInstrumentation extends App {
                 lazy val aiResult = BaseAI(m, new TypeCheckingDomain(p, m))
 
                 for {
-                    PCAndInstruction(pc, GETSTATIC(SystemType, "out", _)) <- code
+                    case PCAndInstruction(pc, GETSTATIC(SystemType, "out", _)) <- code
                 } {
                     lCode.replace(pc, Seq(GETSTATIC(SystemType, "err", PrintStreamType)))
                 }
 
                 for {
-                    PCAndInstruction(pc, INVOKEVIRTUAL(_, "println", PrintlnDescriptor)) <- code
+                    case PCAndInstruction(pc, INVOKEVIRTUAL(_, "println", PrintlnDescriptor)) <- code
                     if aiResult.operandsArray(pc).head.asDomainReferenceValue.isValueASubtypeOf(CollectionType).isYes
                 } {
                     lCode.insert(
@@ -155,7 +155,7 @@ object ThirdInstrumentation extends App {
 
                 // Let's write out whether a value is positive (0...Int.MaxValue) or negative;
                 // i.e., let's see how we add conditional logic.
-                for (PCAndInstruction(pc, IRETURN) <- code) {
+                for (case PCAndInstruction(pc, IRETURN) <- code) {
                     val gtTarget = Symbol(s"$pc:>")
                     val printlnTarget = Symbol(s"$pc:println")
                     lCode.insert(

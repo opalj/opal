@@ -62,13 +62,13 @@ package object ai {
      *
      * @note This type alias serves comprehension purposes only.
      */
-    type SomeAI[D <: Domain] = AI[_ >: D]
+    type SomeAI[D <: Domain] = AI[? >: D]
 
     type PrimitiveValuesFactory =
-        IntegerValuesFactory with LongValuesFactory with FloatValuesFactory with DoubleValuesFactory
+        IntegerValuesFactory & LongValuesFactory & FloatValuesFactory & DoubleValuesFactory
     type ValuesFactory =
-        PrimitiveValuesFactory with ReferenceValuesFactory with ExceptionsFactory with TypedValuesFactory
-    type TargetDomain = ValuesDomain with ValuesFactory
+        PrimitiveValuesFactory & ReferenceValuesFactory & ExceptionsFactory & TypedValuesFactory
+    type TargetDomain = ValuesDomain & ValuesFactory
 
     final type PCs = org.opalj.br.PCs
 
@@ -516,9 +516,9 @@ package object ai {
      *      interpretation.
      */
     def mapOperandsToParameters(
-        operands:     Operands[_ <: ValuesDomain#DomainValue],
+        operands:     Operands[? <: ValuesDomain#DomainValue],
         calledMethod: Method,
-        targetDomain: ValuesDomain with ValuesFactory
+        targetDomain: ValuesDomain & ValuesFactory
     ): Locals[targetDomain.DomainValue] = {
 
         assert(
@@ -566,8 +566,8 @@ package object ai {
      * are identical before are identical afterwards.
      */
     def mapOperands(
-        theOperands:  Operands[_ <: ValuesDomain#DomainValue],
-        targetDomain: ValuesDomain with ValuesFactory
+        theOperands:  Operands[? <: ValuesDomain#DomainValue],
+        targetDomain: ValuesDomain & ValuesFactory
     ): Array[targetDomain.DomainValue] = {
         // implicit val domainValueTag: ClassTag[targetDomain.DomainValue] = targetDomain.DomainValueTag
         import targetDomain.DomainValueTag

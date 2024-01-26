@@ -217,7 +217,7 @@ package control {
         )(
             f: c.Expr[(Int, T) => Unit]
         ): c.Expr[Unit] = {
-            import c.universe._
+            import c.universe.*
 
             reify {
                 val array = a.splice // evaluate only once!
@@ -238,7 +238,7 @@ package control {
         )(
             f: c.Expr[(T, Int) => Unit]
         ): c.Expr[Unit] = {
-            import c.universe._
+            import c.universe.*
 
             reify {
                 val array = a.splice // evaluate only once!
@@ -260,7 +260,7 @@ package control {
         )(
             f: c.Expr[T => Unit]
         ): c.Expr[Unit] = {
-            import c.universe._
+            import c.universe.*
 
             reify {
                 var remainingList = l.splice
@@ -282,7 +282,7 @@ package control {
         )(
             f: c.Expr[T]
         ): c.Expr[ArraySeq[T]] = {
-            import c.universe._
+            import c.universe.*
 
             reify {
                 val size = times.splice // => times is evaluated only once
@@ -302,7 +302,7 @@ package control {
         }
 
         def fillIntArray(c: Context)(times: c.Expr[Int])(f: c.Expr[Int]): c.Expr[ArraySeq[Int]] = {
-            import c.universe._
+            import c.universe.*
 
             reify {
                 val size = times.splice // => times is evaluated only once
@@ -322,7 +322,7 @@ package control {
         }
 
         def fillArrayOfInt(c: Context)(times: c.Expr[Int])(f: c.Expr[Int]): c.Expr[Array[Int]] = {
-            import c.universe._
+            import c.universe.*
 
             reify {
                 val size = times.splice // => times is evaluated only once
@@ -349,7 +349,7 @@ package control {
         )(
             f: c.Expr[(Int) => Unit]
         ): c.Expr[Unit] = {
-            import c.universe._
+            import c.universe.*
 
             reify {
                 var i = from.splice
@@ -369,7 +369,7 @@ package control {
         )(
             f: c.Expr[(Int) => Unit]
         ): c.Expr[Unit] = {
-            import c.universe._
+            import c.universe.*
 
             reify {
                 var i = from.splice
@@ -382,7 +382,7 @@ package control {
         }
 
         def repeat(c: Context)(times: c.Expr[Int])(f: c.Expr[Unit]): c.Expr[Unit] = {
-            import c.universe._
+            import c.universe.*
 
             reify {
                 var i = times.splice

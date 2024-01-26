@@ -177,7 +177,7 @@ sealed abstract class AIAborted extends AIResult {
 
     override def wasAborted: Boolean = true
 
-    def continueInterpretation(ai: AI[_ >: domain.type]): AIResult
+    def continueInterpretation(ai: AI[? >: domain.type]): AIResult
 
     override def stateToString: String = {
         "The abstract interpretation was aborted:\n" + super.stateToString
@@ -205,7 +205,7 @@ sealed abstract class AICompleted extends AIResult {
 
     override def wasAborted: Boolean = false
 
-    def restartInterpretation(ai: AI[_ >: domain.type]): AIResult
+    def restartInterpretation(ai: AI[? >: domain.type]): AIResult
 
     override def stateToString: String = {
         "The abstract interpretation succeeded:\n" + super.stateToString
@@ -273,7 +273,7 @@ object AIResultBuilder { builder =>
             val subroutinesOperandsArray: theDomain.OperandsArray = theSubroutinesOperandsArray
             val subroutinesLocalsArray: theDomain.LocalsArray = theSubroutinesLocalsArray
 
-            def continueInterpretation(ai: AI[_ >: domain.type]): AIResult = {
+            def continueInterpretation(ai: AI[? >: domain.type]): AIResult = {
                 ai.continueInterpretation(
                     code,
                     cfJoins,
@@ -324,7 +324,7 @@ object AIResultBuilder { builder =>
             val subroutinesOperandsArray: theDomain.OperandsArray = null
             val subroutinesLocalsArray: theDomain.LocalsArray = null
 
-            def restartInterpretation(ai: AI[_ >: theDomain.type]): AIResult = {
+            def restartInterpretation(ai: AI[? >: theDomain.type]): AIResult = {
                 // In general, make sure that we don't change "this result"!
 
                 // We have to extract the information about the subroutines... if we have any...

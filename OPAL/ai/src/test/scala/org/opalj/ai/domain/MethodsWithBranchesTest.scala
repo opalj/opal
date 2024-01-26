@@ -9,9 +9,9 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
 
 import org.opalj.ai.common.XHTML.dumpOnFailureDuringValidation
-import org.opalj.ai.domain.l0._
+import org.opalj.ai.domain.l0.*
 import org.opalj.bi.TestResources.locateTestResources
-import org.opalj.br._
+import org.opalj.br.*
 import org.opalj.br.reader.Java8Framework.ClassFiles
 
 /**
@@ -24,7 +24,7 @@ import org.opalj.br.reader.Java8Framework.ClassFiles
 @RunWith(classOf[JUnitRunner])
 class MethodsWithBranchesTest extends AnyFlatSpec with Matchers {
 
-    import MethodsWithBranchesTest._
+    import MethodsWithBranchesTest.*
     import domain.RecordConstraints
 
     class TestDomain(val name: String)
@@ -76,7 +76,7 @@ class MethodsWithBranchesTest extends AnyFlatSpec with Matchers {
             //    5  ireturn
             //    6  iconst_0
             //    7  ireturn
-            import domain._
+            import domain.*
             domain.allReturnedValues should be(
                 Map((5 -> AnIntegerValue), (7 -> AnIntegerValue))
             )
@@ -105,7 +105,7 @@ class MethodsWithBranchesTest extends AnyFlatSpec with Matchers {
             //    5  ireturn
             //    6  iconst_0
             //    7  ireturn
-            import domain._
+            import domain.*
             domain.allReturnedValues should be(
                 Map((5 -> AnIntegerValue), (7 -> AnIntegerValue))
             )
@@ -141,7 +141,7 @@ class MethodsWithBranchesTest extends AnyFlatSpec with Matchers {
             //    16  ireturn
             //    17  iconst_0
             //    18  ireturn
-            import domain._
+            import domain.*
             allReturnedValues should be(Map(
                 (14 -> AnIntegerValue),
                 (16 -> AnIntegerValue),

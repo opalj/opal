@@ -58,12 +58,12 @@ class Java8Invokedynamics(
         project:              Project[S],
         rawClassFiles:        Iterable[(da.ClassFile, S)]
     ): IndexedSeq[LocationsContainer[S]] = {
-        import org.opalj.br.reader.InvokedynamicRewriting._
+        import org.opalj.br.reader.InvokedynamicRewriting.*
 
         val locations = Array.fill(featureIDs.size)(new LocationsContainer[S])
 
         for {
-            m @ MethodWithBody(code) <- project.allMethodsWithBody
+            case m @ MethodWithBody(code) <- project.allMethodsWithBody
             pcAndInvocation <- code collect ({
                 case dynInv: INVOKEDYNAMIC => dynInv
             }: PartialFunction[Instruction, Instruction])

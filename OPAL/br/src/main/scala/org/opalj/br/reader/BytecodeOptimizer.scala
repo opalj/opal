@@ -38,7 +38,7 @@ import org.opalj.br.instructions.WIDE
 import org.opalj.collection.immutable.IntTrieSet1
 import org.opalj.log.OPALLogger.info
 
-import net.ceedubs.ficus.Ficus._
+import net.ceedubs.ficus.Ficus.*
 
 /**
  * Performs some very basic, in-place control-flow simplifications to make the code more regular.
@@ -70,7 +70,7 @@ import net.ceedubs.ficus.Ficus._
  * @author Michael Eichberg
  */
 trait BytecodeOptimizer extends MethodsBinding {
-    this: ClassFileBinding with ConstantPoolBinding with AttributeBinding =>
+    this: ClassFileBinding & ConstantPoolBinding & AttributeBinding =>
 
     final val PerformControlFlowSimplifications: Boolean = {
         val key = BytecodeOptimizer.SimplifyControlFlowKey

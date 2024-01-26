@@ -14,7 +14,7 @@ import org.opalj.br.instructions.ReturnInstruction
  */
 trait SimpleBooleanPropertyTracing
     extends PropertyTracing
-    with RecordReturnFromMethodInstructions { domain: Domain with TheCode =>
+    with RecordReturnFromMethodInstructions { domain: Domain & TheCode =>
 
     /**
      * A name associated with the property. Used for debugging purposes only.

@@ -4,7 +4,7 @@ package ai
 
 import java.net.URL
 import java.util.concurrent.ConcurrentLinkedQueue
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
 import org.opalj.br.MethodDescriptor.JustReturnsString
@@ -55,7 +55,7 @@ object CipherGetInstanceStringUsage extends ProjectAnalysisApplication {
             val result = BaseAI(m, new DefaultDomainWithCFGAndDefUse(project, m))
             val code = result.domain.code
             for {
-                PCAndInstruction(pc, INVOKESTATIC(Cipher, false, "getInstance", _)) <- code
+                case PCAndInstruction(pc, INVOKESTATIC(Cipher, false, "getInstance", _)) <- code
                 vos <- result.domain.operandOrigin(pc, 0)
             } {
                 // getInstance is static, algorithm is first param

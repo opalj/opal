@@ -39,7 +39,7 @@ import org.opalj.value.ValueInformation
  * @author Michael Eichberg
  */
 trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObject {
-    domain: IntegerValuesDomain with Configuration =>
+    domain: IntegerValuesDomain & Configuration =>
 
     /**
      * Merges those exceptions that have the same upper type bound. This ensures
@@ -209,13 +209,13 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
     //
     // ---------------------------------------------------------------------------------------------
 
-    type AReferenceValue <: DomainReferenceValue with ReferenceValueLike
+    type AReferenceValue <: DomainReferenceValue & ReferenceValueLike
 
-    type DomainObjectValue <: ObjectValueLike with AReferenceValue
+    type DomainObjectValue <: ObjectValueLike & AReferenceValue
 
-    type DomainArrayValue <: ArrayValueLike with AReferenceValue
+    type DomainArrayValue <: ArrayValueLike & AReferenceValue
 
-    type DomainNullValue <: NullValueLike with AReferenceValue
+    type DomainNullValue <: NullValueLike & AReferenceValue
 
     trait ArrayAbstraction {
 
@@ -651,7 +651,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
     }
 
     object UpperTypeBound {
-        def unapply(value: AReferenceValue): Some[UIDSet[_ <: ReferenceType]] = {
+        def unapply(value: AReferenceValue): Some[UIDSet[? <: ReferenceType]] = {
             Some(value.upperTypeBound)
         }
     }

@@ -19,7 +19,7 @@ import org.opalj.br.MethodDescriptor.JustReturnsString
 import org.opalj.br.MethodDescriptor.LambdaAltMetafactoryDescriptor
 import org.opalj.br.MethodDescriptor.LambdaMetafactoryDescriptor
 import org.opalj.br.collection.mutable.InstructionsBuilder
-import org.opalj.br.instructions._
+import org.opalj.br.instructions.*
 import org.opalj.br.instructions.ClassFileFactory.AlternativeFactoryMethodName
 import org.opalj.br.instructions.ClassFileFactory.DefaultFactoryMethodName
 import org.opalj.collection.immutable.UIDSet
@@ -55,10 +55,10 @@ trait InvokedynamicRewriting
     with BootstrapArgumentLoading {
     this: ClassFileBinding =>
 
-    import InvokedynamicRewriting._
+    import InvokedynamicRewriting.*
 
     val performInvokedynamicRewriting: Boolean = {
-        import InvokedynamicRewriting.{InvokedynamicRewritingConfigKey => Key}
+        import InvokedynamicRewriting.InvokedynamicRewritingConfigKey as Key
         val rewrite: Boolean =
             try {
                 config.getBoolean(Key)
@@ -82,7 +82,7 @@ trait InvokedynamicRewriting
     }
 
     val logLambdaExpressionsRewrites: Boolean = {
-        import InvokedynamicRewriting.{LambdaExpressionsLogRewritingsConfigKey => Key}
+        import InvokedynamicRewriting.LambdaExpressionsLogRewritingsConfigKey as Key
         val logRewrites: Boolean =
             try {
                 config.getBoolean(Key)
@@ -106,7 +106,7 @@ trait InvokedynamicRewriting
     }
 
     val logStringConcatRewrites: Boolean = {
-        import InvokedynamicRewriting.{StringConcatLogRewritingsConfigKey => Key}
+        import InvokedynamicRewriting.StringConcatLogRewritingsConfigKey as Key
         val logRewrites: Boolean =
             try {
                 config.getBoolean(Key)
@@ -130,7 +130,7 @@ trait InvokedynamicRewriting
     }
 
     val logObjectMethodsRewrites: Boolean = {
-        import InvokedynamicRewriting.{ObjectMethodsLogRewritingsConfigKey => Key}
+        import InvokedynamicRewriting.ObjectMethodsLogRewritingsConfigKey as Key
         val logRewrites: Boolean =
             try {
                 config.getBoolean(Key)
@@ -154,7 +154,7 @@ trait InvokedynamicRewriting
     }
 
     val logUnknownInvokeDynamics: Boolean = {
-        import InvokedynamicRewriting.{InvokedynamicLogUnknownInvokeDynamicsConfigKey => Key}
+        import InvokedynamicRewriting.InvokedynamicLogUnknownInvokeDynamicsConfigKey as Key
         val logUnknownInvokeDynamics: Boolean =
             try {
                 config.getBoolean(Key)
@@ -342,13 +342,13 @@ trait InvokedynamicRewriting
             if (args.isEmpty)
                 (
                     None,
-                    ArraySeq.empty[ConstantValue[_]].view
+                    ArraySeq.empty[ConstantValue[?]].view
                 )
             else args.head match {
                 case recipe: ConstantString =>
                     (
                         Some(recipe),
-                        args.view.slice(from = 1, until = args.length).asInstanceOf[IndexedSeqView[ConstantValue[_]]]
+                        args.view.slice(from = 1, until = args.length).asInstanceOf[IndexedSeqView[ConstantValue[?]]]
                     )
                 case _ =>
                     if (logUnknownInvokeDynamics) {
@@ -369,7 +369,7 @@ trait InvokedynamicRewriting
             name:       String,
             descriptor: MethodDescriptor,
             recipeO:    Option[ConstantString],
-            constants:  IndexedSeqView[ConstantValue[_]]
+            constants:  IndexedSeqView[ConstantValue[?]]
         ): MethodTemplate = {
             // A guess on the number of append operations required, need not be precise
             val numEntries =
@@ -407,7 +407,7 @@ trait InvokedynamicRewriting
             }
 
             // Generate instructions to append a static constant to the StringBuilder
-            def appendConstant(constant: ConstantValue[_]): Int = {
+            def appendConstant(constant: ConstantValue[?]): Int = {
                 val (constantStack, newClassFile) =
                     loadBootstrapArgument(constant, body, updatedClassFile)
                 updatedClassFile = newClassFile
@@ -659,7 +659,7 @@ trait InvokedynamicRewriting
 
         val instructionsBuilder = new InstructionsBuilder(7)
         val (maxStack, newClassFile) = loadBootstrapArgument(
-            bootstrapArguments.head.asInstanceOf[ConstantValue[_]],
+            bootstrapArguments.head.asInstanceOf[ConstantValue[?]],
             instructionsBuilder,
             classFile
         )
@@ -721,7 +721,7 @@ trait InvokedynamicRewriting
         methodNameIndex:       Constant_Pool_Index,
         methodDescriptorIndex: Constant_Pool_Index
     ): ClassFile = {
-        val methodType = invokedynamic.bootstrapMethod.arguments.head.asInstanceOf[ConstantValue[_]]
+        val methodType = invokedynamic.bootstrapMethod.arguments.head.asInstanceOf[ConstantValue[?]]
 
         val body = new InstructionsBuilder(18)
 
@@ -894,7 +894,7 @@ trait InvokedynamicRewriting
             // (e.g., about bridges or markers)
             altMetafactoryArgs
         ) = bootstrapArguments match {
-            case Seq(smt: MethodDescriptor, tim: MethodCallMethodHandle, imt: MethodDescriptor, ama @ _*) =>
+            case Seq(smt: MethodDescriptor, tim: MethodCallMethodHandle, imt: MethodDescriptor, ama*) =>
                 (smt, tim, imt, ama)
             case _ =>
                 if (logUnknownInvokeDynamics) {

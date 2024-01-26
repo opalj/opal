@@ -1,5 +1,5 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-import sbt._
+import sbt.*
 import sbt.Keys.TaskStreams
 
 import play.twirl.compiler.TwirlCompiler
@@ -58,7 +58,7 @@ object SiteGeneration {
 
       import java.nio.charset.Charset
       import java.nio.file.Files
-      import scala.collection.JavaConverters._
+      import scala.collection.JavaConverters.*
       import scala.io.Source.fromFile
 
       import com.typesafe.config.ConfigFactory
@@ -190,7 +190,7 @@ object SiteGeneration {
       toc: Traversable[(String, String)],
       useBanner: Boolean
     )(htmlTemplate: String): Html = {
-    import scala.reflect.runtime.universe._
+    import scala.reflect.runtime.universe.*
     import scala.tools.reflect.ToolBox
     // remove package declaration
     val sanitizedTemplate = htmlTemplate.linesIterator.filter(line => !line.startsWith("package")).mkString("\n")

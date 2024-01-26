@@ -66,7 +66,7 @@ object FieldAccessInformationAnalysisDemo extends ProjectAnalysisApplication {
     }
 
     def analyze(project: Project[URL]): String = {
-        val domain = classOf[DefaultPerformInvocationsDomainWithCFGAndDefUse[_]]
+        val domain = classOf[DefaultPerformInvocationsDomainWithCFGAndDefUse[?]]
         project.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
             case None               => Set(domain)
             case Some(requirements) => requirements + domain

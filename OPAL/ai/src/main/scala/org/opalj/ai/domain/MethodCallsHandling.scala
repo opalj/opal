@@ -16,7 +16,7 @@ import org.opalj.br.ObjectType
  * @author Michael Eichberg
  */
 trait MethodCallsHandling extends MethodCallsDomain {
-    domain: ReferenceValuesDomain with TypedValuesFactory with Configuration with TheCode =>
+    domain: ReferenceValuesDomain & TypedValuesFactory & Configuration & TheCode =>
 
     protected[this] def getPotentialExceptions(pc: Int): List[ExceptionValue] = {
         val exceptionTypes: mutable.Set[ObjectType] = mutable.Set.empty

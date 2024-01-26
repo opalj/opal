@@ -8,12 +8,12 @@ import scala.language.implicitConversions
 import java.io.InputStream
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import scala.collection.mutable
-import scala.concurrent.Await.{result => await}
+import scala.concurrent.Await.result as await
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration.Inf
 import scala.io.BufferedSource
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 import org.opalj.br.ObjectType.Object
 import org.opalj.collection.CompleteCollection
@@ -1315,8 +1315,8 @@ class ClassHierarchy private (
      * returned; an empty upper type bound is expected to model `null`.
      */
     def isSubtypeOf(
-        subtypes:   UIDSet[_ <: ReferenceType],
-        supertypes: UIDSet[_ <: ReferenceType]
+        subtypes:   UIDSet[? <: ReferenceType],
+        supertypes: UIDSet[? <: ReferenceType]
     ): Boolean = {
         if (subtypes.isEmpty /*the upper type bound of "null" values*/ || subtypes == supertypes)
             return true;
@@ -1330,14 +1330,14 @@ class ClassHierarchy private (
      * Returns `true` if the subtype is a subtype of '''all''' given supertypes. Hence,
      * supertypes should not contain more than one class type.
      */
-    def isSubtypeOf(subtype: ReferenceType, supertypes: UIDSet[_ <: ReferenceType]): Boolean = {
+    def isSubtypeOf(subtype: ReferenceType, supertypes: UIDSet[? <: ReferenceType]): Boolean = {
         if (supertypes.isEmpty /*the upper type bound of "null" values*/ )
             return false;
 
         supertypes forall { (supertype: ReferenceType) => isSubtypeOf(subtype, supertype) }
     }
 
-    def isSubtypeOf(subtypes: UIDSet[_ <: ReferenceType], supertype: ReferenceType): Boolean = {
+    def isSubtypeOf(subtypes: UIDSet[? <: ReferenceType], supertype: ReferenceType): Boolean = {
         if (subtypes.isEmpty) /*the upper type bound of "null" values*/
             return true;
 
@@ -1550,8 +1550,8 @@ class ClassHierarchy private (
      * returned; an empty upper type bound is expected to model `null`.
      */
     def isASubtypeOf(
-        subtypes:   UIDSet[_ <: ReferenceType],
-        supertypes: UIDSet[_ <: ReferenceType]
+        subtypes:   UIDSet[? <: ReferenceType],
+        supertypes: UIDSet[? <: ReferenceType]
     ): Answer = {
         if (subtypes.isEmpty /* <=> upper type bound of "null" values */ || subtypes == supertypes)
             return Yes;
@@ -1582,7 +1582,7 @@ class ClassHierarchy private (
      * Returns `Yes` if the subtype is a subtype of '''all''' given supertypes. Hence,
      * supertypes should not contain more than one class type.
      */
-    def isASubtypeOf(subtype: ReferenceType, supertypes: UIDSet[_ <: ReferenceType]): Answer = {
+    def isASubtypeOf(subtype: ReferenceType, supertypes: UIDSet[? <: ReferenceType]): Answer = {
         if (supertypes.isEmpty /* <=> upper type bound of "null" values */ )
             return No;
 
@@ -1597,7 +1597,7 @@ class ClassHierarchy private (
         Yes
     }
 
-    def isASubtypeOf(subtypes: UIDSet[_ <: ReferenceType], supertype: ReferenceType): Answer = {
+    def isASubtypeOf(subtypes: UIDSet[? <: ReferenceType], supertype: ReferenceType): Answer = {
         if (subtypes.isEmpty) /* <=> upper type bound of "null" values */
             return Yes;
 
@@ -2298,8 +2298,8 @@ class ClassHierarchy private (
 
     def joinArrayType(
         upperTypeBoundA: ArrayType,
-        upperTypeBoundB: UIDSet[_ <: ReferenceType]
-    ): UIDSet[_ <: ReferenceType] = {
+        upperTypeBoundB: UIDSet[? <: ReferenceType]
+    ): UIDSet[? <: ReferenceType] = {
         upperTypeBoundB match {
             case UIDSet1(utbB: ArrayType) =>
                 if (utbB eq upperTypeBoundA)
@@ -2319,8 +2319,8 @@ class ClassHierarchy private (
 
     def joinReferenceType(
         upperTypeBoundA: ReferenceType,
-        upperTypeBoundB: UIDSet[_ <: ReferenceType]
-    ): UIDSet[_ <: ReferenceType] = {
+        upperTypeBoundB: UIDSet[? <: ReferenceType]
+    ): UIDSet[? <: ReferenceType] = {
         if (upperTypeBoundA.isArrayType)
             joinArrayType(upperTypeBoundA.asArrayType, upperTypeBoundB)
         else
@@ -2336,9 +2336,9 @@ class ClassHierarchy private (
     }
 
     def joinReferenceTypes(
-        upperTypeBoundA: UIDSet[_ <: ReferenceType],
-        upperTypeBoundB: UIDSet[_ <: ReferenceType]
-    ): UIDSet[_ <: ReferenceType] = {
+        upperTypeBoundA: UIDSet[? <: ReferenceType],
+        upperTypeBoundB: UIDSet[? <: ReferenceType]
+    ): UIDSet[? <: ReferenceType] = {
         if ((upperTypeBoundA eq upperTypeBoundB) || upperTypeBoundA == upperTypeBoundB)
             return upperTypeBoundA;
 
@@ -2576,7 +2576,7 @@ class ClassHierarchy private (
     }
 
     def joinReferenceTypesUntilSingleUpperBound(
-        upperTypeBound: UIDSet[_ <: ReferenceType]
+        upperTypeBound: UIDSet[? <: ReferenceType]
     ): ReferenceType = {
         if (upperTypeBound.isSingletonSet)
             upperTypeBound.head
@@ -2588,9 +2588,9 @@ class ClassHierarchy private (
     }
 
     def joinUpperTypeBounds(
-        utbA: UIDSet[_ <: ReferenceType],
-        utbB: UIDSet[_ <: ReferenceType]
-    ): UIDSet[_ <: ReferenceType] = {
+        utbA: UIDSet[? <: ReferenceType],
+        utbB: UIDSet[? <: ReferenceType]
+    ): UIDSet[? <: ReferenceType] = {
         if (utbA == utbB)
             utbA
         else if (utbA.isEmpty)

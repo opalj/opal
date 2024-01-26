@@ -15,7 +15,7 @@ import org.opalj.collection.immutable.UIDSet
  * @author Michael Eichberg
  */
 trait DefaultReferenceValuesBinding extends l1.ReferenceValues with DefaultExceptionsFactory {
-    domain: CorrelationalDomainSupport with IntegerValuesDomain with TypedValuesFactory with Configuration =>
+    domain: CorrelationalDomainSupport & IntegerValuesDomain & TypedValuesFactory & Configuration =>
 
     // Let's fix the type hierarchy
 
@@ -123,7 +123,7 @@ trait DefaultReferenceValuesBinding extends l1.ReferenceValues with DefaultExcep
         origins:           ValueOrigins,
         isNull:            Answer,
         isPrecise:         Boolean,
-        theUpperTypeBound: UIDSet[_ <: ReferenceType],
+        theUpperTypeBound: UIDSet[? <: ReferenceType],
         refId:             RefId
     ): DomainMultipleReferenceValues = {
         new MultipleReferenceValues(values, origins, isNull, isPrecise, theUpperTypeBound, refId)

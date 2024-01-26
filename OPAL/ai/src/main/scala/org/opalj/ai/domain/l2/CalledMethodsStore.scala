@@ -108,7 +108,7 @@ trait CalledMethodsStore { rootStore =>
 
 object CalledMethodsStore {
 
-    type BaseDomain = ValuesFactory with ReferenceValuesDomain with TheProject
+    type BaseDomain = ValuesFactory & ReferenceValuesDomain & TheProject
 
     def empty(
         theDomain:                         BaseDomain,

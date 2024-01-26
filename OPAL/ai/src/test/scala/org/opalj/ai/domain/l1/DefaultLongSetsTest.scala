@@ -49,7 +49,7 @@ class DefaultLongSetsTest extends AnyFunSpec with Matchers {
 
         it("two instances of ALongValue that may represent different values must not be identical") {
             val theDomain = new LongSetsTestDomain
-            import theDomain._
+            import theDomain.*
             val v1 = LongValue(origin = 1)
             val v2 = LongValue(origin = 1)
             v1 should not be theSameInstanceAs(v2)
@@ -61,7 +61,7 @@ class DefaultLongSetsTest extends AnyFunSpec with Matchers {
         describe("the behavior of join if we exceed the max cardinality") {
 
             val theDomain = new LongSetsTestDomain(8)
-            import theDomain._
+            import theDomain.*
 
             it("(join of two sets with positive values that exceed the cardinality); i1 join i2 => \"StructuralUpdate(LongValue)\"") {
                 val v1 = LongSet(SortedSet(0L, 2L, 4L, 9L))
@@ -96,7 +96,7 @@ class DefaultLongSetsTest extends AnyFunSpec with Matchers {
         }
 
         val theDomain = new LongSetsTestDomain
-        import theDomain._
+        import theDomain.*
 
         describe("the behavior of the join operation if we do not exceed the max. spread") {
 

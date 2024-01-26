@@ -31,7 +31,7 @@ class TACAIIntegrationTest extends AnyFunSpec with Matchers {
 
     def checkProject(
         project:               SomeProject,
-        domainFactory:         (SomeProject, Method) => Domain with RecordDefUse,
+        domainFactory:         (SomeProject, Method) => Domain & RecordDefUse,
         performanceEvaluation: PerformanceEvaluation
     ): Unit = {
         import performanceEvaluation.time
@@ -98,7 +98,7 @@ class TACAIIntegrationTest extends AnyFunSpec with Matchers {
     }
 
     protected def domainFactories = {
-        Seq[(String, (SomeProject, Method) => Domain with RecordDefUse)](
+        Seq[(String, (SomeProject, Method) => Domain & RecordDefUse)](
             (
                 "l0.PrimitiveTACAIDomain",
                 (p: SomeProject, m: Method) => new PrimitiveTACAIDomain(p.classHierarchy, m)

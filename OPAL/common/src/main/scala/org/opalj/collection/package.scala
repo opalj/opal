@@ -1,11 +1,11 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 
-import java.util.{Arrays => JArrays}
+import java.util.Arrays as JArrays
 import java.util.concurrent.ConcurrentHashMap
 import scala.collection.immutable.ArraySeq
 import scala.collection.immutable.HashMap
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 /**
  * ==Design Goals==
@@ -33,7 +33,7 @@ import scala.jdk.CollectionConverters._
  */
 package object collection {
 
-    type SomeIntSet = IntSet[_]
+    type SomeIntSet = IntSet[?]
 
     //
     // Helpers related to Lists

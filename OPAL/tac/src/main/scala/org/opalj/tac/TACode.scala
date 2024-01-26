@@ -2,7 +2,7 @@
 package org.opalj
 package tac
 
-import java.util.{Arrays => JArrays}
+import java.util.Arrays as JArrays
 
 import org.opalj.br.Attribute
 import org.opalj.br.Code

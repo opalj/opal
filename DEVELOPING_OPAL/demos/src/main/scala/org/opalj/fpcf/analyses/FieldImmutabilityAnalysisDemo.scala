@@ -61,7 +61,7 @@ object FieldImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
         project.get(RTACallGraphKey)
 
         project.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) { _ =>
-            Set[Class[_ <: AnyRef]](classOf[domain.l2.DefaultPerformInvocationsDomainWithCFG[URL]])
+            Set[Class[? <: AnyRef]](classOf[domain.l2.DefaultPerformInvocationsDomainWithCFG[URL]])
         }
 
         time {

@@ -3,7 +3,7 @@ package org.opalj
 package br
 package analyses
 
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 import org.junit.runner.RunWith
 import org.scalatest.flatspec.AnyFlatSpec

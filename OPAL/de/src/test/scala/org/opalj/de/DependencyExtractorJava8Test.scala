@@ -15,7 +15,7 @@ import org.scalatest.funsuite.AnyFunSuite
 @org.junit.runner.RunWith(classOf[org.scalatestplus.junit.JUnitRunner])
 class DependencyExtractorJava8Test extends AnyFunSuite {
 
-    import DependencyTypes._
+    import DependencyTypes.*
 
     //
     // THE TEST CODE

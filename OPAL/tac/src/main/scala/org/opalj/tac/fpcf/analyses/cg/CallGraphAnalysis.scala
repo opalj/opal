@@ -134,7 +134,7 @@ class CallGraphAnalysis private[cg] (
 
     protected[this] def doHandleVirtualCall(
         callContext:                   ContextType,
-        call:                          Call[V] with VirtualCall[V],
+        call:                          Call[V] & VirtualCall[V],
         pc:                            Int,
         specializedDeclaringClassType: ReferenceType,
         isPrecise:                     Boolean,
@@ -385,7 +385,7 @@ class CallGraphAnalysis private[cg] (
      */
     private[this] def handleVirtualCall(
         callContext:       ContextType,
-        call:              Call[V] with VirtualCall[V],
+        call:              Call[V] & VirtualCall[V],
         pc:                Int,
         calleesAndCallers: DirectCalls
     )(implicit state: CGState[ContextType]): Unit = {
@@ -419,7 +419,7 @@ class CallGraphAnalysis private[cg] (
     protected[this] def handlePreciseCall(
         calleeType:        ObjectType,
         callContext:       ContextType,
-        call:              Call[V] with VirtualCall[V],
+        call:              Call[V] & VirtualCall[V],
         pc:                Int,
         calleesAndCallers: DirectCalls
     )(implicit state: CGState[ContextType]): Unit = {

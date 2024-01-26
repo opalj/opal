@@ -1,5 +1,5 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-import sbt._
+import sbt.*
 
 import scala.xml.NodeSeq
 

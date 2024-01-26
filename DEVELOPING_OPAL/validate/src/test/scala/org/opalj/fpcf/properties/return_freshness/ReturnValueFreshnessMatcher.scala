@@ -29,7 +29,7 @@ class ReturnValueFreshnessMatcher(val property: ReturnValueFreshness) extends Ab
      *         why the analysis failed.
      */
     override def validateProperty(
-        p:          Project[_],
+        p:          Project[?],
         as:         Set[ObjectType],
         entity:     scala.Any,
         a:          AnnotationLike,

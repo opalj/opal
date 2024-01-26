@@ -9,7 +9,7 @@ import java.io.File
 import java.io.FileWriter
 import java.net.URL
 import java.util.concurrent.atomic.AtomicInteger
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 import org.opalj.br.analyses.Project
 
@@ -25,8 +25,8 @@ import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleLongProperty
 import javafx.collections.FXCollections
 import javafx.collections.ObservableList
-import net.ceedubs.ficus.Ficus._
-import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+import net.ceedubs.ficus.Ficus.*
+import net.ceedubs.ficus.readers.ArbitraryTypeReader.*
 
 /**
  * Implements the core functionality to evaluate a set of feature queries against a set of

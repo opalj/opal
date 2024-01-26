@@ -212,7 +212,7 @@ class InfiniteRecursionsDomain(val project: SomeProject, val method: Method)
     with domain.TheProject
     with domain.TheMethod
 
-case class InfiniteRecursion(method: Method, operands: List[_ <: AnyRef]) {
+case class InfiniteRecursion(method: Method, operands: List[? <: AnyRef]) {
 
     override def toString: String = {
         val declaringClassOfMethod = method.classFile.thisType.toJava

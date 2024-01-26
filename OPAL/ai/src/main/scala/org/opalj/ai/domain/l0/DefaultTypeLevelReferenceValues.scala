@@ -23,7 +23,7 @@ import org.opalj.value.TypeOfReferenceValue
 trait DefaultTypeLevelReferenceValues
     extends DefaultSpecialDomainValuesBinding
     with TypeLevelReferenceValues {
-    domain: IntegerValuesDomain with TypedValuesFactory with Configuration =>
+    domain: IntegerValuesDomain & TypedValuesFactory & Configuration =>
 
     // -----------------------------------------------------------------------------------
     //
@@ -31,9 +31,9 @@ trait DefaultTypeLevelReferenceValues
     //
     // -----------------------------------------------------------------------------------
 
-    type DomainNullValue <: ANullValue with AReferenceValue
-    type DomainObjectValue <: AnObjectValue with AReferenceValue // <= SObject.. and MObject...
-    type DomainArrayValue <: AnArrayValue with AReferenceValue
+    type DomainNullValue <: ANullValue & AReferenceValue
+    type DomainObjectValue <: AnObjectValue & AReferenceValue // <= SObject.. and MObject...
+    type DomainArrayValue <: AnArrayValue & AReferenceValue
 
     protected[this] class ANullValue() extends super.NullValueLike { this: DomainNullValue =>
 

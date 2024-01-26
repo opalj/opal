@@ -3,7 +3,7 @@ package org.opalj
 package collection
 package immutable
 
-import java.lang.{Long => JLong}
+import java.lang.Long as JLong
 
 /**
  * A growable, immutable linked list based data store for '''long values'''.

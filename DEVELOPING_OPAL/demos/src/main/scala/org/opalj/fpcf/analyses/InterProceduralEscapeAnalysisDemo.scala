@@ -56,7 +56,7 @@ object InterProceduralEscapeAnalysisDemo extends ProjectAnalysisApplication {
         implicit val logContext: LogContext = project.logContext
 
         val propertyStore = time {
-            val performInvocationsDomain = classOf[DefaultPerformInvocationsDomainWithCFGAndDefUse[_]]
+            val performInvocationsDomain = classOf[DefaultPerformInvocationsDomainWithCFGAndDefUse[?]]
 
             project.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
                 case None               => Set(performInvocationsDomain)

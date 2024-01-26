@@ -161,11 +161,11 @@ object Immutability {
 
         project.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) { _ =>
             if (level == 0)
-                Set[Class[_ <: AnyRef]](classOf[domain.l0.BaseDomainWithDefUse[URL]])
+                Set[Class[? <: AnyRef]](classOf[domain.l0.BaseDomainWithDefUse[URL]])
             else if (level == 1)
-                Set[Class[_ <: AnyRef]](classOf[domain.l1.DefaultDomainWithCFGAndDefUse[URL]])
+                Set[Class[? <: AnyRef]](classOf[domain.l1.DefaultDomainWithCFGAndDefUse[URL]])
             else if (level == 2)
-                Set[Class[_ <: AnyRef]](classOf[domain.l2.DefaultPerformInvocationsDomainWithCFG[URL]])
+                Set[Class[? <: AnyRef]](classOf[domain.l2.DefaultPerformInvocationsDomainWithCFG[URL]])
             else
                 throw new Exception(s"The level $level does not exist")
         }
@@ -175,10 +175,10 @@ object Immutability {
             (context: List[PropertyStoreContext[AnyRef]]) => {
                 implicit val lg: LogContext = project.logContext
                 if (numThreads == 0) {
-                    org.opalj.fpcf.seq.PKESequentialPropertyStore(context: _*)
+                    org.opalj.fpcf.seq.PKESequentialPropertyStore(context*)
                 } else {
                     org.opalj.fpcf.par.PKECPropertyStore.MaxThreads = numThreads
-                    org.opalj.fpcf.par.PKECPropertyStore(context: _*)
+                    org.opalj.fpcf.par.PKECPropertyStore(context*)
                 }
             }
         )

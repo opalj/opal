@@ -34,7 +34,7 @@ sealed abstract class InstructionLikeElement[+T] extends CodeElement[T] {
 
 object InstructionLikeElement {
 
-    def unapply(ile: InstructionLikeElement[_]): Some[LabeledInstruction] = {
+    def unapply(ile: InstructionLikeElement[?]): Some[LabeledInstruction] = {
         Some(ile.instruction)
     }
 }

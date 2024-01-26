@@ -40,7 +40,7 @@ import org.opalj.value.TypeOfReferenceValue
  * @author Michael Eichberg
  */
 trait NullPropertyRefinement extends CoreDomainFunctionality {
-    domain: ReferenceValuesDomain with Origin =>
+    domain: ReferenceValuesDomain & Origin =>
 
     abstract override def afterEvaluation(
         pc:                       Int,

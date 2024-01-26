@@ -76,7 +76,7 @@ object DefSites {
      * Defines an extractor to get the definition site of an expression's/statement's value.
      * Returns the empty set if the value is a constant.
      */
-    def unapply(valueExpr: Expr[DUVar[_]] /*Expr to make it fail!*/ ): Some[IntTrieSet] = {
+    def unapply(valueExpr: Expr[DUVar[?]] /*Expr to make it fail!*/ ): Some[IntTrieSet] = {
         Some(
             valueExpr match {
                 case UVar(_, defSites) => defSites

@@ -21,7 +21,7 @@ class InMemoryClassLoader(
      *       `java.lang.ClassLoader` for further details!
      */
     @throws[ClassNotFoundException]
-    override def findClass(name: String): Class[_] = {
+    override def findClass(name: String): Class[?] = {
         rawClasses.get(name) match {
             case Some(data) =>
                 val clazz = defineClass(name, data, 0, data.length)

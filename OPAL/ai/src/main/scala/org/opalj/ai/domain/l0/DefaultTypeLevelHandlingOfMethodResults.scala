@@ -17,6 +17,6 @@ trait DefaultTypeLevelHandlingOfMethodResults
     extends DefaultTypeLevelHandlingForThrownExceptions
     with DefaultTypeLevelHandlingOfVoidReturns
     with DefaultTypeLevelHandlingForReturnInstructions {
-    domain: ValuesDomain with ExceptionsFactory with Configuration =>
+    domain: ValuesDomain & ExceptionsFactory & Configuration =>
 
 }

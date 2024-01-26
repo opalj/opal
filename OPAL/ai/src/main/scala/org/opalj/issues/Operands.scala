@@ -18,8 +18,8 @@ import org.opalj.collection.mutable.Locals
 class Operands(
     val code:           Code,
     val pc:             PC,
-    val operands:       List[_ <: AnyRef],
-    val localVariables: Locals[_ <: AnyRef]
+    val operands:       List[? <: AnyRef],
+    val localVariables: Locals[? <: AnyRef]
 ) extends IssueDetails with CodeComprehension {
 
     def toXHTML(basicInfoOnly: Boolean): Node = {

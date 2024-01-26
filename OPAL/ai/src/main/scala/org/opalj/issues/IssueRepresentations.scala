@@ -63,7 +63,7 @@ trait IssueRepresentations extends ReportableAnalysisResult {
      * A basic representation of this issue well suited for console output.
      */
     def toConsoleString: String = {
-        import scala.Console._
+        import scala.Console.*
         toAnsiColoredString
             .replace(RED, "")
             .replace(BLACK, "")

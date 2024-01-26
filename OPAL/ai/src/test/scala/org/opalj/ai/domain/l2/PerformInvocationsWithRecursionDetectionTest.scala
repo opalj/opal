@@ -11,7 +11,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
 
-import org.opalj.br._
+import org.opalj.br.*
 import org.opalj.br.TestSupport.biProject
 import org.opalj.br.analyses.Project
 import org.opalj.log.LogContext
@@ -24,7 +24,7 @@ import org.opalj.log.LogContext
 @RunWith(classOf[JUnitRunner])
 class PerformInvocationsWithRecursionDetectionTest extends AnyFlatSpec with Matchers {
 
-    import PerformInvocationsWithRecursionDetectionTestFixture._
+    import PerformInvocationsWithRecursionDetectionTestFixture.*
 
     behavior of "PerformInvocationsWithRecursionDetection"
 
@@ -184,7 +184,7 @@ object PerformInvocationsWithRecursionDetectionTestFixture {
     ) extends SharedInvocationDomain(project, method)
         with ChildPerformInvocationsWithRecursionDetection { callingDomain =>
 
-        final def calledMethodAI: AI[_ >: CalledMethodDomain] = callerDomain.calledMethodAI
+        final def calledMethodAI: AI[? >: CalledMethodDomain] = callerDomain.calledMethodAI
 
         def calledMethodDomain(method: Method) =
             new ChildInvocationDomain(project, method, callingDomain)

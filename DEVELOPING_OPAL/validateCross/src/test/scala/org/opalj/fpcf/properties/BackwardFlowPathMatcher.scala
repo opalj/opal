@@ -33,7 +33,7 @@ class XlangBackwardFlowPathMatcher extends AbstractBackwardFlowPathMatcher(JavaB
  *
  * @author Mario Trageser
  */
-abstract class AbstractBackwardFlowPathMatcher(pk: PropertyKey[_ <: Property]) extends AbstractPropertyMatcher {
+abstract class AbstractBackwardFlowPathMatcher(pk: PropertyKey[? <: Property]) extends AbstractPropertyMatcher {
 
     def validateProperty(
         p:          SomeProject,

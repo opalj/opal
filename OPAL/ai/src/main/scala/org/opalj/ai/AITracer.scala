@@ -257,7 +257,7 @@ trait AITracer {
      */
     def domainMessage(
         domain:  Domain,
-        source:  Class[_],
+        source:  Class[?],
         typeID:  String,
         pc:      Option[Int /*PC*/ ],
         message: => String // IMPROVE Use IntOption

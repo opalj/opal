@@ -138,7 +138,7 @@ object Purity {
         libDir:                Option[String],
         analysis:              FPCFLazyAnalysisScheduler,
         support:               List[FPCFAnalysisScheduler],
-        domain:                Class[_ <: Domain with RecordDefUse],
+        domain:                Class[? <: Domain & RecordDefUse],
         configurationName:     Option[String],
         schedulingStrategy:    Option[String],
         rater:                 DomainSpecificRater,
@@ -216,10 +216,10 @@ object Purity {
             (context: List[PropertyStoreContext[AnyRef]]) => {
                 implicit val lg: LogContext = project.logContext
                 if (numThreads == 0) {
-                    org.opalj.fpcf.seq.PKESequentialPropertyStore(context: _*)
+                    org.opalj.fpcf.seq.PKESequentialPropertyStore(context*)
                 } else {
                     org.opalj.fpcf.par.PKECPropertyStore.MaxThreads = numThreads
-                    org.opalj.fpcf.par.PKECPropertyStore(context: _*)
+                    org.opalj.fpcf.par.PKECPropertyStore(context*)
                 }
             }
         )
@@ -634,9 +634,9 @@ object Purity {
 
         val d =
             if (domainName.isEmpty)
-                classOf[domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[_]]
+                classOf[domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[?]]
             else {
-                Class.forName(domainName.get).asInstanceOf[Class[Domain with RecordDefUse]]
+                Class.forName(domainName.get).asInstanceOf[Class[Domain & RecordDefUse]]
             }
 
         val rater = if (raterName.isEmpty) {

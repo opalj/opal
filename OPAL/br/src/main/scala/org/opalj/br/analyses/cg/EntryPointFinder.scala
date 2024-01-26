@@ -9,7 +9,7 @@ import scala.collection.mutable.ArrayBuffer
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 
-import net.ceedubs.ficus.Ficus._
+import net.ceedubs.ficus.Ficus.*
 
 /**
  * The EntryPointFinder trait is a common trait for all analyses that can derive an programs entry
@@ -176,7 +176,7 @@ trait ConfigurationEntryPointsFinder extends EntryPointFinder {
     }
 
     override def collectEntryPoints(project: SomeProject): Iterable[Method] = {
-        import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+        import net.ceedubs.ficus.readers.ArbitraryTypeReader.*
 
         implicit val logContext: LogContext = project.logContext
         var entryPoints = Set.empty[Method]

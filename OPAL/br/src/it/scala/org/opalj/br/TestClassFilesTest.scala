@@ -12,7 +12,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
 
 import org.opalj.bi.TestResources.allBITestJARs
-import org.opalj.br.reader._
+import org.opalj.br.reader.*
 import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.io.process
 
@@ -54,7 +54,7 @@ class TestClassFilesTest extends AnyFlatSpec with Matchers /*INTENTIONALLY NOT P
                 if (twinDiff.nonEmpty)
                     fail(s"the $classFile is not jvm equal to its twin: " + twinDiff.get)
 
-                for (MethodWithBody(body) <- classFile.methods.par) {
+                for (case MethodWithBody(body) <- classFile.methods.par) {
                     body.belongsToSubroutine() should not be (null)
 
                     testedMethods.set(true)

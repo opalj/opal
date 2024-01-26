@@ -182,7 +182,7 @@ class DomainIndependenceTest extends AnyFlatSpec with Matchers {
             val r3 = a3(method, new Domain3(body))
             aiCount.incrementAndGet()
 
-            def abort(ai: InstructionCountBoundedAI[_], r: AIResult): Unit = {
+            def abort(ai: InstructionCountBoundedAI[?], r: AIResult): Unit = {
                 fail(
                     "the abstract interpretation of " +
                         method.toJava(

@@ -13,13 +13,13 @@ import org.opalj.ai.util.insertBefore
 import org.opalj.ai.util.insertBeforeIfNew
 import org.opalj.ai.util.removeFirstUnless
 import org.opalj.bi.warnMissingLibrary
-import org.opalj.br._
-import org.opalj.br.instructions._
+import org.opalj.br.*
+import org.opalj.br.instructions.*
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.collection.immutable.IntIntPair
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.collection.mutable.{Locals => Registers}
 import org.opalj.collection.mutable.IntArrayStack
+import org.opalj.collection.mutable.Locals as Registers
 import org.opalj.control.foreachNonNullValue
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
