@@ -15,7 +15,7 @@ import scala.collection.mutable
 import org.opalj.br.ClassHierarchy.PreInitializedClassHierarchy
 import org.opalj.br.cfg.CFG
 import org.opalj.br.cfg.CFGFactory
-import org.opalj.br.instructions._
+import org.opalj.br.instructions.*
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.collection.IntIterator
 import org.opalj.collection.immutable.BitArraySet
@@ -1707,7 +1707,7 @@ object Code {
     def unapply(
         code: Code
     ): Option[(Int, Int, Array[Instruction], ExceptionHandlers, Attributes)] = {
-        import code._
+        import code.*
         Some((maxStack, maxLocals, instructions, exceptionHandlers, attributes))
     }
 

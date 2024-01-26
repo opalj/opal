@@ -87,7 +87,7 @@ object LoadConstantInstruction {
             case _                                               => LoadInt(i)
         }
 
-    def apply(c: ConstantValue[_], wide: Boolean): LoadConstantInstruction[_] =
+    def apply(c: ConstantValue[?], wide: Boolean): LoadConstantInstruction[?] =
         c match {
             case ConstantDouble(d)    => LoadDouble(d)
             case ConstantFloat(f)     => if (wide) LoadFloat_W(f) else LoadFloat(f)
@@ -113,7 +113,7 @@ object LoadConstantInstruction {
      * that represents the default value that is used to initialize fields
      * of the corresponding type.
      */
-    def defaultValue(fieldType: FieldType): LoadConstantInstruction[_] =
+    def defaultValue(fieldType: FieldType): LoadConstantInstruction[?] =
         (fieldType.id: @scala.annotation.switch) match {
             case IntegerType.id => ICONST_0
             case ByteType.id    => ICONST_0
@@ -129,7 +129,7 @@ object LoadConstantInstruction {
 
 object LDCFloat {
 
-    def unapply(ldc: LoadConstantInstruction[_]): Option[Float] = {
+    def unapply(ldc: LoadConstantInstruction[?]): Option[Float] = {
         ldc match {
             case LoadFloat(value)   => Some(value)
             case LoadFloat_W(value) => Some(value)
@@ -140,7 +140,7 @@ object LDCFloat {
 
 object LDCInt {
 
-    def unapply(ldc: LoadConstantInstruction[_]): Option[Int] = {
+    def unapply(ldc: LoadConstantInstruction[?]): Option[Int] = {
         ldc match {
             case LoadInt(value)   => Some(value)
             case LoadInt_W(value) => Some(value)
@@ -151,7 +151,7 @@ object LDCInt {
 
 object LDCClass {
 
-    def unapply(ldc: LoadConstantInstruction[_]): Option[ReferenceType] = {
+    def unapply(ldc: LoadConstantInstruction[?]): Option[ReferenceType] = {
         ldc match {
             case LoadClass(value)   => Some(value)
             case LoadClass_W(value) => Some(value)
@@ -162,7 +162,7 @@ object LDCClass {
 
 object LDCString {
 
-    def unapply(ldc: LoadConstantInstruction[_]): Option[String] = {
+    def unapply(ldc: LoadConstantInstruction[?]): Option[String] = {
         ldc match {
             case LoadString(value)   => Some(value)
             case LoadString_W(value) => Some(value)
@@ -173,7 +173,7 @@ object LDCString {
 
 object LDCMethodHandle {
 
-    def unapply(ldc: LoadConstantInstruction[_]): Option[MethodHandle] = {
+    def unapply(ldc: LoadConstantInstruction[?]): Option[MethodHandle] = {
         ldc match {
             case LoadMethodHandle(value)   => Some(value)
             case LoadMethodHandle_W(value) => Some(value)
@@ -184,7 +184,7 @@ object LDCMethodHandle {
 
 object LDCMethodType {
 
-    def unapply(ldc: LoadConstantInstruction[_]): Option[MethodDescriptor] = {
+    def unapply(ldc: LoadConstantInstruction[?]): Option[MethodDescriptor] = {
         ldc match {
             case LoadMethodType(value)   => Some(value)
             case LoadMethodType_W(value) => Some(value)
@@ -195,7 +195,7 @@ object LDCMethodType {
 
 object LDCDynamic {
 
-    def unapply(ldc: LoadConstantInstruction[_]): Option[(BootstrapMethod, String, FieldType)] = {
+    def unapply(ldc: LoadConstantInstruction[?]): Option[(BootstrapMethod, String, FieldType)] = {
         ldc match {
             case LoadDynamic(bootstrapMethod, name, descriptor) =>
                 Some((bootstrapMethod, name, descriptor))

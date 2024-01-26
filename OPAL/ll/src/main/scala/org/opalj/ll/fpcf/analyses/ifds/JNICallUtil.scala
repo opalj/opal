@@ -76,7 +76,7 @@ object JNICallUtil {
         index - 1
     }
 
-    def resolve(call: Call)(implicit declaredMethods: DeclaredMethods): Set[_ <: NativeFunction] = resolveJNIFunction(call) match {
+    def resolve(call: Call)(implicit declaredMethods: DeclaredMethods): Set[? <: NativeFunction] = resolveJNIFunction(call) match {
         case Symbol("CallTypeMethod") => resolveMethodId(call.operand(2)) // methodID is the third parameter
         case _                        => Set()
     }

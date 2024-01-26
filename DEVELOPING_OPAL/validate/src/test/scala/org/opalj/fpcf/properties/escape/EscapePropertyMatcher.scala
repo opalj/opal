@@ -27,7 +27,7 @@ abstract class EscapePropertyMatcher(
 ) extends AbstractPropertyMatcher {
 
     override def isRelevant(
-        p:      Project[_],
+        p:      Project[?],
         as:     Set[ObjectType],
         entity: Any,
         a:      AnnotationLike
@@ -70,7 +70,7 @@ abstract class EscapePropertyMatcher(
     }
 
     override def validateProperty(
-        p:          Project[_],
+        p:          Project[?],
         as:         Set[ObjectType],
         entity:     scala.Any,
         a:          AnnotationLike,

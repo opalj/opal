@@ -11,7 +11,7 @@ import org.scalatestplus.junit.JUnitRunner
 
 import org.opalj.ai.common.XHTML.dumpOnFailureDuringValidation
 import org.opalj.bi.TestResources.locateTestResources
-import org.opalj.br._
+import org.opalj.br.*
 import org.opalj.br.reader.Java8Framework.ClassFiles
 
 /**
@@ -22,7 +22,7 @@ import org.opalj.br.reader.Java8Framework.ClassFiles
 @RunWith(classOf[JUnitRunner])
 class PropertyTracingTest extends AnyFlatSpec with Matchers {
 
-    import PropertyTracingTest._
+    import PropertyTracingTest.*
 
     class AnalysisDomain(val method: Method)
         extends CorrelationalDomain

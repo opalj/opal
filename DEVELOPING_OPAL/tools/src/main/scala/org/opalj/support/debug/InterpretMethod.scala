@@ -82,7 +82,7 @@ object InterpretMethod {
         val domainClass = {
             if (remainingArgs.nonEmpty && remainingArgs.head.startsWith("-domain=")) {
                 val domainRawClass = Class.forName(remainingArgs.head.substring(8))
-                val clazz = domainRawClass.asInstanceOf[Class[_ <: Domain]]
+                val clazz = domainRawClass.asInstanceOf[Class[? <: Domain]]
                 remainingArgs = remainingArgs.tail
                 clazz
             } else // default domain

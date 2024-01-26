@@ -14,7 +14,7 @@ package l0
  * @author Michael Eichberg
  */
 trait DefaultTypeLevelHandlingForReturnInstructions extends ReturnInstructionsDomain {
-    domain: ValuesDomain with ExceptionsFactory with Configuration =>
+    domain: ValuesDomain & ExceptionsFactory & Configuration =>
 
     def areturn(pc: Int, value: DomainValue): Computation[Nothing, ExceptionValue] = {
         /*base impl.*/

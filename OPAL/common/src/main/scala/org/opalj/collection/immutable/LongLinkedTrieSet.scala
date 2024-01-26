@@ -5,8 +5,8 @@ package immutable
 
 import scala.annotation.switch
 
-import java.lang.{Integer => JInt}
-import java.lang.{Long => JLong}
+import java.lang.Integer as JInt
+import java.lang.Long as JLong
 
 /**
  * An effectively immutable trie set of long values where the elements are sorted based on the

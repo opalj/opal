@@ -36,7 +36,7 @@ import org.opalj.collection.mutable.Locals
 @RunWith(classOf[JUnitRunner])
 class IssueDetailsIDLTest extends AnyFlatSpec with Matchers {
 
-    import IDLTestsFixtures._
+    import IDLTestsFixtures.*
 
     behavior of "the toIDL method"
 

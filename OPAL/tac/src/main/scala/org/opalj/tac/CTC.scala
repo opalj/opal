@@ -11,7 +11,7 @@ package tac
  * }}}
  */
 private[tac] object CTC1 {
-    def unapply(value: Var[_]): Boolean = value.cTpe.categoryId == 1
+    def unapply(value: Var[?]): Boolean = value.cTpe.categoryId == 1
 }
 
 /**
@@ -23,5 +23,5 @@ private[tac] object CTC1 {
  * }}}
  */
 private[tac] object CTC2 {
-    def unapply(value: Var[_]): Boolean = value.cTpe.categoryId == 2
+    def unapply(value: Var[?]): Boolean = value.cTpe.categoryId == 2
 }

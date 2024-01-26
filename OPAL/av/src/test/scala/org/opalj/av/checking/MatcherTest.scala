@@ -11,7 +11,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
 
-import org.opalj.bi.AccessFlagsMatcher._
+import org.opalj.bi.AccessFlagsMatcher.*
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.Annotation
 import org.opalj.br.BooleanValue

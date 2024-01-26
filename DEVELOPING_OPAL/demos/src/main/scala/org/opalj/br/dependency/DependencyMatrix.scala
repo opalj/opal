@@ -2,7 +2,7 @@
 package org.opalj
 package de
 
-import org.opalj.br._
+import org.opalj.br.*
 import org.opalj.br.reader.Java8Framework.ClassFiles
 
 /**

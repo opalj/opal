@@ -41,7 +41,7 @@ sealed trait CalleesAndCallers {
     final def partialResults(
         callerContext:        Context,
         enforceCalleesResult: Boolean = false
-    ): IterableOnce[PartialResult[_, _ >: Null <: Property]] =
+    ): IterableOnce[PartialResult[?, ? >: Null <: Property]] =
         if (directCallees.isEmpty && indirectCallees.isEmpty && incompleteCallSites.isEmpty) {
             if (enforceCalleesResult)
                 Iterator(partialResultForCallees(callerContext)) ++ partialResultsForCallers

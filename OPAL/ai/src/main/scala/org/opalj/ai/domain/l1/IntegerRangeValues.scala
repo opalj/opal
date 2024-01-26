@@ -4,8 +4,8 @@ package ai
 package domain
 package l1
 
-import scala.Int.{MaxValue => MaxInt}
-import scala.Int.{MinValue => MinInt}
+import scala.Int.MaxValue as MaxInt
+import scala.Int.MinValue as MinInt
 
 import org.opalj.br.CTIntType
 import org.opalj.value.IsIntegerValue
@@ -86,7 +86,7 @@ trait IntegerRangeValues
     extends IntegerValuesDomain
     with IntegerRangeValuesFactory
     with ConcreteIntegerValues {
-    domain: CorrelationalDomainSupport with Configuration with ExceptionsFactory =>
+    domain: CorrelationalDomainSupport & Configuration & ExceptionsFactory =>
 
     // -----------------------------------------------------------------------------------
     //
@@ -824,7 +824,7 @@ trait IntegerRangeValues
                 } else {
                     // both values are positive (lbs are >= 0) and at least one
                     // value is not just 0.
-                    import java.lang.Integer.{numberOfLeadingZeros => nlz}
+                    import java.lang.Integer.numberOfLeadingZeros as nlz
                     val max = Math.max(rub, lub)
                     val nlzMax = nlz(max)
                     val ub =

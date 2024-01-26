@@ -21,7 +21,7 @@ import org.opalj.bi.isCurrentJREAtLeastJava16
 import org.opalj.bi.isCurrentJREAtLeastJava17
 import org.opalj.br.IntegerType
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.reader.Java17Framework.{ClassFile => ClassFileReader}
+import org.opalj.br.reader.Java17Framework.ClassFile as ClassFileReader
 import org.opalj.collection.immutable.UShortPair
 import org.opalj.util.InMemoryClassLoader
 

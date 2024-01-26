@@ -37,7 +37,7 @@ class ArrayTypeTest extends AnyFunSuite {
         assert(at1Class == classOf[Array[Object]])
 
         val at2 = ArrayType(ObjectType("java/util/List"))
-        assert(at2.toJavaClass == classOf[Array[java.util.List[_]]])
+        assert(at2.toJavaClass == classOf[Array[java.util.List[?]]])
 
         val at3 = ArrayType(IntegerType)
         assert(at3.toJavaClass == classOf[Array[Int]])

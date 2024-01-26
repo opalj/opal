@@ -15,11 +15,11 @@ package object analyses {
     /**
      * Type alias for Projects with arbitrary sources.
      */
-    type SomeProject = Project[_]
+    type SomeProject = Project[?]
 
     type ProgressEvent = ProgressEvents.Value
 
-    type ProjectInformationKeys = Seq[ProjectInformationKey[_ <: AnyRef, _ <: AnyRef]]
+    type ProjectInformationKeys = Seq[ProjectInformationKey[? <: AnyRef, ? <: AnyRef]]
 
     type StringConstantsInformation = Map[String, ArraySeq[PCInMethod]]
 

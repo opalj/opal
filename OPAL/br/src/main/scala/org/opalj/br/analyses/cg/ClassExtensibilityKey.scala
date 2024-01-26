@@ -6,7 +6,7 @@ package cg
 
 import org.opalj.log.OPALLogger
 
-import net.ceedubs.ficus.Ficus._
+import net.ceedubs.ficus.Ficus.*
 
 /**
  * The ''key'' object to get a function that determines whether a type is directly

@@ -5,7 +5,7 @@ package tac
 import org.junit.runner.RunWith
 import org.scalatestplus.junit.JUnitRunner
 
-import org.opalj.br._
+import org.opalj.br.*
 import org.opalj.br.TestSupport.biProject
 
 /**
@@ -21,9 +21,9 @@ class TACNaiveFloatArithmeticTest extends TACNaiveTest {
 
     val ArithmeticExpressionsClassFile = project.classFile(ArithmeticExpressionsType).get
 
-    import BinaryArithmeticOperators._
-    import RelationalOperators._
-    import UnaryArithmeticOperators._
+    import BinaryArithmeticOperators.*
+    import RelationalOperators.*
+    import UnaryArithmeticOperators.*
 
     val FloatAddMethod = ArithmeticExpressionsClassFile.findMethod("floatAdd").head
     val FloatDivMethod = ArithmeticExpressionsClassFile.findMethod("floatDiv").head

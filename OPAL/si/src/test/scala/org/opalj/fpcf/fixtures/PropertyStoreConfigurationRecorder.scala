@@ -13,7 +13,7 @@ class BasePropertyStoreMockup extends PropertyStore {
 
     implicit val logContext: LogContext = GlobalLogContext
 
-    val ctx: Map[Class[_], AnyRef] = Map.empty
+    val ctx: Map[Class[?], AnyRef] = Map.empty
 
     //
     // Methods which are not required by the following tests...

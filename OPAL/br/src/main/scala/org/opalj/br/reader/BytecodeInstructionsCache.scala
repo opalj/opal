@@ -5,7 +5,7 @@ package reader
 
 import scala.collection.concurrent.TrieMap
 
-import org.opalj.br.instructions._
+import org.opalj.br.instructions.*
 
 class BytecodeInstructionsCache {
 

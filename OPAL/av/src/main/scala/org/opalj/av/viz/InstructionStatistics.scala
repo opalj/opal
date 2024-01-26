@@ -5,7 +5,7 @@ package viz
 
 import java.net.URL
 
-import org.opalj.br._
+import org.opalj.br.*
 import org.opalj.br.analyses.AnalysisApplication
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.OneStepAnalysis
@@ -40,7 +40,7 @@ object InstructionStatistics extends AnalysisApplication {
             for {
                 classFile <- project.allClassFiles
                 packageName = classFile.thisType.packageName
-                MethodWithBody(body) <- classFile.methods
+                case MethodWithBody(body) <- classFile.methods
             } {
                 instructionsPerFQPN.update(
                     packageName,

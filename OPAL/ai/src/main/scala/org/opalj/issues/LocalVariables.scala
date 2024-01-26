@@ -19,7 +19,7 @@ import org.opalj.collection.mutable.Locals
 class LocalVariables(
     val code:           Code,
     val pc:             PC,
-    val localVariables: Locals[_ <: AnyRef]
+    val localVariables: Locals[? <: AnyRef]
 ) extends IssueDetails {
 
     def toXHTML(basicInfoOnly: Boolean): Node = {

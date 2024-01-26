@@ -8,7 +8,7 @@ import scala.reflect.ClassTag
 
 import scala.collection.immutable.SortedSet
 
-import org.opalj.br._
+import org.opalj.br.*
 import org.opalj.collection.SingletonSet
 import org.opalj.value.IsIntegerValue
 
@@ -26,7 +26,7 @@ trait IntegerSetValues
     extends IntegerValuesDomain
     with ConcreteIntegerValues
     with IntegerRangeValuesFactory {
-    domain: CorrelationalDomainSupport with Configuration with ExceptionsFactory =>
+    domain: CorrelationalDomainSupport & Configuration & ExceptionsFactory =>
 
     // -----------------------------------------------------------------------------------
     //
@@ -101,7 +101,7 @@ trait IntegerSetValues
     // IMPROVE Use optimized collection (without (un)boxing).
     def IntegerSet(values: SortedSet[Int]): DomainTypedValue[CTIntType]
 
-    type DomainBaseTypesBasedSet <: BaseTypesBasedSetLike with DomainValue
+    type DomainBaseTypesBasedSet <: BaseTypesBasedSetLike & DomainValue
     val DomainBaseTypesBasedSet: ClassTag[DomainBaseTypesBasedSet]
 
     trait BaseTypesBasedSetLike extends IntegerLikeValue { this: DomainTypedValue[CTIntType] =>
@@ -236,7 +236,7 @@ trait IntegerSetValues
         assert(lowerBound <= upperBound)
 
         if (upperBound.toLong - lowerBound.toLong <= maxCardinalityOfIntegerSets)
-            IntegerSet(SortedSet[Int](lowerBound to upperBound: _*))
+            IntegerSet(SortedSet[Int]((lowerBound to upperBound)*))
         else
             approximateSet(origin, lowerBound, upperBound)
     }

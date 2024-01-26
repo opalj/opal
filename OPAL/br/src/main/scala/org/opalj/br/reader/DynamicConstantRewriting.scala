@@ -47,7 +47,7 @@ trait DynamicConstantRewriting
 
     this: ClassFileBinding =>
 
-    import org.opalj.br.reader.DynamicConstantRewriting._
+    import org.opalj.br.reader.DynamicConstantRewriting.*
 
     val performRewriting: Boolean = {
         val rewrite: Boolean =

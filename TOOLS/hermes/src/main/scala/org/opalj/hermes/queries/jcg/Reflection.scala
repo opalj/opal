@@ -7,7 +7,7 @@ package jcg
 import scala.collection.immutable.ArraySeq
 
 import org.opalj.ai.domain.l1.ArrayValues
-import org.opalj.br._
+import org.opalj.br.*
 import org.opalj.br.MethodDescriptor.JustReturnsObject
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
@@ -20,7 +20,7 @@ import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.da.ClassFile
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
-import org.opalj.tac._
+import org.opalj.tac.*
 import org.opalj.value.ValueInformation
 
 /**
@@ -96,7 +96,7 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
             (classFile, source) <- project.projectClassFilesWithSources
             if !isInterrupted()
             classFileLocation = ClassFileLocation(source, classFile)
-            method @ MethodWithBody(body) <- classFile.methods
+            case method @ MethodWithBody(body) <- classFile.methods
             methodLocation = MethodLocation(classFileLocation, method)
             pcAndInstruction <- body collect ({
                 case i: LoadClass                                                        => i

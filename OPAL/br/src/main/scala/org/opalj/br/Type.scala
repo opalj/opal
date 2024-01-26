@@ -5,7 +5,7 @@ package br
 import scala.annotation.tailrec
 
 import java.lang.ref.WeakReference
-import java.util.{Arrays => JArrays}
+import java.util.Arrays as JArrays
 import java.util.WeakHashMap
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantReadWriteLock
@@ -215,7 +215,7 @@ sealed trait Type extends UIDValue with Ordered[Type] {
      * between the representation used by the analysis and the representation required
      * by the called method.
      */
-    def toJavaClass: java.lang.Class[_]
+    def toJavaClass: java.lang.Class[?]
 
     /**
      * The unique id of this type. Types are associated with globally unique ids to
@@ -249,7 +249,7 @@ sealed trait Type extends UIDValue with Ordered[Type] {
 
 object Type {
 
-    def apply(clazz: Class[_]): Type = {
+    def apply(clazz: Class[?]): Type = {
         if (clazz.isPrimitive) {
             clazz match {
                 case java.lang.Boolean.TYPE   => BooleanType
@@ -302,7 +302,7 @@ sealed abstract class VoidType private () extends Type with ReturnTypeSignature 
 
     override def toJVMTypeName: String = "V"
 
-    override def toJavaClass: java.lang.Class[_] = java.lang.Void.TYPE
+    override def toJavaClass: java.lang.Class[?] = java.lang.Void.TYPE
 
     override def toString: String = "VoidType"
 
@@ -551,7 +551,7 @@ case object CTIntType extends CTIntType {
     override def toBinaryJavaName: String = throw new UnsupportedOperationException()
     def toJVMTypeName: String = throw new UnsupportedOperationException()
     def toJava: String = throw new UnsupportedOperationException()
-    def toJavaClass: Class[_] = throw new UnsupportedOperationException()
+    def toJavaClass: Class[?] = throw new UnsupportedOperationException()
 }
 
 /**
@@ -588,7 +588,7 @@ sealed abstract class ByteType private () extends IntLikeType {
 
     override def toJVMTypeName: String = "B"
 
-    override def toJavaClass: java.lang.Class[_] = java.lang.Byte.TYPE
+    override def toJavaClass: java.lang.Class[?] = java.lang.Byte.TYPE
 
     override def toString: String = "ByteType"
 
@@ -599,7 +599,7 @@ sealed abstract class ByteType private () extends IntLikeType {
     )(
         implicit typeConversionFactory: TypeConversionFactory[T]
     ): T = {
-        import typeConversionFactory._
+        import typeConversionFactory.*
         (targetType.id: @scala.annotation.switch) match {
             case ByteType.id |
                 ShortType.id |
@@ -636,7 +636,7 @@ sealed abstract class CharType private () extends IntLikeType {
 
     override def toJVMTypeName: String = "C"
 
-    override def toJavaClass: java.lang.Class[_] = java.lang.Character.TYPE
+    override def toJavaClass: java.lang.Class[?] = java.lang.Character.TYPE
 
     override def toString: String = "CharType"
 
@@ -647,7 +647,7 @@ sealed abstract class CharType private () extends IntLikeType {
     )(
         implicit typeConversionFactory: TypeConversionFactory[T]
     ): T = {
-        import typeConversionFactory._
+        import typeConversionFactory.*
         (targetType.id: @scala.annotation.switch) match {
             case ByteType.id                  => IntToByte
             case ShortType.id                 => IntToShort
@@ -687,7 +687,7 @@ sealed abstract class DoubleType private () extends NumericType {
 
     final val WrapperType = ObjectType.Double
 
-    override def toJavaClass: java.lang.Class[_] =
+    override def toJavaClass: java.lang.Class[?] =
         java.lang.Double.TYPE
 
     override def toString: String = "DoubleType"
@@ -699,7 +699,7 @@ sealed abstract class DoubleType private () extends NumericType {
     )(
         implicit typeConversionFactory: TypeConversionFactory[T]
     ): T = {
-        import typeConversionFactory._
+        import typeConversionFactory.*
         (targetType.id: @scala.annotation.switch) match {
             case ByteType.id    => Double2Byte
             case CharType.id    => Double2Char
@@ -740,7 +740,7 @@ sealed abstract class FloatType private () extends NumericType {
 
     override def toJVMTypeName: String = "F"
 
-    override def toJavaClass: java.lang.Class[_] = java.lang.Float.TYPE
+    override def toJavaClass: java.lang.Class[?] = java.lang.Float.TYPE
 
     override def toString: String = "FloatType"
 
@@ -752,7 +752,7 @@ sealed abstract class FloatType private () extends NumericType {
     )(
         implicit typeConversionFactory: TypeConversionFactory[T]
     ): T = {
-        import typeConversionFactory._
+        import typeConversionFactory.*
         (targetType.id: @scala.annotation.switch) match {
             case ByteType.id    => Float2Byte
             case CharType.id    => Float2Char
@@ -789,7 +789,7 @@ sealed abstract class ShortType private () extends IntLikeType {
 
     override def toJVMTypeName: String = "S"
 
-    override def toJavaClass: java.lang.Class[_] = java.lang.Short.TYPE
+    override def toJavaClass: java.lang.Class[?] = java.lang.Short.TYPE
 
     override def toString: String = "ShortType"
 
@@ -800,7 +800,7 @@ sealed abstract class ShortType private () extends IntLikeType {
     )(
         implicit typeConversionFactory: TypeConversionFactory[T]
     ): T = {
-        import typeConversionFactory._
+        import typeConversionFactory.*
         (targetType.id: @scala.annotation.switch) match {
             case ByteType.id    => IntToByte
             case ShortType.id   => NoConversion
@@ -837,7 +837,7 @@ sealed abstract class IntegerType private () extends IntLikeType {
 
     override def toJVMTypeName: String = "I"
 
-    override def toJavaClass: java.lang.Class[_] = java.lang.Integer.TYPE
+    override def toJavaClass: java.lang.Class[?] = java.lang.Integer.TYPE
 
     override def toString: String = "IntegerType"
 
@@ -852,7 +852,7 @@ sealed abstract class IntegerType private () extends IntLikeType {
     )(
         implicit typeConversionFactory: TypeConversionFactory[T]
     ): T = {
-        import typeConversionFactory._
+        import typeConversionFactory.*
         (targetType.id: @scala.annotation.switch) match {
             case ByteType.id    => IntToByte
             case ShortType.id   => IntToShort
@@ -893,7 +893,7 @@ sealed abstract class LongType private () extends NumericType {
 
     override def toJVMTypeName: String = "J"
 
-    override def toJavaClass: java.lang.Class[_] = java.lang.Long.TYPE
+    override def toJavaClass: java.lang.Class[?] = java.lang.Long.TYPE
 
     override def toString: String = "LongType"
 
@@ -905,7 +905,7 @@ sealed abstract class LongType private () extends NumericType {
     )(
         implicit typeConversionFactory: TypeConversionFactory[T]
     ): T = {
-        import typeConversionFactory._
+        import typeConversionFactory.*
         (targetType.id: @scala.annotation.switch) match {
             case ByteType.id    => Long2Byte
             case CharType.id    => Long2Char
@@ -951,7 +951,7 @@ sealed abstract class BooleanType private () extends BaseType with CTIntType {
 
     override def toJVMTypeName: String = "Z"
 
-    override def toJavaClass: java.lang.Class[_] = java.lang.Boolean.TYPE
+    override def toJavaClass: java.lang.Class[?] = java.lang.Boolean.TYPE
 
     override def toString: String = "BooleanType"
 
@@ -998,7 +998,7 @@ final class ObjectType private ( // DO NOT MAKE THIS A CASE CLASS!
 
     override def toJVMTypeName: String = s"L$fqn;"
 
-    override def toJavaClass: java.lang.Class[_] = classOf[Type].getClassLoader().loadClass(toJava)
+    override def toJavaClass: java.lang.Class[?] = classOf[Type].getClassLoader().loadClass(toJava)
 
     def unboxValue[T](implicit typeConversionFactory: TypeConversionFactory[T]): T = {
         ObjectType.unboxValue(this)
@@ -1508,7 +1508,7 @@ final class ArrayType private ( // DO NOT MAKE THIS A CASE CLASS!
 
     override def toJVMTypeName: String = "[" + componentType.toJVMTypeName
 
-    override def toJavaClass: java.lang.Class[_] = java.lang.Class.forName(toBinaryJavaName)
+    override def toJavaClass: java.lang.Class[?] = java.lang.Class.forName(toBinaryJavaName)
 
     override def adapt[T](
         targetType: Type

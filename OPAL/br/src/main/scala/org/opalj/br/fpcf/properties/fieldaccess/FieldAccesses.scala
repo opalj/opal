@@ -31,6 +31,7 @@ import org.opalj.fpcf.PropertyKey
  * @author Maximilian Rüsch
  */
 sealed trait FieldAccesses {
+
     final def partialResults(accessContext: Context): IterableOnce[PartialResult[_, _ >: Null <: Property]] = {
         var results = partialResultsForFieldBasedFieldAccesses
             .iterator
@@ -143,7 +144,7 @@ sealed trait FieldAccesses {
 
     protected def partialResultsForFieldBasedFieldAccesses: IterableOnce[PartialResult[
         DeclaredField,
-        _ >: Null <: FieldAccessInformation[_]
+        ? >: Null <: FieldAccessInformation[?]
     ]] =
         Iterator.empty
 }
@@ -161,7 +162,7 @@ trait CompleteFieldAccesses extends FieldAccesses {
         field:       DeclaredField,
         propertyKey: PropertyKey[S],
         property:    S
-    ): PartialResult[DeclaredField, _ >: Null <: FieldAccessInformation[_]] = {
+    ): PartialResult[DeclaredField, ? >: Null <: FieldAccessInformation[?]] = {
         PartialResult[DeclaredField, FieldAccessInformation[S]](
             field,
             propertyKey,
@@ -199,7 +200,7 @@ trait CompleteFieldAccesses extends FieldAccesses {
 
     private[this] var _partialResultsForFieldBasedFieldAccesses: List[PartialResult[
         DeclaredField,
-        _ >: Null <: Property with FieldAccessInformation[_]
+        ? >: Null <: Property & FieldAccessInformation[?]
     ]] =
         List.empty
 
@@ -263,7 +264,7 @@ trait CompleteFieldAccesses extends FieldAccesses {
 
     override protected def partialResultsForFieldBasedFieldAccesses: IterableOnce[PartialResult[
         DeclaredField,
-        _ >: Null <: FieldAccessInformation[_]
+        ? >: Null <: FieldAccessInformation[?]
     ]] =
         _partialResultsForFieldBasedFieldAccesses.iterator ++ super.partialResultsForFieldBasedFieldAccesses
 }

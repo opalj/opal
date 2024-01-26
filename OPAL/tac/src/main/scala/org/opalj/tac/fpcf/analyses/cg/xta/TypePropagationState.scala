@@ -6,11 +6,11 @@ package analyses
 package cg
 package xta
 
-import java.util.{HashMap => JHashMap}
-import java.util.{HashSet => JHashSet}
-import java.util.{Set => JSet}
+import java.util.HashMap as JHashMap
+import java.util.HashSet as JHashSet
+import java.util.Set as JSet
 import scala.collection.immutable.IntMap
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 import org.opalj.br.ClassHierarchy
 import org.opalj.br.DeclaredMethod

@@ -3,8 +3,8 @@ package org.opalj
 package br
 package analyses
 
-import scala.collection.{Map => SomeMap}
-import scala.collection.{Set => SomeSet}
+import scala.collection.Map as SomeMap
+import scala.collection.Set as SomeSet
 import scala.collection.immutable.ArraySeq
 import scala.collection.mutable
 

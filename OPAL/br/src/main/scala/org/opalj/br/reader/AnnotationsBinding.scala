@@ -60,47 +60,47 @@ trait AnnotationsBinding
     }
 
     def ByteValue(cp: Constant_Pool, const_value_index: Constant_Pool_Index): ElementValue = {
-        val cv: ConstantValue[_] = cp(const_value_index).asConstantValue(cp)
+        val cv: ConstantValue[?] = cp(const_value_index).asConstantValue(cp)
         new ByteValue(cv.toByte)
     }
 
     def CharValue(cp: Constant_Pool, const_value_index: Constant_Pool_Index): ElementValue = {
-        val cv: ConstantValue[_] = cp(const_value_index).asConstantValue(cp)
+        val cv: ConstantValue[?] = cp(const_value_index).asConstantValue(cp)
         new CharValue(cv.toChar)
     }
 
     def DoubleValue(cp: Constant_Pool, const_value_index: Constant_Pool_Index): ElementValue = {
-        val cv: ConstantValue[_] = cp(const_value_index).asConstantValue(cp)
+        val cv: ConstantValue[?] = cp(const_value_index).asConstantValue(cp)
         new DoubleValue(cv.toDouble)
     }
 
     def FloatValue(cp: Constant_Pool, const_value_index: Constant_Pool_Index): ElementValue = {
-        val cv: ConstantValue[_] = cp(const_value_index).asConstantValue(cp)
+        val cv: ConstantValue[?] = cp(const_value_index).asConstantValue(cp)
         new FloatValue(cv.toFloat)
     }
 
     def IntValue(cp: Constant_Pool, const_value_index: Constant_Pool_Index): ElementValue = {
-        val cv: ConstantValue[_] = cp(const_value_index).asConstantValue(cp)
+        val cv: ConstantValue[?] = cp(const_value_index).asConstantValue(cp)
         new IntValue(cv.toInt)
     }
 
     def LongValue(cp: Constant_Pool, const_value_index: Constant_Pool_Index): ElementValue = {
-        val cv: ConstantValue[_] = cp(const_value_index).asConstantValue(cp)
+        val cv: ConstantValue[?] = cp(const_value_index).asConstantValue(cp)
         new LongValue(cv.toLong)
     }
 
     def ShortValue(cp: Constant_Pool, const_value_index: Constant_Pool_Index): ElementValue = {
-        val cv: ConstantValue[_] = cp(const_value_index).asConstantValue(cp)
+        val cv: ConstantValue[?] = cp(const_value_index).asConstantValue(cp)
         new ShortValue(cv.toShort)
     }
 
     def BooleanValue(cp: Constant_Pool, const_value_index: Constant_Pool_Index): ElementValue = {
-        val cv: ConstantValue[_] = cp(const_value_index).asConstantValue(cp)
+        val cv: ConstantValue[?] = cp(const_value_index).asConstantValue(cp)
         new BooleanValue(cv.toBoolean)
     }
 
     def StringValue(cp: Constant_Pool, const_value_index: Constant_Pool_Index): ElementValue = {
-        val cv: ConstantValue[_] = cp(const_value_index).asConstantValue(cp)
+        val cv: ConstantValue[?] = cp(const_value_index).asConstantValue(cp)
         new StringValue(cv.toUTF8)
     }
 

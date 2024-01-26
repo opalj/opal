@@ -6,7 +6,7 @@ package cg
 import scala.reflect.runtime.universe.runtimeMirror
 
 import scala.collection.mutable.ArrayBuffer
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 import org.opalj.ai.domain.RecordCFG
 import org.opalj.ai.domain.RecordDefUse
@@ -57,7 +57,7 @@ trait CallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
     ): Iterable[FPCFAnalysisScheduler]
 
     override def requirements(project: SomeProject): ProjectInformationKeys = {
-        val requiredDomains: Set[Class[_ <: AnyRef]] = Set(classOf[RecordCFG], classOf[RecordDefUse])
+        val requiredDomains: Set[Class[? <: AnyRef]] = Set(classOf[RecordCFG], classOf[RecordDefUse])
         project.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
             case None               => requiredDomains
             case Some(requirements) => requirements ++ requiredDomains

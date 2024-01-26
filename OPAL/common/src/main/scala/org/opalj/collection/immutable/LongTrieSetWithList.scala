@@ -3,7 +3,7 @@ package org.opalj
 package collection
 package immutable
 
-import java.lang.Long.{hashCode => lHashCode}
+import java.lang.Long.hashCode as lHashCode
 
 /**
  * An immutable set of long values which maintains an additional list to enable

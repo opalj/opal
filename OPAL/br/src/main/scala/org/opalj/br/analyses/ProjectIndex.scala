@@ -51,7 +51,7 @@ class ProjectIndex private (
     def statistics(): Map[String, Any] = {
 
         def getMostOftenUsed(
-            elementsWithSharedName: Iterable[(String, Map[_, Iterable[ClassMember]])]
+            elementsWithSharedName: Iterable[(String, Map[?, Iterable[ClassMember]])]
         ) = {
             elementsWithSharedName.foldLeft((0, mutable.Set.empty[String])) { (c, n) =>
                 val nName = n._1

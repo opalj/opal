@@ -6,8 +6,8 @@ package cfg
 import scala.reflect.ClassTag
 
 import java.util.Arrays
-import scala.collection.{Set => SomeSet}
 import scala.collection.AbstractIterator
+import scala.collection.Set as SomeSet
 
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.IntTrieSet1

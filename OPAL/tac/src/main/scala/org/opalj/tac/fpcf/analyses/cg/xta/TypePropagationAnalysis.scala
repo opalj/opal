@@ -7,7 +7,7 @@ package cg
 package xta
 
 import scala.collection.mutable.ArrayBuffer
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 import org.opalj.br.Code
 import org.opalj.br.DeclaredMethod
@@ -191,7 +191,7 @@ final class TypePropagationAnalysis private[analyses] (
     ): ProperPropertyComputationResult = {
         val previouslySeenTypes = state.ownInstantiatedTypes.size
         state.updateOwnInstantiatedTypesDependee(eps)
-        val unseenTypes = UIDSet(eps.ub.dropOldest(previouslySeenTypes).toSeq: _*)
+        val unseenTypes = UIDSet(eps.ub.dropOldest(previouslySeenTypes).toSeq*)
 
         implicit val partialResults: ArrayBuffer[SomePartialResult] = ArrayBuffer.empty[SomePartialResult]
         for (fpe <- state.forwardPropagationEntities.iterator().asScala) {
@@ -214,7 +214,7 @@ final class TypePropagationAnalysis private[analyses] (
         val typeSetEntity = eps.e
         val previouslySeenTypes = state.seenTypes(typeSetEntity)
         state.updateBackwardPropagationDependee(eps)
-        val unseenTypes = UIDSet(eps.ub.dropOldest(previouslySeenTypes).toSeq: _*)
+        val unseenTypes = UIDSet(eps.ub.dropOldest(previouslySeenTypes).toSeq*)
 
         val filters = state.backwardPropagationFilters(typeSetEntity)
         val propagationResult = propagateTypes(state.typeSetEntity, unseenTypes, filters)

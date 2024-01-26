@@ -113,7 +113,7 @@ sealed abstract class JVMField extends ClassMember with Ordered[JVMField] {
     /**
      * Returns this field's constant value.
      */
-    def constantFieldValue: Option[ConstantFieldValue[_]] = {
+    def constantFieldValue: Option[ConstantFieldValue[?]] = {
         attributes collectFirst { case cv: ConstantFieldValue[_] => cv }
     }
 

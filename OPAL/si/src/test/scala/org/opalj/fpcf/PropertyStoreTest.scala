@@ -13,7 +13,7 @@ import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
 
-import org.opalj.fpcf.fixtures._
+import org.opalj.fpcf.fixtures.*
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 
@@ -852,7 +852,7 @@ sealed abstract class PropertyStoreTest[PS <: PropertyStore]
                     return Result(n, NoReachableNodes);
 
                 var allDependees: immutable.Set[Node] = nTargets.toSet // may include self-dependency
-                var dependeePs: Set[EOptionP[Entity, _ <: ReachableNodes]] =
+                var dependeePs: Set[EOptionP[Entity, ? <: ReachableNodes]] =
                     ps(allDependees - n /* ignore self-dependency */, ReachableNodes.Key).toSet
 
                 // incremental computation
@@ -867,7 +867,7 @@ sealed abstract class PropertyStoreTest[PS <: PropertyStore]
                     // Adapt the set of dependeePs to ensure termination
                     dependeePs = dependeePs filter { _.e ne dependeeE }
                     if (!dependeeP.isFinal) {
-                        dependeePs += dependeeP.asInstanceOf[EOptionP[Entity, _ <: ReachableNodes]]
+                        dependeePs += dependeeP.asInstanceOf[EOptionP[Entity, ? <: ReachableNodes]]
                     }
                     val r = {
                         if (dependeePs.nonEmpty)
@@ -904,7 +904,7 @@ sealed abstract class PropertyStoreTest[PS <: PropertyStore]
                 if (nTargets.isEmpty)
                     return Result(n, NoReachableNodes);
 
-                var dependeePs: immutable.Set[EOptionP[Entity, _ <: ReachableNodes]] =
+                var dependeePs: immutable.Set[EOptionP[Entity, ? <: ReachableNodes]] =
                     ps(nTargets diff (Set(n)) /* ignore self-dependency */, ReachableNodes.Key)
                         .filter { dependeeP => dependeeP.isRefinable }.toSet
 
@@ -912,7 +912,7 @@ sealed abstract class PropertyStoreTest[PS <: PropertyStore]
                     PartialResult(
                         n,
                         ReachableNodes.Key,
-                        (eOptionP: EOptionP[_, ReachableNodes]) =>
+                        (eOptionP: EOptionP[?, ReachableNodes]) =>
                             eOptionP match {
                                 case _: EPK[_, _] => Some(InterimEUBP(n, ReachableNodes(currentNodes)))
                                 case InterimUBP(p) =>
@@ -936,7 +936,7 @@ sealed abstract class PropertyStoreTest[PS <: PropertyStore]
                     val pr = createPartialResult(depeendeeReachableNodes)
                     dependeePs = dependeePs.filter(_.e ne dependeeP.e)
                     if (dependeeP.isRefinable)
-                        dependeePs += dependeeP.asInstanceOf[EOptionP[Entity, _ <: ReachableNodes]]
+                        dependeePs += dependeeP.asInstanceOf[EOptionP[Entity, ? <: ReachableNodes]]
                     InterimPartialResult(List(pr), dependeePs.asInstanceOf[Set[SomeEOptionP]], c)
                 }
 
@@ -1078,7 +1078,7 @@ sealed abstract class PropertyStoreTest[PS <: PropertyStore]
                 def apply(e: Entity): SomePartialResult = PartialResult(
                     "reached nodes",
                     ReachedEntitiesKey,
-                    (eOptionP: EOptionP[_, ReachedEntities]) =>
+                    (eOptionP: EOptionP[?, ReachedEntities]) =>
                         (eOptionP) match {
                             case _: EPK[_, _] =>
                                 Some(InterimEUBP("reached nodes", ReachedEntities(Set(e.toString))))

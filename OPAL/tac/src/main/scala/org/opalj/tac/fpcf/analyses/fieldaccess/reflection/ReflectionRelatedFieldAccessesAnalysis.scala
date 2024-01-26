@@ -250,7 +250,7 @@ sealed trait FieldInstanceBasedReflectiveFieldAccessAnalysis extends ReflectionA
         if (epk.pk == ForNameClasses.key) {
             val depender = state.dependersOf(epk).head.asInstanceOf[ClassDepender]
 
-            val classes = eps.asInstanceOf[EPS[_, ForNameClasses]].ub.classes.map { tpe =>
+            val classes = eps.asInstanceOf[EPS[?, ForNameClasses]].ub.classes.map { tpe =>
                 if (tpe.isObjectType) tpe.asObjectType else ObjectType.Object
             }
 
@@ -775,7 +775,7 @@ class MethodHandleInvokeAnalysis private[analyses] (
         if (epk.pk == ForNameClasses.key) {
             val depender = state.dependersOf(epk).head.asInstanceOf[ClassDepender]
 
-            val classes = eps.asInstanceOf[EPS[_, ForNameClasses]].ub.classes.map { tpe =>
+            val classes = eps.asInstanceOf[EPS[?, ForNameClasses]].ub.classes.map { tpe =>
                 if (tpe.isObjectType) tpe.asObjectType else ObjectType.Object
             }
 

@@ -26,7 +26,7 @@ import org.opalj.br.fpcf.properties.cg.Callees
 class DirectCallMatcher extends AbstractPropertyMatcher {
 
     override def validateProperty(
-        p:          Project[_],
+        p:          Project[?],
         as:         Set[ObjectType],
         entity:     Any,
         a:          AnnotationLike,
@@ -64,7 +64,7 @@ class DirectCallMatcher extends AbstractPropertyMatcher {
     }
 
     private def validateSingleAnnotation(
-        p:          Project[_],
+        p:          Project[?],
         as:         Set[ObjectType],
         entity:     Any,
         a:          AnnotationLike,

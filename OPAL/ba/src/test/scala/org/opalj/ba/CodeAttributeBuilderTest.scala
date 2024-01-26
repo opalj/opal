@@ -18,7 +18,7 @@ import org.opalj.br.ExceptionHandler
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.MethodDescriptor.JustTakes
 import org.opalj.br.ObjectType
-import org.opalj.br.instructions._
+import org.opalj.br.instructions.*
 import org.opalj.util.InMemoryClassLoader
 
 /**
@@ -468,8 +468,8 @@ class CodeAttributeBuilderTest extends AnyFlatSpec {
     }
 
     it should "not remove live code after simple conditional branch instructions" in {
-        import ObjectType.{Object => OObject}
-        import ObjectType.{RuntimeException => ORuntimeException}
+        import ObjectType.Object as OObject
+        import ObjectType.RuntimeException as ORuntimeException
         val codeElements = Array[CodeElement[AnyRef]](
             LabelElement(0),
             TRY(Symbol("eh")),
@@ -549,8 +549,8 @@ class CodeAttributeBuilderTest extends AnyFlatSpec {
     }
 
     it should "allow inline ExceptionHandlers that include the last PC" in {
-        import ObjectType.{RuntimeException => ORuntimeException}
-        import ObjectType.{Object => OObject}
+        import ObjectType.RuntimeException as ORuntimeException
+        import ObjectType.Object as OObject
         val codeElements = Array[CodeElement[AnyRef]](
             GOTO(Symbol("NORMAL_CF")), // => 0,1,2
             CATCH(Symbol("eh"), 1, Some(ORuntimeException)),

@@ -15,5 +15,5 @@ package fpcf
  */
 case class ContextNotAvailableException(
     context:         AnyRef,
-    completeContext: Map[Class[_], AnyRef]
+    completeContext: Map[Class[?], AnyRef]
 ) extends RuntimeException(completeContext.keys.mkString(s"unknown context $context; available: ", ", ", ""))

@@ -68,7 +68,7 @@ class ChildDefaultDomain[Source](
 
     type CalledMethodDomain = callerDomain.CalledMethodDomain
 
-    final def calledMethodAI: AI[_ >: CalledMethodDomain] = callerDomain.calledMethodAI
+    final def calledMethodAI: AI[? >: CalledMethodDomain] = callerDomain.calledMethodAI
 
     def shouldInvocationBePerformed(method: Method): Boolean = {
         maxCallChainLength > 0 && !method.returnType.isVoidType

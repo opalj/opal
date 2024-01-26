@@ -8,8 +8,8 @@ package escape
 import org.opalj.br.ObjectType
 import org.opalj.br.fpcf.properties.EscapeProperty
 
-import net.ceedubs.ficus.Ficus._
-import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+import net.ceedubs.ficus.Ficus.*
+import net.ceedubs.ficus.readers.ArbitraryTypeReader.*
 
 /**
  * In the configuration system it is possible to define escape information for the this local in the
@@ -35,7 +35,7 @@ trait ConfigurationBasedConstructorEscapeAnalysis extends AbstractEscapeAnalysis
      */
     private[this] val predefinedConstructors: Map[ObjectType, EscapeProperty] = {
         project.config.as[Seq[PredefinedResult]](ConfigKey).map { r =>
-            import scala.reflect.runtime._
+            import scala.reflect.runtime.*
             val rootMirror = universe.runtimeMirror(getClass.getClassLoader)
             val module = rootMirror.staticModule(r.escape_of_this)
             val property = rootMirror.reflectModule(module).instance.asInstanceOf[EscapeProperty]

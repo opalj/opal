@@ -113,7 +113,7 @@ class ConfiguredNativeMethodsInstantiatedTypesAnalysis private[analyses] (
             getInstantiatedTypesUB(propertyStore(project, InstantiatedTypes.key))
 
         val newInstantiatedTypes = UIDSet(
-            ArraySeq.unsafeWrapArray(instantiatedTypes.filterNot(instantiatedTypesUB.contains)): _*
+            ArraySeq.unsafeWrapArray(instantiatedTypes.filterNot(instantiatedTypesUB.contains))*
         )
 
         if (newInstantiatedTypes.isEmpty)

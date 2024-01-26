@@ -6,7 +6,7 @@ package reader
 import scala.language.existentials
 
 import java.util.concurrent.ConcurrentLinkedQueue
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 import org.scalatest.funsuite.AnyFunSuite
 

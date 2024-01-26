@@ -4,7 +4,7 @@ package br
 package analyses
 
 import org.opalj.bi.ACC_PUBLIC
-import org.opalj.br.instructions._
+import org.opalj.br.instructions.*
 import org.opalj.br.reader.Java8Framework.ClassFiles
 import org.opalj.log.GlobalLogContext
 import org.opalj.util.Nanoseconds
@@ -155,7 +155,7 @@ object MoreCheckers {
                 classFile <- classFiles
                 if !classFile.isInterfaceDeclaration && !classFile.isAnnotationDeclaration
                 superClass <- classFile.superclassType.toList
-                method @ Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object)) <- classFile.methods
+                case method @ Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object)) <- classFile.methods
                 if !method.isAbstract
                 if !method.body.get.instructions.exists {
                     case INVOKESPECIAL(`superClass`, _, "clone", JustReturnsObject) => true
@@ -171,7 +171,7 @@ object MoreCheckers {
                 classFile <- classFiles
                 if !classFile.isAnnotationDeclaration
                 if classFile.superclassType.isDefined
-                method @ Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object)) <- classFile.methods
+                case method @ Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object)) <- classFile.methods
                 if classHierarchy.isASubtypeOf(classFile.thisType, ObjectType("java/lang/Cloneable")).isYesOrUnknown
             } yield (classFile.thisType.fqn, method.name)
         }(t => collect("CN_IMPLEMENTS_CLONE_BUT_NOT_CLONEABLE", t /*nsToSecs(t)*/ ))
@@ -188,7 +188,8 @@ object MoreCheckers {
             for {
                 comparable <- classHierarchy.allSubtypes(ObjectType("java/lang/Comparable"), false)
                 classFile <- getClassFile.get(comparable).toList
-                method @ Method(_, "compareTo", MethodDescriptor(Seq(parameterType), IntegerType)) <- classFile.methods
+                case method @ Method(_, "compareTo", MethodDescriptor(Seq(parameterType), IntegerType)) <- classFile
+                    .methods
                 if parameterType != ObjectType("java/lang/Object")
             } yield (classFile, method)
         }(t => collect("CO_SELF_NO_OBJECT/CO_ABSTRACT_SELF", t /*nsToSecs(t)*/ ))
@@ -248,8 +249,11 @@ object MoreCheckers {
         val abstractCovariantEquals = time {
             for {
                 classFile <- classFiles;
-                method @ Method(_, "equals", MethodDescriptor(Seq(classFile.thisType), BooleanType)) <-
-                    classFile.methods if method.isAbstract
+                case method @ Method(
+                    _,
+                    "equals",
+                    MethodDescriptor(Seq(classFile.thisType), BooleanType)
+                ) <- classFile.methods if method.isAbstract
             } yield (classFile, method);
         }(t => collect("EQ_ABSTRACT_SELF", t /*nsToSecs(t)*/ ))
         println(", " /*"\tViolations: "*/ + abstractCovariantEquals.size)
@@ -349,7 +353,7 @@ object MoreCheckers {
         val catchesIllegalMonitorStateException = time {
             for {
                 classFile <- classFiles if classFile.isClassDeclaration
-                method @ MethodWithBody(body) <- classFile.methods
+                case method @ MethodWithBody(body) <- classFile.methods
                 exceptionHandler <- body.exceptionHandlers
                 if exceptionHandler.catchType == Some(IllegalMonitorStateExceptionType)
             } yield (classFile, method)

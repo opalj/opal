@@ -17,14 +17,14 @@ import org.opalj.br.ArrayType
  * @author   Michael Eichberg
  */
 trait ArrayValues extends l1.ReferenceValues {
-    domain: CorrelationalDomain with ConcreteIntegerValues =>
+    domain: CorrelationalDomain & ConcreteIntegerValues =>
 
     // We do not refine the type DomainArrayValue any further since we also want
     // to use the super level ArrayValue class to represent arrays for which we have
     // no further knowledge about the size.
     // DON'T DO: type DomainArrayValue <: ArrayValue with DomainSingleOriginReferenceValue
 
-    type DomainInitializedArrayValue <: InitializedArrayValue with DomainArrayValue
+    type DomainInitializedArrayValue <: InitializedArrayValue & DomainArrayValue
     val DomainInitializedArrayValueTag: ClassTag[DomainInitializedArrayValue]
 
     // IMPROVE Extend MultipleReferenceValues to handle the case that we reference multiple arrays.

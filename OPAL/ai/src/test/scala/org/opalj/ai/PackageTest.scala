@@ -28,14 +28,14 @@ class PackageTest extends AnyFlatSpec with Matchers {
     behavior of "the mapOperands method"
 
     it should ("be able to map an empty list of operands") in {
-        import SimpleCoordinatingTypeLevelDomain._
+        import SimpleCoordinatingTypeLevelDomain.*
         val operands = List.empty[DomainValue]
 
         mapOperands(operands, SimpleCoordinatingTypeLevelDomain) should be(empty)
     }
 
     it should ("be able to map a list with one operand") in {
-        import SimpleCoordinatingTypeLevelDomain._
+        import SimpleCoordinatingTypeLevelDomain.*
         val operands: List[DomainValue] = List(IntegerValue(valueOrigin = -1))
 
         val result = mapOperands(operands, SimpleCoordinatingTypeLevelDomain)
@@ -44,7 +44,7 @@ class PackageTest extends AnyFlatSpec with Matchers {
     }
 
     it should ("be able to map a list with two different operands") in {
-        import SimpleCoordinatingTypeLevelDomain._
+        import SimpleCoordinatingTypeLevelDomain.*
         val operands: List[DomainValue] =
             IntegerValue(valueOrigin = -1) :: FloatValue(valueOrigin = -2) :: List.empty
 
@@ -54,7 +54,7 @@ class PackageTest extends AnyFlatSpec with Matchers {
     }
 
     it should ("be able to map a list with three different operands") in {
-        import SimpleCoordinatingTypeLevelDomain._
+        import SimpleCoordinatingTypeLevelDomain.*
         val operands: List[DomainValue] =
             List(
                 IntegerValue(valueOrigin = -1),
@@ -69,7 +69,7 @@ class PackageTest extends AnyFlatSpec with Matchers {
     }
 
     it should ("be able to map a list with three different operands, where the two first operands are identical") in {
-        import SimpleCoordinatingTypeLevelDomain._
+        import SimpleCoordinatingTypeLevelDomain.*
         val firstOperand = IntegerValue(valueOrigin = -1)
         val operands: List[DomainValue] =
             List(
@@ -86,7 +86,7 @@ class PackageTest extends AnyFlatSpec with Matchers {
     }
 
     it should ("be able to map a list with three different operands, where the two last operands are identical") in {
-        import SimpleCoordinatingTypeLevelDomain._
+        import SimpleCoordinatingTypeLevelDomain.*
         val lastOperand = IntegerValue(valueOrigin = -2)
         val operands: List[DomainValue] =
             List(
@@ -103,7 +103,7 @@ class PackageTest extends AnyFlatSpec with Matchers {
     }
 
     it should ("be able to map a list with three different operands, where all three operands are identical") in {
-        import SimpleCoordinatingTypeLevelDomain._
+        import SimpleCoordinatingTypeLevelDomain.*
         val operand = IntegerValue(valueOrigin = -1)
         val operands: List[DomainValue] = List(operand, operand, operand)
 

@@ -14,7 +14,7 @@ import com.typesafe.config.Config
 import org.opalj.control.foreachWithIndex
 import org.opalj.fpcf.PropertyKind.SupportedPropertyKinds
 import org.opalj.log.LogContext
-import org.opalj.log.OPALLogger.{debug => trace}
+import org.opalj.log.OPALLogger.debug as trace
 import org.opalj.log.OPALLogger.info
 
 /**
@@ -24,7 +24,7 @@ import org.opalj.log.OPALLogger.info
  * @author Michael Eichberg
  */
 final class PKESequentialPropertyStore protected (
-    val ctx:                Map[Class[_], AnyRef],
+    val ctx:                Map[Class[?], AnyRef],
     val tasksManager:       TasksManager,
     val MaxEvaluationDepth: Int
 )(
@@ -182,17 +182,17 @@ final class PKESequentialPropertyStore protected (
         require(lb ne null)
         require(ub ne null)
         assert(lb.key == ub.key)
-        for { ELUBP(e, `lb`, `ub`) <- ps(lb.id).valuesIterator } yield { e }
+        for { case ELUBP(e, `lb`, `ub`) <- ps(lb.id).valuesIterator } yield { e }
     }
 
     override def entitiesWithLB[P <: Property](lb: P): Iterator[Entity] = {
         require(lb ne null)
-        for { ELBP(e, `lb`) <- ps(lb.id).valuesIterator } yield { e }
+        for { case ELBP(e, `lb`) <- ps(lb.id).valuesIterator } yield { e }
     }
 
     override def entitiesWithUB[P <: Property](ub: P): Iterator[Entity] = {
         require(ub ne null)
-        for { EUBP(e, `ub`) <- ps(ub.id).valuesIterator } yield { e }
+        for { case EUBP(e, `ub`) <- ps(ub.id).valuesIterator } yield { e }
     }
 
     override def entities[P <: Property](pk: PropertyKey[P]): Iterator[EPS[Entity, P]] = {
@@ -339,7 +339,7 @@ final class PKESequentialPropertyStore protected (
         val e = dependerEPK.e
         for {
             epkDependees <- dependees(dependerPKId).remove(e)
-            EOptionP(oldDependeeE, oldDependeePK) <- epkDependees // <= the old ones
+            case EOptionP(oldDependeeE, oldDependeePK) <- epkDependees // <= the old ones
             oldDependeePKId = oldDependeePK.id
             dependeeDependers <- dependers(oldDependeePKId).get(oldDependeeE)
         } {
@@ -441,7 +441,7 @@ final class PKESequentialPropertyStore protected (
     private[this] def handlePartialResult(
         e:  Entity,
         pk: SomePropertyKey,
-        u:  UpdateComputation[_ <: Entity, _ <: Property]
+        u:  UpdateComputation[? <: Entity, ? <: Property]
     ): Unit = {
         type E = e.type
         type P = Property
@@ -863,11 +863,11 @@ object PKESequentialPropertyStore extends PropertyStoreFactory[PKESequentialProp
     )
 
     def apply(
-        context: PropertyStoreContext[_ <: AnyRef]*
+        context: PropertyStoreContext[? <: AnyRef]*
     )(
         implicit logContext: LogContext
     ): PKESequentialPropertyStore = {
-        val contextMap: Map[Class[_], AnyRef] = context.map(_.asTuple).toMap
+        val contextMap: Map[Class[?], AnyRef] = context.map(_.asTuple).toMap
         val config =
             contextMap.get(classOf[Config]) match {
                 case Some(config: Config) => config
@@ -882,7 +882,7 @@ object PKESequentialPropertyStore extends PropertyStoreFactory[PKESequentialProp
         taskManagerId:      String,
         maxEvaluationDepth: Int
     )(
-        context: Map[Class[_], AnyRef] = Map.empty
+        context: Map[Class[?], AnyRef] = Map.empty
     )(
         implicit logContext: LogContext
     ): PKESequentialPropertyStore = {

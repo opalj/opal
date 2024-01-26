@@ -2,7 +2,7 @@
 package org.opalj
 package de
 
-import br._
+import br.*
 
 /**
  * Basic implementation of the `DependencyProcessor` trait that does nothing when a

@@ -22,7 +22,7 @@ import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.analyses.ContextProvider
-import org.opalj.br.fpcf.properties._
+import org.opalj.br.fpcf.properties.*
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.EscapeProperty
 import org.opalj.br.fpcf.properties.GlobalEscape

@@ -4,13 +4,13 @@ package tac
 
 import scala.collection.mutable.ArrayBuffer
 
-import org.opalj.br._
+import org.opalj.br.*
 import org.opalj.br.ClassHierarchy
 import org.opalj.br.analyses.AnalysisException
 import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.cfg.CatchNode
 import org.opalj.br.cfg.CFGFactory
-import org.opalj.br.instructions._
+import org.opalj.br.instructions.*
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.collection.immutable.IntIntPair
 import org.opalj.collection.immutable.IntTrieSet
@@ -58,9 +58,9 @@ object TACNaive {
         optimizations:  List[TACOptimization[Param, IdBasedVar, NaiveTACode[Param]]] = List.empty
     ): NaiveTACode[Param] = {
 
-        import BinaryArithmeticOperators._
-        import RelationalOperators._
-        import UnaryArithmeticOperators._
+        import BinaryArithmeticOperators.*
+        import RelationalOperators.*
+        import UnaryArithmeticOperators.*
 
         val code = method.body.get
         import code.pcOfNextInstruction
@@ -169,7 +169,7 @@ object TACNaive {
                 schedule(pcOfNextInstruction(pc), newVal :: rest)
             }
 
-            def loadConstant(instr: LoadConstantInstruction[_]): Unit = {
+            def loadConstant(instr: LoadConstantInstruction[?]): Unit = {
                 instr match {
                     case LDCInt(value) =>
                         val newVar = OperandVar(ComputationalTypeInt, stack)
@@ -466,7 +466,7 @@ object TACNaive {
                     schedule(pcOfNextInstruction(pc), targetVar :: stack)
 
                 case LDC.opcode | LDC_W.opcode | LDC2_W.opcode =>
-                    loadConstant(as[LoadConstantInstruction[_]](instruction))
+                    loadConstant(as[LoadConstantInstruction[?]](instruction))
 
                 case INVOKESPECIAL.opcode =>
                     val invoke = as[MethodInvocationInstruction](instruction)

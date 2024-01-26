@@ -34,7 +34,7 @@ class ClassImmutabilityMatcher(val property: ClassImmutability) extends Abstract
     }
 
     override def validateProperty(
-        project:    Project[_],
+        project:    Project[?],
         as:         Set[ObjectType],
         entity:     scala.Any,
         a:          AnnotationLike,
@@ -54,7 +54,7 @@ class TransitivelyImmutableClassMatcher
 class DependentlyImmutableClassMatcher
     extends ClassImmutabilityMatcher(properties.immutability.DependentlyImmutableClass(SortedSet.empty)) {
     override def validateProperty(
-        project:    Project[_],
+        project:    Project[?],
         as:         Set[ObjectType],
         entity:     scala.Any,
         a:          AnnotationLike,

@@ -6,16 +6,16 @@ package reader
 import scala.collection.immutable.ArraySeq
 
 import org.opalj.bi.reader.ClassFileReader
-import org.opalj.br.reader.{ClassFileReaderConfiguration => BRClassFileReaderConfiguration}
+import org.opalj.br.reader.ClassFileReaderConfiguration as BRClassFileReaderConfiguration
 import org.opalj.log.OPALLogger
 
-import net.ceedubs.ficus.Ficus._
+import net.ceedubs.ficus.Ficus.*
 
 /**
  * @author Michael Eichberg
  */
 trait ClassFileBinding extends ClassFileReader {
-    this: ConstantPoolBinding with MethodsBinding with FieldsBinding with AttributeBinding =>
+    this: ConstantPoolBinding & MethodsBinding & FieldsBinding & AttributeBinding =>
 
     /**
      * This property determines whether artificial [[SynthesizedClassFiles]] attributes
@@ -25,7 +25,7 @@ trait ClassFileBinding extends ClassFileReader {
      *          `ClassFileBinding.DeleteSynthesizedClassFilesAttributesConfigKey`.
      */
     val deleteSynthesizedClassFilesAttributes: Boolean = {
-        import ClassFileBinding.{DeleteSynthesizedClassFilesAttributesConfigKey => Key}
+        import ClassFileBinding.DeleteSynthesizedClassFilesAttributesConfigKey as Key
         val deleteConfiguration = config.as[Option[Boolean]](Key)
         val delete: Boolean = deleteConfiguration match {
             case Some(x) => x

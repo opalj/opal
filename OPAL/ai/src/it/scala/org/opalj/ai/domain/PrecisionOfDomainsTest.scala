@@ -28,7 +28,7 @@ class PrecisionOfDomainsTest extends AnyFunSpec with Matchers {
 
     describe("a more precise domain") {
 
-        type TheAIResult = AIResult { val domain: Domain with TheMethod }
+        type TheAIResult = AIResult { val domain: Domain & TheMethod }
 
         it("should return a more precise result") {
             val theProject = createJREProject()

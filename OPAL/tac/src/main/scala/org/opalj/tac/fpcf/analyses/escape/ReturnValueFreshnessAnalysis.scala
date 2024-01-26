@@ -265,7 +265,7 @@ class ReturnValueFreshnessAnalysis private[analyses] (
 
         // for every return-value statement check the def-sites
         for {
-            ReturnValue(_, expr) <- code
+            case ReturnValue(_, expr) <- code
             defSite <- expr.asVar.definedBy
         } {
 

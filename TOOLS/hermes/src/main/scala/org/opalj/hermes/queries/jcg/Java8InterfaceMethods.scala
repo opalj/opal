@@ -53,7 +53,7 @@ class Java8InterfaceMethods(implicit hermes: HermesConfig) extends DefaultFeatur
             if !isInterrupted()
             classFileLocation = ClassFileLocation(source, classFile)
             callerType = classFile.thisType
-            method @ MethodWithBody(body) <- classFile.methods
+            case method @ MethodWithBody(body) <- classFile.methods
             methodLocation = MethodLocation(classFileLocation, method)
             pcAndInvocation <- body collect ({
                 case iv: INVOKEVIRTUAL if isPotentialCallOnDefaultMethod(iv, project)   => iv

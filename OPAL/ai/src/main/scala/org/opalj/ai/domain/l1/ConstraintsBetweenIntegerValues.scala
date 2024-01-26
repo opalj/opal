@@ -4,8 +4,8 @@ package ai
 package domain
 package l1
 
-import java.util.{IdentityHashMap => IDMap}
-import scala.jdk.CollectionConverters._
+import java.util.IdentityHashMap as IDMap
+import scala.jdk.CollectionConverters.*
 
 import org.opalj.br.LiveVariables
 import org.opalj.br.instructions.Instruction
@@ -22,7 +22,7 @@ trait ConstraintsBetweenIntegerValues
     extends CoreDomainFunctionality
     with IntegerRangeValues // IMRPOVE Define a common trait that specifies that the values support aliasing analyses
     with TheCodeStructure {
-    domain: CorrelationalDomainSupport with Configuration with ExceptionsFactory =>
+    domain: CorrelationalDomainSupport & Configuration & ExceptionsFactory =>
 
     type Constraint = NumericConstraints.Value
 

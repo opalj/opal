@@ -13,7 +13,7 @@ package domain
  * @author Michael Eichberg
  */
 trait RecordLastReturnedValues extends RecordReturnedValues {
-    domain: ValuesDomain with Configuration with ExceptionsFactory =>
+    domain: ValuesDomain & Configuration & ExceptionsFactory =>
 
     type ReturnedValue = DomainValue
 

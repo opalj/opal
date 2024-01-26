@@ -58,7 +58,7 @@ class DefaultIntegerSetsTest extends AnyFunSpec with Matchers {
     describe("central properties of domains that use IntegerSet values") {
 
         val theDomain = new IntegerSetsTestDomain
-        import theDomain._
+        import theDomain.*
 
         it("the representation of the constant integer value 0 should be an IntegerSet value") {
             theDomain.IntegerConstant0 should be(IntegerSet(0))
@@ -70,7 +70,7 @@ class DefaultIntegerSetsTest extends AnyFunSpec with Matchers {
         describe("the behavior of join if we exceed the max cardinality") {
 
             val theDomain = new IntegerSetsTestDomain(8)
-            import theDomain._
+            import theDomain.*
 
             it("(join of two sets with positive values that exceed the cardinality); i1 join i2 => \"StructuralUpdate(AnIntegerValue)\"") {
                 val v1 = IntegerSet(SortedSet[Int](0, 2, 4, 9))
@@ -114,7 +114,7 @@ class DefaultIntegerSetsTest extends AnyFunSpec with Matchers {
         }
 
         val theDomain = new IntegerSetsTestDomain
-        import theDomain._
+        import theDomain.*
 
         describe("the behavior of the join operation if we do not exceed the max. spread") {
 
@@ -987,12 +987,12 @@ class DefaultIntegerSetsTest extends AnyFunSpec with Matchers {
         describe("the behavior of the i2b cast operator") {
 
             it("(byte){-10,...,19} => {-10,...,+19}") {
-                val v1 = IntegerSet(SortedSet[Int](-10 to 19: _*))
-                i2b(-1, v1) should be(IntegerSet(SortedSet[Int](-10 to +19: _*)))
+                val v1 = IntegerSet(SortedSet[Int]((-10 to 19)*))
+                i2b(-1, v1) should be(IntegerSet(SortedSet[Int]((-10 to +19)*)))
             }
 
             it("(byte){0,...,129} => {-128,-127,0,...,+127}") {
-                val v1 = IntegerSet(SortedSet[Int](0 to 129: _*))
+                val v1 = IntegerSet(SortedSet[Int]((0 to 129)*))
                 i2b(-1, v1) should be(ByteValue(IrrelevantPC))
             }
         }
@@ -1005,12 +1005,12 @@ class DefaultIntegerSetsTest extends AnyFunSpec with Matchers {
             }
 
             it("(short){-10,...,129} => {-10,...,60}") {
-                val v1 = IntegerSet(SortedSet[Int](-10 to 60: _*))
-                i2s(-1, v1) should be(IntegerSet(SortedSet[Int](-10 to 60: _*)))
+                val v1 = IntegerSet(SortedSet[Int]((-10 to 60)*))
+                i2s(-1, v1) should be(IntegerSet(SortedSet[Int]((-10 to 60)*)))
             }
 
             it("(short){-128,...,+129000} => {-Short.MinValue,...,Short.MaxValue}") {
-                val v1 = IntegerSet(SortedSet[Int](-128 to 129000: _*))
+                val v1 = IntegerSet(SortedSet[Int]((-128 to 129000)*))
                 i2s(-1, v1) should be(ShortValue(IrrelevantPC))
             }
 
@@ -1297,7 +1297,7 @@ class DefaultIntegerSetsTest extends AnyFunSpec with Matchers {
 
                     // get the loop counter at the "icmple instruction" which controls the
                     // loops that initializes the array
-                    result.operandsArray(20).tail.head should be(domain.IntegerSet(SortedSet[Int](0 to 11: _*)))
+                    result.operandsArray(20).tail.head should be(domain.IntegerSet(SortedSet[Int]((0 to 11)*)))
                 }
 
                 it("it should be possible to identify dead code - even for complex conditions") {

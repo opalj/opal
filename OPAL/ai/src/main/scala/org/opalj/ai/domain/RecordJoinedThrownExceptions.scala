@@ -14,7 +14,7 @@ package domain
  * @author Michael Eichberg
  */
 trait RecordJoinedThrownExceptions extends RecordThrownExceptions {
-    domain: ValuesDomain with Configuration with ExceptionsFactory =>
+    domain: ValuesDomain & Configuration & ExceptionsFactory =>
 
     type ThrownException = ExceptionValue
 

@@ -51,7 +51,7 @@ trait VerificationTypeInfoReader extends Constant_PoolAbstractions {
 
     private val verification_type_info_reader = {
 
-        import VerificationTypeInfoItem._
+        import VerificationTypeInfoItem.*
 
         val r = new Array[(Constant_Pool, DataInputStream) => VerificationTypeInfo](9)
 

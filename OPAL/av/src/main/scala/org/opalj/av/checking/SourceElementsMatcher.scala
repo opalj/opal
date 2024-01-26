@@ -5,7 +5,7 @@ package checking
 
 import scala.collection.immutable
 
-import org.opalj.br._
+import org.opalj.br.*
 import org.opalj.br.analyses.SomeProject
 
 /**

@@ -30,7 +30,7 @@ object ContextRegisteredReceiversAnalysis {
     private val ActivityClass = ObjectType("android/app/Activity")
     private val IntentFilterClass = ObjectType("android/content/IntentFilter")
 
-    def analyze(project: Project[_]): Seq[ApkContextRegisteredReceiver] = {
+    def analyze(project: Project[?]): Seq[ApkContextRegisteredReceiver] = {
         val foundReceivers: ListBuffer[ApkContextRegisteredReceiver] = ListBuffer.empty
 
         // calls from java code
@@ -91,7 +91,7 @@ object ContextRegisteredReceiversAnalysis {
         clazz == ActivityClass
     }
 
-    private def classHierarchyMatches(project: Project[_], clazz: ObjectType): Boolean = {
+    private def classHierarchyMatches(project: Project[?], clazz: ObjectType): Boolean = {
         var tmpClazz = clazz
         while (!classMatches(tmpClazz)) {
             if (tmpClazz.toJava.equals("java.lang.Object")) {

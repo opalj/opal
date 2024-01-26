@@ -21,7 +21,7 @@ sealed trait InterpretationFailedException {
     def cause: Throwable
 
     val domain: Domain
-    val ai: AI[_ >: domain.type]
+    val ai: AI[? >: domain.type]
     val pc: Int
     val worklist: List[Int /*PC*/ ]
     val evaluatedPCs: IntArrayStack
@@ -42,7 +42,7 @@ object InterpretationFailedException {
         theCause:  Throwable,
         theDomain: Domain
     )(
-        theAI:                               AI[_ >: theDomain.type],
+        theAI:                               AI[? >: theDomain.type],
         thePc:                               Int,
         theCFJoins:                          IntTrieSet,
         theWorklist:                         List[Int /*PC*/ ],
@@ -50,11 +50,11 @@ object InterpretationFailedException {
         theOperandsArray:                    theDomain.OperandsArray,
         theLocalsArray:                      theDomain.LocalsArray,
         theMemoryLayoutBeforeSubroutineCall: List[(Int /*PC*/, theDomain.OperandsArray, theDomain.LocalsArray)]
-    ): AIException with InterpretationFailedException = {
+    ): AIException & InterpretationFailedException = {
 
         new AIException("the interpretation failed", theCause) with InterpretationFailedException {
             def cause = super.getCause
-            val ai: AI[_ >: theDomain.type] = theAI
+            val ai: AI[? >: theDomain.type] = theAI
             val domain: theDomain.type = theDomain
             val pc: Int = thePc
             val cfJoins: IntTrieSet = theCFJoins

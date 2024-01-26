@@ -16,7 +16,7 @@ import org.opalj.br.IntegerType
 import org.opalj.br.ObjectType
 import org.opalj.br.TestSupport.biProject
 import org.opalj.br.reader.Java8Framework.ClassFiles
-import org.opalj.collection.immutable._
+import org.opalj.collection.immutable.*
 import org.opalj.collection.mutable.Locals
 import org.opalj.value.BaseReferenceValues
 
@@ -48,7 +48,7 @@ class DefaultReferenceValuesTest extends AnyFunSpec with Matchers {
         with l0.TypeLevelLongValuesShiftOperators
 
     object ValuesDomain extends TheDomain
-    import ValuesDomain._
+    import ValuesDomain.*
 
     //
     // TESTS

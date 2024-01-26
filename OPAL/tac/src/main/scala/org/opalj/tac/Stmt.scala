@@ -4,7 +4,7 @@ package tac
 
 import scala.collection.immutable.ArraySeq
 
-import org.opalj.br._
+import org.opalj.br.*
 import org.opalj.br.analyses.ProjectLike
 import org.opalj.collection.immutable.IntIntPair
 import org.opalj.collection.immutable.IntTrieSet
@@ -797,7 +797,7 @@ object InstanceMethodCall {
     def unapply[V <: Var[V]](
         call: InstanceMethodCall[V]
     ): Some[(Int, ReferenceType, Boolean, String, MethodDescriptor, Expr[V], Seq[Expr[V]])] = {
-        import call._
+        import call.*
         Some((pc, declaringClass, isInterface, name, descriptor, receiver, params))
     }
 }

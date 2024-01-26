@@ -4,7 +4,7 @@ package br
 
 import org.opalj.bi.AccessFlags
 import org.opalj.bi.AccessFlagsContexts
-import org.opalj.br.reader.Java9Framework.{ClassFile => ClassFileReader}
+import org.opalj.br.reader.Java9Framework.ClassFile as ClassFileReader
 
 /**
  * Loads class files from a JAR archive and prints the signature and module related
@@ -31,7 +31,7 @@ object ClassFileInformation {
             // The `Java(8|9)Framework`s define multiple other methods that make it convenient
             // to load class files stored in folders or in jars within jars.
             val classFile = ClassFileReader(args(0), classFileName).head
-            import classFile._
+            import classFile.*
 
             // print the name of the type defined by this class file
             println(thisType.toJava)

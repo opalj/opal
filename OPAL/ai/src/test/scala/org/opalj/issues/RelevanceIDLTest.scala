@@ -15,7 +15,7 @@ import org.scalatestplus.junit.JUnitRunner
 @RunWith(classOf[JUnitRunner])
 class RelevanceIDLTest extends AnyFlatSpec with Matchers {
 
-    import IDLTestsFixtures._
+    import IDLTestsFixtures.*
 
     behavior of "the toIDL method"
 

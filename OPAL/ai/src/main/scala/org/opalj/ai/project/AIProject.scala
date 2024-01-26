@@ -19,7 +19,7 @@ import scala.collection.parallel.CollectionConverters.IterableIsParallelizable
  *
  * @author Michael Eichberg
  */
-trait AIProject[Source, D <: Domain with OptionalReport] {
+trait AIProject[Source, D <: Domain & OptionalReport] {
 
     /**
      * Returns the abstract interpreter that should be used for performing the abstract

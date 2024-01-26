@@ -24,7 +24,7 @@ import org.opalj.collection.immutable.IntTrieSet
  * @author Michael Eichberg
  */
 trait RecordReturnedValues extends RecordReturnedValuesInfrastructure with CustomInitialization {
-    domain: ValuesDomain with Configuration with ExceptionsFactory =>
+    domain: ValuesDomain & Configuration & ExceptionsFactory =>
 
     /**
      * Wraps the given value into a `ReturnedValue`.
