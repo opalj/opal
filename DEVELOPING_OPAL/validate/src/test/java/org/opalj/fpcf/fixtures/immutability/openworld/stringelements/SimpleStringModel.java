@@ -19,7 +19,7 @@ public final class SimpleStringModel {
     @NonTransitivelyImmutableField(value = "The analysis can not recognize transitive immutable arrays",
             analyses = { FieldImmutabilityAnalysis.class})
     @NonAssignableField("The field is final")
-    private final char value[];
+    private final char[] value;
 
     public char[] getValue(){
         return value.clone();
@@ -42,7 +42,7 @@ public final class SimpleStringModel {
     public int hashCode() {
         int h = 0;
         if (hash == 0) {
-            char val[] = value;
+            char[] val = value;
             for (int i = 0; i < value.length; i++) {
                 h = 31 * h + val[i];
             }

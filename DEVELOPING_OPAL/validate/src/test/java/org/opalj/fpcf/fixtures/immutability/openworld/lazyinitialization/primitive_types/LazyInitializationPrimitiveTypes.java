@@ -133,7 +133,7 @@ class DeterministicCall {
         return x;
     }
 
-    private final int sum(int a, int b) {
+    private int sum(int a, int b) {
         return a + b;
     }
 }
@@ -151,7 +151,7 @@ class DeterministicCallWithParam {
         return x;
     }
 
-    private final int sum(int a, int b) {
+    private int sum(int a, int b) {
         return a + b;
     }
 }

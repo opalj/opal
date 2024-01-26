@@ -3,7 +3,6 @@ package org.opalj.fpcf.fixtures.field_locality;
 
 import org.opalj.fpcf.properties.field_locality.LocalField;
 import org.opalj.fpcf.properties.field_locality.LocalFieldWithGetter;
-import org.opalj.fpcf.properties.field_locality.NoLocalField;
 
 public final class FinalClassExample {
 
