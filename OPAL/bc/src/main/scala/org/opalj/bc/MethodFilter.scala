@@ -4,7 +4,7 @@ package bc
 
 import java.io.File
 
-import org.opalj.da._
+import org.opalj.da.*
 import org.opalj.io.write
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext

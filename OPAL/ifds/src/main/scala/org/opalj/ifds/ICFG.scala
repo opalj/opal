@@ -2,7 +2,7 @@
 package org.opalj
 package ifds
 
-import scala.collection.{Set => SomeSet}
+import scala.collection.Set as SomeSet
 
 /**
  * The interface of the ICFG for the IFDS Analysis
@@ -12,7 +12,7 @@ import scala.collection.{Set => SomeSet}
  *
  * @author Marc Clement
  */
-abstract class ICFG[C <: AnyRef, S <: Statement[_ <: C, _]] {
+abstract class ICFG[C <: AnyRef, S <: Statement[? <: C, ?]] {
     /**
      * Determines the statements at which the analysis starts.
      *
@@ -36,7 +36,7 @@ abstract class ICFG[C <: AnyRef, S <: Statement[_ <: C, _]] {
      * @return All callables possibly called at the statement or None, if the statement does not
      *         contain a call.
      */
-    def getCalleesIfCallStatement(statement: S): Option[SomeSet[_ <: C]]
+    def getCalleesIfCallStatement(statement: S): Option[SomeSet[? <: C]]
 
     /**
      * Determines whether the statement is an exit statement.

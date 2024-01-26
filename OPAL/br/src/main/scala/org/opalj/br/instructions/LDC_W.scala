@@ -23,7 +23,7 @@ sealed abstract class LDC_W[T] extends LoadConstantInstruction[T] with Instructi
         val other = code.instructions(otherPC)
         (this eq other) || (
             LDC_W.opcode == other.opcode &&
-            this.value == other.asInstanceOf[LDC_W[_]].value
+            this.value == other.asInstanceOf[LDC_W[?]].value
         )
     }
 
@@ -125,7 +125,7 @@ object LDC_W {
 
     final val opcode = 19
 
-    def apply(constantValue: ConstantValue[_]): LDC_W[_] = {
+    def apply(constantValue: ConstantValue[?]): LDC_W[?] = {
         constantValue.value match {
             case i: Int               => LoadInt_W(i)
             case f: Float             => LoadFloat_W(f)

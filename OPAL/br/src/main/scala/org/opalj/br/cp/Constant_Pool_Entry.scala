@@ -39,12 +39,12 @@ trait Constant_Pool_Entry extends bi.reader.ConstantPoolEntry {
             "conversion to signature attribute is not supported"
         )
 
-    def asConstantValue(cp: Constant_Pool): ConstantValue[_] =
+    def asConstantValue(cp: Constant_Pool): ConstantValue[?] =
         throw new BytecodeProcessingFailedException(
             "conversion of " + this.getClass.getSimpleName + " to constant value is not supported"
         )
 
-    def asConstantFieldValue(cp: Constant_Pool): ConstantFieldValue[_] =
+    def asConstantFieldValue(cp: Constant_Pool): ConstantFieldValue[?] =
         throw new BytecodeProcessingFailedException(
             "conversion of " + this.getClass.getSimpleName + " to constant field value is not supported"
         )

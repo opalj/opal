@@ -191,7 +191,7 @@ class UIDSetTest extends AnyFunSpec with Matchers with ScalaCheckDrivenPropertyC
 
         it("findById") {
             forAll { (s: Set[Int], e: Set[Int]) =>
-                val us = toSUIDSet(s) ++ UIDSet(e.slice(0, e.size / 2).map(SUID.apply).toSeq: _*)
+                val us = toSUIDSet(s) ++ UIDSet(e.slice(0, e.size / 2).map(SUID.apply).toSeq*)
                 classify(us.size > 0, "non-empty set") {
                     e.forall(v => us.find(_.id == v) == us.findById(v))
                 }
@@ -316,7 +316,7 @@ class UIDSetTest extends AnyFunSpec with Matchers with ScalaCheckDrivenPropertyC
             val uidSet = toSUIDSet(orig)
             val us: SUIDSet = uidSet.mapUIDSet(f)
             (s.forall(us.contains) && us.forall(s.contains)) :| s"content $s vs. $us" &&
-                classOf[UIDSet[_]].isInstance(us) :| "unexpected type"
+                classOf[UIDSet[?]].isInstance(us) :| "unexpected type"
             //            forAll { (orig: Set[Int]) =>
             //
             //                def f(s: SUID): SUID = SUID(s.id % 5)

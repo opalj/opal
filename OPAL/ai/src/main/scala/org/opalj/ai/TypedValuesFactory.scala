@@ -20,7 +20,7 @@ import org.opalj.br.VoidType
  * @author Michael Eichberg
  */
 trait TypedValuesFactory {
-    domain: ValuesDomain with ReferenceValuesFactory with PrimitiveValuesFactory =>
+    domain: ValuesDomain & ReferenceValuesFactory & PrimitiveValuesFactory =>
 
     /**
      * Factory method to create domain values with a specific type. I.e., values for

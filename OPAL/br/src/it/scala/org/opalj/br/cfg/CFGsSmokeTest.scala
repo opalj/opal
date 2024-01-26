@@ -13,7 +13,7 @@ import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.concurrent.ConcurrentExceptions
 import org.opalj.util.Nanoseconds
-import org.opalj.util.PerformanceEvaluation._
+import org.opalj.util.PerformanceEvaluation.*
 
 /**
  * Just reads a lot of class files and computes CFGs related information for all methods

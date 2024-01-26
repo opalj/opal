@@ -292,8 +292,11 @@ class ThreadStartAnalysis private[cg] (
     ): Unit = stmts(threadDefSite) match {
         case Assignment(_, thread, New(_, _)) =>
             for {
-                NonVirtualMethodCall(_, _, _, "<init>", descriptor, _, params) <-
-                    getConstructorCalls(thread, threadDefSite, stmts)
+                case NonVirtualMethodCall(_, _, _, "<init>", descriptor, _, params) <- getConstructorCalls(
+                    thread,
+                    threadDefSite,
+                    stmts
+                )
             } {
                 val indexOfRunnableParameter = descriptor.parameterTypes.indexWhere {
                     _ == ObjectType.Runnable

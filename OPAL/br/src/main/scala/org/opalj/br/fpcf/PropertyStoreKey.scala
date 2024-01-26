@@ -13,7 +13,7 @@ import org.opalj.fpcf.PropertyStoreContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 
-import net.ceedubs.ficus.Ficus._
+import net.ceedubs.ficus.Ficus.*
 
 /**
  * The ''key'' object to get the project's [[org.opalj.fpcf.PropertyStore]].
@@ -64,16 +64,16 @@ object PropertyStoreKey
             case None =>
                 val ps = project.config.as[Option[String]](configKey) match {
                     case Some("Sequential") =>
-                        org.opalj.fpcf.seq.PKESequentialPropertyStore(context: _*)
+                        org.opalj.fpcf.seq.PKESequentialPropertyStore(context*)
                     case Some("Parallel") | None =>
-                        org.opalj.fpcf.par.PKECPropertyStore(context: _*)
+                        org.opalj.fpcf.par.PKECPropertyStore(context*)
                     case Some(unknown) =>
                         OPALLogger.error(
                             "analysis configuration",
                             s"unknown PropertyStore $unknown configured," +
                                 " using PKECPropertyStore instead"
                         )
-                        org.opalj.fpcf.par.PKECPropertyStore(context: _*)
+                        org.opalj.fpcf.par.PKECPropertyStore(context*)
                 }
                 ps
         }

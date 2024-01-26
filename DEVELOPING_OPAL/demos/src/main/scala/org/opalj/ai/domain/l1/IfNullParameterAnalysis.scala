@@ -107,7 +107,7 @@ object IfNullParameterAnalysis extends ProjectAnalysisApplication {
                 // all thrown exceptions and to throw away those that are
                 // thrown in both cases, the remaining ones constitute
                 // the difference.
-                var result = LongMap.empty[Set[_ <: AnyRef]]
+                var result = LongMap.empty[Set[? <: AnyRef]]
                 var d2ThrownExceptions = domain2.allThrownExceptions
                 domain1.allThrownExceptions.foreach { e =>
                     val (pc, d1thrownException) = e

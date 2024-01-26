@@ -633,10 +633,10 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
         }
 
         if (!isUpdate || (newPointsToSet ne emptyPointsToSet)) {
-            results +:= PartialResult[Entity, PointsToSetLike[_, _, PointsToSet]](
+            results +:= PartialResult[Entity, PointsToSetLike[?, ?, PointsToSet]](
                 e,
                 pointsToPropertyKey,
-                (eoptp: EOptionP[Entity, PointsToSetLike[_, _, PointsToSet]]) =>
+                (eoptp: EOptionP[Entity, PointsToSetLike[?, ?, PointsToSet]]) =>
                     eoptp match {
                         case UBP(ub: PointsToSet @unchecked) =>
                             val newPointsToSet = updatePointsTo(ub)

@@ -4,7 +4,7 @@ package tac
 package fpcf
 package analyses
 
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 import com.typesafe.config.Config
 
@@ -18,7 +18,7 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.analyses.VirtualFormalParameters
 
-import net.ceedubs.ficus.Ficus._
+import net.ceedubs.ficus.Ficus.*
 import net.ceedubs.ficus.readers.ValueReader
 
 case class ConfiguredMethods(nativeMethods: Array[ConfiguredMethodData])

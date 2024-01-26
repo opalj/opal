@@ -15,7 +15,7 @@ import org.opalj.br.ComputationalTypeLong
  * @author David Becker
  */
 trait DefaultLongValues extends DefaultSpecialDomainValuesBinding with LongValues {
-    domain: IntegerValuesFactory with ExceptionsFactory with Configuration =>
+    domain: IntegerValuesFactory & ExceptionsFactory & Configuration =>
 
     /**
      * Represents an unspecific, unknown long value.

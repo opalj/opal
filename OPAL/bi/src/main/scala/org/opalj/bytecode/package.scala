@@ -191,5 +191,5 @@ package object bytecode {
     }
 
     /** The set of all valid/used opcodes. */
-    def JVMOpcodes = BitSet(JVMInstructions.map(_._1): _*)
+    def JVMOpcodes = BitSet(JVMInstructions.map(_._1)*)
 }

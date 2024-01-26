@@ -110,7 +110,7 @@ class CLASS[T](
         val brAnnotations: Seq[(br.Method, T)] =
             for {
                 m <- classFile.methods
-                Some(a) <- annotationsMap.get(m.signature).toSeq
+                case Some(a) <- annotationsMap.get(m.signature).toSeq
             } yield {
                 (m, a: T @unchecked)
             }

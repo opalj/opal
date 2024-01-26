@@ -36,7 +36,7 @@ object MaxLocalsEvaluation extends ProjectAnalysisApplication {
 
         for {
             classFile <- project.allProjectClassFiles
-            method @ MethodWithBody(body) <- classFile.methods
+            case method @ MethodWithBody(body) <- classFile.methods
             descriptor = method.descriptor
         } {
             val parametersCount = descriptor.parametersCount + (if (method.isStatic) 0 else 1)

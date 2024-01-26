@@ -24,7 +24,7 @@ class ObjectTypeTest extends AnyFunSuite {
 
         assert(ot2.toJavaClass == classOf[Object])
         assert(ot3.toJavaClass == classOf[String])
-        assert(ot4.toJavaClass == classOf[java.util.List[_]])
+        assert(ot4.toJavaClass == classOf[java.util.List[?]])
     }
 
     test("equals method") {

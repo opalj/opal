@@ -31,7 +31,7 @@ object GetReceivers extends ProjectAnalysisApplication {
 
     override def doAnalyze(p: Project[URL], params: Seq[String], isInterrupted: () => Boolean): BasicReport = {
 
-        val performAI: (Method) => AIResult { val domain: Domain with RecordDefUse } =
+        val performAI: (Method) => AIResult { val domain: Domain & RecordDefUse } =
             if (usePropertyStore) {
                 val analysesManager = p.get(FPCFAnalysesManagerKey)
                 analysesManager.runAll(
@@ -52,9 +52,9 @@ object GetReceivers extends ProjectAnalysisApplication {
 
         p.parForeachMethodWithBody() { mi =>
             val m = mi.method
-            lazy val aiResult = performAI(m).asInstanceOf[AIResult { val domain: Domain with Origin }]
+            lazy val aiResult = performAI(m).asInstanceOf[AIResult { val domain: Domain & Origin }]
             for {
-                PCAndInstruction(pc, i) <- m.body.get
+                case PCAndInstruction(pc, i) <- m.body.get
                 if i.isMethodInvocationInstruction
                 invocationInstruction = i.asMethodInvocationInstruction
                 if invocationInstruction.isVirtualMethodCall

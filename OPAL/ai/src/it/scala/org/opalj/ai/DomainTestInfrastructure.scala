@@ -13,9 +13,9 @@ import org.scalatest.matchers.should.Matchers
 
 import org.opalj.ai.util.XHTML
 import org.opalj.bi.TestResources
-import org.opalj.br.{TestSupport => BRTestSupport}
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
+import org.opalj.br.TestSupport as BRTestSupport
 import org.opalj.br.analyses.MethodInfo
 import org.opalj.br.analyses.Project
 import org.opalj.br.reader.BytecodeInstructionsCache
@@ -108,7 +108,7 @@ abstract class DomainTestInfrastructure(domainName: String) extends AnyFlatSpec 
                 val MethodInfo(source, method) = m
                 analyzeClassFile(source.toString, method) foreach { exceptions.add(_) }
             }
-            import scala.jdk.CollectionConverters._
+            import scala.jdk.CollectionConverters.*
             exceptions.asScala
         }
 

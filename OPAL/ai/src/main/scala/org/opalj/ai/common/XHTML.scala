@@ -9,8 +9,8 @@ import scala.xml.NodeSeq
 import scala.xml.Text
 import scala.xml.Unparsed
 
-import org.opalj.br._
-import org.opalj.br.instructions._
+import org.opalj.br.*
+import org.opalj.br.instructions.*
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.io.writeAndOpen
 
@@ -26,7 +26,7 @@ import org.opalj.io.writeAndOpen
  */
 object XHTML {
 
-    import org.opalj.ai.util.XHTML._
+    import org.opalj.ai.util.XHTML.*
 
     /**
      * Stores the time when the last dump was created.
@@ -45,7 +45,7 @@ object XHTML {
     def dumpOnFailure[T, D <: Domain](
         classFile:           ClassFile,
         method:              Method,
-        ai:                  AI[_ >: D],
+        ai:                  AI[? >: D],
         theDomain:           D,
         minimumDumpInterval: Long = 500L
     )(
@@ -127,7 +127,7 @@ object XHTML {
         resultHeader: String,
         result:       AIResult
     ): Node = {
-        import result._
+        import result.*
 
         val title = method.toJava
 
@@ -344,7 +344,7 @@ object XHTML {
         </tr>
     }
 
-    def dumpStack(operands: Operands[_ <: AnyRef])(implicit ids: Option[AnyRef => Int]): Node = {
+    def dumpStack(operands: Operands[? <: AnyRef])(implicit ids: Option[AnyRef => Int]): Node = {
         if (operands eq null)
             <em>Information about operands is not available.</em>
         else {
@@ -354,7 +354,7 @@ object XHTML {
         }
     }
 
-    def dumpLocals(locals: Locals[_ <: AnyRef])(implicit ids: Option[AnyRef => Int]): Node = {
+    def dumpLocals(locals: Locals[? <: AnyRef])(implicit ids: Option[AnyRef => Int]): Node = {
 
         def mapLocal(local: AnyRef): Node = {
             if (local eq null)

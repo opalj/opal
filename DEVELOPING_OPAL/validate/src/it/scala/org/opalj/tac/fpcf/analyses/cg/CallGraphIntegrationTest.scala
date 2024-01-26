@@ -166,7 +166,7 @@ class CallGraphIntegrationTest extends AnyFlatSpec with Matchers {
     )(implicit contextProvider: ContextProvider): Unit = {
         implicit val ps: PropertyStore = propertyStore
         for {
-            FinalEP(dm: DeclaredMethod, callees) <- propertyStore.entities(Callees.key).map(_.asFinal)
+            case FinalEP(dm: DeclaredMethod, callees) <- propertyStore.entities(Callees.key).map(_.asFinal)
             context <- callees.callerContexts
             (pc, tgts) <- callees.callSites(context)
             callee <- tgts
@@ -178,7 +178,7 @@ class CallGraphIntegrationTest extends AnyFlatSpec with Matchers {
         }
 
         for {
-            FinalEP(dm: DeclaredMethod, callers) <- propertyStore.entities(Callers.key).map(_.asFinal)
+            case FinalEP(dm: DeclaredMethod, callers) <- propertyStore.entities(Callers.key).map(_.asFinal)
             (callee, caller, pc, _) <- callers.callContexts(dm).iterator
             if caller.hasContext
         } {

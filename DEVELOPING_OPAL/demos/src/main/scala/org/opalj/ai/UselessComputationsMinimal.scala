@@ -4,7 +4,7 @@ package ai
 
 import java.net.URL
 import java.util.concurrent.ConcurrentLinkedQueue
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 import org.opalj.br.Method
 import org.opalj.br.analyses.BasicReport

@@ -7,7 +7,7 @@ package analyses
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
-import org.opalj.br.collection.mutable.{TypesSet => BRMutableTypesSet}
+import org.opalj.br.collection.mutable.TypesSet as BRMutableTypesSet
 import org.opalj.br.fpcf.properties.ThrownExceptions
 import org.opalj.br.fpcf.properties.ThrownExceptions.AnalysisLimitation
 import org.opalj.br.fpcf.properties.ThrownExceptions.MethodBodyIsNotAvailable

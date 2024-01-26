@@ -4,7 +4,7 @@ package av
 package checking
 
 import org.opalj.bi.AccessFlagsMatcher
-import org.opalj.br.{Attributes => SourceElementAttributes}
+import org.opalj.br.Attributes as SourceElementAttributes
 import org.opalj.br.ConcreteSourceElement
 
 /**
@@ -14,18 +14,18 @@ import org.opalj.br.ConcreteSourceElement
  */
 trait SourceElementPredicate[-S <: ConcreteSourceElement] extends (S => Boolean) { left =>
 
-    def and[T <: ConcreteSourceElement, X <: S with T](
+    def and[T <: ConcreteSourceElement, X <: S & T](
         right: SourceElementPredicate[T]
     ): SourceElementPredicate[X] = {
 
         new SourceElementPredicate[X] {
             def apply(s: X): Boolean = left(s) && right(s)
-            def toDescription() = left.toDescription() + " and " + right.toDescription()
+            def toDescription = left.toDescription + " and " + right.toDescription
         }
 
     }
 
-    final def having[T <: ConcreteSourceElement, X <: S with T](
+    final def having[T <: ConcreteSourceElement, X <: S & T](
         right: SourceElementPredicate[T]
     ): SourceElementPredicate[X] = and(right)
 
@@ -37,7 +37,7 @@ trait SourceElementPredicate[-S <: ConcreteSourceElement] extends (S => Boolean)
      * It should not be a complete sentence as this description may be composed with
      * other descriptions.
      */
-    def toDescription(): String
+    def toDescription: String
 }
 
 case class AccessFlags(
@@ -48,7 +48,7 @@ case class AccessFlags(
         this.accessFlags.unapply(sourceElement.accessFlags)
     }
 
-    def toDescription(): String = accessFlags.toString
+    def toDescription: String = accessFlags.toString
 
 }
 
@@ -65,7 +65,7 @@ case class Attributes(
         this.attributes.forall(a => sourceElement.attributes.exists(_ == a))
     }
 
-    def toDescription(): String = {
+    def toDescription: String = {
         attributes.view.map(_.getClass.getSimpleName).mkString(" « ", ", ", " »")
     }
 }

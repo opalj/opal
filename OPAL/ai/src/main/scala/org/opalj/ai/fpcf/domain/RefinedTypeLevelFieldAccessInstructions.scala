@@ -21,7 +21,7 @@ import org.opalj.fpcf.PropertyKind
 trait RefinedTypeLevelFieldAccessInstructions
     extends TypeLevelFieldAccessInstructions
     with PropertyStoreBased {
-    domain: ReferenceValuesDomain with ValuesFactory with Configuration with TheProject =>
+    domain: ReferenceValuesDomain & ValuesFactory & Configuration & TheProject =>
 
     abstract override def usesProperties: Set[PropertyKind] = {
         super.usesProperties ++ Set(FieldValue)

@@ -7,7 +7,7 @@ package cg
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.warn
 
-import net.ceedubs.ficus.Ficus._
+import net.ceedubs.ficus.Ficus.*
 
 /**
  * Determines which packages are open or closed; that is, determines to which packages code

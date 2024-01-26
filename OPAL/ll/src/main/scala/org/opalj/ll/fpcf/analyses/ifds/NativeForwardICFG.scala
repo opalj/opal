@@ -33,7 +33,7 @@ class NativeForwardICFG(project: SomeProject) extends NativeICFG(project) {
      */
     override def nextStatements(statement: LLVMStatement): Set[LLVMStatement] = {
         if (!statement.instruction.isTerminator) return Set(LLVMStatement(statement.instruction.next.get))
-        statement.instruction.asInstanceOf[Instruction with Terminator].successors.map(LLVMStatement).toSet
+        statement.instruction.asInstanceOf[Instruction & Terminator].successors.map(LLVMStatement).toSet
     }
 
     /**

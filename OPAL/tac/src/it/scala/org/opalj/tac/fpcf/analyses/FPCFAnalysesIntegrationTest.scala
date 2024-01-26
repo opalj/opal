@@ -76,9 +76,9 @@ class FPCFAnalysesIntegrationTest extends AnyFunSpec {
 
                         p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
                             case None =>
-                                Set(classOf[l1.DefaultDomainWithCFGAndDefUse[_]])
+                                Set(classOf[l1.DefaultDomainWithCFGAndDefUse[?]])
                             case Some(requirements) =>
-                                requirements + classOf[l1.DefaultDomainWithCFGAndDefUse[_]]
+                                requirements + classOf[l1.DefaultDomainWithCFGAndDefUse[?]]
                         }
                     } else {
                         // Recreate project keeping all ProjectInformationKeys other than the

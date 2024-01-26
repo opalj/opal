@@ -173,7 +173,7 @@ object FieldAndArrayUsageAnalysis extends ProjectAnalysisApplication {
                                             }
 
                                             for {
-                                                Assignment(_, DVar(_, _), ArrayLoad(_, _, arrayRef2)) <- stmts
+                                                case Assignment(_, DVar(_, _), ArrayLoad(_, _, arrayRef2)) <- stmts
                                                 if arrayRef2.isVar
                                                 if arrayRef2.asVar.definedBy.exists(defSitesOfArray.contains)
                                             } {

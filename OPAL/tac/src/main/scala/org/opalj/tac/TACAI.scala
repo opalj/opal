@@ -30,7 +30,7 @@ import org.opalj.br.PCAndAnyRef
 import org.opalj.br.ShortType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.cfg.CFG
-import org.opalj.br.instructions._
+import org.opalj.br.instructions.*
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.collection.immutable.IntIntPair
 import org.opalj.collection.immutable.IntTrieSet
@@ -89,13 +89,13 @@ object TACAI {
         aiVOToTACVo
     }
 
-    private[this] final val NoParameters = new Parameters(new Array[DUVar[_]](0))
+    private[this] final val NoParameters = new Parameters(new Array[DUVar[?]](0))
 
     def apply(
         project: SomeProject,
         method:  Method
     )(
-        domain: Domain with RecordDefUse = new DefaultDomainWithCFGAndDefUse(project, method)
+        domain: Domain & RecordDefUse = new DefaultDomainWithCFGAndDefUse(project, method)
     ): AITACode[TACMethodParameter, domain.DomainValue] = {
         val aiResult = BaseAI(method, domain)
         TACAI(project, method, aiResult)
@@ -104,7 +104,7 @@ object TACAI {
     def apply(
         project:  SomeProject,
         method:   Method,
-        aiResult: AIResult { val domain: Domain with RecordDefUse }
+        aiResult: AIResult { val domain: Domain & RecordDefUse }
     ): AITACode[TACMethodParameter, aiResult.domain.DomainValue] = {
         val config = project.config
         val propagateConstants = config.getBoolean("org.opalj.tacai.performConstantPropagation")
@@ -124,7 +124,7 @@ object TACAI {
     def apply(
         method:             Method,
         classHierarchy:     ClassHierarchy,
-        aiResult:           AIResult { val domain: Domain with RecordDefUse },
+        aiResult:           AIResult { val domain: Domain & RecordDefUse },
         propagateConstants: Boolean
     )(
         optimizations: List[TACOptimization[
@@ -151,9 +151,9 @@ object TACAI {
             true
         }
 
-        import UnaryArithmeticOperators._
-        import BinaryArithmeticOperators._
-        import RelationalOperators._
+        import UnaryArithmeticOperators.*
+        import BinaryArithmeticOperators.*
+        import RelationalOperators.*
 
         val isStatic = method.isStatic
         val descriptor = method.descriptor
@@ -457,7 +457,7 @@ object TACAI {
                 addInitLocalValStmt(pc, operandsArray(nextPC).head, newArray)
             }
 
-            def loadConstant(instr: LoadConstantInstruction[_]): Unit = {
+            def loadConstant(instr: LoadConstantInstruction[?]): Unit = {
                 instr match {
                     case LDCInt(value) =>
                         addInitLocalValStmt(pc, operandsArray(nextPC).head, IntConst(pc, value))
@@ -696,7 +696,7 @@ object TACAI {
                     addInitLocalValStmt(pc, operandsArray(nextPC).head, LongConst(pc, value))
 
                 case LDC.opcode | LDC_W.opcode | LDC2_W.opcode =>
-                    loadConstant(as[LoadConstantInstruction[_]](instruction))
+                    loadConstant(as[LoadConstantInstruction[?]](instruction))
 
                 case INVOKEINTERFACE.opcode | INVOKESPECIAL.opcode | INVOKEVIRTUAL.opcode =>
                     val call @ MethodInvocationInstruction(declClass, isInterface, name, descriptor) = instruction

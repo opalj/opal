@@ -52,7 +52,7 @@ trait IntSet[T <: IntSet[T]] { intSet: T =>
         is.iterator.foreach { i => r -= i }
         r
     }
-    final def --(is: IntSet[_]): T = {
+    final def --(is: IntSet[?]): T = {
         var r = this
         is.foreach { i => r -= i }
         r

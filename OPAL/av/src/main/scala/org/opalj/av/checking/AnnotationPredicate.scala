@@ -3,7 +3,7 @@ package org.opalj
 package av
 package checking
 
-import org.opalj.br._
+import org.opalj.br.*
 import org.opalj.br.ConcreteSourceElement
 
 /**
@@ -154,7 +154,7 @@ case class AnnotatedWith(
  */
 object AnnotatedWith {
 
-    type SomeClass = Class[_]
+    type SomeClass = Class[?]
 
     /**
      * @param annotationType The type of the annotation. The given value must not be

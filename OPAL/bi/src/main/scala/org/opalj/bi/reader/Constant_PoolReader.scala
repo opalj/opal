@@ -100,7 +100,7 @@ trait Constant_PoolReader extends Constant_PoolAbstractions {
         transformedClassFile
     }
 
-    import ConstantPoolTags._
+    import ConstantPoolTags.*
 
     def Constant_Pool(in: DataInputStream): Constant_Pool = {
 

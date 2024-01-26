@@ -29,7 +29,7 @@ final case class IdentityPair[+T1 <: AnyRef, +T2 <: AnyRef](
     _2: T2
 ) extends Product2[T1, T2] {
 
-    override def canEqual(other: Any): Boolean = other.isInstanceOf[IdentityPair[_, _]]
+    override def canEqual(other: Any): Boolean = other.isInstanceOf[IdentityPair[?, ?]]
 
     override def equals(other: Any): Boolean = {
         // We don't need to call canEqual because this class is final!

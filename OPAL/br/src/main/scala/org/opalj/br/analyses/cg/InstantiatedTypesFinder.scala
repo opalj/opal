@@ -7,7 +7,7 @@ package cg
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 
-import net.ceedubs.ficus.Ficus._
+import net.ceedubs.ficus.Ficus.*
 
 /**
  * @author Florian Kuebler

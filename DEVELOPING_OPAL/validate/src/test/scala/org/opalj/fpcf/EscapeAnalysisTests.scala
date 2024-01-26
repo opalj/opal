@@ -30,7 +30,7 @@ class EscapeAnalysisTests extends PropertiesTest {
     }
 
     override def init(p: Project[URL]): Unit = {
-        val performInvocationsDomain = classOf[DefaultPerformInvocationsDomainWithCFGAndDefUse[_]]
+        val performInvocationsDomain = classOf[DefaultPerformInvocationsDomainWithCFGAndDefUse[?]]
 
         p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
             case None               => Set(performInvocationsDomain)

@@ -4,7 +4,7 @@ package collection
 package immutable
 
 import java.util.Random
-import scala.collection.immutable.{BitSet => SBitSet}
+import scala.collection.immutable.BitSet as SBitSet
 
 import org.junit.runner.RunWith
 import org.scalacheck.Arbitrary
@@ -37,7 +37,7 @@ object BitArraySetProperties extends Properties("BitArraySetProperties") {
     // generates an IntArraySet which only contains positive values
     implicit val arbIntArraySet: Arbitrary[IntArraySet] = Arbitrary {
         Gen.sized { s =>
-            Gen.frequency(frequencies: _*).map { max =>
+            Gen.frequency(frequencies*).map { max =>
                 (0 until s).foldLeft(IntArraySet.empty) { (c, n) => c + r.nextInt(max) }
             }
         }
@@ -45,7 +45,7 @@ object BitArraySetProperties extends Properties("BitArraySetProperties") {
 
     implicit val arbIntBitSet: Arbitrary[SBitSet] = Arbitrary {
         Gen.sized { s =>
-            Gen.frequency(frequencies: _*).map { max =>
+            Gen.frequency(frequencies*).map { max =>
                 (0 until s).foldLeft(SBitSet.empty) { (c, n) => c + r.nextInt(max) }
             }
         }

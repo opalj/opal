@@ -110,7 +110,7 @@ object TACTemplate {
         val constructor = domainClass.getConstructor(classOf[Project[URL]], classOf[Method])
         p.getOrCreateProjectInformationKeyInitializationData(
             SimpleAIKey,
-            (m: Method) => constructor.newInstance(p, m).asInstanceOf[Domain with RecordDefUse]
+            (m: Method) => constructor.newInstance(p, m).asInstanceOf[Domain & RecordDefUse]
         )
         p.get(SimpleAIKey) // used by the LazyTACUsingAIKey
         val tac = p.get(LazyTACUsingAIKey)
@@ -126,7 +126,7 @@ object TACTemplate {
             if m.body.isDefined
             if methodSignature.isEmpty || m.signature.toJava.contains(methodSignature.get)
             c = tac(m)
-            VirtualFunctionCallStatement(VirtualFunctionCall(
+            case VirtualFunctionCallStatement(VirtualFunctionCall(
                 pc,
                 declaringClass: ObjectType,
                 _,

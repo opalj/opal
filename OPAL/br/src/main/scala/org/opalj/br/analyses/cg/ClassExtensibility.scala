@@ -8,7 +8,7 @@ import scala.collection.mutable
 
 import org.opalj.collection.mutable.ArrayMap
 
-import net.ceedubs.ficus.Ficus._
+import net.ceedubs.ficus.Ficus.*
 
 /**
  * Determines whether a class or interface is '''directly extensible by a (yet unknown)

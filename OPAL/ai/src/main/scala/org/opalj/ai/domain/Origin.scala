@@ -32,7 +32,7 @@ import org.opalj.collection.immutable.IntTrieSet1
  * @author Michael Eichberg
  */
 trait Origin { domain: ValuesDomain =>
-    import Origin._
+    import Origin.*
 
     /**
      * Implementers are expected to "override" this method and to call

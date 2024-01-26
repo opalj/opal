@@ -24,8 +24,8 @@ class ForwardTaintAnalysisFixtureTest extends PropertiesTest {
         p.updateProjectInformationKeyInitializationData(
             AIDomainFactoryKey
         )(
-            (_: Option[Set[Class[_ <: AnyRef]]]) =>
-                Set[Class[_ <: AnyRef]](
+            (_: Option[Set[Class[? <: AnyRef]]]) =>
+                Set[Class[? <: AnyRef]](
                     classOf[l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[URL]]
                 )
         )

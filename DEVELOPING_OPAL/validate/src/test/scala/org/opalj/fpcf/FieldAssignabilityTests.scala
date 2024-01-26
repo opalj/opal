@@ -42,7 +42,7 @@ class FieldAssignabilityTests extends PropertiesTest {
 
         p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) { _ =>
             import org.opalj.ai.domain.l1
-            Set[Class[_ <: AnyRef]](classOf[l1.DefaultDomainWithCFGAndDefUse[URL]])
+            Set[Class[? <: AnyRef]](classOf[l1.DefaultDomainWithCFGAndDefUse[URL]])
         }
 
         p.get(RTACallGraphKey)

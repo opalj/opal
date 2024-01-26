@@ -1,6 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-import sbt._
-import sbt.Keys._
+import sbt.*
+import sbt.Keys.*
 import sbt.internal.util.ManagedLogger
 
 /**

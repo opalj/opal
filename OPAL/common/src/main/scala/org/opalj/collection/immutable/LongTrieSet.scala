@@ -5,7 +5,7 @@ package immutable
 
 import scala.annotation.tailrec
 
-import java.lang.Long.{hashCode => lHashCode}
+import java.lang.Long.hashCode as lHashCode
 
 sealed abstract class LongTrieSet extends LongSet { intSet =>
 

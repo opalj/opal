@@ -5,7 +5,7 @@ package de
 import scala.collection.Map
 import scala.collection.Set
 
-import org.opalj.br._
+import org.opalj.br.*
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 import org.opalj.util.PerformanceEvaluation.time

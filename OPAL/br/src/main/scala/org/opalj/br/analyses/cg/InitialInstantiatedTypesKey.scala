@@ -4,7 +4,7 @@ package br
 package analyses
 package cg
 
-import net.ceedubs.ficus.Ficus._
+import net.ceedubs.ficus.Ficus.*
 
 /**
  * Creates the [[InstantiatedTypesFinder]] as specified in the [[ConfigKeyPrefix]] config key.
@@ -44,7 +44,7 @@ object InitialInstantiatedTypesKey extends ProjectInformationKey[Iterable[Object
     }
 
     private[this] def instantiatedTypesFinder(fqn: String): InstantiatedTypesFinder = {
-        import scala.reflect.runtime.universe._
+        import scala.reflect.runtime.universe.*
         val mirror = runtimeMirror(this.getClass.getClassLoader)
         val module = mirror.staticModule(fqn)
         mirror.reflectModule(module).instance.asInstanceOf[InstantiatedTypesFinder]

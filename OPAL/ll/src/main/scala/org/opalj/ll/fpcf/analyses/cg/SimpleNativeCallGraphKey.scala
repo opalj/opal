@@ -28,7 +28,7 @@ object SimpleNativeCallGraphKey
      */
     override def requirements(
         project: SomeProject
-    ): Seq[ProjectInformationKey[_ <: AnyRef, _ <: AnyRef]] = Seq(LLVMProjectKey)
+    ): Seq[ProjectInformationKey[? <: AnyRef, ? <: AnyRef]] = Seq(LLVMProjectKey)
 
     /**
      * Computes the call graph.

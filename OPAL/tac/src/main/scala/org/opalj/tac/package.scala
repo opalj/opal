@@ -68,7 +68,7 @@ package object tac {
         oldEH:      ExceptionHandler,
         newIndexes: Array[Int]
     )(
-        implicit aiResult: AIResult { val domain: Domain with RecordDefUse }
+        implicit aiResult: AIResult { val domain: Domain & RecordDefUse }
     ): (Int, Int) = {
         val oldStartPC = oldEH.startPC
         var newStartIndex = newIndexes(oldStartPC)
@@ -149,7 +149,7 @@ package object tac {
     def updateExceptionHandlers(
         newIndexes: Array[Int]
     )(
-        implicit aiResult: AIResult { val domain: Domain with RecordDefUse }
+        implicit aiResult: AIResult { val domain: Domain & RecordDefUse }
     ): ExceptionHandlers = {
         val code = aiResult.code
         val exceptionHandlers = code.exceptionHandlers

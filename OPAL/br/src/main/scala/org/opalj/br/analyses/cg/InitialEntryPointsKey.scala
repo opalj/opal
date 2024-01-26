@@ -4,7 +4,7 @@ package br
 package analyses
 package cg
 
-import net.ceedubs.ficus.Ficus._
+import net.ceedubs.ficus.Ficus.*
 
 /**
  * The ''key'' object to get a traversable of entry points. Entry points are particularly relevant
@@ -68,7 +68,7 @@ object InitialEntryPointsKey extends ProjectInformationKey[Iterable[Method], Not
     }
 
     private[this] def instantiateEntryPointFinder(fqn: String): EntryPointFinder = {
-        import scala.reflect.runtime.universe._
+        import scala.reflect.runtime.universe.*
         val mirror = runtimeMirror(this.getClass.getClassLoader)
         val module = mirror.staticModule(fqn)
         mirror.reflectModule(module).instance.asInstanceOf[EntryPointFinder]

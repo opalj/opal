@@ -3,12 +3,12 @@ package org.opalj
 package tac
 
 import java.net.URL
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 // import org.opalj.log.OPALLogger.info
 //import org.opalj.br._
 //import org.opalj.br.cfg._
-import org.opalj.br.analyses._
+import org.opalj.br.analyses.*
 
 /**
  * Checks if a resource (an instance of an AutoCloseable) is closed.

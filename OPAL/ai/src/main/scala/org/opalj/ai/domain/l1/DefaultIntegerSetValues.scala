@@ -19,7 +19,7 @@ import org.opalj.value.IsIntegerValue
  * @author Michael Eichberg
  */
 trait DefaultIntegerSetValues extends DefaultSpecialDomainValuesBinding with IntegerSetValues {
-    domain: CorrelationalDomainSupport with Configuration with ExceptionsFactory =>
+    domain: CorrelationalDomainSupport & Configuration & ExceptionsFactory =>
 
     class AnIntegerValue extends super.AnIntegerValueLike {
 

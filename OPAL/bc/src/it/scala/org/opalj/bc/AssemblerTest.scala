@@ -9,7 +9,7 @@ import java.io.DataOutputStream
 import java.io.IOException
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.zip.ZipFile
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 import org.junit.runner.RunWith
 import org.scalatest.flatspec.AnyFlatSpec
@@ -19,7 +19,7 @@ import org.scalatestplus.junit.JUnitRunner
 import org.opalj.bi.TestResources.allBITestJARs
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.bytecode.JRELibraryFolder
-import org.opalj.da.ClassFileReader.{ClassFile => LoadClassFile}
+import org.opalj.da.ClassFileReader.ClassFile as LoadClassFile
 import org.opalj.io.FailAfterByteArrayOutputStream
 
 import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParallelizable
@@ -32,12 +32,11 @@ import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParalle
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class AssemberTest extends AnyFlatSpec with Matchers {
+class AssemblerTest extends AnyFlatSpec with Matchers {
 
     behavior of "the Assembler"
 
-    val jmodsFile =
-        locateTestResources("classfiles/Java9-selected-jmod-module-info.classes.zip", "bi")
+    val jmodsFile = locateTestResources("classfiles/Java9-selected-jmod-module-info.classes.zip", "bi")
     for {
         file <- JRELibraryFolder.listFiles() ++ allBITestJARs() ++ List(jmodsFile)
         if file.isFile

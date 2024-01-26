@@ -51,8 +51,8 @@ import org.opalj.bi.ConstantPoolTags.CONSTANT_Utf8_ID
 import org.opalj.br.Attribute
 import org.opalj.br.Code
 import org.opalj.br.ObjectType
-import org.opalj.br.cp._
-import org.opalj.br.instructions._
+import org.opalj.br.cp.*
+import org.opalj.br.instructions.*
 import org.opalj.collection.immutable.IntIntPair
 import org.opalj.collection.immutable.UShortPair
 import org.opalj.log.GlobalLogContext
@@ -167,7 +167,7 @@ package object ba { ba =>
     // *********************************************************************************************
 
     def createBoostrapMethodTableAttribute(constantsPool: ConstantsPool): da.Attribute = {
-        import constantsPool._
+        import constantsPool.*
         val bootstrap_methods = bootstrapMethods map { bootstrapMethod =>
             new da.BootstrapMethod(
                 CPEMethodHandle(bootstrapMethod.handle, false),
@@ -260,7 +260,7 @@ package object ba { ba =>
         constantsBuffer: ConstantsBuffer,
         config:          ToDAConfig
     ): da.Code_attribute = {
-        import constantsBuffer._
+        import constantsBuffer.*
         val data = new ByteArrayOutputStream(code.instructions.length)
         val instructions = new DataOutputStream(data)
 
@@ -440,7 +440,7 @@ package object ba { ba =>
                     instructions.writeByte(dimensions)
 
                 case LDC.opcode =>
-                    val cpIndex = ConstantsBuffer.getOrCreateCPEntry(i.asInstanceOf[LDC[_]])
+                    val cpIndex = ConstantsBuffer.getOrCreateCPEntry(i.asInstanceOf[LDC[?]])
                     instructions.writeByte(cpIndex)
 
                 case LDC_W.opcode =>
@@ -545,7 +545,7 @@ package object ba { ba =>
         constantsBuffer: ConstantsBuffer,
         config:          ToDAConfig
     ): da.ElementValue = {
-        import constantsBuffer._
+        import constantsBuffer.*
         (elementValue.kindId: @switch) match {
             case br.ByteValue.KindId =>
                 val br.ByteValue(value) = elementValue
@@ -764,7 +764,7 @@ package object ba { ba =>
         constantsBuffer: ConstantsBuffer,
         config:          ToDAConfig
     ): Option[da.Attribute] = {
-        import constantsBuffer._
+        import constantsBuffer.*
         (attribute.kindId: @switch) match {
             case br.Code.KindId => toDA(attribute.asInstanceOf[br.Code])
 

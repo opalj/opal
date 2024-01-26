@@ -21,7 +21,7 @@ import org.opalj.br.reader.Java8Framework.ClassFiles
 @RunWith(classOf[JUnitRunner])
 class TypeAnnotationsTest extends AnyFlatSpec with Matchers {
 
-    import TypeAnnotationsTest._
+    import TypeAnnotationsTest.*
 
     behavior of "OPAL when reading TypeAnnotations"
 

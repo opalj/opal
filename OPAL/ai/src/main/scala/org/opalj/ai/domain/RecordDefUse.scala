@@ -17,13 +17,13 @@ import org.opalj.br.ComputationalTypeCategory
 import org.opalj.br.ObjectType
 import org.opalj.br.PC
 import org.opalj.br.analyses.AnalysisException
-import org.opalj.br.instructions._
+import org.opalj.br.instructions.*
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.collection.immutable.IntArraySet
 import org.opalj.collection.immutable.IntRefPair
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.IntTrieSet1
-import org.opalj.collection.mutable.{Locals => Registers}
+import org.opalj.collection.mutable.Locals as Registers
 import org.opalj.control.foreachNonNullValue
 import org.opalj.graphs.DefaultMutableNode
 
@@ -67,7 +67,7 @@ import org.opalj.graphs.DefaultMutableNode
  *
  * @author Michael Eichberg
  */
-trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode =>
+trait RecordDefUse extends RecordCFG { defUseDomain: Domain & TheCode =>
 
     // IDEA:
     // EACH LOCAL VARIABLE IS BASICALLY NAMED USING THE PC OF THE INSTRUCTION THAT INITIALIZES IT.

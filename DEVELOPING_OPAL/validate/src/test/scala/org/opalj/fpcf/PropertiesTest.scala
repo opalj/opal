@@ -379,7 +379,7 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
                     context.iterator.map(_.asTuple).toMap
                 )
                      */
-                    val ps = PKESequentialPropertyStore(context: _*)
+                    val ps = PKESequentialPropertyStore(context*)
                     ps
                 }
             )

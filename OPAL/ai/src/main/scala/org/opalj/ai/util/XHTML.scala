@@ -8,7 +8,7 @@ import scala.language.reflectiveCalls
 import scala.xml.Node
 import scala.xml.NodeSeq
 
-import org.opalj.br._
+import org.opalj.br.*
 import org.opalj.collection.mutable.IntArrayStack
 import org.opalj.io.process
 

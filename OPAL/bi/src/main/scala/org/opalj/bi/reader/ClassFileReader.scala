@@ -28,7 +28,7 @@ import scala.concurrent.Await
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 import scala.util.control.ControlThrowable
 
 import org.opalj.bytecode.BytecodeProcessingFailedException

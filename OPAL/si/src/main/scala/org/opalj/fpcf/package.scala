@@ -64,21 +64,21 @@ package object fpcf {
      */
     final type Entity = AnyRef
 
-    final type SomeEOptionP = EOptionP[_ <: Entity, _ <: Property]
+    final type SomeEOptionP = EOptionP[? <: Entity, ? <: Property]
 
-    final type SomeEPK = EPK[_ <: Entity, _ <: Property]
+    final type SomeEPK = EPK[? <: Entity, ? <: Property]
 
-    final type SomeEPS = EPS[_ <: Entity, _ <: Property]
+    final type SomeEPS = EPS[? <: Entity, ? <: Property]
 
-    final type SomeFinalEP = FinalEP[_ <: Entity, _ <: Property]
+    final type SomeFinalEP = FinalEP[? <: Entity, ? <: Property]
 
-    final type SomeInterimEP = InterimEP[_ <: Entity, _ <: Property]
+    final type SomeInterimEP = InterimEP[? <: Entity, ? <: Property]
 
-    final type SomePartialResult = PartialResult[_ >: Null <: Entity, _ >: Null <: Property]
+    final type SomePartialResult = PartialResult[? >: Null <: Entity, ? >: Null <: Property]
 
     final type UpdateComputation[E <: Entity, P <: Property] = EOptionP[E, P] => Option[InterimEP[E, P]]
 
-    final type SomeUpdateComputation = UpdateComputation[_ <: Entity, _ <: Property]
+    final type SomeUpdateComputation = UpdateComputation[? <: Entity, ? <: Property]
 
     /**
      * A function that takes an entity and returns a result. The result maybe:
@@ -95,11 +95,11 @@ package object fpcf {
      */
     final type PropertyComputation[E <: Entity] = E => PropertyComputationResult
 
-    final type SomePropertyComputation = PropertyComputation[_ <: Entity]
+    final type SomePropertyComputation = PropertyComputation[? <: Entity]
 
     final type ProperPropertyComputation[E <: Entity] = E => ProperPropertyComputationResult
 
-    final type SomeProperPropertyComputation = ProperPropertyComputation[_ <: Entity]
+    final type SomeProperPropertyComputation = ProperPropertyComputation[? <: Entity]
 
     final type OnUpdateContinuation = SomeEPS => PropertyComputationResult
 
@@ -115,7 +115,7 @@ package object fpcf {
      */
     final type FallbackPropertyComputation[E <: Entity, P <: Property] = (PropertyStore, FallbackReason, E) => P
 
-    final type SomeFallbackPropertyComputation = FallbackPropertyComputation[_ <: Entity, _ <: Property]
+    final type SomeFallbackPropertyComputation = FallbackPropertyComputation[? <: Entity, ? <: Property]
 
     /**
      * A function that continues the computation of a property. It takes
@@ -125,7 +125,7 @@ package object fpcf {
 
     // final type SomeContinuation = Continuation[_ <: Property]
 
-    final type SomePropertyKey = PropertyKey[_ <: Property]
+    final type SomePropertyKey = PropertyKey[? <: Property]
 
     /**
      * The result of a computation if the computation derives multiple properties at the same time.

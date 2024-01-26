@@ -31,7 +31,7 @@ object MethodReturnValuesAnalysis extends ProjectAnalysisApplication {
 
     class AnalysisDomain(
         override val project: Project[java.net.URL],
-        val ai:               InterruptableAI[_],
+        val ai:               InterruptableAI[?],
         val method:           Method
     ) extends CorrelationalDomain
         with domain.DefaultSpecialDomainValuesBinding
@@ -133,7 +133,7 @@ object MethodReturnValuesAnalysis extends ProjectAnalysisApplication {
 case class RefinedReturnType(method: Method, refinedType: Option[Domain#DomainValue]) {
 
     override def toString(): String = {
-        import Console._
+        import Console.*
         "Refined the return type of " + BOLD + BLUE + method.toJava + " => " +
             GREEN + refinedType.getOrElse("\"NONE\" (the method does not return normally)") + RESET
     }

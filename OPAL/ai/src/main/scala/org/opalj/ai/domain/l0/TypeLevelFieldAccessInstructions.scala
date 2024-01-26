@@ -15,7 +15,7 @@ import org.opalj.br.ObjectType
  * @author Michael Eichberg
  */
 trait TypeLevelFieldAccessInstructions extends FieldAccessesDomain {
-    domain: ReferenceValuesDomain with TypedValuesFactory with Configuration =>
+    domain: ReferenceValuesDomain & TypedValuesFactory & Configuration =>
 
     // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // //
     // FIELD READ ACCESS

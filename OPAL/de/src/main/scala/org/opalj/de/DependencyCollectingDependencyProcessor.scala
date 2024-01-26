@@ -2,10 +2,10 @@
 package org.opalj
 package de
 
-import java.util.concurrent.{ConcurrentHashMap => CMap}
+import java.util.concurrent.ConcurrentHashMap as CMap
 import scala.collection.mutable.Set
 
-import org.opalj.br._
+import org.opalj.br.*
 import org.opalj.collection.asScala
 
 /**

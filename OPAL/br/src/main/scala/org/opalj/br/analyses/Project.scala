@@ -9,7 +9,7 @@ import scala.annotation.tailrec
 import java.io.File
 import java.lang.ref.SoftReference
 import java.net.URL
-import java.util.Arrays.{sort => sortArray}
+import java.util.Arrays.sort as sortArray
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicReferenceArray
 import scala.collection.Map
@@ -528,7 +528,7 @@ class Project[Source] private (
      *
      * @see     [[ProjectInformationKey]] for further information.
      */
-    def get[T <: AnyRef](pik: ProjectInformationKey[T, _]): T = {
+    def get[T <: AnyRef](pik: ProjectInformationKey[T, ?]): T = {
         val pikUId = pik.uniqueId
 
         /* Synchronization is done by the caller! */
@@ -598,7 +598,7 @@ class Project[Source] private (
      *
      * @see [[ProjectInformationKey]] for further information.
      */
-    def has[T <: AnyRef](pik: ProjectInformationKey[T, _]): Option[T] = {
+    def has[T <: AnyRef](pik: ProjectInformationKey[T, ?]): Option[T] = {
         val pikUId = pik.uniqueId
 
         if (pikUId < this.projectInformation.length())
@@ -1897,7 +1897,7 @@ object Project {
             import scala.concurrent.Await
             import scala.concurrent.Future
             import scala.concurrent.duration.Duration
-            import scala.concurrent.ExecutionContext.Implicits.{global => ScalaExecutionContext}
+            import scala.concurrent.ExecutionContext.Implicits.global as ScalaExecutionContext
 
             val classHierarchyFuture: Future[ClassHierarchy] = Future {
                 time {

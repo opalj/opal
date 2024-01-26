@@ -2,7 +2,7 @@
 package org.opalj
 package ai
 
-import java.util.{HashMap => JHashMap}
+import java.util.HashMap as JHashMap
 
 import org.opalj.collection.immutable.IdentityPair
 

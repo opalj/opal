@@ -55,7 +55,7 @@ sealed abstract class UIDTrieSet[T <: UID] { set =>
         }
     }
 
-    def equals(other: UIDTrieSet[_]): Boolean
+    def equals(other: UIDTrieSet[?]): Boolean
 }
 
 /**
@@ -140,7 +140,7 @@ case object UIDTrieSet0 extends UIDTrieSetLeaf[UID] {
     override def containsId(id: Int): Boolean = false
     override def head: UID = throw new NoSuchElementException
 
-    override def equals(other: UIDTrieSet[_]): Boolean = other eq this
+    override def equals(other: UIDTrieSet[?]): Boolean = other eq this
     override def hashCode: Int = 0
     override def toString: String = "UIDTrieSet()"
 
@@ -175,7 +175,7 @@ final class UIDTrieSet1[T <: UID](val i: T) extends UIDTrieSetLeaf[T] {
     override def containsId(id: Int): Boolean = id == i.id
     override def head: T = i
 
-    override def equals(other: UIDTrieSet[_]): Boolean = {
+    override def equals(other: UIDTrieSet[?]): Boolean = {
         (other eq this) || (other match {
             case that: UIDTrieSet1[_] => this.i.id == that.i.id
             case that                 => false
@@ -235,7 +235,7 @@ private[immutable] final class UIDTrieSet2[T <: UID] private[immutable] (
         }
     }
 
-    override def equals(other: UIDTrieSet[_]): Boolean = {
+    override def equals(other: UIDTrieSet[?]): Boolean = {
         (other eq this) || (
             other match {
                 case that: UIDTrieSet2[_] =>
@@ -295,7 +295,7 @@ private[immutable] final class UIDTrieSet3[T <: UID] private[immutable] (
             this
     }
 
-    override def equals(other: UIDTrieSet[_]): Boolean = {
+    override def equals(other: UIDTrieSet[?]): Boolean = {
         (other eq this) || (
             other match {
                 case that: UIDTrieSet3[_] =>
@@ -515,7 +515,7 @@ private[immutable] final class UIDTrieSetN[T <: UID](
         }
     }
 
-    override def equals(that: UIDTrieSet[_]): Boolean = {
+    override def equals(that: UIDTrieSet[?]): Boolean = {
         (that eq this) ||
         // recall that the shape of the trie depends on the insertion order
         // (but doesn't reflect the order)

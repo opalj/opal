@@ -31,7 +31,7 @@ import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 trait AbstractPointsToBasedAnalysis extends FPCFAnalysis with ContextualAnalysis {
 
     protected[this] type ElementType
-    protected[this] type PointsToSet >: Null <: PointsToSetLike[ElementType, _, PointsToSet]
+    protected[this] type PointsToSet >: Null <: PointsToSetLike[ElementType, ?, PointsToSet]
     protected[this] type State <: TACAIBasedAnalysisState[ContextType]
     protected[this] type DependerType
 

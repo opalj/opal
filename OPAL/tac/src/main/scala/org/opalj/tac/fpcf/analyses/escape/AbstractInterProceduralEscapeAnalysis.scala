@@ -41,9 +41,9 @@ import org.opalj.tac.fpcf.analyses.cg.uVarForDefSites
  */
 trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
 
-    override type AnalysisContext <: AbstractEscapeAnalysisContext with PropertyStoreContainer with IsMethodOverridableContainer with VirtualFormalParametersContainer with DeclaredMethodsContainer
+    override type AnalysisContext <: AbstractEscapeAnalysisContext & PropertyStoreContainer & IsMethodOverridableContainer & VirtualFormalParametersContainer & DeclaredMethodsContainer
 
-    override type AnalysisState <: AbstractEscapeAnalysisState with ReturnValueUseSites
+    override type AnalysisState <: AbstractEscapeAnalysisState & ReturnValueUseSites
 
     override protected[this] def handleStaticMethodCall(
         call: StaticMethodCall[V]
@@ -193,7 +193,7 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
                 indirectCallee <- callees.indirectCallees(context.entity._1, pc)
                 indirectCallReceiver = callees.indirectCallReceiver(context.entity._1, pc, indirectCallee)
                 indirectCallParams = callees.indirectCallParameters(context.entity._1, pc, indirectCallee)
-                (Some(uvar), i) <- (indirectCallReceiver +: indirectCallParams).zipWithIndex
+                case (Some(uvar), i) <- (indirectCallReceiver +: indirectCallParams).zipWithIndex
                 indirectCallParam = uVarForDefSites(uvar, state.tacai.get.pcToIndex)
                 if state.usesDefSite(indirectCallParam)
             } {
@@ -332,7 +332,7 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
             case EPS((_: Context, VirtualFormalParameter(dm: DefinedMethod, -1))) if dm.definedMethod.isConstructor =>
                 throw new RuntimeException("can't handle the this-reference of the constructor")
 
-            case EPS(other: (_, _)) if other._2.isInstanceOf[VirtualFormalParameter] =>
+            case EPS(other: (?, ?)) if other._2.isInstanceOf[VirtualFormalParameter] =>
                 state.removeDependency(someEPS)
                 handleEscapeState(
                     someEPS,

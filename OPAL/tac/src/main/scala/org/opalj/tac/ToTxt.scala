@@ -311,8 +311,8 @@ object ToTxt {
      */
     def apply(
         method:         Method,
-        classHierarchy: ClassHierarchy                                            = ClassHierarchy.PreInitializedClassHierarchy,
-        aiResult:       Option[AIResult { val domain: Domain with RecordDefUse }] = None
+        classHierarchy: ClassHierarchy                                         = ClassHierarchy.PreInitializedClassHierarchy,
+        aiResult:       Option[AIResult { val domain: Domain & RecordDefUse }] = None
     ): String = {
         aiResult.map { aiResult =>
             val taCode = TACAI(method, classHierarchy, aiResult, propagateConstants = true)(Nil)

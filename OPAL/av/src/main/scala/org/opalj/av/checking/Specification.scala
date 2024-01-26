@@ -9,18 +9,18 @@ import java.net.URL
 import scala.Console.GREEN
 import scala.Console.RED
 import scala.Console.RESET
-import scala.collection.{Map => AMap}
-import scala.collection.{Set => ASet}
+import scala.collection.Map as AMap
+import scala.collection.Set as ASet
 import scala.collection.immutable
 import scala.collection.mutable
-import scala.collection.mutable.{Map => MutableMap}
+import scala.collection.mutable.Map as MutableMap
 import scala.io.Source
 import scala.util.matching.Regex
 
-import org.opalj.br._
+import org.opalj.br.*
 import org.opalj.br.analyses.Project
 import org.opalj.br.reader.Java8Framework.ClassFiles
-import org.opalj.de._
+import org.opalj.de.*
 import org.opalj.de.DependencyTypes.toUsageDescription
 import org.opalj.io.processSource
 import org.opalj.log.GlobalLogContext

@@ -289,7 +289,7 @@ class ConstantsBuffer private (
  */
 object ConstantsBuffer {
 
-    def collectLDCs(classFile: ClassFile): Set[LDC[_]] = {
+    def collectLDCs(classFile: ClassFile): Set[LDC[?]] = {
         val allLDC = for {
             method <- classFile.methods.iterator
             if method.body.isDefined
@@ -301,8 +301,8 @@ object ConstantsBuffer {
     }
 
     @throws[ConstantPoolException]
-    def getOrCreateCPEntry(ldc: LDC[_])(implicit constantsBuffer: ConstantsBuffer): Int = {
-        import constantsBuffer._
+    def getOrCreateCPEntry(ldc: LDC[?])(implicit constantsBuffer: ConstantsBuffer): Int = {
+        import constantsBuffer.*
         ldc match {
             case LoadInt(value) =>
                 CPEInteger(value, requiresUByteIndex = true)
@@ -349,7 +349,7 @@ object ConstantsBuffer {
      *          To collect a [[org.opalj.br.ClassFile]]'s ldc instructions use [[collectLDCs]].
      */
     @throws[ConstantPoolException]("if it is impossible to create a valid constant pool")
-    def apply(ldcs: Set[LDC[_]]): ConstantsBuffer = {
+    def apply(ldcs: Set[LDC[?]]): ConstantsBuffer = {
         // IMPROVE Use Object2IntMap..
         val buffer = mutable.HashMap.empty[Constant_Pool_Entry, Constant_Pool_Index]
         // the first item is null because the constant_pool starts with the index 1
@@ -376,7 +376,7 @@ object ConstantsBuffer {
         // 1. let's add the referenced CONSTANT_UTF8 entries required by LoadClass instructions
         var nextIndexAfterLDCRelatedEntries = 1 + ldcs.size
         implicit val constantsBuffer: ConstantsBuffer = new ConstantsBuffer(nextIndexAfterLDCRelatedEntries, buffer)
-        import constantsBuffer._
+        import constantsBuffer.*
         ldClasses foreach { ldc => CPEUtf8OfCPEClass(ldc.asInstanceOf[LoadClass].value) }
         nextIndexAfterLDCRelatedEntries = constantsBuffer.nextIndex
 

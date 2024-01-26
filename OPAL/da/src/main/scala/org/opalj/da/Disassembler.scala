@@ -6,12 +6,12 @@ import java.io.File
 import java.nio.file.Files
 
 import org.opalj.bytecode.JRELibraryFolder
-import org.opalj.log.{Error => ErrorLogLevel}
 import org.opalj.log.ConsoleOPALLogger
+import org.opalj.log.Error as ErrorLogLevel
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger
 
-import org.apache.commons.text.similarity.LevenshteinDistance.{getDefaultInstance => getLevenshteinDistance}
+import org.apache.commons.text.similarity.LevenshteinDistance.getDefaultInstance as getLevenshteinDistance
 
 /**
  * Disassembles the specified class file(s).

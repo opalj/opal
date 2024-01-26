@@ -1,7 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-import sbt._
-import sbt.Keys._
-import com.jsuereth.sbtpgp.PgpKeys._
+import sbt.*
+import sbt.Keys.*
+import com.jsuereth.sbtpgp.PgpKeys.*
 import sbt.sbtpgp.Compat.publishSignedConfigurationTask
 
 object PublishingOverwrite {

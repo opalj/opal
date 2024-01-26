@@ -4,7 +4,7 @@ package ai
 package domain
 package tracing
 
-import org.opalj.br._
+import org.opalj.br.*
 import org.opalj.collection.immutable.IntTrieSet
 
 /**

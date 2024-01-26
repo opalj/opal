@@ -13,7 +13,7 @@ import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory
 
-import org.opalj.bi.TestResources.{locateTestResources => locate}
+import org.opalj.bi.TestResources.locateTestResources as locate
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.instructions.INVOKESTATIC
@@ -175,8 +175,8 @@ class BasicLambdaExpressionsRewritingTest extends AnyFunSpec with Matchers {
         val method = for {
             invokedMethod <- annotations.filter(_.annotationType == InvokedMethod)
             pairs = invokedMethod.elementValuePairs
-            ElementValuePair("receiverType", StringValue(receiverType)) <- pairs
-            ElementValuePair("name", StringValue(methodName)) <- pairs
+            case ElementValuePair("receiverType", StringValue(receiverType)) <- pairs
+            case ElementValuePair("name", StringValue(methodName)) <- pairs
             classFileOpt = project.classFile(ObjectType(receiverType))
         } yield {
             if (classFileOpt.isEmpty) {

@@ -113,7 +113,7 @@ class ConfiguredNativeMethodsCallGraphAnalysis private[analyses] (
     ): ProperPropertyComputationResult = {
         val callers = eOptP.ub
 
-        var results: Iterator[PartialResult[_, _ >: Null <: Property]] = Iterator.empty
+        var results: Iterator[PartialResult[?, ? >: Null <: Property]] = Iterator.empty
         callers.forNewCalleeContexts(seen, eOptP.e) { calleeContext =>
             val calls = new DirectCallsBase with VMReachableMethodsBase()
             for (tgt <- tgts) {

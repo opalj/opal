@@ -97,7 +97,7 @@ abstract class JavaICFG(project: SomeProject)
      * @param statement The statement. Must be an Assignment or ExprStmt.
      * @return The statement's expression.
      */
-    private def getExpression(statement: Stmt[_]): Expr[_] = statement.astID match {
+    private def getExpression(statement: Stmt[?]): Expr[?] = statement.astID match {
         case Assignment.ASTID => statement.asAssignment.expr
         case ExprStmt.ASTID   => statement.asExprStmt.expr
         case _                => throw new UnknownError("Unexpected statement")

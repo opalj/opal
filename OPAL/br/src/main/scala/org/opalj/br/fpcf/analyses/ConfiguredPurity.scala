@@ -12,8 +12,8 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.ClassExtensibilityKey
 import org.opalj.br.fpcf.properties.Purity
 
-import net.ceedubs.ficus.Ficus._
-import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+import net.ceedubs.ficus.Ficus.*
+import net.ceedubs.ficus.readers.ArbitraryTypeReader.*
 
 /**
  * @author Dominik Helm
@@ -39,7 +39,7 @@ class ConfiguredPurity(
 
     private val methods: Map[DeclaredMethod, Purity] = (
         for {
-            PurityValue(className, methodName, descriptor, property, conditions) <- toSet.toSet
+            case PurityValue(className, methodName, descriptor, property, conditions) <- toSet.toSet
 
             po = Purity(property)
             if po.isDefined

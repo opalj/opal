@@ -28,7 +28,7 @@ import org.opalj.collection.mutable.IntArrayStack
  */
 trait ConsoleEvaluationTracer extends AITracer {
 
-    import Console._
+    import Console.*
 
     private[this] var indent = 0
     private[this] def printIndent(): Unit = { (0 until indent) foreach (i => print("\t")) }
@@ -159,7 +159,7 @@ trait ConsoleEvaluationTracer extends AITracer {
 
     override def domainMessage(
         domain:  Domain,
-        source:  Class[_],
+        source:  Class[?],
         typeID:  String,
         pc:      Option[Int],
         message: => String

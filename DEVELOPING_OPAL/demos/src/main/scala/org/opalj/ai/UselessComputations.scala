@@ -61,10 +61,10 @@ object UselessComputations extends ProjectAnalysisApplication {
         val results = {
             val results = for {
                 classFile <- theProject.allProjectClassFiles.par
-                method @ MethodWithBody(body) <- classFile.methods
+                case method @ MethodWithBody(body) <- classFile.methods
                 result = BaseAI(method, new AnalysisDomain(theProject, method))
             } yield {
-                import result._
+                import result.*
                 val results = collectPCWithOperands(domain)(body, operandsArray) {
                     case (
                             pc,
@@ -118,7 +118,7 @@ case class UselessComputation(method: Method, pc: Int, message: String) {
     def line: Option[Int] = method.body.get.lineNumber(pc)
 
     override def toString: String = {
-        import Console._
+        import Console.*
 
         val line = this.line.map("(line:" + _ + ")").getOrElse("")
 

@@ -41,11 +41,11 @@ case class BasicBlock(block_ref: LLVMBasicBlockRef)
             .toSet
     }
 
-    private def terminator: Option[Instruction with Terminator] = {
+    private def terminator: Option[Instruction & Terminator] = {
         OptionalInstruction(LLVMGetBasicBlockTerminator(block_ref)) match {
             case Some(terminator) => {
                 assert(terminator.isTerminator)
-                Some(terminator.asInstanceOf[Instruction with Terminator])
+                Some(terminator.asInstanceOf[Instruction & Terminator])
             }
             case None => None
         }

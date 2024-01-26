@@ -45,7 +45,7 @@ import org.opalj.tac.fpcf.properties.TACAI
  */
 class PointsToAnalysisState[
     ElementType,
-    PointsToSet <: PointsToSetLike[ElementType, _, PointsToSet],
+    PointsToSet <: PointsToSetLike[ElementType, ?, PointsToSet],
     ContextType <: Context
 ](
     override val callContext:                  ContextType,

@@ -5,7 +5,7 @@ package debug
 
 import java.io.FileInputStream
 import java.util.Properties
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigRenderOptions

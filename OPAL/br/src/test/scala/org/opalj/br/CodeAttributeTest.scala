@@ -9,7 +9,7 @@ import org.scalatestplus.junit.JUnitRunner
 
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.analyses.Project
-import org.opalj.br.instructions._
+import org.opalj.br.instructions.*
 import org.opalj.br.reader.Java8Framework.ClassFiles
 import org.opalj.collection.immutable.IntTrieSet
 
@@ -21,7 +21,7 @@ import org.opalj.collection.immutable.IntTrieSet
 @RunWith(classOf[JUnitRunner])
 class CodeAttributeTest extends AnyFlatSpec with Matchers {
 
-    import CodeAttributeTest._
+    import CodeAttributeTest.*
 
     behavior of "the \"Code\" attribute handlersFor method"
 
@@ -61,7 +61,7 @@ class CodeAttributeTest extends AnyFlatSpec with Matchers {
         codeOfPut collect ({ case DUP2_X2 => DUP2_X2 }: PartialFunction[Instruction, Instruction]) should equal(Seq())
     }
 
-    import org.opalj.br.CodeAttributeTest._
+    import org.opalj.br.CodeAttributeTest.*
 
     behavior of "the \"Code\" attribute's collectWithIndex method"
 

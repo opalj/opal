@@ -12,7 +12,7 @@ import org.opalj.ifds.Dependees.Getter
  * @author Mario Trageser
  * @author Marc Clement
  */
-abstract class IFDSProblem[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C, _]](val icfg: ICFG[C, S]) {
+abstract class IFDSProblem[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[? <: C, ?]](val icfg: ICFG[C, S]) {
 
     /**
      * The null fact of this analysis.

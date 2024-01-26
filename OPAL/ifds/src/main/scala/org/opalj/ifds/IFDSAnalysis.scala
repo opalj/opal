@@ -2,7 +2,7 @@
 package org.opalj
 package ifds
 
-import scala.collection.{Set => SomeSet}
+import scala.collection.Set as SomeSet
 import scala.collection.mutable
 
 import org.opalj.br.analyses.SomeProject
@@ -36,7 +36,7 @@ import org.opalj.ifds.Dependees.Getter
  *
  * @author Marc Clement
  */
-class IFDSFact[Fact <: AbstractIFDSFact, S <: Statement[_, _]](
+class IFDSFact[Fact <: AbstractIFDSFact, S <: Statement[?, ?]](
     val fact:               Fact,
     val isUnbalancedReturn: Boolean,
     val callStmt:           Option[S],
@@ -111,7 +111,7 @@ object Dependees {
  * that is the fact reaches the statement as an input.
  * Source fact is the fact within the analysis entity.
  */
-case class PathEdges[Fact <: AbstractIFDSFact, S <: Statement[_ <: C, _], C <: AnyRef](
+case class PathEdges[Fact <: AbstractIFDSFact, S <: Statement[? <: C, ?], C <: AnyRef](
     subsumes: (Set[Fact], Fact) => Boolean
 ) {
     /**
@@ -193,7 +193,7 @@ case class PathEdges[Fact <: AbstractIFDSFact, S <: Statement[_ <: C, _], C <: A
  * @param source The callable and input fact for which the callable is analyzed.
  * @param subsumes The subsuming function, return whether a new fact is subsume by the existing ones
  */
-protected class IFDSState[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C, _], WorklistItem](
+protected class IFDSState[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[? <: C, ?], WorklistItem](
     val source: (C, IFDSFact[Fact, S]),
     subsumes:   (Set[Fact], Fact) => Boolean
 ) {
@@ -226,7 +226,7 @@ case class Statistics(
  *
  * @author Marc Clement
  */
-class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C, _]](
+class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[? <: C, ?]](
     val project:     SomeProject,
     val ifdsProblem: IFDSProblem[Fact, C, S],
     val propertyKey: IFDSPropertyMetaInformation[S, Fact]
@@ -361,7 +361,7 @@ class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C,
      */
     private def handleCall(
         call:    S,
-        callees: SomeSet[_ <: C],
+        callees: SomeSet[? <: C],
         in:      Fact
     )(
         implicit
@@ -628,7 +628,7 @@ class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C,
     }
 }
 
-abstract class IFDSAnalysisScheduler[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C, _]]
+abstract class IFDSAnalysisScheduler[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[? <: C, ?]]
     extends FPCFLazyAnalysisScheduler {
 
     override final type InitializationData = IFDSAnalysis[Fact, C, S]

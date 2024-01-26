@@ -2,7 +2,7 @@
 package org.opalj
 package fpcf
 
-import java.util.{Arrays => JArrays}
+import java.util.Arrays as JArrays
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.RejectedExecutionException
 import scala.collection.mutable
@@ -13,7 +13,7 @@ import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPKId
 import org.opalj.fpcf.PropertyKind.SupportedPropertyKinds
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
-import org.opalj.log.OPALLogger.{debug => trace}
+import org.opalj.log.OPALLogger.debug as trace
 import org.opalj.log.OPALLogger.error
 import org.opalj.log.OPALLogger.info
 
@@ -177,7 +177,7 @@ abstract class PropertyStore {
     //
 
     /** Immutable map which stores the context objects given at initialization time. */
-    val ctx: Map[Class[_], AnyRef]
+    val ctx: Map[Class[?], AnyRef]
 
     /**
      * Looks up the context object of the given type. This is a comparatively expensive operation;

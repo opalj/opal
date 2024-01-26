@@ -4,7 +4,7 @@ package de
 
 import java.net.URL
 
-import org.opalj.br.analyses._
+import org.opalj.br.analyses.*
 
 import scala.collection.parallel.CollectionConverters.IterableIsParallelizable
 
@@ -27,7 +27,7 @@ object DependencyCounting extends AnalysisApplication with OneStepAnalysis[URL, 
         println("Press enter to start the dependency collection.")
         scala.io.StdIn.readLine()
 
-        import org.opalj.util.PerformanceEvaluation._
+        import org.opalj.util.PerformanceEvaluation.*
         val counter = time {
             val counter = new DependencyCountingDependencyProcessor with FilterSelfDependencies
             val extractor = new DependencyExtractor(counter)

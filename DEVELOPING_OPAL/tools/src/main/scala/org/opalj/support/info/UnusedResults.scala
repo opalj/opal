@@ -6,7 +6,7 @@ package info
 import java.net.URL
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.collection.immutable.ArraySeq
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
@@ -22,9 +22,9 @@ import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.analyses.immutability.LazyClassImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.immutability.LazyTypeImmutabilityAnalysis
-import org.opalj.br.fpcf.properties.{Purity => PurityProperty}
 import org.opalj.br.fpcf.properties.CompileTimePure
 import org.opalj.br.fpcf.properties.Pure
+import org.opalj.br.fpcf.properties.Purity as PurityProperty
 import org.opalj.br.fpcf.properties.SideEffectFree
 import org.opalj.br.fpcf.properties.VirtualMethodPurity
 import org.opalj.br.fpcf.properties.VirtualMethodPurity.VCompileTimePure
@@ -99,7 +99,7 @@ object UnusedResults extends ProjectAnalysisApplication {
 
     def analyzeMethod(
         method: Method,
-        tacai:  Method => Option[TACode[_, V]]
+        tacai:  Method => Option[TACode[?, V]]
     )(
         implicit
         project:             SomeProject,

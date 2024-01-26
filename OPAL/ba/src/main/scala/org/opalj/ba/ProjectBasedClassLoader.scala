@@ -18,7 +18,7 @@ class ProjectBasedInMemoryClassLoader(
 ) extends ClassLoader(parent) {
 
     @throws[ClassNotFoundException]
-    override def findClass(name: String): Class[_] = {
+    override def findClass(name: String): Class[?] = {
         project.classFile(ObjectType(name.replace('.', '/'))) match {
 
             case Some(cf) =>

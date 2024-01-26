@@ -83,7 +83,7 @@ class IFDSBasedVariableTypeAnalysisRunnerIFDS(subsumeFacts: Boolean = false) ext
         new IFDSBasedVariableTypeAnalysisScheduler(subsumeFacts)
 
     override protected def additionalEvaluationResult(
-        analysis: IFDSAnalysis[_, _, _]
+        analysis: IFDSAnalysis[?, ?, ?]
     ): Option[Object] =
         if (analysis.ifdsProblem.subsumeFacts) Some(analysis.statistics) else None
 

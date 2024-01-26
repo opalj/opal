@@ -3,7 +3,7 @@ package org.opalj
 package collection
 package immutable
 
-import java.util.{Arrays => JArrays}
+import java.util.Arrays as JArrays
 import scala.collection.mutable.Builder
 
 /**

@@ -160,7 +160,7 @@ class LoadedClassesAnalysis(
     private[this] def update(
         newLoadedClasses: UIDSet[ObjectType]
     )(
-        eop: EOptionP[_, LoadedClasses]
+        eop: EOptionP[?, LoadedClasses]
     ): Option[InterimEP[SomeProject, LoadedClasses]] = eop match {
         case InterimUBP(ub: LoadedClasses) =>
             val newUb = ub.classes ++ newLoadedClasses

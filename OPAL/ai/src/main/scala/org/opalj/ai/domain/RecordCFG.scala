@@ -3,10 +3,10 @@ package org.opalj
 package ai
 package domain
 
-import java.lang.ref.{SoftReference => SRef}
+import java.lang.ref.SoftReference as SRef
 import scala.collection.BitSet
 import scala.collection.mutable
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 import org.opalj.br.Code
 import org.opalj.br.ExceptionHandler
@@ -57,7 +57,7 @@ trait RecordCFG
     extends CoreDomainFunctionality
     with CustomInitialization
     with ai.ReturnInstructionsDomain {
-    cfgDomain: ValuesDomain with TheCode =>
+    cfgDomain: ValuesDomain & TheCode =>
 
     //
     // DIRECTLY RECORDED INFORMATION
@@ -1035,7 +1035,7 @@ trait RecordCFG
      * @note This implementation is for debugging purposes only. It is NOT performance optimized!
      */
     def cfgAsGraph(): DefaultMutableNode[List[Int /*PC*/ ]] = {
-        import scala.collection.immutable.{List => ScalaList}
+        import scala.collection.immutable.List as ScalaList
         val instructions = code.instructions
         val codeSize = instructions.length
         val nodes = new Array[DefaultMutableNode[List[Int /*PC*/ ]]](codeSize)

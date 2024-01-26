@@ -6,7 +6,7 @@ package l1
 
 import java.lang.reflect.InvocationTargetException
 
-import org.opalj.br._
+import org.opalj.br.*
 
 /**
  * Support the invocation of methods (using Java reflection) of Java objects that
@@ -63,7 +63,7 @@ trait ReflectiveInvoker extends DefaultJavaObjectToDomainValueConversion with As
                 }
                 val jParameterClassTypes = descriptor.parameterTypes map (_.toJavaClass)
                 val method =
-                    declaringClass.toJavaClass.getDeclaredMethod(name, jParameterClassTypes: _*)
+                    declaringClass.toJavaClass.getDeclaredMethod(name, jParameterClassTypes*)
                 (method, jReceiver, jOperands)
             } catch {
                 case e: ClassNotFoundException =>
@@ -89,7 +89,7 @@ trait ReflectiveInvoker extends DefaultJavaObjectToDomainValueConversion with As
             }
 
         try {
-            val result = method.invoke(jReceiver, jOperands: _*)
+            val result = method.invoke(jReceiver, jOperands*)
             (descriptor.returnType.id: @scala.annotation.switch) match {
                 case VoidType.id =>
                     Some(ComputationWithSideEffectOnly)

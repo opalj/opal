@@ -9,7 +9,7 @@ package reader
  * @author Michael Eichberg
  */
 trait LibraryClassFileBinding extends ClassFileBinding {
-    this: ConstantPoolBinding with MethodsBinding with FieldsBinding with AttributeBinding =>
+    this: ConstantPoolBinding & MethodsBinding & FieldsBinding & AttributeBinding =>
 
     override def ClassFile(
         cp:                Constant_Pool,

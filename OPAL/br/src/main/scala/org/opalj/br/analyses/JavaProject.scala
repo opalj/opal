@@ -3,7 +3,7 @@ package org.opalj
 package br
 package analyses
 
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 import org.opalj.log.ConsoleOPALLogger
 import org.opalj.log.Error

@@ -25,7 +25,7 @@ import org.opalj.log.Warn
 trait RefinedTypeLevelInvokeInstructions
     extends MethodCallsDomainWithMethodLockup
     with PropertyStoreBased {
-    domain: ValuesFactory with ReferenceValuesDomain with Configuration with TheProject with TheCode =>
+    domain: ValuesFactory & ReferenceValuesDomain & Configuration & TheProject & TheCode =>
 
     abstract override def usesProperties: Set[PropertyKind] = {
         super.usesProperties ++ Set(MethodReturnValue)
@@ -90,7 +90,7 @@ trait RefinedTypeLevelInvokeInstructions
  * @author Michael Eichberg
  */
 trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling {
-    callingDomain: ValuesFactory with ReferenceValuesDomain with Configuration with TheProject with TheCode =>
+    callingDomain: ValuesFactory & ReferenceValuesDomain & Configuration & TheProject & TheCode =>
 
     /**
      * Invokes the specified method.

@@ -17,8 +17,8 @@ import org.opalj.br.reader.DynamicConstantRewriting
 import org.opalj.br.reader.InvokedynamicRewriting
 import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.io.writeAndOpen
-import org.opalj.log.{Error => ErrorLogLevel}
 import org.opalj.log.ConsoleOPALLogger
+import org.opalj.log.Error as ErrorLogLevel
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger
 
@@ -185,13 +185,13 @@ object TAC {
                                 None
                         )
                     } else {
-                        val d: Domain with RecordDefUse = if (domainName.isEmpty) {
+                        val d: Domain & RecordDefUse = if (domainName.isEmpty) {
                             new domain.l1.DefaultDomainWithCFGAndDefUse(project, m)
                         } else {
                             // ... "org.opalj.ai.domain.l0.BaseDomainWithDefUse"
                             Class
-                                .forName(domainName.get).asInstanceOf[Class[Domain with RecordDefUse]]
-                                .getConstructor(classOf[Project[_]], classOf[Method])
+                                .forName(domainName.get).asInstanceOf[Class[Domain & RecordDefUse]]
+                                .getConstructor(classOf[Project[?]], classOf[Method])
                                 .newInstance(project, m)
                         }
                         // val d = new domain.l0.BaseDomainWithDefUse(project, classFile, method)

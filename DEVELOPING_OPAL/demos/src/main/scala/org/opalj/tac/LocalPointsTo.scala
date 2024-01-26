@@ -38,8 +38,8 @@ object LocalPointsTo {
         // Let's collect the information where a reference value that is passed
         // to some method is coming from.
         for {
-            (MethodCallParameters(params), stmtIndex) <- tac.stmts.iterator.zipWithIndex
-            (UVar(v, defSites), paramIndex) <- params.iterator.zipWithIndex
+            case (MethodCallParameters(params), stmtIndex) <- tac.stmts.iterator.zipWithIndex
+            case (UVar(v, defSites), paramIndex) <- params.iterator.zipWithIndex
             if v.computationalType == ComputationalTypeReference
             defSite <- defSites
         } {

@@ -39,7 +39,7 @@ trait ConcreteArrayValues
     extends l1.ArrayValues
     with PerInstructionPostProcessing
     with PostEvaluationMemoryManagement {
-    domain: CorrelationalDomain with ConcreteIntegerValues with LogContextProvider =>
+    domain: CorrelationalDomain & ConcreteIntegerValues & LogContextProvider =>
 
     private[this] val debug: Boolean = false
 
@@ -109,7 +109,7 @@ trait ConcreteArrayValues
     // no further knowledge about the size/the content.
     // DON'T DO: type DomainArrayValue <: ArrayValue with DomainSingleOriginReferenceValue
 
-    type DomainConcreteArrayValue <: ConcreteArrayValue with DomainArrayValue
+    type DomainConcreteArrayValue <: ConcreteArrayValue & DomainArrayValue
     val DomainConcreteArrayValueTag: ClassTag[DomainConcreteArrayValue]
 
     /**

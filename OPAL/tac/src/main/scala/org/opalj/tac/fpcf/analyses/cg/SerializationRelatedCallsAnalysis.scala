@@ -14,8 +14,8 @@ import org.opalj.br.MethodDescriptor
 import org.opalj.br.MethodDescriptor.JustReturnsObject
 import org.opalj.br.MethodDescriptor.NoArgsAndReturnVoid
 import org.opalj.br.ObjectType
-import org.opalj.br.ObjectType.{ObjectInputStream => ObjectInputStreamType}
-import org.opalj.br.ObjectType.{ObjectOutputStream => ObjectOutputStreamType}
+import org.opalj.br.ObjectType.ObjectInputStream as ObjectInputStreamType
+import org.opalj.br.ObjectType.ObjectOutputStream as ObjectOutputStreamType
 import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys

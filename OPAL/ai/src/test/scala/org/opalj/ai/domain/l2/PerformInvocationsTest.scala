@@ -21,7 +21,7 @@ import org.opalj.br.analyses.Project
 @RunWith(classOf[JUnitRunner])
 class PerformInvocationsTest extends AnyFlatSpec with Matchers {
 
-    import PerformInvocationsTestFixture._
+    import PerformInvocationsTestFixture.*
 
     behavior of "PerformInvocations"
 
@@ -228,7 +228,7 @@ object PerformInvocationsTestFixture {
         with IgnoreSynchronization
         with l0.DefaultTypeLevelHandlingOfMethodResults
         with DefaultRecordMethodCallResults {
-        domain: ValuesFactory with Configuration with TheProject with TheMethod =>
+        domain: ValuesFactory & Configuration & TheProject & TheMethod =>
 
         override def throwExceptionsOnMethodCall: ExceptionsRaisedByCalledMethod = {
             ExceptionsRaisedByCalledMethods.AllExplicitlyHandled
@@ -251,9 +251,9 @@ object PerformInvocationsTestFixture {
 
         override val useExceptionsThrownByCalledMethod = true
 
-        type CalledMethodDomain = Domain with MethodCallResults
+        type CalledMethodDomain = Domain & MethodCallResults
 
-        def calledMethodDomain(method: Method): Domain with MethodCallResults =
+        def calledMethodDomain(method: Method): Domain & MethodCallResults =
             createInvocationDomain(project, method)
 
         def calledMethodAI = BaseAI

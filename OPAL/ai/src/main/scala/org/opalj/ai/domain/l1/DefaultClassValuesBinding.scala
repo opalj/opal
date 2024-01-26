@@ -12,7 +12,7 @@ import org.opalj.br.Type
  * @author Arne Lottmann
  */
 trait DefaultClassValuesBinding extends DefaultStringValuesBinding with ClassValues {
-    domain: CorrelationalDomain with IntegerValuesDomain with TypedValuesFactory with Configuration =>
+    domain: CorrelationalDomain & IntegerValuesDomain & TypedValuesFactory & Configuration =>
 
     type DomainClassValue = ClassValue
     val DomainClassValueTag: ClassTag[DomainClassValue] = implicitly

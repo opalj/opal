@@ -5,7 +5,7 @@ package reader
 
 import scala.annotation.switch
 
-import org.opalj.br.instructions._
+import org.opalj.br.instructions.*
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.collection.immutable.IntIntPair
 import org.opalj.control.fillArraySeq

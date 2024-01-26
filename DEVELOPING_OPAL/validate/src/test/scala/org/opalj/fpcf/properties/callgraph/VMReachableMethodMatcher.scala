@@ -15,7 +15,7 @@ import org.opalj.fpcf.properties.AbstractPropertyMatcher
 class VMReachableMethodMatcher extends AbstractPropertyMatcher {
 
     override def validateProperty(
-        p:          Project[_],
+        p:          Project[?],
         as:         Set[ObjectType],
         entity:     Any,
         a:          AnnotationLike,

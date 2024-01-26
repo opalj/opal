@@ -3,7 +3,7 @@ package org.opalj
 package ba
 
 import scala.language.postfixOps
-import scala.reflect.runtime.universe._
+import scala.reflect.runtime.universe.*
 
 import java.io.ByteArrayInputStream
 
@@ -13,8 +13,8 @@ import org.scalatestplus.junit.JUnitRunner
 
 import org.opalj.bc.Assembler
 import org.opalj.br.Method
-import org.opalj.br.instructions._
-import org.opalj.br.reader.Java8Framework.{ClassFile => ClassFileReader}
+import org.opalj.br.instructions.*
+import org.opalj.br.reader.Java8Framework.ClassFile as ClassFileReader
 import org.opalj.util.InMemoryClassLoader
 
 /**
@@ -79,7 +79,7 @@ class JumpLabelsTest extends AnyFlatSpec {
     "the method returnInt" should "execute as expected" in {
         val classes = Map("TestJumpJava5" -> rawJava5ClassFile, "TestJumpJava8" -> rawJava8ClassFile)
         val loader = new InMemoryClassLoader(classes, this.getClass.getClassLoader)
-        def testClass(clazz: Class[_]): Unit = {
+        def testClass(clazz: Class[?]): Unit = {
             val testJumpInstance = clazz.getDeclaredConstructor().newInstance()
 
             val mirror = runtimeMirror(loader).reflect(testJumpInstance)

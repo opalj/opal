@@ -110,7 +110,7 @@ object LDC2_W {
 
     final val opcode = 20
 
-    def apply(constantValue: ConstantValue[_]): LDC2_W[_] = {
+    def apply(constantValue: ConstantValue[?]): LDC2_W[?] = {
         constantValue.value match {
             case v: Long   => LoadLong(v)
             case d: Double => LoadDouble(d)

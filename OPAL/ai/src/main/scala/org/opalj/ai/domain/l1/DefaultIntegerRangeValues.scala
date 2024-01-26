@@ -15,7 +15,7 @@ import org.opalj.br.CTIntType
  * @author Michael Eichberg
  */
 trait DefaultIntegerRangeValues extends DefaultSpecialDomainValuesBinding with IntegerRangeValues {
-    domain: CorrelationalDomainSupport with Configuration with ExceptionsFactory =>
+    domain: CorrelationalDomainSupport & Configuration & ExceptionsFactory =>
 
     /**
      * Represents a specific but unknown Integer value.

@@ -17,7 +17,7 @@ import org.opalj.log.OPALLogger
  */
 class ProjectSpecificAIExecutor(
     val project:       SomeProject,
-    val domainClass:   Class[_ <: Domain],
+    val domainClass:   Class[? <: Domain],
     val domainFactory: (SomeProject, Method) => Domain
 ) extends (Method => AIResult) {
 
@@ -38,7 +38,7 @@ class ProjectSpecificAIExecutor(
  * @author Michael Eichberg
  */
 object AIDomainFactoryKey
-    extends ProjectInformationKey[ProjectSpecificAIExecutor, Set[Class[_ <: AnyRef]]] {
+    extends ProjectInformationKey[ProjectSpecificAIExecutor, Set[Class[? <: AnyRef]]] {
 
     /**
      * This key has no special prerequisites.
@@ -63,7 +63,7 @@ object AIDomainFactoryKey
 
     def compute(
         project:         SomeProject,
-        domainFactories: Iterable[Class[_ <: AnyRef]] => Set[Class[_ <: Domain]]
+        domainFactories: Iterable[Class[? <: AnyRef]] => Set[Class[? <: Domain]]
     ): ProjectSpecificAIExecutor = {
         implicit val logContext: LogContext = project.logContext
 

@@ -2,8 +2,8 @@
 package org.opalj
 package de
 
-import org.opalj.br._
-import org.opalj.br.instructions._
+import org.opalj.br.*
+import org.opalj.br.instructions.*
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.log.BasicLogMessage
 import org.opalj.log.GlobalLogContext
@@ -44,7 +44,7 @@ import org.opalj.log.OPALLogger
  */
 class DependencyExtractor(protected[this] val dependencyProcessor: DependencyProcessor) {
 
-    import DependencyTypes._
+    import DependencyTypes.*
 
     /**
      * Extracts all inter source element dependencies of the given class file

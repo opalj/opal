@@ -6,7 +6,7 @@ package domain
 import java.net.URL
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicLong
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 import org.junit.runner.RunWith
 import org.scalatest.funspec.AnyFunSpec

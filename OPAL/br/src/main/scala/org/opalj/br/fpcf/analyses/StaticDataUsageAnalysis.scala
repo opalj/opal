@@ -17,7 +17,7 @@ import org.opalj.br.fpcf.properties.StaticDataUsage
 import org.opalj.br.fpcf.properties.UsesConstantDataOnly
 import org.opalj.br.fpcf.properties.UsesNoStaticData
 import org.opalj.br.fpcf.properties.UsesVaryingData
-import org.opalj.br.instructions._
+import org.opalj.br.instructions.*
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPS

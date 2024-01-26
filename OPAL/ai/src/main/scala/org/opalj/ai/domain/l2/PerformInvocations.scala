@@ -20,7 +20,7 @@ import org.opalj.log.Warn
  * @author Michael Eichberg
  */
 trait PerformInvocations extends MethodCallsHandling {
-    callingDomain: ValuesFactory with ReferenceValuesDomain with Configuration with TheProject with TheCode =>
+    callingDomain: ValuesFactory & ReferenceValuesDomain & Configuration & TheProject & TheCode =>
 
     /**
      * If `true` the exceptions thrown by the called method will be used
@@ -28,7 +28,7 @@ trait PerformInvocations extends MethodCallsHandling {
      */
     def useExceptionsThrownByCalledMethod: Boolean = false
 
-    type CalledMethodDomain <: TargetDomain with MethodCallResults
+    type CalledMethodDomain <: TargetDomain & MethodCallResults
 
     /**
      * The domain that will be used to perform the abstract interpretation of the
@@ -42,7 +42,7 @@ trait PerformInvocations extends MethodCallsHandling {
     /**
      *  The abstract interpreter that will be used for the abstract interpretation.
      */
-    def calledMethodAI: AI[_ >: CalledMethodDomain]
+    def calledMethodAI: AI[? >: CalledMethodDomain]
 
     protected[this] def doInvoke(
         method:             Method,

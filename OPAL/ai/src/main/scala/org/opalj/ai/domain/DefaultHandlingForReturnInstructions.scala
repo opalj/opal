@@ -13,7 +13,7 @@ package domain
  * @author Michael Eichberg
  */
 trait DefaultHandlingForReturnInstructions extends ReturnInstructionsDomain {
-    domain: ValuesDomain with ExceptionsFactory with Configuration =>
+    domain: ValuesDomain & ExceptionsFactory & Configuration =>
 
     /*base impl.*/
     def areturn(pc: Int, value: DomainValue): Computation[Nothing, ExceptionValue] = {

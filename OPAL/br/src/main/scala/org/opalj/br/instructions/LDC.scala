@@ -25,7 +25,7 @@ sealed trait LDC[@specialized(Int, Float) T]
         val other = code.instructions(otherPC)
         (this eq other) || (
             this.opcode == other.opcode &&
-            this.value == other.asInstanceOf[LDC[_]].value
+            this.value == other.asInstanceOf[LDC[?]].value
         )
     }
 }
@@ -147,7 +147,7 @@ case object INCOMPLETE_LDC extends LDC[Any] {
  */
 object LDC {
 
-    def apply(constantValue: ConstantValue[_]): LDC[_] = {
+    def apply(constantValue: ConstantValue[?]): LDC[?] = {
         constantValue.value match {
             case i: Int               => LoadInt(i)
             case f: Float             => LoadFloat(f)

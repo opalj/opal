@@ -13,7 +13,7 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Schedule
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.debug
-import org.opalj.util.PerformanceEvaluation._
+import org.opalj.util.PerformanceEvaluation.*
 
 /**
  * Enables the execution of a set of analyses.
