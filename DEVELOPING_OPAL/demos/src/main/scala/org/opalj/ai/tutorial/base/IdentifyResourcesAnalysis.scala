@@ -52,7 +52,7 @@ object IdentifyResourcesAnalysis extends ProjectAnalysisApplication {
                             ) => pc
                     }
                 (m, pcs)
-            }).filter(_._2.size > 0)
+            }).filter(_._2.nonEmpty)
 
         // Step 2
         // Perform a simple abstract interpretation to check if there is some

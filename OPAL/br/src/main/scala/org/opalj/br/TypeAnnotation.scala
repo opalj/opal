@@ -210,7 +210,7 @@ case class TAOfInstanceOf(offset: Int) extends TypeAnnotationTargetInCode {
     override def remapPCs(codeSize: Int, f: PC => PC): Option[TAOfInstanceOf] = {
         val newOffset = f(offset)
         if (newOffset < codeSize)
-            Some(new TAOfInstanceOf(newOffset))
+            Some(TAOfInstanceOf(newOffset))
         else
             None
     }
@@ -223,7 +223,7 @@ case class TAOfNew(offset: Int) extends TypeAnnotationTargetInCode {
     override def remapPCs(codeSize: Int, f: PC => PC): Option[TAOfNew] = {
         val newOffset = f(offset)
         if (newOffset < codeSize)
-            Some(new TAOfNew(newOffset))
+            Some(TAOfNew(newOffset))
         else
             None
     }
@@ -236,7 +236,7 @@ case class TAOfMethodReferenceExpressionNew(offset: Int) extends TypeAnnotationT
     override def remapPCs(codeSize: Int, f: PC => PC): Option[TAOfMethodReferenceExpressionNew] = {
         val newOffset = f(offset)
         if (newOffset < codeSize)
-            Some(new TAOfMethodReferenceExpressionNew(newOffset))
+            Some(TAOfMethodReferenceExpressionNew(newOffset))
         else
             None
     }
@@ -252,7 +252,7 @@ case class TAOfMethodReferenceExpressionIdentifier(offset: Int) extends TypeAnno
     ): Option[TAOfMethodReferenceExpressionIdentifier] = {
         val newOffset = f(offset)
         if (newOffset < codeSize)
-            Some(new TAOfMethodReferenceExpressionIdentifier(newOffset))
+            Some(TAOfMethodReferenceExpressionIdentifier(newOffset))
         else
             None
     }

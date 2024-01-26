@@ -71,7 +71,7 @@ class PropertyTracingTest extends AnyFlatSpec with Matchers {
             super.invokestatic(pc, declaringClass, isInterface, name, descriptor, operands)
         }
 
-        def isSanitized(): Boolean = hasPropertyOnExit
+        def isSanitized: Boolean = hasPropertyOnExit
     }
 
     private def evaluateMethod(name: String)(f: AnalysisDomain => Unit): Unit = {

@@ -18,5 +18,5 @@ case class LLVMStatement(instruction: Instruction) extends Statement[LLVMFunctio
     lazy val function: LLVMFunction = LLVMFunction(instruction.function)
     override def basicBlock: BasicBlock = instruction.parent
     override def callable: LLVMFunction = function
-    override def toString: String = s"${function.name}\n\t${instruction}\n\t${function}"
+    override def toString: String = s"${function.name}\n\t$instruction\n\t$function"
 }

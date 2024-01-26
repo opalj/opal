@@ -24,7 +24,7 @@ class NativeBackwardICFG(project: SomeProject) extends NativeICFG(project) {
     override def startStatements(callable: NativeFunction): Set[LLVMStatement] = callable match {
         case LLVMFunction(function) =>
             if (function.basicBlockCount == 0) {
-                throw new IllegalArgumentException(s"${callable} does not contain any basic blocks and likely should not be in scope of the analysis")
+                throw new IllegalArgumentException(s"$callable does not contain any basic blocks and likely should not be in scope of the analysis")
             }
             function.exitBlocks.map(bb => LLVMStatement(bb.lastInstruction)).toSet
     }

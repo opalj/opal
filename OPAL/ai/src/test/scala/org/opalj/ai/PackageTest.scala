@@ -39,7 +39,7 @@ class PackageTest extends AnyFlatSpec with Matchers {
         val operands: List[DomainValue] = List(IntegerValue(valueOrigin = -1))
 
         val result = mapOperands(operands, SimpleCoordinatingTypeLevelDomain)
-        result.size should be(1)
+        result.length should be(1)
         result.head should be(IntegerValue(valueOrigin = -1))
     }
 

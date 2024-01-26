@@ -69,7 +69,7 @@ class DependentlyImmutableClassMatcher
                                 x =>
                                     x.asStringValue.value
                             )
-                        annotationParameters.toSet.equals(latticeParameters.toSet)
+                        annotationParameters.toSet.equals(latticeParameters)
                     case _ => p == property
                 }
             )

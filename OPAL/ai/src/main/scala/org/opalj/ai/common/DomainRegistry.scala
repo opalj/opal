@@ -54,7 +54,7 @@ object DomainRegistry {
         factory:            (SomeProject, Method) => Domain
     ): Unit = {
         this.synchronized {
-            if (classRegistry.get(domainClass).nonEmpty)
+            if (classRegistry.contains(domainClass))
                 throw new IllegalArgumentException(s"$domainClass is already registered");
 
             descriptions += ((domainDescription, domainClass))

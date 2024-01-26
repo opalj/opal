@@ -148,7 +148,7 @@ final class TypeCheckingDomain(
             val receiver = operands.last
             // the value is now initialized and we have to update the stack/locals
             val UninitializedObjectValue(theType, _) = receiver
-            val initializedObjectValue = new InitializedObjectValue(theType)
+            val initializedObjectValue = InitializedObjectValue(theType)
             updateAfterExecution(receiver, initializedObjectValue, TheIllegalValue)
         }
         super.invokespecial(pc, declaringClass, isInterface, name, methodDescriptor, operands)
@@ -175,19 +175,19 @@ final class TypeCheckingDomain(
     override def NullValue(origin: ValueOrigin): DomainNullValue = TheNullValue
 
     override def NewObject(pc: Int, objectType: ObjectType): DomainObjectValue = {
-        new UninitializedObjectValue(objectType, pc)
+        UninitializedObjectValue(objectType, pc)
     }
 
     override def UninitializedThis(objectType: ObjectType): DomainObjectValue = {
-        new UninitializedObjectValue(objectType, -1)
+        UninitializedObjectValue(objectType, -1)
     }
 
     override def InitializedObjectValue(pc: Int, objectType: ObjectType): DomainObjectValue = {
-        new InitializedObjectValue(objectType)
+        InitializedObjectValue(objectType)
     }
 
     override def ObjectValue(origin: ValueOrigin, objectType: ObjectType): DomainObjectValue = {
-        new InitializedObjectValue(objectType)
+        InitializedObjectValue(objectType)
     }
 
     override def ObjectValue(

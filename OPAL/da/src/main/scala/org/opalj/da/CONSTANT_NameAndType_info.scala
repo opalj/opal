@@ -22,7 +22,7 @@ case class CONSTANT_NameAndType_info(
 
     override def asCPNode(implicit cp: Constant_Pool): Node =
         <div class="cp_entry">
-            {this.getClass().getSimpleName}
+            {this.getClass.getSimpleName}
             (
             <div class="cp_ref">
                 name_index={name_index}

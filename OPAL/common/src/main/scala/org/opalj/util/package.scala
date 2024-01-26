@@ -22,8 +22,8 @@ import org.opalj.log.OPALLogger
 package object util {
 
     // Used in the context of the implementation of "collect(PartialFunction)" methods.
-    final val AnyToAnyThis: Function1[Any, Any] = {
-        new Function1[Any, Any] { def apply(x: Any): Any = this }
+    final val AnyToAnyThis: (Any) => Any = {
+        (x: Any) => this
     }
 
     val ScalaMajorVersion: String = {
@@ -67,7 +67,7 @@ package object util {
         var run = 0
         do {
             if (logContext.isDefined) {
-                val pendingCount = memoryMXBean.getObjectPendingFinalizationCount()
+                val pendingCount = memoryMXBean.getObjectPendingFinalizationCount
                 OPALLogger.info(
                     "performance",
                     s"garbage collection run $run (pending finalization: $pendingCount)"
@@ -76,14 +76,14 @@ package object util {
             // In general it is **not possible to guarantee** that the garbage collector is really
             // run, but we still do our best.
             memoryMXBean.gc()
-            if (memoryMXBean.getObjectPendingFinalizationCount() > 0) {
+            if (memoryMXBean.getObjectPendingFinalizationCount > 0) {
                 // It may be the case that some finalizers (of just gc'ed object) are still running
                 // and -- therefore -- some further objects are freed after the gc run.
                 Thread.sleep(50)
                 memoryMXBean.gc()
             }
             run += 1
-        } while (memoryMXBean.getObjectPendingFinalizationCount() > 0 &&
+        } while (memoryMXBean.getObjectPendingFinalizationCount > 0 &&
         ns2ms(System.nanoTime() - startTime) < maxGCTime.timeSpan)
     }
 

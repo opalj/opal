@@ -45,7 +45,7 @@ object ShowConfiguration {
 
         if (args.contains("-config")) {
             println(s"\nContext Configuration (application/reference.conf): ")
-            println(renderConfig(config).toString.replace("\n", "\n\t"))
+            println(renderConfig(config).replace("\n", "\n\t"))
         }
 
         //

@@ -20,7 +20,7 @@ import org.opalj.de.*
  */
 sealed trait SpecificationViolation {
 
-    override final def toString(): String = toString(useAnsiColors = false)
+    override final def toString: String = toString(useAnsiColors = false)
 
     def toString(useAnsiColors: Boolean): String
 
@@ -44,9 +44,9 @@ case class DependencyViolation(
     override def toString(useAnsiColors: Boolean): String = {
 
         val sourceLineNumber = source.getLineNumber(project).getOrElse(1)
-        val javaSource = s"(${source.classType.toJava}.java:${sourceLineNumber})"
+        val javaSource = s"(${source.classType.toJava}.java:$sourceLineNumber)"
         val targetLineNumber = target.getLineNumber(project).getOrElse(1)
-        val javaTarget = s"(${target.classType.toJava}.java:${targetLineNumber})"
+        val javaTarget = s"(${target.classType.toJava}.java:$targetLineNumber)"
 
         if (useAnsiColors)
             RED + description +

@@ -59,7 +59,7 @@ object InvokedynamicPrinter extends ProjectAnalysisApplication {
                             bootstrap.arguments.mkString("    Arguments: {", ",", "}\n") +
                             s"    Calling:   ${descriptor.toJava(name)}\n" +
                             "} }\n"
-                }.toList.asJava
+                }.asJava
             )
         }
         val result = invokedynamics.asScala.toSeq.sorted

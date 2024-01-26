@@ -159,7 +159,7 @@ trait ConstraintsBetweenIntegerValues
         val it = store.entrySet().iterator
         while (it.hasNext) {
             val e = it.next()
-            newStore.put(e.getKey(), e.getValue().clone().asInstanceOf[IDMap[IntegerLikeValue, Constraint]])
+            newStore.put(e.getKey, e.getValue.clone().asInstanceOf[IDMap[IntegerLikeValue, Constraint]])
         }
         newStore
     }
@@ -191,19 +191,19 @@ trait ConstraintsBetweenIntegerValues
                 val e = it.next()
                 if (stillExists(e.getKey)) {
                     val inner_newStore = new IDMap[IntegerLikeValue, Constraint]()
-                    val inner_it = e.getValue().entrySet().iterator
+                    val inner_it = e.getValue.entrySet().iterator
                     while (inner_it.hasNext) {
                         val inner_e = inner_it.next()
                         if (stillExists(inner_e.getKey)) {
                             inner_newStore.put(inner_e.getKey, inner_e.getValue)
                         }
                     }
-                    if (!inner_newStore.isEmpty()) {
+                    if (!inner_newStore.isEmpty) {
                         newStore.put(e.getKey, inner_newStore)
                     }
                 }
             }
-            if (newStore.isEmpty())
+            if (newStore.isEmpty)
                 null
             else
                 newStore
@@ -361,7 +361,7 @@ trait ConstraintsBetweenIntegerValues
 
         // we do not need to add a constraint
 
-        updatedValues.clear
+        updatedValues.clear()
         result
     }
 
@@ -377,7 +377,7 @@ trait ConstraintsBetweenIntegerValues
 
         // we do not need to add a constraint; this situation is handled by the domain
 
-        updatedValues.clear
+        updatedValues.clear()
         result
     }
 
@@ -393,7 +393,7 @@ trait ConstraintsBetweenIntegerValues
 
         addConstraint(pc, currentValue(value1), currentValue(value2), NumericConstraints.!=)
 
-        updatedValues.clear
+        updatedValues.clear()
         result
     }
 
@@ -409,7 +409,7 @@ trait ConstraintsBetweenIntegerValues
 
         addConstraint(pc, currentValue(left), currentValue(right), NumericConstraints.<)
 
-        updatedValues.clear
+        updatedValues.clear()
         result
     }
 
@@ -425,7 +425,7 @@ trait ConstraintsBetweenIntegerValues
 
         addConstraint(pc, currentValue(left), currentValue(right), NumericConstraints.<=)
 
-        updatedValues.clear
+        updatedValues.clear()
         result
     }
 
@@ -593,12 +593,12 @@ trait ConstraintsBetweenIntegerValues
         if (constraints(pc) == null)
             return "No constraints found."
 
-        val cs = (constraints(pc).asScala.map { e =>
+        val cs = constraints(pc).asScala.flatMap { e =>
             val (v1, v2c) = e
             val jv2c = v2c.asScala
             for ((v2, c) <- jv2c)
                 yield s"${valueToString(v1)} $c ${valueToString(v2)}"
-        }).flatten
+        }
         cs.mkString("Constraints:\n\t", "\n\t", "")
     }
 

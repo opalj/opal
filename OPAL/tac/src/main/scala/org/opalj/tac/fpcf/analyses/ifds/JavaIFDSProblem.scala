@@ -47,7 +47,7 @@ case class JavaStatement(
         case _                => false
     }
 
-    override def toString: String = s"${method.signatureToJava(false)}[${index}]\n\t${stmt}\n\t${method.toJava}"
+    override def toString: String = s"${method.signatureToJava(false)}[$index]\n\t$stmt\n\t${method.toJava}"
     override def callable: Method = method
     override def basicBlock: CFGNode = cfg.bb(index)
     def stmt: Stmt[V] = code(index)

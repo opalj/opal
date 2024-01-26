@@ -47,7 +47,7 @@ class ConstantsBuffer private (
     private[this] def validateIndex(index: Int, requiresUByteIndex: Boolean): Int = {
         if (requiresUByteIndex && index > UByte.MaxValue) {
             val message = s"the constant pool index $index is larger than  ${UByte.MaxValue}"
-            throw new ConstantPoolException(message)
+            throw ConstantPoolException(message)
         }
 
         validateUShortIndex(index)
@@ -57,7 +57,7 @@ class ConstantsBuffer private (
     private[this] def validateUShortIndex(index: Int): Int = {
         if (index > UShort.MaxValue) {
             val message = s"the constant pool index $index is larger than ${UShort.MaxValue}"
-            throw new ConstantPoolException(message)
+            throw ConstantPoolException(message)
         }
         index
     }

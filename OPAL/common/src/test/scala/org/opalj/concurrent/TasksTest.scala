@@ -160,9 +160,9 @@ class TasksTest extends AnyFunSpec with Matchers {
             }
 
             info("subsequently scheduled: " + subsequentlyScheduled.get)
-            info("number of caught exceptions: " + exceptions.size)
+            info("number of caught exceptions: " + exceptions.length)
 
-            exceptions.size should be(aborted.get)
+            exceptions.length should be(aborted.get)
             processedValues.get() should be(100000 + subsequentlyScheduled.get - aborted.get)
         }
     }

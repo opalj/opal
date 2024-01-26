@@ -40,7 +40,7 @@ trait CachedBytecodeReaderAndBinding extends InstructionsDeserializer {
 
         val bas = new ByteArrayInputStream(source)
         val in = new DataInputStream(bas)
-        val codeLength = source.size
+        val codeLength = source.length
         val instructions = new Array[Instruction](codeLength)
 
         var wide: Boolean = false
@@ -410,7 +410,7 @@ trait CachedBytecodeReaderAndBinding extends InstructionsDeserializer {
                     WIDE
 
                 case opcode =>
-                    throw new BytecodeProcessingFailedException("unsupported opcode: " + opcode)
+                    throw BytecodeProcessingFailedException("unsupported opcode: " + opcode)
             }
 
         }

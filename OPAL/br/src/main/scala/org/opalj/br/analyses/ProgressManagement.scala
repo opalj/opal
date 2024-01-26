@@ -81,7 +81,7 @@ trait ProgressManagement {
      * This method is called by the analysis method to check whether the analysis should be aborted.
      * The analysis will abort the computation if this method returns `true`.
      */
-    def isInterrupted(): Boolean
+    def isInterrupted: Boolean
 
 }
 

@@ -192,7 +192,7 @@ class UIDSetTest extends AnyFunSpec with Matchers with ScalaCheckDrivenPropertyC
         it("findById") {
             forAll { (s: Set[Int], e: Set[Int]) =>
                 val us = toSUIDSet(s) ++ UIDSet(e.slice(0, e.size / 2).map(SUID.apply).toSeq*)
-                classify(us.size > 0, "non-empty set") {
+                classify(us.nonEmpty, "non-empty set") {
                     e.forall(v => us.find(_.id == v) == us.findById(v))
                 }
             }
@@ -418,8 +418,8 @@ class UIDSetTest extends AnyFunSpec with Matchers with ScalaCheckDrivenPropertyC
                 val toBeRemoved = b.size / 2
                 val newAUS =
                     ((aus ++ b.map(SUID.apply)) -- b.slice(0, toBeRemoved).map(SUID.apply)).filter(i => b.contains(i.id))
-                val newA = (a ++ b -- b.slice(0, toBeRemoved)).filter(b.contains)
-                classify(newA.size == 0, "new A is now empty") {
+                val newA = (a ++ b -- b.slice(0, toBeRemoved)).intersect(b)
+                classify(newA.isEmpty, "new A is now empty") {
                     classify(newA.size < a.size, "new A is smaller than a") {
                         newAUS.size == newA.size &&
                         newAUS.iterator.map[Int](_.id).toSet == newA
@@ -565,7 +565,7 @@ class UIDSetTest extends AnyFunSpec with Matchers with ScalaCheckDrivenPropertyC
 
     describe("the equals operation for sets of one value") {
         it("should return true for two sets containing the same value") {
-            assert(new UIDSet1(SUID(1)) == UIDSet1(SUID(1)))
+            assert(UIDSet1(SUID(1)) == UIDSet1(SUID(1)))
 
             assert(
                 new UIDSetInnerNode[SUID](1, SUID(1), null, null) == UIDSet1(SUID(1))

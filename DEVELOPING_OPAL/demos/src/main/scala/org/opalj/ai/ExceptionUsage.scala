@@ -133,7 +133,7 @@ object ExceptionUsage extends ProjectAnalysisApplication {
             else {
                 Some(usages)
             }
-        }).filter(_.isDefined).map(_.get).flatten
+        }).filter(_.isDefined).flatMap(_.get)
 
         val (notUsed, used) = usages.toSeq.partition(_.usageInformation.isEmpty)
         var report = used.map(_.toString).toList.sorted.mkString("\nUsed\n", "\n", "\n")

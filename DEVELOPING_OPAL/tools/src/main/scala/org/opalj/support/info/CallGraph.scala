@@ -212,7 +212,7 @@ object CallGraph extends ProjectAnalysisApplication {
 
             println(s"DefSite PTSs: ${getNum(classOf[DefinitionSite])}")
             println(s"Parameter PTSs: ${getNum(classOf[VirtualFormalParameter])}")
-            println(s"Instance Field PTSs: ${getNum(classOf[Tuple2[Long, Field]])}")
+            println(s"Instance Field PTSs: ${getNum(classOf[(Long, Field)])}")
             println(s"Static Field PTSs: ${getNum(classOf[Field])}")
             println(s"Array PTSs: ${getNum(classOf[ArrayEntity[Long]])}")
             println(s"Return PTSs: ${getNum(classOf[DefinedMethod]) + getNum(classOf[VirtualDeclaredMethod])}")
@@ -221,7 +221,7 @@ object CallGraph extends ProjectAnalysisApplication {
 
             println(s"DefSite PTS entries: ${getEntries(classOf[DefinitionSite])}")
             println(s"Parameter PTS entries: ${getEntries(classOf[VirtualFormalParameter])}")
-            println(s"Instance Field PTS entries: ${getEntries(classOf[Tuple2[Long, Field]])}")
+            println(s"Instance Field PTS entries: ${getEntries(classOf[(Long, Field)])}")
             println(s"Static Field PTS entries: ${getEntries(classOf[Field])}")
             println(s"Array PTS entries: ${getEntries(classOf[ArrayEntity[Long]])}")
             println(

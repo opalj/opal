@@ -181,7 +181,7 @@ object InterpretMethod {
                     println("Starting abstract interpretation of: ")
                     println("\t" + classFile.thisType.toJava + "{")
                     println("\t\t" + method.signatureToJava(true) +
-                        "[instructions=" + body.instructions.size +
+                        "[instructions=" + body.instructions.length +
                         "; #max_stack=" + body.maxStack +
                         "; #locals=" + body.maxLocals + "]")
                     println("\t}")
@@ -195,7 +195,7 @@ object InterpretMethod {
                 val evaluatedInstructions = result.evaluatedInstructions
                 val cfgDomain = result.domain.asInstanceOf[RecordCFG]
 
-                val cfgAsDotGraph = toDot(Set(cfgDomain.cfgAsGraph()), ranksep = "0.3").toString
+                val cfgAsDotGraph = toDot(Set(cfgDomain.cfgAsGraph()), ranksep = "0.3")
                 val cfgFile = writeAndOpen(cfgAsDotGraph, "AICFG", ".gv")
                 println("AI CFG: " + cfgFile)
 
@@ -217,7 +217,7 @@ object InterpretMethod {
                 val duInfo = result.domain.asInstanceOf[RecordDefUse]
                 writeAndOpen(duInfo.dumpDefUseInfo(), "DefUseInfo", ".html")
 
-                val dotGraph = toDot(duInfo.createDefUseGraph(method.body.get)).toString()
+                val dotGraph = toDot(duInfo.createDefUseGraph(method.body.get))()
                 writeAndOpen(dotGraph, "ImplicitDefUseGraph", ".gv")
             }
 
@@ -281,7 +281,7 @@ object InterpretMethod {
                             aiState + ife.cause.getStackTrace.mkString("\n<ul><li>", "</li>\n<li>", "</li></ul>\n") +
                                 "<div style='margin-left:5em'>" + causeToString(ife, true) + "</div>"
                         case e: Throwable =>
-                            val message = e.getMessage()
+                            val message = e.getMessage
                             if (message != null)
                                 aiState + "<br>Underlying cause: " + util.XHTML.htmlify(message)
                             else

@@ -47,8 +47,8 @@ object ProjectSerializer {
         var i = 0
         while (i < args.length) {
             args(i) match {
-                case "-in"  => { i += 1; in = args(i) }
-                case "-out" => { i += 1; out = args(i) }
+                case "-in"  => i += 1; in = args(i)
+                case "-out" => i += 1; out = args(i)
 
                 case "-h" | "--help" =>
                     showUsage(error = None);

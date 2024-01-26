@@ -248,7 +248,7 @@ class RecordDefUseTest extends AnyFunSpec with Matchers {
                 do {
                     location += {
                         val st = root.getStackTrace
-                        if (st != null && st.length > 0) {
+                        if (st != null && st.nonEmpty) {
                             st.take(5).map { ste =>
                                 s"${ste.getClassName}{ ${ste.getMethodName}:${ste.getLineNumber}}"
                             }.mkString("; ")

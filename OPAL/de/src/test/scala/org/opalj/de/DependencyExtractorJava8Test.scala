@@ -71,7 +71,7 @@ class DependencyExtractorJava8Test extends AnyFunSuite {
             )
         }
 
-        assert(dependencies.size > 0, "no dependencies extracted")
+        assert(dependencies.nonEmpty, "no dependencies extracted")
 
         //    package dependencies;
         //

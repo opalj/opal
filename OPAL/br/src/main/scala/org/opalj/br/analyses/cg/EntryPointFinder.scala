@@ -210,7 +210,7 @@ trait ConfigurationEntryPointsFinder extends EntryPointFinder {
 
             val considerSubtypes = configuredType.endsWith("+")
             val typeName = if (considerSubtypes) {
-                configuredType.substring(0, configuredType.size - 1)
+                configuredType.substring(0, configuredType.length - 1)
             } else {
                 configuredType
             }
@@ -223,7 +223,7 @@ trait ConfigurationEntryPointsFinder extends EntryPointFinder {
                     case _: IllegalArgumentException =>
                         OPALLogger.warn(
                             "project configuration",
-                            s"illegal method descriptor: $typeName { $name or ${md}}"
+                            s"illegal method descriptor: $typeName { $name or $md}"
                         )
                         None
                 }
@@ -234,7 +234,7 @@ trait ConfigurationEntryPointsFinder extends EntryPointFinder {
                     case Some(cf) =>
                         var methods: List[Method] = cf.findMethod(name)
 
-                        if (methods.size == 0)
+                        if (methods.isEmpty)
                             OPALLogger.warn(
                                 "project configuration",
                                 s"$typeName does not define a method $name; entry point ignored"

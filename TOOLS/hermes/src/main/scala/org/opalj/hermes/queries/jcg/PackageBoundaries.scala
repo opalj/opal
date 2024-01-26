@@ -64,9 +64,7 @@ class PackageBoundaries(implicit hermes: HermesConfig) extends DefaultFeatureQue
                 val rtOt = receiver.asObjectType
                 val rcf = project.classFile(rtOt)
 
-                val isPackageVisibleMethod = rcf.map {
-                    _.findMethod(name, methodDescriptor).map(_.isPackagePrivate).getOrElse(false)
-                }.getOrElse(false)
+                val isPackageVisibleMethod = rcf.exists(_.findMethod(name, methodDescriptor).exists(_.isPackagePrivate))
 
                 val matchesPreconditions = isPackageVisibleMethod &&
                     isMethodOverriddenInDiffPackage(
@@ -109,7 +107,7 @@ class PackageBoundaries(implicit hermes: HermesConfig) extends DefaultFeatureQue
     ) = {
         project.classHierarchy.existsSubclass(rtOt, project) { sot =>
             (sot.thisType.packageName ne callerPackage) &&
-            sot.findMethod(name, methodDescriptor).map(_.isPackagePrivate).getOrElse(false)
+            sot.findMethod(name, methodDescriptor).exists(_.isPackagePrivate)
         }
     }
 

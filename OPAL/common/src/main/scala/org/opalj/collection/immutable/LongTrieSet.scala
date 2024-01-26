@@ -289,7 +289,7 @@ private[immutable] final class LongTrieSet3(
             if (i1_7L == i3_7L) {
                 if (i1_7L == i_7L) {
                     // they all have the same 3 bits used for branching purposes...
-                    new LongTrieSetNode1(i1_7L.toInt, grow(i, level + 3))
+                    new LongTrieSetNode1(i1_7L, grow(i, level + 3))
                 } else {
                     new LongTrieSetNode2(
                         1 << (i_7L * 4) | 2 << (i1_7L * 4) /*lookuptable*/,

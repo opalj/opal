@@ -8,8 +8,8 @@ package taint
 
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
-import org.opalj.ifds.Dependees.Getter
 import org.opalj.ifds.Callable
+import org.opalj.ifds.Dependees.Getter
 import org.opalj.ifds.IFDSFact
 import org.opalj.ll.fpcf.analyses.ifds.JNICallUtil
 import org.opalj.ll.fpcf.analyses.ifds.JNIMethod
@@ -18,35 +18,21 @@ import org.opalj.ll.fpcf.analyses.ifds.LLVMStatement
 import org.opalj.ll.fpcf.analyses.ifds.NativeBackwardIFDSProblem
 import org.opalj.ll.fpcf.analyses.ifds.NativeFunction
 import org.opalj.ll.llvm.PointerType
+import org.opalj.ll.llvm.value.Alloca
 import org.opalj.ll.llvm.value.BinaryOperation
 import org.opalj.ll.llvm.value.Call
-import org.opalj.ll.llvm.value.Store
-import org.opalj.ll.llvm.value.Alloca
-import org.opalj.ll.llvm.value.GetElementPtr
-import org.opalj.ll.llvm.value.Load
-import org.opalj.ll.llvm.value.FNeg
 import org.opalj.ll.llvm.value.ConversionOperation
 import org.opalj.ll.llvm.value.ExtractElement
-import org.opalj.ll.llvm.value.InsertElement
-import org.opalj.ll.llvm.value.ShuffleVector
 import org.opalj.ll.llvm.value.ExtractValue
+import org.opalj.ll.llvm.value.FNeg
+import org.opalj.ll.llvm.value.GetElementPtr
+import org.opalj.ll.llvm.value.InsertElement
 import org.opalj.ll.llvm.value.InsertValue
+import org.opalj.ll.llvm.value.Load
 import org.opalj.ll.llvm.value.Ret
+import org.opalj.ll.llvm.value.ShuffleVector
+import org.opalj.ll.llvm.value.Store
 import org.opalj.ll.llvm.value.Value
-import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem.V
-import org.opalj.tac.fpcf.analyses.ifds.taint.ArrayElement
-import org.opalj.tac.fpcf.analyses.ifds.taint.FlowFact
-import org.opalj.tac.fpcf.analyses.ifds.taint.InstanceField
-import org.opalj.tac.fpcf.analyses.ifds.taint.StaticField
-import org.opalj.tac.fpcf.analyses.ifds.taint.TaintFact
-import org.opalj.tac.fpcf.analyses.ifds.taint.TaintNullFact
-import org.opalj.tac.fpcf.analyses.ifds.taint.TaintProblem
-import org.opalj.tac.fpcf.analyses.ifds.taint.Variable
-import org.opalj.tac.fpcf.analyses.ifds.JavaBackwardICFG
-import org.opalj.tac.fpcf.analyses.ifds.JavaICFG
-import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem
-import org.opalj.tac.fpcf.analyses.ifds.JavaMethod
-import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
 import org.opalj.tac.ArrayLength
 import org.opalj.tac.ArrayLoad
 import org.opalj.tac.BinaryExpr
@@ -59,6 +45,20 @@ import org.opalj.tac.PrefixExpr
 import org.opalj.tac.PrimitiveTypecastExpr
 import org.opalj.tac.ReturnValue
 import org.opalj.tac.Var
+import org.opalj.tac.fpcf.analyses.ifds.JavaBackwardICFG
+import org.opalj.tac.fpcf.analyses.ifds.JavaICFG
+import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem
+import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem.V
+import org.opalj.tac.fpcf.analyses.ifds.JavaMethod
+import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
+import org.opalj.tac.fpcf.analyses.ifds.taint.ArrayElement
+import org.opalj.tac.fpcf.analyses.ifds.taint.FlowFact
+import org.opalj.tac.fpcf.analyses.ifds.taint.InstanceField
+import org.opalj.tac.fpcf.analyses.ifds.taint.StaticField
+import org.opalj.tac.fpcf.analyses.ifds.taint.TaintFact
+import org.opalj.tac.fpcf.analyses.ifds.taint.TaintNullFact
+import org.opalj.tac.fpcf.analyses.ifds.taint.TaintProblem
+import org.opalj.tac.fpcf.analyses.ifds.taint.Variable
 
 /**
  * Class to solve a native backward taint problem.
@@ -191,8 +191,9 @@ abstract class NativeBackwardTaintProblem(project: SomeProject)
                 case NativeVariable(value) if insValue.aggregVal == value =>
                     Set(in, NativeVariable(insValue.value))
                 // check if tainted element is written
-                case NativeArrayElement(base, indices) if insValue.aggregVal == base && indices.head == 0 &&
-                    insValue.constants.contains(indices.toSeq(1)) =>
+                case NativeArrayElement(base, indices)
+                    if insValue.aggregVal == base && indices.head == 0 &&
+                        insValue.constants.contains(indices.toSeq(1)) =>
                     Set(in, NativeVariable(insValue.value))
                 case _ => Set(in)
             }
@@ -365,8 +366,8 @@ abstract class NativeBackwardTaintProblem(project: SomeProject)
 
         in match {
             // Taint actual parameter if formal parameter is tainted
-            case NativeVariable(value)                 => taintActualIfFormal(value)
-            case NativeArrayElement(base, _)           => taintActualIfFormal(base)
+            case NativeVariable(value)       => taintActualIfFormal(value)
+            case NativeArrayElement(base, _) => taintActualIfFormal(base)
             // keep static field taints
             case JavaStaticField(classType, fieldName) => Set(StaticField(classType, fieldName))
             // propagate flow facts
@@ -406,7 +407,7 @@ abstract class NativeBackwardTaintProblem(project: SomeProject)
              arr = nested_ret_array()            {arr[2]}
              sink(arr[2])
              ============================================================
-       */
+             */
             expression.astID match {
                 case Var.ASTID => expression.asVar.definedBy.map(Variable)
                 case ArrayLoad.ASTID =>
@@ -417,8 +418,8 @@ abstract class NativeBackwardTaintProblem(project: SomeProject)
                     else arrayDefinedBy.map(Variable)
                 case BinaryExpr.ASTID | PrefixExpr.ASTID | Compare.ASTID | PrimitiveTypecastExpr.ASTID |
                     NewArray.ASTID | ArrayLength.ASTID =>
-                    (0 until expression.subExprCount).foldLeft(Set.empty[TaintFact])(
-                        (acc, subExpr) => acc ++ createNewTaints(expression.subExpr(subExpr), statement)
+                    (0 until expression.subExprCount).foldLeft(Set.empty[TaintFact])((acc, subExpr) =>
+                        acc ++ createNewTaints(expression.subExpr(subExpr), statement)
                     )
                 case GetField.ASTID =>
                     val getField = expression.asGetField
@@ -476,7 +477,7 @@ abstract class NativeBackwardTaintProblem(project: SomeProject)
         val callInstr = call.instruction.asInstanceOf[Call]
 
         def taintActualIfFormal(index: Int): Set[NativeTaintFact] = {
-            if (index > -1) Set.empty // tac parameter indices are < 0, index is no parameter
+            if (index > -1) return Set.empty; // tac parameter indices are < 0, index is no parameter
             val javaParamIndex = JavaIFDSProblem.remapParamAndVariableIndex(index, callee.isStatic)
             val nativeParamIndex = JNICallUtil.javaParamIndexToNative(javaParamIndex, callee.isStatic)
             Set(NativeVariable(callInstr.argument(nativeParamIndex).get))
@@ -484,15 +485,15 @@ abstract class NativeBackwardTaintProblem(project: SomeProject)
 
         in match {
             // Taint actual parameter if formal parameter is tainted
-            case Variable(index)                   => taintActualIfFormal(index)
-            case ArrayElement(index, _)            => taintActualIfFormal(index)
-            case InstanceField(index, _, _)        => taintActualIfFormal(index)
+            case Variable(index)            => taintActualIfFormal(index)
+            case ArrayElement(index, _)     => taintActualIfFormal(index)
+            case InstanceField(index, _, _) => taintActualIfFormal(index)
             // also propagate tainted static fields
             case StaticField(classType, fieldName) => Set(JavaStaticField(classType, fieldName))
             case TaintNullFact                     => Set(NativeTaintNullFact)
             // Track the call chain to the sink back
-            case FlowFact(flow)                    => Set(NativeFlowFact(unbCallChain.prepended(call.function)))
-            case _                                 => Set.empty
+            case FlowFact(flow) => Set(NativeFlowFact(unbCallChain.prepended(call.function)))
+            case _              => Set.empty
         }
     }
 }

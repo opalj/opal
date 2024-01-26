@@ -224,7 +224,7 @@ trait AnalysisApplication {
 
         info("info", "executing analysis: " + analysis.title + ".")
         // TODO Add progressmanagement.
-        val result = analysis.analyze(project, unknownArgs.toSeq, ProgressManagement.None)
+        val result = analysis.analyze(project, unknownArgs, ProgressManagement.None)
         OPALLogger.log(LogMessage.plainInfo(result.toConsoleString))
     }
 

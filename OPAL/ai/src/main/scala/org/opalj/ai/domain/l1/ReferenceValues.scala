@@ -647,13 +647,13 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
 
             // The reference ids are different...
             if (this == that)
-                return RefIdUpdate(that);
-            if (this.abstractsOver(that))
-                return RefIdUpdate(this.updateRefId(that.refId));
+                RefIdUpdate(that)
+            else if (this.abstractsOver(that))
+                RefIdUpdate(this.updateRefId(that.refId))
             else if (that.abstractsOver(this))
-                return StructuralUpdate(that); // StructuralUpdate(that.updateRefId());
+                StructuralUpdate(that); // StructuralUpdate(that.updateRefId())
             else
-                return StructuralUpdate(doPeformJoinWithNonNullValueWithSameOrigin(that, that.refId));
+                StructuralUpdate(doPeformJoinWithNonNullValueWithSameOrigin(that, that.refId))
         }
 
         def toString(upperTypeBound: String): String = {
@@ -1320,7 +1320,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                 // we now have to impose the conditions of this "MultipleReferenceValue"
                 // on the refinedValue
                 if (thisIsNull.isYesOrNo && refinedValue.isNull.isUnknown)
-                    refinedValue = refinedValue.doRefineIsNull(isNull).asInstanceOf[DomainSingleOriginReferenceValue]
+                    refinedValue = refinedValue.doRefineIsNull(isNull)
                 if (thisIsNull.isNoOrUnknown /*if the value is null then there is nothing (more) to do*/ &&
                     !refinedValue.isPrecise /*if the value isPrecise then there is nothing (more) to do*/ &&
                     thisUpperTypeBound != refinedValue.upperTypeBound &&
@@ -1328,7 +1328,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                 ) {
                     if (thisUpperTypeBound.isSingletonSet)
                         refinedValue =
-                            refinedValue.doRefineUpperTypeBound(thisUpperTypeBound.head).asInstanceOf[DomainSingleOriginReferenceValue]
+                            refinedValue.doRefineUpperTypeBound(thisUpperTypeBound.head)
                     else
                         refinedValue =
                             ObjectValue(
@@ -1494,7 +1494,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                     value.isNull.isYes || {
                         value.isValueASubtypeOf(supertype) match {
                             case Yes | Unknown => true
-                            case No            => { filteredValuesOrigins -= value.id; false }
+                            case No            => filteredValuesOrigins -= value.id; false
                         }
                     }
                 }
@@ -1652,7 +1652,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                                 } else {
                                     val joinResult =
                                         joinedValues.computeIfAbsent(
-                                            new IdentityPair(thisValue, otherValue),
+                                            IdentityPair(thisValue, otherValue),
                                             _ => thisValue.join(joinPC, otherValue)
                                         )
 

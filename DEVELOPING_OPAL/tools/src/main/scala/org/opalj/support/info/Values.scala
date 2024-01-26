@@ -75,7 +75,7 @@ object Values extends ProjectAnalysisApplication {
         }
 
         val objectValuesReturningMethodsCount =
-            project.allMethodsWithBody.filter(_.returnType.isObjectType).size
+            project.allMethodsWithBody.count(_.returnType.isObjectType)
 
         val mMethods =
             methodReturnValues

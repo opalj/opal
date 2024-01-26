@@ -34,7 +34,7 @@ class TACNaiveSwitchTest extends TACNaiveTest {
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, true)
 
             assert(statements.nonEmpty)
-            assert(javaLikeCode.length > 0)
+            assert(javaLikeCode.nonEmpty)
 
             val expected = Array(
                 Assignment(
@@ -96,7 +96,7 @@ class TACNaiveSwitchTest extends TACNaiveTest {
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, true)
 
             assert(statements.nonEmpty)
-            assert(javaLikeCode.length > 0)
+            assert(javaLikeCode.nonEmpty)
             statements.shouldEqual(Array(
                 Assignment(
                     -1,

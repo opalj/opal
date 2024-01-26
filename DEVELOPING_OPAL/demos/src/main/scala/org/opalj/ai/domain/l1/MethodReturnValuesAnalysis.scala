@@ -132,7 +132,7 @@ object MethodReturnValuesAnalysis extends ProjectAnalysisApplication {
 
 case class RefinedReturnType(method: Method, refinedType: Option[Domain#DomainValue]) {
 
-    override def toString(): String = {
+    override def toString: String = {
         import Console.*
         "Refined the return type of " + BOLD + BLUE + method.toJava + " => " +
             GREEN + refinedType.getOrElse("\"NONE\" (the method does not return normally)") + RESET

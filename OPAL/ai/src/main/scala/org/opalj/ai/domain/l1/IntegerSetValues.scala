@@ -620,7 +620,7 @@ trait IntegerSetValues
                 val newLs = ls.filter(_ < rsMax)
                 val (operands1, locals1) =
                     if (newLs.size != ls.size) {
-                        if (newLs.size == 0) {
+                        if (newLs.isEmpty) {
                             val message = s"constraint: $left < $right led to impossible value"
                             throw new IllegalStateException(message)
                         }

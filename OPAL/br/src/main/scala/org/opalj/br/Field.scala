@@ -150,7 +150,7 @@ sealed abstract class JVMField extends ClassMember with Ordered[JVMField] {
     //
     //
 
-    override def toString(): String = {
+    override def toString: String = {
         import AccessFlagsContexts.FIELD
         val jAccessFlags = AccessFlags.toStrings(accessFlags, FIELD).mkString(" ")
         val jDescriptor = fieldType.toJava + " " + name
@@ -162,7 +162,7 @@ sealed abstract class JVMField extends ClassMember with Ordered[JVMField] {
             }
 
         if (attributes.nonEmpty) {
-            field + attributes.map(_.getClass().getSimpleName()).mkString("«", ", ", "»")
+            field + attributes.map(_.getClass.getSimpleName()).mkString("«", ", ", "»")
         } else {
             field
         }

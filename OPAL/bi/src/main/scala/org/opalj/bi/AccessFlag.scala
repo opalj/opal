@@ -79,7 +79,7 @@ object VisibilityModifier {
      *          element has default visibility.
      */
     def get(accessFlags: Int): Option[VisibilityModifier] = {
-        ((accessFlags & mask): @switch) match {
+        (accessFlags & mask: @switch) match {
             case ACC_PUBLIC.mask    => SOME_PUBLIC
             case ACC_PRIVATE.mask   => SOME_PRIVATE
             case ACC_PROTECTED.mask => SOME_PROTECTED

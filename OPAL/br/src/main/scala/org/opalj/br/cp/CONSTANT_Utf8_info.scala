@@ -47,7 +47,7 @@ case class CONSTANT_Utf8_info(value: String) extends Constant_Pool_Entry {
             case AttributesParent.Method    => SignatureParser.parseMethodTypeSignature(value)
             case AttributesParent.Code =>
                 val message = s"code attribute has an unexpected signature attribute: $value"
-                throw new BytecodeProcessingFailedException(message)
+                throw BytecodeProcessingFailedException(message)
         }
     }
 

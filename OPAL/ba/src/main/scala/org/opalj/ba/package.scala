@@ -169,15 +169,15 @@ package object ba { ba =>
     def createBoostrapMethodTableAttribute(constantsPool: ConstantsPool): da.Attribute = {
         import constantsPool.*
         val bootstrap_methods = bootstrapMethods map { bootstrapMethod =>
-            new da.BootstrapMethod(
+            da.BootstrapMethod(
                 CPEMethodHandle(bootstrapMethod.handle, false),
                 bootstrapMethod.arguments.map[da.BootstrapArgument] { argument =>
-                    new da.BootstrapArgument(CPEntryForBootstrapArgument(argument))
+                    da.BootstrapArgument(CPEntryForBootstrapArgument(argument))
                 }
             )
         }
         val attributeNameIndex = constantsPool.CPEUtf8(bi.BootstrapMethodsAttribute.Name)
-        new da.BootstrapMethods_attribute(attributeNameIndex, bootstrap_methods)
+        da.BootstrapMethods_attribute(attributeNameIndex, bootstrap_methods)
     }
 
     /**
@@ -510,7 +510,7 @@ package object ba { ba =>
             }
         }
 
-        instructions.flush
+        instructions.flush()
 
         da.Code_attribute(
             attribute_name_index = constantsBuffer.CPEUtf8(bi.CodeAttribute.Name),

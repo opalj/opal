@@ -119,9 +119,10 @@ object IfNullParameterAnalysis extends ProjectAnalysisApplication {
                                     domain1,
                                     // We need to keep the original location, otherwise
                                     // the correlation analysis would miserably fail!
-                                    ex.asInstanceOf[domain2.DomainSingleOriginReferenceValue].origin
+                                    ex.asInstanceOf[domain2.DomainSingleOriginReferenceValue]
+                                        .origin
                                 ).asInstanceOf[domain1.ExceptionValue]
-                            ).toSet[domain1.DomainReferenceValue]
+                            )
                         val diff =
                             d1thrownException.diff(adaptedD2ThrownException) ++
                                 adaptedD2ThrownException.diff(d1thrownException)

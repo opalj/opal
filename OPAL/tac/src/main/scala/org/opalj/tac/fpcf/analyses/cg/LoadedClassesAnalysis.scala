@@ -229,7 +229,7 @@ class LoadedClassesAnalysis(
         ch.allSupertypes(declClassType, reflexive = true).filterNot(currentLoadedClasses.contains)
     }
 
-    private[this] def getCurrentLoadedClasses(): UIDSet[ObjectType] = {
+    private[this] def getCurrentLoadedClasses: UIDSet[ObjectType] = {
         val currentLoadedClassesEPS: EOptionP[SomeProject, LoadedClasses] =
             propertyStore(project, LoadedClasses.key)
 

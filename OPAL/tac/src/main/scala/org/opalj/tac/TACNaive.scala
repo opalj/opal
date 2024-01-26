@@ -665,7 +665,7 @@ object TACNaive {
                             case cfgNode        =>
                                 // in these cases something went terribly wrong...
                                 val message = "the cfg has an unexpected shape: " + cfgNode
-                                throw new AnalysisException(message)
+                                throw AnalysisException(message)
                         }
                         successors += successor
                         schedule(successor, stack)

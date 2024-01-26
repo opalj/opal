@@ -38,13 +38,13 @@ case class CONSTANT_Utf8_info(raw: Array[Byte], value: String) extends Constant_
 object CONSTANT_Utf8 {
 
     def apply(value: String): CONSTANT_Utf8_info = {
-        new CONSTANT_Utf8_info(
+        CONSTANT_Utf8_info(
             {
                 val bout = new ByteArrayOutputStream(value.length + 2)
                 val dout = new DataOutputStream(bout)
                 dout.writeUTF(value)
                 dout.flush()
-                bout.toByteArray()
+                bout.toByteArray
             },
             value
         )

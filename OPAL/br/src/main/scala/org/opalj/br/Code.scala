@@ -1668,12 +1668,12 @@ object Code {
 
         var localVariableTablesCount = 0
         var lineNumberTablesCount = 0
-        attributes foreach { a =>
-            if (a.isInstanceOf[LocalVariableTable]) {
+        attributes foreach {
+            case _: LocalVariableTable ⇒
                 localVariableTablesCount += 1
-            } else if (a.isInstanceOf[UnpackedLineNumberTable]) {
+            case _: UnpackedLineNumberTable ⇒
                 lineNumberTablesCount += 1
-            }
+            case _ ⇒
         }
 
         if (localVariableTablesCount <= 1 && lineNumberTablesCount <= 1) {

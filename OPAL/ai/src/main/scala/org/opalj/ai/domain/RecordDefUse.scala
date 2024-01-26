@@ -411,7 +411,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain & TheCode =>
 
             forceScheduling
         } else {
-            assert(newDefOps forall { vo => vo != null }, "null value origin found")
+            assert(!newDefOps.contains(null), "null value origin found")
             // assert(newDefOps.forall(e => e.iterator.size == e.size))
             defOps(successorPC) = newDefOps
             defLocals(successorPC) = newDefLocals
@@ -546,7 +546,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain & TheCode =>
         operandsArray: OperandsArray
     ): Boolean = {
         val currentDefOps = defOps(currentPC)
-        currentDefOps.take(usedValues).map { op => updateUsageInformation(op, currentPC) }
+        currentDefOps.take(usedValues).foreach { op => updateUsageInformation(op, currentPC) }
 
         val newDefOps: List[ValueOrigins] =
             if (isExceptionalControlFlow) {
@@ -1260,7 +1260,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain & TheCode =>
                 // just operates on the stack and which is not a stack management instruction (dup,
                 // ...))
                 val usedValues = instructions(currentPC).numberOfPoppedOperands(NotRequired)
-                defOps(currentPC).take(usedValues).map(op => updateUsageInformation(op, currentPC))
+                defOps(currentPC).take(usedValues).foreach(op => updateUsageInformation(op, currentPC))
             }
         }
 
@@ -1344,7 +1344,11 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain & TheCode =>
                         if (os eq null)
                             <i>{"N/A"}</i>
                         else
-                            os.map { o => <li>{if (o eq null) "N/A" else o.mkString("{", ",", "}")}</li> }.toList
+                            os.map { o =>
+                                <li>
+                                {if (o eq null) "N/A" else o.mkString("{", ",", "}")}
+                            </li>
+                            }
 
                     val locals =
                         if (ls eq null)

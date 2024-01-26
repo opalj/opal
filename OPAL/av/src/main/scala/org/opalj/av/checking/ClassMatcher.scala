@@ -111,16 +111,16 @@ case class DefaultClassMatcher(
 object ClassMatcher {
 
     def apply(namePredicate: NamePredicate): ClassMatcher = {
-        new DefaultClassMatcher(namePredicate = namePredicate)
+        DefaultClassMatcher(namePredicate = namePredicate)
     }
 
     def apply(annotationsPredicate: AnnotationsPredicate): ClassMatcher = {
-        new DefaultClassMatcher(annotationsPredicate = annotationsPredicate)
+        DefaultClassMatcher(annotationsPredicate = annotationsPredicate)
     }
 
     def apply(className: String): ClassMatcher = {
         require(className.indexOf('*') == -1)
-        new DefaultClassMatcher(namePredicate = Equals(className))
+        DefaultClassMatcher(namePredicate = Equals(className))
     }
 
     def apply(className: String, matchPrefix: Boolean): ClassMatcher = {
@@ -130,7 +130,7 @@ object ClassMatcher {
                 StartsWith(className)
             else
                 Equals(className)
-        new DefaultClassMatcher(namePredicate = namePredicate)
+        DefaultClassMatcher(namePredicate = namePredicate)
     }
 
     def apply(
@@ -147,7 +147,7 @@ object ClassMatcher {
             else
                 Equals(className)
 
-        new DefaultClassMatcher(
+        DefaultClassMatcher(
             namePredicate = namePredicate,
             matchMethods = matchMethods,
             matchFields = matchFields
@@ -162,18 +162,18 @@ object ClassMatcher {
                 StartsWith(className)
             else
                 Equals(className)
-        new DefaultClassMatcher(
+        DefaultClassMatcher(
             namePredicate = namePredicate,
             matchSubclasses = matchSubclasses
         )
     }
 
     def apply(regex: Regex): ClassMatcher = {
-        new DefaultClassMatcher(namePredicate = RegexNamePredicate(regex))
+        DefaultClassMatcher(namePredicate = RegexNamePredicate(regex))
     }
 
     def apply(regex: Regex, matchSubclasses: Boolean): ClassMatcher = {
-        new DefaultClassMatcher(
+        DefaultClassMatcher(
             namePredicate = RegexNamePredicate(regex),
             matchSubclasses = matchSubclasses
         )

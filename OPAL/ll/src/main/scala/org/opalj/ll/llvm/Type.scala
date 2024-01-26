@@ -82,7 +82,7 @@ sealed abstract class Type(ref: LLVMTypeRef) {
         string
     }
 
-    override def toString: String = s"Type(${repr})"
+    override def toString: String = s"Type($repr)"
 
     def isSized: Boolean = intToBool(LLVMTypeIsSized(ref))
 }

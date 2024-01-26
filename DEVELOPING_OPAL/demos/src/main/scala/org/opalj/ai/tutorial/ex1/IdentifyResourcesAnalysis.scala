@@ -78,7 +78,7 @@ object IdentifyResourcesAnalysis extends ProjectAnalysisApplication {
                         }
                     }
                 (m, pcs)
-            }).filter(_._2.size > 0)
+            }).filter(_._2.nonEmpty)
         } { ns => println(s"Finding candidates took: ${ns.toSeconds}") }
 
         // Step 2

@@ -15,7 +15,7 @@ import org.opalj.collection.asScala
  * This class is thread-safe. However, it does not make sense to call the method
  * [[toStore]] unless the dependency extractor that uses this processor has completed.
  *
- * @param virtualSourceElementsCount An estimation of the number of
+ * @param virtualSourceElementsCountHint An estimation of the number of
  *      "VirtualSourceElements" that will be analyzed. In case that a program and all
  *      its libraries are analyzed this number should be roughly equivalent to the number
  *      of all declared classes/interfaces/enums/annotations plus the number of all

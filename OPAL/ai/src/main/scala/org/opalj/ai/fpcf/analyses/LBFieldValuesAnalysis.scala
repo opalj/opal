@@ -375,7 +375,7 @@ class LBFieldValuesAnalysis private[analyses] (
                                 // the field is no longer written...
                                 OPALLogger.error(
                                     "analysis state",
-                                    s"the field values analysis for ${f} failed miserably: "
+                                    s"the field values analysis for $f failed miserably: "
                                 )(project.logContext)
                             }
                             val domain.DomainReferenceValueTag(dv) = dvOption.get

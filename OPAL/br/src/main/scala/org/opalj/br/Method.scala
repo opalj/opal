@@ -201,7 +201,7 @@ sealed abstract class JVMMethod
         this.hasSignature(name, descriptor, false)
     }
 
-    def signature: MethodSignature = new MethodSignature(name, descriptor)
+    def signature: MethodSignature = MethodSignature(name, descriptor)
 
     def runtimeVisibleParameterAnnotations: ParameterAnnotations = {
         attributes.collectFirst { case RuntimeVisibleParameterAnnotationTable(as) => as } match {

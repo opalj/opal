@@ -54,7 +54,7 @@ object MethodsThatAlwaysReturnAPassedParameter extends ProjectAnalysisApplicatio
         } yield {
             // collect the origin information
             val origins =
-                result.domain.allReturnedValues.values.map(result.domain.originsIterator(_).toList).flatten.toSet
+                result.domain.allReturnedValues.values.flatMap(result.domain.originsIterator(_).toList).toSet
 
             method.toJava + (
                 if (origins.nonEmpty)

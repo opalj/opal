@@ -64,7 +64,7 @@ case class ProjectConfiguration(
     def instantiate: ProjectInstantiation = {
 
         // let's try to garbage collect previous projects
-        new Thread(new Runnable { def run: Unit = { System.gc() } }).start
+        new Thread(() ⇒ System.gc()).start()
 
         info(
             "project setup",
@@ -74,7 +74,7 @@ case class ProjectConfiguration(
 
         val cpJARs = cp.split(File.pathSeparatorChar).flatMap { jar =>
             val jarFile = new File(jar)
-            if (!jarFile.exists || !jarFile.canRead()) {
+            if (!jarFile.exists || !jarFile.canRead) {
                 error("project configuration", s"invalid class path: $jarFile")(GlobalLogContext)
                 None
             } else {
@@ -97,7 +97,7 @@ case class ProjectConfiguration(
                     val libcpJARs = libs.split(File.pathSeparatorChar)
                     libcpJARs.foldLeft(noBRClassFiles) { (classFiles, libcpJAR) =>
                         val libcpJARFile = new File(libcpJAR)
-                        if (!libcpJARFile.exists || !libcpJARFile.canRead()) {
+                        if (!libcpJARFile.exists || !libcpJARFile.canRead) {
                             error("project configuration", s"invalid library: $libcpJARFile")(GlobalLogContext)
                             classFiles
                         } else

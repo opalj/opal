@@ -58,15 +58,13 @@ class TypeExtensibilityAnalysis(val project: SomeProject) extends (ObjectType =>
         foreachDirectSupertype(objectType) { st =>
             val soid = st.id
             subtypeExtensibility(soid) match {
-                case null | No => {
+                case null | No =>
                     update = subtypeExtensibility(soid) ne thisTypeExtensbility
                     subtypeExtensibility(soid) = thisTypeExtensbility
-                }
                 case Yes => // do nothing
-                case Unknown => {
+                case Unknown =>
                     update = subtypeExtensibility(soid) ne thisTypeExtensbility
                     if (thisTypeExtensbility.isYes) subtypeExtensibility(soid) = Yes
-                }
             }
 
             // schedule supertypes

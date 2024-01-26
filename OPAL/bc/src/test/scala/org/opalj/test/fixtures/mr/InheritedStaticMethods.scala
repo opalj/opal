@@ -123,6 +123,6 @@ object InheritedStaticMethods extends App {
     val assembledMain = Assembler(assembledMainCF)
     val assembledMainPath = Paths.get("OPAL/bc/src/test/resources/InheritedStaticInterfaceMethods/mr/Main.class")
     val assembledMainFile = Files.write(assembledMainPath, assembledMain)
-    println("Created class file: " + assembledMainFile.toAbsolutePath())
+    println("Created class file: " + assembledMainFile.toAbsolutePath)
 
 }

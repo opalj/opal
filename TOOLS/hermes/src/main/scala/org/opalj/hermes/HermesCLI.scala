@@ -76,7 +76,7 @@ object HermesCLI {
         val waitOnFinished = new CountDownLatch(1)
         Hermes.analysesFinished.addListener { (_, _, isFinished) =>
             if (isFinished) {
-                val theStatisticsFile = new File(statisticsFile).getAbsoluteFile()
+                val theStatisticsFile = new File(statisticsFile).getAbsoluteFile
                 Hermes.exportStatistics(theStatisticsFile, !noProjectStatistics)
                 println("Wrote statistics: " + theStatisticsFile)
 
@@ -89,7 +89,7 @@ object HermesCLI {
                 }
 
                 mappingFile.foreach { mappingFile =>
-                    val theMappingFile = new File(mappingFile).getAbsoluteFile()
+                    val theMappingFile = new File(mappingFile).getAbsoluteFile
                     Hermes.exportMapping(theMappingFile)
                     println("Wrote mapping: " + theMappingFile)
                 }

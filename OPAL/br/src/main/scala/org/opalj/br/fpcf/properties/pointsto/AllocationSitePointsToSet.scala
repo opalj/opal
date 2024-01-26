@@ -185,7 +185,7 @@ object AllocationSitePointsToSet extends AllocationSitePointsToSetPropertyMetaIn
         allocationSite: AllocationSite,
         allocatedType:  ReferenceType
     ): AllocationSitePointsToSet = {
-        new AllocationSitePointsToSet1(allocationSite, allocatedType)
+        AllocationSitePointsToSet1(allocationSite, allocatedType)
     }
 
     def apply(
@@ -195,7 +195,7 @@ object AllocationSitePointsToSet extends AllocationSitePointsToSetPropertyMetaIn
         allocatedTypeOld:  ReferenceType
     ): AllocationSitePointsToSet = {
         assert(allocationSiteOld != allocationSiteNew)
-        new AllocationSitePointsToSetN(
+        AllocationSitePointsToSetN(
             LongTrieSetWithList(allocationSiteNew, allocationSiteOld),
             UIDSet(allocatedTypeOld, allocatedTypeNew),
             if (allocatedTypeNew != allocatedTypeOld)
@@ -214,9 +214,9 @@ object AllocationSitePointsToSet extends AllocationSitePointsToSetPropertyMetaIn
         if (elements.isEmpty) {
             NoAllocationSites
         } else if (elements.size == 1) {
-            new AllocationSitePointsToSet1(elements.head, orderedTypes.head)
+            AllocationSitePointsToSet1(elements.head, orderedTypes.head)
         } else {
-            new AllocationSitePointsToSetN(elements, types, orderedTypes)
+            AllocationSitePointsToSetN(elements, types, orderedTypes)
         }
     }
 
@@ -360,7 +360,7 @@ case class AllocationSitePointsToSet1(
                     if (at != allocatedType) at :: l else l
                 }
 
-                new AllocationSitePointsToSetN(
+                AllocationSitePointsToSetN(
                     newAllocations,
                     otherTypes + allocatedType,
                     newOrderedTypes

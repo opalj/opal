@@ -14,8 +14,8 @@ import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.UBP
-import org.opalj.ifds.Dependees.Getter
 import org.opalj.ifds.Callable
+import org.opalj.ifds.Dependees.Getter
 import org.opalj.ifds.IFDSAnalysis
 import org.opalj.ifds.IFDSAnalysisScheduler
 import org.opalj.ifds.IFDSFact
@@ -30,6 +30,9 @@ import org.opalj.ll.fpcf.analyses.ifds.NativeBackwardICFG
 import org.opalj.ll.llvm.value.Call
 import org.opalj.ll.llvm.value.Ret
 import org.opalj.ll.llvm.value.Value
+import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem
+import org.opalj.tac.fpcf.analyses.ifds.JavaMethod
+import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
 import org.opalj.tac.fpcf.analyses.ifds.taint.ArrayElement
 import org.opalj.tac.fpcf.analyses.ifds.taint.FlowFact
 import org.opalj.tac.fpcf.analyses.ifds.taint.InstanceField
@@ -38,9 +41,6 @@ import org.opalj.tac.fpcf.analyses.ifds.taint.StaticField
 import org.opalj.tac.fpcf.analyses.ifds.taint.TaintFact
 import org.opalj.tac.fpcf.analyses.ifds.taint.TaintNullFact
 import org.opalj.tac.fpcf.analyses.ifds.taint.Variable
-import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem
-import org.opalj.tac.fpcf.analyses.ifds.JavaMethod
-import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.Taint
 
@@ -84,9 +84,10 @@ class SimpleJavaBackwardTaintProblem(p: SomeProject) extends JavaBackwardTaintPr
         unbCallChain: Seq[Callable]
     ): Option[FlowFact] = {
         if ((in match {
-            case Variable(index) => index == call.index
-            case _               => false
-        }) && icfg.getCalleesIfCallStatement(call).get.exists(_.name == "source")) {
+                case Variable(index) => index == call.index
+                case _               => false
+            }) && icfg.getCalleesIfCallStatement(call).get.exists(_.name == "source")
+        ) {
             val currentMethod = call.callable
             // Avoid infinite loops.
             if (unbCallChain.contains(JavaMethod(currentMethod))) None
@@ -151,10 +152,13 @@ class SimpleJavaBackwardTaintProblem(p: SomeProject) extends JavaBackwardTaintPr
                 val e = (function, entryFact)
                 val exitFacts: Map[LLVMStatement, Set[NativeTaintFact]] =
                     dependeesGetter(e, NativeTaint.key)
-                        .asInstanceOf[EOptionP[(LLVMStatement, IFDSFact[NativeTaintFact, LLVMStatement]), IFDSProperty[LLVMStatement, NativeTaintFact]]] match { // this cast is necessary
-                            case UBP(prop) => prop.flows
-                            case _         => Map.empty
-                        }
+                        .asInstanceOf[EOptionP[
+                            (LLVMStatement, IFDSFact[NativeTaintFact, LLVMStatement]),
+                            IFDSProperty[LLVMStatement, NativeTaintFact]
+                        ]] match { // this cast is necessary
+                        case UBP(prop) => prop.flows
+                        case _         => Map.empty
+                    }
                 for {
                     (_, exitStatementFacts) <- exitFacts // ifds line 15.2
                     exitStatementFact <- exitStatementFacts // ifds line 15.3
@@ -207,7 +211,7 @@ class SimpleJavaBackwardTaintProblem(p: SomeProject) extends JavaBackwardTaintPr
         // JNI call args if static: JNIEnv, class, method, arg 0, arg 1, ...
         // JNI call args if non-static: JNIEnv, this, method, arg 0, arg 1, ...
         def taintActualIfFormal(index: Int): Set[NativeTaintFact] = {
-            if (index > -1) Set.empty // tac parameter indices are < 0, index is no argument
+            if (index > -1) return Set.empty; // tac parameter indices are < 0, index is no argument
 
             val javaParamIndex = JavaIFDSProblem.remapParamAndVariableIndex(index, callee.isStatic)
             val nativeParamIndex = JNICallUtil.javaParamIndexToNative(javaParamIndex, callee.isStatic)
@@ -216,9 +220,9 @@ class SimpleJavaBackwardTaintProblem(p: SomeProject) extends JavaBackwardTaintPr
 
         in match {
             // Taint actual parameter if formal parameter is tainted
-            case Variable(index)                   => taintActualIfFormal(index)
-            case ArrayElement(index, _)            => taintActualIfFormal(index)
-            case InstanceField(index, _, _)        => taintActualIfFormal(index)
+            case Variable(index)            => taintActualIfFormal(index)
+            case ArrayElement(index, _)     => taintActualIfFormal(index)
+            case InstanceField(index, _, _) => taintActualIfFormal(index)
             // also propagate tainted static fields
             case StaticField(classType, fieldName) => Set(JavaStaticField(classType, fieldName))
             case TaintNullFact                     => Set(NativeTaintNullFact)
@@ -255,10 +259,9 @@ class SimpleJavaBackwardTaintProblem(p: SomeProject) extends JavaBackwardTaintPr
         val thisOffset = if (javaCallee.isStatic) 0 else 1
         val callObject = JavaIFDSProblem.asCall(call.stmt)
         callObject.allParams.iterator.zipWithIndex
-            .filter(
-                pair =>
-                    (pair._2 == 0 && !javaCallee.isStatic) || // this
-                        callObject.descriptor.parameterTypes(pair._2 - thisOffset).isReferenceType
+            .filter(pair =>
+                (pair._2 == 0 && !javaCallee.isStatic) || // this
+                    callObject.descriptor.parameterTypes(pair._2 - thisOffset).isReferenceType
             ) // pass-by-reference parameters
             .foreach { pair =>
                 val param = pair._1.asVar
@@ -306,14 +309,14 @@ class SimpleJavaBackwardTaintProblem(p: SomeProject) extends JavaBackwardTaintPr
 
         in match {
             // Taint actual parameter if formal parameter is tainted
-            case NativeVariable(value)                 => taintActualIfFormal(value)
-            case NativeArrayElement(base, _)           => taintActualIfFormal(base)
+            case NativeVariable(value)       => taintActualIfFormal(value)
+            case NativeArrayElement(base, _) => taintActualIfFormal(base)
             // keep static field taints
             case JavaStaticField(classType, fieldName) => Set(StaticField(classType, fieldName))
             // propagate flow facts
-            case NativeFlowFact(flow)                  => Set(FlowFact(unbCallChain.prepended(JavaMethod(call.method))))
-            case NativeTaintNullFact                   => Set(TaintNullFact)
-            case _                                     => Set.empty
+            case NativeFlowFact(flow) => Set(FlowFact(unbCallChain.prepended(JavaMethod(call.method))))
+            case NativeTaintNullFact  => Set(TaintNullFact)
+            case _                    => Set.empty
         }
     }
 }

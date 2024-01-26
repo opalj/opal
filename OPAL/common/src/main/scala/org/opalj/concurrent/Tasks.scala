@@ -34,7 +34,7 @@ sealed trait Tasks[T] {
 final class SequentialTasks[T](
     val process:                               (Tasks[T], T) => Unit,
     val abortOnExceptions:                     Boolean       = false,
-    @volatile private[this] var isInterrupted: () => Boolean = () => Thread.currentThread().isInterrupted()
+    @volatile private[this] var isInterrupted: () => Boolean = () => Thread.currentThread().isInterrupted
 ) extends Tasks[T] {
 
     private[this] val tasksQueue = scala.collection.mutable.Queue.empty[T]
@@ -70,14 +70,13 @@ final class SequentialTasks[T](
             try {
                 process(this, tasksQueue.dequeue())
             } catch {
-                case t: Throwable => {
+                case t: Throwable =>
                     if (concurrentExceptions == null) concurrentExceptions = new ConcurrentExceptions()
                     concurrentExceptions.addSuppressed(t)
                     if (abortOnExceptions) {
                         this.isInterrupted = () => true
                         throw concurrentExceptions;
                     }
-                }
             }
         }
 
@@ -108,7 +107,7 @@ final class SequentialTasks[T](
 final class ConcurrentTasks[T](
     val process:                               (Tasks[T], T) => Unit,
     val abortOnExceptions:                     Boolean       = false,
-    @volatile private[this] var isInterrupted: () => Boolean = () => Thread.currentThread().isInterrupted()
+    @volatile private[this] var isInterrupted: () => Boolean = () => Thread.currentThread().isInterrupted
 )(
     implicit val executionContext: ExecutionContext
 ) extends Tasks[T] { self =>
@@ -239,7 +238,7 @@ object Tasks {
     def apply[T](
         process:           (Tasks[T], T) => Unit,
         abortOnExceptions: Boolean       = false,
-        isInterrupted:     () => Boolean = () => Thread.currentThread().isInterrupted()
+        isInterrupted:     () => Boolean = () => Thread.currentThread().isInterrupted
     )(
         implicit executionContext: ExecutionContext
     ): Tasks[T] = {

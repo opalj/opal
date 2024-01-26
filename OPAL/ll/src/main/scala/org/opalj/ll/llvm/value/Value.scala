@@ -49,7 +49,7 @@ class Value(ref: LLVMValueRef) {
         other.isInstanceOf[Value] && address == other.asInstanceOf[Value].address
 
     override def toString: String = {
-        s"${getClass.getSimpleName}(${repr})"
+        s"${getClass.getSimpleName}($repr)"
     }
 
     def uses: UsesIterator = new UsesIterator(LLVMGetFirstUse(ref))

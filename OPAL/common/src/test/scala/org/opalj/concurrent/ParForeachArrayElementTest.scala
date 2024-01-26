@@ -50,7 +50,7 @@ class ParForeachArrayElementTest extends AnyFunSpec with Matchers {
                     parForeachArrayElement(data, 8) { e => if (e == 7) return; else processed.incrementAndGet() }
                 } catch {
                     case ce: ConcurrentExceptions =>
-                        assert(ce.getSuppressed().length == 1)
+                        assert(ce.getSuppressed.length == 1)
                         assert(ce.getSuppressed()(0).getCause.isInstanceOf[ControlThrowable])
                 }
             }

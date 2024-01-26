@@ -969,7 +969,7 @@ object TACAI {
                     } else {
                         usedBy = usedBy.map(pcToIndex)
                     }
-                    paramDVars(0) = new TACMethodParameter(-1, usedBy)
+                    paramDVars(0) = TACMethodParameter(-1, usedBy)
                     defOrigin = -2
                 }
                 var pIndex = 1
@@ -981,7 +981,7 @@ object TACAI {
                     } else {
                         usedBy = usedBy.map(pcToIndex)
                     }
-                    paramDVars(pIndex) = new TACMethodParameter(-pIndex - 1, usedBy)
+                    paramDVars(pIndex) = TACMethodParameter(-pIndex - 1, usedBy)
                     defOrigin -= parameterTypes(pIndex - 1).operandSize
                     pIndex += 1
                 }
@@ -1030,7 +1030,7 @@ object TACAI {
                     val TACMethodParameter(origin, useSites) = tacParams.parameter(defSite)
                     // Note that the "use sites" of the parameters are already remapped.
                     val newUseSites = useSites - pcToIndex(useSite)
-                    tacParams.parameters(-defSite - 1) = new TACMethodParameter(origin, newUseSites)
+                    tacParams.parameters(-defSite - 1) = TACMethodParameter(origin, newUseSites)
                 } else {
                     /* IMPROVE Support tracking def->use information for exceptions (currently we only have use->def.)
                     val useSiteIndex = pcToIndex(useSite)

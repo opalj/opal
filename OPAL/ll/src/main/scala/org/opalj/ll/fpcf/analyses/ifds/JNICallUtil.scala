@@ -154,7 +154,7 @@ object JNICallUtil {
                     case 31      => Symbol("GetObjectClass")
                     case 33      => Symbol("GetMethodId")
                     case 49 | 61 => Symbol("CallTypeMethod") // CallIntMethod | CallVoidMethod
-                    case index   => throw new IllegalArgumentException(s"unknown JNI function index ${index}")
+                    case index   => throw new IllegalArgumentException(s"unknown JNI function index $index")
                 }
                 case _ => throw new IllegalArgumentException("unknown JNI load src")
             }

@@ -40,7 +40,7 @@ trait TheMethod extends TheCode {
      */
     final /*override*/ val code: Code = method.body.get
 
-    override def toString(): String = {
+    override def toString: String = {
         super.toString + s" with TheMethod(${method.toJava})"
     }
 

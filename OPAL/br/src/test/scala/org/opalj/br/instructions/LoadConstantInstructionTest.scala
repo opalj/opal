@@ -50,8 +50,8 @@ class LoadConstantInstructionTest extends AnyFunSpec with Matchers {
         it("integer values larger/smaller than short values should use ") {
             Seq(
                 Short.MaxValue.toInt + 1,
-                Int.MaxValue.toInt / 2,
-                Int.MaxValue.toInt
+                Int.MaxValue / 2,
+                Int.MaxValue
             ) foreach { i => LoadConstantInstruction(i) should be(LoadInt(i)) }
         }
     }

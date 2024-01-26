@@ -35,7 +35,7 @@ trait DefaultTypeLevelReferenceValues
     type DomainObjectValue <: AnObjectValue & AReferenceValue // <= SObject.. and MObject...
     type DomainArrayValue <: AnArrayValue & AReferenceValue
 
-    protected[this] class ANullValue() extends super.NullValueLike { this: DomainNullValue =>
+    protected[this] class ANullValue extends super.NullValueLike { this: DomainNullValue =>
 
         override protected def doJoin(pc: Int, other: DomainValue): Update[DomainValue] = {
             other match {

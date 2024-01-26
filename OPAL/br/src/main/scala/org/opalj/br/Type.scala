@@ -1019,11 +1019,11 @@ final class ObjectType private ( // DO NOT MAKE THIS A CASE CLASS!
 
     override def toJava: String = fqn.replace('/', '.')
 
-    override def toBinaryJavaName: String = s"L${toJava};"
+    override def toBinaryJavaName: String = s"L$toJava;"
 
     override def toJVMTypeName: String = s"L$fqn;"
 
-    override def toJavaClass: java.lang.Class[?] = classOf[Type].getClassLoader().loadClass(toJava)
+    override def toJavaClass: java.lang.Class[?] = classOf[Type].getClassLoader.loadClass(toJava)
 
     def unboxValue[T](implicit typeConversionFactory: TypeConversionFactory[T]): T = {
         ObjectType.unboxValue(this)

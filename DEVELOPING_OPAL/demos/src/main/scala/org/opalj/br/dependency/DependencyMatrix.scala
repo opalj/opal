@@ -32,7 +32,7 @@ object DependencyMatrix {
 
         for (arg <- args) {
             val file = new java.io.File(arg)
-            if (!file.canRead() || file.isDirectory()) {
+            if (!file.canRead || file.isDirectory) {
                 println(arg + " is not a valid ZIP/Jar file.");
                 printUsage()
                 sys.exit(1)

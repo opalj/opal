@@ -18,7 +18,7 @@ trait CONSTANT_Ref extends Constant_Pool_Entry {
 
     override def asCPNode(implicit cp: Constant_Pool): Node =
         <div class="cp_entry">
-            {this.getClass().getSimpleName}
+            {this.getClass.getSimpleName}
             (<div class="cp_ref">
                  class_index={class_index}
                  &laquo;

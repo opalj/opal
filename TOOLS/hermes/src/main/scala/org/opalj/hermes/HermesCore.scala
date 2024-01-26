@@ -151,7 +151,7 @@ trait HermesCore extends HermesConfig {
             projectAnalysisStartTime: Long
         ): Boolean = {
             if (project.projectClassFilesCount == 0) {
-                updateProjectData { projectFeatures.id.setValue("! " + projectFeatures.id.getValue()) }
+                updateProjectData { projectFeatures.id.setValue("! " + projectFeatures.id.getValue) }
                 false
             } else {
                 true
@@ -166,7 +166,7 @@ trait HermesCore extends HermesConfig {
                 for {
                     // Using an iterator is required to avoid eager initialization of all projects!
                     projectFeatures <- featureMatrix.iterator.asScala
-                    if !Thread.currentThread.isInterrupted()
+                    if !Thread.currentThread.isInterrupted
                     projectConfiguration = projectFeatures.projectConfiguration
                     projectAnalysisStartTime = System.nanoTime()
                     projectInstantiation = projectConfiguration.instantiate
@@ -175,7 +175,7 @@ trait HermesCore extends HermesConfig {
                     if isValid(projectFeatures, project, projectAnalysisStartTime)
                     (featureQuery, features) <- projectFeatures.featureGroups.par
                     featuresMap = features.map(f => (f.getValue.id, f)).toMap
-                    if !Thread.currentThread.isInterrupted()
+                    if !Thread.currentThread.isInterrupted
                 } {
                     val featureAnalysisStartTime = System.nanoTime()
                     val features = featureQuery(projectConfiguration, project, rawClassFiles)

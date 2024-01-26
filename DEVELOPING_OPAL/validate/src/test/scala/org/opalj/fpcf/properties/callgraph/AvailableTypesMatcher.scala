@@ -65,7 +65,7 @@ class AvailableTypesMatcher extends AbstractPropertyMatcher {
                     )
                     UIDSet.empty[ReferenceType]
             }
-        }.toSet
+        }
 
         val expectedTypeNames: Seq[String] =
             getValue(p, a.annotationType.asObjectType, a.elementValuePairs, "value").asArrayValue.values

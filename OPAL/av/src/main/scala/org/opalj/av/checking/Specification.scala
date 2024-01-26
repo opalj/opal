@@ -577,11 +577,9 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
                     case s: VirtualClass => project.classFile(s.classType.asObjectType).get
                     case _               => throw SpecificationError(sourceElement.toJava + " is not a class")
                 }
-                if sourceClassFile.superclassType.map(s =>
-                    !allLocalTargetSourceElements.exists(v =>
-                        v.classType.asObjectType.equals(s)
-                    )
-                ).getOrElse(false)
+                if sourceClassFile.superclassType.exists { s =>
+                    !allLocalTargetSourceElements.exists(v => v.classType.asObjectType.equals(s))
+                }
             } yield {
                 PropertyViolation(
                     project,
@@ -665,7 +663,7 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
             matchAny:             Boolean = false
         ): Unit = {
             architectureCheckers =
-                new LocalOutgoingAnnotatedWithConstraint(
+                LocalOutgoingAnnotatedWithConstraint(
                     contextEnsembleSymbol,
                     annotationPredicates,
                     property,
@@ -677,7 +675,7 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
             methodPredicate: SourceElementPredicate[Method]
         ): Unit = {
             architectureCheckers =
-                new LocalOutgoingShouldImplementMethodConstraint(
+                LocalOutgoingShouldImplementMethodConstraint(
                     contextEnsembleSymbol,
                     methodPredicate
                 ) :: architectureCheckers
@@ -843,7 +841,7 @@ object Specification {
      * Load all jar files.
      */
     def ProjectJARs(jarNames: Seq[String]): Seq[(ClassFile, URL)] = {
-        jarNames.map(ProjectJAR(_)).flatten
+        jarNames.flatMap(ProjectJAR(_))
     }
 
     /**
@@ -870,7 +868,7 @@ object Specification {
      * Load all jar files using the library class loader.
      */
     def LibraryJARs(jarNames: Seq[String]): Seq[(ClassFile, URL)] = {
-        jarNames.map(LibraryJAR(_)).flatten
+        jarNames.flatMap(LibraryJAR(_))
     }
 
     /**
@@ -889,7 +887,7 @@ object Specification {
         pathSeparatorChar: Char = java.io.File.pathSeparatorChar
     ): Iterable[String] = {
         processSource(Source.fromFile(new java.io.File(fileName))) { s =>
-            s.getLines().map(_.split(pathSeparatorChar)).flatten.toSet
+            s.getLines().flatMap(_.split(pathSeparatorChar)).toSet
         }
     }
 

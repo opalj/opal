@@ -124,7 +124,7 @@ class DirectCallMatcher extends AbstractPropertyMatcher {
         val resolvedTargets = {
             val av = a.elementValuePairs collectFirst {
                 case ElementValuePair("resolvedTargets", ArrayValue(ab)) =>
-                    ab.toIndexedSeq.map(_.asInstanceOf[StringValue].value)
+                    ab.map(_.asInstanceOf[StringValue].value)
             }
             av.getOrElse(List())
         }
@@ -154,7 +154,7 @@ class DirectCallMatcher extends AbstractPropertyMatcher {
 
         if (missingCalleesSet.nonEmpty) {
             // TODO more detailed reporting?
-            Some(s"${missingCalleesSet.size} unresolved targets for call to ${methodName} in line ${lineNumber}")
+            Some(s"${missingCalleesSet.size} unresolved targets for call to $methodName in line $lineNumber")
         } else {
             None
         }

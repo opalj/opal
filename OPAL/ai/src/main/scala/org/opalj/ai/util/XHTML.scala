@@ -83,7 +83,7 @@ object XHTML {
     def throwableToXHTML(throwable: Throwable): scala.xml.Node = {
         val node =
             if (throwable.getStackTrace == null ||
-                throwable.getStackTrace.size == 0
+                throwable.getStackTrace.length == 0
             ) {
                 <div>{throwable.getClass.getSimpleName + " " + throwable.getMessage}</div>
             } else {

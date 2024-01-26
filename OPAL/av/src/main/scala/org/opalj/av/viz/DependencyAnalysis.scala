@@ -8,6 +8,7 @@ import scala.language.reflectiveCalls
 import java.net.URL
 import java.util.concurrent.atomic.AtomicInteger
 import scala.util.Random
+import scala.util.Using
 
 import org.opalj.br.ArrayType
 import org.opalj.br.BaseType
@@ -30,7 +31,7 @@ import org.opalj.io.writeAndOpen
  */
 object DependencyAnalysis extends AnalysisApplication {
 
-    val template = this.getClass().getResource("DependencyAnalysis.html.template")
+    val template = this.getClass.getResource("DependencyAnalysis.html.template")
     if (template eq null)
         throw new RuntimeException(
             "the HTML template (DependencyAnalysis.html.template) cannot be found"
@@ -46,12 +47,11 @@ object DependencyAnalysis extends AnalysisApplication {
     def readParameter(param: String, args: Seq[String], default: String = ""): (String, Seq[String]) = {
         args.partition(_.startsWith("-" + param + "=")) match {
             case (Seq(), parameters1) => (default, parameters1)
-            case (Seq(p), parameters1) => {
+            case (Seq(p), parameters1) =>
                 if (p.startsWith("-" + param + "=\"") && p.endsWith("\""))
                     (p.substring(param.length + 3, p.length - 1), parameters1)
                 else
                     (p.substring(param.length + 2), parameters1)
-            }
         }
     }
 
@@ -85,13 +85,12 @@ object DependencyAnalysis extends AnalysisApplication {
         val pattern = "<%[A-Z_]+%>".r
         val option = pattern findFirstIn doc
         option match {
-            case Some(o) => {
+            case Some(o) =>
                 println(
                     Console.YELLOW +
                         "[warn] HtmlDocument has at least one unset option " + o +
                         Console.RESET
                 )
-            }
             case None =>
         }
         doc
@@ -228,7 +227,7 @@ object DependencyAnalysis extends AnalysisApplication {
                 else
                     ""
             // read the template
-            var htmlDocument = scala.io.Source.fromFile(template.getPath())(scala.io.Codec.UTF8).mkString
+            var htmlDocument = Using(scala.io.Source.fromFile(template.getPath)(scala.io.Codec.UTF8)) { _.mkString }.get
 
             if (!htmlDocument.contains("<%DATA%>") || !htmlDocument.contains("<%PACKAGES%>")) {
                 println(Console.RED +

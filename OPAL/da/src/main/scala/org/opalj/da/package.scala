@@ -84,7 +84,7 @@ package object da {
 
         val explicitAccessFlags =
             VisibilityModifier.get(access_flags) match {
-                case None => if (accessFlags.length() == 0) "default" else accessFlags + " default"
+                case None => if (accessFlags.isEmpty) "default" else accessFlags + " default"
                 case _    => accessFlags
             }
 

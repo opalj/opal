@@ -468,9 +468,7 @@ class Project[Source] private (
     ): I = {
         projectInformationKeyInitializationData.computeIfAbsent(
             key.asInstanceOf[ProjectInformationKey[AnyRef, AnyRef]],
-            new java.util.function.Function[ProjectInformationKey[AnyRef, AnyRef], I] {
-                def apply(key: ProjectInformationKey[AnyRef, AnyRef]): I = info
-            }
+            (key: ProjectInformationKey[AnyRef, AnyRef]) => info
         ).asInstanceOf[I]
     }
 
@@ -797,7 +795,7 @@ class Project[Source] private (
                     // java is not a root package of "javax"...
                     val (_, lastPackage) = rootPackages.last
                     if (nextPackage.startsWith(lastPackage) &&
-                        nextPackage.charAt(lastPackage.size) == '/'
+                        nextPackage.charAt(lastPackage.length) == '/'
                     )
                         rootPackages + ((nextPackage, lastPackage))
                     else
@@ -960,7 +958,7 @@ class Project[Source] private (
      *
      * @note This method is intended to be used by Java projects that want to interact with OPAL.
      */
-    def toJavaMap(): java.util.HashMap[ObjectType, ClassFile] = {
+    def toJavaMap: java.util.HashMap[ObjectType, ClassFile] = {
         val map = new java.util.HashMap[ObjectType, ClassFile]
         for (classFile <- allClassFiles) map.put(classFile.thisType, classFile)
         map
@@ -1286,7 +1284,7 @@ object Project {
 
         // Returns `true` if the potentially available information is not yet available.
         @inline def notYetAvailable(superinterfaceType: ObjectType): Boolean = {
-            methods.get(superinterfaceType).isEmpty &&
+            !methods.contains(superinterfaceType) &&
             // If the class file is not known, we will never have any details;
             // hence, the information will "NEVER" be available; or - in other
             // words - all potentially available information is available.
@@ -1297,7 +1295,7 @@ object Project {
             // Due to the fact that we may inherit from multiple interfaces,
             // the computation may have been scheduled multiple times; hence, if we are
             // already done, just return.
-            if (methods.get(objectType).nonEmpty)
+            if (methods.contains(objectType))
                 return;
 
             val superclassType = classHierarchy.superclassType(objectType)
@@ -2006,7 +2004,7 @@ object Project {
                         logContext,
                         InconsistentProjectException(
                             s"${projectType.toJava} is defined by multiple class files:\n\t" +
-                                sources.get(projectType).getOrElse("<VIRTUAL>") + " and\n\t" +
+                                sources.getOrElse(projectType, "<VIRTUAL>") + " and\n\t" +
                                 source.map(_.toString).getOrElse("<VIRTUAL>") +
                                 "\n\tkeeping the first one."
                         )

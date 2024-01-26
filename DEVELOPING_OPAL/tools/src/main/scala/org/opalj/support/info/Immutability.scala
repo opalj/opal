@@ -539,10 +539,9 @@ object Immutability {
                 | Transitively Immutable Fields: ${transitivelyImmutableFields.size}
                 | Fields: ${allFieldsInProjectClassFiles.size}
                 | Fields with primitive Types / java.lang.String: ${
-                        allFieldsInProjectClassFiles
-                            .filter(field =>
-                                !field.fieldType.isReferenceType || field.fieldType == ObjectType.String
-                            ).size
+                        allFieldsInProjectClassFiles.count { field =>
+                            !field.fieldType.isReferenceType || field.fieldType == ObjectType.String
+                        }
                     }
                 |""".stripMargin
             )
@@ -628,7 +627,7 @@ object Immutability {
 
             val calender = Calendar.getInstance()
             calender.add(Calendar.ALL_STYLES, 1)
-            val date = calender.getTime()
+            val date = calender.getTime
             val simpleDateFormat = new SimpleDateFormat("dd_MM_yyyy_HH_mm_ss")
 
             val file = new File(

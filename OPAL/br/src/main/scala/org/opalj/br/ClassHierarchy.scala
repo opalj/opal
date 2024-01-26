@@ -241,9 +241,9 @@ class ClassHierarchy private (
             }
         }
 
-        val rootTypes = this.rootTypes.toSet
+        val rootTypes = this.rootTypes
         val typeInfos =
-            (0 until knownTypesMap.length) filter { i => knownTypesMap(i) ne null } map { i =>
+            knownTypesMap.indices filter { i => knownTypesMap(i) ne null } map { i =>
                 val t = knownTypesMap(i)
                 TypeInfo(
                     t,
@@ -1564,7 +1564,7 @@ class ClassHierarchy private (
                         val isSubtypeOf = this.isASubtypeOf(subtype, supertype)
                         isSubtypeOf match {
                             case Yes     => true
-                            case Unknown => { subtypingRelationUnknown = true; false /* continue */ }
+                            case Unknown => subtypingRelationUnknown = true; false /* continue */
                             case No      => false
                         }
                     }
@@ -1606,7 +1606,7 @@ class ClassHierarchy private (
             subtypes exists { (subtype: ReferenceType) =>
                 this.isASubtypeOf(subtype, supertype) match {
                     case Yes     => true
-                    case Unknown => { subtypeRelationUnknown = true; false /* continue search */ }
+                    case Unknown => subtypeRelationUnknown = true; false /* continue search */
                     case No      => false
                 }
             }
@@ -1899,12 +1899,11 @@ class ClassHierarchy private (
                 case (
                         GenericTypeWithClassSuffix(_, elements, suffix),
                         GenericTypeWithClassSuffix(_, superElements, superSuffix)
-                    ) => {
+                    ) =>
                     compareTypeArguments(elements, superElements) match {
                         case Yes    => compareTypeArgumentsOfClassSuffixes(suffix, superSuffix)
                         case answer => answer
                     }
-                }
 
                 case _ => No
             }
@@ -2008,7 +2007,7 @@ class ClassHierarchy private (
                                         }
                                         if (ss.get.classTypeSignatureSuffix.last.typeArguments.collectFirst {
                                                 case x @ ProperTypeArgument(_, TypeVariableSignature(_)) => x
-                                            }.size > 0
+                                            }.isDefined
                                         )
                                             compareTypeArgumentsOfClassSuffixes(
                                                 List(subtype.simpleClassTypeSignature),
@@ -2089,7 +2088,7 @@ class ClassHierarchy private (
      * into a dot representation [[http://www.graphviz.org Graphviz]]). This
      * graph can be a multi-graph if the class hierarchy contains holes.
      */
-    def toGraph(): Node = new Node {
+    def toGraph: Node = new Node {
 
         private val nodes: mutable.Map[ObjectType, Node] = {
             val nodes = mutable.HashMap.empty[ObjectType, Node]
@@ -2278,7 +2277,7 @@ class ClassHierarchy private (
             // deliberately contains types which are guaranteed to be in a super-/subtype
             // relation, but which are not part of the analyzed code base. Nevertheless,
             // we are performing a join and therefore, drop the information...
-            return new UIDSet1(upperTypeBoundA);
+            return UIDSet1(upperTypeBoundA);
         }
 
         if (isUnknown(upperTypeBoundA)) {
@@ -2303,10 +2302,10 @@ class ClassHierarchy private (
         upperTypeBoundB match {
             case UIDSet1(utbB: ArrayType) =>
                 if (utbB eq upperTypeBoundA)
-                    return upperTypeBoundB;
+                    upperTypeBoundB
                 else
                     joinArrayTypes(upperTypeBoundA, utbB) match {
-                        case Left(newUTB)  => new UIDSet1(newUTB)
+                        case Left(newUTB)  => UIDSet1(newUTB)
                         case Right(newUTB) => newUTB
                     }
             case UIDSet1(utbB: ObjectType) =>
@@ -2381,21 +2380,21 @@ class ClassHierarchy private (
 
         if (upperTypeBoundA eq upperTypeBoundB) {
             if (reflexive)
-                return new UIDSet1(upperTypeBoundA);
+                return UIDSet1(upperTypeBoundA);
             else
                 return directSupertypes(upperTypeBoundA /*or ...B*/ );
         }
 
         if (isSubtypeOf(upperTypeBoundB, upperTypeBoundA)) {
             if (reflexive)
-                return new UIDSet1(upperTypeBoundA);
+                return UIDSet1(upperTypeBoundA);
             else
                 return directSupertypes(upperTypeBoundA);
         }
 
         if (isSubtypeOf(upperTypeBoundA, upperTypeBoundB)) {
             if (reflexive)
-                return new UIDSet1(upperTypeBoundB);
+                return UIDSet1(upperTypeBoundB);
             else
                 return directSupertypes(upperTypeBoundB);
         }
@@ -2436,11 +2435,11 @@ class ClassHierarchy private (
                 if (isCloneable)
                     SerializableAndCloneable
                 else
-                    new UIDSet1(Serializable)
+                    UIDSet1(Serializable)
             } else if (isCloneable) {
-                new UIDSet1(Cloneable)
+                UIDSet1(Cloneable)
             } else {
-                new UIDSet1(Object)
+                UIDSet1(Object)
             }
         }
     }
@@ -2460,7 +2459,7 @@ class ClassHierarchy private (
             (thatUpperTypeBound eq Serializable) ||
             (thatUpperTypeBound eq Cloneable)
         )
-            new UIDSet1(thatUpperTypeBound)
+            UIDSet1(thatUpperTypeBound)
         else {
             var newUpperTypeBound: UIDSet[ObjectType] = UIDSet.empty
             if (isSubtypeOf(thatUpperTypeBound, Serializable))
@@ -2468,7 +2467,7 @@ class ClassHierarchy private (
             if (isSubtypeOf(thatUpperTypeBound, Cloneable))
                 newUpperTypeBound += Cloneable
             if (newUpperTypeBound.isEmpty)
-                new UIDSet1(Object)
+                UIDSet1(Object)
             else
                 newUpperTypeBound
         }
@@ -2606,7 +2605,7 @@ class ClassHierarchy private (
                             utbA.head.asInstanceOf[ArrayType]
                         )
                     joinedArrayType match {
-                        case Left(arrayType)       => new UIDSet1(arrayType)
+                        case Left(arrayType)       => UIDSet1(arrayType)
                         case Right(upperTypeBound) => upperTypeBound
                     }
                 } else {
@@ -2710,7 +2709,7 @@ object ClassHierarchy {
 
     private[this] implicit val classHierarchyEC: ExecutionContext = OPALUnboundedExecutionContext
 
-    final val JustObject: UIDSet[ObjectType] = new UIDSet1(ObjectType.Object)
+    final val JustObject: UIDSet[ObjectType] = UIDSet1(ObjectType.Object)
 
     /**
      * Creates a `ClassHierarchy` that captures the type hierarchy related to
@@ -2749,7 +2748,7 @@ object ClassHierarchy {
             val typeRegExp =
                 """(class|interface)\s+(\S+)(\s+extends\s+(\S+)(\s+implements\s+(.+))?)?""".r
             processSource(new BufferedSource(in)) { source =>
-                source.getLines().map(_.trim).filterNot { l => l.startsWith("#") || l.length == 0 }.map { l =>
+                source.getLines().map(_.trim).filterNot { l => l.startsWith("#") || l.isEmpty }.map { l =>
                     val typeRegExp(typeKind, theType, _, superclassType, _, superinterfaceTypes) = l
                     TypeDeclaration(
                         ObjectType(theType),
@@ -2854,7 +2853,7 @@ object ClassHierarchy {
                 val objectTypes = data(index)
                 data(index) = {
                     if (objectTypes eq null)
-                        new UIDSet1(t)
+                        UIDSet1(t)
                     else
                         objectTypes + t
                 }

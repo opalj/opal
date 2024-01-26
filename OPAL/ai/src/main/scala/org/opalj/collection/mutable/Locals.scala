@@ -306,7 +306,7 @@ sealed trait Locals[T >: Null <: AnyRef] {
 
 }
 
-private[mutable] final object Locals0 extends Locals[Null] {
+private[mutable] object Locals0 extends Locals[Null] {
 
     override final val size = 0
 

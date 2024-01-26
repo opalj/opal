@@ -29,13 +29,13 @@ object LongLinkedTrieSet {
 
     def empty: LongLinkedTrieSet = LongLinkedTrieSet0
 
-    def apply(v: Long): LongLinkedTrieSet = new LongLinkedTrieSet1(v)
+    def apply(v: Long): LongLinkedTrieSet = LongLinkedTrieSet1(v)
 
     def apply(head: Long, last: Long): LongLinkedTrieSet = {
         if (head == last)
-            new LongLinkedTrieSet1(head)
+            LongLinkedTrieSet1(head)
         else
-            new LongLinkedTrieSet2(head, last)
+            LongLinkedTrieSet2(head, last)
     }
 
 }
@@ -72,7 +72,7 @@ final case class LongLinkedTrieSet1(v1: Long) extends LongLinkedTrieSet {
     override final def iterator: LongIterator = LongIterator(v1)
 
     override final def +(v: Long): LongLinkedTrieSet = {
-        if (v != v1) new LongLinkedTrieSet2(v, v1) else this
+        if (v != v1) LongLinkedTrieSet2(v, v1) else this
     }
 }
 
@@ -100,7 +100,7 @@ private[immutable] final case class LongLinkedTrieSet2(
     override final def iterator: LongIterator = LongIterator(v1, v2)
 
     override final def +(v: Long): LongLinkedTrieSet = {
-        if (v != v1 && v != v2) new LongLinkedTrieSet3(v, v1, v2) else this
+        if (v != v1 && v != v2) LongLinkedTrieSet3(v, v1, v2) else this
     }
 }
 

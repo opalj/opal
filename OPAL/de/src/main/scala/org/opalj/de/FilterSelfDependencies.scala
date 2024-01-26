@@ -21,11 +21,11 @@ trait FilterSelfDependencies extends DependencyProcessor {
      * @param dependencyType The type of the dependency.
      */
     abstract override def processDependency(
-        source: VirtualSourceElement,
-        target: VirtualSourceElement,
-        dType:  DependencyType
+        source:         VirtualSourceElement,
+        target:         VirtualSourceElement,
+        dependencyType: DependencyType
     ): Unit = {
-        if (source != target) super.processDependency(source, target, dType)
+        if (source != target) super.processDependency(source, target, dependencyType)
     }
 
 }

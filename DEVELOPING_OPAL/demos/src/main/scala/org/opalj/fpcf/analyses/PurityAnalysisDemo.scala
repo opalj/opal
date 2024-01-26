@@ -125,7 +125,7 @@ object PurityAnalysisDemo extends ProjectAnalysisApplication {
                 )
 
             fieldInfo + methodInfo + propertyStore.toString(false) +
-                "\nPure methods: " + pureMethods.filter(m => m._2 == Pure).size
+                "\nPure methods: " + pureMethods.count(m => m._2 == Pure)
         }
     }
 }
