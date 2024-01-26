@@ -15,27 +15,27 @@ In contrast to most existing Java disassemblers, OPAL generates an HTML document
 
 <pre>
 Usage: java org.opalj.da.Disassembler
-       [-help <tt>will print the help and terminate</tt>]
-       [-o &lt;File&gt; <tt>the name of the file to which the generated html page should be written</tt>]
-       [-open <tt>the generated html page will be opened in a browser</tt>]
-       [-source &lt;File&gt; <tt>a class or jar file or a directory containing jar or class files;
+       [-help <kbd>will print the help and terminate</kbd>]
+       [-o &lt;File&gt; <kbd>the name of the file to which the generated html page should be written</kbd>]
+       [-open <kbd>the generated html page will be opened in a browser</kbd>]
+       [-source &lt;File&gt; <kbd>a class or jar file or a directory containing jar or class files;
                      if no source files/folders are specified the current folder will be
-                     searched for class files</tt>]* (<tt><b>can be specified multiple times</b></tt>)
-       [-sourceJDK <tt>the current JDK/JRE is added as a source folder</tt>]
-       [-noDefaultCSS <tt>the generated html page will have no CSS styling</tt>]
-       [-noMethodsFilter <tt>the generated html page will have no embedded means to filter methods
-                       (as a whole, the file will not contain any JavaScript code)</tt>]
-       [-noHeader <tt>the generated output will have no header;
+                     searched for class files</kbd>]* (<kbd><b>can be specified multiple times</b></kbd>)
+       [-sourceJDK <kbd>the current JDK/JRE is added as a source folder</kbd>]
+       [-noDefaultCSS <kbd>the generated html page will have no CSS styling</kbd>]
+       [-noMethodsFilter <kbd>the generated html page will have no embedded means to filter methods
+                       (as a whole, the file will not contain any JavaScript code)</kbd>]
+       [-noHeader <kbd>the generated output will have no header;
                  the top level element will be &lt;div class="class_file"&gt;...&lt;/div&gt;
-                 (automatically activates "-noMethodsFilter" and "-noDefaultCSS")</tt>]
-       [-css &lt;Source&gt; <tt>the path (URL) of a CSS file (".csss")
-                     which will be referenced from the generated HTML page</tt>]
-       [-js &lt;Source&gt; <tt>the path (URL) of a JavaScript file (".js")
-                    which will be referenced from the generated HTML page</tt>]
-       [-showProgress <tt>shows the progress when searching for the class file</tt>]
-       [&lt;ClassName&gt; <tt>name of the class for which we want to create the HTML page; if not
+                 (automatically activates "-noMethodsFilter" and "-noDefaultCSS")</kbd>]
+       [-css &lt;Source&gt; <kbd>the path (URL) of a CSS file (".csss")
+                     which will be referenced from the generated HTML page</kbd>]
+       [-js &lt;Source&gt; <kbd>the path (URL) of a JavaScript file (".js")
+                    which will be referenced from the generated HTML page</kbd>]
+       [-showProgress <kbd>shows the progress when searching for the class file</kbd>]
+       [&lt;ClassName&gt; <kbd>name of the class for which we want to create the HTML page; if not
                    specified the first class that is found on the given path is taken; this
-                   is particularly useful if the source identifies a particular ".class" file</tt>]
+                   is particularly useful if the source identifies a particular ".class" file</kbd>]
 </pre>
 
 Note, that the OPAL Disassembler is fast and can scan thousands of class files per second; this makes it also possible to use it to locate a certain class file. For example, if you want to find the jar which defines a specific class, e.g., `java.util.HashMap$Entry`, it is sufficient to specify the root folder of the JDK and let it automatically find the class for you. The generated HTML file will contain precise information where the class file was found. This also works if you specify the root of your `.ivy` or `.m2` folders.
