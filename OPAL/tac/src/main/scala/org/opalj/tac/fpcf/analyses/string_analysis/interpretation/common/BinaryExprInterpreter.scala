@@ -12,8 +12,6 @@ import org.opalj.br.ComputationalTypeInt
 import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.FinalEP
 
 /**
@@ -27,8 +25,8 @@ import org.opalj.fpcf.FinalEP
  * @author Patrick Mell
  */
 class BinaryExprInterpreter(
-                               cfg:         CFG[Stmt[V], TACStmts[V]],
-                               exprHandler: InterpretationHandler
+    cfg:         CFG[Stmt[V], TACStmts[V]],
+    exprHandler: InterpretationHandler
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
 
     override type T = BinaryExpr[V]
@@ -47,7 +45,7 @@ class BinaryExprInterpreter(
      *
      * @see [[AbstractStringInterpreter.interpret]]
      */
-    override def interpret(instr: T, defSite: Int): EOptionP[Entity, StringConstancyProperty] = {
+    override def interpret(instr: T, defSite: Int): FinalEP[T, StringConstancyProperty] = {
         val sci = instr.cTpe match {
             case ComputationalTypeInt   => InterpretationHandler.getConstancyInfoForDynamicInt
             case ComputationalTypeFloat => InterpretationHandler.getConstancyInfoForDynamicFloat
@@ -55,5 +53,4 @@ class BinaryExprInterpreter(
         }
         FinalEP(instr, StringConstancyProperty(sci))
     }
-
 }

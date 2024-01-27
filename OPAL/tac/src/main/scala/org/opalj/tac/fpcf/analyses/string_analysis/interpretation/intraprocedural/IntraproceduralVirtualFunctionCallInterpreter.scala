@@ -18,8 +18,6 @@ import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyType
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.FinalEP
 
 /**
@@ -32,8 +30,8 @@ import org.opalj.fpcf.FinalEP
  * @author Patrick Mell
  */
 class IntraproceduralVirtualFunctionCallInterpreter(
-                                                       cfg:         CFG[Stmt[V], TACStmts[V]],
-                                                       exprHandler: IntraproceduralInterpretationHandler
+    cfg:         CFG[Stmt[V], TACStmts[V]],
+    exprHandler: IntraproceduralInterpretationHandler
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
 
     override type T = VirtualFunctionCall[V]
@@ -65,15 +63,14 @@ class IntraproceduralVirtualFunctionCallInterpreter(
      *
      * @see [[AbstractStringInterpreter.interpret]]
      */
-    override def interpret(instr: T, defSite: Int): EOptionP[Entity, StringConstancyProperty] = {
+    override def interpret(instr: T, defSite: Int): FinalEP[T, StringConstancyProperty] = {
         val property = instr.name match {
             case "append"   => interpretAppendCall(instr)
             case "toString" => interpretToStringCall(instr)
             case "replace"  => interpretReplaceCall(instr)
             case _ =>
                 instr.descriptor.returnType match {
-                    case obj: ObjectType if obj.fqn == "java/lang/String" =>
-                        StringConstancyProperty.lb
+                    case obj: ObjectType if obj.fqn == "java/lang/String" => StringConstancyProperty.lb
                     case FloatType | DoubleType =>
                         StringConstancyProperty(StringConstancyInformation(
                             StringConstancyLevel.DYNAMIC,
@@ -92,32 +89,26 @@ class IntraproceduralVirtualFunctionCallInterpreter(
      * that this function assumes that the given `appendCall` is such a function call! Otherwise,
      * the expected behavior cannot be guaranteed.
      */
-    private def interpretAppendCall(
-        appendCall: VirtualFunctionCall[V]
-    ): StringConstancyProperty = {
+    private def interpretAppendCall(appendCall: VirtualFunctionCall[V]): StringConstancyProperty = {
         val receiverSci = receiverValuesOfAppendCall(appendCall).stringConstancyInformation
         val appendSci = valueOfAppendCall(appendCall).stringConstancyInformation
 
-        // The case can occur that receiver and append value are empty; although, it is
-        // counter-intuitive, this case may occur if both, the receiver and the parameter, have been
-        // processed before
         val sci = if (receiverSci.isTheNeutralElement && appendSci.isTheNeutralElement) {
+            // although counter-intuitive, this case may occur if both the receiver and the parameter have been
+            // processed before
             StringConstancyInformation.getNeutralElement
-        } // It might be that we have to go back as much as to a New expression. As they do not
-        // produce a result (= empty list), the if part
-        else if (receiverSci.isTheNeutralElement) {
+        } else if (receiverSci.isTheNeutralElement) {
+            // It might be that we have to go back as much as to a New expression. As they do not
+            // produce a result (= empty list), the if part
             appendSci
-        } // The append value might be empty, if the site has already been processed (then this
-        // information will come from another StringConstancyInformation object
-        else if (appendSci.isTheNeutralElement) {
+        } else if (appendSci.isTheNeutralElement) {
+            // The append value might be empty, if the site has already been processed (then this
+            // information will come from another StringConstancyInformation object
             receiverSci
-        } // Receiver and parameter information are available => Combine them
-        else {
+        } else {
+            // Receiver and parameter information are available => combine them
             StringConstancyInformation(
-                StringConstancyLevel.determineForConcat(
-                    receiverSci.constancyLevel,
-                    appendSci.constancyLevel
-                ),
+                StringConstancyLevel.determineForConcat(receiverSci.constancyLevel, appendSci.constancyLevel),
                 StringConstancyType.APPEND,
                 receiverSci.possibleStrings + appendSci.possibleStrings
             )
@@ -129,40 +120,32 @@ class IntraproceduralVirtualFunctionCallInterpreter(
     /**
      * This function determines the current value of the receiver object of an `append` call.
      */
-    private def receiverValuesOfAppendCall(
-        call: VirtualFunctionCall[V]
-    ): StringConstancyProperty = {
+    private def receiverValuesOfAppendCall(call: VirtualFunctionCall[V]): StringConstancyProperty = {
         // There might be several receivers, thus the map; from the processed sites, however, use
         // only the head as a single receiver interpretation will produce one element
         val scis = call.receiver.asVar.definedBy.toArray.sorted.map { ds =>
             val r = exprHandler.processDefSite(ds)
-            r.asFinal.p.asInstanceOf[StringConstancyProperty].stringConstancyInformation
+            r.asFinal.p.stringConstancyInformation
         }.filter { sci => !sci.isTheNeutralElement }
-        val sci = if (scis.isEmpty) StringConstancyInformation.getNeutralElement
-        else
-            scis.head
-        StringConstancyProperty(sci)
+        StringConstancyProperty(scis.headOption.getOrElse(StringConstancyInformation.getNeutralElement))
     }
 
     /**
      * Determines the (string) value that was passed to a `String{Builder, Buffer}#append` method.
      * This function can process string constants as well as function calls as argument to append.
      */
-    private def valueOfAppendCall(
-        call: VirtualFunctionCall[V]
-    ): StringConstancyProperty = {
+    private def valueOfAppendCall(call: VirtualFunctionCall[V]): StringConstancyProperty = {
         val param = call.params.head.asVar
         // .head because we want to evaluate only the first argument of append
         val defSiteHead = param.definedBy.head
-        var r = exprHandler.processDefSite(defSiteHead)
-        var value = r.asFinal.p.asInstanceOf[StringConstancyProperty]
+        var value = exprHandler.processDefSite(defSiteHead).p
         // If defSiteHead points to a New, value will be the empty list. In that case, process
         // the first use site (which is the <init> call)
         if (value.isTheNeutralElement) {
-            r = exprHandler.processDefSite(
+            val r = exprHandler.processDefSite(
                 cfg.code.instructions(defSiteHead).asAssignment.targetVar.usedBy.toArray.min
-            ).asFinal
-            value = r.asFinal.p.asInstanceOf[StringConstancyProperty]
+            )
+            value = r.p
         }
 
         val sci = value.stringConstancyInformation
@@ -174,9 +157,7 @@ class IntraproceduralVirtualFunctionCallInterpreter(
                 if (call.descriptor.parameterType(0).isCharType &&
                     sci.constancyLevel == StringConstancyLevel.CONSTANT
                 ) {
-                    sci.copy(
-                        possibleStrings = sci.possibleStrings.toInt.toChar.toString
-                    )
+                    sci.copy(possibleStrings = sci.possibleStrings.toInt.toChar.toString)
                 } else {
                     sci
                 }
@@ -199,11 +180,8 @@ class IntraproceduralVirtualFunctionCallInterpreter(
      * Note that this function assumes that the given `toString` is such a function call! Otherwise,
      * the expected behavior cannot be guaranteed.
      */
-    private def interpretToStringCall(
-        call: VirtualFunctionCall[V]
-    ): StringConstancyProperty = {
-        val finalEP = exprHandler.processDefSite(call.receiver.asVar.definedBy.head).asFinal
-        finalEP.p.asInstanceOf[StringConstancyProperty]
+    private def interpretToStringCall(call: VirtualFunctionCall[V]): StringConstancyProperty = {
+        exprHandler.processDefSite(call.receiver.asVar.definedBy.head).p
     }
 
     /**
@@ -211,8 +189,6 @@ class IntraproceduralVirtualFunctionCallInterpreter(
      * (Currently, this function simply approximates `replace` functions by returning the lower
      * bound of [[StringConstancyProperty]]).
      */
-    private def interpretReplaceCall(
-        instr: VirtualFunctionCall[V]
-    ): StringConstancyProperty = InterpretationHandler.getStringConstancyPropertyForReplace
-
+    private def interpretReplaceCall(instr: VirtualFunctionCall[V]): StringConstancyProperty =
+        InterpretationHandler.getStringConstancyPropertyForReplace
 }

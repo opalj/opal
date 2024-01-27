@@ -7,13 +7,9 @@ package string_analysis
 package interpretation
 package intraprocedural
 
-import scala.collection.mutable.ListBuffer
-
 import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.FinalEP
 
 /**
@@ -26,8 +22,8 @@ import org.opalj.fpcf.FinalEP
  * @author Patrick Mell
  */
 class IntraproceduralNonVirtualMethodCallInterpreter(
-                                                        cfg:         CFG[Stmt[V], TACStmts[V]],
-                                                        exprHandler: IntraproceduralInterpretationHandler
+    cfg:         CFG[Stmt[V], TACStmts[V]],
+    exprHandler: IntraproceduralInterpretationHandler
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
 
     override type T = NonVirtualMethodCall[V]
@@ -49,10 +45,7 @@ class IntraproceduralNonVirtualMethodCallInterpreter(
      *
      * @see [[AbstractStringInterpreter.interpret]]
      */
-    override def interpret(
-                              instr:   T,
-                              defSite: Int
-    ): EOptionP[Entity, StringConstancyProperty] = {
+    override def interpret(instr: T, defSite: Int): FinalEP[T, StringConstancyProperty] = {
         val prop = instr.name match {
             case "<init>" => interpretInit(instr)
             case _        => StringConstancyProperty.getNeutralElement
@@ -71,16 +64,10 @@ class IntraproceduralNonVirtualMethodCallInterpreter(
         init.params.size match {
             case 0 => StringConstancyProperty.getNeutralElement
             case _ =>
-                val scis = ListBuffer[StringConstancyInformation]()
-                init.params.head.asVar.definedBy.foreach { ds =>
-                    val r = exprHandler.processDefSite(ds).asFinal
-                    scis.append(
-                        r.p.asInstanceOf[StringConstancyProperty].stringConstancyInformation
-                    )
+                val scis = init.params.head.asVar.definedBy.toList.map { ds =>
+                    exprHandler.processDefSite(ds).p.stringConstancyInformation
                 }
-                val reduced = StringConstancyInformation.reduceMultiple(scis)
-                StringConstancyProperty(reduced)
+                StringConstancyProperty(StringConstancyInformation.reduceMultiple(scis))
         }
     }
-
 }

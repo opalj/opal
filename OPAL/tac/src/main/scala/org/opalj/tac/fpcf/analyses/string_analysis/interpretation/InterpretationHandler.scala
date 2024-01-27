@@ -22,12 +22,11 @@ import org.opalj.value.ValueInformation
 abstract class InterpretationHandler(tac: TACode[TACMethodParameter, DUVar[ValueInformation]]) {
 
     protected val stmts: Array[Stmt[DUVar[ValueInformation]]] = tac.stmts
-    protected val cfg: CFG[Stmt[DUVar[ValueInformation]], TACStmts[DUVar[ValueInformation]]] =
-        tac.cfg
+    protected val cfg: CFG[Stmt[DUVar[ValueInformation]], TACStmts[DUVar[ValueInformation]]] = tac.cfg
 
     /**
      * A list of definition sites that have already been processed. Store it as a map for constant
-     * loop-ups (the value is not relevant and thus set to [[Unit]]).
+     * look-ups (the value is not relevant and thus set to [[Unit]]).
      */
     protected val processedDefSites: mutable.Map[Int, Unit] = mutable.Map()
 

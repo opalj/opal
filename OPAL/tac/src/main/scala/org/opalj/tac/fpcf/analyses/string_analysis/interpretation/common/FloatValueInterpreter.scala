@@ -12,8 +12,6 @@ import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyType
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.FinalEP
 
 /**
@@ -26,8 +24,8 @@ import org.opalj.fpcf.FinalEP
  * @author Patrick Mell
  */
 class FloatValueInterpreter(
-                               cfg:         CFG[Stmt[V], TACStmts[V]],
-                               exprHandler: InterpretationHandler
+    cfg:         CFG[Stmt[V], TACStmts[V]],
+    exprHandler: InterpretationHandler
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
 
     override type T = FloatConst
@@ -37,7 +35,7 @@ class FloatValueInterpreter(
      *
      * @see [[AbstractStringInterpreter.interpret]]
      */
-    override def interpret(instr: T, defSite: Int): EOptionP[Entity, StringConstancyProperty] =
+    override def interpret(instr: T, defSite: Int): FinalEP[T, StringConstancyProperty] =
         FinalEP(
             instr,
             StringConstancyProperty(StringConstancyInformation(

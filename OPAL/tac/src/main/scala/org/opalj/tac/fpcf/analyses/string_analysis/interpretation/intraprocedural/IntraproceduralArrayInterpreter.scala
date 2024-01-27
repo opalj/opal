@@ -7,13 +7,9 @@ package string_analysis
 package interpretation
 package intraprocedural
 
-import scala.collection.mutable.ListBuffer
-
 import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.FinalEP
 
 /**
@@ -25,8 +21,8 @@ import org.opalj.fpcf.FinalEP
  * @author Patrick Mell
  */
 class IntraproceduralArrayInterpreter(
-                                         cfg:         CFG[Stmt[V], TACStmts[V]],
-                                         exprHandler: IntraproceduralInterpretationHandler
+    cfg:         CFG[Stmt[V], TACStmts[V]],
+    exprHandler: IntraproceduralInterpretationHandler
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
 
     override type T = ArrayLoad[V]
@@ -36,50 +32,34 @@ class IntraproceduralArrayInterpreter(
      *
      * @see [[AbstractStringInterpreter.interpret]]
      */
-    override def interpret(instr: T, defSite: Int): EOptionP[Entity, StringConstancyProperty] = {
+    override def interpret(instr: T, defSite: Int): FinalEP[T, StringConstancyProperty] = {
         val stmts = cfg.code.instructions
-        val children = ListBuffer[StringConstancyInformation]()
-        // Loop over all possible array values
         val defSites = instr.arrayRef.asVar.definedBy.toArray
-        defSites.filter(_ >= 0).sorted.foreach { next =>
-            val arrDecl = stmts(next)
-            val sortedArrDeclUses = arrDecl.asAssignment.targetVar.usedBy.toArray.sorted
-            // Process ArrayStores
-            sortedArrDeclUses.filter {
-                stmts(_).isInstanceOf[ArrayStore[V]]
-            } foreach { f: Int =>
-                val sortedDefs = stmts(f).asArrayStore.value.asVar.definedBy.toArray.sorted
-                children.appendAll(sortedDefs.map { exprHandler.processDefSite(_) }.map { n =>
-                    n.asFinal.p.asInstanceOf[StringConstancyProperty].stringConstancyInformation
-                })
-            }
-            // Process ArrayLoads
-            sortedArrDeclUses.filter {
+        var scis = Seq.empty[StringConstancyInformation]
+
+        defSites.filter(_ >= 0).sorted.foreach { defSite =>
+            stmts(defSite).asAssignment.targetVar.usedBy.toArray.sorted.foreach {
                 stmts(_) match {
-                    case Assignment(_, _, _: ArrayLoad[V]) => true
-                    case _                                 => false
+                    // Process ArrayStores
+                    case ArrayStore(_, _, _, value) =>
+                        scis = scis ++ value.asVar.definedBy.toArray.sorted.map {
+                            exprHandler.processDefSite(_).p.stringConstancyInformation
+                        }
+                    // Process ArrayLoads
+                    case Assignment(_, _, expr: ArrayLoad[V]) =>
+                        scis = scis ++ expr.arrayRef.asVar.definedBy.toArray.sorted.map {
+                            exprHandler.processDefSite(_).p.stringConstancyInformation
+                        }
+                    case _ =>
                 }
-            } foreach { f: Int =>
-                val defs = stmts(f).asAssignment.expr.asArrayLoad.arrayRef.asVar.definedBy
-                children.appendAll(defs.toArray.sorted.map(exprHandler.processDefSite(_)).map { n =>
-                    n.asFinal.p.asInstanceOf[StringConstancyProperty].stringConstancyInformation
-                })
             }
         }
 
         // In case it refers to a method parameter, add a dynamic string property
         if (defSites.exists(_ < 0)) {
-            children.append(StringConstancyProperty.lb.stringConstancyInformation)
+            scis = scis :+ StringConstancyInformation.lb
         }
 
-        FinalEP(
-            instr,
-            StringConstancyProperty(
-                StringConstancyInformation.reduceMultiple(
-                    children.filter(!_.isTheNeutralElement)
-                )
-            )
-        )
+        FinalEP(instr, StringConstancyProperty(StringConstancyInformation.reduceMultiple(scis)))
     }
-
 }
