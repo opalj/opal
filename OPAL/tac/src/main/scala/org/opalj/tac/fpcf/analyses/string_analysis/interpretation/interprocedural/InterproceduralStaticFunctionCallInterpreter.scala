@@ -32,13 +32,13 @@ import org.opalj.tac.fpcf.analyses.cg.TypeIterator
  * @author Patrick Mell
  */
 class InterproceduralStaticFunctionCallInterpreter(
-      cfg:             CFG[Stmt[V], TACStmts[V]],
-      exprHandler:     InterproceduralInterpretationHandler,
-      ps:              PropertyStore,
-      state:           InterproceduralComputationState,
-      params:          List[Seq[StringConstancyInformation]],
-      declaredMethods: DeclaredMethods,
-      typeIterator:    TypeIterator
+        cfg:             CFG[Stmt[V], TACStmts[V]],
+        exprHandler:     InterproceduralInterpretationHandler,
+        ps:              PropertyStore,
+        state:           InterproceduralComputationState,
+        params:          List[Seq[StringConstancyInformation]],
+        declaredMethods: DeclaredMethods,
+        typeIterator:    TypeIterator
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
 
     override type T = StaticFunctionCall[V]

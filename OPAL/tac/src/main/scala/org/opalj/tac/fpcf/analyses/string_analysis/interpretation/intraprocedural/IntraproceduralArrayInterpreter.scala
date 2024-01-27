@@ -21,8 +21,8 @@ import org.opalj.fpcf.FinalEP
  * @author Patrick Mell
  */
 class IntraproceduralArrayInterpreter(
-    cfg:         CFG[Stmt[V], TACStmts[V]],
-    exprHandler: IntraproceduralInterpretationHandler
+        cfg:         CFG[Stmt[V], TACStmts[V]],
+        exprHandler: IntraproceduralInterpretationHandler
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
 
     override type T = ArrayLoad[V]

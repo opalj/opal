@@ -8,6 +8,7 @@ package interpretation
 package interprocedural
 
 import scala.collection.mutable.ListBuffer
+
 import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
@@ -30,10 +31,10 @@ import org.opalj.fpcf.FinalEP
  * @author Patrick Mell
  */
 class ArrayPreparationInterpreter(
-    cfg:         CFG[Stmt[V], TACStmts[V]],
-    exprHandler: InterproceduralInterpretationHandler,
-    state:       InterproceduralComputationState,
-    params:      List[Seq[StringConstancyInformation]]
+        cfg:         CFG[Stmt[V], TACStmts[V]],
+        exprHandler: InterproceduralInterpretationHandler,
+        state:       InterproceduralComputationState,
+        params:      List[Seq[StringConstancyInformation]]
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
 
     override type T = ArrayLoad[V]

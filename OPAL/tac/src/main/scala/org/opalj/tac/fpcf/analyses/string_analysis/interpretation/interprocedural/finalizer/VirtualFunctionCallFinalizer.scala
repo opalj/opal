@@ -17,8 +17,8 @@ import org.opalj.br.fpcf.properties.string_definition.StringConstancyType
  * @author Patrick Mell
  */
 class VirtualFunctionCallFinalizer(
-    state: InterproceduralComputationState,
-    cfg:   CFG[Stmt[V], TACStmts[V]]
+        state: InterproceduralComputationState,
+        cfg:   CFG[Stmt[V], TACStmts[V]]
 ) extends AbstractFinalizer(state) {
 
     override type T = VirtualFunctionCall[V]
@@ -33,7 +33,7 @@ class VirtualFunctionCallFinalizer(
         instr.name match {
             case "append"   => finalizeAppend(instr, defSite)
             case "toString" => finalizeToString(instr, defSite)
-            case _ => state.appendToFpe2Sci(defSite, StringConstancyInformation.lb, reset = true)
+            case _          => state.appendToFpe2Sci(defSite, StringConstancyInformation.lb, reset = true)
         }
     }
 

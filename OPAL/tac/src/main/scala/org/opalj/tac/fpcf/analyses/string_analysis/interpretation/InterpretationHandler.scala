@@ -6,10 +6,10 @@ package analyses
 package string_analysis
 package interpretation
 
-import org.opalj.br.ObjectType
-
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
+
+import org.opalj.br.ObjectType
 import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation

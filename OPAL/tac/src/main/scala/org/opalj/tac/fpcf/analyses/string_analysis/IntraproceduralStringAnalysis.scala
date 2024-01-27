@@ -7,6 +7,7 @@ package string_analysis
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
+
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFAnalysis
@@ -68,14 +69,14 @@ class IntraproceduralStringAnalysis(val project: SomeProject) extends FPCFAnalys
      * have all required information ready for a final result.
      */
     private case class ComputationState(
-       // The lean path that was computed
-       computedLeanPath: Path,
-       // A mapping from DUVar elements to the corresponding indices of the FlatPathElements
-       var2IndexMapping: mutable.Map[SEntity, Int],
-       // A mapping from values of FlatPathElements to StringConstancyInformation
-       fpe2sci: mutable.Map[Int, StringConstancyInformation],
-       // The three-address code of the method in which the entity under analysis resides
-       tac: TACode[TACMethodParameter, DUVar[ValueInformation]]
+            // The lean path that was computed
+            computedLeanPath: Path,
+            // A mapping from DUVar elements to the corresponding indices of the FlatPathElements
+            var2IndexMapping: mutable.Map[SEntity, Int],
+            // A mapping from values of FlatPathElements to StringConstancyInformation
+            fpe2sci: mutable.Map[Int, StringConstancyInformation],
+            // The three-address code of the method in which the entity under analysis resides
+            tac: TACode[TACMethodParameter, DUVar[ValueInformation]]
     )
 
     def analyze(data: SContext): ProperPropertyComputationResult = {
@@ -85,7 +86,7 @@ class IntraproceduralStringAnalysis(val project: SomeProject) extends FPCFAnalys
         // Retrieve TAC from property store
         val tacOpt: Option[TACode[TACMethodParameter, V]] = ps(data._2, TACAI.key) match {
             case UBP(tac) => if (tac.tac.isEmpty) None else Some(tac.tac.get)
-            case _ => None
+            case _        => None
         }
         // No TAC available, e.g., because the method has no body
         if (tacOpt.isEmpty)
@@ -215,7 +216,7 @@ class IntraproceduralStringAnalysis(val project: SomeProject) extends FPCFAnalys
         case finalEP: FinalEP[_, _] =>
             processFinalP(data, dependees, state, finalEP.asInstanceOf[FinalEP[SContext, StringConstancyProperty]])
         case InterimLUBP(lb, ub) => InterimResult(data, lb, ub, dependees.toSet, continuation(data, dependees, state))
-        case _ => throw new IllegalStateException("Could not process the continuation successfully.")
+        case _                   => throw new IllegalStateException("Could not process the continuation successfully.")
     }
 
     /**
@@ -224,9 +225,9 @@ class IntraproceduralStringAnalysis(val project: SomeProject) extends FPCFAnalys
      * [[FlatPathElement.element]] in which it occurs.
      */
     private def findDependeesAcc(
-        subpath:           SubPath,
-        stmts:             Array[Stmt[V]],
-        target:            SEntity
+        subpath: SubPath,
+        stmts:   Array[Stmt[V]],
+        target:  SEntity
     )(implicit tac: TACode[TACMethodParameter, V]): (ListBuffer[(SEntity, Int)], Boolean) = {
         var encounteredTarget = false
         val foundDependees = ListBuffer[(SEntity, Int)]()
@@ -275,9 +276,9 @@ class IntraproceduralStringAnalysis(val project: SomeProject) extends FPCFAnalys
      *       this variable as `ignore`.
      */
     private def findDependentVars(
-         path:   Path,
-         stmts:  Array[Stmt[V]],
-         ignore: SEntity
+        path:   Path,
+        stmts:  Array[Stmt[V]],
+        ignore: SEntity
     )(implicit tac: TACode[TACMethodParameter, V]): mutable.LinkedHashMap[SEntity, Int] = {
         val dependees = mutable.LinkedHashMap[SEntity, Int]()
         val ignoreNews = InterpretationHandler.findNewOfVar(ignore.toValueOriginForm(tac.pcToIndex), stmts)

@@ -25,9 +25,9 @@ import org.opalj.fpcf.FinalEP
  * @author Patrick Mell
  */
 class InterproceduralVirtualMethodCallInterpreter(
-    cfg:         CFG[Stmt[V], TACStmts[V]],
-    exprHandler: InterproceduralInterpretationHandler,
-    callees:     Callees
+        cfg:         CFG[Stmt[V], TACStmts[V]],
+        exprHandler: InterproceduralInterpretationHandler,
+        callees:     Callees
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
 
     override type T = VirtualMethodCall[V]
@@ -51,7 +51,7 @@ class InterproceduralVirtualMethodCallInterpreter(
     override def interpret(instr: T, defSite: Int): FinalEP[T, StringConstancyProperty] = {
         val sci = instr.name match {
             case "setLength" => StringConstancyInformation(StringConstancyLevel.CONSTANT, StringConstancyType.RESET)
-            case _ => StringConstancyInformation.getNeutralElement
+            case _           => StringConstancyInformation.getNeutralElement
         }
         FinalEP(instr, StringConstancyProperty(sci))
     }

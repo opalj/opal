@@ -8,6 +8,7 @@ package interpretation
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
+
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.br.cfg.CFG
@@ -37,8 +38,8 @@ import org.opalj.value.ValueInformation
  * @author Patrick Mell
  */
 abstract class AbstractStringInterpreter(
-    protected val cfg:         CFG[Stmt[V], TACStmts[V]],
-    protected val exprHandler: InterpretationHandler
+        protected val cfg:         CFG[Stmt[V], TACStmts[V]],
+        protected val exprHandler: InterpretationHandler
 ) {
 
     type T <: Any
@@ -129,11 +130,11 @@ abstract class AbstractStringInterpreter(
      * entities to functions, `entity2function`.
      */
     protected def evaluateParameters(
-                                        params:          List[Seq[Expr[V]]],
-                                        iHandler:        InterproceduralInterpretationHandler,
-                                        funCall:         FunctionCall[V],
-                                        functionArgsPos: NonFinalFunctionArgsPos,
-                                        entity2function: mutable.Map[SContext, ListBuffer[FunctionCall[V]]]
+        params:          List[Seq[Expr[V]]],
+        iHandler:        InterproceduralInterpretationHandler,
+        funCall:         FunctionCall[V],
+        functionArgsPos: NonFinalFunctionArgsPos,
+        entity2function: mutable.Map[SContext, ListBuffer[FunctionCall[V]]]
     ): NonFinalFunctionArgs = ListBuffer.from(params.zipWithIndex.map {
         case (nextParamList, outerIndex) =>
             ListBuffer.from(nextParamList.zipWithIndex.map {

@@ -17,8 +17,8 @@ import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
  * @author Patrick Mell
  */
 class ArrayLoadFinalizer(
-    state: InterproceduralComputationState,
-    cfg:   CFG[Stmt[V], TACStmts[V]]
+        state: InterproceduralComputationState,
+        cfg:   CFG[Stmt[V], TACStmts[V]]
 ) extends AbstractFinalizer(state) {
 
     override type T = ArrayLoad[V]

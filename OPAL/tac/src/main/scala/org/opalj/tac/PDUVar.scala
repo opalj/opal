@@ -36,7 +36,7 @@ abstract class PDUVar[+Value <: ValueInformation] {
 }
 
 class PUVar[+Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/ ] private (
-        val value:                 Value,
+        val value:  Value,
         val defPCs: PCs
 ) extends PDUVar[Value] {
 
@@ -61,8 +61,8 @@ class PUVar[+Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/
 object PUVar {
 
     def apply(d: org.opalj.ai.ValuesDomain)(
-        value:    d.DomainValue,
-        defPCs:   PCs
+        value:  d.DomainValue,
+        defPCs: PCs
     ): PUVar[d.DomainValue] = {
         new PUVar[d.DomainValue](value, defPCs)
     }

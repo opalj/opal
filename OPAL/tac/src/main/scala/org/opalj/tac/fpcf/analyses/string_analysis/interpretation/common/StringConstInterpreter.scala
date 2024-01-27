@@ -25,8 +25,8 @@ import org.opalj.fpcf.FinalEP
  * @author Patrick Mell
  */
 class StringConstInterpreter(
-    cfg:         CFG[Stmt[V], TACStmts[V]],
-    exprHandler: InterpretationHandler
+        cfg:         CFG[Stmt[V], TACStmts[V]],
+        exprHandler: InterpretationHandler
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
 
     override type T = StringConst

@@ -27,10 +27,10 @@ import org.opalj.fpcf.FinalEP
  * @author Patrick Mell
  */
 class NewArrayPreparer(
-    cfg:         CFG[Stmt[V], TACStmts[V]],
-    exprHandler: InterproceduralInterpretationHandler,
-    state:       InterproceduralComputationState,
-    params:      List[Seq[StringConstancyInformation]]
+        cfg:         CFG[Stmt[V], TACStmts[V]],
+        exprHandler: InterproceduralInterpretationHandler,
+        state:       InterproceduralComputationState,
+        params:      List[Seq[StringConstancyInformation]]
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
 
     override type T = NewArray[V]

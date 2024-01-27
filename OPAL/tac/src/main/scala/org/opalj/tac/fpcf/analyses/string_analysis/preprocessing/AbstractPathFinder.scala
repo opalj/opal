@@ -780,9 +780,9 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
      *         ''else'' branch.
      */
     protected def isCondWithoutElse(
-                                       branchingSite: Int,
-                                       cfg:           CFG[Stmt[V], TACStmts[V]],
-                                       processedIfs:  mutable.Map[Int, Unit]
+        branchingSite: Int,
+        cfg:           CFG[Stmt[V], TACStmts[V]],
+        processedIfs:  mutable.Map[Int, Unit]
     ): Boolean = {
         val successorBlocks = cfg.bb(branchingSite).successors
         // CatchNode exists => Regard it as conditional without alternative

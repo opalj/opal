@@ -26,11 +26,11 @@ import org.opalj.fpcf.PropertyStore
  * @author Patrick Mell
  */
 class InterproceduralNonVirtualMethodCallInterpreter(
-    cfg:             CFG[Stmt[V], TACStmts[V]],
-    exprHandler:     InterproceduralInterpretationHandler,
-    ps:              PropertyStore,
-    state:           InterproceduralComputationState,
-    declaredMethods: DeclaredMethods
+        cfg:             CFG[Stmt[V], TACStmts[V]],
+        exprHandler:     InterproceduralInterpretationHandler,
+        ps:              PropertyStore,
+        state:           InterproceduralComputationState,
+        declaredMethods: DeclaredMethods
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
 
     override type T = NonVirtualMethodCall[V]
@@ -50,7 +50,7 @@ class InterproceduralNonVirtualMethodCallInterpreter(
      *
      * @see [[AbstractStringInterpreter.interpret]]
      */
-    override def interpret(instr:   T, defSite: Int): EOptionP[Entity, StringConstancyProperty] = {
+    override def interpret(instr: T, defSite: Int): EOptionP[Entity, StringConstancyProperty] = {
         val e: Integer = defSite
         instr.name match {
             case "<init>" => interpretInit(instr, e)

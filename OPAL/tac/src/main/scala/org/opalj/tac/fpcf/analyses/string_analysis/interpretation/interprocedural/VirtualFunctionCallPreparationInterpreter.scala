@@ -35,13 +35,13 @@ import org.opalj.tac.fpcf.analyses.cg.TypeIterator
  * @author Patrick Mell
  */
 class VirtualFunctionCallPreparationInterpreter(
-    cfg:             CFG[Stmt[V], TACStmts[V]],
-    exprHandler:     InterproceduralInterpretationHandler,
-    ps:              PropertyStore,
-    state:           InterproceduralComputationState,
-    declaredMethods: DeclaredMethods,
-    params:          List[Seq[StringConstancyInformation]],
-    typeIterator:    TypeIterator
+        cfg:             CFG[Stmt[V], TACStmts[V]],
+        exprHandler:     InterproceduralInterpretationHandler,
+        ps:              PropertyStore,
+        state:           InterproceduralComputationState,
+        declaredMethods: DeclaredMethods,
+        params:          List[Seq[StringConstancyInformation]],
+        typeIterator:    TypeIterator
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
 
     override type T = VirtualFunctionCall[V]
@@ -159,7 +159,8 @@ class VirtualFunctionCallPreparationInterpreter(
                     FinalEP(instr, StringConstancyProperty.lb)
                 } else {
                     val results = returns.map { ret =>
-                        val entity = (ret.asInstanceOf[ReturnValue[V]].expr.asVar.toPersistentForm(tac.get.stmts), nextMethod)
+                        val entity =
+                            (ret.asInstanceOf[ReturnValue[V]].expr.asVar.toPersistentForm(tac.get.stmts), nextMethod)
                         InterproceduralStringAnalysis.registerParams(entity, evaluatedParams)
                         val eps = ps(entity, StringConstancyProperty.key)
                         eps match {
@@ -195,8 +196,8 @@ class VirtualFunctionCallPreparationInterpreter(
      * the expected behavior cannot be guaranteed.
      */
     private def interpretAppendCall(
-                                       appendCall: VirtualFunctionCall[V],
-                                       defSite:    Int
+        appendCall: VirtualFunctionCall[V],
+        defSite:    Int
     ): EOptionP[Entity, StringConstancyProperty] = {
         val receiverResults = receiverValuesOfAppendCall(appendCall, state)
         val appendResult = valueOfAppendCall(appendCall, state)

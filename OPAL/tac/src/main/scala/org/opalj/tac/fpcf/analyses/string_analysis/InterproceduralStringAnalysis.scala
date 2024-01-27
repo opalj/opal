@@ -616,8 +616,8 @@ class InterproceduralStringAnalysis(
      * [[computeLeanPathForStringBuilder]].
      */
     private def computeLeanPath(
-                                   value: V,
-                                   tac:   TACode[TACMethodParameter, DUVar[ValueInformation]]
+        value: V,
+        tac:   TACode[TACMethodParameter, DUVar[ValueInformation]]
     ): Path = {
         val defSites = value.definedBy.toArray.sorted
         if (defSites.head < 0) {
@@ -661,8 +661,8 @@ class InterproceduralStringAnalysis(
      * `(null, false)` and otherwise `(computed lean path, true)`.
      */
     private def computeLeanPathForStringBuilder(
-                                                   value: V,
-                                                   tac:   TACode[TACMethodParameter, DUVar[ValueInformation]]
+        value: V,
+        tac:   TACode[TACMethodParameter, DUVar[ValueInformation]]
     ): (Path, Boolean) = {
         val pathFinder: AbstractPathFinder = new WindowPathFinder(tac.cfg)
         val initDefSites = InterpretationHandler.findDefSiteOfInit(value, tac.stmts)
@@ -701,11 +701,11 @@ class InterproceduralStringAnalysis(
      * FlatPathElement.element in which it occurs.
      */
     private def findDependeesAcc(
-                                    subpath:           SubPath,
-                                    stmts:             Array[Stmt[V]],
-                                    target:            SEntity,
-                                    foundDependees:    ListBuffer[(SEntity, Int)],
-                                    hasTargetBeenSeen: Boolean
+        subpath:           SubPath,
+        stmts:             Array[Stmt[V]],
+        target:            SEntity,
+        foundDependees:    ListBuffer[(SEntity, Int)],
+        hasTargetBeenSeen: Boolean
     )(implicit tac: TACode[TACMethodParameter, V]): (ListBuffer[(SEntity, Int)], Boolean) = {
         var encounteredTarget = false
         subpath match {
@@ -761,9 +761,9 @@ class InterproceduralStringAnalysis(
      *       this variable as `ignore`.
      */
     private def findDependentVars(
-                                     path:   Path,
-                                     stmts:  Array[Stmt[V]],
-                                     ignore: SEntity
+        path:   Path,
+        stmts:  Array[Stmt[V]],
+        ignore: SEntity
     )(implicit tac: TACode[TACMethodParameter, V]): mutable.LinkedHashMap[SEntity, Int] = {
         val dependees = mutable.LinkedHashMap[SEntity, Int]()
         val ignoreNews = InterpretationHandler.findNewOfVar(ignore.toValueOriginForm(tac.pcToIndex), stmts)
@@ -780,7 +780,8 @@ class InterproceduralStringAnalysis(
                 )
                 wasTargetSeen = encounteredTarget
                 currentDeps.foreach { nextPair =>
-                    val newExpressions = InterpretationHandler.findNewOfVar(nextPair._1.toValueOriginForm(tac.pcToIndex), stmts)
+                    val newExpressions =
+                        InterpretationHandler.findNewOfVar(nextPair._1.toValueOriginForm(tac.pcToIndex), stmts)
                     if (ignore != nextPair._1 && ignoreNews != newExpressions) {
                         dependees.put(nextPair._1, nextPair._2)
                     }

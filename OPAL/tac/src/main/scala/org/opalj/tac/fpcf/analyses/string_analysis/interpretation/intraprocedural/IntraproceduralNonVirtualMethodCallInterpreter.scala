@@ -22,8 +22,8 @@ import org.opalj.fpcf.FinalEP
  * @author Patrick Mell
  */
 class IntraproceduralNonVirtualMethodCallInterpreter(
-    cfg:         CFG[Stmt[V], TACStmts[V]],
-    exprHandler: IntraproceduralInterpretationHandler
+        cfg:         CFG[Stmt[V], TACStmts[V]],
+        exprHandler: IntraproceduralInterpretationHandler
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
 
     override type T = NonVirtualMethodCall[V]

@@ -4,9 +4,11 @@ package support
 package info
 
 import scala.annotation.switch
+
 import java.net.URL
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
+
 import org.opalj.br.Method
 import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.BasicReport
@@ -178,10 +180,10 @@ object StringAnalysisReflectiveCalls extends ProjectAnalysisApplication {
      * analysis using the property store, `ps`, to finally store it in the given `resultMap`.
      */
     private def processFunctionCall(
-                                       ps:        PropertyStore,
-                                       method:    Method,
-                                       call:      Call[V],
-                                       resultMap: ResultMapType
+        ps:        PropertyStore,
+        method:    Method,
+        call:      Call[V],
+        resultMap: ResultMapType
     )(implicit stmts: Array[Stmt[V]]): Unit = {
         if (isRelevantCall(call.declaringClass, call.name)) {
             val fqnMethodName = buildFQMethodName(method.classFile.thisType, method.name)
@@ -232,10 +234,10 @@ object StringAnalysisReflectiveCalls extends ProjectAnalysisApplication {
     }
 
     private def processStatements(
-         ps:        PropertyStore,
-         tac:     TACode[TACMethodParameter, V],
-         m:         Method,
-         resultMap: ResultMapType
+        ps:        PropertyStore,
+        tac:       TACode[TACMethodParameter, V],
+        m:         Method,
+        resultMap: ResultMapType
     ): Unit = {
         implicit val stmts: Array[Stmt[V]] = tac.stmts
         stmts.foreach { stmt =>
