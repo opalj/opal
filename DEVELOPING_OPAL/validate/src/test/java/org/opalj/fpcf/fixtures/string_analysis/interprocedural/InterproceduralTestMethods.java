@@ -1,8 +1,9 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf.fixtures.string_analysis;
+package org.opalj.fpcf.fixtures.string_analysis.interprocedural;
 
-import org.opalj.fpcf.fixtures.string_analysis.hierarchies.GreetingService;
-import org.opalj.fpcf.fixtures.string_analysis.hierarchies.HelloGreeting;
+import org.opalj.fpcf.fixtures.string_analysis.interprocedural.hierarchies.GreetingService;
+import org.opalj.fpcf.fixtures.string_analysis.interprocedural.hierarchies.HelloGreeting;
+import org.opalj.fpcf.fixtures.string_analysis.intraprocedural.IntraProceduralTestMethods;
 import org.opalj.fpcf.properties.string_analysis.StringDefinitions;
 import org.opalj.fpcf.properties.string_analysis.StringDefinitionsCollection;
 
@@ -16,7 +17,7 @@ import static org.opalj.fpcf.properties.string_analysis.StringConstancyLevel.*;
 
 /**
  * This file contains various tests for the InterproceduralStringAnalysis. For further information
- * on what to consider, please see {@link LocalTestMethods}
+ * on what to consider, please see {@link IntraProceduralTestMethods}
  *
  * @author Patrick Mell
  */

@@ -1,6 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.properties.string_analysis;
 
+import org.opalj.fpcf.fixtures.string_analysis.intraprocedural.IntraProceduralTestMethods;
 import org.opalj.fpcf.properties.PropertyValidator;
 
 import java.lang.annotation.*;
@@ -32,7 +33,7 @@ public @interface StringDefinitions {
 
     /**
      * A regexp like string that describes the element(s) that are expected. For the rules, refer to
-     * {@link org.opalj.fpcf.fixtures.string_analysis.LocalTestMethods}.
+     * {@link IntraProceduralTestMethods}.
      * For example, "(* | (hello | world)^5)" describes a string which can 1) either be any string
      * or 2) a five time concatenation of "hello" and/or "world".
      */

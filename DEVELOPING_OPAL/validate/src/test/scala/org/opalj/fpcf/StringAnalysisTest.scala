@@ -2,16 +2,11 @@
 package org.opalj
 package fpcf
 
-import java.io.File
 import java.net.URL
-import scala.collection.mutable.ListBuffer
 import org.opalj.br.Annotation
 import org.opalj.br.Annotations
 import org.opalj.br.Method
 import org.opalj.br.analyses.Project
-import org.opalj.br.fpcf.FPCFAnalysesManagerKey
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.tac.EagerDetachedTACAIKey
 import org.opalj.tac.TACMethodParameter
@@ -23,30 +18,12 @@ import org.opalj.tac.fpcf.analyses.string_analysis.LazyInterproceduralStringAnal
 import org.opalj.tac.fpcf.analyses.string_analysis.LazyIntraproceduralStringAnalysis
 import org.opalj.tac.fpcf.analyses.string_analysis.SEntity
 
-/**
- * @param fqTestMethodsClass The fully-qualified name of the class that contains the test methods.
- * @param nameTestMethod The name of the method from which to extract DUVars to analyze.
- * @param filesToLoad Necessary (test) files / classes to load. Note that this list should not
- *                    include "StringDefinitions.class" as this class is loaded by default.
- */
-sealed class StringAnalysisTestRunner(
-        val fqTestMethodsClass: String,
-        val nameTestMethod:     String,
-        val filesToLoad:        List[String]
-) extends PropertiesTest {
+sealed abstract class StringAnalysisTest extends PropertiesTest {
 
-    /**
-     * @return Returns all relevant project files (NOT including library files) to run the tests.
-     */
-    def getRelevantProjectFiles: Array[File] = {
-        val necessaryFiles = Array(
-            "properties/string_analysis/StringDefinitions.class"
-        ) ++ filesToLoad
-        val basePath = System.getProperty("user.dir") +
-            "/DEVELOPING_OPAL/validate/target/scala-2.13/test-classes/org/opalj/fpcf/" // TODO anti-hardcode
-
-        necessaryFiles.map { filePath => new File(basePath + filePath) }
-    }
+    // The fully-qualified name of the class that contains the test methods.
+    protected def fqTestMethodsClass: String
+    // The name of the method from which to extract PUVars to analyze.
+    protected def nameTestMethod: String
 
     /**
      * Extracts a `StringDefinitions` annotation from a `StringDefinitionsCollection` annotation.
@@ -61,51 +38,56 @@ sealed class StringAnalysisTestRunner(
     def getStringDefinitionsFromCollection(a: Annotations, index: Int): Annotation =
         a.head.elementValuePairs(1).value.asArrayValue.values(index).asAnnotationValue.annotation
 
-    def determineEntitiesToAnalyze(
-        project: Project[URL]
-    ): Iterable[(SEntity, Method)] = {
-        val entitiesToAnalyze = ListBuffer[(SEntity, Method)]()
+    def determineEntitiesToAnalyze(project: Project[URL]): Iterable[(SEntity, Method)] = {
+        var entitiesToAnalyze = Seq[(SEntity, Method)]()
         val tacProvider = project.get(EagerDetachedTACAIKey)
         project.allMethodsWithBody.filter {
             _.runtimeInvisibleAnnotations.foldLeft(false)((exists, a) =>
-                exists || StringAnalysisTestRunner.isStringUsageAnnotation(a)
+                exists || StringAnalysisTest.isStringUsageAnnotation(a)
             )
         } foreach { m =>
-            StringAnalysisTestRunner.extractUVars(
-                tacProvider(m),
-                fqTestMethodsClass,
-                nameTestMethod
-            ).foreach { puVar => entitiesToAnalyze.append((puVar, m)) }
+            entitiesToAnalyze = entitiesToAnalyze ++ extractPUVars(tacProvider(m)).map((_, m))
         }
         entitiesToAnalyze
     }
 
+    /**
+     * Extracts [[org.opalj.tac.PUVar]]s from a set of statements. The locations of the PUVar are
+     * identified by the argument to the very first call to [[fqTestMethodsClass]]#[[nameTestMethod]].
+     *
+     * @param tac The tac from which to extract the PUVar, usually derived from the
+     *            method that contains the call(s) to [[fqTestMethodsClass]]#[[nameTestMethod]].
+     * @return Returns the arguments of the [[fqTestMethodsClass]]#[[nameTestMethod]] as a PUVars list in the
+     *         order in which they occurred in the given statements.
+     */
+    def extractPUVars(tac: TACode[TACMethodParameter, V]): List[SEntity] = {
+        tac.cfg.code.instructions.filter {
+            case VirtualMethodCall(_, declClass, _, name, _, _, _) =>
+                declClass.toJavaClass.getName == fqTestMethodsClass && name == nameTestMethod
+            case _ => false
+        }.map(_.asVirtualMethodCall.params.head.asVar.toPersistentForm(tac.stmts)).toList
+    }
+
     def determineEAS(
-                        entities: Iterable[(SEntity, Method)],
-                        project:  Project[URL]
+        entities: Iterable[(SEntity, Method)],
+        project:  Project[URL]
     ): Iterable[((SEntity, Method), String => String, List[Annotation])] = {
         val m2e = entities.groupBy(_._2).iterator.map(e => e._1 -> e._2.map(k => k._1)).toMap
-        // As entity, we need not the method but a tuple (DUVar, Method), thus this transformation
-
-        val eas = methodsWithAnnotations(project).filter(am => m2e.contains(am._1)).flatMap { am =>
+        // As entity, we need not the method but a tuple (PUVar, Method), thus this transformation
+        methodsWithAnnotations(project).filter(am => m2e.contains(am._1)).flatMap { am =>
             m2e(am._1).zipWithIndex.map {
-                case (duvar, index) =>
+                case (puVar, index) =>
                     Tuple3(
-                        (duvar, am._1),
+                        (puVar, am._1),
                         { s: String => s"${am._2(s)} (#$index)" },
                         List(getStringDefinitionsFromCollection(am._3, index))
                     )
             }
         }
-
-        eas
     }
 }
 
-object StringAnalysisTestRunner {
-
-    private val fqStringDefAnnotation =
-        "org.opalj.fpcf.properties.string_analysis.StringDefinitionsCollection"
+object StringAnalysisTest {
 
     /**
      * Takes an annotation and checks if it is a
@@ -115,133 +97,57 @@ object StringAnalysisTestRunner {
      * @return True if the `a` is of type StringDefinitions and false otherwise.
      */
     def isStringUsageAnnotation(a: Annotation): Boolean =
-        a.annotationType.toJavaClass.getName == fqStringDefAnnotation
-
-    /**
-     * Extracts [[org.opalj.tac.UVar]]s from a set of statements. The locations of the UVars are
-     * identified by the argument to the very first call to LocalTestMethods#analyzeString.
-     *
-     * @param cfg The control flow graph from which to extract the UVar, usually derived from the
-     *            method that contains the call(s) to LocalTestMethods#analyzeString.
-     * @return Returns the arguments of the LocalTestMethods#analyzeString as a DUVars list in the
-     *         order in which they occurred in the given statements.
-     */
-    def extractUVars(
-        tac:                TACode[TACMethodParameter, V],
-        fqTestMethodsClass: String,
-        nameTestMethod:     String
-    ): List[SEntity] = {
-        tac.cfg.code.instructions.filter {
-            case VirtualMethodCall(_, declClass, _, name, _, _, _) =>
-                declClass.toJavaClass.getName == fqTestMethodsClass && name == nameTestMethod
-            case _ => false
-        }.map(_.asVirtualMethodCall.params.head.asVar.toPersistentForm(tac.stmts)).toList
-    }
-
+        a.annotationType.toJavaClass.getName == "org.opalj.fpcf.properties.string_analysis.StringDefinitionsCollection"
 }
 
 /**
  * Tests whether the [[org.opalj.tac.fpcf.analyses.string_analysis.IntraproceduralStringAnalysis]] works correctly with
  * respect to some well-defined tests.
  *
- * @author Patrick Mell
+ * @author Maximilian Rüsch
  */
-class IntraproceduralStringAnalysisTest extends PropertiesTest {
+class IntraproceduralStringAnalysisTest extends StringAnalysisTest {
+
+    override protected val fqTestMethodsClass = "org.opalj.fpcf.fixtures.string_analysis.intraprocedural.IntraProceduralTestMethods"
+    override protected val nameTestMethod = "analyzeString"
+
+    override def fixtureProjectPackage: List[String] = List(s"org/opalj/fpcf/fixtures/string_analysis/intraprocedural")
 
     describe("the org.opalj.fpcf.IntraproceduralStringAnalysis is started") {
-        val runner = new StringAnalysisTestRunner(
-            IntraproceduralStringAnalysisTest.fqTestMethodsClass,
-            IntraproceduralStringAnalysisTest.nameTestMethod,
-            IntraproceduralStringAnalysisTest.filesToLoad
-        )
-        val p = Project(runner.getRelevantProjectFiles, Array[File]())
+        val as = executeAnalyses(LazyIntraproceduralStringAnalysis)
 
-        val manager = p.get(FPCFAnalysesManagerKey)
-        val ps = p.get(PropertyStoreKey)
-        val entities = runner.determineEntitiesToAnalyze(p)
-        val (_, analyses) = manager.runAll(
-            List(LazyIntraproceduralStringAnalysis),
-            { _: List[ComputationSpecification[FPCFAnalysis]] =>
-                entities.foreach(ps.force(_, StringConstancyProperty.key))
-            }
-        )
+        val entities = determineEntitiesToAnalyze(as.project)
+        entities.foreach(as.propertyStore.force(_, StringConstancyProperty.key))
 
-        val testContext = TestContext(p, ps, analyses.map(_._2))
-
-        val eas = runner.determineEAS(entities, p)
-
-        ps.shutdown()
-        validateProperties(testContext, eas, Set("StringConstancy"))
-        ps.waitOnPhaseCompletion()
+        as.propertyStore.shutdown()
+        validateProperties(as, determineEAS(entities, as.project), Set("StringConstancy"))
     }
-
-}
-
-object IntraproceduralStringAnalysisTest {
-
-    val fqTestMethodsClass = "org.opalj.fpcf.fixtures.string_analysis.LocalTestMethods"
-    // The name of the method from which to extract DUVars to analyze
-    val nameTestMethod = "analyzeString"
-    // Files to load for the runner
-    val filesToLoad: List[String] = List(
-        "fixtures/string_analysis/LocalTestMethods.class"
-    )
 }
 
 /**
  * Tests whether the [[org.opalj.tac.fpcf.analyses.string_analysis.InterproceduralStringAnalysis]] works correctly with
  * respect to some well-defined tests.
  *
- * @author Patrick Mell
+ * @author Maximilian Rüsch
  */
-class InterproceduralStringAnalysisTest extends PropertiesTest {
+class InterproceduralStringAnalysisTest extends StringAnalysisTest {
 
-    describe("the org.opalj.fpcf.InterproceduralStringAnalysis is started") {
-        val runner = new StringAnalysisTestRunner(
-            InterproceduralStringAnalysisTest.fqTestMethodsClass,
-            InterproceduralStringAnalysisTest.nameTestMethod,
-            InterproceduralStringAnalysisTest.filesToLoad
-        )
-        val p = Project(runner.getRelevantProjectFiles, Array[File]())
+    override protected val fqTestMethodsClass = "org.opalj.fpcf.fixtures.string_analysis.interprocedural.InterproceduralTestMethods"
+    override protected val nameTestMethod = "analyzeString"
 
-        val entities = runner.determineEntitiesToAnalyze(p)
+    override def fixtureProjectPackage: List[String] = List(s"org/opalj/fpcf/fixtures/string_analysis/interprocedural")
 
+    override def init(p: Project[URL]): Unit = {
         p.get(RTACallGraphKey)
-        val ps = p.get(PropertyStoreKey)
-        val manager = p.get(FPCFAnalysesManagerKey)
-        val analysesToRun = Set(
-            LazyInterproceduralStringAnalysis
-        )
-
-        val (_, analyses) = manager.runAll(
-            analysesToRun,
-            { _: List[ComputationSpecification[FPCFAnalysis]] =>
-                entities.foreach(ps.force(_, StringConstancyProperty.key))
-            }
-        )
-
-        val testContext = TestContext(p, ps, analyses.map(_._2))
-        val eas = runner.determineEAS(entities, p)
-
-        ps.waitOnPhaseCompletion()
-        ps.shutdown()
-
-        validateProperties(testContext, eas, Set("StringConstancy"))
     }
 
-}
+    describe("the org.opalj.fpcf.InterproceduralStringAnalysis is started") {
+        val as = executeAnalyses(LazyInterproceduralStringAnalysis)
 
-object InterproceduralStringAnalysisTest {
+        val entities = determineEntitiesToAnalyze(as.project)
+        entities.foreach(as.propertyStore.force(_, StringConstancyProperty.key))
 
-    val fqTestMethodsClass = "org.opalj.fpcf.fixtures.string_analysis.InterproceduralTestMethods"
-    // The name of the method from which to extract DUVars to analyze
-    val nameTestMethod = "analyzeString"
-    // Files to load for the runner
-    val filesToLoad: List[String] = List(
-        "fixtures/string_analysis/InterproceduralTestMethods.class",
-        "fixtures/string_analysis/StringProvider.class",
-        "fixtures/string_analysis/hierarchies/GreetingService.class",
-        "fixtures/string_analysis/hierarchies/HelloGreeting.class",
-        "fixtures/string_analysis/hierarchies/SimpleHelloGreeting.class"
-    )
+        as.propertyStore.shutdown()
+        validateProperties(as, determineEAS(entities, as.project), Set("StringConstancy"))
+    }
 }

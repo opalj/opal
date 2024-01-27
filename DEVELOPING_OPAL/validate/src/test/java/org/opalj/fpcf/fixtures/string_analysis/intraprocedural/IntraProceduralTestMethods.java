@@ -1,5 +1,5 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf.fixtures.string_analysis;
+package org.opalj.fpcf.fixtures.string_analysis.intraprocedural;
 
 import org.opalj.fpcf.properties.string_analysis.StringDefinitions;
 import org.opalj.fpcf.properties.string_analysis.StringDefinitionsCollection;
@@ -57,7 +57,7 @@ import static org.opalj.fpcf.properties.string_analysis.StringConstancyLevel.*;
  *
  * @author Patrick Mell
  */
-public class LocalTestMethods {
+public class IntraProceduralTestMethods {
 
     private String someStringField = "";
     public static final String MY_CONSTANT = "mine";
