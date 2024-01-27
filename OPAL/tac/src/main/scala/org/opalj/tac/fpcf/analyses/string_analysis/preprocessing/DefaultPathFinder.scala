@@ -40,14 +40,13 @@ class DefaultPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) extends AbstractPathFind
         val startSite = cfg.startBlock.startPC
         val endSite = cfg.code.instructions.length - 1
         val csInfo = findControlStructures(List(startSite), endSite)
-        // In case the are no control structures, return a path from the first to the last element
         if (csInfo.isEmpty) {
+            // In case the are no control structures, return a path from the first to the last element
             Path(cfg.startBlock.startPC.until(endSite).map(FlatPathElement).toList)
-        } // Otherwise, order the control structures and assign the corresponding path elements
-        else {
+        } else {
+            // Otherwise, order the control structures and assign the corresponding path elements
             val orderedCS = hierarchicallyOrderControlStructures(csInfo)
             hierarchyToPath(orderedCS.hierarchy.head._2, startSite, endSite)
         }
     }
-
 }

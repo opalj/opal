@@ -9,6 +9,7 @@ package preprocessing
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
+import org.opalj.br.ObjectType
 import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.cfg.CatchNode
 import org.opalj.br.cfg.CFG
@@ -42,9 +43,7 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
      *                  ''e1'' is a parent or child of ''e'' and nor is ''e2'' a parent or child of
      *                  ''e1''.
      */
-    protected case class HierarchicalCSOrder(
-            hierarchy: List[(Option[CSInfo], List[HierarchicalCSOrder])]
-    )
+    protected case class HierarchicalCSOrder(hierarchy: List[(Option[CSInfo], List[HierarchicalCSOrder])])
 
     /**
      * Determines the bounds of a conditional with alternative (like an `if-else` or a `switch` with
@@ -292,8 +291,8 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
      * @note This function has basic support for `throwable`s.
      */
     private def determineTryCatchBounds(): List[CSInfo] = {
-        // Stores the startPC as key and the index of the end of a catch (or finally if it is
-        // present); a map is used for faster accesses
+        // Stores the startPC as key and the index of the end of a catch (or finally if it is present);
+        // a map is used for faster accesses
         val tryInfo = mutable.Map[Int, Int]()
 
         cfg.catchNodes.foreach { cn =>
@@ -301,11 +300,9 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
                 val cnSameStartPC = cfg.catchNodes.filter(_.startPC == cn.startPC)
                 val hasCatchFinally = cnSameStartPC.exists(_.catchType.isEmpty)
                 val hasOnlyFinally = cnSameStartPC.size == 1 && hasCatchFinally
-                val isThrowable = cn.catchType.isDefined &&
-                    cn.catchType.get.fqn == "java/lang/Throwable"
-                // When there is a throwable involved, it might be the case that there is only one
-                // element in cnSameStartPC, the finally part; do not process it now (but in another
-                // catch node)
+                val isThrowable = cn.catchType.isDefined && cn.catchType.get == ObjectType.Throwable
+                // When there is a throwable involved, it might be the case that there is only one element in
+                // cnSameStartPC, the finally part; do not process it now (but in another catch node)
                 if (!hasOnlyFinally) {
                     if (isThrowable) {
                         val throwFinally = cfg.catchNodes.find(_.startPC == cn.handlerPC)
@@ -313,9 +310,9 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
                         else
                             cn.endPC - 1
                         tryInfo(cn.startPC) = endIndex
-                    } // If there is only one CatchNode for a startPC, i.e., no finally, no other
-                    // catches, the end index can be directly derived from the successors
-                    else if (cnSameStartPC.tail.isEmpty && !isThrowable) {
+                    } else if (cnSameStartPC.tail.isEmpty && !isThrowable) {
+                        // If there is only one CatchNode for a startPC, i.e., no finally, no other
+                        // catches, the end index can be directly derived from the successors
                         if (cn.endPC > -1) {
                             var end = cfg.bb(cn.endPC).successors.map {
                                 case bb: BasicBlock => bb.startPC - 1
@@ -330,9 +327,9 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
                         else {
                             findNextReturn(cn.handlerPC)
                         }
-                    } // Otherwise, the index after the try and all catches marks the end index (-1
-                    // to not already get the start index of the successor)
-                    else {
+                    } else {
+                        // Otherwise, the index after the try and all catches marks the end index (-1
+                        // to not already get the start index of the successor)
                         if (hasCatchFinally) {
                             // Find out, how many elements the finally block has and adjust the try
                             // block accordingly
@@ -376,12 +373,9 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
      *                 that the recursive calls will produce a correct result as well).
      * @return The hierarchical structure for `element`.
      */
-    private def buildHierarchy(
-        element:  CSInfo,
-        children: mutable.Map[CSInfo, ListBuffer[CSInfo]]
-    ): HierarchicalCSOrder = {
+    private def buildHierarchy(element: CSInfo, children: Map[CSInfo, ListBuffer[CSInfo]]): HierarchicalCSOrder = {
         if (!children.contains(element)) {
-            // Recursion anchor (no children available
+            // Recursion anchor (no children available)
             HierarchicalCSOrder(List((Some(element), List())))
         } else {
             HierarchicalCSOrder(List((
@@ -583,7 +577,7 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
                     val endPC = if (cn.endPC >= 0) cn.endPC else cn.handlerPC
                     startEndPairs.append((cn.startPC, endPC))
                 }
-                if (cn.catchType.isDefined && cn.catchType.get.fqn == "java/lang/Throwable") {
+                if (cn.catchType.isDefined && cn.catchType.get == ObjectType.Throwable) {
                     throwableElement = Some(cn)
                 } else {
                     catchBlockStartPCs.append(cn.handlerPC)
@@ -627,14 +621,12 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
             catchBlockStartPCs.zipWithIndex.foreach {
                 case (nextStart, i) =>
                     if (i + 1 < catchBlockStartPCs.length) {
-                        startEndPairs.append(
-                            (nextStart, catchBlockStartPCs(i + 1) - 1 - numElementsFinally)
-                        )
+                        startEndPairs.append((nextStart, catchBlockStartPCs(i + 1) - 1 - numElementsFinally))
                     }
             }
-        } // In some cases (sometimes when a throwable is involved) the successors are no catch
-        // nodes => Find the bounds now
-        else {
+        } else {
+            // In some cases (sometimes when a throwable is involved) the successors are no catch
+            // nodes => Find the bounds now
             val cn = cfg.catchNodes.filter(_.startPC == start).head
             startEndPairs.append((cn.startPC, cn.endPC - 1))
             val endOfCatch = cfg.code.instructions(cn.handlerPC - 1) match {
@@ -942,10 +934,7 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
      * @note For further details, see [[getStartAndEndIndexOfCondWithAlternative]],
      *       [[getStartAndEndIndexOfCondWithoutAlternative]], and [[determineTryCatchBounds]].
      */
-    protected def processIf(
-        stmt:         Int,
-        processedIfs: mutable.Map[Int, Unit]
-    ): CSInfo = {
+    protected def processIf(stmt: Int, processedIfs: mutable.Map[Int, Unit]): CSInfo = {
         val csType = determineTypeOfIf(stmt, processedIfs)
         val (startIndex, endIndex) = csType match {
             case NestedPathType.Repetition =>
@@ -953,10 +942,10 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
                 getStartAndEndIndexOfLoop(stmt)
             case NestedPathType.CondWithoutAlternative =>
                 getStartAndEndIndexOfCondWithoutAlternative(stmt, processedIfs)
-            // _ covers CondWithAlternative and TryCatchFinally, however, the latter one should
-            // never be present as the element referring to stmts is / should be an If
-            case _ =>
+            case NestedPathType.CondWithAlternative =>
                 getStartAndEndIndexOfCondWithAlternative(stmt, processedIfs)
+            case t =>
+                throw new IllegalArgumentException(s"Unexpected nested path type: $t")
         }
         (startIndex, endIndex, csType)
     }
@@ -975,9 +964,7 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
         val switch = cfg.code.instructions(stmt).asSwitch
         val caseStmts = switch.caseStmts.sorted
         // From the last to the first one, find the first case that points after the switch
-        val caseGotoOption = caseStmts.reverse.find { caseIndex =>
-            cfg.code.instructions(caseIndex - 1).isInstanceOf[Goto]
-        }
+        val caseGotoOption = caseStmts.findLast { caseIndex => cfg.code.instructions(caseIndex - 1).isInstanceOf[Goto] }
         // If no such case is present, find the next goto after the default case
         val posGoTo = if (caseGotoOption.isEmpty) {
             var i = switch.defaultStmt
@@ -1036,9 +1023,8 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
      *         [[CSInfo]]. The elements are returned in a sorted by ascending start index.
      */
     protected def findControlStructures(startSites: List[Int], endSite: Int): List[CSInfo] = {
-        // foundCS stores all found control structures as a triple in the form (start, end, type)
         var foundCS = ListBuffer[CSInfo]()
-        // For a fast loop-up which if statements have already been processed
+        // For a fast look-up which statements have already been processed
         val processedIfs = mutable.Map[Int, Unit]()
         val processedSwitches = mutable.Map[Int, Unit]()
         val stack = mutable.Stack[CFGNode]()
@@ -1083,31 +1069,27 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
             }
         }
 
-        // It might be that some control structures can be removed as they are not in the relevant
-        // range
+        // It might be that some control structures can be removed as they are not in the relevant range
         foundCS = foundCS.filterNot {
             case (start, end, _) =>
                 (startSites.forall(start > _) && endSite < start) ||
                     (startSites.forall(_ < start) && startSites.forall(_ > end))
         }
 
-        // Add try-catch (only those that are relevant for the given start and end sites)
-        // information
-        var relevantTryCatchBlocks = determineTryCatchBounds()
-        // Filter out all blocks that completely surround the given start and end sites
-        relevantTryCatchBlocks = relevantTryCatchBlocks.filter {
-            case (tryStart, tryEnd, _) =>
-                val tryCatchParts = buildTryCatchPath(tryStart, tryEnd, fill = false)
-                !tryCatchParts._2.exists {
-                    case (nextInnerStart, nextInnerEnd) =>
-                        startSites.forall(_ >= nextInnerStart) && endSite <= nextInnerEnd
-                }
-        }
-        // Keep the try-catch blocks that are (partially) within the start and end sites
-        relevantTryCatchBlocks = relevantTryCatchBlocks.filter {
-            case (tryStart, _, _) =>
-                startSites.exists(tryStart >= _) && tryStart <= endSite
-        }
+        // Add try-catch (only those that are relevant for the given start and end sites) information
+        val relevantTryCatchBlocks = determineTryCatchBounds()
+            // Filter out all blocks that completely surround the given start and end sites
+            .filter {
+                case (tryStart, tryEnd, _) =>
+                    !buildTryCatchPath(tryStart, tryEnd, fill = false)._2.exists {
+                        case (nextInnerStart, nextInnerEnd) =>
+                            startSites.forall(_ >= nextInnerStart) && endSite <= nextInnerEnd
+                    }
+            }
+            // Keep the try-catch blocks that are (partially) within the start and end sites
+            .filter {
+                case (tryStart, _, _) => startSites.exists(tryStart >= _) && tryStart <= endSite
+            }
 
         foundCS.appendAll(relevantTryCatchBlocks)
         foundCS.sortBy { case (start, _, _) => start }.toList
@@ -1190,7 +1172,7 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
 
         HierarchicalCSOrder(List((
             None,
-            cs.filter(!parentOf.contains(_)).map(buildHierarchy(_, mapChildrenOf))
+            cs.filter(!parentOf.contains(_)).map(buildHierarchy(_, mapChildrenOf.toMap))
         )))
     }
 
@@ -1241,8 +1223,8 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
                 // npe is the nested path element that was produced above (head is enough as this
                 // list will always contain only one element, due to fill=false)
                 val npe = subpath.elements.head.asInstanceOf[NestedPathElement]
-                val isRepElement = npe.elementType.getOrElse(NestedPathType.TryCatchFinally) ==
-                    NestedPathType.Repetition
+                val isRepElement =
+                    npe.elementType.getOrElse(NestedPathType.TryCatchFinally) == NestedPathType.Repetition
                 var lastInsertedIndex = 0
                 childrenPath.elements.foreach { nextEle =>
                     if (isRepElement) {
@@ -1261,9 +1243,7 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
                         // Compiler wants it but should never be the case!
                         case _ => -1
                     }
-                    if (insertIndex < startEndPairs.length &&
-                        lastInsertedIndex >= startEndPairs(insertIndex)._2
-                    ) {
+                    if (insertIndex < startEndPairs.length && lastInsertedIndex >= startEndPairs(insertIndex)._2) {
                         insertIndex += 1
                     }
                 }
@@ -1329,5 +1309,4 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
      *         procedures using results of this function do not need to re-process).
      */
     def findPaths(startSites: List[Int], endSite: Int): Path
-
 }

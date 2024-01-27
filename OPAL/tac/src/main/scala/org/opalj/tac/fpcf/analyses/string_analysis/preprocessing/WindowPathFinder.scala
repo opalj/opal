@@ -35,15 +35,13 @@ class WindowPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) extends AbstractPathFinde
      * @see [[AbstractPathFinder.findPaths]]
      */
     override def findPaths(startSites: List[Int], endSite: Int): Path = {
-        // If there are multiple start sites, find the parent "if" or "switch" and use that as a
-        // start site
+        // If there are multiple start sites, find the parent "if" or "switch" and use that as a start site
         var startSite: Option[Int] = None
         if (startSites.tail.nonEmpty) {
             var nextStmt = startSites.min
             while (nextStmt >= 0 && startSite.isEmpty) {
                 cfg.code.instructions(nextStmt) match {
-                    case iff: If[V] if startSites.contains(iff.targetStmt) =>
-                        startSite = Some(nextStmt)
+                    case iff: If[V] if startSites.contains(iff.targetStmt) => startSite = Some(nextStmt)
                     case _: Switch[V] =>
                         val (startSwitch, endSwitch, _) = processSwitch(nextStmt)
                         val isParentSwitch = startSites.forall {
@@ -74,5 +72,4 @@ class WindowPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) extends AbstractPathFinde
             hierarchyToPath(orderedCS.hierarchy.head._2, startSite.get, endSite)
         }
     }
-
 }

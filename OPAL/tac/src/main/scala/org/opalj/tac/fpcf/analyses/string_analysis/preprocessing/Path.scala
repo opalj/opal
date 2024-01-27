@@ -6,6 +6,8 @@ package analyses
 package string_analysis
 package preprocessing
 
+import scala.annotation.tailrec
+
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
@@ -56,7 +58,6 @@ case object NestedPathType extends Enumeration {
      * This type is to mark `try-catch` or `try-catch-finally` constructs.
      */
     val TryCatchFinally: NestedPathType.Value = Value
-
 }
 
 /**
@@ -129,7 +130,7 @@ case class Path(elements: List[SubPath]) {
      * Takes a [[NestedPathElement]] and removes the outermost nesting, i.e., the path contained
      * in `npe` will be the path being returned.
      */
-    private def removeOuterBranching(npe: NestedPathElement): ListBuffer[SubPath] = {
+    @tailrec private def removeOuterBranching(npe: NestedPathElement): ListBuffer[SubPath] = {
         if (npe.element.tail.isEmpty) {
             npe.element.head match {
                 case innerNpe: NestedPathElement => removeOuterBranching(innerNpe)
@@ -143,14 +144,11 @@ case class Path(elements: List[SubPath]) {
     /**
      * Takes a [[NestedPathElement]], `npe`, and an `endSite` and strips all branches that do not
      * contain `endSite`. ''Stripping'' here means to clear the other branches.
-     * For example, assume `npe=[[3, 5], [7, 9]]` and `endSite=7`, the this function will return
-     * `[[], [7, 9]]`. This function can handle deeply nested [[NestedPathElement]] expressions as
+     * For example, assume `npe=[ [3, 5], [7, 9] ]` and `endSite=7`, the this function will return
+     * `[ [], [7, 9] ]`. This function can handle deeply nested [[NestedPathElement]] expressions as
      * well.
      */
-    private def stripUnnecessaryBranches(
-        npe:     NestedPathElement,
-        endSite: Int
-    ): NestedPathElement = {
+    private def stripUnnecessaryBranches(npe: NestedPathElement, endSite: Int): NestedPathElement = {
         npe.element.foreach {
             case innerNpe: NestedPathElement =>
                 if (innerNpe.elementType.isEmpty) {
@@ -334,7 +332,6 @@ case class Path(elements: List[SubPath]) {
 
         Path(leanPath.toList)
     }
-
 }
 
 object Path {
@@ -342,7 +339,7 @@ object Path {
     /**
      * Returns the very last [[FlatPathElement]] in this path, respecting any nesting structure.
      */
-    def getLastElementInNPE(npe: NestedPathElement): FlatPathElement = {
+    @tailrec def getLastElementInNPE(npe: NestedPathElement): FlatPathElement = {
         npe.element.last match {
             case fpe: FlatPathElement => fpe
             case npe: NestedPathElement =>
@@ -354,5 +351,4 @@ object Path {
             case _ => FlatPathElement(-1)
         }
     }
-
 }
