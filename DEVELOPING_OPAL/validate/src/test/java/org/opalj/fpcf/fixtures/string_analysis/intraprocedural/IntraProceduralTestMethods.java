@@ -790,7 +790,7 @@ public class IntraProceduralTestMethods {
                             expectedLevel = CONSTANT, expectedStrings = "java.lang.(Object|Runtime)"
                     )
             })
-    public void secondStringBuilderRead(String className) {
+    public void complexSecondStringBuilderRead(String className) {
         StringBuilder sbObj = new StringBuilder("Object");
         StringBuilder sbRun = new StringBuilder("Runtime");
 
@@ -804,6 +804,28 @@ public class IntraProceduralTestMethods {
         StringBuilder sb2 = new StringBuilder("java.lang.");
         sb2.append(sb1.toString());
         analyzeString(sb2.toString());
+    }
+
+    @StringDefinitionsCollection(
+            value = "checks if the case, where the value of a StringBuilder depends on the "
+                    + "simple construction of a second StringBuilder is determined correctly.",
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT, expectedStrings = "java.lang.(Object|Runtime)"
+                    )
+            })
+    public void simpleSecondStringBuilderRead(String className) {
+        StringBuilder sbObj = new StringBuilder("Object");
+        StringBuilder sbRun = new StringBuilder("Runtime");
+
+        StringBuilder sb1 = new StringBuilder("java.lang.");
+        if (sb1.length() == 0) {
+            sb1.append(sbObj.toString());
+        } else {
+            sb1.append(sbRun.toString());
+        }
+
+        analyzeString(sb1.toString());
     }
 
     @StringDefinitionsCollection(

@@ -129,14 +129,19 @@ class IntraproceduralStringAnalysis(val project: SomeProject) extends FPCFAnalys
                 dependentVars.keys.foreach { nextVar =>
                     propertyStore((nextVar, data._2), StringConstancyProperty.key) match {
                         case finalEP: FinalEP[SContext, StringConstancyProperty] =>
-                            return processFinalP(data, dependees.values.flatten, state, finalEP)
+                            if (dependees.contains(data))
+                                dependees(data) = dependees(data).filter { _.e != finalEP.e }
+                            val sciOpt = processFinalP(dependees.values.flatten, state, finalEP)
+                            if (sciOpt.isDefined)
+                                sci = sciOpt.get
                         case ep =>
                             dependees.getOrElseUpdate(data, ListBuffer()).append(ep)
                     }
                 }
             } else {
                 val interpretationHandler = IntraproceduralInterpretationHandler(tac)
-                sci = new PathTransformer(interpretationHandler).pathToStringTree(leanPath).reduce(true)
+                val stringTree = new PathTransformer(interpretationHandler).pathToStringTree(leanPath)
+                sci = stringTree.reduce(true)
             }
         } else {
             // We deal with pure strings
@@ -162,31 +167,22 @@ class IntraproceduralStringAnalysis(val project: SomeProject) extends FPCFAnalys
     }
 
     private def processFinalP(
-        data:      SContext,
         dependees: Iterable[EOptionP[SContext, StringConstancyProperty]],
         state:     ComputationState,
         finalEP:   FinalEP[SContext, StringConstancyProperty]
-    ): ProperPropertyComputationResult = {
+    ): Option[StringConstancyInformation] = {
         // Add mapping information (which will be used for computing the final result)
         state.fpe2sci.put(state.var2IndexMapping(finalEP.e._1), finalEP.p.stringConstancyInformation)
 
-        // No more dependees => Return the result for this analysis run
-        val remainingDependees = dependees.filter(_.e != finalEP.e)
-        if (remainingDependees.isEmpty) {
+        if (dependees.isEmpty) {
             val interpretationHandler = IntraproceduralInterpretationHandler(state.tac)
-            val finalSci = new PathTransformer(interpretationHandler).pathToStringTree(
+            val sci = new PathTransformer(interpretationHandler).pathToStringTree(
                 state.computedLeanPath,
                 state.fpe2sci.map { case (k, v) => (k, ListBuffer(v)) }
             ).reduce(true)
-            Result(data, StringConstancyProperty(finalSci))
+            Some(sci)
         } else {
-            InterimResult(
-                data,
-                StringConstancyProperty.ub,
-                StringConstancyProperty.lb,
-                remainingDependees.toSet,
-                continuation(data, remainingDependees, state)
-            )
+            None
         }
     }
 
@@ -205,7 +201,26 @@ class IntraproceduralStringAnalysis(val project: SomeProject) extends FPCFAnalys
         state:     ComputationState
     )(eps: SomeEPS): ProperPropertyComputationResult = eps match {
         case finalEP: FinalEP[_, _] =>
-            processFinalP(data, dependees, state, finalEP.asInstanceOf[FinalEP[SContext, StringConstancyProperty]])
+            val finalScpEP = finalEP.asInstanceOf[FinalEP[SContext, StringConstancyProperty]]
+            val sciOpt = processFinalP(dependees, state, finalScpEP)
+            if (sciOpt.isDefined) {
+                val interpretationHandler = IntraproceduralInterpretationHandler(state.tac)
+                val finalSci = new PathTransformer(interpretationHandler).pathToStringTree(
+                    state.computedLeanPath,
+                    state.fpe2sci.map { case (k, v) => (k, ListBuffer(v)) }
+                ).reduce(true)
+                Result(data, StringConstancyProperty(finalSci))
+            } else {
+                val remainingDependees = dependees.filter { _.e != finalScpEP.e }
+                InterimResult(
+                    data,
+                    StringConstancyProperty.ub,
+                    StringConstancyProperty.lb,
+                    remainingDependees.toSet,
+                    continuation(data, remainingDependees, state)
+                )
+            }
+
         case InterimLUBP(lb, ub) => InterimResult(data, lb, ub, dependees.toSet, continuation(data, dependees, state))
         case _                   => throw new IllegalStateException("Could not process the continuation successfully.")
     }
@@ -217,16 +232,11 @@ class IntraproceduralStringAnalysis(val project: SomeProject) extends FPCFAnalys
      */
     private def findDependeesAcc(
         subpath: SubPath,
-        stmts:   Array[Stmt[V]],
-        target:  SEntity
-    )(implicit tac: TACode[TACMethodParameter, V]): (ListBuffer[(SEntity, Int)], Boolean) = {
-        var encounteredTarget = false
+        stmts:   Array[Stmt[V]]
+    )(implicit tac: TACode[TACMethodParameter, V]): ListBuffer[(SEntity, Int)] = {
         val foundDependees = ListBuffer[(SEntity, Int)]()
         subpath match {
             case fpe: FlatPathElement =>
-                if (target.toValueOriginForm(tac.pcToIndex).definedBy.contains(fpe.element)) {
-                    encounteredTarget = true
-                }
                 // For FlatPathElements, search for DUVars on which the toString method is called
                 // and where these toString calls are the parameter of an append call
                 stmts(fpe.element) match {
@@ -243,17 +253,13 @@ class IntraproceduralStringAnalysis(val project: SomeProject) extends FPCFAnalys
                         }
                     case _ =>
                 }
-                (foundDependees, encounteredTarget)
+                foundDependees
             case npe: NestedPathElement =>
                 npe.element.foreach { nextSubpath =>
-                    if (!encounteredTarget) {
-                        val (innerFoundDependees, seen) = findDependeesAcc(nextSubpath, stmts, target)
-                        encounteredTarget = seen
-                        foundDependees.appendAll(innerFoundDependees)
-                    }
+                    foundDependees.appendAll(findDependeesAcc(nextSubpath, stmts))
                 }
-                (foundDependees, encounteredTarget)
-            case _ => (foundDependees, encounteredTarget)
+                foundDependees
+            case _ => foundDependees
         }
     }
 
@@ -273,21 +279,11 @@ class IntraproceduralStringAnalysis(val project: SomeProject) extends FPCFAnalys
         ignore: SEntity
     )(implicit tac: TACode[TACMethodParameter, V]): mutable.LinkedHashMap[SEntity, Int] = {
         val dependees = mutable.LinkedHashMap[SEntity, Int]()
-        val ignoreNews = InterpretationHandler.findNewOfVar(ignore.toValueOriginForm(tac.pcToIndex), stmts)
-        var wasTargetSeen = false
 
         path.elements.foreach { nextSubpath =>
-            if (!wasTargetSeen) {
-                val (currentDeps, encounteredTarget) = findDependeesAcc(nextSubpath, stmts, ignore)
-                wasTargetSeen = encounteredTarget
-                currentDeps.foreach { nextPair =>
-                    val newExpressions = InterpretationHandler.findNewOfVar(
-                        nextPair._1.toValueOriginForm(tac.pcToIndex),
-                        stmts
-                    )
-                    if (ignore != nextPair._1 && ignoreNews != newExpressions) {
-                        dependees.put(nextPair._1, nextPair._2)
-                    }
+            findDependeesAcc(nextSubpath, stmts).foreach { nextPair =>
+                if (ignore != nextPair._1) {
+                    dependees.put(nextPair._1, nextPair._2)
                 }
             }
         }
