@@ -15,7 +15,7 @@ import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.FinalEP
 
 /**
- * The `NewArrayPreparer` is responsible for preparing [[NewArray]] expressions.
+ * Responsible for preparing [[NewArray]] expressions.
  * <p>
  * Not all (partial) results are guaranteed to be available at once, thus intermediate results
  * might be produced. This interpreter will only compute the parts necessary to later on fully
@@ -27,10 +27,10 @@ import org.opalj.fpcf.FinalEP
  * @author Patrick Mell
  */
 class NewArrayPreparer(
-                          cfg:         CFG[Stmt[V], TACStmts[V]],
-                          exprHandler: InterproceduralInterpretationHandler,
-                          state:       InterproceduralComputationState,
-                          params:      List[Seq[StringConstancyInformation]]
+    cfg:         CFG[Stmt[V], TACStmts[V]],
+    exprHandler: InterproceduralInterpretationHandler,
+    state:       InterproceduralComputationState,
+    params:      List[Seq[StringConstancyInformation]]
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
 
     override type T = NewArray[V]
@@ -48,7 +48,7 @@ class NewArrayPreparer(
     override def interpret(instr: T, defSite: Int): EOptionP[Entity, StringConstancyProperty] = {
         // Only support for 1-D arrays
         if (instr.counts.length != 1) {
-            FinalEP(instr, StringConstancyProperty.lb)
+            return FinalEP(instr, StringConstancyProperty.lb)
         }
 
         // Get all sites that define array values and process them
@@ -97,5 +97,4 @@ class NewArrayPreparer(
             FinalEP(Integer.valueOf(defSite), StringConstancyProperty(resultSci))
         }
     }
-
 }

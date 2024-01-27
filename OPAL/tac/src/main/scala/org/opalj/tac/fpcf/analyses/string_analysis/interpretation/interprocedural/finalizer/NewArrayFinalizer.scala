@@ -14,8 +14,8 @@ import org.opalj.br.cfg.CFG
  * @author Patrick Mell
  */
 class NewArrayFinalizer(
-        state: InterproceduralComputationState,
-        cfg:   CFG[Stmt[V], TACStmts[V]]
+    state: InterproceduralComputationState,
+    cfg:   CFG[Stmt[V], TACStmts[V]]
 ) extends AbstractFinalizer(state) {
 
     override type T = NewArray[V]
@@ -28,7 +28,6 @@ class NewArrayFinalizer(
     override def finalizeInterpretation(instr: T, defSite: Int): Unit =
         // Simply re-trigger the computation
         state.iHandler.processDefSite(defSite)
-
 }
 
 object NewArrayFinalizer {
@@ -37,5 +36,4 @@ object NewArrayFinalizer {
         state: InterproceduralComputationState,
         cfg:   CFG[Stmt[V], TACStmts[V]]
     ): NewArrayFinalizer = new NewArrayFinalizer(state, cfg)
-
 }

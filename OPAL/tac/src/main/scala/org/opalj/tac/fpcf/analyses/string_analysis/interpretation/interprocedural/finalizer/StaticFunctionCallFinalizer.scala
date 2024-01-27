@@ -8,15 +8,12 @@ package interpretation
 package interprocedural
 package finalizer
 
-import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 
 /**
  * @author Patrick Mell
  */
-class StaticFunctionCallFinalizer(
-        state: InterproceduralComputationState
-) extends AbstractFinalizer(state) {
+class StaticFunctionCallFinalizer(state: InterproceduralComputationState) extends AbstractFinalizer(state) {
 
     override type T = StaticFunctionCall[V]
 
@@ -41,17 +38,14 @@ class StaticFunctionCallFinalizer(
             val scis = defSites.map { state.fpe2sci }
             StringConstancyInformation.reduceMultiple(scis.flatten.toList)
         } else {
-            StringConstancyProperty.lb.stringConstancyInformation
+            StringConstancyInformation.lb
         }
         state.appendToFpe2Sci(defSite, toAppend, reset = true)
     }
-
 }
 
 object StaticFunctionCallFinalizer {
 
-    def apply(
-        state: InterproceduralComputationState
-    ): StaticFunctionCallFinalizer = new StaticFunctionCallFinalizer(state)
-
+    def apply(state: InterproceduralComputationState): StaticFunctionCallFinalizer =
+        new StaticFunctionCallFinalizer(state)
 }

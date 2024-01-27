@@ -86,7 +86,7 @@ class InterproceduralFieldInterpreter(
                     EPK(state.entity, StringConstancyProperty.key)
                 } else {
                     tac match {
-                        case Some(methodTac) =>
+                        case Some(_) =>
                             val entity = (PUVar(parameter.get._1, parameter.get._2), method)
                             val eps = ps(entity, StringConstancyProperty.key)
                             if (eps.isRefinable) {
@@ -110,15 +110,11 @@ class InterproceduralFieldInterpreter(
         if (results.isEmpty) {
             // No methods, which write the field, were found => Field could either be null or
             // any value
-            val possibleStrings = "(^null$|" + StringConstancyInformation.UnknownWordSymbol + ")"
             val sci = StringConstancyInformation(
                 StringConstancyLevel.DYNAMIC,
-                possibleStrings = possibleStrings
+                possibleStrings = "(^null$|" + StringConstancyInformation.UnknownWordSymbol + ")"
             )
-            state.appendToFpe2Sci(
-                defSitEntity,
-                StringConstancyProperty.lb.stringConstancyInformation
-            )
+            state.appendToFpe2Sci(defSitEntity, StringConstancyInformation.lb)
             FinalEP(defSitEntity, StringConstancyProperty(sci))
         } else {
             // If all results are final, determine all possible values for the field. Otherwise,

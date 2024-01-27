@@ -15,7 +15,6 @@ import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.Result
 import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 
 /**
@@ -27,12 +26,12 @@ import org.opalj.tac.fpcf.analyses.cg.TypeIterator
  * @author Patrick Mell
  */
 class InterproceduralNonVirtualFunctionCallInterpreter(
-                                                          cfg:             CFG[Stmt[V], TACStmts[V]],
-                                                          exprHandler:     InterproceduralInterpretationHandler,
-                                                          ps:              PropertyStore,
-                                                          state:           InterproceduralComputationState,
-                                                          declaredMethods: DeclaredMethods,
-                                                          typeIterator:    TypeIterator
+    cfg:             CFG[Stmt[V], TACStmts[V]],
+    exprHandler:     InterproceduralInterpretationHandler,
+    ps:              PropertyStore,
+    state:           InterproceduralComputationState,
+    declaredMethods: DeclaredMethods,
+    typeIterator:    TypeIterator
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
 
     override type T = NonVirtualFunctionCall[V]
@@ -77,12 +76,11 @@ class InterproceduralNonVirtualFunctionCallInterpreter(
                     }
                     eps
                 }
-                results.find(!_.isInstanceOf[Result]).getOrElse(results.head)
+                results.find(_.isRefinable).getOrElse(results.head)
             }
         } else {
             state.appendToMethodPrep2defSite(m, defSite)
             EPK(state.entity, StringConstancyProperty.key)
         }
     }
-
 }

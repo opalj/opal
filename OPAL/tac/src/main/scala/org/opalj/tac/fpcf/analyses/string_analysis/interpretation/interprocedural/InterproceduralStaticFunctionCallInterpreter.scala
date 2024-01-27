@@ -69,12 +69,8 @@ class InterproceduralStaticFunctionCallInterpreter(
      * returns an instance of Result which corresponds to the result of the interpretation of
      * the parameter passed to the call.
      */
-    private def processStringValueOf(
-        call: StaticFunctionCall[V]
-    ): EOptionP[Entity, StringConstancyProperty] = {
-        val results = call.params.head.asVar.definedBy.toArray.sorted.map { ds =>
-            exprHandler.processDefSite(ds, params)
-        }
+    private def processStringValueOf(call: StaticFunctionCall[V]): EOptionP[Entity, StringConstancyProperty] = {
+        val results = call.params.head.asVar.definedBy.toArray.sorted.map { exprHandler.processDefSite(_, params) }
         val interim = results.find(_.isRefinable)
         if (interim.isDefined) {
             interim.get
@@ -92,8 +88,7 @@ class InterproceduralStaticFunctionCallInterpreter(
             } else {
                 scis
             }
-            val finalSci = StringConstancyInformation.reduceMultiple(finalScis)
-            FinalEP(call, StringConstancyProperty(finalSci))
+            FinalEP(call, StringConstancyProperty(StringConstancyInformation.reduceMultiple(finalScis)))
         }
     }
 
@@ -101,20 +96,16 @@ class InterproceduralStaticFunctionCallInterpreter(
      * This function interprets an arbitrary static function call.
      */
     private def processArbitraryCall(
-                                        instr:   StaticFunctionCall[V],
-                                        defSite: Int
+        instr:   StaticFunctionCall[V],
+        defSite: Int
     ): EOptionP[Entity, StringConstancyProperty] = {
-        val methods, _ = getMethodsForPC(
-            instr.pc,
-            ps,
-            state.callees,
-            typeIterator
-        )
+        val methods, _ = getMethodsForPC(instr.pc, ps, state.callees, typeIterator)
 
-        // Static methods cannot be overwritten, thus 1) we do not need the second return value of
-        // getMethodsForPC and 2) interpreting the head is enough
+        // Static methods cannot be overwritten, thus
+        // 1) we do not need the second return value of getMethodsForPC and
+        // 2) interpreting the head is enough
         if (methods._1.isEmpty) {
-            state.appendToFpe2Sci(defSite, StringConstancyProperty.lb.stringConstancyInformation)
+            state.appendToFpe2Sci(defSite, StringConstancyInformation.lb)
             return FinalEP(instr, StringConstancyProperty.lb)
         }
 
@@ -162,14 +153,14 @@ class InterproceduralStaticFunctionCallInterpreter(
 
         state.nonFinalFunctionArgs.remove(instr)
         state.nonFinalFunctionArgsPos.remove(instr)
-        val evaluatedParams = convertEvaluatedParameters(params.toSeq.map(t => t.toSeq.map(_.toSeq)))
+        val evaluatedParams = convertEvaluatedParameters(params.toSeq.map(t => t.toSeq.map(_.toSeq.map(_.asFinal))))
         if (tac.isDefined) {
             state.removeFromMethodPrep2defSite(m, defSite)
             // TAC available => Get return UVar and start the string analysis
             val returns = tac.get.stmts.filter(_.isInstanceOf[ReturnValue[V]])
             if (returns.isEmpty) {
-                // A function without returns, e.g., because it is guaranteed to throw an exception,
-                // is approximated with the lower bound
+                // A function without returns, e.g., because it is guaranteed to throw an exception, is approximated
+                // with the lower bound
                 FinalEP(instr, StringConstancyProperty.lb)
             } else {
                 val results = returns.map { ret =>
@@ -191,5 +182,4 @@ class InterproceduralStaticFunctionCallInterpreter(
             EPK(state.entity, StringConstancyProperty.key)
         }
     }
-
 }

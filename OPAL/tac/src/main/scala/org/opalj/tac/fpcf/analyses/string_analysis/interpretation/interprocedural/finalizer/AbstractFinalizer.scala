@@ -36,5 +36,4 @@ abstract class AbstractFinalizer(state: InterproceduralComputationState) {
      * @param defSite The definition site that corresponds to the given instruction.
      */
     def finalizeInterpretation(instr: T, defSite: Int): Unit
-
 }

@@ -8,15 +8,12 @@ package interpretation
 package interprocedural
 package finalizer
 
-import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 
 /**
  * @author Patrick Mell
  */
-class NonVirtualMethodCallFinalizer(
-        state: InterproceduralComputationState
-) extends AbstractFinalizer(state) {
+class NonVirtualMethodCallFinalizer(state: InterproceduralComputationState) extends AbstractFinalizer(state) {
 
     override type T = NonVirtualMethodCall[V]
 
@@ -35,17 +32,14 @@ class NonVirtualMethodCallFinalizer(
             val scis = instr.params.head.asVar.definedBy.toArray.sorted.map { state.fpe2sci }
             StringConstancyInformation.reduceMultiple(scis.flatten.toList)
         } else {
-            StringConstancyProperty.lb.stringConstancyInformation
+            StringConstancyInformation.lb
         }
         state.appendToFpe2Sci(defSite, toAppend, reset = true)
     }
-
 }
 
 object NonVirtualMethodCallFinalizer {
 
-    def apply(
-        state: InterproceduralComputationState
-    ): NonVirtualMethodCallFinalizer = new NonVirtualMethodCallFinalizer(state)
-
+    def apply(state: InterproceduralComputationState): NonVirtualMethodCallFinalizer =
+        new NonVirtualMethodCallFinalizer(state)
 }

@@ -8,10 +8,10 @@ package interpretation
 package interprocedural
 
 import scala.collection.mutable.ListBuffer
-
 import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
+import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.FinalEP
@@ -30,10 +30,10 @@ import org.opalj.fpcf.FinalEP
  * @author Patrick Mell
  */
 class ArrayPreparationInterpreter(
-                                     cfg:         CFG[Stmt[V], TACStmts[V]],
-                                     exprHandler: InterproceduralInterpretationHandler,
-                                     state:       InterproceduralComputationState,
-                                     params:      List[Seq[StringConstancyInformation]]
+    cfg:         CFG[Stmt[V], TACStmts[V]],
+    exprHandler: InterproceduralInterpretationHandler,
+    state:       InterproceduralComputationState,
+    params:      List[Seq[StringConstancyInformation]]
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
 
     override type T = ArrayLoad[V]
@@ -51,12 +51,7 @@ class ArrayPreparationInterpreter(
     override def interpret(instr: T, defSite: Int): EOptionP[Entity, StringConstancyProperty] = {
         val results = ListBuffer[EOptionP[Entity, StringConstancyProperty]]()
 
-        val defSites = instr.arrayRef.asVar.definedBy.toArray
-        val allDefSites = ArrayPreparationInterpreter.getStoreAndLoadDefSites(
-            instr,
-            state.tac.stmts
-        )
-
+        val allDefSites = ArrayPreparationInterpreter.getStoreAndLoadDefSites(instr, state.tac.stmts)
         allDefSites.map { ds => (ds, exprHandler.processDefSite(ds)) }.foreach {
             case (ds, ep) =>
                 if (ep.isFinal)
@@ -65,16 +60,14 @@ class ArrayPreparationInterpreter(
         }
 
         // Add information of parameters
-        defSites.filter(_ < 0).foreach { ds =>
+        instr.arrayRef.asVar.definedBy.toArray.filter(_ < 0).foreach { ds =>
             val paramPos = Math.abs(ds + 2)
-            // lb is the fallback value
             val sci = StringConstancyInformation.reduceMultiple(params.map(_(paramPos)))
             state.appendToFpe2Sci(ds, sci)
         }
 
         // If there is at least one InterimResult, return one. Otherwise, return a final result
-        // (to either indicate that further computation are necessary or a final result is already
-        // present)
+        // (to either indicate that further computation are necessary or a final result is already present)
         val interims = results.find(!_.isFinal)
         if (interims.isDefined) {
             interims.get
@@ -115,29 +108,19 @@ object ArrayPreparationInterpreter {
      *         given instruction. The result list is sorted in ascending order.
      */
     def getStoreAndLoadDefSites(instr: T, stmts: Array[Stmt[V]]): List[Int] = {
-        val allDefSites = ListBuffer[Int]()
-        val defSites = instr.arrayRef.asVar.definedBy.toArray
-
-        defSites.filter(_ >= 0).sorted.foreach { next =>
-            val arrDecl = stmts(next)
-            val sortedArrDeclUses = arrDecl.asAssignment.targetVar.usedBy.toArray.sorted
-            // For ArrayStores
-            sortedArrDeclUses.filter {
-                stmts(_).isInstanceOf[ArrayStore[V]]
-            } foreach { f: Int => allDefSites.appendAll(stmts(f).asArrayStore.value.asVar.definedBy.toArray) }
-            // For ArrayLoads
-            sortedArrDeclUses.filter {
+        var defSites = IntTrieSet.empty
+        instr.arrayRef.asVar.definedBy.toArray.filter(_ >= 0).sorted.foreach { next =>
+            stmts(next).asAssignment.targetVar.usedBy.toArray.sorted.foreach {
                 stmts(_) match {
-                    case Assignment(_, _, _: ArrayLoad[V]) => true
-                    case _                                 => false
+                    case ArrayStore(_, _, _, value) =>
+                        defSites = defSites ++ value.asVar.definedBy.toArray
+                    case Assignment(_, _, expr: ArrayLoad[V]) =>
+                        defSites = defSites ++ expr.asArrayLoad.arrayRef.asVar.definedBy.toArray
+                    case _ =>
                 }
-            } foreach { f: Int =>
-                val defs = stmts(f).asAssignment.expr.asArrayLoad.arrayRef.asVar.definedBy
-                allDefSites.appendAll(defs.toArray)
             }
         }
 
-        allDefSites.sorted.toList
+        defSites.toList.sorted
     }
-
 }

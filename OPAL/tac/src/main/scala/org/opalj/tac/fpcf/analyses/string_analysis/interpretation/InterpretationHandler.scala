@@ -6,9 +6,10 @@ package analyses
 package string_analysis
 package interpretation
 
+import org.opalj.br.ObjectType
+
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
-
 import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
@@ -16,7 +17,6 @@ import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyType
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.Property
 import org.opalj.value.ValueInformation
 
 abstract class InterpretationHandler(tac: TACode[TACMethodParameter, DUVar[ValueInformation]]) {
@@ -54,7 +54,7 @@ abstract class InterpretationHandler(tac: TACode[TACMethodParameter, DUVar[Value
     def processDefSite(
         defSite: Int,
         params:  List[Seq[StringConstancyInformation]] = List()
-    ): EOptionP[Entity, Property]
+    ): EOptionP[Entity, StringConstancyProperty]
 
     /**
      * [[InterpretationHandler]]s keeps an internal state for correct and faster processing. As
@@ -67,7 +67,6 @@ abstract class InterpretationHandler(tac: TACode[TACMethodParameter, DUVar[Value
     def reset(): Unit = {
         processedDefSites.clear()
     }
-
 }
 
 object InterpretationHandler {
@@ -75,34 +74,24 @@ object InterpretationHandler {
     /**
      * Checks whether an expression contains a call to [[StringBuilder#toString]] or
      * [[StringBuffer#toString]].
-     *
-     * @param expr The expression that is to be checked.
-     * @return Returns true if `expr` is a call to `toString` of [[StringBuilder]] or
-     *         [[StringBuffer]].
      */
     def isStringBuilderBufferToStringCall(expr: Expr[V]): Boolean =
         expr match {
             case VirtualFunctionCall(_, clazz, _, "toString", _, _, _) =>
-                val className = clazz.mostPreciseObjectType.fqn
-                (className == "java/lang/StringBuilder" || className == "java/lang/StringBuffer")
+                clazz.mostPreciseObjectType == ObjectType.StringBuilder ||
+                    clazz.mostPreciseObjectType == ObjectType.StringBuffer
             case _ => false
         }
 
     /**
      * Checks whether the given expression is a string constant / string literal.
-     *
-     * @param expr The expression to check.
-     * @return Returns `true` if the given expression  is a string constant / literal and `false`
-     *         otherwise.
      */
     def isStringConstExpression(expr: Expr[V]): Boolean = if (expr.isStringConst) {
         true
     } else {
         if (expr.isVar) {
             val value = expr.asVar.value
-            value.isReferenceValue && value.asReferenceValue.upperTypeBound.exists {
-                _.toJava == "java.lang.String"
-            }
+            value.isReferenceValue && value.asReferenceValue.upperTypeBound.exists { _.toJava == "java.lang.String" }
         } else {
             false
         }
@@ -144,7 +133,7 @@ object InterpretationHandler {
     ): List[Int] = {
         // TODO: Check that we deal with an instance of AbstractStringBuilder
         if (toString.name != "toString") {
-            return List()
+            return List.empty
         }
 
         val defSites = ListBuffer[Int]()
@@ -276,5 +265,4 @@ object InterpretationHandler {
             StringConstancyType.REPLACE,
             StringConstancyInformation.UnknownWordSymbol
         ))
-
 }

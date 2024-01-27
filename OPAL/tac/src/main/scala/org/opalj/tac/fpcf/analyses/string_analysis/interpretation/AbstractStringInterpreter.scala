@@ -8,7 +8,6 @@ package interpretation
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
-
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.br.cfg.CFG
@@ -18,7 +17,7 @@ import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.Property
+import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.PropertyStore
 import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural.InterproceduralInterpretationHandler
@@ -38,8 +37,8 @@ import org.opalj.value.ValueInformation
  * @author Patrick Mell
  */
 abstract class AbstractStringInterpreter(
-                                            protected val cfg:         CFG[Stmt[V], TACStmts[V]],
-                                            protected val exprHandler: InterpretationHandler
+    protected val cfg:         CFG[Stmt[V], TACStmts[V]],
+    protected val exprHandler: InterpretationHandler
 ) {
 
     type T <: Any
@@ -175,16 +174,13 @@ abstract class AbstractStringInterpreter(
      * all results in the inner-most sequence are final!
      */
     protected def convertEvaluatedParameters(
-        evaluatedParameters: Seq[Seq[Seq[EOptionP[Entity, Property]]]]
-    ): ListBuffer[ListBuffer[StringConstancyInformation]] = ListBuffer.from(evaluatedParameters.map { paramList =>
-        ListBuffer.from(paramList.map { param =>
-            StringConstancyInformation.reduceMultiple(
-                param.map {
-                    _.asFinal.p.asInstanceOf[StringConstancyProperty].stringConstancyInformation
-                }
-            )
+        evaluatedParameters: Seq[Seq[Seq[FinalEP[Entity, StringConstancyProperty]]]]
+    ): ListBuffer[ListBuffer[StringConstancyInformation]] =
+        ListBuffer.from(evaluatedParameters.map { paramList =>
+            ListBuffer.from(paramList.map { param =>
+                StringConstancyInformation.reduceMultiple(param.map { _.p.stringConstancyInformation })
+            })
         })
-    })
 
     /**
      * @param instr The instruction that is to be interpreted. It is the responsibility of
@@ -203,6 +199,5 @@ abstract class AbstractStringInterpreter(
      *         the definition site, this function returns the interpreted instruction as entity.
      *         Thus, the entity needs to be replaced by the calling client.
      */
-    def interpret(instr: T, defSite: Int): EOptionP[Entity, Property]
-
+    def interpret(instr: T, defSite: Int): EOptionP[Entity, StringConstancyProperty]
 }

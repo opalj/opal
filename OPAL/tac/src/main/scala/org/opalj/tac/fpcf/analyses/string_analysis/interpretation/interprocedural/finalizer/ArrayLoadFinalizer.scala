@@ -17,8 +17,8 @@ import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
  * @author Patrick Mell
  */
 class ArrayLoadFinalizer(
-        state: InterproceduralComputationState,
-        cfg:   CFG[Stmt[V], TACStmts[V]]
+    state: InterproceduralComputationState,
+    cfg:   CFG[Stmt[V], TACStmts[V]]
 ) extends AbstractFinalizer(state) {
 
     override type T = ArrayLoad[V]
@@ -29,10 +29,7 @@ class ArrayLoadFinalizer(
      * @inheritdoc
      */
     override def finalizeInterpretation(instr: T, defSite: Int): Unit = {
-        val allDefSites = ArrayPreparationInterpreter.getStoreAndLoadDefSites(
-            instr,
-            state.tac.stmts
-        )
+        val allDefSites = ArrayPreparationInterpreter.getStoreAndLoadDefSites(instr, state.tac.stmts)
 
         allDefSites.foreach { ds =>
             if (!state.fpe2sci.contains(ds)) {
@@ -44,14 +41,10 @@ class ArrayLoadFinalizer(
             allDefSites.filter(state.fpe2sci.contains).sorted.flatMap { ds => state.fpe2sci(ds) }
         ))
     }
-
 }
 
 object ArrayLoadFinalizer {
 
-    def apply(
-        state: InterproceduralComputationState,
-        cfg:   CFG[Stmt[V], TACStmts[V]]
-    ): ArrayLoadFinalizer = new ArrayLoadFinalizer(state, cfg)
-
+    def apply(state: InterproceduralComputationState, cfg: CFG[Stmt[V], TACStmts[V]]): ArrayLoadFinalizer =
+        new ArrayLoadFinalizer(state, cfg)
 }

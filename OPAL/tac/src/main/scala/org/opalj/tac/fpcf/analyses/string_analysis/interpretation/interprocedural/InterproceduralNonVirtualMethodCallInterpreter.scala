@@ -26,11 +26,11 @@ import org.opalj.fpcf.PropertyStore
  * @author Patrick Mell
  */
 class InterproceduralNonVirtualMethodCallInterpreter(
-                                                        cfg:             CFG[Stmt[V], TACStmts[V]],
-                                                        exprHandler:     InterproceduralInterpretationHandler,
-                                                        ps:              PropertyStore,
-                                                        state:           InterproceduralComputationState,
-                                                        declaredMethods: DeclaredMethods
+    cfg:             CFG[Stmt[V], TACStmts[V]],
+    exprHandler:     InterproceduralInterpretationHandler,
+    ps:              PropertyStore,
+    state:           InterproceduralComputationState,
+    declaredMethods: DeclaredMethods
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
 
     override type T = NonVirtualMethodCall[V]
@@ -50,10 +50,7 @@ class InterproceduralNonVirtualMethodCallInterpreter(
      *
      * @see [[AbstractStringInterpreter.interpret]]
      */
-    override def interpret(
-                              instr:   T,
-                              defSite: Int
-    ): EOptionP[Entity, StringConstancyProperty] = {
+    override def interpret(instr:   T, defSite: Int): EOptionP[Entity, StringConstancyProperty] = {
         val e: Integer = defSite
         instr.name match {
             case "<init>" => interpretInit(instr, e)
@@ -68,10 +65,7 @@ class InterproceduralNonVirtualMethodCallInterpreter(
      * [[StringBuffer]] and [[StringBuilder]], have only constructors with <= 1 arguments and only
      * these are currently interpreted).
      */
-    private def interpretInit(
-                                 init:    T,
-                                 defSite: Integer
-    ): EOptionP[Entity, StringConstancyProperty] = {
+    private def interpretInit(init: T, defSite: Integer): EOptionP[Entity, StringConstancyProperty] = {
         init.params.size match {
             case 0 => FinalEP(defSite, StringConstancyProperty.getNeutralElement)
             case _ =>
@@ -79,23 +73,18 @@ class InterproceduralNonVirtualMethodCallInterpreter(
                     (ds, exprHandler.processDefSite(ds, List()))
                 }
                 if (results.forall(_._2.isFinal)) {
-                    // Final result is available
                     val reduced = StringConstancyInformation.reduceMultiple(results.map { r =>
                         r._2.asFinal.p.stringConstancyInformation
                     })
                     FinalEP(defSite, StringConstancyProperty(reduced))
                 } else {
-                    // Some intermediate results => register necessary information from final
-                    // results and return an intermediate result
+                    // Some intermediate results => register necessary information from final results and return an
+                    // intermediate result
                     val returnIR = results.find(r => !r._2.isFinal).get._2
                     results.foreach {
                         case (ds, r) =>
                             if (r.isFinal) {
-                                state.appendToFpe2Sci(
-                                    ds,
-                                    r.asFinal.p.stringConstancyInformation,
-                                    reset = true
-                                )
+                                state.appendToFpe2Sci(ds, r.asFinal.p.stringConstancyInformation, reset = true)
                             }
                         case _ =>
                     }
@@ -103,5 +92,4 @@ class InterproceduralNonVirtualMethodCallInterpreter(
                 }
         }
     }
-
 }

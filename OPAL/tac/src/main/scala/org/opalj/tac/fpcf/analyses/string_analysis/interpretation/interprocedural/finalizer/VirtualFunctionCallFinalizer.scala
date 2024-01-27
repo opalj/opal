@@ -9,7 +9,6 @@ package interprocedural
 package finalizer
 
 import org.opalj.br.cfg.CFG
-import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyType
@@ -18,8 +17,8 @@ import org.opalj.br.fpcf.properties.string_definition.StringConstancyType
  * @author Patrick Mell
  */
 class VirtualFunctionCallFinalizer(
-        state: InterproceduralComputationState,
-        cfg:   CFG[Stmt[V], TACStmts[V]]
+    state: InterproceduralComputationState,
+    cfg:   CFG[Stmt[V], TACStmts[V]]
 ) extends AbstractFinalizer(state) {
 
     override type T = VirtualFunctionCall[V]
@@ -34,11 +33,7 @@ class VirtualFunctionCallFinalizer(
         instr.name match {
             case "append"   => finalizeAppend(instr, defSite)
             case "toString" => finalizeToString(instr, defSite)
-            case _ => state.appendToFpe2Sci(
-                    defSite,
-                    StringConstancyProperty.lb.stringConstancyInformation,
-                    reset = true
-                )
+            case _ => state.appendToFpe2Sci(defSite, StringConstancyInformation.lb, reset = true)
         }
     }
 
@@ -72,9 +67,7 @@ class VirtualFunctionCallFinalizer(
             }
         }
         val appendSci = if (paramDefSites.forall(state.fpe2sci.contains)) {
-            StringConstancyInformation.reduceMultiple(
-                paramDefSites.flatMap(state.fpe2sci(_))
-            )
+            StringConstancyInformation.reduceMultiple(paramDefSites.flatMap(state.fpe2sci(_)))
         } else StringConstancyInformation.lb
 
         val finalSci = if (receiverSci.isTheNeutralElement && appendSci.isTheNeutralElement) {
@@ -85,10 +78,7 @@ class VirtualFunctionCallFinalizer(
             receiverSci
         } else {
             StringConstancyInformation(
-                StringConstancyLevel.determineForConcat(
-                    receiverSci.constancyLevel,
-                    appendSci.constancyLevel
-                ),
+                StringConstancyLevel.determineForConcat(receiverSci.constancyLevel, appendSci.constancyLevel),
                 StringConstancyType.APPEND,
                 receiverSci.possibleStrings + appendSci.possibleStrings
             )
@@ -114,7 +104,6 @@ class VirtualFunctionCallFinalizer(
         }
         state.appendToFpe2Sci(defSite, finalSci)
     }
-
 }
 
 object VirtualFunctionCallFinalizer {
@@ -123,5 +112,4 @@ object VirtualFunctionCallFinalizer {
         state: InterproceduralComputationState,
         cfg:   CFG[Stmt[V], TACStmts[V]]
     ): VirtualFunctionCallFinalizer = new VirtualFunctionCallFinalizer(state, cfg)
-
 }
