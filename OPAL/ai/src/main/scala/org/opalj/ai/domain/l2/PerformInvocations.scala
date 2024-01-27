@@ -164,7 +164,7 @@ trait PerformInvocations extends MethodCallsHandling {
     ): MethodCallResult = {
 
         if (project.libraryClassFilesAreInterfacesOnly &&
-            project.isLibraryType(method.classFile.thisType)
+                project.isLibraryType(method.classFile.thisType)
         )
             return fallback();
 

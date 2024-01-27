@@ -232,8 +232,8 @@ object SupertypeInformation {
                         val tid = t.id
                         tid == ObjectType.ObjectId || (
                             tid < isKnownType.length && isKnownType(tid) &&
-                            !isInterfaceType(tid) &&
-                            classTypes.containsId(t.id)
+                                !isInterfaceType(tid) &&
+                                classTypes.containsId(t.id)
                         )
                     }
                     override private[br] final def containsId(objectTypeId: Int): Boolean = {
@@ -253,8 +253,8 @@ object SupertypeInformation {
                         val tid = t.id
                         tid == ObjectType.ObjectId || (
                             tid < isKnownType.length && isKnownType(tid) &&
-                            isInterfaceType(tid) &&
-                            interfaceTypes.containsId(t.id)
+                                isInterfaceType(tid) &&
+                                interfaceTypes.containsId(t.id)
                         )
                     }
                     override private[br] final def containsId(objectTypeId: Int): Boolean = {
@@ -273,8 +273,8 @@ object SupertypeInformation {
                         val tid = t.id
                         tid == ObjectType.ObjectId || (
                             tid < isKnownType.length && isKnownType(tid) &&
-                            isInterfaceType(tid) &&
-                            interfaceTypes.containsId(t.id)
+                                isInterfaceType(tid) &&
+                                interfaceTypes.containsId(t.id)
                         )
                     }
                     override private[br] final def containsId(objectTypeId: Int): Boolean = {
@@ -293,7 +293,7 @@ object SupertypeInformation {
                         val tid = t.id
                         tid == ObjectType.ObjectId || (
                             tid < isKnownType.length && isKnownType(tid) &&
-                            allTypes.containsId(t.id)
+                                allTypes.containsId(t.id)
                         )
                     }
                     override private[br] final def containsId(objectTypeId: Int): Boolean = {

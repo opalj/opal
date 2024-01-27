@@ -255,7 +255,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         if (!state.ubPurity.isDeterministic) {
             state.dependees = state.dependees.filter { ep =>
                 ep.pk == Purity.key || ep.pk == VirtualMethodPurity.key || ep.pk == Callees.key ||
-                ep.pk == TACAI.key
+                    ep.pk == TACAI.key
             }
         }
         // IMPROVE: We could filter Purity/VPurity dependees with an lb not less than maxPurity

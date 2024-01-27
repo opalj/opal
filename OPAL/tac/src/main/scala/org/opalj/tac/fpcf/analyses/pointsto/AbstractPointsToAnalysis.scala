@@ -320,8 +320,8 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
             @inline def countIsZero(theCounts: Seq[Expr[V]]): Boolean = {
                 theCounts.head.asVar.definedBy.forall { ds =>
                     ds >= 0 &&
-                    state.tac.stmts(ds).asAssignment.expr.isIntConst &&
-                    state.tac.stmts(ds).asAssignment.expr.asIntConst.value == 0
+                        state.tac.stmts(ds).asAssignment.expr.isIntConst &&
+                        state.tac.stmts(ds).asAssignment.expr.asIntConst.value == 0
                 }
             }
 
@@ -655,7 +655,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                     // otherwise, it might still be the case that we processed it before but it is
                     // final and thus not part of dependees anymore
                     if (dependeeIsExceptions ||
-                        target.method.descriptor.returnType.isReferenceType
+                            target.method.descriptor.returnType.isReferenceType
                     ) {
                         if (!dependees.contains(EPK(entity, pointsToPropertyKey))) {
                             val p2s = ps(entity, pointsToPropertyKey)

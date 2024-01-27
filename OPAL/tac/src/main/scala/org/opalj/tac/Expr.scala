@@ -392,9 +392,9 @@ case class BinaryExpr[+V <: Var[V]](
         // For now, we have to consider a potential "div by zero exception";
         // a better handling is only possible if we know that the value is not zero (0).
         (op != BinaryArithmeticOperators.Divide && op != BinaryArithmeticOperators.Modulo) ||
-        (right.cTpe != ComputationalTypeInt && right.cTpe != ComputationalTypeLong) ||
-        (right.isLongConst && right.asLongConst.value != 0) ||
-        (right.isIntConst && right.asIntConst.value != 0)
+            (right.cTpe != ComputationalTypeInt && right.cTpe != ComputationalTypeLong) ||
+            (right.isLongConst && right.asLongConst.value != 0) ||
+            (right.isIntConst && right.asIntConst.value != 0)
     }
 
     override private[tac] def remapIndexes(

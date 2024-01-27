@@ -82,8 +82,8 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
                         val succBB = successorBB.asBasicBlock
                         (basicBlocks(succBB.startPC) eq succBB) && (basicBlocks(succBB.endPC) eq succBB)
                     }) ||
-                    (successorBB.isCatchNode && catchNodes.contains(successorBB.asCatchNode)) ||
-                    successorBB.isExitNode
+                        (successorBB.isCatchNode && catchNodes.contains(successorBB.asCatchNode)) ||
+                        successorBB.isExitNode
                 }
             },
             allBBs.map(bb =>
@@ -99,7 +99,7 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
                             (basicBlocks(predBB.startPC) eq predBB) && (basicBlocks(predBB.endPC) eq predBB)
                         }
                     ) ||
-                    (predecessorBB.isCatchNode && catchNodes.contains(predecessorBB.asCatchNode))
+                        (predecessorBB.isCatchNode && catchNodes.contains(predecessorBB.asCatchNode))
                 }
             },
             basicBlocks.zipWithIndex.filter(_._1 != null).map(_.swap).map(bb =>

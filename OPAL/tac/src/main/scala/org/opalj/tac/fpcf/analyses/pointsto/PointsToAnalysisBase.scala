@@ -190,7 +190,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
             pts.forNewestNElements(pts.numElements) { as =>
                 val tpe = getTypeOf(as)
                 if (tpe.isObjectType && (fieldOpt.isEmpty ||
-                    classHierarchy.isSubtypeOf(tpe, fieldOpt.get.declaringClassType))
+                        classHierarchy.isSubtypeOf(tpe, fieldOpt.get.declaringClassType))
                 ) {
                     val fieldEntities =
                         if (fieldOpt.isDefined) Iterator((as, fieldOpt.get))
@@ -237,7 +237,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
             pts.forNewestNElements(pts.numElements) { as =>
                 val typeId = getTypeIdOf(as)
                 if (typeId < 0 &&
-                    classHierarchy.isSubtypeOf(ArrayType.lookup(typeId), arrayType)
+                        classHierarchy.isSubtypeOf(ArrayType.lookup(typeId), arrayType)
                 ) {
                     state.includeSharedPointsToSet(
                         defSiteObject,
@@ -266,7 +266,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
             pts.forNewestNElements(pts.numElements) { as =>
                 val tpe = getTypeOf(as)
                 if (tpe.isObjectType && (fieldOpt.isEmpty ||
-                    classHierarchy.isSubtypeOf(tpe, fieldOpt.get.declaringClassType))
+                        classHierarchy.isSubtypeOf(tpe, fieldOpt.get.declaringClassType))
                 ) {
                     val fieldEntities =
                         if (fieldOpt.isDefined) Iterator((as, fieldOpt.get))
@@ -303,8 +303,8 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
             pts.forNewestNElements(pts.numElements) { as =>
                 val typeId = getTypeIdOf(as)
                 if (typeId < 0 &&
-                    classHierarchy.isSubtypeOf(ArrayType.lookup(typeId), arrayType) &&
-                    !isEmptyArray(as)
+                        classHierarchy.isSubtypeOf(ArrayType.lookup(typeId), arrayType) &&
+                        !isEmptyArray(as)
                 ) {
                     val arrayEntity = ArrayEntity(as)
                     val componentType = ArrayType.lookup(typeId).componentType.asReferenceType
@@ -391,7 +391,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
                 ) { as =>
                     val tpe = getTypeOf(as)
                     if (tpe.isObjectType && (fieldOpt.isEmpty ||
-                        classHierarchy.isSubtypeOf(tpe, fieldOpt.get.declaringClassType))
+                            classHierarchy.isSubtypeOf(tpe, fieldOpt.get.declaringClassType))
                     ) {
 
                         val typeFilter = if (fieldOpt.isDefined)
@@ -446,8 +446,8 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
                 ) { as =>
                     val typeId = getTypeIdOf(as)
                     if (typeId < 0 &&
-                        classHierarchy.isSubtypeOf(ArrayType.lookup(typeId), arrayType) &&
-                        !isEmptyArray(as)
+                            classHierarchy.isSubtypeOf(ArrayType.lookup(typeId), arrayType) &&
+                            !isEmptyArray(as)
                     ) {
                         val componentType = ArrayType.lookup(typeId).componentType.asReferenceType
                         val typeFilter = (t: ReferenceType) => classHierarchy.isSubtypeOf(t, componentType)
@@ -495,7 +495,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
                 ) { as =>
                     val tpe = getTypeOf(as)
                     if (tpe.isObjectType && (fieldOpt.isEmpty ||
-                        classHierarchy.isSubtypeOf(tpe, fieldOpt.get.declaringClassType))
+                            classHierarchy.isSubtypeOf(tpe, fieldOpt.get.declaringClassType))
                     ) {
                         val fieldEntities =
                             if (fieldOpt.isDefined) Iterator((as, fieldOpt.get))

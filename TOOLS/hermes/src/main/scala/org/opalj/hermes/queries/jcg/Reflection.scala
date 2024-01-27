@@ -142,27 +142,27 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
                             call.name match {
                                 case "getMethod" =>
                                     if (stmt.astID == Assignment.ASTID &&
-                                        methodUsedForInvocation(index, stmt.asAssignment)
+                                            methodUsedForInvocation(index, stmt.asAssignment)
                                     ) {
                                         locations(2 /* getMethod */ ) += l // invoke called directly
                                         handleParameterSources(call, l)
                                     }
                                 case "getDeclaredMethod" =>
                                     if (stmt.astID == Assignment.ASTID &&
-                                        methodUsedForInvocation(index, stmt.asAssignment)
+                                            methodUsedForInvocation(index, stmt.asAssignment)
                                     ) {
                                         handleParameterSources(call, l)
                                     }
                                 case "newInstance" => locations(5 /* Class.newInstance */ ) += l
                                 case "getDeclaredField" =>
                                     if (stmt.astID == Assignment.ASTID &&
-                                        getFieldUsedForInvokation(index, stmt.asAssignment)
+                                            getFieldUsedForInvokation(index, stmt.asAssignment)
                                     ) {
                                         handleParameterSources(call, l)
                                     }
                                 case "getField" =>
                                     if (stmt.astID == Assignment.ASTID &&
-                                        getFieldUsedForInvokation(index, stmt.asAssignment)
+                                            getFieldUsedForInvokation(index, stmt.asAssignment)
                                     ) {
                                         locations(7 /* getField */ ) += l
                                         handleParameterSources(call, l)
@@ -208,7 +208,7 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
     ): Unit = {
         def simpleDefinition(definedBy: IntTrieSet): Option[Assignment[V]] = {
             if (definedBy.size == 1 && definedBy.head > 0 &&
-                stmts(definedBy.head).astID == Assignment.ASTID
+                    stmts(definedBy.head).astID == Assignment.ASTID
             )
                 Some(stmts(definedBy.head).asAssignment)
             else None
@@ -222,11 +222,11 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
                         case Assignment.ASTID =>
                             use.asAssignment.expr.isVirtualFunctionCall &&
                                 (use.asAssignment.expr.asVirtualFunctionCall.name == "append" ||
-                                use.asAssignment.expr.asVirtualFunctionCall.name == "toString")
+                                    use.asAssignment.expr.asVirtualFunctionCall.name == "toString")
                         case ExprStmt.ASTID =>
                             use.asExprStmt.expr.isVirtualFunctionCall &&
                                 (use.asExprStmt.expr.asVirtualFunctionCall.name == "append" ||
-                                use.asExprStmt.expr.asVirtualFunctionCall.name == "toString")
+                                    use.asExprStmt.expr.asVirtualFunctionCall.name == "toString")
                         case NonVirtualMethodCall.ASTID =>
                             use.asNonVirtualMethodCall.name == "<init>"
                         case _ => false // might escape here

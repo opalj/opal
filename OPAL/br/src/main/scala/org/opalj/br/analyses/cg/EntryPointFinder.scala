@@ -70,7 +70,7 @@ trait ApplicationWithoutJREEntryPointsFinder extends ApplicationEntryPointsFinde
         super.collectEntryPoints(project).filterNot { ep =>
             packagesToExclude.exists { prefix =>
                 ep.declaringClassFile.thisType.packageName.startsWith(prefix) &&
-                ep.name == "main"
+                    ep.name == "main"
             }
         }.filterNot { ep =>
             // The WrapperGenerator class file is part of the rt.jar in 1.7., but is in the
@@ -109,21 +109,21 @@ trait LibraryEntryPointsFinder extends EntryPointFinder {
                         subtypeCFOption.forall(_.isPublic) &&
                             // Method must be static or class instantiable
                             (method.isStatic ||
-                            // Note: This is not enough to ensure that the type is instantiable
-                            // (supertype might have no accessible constructor),
-                            // but it soundly overapproximates
-                            subtypeCFOption.forall(_.constructors.exists { c =>
-                                c.isPublic || (c.isProtected && isExtensible(st).isYesOrUnknown)
-                            }) || classFile.methods.exists {
-                                m => m.isStatic && m.isPublic && m.returnType == ot
-                            })
+                                // Note: This is not enough to ensure that the type is instantiable
+                                // (supertype might have no accessible constructor),
+                                // but it soundly overapproximates
+                                subtypeCFOption.forall(_.constructors.exists { c =>
+                                    c.isPublic || (c.isProtected && isExtensible(st).isYesOrUnknown)
+                                }) || classFile.methods.exists {
+                                    m => m.isStatic && m.isPublic && m.returnType == ot
+                                })
                     }
                 } else if (method.isProtected) {
                     isExtensible(ot).isYesOrUnknown &&
-                    (method.isStatic ||
-                    classHierarchy.allSubtypes(ot, reflexive = true).exists { st =>
-                        project.classFile(st).forall(_.constructors.exists { c => c.isPublic || c.isProtected })
-                    })
+                        (method.isStatic ||
+                            classHierarchy.allSubtypes(ot, reflexive = true).exists { st =>
+                                project.classFile(st).forall(_.constructors.exists { c => c.isPublic || c.isProtected })
+                            })
                 } else false
             } else {
                 // all methods in an open package are accessible

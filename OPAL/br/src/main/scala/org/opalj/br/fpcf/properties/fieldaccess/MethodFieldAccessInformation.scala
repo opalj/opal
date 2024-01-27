@@ -158,7 +158,7 @@ sealed trait MethodFieldAccessInformation[S <: MethodFieldAccessInformation[S]] 
 
     def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
         if (numDirectAccessesInAllAccessSites > other.numDirectAccessesInAllAccessSites ||
-            numIndirectAccessesInAllAccessSites > other.numIndirectAccessesInAllAccessSites
+                numIndirectAccessesInAllAccessSites > other.numIndirectAccessesInAllAccessSites
         ) {
             throw new IllegalArgumentException(s"$e: illegal refinement of $other to $this")
         }

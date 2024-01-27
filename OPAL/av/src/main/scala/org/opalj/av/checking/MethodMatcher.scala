@@ -27,7 +27,7 @@ case class MethodMatcher(
 
     def doesMethodMatch(method: Method): Boolean = {
         annotationsPredicate(method.annotations) &&
-        methodPredicate(method)
+            methodPredicate(method)
     }
 
     def extension(implicit project: SomeProject): immutable.Set[VirtualSourceElement] = {

@@ -64,9 +64,9 @@ object SimpleDefUseAnalysis extends ProjectAnalysisApplication {
                                 // we have to make sure that we do not create an issue report
                                 // for instance methods that can be/are inherited
                                 if (method.isStatic ||
-                                    method.isPrivate ||
-                                    // TODO check that the method parameter is never used... across all implementations of the method... only then report it...||
-                                    method.name == "<init>"
+                                        method.isPrivate ||
+                                        // TODO check that the method parameter is never used... across all implementations of the method... only then report it...||
+                                        method.name == "<init>"
                                 ) {
                                     if (vo == -1) {
                                         values += "this"

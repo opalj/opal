@@ -56,7 +56,7 @@ abstract class AbstractJavaForwardTaintProblem(project: SomeProject)
                         // Taint the whole array if the index is unknown
                         Set(in) ++ definedBy.map { Variable }
                 } else if (arrayIndex.isDefined && definedBy.size == 1 &&
-                           in == ArrayElement(definedBy.head, arrayIndex.get)
+                               in == ArrayElement(definedBy.head, arrayIndex.get)
                 ) {
                     // untaint
                     Set()
@@ -117,10 +117,10 @@ abstract class AbstractJavaForwardTaintProblem(project: SomeProject)
                     case (param, pIndex)
                         if param.asVar.definedBy.contains(index) &&
                             (JavaIFDSProblem.remapParamAndVariableIndex(pIndex, callee.isStatic) != -1 ||
-                            project.classHierarchy.isSubtypeOf(
-                                declClass,
-                                declaredMethods(callee).declaringClassType
-                            )) =>
+                                project.classHierarchy.isSubtypeOf(
+                                    declClass,
+                                    declaredMethods(callee).declaringClassType
+                                )) =>
                         Some(InstanceField(
                             JavaIFDSProblem.remapParamAndVariableIndex(pIndex, callee.isStatic),
                             declClass,
@@ -146,9 +146,9 @@ abstract class AbstractJavaForwardTaintProblem(project: SomeProject)
      */
     private def isPossibleReturnFlow(exit: JavaStatement, successor: JavaStatement): Boolean = {
         (successor.basicBlock.isBasicBlock || successor.basicBlock.isNormalReturnExitNode) &&
-        (exit.stmt.astID == Return.ASTID || exit.stmt.astID == ReturnValue.ASTID) ||
-        (successor.basicBlock.isCatchNode || successor.basicBlock.isAbnormalReturnExitNode) &&
-        (exit.stmt.astID != Return.ASTID && exit.stmt.astID != ReturnValue.ASTID)
+            (exit.stmt.astID == Return.ASTID || exit.stmt.astID == ReturnValue.ASTID) ||
+            (successor.basicBlock.isCatchNode || successor.basicBlock.isAbnormalReturnExitNode) &&
+            (exit.stmt.astID != Return.ASTID && exit.stmt.astID != ReturnValue.ASTID)
     }
 
     /**

@@ -113,8 +113,8 @@ object MethodHandlesUtil {
 
         def isMethodType(expr: Expr[V]): Boolean = {
             expr.isStaticFunctionCall &&
-            (expr.asStaticFunctionCall.declaringClass eq ObjectType.MethodType) &&
-            expr.asStaticFunctionCall.name == "methodType"
+                (expr.asStaticFunctionCall.declaringClass eq ObjectType.MethodType) &&
+                expr.asStaticFunctionCall.name == "methodType"
         }
 
         val defSitesIterator = value.asVar.definedBy.iterator

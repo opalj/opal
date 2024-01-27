@@ -600,9 +600,9 @@ class ClassHierarchy private (
                 subclassTypesMap(oid).forall { subtype =>
                     val (newT, continue) = process(t, subtype); t = newT; continue
                 } &&
-                subinterfaceTypesMap(oid).forall { subtype =>
-                    val (newT, continue) = process(t, subtype); t = newT; continue
-                }
+                    subinterfaceTypesMap(oid).forall { subtype =>
+                        val (newT, continue) = process(t, subtype); t = newT; continue
+                    }
             }
             (t, continue)
         }
@@ -1272,7 +1272,7 @@ class ClassHierarchy private (
             // the subtype is an array type
             if (supertype.isObjectType) {
                 (supertype eq ObjectType.Object) ||
-                (supertype eq ObjectType.Serializable) || (supertype eq ObjectType.Cloneable)
+                    (supertype eq ObjectType.Serializable) || (supertype eq ObjectType.Cloneable)
             } else {
                 // ... and the supertype is also an array type
                 // The case:
@@ -2181,8 +2181,8 @@ class ClassHierarchy private (
 
         types filter { aType =>
             isUnknown(aType) ||
-            // !(directSubtypesOf(aType) exists { t => types.contains(t) })
-            !(types exists { t => (t ne aType) && isSubtypeOf(t, aType) })
+                // !(directSubtypesOf(aType) exists { t => types.contains(t) })
+                !(types exists { t => (t ne aType) && isSubtypeOf(t, aType) })
         }
     }
 
@@ -2457,8 +2457,8 @@ class ClassHierarchy private (
         import ObjectType.Serializable
 
         if ((thatUpperTypeBound eq Object) ||
-            (thatUpperTypeBound eq Serializable) ||
-            (thatUpperTypeBound eq Cloneable)
+                (thatUpperTypeBound eq Serializable) ||
+                (thatUpperTypeBound eq Cloneable)
         )
             new UIDSet1(thatUpperTypeBound)
         else {
@@ -2518,7 +2518,7 @@ class ClassHierarchy private (
                 Left(ArrayType(thatUTBDim, ObjectType.Object))
             }
         } else if (thisUpperTypeBound.elementType.isBaseType ||
-                   thatUpperTypeBound.elementType.isBaseType
+                       thatUpperTypeBound.elementType.isBaseType
         ) {
             // => the number of dimensions is the same, but the elementType isn't
             //    (if the element type would be the same, both object reference would
@@ -2955,8 +2955,8 @@ object ClassHierarchy {
                 // We generally don't want to use pre-configured type hierarchy information;
                 // but we want to extend the information if it is obviously incomplete...
                 if (!processedClassType(oid) ||
-                    // processed - but complete?
-                    ((oid != ObjectType.ObjectId) && superclassTypeMap(oid) == null)
+                        // processed - but complete?
+                        ((oid != ObjectType.ObjectId) && superclassTypeMap(oid) == null)
                 ) {
                     processedClassType(objectType.id) = true
                     process(
@@ -3000,7 +3000,7 @@ object ClassHierarchy {
         assert(
             knownTypesMap.indices forall { i =>
                 (knownTypesMap(i) ne null) ||
-                ((subclassTypesMap(i) eq null) && (subinterfaceTypesMap(i) eq null))
+                    ((subclassTypesMap(i) eq null) && (subinterfaceTypesMap(i) eq null))
             }
         )
 

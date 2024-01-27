@@ -908,7 +908,7 @@ case class EPKState(
             val theDependees = dependees
             // Are we still interested in that dependee?
             if (theDependees != null &&
-                (oldDependee.isFinal || theDependees.contains(oldDependee))
+                    (oldDependee.isFinal || theDependees.contains(oldDependee))
             ) {
                 // We always retrieve the most up-to-date state of the dependee.
                 val currentDependee = ps.ps(oldDependee.pk.id).get(oldDependee.e).eOptP.asEPS

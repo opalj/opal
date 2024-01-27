@@ -151,7 +151,7 @@ class L0AllocationFreenessAnalysis private[analyses] (
                     if (method.isStatic || overwritesSelf)
                         return Result(definedMethod, MethodWithAllocations);
                     else if (instructions(prevPC(currentPC)).opcode != ALOAD_0.opcode ||
-                             body.cfJoins.contains(currentPC)
+                                 body.cfJoins.contains(currentPC)
                     )
                         return Result(definedMethod, MethodWithAllocations);
                     else mayOverwriteSelf = false
@@ -167,8 +167,8 @@ class L0AllocationFreenessAnalysis private[analyses] (
                         // operand, or if the second last instruction is not an ALOAD_0, we
                         // cannot guarantee that the receiver is `this`.
                         if (body.cfJoins.contains(currentPC) || body.cfJoins.contains(previousPC) ||
-                            previousInst.numberOfPoppedOperands(someTypeCategory) != 0 ||
-                            prevPrevInst.opcode != ALOAD_0.opcode
+                                previousInst.numberOfPoppedOperands(someTypeCategory) != 0 ||
+                                prevPrevInst.opcode != ALOAD_0.opcode
                         )
                             return Result(definedMethod, MethodWithAllocations)
                         else mayOverwriteSelf = false

@@ -154,7 +154,7 @@ sealed trait EmptyConcreteCallers extends Callers {
         implicit contextProvider: ContextProvider
     ): Unit = {
         if ((hasCallersWithUnknownContext || hasVMLevelCallers) &&
-            ((old eq null) || !old.hasCallersWithUnknownContext && !old.hasVMLevelCallers)
+                ((old eq null) || !old.hasCallersWithUnknownContext && !old.hasVMLevelCallers)
         )
             handleContext(contextProvider.newContext(method))
     }
@@ -165,7 +165,7 @@ sealed trait EmptyConcreteCallers extends Callers {
         implicit contextProvider: ContextProvider
     ): Unit = {
         if ((hasCallersWithUnknownContext || hasVMLevelCallers) &&
-            ((old eq null) || !old.hasCallersWithUnknownContext && !old.hasVMLevelCallers)
+                ((old eq null) || !old.hasCallersWithUnknownContext && !old.hasVMLevelCallers)
         )
             handleContext(contextProvider.newContext(method), NoContext, -1, true)
     }
@@ -263,14 +263,14 @@ sealed trait CallersImplementation extends Callers {
                     handleContext(contextProvider.contextFromId(calleeContextId))
                 else if (old.callersForContextId(calleeContextId).isEmpty) {
                     if (calleeContextId != unknownContextId ||
-                        !old.hasCallersWithUnknownContext && !old.hasVMLevelCallers
+                            !old.hasCallersWithUnknownContext && !old.hasVMLevelCallers
                     )
                         handleContext(contextProvider.contextFromId(calleeContextId))
                 }
         }
 
         if ((hasCallersWithUnknownContext || hasVMLevelCallers) &&
-            ((old eq null) || !old.hasCallersWithUnknownContext && !old.hasVMLevelCallers)
+                ((old eq null) || !old.hasCallersWithUnknownContext && !old.hasVMLevelCallers)
         )
             if (!encodedCallers.contains(unknownContextId))
                 handleContext(unknownContext)
@@ -293,7 +293,7 @@ sealed trait CallersImplementation extends Callers {
         }
 
         if ((hasCallersWithUnknownContext || hasVMLevelCallers) &&
-            ((old eq null) || !old.hasCallersWithUnknownContext && !old.hasVMLevelCallers)
+                ((old eq null) || !old.hasCallersWithUnknownContext && !old.hasVMLevelCallers)
         )
             handleContext(contextProvider.newContext(method), NoContext, -1, true)
     }

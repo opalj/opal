@@ -776,8 +776,8 @@ class DefaultReferenceValuesTest extends AnyFunSpec with Matchers {
                     val value2 = values1.tail.head
                     assert(
                         value1.isNull != value2.isNull &&
-                        (value1.isNull.isYes || value1.isNull.isUnknown) &&
-                        (value2.isNull.isYes || value2.isNull.isUnknown)
+                            (value1.isNull.isYes || value1.isNull.isUnknown) &&
+                            (value2.isNull.isYes || value2.isNull.isUnknown)
                     )
                 }
 
@@ -788,8 +788,8 @@ class DefaultReferenceValuesTest extends AnyFunSpec with Matchers {
                     val value2 = values2.tail.head
                     assert(
                         value1.isNull != value2.isNull &&
-                        (value1.isNull.isYes || value1.isNull.isUnknown) &&
-                        (value2.isNull.isYes || value2.isNull.isUnknown)
+                            (value1.isNull.isYes || value1.isNull.isUnknown) &&
+                            (value2.isNull.isYes || value2.isNull.isUnknown)
                     )
                 }
 

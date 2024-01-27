@@ -211,13 +211,13 @@ trait ExceptionRater extends DomainSpecificRater {
         implicit val classHierarchy: ClassHierarchy = project.classHierarchy
         val declClass = call.declaringClass
         if (declClass.isObjectType && call.name == "<init>" &&
-            declClass.asObjectType.isSubtypeOf(ObjectType.Throwable) &&
-            !org.opalj.control.find(project.instanceMethods(declClass.asObjectType))(mdc =>
-                mdc.method.compare(
-                    "fillInStackTrace",
-                    MethodDescriptor.withNoArgs(ObjectType.Throwable)
-                )
-            ).exists(_.method.classFile.thisType != ObjectType.Throwable)
+                declClass.asObjectType.isSubtypeOf(ObjectType.Throwable) &&
+                !org.opalj.control.find(project.instanceMethods(declClass.asObjectType))(mdc =>
+                    mdc.method.compare(
+                        "fillInStackTrace",
+                        MethodDescriptor.withNoArgs(ObjectType.Throwable)
+                    )
+                ).exists(_.method.classFile.thisType != ObjectType.Throwable)
         )
             Some(DPure)
         else super.handleCall(call, receiver)
@@ -260,7 +260,7 @@ trait AssertionExceptionRater extends DomainSpecificRater {
     ): Option[Purity] = {
         implicit val classHierarchy: ClassHierarchy = project.classHierarchy
         if (call.declaringClass.isObjectType && call.name == "<init>" &&
-            exceptionTypes.exists(call.declaringClass.asObjectType.isSubtypeOf)
+                exceptionTypes.exists(call.declaringClass.asObjectType.isSubtypeOf)
         )
             Some(DPure)
         else super.handleCall(call, receiver)

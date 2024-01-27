@@ -257,10 +257,10 @@ case class AllocationSitePointsToSetN private[pointsto] (
             case that: AllocationSitePointsToSetN =>
                 (this eq that) || {
                     that.elements.size == this.elements.size &&
-                    that.numTypes == this.numTypes &&
-                    // TODO: we should assert that:
-                    //  that.elements == this.elements => that.orderedTypes == this.orderedTypes
-                    that.elements == this.elements
+                        that.numTypes == this.numTypes &&
+                        // TODO: we should assert that:
+                        //  that.elements == this.elements => that.orderedTypes == this.orderedTypes
+                        that.elements == this.elements
                 }
             case _ => false
         }

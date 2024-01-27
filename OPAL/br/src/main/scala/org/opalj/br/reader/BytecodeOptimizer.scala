@@ -261,7 +261,7 @@ trait BytecodeOptimizer extends MethodsBinding {
                     } else {
                         val newBranchoffset = finalJumpTarget(IntTrieSet1(pc), jumpTargetPC, branchoffset)
                         if (newBranchoffset != branchoffset &&
-                            newBranchoffset >= Short.MinValue && newBranchoffset <= Short.MaxValue
+                                newBranchoffset >= Short.MinValue && newBranchoffset <= Short.MaxValue
                         ) {
                             // let's replace the original jump
                             // IMPROVE Consider using +!=
@@ -290,7 +290,7 @@ trait BytecodeOptimizer extends MethodsBinding {
                             // IMPROVE Consider using +!=
                             jumpTargetInstructions += pc + newBranchoffset
                             if (newBranchoffset >= Short.MinValue &&
-                                newBranchoffset <= Short.MaxValue
+                                    newBranchoffset <= Short.MaxValue
                             ) {
                                 // Replace it by a short goto
                                 instructions(pc + 0) = NOP
@@ -333,7 +333,7 @@ trait BytecodeOptimizer extends MethodsBinding {
                                         // defaultOffset corrected by the relocation of the goto
                                         defaultOffset - ((nextPC - 3) - pc)
                                 if (newBranchoffset >= Short.MinValue &&
-                                    newBranchoffset <= Short.MaxValue
+                                        newBranchoffset <= Short.MaxValue
                                 ) {
                                     newNextPC = nextPC - 3
                                     instructions(newNextPC) = GOTO(newBranchoffset)
@@ -408,7 +408,7 @@ trait BytecodeOptimizer extends MethodsBinding {
 
         totallyConfusedIfs.filter { cIfPC =>
             !jumpTargetInstructions.contains(cIfPC + 3) &&
-            !jumpTargetInstructions.contains(cIfPC + 6)
+                !jumpTargetInstructions.contains(cIfPC + 6)
         }.foreach { cIfPC =>
             // EXAMPLE:
             //
@@ -465,9 +465,9 @@ trait BytecodeOptimizer extends MethodsBinding {
                         val newIfBranchoffset = secondAdjustedBranchoffset
                         val newGotoBranchoffset = firstAdjustedBranchoffset - 6
                         if (newIfBranchoffset >= Short.MinValue &&
-                            newIfBranchoffset <= Short.MaxValue &&
-                            newGotoBranchoffset >= Short.MinValue &&
-                            newGotoBranchoffset <= Short.MaxValue
+                                newIfBranchoffset <= Short.MaxValue &&
+                                newGotoBranchoffset >= Short.MinValue &&
+                                newGotoBranchoffset <= Short.MaxValue
                         ) {
                             instructions(cIfPC) = ifInstruction.negate(firstAdjustedBranchoffset)
                             instructions(cIfPC + 3) = NOP

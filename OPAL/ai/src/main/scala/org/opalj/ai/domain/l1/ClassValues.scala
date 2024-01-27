@@ -146,8 +146,8 @@ trait ClassValues
         } else {
             val elementType = classValue.asArrayType.elementType
             if (elementType.isBaseType ||
-                classHierarchy.isKnown(elementType.asObjectType) ||
-                !throwClassNotFoundException
+                    classHierarchy.isKnown(elementType.asObjectType) ||
+                    !throwClassNotFoundException
             ) {
                 ComputedValue(ClassValue(pc, classValue))
             } else {

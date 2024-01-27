@@ -76,9 +76,9 @@ class BackwardClassForNameTaintProblem(p: SomeProject) extends JavaBackwardTaint
         source: (Method, IFDSFact[TaintFact, JavaStatement])
     ): Boolean = {
         super.shouldPerformUnbalancedReturn(source) &&
-        (!icfg.canBeCalledFromOutside(source._1) ||
-        // The source is callable from outside, but should create unbalanced return facts.
-        entryPoints.contains(source))
+            (!icfg.canBeCalledFromOutside(source._1) ||
+                // The source is callable from outside, but should create unbalanced return facts.
+                entryPoints.contains(source))
     }
 
     /**
@@ -112,13 +112,13 @@ class BackwardClassForNameTaintProblem(p: SomeProject) extends JavaBackwardTaint
         unbCallChain: Seq[Callable]
     ): Option[FlowFact] = {
         if (unbCallChain.nonEmpty && // source fact is unbalanced return fact
-            icfg.canBeCalledFromOutside(callee) && (in match {
-                // index < 0 means that it is a parameter.
-                case Variable(index)                         => index < 0
-                case ArrayElement(index, _) if index < 0     => true
-                case InstanceField(index, _, _) if index < 0 => true
-                case _                                       => false
-            })
+                icfg.canBeCalledFromOutside(callee) && (in match {
+                    // index < 0 means that it is a parameter.
+                    case Variable(index)                         => index < 0
+                    case ArrayElement(index, _) if index < 0     => true
+                    case InstanceField(index, _, _) if index < 0 => true
+                    case _                                       => false
+                })
         ) {
             Some(FlowFact(unbCallChain.prepended(JavaMethod(callee))))
         } else None

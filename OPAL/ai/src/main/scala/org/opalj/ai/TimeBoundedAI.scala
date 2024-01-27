@@ -38,7 +38,7 @@ class TimeBoundedAI[D <: Domain](
             startTime = System.nanoTime()
             false
         } else if (evaluationCount % CheckInterval == 0 &&
-                   (System.nanoTime() - startTime) > maxEffort.timeSpan
+                       (System.nanoTime() - startTime) > maxEffort.timeSpan
         ) {
             interrupted = true
             interruptTime = System.nanoTime()

@@ -113,23 +113,23 @@ object CallGraph extends ProjectAnalysisApplication {
         val remainingParameters =
             parameters.filter { p =>
                 !p.matches(algorithmRegex.regex) &&
-                !p.startsWith("-domain=") &&
-                !p.startsWith("-callers=") &&
-                !p.startsWith("-callees=") &&
-                !p.startsWith("-analysisName=") &&
-                !p.startsWith("-schedulingStrategy=") &&
-                !p.startsWith("-writeCG=") &&
-                !p.startsWith("-writeOutput=") &&
-                !p.startsWith("-main=") &&
-                !p.startsWith("-j=") &&
-                !p.startsWith("-tamiflex-log=") &&
-                !p.startsWith("-finalizerAnalysis=") &&
-                !p.startsWith("-loadedClassesAnalysis=") &&
-                !p.startsWith("-staticInitializerAnalysis=") &&
-                !p.startsWith("-reflectionAnalysis=") &&
-                !p.startsWith("-serializationAnalysis=") &&
-                !p.startsWith("-threadRelatedCallsAnalysis=") &&
-                !p.startsWith("-configuredNativeMethodsAnalysis=")
+                    !p.startsWith("-domain=") &&
+                    !p.startsWith("-callers=") &&
+                    !p.startsWith("-callees=") &&
+                    !p.startsWith("-analysisName=") &&
+                    !p.startsWith("-schedulingStrategy=") &&
+                    !p.startsWith("-writeCG=") &&
+                    !p.startsWith("-writeOutput=") &&
+                    !p.startsWith("-main=") &&
+                    !p.startsWith("-j=") &&
+                    !p.startsWith("-tamiflex-log=") &&
+                    !p.startsWith("-finalizerAnalysis=") &&
+                    !p.startsWith("-loadedClassesAnalysis=") &&
+                    !p.startsWith("-staticInitializerAnalysis=") &&
+                    !p.startsWith("-reflectionAnalysis=") &&
+                    !p.startsWith("-serializationAnalysis=") &&
+                    !p.startsWith("-threadRelatedCallsAnalysis=") &&
+                    !p.startsWith("-configuredNativeMethodsAnalysis=")
             }
         super.checkAnalysisSpecificParameters(remainingParameters)
     }
@@ -163,7 +163,7 @@ object CallGraph extends ProjectAnalysisApplication {
         implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
         val allMethods = declaredMethods.declaredMethods.filter { dm =>
             dm.hasSingleDefinedMethod &&
-            (dm.definedMethod.classFile.thisType eq dm.declaringClassType)
+                (dm.definedMethod.classFile.thisType eq dm.declaringClassType)
         }.to(Iterable)
 
         var propertyStoreTime: Seconds = Seconds.None

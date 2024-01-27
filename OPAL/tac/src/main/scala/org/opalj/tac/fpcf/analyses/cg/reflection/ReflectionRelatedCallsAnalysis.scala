@@ -119,7 +119,7 @@ sealed trait ReflectionAnalysis extends TACAIBasedAPIBasedAnalysis {
         MethodMatching.getPossibleMethods(matchers.toSeq).foreach { m =>
             val receiver = actualReceiver(m)
             if (receiver.isEmpty || m.isStatic && receiver.get._1.asReferenceValue.isNull.isNotNo ||
-                !m.isStatic && receiver.get._1.asReferenceValue.isNull.isNotYes
+                    !m.isStatic && receiver.get._1.asReferenceValue.isNull.isNotYes
             ) {
                 val receiverOpt = if (m.isStatic) None else receiver
                 indirectCalls.addCall(callContext, callPC, declaredMethods(m), actualParams, receiverOpt)

@@ -52,7 +52,7 @@ object ObserverPatternUsage extends ProjectAnalysisApplication {
                 // this is the Fully Qualified binary Name (fqn) e.g., java/lang/Object
                 val fqn = objectType.fqn
                 if (!observers.contains(objectType) &&
-                    (fqn.endsWith("Observer") || fqn.endsWith("Listener"))
+                        (fqn.endsWith("Observer") || fqn.endsWith("Listener"))
                 ) {
                     val observerTypes = allSubtypes(objectType, true)
                     observers ++= observerTypes
@@ -88,15 +88,15 @@ object ObserverPatternUsage extends ProjectAnalysisApplication {
                         implObsIntfs.nonEmpty && (
                             observerClassFile.methods forall { method =>
                                 method.isInitializer || method.isSynthetic ||
-                                // one of the implemented observer interfaces defines the method
-                                implObsIntfs.exists(observerInterface =>
-                                    project.classFile(observerInterface).isDefined &&
-                                        project.resolveInterfaceMethodReference(
-                                            observerInterface,
-                                            method.name,
-                                            method.descriptor
-                                        ).isDefined
-                                )
+                                    // one of the implemented observer interfaces defines the method
+                                    implObsIntfs.exists(observerInterface =>
+                                        project.classFile(observerInterface).isDefined &&
+                                            project.resolveInterfaceMethodReference(
+                                                observerInterface,
+                                                method.name,
+                                                method.descriptor
+                                            ).isDefined
+                                    )
                             }
                         )
                     } else
@@ -156,10 +156,10 @@ object ObserverPatternUsage extends ProjectAnalysisApplication {
             if (hasMethodObserverParameter) {
                 observerManagementMethods += ((observable, method))
             } else if (method.body.isDefined &&
-                       method.body.get.instructions.exists({
-                           case FieldReadAccess(`observableType`, name, _) if omFieldNames.contains(name) => true
-                           case _                                                                         => false
-                       })
+                           method.body.get.instructions.exists({
+                               case FieldReadAccess(`observableType`, name, _) if omFieldNames.contains(name) => true
+                               case _                                                                         => false
+                           })
             ) {
                 observerNotificationMethods += ((observable, method))
             }

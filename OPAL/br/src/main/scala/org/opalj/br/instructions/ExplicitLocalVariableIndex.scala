@@ -18,7 +18,7 @@ trait ExplicitLocalVariableIndex extends Instruction {
 
         (this eq other) || (
             other.opcode == this.opcode &&
-            other.asInstanceOf[ExplicitLocalVariableIndex].lvIndex == this.lvIndex
+                other.asInstanceOf[ExplicitLocalVariableIndex].lvIndex == this.lvIndex
         )
     }
 

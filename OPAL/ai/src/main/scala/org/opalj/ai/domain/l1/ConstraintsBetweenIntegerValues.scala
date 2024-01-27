@@ -182,7 +182,7 @@ trait ConstraintsBetweenIntegerValues
         def clone(store: ConstraintsStore): ConstraintsStore = {
             def stillExists(value: IntegerLikeValue): Boolean = {
                 operandsArray(successorPC).exists(_ eq value) ||
-                localsArray(successorPC).exists(_ eq value)
+                    localsArray(successorPC).exists(_ eq value)
             }
 
             val newStore = new ConstraintsStore()

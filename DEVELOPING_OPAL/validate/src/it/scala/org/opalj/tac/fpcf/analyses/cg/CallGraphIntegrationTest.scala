@@ -131,12 +131,12 @@ class CallGraphIntegrationTest extends AnyFlatSpec with Matchers {
             val callersLPCG = lessPreciseCG.callersPropertyOf(method)
             val callersMPCG = morePreciseCG.callersPropertyOf(method)
             if ((callersLPCG eq NoCallers) &&
-                !callersMPCG.callers(method)(morePreciseContextProvider).iterator.forall {
-                    callSite =>
-                        val callees = lessPreciseCG.calleesPropertyOf(callSite._1)
-                        !callSite._3 &&
-                            callees.isIncompleteCallSite(context, callSite._2)(lessPreciseCGPS)
-                }
+                    !callersMPCG.callers(method)(morePreciseContextProvider).iterator.forall {
+                        callSite =>
+                            val callees = lessPreciseCG.calleesPropertyOf(callSite._1)
+                            !callSite._3 &&
+                                callees.isIncompleteCallSite(context, callSite._2)(lessPreciseCGPS)
+                    }
             ) {
                 unexpectedCalls ::= UnexpectedCallTarget(null, method, -1)
             } else if (callersMPCG.hasVMLevelCallers && !callersLPCG.hasVMLevelCallers) {

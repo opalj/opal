@@ -25,7 +25,7 @@ sealed trait LDC[@specialized(Int, Float) T]
         val other = code.instructions(otherPC)
         (this eq other) || (
             this.opcode == other.opcode &&
-            this.value == other.asInstanceOf[LDC[_]].value
+                this.value == other.asInstanceOf[LDC[_]].value
         )
     }
 }

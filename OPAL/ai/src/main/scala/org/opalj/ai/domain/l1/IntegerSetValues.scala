@@ -336,7 +336,7 @@ trait IntegerSetValues
             case IntegerSetLike(values) =>
                 Answer(
                     values.lastKey >= lowerBound && values.firstKey <= upperBound &&
-                    values.exists(value => value >= lowerBound && value <= upperBound)
+                        values.exists(value => value >= lowerBound && value <= upperBound)
                 )
 
             case DomainBaseTypesBasedSet(value) =>
@@ -382,10 +382,10 @@ trait IntegerSetValues
                         if (leftValues.lastKey < rightValues.firstKey)
                             Yes
                         else if (leftValues.firstKey >= rightValues.lastKey ||
-                                 ( /*"for point sets":*/
-                                     leftValues.size == 1 && rightValues.size == 1 &&
-                                     leftValues.head == rightValues.head
-                                 )
+                                     ( /*"for point sets":*/
+                                         leftValues.size == 1 && rightValues.size == 1 &&
+                                             leftValues.head == rightValues.head
+                                     )
                         )
                             No
                         else

@@ -113,7 +113,7 @@ class DeclaredMethodsKeyTest extends AnyFunSpec with Matchers {
             actual.hasSingleDefinedMethod && (actual.definedMethod eq methodOs.head._2.get)
         } else {
             actual.hasMultipleDefinedMethods &&
-            methodOs.map(_._2.get) == actual.definedMethods
+                methodOs.map(_._2.get) == actual.definedMethods
         }
 
         if (foundMethod)

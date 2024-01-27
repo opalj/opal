@@ -375,24 +375,24 @@ class InstantiatedTypesAnalysisScheduler(
         @inline def fieldIsRelevant(f: Field): Boolean = {
             // Only fields which are ArrayType or ObjectType are relevant.
             f.fieldType.isReferenceType &&
-            // If the field is an ArrayType, then the array's element type must be an ObjectType.
-            // In other words: We don't care about arrays of primitive types (e.g. int[]) which
-            // do not have to be pre-initialized.
-            (!f.fieldType.isArrayType || f.fieldType.asArrayType.elementType.isObjectType)
+                // If the field is an ArrayType, then the array's element type must be an ObjectType.
+                // In other words: We don't care about arrays of primitive types (e.g. int[]) which
+                // do not have to be pre-initialized.
+                (!f.fieldType.isArrayType || f.fieldType.asArrayType.elementType.isObjectType)
         }
 
         // Returns true if a field can be written by the user of a library containing that field.
         def fieldIsAccessible(f: Field): Boolean = {
             // Public fields can always be accessed.
             f.isPublic ||
-            // Protected fields can only be accessed by subclasses. In that case, the library
-            // user can create a subclass of the type containing the field and add a setter method.
-            // This only applies if the field's type can be extended in the first place.
-            (f.isProtected && !f.classFile.isEffectivelyFinal) ||
-            // If the field is package private, it can only be written if the package is
-            // open for modification. In that case, the library user can put a method
-            // writing that field into the field's type's namespace.
-            (f.isPackagePrivate && !packageIsClosed(f.classFile.thisType.packageName))
+                // Protected fields can only be accessed by subclasses. In that case, the library
+                // user can create a subclass of the type containing the field and add a setter method.
+                // This only applies if the field's type can be extended in the first place.
+                (f.isProtected && !f.classFile.isEffectivelyFinal) ||
+                // If the field is package private, it can only be written if the package is
+                // open for modification. In that case, the library user can put a method
+                // writing that field into the field's type's namespace.
+                (f.isPackagePrivate && !packageIsClosed(f.classFile.thisType.packageName))
         }
 
         for {

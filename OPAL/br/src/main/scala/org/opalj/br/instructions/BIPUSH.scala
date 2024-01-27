@@ -25,7 +25,7 @@ class BIPUSH private (val value: Int) extends LoadConstantInstruction[Int] {
         val other = code.instructions(otherPC)
         (this eq other) || (
             BIPUSH.opcode == other.opcode &&
-            this.value == other.asInstanceOf[BIPUSH].value
+                this.value == other.asInstanceOf[BIPUSH].value
         )
     }
 

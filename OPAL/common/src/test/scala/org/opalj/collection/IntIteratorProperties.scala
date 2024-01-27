@@ -57,7 +57,7 @@ object IntIteratorProperties extends Properties("IntIterator") {
 
     property("filter") = forAll { (is: IntArraySet, values: IntArraySet) =>
         (is.iterator.filter(values.contains).forall(values.contains) :| "filter => forall") &&
-        is.iterator.filter(values.contains).toList == is.withFilter(values.contains).toList
+            is.iterator.filter(values.contains).toList == is.withFilter(values.contains).toList
     }
 
     property("withFilter") = forAll { (is: IntArraySet, values: IntArraySet) =>

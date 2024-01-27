@@ -251,7 +251,7 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
         }
 
         if (hasDependentlyImmutableFields &&
-            maxLocalImmutability != NonTransitivelyImmutableClass && maxLocalImmutability != MutableClass
+                maxLocalImmutability != NonTransitivelyImmutableClass && maxLocalImmutability != MutableClass
         ) {
             maxLocalImmutability = DependentlyImmutableClass(genericTypeParameters)
         }
@@ -298,7 +298,7 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
 
                 case LBP(NonTransitivelyImmutableClass) => // super class is at least non-transitively immutable
                     if (minLocalImmutability != NonTransitivelyImmutableClass &&
-                        !dependees.valuesIterator.exists(_.pk == FieldImmutability.key)
+                            !dependees.valuesIterator.exists(_.pk == FieldImmutability.key)
                     )
                         minLocalImmutability = NonTransitivelyImmutableClass // Lift lower bound when possible
 
@@ -307,7 +307,7 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
                     if (hasNonTransitivelyImmutableFields) {
                         maxLocalImmutability = NonTransitivelyImmutableClass
                     } else if (maxLocalImmutability != MutableClass &&
-                               maxLocalImmutability != NonTransitivelyImmutableClass
+                                   maxLocalImmutability != NonTransitivelyImmutableClass
                     ) {
                         genericTypeParameters ++= parameter
                         maxLocalImmutability = DependentlyImmutableClass(genericTypeParameters)

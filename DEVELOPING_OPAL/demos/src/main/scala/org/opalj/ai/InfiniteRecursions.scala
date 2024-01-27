@@ -141,8 +141,8 @@ object InfiniteRecursions extends ProjectAnalysisApplication {
                         if (callOperands.forall {
                                 case domain.DomainSingleOriginReferenceValueTag(v) =>
                                     if (v.origin < 0 /* === the value is a parameter*/ ||
-                                        // the value is always created anew (no sideeffect)
-                                        body.instructions(v.origin).opcode == NEW.opcode
+                                            // the value is always created anew (no sideeffect)
+                                            body.instructions(v.origin).opcode == NEW.opcode
                                     )
                                         true
                                     else

@@ -55,7 +55,7 @@ object ExceptionUsage extends ProjectAnalysisApplication {
             //    to analyze the operands.)
             def collectExceptions(value: result.domain.DomainSingleOriginReferenceValue): Unit = {
                 if (value.isNull.isNoOrUnknown &&
-                    value.isValueASubtypeOf(ObjectType.Throwable).isYes
+                        value.isValueASubtypeOf(ObjectType.Throwable).isYes
                 ) {
                     val key = (value.origin, typeName(value))
                     if (!exceptionUsages.contains(key)) {

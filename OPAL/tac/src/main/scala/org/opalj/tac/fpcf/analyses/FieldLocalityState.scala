@@ -69,12 +69,12 @@ class FieldLocalityState(val field: Field, val thisIsCloneable: Boolean) {
 
     def hasNoDependees: Boolean = {
         fieldReadAccessDependee.forall(_.isFinal) &&
-        fieldWriteAccessDependee.forall(_.isFinal) &&
-        tacDependees.valuesIterator.forall(_.isFinal) &&
-        declaredMethodsDependees.isEmpty &&
-        definitionSitesDependees.isEmpty &&
-        callerDependees.valuesIterator.forall(_.isFinal) &&
-        calleeDependees.valuesIterator.forall(_._1.isFinal)
+            fieldWriteAccessDependee.forall(_.isFinal) &&
+            tacDependees.valuesIterator.forall(_.isFinal) &&
+            declaredMethodsDependees.isEmpty &&
+            definitionSitesDependees.isEmpty &&
+            callerDependees.valuesIterator.forall(_.isFinal) &&
+            calleeDependees.valuesIterator.forall(_._1.isFinal)
     }
 
     def hasTacDependees: Boolean = tacDependees.valuesIterator.exists(_.isRefinable)

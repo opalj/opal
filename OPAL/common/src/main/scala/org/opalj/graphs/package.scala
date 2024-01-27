@@ -263,13 +263,13 @@ package object graphs {
                             // ALTERNATIVE CHECK:
                             // val cSCCandidate = path.iterator.drop(cSCCDFSNum - initialDFSNum)
                             if (workstack.isEmpty ||
-                                path.iterator.drop(cSCCDFSNum - initialDFSNum).forall(n =>
-                                    // ... for all cSCCandidates
-                                    es(n).forall(succN =>
-                                        hasDFSNum(succN) &&
-                                            dfsNum(succN) == cSCCDFSNum // <= prevents premature cscc identifications
+                                    path.iterator.drop(cSCCDFSNum - initialDFSNum).forall(n =>
+                                        // ... for all cSCCandidates
+                                        es(n).forall(succN =>
+                                            hasDFSNum(succN) &&
+                                                dfsNum(succN) == cSCCDFSNum // <= prevents premature cscc identifications
+                                        )
                                     )
-                                )
                             ) {
                                 cSCCs ::= path.drop(cSCCDFSNum - initialDFSNum)
                                 markPathAsProcessed()
@@ -713,8 +713,8 @@ package object graphs {
                                 nextSCC ::= w
                             } while (n != w)
                             if (!filterSingletons ||
-                                nextSCC.tail.nonEmpty ||
-                                es(n).exists(_ == n)
+                                    nextSCC.tail.nonEmpty ||
+                                    es(n).exists(_ == n)
                             ) {
                                 sccs ::= nextSCC
                             }

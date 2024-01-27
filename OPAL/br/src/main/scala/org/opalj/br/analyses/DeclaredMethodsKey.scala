@@ -173,7 +173,7 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
                             }
                     }
                 } else if (m.isStatic && !m.isPrivate &&
-                           !m.isStaticInitializer && !cf.isInterfaceDeclaration
+                               !m.isStaticInitializer && !cf.isInterfaceDeclaration
                 ) {
                     // Static methods are inherited as well - they can be invoked on subtypes
                     // this is not true for static initializers and static methods on interfaces
@@ -318,7 +318,7 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
             if (isPackagePrivate)
                 new PackagePrivateMethodContext(declaringPackage, methodName, descriptor)
             else if (project.classFile(objectType).isDefined &&
-                     project.hasInstanceMethod(objectType, methodName, descriptor, true)
+                         project.hasInstanceMethod(objectType, methodName, descriptor, true)
             )
                 new ShadowsPackagePrivateMethodContext(methodName, descriptor)
             else

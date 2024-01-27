@@ -21,7 +21,7 @@ case class LocalVariableTypeTable(localVariableTypes: LocalVariableTypes) extend
     def similar(other: LocalVariableTypeTable): Boolean = {
         // the order of two local variable type tables does not need to be identical
         this.localVariableTypes.size == other.localVariableTypes.size &&
-        this.localVariableTypes.forall(other.localVariableTypes.contains)
+            this.localVariableTypes.forall(other.localVariableTypes.contains)
     }
 
     override def remapPCs(codeSize: Int, f: PC => PC): CodeAttribute = {

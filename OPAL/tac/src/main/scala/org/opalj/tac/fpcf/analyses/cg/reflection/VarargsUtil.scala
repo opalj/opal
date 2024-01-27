@@ -115,7 +115,7 @@ object VarargsUtil {
         val typeDefs = use.asArrayStore.value.asVar.definedBy
         val indices = use.asArrayStore.index.asVar.definedBy
         if (!typeDefs.isSingletonSet || typeDefs.head < 0 ||
-            !indices.isSingletonSet || indices.head < 0
+                !indices.isSingletonSet || indices.head < 0
         )
             None
         else {

@@ -55,9 +55,9 @@ class IFDSFact[Fact <: AbstractIFDSFact, S <: Statement[_, _]](
         case other: IFDSFact[Fact @unchecked, S @unchecked] =>
             this.eq(other) ||
                 (this.hashCode() == other.hashCode()
-                && this.fact == other.fact
-                && this.isUnbalancedReturn == other.isUnbalancedReturn
-                && this.callStmt == other.callStmt)
+                    && this.fact == other.fact
+                    && this.isUnbalancedReturn == other.isUnbalancedReturn
+                    && this.callStmt == other.callStmt)
         case _ => false
     }
 
@@ -465,7 +465,7 @@ class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C,
                 state.selfDependees.foreach(selfDependee => worklist.enqueue(selfDependee))
 
                 if (ifdsProblem.enableUnbalancedReturns &&
-                    ifdsProblem.shouldPerformUnbalancedReturn(state.source)
+                        ifdsProblem.shouldPerformUnbalancedReturn(state.source)
                 ) {
                     handleUnbalancedReturn(statement, in)
                 }
@@ -539,7 +539,7 @@ class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C,
 
         // ifds line 9
         if (successor.isEmpty // last statement was reached, must be processed to trigger handleExit
-            || state.pathEdges.add(successor.get, out, predecessorOption)
+                || state.pathEdges.add(successor.get, out, predecessorOption)
         ) {
             worklist.enqueue((successor, new IFDSFact(out), Some(predecessor)))
         }

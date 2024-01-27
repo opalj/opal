@@ -143,7 +143,7 @@ class AnalysisScenario[A](val ps: PropertyStore) {
 
         cs.derivesCollaboratively foreach { collaborativelyDerivedProperty =>
             if (eagerlyDerivedProperties.contains(collaborativelyDerivedProperty) ||
-                lazilyDerivedProperties.contains(collaborativelyDerivedProperty)
+                    lazilyDerivedProperties.contains(collaborativelyDerivedProperty)
             ) {
                 val pkName = PropertyKey.name(collaborativelyDerivedProperty.pk.id)
                 val m =

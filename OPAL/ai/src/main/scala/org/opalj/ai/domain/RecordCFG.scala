@@ -378,7 +378,7 @@ trait RecordCFG
         // values directly after the analysis has finished (when the computeBBCFG is
         // potentially called) but before the subroutine results are merged.
         (regularSuccessors(pc) ne null) || (exceptionHandlerSuccessors(pc) ne null) ||
-        normalExitPCs.contains(pc) || abnormalExitPCs.contains(pc)
+            normalExitPCs.contains(pc) || abnormalExitPCs.contains(pc)
     }
 
     /**
@@ -820,10 +820,10 @@ trait RecordCFG
                 val handlerPC = exceptionHandler.handlerPC
                 if ( // 1.1.    Let's check if the handler was executed at all.
                      unsafeWasExecuted(handlerPC) &&
-                     // 1.2.    The handler may be shared by multiple try blocks, hence, we have
-                     //         to ensure the we have at least one instruction in the try block
-                     //         that jumps to the handler.
-                     handlesException(exceptionHandler)
+                         // 1.2.    The handler may be shared by multiple try blocks, hence, we have
+                         //         to ensure the we have at least one instruction in the try block
+                         //         that jumps to the handler.
+                         handlesException(exceptionHandler)
                 ) {
                     // OLD val catchNodeCandidate = new CatchNode(exceptionHandler, index)
                     // OLD val catchNode = exceptionHandlers.getOrElseUpdate(handlerPC, catchNodeCandidate)
@@ -920,8 +920,8 @@ trait RecordCFG
                     }
                 }
                 if (!endRunningBB &&
-                    !connectedWithNextBBs &&
-                    hasMultiplePredecessors(nextInstructionPC)
+                        !connectedWithNextBBs &&
+                        hasMultiplePredecessors(nextInstructionPC)
                 ) {
                     endRunningBB = true
                     connect(runningBB, nextInstructionPC)
@@ -978,7 +978,7 @@ trait RecordCFG
                 predecessors(loopHeaderPC).withFilter { predecessorPC =>
                     // 1. let's ensure that the predecessor actually belongs to the loop...
                     loopHeaderPC == predecessorPC ||
-                    dominatorTree.strictlyDominates(loopHeaderPC, predecessorPC)
+                        dominatorTree.strictlyDominates(loopHeaderPC, predecessorPC)
                 }
             }
             // Now we have to ensure to select the outer most exit pcs which are dominated by

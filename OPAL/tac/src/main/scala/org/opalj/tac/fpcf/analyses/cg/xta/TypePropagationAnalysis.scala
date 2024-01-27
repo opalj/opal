@@ -371,7 +371,7 @@ final class TypePropagationAnalysis private[analyses] (
 
         // If the call is not static, we need to take the implicit "this" parameter into account.
         if (callee.hasSingleDefinedMethod && !callee.definedMethod.isStatic ||
-            !callee.hasSingleDefinedMethod && !bytecode.instructions(pc).isInvokeStatic
+                !callee.hasSingleDefinedMethod && !bytecode.instructions(pc).isInvokeStatic
         ) {
             params += callee.declaringClassType
         }

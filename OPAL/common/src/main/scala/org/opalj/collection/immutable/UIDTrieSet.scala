@@ -517,9 +517,9 @@ private[immutable] final class UIDTrieSetN[T <: UID](
 
     override def equals(that: UIDTrieSet[_]): Boolean = {
         (that eq this) ||
-        // recall that the shape of the trie depends on the insertion order
-        // (but doesn't reflect the order)
-        (that.size == this.size && this.forall(uid => that.containsId(uid.id)))
+            // recall that the shape of the trie depends on the insertion order
+            // (but doesn't reflect the order)
+            (that.size == this.size && this.forall(uid => that.containsId(uid.id)))
     }
 
     override def hashCode: Int = root.hashCode * size

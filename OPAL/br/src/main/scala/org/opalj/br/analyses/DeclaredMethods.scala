@@ -67,7 +67,7 @@ class DeclaredMethods(
                             s"Unexpected signature polymorphic method $name"
                         )
                 } else if ((runtimeType eq MethodHandle) &&
-                           (name == "invoke" || name == "invokeExact")
+                               (name == "invoke" || name == "invokeExact")
                 ) {
                     SignaturePolymorphicMethodObject
                 } else

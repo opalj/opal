@@ -80,7 +80,7 @@ trait AllocationSiteBasedAnalysis extends AbstractPointsToBasedAnalysis {
                     createNewPointsToSet()
             case _ =>
                 if (mergeExceptions &&
-                    classHierarchy.isSubtypeOf(allocatedType, ObjectType.Throwable)
+                        classHierarchy.isSubtypeOf(allocatedType, ObjectType.Throwable)
                 ) {
                     val ptsO = exceptionPointsToSets.get(allocatedType.id)
                     if (ptsO.isDefined)

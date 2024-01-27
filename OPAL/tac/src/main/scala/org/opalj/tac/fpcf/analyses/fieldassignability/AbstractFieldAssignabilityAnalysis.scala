@@ -82,7 +82,7 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
 
         def hasDependees: Boolean = {
             escapeDependees.nonEmpty || fieldWriteAccessDependee.exists(_.isRefinable) ||
-            tacDependees.valuesIterator.exists(_.isRefinable) || callerDependees.valuesIterator.exists(_.isRefinable)
+                tacDependees.valuesIterator.exists(_.isRefinable) || callerDependees.valuesIterator.exists(_.isRefinable)
         }
 
         def dependees: Set[SomeEOptionP] = {

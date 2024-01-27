@@ -92,8 +92,8 @@ abstract class AbstractClassExtensibility extends ClassExtensibility {
                 if (configured.isDefined)
                     configured.get
                 else if (classFile.isEffectivelyFinal ||
-                         classFile.isEnumDeclaration ||
-                         classFile.isAnnotationDeclaration
+                             classFile.isEnumDeclaration ||
+                             classFile.isAnnotationDeclaration
                 )
                     No
                 else if (classFile.isPublic)

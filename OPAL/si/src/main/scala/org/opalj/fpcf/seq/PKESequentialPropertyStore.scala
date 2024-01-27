@@ -733,8 +733,8 @@ final class PKESequentialPropertyStore protected (
                             .valuesIterator
                             .filter { eOptionP =>
                                 eOptionP.isEPK &&
-                                // There is no suppression; i.e., we have no dependees
-                                dependees(pkId).get(eOptionP.e).isEmpty
+                                    // There is no suppression; i.e., we have no dependees
+                                    dependees(pkId).get(eOptionP.e).isEmpty
                             }
                     continueComputation |= epkIterator.hasNext
                     epkIterator.foreach { eOptionP =>

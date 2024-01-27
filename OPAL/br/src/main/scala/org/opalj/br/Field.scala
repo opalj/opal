@@ -77,9 +77,9 @@ sealed abstract class JVMField extends ClassMember with Ordered[JVMField] {
      */
     def similar(other: JVMField, config: SimilarityTestConfiguration): Boolean = {
         this.accessFlags == other.accessFlags &&
-        (this.fieldType eq other.fieldType) &&
-        this.name == other.name &&
-        compareAttributes(other.attributes, config).isEmpty
+            (this.fieldType eq other.fieldType) &&
+            this.name == other.name &&
+            compareAttributes(other.attributes, config).isEmpty
     }
 
     def copy(

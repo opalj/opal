@@ -64,7 +64,7 @@ class L1PuritySmokeTest extends AnyFunSpec with Matchers {
         val propertyStore = p.get(PropertyStoreKey)
         try {
             if (propertyStore.entities(Purity.key).exists(_.isRefinable) ||
-                propertyStore.entities(VirtualMethodPurity.key).exists(_.isRefinable)
+                    propertyStore.entities(VirtualMethodPurity.key).exists(_.isRefinable)
             ) {
                 fail("Analysis left over non-final purity results")
             }

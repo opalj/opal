@@ -95,9 +95,9 @@ case class InstanceAPIMethod(
 
     def unapply(i: MethodInvocationInstruction): Boolean = {
         i.isInstanceMethod &&
-        this.declClass == i.declaringClass &&
-        this.name == i.name &&
-        (this.descriptor.isEmpty || this.descriptor.get == i.methodDescriptor)
+            this.declClass == i.declaringClass &&
+            this.name == i.name &&
+            (this.descriptor.isEmpty || this.descriptor.get == i.methodDescriptor)
     }
 }
 
@@ -147,9 +147,9 @@ case class StaticAPIMethod(
 
     def unapply(i: MethodInvocationInstruction): Boolean = {
         !i.isInstanceMethod &&
-        this.declClass == i.declaringClass &&
-        this.name == i.name &&
-        (this.descriptor.isEmpty || this.descriptor.get == i.methodDescriptor)
+            this.declClass == i.declaringClass &&
+            this.name == i.name &&
+            (this.descriptor.isEmpty || this.descriptor.get == i.methodDescriptor)
     }
 }
 

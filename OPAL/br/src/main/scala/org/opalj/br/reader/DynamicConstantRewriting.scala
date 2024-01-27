@@ -161,7 +161,7 @@ trait DynamicConstantRewriting
 
         val head = newInstructions.head
         if (newLength == 3 && // There might not be an actual replacement
-            (head.isInstanceOf[LoadDynamic_W] || head.isInstanceOf[LoadDynamic2_W])
+                (head.isInstanceOf[LoadDynamic_W] || head.isInstanceOf[LoadDynamic2_W])
         ) {
             if (logUnknownDynamicConstants) {
                 val t = classFile.thisType.toJava

@@ -409,7 +409,7 @@ private[immutable] final class Long2List4(
             case that: Long2List4 =>
                 (that eq this) || (
                     that.v1 == v1 && that.v2 == v2 && that.v3 == v3 && that.v4 == v4 &&
-                    restEquals(that.rest)
+                        restEquals(that.rest)
                 )
             case _ => false
         }

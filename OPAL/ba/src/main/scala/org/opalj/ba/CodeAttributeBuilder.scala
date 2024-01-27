@@ -193,8 +193,8 @@ class CodeAttributeBuilder[T] private[ba] (
 
         // We need to compute the stack map table if we don't have one already!
         if (classFileVersion.major >= bi.Java6MajorVersion &&
-            attributes.forall(a => a.kindId != StackMapTable.KindId) &&
-            (hasControlTransferInstructions || exceptionHandlers.nonEmpty)
+                attributes.forall(a => a.kindId != StackMapTable.KindId) &&
+                (hasControlTransferInstructions || exceptionHandlers.nonEmpty)
         ) {
             // Let's create fake code and method objects to make it possible
             // to use the AI framework for computing the stack map table...

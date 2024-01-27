@@ -97,10 +97,10 @@ trait ConcreteArrayValues
 
         count <= maxTrackedArraySize && (
             arrayType.componentType.isBaseType ||
-            (
-                arrayType.componentType.isObjectType &&
-                isEffectivelyImmutable(arrayType.componentType.asObjectType)
-            )
+                (
+                    arrayType.componentType.isObjectType &&
+                        isEffectivelyImmutable(arrayType.componentType.asObjectType)
+                )
         )
     }
 
@@ -294,9 +294,9 @@ trait ConcreteArrayValues
                     (that eq this) ||
                         (
                             (that canEqual this) &&
-                            this.origin == that.origin &&
-                            (this.theUpperTypeBound eq that.theUpperTypeBound) &&
-                            this.values == that.values
+                                this.origin == that.origin &&
+                                (this.theUpperTypeBound eq that.theUpperTypeBound) &&
+                                this.values == that.values
                         )
 
                 case _ => false

@@ -239,9 +239,9 @@ final class TypePropagationState[ContextType <: Context](
 
     override def hasOpenDependencies: Boolean = {
         super.hasOpenDependencies ||
-        _ownInstantiatedTypesDependee.isRefinable ||
-        _calleeDependee.isRefinable ||
-        !_backwardPropagationDependees.isEmpty
+            _ownInstantiatedTypesDependee.isRefinable ||
+            _calleeDependee.isRefinable ||
+            !_backwardPropagationDependees.isEmpty
     }
 
     override def dependees: Set[SomeEOptionP] = {

@@ -321,7 +321,7 @@ class Project[Source] private (
                                 superinterfaceTypes.forall { superSubIType =>
                                     superSubIType == interfaceType || {
                                         irrelevantInterfaces.contains(superSubIType) ||
-                                        functionalInterfaces.contains(superSubIType)
+                                            functionalInterfaces.contains(superSubIType)
                                     }
                                 }
                             case None => throw new UnknownError()
@@ -402,7 +402,7 @@ class Project[Source] private (
                             functionalInterfaces(interfaceType) = abstractMethods.head.signature
                         processSubinterfaces(interfaceType)
                     } else if (isPotentiallyIrrelevant ||
-                               sharedFunctionalMethod == abstractMethods.head.signature
+                                   sharedFunctionalMethod == abstractMethods.head.signature
                     ) {
                         functionalInterfaces(interfaceType) = sharedFunctionalMethod
                         processSubinterfaces(interfaceType)
@@ -418,8 +418,8 @@ class Project[Source] private (
             val interfaceType = typesToProcess.pop()
 
             if (!otherInterfaces.contains(interfaceType) &&
-                !functionalInterfaces.contains(interfaceType) &&
-                !irrelevantInterfaces.contains(interfaceType)
+                    !functionalInterfaces.contains(interfaceType) &&
+                    !irrelevantInterfaces.contains(interfaceType)
             ) {
 
                 classFile(interfaceType) match {
@@ -797,7 +797,7 @@ class Project[Source] private (
                     // java is not a root package of "javax"...
                     val (_, lastPackage) = rootPackages.last
                     if (nextPackage.startsWith(lastPackage) &&
-                        nextPackage.charAt(lastPackage.size) == '/'
+                            nextPackage.charAt(lastPackage.size) == '/'
                     )
                         rootPackages + ((nextPackage, lastPackage))
                     else
@@ -932,7 +932,7 @@ class Project[Source] private (
             var method: Method = null
             // check the methods with a smaller (or equal) index
             while (index >= 0
-                   && { method = data(index).method; method.compare(name, descriptor) == 0 }
+                       && { method = data(index).method; method.compare(name, descriptor) == 0 }
             ) {
                 if (method.isPackagePrivate == isPackagePrivate)
                     return true;
@@ -943,7 +943,7 @@ class Project[Source] private (
 
             // check the methods with a higher index
             while (index < data.length
-                   && { method = data(index).method; method.compare(name, descriptor) == 0 }
+                       && { method = data(index).method; method.compare(name, descriptor) == 0 }
             ) {
                 if (method.isPackagePrivate == isPackagePrivate)
                     return true;
@@ -1287,10 +1287,10 @@ object Project {
         // Returns `true` if the potentially available information is not yet available.
         @inline def notYetAvailable(superinterfaceType: ObjectType): Boolean = {
             methods.get(superinterfaceType).isEmpty &&
-            // If the class file is not known, we will never have any details;
-            // hence, the information will "NEVER" be available; or - in other
-            // words - all potentially available information is available.
-            objectTypeToClassFile(superinterfaceType).nonEmpty
+                // If the class file is not known, we will never have any details;
+                // hence, the information will "NEVER" be available; or - in other
+                // words - all potentially available information is available.
+                objectTypeToClassFile(superinterfaceType).nonEmpty
         }
 
         def computeDefinedMethods(tasks: Tasks[ObjectType], objectType: ObjectType): Unit = {
@@ -1362,7 +1362,7 @@ object Project {
                 // name is not relevant!
                 definedMethods find { definedMethod =>
                     definedMethod.descriptor == inheritedInterfaceMethod.descriptor &&
-                    definedMethod.name == inheritedInterfaceMethod.name
+                        definedMethod.name == inheritedInterfaceMethod.name
                 } match {
                     case Some(mdc) =>
                         // If there is already a method and it is from an interface, then it is not
@@ -1372,7 +1372,7 @@ object Project {
                         if (mdc.method.classFile.isInterfaceDeclaration) {
                             definedMethods = definedMethods filterNot { definedMethod =>
                                 definedMethod.descriptor == inheritedInterfaceMethod.descriptor &&
-                                definedMethod.name == inheritedInterfaceMethod.name
+                                    definedMethod.name == inheritedInterfaceMethod.name
                             }
                             if (!inheritedInterfaceMethod.isAbstract)
                                 definedMethods ::= MethodDeclarationContext(inheritedInterfaceMethod)
@@ -1440,8 +1440,8 @@ object Project {
                             // visibility) multiple conflicting methods!
                             definedMethods = definedMethods.filterNot { mdc =>
                                 declaredMethodContext.directlyOverrides(mdc) ||
-                                mdc.method.isPrivate &&
-                                declaredMethodContext.method.compare(mdc.method) == 0
+                                    mdc.method.isPrivate &&
+                                    declaredMethodContext.method.compare(mdc.method) == 0
                             }
 
                             // Recall that it is possible to make a method "abstract" again...
@@ -1453,7 +1453,7 @@ object Project {
                             val declaredMethodDescriptor = declaredMethod.descriptor
                             if (definedMethods.exists { mdc =>
                                     mdc.name == declaredMethodName &&
-                                    mdc.descriptor == declaredMethodDescriptor
+                                        mdc.descriptor == declaredMethodDescriptor
                                 }
                             ) {
                                 // In this case we may have an "overriding" of an instance method by
@@ -1904,7 +1904,7 @@ object Project {
                     val OTObject = ObjectType.Object
                     val typeHierarchyDefinitions =
                         if (projectClassFilesWithSources.exists(_._1.thisType == OTObject) ||
-                            libraryClassFilesWithSources.exists(_._1.thisType == OTObject)
+                                libraryClassFilesWithSources.exists(_._1.thisType == OTObject)
                         ) {
                             info("project configuration", "the JDK is part of the analysis")
                             ClassHierarchy.noDefaultTypeHierarchyDefinitions()

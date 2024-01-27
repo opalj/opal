@@ -382,8 +382,8 @@ class LBFieldValuesAnalysis private[analyses] (
                             val vi = ValueBasedFieldValueInformation(dv.toCanonicalForm)
                             // println("======>>>>>>\n\t\t"+vi+"\n\t\t"+relevantDependees)
                             if (newDependees.isEmpty ||
-                                dv.isNull.isYes ||
-                                classHierarchy.isKnownToBeFinal(dv.leastUpperType.get)
+                                    dv.isNull.isYes ||
+                                    classHierarchy.isKnownToBeFinal(dv.leastUpperType.get)
                             ) {
                                 Result(FinalEP(f, vi))
                             } else {
