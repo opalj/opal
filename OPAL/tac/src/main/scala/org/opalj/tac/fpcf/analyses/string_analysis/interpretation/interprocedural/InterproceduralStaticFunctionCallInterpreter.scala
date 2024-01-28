@@ -8,9 +8,9 @@ package interpretation
 package interprocedural
 
 import scala.util.Try
-
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.cfg.CFG
+import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.br.fpcf.properties.NoContext
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
@@ -19,7 +19,6 @@ import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.PropertyStore
-import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 
 /**
  * The `InterproceduralStaticFunctionCallInterpreter` is responsible for processing
@@ -38,7 +37,7 @@ class InterproceduralStaticFunctionCallInterpreter(
         state:           InterproceduralComputationState,
         params:          List[Seq[StringConstancyInformation]],
         declaredMethods: DeclaredMethods,
-        typeIterator:    TypeIterator
+        contextProvider:    ContextProvider
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
 
     override type T = StaticFunctionCall[V]
@@ -99,7 +98,7 @@ class InterproceduralStaticFunctionCallInterpreter(
         instr:   StaticFunctionCall[V],
         defSite: Int
     ): EOptionP[Entity, StringConstancyProperty] = {
-        val methods, _ = getMethodsForPC(instr.pc, ps, state.callees, typeIterator)
+        val methods, _ = getMethodsForPC(instr.pc, ps, state.callees, contextProvider)
 
         // Static methods cannot be overwritten, thus
         // 1) we do not need the second return value of getMethodsForPC and
@@ -112,7 +111,7 @@ class InterproceduralStaticFunctionCallInterpreter(
         val m = methods._1.head
         val (_, tac) = getTACAI(ps, m, state)
 
-        val directCallSites = state.callees.directCallSites(NoContext)(ps, typeIterator)
+        val directCallSites = state.callees.directCallSites(NoContext)(ps, contextProvider)
         val relevantPCs = directCallSites.filter {
             case (_, calledMethods) =>
                 calledMethods.exists(m =>

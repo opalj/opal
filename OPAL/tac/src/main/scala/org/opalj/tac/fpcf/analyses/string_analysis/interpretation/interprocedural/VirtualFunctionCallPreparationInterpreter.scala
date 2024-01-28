@@ -12,6 +12,7 @@ import org.opalj.br.ComputationalTypeInt
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.cfg.CFG
+import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.br.fpcf.properties.NoContext
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
@@ -23,7 +24,6 @@ import org.opalj.fpcf.EPK
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.PropertyStore
-import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 
 /**
  * The `InterproceduralVirtualFunctionCallInterpreter` is responsible for processing
@@ -41,7 +41,7 @@ class VirtualFunctionCallPreparationInterpreter(
         state:           InterproceduralComputationState,
         declaredMethods: DeclaredMethods,
         params:          List[Seq[StringConstancyInformation]],
-        typeIterator:    TypeIterator
+        contextProvider:    ContextProvider
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
 
     override type T = VirtualFunctionCall[V]
@@ -103,18 +103,13 @@ class VirtualFunctionCallPreparationInterpreter(
      * finalized later on.
      */
     private def interpretArbitraryCall(instr: T, defSite: Int): EOptionP[Entity, StringConstancyProperty] = {
-        val (methods, _) = getMethodsForPC(
-            instr.pc,
-            ps,
-            state.callees,
-            typeIterator
-        )
+        val (methods, _) = getMethodsForPC(instr.pc, ps, state.callees, contextProvider)
 
         if (methods.isEmpty) {
             return FinalEP(instr, StringConstancyProperty.lb)
         }
         // TODO: Type Iterator!
-        val directCallSites = state.callees.directCallSites(NoContext)(ps, typeIterator)
+        val directCallSites = state.callees.directCallSites(NoContext)(ps, contextProvider)
         val instrClassName = instr.receiver.asVar.value.asReferenceValue.asReferenceType.mostPreciseObjectType.toJava
 
         val relevantPCs = directCallSites.filter {

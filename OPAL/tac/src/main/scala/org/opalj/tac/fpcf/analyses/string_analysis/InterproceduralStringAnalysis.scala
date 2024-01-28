@@ -7,16 +7,17 @@ package string_analysis
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
-
 import org.opalj.br.FieldType
 import org.opalj.br.analyses.DeclaredFieldsKey
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.FieldAccessInformationKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.FPCFLazyAnalysisScheduler
+import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.Callers
@@ -33,8 +34,6 @@ import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEPS
-import org.opalj.tac.fpcf.analyses.cg.RTATypeIterator
-import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural.ArrayPreparationInterpreter
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural.InterproceduralInterpretationHandler
@@ -78,8 +77,7 @@ class InterproceduralStringAnalysis(
         val project: SomeProject
 ) extends FPCFAnalysis {
 
-    // TODO: How do we pass the type iterator along? How do we decide which to use?
-    private val typeIterator: TypeIterator = new RTATypeIterator(project)
+    private val contextProvider: ContextProvider = project.get(ContextProviderKey)
 
     // TODO: Is it possible to make the following two parameters configurable from the outside?
     /**
@@ -101,7 +99,7 @@ class InterproceduralStringAnalysis(
     private val fieldWriteThreshold = 100
     private val declaredMethods = project.get(DeclaredMethodsKey)
     private val declaredFields = project.get(DeclaredFieldsKey)
-    private final val fieldAccessInformation = project.get(FieldAccessInformationKey)
+    private val fieldAccessInformation = project.get(FieldAccessInformationKey)
 
     /**
      * Returns the current interim result for the given state. If required, custom lower and upper
@@ -188,7 +186,7 @@ class InterproceduralStringAnalysis(
                 declaredFields,
                 fieldAccessInformation,
                 state,
-                typeIterator
+                contextProvider
             )
             val interimState = state.copy()
             interimState.tac = state.tac
@@ -203,7 +201,7 @@ class InterproceduralStringAnalysis(
                 declaredFields,
                 fieldAccessInformation,
                 interimState,
-                typeIterator
+                contextProvider
             )
         }
 
@@ -424,12 +422,12 @@ class InterproceduralStringAnalysis(
             case InterimLUBP(_: StringConstancyProperty, ub: StringConstancyProperty)
                 if eps.pk.equals(StringConstancyProperty.key) =>
                 state.dependees = eps :: state.dependees
-                val uvar = eps.e.asInstanceOf[SContext]._1
-                state.var2IndexMapping(uvar).foreach { i =>
+                val puVar = eps.e.asInstanceOf[SContext]._1
+                state.var2IndexMapping(puVar).foreach { i =>
                     state.appendToInterimFpe2Sci(
                         i,
                         ub.stringConstancyInformation,
-                        Some(uvar)
+                        Some(puVar)
                     )
                 }
                 getInterimResult(state)
@@ -513,7 +511,7 @@ class InterproceduralStringAnalysis(
         state: InterproceduralComputationState
     ): Boolean = {
 
-        val callers = state.callers.callers(state.dm)(typeIterator).iterator.toSeq
+        val callers = state.callers.callers(state.dm)(contextProvider).iterator.toSeq
         if (callers.length > callersThreshold) {
             state.params.append(
                 ListBuffer.from(state.entity._2.parameterTypes.map {
@@ -890,7 +888,6 @@ object InterproceduralStringAnalysis {
         }
         StringConstancyInformation(StringConstancyLevel.DYNAMIC, possibleStrings = possibleStrings)
     }
-
 }
 
 sealed trait InterproceduralStringAnalysisScheduler extends FPCFAnalysisScheduler {
@@ -912,12 +909,7 @@ sealed trait InterproceduralStringAnalysisScheduler extends FPCFAnalysisSchedule
 
     override def afterPhaseScheduling(ps: PropertyStore, analysis: FPCFAnalysis): Unit = {}
 
-    override def afterPhaseCompletion(
-        p:        SomeProject,
-        ps:       PropertyStore,
-        analysis: FPCFAnalysis
-    ): Unit = {}
-
+    override def afterPhaseCompletion(p: SomeProject, ps: PropertyStore, analysis: FPCFAnalysis): Unit = {}
 }
 
 /**
@@ -926,11 +918,7 @@ sealed trait InterproceduralStringAnalysisScheduler extends FPCFAnalysisSchedule
 object LazyInterproceduralStringAnalysis
     extends InterproceduralStringAnalysisScheduler with FPCFLazyAnalysisScheduler {
 
-    override def register(
-        p:        SomeProject,
-        ps:       PropertyStore,
-        analysis: InitializationData
-    ): FPCFAnalysis = {
+    override def register(p: SomeProject, ps: PropertyStore, analysis: InitializationData): FPCFAnalysis = {
         val analysis = new InterproceduralStringAnalysis(p)
         ps.registerLazyPropertyComputation(StringConstancyProperty.key, analysis.analyze)
         analysis
@@ -938,6 +926,9 @@ object LazyInterproceduralStringAnalysis
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 
-    // TODO: Needs TAC key??
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey, FieldAccessInformationKey)
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(
+        DeclaredMethodsKey,
+        FieldAccessInformationKey,
+        ContextProviderKey,
+    )
 }

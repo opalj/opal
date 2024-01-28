@@ -8,10 +8,10 @@ package interpretation
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
-
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.br.cfg.CFG
+import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.br.fpcf.properties.NoContext
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.cg.Callees
@@ -20,7 +20,6 @@ import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.PropertyStore
-import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural.InterproceduralInterpretationHandler
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.value.ValueInformation
@@ -81,12 +80,12 @@ abstract class AbstractStringInterpreter(
         pc:      Int,
         ps:      PropertyStore,
         callees: Callees,
-        typeIt:  TypeIterator
+        contextProvider:  ContextProvider
     ): (List[Method], Boolean) = {
         var hasMethodWithUnknownBody = false
         val methods = ListBuffer[Method]()
 
-        callees.callees(NoContext, pc)(ps, typeIt).map(_.method).foreach {
+        callees.callees(NoContext, pc)(ps, contextProvider).map(_.method).foreach {
             case definedMethod: DefinedMethod => methods.append(definedMethod.definedMethod)
             case _                            => hasMethodWithUnknownBody = true
         }

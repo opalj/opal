@@ -9,13 +9,13 @@ package interprocedural
 
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.cfg.CFG
+import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.PropertyStore
-import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 
 /**
  * The `InterproceduralNonVirtualFunctionCallInterpreter` is responsible for processing
@@ -31,7 +31,7 @@ class InterproceduralNonVirtualFunctionCallInterpreter(
         ps:              PropertyStore,
         state:           InterproceduralComputationState,
         declaredMethods: DeclaredMethods,
-        typeIterator:    TypeIterator
+        contextProvider:    ContextProvider
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
 
     override type T = NonVirtualFunctionCall[V]
@@ -48,7 +48,7 @@ class InterproceduralNonVirtualFunctionCallInterpreter(
      * @see [[AbstractStringInterpreter.interpret]]
      */
     override def interpret(instr: T, defSite: Int): EOptionP[Entity, StringConstancyProperty] = {
-        val methods = getMethodsForPC(instr.pc, ps, state.callees, typeIterator)
+        val methods = getMethodsForPC(instr.pc, ps, state.callees, contextProvider)
         if (methods._1.isEmpty) {
             // No methods available => Return lower bound
             return FinalEP(instr, StringConstancyProperty.lb)

@@ -11,6 +11,7 @@ import org.opalj.ai.ImmediateVMExceptionsOriginOffset
 import org.opalj.br.analyses.DeclaredFields
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.FieldAccessInformation
+import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
@@ -20,7 +21,6 @@ import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
-import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.common.BinaryExprInterpreter
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.common.DoubleValueInterpreter
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.common.FloatValueInterpreter
@@ -53,7 +53,7 @@ class InterproceduralInterpretationHandler(
         declaredFields:         DeclaredFields,
         fieldAccessInformation: FieldAccessInformation,
         state:                  InterproceduralComputationState,
-        typeIterator:           TypeIterator
+        contextProvider:           ContextProvider
 ) extends InterpretationHandler(tac) {
 
     /**
@@ -212,7 +212,7 @@ class InterproceduralInterpretationHandler(
             state,
             declaredMethods,
             params,
-            typeIterator
+            contextProvider
         ).interpret(expr, defSite)
         // Set whether the virtual function call is fully prepared. This is the case if 1) the
         // call was not fully prepared before (no final result available) or 2) the preparation is
@@ -260,7 +260,7 @@ class InterproceduralInterpretationHandler(
             state,
             params,
             declaredMethods,
-            typeIterator
+            contextProvider
         ).interpret(expr, defSite)
         if (!r.isInstanceOf[Result] || state.nonFinalFunctionArgs.contains(expr)) {
             processedDefSites.remove(defSite)
@@ -293,7 +293,7 @@ class InterproceduralInterpretationHandler(
             ps,
             fieldAccessInformation,
             declaredFields,
-            typeIterator
+            contextProvider
         ).interpret(expr, defSite)
         if (r.isRefinable) {
             processedDefSites.remove(defSite)
@@ -315,7 +315,7 @@ class InterproceduralInterpretationHandler(
             ps,
             state,
             declaredMethods,
-            typeIterator
+            contextProvider
         ).interpret(expr, defSite)
         if (r.isRefinable || state.nonFinalFunctionArgs.contains(expr)) {
             processedDefSites.remove(defSite)
@@ -435,7 +435,7 @@ object InterproceduralInterpretationHandler {
         declaredFields:         DeclaredFields,
         fieldAccessInformation: FieldAccessInformation,
         state:                  InterproceduralComputationState,
-        typeIterator:           TypeIterator
+        contextProvider: ContextProvider
     ): InterproceduralInterpretationHandler = new InterproceduralInterpretationHandler(
         tac,
         ps,
@@ -443,6 +443,6 @@ object InterproceduralInterpretationHandler {
         declaredFields,
         fieldAccessInformation,
         state,
-        typeIterator
+        contextProvider
     )
 }
