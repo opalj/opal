@@ -128,21 +128,25 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
 
         implicit val state: AnalysisState = createState(field)
 
-        if (field.isFinal)
-            return Result(field, NonAssignable);
-        else
-            state.fieldAssignability = EffectivelyNonAssignable
+        val fieldName = field.name
+        println(fieldName)
 
-        if (field.isPublic)
+        state.fieldAssignability =
+            if (field.isFinal)
+                NonAssignable
+            else
+                EffectivelyNonAssignable
+
+        if (field.isPublic && !field.isFinal)
             return Result(field, Assignable);
 
         val thisType = field.classFile.thisType
 
-        if (field.isPublic) {
+        if (field.isPublic && !field.isFinal) {
             if (typeExtensibility(ObjectType.Object).isYesOrUnknown) {
                 return Result(field, Assignable);
             }
-        } else if (field.isProtected) {
+        } else if (field.isProtected && !field.isFinal) {
             if (typeExtensibility(thisType).isYesOrUnknown) {
                 return Result(field, Assignable);
             }
@@ -150,7 +154,8 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
                 return Result(field, Assignable);
             }
         }
-        if (field.isPackagePrivate) {
+
+        if (field.isPackagePrivate && !field.isFinal) {
             if (!closedPackages(thisType.packageName)) {
                 return Result(field, Assignable);
             }
