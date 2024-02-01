@@ -1067,8 +1067,6 @@ trait InvokedynamicRewriting
                     } else {
                         handle.isInterface
                     }
-
-                case other => throw new UnknownError("unexpected handle: " + other)
             }
 
         // Creates forwarding method for private method `m` that can be accessed by the proxy class.

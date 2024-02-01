@@ -109,9 +109,6 @@ sealed trait EscapePropertyMetaInformation extends PropertyMetaInformation {
  * `org.opalj.ai.DefinitionSiteLike` and [[org.opalj.br.analyses.VirtualFormalParameter]] are
  * generally used as [[org.opalj.fpcf.Entity]] in combination with this property.
  *
- * [[VirtualMethodEscapeProperty]] provides a wrapper of this property addressing aggregated escape
- * information for parameters of methods in a type hierarchy.
- *
  * [1] Choi, Jong-Deok, Manish Gupta, Mauricio Serrano, Vugranam C. Sreedhar, and Sam Midkiff.
  * "Escape Analysis for Java." In Proceedings of the 14th ACM SIGPLAN Conference on
  * Object-Oriented Programming, Systems, Languages, and Applications, 1–19. OOPSLA ’99.  New
@@ -174,8 +171,6 @@ sealed abstract class EscapeProperty
      * Is this the top value of the lattice, i.e. [[NoEscape]].
      */
     def isTop: Boolean
-
-    def asAggregatedProperty: VirtualMethodEscapeProperty = VirtualMethodEscapeProperty(this)
 }
 
 sealed abstract class FinalEscapeProperty extends EscapeProperty {

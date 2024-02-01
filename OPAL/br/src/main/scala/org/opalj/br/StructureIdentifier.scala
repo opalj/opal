@@ -54,7 +54,6 @@ case class MethodIdentifier(
             case o: ObjectType            => Some(o.packageName);
             case ArrayType(o: ObjectType) => Some(o.packageName);
             case _: ArrayType             => Some("java/lang"); // handles Arrays of primitives
-            case _                        => None
         }
 }
 

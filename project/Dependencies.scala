@@ -12,14 +12,14 @@ object Dependencies {
   object version {
     val junit = "4.13.2"
     val scalatest = "3.2.12"
-    val scalatestjunit = "3.2.5.0"
+    val scalatestjunit = "3.2.10.0"
     val scalacheck = "3.2.12.0"
 
     val scalaxml = "2.2.0"
-    val scalaparsercombinators = "1.1.2"
+    val scalaparsercombinators = "2.3.0"
     val scalaparallelcollections = "1.0.4"
-    val playjson = "2.9.2"
-    val ficus = "1.5.0"
+    val playjson = "2.10.4"
+    val ficus = "1.5.2"
     val commonstext = "1.9"
     val txtmark = "0.16"
     val jacksonDF = "2.12.2"
@@ -43,12 +43,13 @@ object Dependencies {
       case _ => throw new Exception("Unknown platform!")
     }
 
-    def reflect(scalaVersion: String): ModuleID = "org.scala-lang" % "scala-reflect" % scalaVersion
+    def reflect(scalaVersion: String): ModuleID = "org.scala-lang" % "scala-reflect" % "2.13.12" //scalaVersion No scala-reflect available for Scala 3
 
     val scalaxml = "org.scala-lang.modules"                 %% "scala-xml"                  % version.scalaxml
     val scalaparallelcollections = "org.scala-lang.modules" %% "scala-parallel-collections" % version.scalaparallelcollections
     val playjson = "com.typesafe.play"                      %% "play-json"                  % version.playjson
     val ficus = "com.iheart"                                %% "ficus"                      % version.ficus
+    val pureconfig = "com.github.pureconfig"               %% "pureconfig-core"                 % "0.17.5"
     val commonstext = "org.apache.commons"                  % "commons-text"                % version.commonstext
     val scalaparsercombinators = "org.scala-lang.modules"   %% "scala-parser-combinators"   % version.scalaparsercombinators
     val txtmark = "es.nitaur.markdown"                      % "txtmark"                     % version.txtmark withSources () withJavadoc ()
@@ -71,7 +72,7 @@ object Dependencies {
 
   val testlibs: Seq[ModuleID] = Seq(junit, scalatest, scalatestjunit, scalacheck)
 
-  def common(scalaVersion: String) = Seq(reflect(scalaVersion), scalaparallelcollections, scalaxml, playjson, ficus, fastutil)
+  def common(scalaVersion: String) = Seq(reflect(scalaVersion), scalaparallelcollections, scalaxml, playjson, ficus, pureconfig, fastutil)
 
   val si = Seq()
   val bi = Seq(commonstext)

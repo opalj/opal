@@ -32,7 +32,9 @@ object ProjectSerializer {
         println("OPAL - Project Serializer")
         println("Writes out the project's rewritten and transformed class files.")
         println("(No INVOKEDYNAMICS and optimized bytecode.)")
-        error.foreach { e => println(); Console.err.println(e); println() }
+        error.foreach { e =>
+            println(); Console.err.println(e); println()
+        }
         println("Parameters:")
         println("   -in <JAR File or Folder> a jar or a folder containing a project's class files")
         println("   -out <FileName> the folder where the class files are stored.")

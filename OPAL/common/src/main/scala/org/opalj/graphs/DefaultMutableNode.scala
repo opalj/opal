@@ -15,8 +15,8 @@ import scala.collection.immutable
 class DefaultMutableNode[I](
     theIdentifier:       I,
     identifierToString:  I => String                   = (_: Any).toString,
-    theVisualProperties: immutable.Map[String, String] = immutable.Map.empty,
-    theChildren:         List[DefaultMutableNode[I]]   = List.empty
+    theVisualProperties: immutable.Map[String, String] = immutable.Map.empty[String, String],
+    theChildren:         List[DefaultMutableNode[I]]   = List.empty[DefaultMutableNode[I]]
 ) extends MutableNodeLike[I, DefaultMutableNode[I]](
         theIdentifier,
         identifierToString,

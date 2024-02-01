@@ -3,7 +3,6 @@ package org.opalj
 package collection
 package eval
 
-import org.opalj.util
 import org.opalj.util.PerformanceEvaluation.time
 
 /**

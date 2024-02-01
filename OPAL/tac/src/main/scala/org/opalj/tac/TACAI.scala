@@ -274,7 +274,7 @@ object TACAI {
 
         var pc: Int = 0
         var index: Int = 0
-        do {
+        while {
             val nextPC = pcOfNextInstruction(pc)
             val instruction = instructions(pc)
             val opcode = instruction.opcode
@@ -948,7 +948,9 @@ object TACAI {
                 pcToIndex(pc) = -1
                 pc = pcOfNextInstruction(pc)
             }
-        } while (pc < codeSize)
+
+            pc < codeSize
+        } do ()
 
         // add the artificial lastPC + 1 instruction to enable the mapping of exception handlers
         pcToIndex(pc /* == codeSize +1 */ ) = index

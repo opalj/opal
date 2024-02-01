@@ -4,9 +4,6 @@ package br
 package fpcf
 package analyses
 
-import org.opalj.br.Method
-import org.opalj.br.MethodDescriptor
-import org.opalj.br.ObjectType
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.collection.mutable.TypesSet as BRMutableTypesSet

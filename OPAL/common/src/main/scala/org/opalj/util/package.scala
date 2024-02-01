@@ -65,7 +65,7 @@ package object util {
     ): Unit = {
         val startTime = System.nanoTime()
         var run = 0
-        do {
+        while {
             if (logContext.isDefined) {
                 val pendingCount = memoryMXBean.getObjectPendingFinalizationCount()
                 OPALLogger.info(
@@ -83,8 +83,11 @@ package object util {
                 memoryMXBean.gc()
             }
             run += 1
-        } while (memoryMXBean.getObjectPendingFinalizationCount() > 0 &&
-        ns2ms(System.nanoTime() - startTime) < maxGCTime.timeSpan)
+
+            memoryMXBean.getObjectPendingFinalizationCount() > 0 && ns2ms(
+                System.nanoTime() - startTime
+            ) < maxGCTime.timeSpan
+        } do ()
     }
 
     def renderConfig(config: Config, withComments: Boolean = true): String = {

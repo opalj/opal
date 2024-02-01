@@ -142,10 +142,12 @@ class L0AllocationFreenessAnalysis private[analyses] (
                             }
                     }
 
-                case ASTORE_0.opcode if !method.isStatic =>
-                    if (mayOverwriteSelf) overwritesSelf = true
-                    else // A GETFIELD/PUTFIELD may result in a NPE raised (and therefore allocated)
-                        return Result(definedMethod, MethodWithAllocations)
+                case ASTORE_0.opcode =>
+                    if (!method.isStatic) {
+                        if (mayOverwriteSelf) overwritesSelf = true
+                        else // A GETFIELD/PUTFIELD may result in a NPE raised (and therefore allocated)
+                            return Result(definedMethod, MethodWithAllocations)
+                    }
 
                 case GETFIELD.opcode => // may allocate NPE (but not on `this`)
                     if (method.isStatic || overwritesSelf)

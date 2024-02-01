@@ -7,10 +7,7 @@ package fieldaccess
 
 import scala.collection.immutable.IntMap
 
-import org.opalj.br.DeclaredField
-import org.opalj.br.Method
 import org.opalj.br.PCs
-import org.opalj.br.fpcf.properties.Context
 import org.opalj.collection.immutable.IntList
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.LongLinkedTrieSet0

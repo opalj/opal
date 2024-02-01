@@ -95,7 +95,7 @@ trait PerformInvocations extends MethodCallsHandling {
                             callerPC
                         )(
                             originalOperands,
-                            passedParameters
+                            passedParameters.asInstanceOf[domain.Locals]
                         )
                     if (thrownExceptions.nonEmpty) {
                         ComputedValueOrException(returnedValue.get, thrownExceptions)

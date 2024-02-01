@@ -154,13 +154,17 @@ class IntArrayStackTest extends AnyFlatSpec with Matchers {
 
         { // test iteration
             var nextValue = Max - 1
-            stack1.foreach { v => v should be(nextValue); nextValue -= 1 }
+            stack1.foreach { v =>
+                v should be(nextValue); nextValue -= 1
+            }
             stack1.size should be(Max)
         }
 
         { // test pop
             var nextValue = Max - 1
-            Range(start = 0, end = Max).foreach { v => stack1.pop() should be(nextValue); nextValue -= 1 }
+            Range(start = 0, end = Max).foreach { v =>
+                stack1.pop() should be(nextValue); nextValue -= 1
+            }
             stack1.size should be(0)
         }
     }

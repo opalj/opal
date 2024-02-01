@@ -110,12 +110,12 @@ abstract class IntIterator extends AbstractIterator[Int] { self =>
         def next(): Int = { val e = it.next(); advanceIterator(); e }
     }
 
-    def flatMap[T](f: Int => Iterator[T]): Iterator[T] = new Iterator[T] {
+    override def flatMap[T](f: Int => IterableOnce[T]): Iterator[T] = new Iterator[T] {
         private[this] var it: Iterator[T] = Iterator.empty
         private[this] def advanceIterator(): Unit = {
             while (!it.hasNext) {
                 if (self.hasNext) {
-                    it = f(self.next())
+                    it = f(self.next()).iterator
                 } else {
                     it = null
                     return;

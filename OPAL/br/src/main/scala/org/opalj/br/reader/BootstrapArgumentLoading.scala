@@ -637,7 +637,7 @@ trait BootstrapArgumentLoading {
         val attributes = if ("equals" == methodName) {
             ArraySeq(StackMapTable(ArraySeq(SameFrame(7), SameFrame(1))))
         } else {
-            ArraySeq.empty
+            ArraySeq.empty[StackMapTable]
         }
 
         val code = Code(maxStack, maxLocals, body.result(), NoExceptionHandlers, attributes)

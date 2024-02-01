@@ -318,11 +318,13 @@ object CodeAttributeBuilder {
                 } else {
                     val os = new Array[VerificationTypeInfo](operandIndex /*HERE == operands.size*/ )
                     operandIndex -= 1
-                    do {
+                    while {
                         os(operandIndex) = operands.head.verificationTypeInfo
                         operands = operands.tail
                         operandIndex -= 1
-                    } while (operandIndex >= 0)
+
+                        operandIndex >= 0
+                    } do ()
                     ArraySeq.unsafeWrapArray[VerificationTypeInfo](os)
                 }
             }

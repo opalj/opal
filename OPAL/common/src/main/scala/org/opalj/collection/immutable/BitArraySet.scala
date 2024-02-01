@@ -133,7 +133,10 @@ private[immutable] final class BitArraySet32(val set: Int) extends BitArraySet {
         def next(): Int = {
             val currentI = this.i
             var i = currentI
-            do { i += 1 } while (i < 32 && (set & (1 << i)) == 0);
+            while {
+                i += 1
+                i < 32 && (set & (1 << i)) == 0
+            } do ()
             this.i = i
             currentI
         }
@@ -227,7 +230,10 @@ private[immutable] final class BitArraySet64(val set: Long) extends BitArraySet 
         def next(): Int = {
             val currentI = this.i
             var i = currentI
-            do { i += 1 } while (i < 64 && (set & (1L << i)) == 0L)
+            while {
+                i += 1
+                i < 64 && (set & (1L << i)) == 0L
+            } do ()
             this.i = i
             currentI
         }
@@ -413,10 +419,11 @@ private[immutable] final class BitArraySetN(val set: Array[Int]) extends BitArra
         private[this] def advanceIterator(): Unit = {
             val set = self.set
             var bucket = -1
-            do {
+            while {
                 i += 1
                 bucket = i / 32
-            } while (i < max && (set(bucket) & (1 << (i - 32 * bucket))) == 0)
+                i < max && (set(bucket) & (1 << (i - 32 * bucket))) == 0
+            } do ()
         }
         advanceIterator()
         def hasNext: Boolean = i < max

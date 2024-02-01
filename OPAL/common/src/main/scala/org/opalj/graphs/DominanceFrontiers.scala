@@ -59,7 +59,7 @@ final class DominanceFrontiers private (
         val worklist = new IntArrayStack(Math.min(10, maxNodeId / 3))
         worklist.push(x)
 
-        do {
+        while {
             val x = worklist.pop()
 
             df(x) foreach { y =>
@@ -69,7 +69,9 @@ final class DominanceFrontiers private (
                     f(y)
                 }
             }
-        } while (worklist.nonEmpty)
+
+            worklist.nonEmpty
+        } do ()
     }
 
     //

@@ -40,7 +40,6 @@ sealed trait AllocationFreenessPropertyMetaInformation extends PropertyMetaInfor
  */
 sealed abstract class AllocationFreeness
     extends OrderedProperty
-    with IndividualProperty[AllocationFreeness, VirtualMethodAllocationFreeness]
     with AllocationFreenessPropertyMetaInformation {
 
     /**
@@ -48,7 +47,7 @@ sealed abstract class AllocationFreeness
      */
     final def key: PropertyKey[AllocationFreeness] = AllocationFreeness.key
 
-    final val aggregatedProperty = new VirtualMethodAllocationFreeness(this)
+    def meet(other: AllocationFreeness): AllocationFreeness
 }
 
 object AllocationFreeness extends AllocationFreenessPropertyMetaInformation {
@@ -79,9 +78,11 @@ object AllocationFreeness extends AllocationFreenessPropertyMetaInformation {
                         case INVOKESTATIC.opcode | INVOKESPECIAL.opcode | INVOKEVIRTUAL.opcode |
                             INVOKEINTERFACE.opcode | INVOKEDYNAMIC.opcode =>
                             hasAllocation = true
-                        case ASTORE_0.opcode if !method.isStatic =>
-                            if (mayOverwriteSelf) overwritesSelf = true
-                            else hasAllocation = true
+                        case ASTORE_0.opcode =>
+                            if (!method.isStatic) {
+                                if (mayOverwriteSelf) overwritesSelf = true
+                                else hasAllocation = true
+                            }
                         case PUTFIELD.opcode | GETFIELD.opcode => // may allocate NPE on non-receiver
                             if (method.isStatic || overwritesSelf)
                                 hasAllocation = true

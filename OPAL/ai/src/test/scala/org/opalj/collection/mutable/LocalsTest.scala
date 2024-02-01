@@ -212,7 +212,9 @@ class LocalsTest extends AnyFlatSpec with Matchers {
             val v = Locals[Integer](size)
             for { i <- 0 until size } { v.set(i, i) }
 
-            val newV = v.mapKV[Integer] { (i, v) => assert(i == v); i }
+            val newV = v.mapKV[Integer] { (i, v) =>
+                assert(i == v); i
+            }
 
             for { i <- 0 until size } {
                 newV(i) should be(i)

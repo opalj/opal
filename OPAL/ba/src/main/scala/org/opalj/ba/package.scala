@@ -1077,11 +1077,11 @@ package object ba { ba =>
                             require.version.map(CPEUtf8).getOrElse(0)
                         )
                     ),
-                    exports.map[da.ExportsEntry](export =>
+                    exports.map[da.ExportsEntry](exprt =>
                         da.ExportsEntry(
-                            CPEPackage(export.exports),
-                            export.flags,
-                            export.exportsTo.map(CPEModule _)
+                            CPEPackage(exprt.exports),
+                            exprt.flags,
+                            exprt.exportsTo.map(CPEModule _)
                         )
                     ),
                     opens.map[da.OpensEntry](open =>

@@ -1,7 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 
-import scala.language.existentials
 import scala.reflect.ClassTag
 
 import scala.collection.AbstractIterator
@@ -366,11 +365,11 @@ package object ai {
 
     final type Operands[T >: Null <: ValuesDomain#DomainValue] = List[T]
     final type AnOperandsArray[T >: Null <: ValuesDomain#DomainValue] = Array[Operands[T]]
-    final type TheOperandsArray[T >: Null <: d.Operands forSome { val d: ValuesDomain }] = Array[T]
+    final type TheOperandsArray[D <: ValuesDomain, T >: Null <: D#Operands] = Array[T]
 
     final type Locals[T >: Null <: ValuesDomain#DomainValue] = org.opalj.collection.mutable.Locals[T]
     final type ALocalsArray[T >: Null <: ValuesDomain#DomainValue] = Array[Locals[T]]
-    final type TheLocalsArray[T >: Null <: d.Locals forSome { val d: ValuesDomain }] = Array[T]
+    final type TheLocalsArray[D <: ValuesDomain, T >: Null <: D#Locals] = Array[T]
 
     /**
      * Creates a human-readable textual representation of the current memory layout.

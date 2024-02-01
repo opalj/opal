@@ -120,11 +120,13 @@ class AnalysisScenario[A](val ps: PropertyStore) {
             val cssIt = css.iterator
             val headCS = cssIt.next()
             var lastCS = headCS
-            do {
+            while {
                 val nextCS = cssIt.next()
                 compDeps addEdge (lastCS -> nextCS)
                 lastCS = nextCS
-            } while (cssIt.hasNext)
+
+                cssIt.hasNext
+            } do ()
             compDeps addEdge (lastCS -> headCS)
         }
 

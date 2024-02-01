@@ -627,8 +627,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
                 files foreach { file =>
                     val filename = file.getName
                     if (file.isFile) {
-                        if (file.length() == 0) Nil
-                        else if (isClassFileRepository(filename, None)) jarFiles += file
+                        if (file.length() == 0) {} else if (isClassFileRepository(filename, None)) jarFiles += file
                         else if (filename.endsWith(".class")) classFiles += file
                     } else if (file.isDirectory) {
                         collectFiles(file.listFiles())

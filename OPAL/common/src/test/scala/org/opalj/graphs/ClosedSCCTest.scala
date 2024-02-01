@@ -376,7 +376,7 @@ class ClosedSCCTest extends AnyFlatSpec with Matchers {
 
         var run = 0
 
-        do {
+        while {
             val g = {
                 val g =
                     Graph.empty[String] addVertice ("a") addVertice ("b") addVertice ("i") addVertice ("n") addVertice ("z")
@@ -399,7 +399,9 @@ class ClosedSCCTest extends AnyFlatSpec with Matchers {
                 fail(s"$g: cscc with $expectedCSCCs expected, but found $cSCCs (run=$run)")
             }
             run += 1
-        } while (System.currentTimeMillis - seed < 1000)
+
+            System.currentTimeMillis - seed < 1000
+        } do ()
         info(s"tested $run permutations of the graph (initial seed: $seed)")
     }
 

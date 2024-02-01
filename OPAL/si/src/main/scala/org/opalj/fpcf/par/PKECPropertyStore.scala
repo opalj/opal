@@ -280,7 +280,7 @@ class PKECPropertyStore(
                 handleResult(ir)
                 npcs /*: Iterator[(PropertyComputation[e],e)]*/ foreach { npc =>
                     val (pc, e) = npc
-                    schedulePropertyComputation(e, pc)
+                    schedulePropertyComputation(e, pc.asInstanceOf[PropertyComputation[Entity]])
                 }
 
             //
@@ -342,7 +342,12 @@ class PKECPropertyStore(
     ): Unit = {
         val SomeEPS(e, pk) = finalEP
         var isFresh = false
-        val ePKState = ps(pk.id).computeIfAbsent(e, { _ => isFresh = true; EPKState(finalEP, null, null) })
+        val ePKState = ps(pk.id).computeIfAbsent(
+            e,
+            { _ =>
+                isFresh = true; EPKState(finalEP, null, null)
+            }
+        )
         if (isFresh) triggerComputations(e, pk.id)
         else ePKState.setFinal(finalEP, unnotifiedPKs)
     }
@@ -362,7 +367,12 @@ class PKECPropertyStore(
         val SomeEPS(e, pk) = interimEP
         var isFresh = false
         val ePKState =
-            ps(pk.id).computeIfAbsent(e, { _ => isFresh = true; EPKState(interimEP, c, dependees) })
+            ps(pk.id).computeIfAbsent(
+                e,
+                { _ =>
+                    isFresh = true; EPKState(interimEP, c, dependees)
+                }
+            )
         if (isFresh) {
             triggerComputations(e, pk.id)
             updateDependees(ePKState, dependees)
@@ -495,25 +505,23 @@ class PKECPropertyStore(
         activeTasks.addAndGet(initialQueues.iterator.map(_.size()).sum)
 
         while (subPhaseId < subPhaseFinalizationOrder.length) {
-            var continueCycles = false
-            do {
-                var continueFallbacks = false
-                do {
+            while {
+                while {
                     startThreads(new WorkerThread(_))
 
                     quiescenceCounter += 1
 
                     startThreads(new FallbackThread(_))
 
-                    continueFallbacks = activeTasks.get() > 0
-                } while (continueFallbacks)
+                    activeTasks.get() > 0
+                } do ()
 
                 startThreads(new CycleResolutionThread(_))
 
                 resolveCycles()
 
-                continueCycles = activeTasks.get() > 0
-            } while (continueCycles)
+                activeTasks.get() > 0
+            } do ()
 
             startThreads(new PartialPropertiesFinalizerThread(_))
 

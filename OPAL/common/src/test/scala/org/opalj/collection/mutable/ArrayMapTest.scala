@@ -19,8 +19,8 @@ class ArrayMapTest extends AnyFlatSpec with Matchers {
     behavior of "an ArrayMap data structure"
 
     it should ("be empty if it is newly created") in {
-        ArrayMap.empty.foreachValue { e => fail("non empty") }
-        ArrayMap(100).foreachValue { e => fail("non empty") }
+        ArrayMap.empty[Integer].foreachValue { e => fail("non empty") }
+        ArrayMap[Integer](100).foreachValue { e => fail("non empty") }
     }
 
     it should ("should only contain those elements that are added even if some keys are not used") in {
@@ -89,8 +89,8 @@ class ArrayMapTest extends AnyFlatSpec with Matchers {
     }
 
     it should ("correctly implement a deep equals for empty array with different size hints") in {
-        val m1 = ArrayMap.empty.foreachValue { e => fail("non empty") }
-        val m2 = ArrayMap(100).foreachValue { e => fail("non empty") }
+        val m1 = ArrayMap.empty[Integer]
+        val m2 = ArrayMap[Integer](100)
 
         m1 should equal(m2)
         m2 should equal(m1)
@@ -138,8 +138,8 @@ class ArrayMapTest extends AnyFlatSpec with Matchers {
     }
 
     it should ("correctly implement the hashCode method ") in {
-        val m1 = ArrayMap.empty.foreachValue { e => fail("non empty") }
-        val m2 = ArrayMap(100).foreachValue { e => fail("non empty") }
+        val m1 = ArrayMap.empty[Integer]
+        val m2 = ArrayMap[Integer](100)
 
         m1.hashCode() should be(m2.hashCode())
         m2.hashCode() should be(m1.hashCode())

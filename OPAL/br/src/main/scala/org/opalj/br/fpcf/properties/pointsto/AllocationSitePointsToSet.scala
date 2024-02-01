@@ -365,8 +365,6 @@ case class AllocationSitePointsToSet1(
                     otherTypes + allocatedType,
                     newOrderedTypes
                 )
-            case _ =>
-                throw new IllegalArgumentException(s"unexpected list $other")
         }
     }
 

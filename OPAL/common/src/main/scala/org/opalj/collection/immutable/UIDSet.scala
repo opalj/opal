@@ -341,7 +341,7 @@ final class UIDSet2[T <: UID](value1: T, value2: T) extends NonEmptyUIDSet[T] {
     }
 }
 
-final object UIDSet2 {
+object UIDSet2 {
     def apply[T <: UID](value1: T, value2: T): UIDSet2[T] = new UIDSet2[T](value1, value2)
 }
 
@@ -725,7 +725,7 @@ sealed abstract private[immutable] class UIDSetNodeLike[T <: UID] extends NonEmp
     override def findById(id: Int): Option[T] = {
         var currentNode: UIDSetNodeLike[T] = this
         var currentShiftedEId = id
-        do {
+        while {
             if (currentNode.value.id == id)
                 return Some(currentNode.value);
 
@@ -736,7 +736,8 @@ sealed abstract private[immutable] class UIDSetNodeLike[T <: UID] extends NonEmp
 
             currentShiftedEId = currentShiftedEId >>> 1
 
-        } while (currentNode ne null)
+            currentNode ne null
+        } do ()
         None
     }
 
@@ -835,7 +836,7 @@ sealed abstract private[immutable] class UIDSetNodeLike[T <: UID] extends NonEmp
 
         var currentNode: UIDSetNodeLike[T] = this
         var currentShiftedId = shiftedId
-        do {
+        while {
             if (currentNode.value.id == id)
                 return true;
 
@@ -846,7 +847,8 @@ sealed abstract private[immutable] class UIDSetNodeLike[T <: UID] extends NonEmp
 
             currentShiftedId = currentShiftedId >>> 1
 
-        } while (currentNode ne null)
+            currentNode ne null
+        } do ()
         false
     }
 

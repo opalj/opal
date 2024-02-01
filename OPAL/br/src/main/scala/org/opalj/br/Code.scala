@@ -493,7 +493,9 @@ final class Code private (
         val liveVariables = new Array[BitArraySet](instructionsLength)
         val workqueue = IntQueue.empty
         val AllDead = BitArraySet.empty
-        finalPCs foreach { pc => liveVariables(pc) = AllDead; workqueue.enqueue(pc) }
+        finalPCs foreach { pc =>
+            liveVariables(pc) = AllDead; workqueue.enqueue(pc)
+        }
         // required to handle endless loops!
         cfJoins foreach { pc =>
             val instruction = instructions(pc)
@@ -1729,7 +1731,7 @@ object Code {
         var pc = 0
         var maxRegisterIndex = -1
         var modifiedByWide = false
-        do {
+        while {
             val i: Instruction = instructions(pc)
             if (i == WIDE) {
                 modifiedByWide = true
@@ -1750,7 +1752,9 @@ object Code {
                 pc = i.indexOfNextInstruction(pc, modifiedByWide)
                 modifiedByWide = false
             }
-        } while (pc < instructionsLength)
+
+            pc < instructionsLength
+        } do ()
 
         maxRegisterIndex + 1 /* the first register has index 0 */
     }

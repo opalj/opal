@@ -994,7 +994,9 @@ class ClassHierarchy private (
         val allClassTypes = UIDSet.empty[ObjectType] ++ allSuperclassTypesInInitializationOrder(o).s
 
         var allInterfaceTypes = UIDSet.empty[ObjectType]
-        foreachSuperinterfaceType(o) { supertype => allInterfaceTypes += supertype; true }
+        foreachSuperinterfaceType(o) { supertype =>
+            allInterfaceTypes += supertype; true
+        }
 
         SupertypeInformation.forSubtypesOfObject(
             isKnownTypeMap,

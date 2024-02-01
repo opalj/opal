@@ -8,8 +8,6 @@ import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicInteger
 import scala.jdk.CollectionConverters.*
 
-import org.opalj.io
-
 /**
  * Enables the tracing of key events during the analysis progress.
  *

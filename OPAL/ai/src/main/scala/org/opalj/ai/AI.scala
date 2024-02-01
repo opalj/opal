@@ -138,7 +138,7 @@ abstract class AI[D <: Domain](
     final val RegisterStoreMayThrowExceptions: Boolean = false
 ) {
 
-    type SomeLocals[V <: d.DomainValue forSome { val d: D }] = Option[IndexedSeq[V]]
+    type SomeLocals[V <: D#DomainValue] = Option[IndexedSeq[V]]
 
     /**
      * Determines whether a running (or to be started) abstract interpretation

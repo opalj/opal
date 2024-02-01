@@ -9,7 +9,7 @@ import scala.annotation.switch
  *
  * @author Michael Eichberg
  */
-object NumericConstraints extends Enumeration(1) {
+object NumericConstraints extends Enumeration(0) {
 
     final val LT = 1
     final val < : Value = Value(LT, "<")
@@ -23,8 +23,10 @@ object NumericConstraints extends Enumeration(1) {
 
     final val EQ = 5
     final val == : Value = Value(EQ, "==")
+    final val equal = == // Required, because NumericConstraints.== and .eq are not allowed in Scala 3
     final val NE = 6
     final val != : Value = Value(NE, "!=")
+    final val unequal = != // Required, because NumericConstraints.!= and .ne are not allowed in Scala 3
 
     nextId = 7
 

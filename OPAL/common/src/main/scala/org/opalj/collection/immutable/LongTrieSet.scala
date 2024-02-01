@@ -670,7 +670,7 @@ sealed abstract private[immutable] class LongTrieSetNode2_7 extends LongTrieSetN
                 val thisLookupTable = this.lookupTable
                 val thatLookupTable = that.lookupTable
                 var index = 0
-                do {
+                while {
                     val thisIndex = thisLookupTable >> (index * 4) & 15
                     val thatIndex = thatLookupTable >> (index * 4) & 15
                     if (thisIndex == 0) {
@@ -689,7 +689,8 @@ sealed abstract private[immutable] class LongTrieSetNode2_7 extends LongTrieSetN
                             }
                         }
                     }
-                } while (index < 8)
+                    index < 8
+                } do ()
                 true
             case _ =>
                 false

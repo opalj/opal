@@ -632,7 +632,7 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
             Arrays.fill(newBasicBlocksArray, 0, endIndex + 1, lastNewBB)
         }
         var startPC = 0
-        do {
+        while {
             val oldBB = basicBlocks(startPC)
             val startIndex = pcToIndex(startPC)
             val endIndex = {
@@ -670,7 +670,9 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
                 }
                 startPC += 1
             }
-        } while (startPC < bbsLength)
+
+            startPC < bbsLength
+        } do ()
 
         if (requiresNewStartBlock) {
             val firstBB = newBasicBlocks(0)

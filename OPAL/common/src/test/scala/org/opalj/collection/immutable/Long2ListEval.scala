@@ -17,10 +17,12 @@ object Long2ListEval extends App {
         PerformanceEvaluation.memory {
             PerformanceEvaluation.time {
                 var i = Elements
-                do {
+                while {
                     l = Math.abs(rngGen.nextLong()) +: l
                     i -= 1
-                } while (i > 0)
+
+                    i > 0
+                } do ()
             } { t => println(s"creation took ${t.toSeconds}") }
         } { mu => println(s"required $mu bytes") }
 

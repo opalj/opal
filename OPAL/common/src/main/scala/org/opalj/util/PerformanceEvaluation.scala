@@ -306,7 +306,7 @@ object PerformanceEvaluation {
                 }
             }
             var avg: Double = times.head.timeSpan.toDouble
-            do {
+            while {
                 if (runGC) gc()
                 time {
                     result = f
@@ -328,8 +328,9 @@ object PerformanceEvaluation {
                     }
                     r(t, times)
                 }
-            } while (times.size < minimalNumberOfRelevantRuns ||
-            Math.abs(avg - times.head.timeSpan) > avg * e)
+
+                times.size < minimalNumberOfRelevantRuns || Math.abs(avg - times.head.timeSpan) > avg * e
+            } do ()
 
             result
 

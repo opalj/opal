@@ -160,8 +160,8 @@ object XHTML {
         domain:       Domain
     )(
         cfJoins:       IntTrieSet,
-        operandsArray: TheOperandsArray[domain.Operands],
-        localsArray:   TheLocalsArray[domain.Locals]
+        operandsArray: TheOperandsArray[Domain, domain.Operands],
+        localsArray:   TheLocalsArray[Domain, domain.Locals]
     ): Node = {
 
         def methodToString(method: Method): String = method.signatureToJava(withVisibility = false)
@@ -189,8 +189,8 @@ object XHTML {
         domain: Domain
     )(
         cfJoins:       IntTrieSet,
-        operandsArray: TheOperandsArray[domain.Operands],
-        localsArray:   TheLocalsArray[domain.Locals]
+        operandsArray: TheOperandsArray[Domain, domain.Operands],
+        localsArray:   TheLocalsArray[Domain, domain.Locals]
     ): Node = {
 
         val indexedExceptionHandlers = indexExceptionHandlers(code).toSeq.sortWith(_._2 < _._2)
@@ -275,8 +275,8 @@ object XHTML {
         operandsOnly: Boolean
     )(
         cfJoins:       IntTrieSet,
-        operandsArray: TheOperandsArray[domain.Operands],
-        localsArray:   TheLocalsArray[domain.Locals]
+        operandsArray: TheOperandsArray[Domain, domain.Operands],
+        localsArray:   TheLocalsArray[Domain, domain.Locals]
     )(
         implicit ids: Option[AnyRef => Int]
     ): Array[Node] = {

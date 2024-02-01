@@ -4,9 +4,6 @@ package br
 package collection
 package mutable
 
-import org.opalj.br.ClassHierarchy
-import org.opalj.br.ObjectType
-
 /**
  * An efficient representation of a set of types if some types are actually upper type bounds
  * and hence already represent sets of types.

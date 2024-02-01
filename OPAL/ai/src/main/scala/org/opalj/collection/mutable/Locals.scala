@@ -306,7 +306,7 @@ sealed trait Locals[T >: Null <: AnyRef] {
 
 }
 
-private[mutable] final object Locals0 extends Locals[Null] {
+private[mutable] object Locals0 extends Locals[Null] {
 
     override final val size = 0
 
@@ -2033,7 +2033,7 @@ private[mutable] final class Locals12_N[T >: Null <: AnyRef: ClassTag](
             if (thisVs12_N eq thatVs12_N)
                 thisVs12_N
             else {
-                val newVs12_N = new Array(vs12_N.length)
+                val newVs12_N = new Array[T](vs12_N.length)
                 var useThisArray = true
                 var useThatArray = true
                 var i = vs12_N.length - 1

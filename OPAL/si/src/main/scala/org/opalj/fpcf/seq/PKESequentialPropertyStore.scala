@@ -280,8 +280,8 @@ final class PKESequentialPropertyStore protected (
                         }
                 }
 
-            case Some(eOptionP: EOptionP[E, P] @unchecked) =>
-                eOptionP
+            case Some(eOptionP) =>
+                eOptionP.asInstanceOf[EOptionP[E, P]]
         }
     }
 
@@ -438,10 +438,10 @@ final class PKESequentialPropertyStore protected (
         propertiesOfKind.put(e, newEPS)
     }
 
-    private[this] def handlePartialResult(
+    private[this] def handlePartialResult[E <: Entity, P <: Property](
         e:  Entity,
         pk: SomePropertyKey,
-        u:  UpdateComputation[? <: Entity, ? <: Property]
+        u:  UpdateComputation[E, P]
     ): Unit = {
         type E = e.type
         type P = Property
@@ -466,7 +466,7 @@ final class PKESequentialPropertyStore protected (
         var nextC = c
 
         var continue = false
-        do {
+        while {
             continue = false
 
             handlePartialResults(nextPartialResults) // this may have triggered some computations...
@@ -530,7 +530,8 @@ final class PKESequentialPropertyStore protected (
                 }
             }
 
-        } while (continue)
+            continue
+        } do ()
 
         (nextProcessedDependees, nextC)
     }
@@ -549,7 +550,7 @@ final class PKESequentialPropertyStore protected (
         var nextC = initialC
 
         var continue = false
-        do {
+        while {
             continue = false
             nextDependees exists /* <= used for early termination purposes */ { nextDependee =>
                 val nextDependeeE = nextDependee.e
@@ -585,7 +586,9 @@ final class PKESequentialPropertyStore protected (
                     false
                 }
             }
-        } while (continue)
+
+            continue
+        } do ()
 
         (nextEPS, nextDependees, nextC)
     }
@@ -606,7 +609,8 @@ final class PKESequentialPropertyStore protected (
                 val IncrementalResult(ir, npcs /*: Iterator[(PropertyComputation[e],e)]*/ ) = r
                 handleResult(ir)
                 npcs foreach { npc =>
-                    val (pc, e) = npc; scheduleEagerComputationForEntity(e)(pc)
+                    val (pc, e) = npc;
+                    scheduleEagerComputationForEntity(e)(pc.asInstanceOf[PropertyComputation[Entity]])
                 }
 
             case Results.id =>
@@ -707,7 +711,7 @@ final class PKESequentialPropertyStore protected (
 
         val maxPKIndex = PropertyKey.maxId
         var continueComputation: Boolean = false
-        do {
+        while {
             continueComputation = false
 
             processTasks()
@@ -821,7 +825,9 @@ final class PKESequentialPropertyStore protected (
                         s"${subPhaseFinalizationOrder.length} led to ${tasksManager.size} updates "
                 )
             }
-        } while (continueComputation)
+
+            continueComputation
+        } do ()
 
         if (exception != null) throw exception;
     }

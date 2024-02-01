@@ -55,7 +55,7 @@ trait CalledMethodsStore { rootStore =>
 
     def testOrElseUpdated(
         method:   Method,
-        operands: ValuesDomain#Operands
+        operands: Operands[? <: ValuesDomain#DomainValue]
     ): Option[CalledMethodsStore { val domain: rootStore.domain.type }] = {
 
         val adaptedOperands = mapOperands(operands, domain)

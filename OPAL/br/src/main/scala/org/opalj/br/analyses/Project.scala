@@ -1187,8 +1187,6 @@ object Project {
                                 val invokestatic = instruction.asInstanceOf[INVOKESTATIC]
                                 if (validateReceiverTypeKind(invokestatic)) {
                                     project.staticCall(cf.thisType, invokestatic) match {
-                                        case _: Success[_] => /*OK*/
-                                        case Empty         => /*OK - partial project*/
                                         case Failure =>
                                             val ex = InconsistentProjectException(
                                                 s"target method of invokestatic call in " +
@@ -1199,6 +1197,8 @@ object Project {
                                                 Error
                                             )
                                             addException(ex)
+                                        case Empty => /*OK - partial project*/
+                                        case _     => /*OK*/
                                     }
                                 }
 
@@ -1206,8 +1206,6 @@ object Project {
                                 val invokespecial = instruction.asInstanceOf[INVOKESPECIAL]
                                 if (validateReceiverTypeKind(invokespecial)) {
                                     project.specialCall(cf.thisType, invokespecial) match {
-                                        case _: Success[_] => /*OK*/
-                                        case Empty         => /*OK - partial project*/
                                         case Failure =>
                                             val ex = InconsistentProjectException(
                                                 s"target method of invokespecial call in " +
@@ -1218,6 +1216,8 @@ object Project {
                                                 Error
                                             )
                                             addException(ex)
+                                        case Empty => /*OK - partial project*/
+                                        case _     => /*OK*/
                                     }
                                 }
                             case _ => // Nothing special is checked (so far)
@@ -1607,6 +1607,7 @@ object Project {
                                         overridingMethods ++= nextOverridingMethods
                                     }
                                     false // we don't have to analyze subsequent subtypes.
+                                case _ /* FilteredSuccess */ => false // Won't happen
                             }
                         }
 

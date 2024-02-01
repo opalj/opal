@@ -210,7 +210,7 @@ object ClassFileFactory {
                     methodDescriptor
                 )
             ) {
-                ArraySeq.empty
+                ArraySeq.empty[FieldTemplate]
             } else {
                 ArraySeq(createField(fieldType = receiverType, name = ReceiverFieldName))
             }

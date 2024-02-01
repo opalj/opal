@@ -458,14 +458,14 @@ trait ValuesDomain { domain =>
      */
     type Operands = org.opalj.ai.Operands[DomainValue] // the package name is required by unidoc
 
-    type OperandsArray = org.opalj.ai.TheOperandsArray[Operands] // the package name is required by unidoc
+    type OperandsArray = org.opalj.ai.TheOperandsArray[ValuesDomain, Operands] // the package name is required by unidoc
 
     /**
      * An instruction's current register values/locals are represented using an array.
      */
     type Locals = org.opalj.ai.Locals[DomainValue] // the package name is required by unidoc
 
-    type LocalsArray = org.opalj.ai.TheLocalsArray[Locals] // the package name is required by unidoc
+    type LocalsArray = org.opalj.ai.TheLocalsArray[ValuesDomain, Locals] // the package name is required by unidoc
 
     /**
      * Represents a value that has no well defined state/type. Such values are either

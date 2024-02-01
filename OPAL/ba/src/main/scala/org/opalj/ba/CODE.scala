@@ -248,7 +248,7 @@ object CODE {
 
                     var currentInstruction: CodeElement[T] = codeElements(currentIndex)
                     var continueIteration = true
-                    do {
+                    while {
                         val isNotYetLive = !isLive(currentIndex)
                         if (isNotYetLive && !currentInstruction.isExceptionHandlerElement) {
                             // This check is primarily required due to the eager marking
@@ -290,17 +290,17 @@ object CODE {
                                 }
                         }
                         currentIndex += 1
-                    } while (
+
                         continueIteration
-                        && currentIndex < codeElementsSize
-                        && {
-                            currentInstruction = codeElements(currentIndex)
-                            // In the following we ignore pseudo instructions
-                            // (in particular PCLabels)
-                            // because they may have been set to live already!
-                            currentInstruction.isPseudoInstruction || !isLive(currentIndex)
-                        }
-                    )
+                            && currentIndex < codeElementsSize
+                            && {
+                                currentInstruction = codeElements(currentIndex)
+                                // In the following we ignore pseudo instructions
+                                // (in particular PCLabels)
+                                // because they may have been set to live already!
+                                currentInstruction.isPseudoInstruction || !isLive(currentIndex)
+                            }
+                    } do ()
                 }
             }
         }
@@ -397,7 +397,7 @@ object CODE {
 
         // The main loop processing the worklist data-structure.
         var continueProcessingCode = false
-        do {
+        while {
             continueProcessingCode = false
             processMarkedAsLive()
             val oldIsLiveCount = isLiveCount
@@ -407,7 +407,9 @@ object CODE {
                     continueProcessingCode = true
                 }
             }
-        } while (continueProcessingCode)
+
+            continueProcessingCode
+        } do ()
 
         // Post-processing
         if (isLiveCount < codeElementsSize) {

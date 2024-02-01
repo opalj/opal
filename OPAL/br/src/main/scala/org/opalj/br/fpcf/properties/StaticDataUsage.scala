@@ -23,7 +23,6 @@ sealed trait StaticDataUsagePropertyMetaInformation extends PropertyMetaInformat
  */
 sealed abstract class StaticDataUsage
     extends OrderedProperty
-    with IndividualProperty[StaticDataUsage, VirtualMethodStaticDataUsage]
     with StaticDataUsagePropertyMetaInformation {
 
     /**
@@ -31,7 +30,7 @@ sealed abstract class StaticDataUsage
      */
     final def key: PropertyKey[StaticDataUsage] = StaticDataUsage.key
 
-    final val aggregatedProperty = new VirtualMethodStaticDataUsage(this)
+    def meet(other: StaticDataUsage): StaticDataUsage
 }
 
 object StaticDataUsage extends StaticDataUsagePropertyMetaInformation {

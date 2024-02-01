@@ -83,8 +83,12 @@ final class ClassFile private (
     val attributes:     Attributes
 ) extends ConcreteSourceElement {
 
-    methods.foreach { m => assert(m.declaringClassFile == null); m.declaringClassFile = this }
-    fields.foreach { f => assert(f.declaringClassFile == null); f.declaringClassFile = this }
+    methods.foreach { m =>
+        assert(m.declaringClassFile == null); m.declaringClassFile = this
+    }
+    fields.foreach { f =>
+        assert(f.declaringClassFile == null); f.declaringClassFile = this
+    }
 
     /**
      * Compares this class file with the given one; returns (the first) differences if any. The
@@ -494,7 +498,7 @@ final class ClassFile private (
                     )
                     .map[ObjectType](_.innerClassType)
             }.getOrElse {
-                ArraySeq.empty
+                ArraySeq.empty[ObjectType]
             }
 
         // THE FOLLOWING CODE IS NECESSARY TO COPE WITH BYTECODE GENERATED
