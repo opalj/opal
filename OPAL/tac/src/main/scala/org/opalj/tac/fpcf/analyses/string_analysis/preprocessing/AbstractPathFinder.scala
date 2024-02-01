@@ -511,18 +511,20 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
         end:   Int,
         fill:  Boolean
     ): (Path, List[(Int, Int)]) = {
-        val startEndPairs = ListBuffer[(Int, Int)]()
         val switch = cfg.code.instructions(start).asSwitch
         val caseStmts = ListBuffer[Int](switch.caseStmts.sorted: _*)
 
-        val containsDefault = caseStmts.length == caseStmts.distinct.length
+        // When the default stmt matches any case block, there is no explicit default defined
+        val containsDefault = !caseStmts.contains(switch.defaultStmt)
         if (containsDefault) {
             caseStmts.append(switch.defaultStmt)
         }
+        // TODO this does not make sense for all path types
         val pathType = if (containsDefault) NestedPathType.CondWithAlternative
-        else
-            NestedPathType.CondWithoutAlternative
+        else NestedPathType.CondWithoutAlternative
 
+        // Determine the start and end stmt indices of each case stmt
+        val startEndPairs = ListBuffer[(Int, Int)]()
         var previousStart = caseStmts.head
         caseStmts.tail.foreach { nextStart =>
             val currentEnd = nextStart - 1
@@ -535,14 +537,12 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
             startEndPairs.append((previousStart, end))
         }
 
-        val subPaths = ListBuffer[SubPath]()
-        startEndPairs.foreach {
-            case (startSubpath, endSubpath) =>
-                val subpathElements = ListBuffer[SubPath]()
-                subPaths.append(NestedPathElement(subpathElements, None))
-                if (fill) {
-                    subpathElements.appendAll(startSubpath.to(endSubpath).map(FlatPathElement))
-                }
+        val subPaths: ListBuffer[SubPath] = startEndPairs.map { pair =>
+            val subpathElements = ListBuffer[SubPath]()
+            if (fill) {
+                subpathElements.appendAll(Range.inclusive(pair._1, pair._2).map(FlatPathElement))
+            }
+            NestedPathElement(subpathElements, None)
         }
         (Path(List(NestedPathElement(subPaths, Some(pathType)))), startEndPairs.toList)
     }
