@@ -76,17 +76,19 @@ class PathTransformer(val interpretationHandler: InterpretationHandler) {
                                         if (processedSubPaths.tail.nonEmpty) {
                                             Some(StringTreeOr(processedSubPaths))
                                         } else {
-                                            Some(StringTreeCond(processedSubPaths))
+                                            Some(StringTreeCond(processedSubPaths.head))
                                         }
                                     case NestedPathType.SwitchWithDefault |
                                          NestedPathType.CondWithAlternative =>
                                         if (npe.element.size == processedSubPaths.size) {
                                             Some(StringTreeOr(processedSubPaths))
                                         } else {
-                                            Some(StringTreeCond(ListBuffer(StringTreeOr(processedSubPaths))))
+                                            Some(StringTreeCond(StringTreeOr(processedSubPaths)))
                                         }
-                                    case NestedPathType.CondWithoutAlternative => Some(StringTreeCond(processedSubPaths))
-                                    case NestedPathType.SwitchWithoutDefault => Some(StringTreeCond(processedSubPaths))
+                                    case NestedPathType.SwitchWithoutDefault =>
+                                        Some(StringTreeCond(StringTreeOr(processedSubPaths)))
+                                    case NestedPathType.CondWithoutAlternative =>
+                                        Some(StringTreeCond(StringTreeOr(processedSubPaths)))
                                     case _                                     => None
                                 }
                             } else {

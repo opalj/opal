@@ -490,7 +490,7 @@ public class IntraProceduralTestMethods {
             value = "if-else control structure which append to a string builder multiple times and a non used else if branch is present",
             stringDefinitions = {
                     @StringDefinitions(
-                            expectedLevel = CONSTANT, expectedStrings = "a((bcd|xyz))?"
+                            expectedLevel = CONSTANT, expectedStrings = "a(bcd|xyz)?"
                     )
             })
     public void ifElseWithStringBuilder4() {
@@ -862,7 +862,7 @@ public class IntraProceduralTestMethods {
                     @StringDefinitions(
                             // The bytecode produces an "if" within an "if" inside the first loop,
                             // => two conds
-                            expectedLevel = CONSTANT, expectedStrings = "abc(((d)?)?)*"
+                            expectedLevel = CONSTANT, expectedStrings = "abc((d)?)*"
                     ),
                     @StringDefinitions(
                             expectedLevel = CONSTANT, expectedStrings = ""

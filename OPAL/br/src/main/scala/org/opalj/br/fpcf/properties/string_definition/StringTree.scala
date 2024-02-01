@@ -47,13 +47,20 @@ sealed abstract class StringTree(val children: ListBuffer[StringTree]) { // ques
 
         if (appendSci.isDefined) {
             // The only difference between a Cond and an Or is how the possible strings look like
-            var possibleStrings = s"${appendSci.get.possibleStrings}"
+            var possibleStrings = appendSci.get.possibleStrings
             if (processOr) {
                 if (appendElements.tail.nonEmpty) {
                     possibleStrings = s"($possibleStrings)"
                 }
             } else {
-                possibleStrings = s"(${appendSci.get.possibleStrings})?"
+                // IMPROVE dont wrap and immediately unwrap in ()
+                if (possibleStrings.startsWith("(") && possibleStrings.endsWith(")")) {
+                    possibleStrings = s"(${possibleStrings.substring(1, possibleStrings.length - 1)})?"
+                } else if (possibleStrings.startsWith("(") && possibleStrings.endsWith(")?")) {
+                    possibleStrings = s"(${possibleStrings.substring(1, possibleStrings.length - 2)})?"
+                } else {
+                    possibleStrings = s"(${appendSci.get.possibleStrings})?"
+                }
             }
             scis.append(StringConstancyInformation(
                 appendSci.get.constancyLevel,
@@ -155,7 +162,7 @@ sealed abstract class StringTree(val children: ListBuffer[StringTree]) { // ques
                 ))
             case StringTreeConcat(cs) => processReduceConcat(cs.toList)
             case StringTreeOr(cs)     => processReduceCondOrReduceOr(cs.toList)
-            case StringTreeCond(cs)   => processReduceCondOrReduceOr(cs.toList, processOr = false)
+            case StringTreeCond(c)    => processReduceCondOrReduceOr(List(c), processOr = false)
             case StringTreeConst(sci) => List(sci)
         }
     }
@@ -250,7 +257,7 @@ sealed abstract class StringTree(val children: ListBuffer[StringTree]) { // ques
         subtree match {
             case sto: StringTreeOr                 => processConcatOrOrCase(sto)
             case stc: StringTreeConcat             => processConcatOrOrCase(stc)
-            case StringTreeCond(cs)                => StringTreeCond(cs.map(groupRepetitionElementsAcc))
+            case StringTreeCond(child)             => StringTreeCond(groupRepetitionElementsAcc(child))
             case StringTreeRepetition(child, _, _) => StringTreeRepetition(groupRepetitionElementsAcc(child))
             case stc: StringTreeConst              => stc
         }
@@ -352,8 +359,8 @@ case class StringTreeOr(
  * string may have (contain) a particular but not necessarily.
  */
 case class StringTreeCond(
-        override val children: ListBuffer[StringTree]
-) extends StringTree(children)
+     child: StringTree
+) extends StringTree(ListBuffer(child))
 
 /**
  * [[StringTreeConst]]s are the only elements which are supposed to act as leafs within a
