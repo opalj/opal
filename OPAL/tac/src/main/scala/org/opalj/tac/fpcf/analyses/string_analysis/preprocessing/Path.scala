@@ -55,6 +55,16 @@ case object NestedPathType extends Enumeration {
     val CondWithoutAlternative: NestedPathType.Value = Value
 
     /**
+     * Use this type to mark a switch that does not contain a `default` statement.
+     */
+    val SwitchWithoutDefault: NestedPathType.Value = Value
+
+    /**
+     * Use this type to mark a switch that contains a `default` statement.
+     */
+    val SwitchWithDefault: NestedPathType.Value = Value
+
+    /**
      * This type is to mark `try-catch` or `try-catch-finally` constructs.
      */
     val TryCatchFinally: NestedPathType.Value = Value
@@ -177,72 +187,40 @@ case class Path(elements: List[SubPath]) {
      *               path, the rest can be safely omitted (as the paths already are in a
      *               happens-before relationship). If all elements are included, pass an int value
      *               that is greater than the greatest index of the elements in `toProcess`.
-     * @param includeAlternatives For cases where an operation of interest happens within a branch
-     *                            of an `if-else` constructions , it is not necessary to include the
-     *                            other branches (as they are mutually exclusive anyway).
-     *                            `includeAlternatives = false` represents this behavior. However,
-     *                            sometimes it is desired to include all alternatives as in the case
-     *                            of `try-catch(-finally)` constructions).
      * @return In case a (sub) path is empty, `None` is returned and otherwise the lean (sub) path.
      */
     private def makeLeanPathAcc(
         toProcess:           NestedPathElement,
         siteMap:             Map[Int, Unit],
-        endSite:             Int,
-        includeAlternatives: Boolean = false
-    ): (Option[NestedPathElement], Boolean) = {
+        endSite:             Int
+    ): Option[NestedPathElement] = {
         val elements = ListBuffer[SubPath]()
-        var stop = false
-        var hasTargetBeenSeen = false
-        val isTryCatch = includeAlternatives || (toProcess.elementType.isDefined &&
-        toProcess.elementType.get == NestedPathType.TryCatchFinally)
 
-        toProcess.element.foreach { next =>
-            // The stop flag is used to make sure that within a sub-path only the elements up to the
-            // endSite are gathered (if endSite is within this sub-path)
-            if (!stop) {
-                next match {
-                    case fpe: FlatPathElement if !hasTargetBeenSeen =>
-                        if (siteMap.contains(fpe.element) && !hasTargetBeenSeen) {
-                            elements.append(fpe.copy())
-                        }
-                        if (fpe.element == endSite) {
-                            hasTargetBeenSeen = true
-                            stop = true
-                        }
-                    case npe: NestedPathElement if isTryCatch =>
-                        val (leanedSubPath, _) = makeLeanPathAcc(
-                            npe,
-                            siteMap,
-                            endSite,
-                            includeAlternatives = true
-                        )
-                        if (leanedSubPath.isDefined) {
-                            elements.append(leanedSubPath.get)
-                        }
-                    case npe: NestedPathElement =>
-                        if (!hasTargetBeenSeen) {
-                            val (leanedSubPath, wasTargetSeen) = makeLeanPathAcc(
-                                npe,
-                                siteMap,
-                                endSite
-                            )
-                            if (leanedSubPath.isDefined) {
-                                elements.append(leanedSubPath.get)
-                            }
-                            if (wasTargetSeen) {
-                                hasTargetBeenSeen = true
-                            }
-                        }
-                    case _ =>
+        toProcess.element.foreach {
+            case fpe: FlatPathElement =>
+                if (siteMap.contains(fpe.element)) {
+                    elements.append(fpe.copy())
                 }
-            }
+            case npe: NestedPathElement =>
+                val leanedSubPath = makeLeanPathAcc(npe, siteMap, endSite)
+                val keepAlternativeBranches = toProcess.elementType match {
+                    case Some(NestedPathType.CondWithAlternative) |
+                         Some(NestedPathType.SwitchWithDefault) |
+                         Some(NestedPathType.TryCatchFinally) => true
+                    case _ => false
+                }
+                if (leanedSubPath.isDefined) {
+                    elements.append(leanedSubPath.get)
+                } else if (keepAlternativeBranches) {
+                    elements.append(NestedPathElement(ListBuffer[SubPath](), None))
+                }
+            case _ =>
         }
 
         if (elements.nonEmpty) {
-            (Some(NestedPathElement(elements, toProcess.elementType)), hasTargetBeenSeen)
+            Some(NestedPathElement(elements, toProcess.elementType))
         } else {
-            (None, false)
+            None
         }
     }
 
@@ -280,34 +258,21 @@ case class Path(elements: List[SubPath]) {
         }.map { s => (s, ()) }.toMap
         var leanPath = ListBuffer[SubPath]()
         val endSite = obj.definedBy.toArray.max
-        var reachedEndSite = false
 
-        elements.foreach { next =>
-            if (!reachedEndSite) {
-                next match {
-                    case fpe: FlatPathElement if siteMap.contains(fpe.element) =>
-                        leanPath.append(fpe)
-                        if (fpe.element == endSite) {
-                            reachedEndSite = true
-                        }
-                    case npe: NestedPathElement =>
-                        val (leanedPath, wasTargetSeen) = makeLeanPathAcc(npe, siteMap, endSite)
-                        if (npe.elementType.isDefined &&
-                            npe.elementType.get != NestedPathType.TryCatchFinally
-                        ) {
-                            reachedEndSite = wasTargetSeen
-                        }
-                        if (leanedPath.isDefined) {
-                            leanPath.append(leanedPath.get)
-                        }
-                    case _ =>
+        elements.foreach {
+            case fpe: FlatPathElement if siteMap.contains(fpe.element) && fpe.element <= endSite =>
+                leanPath.append(fpe)
+            case npe: NestedPathElement =>
+                val leanedPath = makeLeanPathAcc(npe, siteMap, endSite)
+                if (leanedPath.isDefined) {
+                    leanPath.append(leanedPath.get)
                 }
-            }
+            case _ =>
         }
 
         // If everything is within a single branch of a nested path element, ignore it (it is not
         // relevant, as everything happens within that branch anyway); for loops, remove the outer
-        // body in any case (as there is no alternative branch to consider)
+        // body in any case (as there is no alternative branch to consider) TODO check loops again what is with loops that are never executed?
         if (leanPath.tail.isEmpty) {
             leanPath.head match {
                 case npe: NestedPathElement
@@ -322,7 +287,7 @@ case class Path(elements: List[SubPath]) {
             leanPath.last match {
                 case npe: NestedPathElement
                     if npe.elementType.isDefined &&
-                        (npe.elementType.get != NestedPathType.TryCatchFinally) =>
+                        (npe.elementType.get != NestedPathType.TryCatchFinally || npe.elementType.get != NestedPathType.SwitchWithDefault) =>
                     val newLast = stripUnnecessaryBranches(npe, endSite)
                     leanPath.remove(leanPath.size - 1)
                     leanPath.append(newLast)

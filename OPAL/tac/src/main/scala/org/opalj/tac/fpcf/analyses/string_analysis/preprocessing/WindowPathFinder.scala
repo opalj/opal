@@ -66,8 +66,8 @@ class WindowPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) extends AbstractPathFinde
         if (csInfo.isEmpty) {
             val indexLastStmt = cfg.code.instructions.length
             Path(cfg.startBlock.startPC.until(indexLastStmt).map(FlatPathElement).toList)
-        } // Otherwise, order the control structures and assign the corresponding path elements
-        else {
+        } else {
+            // Otherwise, order the control structures and assign the corresponding path elements
             val orderedCS = hierarchicallyOrderControlStructures(csInfo)
             hierarchyToPath(orderedCS.hierarchy.head._2, startSite.get, endSite)
         }

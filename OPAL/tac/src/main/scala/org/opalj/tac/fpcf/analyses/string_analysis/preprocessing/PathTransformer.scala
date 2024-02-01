@@ -70,8 +70,7 @@ class PathTransformer(val interpretationHandler: InterpretationHandler) {
                             val processedSubPaths = npe.element.flatMap { ne => pathToTreeAcc(ne, fpe2Sci) }
                             if (processedSubPaths.nonEmpty) {
                                 npe.elementType.get match {
-                                    case NestedPathType.CondWithAlternative |
-                                        NestedPathType.TryCatchFinally =>
+                                    case NestedPathType.TryCatchFinally =>
                                         // In case there is only one element in the sub path, transform it into a
                                         // conditional element (as there is no alternative)
                                         if (processedSubPaths.tail.nonEmpty) {
@@ -79,7 +78,15 @@ class PathTransformer(val interpretationHandler: InterpretationHandler) {
                                         } else {
                                             Some(StringTreeCond(processedSubPaths))
                                         }
+                                    case NestedPathType.SwitchWithDefault |
+                                         NestedPathType.CondWithAlternative =>
+                                        if (npe.element.size == processedSubPaths.size) {
+                                            Some(StringTreeOr(processedSubPaths))
+                                        } else {
+                                            Some(StringTreeCond(ListBuffer(StringTreeOr(processedSubPaths))))
+                                        }
                                     case NestedPathType.CondWithoutAlternative => Some(StringTreeCond(processedSubPaths))
+                                    case NestedPathType.SwitchWithoutDefault => Some(StringTreeCond(processedSubPaths))
                                     case _                                     => None
                                 }
                             } else {

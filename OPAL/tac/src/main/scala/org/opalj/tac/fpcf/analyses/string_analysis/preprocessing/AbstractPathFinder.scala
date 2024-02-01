@@ -509,19 +509,17 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
     private def buildPathForSwitch(
         start: Int,
         end:   Int,
+        pathType: NestedPathType.Value,
         fill:  Boolean
     ): (Path, List[(Int, Int)]) = {
         val switch = cfg.code.instructions(start).asSwitch
         val caseStmts = ListBuffer[Int](switch.caseStmts.sorted: _*)
 
         // When the default stmt matches any case block, there is no explicit default defined
-        val containsDefault = !caseStmts.contains(switch.defaultStmt)
+        val containsDefault = pathType == NestedPathType.SwitchWithDefault
         if (containsDefault) {
             caseStmts.append(switch.defaultStmt)
         }
-        // TODO this does not make sense for all path types
-        val pathType = if (containsDefault) NestedPathType.CondWithAlternative
-        else NestedPathType.CondWithoutAlternative
 
         // Determine the start and end stmt indices of each case stmt
         val startEndPairs = ListBuffer[(Int, Int)]()
@@ -953,8 +951,8 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
     /**
      * This function determines the indices of the very first and very last statement that belong to
      * the `switch` statement as well as the type of the `switch` (
-     * [[NestedPathType.CondWithAlternative]] if the `switch` has a `default` case and
-     * [[NestedPathType.CondWithoutAlternative]] otherwise.
+     * [[NestedPathType.SwitchWithDefault]] if the `switch` has a `default` case and
+     * [[NestedPathType.SwitchWithoutDefault]] otherwise.
      *
      * @param stmt The index of the statement to process. This statement must be of type [[Switch]].
      *
@@ -980,10 +978,9 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
             end = posGoTo
         }
 
-        val containsDefault = caseStmts.length == caseStmts.distinct.length
-        val pathType = if (containsDefault) NestedPathType.CondWithAlternative
-        else
-            NestedPathType.CondWithoutAlternative
+        val containsDefault = !caseStmts.contains(switch.defaultStmt)
+        val pathType = if (containsDefault) NestedPathType.SwitchWithDefault
+        else NestedPathType.SwitchWithoutDefault
 
         (stmt, end, pathType)
     }
@@ -1102,25 +1099,24 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
      * [[buildPathForSwitch]], and [[buildTryCatchPath]].
      */
     protected def buildPathForElement(
-        toTransform: HierarchicalCSOrder,
+        toTransform: CSInfo,
         fill:        Boolean
     ): (Path, List[(Int, Int)]) = {
-        val element = toTransform.hierarchy.head._1.get
-        val start = element._1
-        val end = element._2
-        if (cfg.code.instructions(start).isInstanceOf[Switch[V]]) {
-            buildPathForSwitch(start, end, fill)
-        } else {
-            element._3 match {
-                case NestedPathType.Repetition =>
-                    buildRepetitionPath(start, end, fill)
-                case NestedPathType.CondWithAlternative =>
-                    buildCondPath(start, end, NestedPathType.CondWithAlternative, fill)
-                case NestedPathType.CondWithoutAlternative =>
-                    buildCondPath(start, end, NestedPathType.CondWithoutAlternative, fill)
-                case NestedPathType.TryCatchFinally =>
-                    buildTryCatchPath(start, end, fill)
-            }
+        val start = toTransform._1
+        val end = toTransform._2
+        toTransform._3 match {
+            case NestedPathType.Repetition =>
+                buildRepetitionPath(start, end, fill)
+            case NestedPathType.CondWithAlternative =>
+                buildCondPath(start, end, NestedPathType.CondWithAlternative, fill)
+            case NestedPathType.CondWithoutAlternative =>
+                buildCondPath(start, end, NestedPathType.CondWithoutAlternative, fill)
+            case NestedPathType.SwitchWithDefault =>
+                buildPathForSwitch(start, end, NestedPathType.SwitchWithDefault, fill)
+            case NestedPathType.SwitchWithoutDefault =>
+                buildPathForSwitch(start, end, NestedPathType.SwitchWithoutDefault, fill)
+            case NestedPathType.TryCatchFinally =>
+                buildTryCatchPath(start, end, fill)
         }
     }
 
@@ -1203,23 +1199,25 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
 
         // Recursively transform the hierarchies to paths
         topElements.foreach { nextTopEle =>
+            val nextTopCsInfo = nextTopEle.hierarchy.head._1.get
+
             // Build path up to the next control structure
-            val nextCSStart = nextTopEle.hierarchy.head._1.get._1
+            val nextCSStart = nextTopCsInfo._1
             indexLastCSEnd.until(nextCSStart).foreach { i => finalPath.append(FlatPathElement(i)) }
 
             val children = nextTopEle.hierarchy.head._2
             if (children.isEmpty) {
                 // Recursion anchor: Build path for the correct type
-                val (subpath, _) = buildPathForElement(nextTopEle, fill = true)
+                val (subpath, _) = buildPathForElement(nextTopCsInfo, fill = true)
                 // Control structures consist of only one element (NestedPathElement), thus "head"
                 // is enough
                 finalPath.append(subpath.elements.head)
             } else {
-                val startIndex = nextTopEle.hierarchy.head._1.get._1
-                val endIndex = nextTopEle.hierarchy.head._1.get._2
+                val startIndex = nextTopCsInfo._1
+                val endIndex = nextTopCsInfo._2
                 val childrenPath = hierarchyToPath(children, startIndex, endIndex)
                 var insertIndex = 0
-                val (subpath, startEndPairs) = buildPathForElement(nextTopEle, fill = false)
+                val (subpath, startEndPairs) = buildPathForElement(nextTopCsInfo, fill = false)
                 // npe is the nested path element that was produced above (head is enough as this
                 // list will always contain only one element, due to fill=false)
                 val npe = subpath.elements.head.asInstanceOf[NestedPathElement]
@@ -1279,7 +1277,7 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
                 )
                 finalPath.append(subPathToAdd)
             }
-            indexLastCSEnd = nextTopEle.hierarchy.head._1.get._2 + 1
+            indexLastCSEnd = nextTopCsInfo._2 + 1
         }
 
         finalPath.appendAll(indexLastCSEnd.to(endIndex).map(FlatPathElement))

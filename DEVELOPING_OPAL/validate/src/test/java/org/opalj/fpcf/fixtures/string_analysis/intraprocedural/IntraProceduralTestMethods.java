@@ -227,25 +227,164 @@ public class IntraProceduralTestMethods {
     }
 
     @StringDefinitionsCollection(
-            value = "a case where multiple optional definition sites have to be considered.",
+            value = "Switch statement with multiple relevant and multiple irrelevant cases",
             stringDefinitions = {
                     @StringDefinitions(
                             expectedLevel = CONSTANT, expectedStrings = "a(b|c)?"
                     )
             })
-    public void multipleOptionalAppendSites(int value) {
+    public void switchRelevantAndIrrelevant(int value) {
         StringBuilder sb = new StringBuilder("a");
         switch (value) {
-        case 0:
-            sb.append("b");
-            break;
-        case 1:
-            sb.append("c");
-            break;
-        case 3:
-            break;
-        case 4:
-            break;
+            case 0:
+                sb.append("b");
+                break;
+            case 1:
+                sb.append("c");
+                break;
+            case 3:
+                break;
+            case 4:
+                break;
+        }
+        analyzeString(sb.toString());
+    }
+
+    @StringDefinitionsCollection(
+            value = "Switch statement with multiple relevant and multiple irrelevant cases and a relevant default case",
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT, expectedStrings = "a(b|c|d)?"
+                    )
+            })
+    public void switchRelevantAndIrrelevantWithRelevantDefault(int value) {
+        StringBuilder sb = new StringBuilder("a");
+        switch (value) {
+            case 0:
+                sb.append("b");
+                break;
+            case 1:
+                sb.append("c");
+                break;
+            case 2:
+                break;
+            case 3:
+                break;
+            default:
+                sb.append("d");
+                break;
+        }
+        analyzeString(sb.toString());
+    }
+
+    @StringDefinitionsCollection(
+            value = "Switch statement with multiple relevant and multiple irrelevant cases and an irrelevant default case",
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT, expectedStrings = "a(b|c)?"
+                    )
+            })
+    public void switchRelevantAndIrrelevantWithIrrelevantDefault(int value) {
+        StringBuilder sb = new StringBuilder("a");
+        switch (value) {
+            case 0:
+                sb.append("b");
+                break;
+            case 1:
+                sb.append("c");
+                break;
+            case 2:
+                break;
+            case 3:
+                break;
+            default:
+                break;
+        }
+        analyzeString(sb.toString());
+    }
+
+    @StringDefinitionsCollection(
+            value = "Switch statement with multiple relevant and no irrelevant cases and a relevant default case",
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT, expectedStrings = "a(b|c|d)"
+                    )
+            })
+    public void switchRelevantWithRelevantDefault(int value) {
+        StringBuilder sb = new StringBuilder("a");
+        switch (value) {
+            case 0:
+                sb.append("b");
+                break;
+            case 1:
+                sb.append("c");
+                break;
+            default:
+                sb.append("d");
+                break;
+        }
+        analyzeString(sb.toString());
+    }
+
+    @StringDefinitionsCollection(
+            value = "Switch statement a relevant default case and a nested switch statement",
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT, expectedStrings = "a(b|(c|d)?|f)"
+                    )
+            })
+    public void switchNestedNoNestedDefault(int value, int value2) {
+        StringBuilder sb = new StringBuilder("a");
+        switch (value) {
+            case 0:
+                sb.append("b");
+                break;
+            case 1:
+                switch (value2) {
+                    case 0:
+                        sb.append("c");
+                        break;
+                    case 1:
+                        sb.append("d");
+                        break;
+                }
+                break;
+            default:
+                sb.append("f");
+                break;
+        }
+        analyzeString(sb.toString());
+    }
+
+    @StringDefinitionsCollection(
+            value = "Switch statement a relevant default case and a nested switch statement",
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT, expectedStrings = "a(b|(c|d|e)|f)"
+                    )
+            })
+    public void switchNestedWithNestedDefault(int value, int value2) {
+        StringBuilder sb = new StringBuilder("a");
+        switch (value) {
+            case 0:
+                sb.append("b");
+                break;
+            case 1:
+                switch (value2) {
+                    case 0:
+                        sb.append("c");
+                        break;
+                    case 1:
+                        sb.append("d");
+                        break;
+                    default:
+                        sb.append("e");
+                        break;
+                }
+                break;
+            default:
+                sb.append("f");
+                break;
         }
         analyzeString(sb.toString());
     }
@@ -339,6 +478,30 @@ public class IntraProceduralTestMethods {
             sb.append("b");
             sb.append("c");
             sb.append("d");
+        } else {
+            sb.append("x");
+            sb.append("y");
+            sb.append("z");
+        }
+        analyzeString(sb.toString());
+    }
+
+    @StringDefinitionsCollection(
+            value = "if-else control structure which append to a string builder multiple times and a non used else if branch is present",
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT, expectedStrings = "a((bcd|xyz))?"
+                    )
+            })
+    public void ifElseWithStringBuilder4() {
+        StringBuilder sb = new StringBuilder("a");
+        int i = new Random().nextInt();
+        if (i % 3 == 0) {
+            sb.append("b");
+            sb.append("c");
+            sb.append("d");
+        } else if (i % 2 == 0) {
+            System.out.println("something");
         } else {
             sb.append("x");
             sb.append("y");
@@ -574,7 +737,7 @@ public class IntraProceduralTestMethods {
             value = "case with a try-catch-finally exception",
             stringDefinitions = {
                     @StringDefinitions(
-                            expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "=====(.*|=====)"
+                            expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "=====(.*)?"
                     ),
                     @StringDefinitions(
                             expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "=====(.*|=====)"
@@ -583,7 +746,7 @@ public class IntraProceduralTestMethods {
                             expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "=====(.*|=====)"
                     )
             })
-    public void tryCatchFinally(String filename) {
+    public void tryCatchFinally(String filename) { // TODO why three definitions here?
         StringBuilder sb = new StringBuilder("=====");
         try {
             String data = new String(Files.readAllBytes(Paths.get(filename)));
