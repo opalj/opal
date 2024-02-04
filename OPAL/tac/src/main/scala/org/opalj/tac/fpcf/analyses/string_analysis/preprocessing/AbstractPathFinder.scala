@@ -954,6 +954,8 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
      * [[NestedPathType.SwitchWithDefault]] if the `switch` has a `default` case and
      * [[NestedPathType.SwitchWithoutDefault]] otherwise.
      *
+     * IMPROVE switch bound processing is broken for nested switch statements without statements after them.
+     *
      * @param stmt The index of the statement to process. This statement must be of type [[Switch]].
      *
      * @return Returns the start index, end index, and type of the `switch` in that order.
