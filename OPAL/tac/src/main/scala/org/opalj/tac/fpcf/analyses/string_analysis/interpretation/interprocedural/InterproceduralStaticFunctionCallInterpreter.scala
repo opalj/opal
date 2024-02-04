@@ -7,6 +7,8 @@ package string_analysis
 package interpretation
 package interprocedural
 
+import org.opalj.br.ObjectType
+
 import scala.util.Try
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.cfg.CFG
@@ -53,7 +55,7 @@ class InterproceduralStaticFunctionCallInterpreter(
      * @see [[AbstractStringInterpreter.interpret]]
      */
     override def interpret(instr: T, defSite: Int): EOptionP[Entity, StringConstancyProperty] = {
-        if (instr.declaringClass.fqn == "java/lang/String" && instr.name == "valueOf") {
+        if (instr.declaringClass == ObjectType.String && instr.name == "valueOf") {
             processStringValueOf(instr)
         } else {
             processArbitraryCall(instr, defSite)
@@ -98,7 +100,7 @@ class InterproceduralStaticFunctionCallInterpreter(
         instr:   StaticFunctionCall[V],
         defSite: Int
     ): EOptionP[Entity, StringConstancyProperty] = {
-        val methods, _ = getMethodsForPC(instr.pc, ps, state.callees, contextProvider)
+        val methods, _ = getMethodsForPC(instr.pc)(ps, state.callees, contextProvider)
 
         // Static methods cannot be overwritten, thus
         // 1) we do not need the second return value of getMethodsForPC and

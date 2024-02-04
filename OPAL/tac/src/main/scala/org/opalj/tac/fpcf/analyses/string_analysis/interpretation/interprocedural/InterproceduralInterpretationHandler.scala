@@ -20,7 +20,6 @@ import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.Result
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.common.BinaryExprInterpreter
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.common.DoubleValueInterpreter
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.common.FloatValueInterpreter
@@ -68,7 +67,7 @@ class InterproceduralInterpretationHandler(
     ): EOptionP[Entity, StringConstancyProperty] = {
         // Without doing the following conversion, the following compile error will occur: "the
         // result type of an implicit conversion must be more specific than org.opalj.fpcf.Entity"
-        val e: Integer = defSite.toInt
+        val e: Integer = defSite
         // Function parameters are not evaluated when none are present (this always includes the
         // implicit parameter for "this" and for exceptions thrown outside the current function)
         if (defSite < 0 &&
@@ -187,13 +186,9 @@ class InterproceduralInterpretationHandler(
      * Helper / utility function for processing [[New]] expressions.
      */
     private def processNew(expr: New, defSite: Int): EOptionP[Entity, StringConstancyProperty] = {
-        val finalEP = new NewInterpreter(cfg, this).interpret(
-            expr,
-            defSite
-        )
-        val sci = finalEP.asFinal.p.stringConstancyInformation
-        state.appendToFpe2Sci(defSite, sci)
-        state.appendToInterimFpe2Sci(defSite, sci)
+        val finalEP = new NewInterpreter(cfg, this).interpret(expr, defSite)
+        state.appendToFpe2Sci(defSite, finalEP.p.stringConstancyInformation)
+        state.appendToInterimFpe2Sci(defSite, finalEP.p.stringConstancyInformation)
         finalEP
     }
 
@@ -205,7 +200,7 @@ class InterproceduralInterpretationHandler(
         defSite: Int,
         params:  List[Seq[StringConstancyInformation]]
     ): EOptionP[Entity, StringConstancyProperty] = {
-        val r = new VirtualFunctionCallPreparationInterpreter(
+        val r = new InterproceduralVirtualFunctionCallInterpreter(
             cfg,
             this,
             ps,
@@ -262,7 +257,7 @@ class InterproceduralInterpretationHandler(
             declaredMethods,
             contextProvider
         ).interpret(expr, defSite)
-        if (!r.isInstanceOf[Result] || state.nonFinalFunctionArgs.contains(expr)) {
+        if (r.isRefinable || state.nonFinalFunctionArgs.contains(expr)) {
             processedDefSites.remove(defSite)
         }
         doInterimResultHandling(r, defSite)

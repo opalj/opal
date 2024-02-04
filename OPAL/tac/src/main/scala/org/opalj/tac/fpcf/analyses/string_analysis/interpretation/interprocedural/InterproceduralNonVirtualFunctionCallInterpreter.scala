@@ -48,7 +48,7 @@ class InterproceduralNonVirtualFunctionCallInterpreter(
      * @see [[AbstractStringInterpreter.interpret]]
      */
     override def interpret(instr: T, defSite: Int): EOptionP[Entity, StringConstancyProperty] = {
-        val methods = getMethodsForPC(instr.pc, ps, state.callees, contextProvider)
+        val methods = getMethodsForPC(instr.pc)(ps, state.callees, contextProvider)
         if (methods._1.isEmpty) {
             // No methods available => Return lower bound
             return FinalEP(instr, StringConstancyProperty.lb)

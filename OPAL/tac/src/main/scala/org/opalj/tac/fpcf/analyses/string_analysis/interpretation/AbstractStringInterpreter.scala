@@ -75,9 +75,8 @@ abstract class AbstractStringInterpreter(
      * second return value indicates whether at least one method has an unknown body (if `true`,
      * then there is such a method).
      */
-    protected def getMethodsForPC(
+    protected def getMethodsForPC(pc: Int)(
         implicit
-        pc:      Int,
         ps:      PropertyStore,
         callees: Callees,
         contextProvider:  ContextProvider

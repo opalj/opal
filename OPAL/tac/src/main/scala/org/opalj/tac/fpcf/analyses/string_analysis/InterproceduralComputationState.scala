@@ -263,5 +263,4 @@ case class InterproceduralComputationState(dm: DeclaredMethod, entity: SContext,
             }
         }
     }
-
 }

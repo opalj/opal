@@ -29,7 +29,6 @@ import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.InterimLUBP
 import org.opalj.fpcf.InterimResult
 import org.opalj.fpcf.ProperPropertyComputationResult
-import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
@@ -235,7 +234,7 @@ class InterproceduralStringAnalysis(
                         InterproceduralStringAnalysis.isSupportedType
                     }
                     if (hasSupportedParamType) {
-                        hasParamUsageAlongPath(state.computedLeanPath, state.tac.stmts)
+                        hasFormalParamUsageAlongPath(state.computedLeanPath, state.tac.stmts)
                     } else {
                         !hasCallersOrParamInfo
                     }
@@ -265,8 +264,6 @@ class InterproceduralStringAnalysis(
             state.isSetupCompleted = true
         }
 
-        // sci stores the final StringConstancyInformation (if it can be determined now at all)
-        var sci = StringConstancyProperty.lb.stringConstancyInformation
         // Interpret a function / method parameter using the parameter information in state
         if (defSites.head < 0) {
             val r = state.iHandler.processDefSite(defSites.head, state.params.toList.map(_.toList))
@@ -290,33 +287,36 @@ class InterproceduralStringAnalysis(
             } else {
                 attemptFinalResultComputation = true
             }
-        } // If not a call to String{Builder, Buffer}.toString, then we deal with pure strings
-        else {
+        } else {
+            // If not a call to String{Builder, Buffer}.toString, then we deal with pure strings
             attemptFinalResultComputation = true
         }
 
-        if (attemptFinalResultComputation) {
-            if (state.dependees.isEmpty && computeResultsForPath(state.computedLeanPath, state)) {
-                // Check whether we deal with the empty string; it requires special treatment as the
-                // PathTransformer#pathToStringTree would not handle it correctly (as
-                // PathTransformer#pathToStringTree is involved in a mutual recursion)
-                val isEmptyString = if (state.computedLeanPath.elements.length == 1) {
-                    state.computedLeanPath.elements.head match {
-                        case FlatPathElement(i) =>
-                            state.fpe2sci.contains(i) && state.fpe2sci(i).length == 1 &&
-                                state.fpe2sci(i).head == StringConstancyInformation.getNeutralElement
-                        case _ => false
-                    }
-                } else false
-
-                sci = if (isEmptyString) {
-                    StringConstancyInformation.getNeutralElement
-                } else {
-                    new PathTransformer(state.iHandler).pathToStringTree(
-                        state.computedLeanPath,
-                        state.fpe2sci
-                    ).reduce(true)
+        var sci = StringConstancyInformation.lb
+        if (
+            attemptFinalResultComputation
+                && state.dependees.isEmpty
+                && computeResultsForPath(state.computedLeanPath, state)
+        ) {
+            // Check whether we deal with the empty string; it requires special treatment as the
+            // PathTransformer#pathToStringTree would not handle it correctly (as
+            // PathTransformer#pathToStringTree is involved in a mutual recursion)
+            val isEmptyString = if (state.computedLeanPath.elements.length == 1) {
+                state.computedLeanPath.elements.head match {
+                    case FlatPathElement(i) =>
+                        state.fpe2sci.contains(i) && state.fpe2sci(i).length == 1 &&
+                            state.fpe2sci(i).head == StringConstancyInformation.getNeutralElement
+                    case _ => false
                 }
+            } else false
+
+            sci = if (isEmptyString) {
+                StringConstancyInformation.getNeutralElement
+            } else {
+                new PathTransformer(state.iHandler).pathToStringTree(
+                    state.computedLeanPath,
+                    state.fpe2sci
+                ).reduce(true)
             }
         }
 
@@ -475,20 +475,14 @@ class InterproceduralStringAnalysis(
         Result(state.entity, StringConstancyProperty(finalSci))
     }
 
-    /**
-     * `processFinalP` is responsible for handling the case that the `propertyStore` outputs a
-     * [[org.opalj.fpcf.FinalP]].
-     */
     private def processFinalP(
         state: InterproceduralComputationState,
         e:     Entity,
-        p:     Property
+        p:     StringConstancyProperty
     ): ProperPropertyComputationResult = {
         // Add mapping information (which will be used for computing the final result)
-        val retrievedProperty = p.asInstanceOf[StringConstancyProperty]
-        val currentSci = retrievedProperty.stringConstancyInformation
         state.var2IndexMapping(e.asInstanceOf[SContext]._1).foreach {
-            state.appendToFpe2Sci(_, currentSci)
+            state.appendToFpe2Sci(_, p.stringConstancyInformation)
         }
 
         state.dependees = state.dependees.filter(_.e != e)
@@ -507,10 +501,7 @@ class InterproceduralStringAnalysis(
      * The return value of this function indicates whether a the parameter evaluation is done
      * (`true`) or not yet (`false`).
      */
-    private def registerParams(
-        state: InterproceduralComputationState
-    ): Boolean = {
-
+    private def registerParams(state: InterproceduralComputationState): Boolean = {
         val callers = state.callers.callers(state.dm)(contextProvider).iterator.toSeq
         if (callers.length > callersThreshold) {
             state.params.append(
@@ -600,9 +591,7 @@ class InterproceduralStringAnalysis(
                     Path(npe.element.toList),
                     state
                 )
-                if (hasFinalResult) {
-                    hasFinalResult = subFinalResult
-                }
+                hasFinalResult = hasFinalResult && subFinalResult
             case _ =>
         }
 
@@ -672,23 +661,23 @@ class InterproceduralStringAnalysis(
         }
     }
 
-    private def hasParamUsageAlongPath(path: Path, stmts: Array[Stmt[V]]): Boolean = {
-        def hasExprParamUsage(expr: Expr[V]): Boolean = expr match {
+    private def hasFormalParamUsageAlongPath(path: Path, stmts: Array[Stmt[V]]): Boolean = {
+        def hasExprFormalParamUsage(expr: Expr[V]): Boolean = expr match {
             case al: ArrayLoad[V]    => ArrayPreparationInterpreter.getStoreAndLoadDefSites(al, stmts).exists(_ < 0)
             case duVar: V            => duVar.definedBy.exists(_ < 0)
-            case fc: FunctionCall[V] => fc.params.exists(hasExprParamUsage)
-            case mc: MethodCall[V]   => mc.params.exists(hasExprParamUsage)
-            case be: BinaryExpr[V]   => hasExprParamUsage(be.left) || hasExprParamUsage(be.right)
+            case fc: FunctionCall[V] => fc.params.exists(hasExprFormalParamUsage)
+            case mc: MethodCall[V]   => mc.params.exists(hasExprFormalParamUsage)
+            case be: BinaryExpr[V]   => hasExprFormalParamUsage(be.left) || hasExprFormalParamUsage(be.right)
             case _                   => false
         }
 
         path.elements.exists {
             case FlatPathElement(index) => stmts(index) match {
-                    case Assignment(_, _, expr) => hasExprParamUsage(expr)
-                    case ExprStmt(_, expr)      => hasExprParamUsage(expr)
+                    case Assignment(_, _, expr) => hasExprFormalParamUsage(expr)
+                    case ExprStmt(_, expr)      => hasExprFormalParamUsage(expr)
                     case _                      => false
                 }
-            case NestedPathElement(subPath, _) => hasParamUsageAlongPath(Path(subPath.toList), stmts)
+            case NestedPathElement(subPath, _) => hasFormalParamUsageAlongPath(Path(subPath.toList), stmts)
             case _                             => false
         }
     }
@@ -698,19 +687,12 @@ class InterproceduralStringAnalysis(
      * findDependentVars. Returns a list of pairs of DUVar and the index of the
      * FlatPathElement.element in which it occurs.
      */
-    private def findDependeesAcc(
-        subpath:           SubPath,
-        stmts:             Array[Stmt[V]],
-        target:            SEntity,
-        foundDependees:    ListBuffer[(SEntity, Int)],
-        hasTargetBeenSeen: Boolean
-    )(implicit tac: TACode[TACMethodParameter, V]): (ListBuffer[(SEntity, Int)], Boolean) = {
-        var encounteredTarget = false
+    private def findDependeesAcc(subpath: SubPath, stmts: Array[Stmt[V]], target: SEntity)(
+        implicit tac: TACode[TACMethodParameter, V],
+    ): ListBuffer[(SEntity, Int)] = {
+        val dependees = ListBuffer[(SEntity, Int)]()
         subpath match {
             case fpe: FlatPathElement =>
-                if (target.toValueOriginForm(tac.pcToIndex).definedBy.contains(fpe.element)) {
-                    encounteredTarget = true
-                }
                 // For FlatPathElements, search for DUVars on which the toString method is called
                 // and where these toString calls are the parameter of an append call
                 stmts(fpe.element) match {
@@ -720,31 +702,19 @@ class InterproceduralStringAnalysis(
                             param.definedBy.filter(_ >= 0).foreach { ds =>
                                 val expr = stmts(ds).asAssignment.expr
                                 if (InterpretationHandler.isStringBuilderBufferToStringCall(expr)) {
-                                    foundDependees.append((
-                                        outerExpr.asVirtualFunctionCall.params.head.asVar.toPersistentForm(tac.stmts),
-                                        fpe.element
-                                    ))
+                                    dependees.append((param.toPersistentForm(tac.stmts), fpe.element))
                                 }
                             }
                         }
                     case _ =>
                 }
-                (foundDependees, encounteredTarget)
+                dependees
             case npe: NestedPathElement =>
                 npe.element.foreach { nextSubpath =>
-                    if (!encounteredTarget) {
-                        val (_, seen) = findDependeesAcc(
-                            nextSubpath,
-                            stmts,
-                            target,
-                            foundDependees,
-                            encounteredTarget
-                        )
-                        encounteredTarget = seen
-                    }
+                    dependees.appendAll(findDependeesAcc(nextSubpath, stmts, target))
                 }
-                (foundDependees, encounteredTarget)
-            case _ => (foundDependees, encounteredTarget)
+                dependees
+            case _ => dependees
         }
     }
 
@@ -758,37 +728,19 @@ class InterproceduralStringAnalysis(
      * @note In order to make sure that a [[org.opalj.tac.DUVar]] does not depend on itself, pass
      *       this variable as `ignore`.
      */
-    private def findDependentVars(
-        path:   Path,
-        stmts:  Array[Stmt[V]],
-        ignore: SEntity
-    )(implicit tac: TACode[TACMethodParameter, V]): mutable.LinkedHashMap[SEntity, Int] = {
+    private def findDependentVars(path: Path, stmts: Array[Stmt[V]], ignore: SEntity)(
+        implicit tac: TACode[TACMethodParameter, V],
+    ): mutable.LinkedHashMap[SEntity, Int] = {
         val dependees = mutable.LinkedHashMap[SEntity, Int]()
-        val ignoreNews = InterpretationHandler.findNewOfVar(ignore.toValueOriginForm(tac.pcToIndex), stmts)
-        var wasTargetSeen = false
-
         path.elements.foreach { nextSubpath =>
-            if (!wasTargetSeen) {
-                val (currentDeps, encounteredTarget) = findDependeesAcc(
-                    nextSubpath,
-                    stmts,
-                    ignore,
-                    ListBuffer(),
-                    hasTargetBeenSeen = false
-                )
-                wasTargetSeen = encounteredTarget
-                currentDeps.foreach { nextPair =>
-                    val newExpressions =
-                        InterpretationHandler.findNewOfVar(nextPair._1.toValueOriginForm(tac.pcToIndex), stmts)
-                    if (ignore != nextPair._1 && ignoreNews != newExpressions) {
-                        dependees.put(nextPair._1, nextPair._2)
-                    }
+            findDependeesAcc(nextSubpath, stmts, ignore).foreach { nextPair =>
+                if (ignore != nextPair._1) {
+                    dependees.put(nextPair._1, nextPair._2)
                 }
             }
         }
         dependees
     }
-
 }
 
 object InterproceduralStringAnalysis {

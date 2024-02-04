@@ -40,7 +40,7 @@ class VirtualFunctionCallFinalizer(
     /**
      * This function actually finalizes append calls by mimicking the behavior of the corresponding
      * interpretation function of
-     * [[org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural.VirtualFunctionCallPreparationInterpreter]].
+     * [[org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural.InterproceduralVirtualFunctionCallInterpreter]].
      */
     private def finalizeAppend(instr: T, defSite: Int): Unit = {
         val receiverDefSites = instr.receiver.asVar.definedBy.toArray.sorted

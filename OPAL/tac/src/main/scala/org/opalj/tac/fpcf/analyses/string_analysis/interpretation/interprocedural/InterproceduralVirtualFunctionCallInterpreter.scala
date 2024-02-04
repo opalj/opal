@@ -34,7 +34,7 @@ import org.opalj.fpcf.PropertyStore
  *
  * @author Patrick Mell
  */
-class VirtualFunctionCallPreparationInterpreter(
+class InterproceduralVirtualFunctionCallInterpreter(
         cfg:             CFG[Stmt[V], TACStmts[V]],
         exprHandler:     InterproceduralInterpretationHandler,
         ps:              PropertyStore,
@@ -58,7 +58,7 @@ class VirtualFunctionCallPreparationInterpreter(
      * <li>
      *     `replace`: Calls to the `replace` function of [[StringBuilder]] and [[StringBuffer]]. For
      *     further information how this operation is processed, see
-     *     [[VirtualFunctionCallPreparationInterpreter.interpretReplaceCall]].
+     *     [[InterproceduralVirtualFunctionCallInterpreter.interpretReplaceCall]].
      * </li>
      * <li>
      *     Apart from these supported methods, a list with [[StringConstancyProperty.lb]]
@@ -67,12 +67,10 @@ class VirtualFunctionCallPreparationInterpreter(
      * </ul>
      *
      * If none of the above-described cases match, a final result containing
-     * [[StringConstancyProperty.getNeutralElement]] is returned.
+     * [[StringConstancyProperty.lb]] is returned.
      *
      * @note For this implementation, `defSite` plays a role!
-     *
      * @note This function takes care of updating [[state.fpe2sci]] as necessary.
-     *
      * @see [[AbstractStringInterpreter.interpret]]
      */
     override def interpret(instr: T, defSite: Int): EOptionP[Entity, StringConstancyProperty] = {
@@ -82,11 +80,10 @@ class VirtualFunctionCallPreparationInterpreter(
             case "replace"  => interpretReplaceCall(instr)
             case _ =>
                 instr.descriptor.returnType match {
-                    case obj: ObjectType if obj.fqn == "java/lang/String" =>
+                    case obj: ObjectType if obj == ObjectType.String =>
                         interpretArbitraryCall(instr, defSite)
                     case _ =>
-                        val e: Integer = defSite
-                        FinalEP(e, StringConstancyProperty.lb)
+                        FinalEP(defSite.asInstanceOf[Integer], StringConstancyProperty.lb)
                 }
         }
 
@@ -103,7 +100,7 @@ class VirtualFunctionCallPreparationInterpreter(
      * finalized later on.
      */
     private def interpretArbitraryCall(instr: T, defSite: Int): EOptionP[Entity, StringConstancyProperty] = {
-        val (methods, _) = getMethodsForPC(instr.pc, ps, state.callees, contextProvider)
+        val (methods, _) = getMethodsForPC(instr.pc)(ps, state.callees, contextProvider)
 
         if (methods.isEmpty) {
             return FinalEP(instr, StringConstancyProperty.lb)
