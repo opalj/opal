@@ -40,9 +40,9 @@ import org.opalj.tac.TACode
 import org.opalj.tac.V
 import org.opalj.tac.VirtualFunctionCall
 import org.opalj.tac.cg.RTACallGraphKey
-import org.opalj.tac.fpcf.analyses.string_analysis.LazyInterproceduralStringAnalysis
-import org.opalj.tac.fpcf.analyses.string_analysis.LazyIntraproceduralStringAnalysis
 import org.opalj.tac.fpcf.analyses.string_analysis.SContext
+import org.opalj.tac.fpcf.analyses.string_analysis.l0.LazyL0StringAnalysis
+import org.opalj.tac.fpcf.analyses.string_analysis.l1.LazyL1StringAnalysis
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
@@ -310,7 +310,7 @@ object StringAnalysisReflectiveCalls extends ProjectAnalysisApplication {
         project.get(RTACallGraphKey)
 
         implicit val (propertyStore, analyses) = manager.runAll(
-            if (runIntraproceduralAnalysis) LazyIntraproceduralStringAnalysis else LazyInterproceduralStringAnalysis
+            if (runIntraproceduralAnalysis) LazyL0StringAnalysis else LazyL1StringAnalysis
         )
 
         // Stores the obtained results for each supported reflective operation

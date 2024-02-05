@@ -14,9 +14,9 @@ import org.opalj.tac.TACode
 import org.opalj.tac.V
 import org.opalj.tac.VirtualMethodCall
 import org.opalj.tac.cg.RTACallGraphKey
-import org.opalj.tac.fpcf.analyses.string_analysis.LazyInterproceduralStringAnalysis
-import org.opalj.tac.fpcf.analyses.string_analysis.LazyIntraproceduralStringAnalysis
 import org.opalj.tac.fpcf.analyses.string_analysis.SEntity
+import org.opalj.tac.fpcf.analyses.string_analysis.l0.LazyL0StringAnalysis
+import org.opalj.tac.fpcf.analyses.string_analysis.l1.LazyL1StringAnalysis
 
 sealed abstract class StringAnalysisTest extends PropertiesTest {
 
@@ -101,7 +101,7 @@ object StringAnalysisTest {
 }
 
 /**
- * Tests whether the [[org.opalj.tac.fpcf.analyses.string_analysis.IntraproceduralStringAnalysis]] works correctly with
+ * Tests whether the [[org.opalj.tac.fpcf.analyses.string_analysis.l0.L0StringAnalysis]] works correctly with
  * respect to some well-defined tests.
  *
  * @author Maximilian Rüsch
@@ -114,7 +114,7 @@ class IntraproceduralStringAnalysisTest extends StringAnalysisTest {
     override def fixtureProjectPackage: List[String] = List(s"org/opalj/fpcf/fixtures/string_analysis/intraprocedural")
 
     describe("the org.opalj.fpcf.IntraproceduralStringAnalysis is started") {
-        val as = executeAnalyses(LazyIntraproceduralStringAnalysis)
+        val as = executeAnalyses(LazyL0StringAnalysis)
 
         val entities = determineEntitiesToAnalyze(as.project)
         entities.foreach(as.propertyStore.force(_, StringConstancyProperty.key))
@@ -125,7 +125,7 @@ class IntraproceduralStringAnalysisTest extends StringAnalysisTest {
 }
 
 /**
- * Tests whether the [[org.opalj.tac.fpcf.analyses.string_analysis.InterproceduralStringAnalysis]] works correctly with
+ * Tests whether the [[org.opalj.tac.fpcf.analyses.string_analysis.l1.L1StringAnalysis]] works correctly with
  * respect to some well-defined tests.
  *
  * @author Maximilian Rüsch
@@ -142,7 +142,7 @@ class InterproceduralStringAnalysisTest extends StringAnalysisTest {
     }
 
     describe("the org.opalj.fpcf.InterproceduralStringAnalysis is started") {
-        val as = executeAnalyses(LazyInterproceduralStringAnalysis)
+        val as = executeAnalyses(LazyL1StringAnalysis)
 
         val entities = determineEntitiesToAnalyze(as.project)
         entities.foreach(as.propertyStore.force(_, StringConstancyProperty.key))

@@ -6,7 +6,6 @@ package analyses
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
-
 import org.opalj.br.Method
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.fpcf.Entity
@@ -18,15 +17,14 @@ import org.opalj.fpcf.EOptionP
 package object string_analysis {
 
     /**
-     * The type of entities the [[IntraproceduralStringAnalysis]] and the [[InterproceduralStringAnalysis]] process.
+     * The type of entities the string analysis process.
      *
      * @note The analysis require further context information, see [[SContext]].
      */
     type SEntity = PV
 
     /**
-     * [[IntraproceduralStringAnalysis]] and [[InterproceduralStringAnalysis]] process a local variable within a
-     * particular context, i.e. the method in which it is used.
+     * String analysis process a local variable within a particular context, i.e. the method in which it is used.
      */
     type SContext = (SEntity, Method)
 

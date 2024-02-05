@@ -8,7 +8,6 @@ package preprocessing
 
 import scala.collection.mutable.ListBuffer
 import scala.collection.mutable.Map
-
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.br.fpcf.properties.string_definition.StringTree
 import org.opalj.br.fpcf.properties.string_definition.StringTreeConcat
@@ -117,20 +116,15 @@ class PathTransformer(val interpretationHandler: InterpretationHandler) {
      * how to handle methods called on the object of interest (like `append`).
      *
      * @param path             The path element to be transformed.
-     * @param fpe2Sci          A mapping from [[FlatPathElement.element]] values to
-     *                         [[StringConstancyInformation]]. Make use of this mapping if some
-     *                         StringConstancyInformation need to be used that the
-     *                         [[org.opalj.tac.fpcf.analyses.string_analysis.interpretation.intraprocedural.IntraproceduralInterpretationHandler]]
-     *                         cannot infer / derive. For instance, if the exact value of an
+     * @param fpe2Sci          A mapping from [[FlatPathElement.element]] values to [[StringConstancyInformation]]. Make
+     *                         use of this mapping if some StringConstancyInformation need to be used that the
+     *                         [[InterpretationHandler]] cannot infer / derive. For instance, if the exact value of an
      *                         expression needs to be determined by calling the
-     *                         [[org.opalj.tac.fpcf.analyses.string_analysis.IntraproceduralStringAnalysis]]
+     *                         [[org.opalj.tac.fpcf.analyses.string_analysis.l0.L0StringAnalysis]]
      *                         on another instance, store this information in fpe2Sci.
-     * @param resetExprHandler Whether to reset the underlying
-     *                         [[org.opalj.tac.fpcf.analyses.string_analysis.interpretation.intraprocedural.IntraproceduralInterpretationHandler]]
-     *                         or not. When calling this function from outside, the default value
-     *                         should do fine in most of the cases. For further information, see
-     *                         [[org.opalj.tac.fpcf.analyses.string_analysis.interpretation.intraprocedural.IntraproceduralInterpretationHandler.reset]].
-     *
+     * @param resetExprHandler Whether to reset the underlying [[InterpretationHandler]] or not. When calling this
+     *                         function from outside, the default value should do fine in most of the cases. For further
+     *                         information, see [[InterpretationHandler.reset]].
      * @return If an empty [[Path]] is given, `None` will be returned. Otherwise, the transformed
      *         [[org.opalj.br.fpcf.properties.string_definition.StringTree]] will be returned. Note that
      *         all elements of the tree will be defined, i.e., if `path` contains sites that could

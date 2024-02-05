@@ -8,7 +8,6 @@ package interpretation
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
-
 import org.opalj.br.ObjectType
 import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.properties.StringConstancyProperty
@@ -17,6 +16,7 @@ import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyType
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
+import org.opalj.tac.fpcf.analyses.string_analysis.l1.L1StringAnalysis
 import org.opalj.value.ValueInformation
 
 abstract class InterpretationHandler(tac: TACode[TACMethodParameter, DUVar[ValueInformation]]) {
@@ -102,7 +102,7 @@ object InterpretationHandler {
      */
     def isPrimitiveNumberTypeExpression(expr: Expr[V]): Boolean =
         expr.asVar.value.isPrimitiveValue &&
-            InterproceduralStringAnalysis.isSupportedPrimitiveNumberType(
+            L1StringAnalysis.isSupportedPrimitiveNumberType(
                 expr.asVar.value.asPrimitiveValue.primitiveType.toJava
             )
 

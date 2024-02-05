@@ -1,0 +1,104 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
+package org.opalj
+package tac
+package fpcf
+package analyses
+package string_analysis
+package l1
+package finalizer
+
+import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
+import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
+import org.opalj.br.fpcf.properties.string_definition.StringConstancyType
+
+/**
+ * @author Maximilian Rüsch
+ */
+case class VirtualFunctionCallFinalizer(
+    override protected val state: L1ComputationState
+) extends L1Finalizer {
+
+    override type T = VirtualFunctionCall[V]
+
+    /**
+     * Finalizes [[VirtualFunctionCall]]s. Currently, this finalizer supports only the "append" and
+     * "toString" function.
+     * <p>
+     * @inheritdoc
+     */
+    override def finalizeInterpretation(instr: T, defSite: Int): Unit = {
+        instr.name match {
+            case "append"   => finalizeAppend(instr, defSite)
+            case "toString" => finalizeToString(instr, defSite)
+            case _          => state.appendToFpe2Sci(defSite, StringConstancyInformation.lb, reset = true)
+        }
+    }
+
+    /**
+     * This function actually finalizes append calls by mimicking the behavior of the corresponding
+     * interpretation function of
+     * [[org.opalj.tac.fpcf.analyses.string_analysis.l1.interpretation.L1VirtualFunctionCallInterpreter]].
+     */
+    private def finalizeAppend(instr: T, defSite: Int): Unit = {
+        val receiverDefSites = instr.receiver.asVar.definedBy.toArray.sorted
+        receiverDefSites.foreach { ds =>
+            if (!state.fpe2sci.contains(ds)) {
+                state.iHandler.finalizeDefSite(ds, state)
+            }
+        }
+        val receiverSci = StringConstancyInformation.reduceMultiple(
+            receiverDefSites.flatMap { s =>
+                // As the receiver value is used already here, we do not want it to be used a
+                // second time (during the final traversing of the path); thus, reset it to have it
+                // only once in the result, i.e., final tree
+                val sci = state.fpe2sci(s)
+                state.appendToFpe2Sci(s, StringConstancyInformation.getNeutralElement, reset = true)
+                sci
+            }
+        )
+
+        val paramDefSites = instr.params.head.asVar.definedBy.toArray.sorted
+        paramDefSites.foreach { ds =>
+            if (!state.fpe2sci.contains(ds)) {
+                state.iHandler.finalizeDefSite(ds, state)
+            }
+        }
+        val appendSci = if (paramDefSites.forall(state.fpe2sci.contains)) {
+            StringConstancyInformation.reduceMultiple(paramDefSites.flatMap(state.fpe2sci(_)))
+        } else StringConstancyInformation.lb
+
+        val finalSci = if (receiverSci.isTheNeutralElement && appendSci.isTheNeutralElement) {
+            receiverSci
+        } else if (receiverSci.isTheNeutralElement) {
+            appendSci
+        } else if (appendSci.isTheNeutralElement) {
+            receiverSci
+        } else {
+            StringConstancyInformation(
+                StringConstancyLevel.determineForConcat(receiverSci.constancyLevel, appendSci.constancyLevel),
+                StringConstancyType.APPEND,
+                receiverSci.possibleStrings + appendSci.possibleStrings
+            )
+        }
+
+        state.appendToFpe2Sci(defSite, finalSci, reset = true)
+    }
+
+    private def finalizeToString(instr: T, defSite: Int): Unit = {
+        val dependeeSites = instr.receiver.asVar.definedBy
+        dependeeSites.foreach { nextDependeeSite =>
+            if (!state.fpe2sci.contains(nextDependeeSite)) {
+                state.iHandler.finalizeDefSite(nextDependeeSite, state)
+            }
+        }
+        val finalSci = StringConstancyInformation.reduceMultiple(
+            dependeeSites.toArray.flatMap { ds => state.fpe2sci(ds) }
+        )
+        // Remove the dependees, such as calls to "toString"; the reason being is that we do not
+        // duplications (arising from an "append" and a "toString" call)
+        dependeeSites.foreach {
+            state.appendToFpe2Sci(_, StringConstancyInformation.getNeutralElement, reset = true)
+        }
+        state.appendToFpe2Sci(defSite, finalSci)
+    }
+}
