@@ -8,6 +8,7 @@ package interpretation
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
+
 import org.opalj.br.ObjectType
 import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.properties.StringConstancyProperty

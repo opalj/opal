@@ -7,12 +7,14 @@ package string_analysis
 package l1
 package interpretation
 
+import scala.collection.mutable.ListBuffer
+
 import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.FinalEP
 import org.opalj.tac.ArrayLoad
 import org.opalj.tac.ArrayStore
@@ -21,8 +23,6 @@ import org.opalj.tac.Stmt
 import org.opalj.tac.TACStmts
 import org.opalj.tac.V
 import org.opalj.tac.fpcf.analyses.string_analysis.l1.L1ComputationState
-
-import scala.collection.mutable.ListBuffer
 
 /**
  * Responsible for preparing [[ArrayLoad]] as well as [[ArrayStore]] expressions in an interprocedural fashion.
@@ -35,10 +35,10 @@ import scala.collection.mutable.ListBuffer
  * @author Patrick Mell
  */
 case class L1ArrayAccessInterpreter(
-                                       override protected val cfg:         CFG[Stmt[V], TACStmts[V]],
-                                       override protected val exprHandler: L1InterpretationHandler,
-                                       state:       L1ComputationState,
-                                       params:      List[Seq[StringConstancyInformation]]
+        override protected val cfg:         CFG[Stmt[V], TACStmts[V]],
+        override protected val exprHandler: L1InterpretationHandler,
+        state:                              L1ComputationState,
+        params:                             List[Seq[StringConstancyInformation]]
 ) extends L1StringInterpreter {
 
     override type T = ArrayLoad[V]

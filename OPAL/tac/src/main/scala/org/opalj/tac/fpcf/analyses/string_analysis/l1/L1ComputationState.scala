@@ -6,20 +6,20 @@ package analyses
 package string_analysis
 package l1
 
+import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
+
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.Method
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
-import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.Property
 import org.opalj.tac.fpcf.analyses.string_analysis.l1.interpretation.L1InterpretationHandler
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.Path
 import org.opalj.value.ValueInformation
-
-import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
 
 /**
  * This class is to be used to store state information that are required at a later point in

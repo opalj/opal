@@ -7,19 +7,19 @@ package string_analysis
 package l1
 package interpretation
 
+import scala.util.Try
+
 import org.opalj.br.ObjectType
 import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.br.fpcf.properties.NoContext
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
+import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
-import org.opalj.fpcf.Entity
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.PropertyStore
-
-import scala.util.Try
 
 /**
  * Responsible for processing [[StaticFunctionCall]]s in an interprocedural fashion.
@@ -28,12 +28,12 @@ import scala.util.Try
  * @author Patrick Mell
  */
 class L1StaticFunctionCallInterpreter(
-                                         override protected val cfg:             CFG[Stmt[V], TACStmts[V]],
-                                         override protected val exprHandler:     L1InterpretationHandler,
-                                         ps:              PropertyStore,
-                                         state:           L1ComputationState,
-                                         params:          List[Seq[StringConstancyInformation]],
-                                         contextProvider:    ContextProvider
+        override protected val cfg:         CFG[Stmt[V], TACStmts[V]],
+        override protected val exprHandler: L1InterpretationHandler,
+        ps:                                 PropertyStore,
+        state:                              L1ComputationState,
+        params:                             List[Seq[StringConstancyInformation]],
+        contextProvider:                    ContextProvider
 ) extends L1StringInterpreter {
 
     override type T = StaticFunctionCall[V]

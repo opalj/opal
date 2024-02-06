@@ -79,7 +79,8 @@ class L0InterpretationHandler(
                 FinalEP(expr, StringConstancyProperty.lb)
             case ExprStmt(_, expr: VirtualFunctionCall[V]) =>
                 L0VirtualFunctionCallInterpreter(cfg, this).interpret(expr, defSite)
-            case ExprStmt(_, expr: StaticFunctionCall[V]) => L0StaticFunctionCallInterpreter(cfg, this).interpret(expr, defSite)
+            case ExprStmt(_, expr: StaticFunctionCall[V]) =>
+                L0StaticFunctionCallInterpreter(cfg, this).interpret(expr, defSite)
             case vmc: VirtualMethodCall[V] =>
                 L0VirtualMethodCallInterpreter(cfg, this).interpret(vmc, defSite)
             case nvmc: NonVirtualMethodCall[V] =>

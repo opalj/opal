@@ -8,6 +8,7 @@ package interpretation
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
+
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.br.cfg.CFG
@@ -81,9 +82,9 @@ trait StringInterpreter {
      */
     protected def getMethodsForPC(pc: Int)(
         implicit
-        ps:      PropertyStore,
-        callees: Callees,
-        contextProvider:  ContextProvider
+        ps:              PropertyStore,
+        callees:         Callees,
+        contextProvider: ContextProvider
     ): (List[Method], Boolean) = {
         var hasMethodWithUnknownBody = false
         val methods = ListBuffer[Method]()

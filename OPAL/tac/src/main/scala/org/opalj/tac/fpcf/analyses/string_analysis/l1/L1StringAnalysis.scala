@@ -6,6 +6,9 @@ package analyses
 package string_analysis
 package l1
 
+import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
+
 import org.opalj.br.FieldType
 import org.opalj.br.analyses.DeclaredFieldsKey
 import org.opalj.br.analyses.DeclaredMethodsKey
@@ -45,9 +48,6 @@ import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.SubPath
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.WindowPathFinder
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.value.ValueInformation
-
-import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
 
 /**
  * InterproceduralStringAnalysis processes a read operation of a string variable at a program
@@ -291,10 +291,9 @@ class L1StringAnalysis(val project: SomeProject) extends FPCFAnalysis {
         }
 
         var sci = StringConstancyInformation.lb
-        if (
-            attemptFinalResultComputation
-                && state.dependees.isEmpty
-                && computeResultsForPath(state.computedLeanPath, state)
+        if (attemptFinalResultComputation
+            && state.dependees.isEmpty
+            && computeResultsForPath(state.computedLeanPath, state)
         ) {
             // Check whether we deal with the empty string; it requires special treatment as the
             // PathTransformer#pathToStringTree would not handle it correctly (as
@@ -437,9 +436,9 @@ class L1StringAnalysis(val project: SomeProject) extends FPCFAnalysis {
     }
 
     private def finalizePreparations(
-                                        path:     Path,
-                                        state:    L1ComputationState,
-                                        iHandler: L1InterpretationHandler
+        path:     Path,
+        state:    L1ComputationState,
+        iHandler: L1InterpretationHandler
     ): Unit = path.elements.foreach {
         case FlatPathElement(index) =>
             if (!state.fpe2sci.contains(index)) {
@@ -474,9 +473,9 @@ class L1StringAnalysis(val project: SomeProject) extends FPCFAnalysis {
     }
 
     private def processFinalP(
-                                 state: L1ComputationState,
-                                 e:     Entity,
-                                 p:     StringConstancyProperty
+        state: L1ComputationState,
+        e:     Entity,
+        p:     StringConstancyProperty
     ): ProperPropertyComputationResult = {
         // Add mapping information (which will be used for computing the final result)
         state.var2IndexMapping(e.asInstanceOf[SContext]._1).foreach {
@@ -686,7 +685,7 @@ class L1StringAnalysis(val project: SomeProject) extends FPCFAnalysis {
      * FlatPathElement.element in which it occurs.
      */
     private def findDependeesAcc(subpath: SubPath, stmts: Array[Stmt[V]], target: SEntity)(
-        implicit tac: TACode[TACMethodParameter, V],
+        implicit tac: TACode[TACMethodParameter, V]
     ): ListBuffer[(SEntity, Int)] = {
         val dependees = ListBuffer[(SEntity, Int)]()
         subpath match {
@@ -708,9 +707,7 @@ class L1StringAnalysis(val project: SomeProject) extends FPCFAnalysis {
                 }
                 dependees
             case npe: NestedPathElement =>
-                npe.element.foreach { nextSubpath =>
-                    dependees.appendAll(findDependeesAcc(nextSubpath, stmts, target))
-                }
+                npe.element.foreach { nextSubpath => dependees.appendAll(findDependeesAcc(nextSubpath, stmts, target)) }
                 dependees
             case _ => dependees
         }
@@ -727,7 +724,7 @@ class L1StringAnalysis(val project: SomeProject) extends FPCFAnalysis {
      *       this variable as `ignore`.
      */
     private def findDependentVars(path: Path, stmts: Array[Stmt[V]], ignore: SEntity)(
-        implicit tac: TACode[TACMethodParameter, V],
+        implicit tac: TACode[TACMethodParameter, V]
     ): mutable.LinkedHashMap[SEntity, Int] = {
         val dependees = mutable.LinkedHashMap[SEntity, Int]()
         path.elements.foreach { nextSubpath =>
@@ -879,6 +876,6 @@ object LazyL1StringAnalysis
     override def requiredProjectInformation: ProjectInformationKeys = Seq(
         DeclaredMethodsKey,
         FieldAccessInformationKey,
-        ContextProviderKey,
+        ContextProviderKey
     )
 }

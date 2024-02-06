@@ -10,8 +10,8 @@ package interpretation
 import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
-import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.FinalEP
 
 /**
@@ -25,10 +25,10 @@ import org.opalj.fpcf.FinalEP
  * @author Patrick Mell
  */
 class L1NewArrayInterpreter(
-                               override protected val cfg:         CFG[Stmt[V], TACStmts[V]],
-                               override protected val exprHandler: L1InterpretationHandler,
-                               state:       L1ComputationState,
-                               params:      List[Seq[StringConstancyInformation]]
+        override protected val cfg:         CFG[Stmt[V], TACStmts[V]],
+        override protected val exprHandler: L1InterpretationHandler,
+        state:                              L1ComputationState,
+        params:                             List[Seq[StringConstancyInformation]]
 ) extends L1StringInterpreter {
 
     override type T = NewArray[V]

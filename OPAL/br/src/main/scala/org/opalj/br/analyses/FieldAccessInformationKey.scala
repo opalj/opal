@@ -26,10 +26,6 @@ object FieldAccessInformationKey extends ProjectInformationKey[FieldAccessInform
                     "analysis configuration",
                     s"no field access information analysis configured, using SimpleFieldAccessInformationAnalysis as a fallback"
                 )(project.logContext)
-                project.updateProjectInformationKeyInitializationData(this) {
-                    case None => Seq(EagerSimpleFieldAccessInformationAnalysis)
-                    case Some(schedulers) => schedulers ++ Seq(EagerSimpleFieldAccessInformationAnalysis)
-                }
                 Seq(EagerSimpleFieldAccessInformationAnalysis)
         }
 

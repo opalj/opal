@@ -6,6 +6,7 @@ package analyses
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
+
 import org.opalj.br.Method
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.fpcf.Entity

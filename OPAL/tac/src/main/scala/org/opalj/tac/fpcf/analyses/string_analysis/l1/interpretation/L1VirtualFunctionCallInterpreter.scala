@@ -17,9 +17,9 @@ import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyType
+import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
-import org.opalj.fpcf.Entity
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.PropertyStore
@@ -32,12 +32,12 @@ import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.Interpretation
  * @author Patrick Mell
  */
 class L1VirtualFunctionCallInterpreter(
-                                          override protected val cfg:             CFG[Stmt[V], TACStmts[V]],
-                                          override protected val exprHandler:     L1InterpretationHandler,
-                                          ps:              PropertyStore,
-                                          state:           L1ComputationState,
-                                          params:          List[Seq[StringConstancyInformation]],
-                                          contextProvider:    ContextProvider
+        override protected val cfg:         CFG[Stmt[V], TACStmts[V]],
+        override protected val exprHandler: L1InterpretationHandler,
+        ps:                                 PropertyStore,
+        state:                              L1ComputationState,
+        params:                             List[Seq[StringConstancyInformation]],
+        contextProvider:                    ContextProvider
 ) extends L1StringInterpreter {
 
     override type T = VirtualFunctionCall[V]

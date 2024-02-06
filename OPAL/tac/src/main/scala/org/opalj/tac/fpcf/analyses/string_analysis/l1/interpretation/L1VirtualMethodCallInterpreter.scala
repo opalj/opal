@@ -21,8 +21,8 @@ import org.opalj.fpcf.FinalEP
  * @author Patrick Mell
  */
 case class L1VirtualMethodCallInterpreter(
-    override protected val cfg:         CFG[Stmt[V], TACStmts[V]],
-    override protected val exprHandler: L1InterpretationHandler
+        override protected val cfg:         CFG[Stmt[V], TACStmts[V]],
+        override protected val exprHandler: L1InterpretationHandler
 ) extends L1StringInterpreter {
 
     override type T = VirtualMethodCall[V]

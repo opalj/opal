@@ -7,10 +7,10 @@ package string_analysis
 package l1
 package finalizer
 
+import scala.collection.mutable.ListBuffer
+
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.tac.fpcf.analyses.string_analysis.l1.interpretation.L1ArrayAccessInterpreter
-
-import scala.collection.mutable.ListBuffer
 
 /**
  * @author Maximilian Rüsch

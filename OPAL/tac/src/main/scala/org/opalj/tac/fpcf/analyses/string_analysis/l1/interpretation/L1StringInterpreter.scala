@@ -8,8 +8,8 @@ package l1
 package interpretation
 
 import org.opalj.br.fpcf.properties.StringConstancyProperty
-import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EOptionP
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.StringInterpreter
 
 /**

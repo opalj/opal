@@ -6,6 +6,9 @@ package analyses
 package string_analysis
 package l0
 
+import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
+
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFAnalysis
@@ -34,9 +37,6 @@ import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.SubPath
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.WindowPathFinder
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.value.ValueInformation
-
-import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
 
 /**
  * IntraproceduralStringAnalysis processes a read operation of a local string variable at a program
@@ -253,9 +253,7 @@ class L0StringAnalysis(val project: SomeProject) extends FPCFAnalysis {
                 }
                 foundDependees
             case npe: NestedPathElement =>
-                npe.element.foreach { nextSubpath =>
-                    foundDependees.appendAll(findDependeesAcc(nextSubpath, stmts))
-                }
+                npe.element.foreach { nextSubpath => foundDependees.appendAll(findDependeesAcc(nextSubpath, stmts)) }
                 foundDependees
             case _ => foundDependees
         }

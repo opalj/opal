@@ -190,9 +190,9 @@ case class Path(elements: List[SubPath]) {
      * @return In case a (sub) path is empty, `None` is returned and otherwise the lean (sub) path.
      */
     private def makeLeanPathAcc(
-        toProcess:           NestedPathElement,
-        siteMap:             Map[Int, Unit],
-        endSite:             Int
+        toProcess: NestedPathElement,
+        siteMap:   Map[Int, Unit],
+        endSite:   Int
     ): Option[NestedPathElement] = {
         val elements = ListBuffer[SubPath]()
 
@@ -205,8 +205,8 @@ case class Path(elements: List[SubPath]) {
                 val leanedSubPath = makeLeanPathAcc(npe, siteMap, endSite)
                 val keepAlternativeBranches = toProcess.elementType match {
                     case Some(NestedPathType.CondWithAlternative) |
-                         Some(NestedPathType.SwitchWithDefault) |
-                         Some(NestedPathType.TryCatchFinally) => true
+                        Some(NestedPathType.SwitchWithDefault) |
+                        Some(NestedPathType.TryCatchFinally) => true
                     case _ => false
                 }
                 if (leanedSubPath.isDefined) {

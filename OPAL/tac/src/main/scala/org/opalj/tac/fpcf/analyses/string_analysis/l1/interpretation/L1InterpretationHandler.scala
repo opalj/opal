@@ -13,8 +13,8 @@ import org.opalj.br.analyses.FieldAccessInformation
 import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
-import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyStore
@@ -26,11 +26,11 @@ import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.Interpretation
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.NewInterpreter
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.StringConstInterpreter
 import org.opalj.tac.fpcf.analyses.string_analysis.l1.finalizer.ArrayLoadFinalizer
+import org.opalj.tac.fpcf.analyses.string_analysis.l1.finalizer.GetFieldFinalizer
 import org.opalj.tac.fpcf.analyses.string_analysis.l1.finalizer.NewArrayFinalizer
 import org.opalj.tac.fpcf.analyses.string_analysis.l1.finalizer.NonVirtualMethodCallFinalizer
-import org.opalj.tac.fpcf.analyses.string_analysis.l1.finalizer.VirtualFunctionCallFinalizer
-import org.opalj.tac.fpcf.analyses.string_analysis.l1.finalizer.GetFieldFinalizer
 import org.opalj.tac.fpcf.analyses.string_analysis.l1.finalizer.StaticFunctionCallFinalizer
+import org.opalj.tac.fpcf.analyses.string_analysis.l1.finalizer.VirtualFunctionCallFinalizer
 import org.opalj.value.ValueInformation
 
 /**
@@ -43,12 +43,12 @@ import org.opalj.value.ValueInformation
  * @author Patrick Mell
  */
 class L1InterpretationHandler(
-    tac:                    TACode[TACMethodParameter, DUVar[ValueInformation]],
-    ps:                     PropertyStore,
-    declaredFields:         DeclaredFields,
-    fieldAccessInformation: FieldAccessInformation,
-    state:                  L1ComputationState,
-    contextProvider:           ContextProvider
+        tac:                    TACode[TACMethodParameter, DUVar[ValueInformation]],
+        ps:                     PropertyStore,
+        declaredFields:         DeclaredFields,
+        fieldAccessInformation: FieldAccessInformation,
+        state:                  L1ComputationState,
+        contextProvider:        ContextProvider
 ) extends InterpretationHandler(tac) {
 
     /**
@@ -405,12 +405,12 @@ class L1InterpretationHandler(
 object L1InterpretationHandler {
 
     def apply(
-                 tac:                    TACode[TACMethodParameter, DUVar[ValueInformation]],
-                 ps:                     PropertyStore,
-                 declaredFields:         DeclaredFields,
-                 fieldAccessInformation: FieldAccessInformation,
-                 state:                  L1ComputationState,
-                 contextProvider: ContextProvider
+        tac:                    TACode[TACMethodParameter, DUVar[ValueInformation]],
+        ps:                     PropertyStore,
+        declaredFields:         DeclaredFields,
+        fieldAccessInformation: FieldAccessInformation,
+        state:                  L1ComputationState,
+        contextProvider:        ContextProvider
     ): L1InterpretationHandler = new L1InterpretationHandler(
         tac,
         ps,

@@ -8,6 +8,7 @@ package preprocessing
 
 import scala.collection.mutable.ListBuffer
 import scala.collection.mutable.Map
+
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.br.fpcf.properties.string_definition.StringTree
 import org.opalj.br.fpcf.properties.string_definition.StringTreeConcat
@@ -78,7 +79,7 @@ class PathTransformer(val interpretationHandler: InterpretationHandler) {
                                             Some(StringTreeCond(processedSubPaths.head))
                                         }
                                     case NestedPathType.SwitchWithDefault |
-                                         NestedPathType.CondWithAlternative =>
+                                        NestedPathType.CondWithAlternative =>
                                         if (npe.element.size == processedSubPaths.size) {
                                             Some(StringTreeOr(processedSubPaths))
                                         } else {
@@ -88,7 +89,7 @@ class PathTransformer(val interpretationHandler: InterpretationHandler) {
                                         Some(StringTreeCond(StringTreeOr(processedSubPaths)))
                                     case NestedPathType.CondWithoutAlternative =>
                                         Some(StringTreeCond(StringTreeOr(processedSubPaths)))
-                                    case _                                     => None
+                                    case _ => None
                                 }
                             } else {
                                 None

@@ -19,8 +19,8 @@ import org.opalj.fpcf.FinalEP
  * @author Maximilian Rüsch
  */
 case class FloatValueInterpreter(
-    override protected val cfg:         CFG[Stmt[V], TACStmts[V]],
-    override protected val exprHandler: InterpretationHandler
+        override protected val cfg:         CFG[Stmt[V], TACStmts[V]],
+        override protected val exprHandler: InterpretationHandler
 ) extends StringInterpreter {
 
     override type T = FloatConst

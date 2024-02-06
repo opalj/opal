@@ -13,7 +13,7 @@ import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
  * @author Maximilian Rüsch
  */
 case class StaticFunctionCallFinalizer(
-    override protected val state: L1ComputationState
+        override protected val state: L1ComputationState
 ) extends L1Finalizer {
 
     override type T = StaticFunctionCall[V]

@@ -507,10 +507,10 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
      * statements and that it determines itself whether the switch contains a default case or not.
      */
     private def buildPathForSwitch(
-        start: Int,
-        end:   Int,
+        start:    Int,
+        end:      Int,
         pathType: NestedPathType.Value,
-        fill:  Boolean
+        fill:     Boolean
     ): (Path, List[(Int, Int)]) = {
         val switch = cfg.code.instructions(start).asSwitch
         val caseStmts = ListBuffer[Int](switch.caseStmts.sorted: _*)

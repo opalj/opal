@@ -11,7 +11,7 @@ package finalizer
  * @author Maximilian Rüsch
  */
 case class NewArrayFinalizer(
-    override protected val state: L1ComputationState
+        override protected val state: L1ComputationState
 ) extends L1Finalizer {
 
     override type T = NewArray[V]

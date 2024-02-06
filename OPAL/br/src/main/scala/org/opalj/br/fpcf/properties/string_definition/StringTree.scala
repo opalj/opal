@@ -359,7 +359,7 @@ case class StringTreeOr(
  * string may have (contain) a particular but not necessarily.
  */
 case class StringTreeCond(
-     child: StringTree
+        child: StringTree
 ) extends StringTree(ListBuffer(child))
 
 /**

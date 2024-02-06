@@ -15,7 +15,7 @@ import org.opalj.br.fpcf.properties.string_definition.StringConstancyType
  * @author Maximilian Rüsch
  */
 case class VirtualFunctionCallFinalizer(
-    override protected val state: L1ComputationState
+        override protected val state: L1ComputationState
 ) extends L1Finalizer {
 
     override type T = VirtualFunctionCall[V]

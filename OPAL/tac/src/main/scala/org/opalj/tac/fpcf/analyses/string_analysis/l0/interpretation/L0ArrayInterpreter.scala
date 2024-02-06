@@ -18,8 +18,8 @@ import org.opalj.fpcf.FinalEP
  * @author Maximilian Rüsch
  */
 case class L0ArrayInterpreter(
-    override protected val cfg:         CFG[Stmt[V], TACStmts[V]],
-    override protected val exprHandler: L0InterpretationHandler
+        override protected val cfg:         CFG[Stmt[V], TACStmts[V]],
+        override protected val exprHandler: L0InterpretationHandler
 ) extends L0StringInterpreter {
 
     override type T = ArrayLoad[V]
