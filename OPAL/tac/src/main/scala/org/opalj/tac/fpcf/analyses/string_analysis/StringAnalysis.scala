@@ -26,7 +26,6 @@ import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEPS
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 import org.opalj.tac.fpcf.analyses.string_analysis.l1.interpretation.L1ArrayAccessInterpreter
-import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.AbstractPathFinder
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.FlatPathElement
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.NestedPathElement
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.NestedPathType
@@ -260,21 +259,16 @@ trait StringAnalysis extends FPCFAnalysis {
     }
 
     /**
-     * This function is a wrapper function for [[computeLeanPathForStringConst]] and
-     * [[computeLeanPathForStringBuilder]].
+     * Wrapper function for [[computeLeanPathForStringConst]] and [[computeLeanPathForStringBuilder]].
      */
-    protected def computeLeanPath(
-        value: V,
-        tac:   TACode[TACMethodParameter, V]
-    ): Path = {
+    protected def computeLeanPath(value: V, tac: TACode[TACMethodParameter, V]): Path = {
         val defSites = value.definedBy.toArray.sorted
         if (defSites.head < 0) {
             computeLeanPathForStringConst(value)
         } else {
             val call = tac.stmts(defSites.head).asAssignment.expr
             if (InterpretationHandler.isStringBuilderBufferToStringCall(call)) {
-                val (leanPath, _) = computeLeanPathForStringBuilder(value, tac)
-                leanPath
+                computeLeanPathForStringBuilder(value, tac).get
             } else {
                 computeLeanPathForStringConst(value)
             }
@@ -310,14 +304,13 @@ trait StringAnalysis extends FPCFAnalysis {
     protected def computeLeanPathForStringBuilder(
         value: V,
         tac:   TACode[TACMethodParameter, DUVar[ValueInformation]]
-    ): (Path, Boolean) = {
-        val pathFinder: AbstractPathFinder = new WindowPathFinder(tac.cfg)
+    ): Option[Path] = {
         val initDefSites = InterpretationHandler.findDefSiteOfInit(value, tac.stmts)
         if (initDefSites.isEmpty) {
-            (null, false)
+            None
         } else {
-            val paths = pathFinder.findPaths(initDefSites, value.definedBy.toArray.max)
-            (paths.makeLeanPath(value, tac.stmts), true)
+            val paths = new WindowPathFinder(tac.cfg).findPaths(initDefSites, value.definedBy.toArray.max)
+            Some(paths.makeLeanPath(value, tac.stmts))
         }
     }
 

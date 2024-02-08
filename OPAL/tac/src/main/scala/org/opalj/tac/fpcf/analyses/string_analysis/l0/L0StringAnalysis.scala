@@ -27,7 +27,6 @@ import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 import org.opalj.tac.fpcf.analyses.string_analysis.l0.interpretation.L0InterpretationHandler
-import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.WindowPathFinder
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
@@ -102,16 +101,14 @@ class L0StringAnalysis(override val project: SomeProject) extends StringAnalysis
             return Result(state.entity, StringConstancyProperty.lb)
         }
 
-        val call = stmts(defSites.head).asAssignment.expr
-        if (InterpretationHandler.isStringBuilderBufferToStringCall(call)) {
-            val initDefSites = InterpretationHandler.findDefSiteOfInit(uVar, stmts)
-            if (initDefSites.isEmpty) {
+        val expr = stmts(defSites.head).asAssignment.expr
+        if (InterpretationHandler.isStringBuilderBufferToStringCall(expr)) {
+            val leanPath = computeLeanPathForStringBuilder(uVar, tac)
+            if (leanPath.isEmpty) {
                 // String{Builder,Buffer} from method parameter is to be evaluated
                 return Result(state.entity, StringConstancyProperty.lb)
             }
-
-            val path = new WindowPathFinder(tac.cfg).findPaths(initDefSites, uVar.definedBy.head)
-            state.computedLeanPath = path.makeLeanPath(uVar, stmts)
+            state.computedLeanPath = leanPath.get
 
             // Find DUVars, that the analysis of the current entity depends on
             val dependentVars = findDependentVars(state.computedLeanPath, puVar)

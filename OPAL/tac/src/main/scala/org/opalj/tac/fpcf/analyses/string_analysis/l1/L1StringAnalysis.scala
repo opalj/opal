@@ -202,8 +202,8 @@ class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
             } else {
                 val call = stmts(defSites.head).asAssignment.expr
                 if (InterpretationHandler.isStringBuilderBufferToStringCall(call)) {
-                    val (_, hasInitDefSites) = computeLeanPathForStringBuilder(uVar, state.tac)
-                    if (!hasInitDefSites) {
+                    val leanPath = computeLeanPathForStringBuilder(uVar, state.tac)
+                    if (leanPath.isEmpty) {
                         return Result(state.entity, StringConstancyProperty.lb)
                     }
                     val hasSupportedParamType = state.entity._2.parameterTypes.exists {
