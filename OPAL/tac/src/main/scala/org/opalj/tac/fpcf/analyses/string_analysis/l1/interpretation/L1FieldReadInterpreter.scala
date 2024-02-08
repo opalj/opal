@@ -146,7 +146,7 @@ case class L1FieldReadInterpreter[State <: ComputationState[State]](
                 StringConstancyLevel.DYNAMIC,
                 possibleStrings = "(^null$|" + StringConstancyInformation.UnknownWordSymbol + ")"
             )
-            state.appendToFpe2Sci(defSitEntity, StringConstancyInformation.lb)
+            state.appendToFpe2Sci(pcOfDefSite(defSite)(state.tac.stmts), StringConstancyInformation.lb)
             FinalEP(defSitEntity, StringConstancyProperty(sci))
         } else {
             // If all results are final, determine all possible values for the field. Otherwise,
@@ -164,7 +164,7 @@ case class L1FieldReadInterpreter[State <: ComputationState[State]](
                 val finalSci = StringConstancyInformation.reduceMultiple(results.map {
                     _.asFinal.p.stringConstancyInformation
                 })
-                state.appendToFpe2Sci(defSitEntity, finalSci)
+                state.appendToFpe2Sci(pcOfDefSite(defSite)(state.tac.stmts), finalSci)
                 FinalEP(defSitEntity, StringConstancyProperty(finalSci))
             } else {
                 results.find(!_.isFinal).get

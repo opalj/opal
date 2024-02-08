@@ -28,15 +28,15 @@ case class ArrayLoadFinalizer(
      */
     override def finalizeInterpretation(instr: T, defSite: Int): Unit = {
         val allDefSites = L1ArrayAccessInterpreter.getStoreAndLoadDefSites(instr, state.tac.stmts)
-
-        allDefSites.foreach { ds =>
-            if (!state.fpe2sci.contains(ds)) {
-                state.iHandler.finalizeDefSite(ds, state)
+        val allDefSitesByPC = allDefSites.map(ds => (pcOfDefSite(ds)(state.tac.stmts), ds)).toMap
+        allDefSitesByPC.keys.foreach { pc =>
+            if (!state.fpe2sci.contains(pc)) {
+                state.iHandler.finalizeDefSite(allDefSitesByPC(pc), state)
             }
         }
 
-        state.fpe2sci(defSite) = ListBuffer(StringConstancyInformation.reduceMultiple(
-            allDefSites.filter(state.fpe2sci.contains).sorted.flatMap { ds => state.fpe2sci(ds) }
+        state.fpe2sci(pcOfDefSite(defSite)(state.tac.stmts)) = ListBuffer(StringConstancyInformation.reduceMultiple(
+            allDefSitesByPC.keys.filter(state.fpe2sci.contains).toList.sorted.flatMap { pc => state.fpe2sci(pc) }
         ))
     }
 }

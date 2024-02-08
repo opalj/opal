@@ -18,15 +18,11 @@ import org.opalj.br.fpcf.properties.string_definition.StringConstancyType
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.tac.fpcf.analyses.string_analysis.l1.L1StringAnalysis
-import org.opalj.value.ValueInformation
 
-abstract class InterpretationHandler[State <: ComputationState[State]](tac: TACode[
-    TACMethodParameter,
-    DUVar[ValueInformation]
-]) {
+abstract class InterpretationHandler[State <: ComputationState[State]](tac: TAC) {
 
-    protected val stmts: Array[Stmt[DUVar[ValueInformation]]] = tac.stmts
-    protected val cfg: CFG[Stmt[DUVar[ValueInformation]], TACStmts[DUVar[ValueInformation]]] = tac.cfg
+    protected val stmts: Array[Stmt[V]] = tac.stmts
+    protected val cfg: CFG[Stmt[V], TACStmts[V]] = tac.cfg
 
     /**
      * A list of definition sites that have already been processed. Store it as a map for constant

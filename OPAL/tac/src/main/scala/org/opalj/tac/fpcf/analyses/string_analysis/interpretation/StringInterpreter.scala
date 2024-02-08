@@ -22,7 +22,6 @@ import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.PropertyStore
 import org.opalj.tac.fpcf.properties.TACAI
-import org.opalj.value.ValueInformation
 
 /**
  * @author Maximilian Rüsch
@@ -61,7 +60,7 @@ trait StringInterpreter[State <: ComputationState[State]] {
         ps: PropertyStore,
         m:  Method,
         s:  State
-    ): (EOptionP[Method, TACAI], Option[TACode[TACMethodParameter, V]]) = {
+    ): (EOptionP[Method, TACAI], Option[TAC]) = {
         val tacai = ps(m, TACAI.key)
         if (tacai.hasUBP) {
             (tacai, tacai.ub.tac)
@@ -102,7 +101,7 @@ trait StringInterpreter[State <: ComputationState[State]] {
      */
     protected def getParametersForPCs(
         pcs: Iterable[Int],
-        tac: TACode[TACMethodParameter, DUVar[ValueInformation]]
+        tac: TAC
     ): List[Seq[Expr[V]]] = {
         val paramLists = ListBuffer[Seq[Expr[V]]]()
         pcs.map(tac.pcToIndex).foreach { stmtIndex =>

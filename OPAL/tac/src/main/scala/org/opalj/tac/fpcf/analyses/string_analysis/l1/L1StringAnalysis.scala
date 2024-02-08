@@ -150,7 +150,7 @@ class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
         val stmts = state.tac.stmts
 
         if (state.computedLeanPath == null) {
-            state.computedLeanPath = computeLeanPath(uVar, state.tac)
+            state.computedLeanPath = computeLeanPath(uVar)(state.tac)
         }
 
         if (state.iHandler == null) {
@@ -202,7 +202,7 @@ class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
             } else {
                 val call = stmts(defSites.head).asAssignment.expr
                 if (InterpretationHandler.isStringBuilderBufferToStringCall(call)) {
-                    val leanPath = computeLeanPathForStringBuilder(uVar, state.tac)
+                    val leanPath = computeLeanPathForStringBuilder(uVar)(state.tac)
                     if (leanPath.isEmpty) {
                         return Result(state.entity, StringConstancyProperty.lb)
                     }
@@ -210,7 +210,7 @@ class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
                         L1StringAnalysis.isSupportedType
                     }
                     if (hasSupportedParamType) {
-                        hasFormalParamUsageAlongPath(state.computedLeanPath, state.tac.stmts)
+                        hasFormalParamUsageAlongPath(state.computedLeanPath)(state.tac)
                     } else {
                         !hasCallersOrParamInfo
                     }
@@ -275,16 +275,16 @@ class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
         var sci = StringConstancyInformation.lb
         if (attemptFinalResultComputation
             && state.dependees.isEmpty
-            && computeResultsForPath(state.computedLeanPath, state)
+            && computeResultsForPath(state.computedLeanPath)(state)
         ) {
             // Check whether we deal with the empty string; it requires special treatment as the
             // PathTransformer#pathToStringTree would not handle it correctly (as
             // PathTransformer#pathToStringTree is involved in a mutual recursion)
             val isEmptyString = if (state.computedLeanPath.elements.length == 1) {
                 state.computedLeanPath.elements.head match {
-                    case FlatPathElement(i) =>
-                        state.fpe2sci.contains(i) && state.fpe2sci(i).length == 1 &&
-                            state.fpe2sci(i).head == StringConstancyInformation.getNeutralElement
+                    case fpe: FlatPathElement =>
+                        state.fpe2sci.contains(fpe.pc) && state.fpe2sci(fpe.pc).length == 1 &&
+                            state.fpe2sci(fpe.pc).head == StringConstancyInformation.getNeutralElement
                     case _ => false
                 }
             } else false
@@ -347,9 +347,9 @@ class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
         state:    State,
         iHandler: InterpretationHandler[State]
     ): Unit = path.elements.foreach {
-        case FlatPathElement(index) =>
-            if (!state.fpe2sci.contains(index)) {
-                iHandler.finalizeDefSite(index, state)
+        case fpe: FlatPathElement =>
+            if (!state.fpe2sci.contains(fpe.pc)) {
+                iHandler.finalizeDefSite(valueOriginOfPC(fpe.pc, state.tac.pcToIndex).get, state)
             }
         case npe: NestedPathElement =>
             finalizePreparations(Path(npe.element.toList), state, iHandler)
@@ -423,62 +423,9 @@ class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
         !hasIntermediateResult
     }
 
-    /**
-     * This function traverses the given path, computes all string values along the path and stores
-     * these information in the given state.
-     *
-     * @param p     The path to traverse.
-     * @param state The current state of the computation. This function will alter
-     *              [[L1ComputationState.fpe2sci]].
-     * @return Returns `true` if all values computed for the path are final results.
-     */
-    private def computeResultsForPath(
-        p:     Path,
-        state: L1ComputationState
-    ): Boolean = {
-        var hasFinalResult = true
-
-        p.elements.foreach {
-            case FlatPathElement(index) =>
-                if (!state.fpe2sci.contains(index)) {
-                    val eOptP = state.iHandler.processDefSite(index, state.params.toList.map(_.toSeq))(state)
-                    if (eOptP.isFinal) {
-                        state.appendToFpe2Sci(index, eOptP.asFinal.p.stringConstancyInformation, reset = true)
-                    } else {
-                        hasFinalResult = false
-                    }
-                }
-            case npe: NestedPathElement =>
-                val subFinalResult = computeResultsForPath(
-                    Path(npe.element.toList),
-                    state
-                )
-                hasFinalResult = hasFinalResult && subFinalResult
-            case _ =>
-        }
-
-        hasFinalResult
-    }
-
-    private def hasFormalParamUsageAlongPath(path: Path, stmts: Array[Stmt[V]]): Boolean = {
-        def hasExprFormalParamUsage(expr: Expr[V]): Boolean = expr match {
-            case al: ArrayLoad[V]    => L1ArrayAccessInterpreter.getStoreAndLoadDefSites(al, stmts).exists(_ < 0)
-            case duVar: V            => duVar.definedBy.exists(_ < 0)
-            case fc: FunctionCall[V] => fc.params.exists(hasExprFormalParamUsage)
-            case mc: MethodCall[V]   => mc.params.exists(hasExprFormalParamUsage)
-            case be: BinaryExpr[V]   => hasExprFormalParamUsage(be.left) || hasExprFormalParamUsage(be.right)
-            case _                   => false
-        }
-
-        path.elements.exists {
-            case FlatPathElement(index) => stmts(index) match {
-                    case Assignment(_, _, expr) => hasExprFormalParamUsage(expr)
-                    case ExprStmt(_, expr)      => hasExprFormalParamUsage(expr)
-                    case _                      => false
-                }
-            case NestedPathElement(subPath, _) => hasFormalParamUsageAlongPath(Path(subPath.toList), stmts)
-            case _                             => false
-        }
+    override protected def hasExprFormalParamUsage(expr: Expr[V])(implicit tac: TAC): Boolean = expr match {
+        case al: ArrayLoad[V] => L1ArrayAccessInterpreter.getStoreAndLoadDefSites(al, tac.stmts).exists(_ < 0)
+        case _                => super.hasExprFormalParamUsage(expr)
     }
 }
 

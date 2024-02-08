@@ -31,7 +31,7 @@ import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.StringConstInt
  * @author Maximilian Rüsch
  */
 class L0InterpretationHandler(
-        tac: TACode[TACMethodParameter, V]
+        tac: TAC
 ) extends InterpretationHandler[L0ComputationState](tac) {
 
     /**
@@ -95,5 +95,5 @@ class L0InterpretationHandler(
 
 object L0InterpretationHandler {
 
-    def apply(tac: TACode[TACMethodParameter, V]): L0InterpretationHandler = new L0InterpretationHandler(tac)
+    def apply(tac: TAC): L0InterpretationHandler = new L0InterpretationHandler(tac)
 }

@@ -19,11 +19,12 @@ import org.opalj.br.cfg.CFGNode
  * [[AbstractPathFinder]] provides a scaffolding for finding all relevant paths in a CFG in the
  * scope of string definition analyses.
  *
- * @param cfg The control flow graph (CFG) on which instance of this class will operate on.
- *
- * @author Patrick Mell
+ * @author Maximilian Rüsch
  */
-abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
+abstract class AbstractPathFinder(tac: TAC) {
+
+    val cfg: CFG[Stmt[V], TACStmts[V]] = tac.cfg
+    implicit val stmts: Array[Stmt[V]] = tac.stmts
 
     /**
      * CSInfo stores information regarding control structures (CS) in the form: Index of the start
@@ -487,7 +488,7 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
             case (startSubpath, endSubpath) =>
                 val subpathElements = ListBuffer[SubPath]()
                 if (fill) {
-                    subpathElements.appendAll(startSubpath.to(endSubpath).map(FlatPathElement))
+                    subpathElements.appendAll(startSubpath.to(endSubpath).map(FlatPathElement.apply))
                 }
                 if (!fill || subpathElements.nonEmpty)
                     subPaths.append(NestedPathElement(subpathElements, None))
@@ -538,7 +539,7 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
         val subPaths: ListBuffer[SubPath] = startEndPairs.map { pair =>
             val subpathElements = ListBuffer[SubPath]()
             if (fill) {
-                subpathElements.appendAll(Range.inclusive(pair._1, pair._2).map(FlatPathElement))
+                subpathElements.appendAll(Range.inclusive(pair._1, pair._2).map(FlatPathElement.apply))
             }
             NestedPathElement(subpathElements, None)
         }
@@ -656,14 +657,14 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
                 val subpathElements = ListBuffer[SubPath]()
                 subPaths.append(NestedPathElement(subpathElements, None))
                 if (fill) {
-                    subpathElements.appendAll(startSubpath.to(endSubpath).map(FlatPathElement))
+                    subpathElements.appendAll(startSubpath.to(endSubpath).map(FlatPathElement.apply))
                 }
         }
 
         // If there is a finally part, append everything after the end of the try block up to the
         // very first catch block
         if (hasFinallyBlock && fill) {
-            subPaths.appendAll((startEndPairs.head._2 + 1).until(startEndPairs(1)._1).map { i => FlatPathElement(i) })
+            subPaths.appendAll((startEndPairs.head._2 + 1).until(startEndPairs(1)._1).map(FlatPathElement.apply))
         }
 
         (
@@ -1238,8 +1239,8 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
                     }
 
                     lastInsertedIndex = nextEle match {
-                        case fpe: FlatPathElement     => fpe.element
-                        case inner: NestedPathElement => Path.getLastElementInNPE(inner).element
+                        case fpe: FlatPathElement     => fpe.stmtIndex(tac.pcToIndex)
+                        case inner: NestedPathElement => Path.getLastElementInNPE(inner).stmtIndex(tac.pcToIndex)
                         // Compiler wants it but should never be the case!
                         case _ => -1
                     }
@@ -1252,7 +1253,7 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
                 if (insertIndex < startEndPairs.length) {
                     currentToInsert.appendAll((lastInsertedIndex + 1).to(
                         startEndPairs(insertIndex)._2
-                    ).map(FlatPathElement))
+                    ).map(FlatPathElement.apply))
                     if (isRepElement) {
                         npe.element.appendAll(currentToInsert)
                     } else {
@@ -1263,7 +1264,7 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
                         insertIndex.until(startEndPairs.length).foreach { i =>
                             insertPos = npe.element(i).asInstanceOf[NestedPathElement]
                             insertPos.element.appendAll(
-                                startEndPairs(i)._1.to(startEndPairs(i)._2).map(FlatPathElement)
+                                startEndPairs(i)._1.to(startEndPairs(i)._2).map(FlatPathElement.apply)
                             )
                         }
                     }
@@ -1282,7 +1283,7 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
             indexLastCSEnd = nextTopCsInfo._2 + 1
         }
 
-        finalPath.appendAll(indexLastCSEnd.to(endIndex).map(FlatPathElement))
+        finalPath.appendAll(indexLastCSEnd.to(endIndex).map(FlatPathElement.apply))
         Path(finalPath.toList)
     }
 

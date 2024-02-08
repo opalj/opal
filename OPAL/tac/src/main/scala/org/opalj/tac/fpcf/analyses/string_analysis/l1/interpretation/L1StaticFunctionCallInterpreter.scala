@@ -92,7 +92,7 @@ class L1StaticFunctionCallInterpreter(
         // 1) we do not need the second return value of getMethodsForPC and
         // 2) interpreting the head is enough
         if (methods._1.isEmpty) {
-            state.appendToFpe2Sci(defSite, StringConstancyInformation.lb)
+            state.appendToFpe2Sci(pcOfDefSite(defSite)(state.tac.stmts), StringConstancyInformation.lb)
             return FinalEP(instr, StringConstancyProperty.lb)
         }
 

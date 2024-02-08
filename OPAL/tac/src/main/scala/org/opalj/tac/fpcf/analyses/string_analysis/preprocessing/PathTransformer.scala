@@ -43,16 +43,16 @@ class PathTransformer[State <: ComputationState[State]](val interpretationHandle
     )(implicit state: State): Option[StringTree] = {
         subpath match {
             case fpe: FlatPathElement =>
-                val sci = if (fpe2Sci.contains(fpe.element)) {
-                    StringConstancyInformation.reduceMultiple(fpe2Sci(fpe.element))
+                val sci = if (fpe2Sci.contains(fpe.pc)) {
+                    StringConstancyInformation.reduceMultiple(fpe2Sci(fpe.pc))
                 } else {
-                    val sciToAdd = interpretationHandler.processDefSite(fpe.element) match {
+                    val sciToAdd = interpretationHandler.processDefSite(fpe.stmtIndex(state.tac.pcToIndex)) match {
                         case FinalP(p)      => p.stringConstancyInformation
                         case InterimUBP(ub) => ub.stringConstancyInformation
                         case _              => StringConstancyInformation.lb
                     }
 
-                    fpe2Sci(fpe.element) = ListBuffer(sciToAdd)
+                    fpe2Sci(fpe.pc) = ListBuffer(sciToAdd)
                     sciToAdd
                 }
                 Option.unless(sci.isTheNeutralElement)(StringTreeConst(sci))
@@ -117,7 +117,7 @@ class PathTransformer[State <: ComputationState[State]](val interpretationHandle
      * how to handle methods called on the object of interest (like `append`).
      *
      * @param path             The path element to be transformed.
-     * @param fpe2Sci          A mapping from [[FlatPathElement.element]] values to [[StringConstancyInformation]]. Make
+     * @param fpe2Sci          A mapping from [[FlatPathElement.pc]] values to [[StringConstancyInformation]]. Make
      *                         use of this mapping if some StringConstancyInformation need to be used that the
      *                         [[InterpretationHandler]] cannot infer / derive. For instance, if the exact value of an
      *                         expression needs to be determined by calling the

@@ -737,7 +737,7 @@ public class IntraProceduralTestMethods {
             value = "case with a try-catch-finally exception",
             stringDefinitions = {
                     @StringDefinitions(
-                            expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "=====(.*)?"
+                            expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "=====(.*|=====)"
                     ),
                     @StringDefinitions(
                             expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "=====(.*|=====)"

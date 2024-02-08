@@ -24,10 +24,22 @@ import org.opalj.value.ValueInformation
 sealed class SubPath()
 
 /**
- * A flat element, e.g., for representing a single statement. The statement is identified by
- * `element`.
+ * A flat element, e.g., for representing a single statement. The statement is identified with `pc` by its [[org.opalj.br.PC]].
  */
-case class FlatPathElement(element: Int) extends SubPath
+class FlatPathElement private[FlatPathElement] (val pc: Int) extends SubPath {
+    def stmtIndex(implicit pcToIndex: Array[Int]): Int = valueOriginOfPC(pc, pcToIndex).get
+
+    def copy = new FlatPathElement(pc)
+}
+
+object FlatPathElement extends SubPath {
+    def apply(defSite: Int)(implicit stmts: Array[Stmt[V]]) = new FlatPathElement(pcOfDefSite(defSite))
+
+    def unapply(fpe: FlatPathElement)(implicit pcToIndex: Array[Int]): Some[Int] = Some(fpe.stmtIndex)
+
+    def fromPC(pc: Int) = new FlatPathElement(pc)
+    def invalid = new FlatPathElement(-1)
+}
 
 /**
  * Identifies the nature of a nested path element.
@@ -89,22 +101,19 @@ case class Path(elements: List[SubPath]) {
 
     /**
      * Takes an object of interest, `obj`, and a list of statements, `stmts` and finds all
-     * definitions and usages of `obj`within `stmts`. These sites are then returned in a single
+     * definitions and usages of `obj` within `stmts`. These sites are then returned in a single
      * sorted list.
      */
-    private def getAllDefAndUseSites(
-        obj:   DUVar[ValueInformation],
-        stmts: Array[Stmt[V]]
-    ): List[Int] = {
+    private def getAllDefAndUseSites(obj: DUVar[ValueInformation], stmts: Array[Stmt[V]]): List[Int] = {
         val defAndUses = ListBuffer[Int]()
         val stack = mutable.Stack[Int](obj.definedBy.toList: _*)
 
         while (stack.nonEmpty) {
-            val popped = stack.pop()
-            if (!defAndUses.contains(popped)) {
-                defAndUses.append(popped)
+            val nextDefUseSite = stack.pop()
+            if (!defAndUses.contains(nextDefUseSite)) {
+                defAndUses.append(nextDefUseSite)
 
-                stmts(popped) match {
+                stmts(nextDefUseSite) match {
                     case a: Assignment[V] if a.expr.isInstanceOf[VirtualFunctionCall[V]] =>
                         val receiver = a.expr.asVirtualFunctionCall.receiver.asVar
                         stack.pushAll(receiver.asVar.definedBy.filter(_ >= 0).toArray)
@@ -121,17 +130,15 @@ case class Path(elements: List[SubPath]) {
     }
 
     /**
-     * Takes a `subpath` and checks whether the given `element` is contained. This function does a
-     * deep search, i.e., will also find the element if it is contained within
-     * [[NestedPathElement]]s.
+     * Checks whether a [[FlatPathElement]] with the given `element` is contained in the given `subpath`. This function
+     * does a deep search, i.e., will also find the element if it is contained within [[NestedPathElement]]s.
      */
-    private def containsPathElement(subpath: NestedPathElement, element: Int): Boolean = {
+    private def containsPathElementWithPC(subpath: NestedPathElement, pc: Int): Boolean = {
         subpath.element.foldLeft(false) { (old: Boolean, nextSubpath: SubPath) =>
             old || (nextSubpath match {
-                case fpe: FlatPathElement   => fpe.element == element
-                case npe: NestedPathElement => containsPathElement(npe, element)
-                // For the SubPath type (should never be the case, but the compiler wants it)
-                case _ => false
+                case fpe: FlatPathElement   => fpe.pc == pc
+                case npe: NestedPathElement => containsPathElementWithPC(npe, pc)
+                case e                      => throw new IllegalStateException(s"Unexpected path element $e")
             })
         }
     }
@@ -162,7 +169,7 @@ case class Path(elements: List[SubPath]) {
         npe.element.foreach {
             case innerNpe: NestedPathElement =>
                 if (innerNpe.elementType.isEmpty) {
-                    if (!containsPathElement(innerNpe, endSite)) {
+                    if (!containsPathElementWithPC(innerNpe, endSite)) {
                         innerNpe.element.clear()
                     }
                 } else {
@@ -179,30 +186,24 @@ case class Path(elements: List[SubPath]) {
      * [[makeLeanPath]].
      *
      * @param toProcess The NestedPathElement to turn into its lean equivalent.
-     * @param siteMap Serves as a look-up table to include only elements that are of interest, in
-     *                this case: That belong to some object.
-     * @param endSite `endSite` is an denotes an element which is sort of a border between elements
-     *               to include into the lean path and which not to include. For example, if a read
-     *               operation, which is of interest, occurs not at the end of the given `toProcess`
-     *               path, the rest can be safely omitted (as the paths already are in a
-     *               happens-before relationship). If all elements are included, pass an int value
-     *               that is greater than the greatest index of the elements in `toProcess`.
+     * @param relevantPCsMap Serves as a constant time look-up table to include only pcs that are of interest, in this
+     *                      case: That belong to some object.
+     *
      * @return In case a (sub) path is empty, `None` is returned and otherwise the lean (sub) path.
      */
     private def makeLeanPathAcc(
-        toProcess: NestedPathElement,
-        siteMap:   Map[Int, Unit],
-        endSite:   Int
+        toProcess:      NestedPathElement,
+        relevantPCsMap: Map[Int, Unit]
     ): Option[NestedPathElement] = {
         val elements = ListBuffer[SubPath]()
 
         toProcess.element.foreach {
             case fpe: FlatPathElement =>
-                if (siteMap.contains(fpe.element)) {
-                    elements.append(fpe.copy())
+                if (relevantPCsMap.contains(fpe.pc)) {
+                    elements.append(fpe.copy)
                 }
             case npe: NestedPathElement =>
-                val leanedSubPath = makeLeanPathAcc(npe, siteMap, endSite)
+                val leanedSubPath = makeLeanPathAcc(npe, relevantPCsMap)
                 val keepAlternativeBranches = toProcess.elementType match {
                     case Some(NestedPathType.CondWithAlternative) |
                         Some(NestedPathType.SwitchWithDefault) |
@@ -214,7 +215,7 @@ case class Path(elements: List[SubPath]) {
                 } else if (keepAlternativeBranches) {
                     elements.append(NestedPathElement(ListBuffer[SubPath](), None))
                 }
-            case _ =>
+            case e => throw new IllegalStateException(s"Unexpected sub path element found: $e")
         }
 
         if (elements.nonEmpty) {
@@ -225,28 +226,30 @@ case class Path(elements: List[SubPath]) {
     }
 
     /**
-     * Takes `this` path and transforms it into a new [[Path]] where only those sites are contained
-     * that either use or define `obj`.
+     * Takes `this` path and transforms it into a new [[Path]] where only those sites are contained that either use or
+     * define `obj`.
      *
-     * @param obj Identifies the object of interest. That is, all definition and use sites of this
-     *            object will be kept in the resulting lean path. `obj` should refer to a use site,
-     *            most likely corresponding to an (implicit) `toString` call.
-     * @param stmts A list of look-up statements, i.e., a program / method description in which
-     *              `obj` occurs.
+     * @param obj Identifies the object of interest. That is, all definition and use sites of this object will be kept
+     *            in the resulting lean path. `obj` should refer to a use site, most likely corresponding to an
+     *            (implicit) `toString` call.
+     *
      * @return Returns a lean path of `this` path. That means, `this` instance will be stripped to
      *         contain only [[FlatPathElement]]s and [[NestedPathElement]]s that contain a
      *         definition or usage of `obj`. This includes the removal of [[NestedPathElement]]s
      *         not containing `obj`.
      *
-     * @note This function does not change the underlying `this` instance. Furthermore, all relevant
-     *       elements for the lean path will be copied, i.e., `this` instance and the returned
-     *       instance do not share any references.
+     * @note This function does not change the underlying `this` instance. Furthermore, all relevant elements for the
+     *       lean path will be copied, i.e., `this` instance and the returned instance do not share any references.
      */
-    def makeLeanPath(obj: DUVar[ValueInformation], stmts: Array[Stmt[V]]): Path = {
+    def makeLeanPath(obj: DUVar[ValueInformation])(implicit tac: TAC): Path = {
+        implicit val stmts: Array[Stmt[V]] = tac.stmts
+        implicit val pcToIndex: Array[Int] = tac.pcToIndex
+
         val newOfObj = InterpretationHandler.findNewOfVar(obj, stmts)
-        // Transform the list of relevant sites into a map to have a constant access time
-        val siteMap = getAllDefAndUseSites(obj, stmts).filter { nextSite =>
-            stmts(nextSite) match {
+        // Transform the list of relevant pcs into a map to have a constant access time
+        val defUseSites = getAllDefAndUseSites(obj, stmts)
+        val pcMap = defUseSites.filter { dus =>
+            stmts(dus) match {
                 case Assignment(_, _, expr: VirtualFunctionCall[V]) =>
                     val news = InterpretationHandler.findNewOfVar(expr.receiver.asVar, stmts)
                     newOfObj == news || news.exists(newOfObj.contains)
@@ -255,15 +258,15 @@ case class Path(elements: List[SubPath]) {
                     newOfObj == news || news.exists(newOfObj.contains)
                 case _ => true
             }
-        }.map { s => (s, ()) }.toMap
+        }.map { s => (pcOfDefSite(s), ()) }.toMap
         var leanPath = ListBuffer[SubPath]()
         val endSite = obj.definedBy.toArray.max
 
         elements.foreach {
-            case fpe: FlatPathElement if siteMap.contains(fpe.element) && fpe.element <= endSite =>
+            case fpe: FlatPathElement if pcMap.contains(fpe.pc) && fpe.stmtIndex <= endSite =>
                 leanPath.append(fpe)
             case npe: NestedPathElement =>
-                val leanedPath = makeLeanPathAcc(npe, siteMap, endSite)
+                val leanedPath = makeLeanPathAcc(npe, pcMap)
                 if (leanedPath.isDefined) {
                     leanPath.append(leanedPath.get)
                 }
@@ -273,7 +276,7 @@ case class Path(elements: List[SubPath]) {
         // If everything is within a single branch of a nested path element, ignore it (it is not
         // relevant, as everything happens within that branch anyway); for loops, remove the outer
         // body in any case (as there is no alternative branch to consider) TODO check loops again what is with loops that are never executed?
-        if (leanPath.tail.isEmpty) {
+        if (leanPath.tail.isEmpty) { // TODO this throws if lean path is only one element long
             leanPath.head match {
                 case npe: NestedPathElement
                     if npe.elementType.get == NestedPathType.Repetition ||
@@ -287,7 +290,7 @@ case class Path(elements: List[SubPath]) {
             leanPath.last match {
                 case npe: NestedPathElement
                     if npe.elementType.isDefined &&
-                        (npe.elementType.get != NestedPathType.TryCatchFinally || npe.elementType.get != NestedPathType.SwitchWithDefault) =>
+                        (npe.elementType.get != NestedPathType.TryCatchFinally && npe.elementType.get != NestedPathType.SwitchWithDefault) =>
                     val newLast = stripUnnecessaryBranches(npe, endSite)
                     leanPath.remove(leanPath.size - 1)
                     leanPath.append(newLast)
@@ -302,7 +305,8 @@ case class Path(elements: List[SubPath]) {
 object Path {
 
     /**
-     * Returns the very last [[FlatPathElement]] in this path, respecting any nesting structure.
+     * Returns the very last [[FlatPathElement]] in this path, respecting any nesting structure. If no last element
+     * exists, [[FlatPathElement.invalid]] is returned.
      */
     @tailrec def getLastElementInNPE(npe: NestedPathElement): FlatPathElement = {
         npe.element.last match {
@@ -311,9 +315,9 @@ object Path {
                 npe.element.last match {
                     case fpe: FlatPathElement        => fpe
                     case innerNpe: NestedPathElement => getLastElementInNPE(innerNpe)
-                    case _                           => FlatPathElement(-1)
+                    case _                           => FlatPathElement.invalid
                 }
-            case _ => FlatPathElement(-1)
+            case _ => FlatPathElement.invalid
         }
     }
 }

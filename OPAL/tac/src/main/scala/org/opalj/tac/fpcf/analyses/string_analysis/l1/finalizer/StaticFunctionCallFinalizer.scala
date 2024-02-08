@@ -30,17 +30,16 @@ case class StaticFunctionCallFinalizer(
             // are only considered when they are char constants and thus a final result is already
             // computed by InterproceduralStaticFunctionCallInterpreter (which is why this method
             // will not be called for char parameters)
-            val defSites = instr.params.head.asVar.definedBy.toArray.sorted
-            defSites.foreach { ds =>
-                if (!state.fpe2sci.contains(ds)) {
-                    state.iHandler.finalizeDefSite(ds, state)
+            val defSitesByPC = instr.params.head.asVar.definedBy.map(ds => (pcOfDefSite(ds)(state.tac.stmts), ds)).toMap
+            defSitesByPC.keys.foreach { pc =>
+                if (!state.fpe2sci.contains(pc)) {
+                    state.iHandler.finalizeDefSite(defSitesByPC(pc), state)
                 }
             }
-            val scis = defSites.map { state.fpe2sci }
-            StringConstancyInformation.reduceMultiple(scis.flatten.toList)
+            StringConstancyInformation.reduceMultiple(defSitesByPC.keys.toList.sorted.flatMap(state.fpe2sci))
         } else {
             StringConstancyInformation.lb
         }
-        state.appendToFpe2Sci(defSite, toAppend, reset = true)
+        state.appendToFpe2Sci(pcOfDefSite(defSite)(state.tac.stmts), toAppend, reset = true)
     }
 }

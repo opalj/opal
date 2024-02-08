@@ -25,7 +25,6 @@ import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEPS
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
-import org.opalj.tac.fpcf.analyses.string_analysis.l1.interpretation.L1ArrayAccessInterpreter
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.FlatPathElement
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.NestedPathElement
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.NestedPathType
@@ -34,12 +33,11 @@ import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.PathTransformer
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.SubPath
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.WindowPathFinder
 import org.opalj.tac.fpcf.properties.TACAI
-import org.opalj.value.ValueInformation
 
 /**
  * String Analysis trait defining some basic dependency handling.
  *
- * @author Patrick Mell
+ * @author Maximilian Rüsch
  */
 trait StringAnalysis extends FPCFAnalysis {
 
@@ -144,7 +142,7 @@ trait StringAnalysis extends FPCFAnalysis {
                         // defer this computations when we know that all necessary
                         // information are available
                         state.entity2Function.clear()
-                        if (!computeResultsForPath(state.computedLeanPath, state)) {
+                        if (!computeResultsForPath(state.computedLeanPath)(state)) {
                             return determinePossibleStrings(state)
                         }
                     }
@@ -223,35 +221,30 @@ trait StringAnalysis extends FPCFAnalysis {
     }
 
     /**
-     * This function traverses the given path, computes all string values along the path and stores these information in
-     * the given state.
+     * This function traverses the given path, computes all string values along the path and stores
+     * these information in the given state.
      *
      * @param p     The path to traverse.
      * @param state The current state of the computation. This function will alter [[ComputationState.fpe2sci]].
      * @return Returns `true` if all values computed for the path are final results.
      */
-    private def computeResultsForPath(
-        p:     Path,
-        state: State
-    ): Boolean = {
+    protected def computeResultsForPath(p: Path)(implicit state: State): Boolean = {
         var hasFinalResult = true
-
         p.elements.foreach {
-            case FlatPathElement(index) =>
-                if (!state.fpe2sci.contains(index)) {
-                    val eOptP = state.iHandler.processDefSite(index, state.params.toList.map(_.toSeq))(state)
+            case fpe: FlatPathElement =>
+                if (!state.fpe2sci.contains(fpe.pc)) {
+                    val eOptP = state.iHandler.processDefSite(
+                        valueOriginOfPC(fpe.pc, state.tac.pcToIndex).get,
+                        state.params.toList.map(_.toSeq)
+                    )
                     if (eOptP.isFinal) {
-                        state.appendToFpe2Sci(index, eOptP.asFinal.p.stringConstancyInformation, reset = true)
+                        state.appendToFpe2Sci(fpe.pc, eOptP.asFinal.p.stringConstancyInformation, reset = true)
                     } else {
                         hasFinalResult = false
                     }
                 }
             case npe: NestedPathElement =>
-                val subFinalResult = computeResultsForPath(
-                    Path(npe.element.toList),
-                    state
-                )
-                hasFinalResult = hasFinalResult && subFinalResult
+                hasFinalResult = hasFinalResult && computeResultsForPath(Path(npe.element.toList))
             case _ =>
         }
 
@@ -261,16 +254,16 @@ trait StringAnalysis extends FPCFAnalysis {
     /**
      * Wrapper function for [[computeLeanPathForStringConst]] and [[computeLeanPathForStringBuilder]].
      */
-    protected def computeLeanPath(value: V, tac: TACode[TACMethodParameter, V]): Path = {
+    protected def computeLeanPath(value: V)(implicit tac: TAC): Path = {
         val defSites = value.definedBy.toArray.sorted
         if (defSites.head < 0) {
-            computeLeanPathForStringConst(value)
+            computeLeanPathForStringConst(value)(tac.stmts)
         } else {
             val call = tac.stmts(defSites.head).asAssignment.expr
             if (InterpretationHandler.isStringBuilderBufferToStringCall(call)) {
-                computeLeanPathForStringBuilder(value, tac).get
+                computeLeanPathForStringBuilder(value).get
             } else {
-                computeLeanPathForStringConst(value)
+                computeLeanPathForStringConst(value)(tac.stmts)
             }
         }
     }
@@ -278,18 +271,16 @@ trait StringAnalysis extends FPCFAnalysis {
     /**
      * This function computes the lean path for a [[V]] which is required to be a string expression.
      */
-    protected def computeLeanPathForStringConst(value: V): Path = {
+    protected def computeLeanPathForStringConst(value: V)(implicit stmts: Array[Stmt[V]]): Path = {
         val defSites = value.definedBy.toArray.sorted
-        if (defSites.length == 1) {
-            // Trivial case for just one element
-            Path(List(FlatPathElement(defSites.head)))
+        val element = if (defSites.length == 1) {
+            FlatPathElement(defSites.head)
         } else {
-            // For > 1 definition sites, create a nest path element with |defSites| many
-            // children where each child is a NestPathElement(FlatPathElement)
-            val children = ListBuffer[SubPath]()
-            defSites.foreach { ds => children.append(NestedPathElement(ListBuffer(FlatPathElement(ds)), None)) }
-            Path(List(NestedPathElement(children, Some(NestedPathType.CondWithAlternative))))
+            // Create alternative branches with intermediate None-Type nested path elements
+            val children = defSites.map { ds => NestedPathElement(ListBuffer(FlatPathElement(ds)), None) }
+            NestedPathElement(ListBuffer.from(children), Some(NestedPathType.CondWithAlternative))
         }
+        Path(List(element))
     }
 
     /**
@@ -301,43 +292,41 @@ trait StringAnalysis extends FPCFAnalysis {
      * indicates whether the String{Builder, Buffer} has initialization sites within the method stored in `tac`. If it
      * has no initialization sites, it returns `(null, false)` and otherwise `(computed lean path, true)`.
      */
-    protected def computeLeanPathForStringBuilder(
-        value: V,
-        tac:   TACode[TACMethodParameter, DUVar[ValueInformation]]
-    ): Option[Path] = {
+    protected def computeLeanPathForStringBuilder(value: V)(implicit tac: TAC): Option[Path] = {
         val initDefSites = InterpretationHandler.findDefSiteOfInit(value, tac.stmts)
         if (initDefSites.isEmpty) {
             None
         } else {
-            val paths = new WindowPathFinder(tac.cfg).findPaths(initDefSites, value.definedBy.toArray.max)
-            Some(paths.makeLeanPath(value, tac.stmts))
+            val path = WindowPathFinder(tac).findPaths(initDefSites, value.definedBy.toArray.max)
+            val leanPath = path.makeLeanPath(value)
+            Some(leanPath)
         }
     }
 
-    private def hasFormalParamUsageAlongPath(path: Path, stmts: Array[Stmt[V]]): Boolean = {
-        def hasExprFormalParamUsage(expr: Expr[V]): Boolean = expr match {
-            case al: ArrayLoad[V]    => L1ArrayAccessInterpreter.getStoreAndLoadDefSites(al, stmts).exists(_ < 0)
-            case duVar: V            => duVar.definedBy.exists(_ < 0)
-            case fc: FunctionCall[V] => fc.params.exists(hasExprFormalParamUsage)
-            case mc: MethodCall[V]   => mc.params.exists(hasExprFormalParamUsage)
-            case be: BinaryExpr[V]   => hasExprFormalParamUsage(be.left) || hasExprFormalParamUsage(be.right)
-            case _                   => false
-        }
+    protected def hasExprFormalParamUsage(expr: Expr[V])(implicit tac: TAC): Boolean = expr match {
+        case duVar: V            => duVar.definedBy.exists(_ < 0)
+        case fc: FunctionCall[V] => fc.params.exists(hasExprFormalParamUsage)
+        case mc: MethodCall[V]   => mc.params.exists(hasExprFormalParamUsage)
+        case be: BinaryExpr[V]   => hasExprFormalParamUsage(be.left) || hasExprFormalParamUsage(be.right)
+        case _                   => false
+    }
 
+    protected def hasFormalParamUsageAlongPath(path: Path)(implicit tac: TAC): Boolean = {
+        implicit val pcToIndex: Array[Int] = tac.pcToIndex
         path.elements.exists {
-            case FlatPathElement(index) => stmts(index) match {
+            case FlatPathElement(index) => tac.stmts(index) match {
                     case Assignment(_, _, expr) => hasExprFormalParamUsage(expr)
                     case ExprStmt(_, expr)      => hasExprFormalParamUsage(expr)
                     case _                      => false
                 }
-            case NestedPathElement(subPath, _) => hasFormalParamUsageAlongPath(Path(subPath.toList), stmts)
+            case NestedPathElement(subPath, _) => hasFormalParamUsageAlongPath(Path(subPath.toList))
             case _                             => false
         }
     }
 
     /**
      * Finds [[PUVar]]s the string constancy information computation for the given [[Path]] depends on. Enables passing
-     * an entity to ignore (usually the entity for which the path was created so it does not depend on itself.
+     * an entity to ignore (usually the entity for which the path was created so it does not depend on itself).
      *
      * @return A mapping from dependent [[PUVar]]s to the [[FlatPathElement]] indices they occur in.
      */
@@ -351,7 +340,7 @@ trait StringAnalysis extends FPCFAnalysis {
                 case fpe: FlatPathElement =>
                     // For FlatPathElements, search for DUVars on which the toString method is called
                     // and where these toString calls are the parameter of an append call
-                    stmts(fpe.element) match {
+                    stmts(fpe.stmtIndex(state.tac.pcToIndex)) match {
                         case ExprStmt(_, outerExpr) =>
                             if (InterpretationHandler.isStringBuilderBufferAppendCall(outerExpr)) {
                                 val param = outerExpr.asVirtualFunctionCall.params.head.asVar
@@ -359,7 +348,7 @@ trait StringAnalysis extends FPCFAnalysis {
                                     val expr = stmts(ds).asAssignment.expr
                                     // TODO check support for passing nested string builder directly (e.g. with a test case)
                                     if (InterpretationHandler.isStringBuilderBufferToStringCall(expr)) {
-                                        foundDependees.append((param.toPersistentForm(stmts), fpe.element))
+                                        foundDependees.append((param.toPersistentForm(stmts), fpe.pc))
                                     }
                                 }
                             }

@@ -62,7 +62,7 @@ case class L1NonVirtualMethodCallInterpreter[State <: ComputationState[State]](
             case 0 => FinalEP(defSite, StringConstancyProperty.getNeutralElement)
             case _ =>
                 val results = init.params.head.asVar.definedBy.map { ds: Int =>
-                    (ds, exprHandler.processDefSite(ds, List()))
+                    (pcOfDefSite(ds)(state.tac.stmts), exprHandler.processDefSite(ds, List()))
                 }
                 if (results.forall(_._2.isFinal)) {
                     val reduced = StringConstancyInformation.reduceMultiple(results.map { r =>
@@ -74,9 +74,9 @@ case class L1NonVirtualMethodCallInterpreter[State <: ComputationState[State]](
                     // intermediate result
                     val returnIR = results.find(r => !r._2.isFinal).get._2
                     results.foreach {
-                        case (ds, r) =>
+                        case (pc, r) =>
                             if (r.isFinal) {
-                                state.appendToFpe2Sci(ds, r.asFinal.p.stringConstancyInformation, reset = true)
+                                state.appendToFpe2Sci(pc, r.asFinal.p.stringConstancyInformation, reset = true)
                             }
                         case _ =>
                     }

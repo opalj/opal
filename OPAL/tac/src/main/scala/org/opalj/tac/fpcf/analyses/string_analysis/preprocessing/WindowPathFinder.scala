@@ -6,23 +6,19 @@ package analyses
 package string_analysis
 package preprocessing
 
-import org.opalj.br.cfg.CFG
-
 /**
  * An approach based on an intuitive traversing of the control flow graph (CFG). This implementation
  * will use the CFG to find all paths from the given `startSites` to the `endSite`. ("Window" as
  * only part of the whole CFG is considered.)
  *
- * @param cfg The CFG on which this instance will operate on.
- *
- * @author Patrick Mell
+ * @author Maximilian Rüsch
  *
  * @note To fill gaps, e.g., from the very first statement of a context, such as a CFG, to the first
  *       control structure, a consecutive row of path elements are inserted. Arbitrarily inserted
  *       jumps within the bytecode might lead to a different order than the one computed by this
  *       class!
  */
-class WindowPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) extends AbstractPathFinder(cfg) {
+case class WindowPathFinder(tac: TAC) extends AbstractPathFinder(tac) {
 
     /**
      * This implementation finds all paths based on an a naive / intuitive traversing of the `cfg`
@@ -62,10 +58,8 @@ class WindowPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) extends AbstractPathFinde
         }
 
         val csInfo = findControlStructures(List(startSite.get), endSite)
-        // In case the are no control structures, return a path from the first to the last element
         if (csInfo.isEmpty) {
-            val indexLastStmt = cfg.code.instructions.length
-            Path(cfg.startBlock.startPC.until(indexLastStmt).map(FlatPathElement).toList)
+            Path(cfg.startBlock.startPC.until(cfg.code.instructions.last.pc).map(FlatPathElement.fromPC).toList)
         } else {
             // Otherwise, order the control structures and assign the corresponding path elements
             val orderedCS = hierarchicallyOrderControlStructures(csInfo)

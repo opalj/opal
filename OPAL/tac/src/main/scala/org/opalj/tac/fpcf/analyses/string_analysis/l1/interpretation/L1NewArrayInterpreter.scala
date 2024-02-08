@@ -56,7 +56,7 @@ class L1NewArrayInterpreter[State <: ComputationState[State]](
             state.tac.stmts(ds).asArrayStore.value.asVar.definedBy.toArray.toList.sorted.map { d =>
                 val r = exprHandler.processDefSite(d, params)
                 if (r.isFinal) {
-                    state.appendToFpe2Sci(d, r.asFinal.p.stringConstancyInformation)
+                    state.appendToFpe2Sci(pcOfDefSite(d)(state.tac.stmts), r.asFinal.p.stringConstancyInformation)
                 }
                 r
             }
@@ -67,7 +67,7 @@ class L1NewArrayInterpreter[State <: ComputationState[State]](
             val paramPos = Math.abs(ds + 2)
             // lb is the fallback value
             val sci = StringConstancyInformation.reduceMultiple(params.map(_(paramPos)))
-            state.appendToFpe2Sci(ds, sci)
+            state.appendToFpe2Sci(pcOfDefSite(ds)(state.tac.stmts), sci)
             val e: Integer = ds
             allResults ::= FinalEP(e, StringConstancyProperty(sci))
         }
@@ -88,7 +88,7 @@ class L1NewArrayInterpreter[State <: ComputationState[State]](
                 val toAppend = FinalEP(instr, StringConstancyProperty(resultSci))
                 allResults = toAppend :: allResults
             }
-            state.appendToFpe2Sci(defSite, resultSci)
+            state.appendToFpe2Sci(pcOfDefSite(defSite)(state.tac.stmts), resultSci)
             FinalEP(Integer.valueOf(defSite), StringConstancyProperty(resultSci))
         }
     }

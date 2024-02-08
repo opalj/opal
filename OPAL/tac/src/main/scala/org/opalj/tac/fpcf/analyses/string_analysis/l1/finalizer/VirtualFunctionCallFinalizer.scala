@@ -30,7 +30,8 @@ case class VirtualFunctionCallFinalizer(
         instr.name match {
             case "append"   => finalizeAppend(instr, defSite)
             case "toString" => finalizeToString(instr, defSite)
-            case _          => state.appendToFpe2Sci(defSite, StringConstancyInformation.lb, reset = true)
+            case _ =>
+                state.appendToFpe2Sci(pcOfDefSite(defSite)(state.tac.stmts), StringConstancyInformation.lb, reset = true)
         }
     }
 
@@ -40,31 +41,33 @@ case class VirtualFunctionCallFinalizer(
      * [[org.opalj.tac.fpcf.analyses.string_analysis.l1.interpretation.L1VirtualFunctionCallInterpreter]].
      */
     private def finalizeAppend(instr: T, defSite: Int): Unit = {
-        val receiverDefSites = instr.receiver.asVar.definedBy.toArray.sorted
-        receiverDefSites.foreach { ds =>
-            if (!state.fpe2sci.contains(ds)) {
-                state.iHandler.finalizeDefSite(ds, state)
+        val receiverDefSitesByPC =
+            instr.receiver.asVar.definedBy.map(ds => (pcOfDefSite(ds)(state.tac.stmts), ds)).toMap
+        receiverDefSitesByPC.keys.foreach { pc =>
+            if (!state.fpe2sci.contains(pc)) {
+                state.iHandler.finalizeDefSite(receiverDefSitesByPC(pc), state)
             }
         }
         val receiverSci = StringConstancyInformation.reduceMultiple(
-            receiverDefSites.flatMap { s =>
+            receiverDefSitesByPC.keys.toList.sorted.flatMap { pc =>
                 // As the receiver value is used already here, we do not want it to be used a
                 // second time (during the final traversing of the path); thus, reset it to have it
                 // only once in the result, i.e., final tree
-                val sci = state.fpe2sci(s)
-                state.appendToFpe2Sci(s, StringConstancyInformation.getNeutralElement, reset = true)
+                val sci = state.fpe2sci(pc)
+                state.appendToFpe2Sci(pc, StringConstancyInformation.getNeutralElement, reset = true)
                 sci
             }
         )
 
-        val paramDefSites = instr.params.head.asVar.definedBy.toArray.sorted
-        paramDefSites.foreach { ds =>
-            if (!state.fpe2sci.contains(ds)) {
-                state.iHandler.finalizeDefSite(ds, state)
+        val paramDefSitesByPC =
+            instr.params.head.asVar.definedBy.map(ds => (pcOfDefSite(ds)(state.tac.stmts), ds)).toMap
+        paramDefSitesByPC.keys.foreach { pc =>
+            if (!state.fpe2sci.contains(pc)) {
+                state.iHandler.finalizeDefSite(paramDefSitesByPC(pc), state)
             }
         }
-        val appendSci = if (paramDefSites.forall(state.fpe2sci.contains)) {
-            StringConstancyInformation.reduceMultiple(paramDefSites.flatMap(state.fpe2sci(_)))
+        val appendSci = if (paramDefSitesByPC.keys.forall(state.fpe2sci.contains)) {
+            StringConstancyInformation.reduceMultiple(paramDefSitesByPC.keys.toList.sorted.flatMap(state.fpe2sci(_)))
         } else StringConstancyInformation.lb
 
         val finalSci = if (receiverSci.isTheNeutralElement && appendSci.isTheNeutralElement) {
@@ -81,24 +84,24 @@ case class VirtualFunctionCallFinalizer(
             )
         }
 
-        state.appendToFpe2Sci(defSite, finalSci, reset = true)
+        state.appendToFpe2Sci(pcOfDefSite(defSite)(state.tac.stmts), finalSci, reset = true)
     }
 
     private def finalizeToString(instr: T, defSite: Int): Unit = {
-        val dependeeSites = instr.receiver.asVar.definedBy
-        dependeeSites.foreach { nextDependeeSite =>
-            if (!state.fpe2sci.contains(nextDependeeSite)) {
-                state.iHandler.finalizeDefSite(nextDependeeSite, state)
+        val dependeeSites = instr.receiver.asVar.definedBy.map(ds => (pcOfDefSite(ds)(state.tac.stmts), ds)).toMap
+        dependeeSites.keys.foreach { pc =>
+            if (!state.fpe2sci.contains(pc)) {
+                state.iHandler.finalizeDefSite(dependeeSites(pc), state)
             }
         }
         val finalSci = StringConstancyInformation.reduceMultiple(
-            dependeeSites.toArray.flatMap { ds => state.fpe2sci(ds) }
+            dependeeSites.keys.toList.flatMap { pc => state.fpe2sci(pc) }
         )
         // Remove the dependees, such as calls to "toString"; the reason being is that we do not
         // duplications (arising from an "append" and a "toString" call)
-        dependeeSites.foreach {
+        dependeeSites.keys.foreach {
             state.appendToFpe2Sci(_, StringConstancyInformation.getNeutralElement, reset = true)
         }
-        state.appendToFpe2Sci(defSite, finalSci)
+        state.appendToFpe2Sci(pcOfDefSite(defSite)(state.tac.stmts), finalSci)
     }
 }

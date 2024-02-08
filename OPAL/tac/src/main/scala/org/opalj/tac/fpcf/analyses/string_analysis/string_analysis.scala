@@ -17,6 +17,8 @@ import org.opalj.fpcf.EOptionP
  */
 package object string_analysis {
 
+    type TAC = TACode[TACMethodParameter, V]
+
     /**
      * The type of entities the string analysis process.
      *
@@ -46,5 +48,4 @@ package object string_analysis {
      * calls.
      */
     type NonFinalFunctionArgsPos = mutable.Map[FunctionCall[V], mutable.Map[SContext, (Int, Int, Int)]]
-
 }

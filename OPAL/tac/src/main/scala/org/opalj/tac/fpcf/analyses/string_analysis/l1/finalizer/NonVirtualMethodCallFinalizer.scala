@@ -25,16 +25,16 @@ case class NonVirtualMethodCallFinalizer(
      */
     override def finalizeInterpretation(instr: T, defSite: Int): Unit = {
         val toAppend = if (instr.params.nonEmpty) {
-            instr.params.head.asVar.definedBy.toArray.foreach { ds =>
-                if (!state.fpe2sci.contains(ds)) {
-                    state.iHandler.finalizeDefSite(ds, state)
+            val defSitesByPC = instr.params.head.asVar.definedBy.map(ds => (pcOfDefSite(ds)(state.tac.stmts), ds)).toMap
+            defSitesByPC.keys.foreach { pc =>
+                if (!state.fpe2sci.contains(pc)) {
+                    state.iHandler.finalizeDefSite(defSitesByPC(pc), state)
                 }
             }
-            val scis = instr.params.head.asVar.definedBy.toArray.sorted.map { state.fpe2sci }
-            StringConstancyInformation.reduceMultiple(scis.flatten.toList)
+            StringConstancyInformation.reduceMultiple(defSitesByPC.keys.toList.sorted.flatMap(state.fpe2sci))
         } else {
             StringConstancyInformation.lb
         }
-        state.appendToFpe2Sci(defSite, toAppend, reset = true)
+        state.appendToFpe2Sci(pcOfDefSite(defSite)(state.tac.stmts), toAppend, reset = true)
     }
 }

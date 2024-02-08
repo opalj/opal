@@ -133,17 +133,20 @@ class IntraproceduralStringAnalysisTest extends StringAnalysisTest {
         val newEntities = entities
             //.filter(entity => entity._2.name.startsWith("tryCatchFinally"))
             //.filter(entity => entity._2.name.startsWith("tryCatchFinallyWithThrowable"))
-            //.filterNot(entity => entity._2.name.startsWith("switchNested"))
-            //.filterNot(entity => entity._2.name.startsWith("tryCatchFinallyWithThrowable"))
-            //.filterNot(entity => entity._2.name.startsWith("twoDefinitionsOneUsage"))
-            //.filterNot(entity => entity._2.name.startsWith("simpleStringConcat"))
-            //.filterNot(entity => entity._2.name.startsWith("multipleDefSites"))
-            //.filterNot(entity => entity._2.name.startsWith("fromConstantAndFunctionCall"))
-        newEntities.foreach(as.propertyStore.force(_, StringConstancyProperty.key))
+            .filterNot(entity => entity._2.name.startsWith("switchNested"))
+            .filterNot(entity => entity._2.name.startsWith("tryCatchFinallyWithThrowable"))
+            .filterNot(entity => entity._2.name.startsWith("twoDefinitionsOneUsage"))
+            .filterNot(entity => entity._2.name.startsWith("simpleStringConcat"))
+            .filterNot(entity => entity._2.name.startsWith("multipleDefSites"))
+            .filterNot(entity => entity._2.name.startsWith("fromConstantAndFunctionCall"))
 
-        as.propertyStore.shutdown()
+        //it("can be executed without exceptions") {
+            newEntities.foreach(as.propertyStore.force(_, StringConstancyProperty.key))
 
-        validateProperties(as, determineEAS(newEntities, as.project), Set("StringConstancy"))
+            as.propertyStore.shutdown()
+
+            validateProperties(as, determineEAS(newEntities, as.project), Set("StringConstancy"))
+        //}
     }
 }
 

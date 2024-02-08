@@ -17,7 +17,6 @@ import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.Property
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.Path
-import org.opalj.value.ValueInformation
 
 /**
  * This class is to be used to store state information that are required at a later point in
@@ -35,7 +34,7 @@ trait ComputationState[State <: ComputationState[State]] {
     /**
      * The Three-Address Code of the entity's method
      */
-    var tac: TACode[TACMethodParameter, DUVar[ValueInformation]] = _ // TODO add dm to tac dependee mapping
+    var tac: TAC = _ // TODO add dm to tac dependee mapping
 
     /**
      * The interpretation handler to use for computing a final result (if possible).
@@ -60,18 +59,17 @@ trait ComputationState[State <: ComputationState[State]] {
     var dependees: List[EOptionP[Entity, Property]] = List()
 
     /**
-     * A mapping from DUVar elements to the corresponding indices of the FlatPathElements
+     * A mapping from DUVar elements to the corresponding values of the FlatPathElements
      */
     val var2IndexMapping: mutable.Map[SEntity, ListBuffer[Int]] = mutable.Map()
 
     /**
-     * A mapping from values / indices of FlatPathElements to StringConstancyInformation
+     * A mapping from values of FlatPathElements to StringConstancyInformation
      */
     val fpe2sci: mutable.Map[Int, ListBuffer[StringConstancyInformation]] = mutable.Map()
 
     /**
-     * A mapping from a value / index of a FlatPathElement to StringConstancyInformation which are
-     * not yet final.
+     * A mapping from a value of a FlatPathElement to StringConstancyInformation which are not yet final.
      */
     val interimFpe2sci: mutable.Map[Int, ListBuffer[StringConstancyInformation]] = mutable.Map()
 
@@ -145,20 +143,19 @@ trait ComputationState[State <: ComputationState[State]] {
     val isVFCFullyPrepared: mutable.Map[VirtualFunctionCall[V], Boolean] = mutable.Map()
 
     /**
-     * Takes a definition site as well as [[StringConstancyInformation]] and extends the [[fpe2sci]]
-     * map accordingly, however, only if `defSite` is not yet present and `sci` not present within
-     * the list of `defSite`.
+     * Takes a `pc` as well as [[StringConstancyInformation]] and extends the [[fpe2sci]] map accordingly, however, only
+     * if `pc` is not yet present or `sci` not present within the list of `pc`.
      */
     def appendToFpe2Sci(
-        defSite: Int,
-        sci:     StringConstancyInformation,
-        reset:   Boolean = false
+        pc:    Int,
+        sci:   StringConstancyInformation,
+        reset: Boolean = false
     ): Unit = {
-        if (reset || !fpe2sci.contains(defSite)) {
-            fpe2sci(defSite) = ListBuffer()
+        if (reset || !fpe2sci.contains(pc)) {
+            fpe2sci(pc) = ListBuffer()
         }
-        if (!fpe2sci(defSite).contains(sci)) {
-            fpe2sci(defSite).append(sci)
+        if (!fpe2sci(pc).contains(sci)) {
+            fpe2sci(pc).append(sci)
         }
     }
 
@@ -182,50 +179,50 @@ trait ComputationState[State <: ComputationState[State]] {
      *     makes the analysis of ''e_2'' update its to (((e1|e2)|e3)|e3) and so on.</li>
      * </ul>
      *
-     * @param defSite The definition site to which append the given `sci` element for.
+     * @param pc The definition site to which append the given `sci` element for.
      * @param sci The [[StringConstancyInformation]] to add to the list of interim results for the
      *            given definition site.
      * @param entity Optional. The entity for which the `sci` element was computed.
      */
     def appendToInterimFpe2Sci(
-        defSite: Int,
-        sci:     StringConstancyInformation,
-        entity:  Option[SEntity] = None
+        pc:     Int,
+        sci:    StringConstancyInformation,
+        entity: Option[SEntity] = None
     ): Unit = {
-        val numElements = var2IndexMapping.values.flatten.count(_ == defSite)
+        val numElements = var2IndexMapping.values.flatten.count(_ == pc)
         var addedNewList = false
-        if (!interimFpe2sci.contains(defSite)) {
-            interimFpe2sci(defSite) = ListBuffer()
+        if (!interimFpe2sci.contains(pc)) {
+            interimFpe2sci(pc) = ListBuffer()
             addedNewList = true
         }
         // Append an element
-        val containsSci = interimFpe2sci(defSite).contains(sci)
+        val containsSci = interimFpe2sci(pc).contains(sci)
         if (!containsSci && entity.isEmpty) {
-            if (!addedNewList && interimFpe2sci(defSite).length == numElements) {
-                interimFpe2sci(defSite).remove(0)
+            if (!addedNewList && interimFpe2sci(pc).length == numElements) {
+                interimFpe2sci(pc).remove(0)
             }
-            interimFpe2sci(defSite).append(sci)
+            interimFpe2sci(pc).append(sci)
         } else if (!containsSci && entity.nonEmpty) {
             if (!entity2lastInterimFpe2SciValue.contains(entity.get) ||
                 entity2lastInterimFpe2SciValue(entity.get) == StringConstancyInformation.lb
             ) {
                 entity2lastInterimFpe2SciValue(entity.get) = sci
-                if (interimFpe2sci(defSite).nonEmpty) {
-                    interimFpe2sci(defSite).remove(0)
+                if (interimFpe2sci(pc).nonEmpty) {
+                    interimFpe2sci(pc).remove(0)
                 }
-                interimFpe2sci(defSite).append(sci)
+                interimFpe2sci(pc).append(sci)
             }
         }
     }
 
     /**
-     * Takes an entity as well as a definition site and append it to [[var2IndexMapping]].
+     * Takes an entity as well as a pc and append it to [[var2IndexMapping]].
      */
-    def appendToVar2IndexMapping(entity: SEntity, defSite: Int): Unit = {
+    def appendToVar2IndexMapping(entity: SEntity, pc: Int): Unit = {
         if (!var2IndexMapping.contains(entity)) {
             var2IndexMapping(entity) = ListBuffer()
         }
-        var2IndexMapping(entity).append(defSite)
+        var2IndexMapping(entity).append(pc)
     }
 
     /**

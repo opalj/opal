@@ -70,7 +70,7 @@ class L0StringAnalysis(override val project: SomeProject) extends StringAnalysis
 
     def analyze(data: SContext): ProperPropertyComputationResult = {
         // Retrieve TAC from property store
-        val tacOpt: Option[TACode[TACMethodParameter, V]] = ps(data._2, TACAI.key) match {
+        val tacOpt: Option[TAC] = ps(data._2, TACAI.key) match {
             case UBP(tac) => if (tac.tac.isEmpty) None else Some(tac.tac.get)
             case _        => None
         }
@@ -89,7 +89,7 @@ class L0StringAnalysis(override val project: SomeProject) extends StringAnalysis
     override protected[string_analysis] def determinePossibleStrings(state: State): ProperPropertyComputationResult = {
         implicit val _state: State = state
 
-        implicit val tac: TACode[TACMethodParameter, V] = state.tac
+        implicit val tac: TAC = state.tac
         val stmts = tac.stmts
 
         val puVar = state.entity._1
@@ -103,7 +103,7 @@ class L0StringAnalysis(override val project: SomeProject) extends StringAnalysis
 
         val expr = stmts(defSites.head).asAssignment.expr
         if (InterpretationHandler.isStringBuilderBufferToStringCall(expr)) {
-            val leanPath = computeLeanPathForStringBuilder(uVar, tac)
+            val leanPath = computeLeanPathForStringBuilder(uVar)
             if (leanPath.isEmpty) {
                 // String{Builder,Buffer} from method parameter is to be evaluated
                 return Result(state.entity, StringConstancyProperty.lb)

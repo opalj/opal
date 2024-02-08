@@ -32,7 +32,6 @@ import org.opalj.tac.fpcf.analyses.string_analysis.l1.finalizer.NewArrayFinalize
 import org.opalj.tac.fpcf.analyses.string_analysis.l1.finalizer.NonVirtualMethodCallFinalizer
 import org.opalj.tac.fpcf.analyses.string_analysis.l1.finalizer.StaticFunctionCallFinalizer
 import org.opalj.tac.fpcf.analyses.string_analysis.l1.finalizer.VirtualFunctionCallFinalizer
-import org.opalj.value.ValueInformation
 
 /**
  * Responsible for processing expressions that are relevant in order to determine which value(s) a string read operation
@@ -44,7 +43,7 @@ import org.opalj.value.ValueInformation
  * @author Patrick Mell
  */
 class L1InterpretationHandler(
-        tac:                    TACode[TACMethodParameter, DUVar[ValueInformation]],
+        tac:                    TAC,
         ps:                     PropertyStore,
         project:                SomeProject,
         declaredFields:         DeclaredFields,
@@ -71,14 +70,17 @@ class L1InterpretationHandler(
         if (defSite < 0 &&
             (params.isEmpty || defSite == -1 || defSite <= ImmediateVMExceptionsOriginOffset)
         ) {
-            state.appendToInterimFpe2Sci(defSite, StringConstancyInformation.lb)
+            state.appendToInterimFpe2Sci(pcOfDefSite(defSite)(state.tac.stmts), StringConstancyInformation.lb)
             return FinalEP(e, StringConstancyProperty.lb)
         } else if (defSite < 0) {
             val sci = getParam(params, defSite)
-            state.appendToInterimFpe2Sci(defSite, sci)
+            state.appendToInterimFpe2Sci(pcOfDefSite(defSite)(state.tac.stmts), sci)
             return FinalEP(e, StringConstancyProperty(sci))
         } else if (processedDefSites.contains(defSite)) {
-            state.appendToInterimFpe2Sci(defSite, StringConstancyInformation.getNeutralElement)
+            state.appendToInterimFpe2Sci(
+                pcOfDefSite(defSite)(state.tac.stmts),
+                StringConstancyInformation.getNeutralElement
+            )
             return FinalEP(e, StringConstancyProperty.getNeutralElement)
         }
         // Note that def sites referring to constant expressions will be deleted further down
@@ -104,7 +106,10 @@ class L1InterpretationHandler(
             case vmc: VirtualMethodCall[V]                         => processVirtualMethodCall(vmc, defSite)
             case nvmc: NonVirtualMethodCall[V]                     => processNonVirtualMethodCall(nvmc, defSite)
             case _ =>
-                state.appendToInterimFpe2Sci(defSite, StringConstancyInformation.getNeutralElement)
+                state.appendToInterimFpe2Sci(
+                    pcOfDefSite(defSite)(state.tac.stmts),
+                    StringConstancyInformation.getNeutralElement
+                )
                 FinalEP(e, StringConstancyProperty.getNeutralElement)
         }
     }
@@ -125,8 +130,8 @@ class L1InterpretationHandler(
             case c               => throw new IllegalArgumentException(s"Unsupported const value: $c")
         }
         val sci = finalEP.p.stringConstancyInformation
-        state.appendToFpe2Sci(defSite, sci)
-        state.appendToInterimFpe2Sci(defSite, sci)
+        state.appendToFpe2Sci(pcOfDefSite(defSite)(state.tac.stmts), sci)
+        state.appendToInterimFpe2Sci(pcOfDefSite(defSite)(state.tac.stmts), sci)
         processedDefSites.remove(defSite)
         finalEP
     }
@@ -151,7 +156,7 @@ class L1InterpretationHandler(
             processedDefSites.remove(defSite)
             StringConstancyInformation.lb
         }
-        state.appendToInterimFpe2Sci(defSite, sci)
+        state.appendToInterimFpe2Sci(pcOfDefSite(defSite)(state.tac.stmts), sci)
         r
     }
 
@@ -175,7 +180,7 @@ class L1InterpretationHandler(
             processedDefSites.remove(defSite)
             StringConstancyInformation.lb
         }
-        state.appendToInterimFpe2Sci(defSite, sci)
+        state.appendToInterimFpe2Sci(pcOfDefSite(defSite)(state.tac.stmts), sci)
         r
     }
 
@@ -184,8 +189,8 @@ class L1InterpretationHandler(
      */
     private def processNew(expr: New, defSite: Int): FinalEP[Entity, StringConstancyProperty] = {
         val finalEP = NewInterpreter(cfg, this).interpret(expr)
-        state.appendToFpe2Sci(defSite, finalEP.p.stringConstancyInformation)
-        state.appendToInterimFpe2Sci(defSite, finalEP.p.stringConstancyInformation)
+        state.appendToFpe2Sci(pcOfDefSite(defSite)(state.tac.stmts), finalEP.p.stringConstancyInformation)
+        state.appendToInterimFpe2Sci(pcOfDefSite(defSite)(state.tac.stmts), finalEP.p.stringConstancyInformation)
         finalEP
     }
 
@@ -266,8 +271,8 @@ class L1InterpretationHandler(
         // TODO: For binary expressions, use the underlying domain to retrieve the result of such expressions
         val result = BinaryExprInterpreter(cfg, this).interpret(expr)
         val sci = result.p.stringConstancyInformation
-        state.appendToInterimFpe2Sci(defSite, sci)
-        state.appendToFpe2Sci(defSite, sci)
+        state.appendToInterimFpe2Sci(pcOfDefSite(defSite)(state.tac.stmts), sci)
+        state.appendToFpe2Sci(pcOfDefSite(defSite)(state.tac.stmts), sci)
         result
     }
 
@@ -333,10 +338,10 @@ class L1InterpretationHandler(
         val r = L1NonVirtualMethodCallInterpreter(cfg, this, state).interpret(nvmc, defSite)
         r match {
             case FinalEP(_, p: StringConstancyProperty) =>
-                state.appendToInterimFpe2Sci(defSite, p.stringConstancyInformation)
-                state.appendToFpe2Sci(defSite, p.stringConstancyInformation)
+                state.appendToInterimFpe2Sci(pcOfDefSite(defSite)(state.tac.stmts), p.stringConstancyInformation)
+                state.appendToFpe2Sci(pcOfDefSite(defSite)(state.tac.stmts), p.stringConstancyInformation)
             case _ =>
-                state.appendToInterimFpe2Sci(defSite, StringConstancyInformation.lb)
+                state.appendToInterimFpe2Sci(pcOfDefSite(defSite)(state.tac.stmts), StringConstancyInformation.lb)
                 processedDefSites.remove(defSite)
         }
         r
@@ -353,7 +358,7 @@ class L1InterpretationHandler(
         } else {
             StringConstancyInformation.lb
         }
-        state.appendToInterimFpe2Sci(defSite, sci)
+        state.appendToInterimFpe2Sci(pcOfDefSite(defSite)(state.tac.stmts), sci)
     }
 
     /**
@@ -375,7 +380,11 @@ class L1InterpretationHandler(
      */
     def finalizeDefSite(defSite: Int, state: L1ComputationState): Unit = {
         if (defSite < 0) {
-            state.appendToFpe2Sci(defSite, getParam(state.params.toSeq.map(_.toSeq), defSite), reset = true)
+            state.appendToFpe2Sci(
+                pcOfDefSite(defSite)(state.tac.stmts),
+                getParam(state.params.toSeq.map(_.toSeq), defSite),
+                reset = true
+            )
         } else {
             stmts(defSite) match {
                 case nvmc: NonVirtualMethodCall[V] =>
@@ -397,7 +406,11 @@ class L1InterpretationHandler(
                 case ExprStmt(_, sfc: StaticFunctionCall[V]) =>
                     StaticFunctionCallFinalizer(state).finalizeInterpretation(sfc, defSite)
                 case _ =>
-                    state.appendToFpe2Sci(defSite, StringConstancyInformation.lb, reset = true)
+                    state.appendToFpe2Sci(
+                        pcOfDefSite(defSite)(state.tac.stmts),
+                        StringConstancyInformation.lb,
+                        reset = true
+                    )
             }
         }
     }
@@ -406,7 +419,7 @@ class L1InterpretationHandler(
 object L1InterpretationHandler {
 
     def apply(
-        tac:                    TACode[TACMethodParameter, DUVar[ValueInformation]],
+        tac:                    TAC,
         ps:                     PropertyStore,
         project:                SomeProject,
         declaredFields:         DeclaredFields,

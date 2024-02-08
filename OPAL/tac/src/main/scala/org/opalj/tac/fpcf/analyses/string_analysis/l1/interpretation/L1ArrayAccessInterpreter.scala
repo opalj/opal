@@ -52,19 +52,20 @@ case class L1ArrayAccessInterpreter[State <: ComputationState[State]](
     override def interpret(instr: T, defSite: Int)(implicit state: State): EOptionP[Entity, StringConstancyProperty] = {
         val results = ListBuffer[EOptionP[Entity, StringConstancyProperty]]()
 
-        val allDefSites = L1ArrayAccessInterpreter.getStoreAndLoadDefSites(instr, state.tac.stmts)
-        allDefSites.map { ds => (ds, exprHandler.processDefSite(ds)) }.foreach {
-            case (ds, ep) =>
+        val allDefSitesByPC = L1ArrayAccessInterpreter.getStoreAndLoadDefSites(instr, state.tac.stmts)
+            .map(ds => (pcOfDefSite(ds)(state.tac.stmts), ds)).toMap
+        allDefSitesByPC.keys.map { pc => (pc, exprHandler.processDefSite(allDefSitesByPC(pc))) }.foreach {
+            case (pc, ep) =>
                 if (ep.isFinal)
-                    state.appendToFpe2Sci(ds, ep.asFinal.p.stringConstancyInformation)
+                    state.appendToFpe2Sci(pc, ep.asFinal.p.stringConstancyInformation)
                 results.append(ep)
         }
 
         // Add information of parameters
-        instr.arrayRef.asVar.definedBy.toArray.filter(_ < 0).foreach { ds =>
-            val paramPos = Math.abs(ds + 2)
+        instr.arrayRef.asVar.toPersistentForm(state.tac.stmts).defPCs.filter(_ < 0).foreach { pc =>
+            val paramPos = Math.abs(pc + 2)
             val sci = StringConstancyInformation.reduceMultiple(params.map(_(paramPos)))
-            state.appendToFpe2Sci(ds, sci)
+            state.appendToFpe2Sci(pc, sci)
         }
 
         // If there is at least one InterimResult, return one. Otherwise, return a final result
@@ -88,7 +89,7 @@ case class L1ArrayAccessInterpreter[State <: ComputationState[State]](
                 ))
             }
 
-            state.appendToFpe2Sci(defSite, resultSci)
+            state.appendToFpe2Sci(pcOfDefSite(defSite)(state.tac.stmts), resultSci)
             results.head
         }
     }

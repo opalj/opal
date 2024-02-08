@@ -83,7 +83,7 @@ class L1VirtualFunctionCallInterpreter(
         }
 
         if (result.isDefined) {
-            state.appendToFpe2Sci(defSite, result.get)
+            state.appendToFpe2Sci(pcOfDefSite(defSite)(state.tac.stmts), result.get)
         }
         FinalEP(defSite.asInstanceOf[Integer], StringConstancyProperty(result.getOrElse(StringConstancyInformation.lb)))
     }
@@ -153,7 +153,10 @@ class L1VirtualFunctionCallInterpreter(
                         L1StringAnalysis.registerParams(entity, evaluatedParams)
                         ps(entity, StringConstancyProperty.key) match {
                             case r: FinalEP[SContext, StringConstancyProperty] =>
-                                state.appendToFpe2Sci(defSite, r.p.stringConstancyInformation)
+                                state.appendToFpe2Sci(
+                                    pcOfDefSite(defSite)(state.tac.stmts),
+                                    r.p.stringConstancyInformation
+                                )
                                 r
                             case eps =>
                                 state.dependees = eps :: state.dependees
@@ -246,7 +249,7 @@ class L1VirtualFunctionCallInterpreter(
     )(implicit state: L1ComputationState): List[EOptionP[Entity, StringConstancyProperty]] = {
         val defSites = call.receiver.asVar.definedBy.toArray.sorted
 
-        val allResults = defSites.map(ds => (ds, exprHandler.processDefSite(ds, params)))
+        val allResults = defSites.map(ds => (pcOfDefSite(ds)(state.tac.stmts), exprHandler.processDefSite(ds, params)))
         val finalResults = allResults.filter(_._2.isFinal)
         val finalResultsWithoutNeutralElements = finalResults.filter {
             case (_, FinalEP(_, p: StringConstancyProperty)) =>
@@ -337,7 +340,7 @@ class L1VirtualFunctionCallInterpreter(
         }
 
         val e: Integer = defSites.head
-        state.appendToFpe2Sci(e, newValueSci, reset = true)
+        state.appendToFpe2Sci(pcOfDefSite(e)(state.tac.stmts), newValueSci, reset = true)
         FinalEP(e, StringConstancyProperty(finalSci))
     }
 
