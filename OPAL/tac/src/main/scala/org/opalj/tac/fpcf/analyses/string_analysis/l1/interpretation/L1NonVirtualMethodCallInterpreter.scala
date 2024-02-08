@@ -13,6 +13,7 @@ import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.FinalEP
+import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 
 /**
  * Responsible for processing [[NonVirtualMethodCall]]s in an interprocedural fashion.
@@ -20,11 +21,11 @@ import org.opalj.fpcf.FinalEP
  *
  * @author Patrick Mell
  */
-case class L1NonVirtualMethodCallInterpreter(
+case class L1NonVirtualMethodCallInterpreter[State <: ComputationState[State]](
         override protected val cfg:         CFG[Stmt[V], TACStmts[V]],
-        override protected val exprHandler: L1InterpretationHandler,
-        state:                              L1ComputationState
-) extends L1StringInterpreter {
+        override protected val exprHandler: InterpretationHandler[State],
+        state:                              State
+) extends L1StringInterpreter[State] {
 
     override type T = NonVirtualMethodCall[V]
 
@@ -39,7 +40,7 @@ case class L1NonVirtualMethodCallInterpreter(
      * </ul>
      * For all other calls, an empty list will be returned at the moment.
      */
-    override def interpret(instr: T, defSite: Int): EOptionP[Entity, StringConstancyProperty] = {
+    override def interpret(instr: T, defSite: Int)(implicit state: State): EOptionP[Entity, StringConstancyProperty] = {
         val e: Integer = defSite
         instr.name match {
             case "<init>" => interpretInit(instr, e)
@@ -54,7 +55,9 @@ case class L1NonVirtualMethodCallInterpreter(
      * [[StringBuffer]] and [[StringBuilder]], have only constructors with <= 1 arguments and only
      * these are currently interpreted).
      */
-    private def interpretInit(init: T, defSite: Integer): EOptionP[Entity, StringConstancyProperty] = {
+    private def interpretInit(init: T, defSite: Integer)(implicit
+        state: State
+    ): EOptionP[Entity, StringConstancyProperty] = {
         init.params.size match {
             case 0 => FinalEP(defSite, StringConstancyProperty.getNeutralElement)
             case _ =>

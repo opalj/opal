@@ -21,15 +21,13 @@ import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.PropertyStore
-import org.opalj.tac.fpcf.analyses.string_analysis.l1.L1ComputationState
-import org.opalj.tac.fpcf.analyses.string_analysis.l1.interpretation.L1InterpretationHandler
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.value.ValueInformation
 
 /**
  * @author Maximilian Rüsch
  */
-trait StringInterpreter {
+trait StringInterpreter[State <: ComputationState[State]] {
 
     /**
      * The control flow graph that underlies the instruction to interpret.
@@ -44,7 +42,7 @@ trait StringInterpreter {
      *       clearly indicate what kind of [[InterpretationHandler]] they expect in order to ensure the
      *       desired behavior and not confuse developers.
      */
-    protected val exprHandler: InterpretationHandler
+    protected val exprHandler: InterpretationHandler[State]
 
     type T <: Any
 
@@ -62,7 +60,7 @@ trait StringInterpreter {
     protected def getTACAI(
         ps: PropertyStore,
         m:  Method,
-        s:  L1ComputationState
+        s:  State
     ): (EOptionP[Method, TACAI], Option[TACode[TACMethodParameter, V]]) = {
         val tacai = ps(m, TACAI.key)
         if (tacai.hasUBP) {
@@ -134,11 +132,11 @@ trait StringInterpreter {
      */
     protected def evaluateParameters(
         params:          List[Seq[Expr[V]]],
-        iHandler:        L1InterpretationHandler,
+        iHandler:        InterpretationHandler[State],
         funCall:         FunctionCall[V],
         functionArgsPos: NonFinalFunctionArgsPos,
         entity2function: mutable.Map[SContext, ListBuffer[FunctionCall[V]]]
-    ): NonFinalFunctionArgs = ListBuffer.from(params.zipWithIndex.map {
+    )(implicit state: State): NonFinalFunctionArgs = ListBuffer.from(params.zipWithIndex.map {
         case (nextParamList, outerIndex) =>
             ListBuffer.from(nextParamList.zipWithIndex.map {
                 case (nextParam, middleIndex) =>

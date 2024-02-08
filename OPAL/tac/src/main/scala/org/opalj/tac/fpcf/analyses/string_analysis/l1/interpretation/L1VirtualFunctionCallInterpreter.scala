@@ -33,12 +33,11 @@ import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.Interpretation
  */
 class L1VirtualFunctionCallInterpreter(
         override protected val cfg:         CFG[Stmt[V], TACStmts[V]],
-        override protected val exprHandler: L1InterpretationHandler,
+        override protected val exprHandler: InterpretationHandler[L1ComputationState],
         ps:                                 PropertyStore,
-        state:                              L1ComputationState,
         params:                             List[Seq[StringConstancyInformation]],
         contextProvider:                    ContextProvider
-) extends L1StringInterpreter {
+) extends L1StringInterpreter[L1ComputationState] {
 
     override type T = VirtualFunctionCall[V]
 
@@ -67,24 +66,26 @@ class L1VirtualFunctionCallInterpreter(
      *
      * @note This function takes care of updating [[state.fpe2sci]] as necessary.
      */
-    override def interpret(instr: T, defSite: Int): EOptionP[Entity, StringConstancyProperty] = {
+    override def interpret(instr: T, defSite: Int)(implicit
+        state: L1ComputationState
+    ): EOptionP[Entity, StringConstancyProperty] = {
         val result = instr.name match {
-            case "append"   => interpretAppendCall(instr, defSite)
+            case "append"   => interpretAppendCall(instr)
             case "toString" => interpretToStringCall(instr)
-            case "replace"  => interpretReplaceCall(instr)
+            case "replace"  => Some(interpretReplaceCall)
             case _ =>
                 instr.descriptor.returnType match {
                     case obj: ObjectType if obj == ObjectType.String =>
                         interpretArbitraryCall(instr, defSite)
                     case _ =>
-                        FinalEP(defSite.asInstanceOf[Integer], StringConstancyProperty.lb)
+                        Some(StringConstancyInformation.lb)
                 }
         }
 
-        if (result.isFinal) {
-            state.appendToFpe2Sci(defSite, result.asFinal.p.stringConstancyInformation)
+        if (result.isDefined) {
+            state.appendToFpe2Sci(defSite, result.get)
         }
-        result
+        FinalEP(defSite.asInstanceOf[Integer], StringConstancyProperty(result.getOrElse(StringConstancyInformation.lb)))
     }
 
     /**
@@ -93,11 +94,13 @@ class L1VirtualFunctionCallInterpreter(
      * analysis was triggered whose result is not yet ready. In this case, the result needs to be
      * finalized later on.
      */
-    private def interpretArbitraryCall(instr: T, defSite: Int): EOptionP[Entity, StringConstancyProperty] = {
+    private def interpretArbitraryCall(instr: T, defSite: Int)(
+        implicit state: L1ComputationState
+    ): Option[StringConstancyInformation] = {
         val (methods, _) = getMethodsForPC(instr.pc)(ps, state.callees, contextProvider)
 
         if (methods.isEmpty) {
-            return FinalEP(instr, StringConstancyProperty.lb)
+            return Some(StringConstancyInformation.lb)
         }
         // TODO: Type Iterator!
         val directCallSites = state.callees.directCallSites(NoContext)(ps, contextProvider)
@@ -128,7 +131,7 @@ class L1VirtualFunctionCallInterpreter(
         val nonFinalResults = getNonFinalParameters(params.toSeq.map(t => t.toSeq.map(_.toSeq)))
         if (nonFinalResults.nonEmpty) {
             state.nonFinalFunctionArgs(instr) = params
-            return nonFinalResults.head
+            return None
         }
 
         state.nonFinalFunctionArgs.remove(instr)
@@ -148,12 +151,11 @@ class L1VirtualFunctionCallInterpreter(
                         val entity =
                             (ret.asInstanceOf[ReturnValue[V]].expr.asVar.toPersistentForm(tac.get.stmts), nextMethod)
                         L1StringAnalysis.registerParams(entity, evaluatedParams)
-                        val eps = ps(entity, StringConstancyProperty.key)
-                        eps match {
+                        ps(entity, StringConstancyProperty.key) match {
                             case r: FinalEP[SContext, StringConstancyProperty] =>
                                 state.appendToFpe2Sci(defSite, r.p.stringConstancyInformation)
                                 r
-                            case _ =>
+                            case eps =>
                                 state.dependees = eps :: state.dependees
                                 state.appendToVar2IndexMapping(entity._1, defSite)
                                 eps
@@ -168,11 +170,11 @@ class L1VirtualFunctionCallInterpreter(
         }
 
         val finalResults = results.filter(_.isFinal)
-        val intermediateResults = results.filter(_.isRefinable)
+        // val intermediateResults = results.filter(_.isRefinable)
         if (results.length == finalResults.length) {
-            finalResults.head
+            Some(finalResults.head.asFinal.p.stringConstancyInformation)
         } else {
-            intermediateResults.head
+            None
         }
     }
 
@@ -181,22 +183,22 @@ class L1VirtualFunctionCallInterpreter(
      * that this function assumes that the given `appendCall` is such a function call! Otherwise,
      * the expected behavior cannot be guaranteed.
      */
-    private def interpretAppendCall(
-        appendCall: VirtualFunctionCall[V],
-        defSite:    Int
-    ): EOptionP[Entity, StringConstancyProperty] = {
-        val receiverResults = receiverValuesOfAppendCall(appendCall, state)
-        val appendResult = valueOfAppendCall(appendCall, state)
+    private def interpretAppendCall(appendCall: VirtualFunctionCall[V])(
+        implicit state: L1ComputationState
+    ): Option[StringConstancyInformation] = {
+        val receiverResults = receiverValuesOfAppendCall(appendCall)
+        val appendResult = valueOfAppendCall(appendCall)
 
-        // If there is an intermediate result, return this one (then the final result cannot yet be
-        // computed)
+        // If there is an intermediate result, return this one (then the final result cannot yet be computed)
         if (receiverResults.head.isRefinable) {
-            return receiverResults.head
+            return None
         } else if (appendResult.isRefinable) {
-            return appendResult
+            return None
         }
 
-        val receiverScis = receiverResults.map { _.asFinal.p.stringConstancyInformation }
+        val receiverScis = receiverResults.map {
+            _.asFinal.p.stringConstancyInformation
+        }
         val appendSci = appendResult.asFinal.p.stringConstancyInformation
 
         // The case can occur that receiver and append value are empty; although, it is
@@ -226,8 +228,7 @@ class L1VirtualFunctionCallInterpreter(
             )
         }
 
-        val e: Integer = defSite
-        FinalEP(e, StringConstancyProperty(finalSci))
+        Some(finalSci)
     }
 
     /**
@@ -241,9 +242,8 @@ class L1VirtualFunctionCallInterpreter(
      *       returned list contains an [[org.opalj.fpcf.InterimResult]].
      */
     private def receiverValuesOfAppendCall(
-        call:  VirtualFunctionCall[V],
-        state: L1ComputationState
-    ): List[EOptionP[Entity, StringConstancyProperty]] = {
+        call: VirtualFunctionCall[V]
+    )(implicit state: L1ComputationState): List[EOptionP[Entity, StringConstancyProperty]] = {
         val defSites = call.receiver.asVar.definedBy.toArray.sorted
 
         val allResults = defSites.map(ds => (ds, exprHandler.processDefSite(ds, params)))
@@ -272,9 +272,8 @@ class L1VirtualFunctionCallInterpreter(
      * This function can process string constants as well as function calls as argument to append.
      */
     private def valueOfAppendCall(
-        call:  VirtualFunctionCall[V],
-        state: L1ComputationState
-    ): EOptionP[Entity, StringConstancyProperty] = {
+        call: VirtualFunctionCall[V]
+    )(implicit state: L1ComputationState): EOptionP[Entity, StringConstancyProperty] = {
         // .head because we want to evaluate only the first argument of append
         val param = call.params.head.asVar
         val defSites = param.definedBy.toArray.sorted
@@ -347,17 +346,18 @@ class L1VirtualFunctionCallInterpreter(
      * Note that this function assumes that the given `toString` is such a function call! Otherwise,
      * the expected behavior cannot be guaranteed.
      */
-    private def interpretToStringCall(call: VirtualFunctionCall[V]): EOptionP[Entity, StringConstancyProperty] =
-        // TODO: Can it produce an intermediate result???
-        exprHandler.processDefSite(call.receiver.asVar.definedBy.head, params)
+    private def interpretToStringCall(call: VirtualFunctionCall[V])(
+        implicit state: L1ComputationState
+    ): Option[StringConstancyInformation] =
+        handleInterpretationResult(exprHandler.processDefSite(call.receiver.asVar.definedBy.head, params))
 
     /**
      * Function for processing calls to [[StringBuilder#replace]] or [[StringBuffer#replace]].
      * (Currently, this function simply approximates `replace` functions by returning the lower
      * bound of [[StringConstancyProperty]]).
      */
-    private def interpretReplaceCall(instr: VirtualFunctionCall[V]): FinalEP[Entity, StringConstancyProperty] =
-        FinalEP(instr, InterpretationHandler.getStringConstancyPropertyForReplace)
+    private def interpretReplaceCall: StringConstancyInformation =
+        InterpretationHandler.getStringConstancyInformationForReplace
 
     /**
      * Checks whether a given string is an integer value, i.e. contains only numbers.

@@ -9,7 +9,10 @@ package interpretation
 
 import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.properties.StringConstancyProperty
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.FinalEP
+import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 
 /**
  * The `IntraproceduralStaticFunctionCallInterpreter` is responsible for processing
@@ -19,13 +22,13 @@ import org.opalj.fpcf.FinalEP
  *
  * @author Maximilian Rüsch
  */
-case class L0StaticFunctionCallInterpreter(
+case class L0StaticFunctionCallInterpreter[State <: ComputationState[State]](
         override protected val cfg:         CFG[Stmt[V], TACStmts[V]],
-        override protected val exprHandler: L0InterpretationHandler
-) extends L0StringInterpreter {
+        override protected val exprHandler: InterpretationHandler[State]
+) extends L0StringInterpreter[State] {
 
     override type T = StaticFunctionCall[V]
 
-    override def interpret(instr: T, defSite: Int): FinalEP[T, StringConstancyProperty] =
+    override def interpret(instr: T, defSite: Int)(implicit state: State): EOptionP[Entity, StringConstancyProperty] =
         FinalEP(instr, StringConstancyProperty.lb)
 }

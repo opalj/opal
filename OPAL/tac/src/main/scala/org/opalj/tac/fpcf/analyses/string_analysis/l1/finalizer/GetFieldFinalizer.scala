@@ -24,5 +24,5 @@ case class GetFieldFinalizer(
     override def finalizeInterpretation(instr: T, defSite: Int): Unit =
         // Processing the definition site again is enough as the finalization procedure is only
         // called after all dependencies are resolved.
-        state.iHandler.processDefSite(defSite)
+        state.iHandler.processDefSite(defSite)(state)
 }

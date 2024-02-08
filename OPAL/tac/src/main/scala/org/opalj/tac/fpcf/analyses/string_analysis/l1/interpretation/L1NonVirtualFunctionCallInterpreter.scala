@@ -15,6 +15,7 @@ import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.PropertyStore
+import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 
 /**
  * Responsible for processing [[NonVirtualFunctionCall]]s in an interprocedural fashion.
@@ -23,15 +24,16 @@ import org.opalj.fpcf.PropertyStore
  */
 case class L1NonVirtualFunctionCallInterpreter(
         override protected val cfg:         CFG[Stmt[V], TACStmts[V]],
-        override protected val exprHandler: L1InterpretationHandler,
+        override protected val exprHandler: InterpretationHandler[L1ComputationState],
         ps:                                 PropertyStore,
-        state:                              L1ComputationState,
         contextProvider:                    ContextProvider
-) extends L1StringInterpreter {
+) extends L1StringInterpreter[L1ComputationState] {
 
     override type T = NonVirtualFunctionCall[V]
 
-    override def interpret(instr: T, defSite: Int): EOptionP[Entity, StringConstancyProperty] = {
+    override def interpret(instr: T, defSite: Int)(implicit
+        state: L1ComputationState
+    ): EOptionP[Entity, StringConstancyProperty] = {
         val methods = getMethodsForPC(instr.pc)(ps, state.callees, contextProvider)
         if (methods._1.isEmpty) {
             // No methods available => Return lower bound

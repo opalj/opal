@@ -22,7 +22,7 @@ import org.opalj.tac.Assignment
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACStmts
 import org.opalj.tac.V
-import org.opalj.tac.fpcf.analyses.string_analysis.l1.L1ComputationState
+import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 
 /**
  * Responsible for preparing [[ArrayLoad]] as well as [[ArrayStore]] expressions in an interprocedural fashion.
@@ -34,12 +34,12 @@ import org.opalj.tac.fpcf.analyses.string_analysis.l1.L1ComputationState
  *
  * @author Patrick Mell
  */
-case class L1ArrayAccessInterpreter(
+case class L1ArrayAccessInterpreter[State <: ComputationState[State]](
         override protected val cfg:         CFG[Stmt[V], TACStmts[V]],
-        override protected val exprHandler: L1InterpretationHandler,
-        state:                              L1ComputationState,
+        override protected val exprHandler: InterpretationHandler[State],
+        state:                              State,
         params:                             List[Seq[StringConstancyInformation]]
-) extends L1StringInterpreter {
+) extends L1StringInterpreter[State] {
 
     override type T = ArrayLoad[V]
 
@@ -49,7 +49,7 @@ case class L1ArrayAccessInterpreter(
      *       definition sites producing a refinable result will have to be handled later on to
      *       not miss this information.
      */
-    override def interpret(instr: T, defSite: Int): EOptionP[Entity, StringConstancyProperty] = {
+    override def interpret(instr: T, defSite: Int)(implicit state: State): EOptionP[Entity, StringConstancyProperty] = {
         val results = ListBuffer[EOptionP[Entity, StringConstancyProperty]]()
 
         val allDefSites = L1ArrayAccessInterpreter.getStoreAndLoadDefSites(instr, state.tac.stmts)

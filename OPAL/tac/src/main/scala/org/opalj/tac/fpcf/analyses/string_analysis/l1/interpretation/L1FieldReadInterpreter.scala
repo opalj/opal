@@ -11,6 +11,7 @@ import scala.collection.mutable.ListBuffer
 
 import org.opalj.br.analyses.DeclaredFields
 import org.opalj.br.analyses.FieldAccessInformation
+import org.opalj.br.analyses.SomeProject
 import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.br.fpcf.properties.StringConstancyProperty
@@ -21,7 +22,10 @@ import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.PropertyStore
-import org.opalj.tac.fpcf.analyses.string_analysis.l1.L1ComputationState
+import org.opalj.log.Error
+import org.opalj.log.Info
+import org.opalj.log.OPALLogger.logOnce
+import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 import org.opalj.tac.fpcf.analyses.string_analysis.l1.L1StringAnalysis
 
 /**
@@ -30,18 +34,48 @@ import org.opalj.tac.fpcf.analyses.string_analysis.l1.L1StringAnalysis
  *
  * @author Maximilian Rüsch
  */
-case class L1FieldReadInterpreter(
-        override protected val exprHandler: L1InterpretationHandler,
-        state:                              L1ComputationState,
+case class L1FieldReadInterpreter[State <: ComputationState[State]](
+        override protected val exprHandler: InterpretationHandler[State],
+        state:                              State,
         ps:                                 PropertyStore,
         fieldAccessInformation:             FieldAccessInformation,
+        project:                            SomeProject,
         implicit val declaredFields:        DeclaredFields,
         implicit val contextProvider:       ContextProvider
-) extends L1StringInterpreter {
+) extends L1StringInterpreter[State] {
 
     override protected val cfg: CFG[Stmt[V], TACStmts[V]] = state.tac.cfg
 
     override type T = FieldRead[V]
+
+    /**
+     * To analyze a read operation of field, ''f'', all write accesses, ''wa_f'', to ''f'' have to
+     * be analyzed. ''fieldWriteThreshold'' determines the threshold of ''|wa_f|'' when ''f'' is to
+     * be approximated as the lower bound, i.e., ''|wa_f|'' is greater than ''fieldWriteThreshold''
+     * then the read operation of ''f'' is approximated as the lower bound. Otherwise, if ''|wa_f|''
+     * is less or equal than ''fieldWriteThreshold'', analyze all ''wa_f'' to approximate the read
+     * of ''f''.
+     */
+    private val fieldWriteThreshold = {
+        val threshold =
+            try {
+                project.config.getInt(L1StringAnalysis.FieldWriteThresholdConfigKey)
+            } catch {
+                case t: Throwable =>
+                    logOnce(Error(
+                        "analysis configuration - l1 string analysis",
+                        s"couldn't read: ${L1StringAnalysis.FieldWriteThresholdConfigKey}",
+                        t
+                    ))(project.logContext)
+                    10
+            }
+
+        logOnce(Info(
+            "analysis configuration - l1 string analysis",
+            "l1 string analysis uses a field write threshold of " + threshold
+        ))(project.logContext)
+        threshold
+    }
 
     /**
      * Currently, fields are approximated using the following approach. If a field of a type not
@@ -51,7 +85,7 @@ case class L1FieldReadInterpreter(
      * itself, it will be approximated using all write accesses as well as with the lower bound and
      * "null" => in these cases fields are [[StringConstancyLevel.DYNAMIC]].
      */
-    override def interpret(instr: T, defSite: Int): EOptionP[Entity, StringConstancyProperty] = {
+    override def interpret(instr: T, defSite: Int)(implicit state: State): EOptionP[Entity, StringConstancyProperty] = {
         // TODO: The approximation of fields might be outsourced into a dedicated analysis. Then,
         //  one could add a finer-grained processing or provide different abstraction levels. This
         //  String analysis could then use the field analysis.
@@ -63,7 +97,7 @@ case class L1FieldReadInterpreter(
         // Write accesses exceeds the threshold => approximate with lower bound
         val definedField = declaredFields(instr.declaringClass, instr.name, instr.declaredFieldType).asDefinedField
         val writeAccesses = fieldAccessInformation.writeAccesses(definedField.definedField)
-        if (writeAccesses.length > state.fieldWriteThreshold) {
+        if (writeAccesses.length > fieldWriteThreshold) {
             return FinalEP(instr, StringConstancyProperty.lb)
         }
 

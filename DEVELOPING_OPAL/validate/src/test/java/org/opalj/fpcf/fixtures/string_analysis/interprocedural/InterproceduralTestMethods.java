@@ -637,6 +637,18 @@ public class InterproceduralTestMethods {
     }
 
     @StringDefinitionsCollection(
+            value = "a test case which tests the interpretation of String#valueOf",
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT,
+                            expectedStrings = "java.lang.Runtime"
+                    )
+            })
+    public void valueOfTest2() {
+        analyzeString(String.valueOf(getRuntimeClassName()));
+    }
+
+    @StringDefinitionsCollection(
             value = "a case where a static property is read",
             stringDefinitions = {
                     @StringDefinitions(

@@ -22,10 +22,10 @@ import org.opalj.tac.V
  *
  * @author Maximilian Rüsch
  */
-case class StringConstInterpreter(
+case class StringConstInterpreter[State <: ComputationState[State]](
         override protected val cfg:         CFG[Stmt[V], TACStmts[V]],
-        override protected val exprHandler: InterpretationHandler
-) extends StringInterpreter {
+        override protected val exprHandler: InterpretationHandler[State]
+) extends StringInterpreter[State] {
 
     override type T = StringConst
 

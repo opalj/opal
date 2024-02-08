@@ -20,7 +20,10 @@ import org.opalj.fpcf.EOptionP
 import org.opalj.tac.fpcf.analyses.string_analysis.l1.L1StringAnalysis
 import org.opalj.value.ValueInformation
 
-abstract class InterpretationHandler(tac: TACode[TACMethodParameter, DUVar[ValueInformation]]) {
+abstract class InterpretationHandler[State <: ComputationState[State]](tac: TACode[
+    TACMethodParameter,
+    DUVar[ValueInformation]
+]) {
 
     protected val stmts: Array[Stmt[DUVar[ValueInformation]]] = tac.stmts
     protected val cfg: CFG[Stmt[DUVar[ValueInformation]], TACStmts[DUVar[ValueInformation]]] = tac.cfg
@@ -55,7 +58,7 @@ abstract class InterpretationHandler(tac: TACode[TACMethodParameter, DUVar[Value
     def processDefSite(
         defSite: Int,
         params:  List[Seq[StringConstancyInformation]] = List()
-    ): EOptionP[Entity, StringConstancyProperty]
+    )(implicit state: State): EOptionP[Entity, StringConstancyProperty]
 
     /**
      * [[InterpretationHandler]]s keeps an internal state for correct and faster processing. As
@@ -68,13 +71,17 @@ abstract class InterpretationHandler(tac: TACode[TACMethodParameter, DUVar[Value
     def reset(): Unit = {
         processedDefSites.clear()
     }
+
+    /**
+     * Finalized a given definition state.
+     */
+    def finalizeDefSite(defSite: Int, state: State): Unit
 }
 
 object InterpretationHandler {
 
     /**
-     * Checks whether an expression contains a call to [[StringBuilder#toString]] or
-     * [[StringBuffer#toString]].
+     * Checks whether an expression contains a call to [[StringBuilder#toString]] or [[StringBuffer#toString]].
      */
     def isStringBuilderBufferToStringCall(expr: Expr[V]): Boolean =
         expr match {
@@ -255,15 +262,15 @@ object InterpretationHandler {
         )
 
     /**
-     * @return Returns a [[StringConstancyProperty]] element that describes the result of a
+     * @return Returns a [[StringConstancyInformation]] element that describes the result of a
      *         `replace` operation. That is, the returned element currently consists of the value
      *         [[StringConstancyLevel.DYNAMIC]], [[StringConstancyType.REPLACE]], and
      *         [[StringConstancyInformation.UnknownWordSymbol]].
      */
-    def getStringConstancyPropertyForReplace: StringConstancyProperty =
-        StringConstancyProperty(StringConstancyInformation(
+    def getStringConstancyInformationForReplace: StringConstancyInformation =
+        StringConstancyInformation(
             StringConstancyLevel.DYNAMIC,
             StringConstancyType.REPLACE,
             StringConstancyInformation.UnknownWordSymbol
-        ))
+        )
 }

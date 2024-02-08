@@ -32,7 +32,7 @@ import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.Interpretation
  *
  * @author Patrick Mell
  */
-class PathTransformer(val interpretationHandler: InterpretationHandler) {
+class PathTransformer[State <: ComputationState[State]](val interpretationHandler: InterpretationHandler[State]) {
 
     /**
      * Accumulator function for transforming a path into a StringTree element.
@@ -40,7 +40,7 @@ class PathTransformer(val interpretationHandler: InterpretationHandler) {
     private def pathToTreeAcc(
         subpath: SubPath,
         fpe2Sci: Map[Int, ListBuffer[StringConstancyInformation]]
-    ): Option[StringTree] = {
+    )(implicit state: State): Option[StringTree] = {
         subpath match {
             case fpe: FlatPathElement =>
                 val sci = if (fpe2Sci.contains(fpe.element)) {
@@ -135,7 +135,7 @@ class PathTransformer(val interpretationHandler: InterpretationHandler) {
         path:             Path,
         fpe2Sci:          Map[Int, ListBuffer[StringConstancyInformation]] = Map.empty,
         resetExprHandler: Boolean                                          = true
-    ): StringTree = {
+    )(implicit state: State): StringTree = {
         val tree = path.elements.size match {
             case 1 =>
                 // It might be that for some expressions, a neutral element is produced which is

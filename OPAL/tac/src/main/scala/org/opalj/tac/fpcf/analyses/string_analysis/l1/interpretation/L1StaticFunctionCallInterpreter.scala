@@ -20,6 +20,7 @@ import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.PropertyStore
+import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 
 /**
  * Responsible for processing [[StaticFunctionCall]]s in an interprocedural fashion.
@@ -29,16 +30,18 @@ import org.opalj.fpcf.PropertyStore
  */
 class L1StaticFunctionCallInterpreter(
         override protected val cfg:         CFG[Stmt[V], TACStmts[V]],
-        override protected val exprHandler: L1InterpretationHandler,
+        override protected val exprHandler: InterpretationHandler[L1ComputationState],
         ps:                                 PropertyStore,
-        state:                              L1ComputationState,
+        implicit val state:                 L1ComputationState,
         params:                             List[Seq[StringConstancyInformation]],
         contextProvider:                    ContextProvider
-) extends L1StringInterpreter {
+) extends L1StringInterpreter[L1ComputationState] {
 
     override type T = StaticFunctionCall[V]
 
-    override def interpret(instr: T, defSite: Int): EOptionP[Entity, StringConstancyProperty] = {
+    override def interpret(instr: T, defSite: Int)(
+        implicit state: L1ComputationState
+    ): EOptionP[Entity, StringConstancyProperty] = {
         if (instr.declaringClass == ObjectType.String && instr.name == "valueOf") {
             processStringValueOf(instr)
         } else {
@@ -54,7 +57,9 @@ class L1StaticFunctionCallInterpreter(
      * returns an instance of Result which corresponds to the result of the interpretation of
      * the parameter passed to the call.
      */
-    private def processStringValueOf(call: StaticFunctionCall[V]): EOptionP[Entity, StringConstancyProperty] = {
+    private def processStringValueOf(call: StaticFunctionCall[V])(
+        implicit state: L1ComputationState
+    ): EOptionP[Entity, StringConstancyProperty] = {
         val results = call.params.head.asVar.definedBy.toArray.sorted.map { exprHandler.processDefSite(_, params) }
         val interim = results.find(_.isRefinable)
         if (interim.isDefined) {

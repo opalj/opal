@@ -13,6 +13,7 @@ import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyType
 import org.opalj.fpcf.FinalEP
+import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 
 /**
  * Responsible for processing [[VirtualMethodCall]]s in an interprocedural fashion.
@@ -20,10 +21,10 @@ import org.opalj.fpcf.FinalEP
  *
  * @author Patrick Mell
  */
-case class L1VirtualMethodCallInterpreter(
+case class L1VirtualMethodCallInterpreter[State <: ComputationState[State]](
         override protected val cfg:         CFG[Stmt[V], TACStmts[V]],
-        override protected val exprHandler: L1InterpretationHandler
-) extends L1StringInterpreter {
+        override protected val exprHandler: InterpretationHandler[State]
+) extends L1StringInterpreter[State] {
 
     override type T = VirtualMethodCall[V]
 
@@ -39,7 +40,7 @@ case class L1VirtualMethodCallInterpreter(
      * </ul>
      * For all other calls, an empty list will be returned.
      */
-    override def interpret(instr: T, defSite: Int): FinalEP[T, StringConstancyProperty] = {
+    override def interpret(instr: T, defSite: Int)(implicit state: State): FinalEP[T, StringConstancyProperty] = {
         val sci = instr.name match {
             case "setLength" => StringConstancyInformation(StringConstancyLevel.CONSTANT, StringConstancyType.RESET)
             case _           => StringConstancyInformation.getNeutralElement

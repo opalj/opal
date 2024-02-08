@@ -10,8 +10,10 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 import org.opalj.br.FieldType
+import org.opalj.br.analyses.DeclaredFields
 import org.opalj.br.analyses.DeclaredFieldsKey
 import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.FieldAccessInformation
 import org.opalj.br.analyses.FieldAccessInformationKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
@@ -28,26 +30,23 @@ import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.FinalP
-import org.opalj.fpcf.InterimLUBP
 import org.opalj.fpcf.InterimResult
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEPS
+import org.opalj.log.Error
+import org.opalj.log.Info
+import org.opalj.log.OPALLogger.logOnce
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 import org.opalj.tac.fpcf.analyses.string_analysis.l1.interpretation.L1ArrayAccessInterpreter
 import org.opalj.tac.fpcf.analyses.string_analysis.l1.interpretation.L1InterpretationHandler
-import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.AbstractPathFinder
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.FlatPathElement
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.NestedPathElement
-import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.NestedPathType
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.Path
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.PathTransformer
-import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.SubPath
-import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.WindowPathFinder
 import org.opalj.tac.fpcf.properties.TACAI
-import org.opalj.value.ValueInformation
 
 /**
  * InterproceduralStringAnalysis processes a read operation of a string variable at a program
@@ -74,39 +73,46 @@ import org.opalj.value.ValueInformation
  *
  * @author Patrick Mell
  */
-class L1StringAnalysis(val project: SomeProject) extends FPCFAnalysis {
+class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
 
-    private val contextProvider: ContextProvider = project.get(ContextProviderKey)
+    override type State = L1ComputationState
 
-    // TODO: Is it possible to make the following two parameters configurable from the outside?
     /**
      * To analyze an expression within a method ''m'', callers information might be necessary, e.g.,
      * to know with which arguments ''m'' is called. [[callersThreshold]] determines the threshold
      * up to which number of callers parameter information are gathered. For "number of callers
      * greater than [[callersThreshold]]", parameters are approximated with the lower bound.
      */
-    private val callersThreshold = 10
+    private val callersThreshold = {
+        val threshold =
+            try {
+                project.config.getInt(L1StringAnalysis.CallersThresholdConfigKey)
+            } catch {
+                case t: Throwable =>
+                    logOnce(Error(
+                        "analysis configuration - l1 string analysis",
+                        s"couldn't read: ${L1StringAnalysis.CallersThresholdConfigKey}",
+                        t
+                    ))
+                    10
+            }
 
-    /**
-     * To analyze a read operation of field, ''f'', all write accesses, ''wa_f'', to ''f'' have to
-     * be analyzed. ''fieldWriteThreshold'' determines the threshold of ''|wa_f|'' when ''f'' is to
-     * be approximated as the lower bound, i.e., ''|wa_f|'' is greater than ''fieldWriteThreshold''
-     * then the read operation of ''f'' is approximated as the lower bound. Otherwise, if ''|wa_f|''
-     * is less or equal than ''fieldWriteThreshold'', analyze all ''wa_f'' to approximate the read
-     * of ''f''.
-     */
-    private val fieldWriteThreshold = 100
-    private val declaredMethods = project.get(DeclaredMethodsKey)
-    private val declaredFields = project.get(DeclaredFieldsKey)
-    private val fieldAccessInformation = project.get(FieldAccessInformationKey)
+        logOnce(Info(
+            "analysis configuration - l1 string analysis",
+            "l1 string analysis uses a callers threshold of " + threshold
+        ))
+        threshold
+    }
+
+    protected implicit val declaredFields: DeclaredFields = project.get(DeclaredFieldsKey)
+    protected implicit val fieldAccessInformation: FieldAccessInformation = project.get(FieldAccessInformationKey)
+    protected implicit val contextProvider: ContextProvider = project.get(ContextProviderKey)
 
     /**
      * Returns the current interim result for the given state. If required, custom lower and upper
      * bounds can be used for the interim result.
      */
-    private def getInterimResult(
-        state: L1ComputationState
-    ): InterimResult[StringConstancyProperty] = InterimResult(
+    private def getInterimResult(state: State): InterimResult[StringConstancyProperty] = InterimResult(
         state.entity,
         computeNewLowerBound(state),
         computeNewUpperBound(state),
@@ -114,26 +120,22 @@ class L1StringAnalysis(val project: SomeProject) extends FPCFAnalysis {
         continuation(state)
     )
 
-    private def computeNewUpperBound(
-        state: L1ComputationState
-    ): StringConstancyProperty = {
+    private def computeNewUpperBound(state: State): StringConstancyProperty = {
         if (state.computedLeanPath != null) {
             StringConstancyProperty(new PathTransformer(state.interimIHandler).pathToStringTree(
                 state.computedLeanPath,
                 state.interimFpe2sci
-            ).reduce(true))
+            )(state).reduce(true))
         } else {
             StringConstancyProperty.lb
         }
     }
 
-    private def computeNewLowerBound(
-        state: L1ComputationState
-    ): StringConstancyProperty = StringConstancyProperty.lb
+    private def computeNewLowerBound(state: State): StringConstancyProperty = StringConstancyProperty.lb
 
     def analyze(data: SContext): ProperPropertyComputationResult = {
         val dm = declaredMethods(data._2)
-        val state = l1.L1ComputationState(dm, data, fieldWriteThreshold)
+        val state = L1ComputationState(dm, data)
 
         val tacaiEOptP = ps(data._2, TACAI.key)
         if (tacaiEOptP.hasUBP) {
@@ -162,7 +164,7 @@ class L1StringAnalysis(val project: SomeProject) extends FPCFAnalysis {
      * the possible string values. This method returns either a final [[Result]] or an
      * [[InterimResult]] depending on whether other information needs to be computed first.
      */
-    private def determinePossibleStrings(state: L1ComputationState): ProperPropertyComputationResult = {
+    override protected[string_analysis] def determinePossibleStrings(state: State): ProperPropertyComputationResult = {
         val puVar = state.entity._1
         val uVar = puVar.toValueOriginForm(state.tac.pcToIndex)
         val defSites = uVar.definedBy.toArray.sorted
@@ -181,6 +183,7 @@ class L1StringAnalysis(val project: SomeProject) extends FPCFAnalysis {
             state.iHandler = L1InterpretationHandler(
                 state.tac,
                 ps,
+                project,
                 declaredFields,
                 fieldAccessInformation,
                 state,
@@ -195,6 +198,7 @@ class L1StringAnalysis(val project: SomeProject) extends FPCFAnalysis {
             state.interimIHandler = L1InterpretationHandler(
                 state.tac,
                 ps,
+                project,
                 declaredFields,
                 fieldAccessInformation,
                 interimState,
@@ -264,7 +268,7 @@ class L1StringAnalysis(val project: SomeProject) extends FPCFAnalysis {
 
         // Interpret a function / method parameter using the parameter information in state
         if (defSites.head < 0) {
-            val r = state.iHandler.processDefSite(defSites.head, state.params.toList.map(_.toList))
+            val r = state.iHandler.processDefSite(defSites.head, state.params.toList.map(_.toList))(state)
             return Result(state.entity, StringConstancyProperty(r.asFinal.p.stringConstancyInformation))
         }
 
@@ -272,7 +276,7 @@ class L1StringAnalysis(val project: SomeProject) extends FPCFAnalysis {
         var attemptFinalResultComputation = false
         if (InterpretationHandler.isStringBuilderBufferToStringCall(call)) {
             // Find DUVars, that the analysis of the current entity depends on
-            val dependentVars = findDependentVars(state.computedLeanPath, stmts, puVar)(state.tac)
+            val dependentVars = findDependentVars(state.computedLeanPath, stmts, puVar)(state)
             if (dependentVars.nonEmpty) {
                 dependentVars.keys.foreach { nextVar =>
                     dependentVars.foreach { case (k, v) => state.appendToVar2IndexMapping(k, v) }
@@ -313,7 +317,7 @@ class L1StringAnalysis(val project: SomeProject) extends FPCFAnalysis {
                 new PathTransformer(state.iHandler).pathToStringTree(
                     state.computedLeanPath,
                     state.fpe2sci
-                ).reduce(true)
+                )(state).reduce(true)
             }
         }
 
@@ -334,19 +338,12 @@ class L1StringAnalysis(val project: SomeProject) extends FPCFAnalysis {
      * @return Returns a final result if (already) available. Otherwise, an intermediate result will
      *         be returned.
      */
-    private def continuation(
+    override protected def continuation(
         state: L1ComputationState
     )(eps: SomeEPS): ProperPropertyComputationResult = {
         state.dependees = state.dependees.filter(_.e != eps.e)
 
         eps match {
-            case FinalP(tac: TACAI) if eps.pk.equals(TACAI.key) =>
-                // Set the TAC only once (the TAC might be requested for other methods, so this
-                // makes sure we do not overwrite the state's TAC)
-                if (state.tac == null) {
-                    state.tac = tac.tac.get
-                }
-                determinePossibleStrings(state)
             case FinalP(callees: Callees) if eps.pk.equals(Callees.key) =>
                 state.callees = callees
                 if (state.dependees.isEmpty) {
@@ -362,83 +359,15 @@ class L1StringAnalysis(val project: SomeProject) extends FPCFAnalysis {
                 } else {
                     getInterimResult(state)
                 }
-            case FinalEP(entity, p: StringConstancyProperty) if eps.pk.equals(StringConstancyProperty.key) =>
-                val e = entity.asInstanceOf[SContext]
-                // For updating the interim state
-                state.var2IndexMapping(eps.e.asInstanceOf[SContext]._1).foreach { i =>
-                    state.appendToInterimFpe2Sci(i, p.stringConstancyInformation)
-                }
-                // If necessary, update the parameter information with which the
-                // surrounding function / method of the entity was called with
-                if (state.paramResultPositions.contains(e)) {
-                    val pos = state.paramResultPositions(e)
-                    state.params(pos._1)(pos._2) = p.stringConstancyInformation
-                    state.paramResultPositions.remove(e)
-                    state.parameterDependeesCount -= 1
-                }
-
-                // If necessary, update parameter information of function calls
-                if (state.entity2Function.contains(e)) {
-                    state.var2IndexMapping(e._1).foreach(state.appendToFpe2Sci(
-                        _,
-                        p.stringConstancyInformation
-                    ))
-                    // Update the state
-                    state.entity2Function(e).foreach { f =>
-                        val pos = state.nonFinalFunctionArgsPos(f)(e)
-                        val finalEp = FinalEP(e, p)
-                        state.nonFinalFunctionArgs(f)(pos._1)(pos._2)(pos._3) = finalEp
-                        // Housekeeping
-                        val index = state.entity2Function(e).indexOf(f)
-                        state.entity2Function(e).remove(index)
-                        if (state.entity2Function(e).isEmpty) {
-                            state.entity2Function.remove(e)
-                        }
-                    }
-                    // Continue only after all necessary function parameters are evaluated
-                    if (state.entity2Function.nonEmpty) {
-                        return getInterimResult(state)
-                    } else {
-                        // We could try to determine a final result before all function
-                        // parameter information are available, however, this will
-                        // definitely result in finding some intermediate result. Thus,
-                        // defer this computations when we know that all necessary
-                        // information are available
-                        state.entity2Function.clear()
-                        if (!computeResultsForPath(state.computedLeanPath, state)) {
-                            return determinePossibleStrings(state)
-                        }
-                    }
-                }
-
-                if (state.isSetupCompleted && state.parameterDependeesCount == 0) {
-                    processFinalP(state, eps.e, p)
-                } else {
-                    determinePossibleStrings(state)
-                }
-            case InterimLUBP(_: StringConstancyProperty, ub: StringConstancyProperty)
-                if eps.pk.equals(StringConstancyProperty.key) =>
-                state.dependees = eps :: state.dependees
-                val puVar = eps.e.asInstanceOf[SContext]._1
-                state.var2IndexMapping(puVar).foreach { i =>
-                    state.appendToInterimFpe2Sci(
-                        i,
-                        ub.stringConstancyInformation,
-                        Some(puVar)
-                    )
-                }
-                getInterimResult(state)
             case _ =>
-                state.dependees = eps :: state.dependees
-                getInterimResult(state)
-
+                super.continuation(state)(eps)
         }
     }
 
-    private def finalizePreparations(
+    override protected[string_analysis] def finalizePreparations(
         path:     Path,
-        state:    L1ComputationState,
-        iHandler: L1InterpretationHandler
+        state:    State,
+        iHandler: InterpretationHandler[State]
     ): Unit = path.elements.foreach {
         case FlatPathElement(index) =>
             if (!state.fpe2sci.contains(index)) {
@@ -447,48 +376,6 @@ class L1StringAnalysis(val project: SomeProject) extends FPCFAnalysis {
         case npe: NestedPathElement =>
             finalizePreparations(Path(npe.element.toList), state, iHandler)
         case _ =>
-    }
-
-    /**
-     * computeFinalResult computes the final result of an analysis. This includes the computation
-     * of instruction that could only be prepared (e.g., if an array load included a method call,
-     * its final result is not yet ready, however, this function finalizes, e.g., that load).
-     *
-     * @param state The final computation state. For this state the following criteria must apply:
-     *              For each [[FlatPathElement]], there must be a corresponding entry in
-     *              `state.fpe2sci`. If this criteria is not met, a [[NullPointerException]] will
-     *              be thrown (in this case there was some work to do left and this method should
-     *              not have been called)!
-     * @return Returns the final result.
-     */
-    private def computeFinalResult(state: L1ComputationState): Result = {
-        finalizePreparations(state.computedLeanPath, state, state.iHandler)
-        val finalSci = new PathTransformer(state.iHandler).pathToStringTree(
-            state.computedLeanPath,
-            state.fpe2sci,
-            resetExprHandler = false
-        ).reduce(true)
-        L1StringAnalysis.unregisterParams(state.entity)
-        Result(state.entity, StringConstancyProperty(finalSci))
-    }
-
-    private def processFinalP(
-        state: L1ComputationState,
-        e:     Entity,
-        p:     StringConstancyProperty
-    ): ProperPropertyComputationResult = {
-        // Add mapping information (which will be used for computing the final result)
-        state.var2IndexMapping(e.asInstanceOf[SContext]._1).foreach {
-            state.appendToFpe2Sci(_, p.stringConstancyInformation)
-        }
-
-        state.dependees = state.dependees.filter(_.e != e)
-        // No more dependees => Return the result for this analysis run
-        if (state.dependees.isEmpty) {
-            computeFinalResult(state)
-        } else {
-            getInterimResult(state)
-        }
     }
 
     /**
@@ -576,7 +463,7 @@ class L1StringAnalysis(val project: SomeProject) extends FPCFAnalysis {
         p.elements.foreach {
             case FlatPathElement(index) =>
                 if (!state.fpe2sci.contains(index)) {
-                    val eOptP = state.iHandler.processDefSite(index, state.params.toList.map(_.toSeq))
+                    val eOptP = state.iHandler.processDefSite(index, state.params.toList.map(_.toSeq))(state)
                     if (eOptP.isFinal) {
                         state.appendToFpe2Sci(index, eOptP.asFinal.p.stringConstancyInformation, reset = true)
                     } else {
@@ -593,69 +480,6 @@ class L1StringAnalysis(val project: SomeProject) extends FPCFAnalysis {
         }
 
         hasFinalResult
-    }
-
-    /**
-     * This function is a wrapper function for [[computeLeanPathForStringConst]] and
-     * [[computeLeanPathForStringBuilder]].
-     */
-    private def computeLeanPath(
-        value: V,
-        tac:   TACode[TACMethodParameter, DUVar[ValueInformation]]
-    ): Path = {
-        val defSites = value.definedBy.toArray.sorted
-        if (defSites.head < 0) {
-            computeLeanPathForStringConst(value)
-        } else {
-            val call = tac.stmts(defSites.head).asAssignment.expr
-            if (InterpretationHandler.isStringBuilderBufferToStringCall(call)) {
-                val (leanPath, _) = computeLeanPathForStringBuilder(value, tac)
-                leanPath
-            } else {
-                computeLeanPathForStringConst(value)
-            }
-        }
-    }
-
-    /**
-     * This function computes the lean path for a [[DUVar]] which is required to be a string
-     * expressions.
-     */
-    private def computeLeanPathForStringConst(value: V): Path = {
-        val defSites = value.definedBy.toArray.sorted
-        if (defSites.length == 1) {
-            // Trivial case for just one element
-            Path(List(FlatPathElement(defSites.head)))
-        } else {
-            // For > 1 definition sites, create a nest path element with |defSites| many
-            // children where each child is a NestPathElement(FlatPathElement)
-            val children = ListBuffer[SubPath]()
-            defSites.foreach { ds => children.append(NestedPathElement(ListBuffer(FlatPathElement(ds)), None)) }
-            Path(List(NestedPathElement(children, Some(NestedPathType.CondWithAlternative))))
-        }
-    }
-
-    /**
-     * This function computes the lean path for a [[DUVar]] which is required to stem from a
-     * `String{Builder, Buffer}#toString()` call. For this, the `tac` of the method, in which
-     * `duvar` resides, is required.
-     * This function then returns a pair of values: The first value is the computed lean path and
-     * the second value indicates whether the String{Builder, Buffer} has initialization sites
-     * within the method stored in `tac`. If it has no initialization sites, it returns
-     * `(null, false)` and otherwise `(computed lean path, true)`.
-     */
-    private def computeLeanPathForStringBuilder(
-        value: V,
-        tac:   TACode[TACMethodParameter, DUVar[ValueInformation]]
-    ): (Path, Boolean) = {
-        val pathFinder: AbstractPathFinder = new WindowPathFinder(tac.cfg)
-        val initDefSites = InterpretationHandler.findDefSiteOfInit(value, tac.stmts)
-        if (initDefSites.isEmpty) {
-            (null, false)
-        } else {
-            val paths = pathFinder.findPaths(initDefSites, value.definedBy.toArray.max)
-            (paths.makeLeanPath(value, tac.stmts), true)
-        }
     }
 
     private def hasFormalParamUsageAlongPath(path: Path, stmts: Array[Stmt[V]]): Boolean = {
@@ -678,67 +502,17 @@ class L1StringAnalysis(val project: SomeProject) extends FPCFAnalysis {
             case _                             => false
         }
     }
-
-    /**
-     * Helper / accumulator function for finding dependees. For how dependees are detected, see
-     * findDependentVars. Returns a list of pairs of DUVar and the index of the
-     * FlatPathElement.element in which it occurs.
-     */
-    private def findDependeesAcc(subpath: SubPath, stmts: Array[Stmt[V]], target: SEntity)(
-        implicit tac: TACode[TACMethodParameter, V]
-    ): ListBuffer[(SEntity, Int)] = {
-        val dependees = ListBuffer[(SEntity, Int)]()
-        subpath match {
-            case fpe: FlatPathElement =>
-                // For FlatPathElements, search for DUVars on which the toString method is called
-                // and where these toString calls are the parameter of an append call
-                stmts(fpe.element) match {
-                    case ExprStmt(_, outerExpr) =>
-                        if (InterpretationHandler.isStringBuilderBufferAppendCall(outerExpr)) {
-                            val param = outerExpr.asVirtualFunctionCall.params.head.asVar
-                            param.definedBy.filter(_ >= 0).foreach { ds =>
-                                val expr = stmts(ds).asAssignment.expr
-                                if (InterpretationHandler.isStringBuilderBufferToStringCall(expr)) {
-                                    dependees.append((param.toPersistentForm(tac.stmts), fpe.element))
-                                }
-                            }
-                        }
-                    case _ =>
-                }
-                dependees
-            case npe: NestedPathElement =>
-                npe.element.foreach { nextSubpath => dependees.appendAll(findDependeesAcc(nextSubpath, stmts, target)) }
-                dependees
-            case _ => dependees
-        }
-    }
-
-    /**
-     * Takes a `path`, this should be the lean path of a [[Path]], as well as a context in the form
-     * of statements, `stmts`, and detects all dependees within `path`. Dependees are found by
-     * looking at all elements in the path, and check whether the argument of an `append` call is a
-     * value that stems from a `toString` call of a [[StringBuilder]] or [[StringBuffer]]. This
-     * function then returns the found UVars along with the indices of those append statements.
-     *
-     * @note In order to make sure that a [[org.opalj.tac.DUVar]] does not depend on itself, pass
-     *       this variable as `ignore`.
-     */
-    private def findDependentVars(path: Path, stmts: Array[Stmt[V]], ignore: SEntity)(
-        implicit tac: TACode[TACMethodParameter, V]
-    ): mutable.LinkedHashMap[SEntity, Int] = {
-        val dependees = mutable.LinkedHashMap[SEntity, Int]()
-        path.elements.foreach { nextSubpath =>
-            findDependeesAcc(nextSubpath, stmts, ignore).foreach { nextPair =>
-                if (ignore != nextPair._1) {
-                    dependees.put(nextPair._1, nextPair._2)
-                }
-            }
-        }
-        dependees
-    }
 }
 
 object L1StringAnalysis {
+
+    final val FieldWriteThresholdConfigKey = {
+        "org.opalj.fpcf.analyses.string_analysis.l1.L1StringAnalysis.fieldWriteThreshold"
+    }
+
+    private final val CallersThresholdConfigKey = {
+        "org.opalj.fpcf.analyses.string_analysis.l1.L1StringAnalysis.callersThreshold"
+    }
 
     /**
      * Maps entities to a list of lists of parameters. As currently this analysis works context-

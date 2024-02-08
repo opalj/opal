@@ -10,6 +10,7 @@ package interpretation
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.FinalEP
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.BinaryExprInterpreter
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.DoubleValueInterpreter
@@ -31,7 +32,7 @@ import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.StringConstInt
  */
 class L0InterpretationHandler(
         tac: TACode[TACMethodParameter, V]
-) extends InterpretationHandler(tac) {
+) extends InterpretationHandler[L0ComputationState](tac) {
 
     /**
      * Processed the given definition site in an intraprocedural fashion.
@@ -41,7 +42,7 @@ class L0InterpretationHandler(
     override def processDefSite(
         defSite: Int,
         params:  List[Seq[StringConstancyInformation]] = List()
-    ): FinalEP[Entity, StringConstancyProperty] = {
+    )(implicit state: L0ComputationState): EOptionP[Entity, StringConstancyProperty] = {
         // Without doing the following conversion, the following compile error will occur: "the
         // result type of an implicit conversion must be more specific than org.opalj.fpcf.Entity"
         val e: Integer = defSite
@@ -69,7 +70,7 @@ class L0InterpretationHandler(
             case Assignment(_, _, expr: New) =>
                 NewInterpreter(cfg, this).interpret(expr)
             case Assignment(_, _, expr: GetField[V]) =>
-                L0FieldReadInterpreter(cfg, this).interpret(expr, defSite)
+                L0GetFieldInterpreter(cfg, this).interpret(expr, defSite)
             case Assignment(_, _, expr: VirtualFunctionCall[V]) =>
                 L0VirtualFunctionCallInterpreter(cfg, this).interpret(expr, defSite)
             case Assignment(_, _, expr: StaticFunctionCall[V]) =>
@@ -88,6 +89,8 @@ class L0InterpretationHandler(
             case _ => FinalEP(e, StringConstancyProperty.getNeutralElement)
         }
     }
+
+    override def finalizeDefSite(defSite: Int, state: L0ComputationState): Unit = {}
 }
 
 object L0InterpretationHandler {

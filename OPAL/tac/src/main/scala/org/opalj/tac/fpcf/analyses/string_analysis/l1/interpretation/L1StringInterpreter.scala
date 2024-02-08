@@ -8,16 +8,16 @@ package l1
 package interpretation
 
 import org.opalj.br.fpcf.properties.StringConstancyProperty
+import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.FinalP
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.StringInterpreter
 
 /**
  * @author Maximilian Rüsch
  */
-trait L1StringInterpreter extends StringInterpreter {
-
-    override protected val exprHandler: L1InterpretationHandler
+trait L1StringInterpreter[State <: ComputationState[State]] extends StringInterpreter[State] {
 
     /**
      * @param instr The instruction that is to be interpreted. It is the responsibility of implementations to make sure
@@ -35,5 +35,17 @@ trait L1StringInterpreter extends StringInterpreter {
      *         interpret but not the definition site, this function returns the interpreted instruction as entity.
      *         Thus, the entity needs to be replaced by the calling client.
      */
-    def interpret(instr: T, defSite: Int): EOptionP[Entity, StringConstancyProperty]
+    def interpret(instr: T, defSite: Int)(implicit state: State): EOptionP[Entity, StringConstancyProperty]
+
+    protected def handleInterpretationResult(ep: EOptionP[Entity, StringConstancyProperty])(implicit
+        state: State
+    ): Option[StringConstancyInformation] = {
+        ep match {
+            case FinalP(p) =>
+                Some(p.stringConstancyInformation)
+            case eps =>
+                state.dependees = eps :: state.dependees
+                None
+        }
+    }
 }

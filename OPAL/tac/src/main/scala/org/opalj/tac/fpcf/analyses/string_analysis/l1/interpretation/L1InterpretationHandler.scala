@@ -10,6 +10,7 @@ package interpretation
 import org.opalj.ai.ImmediateVMExceptionsOriginOffset
 import org.opalj.br.analyses.DeclaredFields
 import org.opalj.br.analyses.FieldAccessInformation
+import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
@@ -45,11 +46,12 @@ import org.opalj.value.ValueInformation
 class L1InterpretationHandler(
         tac:                    TACode[TACMethodParameter, DUVar[ValueInformation]],
         ps:                     PropertyStore,
+        project:                SomeProject,
         declaredFields:         DeclaredFields,
         fieldAccessInformation: FieldAccessInformation,
-        state:                  L1ComputationState,
+        implicit val state:     L1ComputationState,
         contextProvider:        ContextProvider
-) extends InterpretationHandler(tac) {
+) extends InterpretationHandler[L1ComputationState](tac) {
 
     /**
      * Processed the given definition site in an interprocedural fashion.
@@ -60,7 +62,7 @@ class L1InterpretationHandler(
     override def processDefSite(
         defSite: Int,
         params:  List[Seq[StringConstancyInformation]] = List()
-    ): EOptionP[Entity, StringConstancyProperty] = {
+    )(implicit state: L1ComputationState): EOptionP[Entity, StringConstancyProperty] = {
         // Without doing the following conversion, the following compile error will occur: "the
         // result type of an implicit conversion must be more specific than org.opalj.fpcf.Entity"
         val e: Integer = defSite
@@ -136,7 +138,7 @@ class L1InterpretationHandler(
         expr:    ArrayLoad[V],
         defSite: Int,
         params:  List[Seq[StringConstancyInformation]]
-    ): EOptionP[Entity, StringConstancyProperty] = {
+    )(implicit state: L1ComputationState): EOptionP[Entity, StringConstancyProperty] = {
         val r = new L1ArrayAccessInterpreter(
             cfg,
             this,
@@ -199,7 +201,6 @@ class L1InterpretationHandler(
             cfg,
             this,
             ps,
-            state,
             params,
             contextProvider
         ).interpret(expr, defSite)
@@ -279,6 +280,7 @@ class L1InterpretationHandler(
             state,
             ps,
             fieldAccessInformation,
+            project,
             declaredFields,
             contextProvider
         ).interpret(expr, defSite)
@@ -295,12 +297,11 @@ class L1InterpretationHandler(
     private def processNonVirtualFunctionCall(
         expr:    NonVirtualFunctionCall[V],
         defSite: Int
-    ): EOptionP[Entity, StringConstancyProperty] = {
+    )(implicit state: L1ComputationState): EOptionP[Entity, StringConstancyProperty] = {
         val r = L1NonVirtualFunctionCallInterpreter(
             cfg,
             this,
             ps,
-            state,
             contextProvider
         ).interpret(expr, defSite)
         if (r.isRefinable || state.nonFinalFunctionArgs.contains(expr)) {
@@ -316,7 +317,7 @@ class L1InterpretationHandler(
     def processVirtualMethodCall(
         expr:    VirtualMethodCall[V],
         defSite: Int
-    ): EOptionP[Entity, StringConstancyProperty] = {
+    )(implicit state: L1ComputationState): EOptionP[Entity, StringConstancyProperty] = {
         val r = L1VirtualMethodCallInterpreter(cfg, this).interpret(expr, defSite)
         doInterimResultHandling(r, defSite)
         r
@@ -407,6 +408,7 @@ object L1InterpretationHandler {
     def apply(
         tac:                    TACode[TACMethodParameter, DUVar[ValueInformation]],
         ps:                     PropertyStore,
+        project:                SomeProject,
         declaredFields:         DeclaredFields,
         fieldAccessInformation: FieldAccessInformation,
         state:                  L1ComputationState,
@@ -414,6 +416,7 @@ object L1InterpretationHandler {
     ): L1InterpretationHandler = new L1InterpretationHandler(
         tac,
         ps,
+        project,
         declaredFields,
         fieldAccessInformation,
         state,

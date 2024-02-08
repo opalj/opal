@@ -18,6 +18,8 @@ import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyType
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.FinalEP
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 
@@ -27,10 +29,10 @@ import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.Interpretation
  *
  * @author Patrick Mell
  */
-case class L0VirtualFunctionCallInterpreter(
+case class L0VirtualFunctionCallInterpreter[State <: ComputationState[State]](
         override protected val cfg:         CFG[Stmt[V], TACStmts[V]],
-        override protected val exprHandler: L0InterpretationHandler
-) extends L0StringInterpreter {
+        override protected val exprHandler: InterpretationHandler[State]
+) extends L0StringInterpreter[State] {
 
     override type T = VirtualFunctionCall[V]
 
@@ -57,25 +59,24 @@ case class L0VirtualFunctionCallInterpreter(
      * If none of the above-described cases match, a result containing
      * [[StringConstancyProperty.getNeutralElement]] will be returned.
      */
-    override def interpret(instr: T, defSite: Int): FinalEP[T, StringConstancyProperty] = {
-        val property = instr.name match {
+    override def interpret(instr: T, defSite: Int)(implicit state: State): EOptionP[Entity, StringConstancyProperty] = {
+        val sci = instr.name match {
             case "append"   => interpretAppendCall(instr)
             case "toString" => interpretToStringCall(instr)
-            case "replace"  => interpretReplaceCall(instr)
+            case "replace"  => Some(interpretReplaceCall)
             case _ =>
                 instr.descriptor.returnType match {
-                    case obj: ObjectType if obj.fqn == "java/lang/String" => StringConstancyProperty.lb
-                    case FloatType | DoubleType =>
-                        StringConstancyProperty(StringConstancyInformation(
+                    case obj: ObjectType if obj.fqn == "java/lang/String" => Some(StringConstancyInformation.lb)
+                    case FloatType | DoubleType => Some(StringConstancyInformation(
                             StringConstancyLevel.DYNAMIC,
                             StringConstancyType.APPEND,
                             StringConstancyInformation.FloatValue
                         ))
-                    case _ => StringConstancyProperty.getNeutralElement
+                    case _ => Some(StringConstancyInformation.getNeutralElement)
                 }
         }
 
-        FinalEP(instr, property)
+        FinalEP(instr, StringConstancyProperty(sci.get))
     }
 
     /**
@@ -83,38 +84,46 @@ case class L0VirtualFunctionCallInterpreter(
      * that this function assumes that the given `appendCall` is such a function call! Otherwise,
      * the expected behavior cannot be guaranteed.
      */
-    private def interpretAppendCall(appendCall: VirtualFunctionCall[V]): StringConstancyProperty = {
+    private def interpretAppendCall(appendCall: VirtualFunctionCall[V])(implicit
+        state: State
+    ): Option[StringConstancyInformation] = {
         val receiverSci = receiverValuesOfAppendCall(appendCall).stringConstancyInformation
-        val appendSci = valueOfAppendCall(appendCall).stringConstancyInformation
+        val appendSci = valueOfAppendCall(appendCall)
 
-        val sci = if (receiverSci.isTheNeutralElement && appendSci.isTheNeutralElement) {
-            // although counter-intuitive, this case may occur if both the receiver and the parameter have been
-            // processed before
-            StringConstancyInformation.getNeutralElement
-        } else if (receiverSci.isTheNeutralElement) {
-            // It might be that we have to go back as much as to a New expression. As they do not
-            // produce a result (= empty list), the if part
-            appendSci
-        } else if (appendSci.isTheNeutralElement) {
-            // The append value might be empty, if the site has already been processed (then this
-            // information will come from another StringConstancyInformation object
-            receiverSci
+        if (appendSci.isEmpty) {
+            None
         } else {
-            // Receiver and parameter information are available => combine them
-            StringConstancyInformation(
-                StringConstancyLevel.determineForConcat(receiverSci.constancyLevel, appendSci.constancyLevel),
-                StringConstancyType.APPEND,
-                receiverSci.possibleStrings + appendSci.possibleStrings
-            )
-        }
+            val sci = if (receiverSci.isTheNeutralElement && appendSci.get.isTheNeutralElement) {
+                // although counter-intuitive, this case may occur if both the receiver and the parameter have been
+                // processed before
+                StringConstancyInformation.getNeutralElement
+            } else if (receiverSci.isTheNeutralElement) {
+                // It might be that we have to go back as much as to a New expression. As they do not
+                // produce a result (= empty list), the if part
+                appendSci.get
+            } else if (appendSci.get.isTheNeutralElement) {
+                // The append value might be empty, if the site has already been processed (then this
+                // information will come from another StringConstancyInformation object
+                receiverSci
+            } else {
+                // Receiver and parameter information are available => combine them
+                StringConstancyInformation(
+                    StringConstancyLevel.determineForConcat(receiverSci.constancyLevel, appendSci.get.constancyLevel),
+                    StringConstancyType.APPEND,
+                    receiverSci.possibleStrings + appendSci.get.possibleStrings
+                )
+            }
 
-        StringConstancyProperty(sci)
+            Some(sci)
+        }
     }
 
     /**
      * This function determines the current value of the receiver object of an `append` call.
      */
-    private def receiverValuesOfAppendCall(call: VirtualFunctionCall[V]): StringConstancyProperty = {
+    private def receiverValuesOfAppendCall(call: VirtualFunctionCall[V])(implicit
+        state: State
+    ): StringConstancyProperty = {
         // There might be several receivers, thus the map; from the processed sites, however, use
         // only the head as a single receiver interpretation will produce one element
         val scis = call.receiver.asVar.definedBy.toArray.sorted.map { ds =>
@@ -128,45 +137,48 @@ case class L0VirtualFunctionCallInterpreter(
      * Determines the (string) value that was passed to a `String{Builder, Buffer}#append` method.
      * This function can process string constants as well as function calls as argument to append.
      */
-    private def valueOfAppendCall(call: VirtualFunctionCall[V]): StringConstancyProperty = {
+    private def valueOfAppendCall(call: VirtualFunctionCall[V])(implicit
+        state: State
+    ): Option[StringConstancyInformation] = {
         val param = call.params.head.asVar
         // .head because we want to evaluate only the first argument of append
         val defSiteHead = param.definedBy.head
-        var value = exprHandler.processDefSite(defSiteHead).p
+        var value = handleDependentDefSite(defSiteHead)
         // If defSiteHead points to a New, value will be the empty list. In that case, process
         // the first use site (which is the <init> call)
-        if (value.isTheNeutralElement) {
-            val r = exprHandler.processDefSite(
-                cfg.code.instructions(defSiteHead).asAssignment.targetVar.usedBy.toArray.min
-            )
-            value = r.p
+        if (value.isDefined && value.get.isTheNeutralElement) {
+            value = handleDependentDefSite(cfg.code.instructions(defSiteHead).asAssignment.targetVar.usedBy.toArray.min)
         }
 
-        val sci = value.stringConstancyInformation
-        val finalSci = param.value.computationalType match {
-            // For some types, we know the (dynamic) values
-            case ComputationalTypeInt =>
-                // The value was already computed above; however, we need to check whether the
-                // append takes an int value or a char (if it is a constant char, convert it)
-                if (call.descriptor.parameterType(0).isCharType &&
-                    sci.constancyLevel == StringConstancyLevel.CONSTANT
-                ) {
-                    sci.copy(possibleStrings = sci.possibleStrings.toInt.toChar.toString)
-                } else {
+        if (value.isEmpty) {
+            None
+        } else {
+            val sci = value.get
+            val finalSci = param.value.computationalType match {
+                // For some types, we know the (dynamic) values
+                case ComputationalTypeInt =>
+                    // The value was already computed above; however, we need to check whether the
+                    // append takes an int value or a char (if it is a constant char, convert it)
+                    if (call.descriptor.parameterType(0).isCharType &&
+                        sci.constancyLevel == StringConstancyLevel.CONSTANT
+                    ) {
+                        sci.copy(possibleStrings = sci.possibleStrings.toInt.toChar.toString)
+                    } else {
+                        sci
+                    }
+                case ComputationalTypeFloat | ComputationalTypeDouble =>
+                    if (sci.constancyLevel == StringConstancyLevel.CONSTANT) {
+                        sci
+                    } else {
+                        InterpretationHandler.getConstancyInfoForDynamicFloat
+                    }
+                // Otherwise, try to compute
+                case _ =>
                     sci
-                }
-            case ComputationalTypeFloat | ComputationalTypeDouble =>
-                if (sci.constancyLevel == StringConstancyLevel.CONSTANT) {
-                    sci
-                } else {
-                    InterpretationHandler.getConstancyInfoForDynamicFloat
-                }
-            // Otherwise, try to compute
-            case _ =>
-                sci
-        }
+            }
 
-        StringConstancyProperty(finalSci)
+            Some(finalSci)
+        }
     }
 
     /**
@@ -174,8 +186,10 @@ case class L0VirtualFunctionCallInterpreter(
      * Note that this function assumes that the given `toString` is such a function call! Otherwise,
      * the expected behavior cannot be guaranteed.
      */
-    private def interpretToStringCall(call: VirtualFunctionCall[V]): StringConstancyProperty = {
-        exprHandler.processDefSite(call.receiver.asVar.definedBy.head).p
+    private def interpretToStringCall(call: VirtualFunctionCall[V])(implicit
+        state: State
+    ): Option[StringConstancyInformation] = {
+        handleDependentDefSite(call.receiver.asVar.definedBy.head)
     }
 
     /**
@@ -183,6 +197,6 @@ case class L0VirtualFunctionCallInterpreter(
      * (Currently, this function simply approximates `replace` functions by returning the lower
      * bound of [[StringConstancyProperty]]).
      */
-    private def interpretReplaceCall(instr: VirtualFunctionCall[V]): StringConstancyProperty =
-        InterpretationHandler.getStringConstancyPropertyForReplace
+    private def interpretReplaceCall: StringConstancyInformation =
+        InterpretationHandler.getStringConstancyInformationForReplace
 }

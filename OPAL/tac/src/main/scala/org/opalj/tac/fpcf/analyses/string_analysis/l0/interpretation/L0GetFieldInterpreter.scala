@@ -9,24 +9,27 @@ package interpretation
 
 import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.properties.StringConstancyProperty
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.FinalEP
+import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 
 /**
- * Responsible for processing [[FieldRead]]s. Currently, there is no support for fields, i.e., they are not analyzed but
+ * Responsible for processing [[GetField]]s. Currently, there is no support for fields, i.e., they are not analyzed but
  * a constant [[org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation]] is returned.
  *
  * @author Maximilian Rüsch
  */
-case class L0FieldReadInterpreter(
+case class L0GetFieldInterpreter[State <: ComputationState[State]](
         override protected val cfg:         CFG[Stmt[V], TACStmts[V]],
-        override protected val exprHandler: L0InterpretationHandler
-) extends L0StringInterpreter {
+        override protected val exprHandler: InterpretationHandler[State]
+) extends L0StringInterpreter[State] {
 
     override type T = GetField[V]
 
     /**
      * Fields are currently unsupported, thus this function always returns [[StringConstancyProperty.lb]].
      */
-    override def interpret(instr: T, defSite: Int): FinalEP[T, StringConstancyProperty] =
+    override def interpret(instr: T, defSite: Int)(implicit state: State): EOptionP[Entity, StringConstancyProperty] =
         FinalEP(instr, StringConstancyProperty.lb)
 }

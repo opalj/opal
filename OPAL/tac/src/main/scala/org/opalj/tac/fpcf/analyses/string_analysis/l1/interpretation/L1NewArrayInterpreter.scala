@@ -13,6 +13,7 @@ import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.FinalEP
+import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 
 /**
  * Responsible for preparing [[NewArray]] expressions.
@@ -24,12 +25,12 @@ import org.opalj.fpcf.FinalEP
  *
  * @author Patrick Mell
  */
-class L1NewArrayInterpreter(
+class L1NewArrayInterpreter[State <: ComputationState[State]](
         override protected val cfg:         CFG[Stmt[V], TACStmts[V]],
-        override protected val exprHandler: L1InterpretationHandler,
-        state:                              L1ComputationState,
+        override protected val exprHandler: InterpretationHandler[State],
+        state:                              State,
         params:                             List[Seq[StringConstancyInformation]]
-) extends L1StringInterpreter {
+) extends L1StringInterpreter[State] {
 
     override type T = NewArray[V]
 
@@ -39,7 +40,7 @@ class L1NewArrayInterpreter(
      *       definition sites producing a refinable result will have to be handled later on to
      *       not miss this information.
      */
-    override def interpret(instr: T, defSite: Int): EOptionP[Entity, StringConstancyProperty] = {
+    override def interpret(instr: T, defSite: Int)(implicit state: State): EOptionP[Entity, StringConstancyProperty] = {
         // Only support for 1-D arrays
         if (instr.counts.length != 1) {
             return FinalEP(instr, StringConstancyProperty.lb)

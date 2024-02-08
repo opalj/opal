@@ -10,21 +10,24 @@ package interpretation
 import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.FinalEP
+import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 
 /**
  * Responsible for processing [[ArrayLoad]] as well as [[ArrayStore]] expressions in an intraprocedural fashion.
  *
  * @author Maximilian Rüsch
  */
-case class L0ArrayInterpreter(
+case class L0ArrayInterpreter[State <: ComputationState[State]](
         override protected val cfg:         CFG[Stmt[V], TACStmts[V]],
-        override protected val exprHandler: L0InterpretationHandler
-) extends L0StringInterpreter {
+        override protected val exprHandler: InterpretationHandler[State]
+) extends L0StringInterpreter[State] {
 
     override type T = ArrayLoad[V]
 
-    override def interpret(instr: T, defSite: Int): FinalEP[T, StringConstancyProperty] = {
+    override def interpret(instr: T, defSite: Int)(implicit state: State): EOptionP[Entity, StringConstancyProperty] = {
         val stmts = cfg.code.instructions
         val defSites = instr.arrayRef.asVar.definedBy.toArray
         var scis = Seq.empty[StringConstancyInformation]
@@ -34,14 +37,10 @@ case class L0ArrayInterpreter(
                 stmts(_) match {
                     // Process ArrayStores
                     case ArrayStore(_, _, _, value) =>
-                        scis = scis ++ value.asVar.definedBy.toArray.sorted.map {
-                            exprHandler.processDefSite(_).p.stringConstancyInformation
-                        }
+                        scis = scis ++ value.asVar.definedBy.toArray.sorted.flatMap { handleDependentDefSite }
                     // Process ArrayLoads
                     case Assignment(_, _, expr: ArrayLoad[V]) =>
-                        scis = scis ++ expr.arrayRef.asVar.definedBy.toArray.sorted.map {
-                            exprHandler.processDefSite(_).p.stringConstancyInformation
-                        }
+                        scis = scis ++ expr.arrayRef.asVar.definedBy.toArray.sorted.flatMap { handleDependentDefSite }
                     case _ =>
                 }
             }

@@ -746,7 +746,7 @@ public class IntraProceduralTestMethods {
                             expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "=====(.*|=====)"
                     )
             })
-    public void tryCatchFinally(String filename) { // TODO why three definitions here?
+    public void tryCatchFinally(String filename) {
         StringBuilder sb = new StringBuilder("=====");
         try {
             String data = new String(Files.readAllBytes(Paths.get(filename)));

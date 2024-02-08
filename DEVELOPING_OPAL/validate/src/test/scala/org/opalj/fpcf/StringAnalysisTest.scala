@@ -2,6 +2,9 @@
 package org.opalj
 package fpcf
 
+import org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
+import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
+
 import java.net.URL
 import org.opalj.br.Annotation
 import org.opalj.br.Annotations
@@ -113,14 +116,34 @@ class IntraproceduralStringAnalysisTest extends StringAnalysisTest {
 
     override def fixtureProjectPackage: List[String] = List(s"org/opalj/fpcf/fixtures/string_analysis/intraprocedural")
 
+    override def init(p: Project[URL]): Unit = {
+        val domain = classOf[DefaultPerformInvocationsDomainWithCFGAndDefUse[_]]
+        p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
+            case None => Set(domain)
+            case Some(requirements) => requirements + domain
+        }
+
+        p.get(RTACallGraphKey)
+    }
+
     describe("the org.opalj.fpcf.IntraproceduralStringAnalysis is started") {
         val as = executeAnalyses(LazyL0StringAnalysis)
 
         val entities = determineEntitiesToAnalyze(as.project)
-        entities.foreach(as.propertyStore.force(_, StringConstancyProperty.key))
+        val newEntities = entities
+            //.filter(entity => entity._2.name.startsWith("tryCatchFinally"))
+            //.filter(entity => entity._2.name.startsWith("tryCatchFinallyWithThrowable"))
+            //.filterNot(entity => entity._2.name.startsWith("switchNested"))
+            //.filterNot(entity => entity._2.name.startsWith("tryCatchFinallyWithThrowable"))
+            //.filterNot(entity => entity._2.name.startsWith("twoDefinitionsOneUsage"))
+            //.filterNot(entity => entity._2.name.startsWith("simpleStringConcat"))
+            //.filterNot(entity => entity._2.name.startsWith("multipleDefSites"))
+            //.filterNot(entity => entity._2.name.startsWith("fromConstantAndFunctionCall"))
+        newEntities.foreach(as.propertyStore.force(_, StringConstancyProperty.key))
 
         as.propertyStore.shutdown()
-        validateProperties(as, determineEAS(entities, as.project), Set("StringConstancy"))
+
+        validateProperties(as, determineEAS(newEntities, as.project), Set("StringConstancy"))
     }
 }
 
@@ -144,7 +167,7 @@ class InterproceduralStringAnalysisTest extends StringAnalysisTest {
     describe("the org.opalj.fpcf.InterproceduralStringAnalysis is started") {
         val as = executeAnalyses(LazyL1StringAnalysis)
 
-        val entities = determineEntitiesToAnalyze(as.project)
+        val entities = determineEntitiesToAnalyze(as.project) //.filter(entity => entity._2.name == "valueOfTest2")
         entities.foreach(as.propertyStore.force(_, StringConstancyProperty.key))
 
         as.propertyStore.shutdown()

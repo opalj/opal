@@ -18,10 +18,10 @@ import org.opalj.fpcf.FinalEP
  *
  * @author Maximilian Rüsch
  */
-case class DoubleValueInterpreter(
+case class DoubleValueInterpreter[State <: ComputationState[State]](
         override protected val cfg:         CFG[Stmt[V], TACStmts[V]],
-        override protected val exprHandler: InterpretationHandler
-) extends StringInterpreter {
+        override protected val exprHandler: InterpretationHandler[State]
+) extends StringInterpreter[State] {
 
     override type T = DoubleConst
 

@@ -23,5 +23,5 @@ case class NewArrayFinalizer(
      */
     override def finalizeInterpretation(instr: T, defSite: Int): Unit =
         // Simply re-trigger the computation
-        state.iHandler.processDefSite(defSite)
+        state.iHandler.processDefSite(defSite)(state)
 }
