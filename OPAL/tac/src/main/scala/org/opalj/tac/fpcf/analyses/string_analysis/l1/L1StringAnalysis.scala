@@ -30,7 +30,6 @@ import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.FinalP
-import org.opalj.fpcf.InterimResult
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
@@ -108,31 +107,6 @@ class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
     protected implicit val fieldAccessInformation: FieldAccessInformation = project.get(FieldAccessInformationKey)
     protected implicit val contextProvider: ContextProvider = project.get(ContextProviderKey)
 
-    /**
-     * Returns the current interim result for the given state. If required, custom lower and upper
-     * bounds can be used for the interim result.
-     */
-    private def getInterimResult(state: State): InterimResult[StringConstancyProperty] = InterimResult(
-        state.entity,
-        computeNewLowerBound(state),
-        computeNewUpperBound(state),
-        state.dependees.toSet,
-        continuation(state)
-    )
-
-    private def computeNewUpperBound(state: State): StringConstancyProperty = {
-        if (state.computedLeanPath != null) {
-            StringConstancyProperty(new PathTransformer(state.interimIHandler).pathToStringTree(
-                state.computedLeanPath,
-                state.interimFpe2sci
-            )(state).reduce(true))
-        } else {
-            StringConstancyProperty.lb
-        }
-    }
-
-    private def computeNewLowerBound(state: State): StringConstancyProperty = StringConstancyProperty.lb
-
     def analyze(data: SContext): ProperPropertyComputationResult = {
         val dm = declaredMethods(data._2)
         val state = L1ComputationState(dm, data)
@@ -162,7 +136,7 @@ class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
     /**
      * Takes the `data` an analysis was started with as well as a computation `state` and determines
      * the possible string values. This method returns either a final [[Result]] or an
-     * [[InterimResult]] depending on whether other information needs to be computed first.
+     * [[org.opalj.fpcf.InterimResult]] depending on whether other information needs to be computed first.
      */
     override protected[string_analysis] def determinePossibleStrings(state: State): ProperPropertyComputationResult = {
         val puVar = state.entity._1
@@ -273,25 +247,29 @@ class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
         }
 
         val call = stmts(defSites.head).asAssignment.expr
-        var attemptFinalResultComputation = false
+        var attemptFinalResultComputation = true
         if (InterpretationHandler.isStringBuilderBufferToStringCall(call)) {
-            // Find DUVars, that the analysis of the current entity depends on
-            val dependentVars = findDependentVars(state.computedLeanPath, stmts, puVar)(state)
+            // Find DUVars that the analysis of the current entity depends on
+            val dependentVars = findDependentVars(state.computedLeanPath, puVar)(state)
             if (dependentVars.nonEmpty) {
                 dependentVars.keys.foreach { nextVar =>
                     dependentVars.foreach { case (k, v) => state.appendToVar2IndexMapping(k, v) }
                     val ep = propertyStore((nextVar, state.entity._2), StringConstancyProperty.key)
                     ep match {
-                        case FinalEP(e, p) => return processFinalP(state, e, p)
-                        case _             => state.dependees = ep :: state.dependees
+                        case FinalEP(e, p) =>
+                            processFinalP(state, e, p)
+                            // No more dependees => Return the result for this analysis run
+                            if (state.dependees.isEmpty) {
+                                return computeFinalResult(state)
+                            } else {
+                                return getInterimResult(state)
+                            }
+                        case _ =>
+                            state.dependees = ep :: state.dependees
+                            attemptFinalResultComputation = false
                     }
                 }
-            } else {
-                attemptFinalResultComputation = true
             }
-        } else {
-            // If not a call to String{Builder, Buffer}.toString, then we deal with pure strings
-            attemptFinalResultComputation = true
         }
 
         var sci = StringConstancyInformation.lb

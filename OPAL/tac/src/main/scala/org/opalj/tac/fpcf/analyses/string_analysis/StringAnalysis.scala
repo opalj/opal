@@ -54,7 +54,7 @@ trait StringAnalysis extends FPCFAnalysis {
      * Returns the current interim result for the given state. If required, custom lower and upper bounds can be used
      * for the interim result.
      */
-    private def getInterimResult(state: State): InterimResult[StringConstancyProperty] = InterimResult(
+    protected def getInterimResult(state: State): InterimResult[StringConstancyProperty] = InterimResult(
         state.entity,
         computeNewLowerBound(state),
         computeNewUpperBound(state),
@@ -153,6 +153,12 @@ trait StringAnalysis extends FPCFAnalysis {
 
                 if (state.isSetupCompleted && state.parameterDependeesCount == 0) {
                     processFinalP(state, eps.e, p)
+                    // No more dependees => Return the result for this analysis run
+                    if (state.dependees.isEmpty) {
+                        computeFinalResult(state)
+                    } else {
+                        getInterimResult(state)
+                    }
                 } else {
                     determinePossibleStrings(state)
                 }
@@ -193,7 +199,7 @@ trait StringAnalysis extends FPCFAnalysis {
      *              not have been called)!
      * @return Returns the final result.
      */
-    private def computeFinalResult(state: State): Result = {
+    protected def computeFinalResult(state: State): Result = {
         finalizePreparations(state.computedLeanPath, state, state.iHandler)
         val finalSci = new PathTransformer(state.iHandler).pathToStringTree(
             state.computedLeanPath,
@@ -208,19 +214,13 @@ trait StringAnalysis extends FPCFAnalysis {
         state: State,
         e:     Entity,
         p:     StringConstancyProperty
-    ): ProperPropertyComputationResult = {
+    ): Unit = {
         // Add mapping information (which will be used for computing the final result)
         state.var2IndexMapping(e.asInstanceOf[SContext]._1).foreach {
             state.appendToFpe2Sci(_, p.stringConstancyInformation)
         }
 
         state.dependees = state.dependees.filter(_.e != e)
-        // No more dependees => Return the result for this analysis run
-        if (state.dependees.isEmpty) {
-            computeFinalResult(state)
-        } else {
-            getInterimResult(state)
-        }
     }
 
     /**
@@ -343,46 +343,46 @@ trait StringAnalysis extends FPCFAnalysis {
     }
 
     /**
-     * Helper / accumulator function for finding dependees. For how dependees are detected, see
-     * [[findDependentVars]]. Returns a list of pairs of DUVar and the index of the
-     * [[FlatPathElement.element]] in which it occurs.
+     * Finds [[PUVar]]s the string constancy information computation for the given [[Path]] depends on. Enables passing
+     * an entity to ignore (usually the entity for which the path was created so it does not depend on itself.
+     *
+     * @return A mapping from dependent [[PUVar]]s to the [[FlatPathElement]] indices they occur in.
      */
-    private def findDependeesAcc(subpath: SubPath, stmts: Array[Stmt[V]])(
-        implicit state: State
-    ): ListBuffer[(SEntity, Int)] = {
-        val foundDependees = ListBuffer[(SEntity, Int)]()
-        subpath match {
-            case fpe: FlatPathElement =>
-                // For FlatPathElements, search for DUVars on which the toString method is called
-                // and where these toString calls are the parameter of an append call
-                stmts(fpe.element) match {
-                    case ExprStmt(_, outerExpr) =>
-                        if (InterpretationHandler.isStringBuilderBufferAppendCall(outerExpr)) {
-                            val param = outerExpr.asVirtualFunctionCall.params.head.asVar
-                            param.definedBy.filter(_ >= 0).foreach { ds =>
-                                val expr = stmts(ds).asAssignment.expr
-                                // TODO check support for passing nested string builder directly (e.g. with a test case)
-                                if (InterpretationHandler.isStringBuilderBufferToStringCall(expr)) {
-                                    foundDependees.append((param.toPersistentForm(state.tac.stmts), fpe.element))
+    protected def findDependentVars(path: Path, ignore: SEntity)( // We may need to register the old path with them
+        implicit state: State): mutable.LinkedHashMap[SEntity, Int] = {
+        val stmts = state.tac.stmts
+
+        def findDependeesAcc(subpath: SubPath): ListBuffer[(SEntity, Int)] = {
+            val foundDependees = ListBuffer[(SEntity, Int)]()
+            subpath match {
+                case fpe: FlatPathElement =>
+                    // For FlatPathElements, search for DUVars on which the toString method is called
+                    // and where these toString calls are the parameter of an append call
+                    stmts(fpe.element) match {
+                        case ExprStmt(_, outerExpr) =>
+                            if (InterpretationHandler.isStringBuilderBufferAppendCall(outerExpr)) {
+                                val param = outerExpr.asVirtualFunctionCall.params.head.asVar
+                                param.definedBy.filter(_ >= 0).foreach { ds =>
+                                    val expr = stmts(ds).asAssignment.expr
+                                    // TODO check support for passing nested string builder directly (e.g. with a test case)
+                                    if (InterpretationHandler.isStringBuilderBufferToStringCall(expr)) {
+                                        foundDependees.append((param.toPersistentForm(stmts), fpe.element))
+                                    }
                                 }
                             }
-                        }
-                    case _ =>
-                }
-                foundDependees
-            case npe: NestedPathElement =>
-                npe.element.foreach { nextSubpath => foundDependees.appendAll(findDependeesAcc(nextSubpath, stmts)) }
-                foundDependees
-            case _ => foundDependees
+                        case _ =>
+                    }
+                    foundDependees
+                case npe: NestedPathElement =>
+                    foundDependees.appendAll(npe.element.flatMap { findDependeesAcc })
+                    foundDependees
+                case _ => foundDependees
+            }
         }
-    }
 
-    protected def findDependentVars(path: Path, stmts: Array[Stmt[V]], ignore: SEntity)(
-        implicit state: State
-    ): mutable.LinkedHashMap[SEntity, Int] = {
         val dependees = mutable.LinkedHashMap[SEntity, Int]()
         path.elements.foreach { nextSubpath =>
-            findDependeesAcc(nextSubpath, stmts).foreach { nextPair =>
+            findDependeesAcc(nextSubpath).foreach { nextPair =>
                 if (ignore != nextPair._1) {
                     dependees.put(nextPair._1, nextPair._2)
                 }

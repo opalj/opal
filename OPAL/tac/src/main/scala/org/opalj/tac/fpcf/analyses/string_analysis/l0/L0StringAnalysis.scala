@@ -15,6 +15,7 @@ import org.opalj.br.fpcf.FPCFLazyAnalysisScheduler
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
+import org.opalj.fpcf.Entity
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.InterimLUBP
 import org.opalj.fpcf.InterimResult
@@ -26,7 +27,6 @@ import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 import org.opalj.tac.fpcf.analyses.string_analysis.l0.interpretation.L0InterpretationHandler
-import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.PathTransformer
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.WindowPathFinder
 import org.opalj.tac.fpcf.properties.TACAI
 
@@ -60,7 +60,8 @@ protected[l0] case class L0ComputationState(
  * (indicated by the given DUVar) is computed. That is, all paths from all definition sites to the
  * usage where only statements are contained that include the String{Builder, Buffer} object of
  * interest in some way (like an "append" or "replace" operation for example). These paths are then
- * transformed into a string tree by making use of a [[PathTransformer]].
+ * transformed into a string tree by making use of a
+ * [[org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.PathTransformer]].
  *
  * @author Patrick Mell
  */
@@ -89,9 +90,6 @@ class L0StringAnalysis(override val project: SomeProject) extends StringAnalysis
     override protected[string_analysis] def determinePossibleStrings(state: State): ProperPropertyComputationResult = {
         implicit val _state: State = state
 
-        // sci stores the final StringConstancyInformation (if it can be determined now at all)
-        var sci = StringConstancyInformation.lb
-
         implicit val tac: TACode[TACMethodParameter, V] = state.tac
         val stmts = tac.stmts
 
@@ -113,46 +111,45 @@ class L0StringAnalysis(override val project: SomeProject) extends StringAnalysis
             }
 
             val path = new WindowPathFinder(tac.cfg).findPaths(initDefSites, uVar.definedBy.head)
-            val leanPath = path.makeLeanPath(uVar, stmts)
+            state.computedLeanPath = path.makeLeanPath(uVar, stmts)
 
             // Find DUVars, that the analysis of the current entity depends on
-            val dependentVars = findDependentVars(leanPath, stmts, puVar)
+            val dependentVars = findDependentVars(state.computedLeanPath, puVar)
             if (dependentVars.nonEmpty) {
-                state.computedLeanPath = leanPath
                 dependentVars.foreach { case (k, v) => state.appendToVar2IndexMapping(k, v) }
-
                 dependentVars.keys.foreach { nextVar =>
                     propertyStore((nextVar, state.entity._2), StringConstancyProperty.key) match {
-                        case finalEP: FinalEP[SContext, StringConstancyProperty] =>
-                            return processFinalP(state, finalEP.e, finalEP.p)
+                        case FinalEP(e, p) =>
+                            // Add mapping information (which will be used for computing the final result)
+                            state.var2IndexMapping(e._1).foreach {
+                                state.appendToFpe2Sci(_, p.stringConstancyInformation)
+                            }
+                            state.dependees = state.dependees.filter(_.e.asInstanceOf[SContext] != e)
                         case ep =>
                             state.dependees = ep :: state.dependees
                     }
                 }
+            }
+
+            if (state.dependees.isEmpty) {
+                computeFinalResult(state)
             } else {
-                val stringTree = new PathTransformer(L0InterpretationHandler(tac)).pathToStringTree(leanPath)
-                sci = stringTree.reduce(true)
+                getInterimResult(state)
             }
         } else {
-            // We deal with pure strings
+            // We deal with pure strings TODO unify result handling
             val interpretationHandler = L0InterpretationHandler(tac)
-            sci = StringConstancyInformation.reduceMultiple(
+            val sci = StringConstancyInformation.reduceMultiple(
                 uVar.definedBy.toArray.sorted.map { ds =>
                     interpretationHandler.processDefSite(ds).asFinal.p.stringConstancyInformation
                 }
             )
-        }
 
-        if (state.dependees.nonEmpty) {
-            InterimResult(
-                state.entity._1,
-                StringConstancyProperty.ub,
-                StringConstancyProperty.lb,
-                state.dependees.toSet,
-                continuation(state)
-            )
-        } else {
-            Result(state.entity, StringConstancyProperty(sci))
+            if (state.dependees.isEmpty) {
+                Result(state.entity, StringConstancyProperty(sci))
+            } else {
+                getInterimResult(state)
+            }
         }
     }
 
@@ -166,9 +163,13 @@ class L0StringAnalysis(override val project: SomeProject) extends StringAnalysis
     override protected def continuation(
         state: State
     )(eps: SomeEPS): ProperPropertyComputationResult = eps match {
-        case finalEP: FinalEP[_, _] =>
-            val finalScpEP = finalEP.asInstanceOf[FinalEP[SContext, StringConstancyProperty]]
-            processFinalP(state, finalScpEP.e, finalScpEP.p)
+        case FinalEP(e: Entity, p: StringConstancyProperty) if eps.pk.equals(StringConstancyProperty.key) =>
+            processFinalP(state, e, p)
+            if (state.dependees.isEmpty) {
+                computeFinalResult(state)
+            } else {
+                getInterimResult(state)
+            }
 
         case InterimLUBP(lb, ub) =>
             InterimResult(state.entity, lb, ub, state.dependees.toSet, continuation(state))
