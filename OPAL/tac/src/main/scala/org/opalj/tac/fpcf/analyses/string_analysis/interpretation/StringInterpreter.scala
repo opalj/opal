@@ -9,13 +9,9 @@ package interpretation
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
-import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.br.cfg.CFG
-import org.opalj.br.fpcf.analyses.ContextProvider
-import org.opalj.br.fpcf.properties.NoContext
 import org.opalj.br.fpcf.properties.StringConstancyProperty
-import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
@@ -73,39 +69,12 @@ trait StringInterpreter[State <: ComputationState[State]] {
     }
 
     /**
-     * This function returns all methods for a given `pc` among a set of `declaredMethods`. The
-     * second return value indicates whether at least one method has an unknown body (if `true`,
-     * then there is such a method).
+     * Extracts all parameters of the function calls at the given `pcs`.
      */
-    protected def getMethodsForPC(pc: Int)(
-        implicit
-        ps:              PropertyStore,
-        callees:         Callees,
-        contextProvider: ContextProvider
-    ): (List[Method], Boolean) = {
-        var hasMethodWithUnknownBody = false
-        val methods = ListBuffer[Method]()
-
-        callees.callees(NoContext, pc)(ps, contextProvider).map(_.method).foreach {
-            case definedMethod: DefinedMethod => methods.append(definedMethod.definedMethod)
-            case _                            => hasMethodWithUnknownBody = true
-        }
-
-        (methods.sortBy(_.classFile.fqn).toList, hasMethodWithUnknownBody)
-    }
-
-    /**
-     * `getParametersForPCs` takes a list of program counters, `pcs`, as well as the TACode on which
-     * `pcs` is based. This function then extracts the parameters of all function calls from the
-     * given `pcs` and returns them.
-     */
-    protected def getParametersForPCs(
-        pcs: Iterable[Int],
-        tac: TAC
-    ): List[Seq[Expr[V]]] = {
+    protected def getParametersForPCs(pcs: Iterable[Int])(implicit state: State): List[Seq[Expr[V]]] = {
         val paramLists = ListBuffer[Seq[Expr[V]]]()
-        pcs.map(tac.pcToIndex).foreach { stmtIndex =>
-            val params = tac.stmts(stmtIndex) match {
+        pcs.map(state.tac.pcToIndex).foreach { stmtIndex =>
+            val params = state.tac.stmts(stmtIndex) match {
                 case ExprStmt(_, vfc: FunctionCall[V])     => vfc.params
                 case Assignment(_, _, fc: FunctionCall[V]) => fc.params
                 case _                                     => Seq()
@@ -130,11 +99,9 @@ trait StringInterpreter[State <: ComputationState[State]] {
      * entities to functions, `entity2function`.
      */
     protected def evaluateParameters(
-        params:          List[Seq[Expr[V]]],
-        iHandler:        InterpretationHandler[State],
-        funCall:         FunctionCall[V],
-        functionArgsPos: NonFinalFunctionArgsPos,
-        entity2function: mutable.Map[SContext, ListBuffer[FunctionCall[V]]]
+        params:   List[Seq[Expr[V]]],
+        iHandler: InterpretationHandler[State],
+        funCall:  FunctionCall[V]
     )(implicit state: State): NonFinalFunctionArgs = ListBuffer.from(params.zipWithIndex.map {
         case (nextParamList, outerIndex) =>
             ListBuffer.from(nextParamList.zipWithIndex.map {
@@ -143,15 +110,15 @@ trait StringInterpreter[State <: ComputationState[State]] {
                         case (ds, innerIndex) =>
                             val ep = iHandler.processDefSite(ds)
                             if (ep.isRefinable) {
-                                if (!functionArgsPos.contains(funCall)) {
-                                    functionArgsPos(funCall) = mutable.Map()
+                                if (!state.nonFinalFunctionArgsPos.contains(funCall)) {
+                                    state.nonFinalFunctionArgsPos(funCall) = mutable.Map()
                                 }
                                 val e = ep.e.asInstanceOf[SContext]
-                                functionArgsPos(funCall)(e) = (outerIndex, middleIndex, innerIndex)
-                                if (!entity2function.contains(e)) {
-                                    entity2function(e) = ListBuffer()
+                                state.nonFinalFunctionArgsPos(funCall)(e) = (outerIndex, middleIndex, innerIndex)
+                                if (!state.entity2Function.contains(e)) {
+                                    state.entity2Function(e) = ListBuffer()
                                 }
-                                entity2function(e).append(funCall)
+                                state.entity2Function(e).append(funCall)
                             }
                             ep
                     })
@@ -159,11 +126,10 @@ trait StringInterpreter[State <: ComputationState[State]] {
     })
 
     /**
-     * This function checks whether the interpretation of parameters, as, e.g., produced by
-     * [[evaluateParameters()]], is final or not and returns all refineables as a list. Hence, if
-     * this function returns an empty list, all parameters are fully evaluated.
+     * Checks whether the interpretation of parameters, as, e.g., produced by [[evaluateParameters()]], is final or not
+     * and returns all refinable results as a list. Hence, an empty list is returned, all parameters are fully evaluated.
      */
-    protected def getNonFinalParameters(
+    protected def getRefinableParameterResults(
         evaluatedParameters: Seq[Seq[Seq[EOptionP[Entity, StringConstancyProperty]]]]
     ): List[EOptionP[Entity, StringConstancyProperty]] =
         evaluatedParameters.flatten.flatten.filter { _.isRefinable }.toList

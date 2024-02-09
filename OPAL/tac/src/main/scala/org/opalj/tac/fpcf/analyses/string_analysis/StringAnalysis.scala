@@ -11,7 +11,6 @@ import scala.collection.mutable.ListBuffer
 import org.opalj.br.FieldType
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
@@ -40,8 +39,6 @@ import org.opalj.tac.fpcf.properties.TACAI
  * @author Maximilian Rüsch
  */
 trait StringAnalysis extends FPCFAnalysis {
-
-    override val project: SomeProject
 
     type State <: ComputationState[State]
 
@@ -77,7 +74,7 @@ trait StringAnalysis extends FPCFAnalysis {
      * the possible string values. This method returns either a final [[Result]] or an
      * [[InterimResult]] depending on whether other information needs to be computed first.
      */
-    protected[string_analysis] def determinePossibleStrings(state: State): ProperPropertyComputationResult
+    protected[string_analysis] def determinePossibleStrings(implicit state: State): ProperPropertyComputationResult
 
     /**
      * Continuation function for this analysis.
@@ -233,10 +230,7 @@ trait StringAnalysis extends FPCFAnalysis {
         p.elements.foreach {
             case fpe: FlatPathElement =>
                 if (!state.fpe2sci.contains(fpe.pc)) {
-                    val eOptP = state.iHandler.processDefSite(
-                        valueOriginOfPC(fpe.pc, state.tac.pcToIndex).get,
-                        state.params.toList.map(_.toSeq)
-                    )
+                    val eOptP = state.iHandler.processDefSite(valueOriginOfPC(fpe.pc, state.tac.pcToIndex).get)
                     if (eOptP.isFinal) {
                         state.appendToFpe2Sci(fpe.pc, eOptP.asFinal.p.stringConstancyInformation, reset = true)
                     } else {

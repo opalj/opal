@@ -86,26 +86,49 @@ class L0StringAnalysis(override val project: SomeProject) extends StringAnalysis
         determinePossibleStrings(state)
     }
 
-    override protected[string_analysis] def determinePossibleStrings(state: State): ProperPropertyComputationResult = {
-        implicit val _state: State = state
-
+    override protected[string_analysis] def determinePossibleStrings(implicit
+        state: State
+    ): ProperPropertyComputationResult = {
         implicit val tac: TAC = state.tac
         val stmts = tac.stmts
 
         val puVar = state.entity._1
         val uVar = puVar.toValueOriginForm(tac.pcToIndex)
         val defSites = uVar.definedBy.toArray.sorted
-        // Function parameters are currently regarded as dynamic value; the following if finds read
-        // operations of strings (not String{Builder, Buffer}s, they will be handled further down
+
+        if (state.params.isEmpty) {
+            state.params = StringAnalysis.getParams(state.entity)
+        }
+
+        if (state.params.isEmpty && defSites.exists(_ < 0)) {
+            if (InterpretationHandler.isStringConstExpression(uVar)) {
+                // We can evaluate string const expressions as function parameters
+            } else if (StringAnalysis.isSupportedPrimitiveNumberType(uVar)) {
+                val numType = uVar.value.asPrimitiveValue.primitiveType.toJava
+                val sci = StringAnalysis.getDynamicStringInformationForNumberType(numType)
+                return Result(state.entity, StringConstancyProperty(sci))
+            } else {
+                // StringBuilders as parameters are currently not evaluated
+                return Result(state.entity, StringConstancyProperty.lb)
+            }
+        }
+
+        if (state.parameterDependeesCount > 0) {
+            return getInterimResult(state)
+        } else {
+            state.isSetupCompleted = true
+        }
+
+        // Interpret a function / method parameter using the parameter information in state
         if (defSites.head < 0) {
-            return Result(state.entity, StringConstancyProperty.lb)
+            val r = state.iHandler.processDefSite(defSites.head)(state)
+            return Result(state.entity, StringConstancyProperty(r.asFinal.p.stringConstancyInformation))
         }
 
         val expr = stmts(defSites.head).asAssignment.expr
         if (InterpretationHandler.isStringBuilderBufferToStringCall(expr)) {
             val leanPath = computeLeanPathForStringBuilder(uVar)
             if (leanPath.isEmpty) {
-                // String{Builder,Buffer} from method parameter is to be evaluated
                 return Result(state.entity, StringConstancyProperty.lb)
             }
             state.computedLeanPath = leanPath.get
@@ -135,10 +158,9 @@ class L0StringAnalysis(override val project: SomeProject) extends StringAnalysis
             }
         } else {
             // We deal with pure strings TODO unify result handling
-            val interpretationHandler = L0InterpretationHandler(tac)
             val sci = StringConstancyInformation.reduceMultiple(
                 uVar.definedBy.toArray.sorted.map { ds =>
-                    interpretationHandler.processDefSite(ds).asFinal.p.stringConstancyInformation
+                    state.iHandler.processDefSite(ds).asFinal.p.stringConstancyInformation
                 }
             )
 

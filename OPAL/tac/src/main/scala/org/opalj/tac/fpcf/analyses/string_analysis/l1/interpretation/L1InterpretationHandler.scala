@@ -58,24 +58,24 @@ class L1InterpretationHandler(
      *
      * @inheritdoc
      */
-    override def processDefSite(
-        defSite: Int,
-        params:  List[Seq[StringConstancyInformation]] = List()
-    )(implicit state: L1ComputationState): EOptionP[Entity, StringConstancyProperty] = {
+    override def processDefSite(defSite: Int)(implicit
+        state: L1ComputationState
+    ): EOptionP[Entity, StringConstancyProperty] = {
         // Without doing the following conversion, the following compile error will occur: "the
         // result type of an implicit conversion must be more specific than org.opalj.fpcf.Entity"
         val e: Integer = defSite
         // Function parameters are not evaluated when none are present (this always includes the
         // implicit parameter for "this" and for exceptions thrown outside the current function)
-        if (defSite < 0 &&
-            (params.isEmpty || defSite == -1 || defSite <= ImmediateVMExceptionsOriginOffset)
-        ) {
-            state.appendToInterimFpe2Sci(pcOfDefSite(defSite)(state.tac.stmts), StringConstancyInformation.lb)
-            return FinalEP(e, StringConstancyProperty.lb)
-        } else if (defSite < 0) {
-            val sci = getParam(params, defSite)
-            state.appendToInterimFpe2Sci(pcOfDefSite(defSite)(state.tac.stmts), sci)
-            return FinalEP(e, StringConstancyProperty(sci))
+        if (defSite < 0) {
+            val params = state.params.toList.map(_.toList)
+            if (params.isEmpty || defSite == -1 || defSite <= ImmediateVMExceptionsOriginOffset) {
+                state.appendToInterimFpe2Sci(pcOfDefSite(defSite)(state.tac.stmts), StringConstancyInformation.lb)
+                return FinalEP(e, StringConstancyProperty.lb)
+            } else {
+                val sci = getParam(params, defSite)
+                state.appendToInterimFpe2Sci(pcOfDefSite(defSite)(state.tac.stmts), sci)
+                return FinalEP(e, StringConstancyProperty(sci))
+            }
         } else if (processedDefSites.contains(defSite)) {
             state.appendToInterimFpe2Sci(
                 pcOfDefSite(defSite)(state.tac.stmts),
@@ -91,15 +91,15 @@ class L1InterpretationHandler(
             case Assignment(_, _, expr: IntConst)                  => processConstExpr(expr, defSite)
             case Assignment(_, _, expr: FloatConst)                => processConstExpr(expr, defSite)
             case Assignment(_, _, expr: DoubleConst)               => processConstExpr(expr, defSite) // TODO what about long consts
-            case Assignment(_, _, expr: ArrayLoad[V])              => processArrayLoad(expr, defSite, params)
-            case Assignment(_, _, expr: NewArray[V])               => processNewArray(expr, defSite, params)
+            case Assignment(_, _, expr: ArrayLoad[V])              => processArrayLoad(expr, defSite)
+            case Assignment(_, _, expr: NewArray[V])               => processNewArray(expr, defSite)
             case Assignment(_, _, expr: New)                       => processNew(expr, defSite)
             case Assignment(_, _, expr: GetStatic)                 => processGetField(expr, defSite)
             case ExprStmt(_, expr: GetStatic)                      => processGetField(expr, defSite)
-            case Assignment(_, _, expr: VirtualFunctionCall[V])    => processVFC(expr, defSite, params)
-            case ExprStmt(_, expr: VirtualFunctionCall[V])         => processVFC(expr, defSite, params)
-            case Assignment(_, _, expr: StaticFunctionCall[V])     => processStaticFunctionCall(expr, defSite, params)
-            case ExprStmt(_, expr: StaticFunctionCall[V])          => processStaticFunctionCall(expr, defSite, params)
+            case Assignment(_, _, expr: VirtualFunctionCall[V])    => processVFC(expr, defSite)
+            case ExprStmt(_, expr: VirtualFunctionCall[V])         => processVFC(expr, defSite)
+            case Assignment(_, _, expr: StaticFunctionCall[V])     => processStaticFunctionCall(expr, defSite)
+            case ExprStmt(_, expr: StaticFunctionCall[V])          => processStaticFunctionCall(expr, defSite)
             case Assignment(_, _, expr: BinaryExpr[V])             => processBinaryExpr(expr, defSite)
             case Assignment(_, _, expr: NonVirtualFunctionCall[V]) => processNonVirtualFunctionCall(expr, defSite)
             case Assignment(_, _, expr: GetField[V])               => processGetField(expr, defSite)
@@ -141,14 +141,12 @@ class L1InterpretationHandler(
      */
     private def processArrayLoad(
         expr:    ArrayLoad[V],
-        defSite: Int,
-        params:  List[Seq[StringConstancyInformation]]
+        defSite: Int
     )(implicit state: L1ComputationState): EOptionP[Entity, StringConstancyProperty] = {
         val r = new L1ArrayAccessInterpreter(
             cfg,
             this,
-            state,
-            params
+            state
         ).interpret(expr, defSite)
         val sci = if (r.isFinal) {
             r.asFinal.p.stringConstancyInformation
@@ -165,14 +163,12 @@ class L1InterpretationHandler(
      */
     private def processNewArray(
         expr:    NewArray[V],
-        defSite: Int,
-        params:  List[Seq[StringConstancyInformation]]
+        defSite: Int
     ): EOptionP[Entity, StringConstancyProperty] = {
         val r = new L1NewArrayInterpreter(
             cfg,
             this,
-            state,
-            params
+            state
         ).interpret(expr, defSite)
         val sci = if (r.isFinal) {
             r.asFinal.p.stringConstancyInformation
@@ -199,14 +195,12 @@ class L1InterpretationHandler(
      */
     private def processVFC(
         expr:    VirtualFunctionCall[V],
-        defSite: Int,
-        params:  List[Seq[StringConstancyInformation]]
+        defSite: Int
     ): EOptionP[Entity, StringConstancyProperty] = {
         val r = new L1VirtualFunctionCallInterpreter(
             cfg,
             this,
             ps,
-            params,
             contextProvider
         ).interpret(expr, defSite)
         // Set whether the virtual function call is fully prepared. This is the case if 1) the
@@ -245,15 +239,13 @@ class L1InterpretationHandler(
      */
     private def processStaticFunctionCall(
         expr:    StaticFunctionCall[V],
-        defSite: Int,
-        params:  List[Seq[StringConstancyInformation]]
+        defSite: Int
     ): EOptionP[Entity, StringConstancyProperty] = {
         val r = new L1StaticFunctionCallInterpreter(
             cfg,
             this,
             ps,
             state,
-            params,
             contextProvider
         ).interpret(expr, defSite)
         if (r.isRefinable || state.nonFinalFunctionArgs.contains(expr)) {
@@ -359,20 +351,6 @@ class L1InterpretationHandler(
             StringConstancyInformation.lb
         }
         state.appendToInterimFpe2Sci(pcOfDefSite(defSite)(state.tac.stmts), sci)
-    }
-
-    /**
-     * This function takes parameters and a definition site and extracts the desired parameter from
-     * the given list of parameters. Note that `defSite` is required to be <= -2.
-     */
-    private def getParam(params: Seq[Seq[StringConstancyInformation]], defSite: Int): StringConstancyInformation = {
-        val paramPos = Math.abs(defSite + 2)
-        if (params.exists(_.length <= paramPos)) {
-            StringConstancyInformation.lb
-        } else {
-            val paramScis = params.map(_(paramPos)).distinct
-            StringConstancyInformation.reduceMultiple(paramScis)
-        }
     }
 
     /**

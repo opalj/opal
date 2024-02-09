@@ -6,7 +6,6 @@ package analyses
 package string_analysis
 package l1
 
-import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 import org.opalj.br.FieldType
@@ -26,8 +25,6 @@ import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
-import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
-import org.opalj.fpcf.Entity
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.ProperPropertyComputationResult
@@ -138,7 +135,9 @@ class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
      * the possible string values. This method returns either a final [[Result]] or an
      * [[org.opalj.fpcf.InterimResult]] depending on whether other information needs to be computed first.
      */
-    override protected[string_analysis] def determinePossibleStrings(state: State): ProperPropertyComputationResult = {
+    override protected[string_analysis] def determinePossibleStrings(implicit
+        state: State
+    ): ProperPropertyComputationResult = {
         val puVar = state.entity._1
         val uVar = puVar.toValueOriginForm(state.tac.pcToIndex)
         val defSites = uVar.definedBy.toArray.sorted
@@ -182,7 +181,7 @@ class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
 
         var requiresCallersInfo = false
         if (state.params.isEmpty) {
-            state.params = L1StringAnalysis.getParams(state.entity)
+            state.params = StringAnalysis.getParams(state.entity)
         }
         if (state.params.isEmpty) {
             // In case a parameter is required for approximating a string, retrieve callers information
@@ -191,9 +190,9 @@ class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
             requiresCallersInfo = if (defSites.exists(_ < 0)) {
                 if (InterpretationHandler.isStringConstExpression(uVar)) {
                     hasCallersOrParamInfo
-                } else if (L1StringAnalysis.isSupportedPrimitiveNumberType(uVar)) {
+                } else if (StringAnalysis.isSupportedPrimitiveNumberType(uVar)) {
                     val numType = uVar.value.asPrimitiveValue.primitiveType.toJava
-                    val sci = L1StringAnalysis.getDynamicStringInformationForNumberType(numType)
+                    val sci = StringAnalysis.getDynamicStringInformationForNumberType(numType)
                     return Result(state.entity, StringConstancyProperty(sci))
                 } else {
                     // StringBuilders as parameters are currently not evaluated
@@ -207,7 +206,7 @@ class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
                         return Result(state.entity, StringConstancyProperty.lb)
                     }
                     val hasSupportedParamType = state.entity._2.parameterTypes.exists {
-                        L1StringAnalysis.isSupportedType
+                        StringAnalysis.isSupportedType
                     }
                     if (hasSupportedParamType) {
                         hasFormalParamUsageAlongPath(state.computedLeanPath)(state.tac)
@@ -242,7 +241,7 @@ class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
 
         // Interpret a function / method parameter using the parameter information in state
         if (defSites.head < 0) {
-            val r = state.iHandler.processDefSite(defSites.head, state.params.toList.map(_.toList))(state)
+            val r = state.iHandler.processDefSite(defSites.head)(state)
             return Result(state.entity, StringConstancyProperty(r.asFinal.p.stringConstancyInformation))
         }
 
@@ -302,7 +301,7 @@ class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
         if (state.dependees.nonEmpty) {
             getInterimResult(state)
         } else {
-            L1StringAnalysis.unregisterParams(state.entity)
+            StringAnalysis.unregisterParams(state.entity)
             Result(state.entity, StringConstancyProperty(sci))
         }
     }
@@ -357,11 +356,9 @@ class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
     }
 
     /**
-     * This method takes a computation state, `state` as well as a TAC provider, `tacProvider`, and
-     * determines the interpretations of all parameters of the method under analysis. These
-     * interpretations are registered using [[L1StringAnalysis.registerParams]].
-     * The return value of this function indicates whether a the parameter evaluation is done
-     * (`true`) or not yet (`false`).
+     * This method takes a computation `state`, and determines the interpretations of all parameters of the method under
+     * analysis. These interpretations are registered using [[StringAnalysis.registerParams]]. The return value of this
+     * function indicates whether the parameter evaluation is done (`true`) or not yet (`false`).
      */
     private def registerParams(state: L1ComputationState): Boolean = {
         val callers = state.callers.callers(state.dm)(contextProvider).iterator.toSeq
@@ -396,7 +393,7 @@ class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
                             )))
                         }
                         // Recursively analyze supported types
-                        if (L1StringAnalysis.isSupportedType(p.asVar)) {
+                        if (StringAnalysis.isSupportedType(p.asVar)) {
                             val paramEntity = (p.asVar.toPersistentForm(state.tac.stmts), m.definedMethod)
                             val eps = propertyStore(paramEntity, StringConstancyProperty.key)
                             state.appendToVar2IndexMapping(paramEntity._1, paramIndex)
@@ -413,12 +410,11 @@ class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
                             state.params(methodIndex)(paramIndex) =
                                 StringConstancyProperty.lb.stringConstancyInformation
                         }
-
                 }
         }
         // If all parameters could already be determined, register them
         if (!hasIntermediateResult) {
-            L1StringAnalysis.registerParams(state.entity, state.params)
+            StringAnalysis.registerParams(state.entity, state.params)
         }
         !hasIntermediateResult
     }
@@ -431,108 +427,12 @@ class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
 
 object L1StringAnalysis {
 
-    final val FieldWriteThresholdConfigKey = {
+    private[l1] final val FieldWriteThresholdConfigKey = {
         "org.opalj.fpcf.analyses.string_analysis.l1.L1StringAnalysis.fieldWriteThreshold"
     }
 
     private final val CallersThresholdConfigKey = {
         "org.opalj.fpcf.analyses.string_analysis.l1.L1StringAnalysis.callersThreshold"
-    }
-
-    /**
-     * Maps entities to a list of lists of parameters. As currently this analysis works context-
-     * insensitive, we have a list of lists to capture all parameters of all potential method /
-     * function calls.
-     */
-    private val paramInfos = mutable.Map[Entity, ListBuffer[ListBuffer[StringConstancyInformation]]]()
-
-    def registerParams(e: Entity, scis: ListBuffer[ListBuffer[StringConstancyInformation]]): Unit = {
-        if (!paramInfos.contains(e)) {
-            paramInfos(e) = scis
-        } else {
-            paramInfos(e).appendAll(scis)
-        }
-    }
-
-    def unregisterParams(e: Entity): Unit = paramInfos.remove(e)
-
-    def getParams(e: Entity): ListBuffer[ListBuffer[StringConstancyInformation]] =
-        if (paramInfos.contains(e)) {
-            paramInfos(e)
-        } else {
-            ListBuffer()
-        }
-
-    /**
-     * This function checks whether a given type is a supported primitive type. Supported currently
-     * means short, int, float, or double.
-     */
-    def isSupportedPrimitiveNumberType(v: V): Boolean =
-        v.value.isPrimitiveValue && isSupportedPrimitiveNumberType(v.value.asPrimitiveValue.primitiveType.toJava)
-
-    /**
-     * This function checks whether a given type is a supported primitive type. Supported currently
-     * means short, int, float, or double.
-     */
-    def isSupportedPrimitiveNumberType(typeName: String): Boolean =
-        typeName == "short" || typeName == "int" || typeName == "float" || typeName == "double"
-
-    /**
-     * Checks whether a given type, identified by its string representation, is supported by the
-     * string analysis. That means, if this function returns `true`, a value, which is of type
-     * `typeName` may be approximated by the string analysis better than just the lower bound.
-     *
-     * @param typeName The name of the type to check. May either be the name of a primitive type or
-     *                 a fully-qualified class name (dot-separated).
-     * @return Returns `true`, if `typeName` is an element in [char, short, int, float, double,
-     *         java.lang.String] and `false` otherwise.
-     */
-    def isSupportedType(typeName: String): Boolean =
-        typeName == "char" || isSupportedPrimitiveNumberType(typeName) ||
-            typeName == "java.lang.String" || typeName == "java.lang.String[]"
-
-    /**
-     * Determines whether a given element is supported by the string analysis.
-     *
-     * @param v The element to check.
-     * @return Returns true if the given [[FieldType]] is of a supported type. For supported types,
-     *         see [[L1StringAnalysis.isSupportedType(String)]].
-     */
-    def isSupportedType(v: V): Boolean =
-        if (v.value.isPrimitiveValue) {
-            isSupportedType(v.value.asPrimitiveValue.primitiveType.toJava)
-        } else {
-            try {
-                isSupportedType(v.value.verificationTypeInfo.asObjectVariableInfo.clazz.toJava)
-            } catch {
-                case _: Exception => false
-            }
-        }
-
-    /**
-     * Determines whether a given [[FieldType]] element is supported by the string analysis.
-     *
-     * @param fieldType The element to check.
-     * @return Returns true if the given [[FieldType]] is of a supported type. For supported types,
-     *         see [[L1StringAnalysis.isSupportedType(String)]].
-     */
-    def isSupportedType(fieldType: FieldType): Boolean = isSupportedType(fieldType.toJava)
-
-    /**
-     * Takes the name of a primitive number type - supported types are short, int, float, double -
-     * and returns the dynamic [[StringConstancyInformation]] for that type. In case an unsupported
-     * type is given [[StringConstancyInformation.UnknownWordSymbol]] is returned as possible
-     * strings.
-     */
-    def getDynamicStringInformationForNumberType(
-        numberType: String
-    ): StringConstancyInformation = {
-        val possibleStrings = numberType match {
-            case "short" | "int"    => StringConstancyInformation.IntValue
-            case "float" | "double" => StringConstancyInformation.FloatValue
-            case _                  => StringConstancyInformation.UnknownWordSymbol
-        }
-        StringConstancyInformation(StringConstancyLevel.DYNAMIC, possibleStrings = possibleStrings)
     }
 }
 

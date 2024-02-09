@@ -37,8 +37,7 @@ import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.Interpretation
 case class L1ArrayAccessInterpreter[State <: ComputationState[State]](
         override protected val cfg:         CFG[Stmt[V], TACStmts[V]],
         override protected val exprHandler: InterpretationHandler[State],
-        state:                              State,
-        params:                             List[Seq[StringConstancyInformation]]
+        state:                              State
 ) extends L1StringInterpreter[State] {
 
     override type T = ArrayLoad[V]
@@ -64,7 +63,7 @@ case class L1ArrayAccessInterpreter[State <: ComputationState[State]](
         // Add information of parameters
         instr.arrayRef.asVar.toPersistentForm(state.tac.stmts).defPCs.filter(_ < 0).foreach { pc =>
             val paramPos = Math.abs(pc + 2)
-            val sci = StringConstancyInformation.reduceMultiple(params.map(_(paramPos)))
+            val sci = StringConstancyInformation.reduceMultiple(state.params.map(_(paramPos)))
             state.appendToFpe2Sci(pc, sci)
         }
 

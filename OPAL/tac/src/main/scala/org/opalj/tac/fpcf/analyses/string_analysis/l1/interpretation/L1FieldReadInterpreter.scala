@@ -91,7 +91,7 @@ case class L1FieldReadInterpreter[State <: ComputationState[State]](
         //  String analysis could then use the field analysis.
         val defSitEntity: Integer = defSite
         // Unknown type => Cannot further approximate
-        if (!L1StringAnalysis.isSupportedType(instr.declaredFieldType)) {
+        if (!StringAnalysis.isSupportedType(instr.declaredFieldType)) {
             return FinalEP(instr, StringConstancyProperty.lb)
         }
         // Write accesses exceeds the threshold => approximate with lower bound

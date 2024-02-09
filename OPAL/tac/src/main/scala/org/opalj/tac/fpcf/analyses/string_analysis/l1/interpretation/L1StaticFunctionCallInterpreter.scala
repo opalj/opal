@@ -33,7 +33,6 @@ class L1StaticFunctionCallInterpreter(
         override protected val exprHandler: InterpretationHandler[L1ComputationState],
         ps:                                 PropertyStore,
         implicit val state:                 L1ComputationState,
-        params:                             List[Seq[StringConstancyInformation]],
         contextProvider:                    ContextProvider
 ) extends L1StringInterpreter[L1ComputationState] {
 
@@ -60,7 +59,7 @@ class L1StaticFunctionCallInterpreter(
     private def processStringValueOf(call: StaticFunctionCall[V])(
         implicit state: L1ComputationState
     ): EOptionP[Entity, StringConstancyProperty] = {
-        val results = call.params.head.asVar.definedBy.toArray.sorted.map { exprHandler.processDefSite(_, params) }
+        val results = call.params.head.asVar.definedBy.toArray.sorted.map { exprHandler.processDefSite(_) }
         val interim = results.find(_.isRefinable)
         if (interim.isDefined) {
             interim.get
@@ -113,17 +112,11 @@ class L1StaticFunctionCallInterpreter(
         val params = if (state.nonFinalFunctionArgs.contains(instr)) {
             state.nonFinalFunctionArgs(instr)
         } else {
-            evaluateParameters(
-                getParametersForPCs(relevantPCs, state.tac),
-                exprHandler,
-                instr,
-                state.nonFinalFunctionArgsPos,
-                state.entity2Function
-            )
+            evaluateParameters(getParametersForPCs(relevantPCs), exprHandler, instr)
         }
         // Continue only when all parameter information are available
-        val nonFinalResults = getNonFinalParameters(params.toSeq.map(t => t.toSeq.map(_.toSeq)))
-        if (nonFinalResults.nonEmpty) {
+        val refinableResults = getRefinableParameterResults(params.toSeq.map(t => t.toSeq.map(_.toSeq)))
+        if (refinableResults.nonEmpty) {
             if (tac.isDefined) {
                 val returns = tac.get.stmts.filter(_.isInstanceOf[ReturnValue[V]])
                 returns.foreach { ret =>
@@ -135,7 +128,7 @@ class L1StaticFunctionCallInterpreter(
             }
             state.nonFinalFunctionArgs(instr) = params
             state.appendToMethodPrep2defSite(m, defSite)
-            return nonFinalResults.head
+            return refinableResults.head
         }
 
         state.nonFinalFunctionArgs.remove(instr)
@@ -152,7 +145,7 @@ class L1StaticFunctionCallInterpreter(
             } else {
                 val results = returns.map { ret =>
                     val entity = (ret.asInstanceOf[ReturnValue[V]].expr.asVar.toPersistentForm(tac.get.stmts), m)
-                    L1StringAnalysis.registerParams(entity, evaluatedParams)
+                    StringAnalysis.registerParams(entity, evaluatedParams)
 
                     val eps = ps(entity, StringConstancyProperty.key)
                     if (eps.isRefinable) {

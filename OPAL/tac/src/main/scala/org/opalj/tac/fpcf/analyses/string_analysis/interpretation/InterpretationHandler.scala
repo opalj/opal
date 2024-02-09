@@ -17,7 +17,6 @@ import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyType
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
-import org.opalj.tac.fpcf.analyses.string_analysis.l1.L1StringAnalysis
 
 abstract class InterpretationHandler[State <: ComputationState[State]](tac: TAC) {
 
@@ -51,10 +50,7 @@ abstract class InterpretationHandler[State <: ComputationState[State]](tac: TAC)
      *         [[org.opalj.br.fpcf.properties.StringConstancyProperty.isTheNeutralElement]]).
      *         The entity of the result will be the given `defSite`.
      */
-    def processDefSite(
-        defSite: Int,
-        params:  List[Seq[StringConstancyInformation]] = List()
-    )(implicit state: State): EOptionP[Entity, StringConstancyProperty]
+    def processDefSite(defSite: Int)(implicit state: State): EOptionP[Entity, StringConstancyProperty]
 
     /**
      * [[InterpretationHandler]]s keeps an internal state for correct and faster processing. As
@@ -72,6 +68,20 @@ abstract class InterpretationHandler[State <: ComputationState[State]](tac: TAC)
      * Finalized a given definition state.
      */
     def finalizeDefSite(defSite: Int, state: State): Unit
+
+    /**
+     * This function takes parameters and a definition site and extracts the desired parameter from
+     * the given list of parameters. Note that `defSite` is required to be <= -2.
+     */
+    protected def getParam(params: Seq[Seq[StringConstancyInformation]], defSite: Int): StringConstancyInformation = {
+        val paramPos = Math.abs(defSite + 2)
+        if (params.exists(_.length <= paramPos)) {
+            // IMPROVE cant we just map each list of params with a nonexistent pos to lb and still reduce?
+            StringConstancyInformation.lb
+        } else {
+            StringConstancyInformation.reduceMultiple(params.map(_(paramPos)).distinct)
+        }
+    }
 }
 
 object InterpretationHandler {
@@ -106,7 +116,7 @@ object InterpretationHandler {
      */
     def isPrimitiveNumberTypeExpression(expr: Expr[V]): Boolean =
         expr.asVar.value.isPrimitiveValue &&
-            L1StringAnalysis.isSupportedPrimitiveNumberType(
+            StringAnalysis.isSupportedPrimitiveNumberType(
                 expr.asVar.value.asPrimitiveValue.primitiveType.toJava
             )
 

@@ -7,11 +7,14 @@ package string_analysis
 package l0
 package interpretation
 
+import org.opalj.ai.ImmediateVMExceptionsOriginOffset
+import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.FinalEP
+import org.opalj.fpcf.PropertyStore
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.BinaryExprInterpreter
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.DoubleValueInterpreter
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.FloatValueInterpreter
@@ -32,6 +35,10 @@ import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.StringConstInt
  */
 class L0InterpretationHandler(
         tac: TAC
+)(
+        implicit
+        p:  SomeProject,
+        ps: PropertyStore
 ) extends InterpretationHandler[L0ComputationState](tac) {
 
     /**
@@ -39,19 +46,29 @@ class L0InterpretationHandler(
      * <p>
      * @inheritdoc
      */
-    override def processDefSite(
-        defSite: Int,
-        params:  List[Seq[StringConstancyInformation]] = List()
-    )(implicit state: L0ComputationState): EOptionP[Entity, StringConstancyProperty] = {
+    override def processDefSite(defSite: Int)(implicit
+        state: L0ComputationState
+    ): EOptionP[Entity, StringConstancyProperty] = {
         // Without doing the following conversion, the following compile error will occur: "the
         // result type of an implicit conversion must be more specific than org.opalj.fpcf.Entity"
         val e: Integer = defSite
-        // Function parameters are not evaluated but regarded as unknown
+        val defSitePC = pcOfDefSite(defSite)(state.tac.stmts)
+
         if (defSite < 0) {
-            return FinalEP(e, StringConstancyProperty.lb)
+            val params = state.params.toList.map(_.toList)
+            if (params.isEmpty || defSite == -1 || defSite <= ImmediateVMExceptionsOriginOffset) {
+                state.appendToInterimFpe2Sci(defSitePC, StringConstancyInformation.lb)
+                return FinalEP(e, StringConstancyProperty.lb)
+            } else {
+                val sci = getParam(params, defSite)
+                state.appendToInterimFpe2Sci(defSitePC, sci)
+                return FinalEP(e, StringConstancyProperty(sci))
+            }
         } else if (processedDefSites.contains(defSite)) {
+            state.appendToInterimFpe2Sci(defSitePC, StringConstancyInformation.getNeutralElement)
             return FinalEP(e, StringConstancyProperty.getNeutralElement)
         }
+
         processedDefSites(defSite) = ()
 
         stmts(defSite) match {
@@ -86,7 +103,9 @@ class L0InterpretationHandler(
                 L0VirtualMethodCallInterpreter(cfg, this).interpret(vmc, defSite)
             case nvmc: NonVirtualMethodCall[V] =>
                 L0NonVirtualMethodCallInterpreter(cfg, this).interpret(nvmc, defSite)
-            case _ => FinalEP(e, StringConstancyProperty.getNeutralElement)
+            case _ =>
+                state.appendToInterimFpe2Sci(defSitePC, StringConstancyInformation.getNeutralElement)
+                FinalEP(e, StringConstancyProperty.getNeutralElement)
         }
     }
 
@@ -95,5 +114,9 @@ class L0InterpretationHandler(
 
 object L0InterpretationHandler {
 
-    def apply(tac: TAC): L0InterpretationHandler = new L0InterpretationHandler(tac)
+    def apply(tac: TAC)(
+        implicit
+        p:  SomeProject,
+        ps: PropertyStore
+    ): L0InterpretationHandler = new L0InterpretationHandler(tac)
 }

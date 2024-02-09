@@ -28,8 +28,7 @@ import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.Interpretation
 class L1NewArrayInterpreter[State <: ComputationState[State]](
         override protected val cfg:         CFG[Stmt[V], TACStmts[V]],
         override protected val exprHandler: InterpretationHandler[State],
-        state:                              State,
-        params:                             List[Seq[StringConstancyInformation]]
+        state:                              State
 ) extends L1StringInterpreter[State] {
 
     override type T = NewArray[V]
@@ -54,7 +53,7 @@ class L1NewArrayInterpreter[State <: ComputationState[State]](
         }.flatMap { ds =>
             // ds holds a site an of array stores; these need to be evaluated for the actual values
             state.tac.stmts(ds).asArrayStore.value.asVar.definedBy.toArray.toList.sorted.map { d =>
-                val r = exprHandler.processDefSite(d, params)
+                val r = exprHandler.processDefSite(d)
                 if (r.isFinal) {
                     state.appendToFpe2Sci(pcOfDefSite(d)(state.tac.stmts), r.asFinal.p.stringConstancyInformation)
                 }
@@ -66,7 +65,7 @@ class L1NewArrayInterpreter[State <: ComputationState[State]](
         arrValuesDefSites.filter(_ < 0).foreach { ds =>
             val paramPos = Math.abs(ds + 2)
             // lb is the fallback value
-            val sci = StringConstancyInformation.reduceMultiple(params.map(_(paramPos)))
+            val sci = StringConstancyInformation.reduceMultiple(state.params.map(_(paramPos)))
             state.appendToFpe2Sci(pcOfDefSite(ds)(state.tac.stmts), sci)
             val e: Integer = ds
             allResults ::= FinalEP(e, StringConstancyProperty(sci))

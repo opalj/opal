@@ -7,11 +7,19 @@ package string_analysis
 package l1
 package interpretation
 
+import scala.collection.mutable.ListBuffer
+
+import org.opalj.br.DefinedMethod
+import org.opalj.br.Method
+import org.opalj.br.fpcf.analyses.ContextProvider
+import org.opalj.br.fpcf.properties.NoContext
 import org.opalj.br.fpcf.properties.StringConstancyProperty
+import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.FinalP
+import org.opalj.fpcf.PropertyStore
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.StringInterpreter
 
 /**
@@ -36,6 +44,28 @@ trait L1StringInterpreter[State <: ComputationState[State]] extends StringInterp
      *         Thus, the entity needs to be replaced by the calling client.
      */
     def interpret(instr: T, defSite: Int)(implicit state: State): EOptionP[Entity, StringConstancyProperty]
+
+    /**
+     * This function returns all methods for a given `pc` among a set of `declaredMethods`. The
+     * second return value indicates whether at least one method has an unknown body (if `true`,
+     * then there is such a method).
+     */
+    protected def getMethodsForPC(pc: Int)(
+        implicit
+        ps:              PropertyStore,
+        callees:         Callees,
+        contextProvider: ContextProvider
+    ): (List[Method], Boolean) = {
+        var hasMethodWithUnknownBody = false
+        val methods = ListBuffer[Method]()
+
+        callees.callees(NoContext, pc)(ps, contextProvider).map(_.method).foreach {
+            case definedMethod: DefinedMethod => methods.append(definedMethod.definedMethod)
+            case _                            => hasMethodWithUnknownBody = true
+        }
+
+        (methods.sortBy(_.classFile.fqn).toList, hasMethodWithUnknownBody)
+    }
 
     protected def handleInterpretationResult(ep: EOptionP[Entity, StringConstancyProperty])(implicit
         state: State

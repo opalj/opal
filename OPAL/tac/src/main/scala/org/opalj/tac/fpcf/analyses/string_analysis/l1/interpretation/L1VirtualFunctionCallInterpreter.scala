@@ -35,7 +35,6 @@ class L1VirtualFunctionCallInterpreter(
         override protected val cfg:         CFG[Stmt[V], TACStmts[V]],
         override protected val exprHandler: InterpretationHandler[L1ComputationState],
         ps:                                 PropertyStore,
-        params:                             List[Seq[StringConstancyInformation]],
         contextProvider:                    ContextProvider
 ) extends L1StringInterpreter[L1ComputationState] {
 
@@ -119,17 +118,11 @@ class L1VirtualFunctionCallInterpreter(
         val params = if (state.nonFinalFunctionArgs.contains(instr)) {
             state.nonFinalFunctionArgs(instr)
         } else {
-            evaluateParameters(
-                getParametersForPCs(relevantPCs, state.tac),
-                exprHandler,
-                instr,
-                state.nonFinalFunctionArgsPos,
-                state.entity2Function
-            )
+            evaluateParameters(getParametersForPCs(relevantPCs), exprHandler, instr)
         }
         // Continue only when all parameter information are available
-        val nonFinalResults = getNonFinalParameters(params.toSeq.map(t => t.toSeq.map(_.toSeq)))
-        if (nonFinalResults.nonEmpty) {
+        val refinableResults = getRefinableParameterResults(params.toSeq.map(t => t.toSeq.map(_.toSeq)))
+        if (refinableResults.nonEmpty) {
             state.nonFinalFunctionArgs(instr) = params
             return None
         }
@@ -150,7 +143,7 @@ class L1VirtualFunctionCallInterpreter(
                     val results = returns.map { ret =>
                         val entity =
                             (ret.asInstanceOf[ReturnValue[V]].expr.asVar.toPersistentForm(tac.get.stmts), nextMethod)
-                        L1StringAnalysis.registerParams(entity, evaluatedParams)
+                        StringAnalysis.registerParams(entity, evaluatedParams)
                         ps(entity, StringConstancyProperty.key) match {
                             case r: FinalEP[SContext, StringConstancyProperty] =>
                                 state.appendToFpe2Sci(
@@ -249,7 +242,7 @@ class L1VirtualFunctionCallInterpreter(
     )(implicit state: L1ComputationState): List[EOptionP[Entity, StringConstancyProperty]] = {
         val defSites = call.receiver.asVar.definedBy.toArray.sorted
 
-        val allResults = defSites.map(ds => (pcOfDefSite(ds)(state.tac.stmts), exprHandler.processDefSite(ds, params)))
+        val allResults = defSites.map(ds => (pcOfDefSite(ds)(state.tac.stmts), exprHandler.processDefSite(ds)))
         val finalResults = allResults.filter(_._2.isFinal)
         val finalResultsWithoutNeutralElements = finalResults.filter {
             case (_, FinalEP(_, p: StringConstancyProperty)) =>
@@ -280,7 +273,7 @@ class L1VirtualFunctionCallInterpreter(
         // .head because we want to evaluate only the first argument of append
         val param = call.params.head.asVar
         val defSites = param.definedBy.toArray.sorted
-        val values = defSites.map(exprHandler.processDefSite(_, params))
+        val values = defSites.map(exprHandler.processDefSite(_))
 
         // Defer the computation if there is at least one intermediate result
         if (values.exists(_.isRefinable)) {
@@ -298,7 +291,7 @@ class L1VirtualFunctionCallInterpreter(
                 newValueSci = StringConstancyInformation.lb
             } else {
                 val ds = cfg.code.instructions(headSite).asAssignment.targetVar.usedBy.toArray.min
-                val r = exprHandler.processDefSite(ds, params)
+                val r = exprHandler.processDefSite(ds)
                 r match {
                     case FinalP(p) => newValueSci = p.stringConstancyInformation
                     // Defer the computation if there is no final result yet
@@ -352,7 +345,7 @@ class L1VirtualFunctionCallInterpreter(
     private def interpretToStringCall(call: VirtualFunctionCall[V])(
         implicit state: L1ComputationState
     ): Option[StringConstancyInformation] =
-        handleInterpretationResult(exprHandler.processDefSite(call.receiver.asVar.definedBy.head, params))
+        handleInterpretationResult(exprHandler.processDefSite(call.receiver.asVar.definedBy.head))
 
     /**
      * Function for processing calls to [[StringBuilder#replace]] or [[StringBuffer#replace]].
