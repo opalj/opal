@@ -33,13 +33,11 @@ import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.StringConstInt
  *
  * @author Maximilian Rüsch
  */
-class L0InterpretationHandler(
-        tac: TAC
-)(
+class L0InterpretationHandler()(
         implicit
         p:  SomeProject,
         ps: PropertyStore
-) extends InterpretationHandler[L0ComputationState](tac) {
+) extends InterpretationHandler[L0ComputationState] {
 
     /**
      * Processed the given definition site in an intraprocedural fashion.
@@ -71,38 +69,38 @@ class L0InterpretationHandler(
 
         processedDefSites(defSite) = ()
 
-        stmts(defSite) match {
+        state.tac.stmts(defSite) match {
             case Assignment(_, _, expr: StringConst) =>
-                StringConstInterpreter(cfg, this).interpret(expr)
+                StringConstInterpreter.interpret(expr)
             case Assignment(_, _, expr: IntConst) =>
-                IntegerValueInterpreter(cfg, this).interpret(expr)
+                IntegerValueInterpreter.interpret(expr)
             case Assignment(_, _, expr: FloatConst) =>
-                FloatValueInterpreter(cfg, this).interpret(expr)
+                FloatValueInterpreter.interpret(expr)
             case Assignment(_, _, expr: DoubleConst) =>
-                DoubleValueInterpreter(cfg, this).interpret(expr)
+                DoubleValueInterpreter.interpret(expr)
             case Assignment(_, _, expr: BinaryExpr[V]) =>
-                BinaryExprInterpreter(cfg, this).interpret(expr)
+                BinaryExprInterpreter.interpret(expr)
             case Assignment(_, _, expr: ArrayLoad[V]) =>
-                L0ArrayInterpreter(cfg, this).interpret(expr, defSite)
+                L0ArrayInterpreter(this).interpret(expr, defSite)(state)
             case Assignment(_, _, expr: New) =>
-                NewInterpreter(cfg, this).interpret(expr)
+                NewInterpreter.interpret(expr)
             case Assignment(_, _, expr: GetField[V]) =>
-                L0GetFieldInterpreter(cfg, this).interpret(expr, defSite)
+                L0GetFieldInterpreter().interpret(expr, defSite)(state)
             case Assignment(_, _, expr: VirtualFunctionCall[V]) =>
-                L0VirtualFunctionCallInterpreter(cfg, this).interpret(expr, defSite)
+                L0VirtualFunctionCallInterpreter(this).interpret(expr, defSite)
             case Assignment(_, _, expr: StaticFunctionCall[V]) =>
-                L0StaticFunctionCallInterpreter(cfg, this).interpret(expr, defSite)
+                L0StaticFunctionCallInterpreter(this).interpret(expr, defSite)
             case Assignment(_, _, expr: NonVirtualFunctionCall[V]) =>
                 // Currently unsupported
                 FinalEP(expr, StringConstancyProperty.lb)
             case ExprStmt(_, expr: VirtualFunctionCall[V]) =>
-                L0VirtualFunctionCallInterpreter(cfg, this).interpret(expr, defSite)
+                L0VirtualFunctionCallInterpreter(this).interpret(expr, defSite)
             case ExprStmt(_, expr: StaticFunctionCall[V]) =>
-                L0StaticFunctionCallInterpreter(cfg, this).interpret(expr, defSite)
+                L0StaticFunctionCallInterpreter(this).interpret(expr, defSite)
             case vmc: VirtualMethodCall[V] =>
-                L0VirtualMethodCallInterpreter(cfg, this).interpret(vmc, defSite)
+                L0VirtualMethodCallInterpreter().interpret(vmc, defSite)(state)
             case nvmc: NonVirtualMethodCall[V] =>
-                L0NonVirtualMethodCallInterpreter(cfg, this).interpret(nvmc, defSite)
+                L0NonVirtualMethodCallInterpreter(this).interpret(nvmc, defSite)
             case _ =>
                 state.appendToInterimFpe2Sci(defSitePC, StringConstancyInformation.getNeutralElement)
                 FinalEP(e, StringConstancyProperty.getNeutralElement)
@@ -114,9 +112,9 @@ class L0InterpretationHandler(
 
 object L0InterpretationHandler {
 
-    def apply(tac: TAC)(
+    def apply()(
         implicit
         p:  SomeProject,
         ps: PropertyStore
-    ): L0InterpretationHandler = new L0InterpretationHandler(tac)
+    ): L0InterpretationHandler = new L0InterpretationHandler
 }

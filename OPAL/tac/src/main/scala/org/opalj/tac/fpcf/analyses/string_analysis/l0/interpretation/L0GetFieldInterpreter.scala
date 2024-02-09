@@ -7,12 +7,10 @@ package string_analysis
 package l0
 package interpretation
 
-import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.FinalEP
-import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 
 /**
  * Responsible for processing [[GetField]]s. Currently, there is no support for fields, i.e., they are not analyzed but
@@ -20,10 +18,7 @@ import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.Interpretation
  *
  * @author Maximilian Rüsch
  */
-case class L0GetFieldInterpreter[State <: ComputationState[State]](
-        override protected val cfg:         CFG[Stmt[V], TACStmts[V]],
-        override protected val exprHandler: InterpretationHandler[State]
-) extends L0StringInterpreter[State] {
+case class L0GetFieldInterpreter[State <: ComputationState[State]]() extends L0StringInterpreter[State] {
 
     override type T = GetField[V]
 

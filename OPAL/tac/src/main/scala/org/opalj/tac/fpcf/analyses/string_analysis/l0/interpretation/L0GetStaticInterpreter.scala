@@ -7,12 +7,10 @@ package string_analysis
 package l0
 package interpretation
 
-import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.FinalEP
-import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 
 /**
  * The `IntraproceduralGetStaticInterpreter` is responsible for processing
@@ -22,10 +20,7 @@ import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.Interpretation
  *
  * @author Patrick Mell
  */
-case class L0GetStaticInterpreter[State <: ComputationState[State]](
-        override protected val cfg:         CFG[Stmt[V], TACStmts[V]],
-        override protected val exprHandler: InterpretationHandler[State]
-) extends L0StringInterpreter[State] {
+case class L0GetStaticInterpreter[State <: ComputationState[State]]() extends L0StringInterpreter[State] {
 
     override type T = GetStatic
 

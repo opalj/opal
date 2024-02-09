@@ -9,7 +9,6 @@ package interpretation
 
 import scala.collection.mutable.ListBuffer
 
-import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.collection.immutable.IntTrieSet
@@ -20,7 +19,6 @@ import org.opalj.tac.ArrayLoad
 import org.opalj.tac.ArrayStore
 import org.opalj.tac.Assignment
 import org.opalj.tac.Stmt
-import org.opalj.tac.TACStmts
 import org.opalj.tac.V
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 
@@ -32,21 +30,18 @@ import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.Interpretation
  * interpretation.
  * For more information, see the [[interpret]] method.
  *
- * @author Patrick Mell
+ * @author Maximilian Rüsch
  */
 case class L1ArrayAccessInterpreter[State <: ComputationState[State]](
-        override protected val cfg:         CFG[Stmt[V], TACStmts[V]],
-        override protected val exprHandler: InterpretationHandler[State],
-        state:                              State
+        exprHandler: InterpretationHandler[State]
 ) extends L1StringInterpreter[State] {
 
     override type T = ArrayLoad[V]
 
     /**
-     * @note This implementation will extend [[state.fpe2sci]] in a way that it adds the string
-     *       constancy information for each definition site where it can compute a final result. All
-     *       definition sites producing a refinable result will have to be handled later on to
-     *       not miss this information.
+     * @note This implementation will extend [[ComputationState.fpe2sci]] in a way that it adds the string constancy
+     *       information for each definition site where it can compute a final result. All definition sites producing a
+     *       refinable result will have to be handled later on to not miss this information.
      */
     override def interpret(instr: T, defSite: Int)(implicit state: State): EOptionP[Entity, StringConstancyProperty] = {
         val results = ListBuffer[EOptionP[Entity, StringConstancyProperty]]()

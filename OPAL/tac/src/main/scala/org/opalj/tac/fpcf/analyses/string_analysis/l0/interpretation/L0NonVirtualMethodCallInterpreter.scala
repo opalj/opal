@@ -7,12 +7,12 @@ package string_analysis
 package l0
 package interpretation
 
-import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.FinalEP
+import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.DependingStringInterpreter
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 
 /**
@@ -22,9 +22,10 @@ import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.Interpretation
  * @author Maximilian Rüsch
  */
 case class L0NonVirtualMethodCallInterpreter[State <: ComputationState[State]](
-        override protected val cfg:         CFG[Stmt[V], TACStmts[V]],
-        override protected val exprHandler: InterpretationHandler[State]
-) extends L0StringInterpreter[State] {
+        exprHandler: InterpretationHandler[State]
+) extends L0StringInterpreter[State] with DependingStringInterpreter[State] {
+
+    implicit val _exprHandler: InterpretationHandler[State] = exprHandler
 
     override type T = NonVirtualMethodCall[V]
 

@@ -13,7 +13,6 @@ import org.opalj.br.ComputationalTypeInt
 import org.opalj.br.DoubleType
 import org.opalj.br.FloatType
 import org.opalj.br.ObjectType
-import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
@@ -21,18 +20,20 @@ import org.opalj.br.fpcf.properties.string_definition.StringConstancyType
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.FinalEP
+import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.DependingStringInterpreter
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 
 /**
- * Responsible for processing [[VirtualFunctionCall]]s in an intraprocedural fashion.
+ * Responsible for processing [[VirtualFunctionCall]]s without a call graph.
  * The list of currently supported function calls can be seen in the documentation of [[interpret]].
  *
- * @author Patrick Mell
+ * @author Maximilian Rüsch
  */
 case class L0VirtualFunctionCallInterpreter[State <: ComputationState[State]](
-        override protected val cfg:         CFG[Stmt[V], TACStmts[V]],
-        override protected val exprHandler: InterpretationHandler[State]
-) extends L0StringInterpreter[State] {
+        exprHandler: InterpretationHandler[State]
+) extends L0StringInterpreter[State] with DependingStringInterpreter[State] {
+
+    implicit val _exprHandler: InterpretationHandler[State] = exprHandler
 
     override type T = VirtualFunctionCall[V]
 
@@ -147,7 +148,7 @@ case class L0VirtualFunctionCallInterpreter[State <: ComputationState[State]](
         // If defSiteHead points to a New, value will be the empty list. In that case, process
         // the first use site (which is the <init> call)
         if (value.isDefined && value.get.isTheNeutralElement) {
-            value = handleDependentDefSite(cfg.code.instructions(defSiteHead).asAssignment.targetVar.usedBy.toArray.min)
+            value = handleDependentDefSite(state.tac.stmts(defSiteHead).asAssignment.targetVar.usedBy.toArray.min)
         }
 
         if (value.isEmpty) {
@@ -182,20 +183,18 @@ case class L0VirtualFunctionCallInterpreter[State <: ComputationState[State]](
     }
 
     /**
-     * Function for processing calls to [[StringBuilder#toString]] or [[StringBuffer#toString]].
-     * Note that this function assumes that the given `toString` is such a function call! Otherwise,
-     * the expected behavior cannot be guaranteed.
+     * Processes calls to [[StringBuilder#toString]] or [[StringBuffer#toString]]. Note that this function assumes that
+     * the given `toString` is such a function call! Otherwise, the expected behavior cannot be guaranteed.
      */
     private def interpretToStringCall(call: VirtualFunctionCall[V])(implicit
         state: State
     ): Option[StringConstancyInformation] = {
-        handleDependentDefSite(call.receiver.asVar.definedBy.head)
+        handleInterpretationResult(exprHandler.processDefSite(call.receiver.asVar.definedBy.head))
     }
 
     /**
-     * Function for processing calls to [[StringBuilder#replace]] or [[StringBuffer#replace]].
-     * (Currently, this function simply approximates `replace` functions by returning the lower
-     * bound of [[StringConstancyProperty]]).
+     * Processes calls to [[StringBuilder#replace]] or [[StringBuffer#replace]]. (Currently, this function simply
+     * approximates `replace` functions by returning the lower bound of [[StringConstancyProperty]]).
      */
     private def interpretReplaceCall: StringConstancyInformation =
         InterpretationHandler.getStringConstancyInformationForReplace

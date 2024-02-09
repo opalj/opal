@@ -153,30 +153,16 @@ class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
         }
 
         if (state.iHandler == null) {
-            state.iHandler = L1InterpretationHandler(
-                state.tac,
-                ps,
-                project,
-                declaredFields,
-                fieldAccessInformation,
-                state,
-                contextProvider
-            )
+            state.iHandler =
+                L1InterpretationHandler(ps, project, declaredFields, fieldAccessInformation, contextProvider)
             val interimState = state.copy()
             interimState.tac = state.tac
             interimState.computedLeanPath = state.computedLeanPath
             interimState.callees = state.callees
             interimState.callers = state.callers
             interimState.params = state.params
-            state.interimIHandler = L1InterpretationHandler(
-                state.tac,
-                ps,
-                project,
-                declaredFields,
-                fieldAccessInformation,
-                interimState,
-                contextProvider
-            )
+            state.interimIHandler =
+                L1InterpretationHandler(ps, project, declaredFields, fieldAccessInformation, contextProvider)
         }
 
         var requiresCallersInfo = false

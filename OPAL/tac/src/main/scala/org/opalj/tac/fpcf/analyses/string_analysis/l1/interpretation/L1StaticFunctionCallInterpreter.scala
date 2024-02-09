@@ -10,7 +10,6 @@ package interpretation
 import scala.util.Try
 
 import org.opalj.br.ObjectType
-import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.br.fpcf.properties.NoContext
 import org.opalj.br.fpcf.properties.StringConstancyProperty
@@ -23,17 +22,14 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 
 /**
- * Responsible for processing [[StaticFunctionCall]]s in an interprocedural fashion.
- * For supported method calls, see the documentation of the `interpret` function.
+ * Responsible for processing [[StaticFunctionCall]]s with a call graph.
  *
- * @author Patrick Mell
+ * @author Maximilian Rüsch
  */
 class L1StaticFunctionCallInterpreter(
-        override protected val cfg:         CFG[Stmt[V], TACStmts[V]],
-        override protected val exprHandler: InterpretationHandler[L1ComputationState],
-        ps:                                 PropertyStore,
-        implicit val state:                 L1ComputationState,
-        contextProvider:                    ContextProvider
+        exprHandler:     InterpretationHandler[L1ComputationState],
+        ps:              PropertyStore,
+        contextProvider: ContextProvider
 ) extends L1StringInterpreter[L1ComputationState] {
 
     override type T = StaticFunctionCall[V]
@@ -84,7 +80,7 @@ class L1StaticFunctionCallInterpreter(
     private def processArbitraryCall(
         instr:   StaticFunctionCall[V],
         defSite: Int
-    ): EOptionP[Entity, StringConstancyProperty] = {
+    )(implicit state: L1ComputationState): EOptionP[Entity, StringConstancyProperty] = {
         val methods, _ = getMethodsForPC(instr.pc)(ps, state.callees, contextProvider)
 
         // Static methods cannot be overwritten, thus

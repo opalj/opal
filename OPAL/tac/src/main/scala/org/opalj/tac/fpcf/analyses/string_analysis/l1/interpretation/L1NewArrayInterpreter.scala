@@ -7,7 +7,6 @@ package string_analysis
 package l1
 package interpretation
 
-import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.fpcf.Entity
@@ -26,15 +25,13 @@ import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.Interpretation
  * @author Patrick Mell
  */
 class L1NewArrayInterpreter[State <: ComputationState[State]](
-        override protected val cfg:         CFG[Stmt[V], TACStmts[V]],
-        override protected val exprHandler: InterpretationHandler[State],
-        state:                              State
+        exprHandler: InterpretationHandler[State]
 ) extends L1StringInterpreter[State] {
 
     override type T = NewArray[V]
 
     /**
-     * @note This implementation will extend [[state.fpe2sci]] in a way that it adds the string
+     * @note This implementation will extend [[ComputationState.fpe2sci]] in a way that it adds the string
      *       constancy information for each definition site where it can compute a final result. All
      *       definition sites producing a refinable result will have to be handled later on to
      *       not miss this information.

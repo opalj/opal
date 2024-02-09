@@ -6,26 +6,19 @@ package analyses
 package string_analysis
 package interpretation
 
-import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyType
 import org.opalj.fpcf.FinalEP
-import org.opalj.tac.Stmt
 import org.opalj.tac.StringConst
-import org.opalj.tac.TACStmts
-import org.opalj.tac.V
 
 /**
  * Responsible for processing [[StringConst]]s.
  *
  * @author Maximilian Rüsch
  */
-case class StringConstInterpreter[State <: ComputationState[State]](
-        override protected val cfg:         CFG[Stmt[V], TACStmts[V]],
-        override protected val exprHandler: InterpretationHandler[State]
-) extends StringInterpreter[State] {
+object StringConstInterpreter extends StringInterpreter[Nothing] {
 
     override type T = StringConst
 

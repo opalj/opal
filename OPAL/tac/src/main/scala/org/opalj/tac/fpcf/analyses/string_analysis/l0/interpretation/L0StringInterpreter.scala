@@ -8,10 +8,8 @@ package l0
 package interpretation
 
 import org.opalj.br.fpcf.properties.StringConstancyProperty
-import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.FinalP
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.StringInterpreter
 
 /**
@@ -36,14 +34,4 @@ trait L0StringInterpreter[State <: ComputationState[State]] extends StringInterp
      *         Thus, the entity needs to be replaced by the calling client.
      */
     def interpret(instr: T, defSite: Int)(implicit state: State): EOptionP[Entity, StringConstancyProperty]
-
-    protected def handleDependentDefSite(defSite: Int)(implicit state: State): Option[StringConstancyInformation] = {
-        exprHandler.processDefSite(defSite) match {
-            case FinalP(p) =>
-                Some(p.stringConstancyInformation)
-            case eps =>
-                state.dependees = eps :: state.dependees
-                None
-        }
-    }
 }

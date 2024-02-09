@@ -10,7 +10,6 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 import org.opalj.br.ObjectType
-import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
@@ -18,10 +17,7 @@ import org.opalj.br.fpcf.properties.string_definition.StringConstancyType
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 
-abstract class InterpretationHandler[State <: ComputationState[State]](tac: TAC) {
-
-    protected val stmts: Array[Stmt[V]] = tac.stmts
-    protected val cfg: CFG[Stmt[V], TACStmts[V]] = tac.cfg
+abstract class InterpretationHandler[State <: ComputationState[State]] {
 
     /**
      * A list of definition sites that have already been processed. Store it as a map for constant
@@ -33,15 +29,9 @@ abstract class InterpretationHandler[State <: ComputationState[State]](tac: TAC)
      * Processes a given definition site. That is, this function determines the interpretation of
      * the specified instruction.
      *
-     * @param defSite The definition site to process. Make sure that (1) the value is >= 0, (2) it
-     *                actually exists, and (3) can be processed by one of the subclasses of
-     *                [[AbstractStringInterpreter]] (in case (3) is violated, an
-     *                [[IllegalArgumentException]] will be thrown.
-     * @param params For a (precise) interpretation, (method / function) parameter values might be
-     *               necessary. They can be leveraged using this value. The implementing classes
-     *               should make sure that (1) they handle the case when no parameters are given
-     *               and (2)they have a proper mapping from the definition sites within used methods
-     *               to the indices in `params` (as the definition sites of parameters are < 0).
+     * @param defSite The definition site to process. Make sure that (1) the value is >= 0, (2) it actually exists, and
+     *                (3) can be processed by one of the subclasses of [[StringInterpreter]] (in case (3) is violated,
+     *                an [[IllegalArgumentException]] will be thrown).
      * @return Returns the result of the interpretation. Note that depending on the concrete
      *         interpreter either a final or an intermediate result can be returned!
      *         In case the rules listed above or the ones of the different concrete interpreters are
@@ -105,7 +95,7 @@ object InterpretationHandler {
     } else {
         if (expr.isVar) {
             val value = expr.asVar.value
-            value.isReferenceValue && value.asReferenceValue.upperTypeBound.exists { _.toJava == "java.lang.String" }
+            value.isReferenceValue && value.asReferenceValue.upperTypeBound.exists { _ == ObjectType.String }
         } else {
             false
         }
@@ -121,12 +111,7 @@ object InterpretationHandler {
             )
 
     /**
-     * Checks whether an expression contains a call to [[StringBuilder#append]] or
-     * [[StringBuffer#append]].
-     *
-     * @param expr The expression that is to be checked.
-     * @return Returns true if `expr` is a call to `append` of [[StringBuilder]] or
-     *         [[StringBuffer]].
+     * Checks whether an expression contains a call to [[StringBuilder#append]] or [[StringBuffer#append]].
      */
     def isStringBuilderBufferAppendCall(expr: Expr[V]): Boolean = {
         expr match {
@@ -185,7 +170,7 @@ object InterpretationHandler {
      * Determines the definition sites of the initializations of the base object of `duvar`. This
      * function assumes that the definition sites refer to `toString` calls.
      *
-     * @param duvar The `DUVar` to get the initializations of the base object for.
+     * @param value The [[V]] to get the initializations of the base object for.
      * @param stmts The search context for finding the relevant information.
      * @return Returns the definition sites of the base object.
      */
@@ -209,7 +194,7 @@ object InterpretationHandler {
     /**
      * Determines the [[New]] expressions that belongs to a given `duvar`.
      *
-     * @param duvar The [[org.opalj.tac.DUVar]] to get the [[New]]s for.
+     * @param value The [[V]] to get the [[New]]s for.
      * @param stmts The context to search in, e.g., the surrounding method.
      * @return Returns all found [[New]] expressions.
      */

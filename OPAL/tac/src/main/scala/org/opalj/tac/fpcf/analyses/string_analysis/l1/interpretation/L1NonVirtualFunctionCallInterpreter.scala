@@ -7,7 +7,6 @@ package string_analysis
 package l1
 package interpretation
 
-import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.fpcf.Entity
@@ -15,7 +14,6 @@ import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.PropertyStore
-import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 
 /**
  * Responsible for processing [[NonVirtualFunctionCall]]s in an interprocedural fashion.
@@ -23,10 +21,8 @@ import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.Interpretation
  * @author Maximilian Rüsch
  */
 case class L1NonVirtualFunctionCallInterpreter(
-        override protected val cfg:         CFG[Stmt[V], TACStmts[V]],
-        override protected val exprHandler: InterpretationHandler[L1ComputationState],
-        ps:                                 PropertyStore,
-        contextProvider:                    ContextProvider
+        ps:              PropertyStore,
+        contextProvider: ContextProvider
 ) extends L1StringInterpreter[L1ComputationState] {
 
     override type T = NonVirtualFunctionCall[V]

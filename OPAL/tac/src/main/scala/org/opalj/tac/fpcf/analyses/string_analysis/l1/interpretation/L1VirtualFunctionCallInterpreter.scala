@@ -10,7 +10,6 @@ package interpretation
 import org.opalj.br.ComputationalTypeFloat
 import org.opalj.br.ComputationalTypeInt
 import org.opalj.br.ObjectType
-import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.br.fpcf.properties.NoContext
 import org.opalj.br.fpcf.properties.StringConstancyProperty
@@ -23,6 +22,7 @@ import org.opalj.fpcf.EPK
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.PropertyStore
+import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.DependingStringInterpreter
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 
 /**
@@ -32,11 +32,10 @@ import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.Interpretation
  * @author Patrick Mell
  */
 class L1VirtualFunctionCallInterpreter(
-        override protected val cfg:         CFG[Stmt[V], TACStmts[V]],
-        override protected val exprHandler: InterpretationHandler[L1ComputationState],
-        ps:                                 PropertyStore,
-        contextProvider:                    ContextProvider
-) extends L1StringInterpreter[L1ComputationState] {
+        exprHandler:     InterpretationHandler[L1ComputationState],
+        ps:              PropertyStore,
+        contextProvider: ContextProvider
+) extends L1StringInterpreter[L1ComputationState] with DependingStringInterpreter[L1ComputationState] {
 
     override type T = VirtualFunctionCall[V]
 
@@ -63,7 +62,7 @@ class L1VirtualFunctionCallInterpreter(
      * If none of the above-described cases match, a final result containing
      * [[StringConstancyProperty.lb]] is returned.
      *
-     * @note This function takes care of updating [[state.fpe2sci]] as necessary.
+     * @note This function takes care of updating [[ComputationState.fpe2sci]] as necessary.
      */
     override def interpret(instr: T, defSite: Int)(implicit
         state: L1ComputationState
@@ -290,7 +289,7 @@ class L1VirtualFunctionCallInterpreter(
             if (headSite < 0) {
                 newValueSci = StringConstancyInformation.lb
             } else {
-                val ds = cfg.code.instructions(headSite).asAssignment.targetVar.usedBy.toArray.min
+                val ds = state.tac.stmts(headSite).asAssignment.targetVar.usedBy.toArray.min
                 val r = exprHandler.processDefSite(ds)
                 r match {
                     case FinalP(p) => newValueSci = p.stringConstancyInformation

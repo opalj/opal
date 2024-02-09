@@ -7,13 +7,11 @@ package string_analysis
 package l1
 package interpretation
 
-import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyType
 import org.opalj.fpcf.FinalEP
-import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 
 /**
  * Responsible for processing [[VirtualMethodCall]]s in an interprocedural fashion.
@@ -21,10 +19,7 @@ import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.Interpretation
  *
  * @author Patrick Mell
  */
-case class L1VirtualMethodCallInterpreter[State <: ComputationState[State]](
-        override protected val cfg:         CFG[Stmt[V], TACStmts[V]],
-        override protected val exprHandler: InterpretationHandler[State]
-) extends L1StringInterpreter[State] {
+case class L1VirtualMethodCallInterpreter[State <: ComputationState[State]]() extends L1StringInterpreter[State] {
 
     override type T = VirtualMethodCall[V]
 

@@ -78,11 +78,10 @@ class L0StringAnalysis(override val project: SomeProject) extends StringAnalysis
         if (tacOpt.isEmpty)
             return Result(data, StringConstancyProperty.lb) // TODO add continuation
 
-        val tac = tacOpt.get
         val state = L0ComputationState(declaredMethods(data._2), data)
-        state.iHandler = L0InterpretationHandler(tac)
-        state.interimIHandler = L0InterpretationHandler(tac)
-        state.tac = tac
+        state.iHandler = L0InterpretationHandler()
+        state.interimIHandler = L0InterpretationHandler()
+        state.tac = tacOpt.get
         determinePossibleStrings(state)
     }
 

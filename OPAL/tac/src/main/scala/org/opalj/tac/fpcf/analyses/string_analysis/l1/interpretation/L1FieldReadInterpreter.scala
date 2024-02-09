@@ -12,7 +12,6 @@ import scala.collection.mutable.ListBuffer
 import org.opalj.br.analyses.DeclaredFields
 import org.opalj.br.analyses.FieldAccessInformation
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
@@ -25,7 +24,6 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.log.Error
 import org.opalj.log.Info
 import org.opalj.log.OPALLogger.logOnce
-import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 import org.opalj.tac.fpcf.analyses.string_analysis.l1.L1StringAnalysis
 
 /**
@@ -35,16 +33,12 @@ import org.opalj.tac.fpcf.analyses.string_analysis.l1.L1StringAnalysis
  * @author Maximilian Rüsch
  */
 case class L1FieldReadInterpreter[State <: ComputationState[State]](
-        override protected val exprHandler: InterpretationHandler[State],
-        state:                              State,
-        ps:                                 PropertyStore,
-        fieldAccessInformation:             FieldAccessInformation,
-        project:                            SomeProject,
-        implicit val declaredFields:        DeclaredFields,
-        implicit val contextProvider:       ContextProvider
+        ps:                           PropertyStore,
+        fieldAccessInformation:       FieldAccessInformation,
+        project:                      SomeProject,
+        implicit val declaredFields:  DeclaredFields,
+        implicit val contextProvider: ContextProvider
 ) extends L1StringInterpreter[State] {
-
-    override protected val cfg: CFG[Stmt[V], TACStmts[V]] = state.tac.cfg
 
     override type T = FieldRead[V]
 

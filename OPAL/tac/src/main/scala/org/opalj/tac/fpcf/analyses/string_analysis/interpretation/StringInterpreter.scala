@@ -10,7 +10,6 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 import org.opalj.br.Method
-import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.fpcf.Entity
@@ -23,21 +22,6 @@ import org.opalj.tac.fpcf.properties.TACAI
  * @author Maximilian Rüsch
  */
 trait StringInterpreter[State <: ComputationState[State]] {
-
-    /**
-     * The control flow graph that underlies the instruction to interpret.
-     */
-    protected val cfg: CFG[Stmt[V], TACStmts[V]]
-
-    /**
-     * Handles interpretation of instructions the current interpretation depends on.
-     *
-     * @note The abstract type [[InterpretationHandler]] allows the handling of different styles (e.g.,
-     *       intraprocedural and interprocedural). Thus, implementation of this class are required to
-     *       clearly indicate what kind of [[InterpretationHandler]] they expect in order to ensure the
-     *       desired behavior and not confuse developers.
-     */
-    protected val exprHandler: InterpretationHandler[State]
 
     type T <: Any
 

@@ -6,7 +6,6 @@ package analyses
 package string_analysis
 package interpretation
 
-import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
@@ -18,10 +17,7 @@ import org.opalj.fpcf.FinalEP
  *
  * @author Maximilian Rüsch
  */
-case class FloatValueInterpreter[State <: ComputationState[State]](
-        override protected val cfg:         CFG[Stmt[V], TACStmts[V]],
-        override protected val exprHandler: InterpretationHandler[State]
-) extends StringInterpreter[State] {
+object FloatValueInterpreter extends StringInterpreter[Nothing] {
 
     override type T = FloatConst
 

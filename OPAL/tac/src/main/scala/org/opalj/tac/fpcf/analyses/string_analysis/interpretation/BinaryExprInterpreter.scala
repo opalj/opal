@@ -8,7 +8,6 @@ package interpretation
 
 import org.opalj.br.ComputationalTypeFloat
 import org.opalj.br.ComputationalTypeInt
-import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.fpcf.FinalEP
@@ -19,10 +18,7 @@ import org.opalj.fpcf.FinalEP
  *
  * @author Maximilian Rüsch
  */
-case class BinaryExprInterpreter[State <: ComputationState[State]](
-        override protected val cfg:         CFG[Stmt[V], TACStmts[V]],
-        override protected val exprHandler: InterpretationHandler[State]
-) extends StringInterpreter[State] {
+object BinaryExprInterpreter extends StringInterpreter[Nothing] {
 
     override type T = BinaryExpr[V]
 
