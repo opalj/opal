@@ -11,7 +11,6 @@ import org.opalj.br.ComputationalTypeFloat
 import org.opalj.br.ComputationalTypeInt
 import org.opalj.br.ObjectType
 import org.opalj.br.fpcf.analyses.ContextProvider
-import org.opalj.br.fpcf.properties.NoContext
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
@@ -32,9 +31,9 @@ import org.opalj.tac.fpcf.analyses.string_analysis.l0.interpretation.L0VirtualFu
  * @author Patrick Mell
  */
 class L1VirtualFunctionCallInterpreter(
-        exprHandler:     InterpretationHandler[L1ComputationState],
-        ps:              PropertyStore,
-        contextProvider: ContextProvider
+        exprHandler:                  InterpretationHandler[L1ComputationState],
+        implicit val ps:              PropertyStore,
+        implicit val contextProvider: ContextProvider
 ) extends L0VirtualFunctionCallInterpreter[L1ComputationState](exprHandler)
     with L1StringInterpreter[L1ComputationState] {
 
@@ -91,13 +90,13 @@ class L1VirtualFunctionCallInterpreter(
     private def interpretArbitraryCall(instr: T, defSite: Int)(
         implicit state: L1ComputationState
     ): Option[StringConstancyInformation] = {
-        val (methods, _) = getMethodsForPC(instr.pc)(ps, state.callees, contextProvider)
+        val (methods, _) = getMethodsForPC(state.methodContext, instr.pc)(ps, state.callees, contextProvider)
 
         if (methods.isEmpty) {
             return Some(StringConstancyInformation.lb)
         }
         // TODO: Type Iterator!
-        val directCallSites = state.callees.directCallSites(NoContext)(ps, contextProvider)
+        val directCallSites = state.callees.directCallSites(state.methodContext)(ps, contextProvider)
         val instrClassName = instr.receiver.asVar.value.asReferenceValue.asReferenceType.mostPreciseObjectType.toJava
 
         val relevantPCs = directCallSites.filter {

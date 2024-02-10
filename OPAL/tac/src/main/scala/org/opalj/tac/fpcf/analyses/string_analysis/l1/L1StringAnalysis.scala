@@ -106,7 +106,8 @@ class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
 
     def analyze(data: SContext): ProperPropertyComputationResult = {
         val dm = declaredMethods(data._2)
-        val state = L1ComputationState(dm, data)
+        // IMPROVE enable handling call string contexts here (build a chain, probably via SContext)
+        val state = L1ComputationState(dm, data, contextProvider.newContext(declaredMethods(data._2)))
 
         val tacaiEOptP = ps(data._2, TACAI.key)
         if (tacaiEOptP.hasUBP) {

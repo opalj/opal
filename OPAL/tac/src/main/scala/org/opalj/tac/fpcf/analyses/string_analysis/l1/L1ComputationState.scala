@@ -7,6 +7,7 @@ package string_analysis
 package l1
 
 import org.opalj.br.DeclaredMethod
+import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.Callers
 
@@ -19,7 +20,8 @@ import org.opalj.br.fpcf.properties.cg.Callers
  */
 case class L1ComputationState(
         override val dm:     DeclaredMethod,
-        override val entity: SContext
+        override val entity: SContext,
+        methodContext:       Context
 ) extends ComputationState[L1ComputationState] {
 
     /**

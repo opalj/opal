@@ -11,7 +11,6 @@ import scala.util.Try
 
 import org.opalj.br.ObjectType
 import org.opalj.br.fpcf.analyses.ContextProvider
-import org.opalj.br.fpcf.properties.NoContext
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.fpcf.Entity
@@ -81,7 +80,7 @@ class L1StaticFunctionCallInterpreter(
         instr:   StaticFunctionCall[V],
         defSite: Int
     )(implicit state: L1ComputationState): EOptionP[Entity, StringConstancyProperty] = {
-        val methods, _ = getMethodsForPC(instr.pc)(ps, state.callees, contextProvider)
+        val methods, _ = getMethodsForPC(state.methodContext, instr.pc)(ps, state.callees, contextProvider)
 
         // Static methods cannot be overwritten, thus
         // 1) we do not need the second return value of getMethodsForPC and
@@ -94,7 +93,7 @@ class L1StaticFunctionCallInterpreter(
         val m = methods._1.head
         val (_, tac) = getTACAI(ps, m, state)
 
-        val directCallSites = state.callees.directCallSites(NoContext)(ps, contextProvider)
+        val directCallSites = state.callees.directCallSites(state.methodContext)(ps, contextProvider)
         val relevantPCs = directCallSites.filter {
             case (_, calledMethods) =>
                 calledMethods.exists(m =>

@@ -30,7 +30,7 @@ case class L1NonVirtualFunctionCallInterpreter(
     override def interpret(instr: T, defSite: Int)(implicit
         state: L1ComputationState
     ): EOptionP[Entity, StringConstancyProperty] = {
-        val methods = getMethodsForPC(instr.pc)(ps, state.callees, contextProvider)
+        val methods = getMethodsForPC(state.methodContext, instr.pc)(ps, state.callees, contextProvider)
         if (methods._1.isEmpty) {
             // No methods available => Return lower bound
             return FinalEP(instr, StringConstancyProperty.lb)
