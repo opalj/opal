@@ -118,6 +118,22 @@ public class IntraProceduralTestMethods {
     }
 
     @StringDefinitionsCollection(
+            value = "checks if a string value with append(s) is determined correctly",
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT, expectedStrings = "java.lang.String"
+                    ),
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT, expectedStrings = "java.lang.Object"
+                    )
+            }
+    )
+    public void simpleStringConcatWithStaticFunctionCalls() {
+        analyzeString(StringProvider.concat("java.lang.", "String"));
+        analyzeString(StringProvider.concat("java.", StringProvider.concat("lang.", "Object")));
+    }
+
+    @StringDefinitionsCollection(
             value = "checks if a string value with > 2 continuous appends is determined correctly",
             stringDefinitions = {
                     @StringDefinitions(
@@ -172,6 +188,25 @@ public class IntraProceduralTestMethods {
         if (index >= 0 && index < classes.length) {
             analyzeString(classes[index]);
         }
+    }
+
+    @StringDefinitionsCollection(
+            value = "a case where an array access needs to be interpreted with multiple static function calls",
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = DYNAMIC,
+                            expectedStrings = "(java.lang.Object|.*|java.lang.Integer|.*)"
+                    )
+
+            })
+    public void arrayStaticFunctionCalls(int i) {
+        String[] classes = {
+                "java.lang.Object",
+                getRuntimeClassName(),
+                StringProvider.getFQClassNameWithStringBuilder("java.lang", "Integer"),
+                System.getProperty("SomeClass")
+        };
+        analyzeString(classes[i]);
     }
 
     @StringDefinitionsCollection(

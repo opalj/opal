@@ -4,6 +4,7 @@ package org.opalj.fpcf.fixtures.string_analysis.interprocedural;
 import org.opalj.fpcf.fixtures.string_analysis.interprocedural.hierarchies.GreetingService;
 import org.opalj.fpcf.fixtures.string_analysis.interprocedural.hierarchies.HelloGreeting;
 import org.opalj.fpcf.fixtures.string_analysis.intraprocedural.IntraProceduralTestMethods;
+import org.opalj.fpcf.fixtures.string_analysis.intraprocedural.StringProvider;
 import org.opalj.fpcf.properties.string_analysis.StringDefinitions;
 import org.opalj.fpcf.properties.string_analysis.StringDefinitionsCollection;
 

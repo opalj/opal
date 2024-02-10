@@ -26,6 +26,7 @@ import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.IntegerValueIn
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.NewInterpreter
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.StringConstInterpreter
+import org.opalj.tac.fpcf.analyses.string_analysis.l0.interpretation.L0ArrayAccessInterpreter
 import org.opalj.tac.fpcf.analyses.string_analysis.l1.finalizer.ArrayLoadFinalizer
 import org.opalj.tac.fpcf.analyses.string_analysis.l1.finalizer.GetFieldFinalizer
 import org.opalj.tac.fpcf.analyses.string_analysis.l1.finalizer.NewArrayFinalizer
@@ -141,7 +142,7 @@ class L1InterpretationHandler(
         expr:    ArrayLoad[V],
         defSite: Int
     )(implicit state: L1ComputationState): EOptionP[Entity, StringConstancyProperty] = {
-        val r = new L1ArrayAccessInterpreter(this).interpret(expr, defSite)
+        val r = new L0ArrayAccessInterpreter(this).interpret(expr, defSite)
         val sci = if (r.isFinal) {
             r.asFinal.p.stringConstancyInformation
         } else {

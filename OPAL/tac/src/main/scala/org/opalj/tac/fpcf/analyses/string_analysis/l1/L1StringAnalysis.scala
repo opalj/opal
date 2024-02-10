@@ -36,7 +36,7 @@ import org.opalj.log.Error
 import org.opalj.log.Info
 import org.opalj.log.OPALLogger.logOnce
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
-import org.opalj.tac.fpcf.analyses.string_analysis.l1.interpretation.L1ArrayAccessInterpreter
+import org.opalj.tac.fpcf.analyses.string_analysis.l0.interpretation.L0ArrayAccessInterpreter
 import org.opalj.tac.fpcf.analyses.string_analysis.l1.interpretation.L1InterpretationHandler
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.FlatPathElement
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.NestedPathElement
@@ -406,7 +406,7 @@ class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
     }
 
     override protected def hasExprFormalParamUsage(expr: Expr[V])(implicit tac: TAC): Boolean = expr match {
-        case al: ArrayLoad[V] => L1ArrayAccessInterpreter.getStoreAndLoadDefSites(al, tac.stmts).exists(_ < 0)
+        case al: ArrayLoad[V] => L0ArrayAccessInterpreter.getStoreAndLoadDefSites(al)(tac.stmts).exists(_ < 0)
         case _                => super.hasExprFormalParamUsage(expr)
     }
 }

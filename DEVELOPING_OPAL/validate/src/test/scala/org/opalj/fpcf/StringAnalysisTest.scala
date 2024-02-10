@@ -114,7 +114,7 @@ class IntraproceduralStringAnalysisTest extends StringAnalysisTest {
     override protected val fqTestMethodsClass = "org.opalj.fpcf.fixtures.string_analysis.intraprocedural.IntraProceduralTestMethods"
     override protected val nameTestMethod = "analyzeString"
 
-    override def fixtureProjectPackage: List[String] = List(s"org/opalj/fpcf/fixtures/string_analysis/intraprocedural")
+    override def fixtureProjectPackage: List[String] = List("org/opalj/fpcf/fixtures/string_analysis/intraprocedural")
 
     override def init(p: Project[URL]): Unit = {
         val domain = classOf[DefaultPerformInvocationsDomainWithCFGAndDefUse[_]]
@@ -136,7 +136,7 @@ class IntraproceduralStringAnalysisTest extends StringAnalysisTest {
             .filterNot(entity => entity._2.name.startsWith("switchNested"))
             .filterNot(entity => entity._2.name.startsWith("tryCatchFinallyWithThrowable"))
             .filterNot(entity => entity._2.name.startsWith("twoDefinitionsOneUsage"))
-            .filterNot(entity => entity._2.name.startsWith("simpleStringConcat"))
+            .filterNot(entity => entity._2.name == "simpleStringConcat")
             .filterNot(entity => entity._2.name.startsWith("multipleDefSites"))
             .filterNot(entity => entity._2.name.startsWith("fromConstantAndFunctionCall"))
 
@@ -161,7 +161,10 @@ class InterproceduralStringAnalysisTest extends StringAnalysisTest {
     override protected val fqTestMethodsClass = "org.opalj.fpcf.fixtures.string_analysis.interprocedural.InterproceduralTestMethods"
     override protected val nameTestMethod = "analyzeString"
 
-    override def fixtureProjectPackage: List[String] = List(s"org/opalj/fpcf/fixtures/string_analysis/interprocedural")
+    override def fixtureProjectPackage: List[String] = List(
+        "org/opalj/fpcf/fixtures/string_analysis/intraprocedural",
+        "org/opalj/fpcf/fixtures/string_analysis/interprocedural"
+    )
 
     override def init(p: Project[URL]): Unit = {
         p.get(RTACallGraphKey)

@@ -10,7 +10,7 @@ package finalizer
 import scala.collection.mutable.ListBuffer
 
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
-import org.opalj.tac.fpcf.analyses.string_analysis.l1.interpretation.L1ArrayAccessInterpreter
+import org.opalj.tac.fpcf.analyses.string_analysis.l0.interpretation.L0ArrayAccessInterpreter
 
 /**
  * @author Maximilian Rüsch
@@ -27,7 +27,7 @@ case class ArrayLoadFinalizer(
      * @inheritdoc
      */
     override def finalizeInterpretation(instr: T, defSite: Int): Unit = {
-        val allDefSites = L1ArrayAccessInterpreter.getStoreAndLoadDefSites(instr, state.tac.stmts)
+        val allDefSites = L0ArrayAccessInterpreter.getStoreAndLoadDefSites(instr)(state.tac.stmts)
         val allDefSitesByPC = allDefSites.map(ds => (pcOfDefSite(ds)(state.tac.stmts), ds)).toMap
         allDefSitesByPC.keys.foreach { pc =>
             if (!state.fpe2sci.contains(pc)) {

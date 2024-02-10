@@ -81,7 +81,7 @@ class L0InterpretationHandler()(
             case Assignment(_, _, expr: BinaryExpr[V]) =>
                 BinaryExprInterpreter.interpret(expr)
             case Assignment(_, _, expr: ArrayLoad[V]) =>
-                L0ArrayInterpreter(this).interpret(expr, defSite)(state)
+                L0ArrayAccessInterpreter(this).interpret(expr, defSite)(state)
             case Assignment(_, _, expr: New) =>
                 NewInterpreter.interpret(expr)
             case Assignment(_, _, expr: GetField[V]) =>
