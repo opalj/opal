@@ -826,21 +826,21 @@ public class L0TestMethods {
             value = "simple examples to clear a StringBuilder",
             stringDefinitions = {
                     @StringDefinitions(
-                            expectedLevel = DYNAMIC, expectedStrings = ".*"
+                            expectedLevel = CONSTANT, expectedStrings = "java.lang.StringBuilder"
                     ),
                     @StringDefinitions(
-                            expectedLevel = DYNAMIC, expectedStrings = ".*"
+                            expectedLevel = CONSTANT, expectedStrings = "java.lang.StringBuilder"
                     )
             })
     public void simpleClearExamples() {
         StringBuilder sb1 = new StringBuilder("init_value:");
         sb1.setLength(0);
-        sb1.append(getStringBuilderClassName());
+        sb1.append("java.lang.StringBuilder");
 
         StringBuilder sb2 = new StringBuilder("init_value:");
         System.out.println(sb2.toString());
         sb2 = new StringBuilder();
-        sb2.append(getStringBuilderClassName());
+        sb2.append("java.lang.StringBuilder");
 
         analyzeString(sb1.toString());
         analyzeString(sb2.toString());

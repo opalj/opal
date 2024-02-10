@@ -11,7 +11,10 @@ import org.opalj.fpcf.properties.string_analysis.StringDefinitionsCollection;
 import javax.management.remote.rmi.RMIServer;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.Random;
 import java.util.Scanner;
 
 import static org.opalj.fpcf.properties.string_analysis.StringConstancyLevel.*;
@@ -98,18 +101,6 @@ public class L1TestMethods extends L0TestMethods {
     }
 
     @StringDefinitionsCollection(
-            value = "a case where a static method with a string parameter is called",
-            stringDefinitions = {
-                    @StringDefinitions(
-                            expectedLevel = CONSTANT,
-                            expectedStrings = "java.lang.(Integer|Object|Runtime)"
-                    )
-            })
-    public void fromStaticMethodWithParamTest() {
-        analyzeString(StringProvider.getFQClassName(JAVA_LANG, "Integer"));
-    }
-
-    @StringDefinitionsCollection(
             value = "a case where a static method is called that returns a string but are not "
                     + "within this project => cannot / will not be interpret",
             stringDefinitions = {
@@ -144,20 +135,18 @@ public class L1TestMethods extends L0TestMethods {
     }
 
     @StringDefinitionsCollection(
-            value = "a case where an array access needs to be interpreted interprocedurally",
+            value = "a case where an array access needs to be interpreted with a virtual call, requiring a call graph",
             stringDefinitions = {
                     @StringDefinitions(
                             expectedLevel = DYNAMIC,
-                            expectedStrings = "(java.lang.Object|.*|java.lang.(Integer|"
-                                    + "Object|Runtime)|.*)"
+                            expectedStrings = "(java.lang.Object|java.lang.Runtime|java.lang.Integer|.*)"
                     )
-
             })
     public void arrayTest(int i) {
         String[] classes = {
                 "java.lang.Object",
                 getRuntimeClassName(),
-                StringProvider.getFQClassName("java.lang", "Integer"),
+                StringProvider.getFQClassNameWithStringBuilder("java.lang", "Integer"),
                 System.getProperty("SomeClass")
         };
         analyzeString(classes[i]);
@@ -256,14 +245,14 @@ public class L1TestMethods extends L0TestMethods {
             stringDefinitions = {
                     @StringDefinitions(
                             expectedLevel = CONSTANT,
-                            expectedStrings = "java.lang.(Integer|Object|Runtime)"
+                            expectedStrings = "java.lang.(Object|Runtime)"
                     )
 
             })
     public void contextInsensitivityTest() {
         StringBuilder sb = new StringBuilder();
-        String s = StringProvider.getFQClassName("java.lang", "Object");
-        sb.append(StringProvider.getFQClassName("java.lang", "Runtime"));
+        String s = StringProvider.getFQClassNameWithStringBuilder("java.lang", "Object");
+        sb.append(StringProvider.getFQClassNameWithStringBuilder("java.lang", "Runtime"));
         analyzeString(sb.toString());
     }
 
@@ -404,13 +393,11 @@ public class L1TestMethods extends L0TestMethods {
     }
 
     @StringDefinitionsCollection(
-            value = "a case taken from com.sun.prism.impl.ps.BaseShaderContext#getPaintShader "
-                    + "and slightly adapted",
+            value = "a case taken from com.sun.prism.impl.ps.BaseShaderContext#getPaintShader and slightly adapted",
             stringDefinitions = {
                     @StringDefinitions(
                             expectedLevel = CONSTANT,
-                            expectedStrings = "Hello, World_paintname((_PAD|_REFLECT|_REPEAT)?)?"
-                                    + "(_AlphaTest)?"
+                            expectedStrings = "Hello, World_paintname((_PAD|_REFLECT|_REPEAT)?)?(_AlphaTest)?"
                     )
             })
     public void getPaintShader(boolean getPaintType, int spreadMethod, boolean alphaTest) {
@@ -442,7 +429,7 @@ public class L1TestMethods extends L0TestMethods {
             stringDefinitions = {
                     @StringDefinitions(
                             expectedLevel = CONSTANT,
-                            expectedStrings = "(some value|another value|^null$)"
+                            expectedStrings = "(another value|some value|^null$)"
                     )
             })
     public void fieldReadTest() {
@@ -560,7 +547,7 @@ public class L1TestMethods extends L0TestMethods {
     }
 
     @StringDefinitionsCollection(
-            value = "a case where a non static function has multiple return values",
+            value = "a case where a static function has multiple return values",
             stringDefinitions = {
                     @StringDefinitions(
                             expectedLevel = CONSTANT,
@@ -671,6 +658,122 @@ public class L1TestMethods extends L0TestMethods {
             })
     public void getStringArrayField(int i) {
         analyzeString(monthNames[i]);
+    }
+
+    // DIFFERING TEST CASES FROM PREVIOUS LEVELS
+
+    @StringDefinitionsCollection(
+            value = "can handle virtual function calls",
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT, expectedStrings = "java.lang.StringBuilder"
+                    )
+            })
+    public void fromFunctionCall() {
+        String className = getStringBuilderClassName();
+        analyzeString(className);
+    }
+
+    @StringDefinitionsCollection(
+            // IMPROVE subsequent levels should not worsen quality of results
+            value = "checks if a string value with append(s) is determined correctly",
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT, expectedStrings = "(java.lang.|lang.|java.)(String|Object|(java.lang.|lang.|java.)(String|Object))"
+                    ),
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT, expectedStrings = "(java.lang.|lang.|java.)(String|Object|(java.lang.|lang.|java.)(String|Object))"
+                    )
+            }
+    )
+    public void simpleStringConcatWithStaticFunctionCalls() {
+        analyzeString(StringProvider.concat("java.lang.", "String"));
+        analyzeString(StringProvider.concat("java.", StringProvider.concat("lang.", "Object")));
+    }
+
+    @StringDefinitionsCollection(
+            value = "Some comprehensive example for experimental purposes taken from the JDK and slightly modified",
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT,
+                            expectedStrings = "Hello: (java.lang.Runtime|java.lang.StringBuilder|StringBuilder)?"
+                    ),
+            })
+    protected void setDebugFlags(String[] var1) {
+        for(int var2 = 0; var2 < var1.length; ++var2) {
+            String var3 = var1[var2];
+
+            int randomValue = new Random().nextInt();
+            StringBuilder sb = new StringBuilder("Hello: ");
+            if (randomValue % 2 == 0) {
+                sb.append(getRuntimeClassName());
+            } else if (randomValue % 3 == 0) {
+                sb.append(getStringBuilderClassName());
+            } else if (randomValue % 4 == 0) {
+                sb.append(getSimpleStringBuilderClassName());
+            }
+
+            try {
+                Field var4 = this.getClass().getField(var3 + "DebugFlag");
+                int var5 = var4.getModifiers();
+                if (Modifier.isPublic(var5) && !Modifier.isStatic(var5) &&
+                        var4.getType() == Boolean.TYPE) {
+                    var4.setBoolean(this, true);
+                }
+            } catch (IndexOutOfBoundsException var90) {
+                System.out.println("Should never happen!");
+            } catch (Exception var6) {
+                int i = 10;
+                i += new Random().nextInt();
+                System.out.println("Some severe error occurred!" + i);
+            } finally {
+                int i = 10;
+                i += new Random().nextInt();
+                // TODO: Control structures in finally blocks are not handles correctly
+                // if (i % 2 == 0) {
+                //     System.out.println("Ready to analyze now in any case!" + i);
+                // }
+            }
+
+            analyzeString(sb.toString());
+        }
+    }
+
+    @StringDefinitionsCollection(
+            value = "an extensive example with many control structures",
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT, expectedStrings = "(iv1|iv2): "
+                    ),
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT,
+                            expectedStrings = "(iv1|iv2): ((great!)?)*(java.lang.Runtime)?"
+                    )
+            })
+    public void extensive(boolean cond) {
+        StringBuilder sb = new StringBuilder();
+        if (cond) {
+            sb.append("iv1");
+        } else {
+            sb.append("iv2");
+        }
+        System.out.println(sb);
+        sb.append(": ");
+
+        analyzeString(sb.toString());
+
+        Random random = new Random();
+        while (random.nextFloat() > 5.) {
+            if (random.nextInt() % 2 == 0) {
+                sb.append("great!");
+            }
+        }
+
+        if (sb.indexOf("great!") > -1) {
+            sb.append(getRuntimeClassName());
+        }
+
+        analyzeString(sb.toString());
     }
 
     private String getRuntimeClassName() {

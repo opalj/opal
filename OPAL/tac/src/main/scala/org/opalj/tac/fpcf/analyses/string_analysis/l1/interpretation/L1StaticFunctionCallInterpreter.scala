@@ -99,7 +99,7 @@ class L1StaticFunctionCallInterpreter[State <: L1ComputationState[State]](
                 calledMethods.exists(m =>
                     m.method.name == instr.name && m.method.declaringClassType == instr.declaringClass
                 )
-        }.keys
+        }.keys.toList.sorted
 
         // Collect all parameters; either from the state if the interpretation of instr was started
         // before (in this case, the assumption is that all parameters are fully interpreted) or
