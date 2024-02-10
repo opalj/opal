@@ -1201,6 +1201,18 @@ public class L0TestMethods {
         analyzeString(sb.toString());
     }
 
+    @StringDefinitionsCollection(
+            value = "a case where a static method with a string parameter is called",
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT,
+                            expectedStrings = "java.lang.Integer"
+                    )
+            })
+    public void fromStaticMethodWithParamTest() {
+        analyzeString(StringProvider.getFQClassNameWithStringBuilder("java.lang", "Integer"));
+    }
+
     private String getRuntimeClassName() {
         return "java.lang.Runtime";
     }
