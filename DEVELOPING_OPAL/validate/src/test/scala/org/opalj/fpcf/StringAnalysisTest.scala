@@ -10,6 +10,7 @@ import org.opalj.br.Annotation
 import org.opalj.br.Annotations
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
+import org.opalj.br.analyses.FieldAccessInformationKey
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.tac.EagerDetachedTACAIKey
@@ -18,6 +19,7 @@ import org.opalj.tac.TACode
 import org.opalj.tac.V
 import org.opalj.tac.VirtualMethodCall
 import org.opalj.tac.cg.RTACallGraphKey
+import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalysis
 import org.opalj.tac.fpcf.analyses.string_analysis.SEntity
 import org.opalj.tac.fpcf.analyses.string_analysis.l0.LazyL0StringAnalysis
 import org.opalj.tac.fpcf.analyses.string_analysis.l1.LazyL1StringAnalysis
@@ -188,6 +190,11 @@ class L1StringAnalysisTest extends StringAnalysisTest {
     override def level = 1
 
     override def init(p: Project[URL]): Unit = {
+        p.updateProjectInformationKeyInitializationData(FieldAccessInformationKey) {
+            case None               => Seq(EagerFieldAccessInformationAnalysis)
+            case Some(requirements) => requirements :+ EagerFieldAccessInformationAnalysis
+        }
+
         p.get(RTACallGraphKey)
     }
 

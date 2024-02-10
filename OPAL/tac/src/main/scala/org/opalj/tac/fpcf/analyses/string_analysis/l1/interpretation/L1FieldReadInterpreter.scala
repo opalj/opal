@@ -43,12 +43,8 @@ case class L1FieldReadInterpreter[State <: L1ComputationState[State]](
     override type T = FieldRead[V]
 
     /**
-     * To analyze a read operation of field, ''f'', all write accesses, ''wa_f'', to ''f'' have to
-     * be analyzed. ''fieldWriteThreshold'' determines the threshold of ''|wa_f|'' when ''f'' is to
-     * be approximated as the lower bound, i.e., ''|wa_f|'' is greater than ''fieldWriteThreshold''
-     * then the read operation of ''f'' is approximated as the lower bound. Otherwise, if ''|wa_f|''
-     * is less or equal than ''fieldWriteThreshold'', analyze all ''wa_f'' to approximate the read
-     * of ''f''.
+     * To analyze a read operation of field, ''f'', all write accesses, ''wa_f'', to ''f'' have to be analyzed.
+     * ''fieldWriteThreshold'' determines the threshold of ''|wa_f|'' when ''f'' is to be approximated as the lower bound.
      */
     private val fieldWriteThreshold = {
         val threshold =
@@ -72,25 +68,21 @@ case class L1FieldReadInterpreter[State <: L1ComputationState[State]](
     }
 
     /**
-     * Currently, fields are approximated using the following approach. If a field of a type not
-     * supported by the [[L1StringAnalysis]] is passed,
-     * [[StringConstancyInformation.lb]] will be produces. Otherwise, all write accesses are
-     * considered and analyzed. If a field is not initialized within a constructor or the class
-     * itself, it will be approximated using all write accesses as well as with the lower bound and
-     * "null" => in these cases fields are [[StringConstancyLevel.DYNAMIC]].
+     * Currently, fields are approximated using the following approach: If a field of a type not supported by the
+     * [[L1StringAnalysis]] is passed, [[StringConstancyInformation.lb]] will be produces. Otherwise, all write accesses
+     * are considered and analyzed. If a field is not initialized within a constructor or the class itself, it will be
+     * approximated using all write accesses as well as with the lower bound and "null" => in these cases fields are
+     * [[StringConstancyLevel.DYNAMIC]].
      */
     override def interpret(instr: T, defSite: Int)(implicit state: State): EOptionP[Entity, StringConstancyProperty] = {
-        // TODO: The approximation of fields might be outsourced into a dedicated analysis. Then,
-        //  one could add a finer-grained processing or provide different abstraction levels. This
-        //  String analysis could then use the field analysis.
-        val defSitEntity: Integer = defSite
-        // Unknown type => Cannot further approximate
+        // TODO: The approximation of fields might be outsourced into a dedicated analysis. Then, one could add a
+        //  finer-grained processing or provide different abstraction levels. This analysis could then use that analysis.
         if (!StringAnalysis.isSupportedType(instr.declaredFieldType)) {
             return FinalEP(instr, StringConstancyProperty.lb)
         }
-        // Write accesses exceeds the threshold => approximate with lower bound
+
         val definedField = declaredFields(instr.declaringClass, instr.name, instr.declaredFieldType).asDefinedField
-        val writeAccesses = fieldAccessInformation.writeAccesses(definedField.definedField)
+        val writeAccesses = fieldAccessInformation.writeAccesses(definedField.definedField).toSeq
         if (writeAccesses.length > fieldWriteThreshold) {
             return FinalEP(instr, StringConstancyProperty.lb)
         }
@@ -107,7 +99,7 @@ case class L1FieldReadInterpreter[State <: L1ComputationState[State]](
                 val (tacEps, tac) = getTACAI(ps, method, state)
                 val nextResult = if (parameter.isEmpty) {
                     // Field parameter information is not available
-                    FinalEP(defSitEntity, StringConstancyProperty.lb)
+                    FinalEP(defSite.asInstanceOf[Integer], StringConstancyProperty.lb)
                 } else if (tacEps.isRefinable) {
                     EPK(state.entity, StringConstancyProperty.key)
                 } else {
@@ -127,28 +119,26 @@ case class L1FieldReadInterpreter[State <: L1ComputationState[State]](
                             eps
                         case _ =>
                             // No TAC available
-                            FinalEP(defSitEntity, StringConstancyProperty.lb)
+                            FinalEP(defSite.asInstanceOf[Integer], StringConstancyProperty.lb)
                     }
                 }
                 results.append(nextResult)
         }
 
         if (results.isEmpty) {
-            // No methods, which write the field, were found => Field could either be null or
-            // any value
+            // No methods which write the field were found => Field could either be null or any value
             val sci = StringConstancyInformation(
                 StringConstancyLevel.DYNAMIC,
-                possibleStrings = "(^null$|" + StringConstancyInformation.UnknownWordSymbol + ")"
+                possibleStrings =
+                    s"(${StringConstancyInformation.NullStringValue}|${StringConstancyInformation.UnknownWordSymbol})"
             )
             state.appendToFpe2Sci(pcOfDefSite(defSite)(state.tac.stmts), StringConstancyInformation.lb)
-            FinalEP(defSitEntity, StringConstancyProperty(sci))
+            FinalEP(defSite.asInstanceOf[Integer], StringConstancyProperty(sci))
         } else {
-            // If all results are final, determine all possible values for the field. Otherwise,
-            // return some intermediate result to indicate that the computation is not yet done
             if (results.forall(_.isFinal)) {
-                // No init is present => append a `null` element to indicate that the field might be
-                // null; this behavior could be refined by only setting the null element if no
-                // statement is guaranteed to be executed prior to the field read
+                // No init is present => append a `null` element to indicate that the field might be null; this behavior
+                // could be refined by only setting the null element if no statement is guaranteed to be executed prior
+                // to the field read
                 if (!hasInit) {
                     results.append(FinalEP(
                         instr,
@@ -159,7 +149,7 @@ case class L1FieldReadInterpreter[State <: L1ComputationState[State]](
                     _.asFinal.p.stringConstancyInformation
                 })
                 state.appendToFpe2Sci(pcOfDefSite(defSite)(state.tac.stmts), finalSci)
-                FinalEP(defSitEntity, StringConstancyProperty(finalSci))
+                FinalEP(defSite.asInstanceOf[Integer], StringConstancyProperty(finalSci))
             } else {
                 results.find(!_.isFinal).get
             }
