@@ -155,12 +155,6 @@ class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
         if (state.iHandler == null) {
             state.iHandler =
                 L1InterpretationHandler(ps, project, declaredFields, fieldAccessInformation, contextProvider)
-            val interimState = state.copy()
-            interimState.tac = state.tac
-            interimState.computedLeanPath = state.computedLeanPath
-            interimState.callees = state.callees
-            interimState.callers = state.callers
-            interimState.params = state.params
             state.interimIHandler =
                 L1InterpretationHandler(ps, project, declaredFields, fieldAccessInformation, contextProvider)
         }
@@ -262,26 +256,9 @@ class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
             && state.dependees.isEmpty
             && computeResultsForPath(state.computedLeanPath)(state)
         ) {
-            // Check whether we deal with the empty string; it requires special treatment as the
-            // PathTransformer#pathToStringTree would not handle it correctly (as
-            // PathTransformer#pathToStringTree is involved in a mutual recursion)
-            val isEmptyString = if (state.computedLeanPath.elements.length == 1) {
-                state.computedLeanPath.elements.head match {
-                    case fpe: FlatPathElement =>
-                        state.fpe2sci.contains(fpe.pc) && state.fpe2sci(fpe.pc).length == 1 &&
-                            state.fpe2sci(fpe.pc).head == StringConstancyInformation.getNeutralElement
-                    case _ => false
-                }
-            } else false
-
-            sci = if (isEmptyString) {
-                StringConstancyInformation.getNeutralElement
-            } else {
-                new PathTransformer(state.iHandler).pathToStringTree(
-                    state.computedLeanPath,
-                    state.fpe2sci
-                )(state).reduce(true)
-            }
+            sci = new PathTransformer(state.iHandler)
+                .pathToStringTree(state.computedLeanPath, state.fpe2sci)
+                .reduce(true)
         }
 
         if (state.dependees.nonEmpty) {
@@ -295,11 +272,9 @@ class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
     /**
      * Continuation function for this analysis.
      *
-     * @param state The current computation state. Within this continuation, dependees of the state
-     *              might be updated. Furthermore, methods processing this continuation might alter
-     *              the state.
-     * @return Returns a final result if (already) available. Otherwise, an intermediate result will
-     *         be returned.
+     * @param state The current computation state. Within this continuation, dependees of the state might be updated.
+     *              Furthermore, methods processing this continuation might alter the state.
+     * @return Returns a final result if (already) available. Otherwise, an intermediate result will be returned.
      */
     override protected def continuation(
         state: L1ComputationState
