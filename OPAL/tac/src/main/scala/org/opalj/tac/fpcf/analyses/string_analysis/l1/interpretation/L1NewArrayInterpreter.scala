@@ -24,7 +24,7 @@ import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.Interpretation
  *
  * @author Patrick Mell
  */
-class L1NewArrayInterpreter[State <: ComputationState[State]](
+class L1NewArrayInterpreter[State <: L1ComputationState[State]](
         exprHandler: InterpretationHandler[State]
 ) extends L1StringInterpreter[State] {
 

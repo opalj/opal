@@ -15,7 +15,7 @@ import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.StringInterpre
 /**
  * @author Maximilian Rüsch
  */
-trait L0StringInterpreter[State <: ComputationState[State]] extends StringInterpreter[State] {
+trait L0StringInterpreter[State <: L0ComputationState[State]] extends StringInterpreter[State] {
 
     /**
      * @param instr The instruction that is to be interpreted. It is the responsibility of implementations to make sure

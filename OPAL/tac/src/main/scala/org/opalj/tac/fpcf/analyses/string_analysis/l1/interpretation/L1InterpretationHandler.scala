@@ -28,7 +28,7 @@ import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.NewInterpreter
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.StringConstInterpreter
 import org.opalj.tac.fpcf.analyses.string_analysis.l0.interpretation.L0ArrayAccessInterpreter
 import org.opalj.tac.fpcf.analyses.string_analysis.l1.finalizer.ArrayLoadFinalizer
-import org.opalj.tac.fpcf.analyses.string_analysis.l1.finalizer.GetFieldFinalizer
+import org.opalj.tac.fpcf.analyses.string_analysis.l1.finalizer.FieldReadFinalizer
 import org.opalj.tac.fpcf.analyses.string_analysis.l1.finalizer.NewArrayFinalizer
 import org.opalj.tac.fpcf.analyses.string_analysis.l1.finalizer.NonVirtualMethodCallFinalizer
 import org.opalj.tac.fpcf.analyses.string_analysis.l1.finalizer.StaticFunctionCallFinalizer
@@ -43,13 +43,13 @@ import org.opalj.tac.fpcf.analyses.string_analysis.l1.finalizer.VirtualFunctionC
  *
  * @author Patrick Mell
  */
-class L1InterpretationHandler(
-        ps:                     PropertyStore,
-        project:                SomeProject,
-        declaredFields:         DeclaredFields,
-        fieldAccessInformation: FieldAccessInformation,
-        contextProvider:        ContextProvider
-) extends InterpretationHandler[L1ComputationState] {
+class L1InterpretationHandler[State <: L1ComputationState[State]](
+        project:                      SomeProject,
+        declaredFields:               DeclaredFields,
+        fieldAccessInformation:       FieldAccessInformation,
+        implicit val ps:              PropertyStore,
+        implicit val contextProvider: ContextProvider
+) extends InterpretationHandler[State] {
 
     /**
      * Processed the given definition site in an interprocedural fashion.
@@ -58,7 +58,7 @@ class L1InterpretationHandler(
      * @inheritdoc
      */
     override def processDefSite(defSite: Int)(implicit
-        state: L1ComputationState
+        state: State
     ): EOptionP[Entity, StringConstancyProperty] = {
         // Without doing the following conversion, the following compile error will occur: "the
         // result type of an implicit conversion must be more specific than org.opalj.fpcf.Entity"
@@ -120,7 +120,7 @@ class L1InterpretationHandler(
     private def processConstExpr(
         constExpr: SimpleValueConst,
         defSite:   Int
-    )(implicit state: L1ComputationState): FinalEP[Entity, StringConstancyProperty] = {
+    )(implicit state: State): FinalEP[Entity, StringConstancyProperty] = {
         val finalEP = constExpr match {
             case ic: IntConst    => IntegerValueInterpreter.interpret(ic)
             case fc: FloatConst  => FloatValueInterpreter.interpret(fc)
@@ -141,7 +141,7 @@ class L1InterpretationHandler(
     private def processArrayLoad(
         expr:    ArrayLoad[V],
         defSite: Int
-    )(implicit state: L1ComputationState): EOptionP[Entity, StringConstancyProperty] = {
+    )(implicit state: State): EOptionP[Entity, StringConstancyProperty] = {
         val r = new L0ArrayAccessInterpreter(this).interpret(expr, defSite)
         val sci = if (r.isFinal) {
             r.asFinal.p.stringConstancyInformation
@@ -159,7 +159,7 @@ class L1InterpretationHandler(
     private def processNewArray(
         expr:    NewArray[V],
         defSite: Int
-    )(implicit state: L1ComputationState): EOptionP[Entity, StringConstancyProperty] = {
+    )(implicit state: State): EOptionP[Entity, StringConstancyProperty] = {
         val r = new L1NewArrayInterpreter(this).interpret(expr, defSite)
         val sci = if (r.isFinal) {
             r.asFinal.p.stringConstancyInformation
@@ -175,7 +175,7 @@ class L1InterpretationHandler(
      * Helper / utility function for processing [[New]] expressions.
      */
     private def processNew(expr: New, defSite: Int)(implicit
-        state: L1ComputationState
+        state: State
     ): FinalEP[Entity, StringConstancyProperty] = {
         val finalEP = NewInterpreter.interpret(expr)
         state.appendToFpe2Sci(pcOfDefSite(defSite)(state.tac.stmts), finalEP.p.stringConstancyInformation)
@@ -189,7 +189,7 @@ class L1InterpretationHandler(
     private def processVFC(
         expr:    VirtualFunctionCall[V],
         defSite: Int
-    )(implicit state: L1ComputationState): EOptionP[Entity, StringConstancyProperty] = {
+    )(implicit state: State): EOptionP[Entity, StringConstancyProperty] = {
         val r = new L1VirtualFunctionCallInterpreter(this, ps, contextProvider).interpret(expr, defSite)
         // Set whether the virtual function call is fully prepared. This is the case if 1) the
         // call was not fully prepared before (no final result available) or 2) the preparation is
@@ -228,7 +228,7 @@ class L1InterpretationHandler(
     private def processStaticFunctionCall(
         expr:    StaticFunctionCall[V],
         defSite: Int
-    )(implicit state: L1ComputationState): EOptionP[Entity, StringConstancyProperty] = {
+    )(implicit state: State): EOptionP[Entity, StringConstancyProperty] = {
         val r = new L1StaticFunctionCallInterpreter(this, ps, contextProvider).interpret(expr, defSite)
         if (r.isRefinable || state.nonFinalFunctionArgs.contains(expr)) {
             processedDefSites.remove(defSite)
@@ -242,7 +242,7 @@ class L1InterpretationHandler(
      * Helper / utility function for processing [[BinaryExpr]]s.
      */
     private def processBinaryExpr(expr: BinaryExpr[V], defSite: Int)(implicit
-        state: L1ComputationState
+        state: State
     ): FinalEP[Entity, StringConstancyProperty] = {
         // TODO: For binary expressions, use the underlying domain to retrieve the result of such expressions
         val result = BinaryExprInterpreter.interpret(expr)
@@ -256,7 +256,7 @@ class L1InterpretationHandler(
      * Helper / utility function for processing [[GetField]]s.
      */
     private def processGetField(expr: FieldRead[V], defSite: Int)(implicit
-        state: L1ComputationState
+        state: State
     ): EOptionP[Entity, StringConstancyProperty] = {
         val r = L1FieldReadInterpreter(ps, fieldAccessInformation, project, declaredFields, contextProvider)
             .interpret(expr, defSite)(state)
@@ -273,8 +273,8 @@ class L1InterpretationHandler(
     private def processNonVirtualFunctionCall(
         expr:    NonVirtualFunctionCall[V],
         defSite: Int
-    )(implicit state: L1ComputationState): EOptionP[Entity, StringConstancyProperty] = {
-        val r = L1NonVirtualFunctionCallInterpreter(ps, contextProvider).interpret(expr, defSite)
+    )(implicit state: State): EOptionP[Entity, StringConstancyProperty] = {
+        val r = L1NonVirtualFunctionCallInterpreter().interpret(expr, defSite)(state)
         if (r.isRefinable || state.nonFinalFunctionArgs.contains(expr)) {
             processedDefSites.remove(defSite)
         }
@@ -288,7 +288,7 @@ class L1InterpretationHandler(
     def processVirtualMethodCall(
         expr:    VirtualMethodCall[V],
         defSite: Int
-    )(implicit state: L1ComputationState): EOptionP[Entity, StringConstancyProperty] = {
+    )(implicit state: State): EOptionP[Entity, StringConstancyProperty] = {
         val r = L1VirtualMethodCallInterpreter().interpret(expr, defSite)(state)
         doInterimResultHandling(r, defSite)
         r
@@ -300,7 +300,7 @@ class L1InterpretationHandler(
     private def processNonVirtualMethodCall(
         nvmc:    NonVirtualMethodCall[V],
         defSite: Int
-    )(implicit state: L1ComputationState): EOptionP[Entity, StringConstancyProperty] = {
+    )(implicit state: State): EOptionP[Entity, StringConstancyProperty] = {
         val r = L1NonVirtualMethodCallInterpreter(this).interpret(nvmc, defSite)
         r match {
             case FinalEP(_, p: StringConstancyProperty) =>
@@ -321,7 +321,7 @@ class L1InterpretationHandler(
     private def doInterimResultHandling(
         result:  EOptionP[Entity, Property],
         defSite: Int
-    )(implicit state: L1ComputationState): Unit = {
+    )(implicit state: State): Unit = {
         val sci = if (result.isFinal) {
             result.asFinal.p.asInstanceOf[StringConstancyProperty].stringConstancyInformation
         } else {
@@ -333,7 +333,7 @@ class L1InterpretationHandler(
     /**
      * Finalized a given definition state.
      */
-    def finalizeDefSite(defSite: Int, state: L1ComputationState): Unit = {
+    override def finalizeDefSite(defSite: Int)(implicit state: State): Unit = {
         if (defSite < 0) {
             state.appendToFpe2Sci(
                 pcOfDefSite(defSite)(state.tac.stmts),
@@ -343,23 +343,23 @@ class L1InterpretationHandler(
         } else {
             state.tac.stmts(defSite) match {
                 case nvmc: NonVirtualMethodCall[V] =>
-                    NonVirtualMethodCallFinalizer(state).finalizeInterpretation(nvmc, defSite)
+                    NonVirtualMethodCallFinalizer().finalizeInterpretation(nvmc, defSite)(state)
                 case Assignment(_, _, al: ArrayLoad[V]) =>
-                    ArrayLoadFinalizer(state).finalizeInterpretation(al, defSite)
+                    ArrayLoadFinalizer().finalizeInterpretation(al, defSite)(state)
                 case Assignment(_, _, na: NewArray[V]) =>
-                    NewArrayFinalizer(state).finalizeInterpretation(na, defSite)
+                    NewArrayFinalizer().finalizeInterpretation(na, defSite)(state)
                 case Assignment(_, _, vfc: VirtualFunctionCall[V]) =>
-                    VirtualFunctionCallFinalizer(state).finalizeInterpretation(vfc, defSite)
+                    VirtualFunctionCallFinalizer().finalizeInterpretation(vfc, defSite)(state)
                 case ExprStmt(_, vfc: VirtualFunctionCall[V]) =>
-                    VirtualFunctionCallFinalizer(state).finalizeInterpretation(vfc, defSite)
+                    VirtualFunctionCallFinalizer().finalizeInterpretation(vfc, defSite)(state)
                 case Assignment(_, _, fr: FieldRead[V]) =>
-                    GetFieldFinalizer(state).finalizeInterpretation(fr, defSite)
+                    FieldReadFinalizer().finalizeInterpretation(fr, defSite)(state)
                 case ExprStmt(_, fr: FieldRead[V]) =>
-                    GetFieldFinalizer(state).finalizeInterpretation(fr, defSite)
+                    FieldReadFinalizer().finalizeInterpretation(fr, defSite)(state)
                 case Assignment(_, _, sfc: StaticFunctionCall[V]) =>
-                    StaticFunctionCallFinalizer(state).finalizeInterpretation(sfc, defSite)
+                    StaticFunctionCallFinalizer().finalizeInterpretation(sfc, defSite)(state)
                 case ExprStmt(_, sfc: StaticFunctionCall[V]) =>
-                    StaticFunctionCallFinalizer(state).finalizeInterpretation(sfc, defSite)
+                    StaticFunctionCallFinalizer().finalizeInterpretation(sfc, defSite)(state)
                 case _ =>
                     state.appendToFpe2Sci(
                         pcOfDefSite(defSite)(state.tac.stmts),
@@ -373,17 +373,17 @@ class L1InterpretationHandler(
 
 object L1InterpretationHandler {
 
-    def apply(
-        ps:                     PropertyStore,
+    def apply[State <: L1ComputationState[State]](
         project:                SomeProject,
         declaredFields:         DeclaredFields,
         fieldAccessInformation: FieldAccessInformation,
+        ps:                     PropertyStore,
         contextProvider:        ContextProvider
-    ): L1InterpretationHandler = new L1InterpretationHandler(
-        ps,
+    ): L1InterpretationHandler[State] = new L1InterpretationHandler[State](
         project,
         declaredFields,
         fieldAccessInformation,
+        ps,
         contextProvider
     )
 }

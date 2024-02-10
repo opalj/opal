@@ -20,17 +20,17 @@ import org.opalj.fpcf.PropertyStore
  *
  * @author Maximilian Rüsch
  */
-case class L1NonVirtualFunctionCallInterpreter(
-        ps:              PropertyStore,
-        contextProvider: ContextProvider
-) extends L1StringInterpreter[L1ComputationState] {
+case class L1NonVirtualFunctionCallInterpreter[State <: L1ComputationState[State]]()(
+        implicit val ps:              PropertyStore,
+        implicit val contextProvider: ContextProvider
+) extends L1StringInterpreter[State] {
 
     override type T = NonVirtualFunctionCall[V]
 
     override def interpret(instr: T, defSite: Int)(implicit
-        state: L1ComputationState
+        state: State
     ): EOptionP[Entity, StringConstancyProperty] = {
-        val methods = getMethodsForPC(state.methodContext, instr.pc)(ps, state.callees, contextProvider)
+        val methods = getMethodsForPC(instr.pc)
         if (methods._1.isEmpty) {
             // No methods available => Return lower bound
             return FinalEP(instr, StringConstancyProperty.lb)

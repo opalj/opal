@@ -20,7 +20,7 @@ import org.opalj.fpcf.FinalEP
  *
  * @author Patrick Mell
  */
-case class L0GetStaticInterpreter[State <: ComputationState[State]]() extends L0StringInterpreter[State] {
+case class L0GetStaticInterpreter[State <: L0ComputationState[State]]() extends L0StringInterpreter[State] {
 
     override type T = GetStatic
 

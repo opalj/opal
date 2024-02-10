@@ -32,7 +32,7 @@ import org.opalj.tac.fpcf.analyses.string_analysis.l1.L1StringAnalysis
  *
  * @author Maximilian Rüsch
  */
-case class L1FieldReadInterpreter[State <: ComputationState[State]](
+case class L1FieldReadInterpreter[State <: L1ComputationState[State]](
         ps:                           PropertyStore,
         fieldAccessInformation:       FieldAccessInformation,
         project:                      SomeProject,

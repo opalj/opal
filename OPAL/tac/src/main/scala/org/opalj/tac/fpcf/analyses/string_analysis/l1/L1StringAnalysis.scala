@@ -8,7 +8,9 @@ package l1
 
 import scala.collection.mutable.ListBuffer
 
+import org.opalj.br.DeclaredMethod
 import org.opalj.br.FieldType
+import org.opalj.br.Method
 import org.opalj.br.analyses.DeclaredFields
 import org.opalj.br.analyses.DeclaredFieldsKey
 import org.opalj.br.analyses.DeclaredMethodsKey
@@ -21,6 +23,7 @@ import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.FPCFLazyAnalysisScheduler
 import org.opalj.br.fpcf.analyses.ContextProvider
+import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.Callers
@@ -71,7 +74,13 @@ import org.opalj.tac.fpcf.properties.TACAI
  */
 class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
 
-    override type State = L1ComputationState
+    protected[l1] case class CState(
+            override val dm:            DeclaredMethod,
+            override val entity:        (SEntity, Method),
+            override val methodContext: Context
+    ) extends L1ComputationState[CState]
+
+    override type State = CState
 
     /**
      * To analyze an expression within a method ''m'', callers information might be necessary, e.g.,
@@ -107,7 +116,7 @@ class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
     def analyze(data: SContext): ProperPropertyComputationResult = {
         val dm = declaredMethods(data._2)
         // IMPROVE enable handling call string contexts here (build a chain, probably via SContext)
-        val state = L1ComputationState(dm, data, contextProvider.newContext(declaredMethods(data._2)))
+        val state = CState(dm, data, contextProvider.newContext(declaredMethods(data._2)))
 
         val tacaiEOptP = ps(data._2, TACAI.key)
         if (tacaiEOptP.hasUBP) {
@@ -155,9 +164,9 @@ class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
 
         if (state.iHandler == null) {
             state.iHandler =
-                L1InterpretationHandler(ps, project, declaredFields, fieldAccessInformation, contextProvider)
+                L1InterpretationHandler(project, declaredFields, fieldAccessInformation, ps, contextProvider)
             state.interimIHandler =
-                L1InterpretationHandler(ps, project, declaredFields, fieldAccessInformation, contextProvider)
+                L1InterpretationHandler(project, declaredFields, fieldAccessInformation, ps, contextProvider)
         }
 
         var requiresCallersInfo = false
@@ -278,7 +287,7 @@ class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
      * @return Returns a final result if (already) available. Otherwise, an intermediate result will be returned.
      */
     override protected def continuation(
-        state: L1ComputationState
+        state: State
     )(eps: SomeEPS): ProperPropertyComputationResult = {
         state.dependees = state.dependees.filter(_.e != eps.e)
 
@@ -310,7 +319,7 @@ class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
     ): Unit = path.elements.foreach {
         case fpe: FlatPathElement =>
             if (!state.fpe2sci.contains(fpe.pc)) {
-                iHandler.finalizeDefSite(valueOriginOfPC(fpe.pc, state.tac.pcToIndex).get, state)
+                iHandler.finalizeDefSite(valueOriginOfPC(fpe.pc, state.tac.pcToIndex).get)(state)
             }
         case npe: NestedPathElement =>
             finalizePreparations(Path(npe.element.toList), state, iHandler)
@@ -322,7 +331,7 @@ class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
      * analysis. These interpretations are registered using [[StringAnalysis.registerParams]]. The return value of this
      * function indicates whether the parameter evaluation is done (`true`) or not yet (`false`).
      */
-    private def registerParams(state: L1ComputationState): Boolean = {
+    private def registerParams(state: State): Boolean = {
         val callers = state.callers.callers(state.dm)(contextProvider).iterator.toSeq
         if (callers.length > callersThreshold) {
             state.params.append(

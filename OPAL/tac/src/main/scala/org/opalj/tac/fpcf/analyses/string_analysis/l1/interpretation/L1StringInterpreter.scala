@@ -12,9 +12,7 @@ import scala.collection.mutable.ListBuffer
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.br.fpcf.analyses.ContextProvider
-import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.StringConstancyProperty
-import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.PropertyStore
@@ -23,7 +21,7 @@ import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.StringInterpre
 /**
  * @author Maximilian Rüsch
  */
-trait L1StringInterpreter[State <: ComputationState[State]] extends StringInterpreter[State] {
+trait L1StringInterpreter[State <: L1ComputationState[State]] extends StringInterpreter[State] {
 
     /**
      * @param instr The instruction that is to be interpreted. It is the responsibility of implementations to make sure
@@ -48,16 +46,16 @@ trait L1StringInterpreter[State <: ComputationState[State]] extends StringInterp
      * second return value indicates whether at least one method has an unknown body (if `true`,
      * then there is such a method).
      */
-    protected def getMethodsForPC(context: Context, pc: Int)(
+    protected def getMethodsForPC(pc: Int)(
         implicit
+        state:           State,
         ps:              PropertyStore,
-        callees:         Callees,
         contextProvider: ContextProvider
     ): (List[Method], Boolean) = {
         var hasMethodWithUnknownBody = false
         val methods = ListBuffer[Method]()
 
-        callees.callees(context, pc)(ps, contextProvider).map(_.method).foreach {
+        state.callees.callees(state.methodContext, pc)(ps, contextProvider).map(_.method).foreach {
             case definedMethod: DefinedMethod => methods.append(definedMethod.definedMethod)
             case _                            => hasMethodWithUnknownBody = true
         }

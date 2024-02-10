@@ -14,9 +14,7 @@ import org.opalj.br.fpcf.properties.string_definition.StringConstancyType
 /**
  * @author Maximilian Rüsch
  */
-case class VirtualFunctionCallFinalizer(
-        override protected val state: L1ComputationState
-) extends L1Finalizer {
+case class VirtualFunctionCallFinalizer[State <: L1ComputationState[State]]() extends L1Finalizer[State] {
 
     override type T = VirtualFunctionCall[V]
 
@@ -26,7 +24,7 @@ case class VirtualFunctionCallFinalizer(
      * <p>
      * @inheritdoc
      */
-    override def finalizeInterpretation(instr: T, defSite: Int): Unit = {
+    override def finalizeInterpretation(instr: T, defSite: Int)(implicit state: State): Unit = {
         instr.name match {
             case "append"   => finalizeAppend(instr, defSite)
             case "toString" => finalizeToString(instr, defSite)
@@ -40,12 +38,12 @@ case class VirtualFunctionCallFinalizer(
      * interpretation function of
      * [[org.opalj.tac.fpcf.analyses.string_analysis.l1.interpretation.L1VirtualFunctionCallInterpreter]].
      */
-    private def finalizeAppend(instr: T, defSite: Int): Unit = {
+    private def finalizeAppend(instr: T, defSite: Int)(implicit state: State): Unit = {
         val receiverDefSitesByPC =
             instr.receiver.asVar.definedBy.map(ds => (pcOfDefSite(ds)(state.tac.stmts), ds)).toMap
         receiverDefSitesByPC.keys.foreach { pc =>
             if (!state.fpe2sci.contains(pc)) {
-                state.iHandler.finalizeDefSite(receiverDefSitesByPC(pc), state)
+                state.iHandler.finalizeDefSite(receiverDefSitesByPC(pc))
             }
         }
         val receiverSci = StringConstancyInformation.reduceMultiple(
@@ -63,7 +61,7 @@ case class VirtualFunctionCallFinalizer(
             instr.params.head.asVar.definedBy.map(ds => (pcOfDefSite(ds)(state.tac.stmts), ds)).toMap
         paramDefSitesByPC.keys.foreach { pc =>
             if (!state.fpe2sci.contains(pc)) {
-                state.iHandler.finalizeDefSite(paramDefSitesByPC(pc), state)
+                state.iHandler.finalizeDefSite(paramDefSitesByPC(pc))
             }
         }
         val appendSci = if (paramDefSitesByPC.keys.forall(state.fpe2sci.contains)) {
@@ -87,11 +85,11 @@ case class VirtualFunctionCallFinalizer(
         state.appendToFpe2Sci(pcOfDefSite(defSite)(state.tac.stmts), finalSci, reset = true)
     }
 
-    private def finalizeToString(instr: T, defSite: Int): Unit = {
+    private def finalizeToString(instr: T, defSite: Int)(implicit state: State): Unit = {
         val dependeeSites = instr.receiver.asVar.definedBy.map(ds => (pcOfDefSite(ds)(state.tac.stmts), ds)).toMap
         dependeeSites.keys.foreach { pc =>
             if (!state.fpe2sci.contains(pc)) {
-                state.iHandler.finalizeDefSite(dependeeSites(pc), state)
+                state.iHandler.finalizeDefSite(dependeeSites(pc))
             }
         }
         val finalSci = StringConstancyInformation.reduceMultiple(

@@ -19,7 +19,7 @@ import org.opalj.fpcf.FinalEP
  *
  * @author Patrick Mell
  */
-case class L1VirtualMethodCallInterpreter[State <: ComputationState[State]]() extends L1StringInterpreter[State] {
+case class L1VirtualMethodCallInterpreter[State <: L1ComputationState[State]]() extends L1StringInterpreter[State] {
 
     override type T = VirtualMethodCall[V]
 

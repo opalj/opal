@@ -29,7 +29,7 @@ import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.Interpretation
  *
  * @author Maximilian Rüsch
  */
-case class L0VirtualFunctionCallInterpreter[State <: ComputationState[State]](
+case class L0VirtualFunctionCallInterpreter[State <: L0ComputationState[State]](
         exprHandler: InterpretationHandler[State]
 ) extends L0StringInterpreter[State] with DependingStringInterpreter[State] {
 

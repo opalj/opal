@@ -22,7 +22,7 @@ import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.Interpretation
  *
  * @author Maximilian Rüsch
  */
-case class L0StaticFunctionCallInterpreter[State <: ComputationState[State]](
+case class L0StaticFunctionCallInterpreter[State <: L0ComputationState[State]](
         exprHandler: InterpretationHandler[State]
 )(
         implicit

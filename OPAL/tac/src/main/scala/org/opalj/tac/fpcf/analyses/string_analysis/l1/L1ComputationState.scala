@@ -6,23 +6,14 @@ package analyses
 package string_analysis
 package l1
 
-import org.opalj.br.DeclaredMethod
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.tac.fpcf.analyses.string_analysis.l0.L0ComputationState
 
-/**
- * This class is to be used to store state information that are required at a later point in
- * time during the analysis, e.g., due to the fact that another analysis had to be triggered to
- * have all required information ready for a final result.
- *
- * @param entity The entity for which the analysis was started with.
- */
-case class L1ComputationState(
-        override val dm:     DeclaredMethod,
-        override val entity: SContext,
-        methodContext:       Context
-) extends ComputationState[L1ComputationState] {
+trait L1ComputationState[State <: L1ComputationState[State]] extends L0ComputationState[State] {
+
+    val methodContext: Context
 
     /**
      * Callees information regarding the declared method that corresponds to the entity's method

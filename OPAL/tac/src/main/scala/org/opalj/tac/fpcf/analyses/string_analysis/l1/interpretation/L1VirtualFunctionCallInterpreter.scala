@@ -30,12 +30,12 @@ import org.opalj.tac.fpcf.analyses.string_analysis.l0.interpretation.L0VirtualFu
  *
  * @author Patrick Mell
  */
-class L1VirtualFunctionCallInterpreter(
-        exprHandler:                  InterpretationHandler[L1ComputationState],
+class L1VirtualFunctionCallInterpreter[State <: L1ComputationState[State]](
+        exprHandler:                  InterpretationHandler[State],
         implicit val ps:              PropertyStore,
         implicit val contextProvider: ContextProvider
-) extends L0VirtualFunctionCallInterpreter[L1ComputationState](exprHandler)
-    with L1StringInterpreter[L1ComputationState] {
+) extends L0VirtualFunctionCallInterpreter[State](exprHandler)
+    with L1StringInterpreter[State] {
 
     override type T = VirtualFunctionCall[V]
 
@@ -66,7 +66,7 @@ class L1VirtualFunctionCallInterpreter(
      */
 
     override protected def handleInterpretation(instr: T, defSite: Int)(implicit
-        state: L1ComputationState
+        state: State
     ): Option[StringConstancyInformation] = {
         instr.name match {
             case "append"               => interpretAppendCall(instr)
@@ -88,9 +88,9 @@ class L1VirtualFunctionCallInterpreter(
      * finalized later on.
      */
     private def interpretArbitraryCall(instr: T, defSite: Int)(
-        implicit state: L1ComputationState
+        implicit state: State
     ): Option[StringConstancyInformation] = {
-        val (methods, _) = getMethodsForPC(state.methodContext, instr.pc)(ps, state.callees, contextProvider)
+        val (methods, _) = getMethodsForPC(instr.pc)
 
         if (methods.isEmpty) {
             return Some(StringConstancyInformation.lb)
@@ -174,7 +174,7 @@ class L1VirtualFunctionCallInterpreter(
      * the expected behavior cannot be guaranteed.
      */
     private def interpretAppendCall(appendCall: VirtualFunctionCall[V])(
-        implicit state: L1ComputationState
+        implicit state: State
     ): Option[StringConstancyInformation] = {
         val receiverResults = receiverValuesOfAppendCall(appendCall)
         val appendResult = valueOfAppendCall(appendCall)
@@ -230,7 +230,7 @@ class L1VirtualFunctionCallInterpreter(
      */
     private def receiverValuesOfAppendCall(
         call: VirtualFunctionCall[V]
-    )(implicit state: L1ComputationState): List[EOptionP[Entity, StringConstancyProperty]] = {
+    )(implicit state: State): List[EOptionP[Entity, StringConstancyProperty]] = {
         val defSites = call.receiver.asVar.definedBy.toArray.sorted
 
         val allResults = defSites.map(ds => (pcOfDefSite(ds)(state.tac.stmts), exprHandler.processDefSite(ds)))
@@ -260,7 +260,7 @@ class L1VirtualFunctionCallInterpreter(
      */
     private def valueOfAppendCall(
         call: VirtualFunctionCall[V]
-    )(implicit state: L1ComputationState): EOptionP[Entity, StringConstancyProperty] = {
+    )(implicit state: State): EOptionP[Entity, StringConstancyProperty] = {
         // .head because we want to evaluate only the first argument of append
         val param = call.params.head.asVar
         val defSites = param.definedBy.toArray.sorted

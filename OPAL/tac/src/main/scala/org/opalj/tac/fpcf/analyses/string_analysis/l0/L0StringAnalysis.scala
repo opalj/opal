@@ -29,15 +29,7 @@ import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.Interpretation
 import org.opalj.tac.fpcf.analyses.string_analysis.l0.interpretation.L0InterpretationHandler
 import org.opalj.tac.fpcf.properties.TACAI
 
-/**
- * This class is to be used to store state information that are required at a later point in
- * time during the analysis, e.g., due to the fact that another analysis had to be triggered to
- * have all required information ready for a final result.
- */
-protected[l0] case class L0ComputationState(
-        override val dm:     DeclaredMethod,
-        override val entity: SContext
-) extends ComputationState[L0ComputationState]
+trait L0ComputationState[State <: L0ComputationState[State]] extends ComputationState[State]
 
 /**
  * IntraproceduralStringAnalysis processes a read operation of a local string variable at a program
@@ -66,7 +58,12 @@ protected[l0] case class L0ComputationState(
  */
 class L0StringAnalysis(override val project: SomeProject) extends StringAnalysis {
 
-    override type State = L0ComputationState
+    protected[l0] case class CState(
+            override val dm:     DeclaredMethod,
+            override val entity: SContext
+    ) extends L0ComputationState[CState]
+
+    override type State = CState
 
     def analyze(data: SContext): ProperPropertyComputationResult = {
         // Retrieve TAC from property store
@@ -78,7 +75,7 @@ class L0StringAnalysis(override val project: SomeProject) extends StringAnalysis
         if (tacOpt.isEmpty)
             return Result(data, StringConstancyProperty.lb) // TODO add continuation
 
-        val state = L0ComputationState(declaredMethods(data._2), data)
+        val state = CState(declaredMethods(data._2), data)
         state.iHandler = L0InterpretationHandler()
         state.interimIHandler = L0InterpretationHandler()
         state.tac = tacOpt.get

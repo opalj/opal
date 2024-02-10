@@ -12,9 +12,7 @@ import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 /**
  * @author Maximilian Rüsch
  */
-case class StaticFunctionCallFinalizer(
-        override protected val state: L1ComputationState
-) extends L1Finalizer {
+case class StaticFunctionCallFinalizer[State <: L1ComputationState[State]]() extends L1Finalizer[State] {
 
     override type T = StaticFunctionCall[V]
 
@@ -23,7 +21,7 @@ case class StaticFunctionCallFinalizer(
      * <p>
      * @inheritdoc
      */
-    override def finalizeInterpretation(instr: T, defSite: Int): Unit = {
+    override def finalizeInterpretation(instr: T, defSite: Int)(implicit state: State): Unit = {
         val isValueOf = instr.declaringClass.fqn == "java/lang/String" && instr.name == "valueOf"
         val toAppend = if (isValueOf) {
             // For the finalization we do not need to consider between chars and non-chars as chars
@@ -33,7 +31,7 @@ case class StaticFunctionCallFinalizer(
             val defSitesByPC = instr.params.head.asVar.definedBy.map(ds => (pcOfDefSite(ds)(state.tac.stmts), ds)).toMap
             defSitesByPC.keys.foreach { pc =>
                 if (!state.fpe2sci.contains(pc)) {
-                    state.iHandler.finalizeDefSite(defSitesByPC(pc), state)
+                    state.iHandler.finalizeDefSite(defSitesByPC(pc))
                 }
             }
             StringConstancyInformation.reduceMultiple(defSitesByPC.keys.toList.sorted.flatMap(state.fpe2sci))

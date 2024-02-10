@@ -33,11 +33,11 @@ import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.StringConstInt
  *
  * @author Maximilian Rüsch
  */
-class L0InterpretationHandler()(
+class L0InterpretationHandler[State <: L0ComputationState[State]]()(
         implicit
         p:  SomeProject,
         ps: PropertyStore
-) extends InterpretationHandler[L0ComputationState] {
+) extends InterpretationHandler[State] {
 
     /**
      * Processed the given definition site in an intraprocedural fashion.
@@ -45,7 +45,7 @@ class L0InterpretationHandler()(
      * @inheritdoc
      */
     override def processDefSite(defSite: Int)(implicit
-        state: L0ComputationState
+        state: State
     ): EOptionP[Entity, StringConstancyProperty] = {
         // Without doing the following conversion, the following compile error will occur: "the
         // result type of an implicit conversion must be more specific than org.opalj.fpcf.Entity"
@@ -106,15 +106,13 @@ class L0InterpretationHandler()(
                 FinalEP(e, StringConstancyProperty.getNeutralElement)
         }
     }
-
-    override def finalizeDefSite(defSite: Int, state: L0ComputationState): Unit = {}
 }
 
 object L0InterpretationHandler {
 
-    def apply()(
+    def apply[State <: L0ComputationState[State]]()(
         implicit
         p:  SomeProject,
         ps: PropertyStore
-    ): L0InterpretationHandler = new L0InterpretationHandler
+    ): L0InterpretationHandler[State] = new L0InterpretationHandler[State]
 }

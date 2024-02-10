@@ -18,7 +18,7 @@ import org.opalj.fpcf.FinalEP
  *
  * @author Maximilian Rüsch
  */
-case class L0GetFieldInterpreter[State <: ComputationState[State]]() extends L0StringInterpreter[State] {
+case class L0GetFieldInterpreter[State <: L0ComputationState[State]]() extends L0StringInterpreter[State] {
 
     override type T = GetField[V]
 

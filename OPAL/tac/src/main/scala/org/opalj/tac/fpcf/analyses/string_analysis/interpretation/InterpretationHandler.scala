@@ -57,7 +57,7 @@ abstract class InterpretationHandler[State <: ComputationState[State]] {
     /**
      * Finalized a given definition state.
      */
-    def finalizeDefSite(defSite: Int, state: State): Unit
+    def finalizeDefSite(defSite: Int)(implicit state: State): Unit = {}
 
     /**
      * This function takes parameters and a definition site and extracts the desired parameter from

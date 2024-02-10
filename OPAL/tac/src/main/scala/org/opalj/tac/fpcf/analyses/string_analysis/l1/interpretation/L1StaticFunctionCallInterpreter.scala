@@ -25,16 +25,16 @@ import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.Interpretation
  *
  * @author Maximilian Rüsch
  */
-class L1StaticFunctionCallInterpreter(
-        exprHandler:     InterpretationHandler[L1ComputationState],
-        ps:              PropertyStore,
-        contextProvider: ContextProvider
-) extends L1StringInterpreter[L1ComputationState] {
+class L1StaticFunctionCallInterpreter[State <: L1ComputationState[State]](
+        exprHandler:                  InterpretationHandler[State],
+        implicit val ps:              PropertyStore,
+        implicit val contextProvider: ContextProvider
+) extends L1StringInterpreter[State] {
 
     override type T = StaticFunctionCall[V]
 
     override def interpret(instr: T, defSite: Int)(
-        implicit state: L1ComputationState
+        implicit state: State
     ): EOptionP[Entity, StringConstancyProperty] = {
         if (instr.declaringClass == ObjectType.String && instr.name == "valueOf") {
             processStringValueOf(instr)
@@ -52,7 +52,7 @@ class L1StaticFunctionCallInterpreter(
      * the parameter passed to the call.
      */
     private def processStringValueOf(call: StaticFunctionCall[V])(
-        implicit state: L1ComputationState
+        implicit state: State
     ): EOptionP[Entity, StringConstancyProperty] = {
         val results = call.params.head.asVar.definedBy.toArray.sorted.map { exprHandler.processDefSite(_) }
         val interim = results.find(_.isRefinable)
@@ -79,8 +79,8 @@ class L1StaticFunctionCallInterpreter(
     private def processArbitraryCall(
         instr:   StaticFunctionCall[V],
         defSite: Int
-    )(implicit state: L1ComputationState): EOptionP[Entity, StringConstancyProperty] = {
-        val methods, _ = getMethodsForPC(state.methodContext, instr.pc)(ps, state.callees, contextProvider)
+    )(implicit state: State): EOptionP[Entity, StringConstancyProperty] = {
+        val methods, _ = getMethodsForPC(instr.pc)
 
         // Static methods cannot be overwritten, thus
         // 1) we do not need the second return value of getMethodsForPC and

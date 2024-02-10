@@ -18,23 +18,18 @@ package finalizer
  * result. However, '''this assumes that all partial results are available when finalizing a
  * result!'''
  */
-trait L1Finalizer {
-
-    /**
-     * The computation state to use to retrieve partial results and to write the final result back.
-     */
-    protected val state: L1ComputationState
+trait L1Finalizer[State <: L1ComputationState[State]] {
 
     protected type T <: Any
 
     /**
      * Implementations of this class finalize an instruction of type [[T]] which they are supposed
      * to override / refine. This function does not return any result, however, the final result
-     * computed in this function is to be set in [[state.fpe2sci]] at position `defSite` by concrete
+     * computed in this function is to be set in [[ComputationState.fpe2sci]] at position `defSite` by concrete
      * implementations.
      *
      * @param instr The instruction that is to be finalized.
      * @param defSite The definition site that corresponds to the given instruction.
      */
-    def finalizeInterpretation(instr: T, defSite: Int): Unit
+    def finalizeInterpretation(instr: T, defSite: Int)(implicit state: State): Unit
 }

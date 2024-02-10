@@ -10,9 +10,7 @@ package finalizer
 /**
  * @author Maximilian Rüsch
  */
-case class NewArrayFinalizer(
-        override protected val state: L1ComputationState
-) extends L1Finalizer {
+case class NewArrayFinalizer[State <: L1ComputationState[State]]() extends L1Finalizer[State] {
 
     override type T = NewArray[V]
 
@@ -21,7 +19,7 @@ case class NewArrayFinalizer(
      * <p>
      * @inheritdoc
      */
-    override def finalizeInterpretation(instr: T, defSite: Int): Unit =
+    override def finalizeInterpretation(instr: T, defSite: Int)(implicit state: State): Unit =
         // Simply re-trigger the computation
         state.iHandler.processDefSite(defSite)(state)
 }

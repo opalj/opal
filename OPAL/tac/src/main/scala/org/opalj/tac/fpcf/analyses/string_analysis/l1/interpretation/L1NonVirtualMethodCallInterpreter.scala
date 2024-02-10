@@ -20,7 +20,7 @@ import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.Interpretation
  *
  * @author Patrick Mell
  */
-case class L1NonVirtualMethodCallInterpreter[State <: ComputationState[State]](
+case class L1NonVirtualMethodCallInterpreter[State <: L1ComputationState[State]](
         exprHandler: InterpretationHandler[State]
 ) extends L1StringInterpreter[State] {
 
