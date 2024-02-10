@@ -85,7 +85,8 @@ class L0InterpretationHandler[State <: L0ComputationState[State]]()(
             case Assignment(_, _, expr: New) =>
                 NewInterpreter.interpret(expr)
             case Assignment(_, _, expr: GetField[V]) =>
-                L0GetFieldInterpreter().interpret(expr, defSite)(state)
+                // Currently unsupported
+                FinalEP(expr, StringConstancyProperty.lb)
             case Assignment(_, _, expr: VirtualFunctionCall[V]) =>
                 L0VirtualFunctionCallInterpreter(this).interpret(expr, defSite)
             case Assignment(_, _, expr: StaticFunctionCall[V]) =>
