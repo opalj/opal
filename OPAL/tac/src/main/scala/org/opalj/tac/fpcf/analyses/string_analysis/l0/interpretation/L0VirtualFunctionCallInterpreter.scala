@@ -37,37 +37,48 @@ case class L0VirtualFunctionCallInterpreter[State <: ComputationState[State]](
 
     override type T = VirtualFunctionCall[V]
 
+    override def interpret(instr: T, defSite: Int)(implicit state: State): EOptionP[Entity, StringConstancyProperty] = {
+        val result = handleInterpretation(instr, defSite)
+
+        if (result.isDefined) {
+            state.appendToFpe2Sci(pcOfDefSite(defSite)(state.tac.stmts), result.get)
+        }
+        FinalEP(defSite.asInstanceOf[Integer], StringConstancyProperty(result.getOrElse(StringConstancyInformation.lb)))
+    }
+
     /**
      * Currently, this implementation supports the interpretation of the following function calls:
      * <ul>
      * <li>`append`: Calls to the `append` function of [[StringBuilder]] and [[StringBuffer]].</li>
      * <li>
-     *     `toString`: Calls to the `append` function of [[StringBuilder]] and [[StringBuffer]]. As
-     *     a `toString` call does not change the state of such an object, an empty list will be
-     *     returned.
+     * `toString`: Calls to the `append` function of [[StringBuilder]] and [[StringBuffer]]. As
+     * a `toString` call does not change the state of such an object, an empty list will be
+     * returned.
      * </li>
      * <li>
-     *     `replace`: Calls to the `replace` function of [[StringBuilder]] and [[StringBuffer]]. For
-     *     further information how this operation is processed, see
-     *     [[L0VirtualFunctionCallInterpreter.interpretReplaceCall]].
+     * `replace`: Calls to the `replace` function of [[StringBuilder]] and [[StringBuffer]]. For
+     * further information how this operation is processed, see
+     * [[L0VirtualFunctionCallInterpreter.interpretReplaceCall]].
      * </li>
      * <li>
-     *     Apart from these supported methods, a list with [[StringConstancyProperty.lb]]
-     *     will be returned in case the passed method returns a [[java.lang.String]].
+     * Apart from these supported methods, a list with [[StringConstancyProperty.lb]]
+     * will be returned in case the passed method returns a [[java.lang.String]].
      * </li>
      * </ul>
      *
      * If none of the above-described cases match, a result containing
      * [[StringConstancyProperty.getNeutralElement]] will be returned.
      */
-    override def interpret(instr: T, defSite: Int)(implicit state: State): EOptionP[Entity, StringConstancyProperty] = {
-        val sci = instr.name match {
+    protected def handleInterpretation(instr: T, defSite: Int)(implicit
+        state: State
+    ): Option[StringConstancyInformation] = {
+        instr.name match {
             case "append"   => interpretAppendCall(instr)
             case "toString" => interpretToStringCall(instr)
             case "replace"  => Some(interpretReplaceCall)
             case _ =>
                 instr.descriptor.returnType match {
-                    case obj: ObjectType if obj.fqn == "java/lang/String" => Some(StringConstancyInformation.lb)
+                    case obj: ObjectType if obj == ObjectType.String => Some(StringConstancyInformation.lb)
                     case FloatType | DoubleType => Some(StringConstancyInformation(
                             StringConstancyLevel.DYNAMIC,
                             StringConstancyType.APPEND,
@@ -76,8 +87,6 @@ case class L0VirtualFunctionCallInterpreter[State <: ComputationState[State]](
                     case _ => Some(StringConstancyInformation.getNeutralElement)
                 }
         }
-
-        FinalEP(instr, StringConstancyProperty(sci.get))
     }
 
     /**
@@ -88,7 +97,7 @@ case class L0VirtualFunctionCallInterpreter[State <: ComputationState[State]](
     private def interpretAppendCall(appendCall: VirtualFunctionCall[V])(implicit
         state: State
     ): Option[StringConstancyInformation] = {
-        val receiverSci = receiverValuesOfAppendCall(appendCall).stringConstancyInformation
+        val receiverSci = receiverValuesOfAppendCall(appendCall)
         val appendSci = valueOfAppendCall(appendCall)
 
         if (appendSci.isEmpty) {
@@ -124,14 +133,14 @@ case class L0VirtualFunctionCallInterpreter[State <: ComputationState[State]](
      */
     private def receiverValuesOfAppendCall(call: VirtualFunctionCall[V])(implicit
         state: State
-    ): StringConstancyProperty = {
+    ): StringConstancyInformation = {
         // There might be several receivers, thus the map; from the processed sites, however, use
         // only the head as a single receiver interpretation will produce one element
         val scis = call.receiver.asVar.definedBy.toArray.sorted.map { ds =>
             val r = exprHandler.processDefSite(ds)
             r.asFinal.p.stringConstancyInformation
         }.filter { sci => !sci.isTheNeutralElement }
-        StringConstancyProperty(scis.headOption.getOrElse(StringConstancyInformation.getNeutralElement))
+        scis.headOption.getOrElse(StringConstancyInformation.getNeutralElement)
     }
 
     /**
