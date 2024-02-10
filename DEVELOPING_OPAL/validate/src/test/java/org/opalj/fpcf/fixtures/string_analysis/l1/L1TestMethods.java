@@ -1,10 +1,10 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf.fixtures.string_analysis.interprocedural;
+package org.opalj.fpcf.fixtures.string_analysis.l1;
 
-import org.opalj.fpcf.fixtures.string_analysis.interprocedural.hierarchies.GreetingService;
-import org.opalj.fpcf.fixtures.string_analysis.interprocedural.hierarchies.HelloGreeting;
-import org.opalj.fpcf.fixtures.string_analysis.intraprocedural.IntraProceduralTestMethods;
-import org.opalj.fpcf.fixtures.string_analysis.intraprocedural.StringProvider;
+import org.opalj.fpcf.fixtures.string_analysis.l1.hierarchies.GreetingService;
+import org.opalj.fpcf.fixtures.string_analysis.l1.hierarchies.HelloGreeting;
+import org.opalj.fpcf.fixtures.string_analysis.l0.L0TestMethods;
+import org.opalj.fpcf.fixtures.string_analysis.l0.StringProvider;
 import org.opalj.fpcf.properties.string_analysis.StringDefinitions;
 import org.opalj.fpcf.properties.string_analysis.StringDefinitionsCollection;
 
@@ -17,12 +17,12 @@ import java.util.Scanner;
 import static org.opalj.fpcf.properties.string_analysis.StringConstancyLevel.*;
 
 /**
- * This file contains various tests for the InterproceduralStringAnalysis. For further information
- * on what to consider, please see {@link IntraProceduralTestMethods}
+ * This file contains various tests for the L1StringAnalysis. For further information on what to consider, please see
+ * {@link L0TestMethods}.
  *
  * @author Patrick Mell
  */
-public class InterproceduralTestMethods {
+public class L1TestMethods extends L0TestMethods {
 
     public static final String JAVA_LANG = "java.lang";
     private static final String rmiServerImplStubClassName =
@@ -45,12 +45,12 @@ public class InterproceduralTestMethods {
     private String[] monthNames = { "January", "February", "March", getApril() };
 
     /**
-     * {@see LocalTestMethods#analyzeString}
+     * {@see L0TestMethods#analyzeString}
      */
     public void analyzeString(String s) {
     }
 
-    public InterproceduralTestMethods(float e) {
+    public L1TestMethods(float e) {
         fieldWithConstructorInit = "initialized by constructor";
         secretNumber = e;
     }

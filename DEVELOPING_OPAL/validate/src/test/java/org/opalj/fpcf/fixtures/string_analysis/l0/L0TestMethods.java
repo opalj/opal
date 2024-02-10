@@ -1,5 +1,5 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf.fixtures.string_analysis.intraprocedural;
+package org.opalj.fpcf.fixtures.string_analysis.l0;
 
 import org.opalj.fpcf.properties.string_analysis.StringDefinitions;
 import org.opalj.fpcf.properties.string_analysis.StringDefinitionsCollection;
@@ -15,8 +15,8 @@ import java.util.Random;
 import static org.opalj.fpcf.properties.string_analysis.StringConstancyLevel.*;
 
 /**
- * This file contains various tests for the LocalStringAnalysis. The following things are to be
- * considered when adding test cases:
+ * This file contains various tests for the L0StringAnalysis. The following things are to be considered when adding test
+ * cases:
  * <ul>
  * <li>
  * The asterisk symbol (*) is used to indicate that a string (or part of it) can occur >= 0 times.
@@ -57,14 +57,14 @@ import static org.opalj.fpcf.properties.string_analysis.StringConstancyLevel.*;
  *
  * @author Patrick Mell
  */
-public class IntraProceduralTestMethods {
+public class L0TestMethods {
 
     private String someStringField = "";
     public static final String MY_CONSTANT = "mine";
 
     /**
      * This method represents the test method which is serves as the trigger point for the
-     * {@link org.opalj.fpcf.IntraproceduralStringAnalysisTest} to know which string read operation to
+     * {@link org.opalj.fpcf.L0StringAnalysisTest} to know which string read operation to
      * analyze.
      * Note that the {@link StringDefinitions} annotation is designed in a way to be able to capture
      * only one read operation. For how to get around this limitation, see the annotation.
