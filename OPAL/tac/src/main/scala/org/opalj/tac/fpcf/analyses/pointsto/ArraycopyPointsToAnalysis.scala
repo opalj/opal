@@ -37,7 +37,7 @@ import org.opalj.tac.fpcf.properties.TheTACAI
  * @author Dominik Helm
  */
 abstract class ArraycopyPointsToAnalysis private[pointsto] (
-        final val project: SomeProject
+    final val project: SomeProject
 ) extends PointsToAnalysisBase with TACAIBasedAPIBasedAnalysis {
 
     override val apiMethod: DeclaredMethod = declaredMethods(

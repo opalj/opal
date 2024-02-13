@@ -15,11 +15,11 @@ import org.opalj.collection.immutable.UShortPair
  * @author Michael Eichberg
  */
 class METHOD[T](
-        accessModifiers: AccessModifier,
-        name:            String,
-        descriptor:      String,
-        code:            Option[br.CodeAttributeBuilder[T]],
-        attributes:      ArraySeq[br.MethodAttributeBuilder]
+    accessModifiers: AccessModifier,
+    name:            String,
+    descriptor:      String,
+    code:            Option[br.CodeAttributeBuilder[T]],
+    attributes:      ArraySeq[br.MethodAttributeBuilder]
 ) {
 
     /**

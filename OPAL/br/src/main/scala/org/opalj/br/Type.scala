@@ -993,8 +993,8 @@ case object BooleanType extends BooleanType
  *      (e.g. "java/lang/Object").
  */
 final class ObjectType private ( // DO NOT MAKE THIS A CASE CLASS!
-        final val id:  Int,
-        final val fqn: String
+    final val id:  Int,
+    final val fqn: String
 ) extends ReferenceType {
 
     assert(fqn.indexOf('.') == -1, s"invalid object type name: $fqn")
@@ -1480,8 +1480,8 @@ object ObjectType {
  * @author Michael Eichberg
  */
 final class ArrayType private ( // DO NOT MAKE THIS A CASE CLASS!
-        val id:            Int,
-        val componentType: FieldType
+    val id:            Int,
+    val componentType: FieldType
 ) extends ReferenceType {
 
     override def isArrayType = true

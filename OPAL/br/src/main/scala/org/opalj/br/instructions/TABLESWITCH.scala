@@ -33,10 +33,10 @@ trait TABLESWITCHLike extends CompoundConditionalBranchInstructionLike {
 }
 
 case class TABLESWITCH(
-        defaultOffset: Int,
-        low:           Int,
-        high:          Int,
-        jumpOffsets:   ArraySeq[Int]
+    defaultOffset: Int,
+    low:           Int,
+    high:          Int,
+    jumpOffsets:   ArraySeq[Int]
 ) extends CompoundConditionalBranchInstruction with TABLESWITCHLike {
 
     override final def asTABLESWITCH: this.type = this
@@ -165,10 +165,10 @@ object TABLESWITCH extends InstructionMetaInformation {
  * @author Malte Limmeroth
  */
 case class LabeledTABLESWITCH(
-        defaultBranchTarget: InstructionLabel,
-        low:                 Int,
-        high:                Int,
-        jumpTargets:         ArraySeq[InstructionLabel]
+    defaultBranchTarget: InstructionLabel,
+    low:                 Int,
+    high:                Int,
+    jumpTargets:         ArraySeq[InstructionLabel]
 ) extends LabeledInstruction with TABLESWITCHLike {
 
     @throws[BranchoffsetOutOfBoundsException]("if the branchoffset is invalid")

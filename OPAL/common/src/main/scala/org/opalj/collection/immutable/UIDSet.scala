@@ -954,7 +954,7 @@ private[immutable] object UIDSetNode {
 }
 
 final class UIDSetLeaf[T <: UID] private[immutable] (
-        val value: T
+    val value: T
 ) extends UIDSetNodeLike[T] {
     override def size: Int = 1
     override def left: UIDSetNodeLike[T] = null
@@ -1006,10 +1006,10 @@ final class UIDSetLeaf[T <: UID] private[immutable] (
 
 // we wan't to be able to adapt the case class...
 final class UIDSetInnerNode[T <: UID] private[immutable] (
-        protected var theSize:          Int,
-        protected[immutable] var value: T,
-        protected[immutable] var left:  UIDSetNodeLike[T],
-        protected[immutable] var right: UIDSetNodeLike[T]
+    protected var theSize:          Int,
+    protected[immutable] var value: T,
+    protected[immutable] var left:  UIDSetNodeLike[T],
+    protected[immutable] var right: UIDSetNodeLike[T]
 ) extends UIDSetNodeLike[T] {
 
     override def size: Int = theSize

@@ -210,8 +210,8 @@ private final class NoArgumentMethodDescriptor(val returnType: Type) extends Met
 }
 
 private final class SingleArgumentMethodDescriptor(
-        val parameterType: FieldType,
-        val returnType:    Type
+    val parameterType: FieldType,
+    val returnType:    Type
 ) extends MethodDescriptor {
 
     override def parameterTypes: FieldTypes = ArraySeq(parameterType)
@@ -258,9 +258,9 @@ private final class SingleArgumentMethodDescriptor(
 }
 
 private final class TwoArgumentsMethodDescriptor(
-        val firstParameterType:  FieldType,
-        val secondParameterType: FieldType,
-        val returnType:          Type
+    val firstParameterType:  FieldType,
+    val secondParameterType: FieldType,
+    val returnType:          Type
 ) extends MethodDescriptor {
 
     override def parameterTypes: FieldTypes = ArraySeq(firstParameterType, secondParameterType)
@@ -322,8 +322,8 @@ private final class TwoArgumentsMethodDescriptor(
 }
 
 private final class MultiArgumentsMethodDescriptor(
-        val parameterTypes: FieldTypes,
-        val returnType:     Type
+    val parameterTypes: FieldTypes,
+    val returnType:     Type
 ) extends MethodDescriptor {
 
     override def parameterType(index: Int): FieldType = parameterTypes(index)

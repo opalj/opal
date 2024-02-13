@@ -40,7 +40,7 @@ import org.opalj.fpcf.PropertyStore
  * @author Florian Kuebler
  */
 class ConfiguredNativeMethodsInstantiatedTypesAnalysis private[analyses] (
-        final val project: SomeProject
+    final val project: SomeProject
 ) extends FPCFAnalysis {
 
     private[this] implicit val declaredMethods: DeclaredMethods = p.get(DeclaredMethodsKey)

@@ -22,6 +22,6 @@ trait TACOptimization[P <: AnyRef, V <: Var[V], C <: TACode[P, V]] {
  * @author Michael Eichberg
  */
 case class TACOptimizationResult[P <: AnyRef, V <: Var[V], C <: TACode[P, V]](
-        code:           C,
-        wasTransformed: Boolean
+    code:           C,
+    wasTransformed: Boolean
 )

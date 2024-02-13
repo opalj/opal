@@ -39,7 +39,7 @@ import org.opalj.value.ValueInformation
  * @author Florian Kuebler
  */
 class TamiFlexCallGraphAnalysis private[analyses] (
-        final val project: SomeProject
+    final val project: SomeProject
 ) extends FPCFAnalysis {
 
     val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
@@ -86,9 +86,9 @@ class TamiFlexCallGraphAnalysis private[analyses] (
 }
 
 class TamiFlexMethodInvokeAnalysis private[analyses] (
-        final val project:      SomeProject,
-        override val apiMethod: DeclaredMethod,
-        val key:                String
+    final val project:      SomeProject,
+    override val apiMethod: DeclaredMethod,
+    val key:                String
 ) extends TACAIBasedAPIBasedAnalysis with TypeConsumerAnalysis {
 
     private[this] final val tamiFlexLogData = project.get(TamiFlexKey)

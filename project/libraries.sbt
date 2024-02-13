@@ -2,15 +2,10 @@
 // THE VERSION OF THIS LIBRARY MUST NOT BE UPDATED - WE RELY ON THE JAVA CLASS FILE'S INTERNALS!
 libraryDependencies += "org.eclipse.jdt" % "ecj" % "3.28.0.v20211021-2009" // <= DO *NOT* CHANGE!
 
-//TODO Remove once scalariform is gone
-ThisBuild / libraryDependencySchemes ++= Seq(
-    "org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always
-)
-
 // Required to compile the website
 libraryDependencies += "com.typesafe.play" %% "twirl-api" % "1.6.2"
 libraryDependencies += "com.typesafe.play" %% "twirl-compiler" % "1.6.2"
 libraryDependencies += "org.scala-lang" % "scala-compiler" % sbt.Keys.scalaVersion.value
 
-libraryDependencies += "com.vladsch.flexmark" % "flexmark-all"  % "0.62.2"
-libraryDependencies += "com.typesafe"         % "config"        % "1.4.1"
+libraryDependencies += "com.vladsch.flexmark" % "flexmark-all" % "0.62.2"
+libraryDependencies += "com.typesafe" % "config" % "1.4.1"

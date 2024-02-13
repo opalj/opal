@@ -106,8 +106,8 @@ object ClassValue { final val tag: Int = 'c' }
 trait StructuredElementValue extends ElementValue
 
 case class EnumValue(
-        type_name_index:  Constant_Pool_Index,
-        const_name_index: Constant_Pool_Index
+    type_name_index:  Constant_Pool_Index,
+    const_name_index: Constant_Pool_Index
 ) extends StructuredElementValue {
     override final def attribute_length: Int = 1 + 2 + 2
 

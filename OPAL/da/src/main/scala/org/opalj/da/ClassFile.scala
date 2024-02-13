@@ -22,16 +22,16 @@ import org.opalj.io.process
  * @author Andre Pacak
  */
 case class ClassFile(
-        constant_pool: Constant_Pool,
-        minor_version: Int,
-        major_version: Int,
-        access_flags:  Int        = ACC_PUBLIC.mask | ACC_SUPER.mask,
-        this_class:    Constant_Pool_Index,
-        super_class:   Constant_Pool_Index,
-        interfaces:    Interfaces = NoInterfaces,
-        fields:        Fields     = NoFields,
-        methods:       Methods    = NoMethods,
-        attributes:    Attributes = NoAttributes
+    constant_pool: Constant_Pool,
+    minor_version: Int,
+    major_version: Int,
+    access_flags:  Int        = ACC_PUBLIC.mask | ACC_SUPER.mask,
+    this_class:    Constant_Pool_Index,
+    super_class:   Constant_Pool_Index,
+    interfaces:    Interfaces = NoInterfaces,
+    fields:        Fields     = NoFields,
+    methods:       Methods    = NoMethods,
+    attributes:    Attributes = NoAttributes
 ) {
 
     assert({

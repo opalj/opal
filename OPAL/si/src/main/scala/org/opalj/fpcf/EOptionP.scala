@@ -533,9 +533,9 @@ object InterimE {
  * For a detailed discussion of the semantics of `lb` and `ub` see [[EOptionP.ub]].
  */
 final class InterimELUBP[+E <: Entity, +P <: Property](
-        val e:  E,
-        val lb: P,
-        val ub: P
+    val e:  E,
+    val lb: P,
+    val ub: P
 ) extends InterimEP[E, P] {
 
     assert(lb != null)
@@ -595,8 +595,8 @@ object InterimLUBP {
 }
 
 final class InterimEUBP[+E <: Entity, +P <: Property](
-        val e:  E,
-        val ub: P
+    val e:  E,
+    val ub: P
 ) extends InterimEP[E, P] {
 
     assert(ub != null)
@@ -711,8 +711,8 @@ object InterimUBP {
 }
 
 final class InterimELBP[+E <: Entity, +P <: Property](
-        val e:  E,
-        val lb: P
+    val e:  E,
+    val lb: P
 ) extends InterimEP[E, P] {
 
     assert(lb != null)
@@ -776,8 +776,8 @@ object InterimLBP {
  * @author Michael Eichberg
  */
 final class EPK[+E <: Entity, +P <: Property](
-        val e:  E,
-        val pk: PropertyKey[P]
+    val e:  E,
+    val pk: PropertyKey[P]
 ) extends EOptionP[E, P] {
 
     override def hasLBP: Boolean = false

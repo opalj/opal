@@ -73,9 +73,9 @@ final case class LoadDouble(value: Double) extends LDC2_W[Double] {
  *       [[LDCDynamic]].
  */
 final case class LoadDynamic2_W(
-        bootstrapMethod: BootstrapMethod,
-        name:            String,
-        descriptor:      FieldType
+    bootstrapMethod: BootstrapMethod,
+    name:            String,
+    descriptor:      FieldType
 ) extends LDC2_W[Nothing] {
     def value: Nothing = throw new UnsupportedOperationException("dynamic constant unknown")
 

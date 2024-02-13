@@ -13,7 +13,7 @@ sealed trait VirtualMethodEscapePropertyMetaInformation extends PropertyMetaInfo
 }
 
 sealed case class VirtualMethodEscapeProperty(
-        escapeProperty: EscapeProperty
+    escapeProperty: EscapeProperty
 ) extends Property with VirtualMethodEscapePropertyMetaInformation {
     final def key: PropertyKey[VirtualMethodEscapeProperty] = VirtualMethodEscapeProperty.key
 

@@ -10,8 +10,8 @@ import scala.xml.Node
  * @author Michael Eichberg
  */
 case class ModuleMainClass_attribute(
-        attribute_name_index: Constant_Pool_Index,
-        main_class_index:     Constant_Pool_Index // CONSTANT_CLASS
+    attribute_name_index: Constant_Pool_Index,
+    main_class_index:     Constant_Pool_Index // CONSTANT_CLASS
 ) extends Attribute {
 
     def attribute_length: Int = 2

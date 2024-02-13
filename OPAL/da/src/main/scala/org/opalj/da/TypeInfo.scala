@@ -79,9 +79,9 @@ case class ObjectTypeInfo(asJava: String) extends FieldTypeInfo {
 }
 
 case class ArrayTypeInfo(
-        elementTypeAsJava:     String,
-        dimensions:            Int,
-        elementTypeIsBaseType: Boolean
+    elementTypeAsJava:     String,
+    dimensions:            Int,
+    elementTypeIsBaseType: Boolean
 ) extends FieldTypeInfo {
 
     assert(dimensions > 0)

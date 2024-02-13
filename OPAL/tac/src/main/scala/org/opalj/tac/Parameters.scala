@@ -16,7 +16,7 @@ import org.opalj.ai.ValueOrigin
  * @author Michael Eichberg
  */
 class Parameters[P <: AnyRef](
-        val parameters: Array[P] // EVENTUALLY CONST
+    val parameters: Array[P] // EVENTUALLY CONST
 ) extends (Int => P) {
 
     /**

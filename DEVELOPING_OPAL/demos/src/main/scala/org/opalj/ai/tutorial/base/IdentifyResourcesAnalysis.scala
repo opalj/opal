@@ -58,8 +58,8 @@ object IdentifyResourcesAnalysis extends ProjectAnalysisApplication {
         // Perform a simple abstract interpretation to check if there is some
         // method that passes a constant string to a method.
         class AnalysisDomain(
-                override val project: Project[URL],
-                val method:           Method
+            override val project: Project[URL],
+            val method:           Method
         ) extends CorrelationalDomain
             with domain.TheProject
             with domain.TheMethod

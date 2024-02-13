@@ -8,8 +8,8 @@ package ba
  * @author Michael Eichberg
  */
 case class ToDAConfig(
-        retainOPALAttributes:    Boolean = false,
-        retainUnknownAttributes: Boolean = false
+    retainOPALAttributes:    Boolean = false,
+    retainUnknownAttributes: Boolean = false
 )
 
 object ToDAConfig {

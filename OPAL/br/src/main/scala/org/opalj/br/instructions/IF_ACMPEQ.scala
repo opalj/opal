@@ -50,7 +50,7 @@ object IF_ACMPEQ extends InstructionMetaInformation {
 }
 
 case class LabeledIF_ACMPEQ(
-        branchTarget: InstructionLabel
+    branchTarget: InstructionLabel
 ) extends LabeledSimpleConditionalBranchInstruction
     with IF_ACMPEQLike {
 

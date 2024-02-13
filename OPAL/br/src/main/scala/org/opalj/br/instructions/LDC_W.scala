@@ -88,9 +88,9 @@ final case class LoadString_W(value: String) extends PrimitiveLDC_W[String] {
  *       [[LDCDynamic]].
  */
 final case class LoadDynamic_W(
-        bootstrapMethod: BootstrapMethod,
-        name:            String,
-        descriptor:      FieldType
+    bootstrapMethod: BootstrapMethod,
+    name:            String,
+    descriptor:      FieldType
 ) extends LDC_W[Nothing] {
     def value: Nothing = throw new UnsupportedOperationException("dynamic constant unknown")
 

@@ -8,10 +8,10 @@ import org.opalj.br.Method
 import org.opalj.br.analyses.Project
 
 class DefaultDomain[Source](
-        project:                            Project[Source],
-        method:                             Method,
-        val frequentEvaluationWarningLevel: Int,
-        val maxCallChainLength:             Int
+    project:                            Project[Source],
+    method:                             Method,
+    val frequentEvaluationWarningLevel: Int,
+    val maxCallChainLength:             Int
 ) extends SharedDefaultDomain[Source](project, method)
     with PerformInvocationsWithRecursionDetection
     with RecordCFG
@@ -56,12 +56,12 @@ class DefaultDomain[Source](
 }
 
 class ChildDefaultDomain[Source](
-        project: Project[Source],
-        method:  Method,
-        val callerDomain: PerformInvocationsWithRecursionDetection {
-            type CalledMethodDomain = ChildDefaultDomain[Source]
-        },
-        val maxCallChainLength: Int
+    project: Project[Source],
+    method:  Method,
+    val callerDomain: PerformInvocationsWithRecursionDetection {
+        type CalledMethodDomain = ChildDefaultDomain[Source]
+    },
+    val maxCallChainLength: Int
 ) extends SharedDefaultDomain[Source](project, method)
     with ChildPerformInvocationsWithRecursionDetection
     with DefaultRecordMethodCallResults { callingDomain =>

@@ -72,7 +72,7 @@ object CallBySignatureKey extends ProjectInformationKey[CallBySignatureTargets, 
 }
 
 class CallBySignatureTargets private[analyses] (
-        val data: scala.collection.Map[Method, ArraySeq[ObjectType]]
+    val data: scala.collection.Map[Method, ArraySeq[ObjectType]]
 ) {
     /**
      * Returns all call-by-signature targets of the given method. If the method is not known,

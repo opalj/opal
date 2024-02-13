@@ -51,7 +51,7 @@ sealed abstract class TATTypeParameter extends TypeAnnotationTarget {
 }
 
 case class TATParameterDeclarationOfClassOrInterface(
-        type_parameter_index: Int
+    type_parameter_index: Int
 ) extends TATTypeParameter {
 
     override final def tag: Int = 0x00
@@ -62,7 +62,7 @@ case class TATParameterDeclarationOfClassOrInterface(
 }
 
 case class TATParameterDeclarationOfMethodOrConstructor(
-        type_parameter_index: Int
+    type_parameter_index: Int
 ) extends TATTypeParameter {
 
     override final def tag: Int = 0x01
@@ -115,8 +115,8 @@ sealed abstract class TATTypeParameterBound extends TypeAnnotationTarget {
 }
 
 case class TATTypeBoundOfParameterDeclarationOfClassOrInterface(
-        type_parameter_index: Int,
-        bound_index:          Int
+    type_parameter_index: Int,
+    bound_index:          Int
 ) extends TATTypeParameterBound {
 
     override final def tag: Int = 0x11
@@ -127,8 +127,8 @@ case class TATTypeBoundOfParameterDeclarationOfClassOrInterface(
 }
 
 case class TATTypeBoundOfParameterDeclarationOfMethodOrConstructor(
-        type_parameter_index: Int,
-        bound_index:          Int
+    type_parameter_index: Int,
+    bound_index:          Int
 ) extends TATTypeParameterBound {
 
     override final def tag: Int = 0x12
@@ -359,8 +359,8 @@ case class TATCastExpression(offset: Int, type_argument_index: Int) extends TATT
 }
 
 case class TATConstructorInvocation(
-        offset:              Int,
-        type_argument_index: Int
+    offset:              Int,
+    type_argument_index: Int
 ) extends TATTypeArgument {
 
     override final def tag: Int = 0x48
@@ -373,8 +373,8 @@ case class TATConstructorInvocation(
 }
 
 case class TATMethodInvocation(
-        offset:              Int,
-        type_argument_index: Int
+    offset:              Int,
+    type_argument_index: Int
 ) extends TATTypeArgument {
 
     override final def tag: Int = 0x49
@@ -386,8 +386,8 @@ case class TATMethodInvocation(
 }
 
 case class TATConstructorInMethodReferenceExpression(
-        offset:              Int,
-        type_argument_index: Int
+    offset:              Int,
+    type_argument_index: Int
 ) extends TATTypeArgument {
 
     override final def tag: Int = 0x4A
@@ -398,8 +398,8 @@ case class TATConstructorInMethodReferenceExpression(
 }
 
 case class TATMethodInMethodReferenceExpression(
-        offset:              Int,
-        type_argument_index: Int
+    offset:              Int,
+    type_argument_index: Int
 ) extends TATTypeArgument {
 
     override final def tag: Int = 0x4B

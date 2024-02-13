@@ -87,8 +87,8 @@ sealed trait EOptionPSet[E <: Entity, P <: Property] extends Iterable[EOptionP[E
 }
 
 private[fpcf] class MultiEOptionPSet[E <: Entity, P <: Property](
-        private var data:                  Map[Int, mutable.Map[Entity, EOptionP[E, P]]] = IntMap.empty,
-        private[fpcf] var epkUpdatesCount: Int                                           = 0
+    private var data:                  Map[Int, mutable.Map[Entity, EOptionP[E, P]]] = IntMap.empty,
+    private[fpcf] var epkUpdatesCount: Int                                           = 0
 ) extends EOptionPSet[E, P] {
 
     override def foreach[U](f: EOptionP[E, P] => U): Unit = {

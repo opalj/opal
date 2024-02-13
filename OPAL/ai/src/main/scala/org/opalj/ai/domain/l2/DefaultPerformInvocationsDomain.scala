@@ -11,8 +11,8 @@ import org.opalj.br.analyses.Project
  * Performs a simple invocation of the immediately called methods.
  */
 class DefaultPerformInvocationsDomain[Source](
-        project: Project[Source],
-        method:  Method
+    project: Project[Source],
+    method:  Method
 ) extends SharedDefaultDomain[Source](project, method) with PerformInvocations {
 
     def shouldInvocationBePerformed(method: Method): Boolean = !method.returnType.isVoidType
@@ -28,13 +28,13 @@ class DefaultPerformInvocationsDomain[Source](
 }
 
 class DefaultPerformInvocationsDomainWithCFG[Source](
-        project: Project[Source],
-        method:  Method
+    project: Project[Source],
+    method:  Method
 ) extends DefaultPerformInvocationsDomain[Source](project, method)
     with RecordCFG
 
 class DefaultPerformInvocationsDomainWithCFGAndDefUse[Source](
-        project: Project[Source],
-        method:  Method
+    project: Project[Source],
+    method:  Method
 ) extends DefaultPerformInvocationsDomainWithCFG[Source](project, method)
     with RefineDefUseUsingOrigins

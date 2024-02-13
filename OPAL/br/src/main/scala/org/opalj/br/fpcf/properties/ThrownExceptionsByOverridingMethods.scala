@@ -61,7 +61,7 @@ object ThrownExceptionsByOverridingMethods
 }
 
 case class ThrownExceptionsByOverridingMethods(
-        exceptions: BRTypesSet = BRTypesSet.empty
+    exceptions: BRTypesSet = BRTypesSet.empty
 ) extends Property
     with ThrownExceptionsByOverridingMethodsPropertyMetaInformation {
 

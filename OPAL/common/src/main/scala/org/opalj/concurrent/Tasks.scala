@@ -32,9 +32,9 @@ sealed trait Tasks[T] {
  * @tparam T Type of the processed data.
  */
 final class SequentialTasks[T](
-        val process:                               (Tasks[T], T) => Unit,
-        val abortOnExceptions:                     Boolean       = false,
-        @volatile private[this] var isInterrupted: () => Boolean = () => Thread.currentThread().isInterrupted()
+    val process:                               (Tasks[T], T) => Unit,
+    val abortOnExceptions:                     Boolean       = false,
+    @volatile private[this] var isInterrupted: () => Boolean = () => Thread.currentThread().isInterrupted()
 ) extends Tasks[T] {
 
     private[this] val tasksQueue = scala.collection.mutable.Queue.empty[T]
@@ -106,11 +106,11 @@ final class SequentialTasks[T](
  * @author Michael Eichberg
  */
 final class ConcurrentTasks[T](
-        val process:                               (Tasks[T], T) => Unit,
-        val abortOnExceptions:                     Boolean       = false,
-        @volatile private[this] var isInterrupted: () => Boolean = () => Thread.currentThread().isInterrupted()
+    val process:                               (Tasks[T], T) => Unit,
+    val abortOnExceptions:                     Boolean       = false,
+    @volatile private[this] var isInterrupted: () => Boolean = () => Thread.currentThread().isInterrupted()
 )(
-        implicit val executionContext: ExecutionContext
+    implicit val executionContext: ExecutionContext
 ) extends Tasks[T] { self =>
 
     @volatile private[this] var tasksCount = 0

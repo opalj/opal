@@ -9,9 +9,9 @@ package instructions
  * @author Michael Eichberg
  */
 case class INVOKEINTERFACE(
-        override val declaringClass:   ObjectType, // an interface type
-        override val name:             String,
-        override val methodDescriptor: MethodDescriptor
+    override val declaringClass:   ObjectType, // an interface type
+    override val name:             String,
+    override val methodDescriptor: MethodDescriptor
 ) extends VirtualMethodInvocationInstruction {
 
     override final def isInterfaceCall: Boolean = true

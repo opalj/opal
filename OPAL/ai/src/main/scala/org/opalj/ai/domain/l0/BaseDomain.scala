@@ -19,8 +19,8 @@ import org.opalj.br.analyses.Project
  * @author Michael Eichberg
  */
 class BaseDomain[Source](
-        val project: Project[Source],
-        val method:  Method
+    val project: Project[Source],
+    val method:  Method
 ) extends TypeLevelDomain
     with ThrowAllPotentialExceptionsConfiguration
     with IgnoreSynchronization
@@ -47,6 +47,6 @@ object BaseDomain {
  * @tparam Source The source file's type.
  */
 class BaseDomainWithDefUse[Source](
-        project: Project[Source],
-        method:  Method
+    project: Project[Source],
+    method:  Method
 ) extends BaseDomain[Source](project, method) with RecordDefUse
