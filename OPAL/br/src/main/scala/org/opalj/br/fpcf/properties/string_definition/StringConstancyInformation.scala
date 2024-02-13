@@ -29,6 +29,16 @@ case class StringConstancyInformation(
             constancyType == StringConstancyType.APPEND &&
             possibleStrings == ""
 
+    /**
+     * Checks whether the instance is a complex element in the sense that it is either non-constant or contains some
+     * characters that make finding substrings harder.
+     */
+    def isComplex: Boolean =
+        constancyLevel != StringConstancyLevel.CONSTANT ||
+            possibleStrings.contains("|") ||
+            possibleStrings.contains("?") ||
+            possibleStrings.contains("(") ||
+            possibleStrings.contains(")")
 }
 
 /**
@@ -81,8 +91,16 @@ object StringConstancyInformation {
             // the neutral element
             case 0 => StringConstancyInformation.getNeutralElement
             case 1 => relScis.head
-            case _ => // Reduce
-                val reduced = relScis.reduceLeft((o, n) =>
+            case _ => // Deduplicate and reduce
+                var seenStrings = Set.empty[String]
+                val reduced = relScis.flatMap { sci =>
+                    if (seenStrings.contains(sci.possibleStrings)) {
+                        None
+                    } else {
+                        seenStrings += sci.possibleStrings
+                        Some(sci)
+                    }
+                } reduceLeft((o, n) =>
                     StringConstancyInformation(
                         StringConstancyLevel.determineMoreGeneral(
                             o.constancyLevel,

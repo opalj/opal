@@ -195,7 +195,7 @@ public class L0TestMethods {
             stringDefinitions = {
                     @StringDefinitions(
                             expectedLevel = DYNAMIC,
-                            expectedStrings = "(java.lang.Object|.*|java.lang.Integer|.*)"
+                            expectedStrings = "(java.lang.Object|.*|java.lang.Integer)"
                     )
 
             })
@@ -233,8 +233,7 @@ public class L0TestMethods {
             stringDefinitions = {
                     @StringDefinitions(
                             expectedLevel = DYNAMIC,
-                            expectedStrings = "((java.lang.Object|.*)|java.lang.System|"
-                                    + "java.lang..*|.*)"
+                            expectedStrings = "((java.lang.Object|.*)|.*|java.lang.System|java.lang..*)"
                     )
             })
     public void multipleDefSites(int value) {
