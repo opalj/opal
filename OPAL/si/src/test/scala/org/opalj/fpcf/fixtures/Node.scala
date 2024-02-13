@@ -11,8 +11,8 @@ import scala.collection.mutable
  * @note Only intended to be used as a test fixture.
  */
 final class Node(
-        val name:    String,
-        val targets: mutable.Set[Node] = mutable.Set.empty
+    val name:    String,
+    val targets: mutable.Set[Node] = mutable.Set.empty
 ) {
 
     override def hashCode: Int = name.hashCode()

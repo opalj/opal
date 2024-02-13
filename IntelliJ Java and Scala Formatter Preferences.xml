@@ -1,11 +1,12 @@
-<code_scheme name="Java Conventions [maximum line width 100]" version="173">
-  <option name="RIGHT_MARGIN" value="100" />
+<code_scheme name="Project" version="173">
+  <option name="RIGHT_MARGIN" value="120" />
   <option name="FORMATTER_TAGS_ENABLED" value="true" />
+  <option name="SOFT_MARGINS" value="120" />
   <JavaCodeStyleSettings>
     <option name="ANNOTATION_PARAMETER_WRAP" value="1" />
   </JavaCodeStyleSettings>
   <ScalaCodeStyleSettings>
-    <option name="classCountToUseImportOnDemand" value="32" />
+    <option name="classCountToUseImportOnDemand" value="60" />
     <option name="collectImports" value="false" />
     <option name="doNotChangeLocalImportsOnOptimize" value="false" />
     <option name="importLayout">
@@ -15,27 +16,19 @@
         <option value="scala.reflect" />
         <option value="_______ blank line _______" />
         <option value="java" />
-        <option value="_______ blank line _______" />
         <option value="scala" />
+        <option value="play" />
+        <option value="_______ blank line _______" />
+        <option value="org.junit" />
+        <option value="org.scalacheck" />
+        <option value="org.scalatest" />
+        <option value="org.scalatestplus" />
+        <option value="_______ blank line _______" />
+        <option value="com.typesafe.config" />
+        <option value="_______ blank line _______" />
+        <option value="org.opalj" />
         <option value="_______ blank line _______" />
         <option value="all other imports" />
-        <option value="_______ blank line _______" />
-        <option value="org.opalj.log" />
-        <option value="org.opalj.util" />
-        <option value="org.opalj.collection" />
-        <option value="org.opalj.concurrent" />
-        <option value="org.opalj.fpcf" />
-        <option value="org.opalj.bytecode" />
-        <option value="org.opalj.value" />
-        <option value="org.opalj.bi" />
-        <option value="org.opalj.da" />
-        <option value="org.opalj.br" />
-        <option value="org.opalj.bc" />
-        <option value="org.opalj.ba" />
-        <option value="org.opalj.ai" />
-        <option value="org.opalj.tac" />
-        <option value="org.opalj.de" />
-        <option value="org.opalj.av" />
       </array>
     </option>
     <option name="importShortestPathForAmbiguousReferences" value="false" />
@@ -87,18 +80,35 @@
         <option value="scala.reflect.macros.whitebox.Context" />
       </array>
     </option>
-    <option name="sortAsScalastyle" value="true" />
-    <option name="USE_SCALADOC2_FORMATTING" value="false" />
+    <option name="WRAP_BEFORE_WITH_KEYWORD" value="true" />
+    <option name="PLACE_SELF_TYPE_ON_NEW_LINE" value="false" />
+    <option name="ALIGN_EXTENDS_WITH" value="3" />
+    <option name="ALIGN_IN_COLUMNS_CASE_BRANCH" value="true" />
+    <option name="ALIGN_COMPOSITE_PATTERN" value="false" />
+    <option name="INDENT_FIRST_PARAMETER" value="false" />
+    <option name="SCALAFMT_CONFIG_PATH" value="/home/dominik/Work/opal/.scalafmt.conf" />
+    <option name="SCALAFMT_REFORMAT_ON_FILES_SAVE" value="true" />
+    <option name="FORMATTER" value="1" />
+    <option name="SPACE_AFTER_MODIFIERS_CONSTRUCTOR" value="true" />
+    <option name="SPACES_IN_ONE_LINE_BLOCKS" value="true" />
+    <option name="SPACES_AROUND_AT_IN_PATTERNS" value="true" />
+    <option name="ALIGN_PARAMETER_TYPES_IN_MULTILINE_DECLARATIONS" value="2" />
+    <option name="SPACE_BEFORE_TYPE_PARAMETER_LEADING_CONTEXT_BOUND_COLON_HK" value="false" />
+    <option name="CALL_PARAMETERS_NEW_LINE_AFTER_LPAREN" value="2" />
+    <option name="MULTILINE_STRING_ALIGN_DANGLING_CLOSING_QUOTES" value="true" />
     <option name="TYPE_ANNOTATION_EXCLUDE_MEMBER_OF_ANONYMOUS_CLASS" value="true" />
     <option name="TYPE_ANNOTATION_EXCLUDE_MEMBER_OF_PRIVATE_CLASS" value="true" />
     <option name="SD_BLANK_LINE_AFTER_PARAMETERS_COMMENTS" value="true" />
     <option name="SD_BLANK_LINE_AFTER_RETURN_COMMENTS" value="true" />
+    <option name="SD_BLANK_LINE_BEFORE_PARAMETERS" value="true" />
     <option name="SD_KEEP_BLANK_LINES_BETWEEN_TAGS" value="true" />
     <option name="SD_PRESERVE_SPACES_IN_TAGS" value="true" />
-    <!-- Unicode arrows are not supported anymore since Scala 2.13 -->
-    <option name="REPLACE_CASE_ARROW_WITH_UNICODE_CHAR" value="false" />
-    <option name="REPLACE_MAP_ARROW_WITH_UNICODE_CHAR" value="false" />
-    <option name="REPLACE_FOR_GENERATOR_ARROW_WITH_UNICODE_CHAR" value="false" />
+    <option name="TRAILING_COMMA_MODE" value="TRAILING_COMMA_REMOVE_WHEN_MULTILINE" />
+    <option name="TRAILING_COMMA_TUPLE_ENABLED" value="true" />
+    <option name="TRAILING_COMMA_TUPLE_TYPE_ENABLED" value="true" />
+    <option name="TRAILING_COMMA_PATTERN_ARG_LIST_ENABLED" value="true" />
+    <option name="TRAILING_COMMA_TYPE_PARAMS_ENABLED" value="true" />
+    <option name="TRAILING_COMMA_IMPORT_SELECTOR_ENABLED" value="true" />
   </ScalaCodeStyleSettings>
   <codeStyleSettings language="JAVA">
     <option name="KEEP_FIRST_COLUMN_COMMENT" value="false" />
@@ -138,7 +148,21 @@
     </indentOptions>
   </codeStyleSettings>
   <codeStyleSettings language="Scala">
-    <option name="MODIFIER_LIST_WRAP" value="true" />
+    <option name="KEEP_BLANK_LINES_IN_DECLARATIONS" value="1" />
+    <option name="KEEP_BLANK_LINES_IN_CODE" value="1" />
+    <option name="KEEP_BLANK_LINES_BEFORE_RBRACE" value="1" />
+    <option name="ALIGN_MULTILINE_PARAMETERS_IN_CALLS" value="true" />
+    <option name="CALL_PARAMETERS_WRAP" value="5" />
+    <option name="CALL_PARAMETERS_RPAREN_ON_NEXT_LINE" value="true" />
+    <option name="METHOD_PARAMETERS_LPAREN_ON_NEXT_LINE" value="true" />
+    <option name="METHOD_PARAMETERS_RPAREN_ON_NEXT_LINE" value="true" />
+    <option name="EXTENDS_LIST_WRAP" value="5" />
+    <option name="EXTENDS_KEYWORD_WRAP" value="1" />
+    <option name="METHOD_CALL_CHAIN_WRAP" value="1" />
+    <option name="BINARY_OPERATION_WRAP" value="1" />
+    <option name="FOR_STATEMENT_WRAP" value="2" />
+    <option name="VARIABLE_ANNOTATION_WRAP" value="2" />
+    <option name="SOFT_MARGINS" value="120" />
     <indentOptions>
       <option name="INDENT_SIZE" value="4" />
       <option name="CONTINUATION_INDENT_SIZE" value="4" />

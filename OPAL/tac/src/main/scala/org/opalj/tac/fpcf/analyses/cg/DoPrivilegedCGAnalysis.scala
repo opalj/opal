@@ -52,9 +52,9 @@ import org.opalj.value.ValueInformation
  * @author Dominik Helm
  */
 class DoPrivilegedMethodAnalysis private[cg] (
-        final val doPrivilegedMethod: DeclaredMethod,
-        final val declaredRunMethod:  DeclaredMethod,
-        override val project:         SomeProject
+    final val doPrivilegedMethod: DeclaredMethod,
+    final val declaredRunMethod:  DeclaredMethod,
+    override val project:         SomeProject
 ) extends TACAIBasedAPIBasedAnalysis with TypeConsumerAnalysis {
 
     override def processNewCaller(
@@ -153,7 +153,7 @@ class DoPrivilegedMethodAnalysis private[cg] (
 }
 
 class DoPrivilegedCGAnalysis private[cg] (
-        final val project: SomeProject
+    final val project: SomeProject
 ) extends FPCFAnalysis {
 
     def analyze(p: SomeProject): PropertyComputationResult = {

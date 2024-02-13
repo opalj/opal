@@ -86,8 +86,8 @@ case object LongList0 extends LongList {
  * @author Michael Eichberg
  */
 final case class LongListNode(
-        head:                        Long,
-        private[immutable] var rest: LongList = LongList0
+    head:                        Long,
+    private[immutable] var rest: LongList = LongList0
 ) extends LongList { list =>
 
     override def tail: LongList = rest

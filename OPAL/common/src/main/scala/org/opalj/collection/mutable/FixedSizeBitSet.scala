@@ -169,7 +169,7 @@ private[mutable] final class FixedSizeBitSet128 extends FixedSizeBitSet { thisSe
 }
 
 private[mutable] final class FixedSizeBitSetN private[mutable] (
-        private val set: Array[Long]
+    private val set: Array[Long]
 ) extends FixedSizeBitSet { thisSet =>
 
     assert(set.length > 2)

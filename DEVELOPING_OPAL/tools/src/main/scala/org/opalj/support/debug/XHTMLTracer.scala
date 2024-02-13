@@ -24,11 +24,11 @@ import org.opalj.collection.mutable.IntArrayStack
 import org.opalj.io.writeAndOpen
 
 case class FlowEntity(
-        pc:          Int,
-        instruction: Instruction,
-        operands:    Operands[_ >: Null <: Domain#DomainValue],
-        locals:      Locals[_ >: Null <: Domain#DomainValue],
-        properties:  Option[String]
+    pc:          Int,
+    instruction: Instruction,
+    operands:    Operands[_ >: Null <: Domain#DomainValue],
+    locals:      Locals[_ >: Null <: Domain#DomainValue],
+    properties:  Option[String]
 ) {
     val flowId = FlowEntity.nextFlowId
 }

@@ -11,9 +11,9 @@ import scala.xml.Node
  * @author Noorulla Sharief
  */
 case class EnclosingMethod_attribute(
-        attribute_name_index: Constant_Pool_Index,
-        class_index:          Constant_Pool_Index,
-        method_index:         Constant_Pool_Index
+    attribute_name_index: Constant_Pool_Index,
+    class_index:          Constant_Pool_Index,
+    method_index:         Constant_Pool_Index
 ) extends Attribute {
 
     override final def attribute_length = 2 + 2

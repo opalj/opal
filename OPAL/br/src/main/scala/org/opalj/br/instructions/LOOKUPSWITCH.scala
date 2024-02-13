@@ -40,8 +40,8 @@ trait LOOKUPSWITCHLike extends CompoundConditionalBranchInstructionLike {
  * @author  Michael Eichberg
  */
 case class LOOKUPSWITCH(
-        defaultOffset: Int,
-        npairs:        ArraySeq[IntIntPair]
+    defaultOffset: Int,
+    npairs:        ArraySeq[IntIntPair]
 ) extends CompoundConditionalBranchInstruction with LOOKUPSWITCHLike {
 
     override final def asLOOKUPSWITCH: this.type = this
@@ -157,8 +157,8 @@ object LOOKUPSWITCH extends InstructionMetaInformation {
  * @author Malte Limmeroth
  */
 case class LabeledLOOKUPSWITCH(
-        defaultBranchTarget: InstructionLabel,
-        npairs:              ArraySeq[(Int, InstructionLabel)]
+    defaultBranchTarget: InstructionLabel,
+    npairs:              ArraySeq[(Int, InstructionLabel)]
 ) extends LabeledInstruction with LOOKUPSWITCHLike {
 
     override def tableSize: Int = npairs.size

@@ -10,9 +10,9 @@ import org.opalj.bytecode.BytecodeProcessingFailedException
  * `DynamicConstant` is used to represent dynamic constant arguments of bootstrap methods.
  */
 final class DynamicConstant(
-        val name:             String,
-        val descriptor:       FieldType,
-        private val bsmIndex: Int
+    val name:             String,
+    val descriptor:       FieldType,
+    private val bsmIndex: Int
 ) extends ConstantValue[Any] {
     private var bsm: BootstrapMethod = null
 

@@ -18,8 +18,8 @@ import org.opalj.bi.ConstantPoolTags
  * @author Dominik Helm
  */
 case class CONSTANT_Dynamic_info(
-        bootstrapMethodAttributeIndex: Int,
-        nameAndTypeIndex:              Constant_Pool_Index
+    bootstrapMethodAttributeIndex: Int,
+    nameAndTypeIndex:              Constant_Pool_Index
 ) extends Constant_Pool_Entry {
 
     override def isDynamic = true

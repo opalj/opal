@@ -23,11 +23,11 @@ import org.opalj.collection.immutable.IntTrieSet
  * @param  foreachSuccessorOf The original successor information.
  */
 final class PostDominatorTree private[graphs] (
-        val startNode:            Int,
-        val hasVirtualStartNode:  Boolean,
-        val additionalExitNodes:  IntTrieSet,
-        val foreachSuccessorOf:   Int => ((Int => Unit) => Unit),
-        private[graphs] val idom: Array[Int] // the (post)dominator information
+    val startNode:            Int,
+    val hasVirtualStartNode:  Boolean,
+    val additionalExitNodes:  IntTrieSet,
+    val foreachSuccessorOf:   Int => ((Int => Unit) => Unit),
+    private[graphs] val idom: Array[Int] // the (post)dominator information
 ) extends AbstractDominatorTree {
 
     /**

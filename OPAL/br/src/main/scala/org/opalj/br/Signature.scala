@@ -235,9 +235,9 @@ import Signature.formalTypeParametersToJVMSignature
  * @see For matching signatures see [[Signature]].
  */
 case class ClassSignature(
-        formalTypeParameters:     List[FormalTypeParameter],
-        superClassSignature:      ClassTypeSignature,
-        superInterfacesSignature: List[ClassTypeSignature]
+    formalTypeParameters:     List[FormalTypeParameter],
+    superClassSignature:      ClassTypeSignature,
+    superInterfacesSignature: List[ClassTypeSignature]
 ) extends Signature {
 
     def accept[T](sv: SignatureVisitor[T]): T = sv.visit(this)
@@ -268,10 +268,10 @@ object ClassSignature {
  * @see For matching signatures see [[Signature]].
  */
 case class MethodTypeSignature(
-        formalTypeParameters:     List[FormalTypeParameter],
-        parametersTypeSignatures: List[TypeSignature],
-        returnTypeSignature:      ReturnTypeSignature,
-        throwsSignature:          List[ThrowsSignature]
+    formalTypeParameters:     List[FormalTypeParameter],
+    parametersTypeSignatures: List[TypeSignature],
+    returnTypeSignature:      ReturnTypeSignature,
+    throwsSignature:          List[ThrowsSignature]
 ) extends Signature {
 
     def accept[T](sv: SignatureVisitor[T]): T = sv.visit(this)
@@ -330,9 +330,9 @@ object ArrayTypeSignature {
  * @see For matching signatures see [[Signature]].
  */
 case class ClassTypeSignature(
-        packageIdentifier:        Option[String],
-        simpleClassTypeSignature: SimpleClassTypeSignature,
-        classTypeSignatureSuffix: List[SimpleClassTypeSignature]
+    packageIdentifier:        Option[String],
+    simpleClassTypeSignature: SimpleClassTypeSignature,
+    classTypeSignatureSuffix: List[SimpleClassTypeSignature]
 ) extends FieldTypeSignature with ThrowsSignature {
 
     def objectType: ObjectType = {
@@ -379,7 +379,7 @@ object ClassTypeSignature {
  * @see For matching signatures see [[Signature]].
  */
 case class TypeVariableSignature(
-        identifier: String
+    identifier: String
 ) extends FieldTypeSignature with ThrowsSignature {
 
     def accept[T](sv: SignatureVisitor[T]): T = sv.visit(this)
@@ -400,8 +400,8 @@ object TypeVariableSignature {
  * @see For matching signatures see [[Signature]].
  */
 case class SimpleClassTypeSignature(
-        simpleName:    String,
-        typeArguments: List[TypeArgument]
+    simpleName:    String,
+    typeArguments: List[TypeArgument]
 ) {
 
     def accept[T](sv: SignatureVisitor[T]): T = sv.visit(this)
@@ -419,9 +419,9 @@ case class SimpleClassTypeSignature(
  * @see For matching signatures see [[Signature]].
  */
 case class FormalTypeParameter(
-        identifier:     String,
-        classBound:     Option[FieldTypeSignature],
-        interfaceBound: List[FieldTypeSignature]
+    identifier:     String,
+    classBound:     Option[FieldTypeSignature],
+    interfaceBound: List[FieldTypeSignature]
 ) {
 
     def accept[T](sv: SignatureVisitor[T]): T = sv.visit(this)
@@ -448,8 +448,8 @@ sealed abstract class TypeArgument extends SignatureElement
  * @see For matching signatures see [[Signature]].
  */
 case class ProperTypeArgument(
-        varianceIndicator:  Option[VarianceIndicator],
-        fieldTypeSignature: FieldTypeSignature
+    varianceIndicator:  Option[VarianceIndicator],
+    fieldTypeSignature: FieldTypeSignature
 ) extends TypeArgument {
 
     def accept[T](sv: SignatureVisitor[T]): T = sv.visit(this)

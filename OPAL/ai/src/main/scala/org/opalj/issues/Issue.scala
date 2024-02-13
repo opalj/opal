@@ -30,13 +30,13 @@ import scala.xml.Unparsed
  * @author Michael Eichberg
  */
 case class Issue(
-        analysis:   String,
-        relevance:  Relevance,
-        summary:    String,
-        categories: Set[String],
-        kinds:      Set[String],
-        locations:  Seq[IssueLocation],
-        details:    Iterable[IssueDetails] = Nil
+    analysis:   String,
+    relevance:  Relevance,
+    summary:    String,
+    categories: Set[String],
+    kinds:      Set[String],
+    locations:  Seq[IssueLocation],
+    details:    Iterable[IssueDetails] = Nil
 ) extends IssueRepresentations {
 
     assert(!summary.contains('\n'), s"the summary must not contain new lines:\n$summary")

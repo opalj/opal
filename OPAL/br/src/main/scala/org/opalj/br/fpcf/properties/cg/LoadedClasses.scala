@@ -26,8 +26,8 @@ sealed trait LoadedClassesMetaInformation extends PropertyMetaInformation {
  * @author Florian Kuebler
  */
 sealed class LoadedClasses private[properties] (
-        final val orderedClasses: List[ObjectType],
-        final val classes:        UIDSet[ObjectType]
+    final val orderedClasses: List[ObjectType],
+    final val classes:        UIDSet[ObjectType]
 ) extends OrderedProperty with LoadedClassesMetaInformation {
 
     assert(orderedClasses == null || orderedClasses.size == classes.size)

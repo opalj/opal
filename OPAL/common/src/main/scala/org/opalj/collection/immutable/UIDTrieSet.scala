@@ -200,8 +200,8 @@ final class UIDTrieSet1[T <: UID](val i: T) extends UIDTrieSetLeaf[T] {
  * Represents an ordered set of two values where i1 has to be smaller than i2.
  */
 private[immutable] final class UIDTrieSet2[T <: UID] private[immutable] (
-        val i1: T,
-        val i2: T
+    val i1: T,
+    val i2: T
 ) extends UIDTrieSetLeaf[T] {
 
     override def isEmpty: Boolean = false
@@ -266,9 +266,9 @@ private[immutable] final class UIDTrieSet2[T <: UID] private[immutable] (
  * Represents an ordered set of three int values: i1 < i2 < i3.
  */
 private[immutable] final class UIDTrieSet3[T <: UID] private[immutable] (
-        val i1: T,
-        val i2: T,
-        val i3: T
+    val i1: T,
+    val i2: T,
+    val i3: T
 ) extends UIDTrieSetLeaf[T] {
 
     override def size: Int = 3
@@ -451,8 +451,8 @@ private[immutable] final class UIDTrieSet3[T <: UID] private[immutable] (
  * A UIDTrieSet with four or more values.
  */
 private[immutable] final class UIDTrieSetN[T <: UID](
-        val size: Int,
-        root:     UIDTrieSetNode[T]
+    val size: Int,
+    root:     UIDTrieSetNode[T]
 ) extends UIDTrieSet[T] {
 
     // assert(size >= 4)
@@ -540,9 +540,9 @@ private[immutable] final class UIDTrieSetN[T <: UID](
 }
 
 private[immutable] final class UIDTrieSetNode_0_1[T <: UID](
-        val v:  T, // value with the current prefix...
-        val _0: UIDTrieSetNode[T],
-        val _1: UIDTrieSetNode[T]
+    val v:  T, // value with the current prefix...
+    val _0: UIDTrieSetNode[T],
+    val _1: UIDTrieSetNode[T]
 ) extends UIDTrieSetNode[T] {
 
     override def foreach[U](f: T => U): Unit = { f(v); _0.foreach(f); _1.foreach(f) }
@@ -599,8 +599,8 @@ private[immutable] final class UIDTrieSetNode_0_1[T <: UID](
 }
 
 private[immutable] final class UIDTrieSetNode_0[T <: UID](
-        val v:  T,
-        val _0: UIDTrieSetNode[T]
+    val v:  T,
+    val _0: UIDTrieSetNode[T]
 ) extends UIDTrieSetNode[T] {
 
     override def hashCode: Int = v.id ^ _0.hashCode
@@ -660,8 +660,8 @@ private[immutable] final class UIDTrieSetNode_0[T <: UID](
 }
 
 private[immutable] final class UIDTrieSetNode_1[T <: UID](
-        val v:  T,
-        val _1: UIDTrieSetNode[T]
+    val v:  T,
+    val _1: UIDTrieSetNode[T]
 ) extends UIDTrieSetNode[T] {
 
     override def hashCode: Int = v.id ^ _1.hashCode

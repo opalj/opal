@@ -16,9 +16,9 @@ import org.opalj.log.OPALLogger
  * for the specified project. This typically initialized by the [[AIDomainFactoryKey$]].
  */
 class ProjectSpecificAIExecutor(
-        val project:       SomeProject,
-        val domainClass:   Class[_ <: Domain],
-        val domainFactory: (SomeProject, Method) => Domain
+    val project:       SomeProject,
+    val domainClass:   Class[_ <: Domain],
+    val domainFactory: (SomeProject, Method) => Domain
 ) extends (Method => AIResult) {
 
     def apply(m: Method): AIResult = { BaseAI(m, domainFactory(project, m)) }

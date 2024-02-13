@@ -13,6 +13,6 @@ import org.opalj.da
  * @author Michael Eichberg
  */
 case class ProjectInstantiation(
-        project:       Project[URL],
-        rawClassFiles: Iterable[(da.ClassFile, URL)]
+    project:       Project[URL],
+    rawClassFiles: Iterable[(da.ClassFile, URL)]
 )

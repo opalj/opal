@@ -55,9 +55,9 @@ case class TRYEND(id: Symbol) extends ExceptionHandlerElement {
  *         (finally handler).
  */
 case class CATCH(
-        id:          Symbol,
-        position:    Int,
-        handlerType: Option[br.ObjectType] = None
+    id:          Symbol,
+    position:    Int,
+    handlerType: Option[br.ObjectType] = None
 ) extends ExceptionHandlerElement {
     override final def isTry: Boolean = false
     override final def isCatch: Boolean = true

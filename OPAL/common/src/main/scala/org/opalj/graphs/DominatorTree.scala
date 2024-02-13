@@ -18,10 +18,10 @@ import org.opalj.collection.mutable.IntArrayStack
  *         `startNode`.
  */
 final class DominatorTree private (
-        val startNode:            Int,
-        val hasVirtualStartNode:  Boolean,
-        val foreachSuccessorOf:   Int => ((Int => Unit) => Unit),
-        private[graphs] val idom: Array[Int]
+    val startNode:            Int,
+    val hasVirtualStartNode:  Boolean,
+    val foreachSuccessorOf:   Int => ((Int => Unit) => Unit),
+    private[graphs] val idom: Array[Int]
 ) extends AbstractDominatorTree {
 
     def isAugmented: Boolean = hasVirtualStartNode

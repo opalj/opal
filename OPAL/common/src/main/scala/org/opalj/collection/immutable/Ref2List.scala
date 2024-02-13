@@ -105,9 +105,9 @@ private[immutable] case object Ref2ListEnd extends Ref2List[Nothing] {
  * @author Michael Eichberg
  */
 private[immutable] final case class Ref2ListNode[T >: Null <: AnyRef](
-        private[immutable] var h:    T,
-        private[immutable] var t:    T,
-        private[immutable] var rest: Ref2List[T]
+    private[immutable] var h:    T,
+    private[immutable] var t:    T,
+    private[immutable] var rest: Ref2List[T]
 ) extends Ref2List[T] { list =>
 
     override def isEmpty: Boolean = false

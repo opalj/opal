@@ -24,10 +24,10 @@ trait DefaultConcreteArrayValuesBinding
     //
 
     private case class DefaultConcreteArrayValue(
-            origin:            ValueOrigin,
-            theUpperTypeBound: ArrayType,
-            values:            Array[DomainValue],
-            refId:             RefId
+        origin:            ValueOrigin,
+        theUpperTypeBound: ArrayType,
+        values:            Array[DomainValue],
+        refId:             RefId
     ) extends ConcreteArrayValue
 
     override def ArrayValue(

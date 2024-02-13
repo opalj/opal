@@ -272,8 +272,8 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
      * any `PackagePrivateMethodContext` with the same signature.
      */
     sealed private[analyses] class MethodContext(
-            val methodName: String,
-            val descriptor: MethodDescriptor
+        val methodName: String,
+        val descriptor: MethodDescriptor
     ) {
 
         override def equals(other: Any): Boolean = other match {
@@ -335,9 +335,9 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
      * names are the same, though.
      */
     private[this] class PackagePrivateMethodContext(
-            val packageName: String,
-            methodName:      String,
-            descriptor:      MethodDescriptor
+        val packageName: String,
+        methodName:      String,
+        descriptor:      MethodDescriptor
     ) extends MethodContext(methodName, descriptor) {
 
         override def equals(other: Any): Boolean = other match {
@@ -361,8 +361,8 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
      * `MethodContext` with the same signature regardless of the package name.
      */
     private[this] class ShadowsPackagePrivateMethodContext(
-            methodName: String,
-            descriptor: MethodDescriptor
+        methodName: String,
+        descriptor: MethodDescriptor
     ) extends MethodContext(methodName, descriptor) {
 
         override def equals(other: Any): Boolean = other match {
@@ -381,11 +381,11 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
      * hashCode, but differ in their equality with this type.
      */
     private[analyses] class MethodContextQuery(
-            project:          SomeProject,
-            val receiverType: ObjectType,
-            val packageName:  String,
-            methodName:       String,
-            descriptor:       MethodDescriptor
+        project:          SomeProject,
+        val receiverType: ObjectType,
+        val packageName:  String,
+        methodName:       String,
+        descriptor:       MethodDescriptor
     ) extends MethodContext(methodName, descriptor) {
 
         override def equals(other: Any): Boolean = other match {

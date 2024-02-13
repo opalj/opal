@@ -41,10 +41,10 @@ sealed abstract class DeclaredField {
  * field definition is not available (in the context of the current analysis).
  */
 final class VirtualDeclaredField private[br] (
-        override val declaringClassType: ObjectType,
-        override val name:               String,
-        override val fieldType:          FieldType,
-        override val id:                 Int
+    override val declaringClassType: ObjectType,
+    override val name:               String,
+    override val fieldType:          FieldType,
+    override val id:                 Int
 ) extends DeclaredField {
 
     override val isDefinedField = false
@@ -61,8 +61,8 @@ final class VirtualDeclaredField private[br] (
  * original reference.
  */
 final class DefinedField private[br] (
-        override val id:           Int,
-        override val definedField: Field
+    override val id:           Int,
+    override val definedField: Field
 ) extends DeclaredField {
 
     override def declaringClassType: ObjectType = definedField.declaringClassFile.thisType

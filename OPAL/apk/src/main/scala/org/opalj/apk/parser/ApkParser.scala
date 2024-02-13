@@ -337,8 +337,8 @@ object ApkParser {
 }
 
 case class ApkParserException(
-        message: String,
-        cause:   Throwable = null
+    message: String,
+    cause:   Throwable = null
 ) extends Exception(message, cause)
 
 object DexParser extends Enumeration {

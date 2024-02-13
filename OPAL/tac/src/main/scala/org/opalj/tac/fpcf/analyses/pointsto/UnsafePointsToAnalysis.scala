@@ -40,7 +40,7 @@ import org.opalj.tac.fpcf.properties.TheTACAI
  * @author Dominik Helm
  */
 abstract class UnsafePointsToAnalysis private[pointsto] (
-        final val project: SomeProject
+    final val project: SomeProject
 ) extends PointsToAnalysisBase { self =>
 
     private[this] val UnsafeT = ObjectType("sun/misc/Unsafe")
@@ -204,8 +204,8 @@ abstract class UnsafePointsToAnalysis private[pointsto] (
 }
 
 abstract class UnsafeGetPointsToAnalysis(
-        final val project:      SomeProject,
-        override val apiMethod: DeclaredMethod
+    final val project:      SomeProject,
+    override val apiMethod: DeclaredMethod
 ) extends PointsToAnalysisBase with TACAIBasedAPIBasedAnalysis {
 
     def processNewCaller(
@@ -235,9 +235,9 @@ abstract class UnsafeGetPointsToAnalysis(
 }
 
 abstract class UnsafePutPointsToAnalysis(
-        final val project:      SomeProject,
-        val index:              Int,
-        override val apiMethod: DeclaredMethod
+    final val project:      SomeProject,
+    val index:              Int,
+    override val apiMethod: DeclaredMethod
 ) extends PointsToAnalysisBase with TACAIBasedAPIBasedAnalysis {
 
     def processNewCaller(

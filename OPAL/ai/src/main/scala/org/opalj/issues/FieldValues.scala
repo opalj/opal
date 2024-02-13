@@ -20,8 +20,8 @@ import org.opalj.br.instructions.FieldReadAccess
  * @author Michael Eichberg
  */
 class FieldValues(
-        val method: Method,
-        val result: AIResult
+    val method: Method,
+    val result: AIResult
 ) extends IssueDetails with MethodComprehension {
 
     final def classFile: ClassFile = method.classFile

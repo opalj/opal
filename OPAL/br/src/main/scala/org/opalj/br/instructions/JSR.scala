@@ -40,7 +40,7 @@ object JSR extends InstructionMetaInformation {
 }
 
 case class LabeledJSR(
-        branchTarget: InstructionLabel
+    branchTarget: InstructionLabel
 ) extends LabeledUnconditionalBranchInstruction with JSRLike {
 
     @throws[BranchoffsetOutOfBoundsException]("if the branchoffset is invalid")

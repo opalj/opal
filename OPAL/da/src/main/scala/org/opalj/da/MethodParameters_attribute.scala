@@ -14,8 +14,8 @@ import org.opalj.bi.AccessFlagsContexts.METHOD_PARAMETERS
  * @author Noorulla Sharief
  */
 case class MethodParameters_attribute(
-        attribute_name_index: Constant_Pool_Index,
-        parameters:           ArraySeq[MethodParameter]
+    attribute_name_index: Constant_Pool_Index,
+    parameters:           ArraySeq[MethodParameter]
 ) extends Attribute {
 
     override final def attribute_length: Int = 1 /*parameters_count*/ + parameters.size * 4
@@ -31,8 +31,8 @@ case class MethodParameters_attribute(
 }
 
 case class MethodParameter(
-        name_index:   Constant_Pool_Index,
-        access_flags: Int
+    name_index:   Constant_Pool_Index,
+    access_flags: Int
 ) {
 
     def toXHTML(implicit cp: Constant_Pool): Seq[Node] = {

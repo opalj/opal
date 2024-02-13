@@ -49,7 +49,7 @@ import org.opalj.fpcf.SomeEPS
  * @author Florian Kuebler
  */
 class ConfiguredNativeMethodsCallGraphAnalysis private[analyses] (
-        final val project: SomeProject
+    final val project: SomeProject
 ) extends FPCFAnalysis {
 
     val configKey = "org.opalj.fpcf.analyses.ConfiguredNativeMethodsAnalysis"

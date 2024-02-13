@@ -33,7 +33,7 @@ import org.opalj.fpcf.Results
  * @author Dominik Helm
  */
 class ReflectionAllocationsAnalysis private[analyses] (
-        final val project: SomeProject
+    final val project: SomeProject
 ) extends FPCFAnalysis {
 
     val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
@@ -254,8 +254,8 @@ class ReflectionAllocationsAnalysis private[analyses] (
 }
 
 class ReflectionMethodAllocationsAnalysis(
-        final val project:            SomeProject,
-        override final val apiMethod: DeclaredMethod
+    final val project:            SomeProject,
+    override final val apiMethod: DeclaredMethod
 ) extends PointsToAnalysisBase with AllocationSiteBasedAnalysis with APIBasedAnalysis {
 
     override def handleNewCaller(

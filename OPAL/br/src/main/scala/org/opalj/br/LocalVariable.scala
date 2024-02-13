@@ -8,11 +8,11 @@ package br
  * @author Michael Eichberg
  */
 case class LocalVariable(
-        startPC:   PC,
-        length:    Int,
-        name:      String,
-        fieldType: FieldType,
-        index:     Int
+    startPC:   PC,
+    length:    Int,
+    name:      String,
+    fieldType: FieldType,
+    index:     Int
 ) {
 
     def remapPCs(codeSize: Int, f: PC => PC): Option[LocalVariable] = {

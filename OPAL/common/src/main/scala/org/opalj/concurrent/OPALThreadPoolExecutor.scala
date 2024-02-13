@@ -25,8 +25,8 @@ import java.util.concurrent.atomic.AtomicLong
  * @author Michael Eichberg
  */
 class OPALBoundedThreadPoolExecutor(
-        n:         Int,
-        val group: ThreadGroup
+    n:         Int,
+    val group: ThreadGroup
 ) extends ThreadPoolExecutor(
         n,
         n,

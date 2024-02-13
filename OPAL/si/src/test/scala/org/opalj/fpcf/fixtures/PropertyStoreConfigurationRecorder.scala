@@ -103,7 +103,7 @@ class BasePropertyStoreMockup extends PropertyStore {
 
 /** A simple property store which will return the values when queried consecutively */
 class InitializedPropertyStore(
-        val data: IntMap[Map[Entity, mutable.Queue[EOptionP[Entity, Property]]]]
+    val data: IntMap[Map[Entity, mutable.Queue[EOptionP[Entity, Property]]]]
 ) extends BasePropertyStoreMockup {
 
     override def doApply[E <: Entity, P <: Property](

@@ -13,14 +13,14 @@ import org.opalj.bi.AccessFlagsContexts
  * @author Michael Eichberg
  */
 case class Module(
-        name:        String,
-        moduleFlags: Int,
-        versionInfo: Option[String],
-        requires:    ArraySeq[Requires],
-        exports:     ArraySeq[Exports],
-        opens:       ArraySeq[Opens],
-        uses:        ArraySeq[ObjectType],
-        provides:    ArraySeq[Provides]
+    name:        String,
+    moduleFlags: Int,
+    versionInfo: Option[String],
+    requires:    ArraySeq[Requires],
+    exports:     ArraySeq[Exports],
+    opens:       ArraySeq[Opens],
+    uses:        ArraySeq[ObjectType],
+    provides:    ArraySeq[Provides]
 ) extends Attribute {
 
     override final def kindId: Int = Module.KindId

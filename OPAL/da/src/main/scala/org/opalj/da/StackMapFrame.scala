@@ -71,8 +71,8 @@ case class SameFrame(frame_type: Int) extends StackMapFrame {
 }
 
 case class SameLocals1StackItemFrame(
-        frame_type:                   Int,
-        verification_type_info_stack: VerificationTypeInfo
+    frame_type:                   Int,
+    verification_type_info_stack: VerificationTypeInfo
 ) extends StackMapFrame {
 
     override final def attribute_length: Int = 1 + verification_type_info_stack.attribute_length
@@ -101,9 +101,9 @@ case class SameLocals1StackItemFrame(
 }
 
 case class SameLocals1StackItemFrameExtended(
-        frame_type:                   Int = 247,
-        offset_delta:                 Int,
-        verification_type_info_stack: VerificationTypeInfo
+    frame_type:                   Int = 247,
+    offset_delta:                 Int,
+    verification_type_info_stack: VerificationTypeInfo
 ) extends StackMapFrame {
 
     override final def attribute_length: Int = 1 + 2 + verification_type_info_stack.attribute_length
@@ -185,9 +185,9 @@ case class SameFrameExtended(frame_type: Int = 251, offset_delta: Int) extends S
 }
 
 case class AppendFrame(
-        frame_type:                    Int,
-        offset_delta:                  Int,
-        verification_type_info_locals: VerificationTypeInfos
+    frame_type:                    Int,
+    offset_delta:                  Int,
+    verification_type_info_locals: VerificationTypeInfos
 ) extends StackMapFrame {
 
     override final def attribute_length: Int = {
@@ -219,10 +219,10 @@ case class AppendFrame(
 }
 
 case class FullFrame(
-        frame_type:                    Int,
-        offset_delta:                  Int,
-        verification_type_info_locals: VerificationTypeInfos,
-        verification_type_info_stack:  VerificationTypeInfos
+    frame_type:                    Int,
+    offset_delta:                  Int,
+    verification_type_info_locals: VerificationTypeInfos,
+    verification_type_info_stack:  VerificationTypeInfos
 ) extends StackMapFrame {
 
     override final def attribute_length: Int = {
