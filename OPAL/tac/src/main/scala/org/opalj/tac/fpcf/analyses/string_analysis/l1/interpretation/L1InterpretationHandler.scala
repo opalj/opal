@@ -27,6 +27,7 @@ import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.Interpretation
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.NewInterpreter
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.StringConstInterpreter
 import org.opalj.tac.fpcf.analyses.string_analysis.l0.interpretation.L0ArrayAccessInterpreter
+import org.opalj.tac.fpcf.analyses.string_analysis.l0.interpretation.L0NonVirtualMethodCallInterpreter
 import org.opalj.tac.fpcf.analyses.string_analysis.l0.interpretation.L0StaticFunctionCallInterpreter
 import org.opalj.tac.fpcf.analyses.string_analysis.l1.finalizer.ArrayLoadFinalizer
 import org.opalj.tac.fpcf.analyses.string_analysis.l1.finalizer.FieldReadFinalizer
@@ -302,7 +303,7 @@ class L1InterpretationHandler[State <: L1ComputationState[State]](
         nvmc:    NonVirtualMethodCall[V],
         defSite: Int
     )(implicit state: State): EOptionP[Entity, StringConstancyProperty] = {
-        val r = L1NonVirtualMethodCallInterpreter(this).interpret(nvmc, defSite)
+        val r = L0NonVirtualMethodCallInterpreter(this).interpret(nvmc, defSite)
         r match {
             case FinalEP(_, p: StringConstancyProperty) =>
                 state.appendToInterimFpe2Sci(pcOfDefSite(defSite)(state.tac.stmts), p.stringConstancyInformation)
