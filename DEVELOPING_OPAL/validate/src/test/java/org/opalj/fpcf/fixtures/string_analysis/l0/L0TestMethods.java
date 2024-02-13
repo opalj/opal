@@ -208,7 +208,7 @@ public class L0TestMethods {
     }
 
     @StringDefinitionsCollection(
-            value = "a case where an array access needs to be interpreted with multiple static function calls",
+            value = "a case where an array access needs to be interpreted with multiple static and virtual function calls",
             stringDefinitions = {
                     @StringDefinitions(
                             expectedLevel = DYNAMIC,
@@ -216,7 +216,7 @@ public class L0TestMethods {
                     )
 
             })
-    public void arrayStaticFunctionCalls(int i) {
+    public void arrayStaticAndVirtualFunctionCalls(int i) {
         String[] classes = {
                 "java.lang.Object",
                 getRuntimeClassName(),

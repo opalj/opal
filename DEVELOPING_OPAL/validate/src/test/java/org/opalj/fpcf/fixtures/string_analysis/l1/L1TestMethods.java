@@ -135,24 +135,6 @@ public class L1TestMethods extends L0TestMethods {
     }
 
     @StringDefinitionsCollection(
-            value = "a case where an array access needs to be interpreted with a virtual call, requiring a call graph",
-            stringDefinitions = {
-                    @StringDefinitions(
-                            expectedLevel = DYNAMIC,
-                            expectedStrings = "(java.lang.Object|java.lang.Runtime|java.lang.Integer|.*)"
-                    )
-            })
-    public void arrayTest(int i) {
-        String[] classes = {
-                "java.lang.Object",
-                getRuntimeClassName(),
-                StringProvider.getFQClassNameWithStringBuilder("java.lang", "Integer"),
-                System.getProperty("SomeClass")
-        };
-        analyzeString(classes[i]);
-    }
-
-    @StringDefinitionsCollection(
             value = "a case that tests that the append interpretation of only intraprocedural "
                     + "expressions still works",
             stringDefinitions = {
