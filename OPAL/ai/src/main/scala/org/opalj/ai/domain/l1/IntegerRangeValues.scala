@@ -9,6 +9,8 @@ import scala.Int.{MinValue => MinInt}
 
 import org.opalj.br.CTIntType
 import org.opalj.value.IsIntegerValue
+import org.opalj.value.TheIntegerValue
+import org.opalj.value.ValueInformation
 
 /**
  * This domain represents integer values using ranges.
@@ -149,6 +151,12 @@ trait IntegerRangeValues
 
         val upperBound: Int // inclusive
 
+        override final def toCanonicalForm: ValueInformation = {
+            if (lowerBound == upperBound)
+                TheIntegerValue(lowerBound)
+            else
+                super.toCanonicalForm
+        }
     }
 
     /**
