@@ -223,22 +223,6 @@ public class L1TestMethods extends L0TestMethods {
     }
 
     @StringDefinitionsCollection(
-            value = "a case where context-insensitivity is tested",
-            stringDefinitions = {
-                    @StringDefinitions(
-                            expectedLevel = CONSTANT,
-                            expectedStrings = "java.lang.(Object|Runtime)"
-                    )
-
-            })
-    public void contextInsensitivityTest() {
-        StringBuilder sb = new StringBuilder();
-        String s = StringProvider.getFQClassNameWithStringBuilder("java.lang", "Object");
-        sb.append(StringProvider.getFQClassNameWithStringBuilder("java.lang", "Runtime"));
-        analyzeString(sb.toString());
-    }
-
-    @StringDefinitionsCollection(
             value = "a case taken from javax.management.remote.rmi.RMIConnector where a GetStatic "
                     + "is involved",
             stringDefinitions = {
@@ -585,40 +569,6 @@ public class L1TestMethods extends L0TestMethods {
     }
 
     @StringDefinitionsCollection(
-            value = "a test case which tests the interpretation of String#valueOf",
-            stringDefinitions = {
-                    @StringDefinitions(
-                            expectedLevel = CONSTANT,
-                            expectedStrings = "c"
-                    ),
-                    @StringDefinitions(
-                            expectedLevel = CONSTANT,
-                            expectedStrings = "42.3"
-                    ),
-                    @StringDefinitions(
-                            expectedLevel = CONSTANT,
-                            expectedStrings = "java.lang.Runtime"
-                    )
-            })
-    public void valueOfTest() {
-        analyzeString(String.valueOf('c'));
-        analyzeString(String.valueOf((float) 42.3));
-        analyzeString(String.valueOf(getRuntimeClassName()));
-    }
-
-    @StringDefinitionsCollection(
-            value = "a test case which tests the interpretation of String#valueOf",
-            stringDefinitions = {
-                    @StringDefinitions(
-                            expectedLevel = CONSTANT,
-                            expectedStrings = "java.lang.Runtime"
-                    )
-            })
-    public void valueOfTest2() {
-        analyzeString(String.valueOf(getRuntimeClassName()));
-    }
-
-    @StringDefinitionsCollection(
             value = "a case where a static property is read",
             stringDefinitions = {
                     @StringDefinitions(
@@ -645,6 +595,28 @@ public class L1TestMethods extends L0TestMethods {
     // DIFFERING TEST CASES FROM PREVIOUS LEVELS
 
     @StringDefinitionsCollection(
+            value = "a test case which tests the interpretation of String#valueOf",
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT,
+                            expectedStrings = "c"
+                    ),
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT,
+                            expectedStrings = "42.3"
+                    ),
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT,
+                            expectedStrings = "java.lang.Runtime"
+                    )
+            })
+    public void valueOfTest() {
+        analyzeString(String.valueOf('c'));
+        analyzeString(String.valueOf((float) 42.3));
+        analyzeString(String.valueOf(getRuntimeClassName()));
+    }
+
+    @StringDefinitionsCollection(
             value = "can handle virtual function calls",
             stringDefinitions = {
                     @StringDefinitions(
@@ -654,23 +626,6 @@ public class L1TestMethods extends L0TestMethods {
     public void fromFunctionCall() {
         String className = getStringBuilderClassName();
         analyzeString(className);
-    }
-
-    @StringDefinitionsCollection(
-            // IMPROVE subsequent levels should not worsen quality of results
-            value = "checks if a string value with append(s) is determined correctly",
-            stringDefinitions = {
-                    @StringDefinitions(
-                            expectedLevel = CONSTANT, expectedStrings = "(java.lang.|lang.|java.)(String|Object|(java.lang.|lang.|java.)(String|Object))"
-                    ),
-                    @StringDefinitions(
-                            expectedLevel = CONSTANT, expectedStrings = "(java.lang.|lang.|java.)(String|Object|(java.lang.|lang.|java.)(String|Object))"
-                    )
-            }
-    )
-    public void simpleStringConcatWithStaticFunctionCalls() {
-        analyzeString(StringProvider.concat("java.lang.", "String"));
-        analyzeString(StringProvider.concat("java.", StringProvider.concat("lang.", "Object")));
     }
 
     @StringDefinitionsCollection(

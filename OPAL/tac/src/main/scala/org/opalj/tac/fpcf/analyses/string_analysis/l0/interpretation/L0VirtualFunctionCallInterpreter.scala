@@ -7,6 +7,8 @@ package string_analysis
 package l0
 package interpretation
 
+import scala.util.Try
+
 import org.opalj.br.ComputationalTypeDouble
 import org.opalj.br.ComputationalTypeFloat
 import org.opalj.br.ComputationalTypeInt
@@ -159,7 +161,10 @@ case class L0VirtualFunctionCallInterpreter[State <: L0ComputationState[State]](
                     if (call.descriptor.parameterType(0).isCharType &&
                         sci.constancyLevel == StringConstancyLevel.CONSTANT
                     ) {
-                        sci.copy(possibleStrings = sci.possibleStrings.toInt.toChar.toString)
+                        if (Try(sci.possibleStrings.toInt).isSuccess) {
+                            sci.copy(possibleStrings = sci.possibleStrings.toInt.toChar.toString)
+                        } else
+                            sci
                     } else {
                         sci
                     }

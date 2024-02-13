@@ -7,6 +7,9 @@ package string_analysis
 package l0
 package interpretation
 
+import scala.util.Try
+
+import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
@@ -33,6 +36,43 @@ case class L0StaticFunctionCallInterpreter[State <: L0ComputationState[State]](
     override type T = StaticFunctionCall[V]
 
     override def interpret(instr: T, defSite: Int)(implicit state: State): EOptionP[Entity, StringConstancyProperty] = {
+        if (instr.declaringClass == ObjectType.String && instr.name == "valueOf") {
+            processStringValueOf(instr)
+        } else {
+            processArbitraryCall(instr, defSite)
+        }
+    }
+
+    private def processStringValueOf(call: StaticFunctionCall[V])(
+        implicit state: State
+    ): EOptionP[Entity, StringConstancyProperty] = {
+        val results = call.params.head.asVar.definedBy.toArray.sorted.map {
+            exprHandler.processDefSite(_)
+        }
+        val interim = results.find(_.isRefinable)
+        if (interim.isDefined) {
+            interim.get
+        } else {
+            // For char values, we need to do a conversion (as the returned results are integers)
+            val scis = results.map { r => r.asFinal.p.stringConstancyInformation }
+            val finalScis = if (call.descriptor.parameterType(0).toJava == "char") {
+                scis.map { sci =>
+                    if (Try(sci.possibleStrings.toInt).isSuccess) {
+                        sci.copy(possibleStrings = sci.possibleStrings.toInt.toChar.toString)
+                    } else {
+                        sci
+                    }
+                }
+            } else {
+                scis
+            }
+            FinalEP(call, StringConstancyProperty(StringConstancyInformation.reduceMultiple(finalScis)))
+        }
+    }
+
+    protected def processArbitraryCall(instr: T, defSite: Int)(implicit
+        state: State
+    ): EOptionP[Entity, StringConstancyProperty] = {
         val calleeMethod = instr.resolveCallTarget(state.entity._2.classFile.thisType)
         if (calleeMethod.isEmpty) {
             state.appendToFpe2Sci(pcOfDefSite(defSite)(state.tac.stmts), StringConstancyInformation.lb)

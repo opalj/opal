@@ -164,9 +164,9 @@ class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
 
         if (state.iHandler == null) {
             state.iHandler =
-                L1InterpretationHandler(project, declaredFields, fieldAccessInformation, ps, contextProvider)
+                L1InterpretationHandler(declaredFields, fieldAccessInformation, project, ps, contextProvider)
             state.interimIHandler =
-                L1InterpretationHandler(project, declaredFields, fieldAccessInformation, ps, contextProvider)
+                L1InterpretationHandler(declaredFields, fieldAccessInformation, project, ps, contextProvider)
         }
 
         var requiresCallersInfo = false

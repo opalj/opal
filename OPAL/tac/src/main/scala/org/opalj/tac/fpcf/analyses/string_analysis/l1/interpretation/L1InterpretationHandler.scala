@@ -27,6 +27,7 @@ import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.Interpretation
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.NewInterpreter
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.StringConstInterpreter
 import org.opalj.tac.fpcf.analyses.string_analysis.l0.interpretation.L0ArrayAccessInterpreter
+import org.opalj.tac.fpcf.analyses.string_analysis.l0.interpretation.L0StaticFunctionCallInterpreter
 import org.opalj.tac.fpcf.analyses.string_analysis.l1.finalizer.ArrayLoadFinalizer
 import org.opalj.tac.fpcf.analyses.string_analysis.l1.finalizer.FieldReadFinalizer
 import org.opalj.tac.fpcf.analyses.string_analysis.l1.finalizer.NewArrayFinalizer
@@ -44,9 +45,9 @@ import org.opalj.tac.fpcf.analyses.string_analysis.l1.finalizer.VirtualFunctionC
  * @author Patrick Mell
  */
 class L1InterpretationHandler[State <: L1ComputationState[State]](
-    project:                      SomeProject,
     declaredFields:               DeclaredFields,
     fieldAccessInformation:       FieldAccessInformation,
+    implicit val p:               SomeProject,
     implicit val ps:              PropertyStore,
     implicit val contextProvider: ContextProvider
 ) extends InterpretationHandler[State] {
@@ -229,7 +230,7 @@ class L1InterpretationHandler[State <: L1ComputationState[State]](
         expr:    StaticFunctionCall[V],
         defSite: Int
     )(implicit state: State): EOptionP[Entity, StringConstancyProperty] = {
-        val r = new L1StaticFunctionCallInterpreter(this, ps, contextProvider).interpret(expr, defSite)
+        val r = L0StaticFunctionCallInterpreter(this).interpret(expr, defSite)
         if (r.isRefinable || state.nonFinalFunctionArgs.contains(expr)) {
             processedDefSites.remove(defSite)
         }
@@ -258,7 +259,7 @@ class L1InterpretationHandler[State <: L1ComputationState[State]](
     private def processGetField(expr: FieldRead[V], defSite: Int)(implicit
         state: State
     ): EOptionP[Entity, StringConstancyProperty] = {
-        val r = L1FieldReadInterpreter(ps, fieldAccessInformation, project, declaredFields, contextProvider)
+        val r = L1FieldReadInterpreter(ps, fieldAccessInformation, p, declaredFields, contextProvider)
             .interpret(expr, defSite)(state)
         if (r.isRefinable) {
             processedDefSites.remove(defSite)
@@ -374,15 +375,15 @@ class L1InterpretationHandler[State <: L1ComputationState[State]](
 object L1InterpretationHandler {
 
     def apply[State <: L1ComputationState[State]](
-        project:                SomeProject,
         declaredFields:         DeclaredFields,
         fieldAccessInformation: FieldAccessInformation,
+        project:                SomeProject,
         ps:                     PropertyStore,
         contextProvider:        ContextProvider
     ): L1InterpretationHandler[State] = new L1InterpretationHandler[State](
-        project,
         declaredFields,
         fieldAccessInformation,
+        project,
         ps,
         contextProvider
     )

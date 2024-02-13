@@ -1043,6 +1043,28 @@ public class L0TestMethods {
     }
 
     @StringDefinitionsCollection(
+            value = "a test case which tests the interpretation of String#valueOf",
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT,
+                            expectedStrings = "c"
+                    ),
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT,
+                            expectedStrings = "42.3"
+                    ),
+                    @StringDefinitions(
+                            expectedLevel = DYNAMIC,
+                            expectedStrings = ".*"
+                    )
+            })
+    public void valueOfTest() {
+        analyzeString(String.valueOf('c'));
+        analyzeString(String.valueOf((float) 42.3));
+        analyzeString(String.valueOf(getRuntimeClassName()));
+    }
+
+    @StringDefinitionsCollection(
             value = "an example that uses a non final field",
             stringDefinitions = {
                     @StringDefinitions(
