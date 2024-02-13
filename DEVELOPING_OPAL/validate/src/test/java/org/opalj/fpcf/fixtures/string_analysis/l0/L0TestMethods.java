@@ -118,6 +118,23 @@ public class L0TestMethods {
     }
 
     @StringDefinitionsCollection(
+            value = "checks if the substring of a constant string value is determined correctly",
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT, expectedStrings = "va"
+                    ),
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT, expectedStrings = "va.lang."
+                    )
+            }
+    )
+    public void simpleSubstring() {
+        String someString = "java.lang.";
+        analyzeString(someString.substring(2, 5));
+        analyzeString(someString.substring(2));
+    }
+
+    @StringDefinitionsCollection(
             value = "checks if a string value with append(s) is determined correctly",
             stringDefinitions = {
                     @StringDefinitions(

@@ -164,10 +164,6 @@ class L0StringAnalysisTest extends StringAnalysisTest {
             // .filter(entity => entity._2.name.startsWith("tryCatchFinallyWithThrowable"))
             .filterNot(entity => entity._2.name.startsWith("switchNested"))
             .filterNot(entity => entity._2.name.startsWith("tryCatchFinallyWithThrowable"))
-            .filterNot(entity => entity._2.name.startsWith("twoDefinitionsOneUsage")) // Waits on string_concat and "substring"
-            .filterNot(entity => entity._2.name == "simpleStringConcat") // Waits on string_concat and "substring"
-            .filterNot(entity => entity._2.name.startsWith("multipleDefSites")) // Waits on string_concat and "substring"
-            .filterNot(entity => entity._2.name.startsWith("fromConstantAndFunctionCall")) // Waits on string_concat and "substring"
 
         // it("can be executed without exceptions") {
         newEntities.foreach(as.propertyStore.force(_, StringConstancyProperty.key))

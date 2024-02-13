@@ -22,6 +22,7 @@ import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.FinalEP
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.DependingStringInterpreter
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
+import org.opalj.value.TheIntegerValue
 
 /**
  * Responsible for processing [[VirtualFunctionCall]]s without a call graph.
@@ -76,6 +77,7 @@ case class L0VirtualFunctionCallInterpreter[State <: L0ComputationState[State]](
             case "append"   => interpretAppendCall(instr)
             case "toString" => interpretToStringCall(instr)
             case "replace"  => Some(interpretReplaceCall)
+            case "substring" if instr.descriptor.returnType == ObjectType.String => interpretSubstringCall(instr)
             case _ =>
                 instr.descriptor.returnType match {
                     case obj: ObjectType if obj == ObjectType.String => Some(StringConstancyInformation.lb)
@@ -97,7 +99,7 @@ case class L0VirtualFunctionCallInterpreter[State <: L0ComputationState[State]](
     private def interpretAppendCall(appendCall: VirtualFunctionCall[V])(implicit
         state: State
     ): Option[StringConstancyInformation] = {
-        val receiverSci = receiverValuesOfAppendCall(appendCall)
+        val receiverSci = receiverValuesOfCall(appendCall)
         val appendSci = valueOfAppendCall(appendCall)
 
         if (appendSci.isEmpty) {
@@ -126,21 +128,6 @@ case class L0VirtualFunctionCallInterpreter[State <: L0ComputationState[State]](
 
             Some(sci)
         }
-    }
-
-    /**
-     * This function determines the current value of the receiver object of an `append` call.
-     */
-    private def receiverValuesOfAppendCall(call: VirtualFunctionCall[V])(implicit
-        state: State
-    ): StringConstancyInformation = {
-        // There might be several receivers, thus the map; from the processed sites, however, use
-        // only the head as a single receiver interpretation will produce one element
-        val scis = call.receiver.asVar.definedBy.toArray.sorted.map { ds =>
-            val r = exprHandler.processDefSite(ds)
-            r.asFinal.p.stringConstancyInformation
-        }.filter { sci => !sci.isTheNeutralElement }
-        scis.headOption.getOrElse(StringConstancyInformation.getNeutralElement)
     }
 
     /**
@@ -192,12 +179,67 @@ case class L0VirtualFunctionCallInterpreter[State <: L0ComputationState[State]](
     }
 
     /**
+     * Processes calls to [[String#substring]].
+     */
+    private def interpretSubstringCall(substringCall: T)(implicit state: State): Option[StringConstancyInformation] = {
+        val receiverSci = receiverValuesOfCall(substringCall)
+
+        if (receiverSci.isComplex) {
+            // We cannot yet interpret substrings of mixed values
+            Some(StringConstancyInformation.lb)
+        } else {
+            val parameterCount = substringCall.params.size
+            parameterCount match {
+                case 1 =>
+                    substringCall.params.head.asVar.value match {
+                        case intValue: TheIntegerValue =>
+                            Some(StringConstancyInformation(
+                                StringConstancyLevel.CONSTANT,
+                                StringConstancyType.REPLACE,
+                                receiverSci.possibleStrings.substring(intValue.value)
+                            ))
+                        case _ =>
+                            Some(StringConstancyInformation.lb)
+                    }
+
+                case 2 =>
+                    (substringCall.params.head.asVar.value, substringCall.params(1).asVar.value) match {
+                        case (firstIntValue: TheIntegerValue, secondIntValue: TheIntegerValue) =>
+                            Some(StringConstancyInformation(
+                                StringConstancyLevel.CONSTANT,
+                                StringConstancyType.APPEND,
+                                receiverSci.possibleStrings.substring(firstIntValue.value, secondIntValue.value)
+                            ))
+                        case _ =>
+                            Some(StringConstancyInformation.lb)
+                    }
+
+                case _ => throw new IllegalStateException(
+                    s"Unexpected parameter count for ${substringCall.descriptor.toJava}. Expected one or two, got $parameterCount"
+                )
+            }
+        }
+    }
+
+    /**
+     * This function determines the current value of the receiver object of a call.
+     */
+    private def receiverValuesOfCall(call: T)(implicit state: State): StringConstancyInformation = {
+        // There might be several receivers, thus the map; from the processed sites, however, use
+        // only the head as a single receiver interpretation will produce one element
+        val scis = call.receiver.asVar.definedBy.toArray.sorted.map { ds =>
+            // IMPROVE enable handling dependees here
+            val r = exprHandler.processDefSite(ds)
+            r.asFinal.p.stringConstancyInformation
+        }.filter { sci => !sci.isTheNeutralElement }
+        scis.headOption.getOrElse(StringConstancyInformation.getNeutralElement)
+    }
+
+    /**
      * Processes calls to [[StringBuilder#toString]] or [[StringBuffer#toString]]. Note that this function assumes that
      * the given `toString` is such a function call! Otherwise, the expected behavior cannot be guaranteed.
      */
-    private def interpretToStringCall(call: VirtualFunctionCall[V])(implicit
-        state: State
-    ): Option[StringConstancyInformation] = {
+    private def interpretToStringCall(call: T)(implicit state: State): Option[StringConstancyInformation] = {
         handleInterpretationResult(exprHandler.processDefSite(call.receiver.asVar.definedBy.head))
     }
 
