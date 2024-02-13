@@ -322,9 +322,9 @@ sealed abstract class StringTree(val children: ListBuffer[StringTree]) { // ques
  * Otherwise, the number of repetitions is computed by `upperBound - lowerBound`.
  */
 case class StringTreeRepetition(
-        child:      StringTree,
-        lowerBound: Option[Int] = None,
-        upperBound: Option[Int] = None
+    child:      StringTree,
+    lowerBound: Option[Int] = None,
+    upperBound: Option[Int] = None
 ) extends StringTree(ListBuffer(child))
 
 /**
@@ -334,7 +334,7 @@ case class StringTreeRepetition(
  * represents ''s_1'' and the last child / last element ''s_n''.
  */
 case class StringTreeConcat(
-        override val children: ListBuffer[StringTree]
+    override val children: ListBuffer[StringTree]
 ) extends StringTree(children)
 
 /**
@@ -347,7 +347,7 @@ case class StringTreeConcat(
  * a (sub) string.
  */
 case class StringTreeOr(
-        override val children: ListBuffer[StringTree]
+    override val children: ListBuffer[StringTree]
 ) extends StringTree(children)
 
 /**
@@ -359,7 +359,7 @@ case class StringTreeOr(
  * string may have (contain) a particular but not necessarily.
  */
 case class StringTreeCond(
-        child: StringTree
+    child: StringTree
 ) extends StringTree(ListBuffer(child))
 
 /**
@@ -370,5 +370,5 @@ case class StringTreeCond(
  * expression and that represents part of the value(s) a string may have.
  */
 case class StringTreeConst(
-        sci: StringConstancyInformation
+    sci: StringConstancyInformation
 ) extends StringTree(ListBuffer())

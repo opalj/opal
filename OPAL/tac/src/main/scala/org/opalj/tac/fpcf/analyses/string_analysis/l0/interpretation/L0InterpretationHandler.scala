@@ -34,9 +34,9 @@ import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.StringConstInt
  * @author Maximilian Rüsch
  */
 class L0InterpretationHandler[State <: L0ComputationState[State]]()(
-        implicit
-        p:  SomeProject,
-        ps: PropertyStore
+    implicit
+    p:  SomeProject,
+    ps: PropertyStore
 ) extends InterpretationHandler[State] {
 
     /**

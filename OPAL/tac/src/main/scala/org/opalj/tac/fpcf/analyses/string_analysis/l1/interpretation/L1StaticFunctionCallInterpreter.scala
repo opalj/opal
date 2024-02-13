@@ -26,9 +26,9 @@ import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.Interpretation
  * @author Maximilian Rüsch
  */
 class L1StaticFunctionCallInterpreter[State <: L1ComputationState[State]](
-        exprHandler:                  InterpretationHandler[State],
-        implicit val ps:              PropertyStore,
-        implicit val contextProvider: ContextProvider
+    exprHandler:                  InterpretationHandler[State],
+    implicit val ps:              PropertyStore,
+    implicit val contextProvider: ContextProvider
 ) extends L1StringInterpreter[State] {
 
     override type T = StaticFunctionCall[V]

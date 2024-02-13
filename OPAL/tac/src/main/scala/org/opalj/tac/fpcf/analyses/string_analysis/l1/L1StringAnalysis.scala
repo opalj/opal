@@ -75,9 +75,9 @@ import org.opalj.tac.fpcf.properties.TACAI
 class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
 
     protected[l1] case class CState(
-            override val dm:            DeclaredMethod,
-            override val entity:        (SEntity, Method),
-            override val methodContext: Context
+        override val dm:            DeclaredMethod,
+        override val entity:        (SEntity, Method),
+        override val methodContext: Context
     ) extends L1ComputationState[CState]
 
     override type State = CState

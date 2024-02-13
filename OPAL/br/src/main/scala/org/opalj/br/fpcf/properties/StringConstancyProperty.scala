@@ -19,7 +19,7 @@ sealed trait StringConstancyPropertyMetaInformation extends PropertyMetaInformat
 }
 
 class StringConstancyProperty(
-        val stringConstancyInformation: StringConstancyInformation
+    val stringConstancyInformation: StringConstancyInformation
 ) extends Property with StringConstancyPropertyMetaInformation {
 
     final def key: PropertyKey[StringConstancyProperty] = StringConstancyProperty.key

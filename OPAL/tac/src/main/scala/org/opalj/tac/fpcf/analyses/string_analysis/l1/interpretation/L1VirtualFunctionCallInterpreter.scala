@@ -31,9 +31,9 @@ import org.opalj.tac.fpcf.analyses.string_analysis.l0.interpretation.L0VirtualFu
  * @author Patrick Mell
  */
 class L1VirtualFunctionCallInterpreter[State <: L1ComputationState[State]](
-        exprHandler:                  InterpretationHandler[State],
-        implicit val ps:              PropertyStore,
-        implicit val contextProvider: ContextProvider
+    exprHandler:                  InterpretationHandler[State],
+    implicit val ps:              PropertyStore,
+    implicit val contextProvider: ContextProvider
 ) extends L0VirtualFunctionCallInterpreter[State](exprHandler)
     with L1StringInterpreter[State] {
 

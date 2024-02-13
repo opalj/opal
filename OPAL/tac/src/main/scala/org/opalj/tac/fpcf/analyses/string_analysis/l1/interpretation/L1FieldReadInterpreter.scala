@@ -33,11 +33,11 @@ import org.opalj.tac.fpcf.analyses.string_analysis.l1.L1StringAnalysis
  * @author Maximilian Rüsch
  */
 case class L1FieldReadInterpreter[State <: L1ComputationState[State]](
-        ps:                           PropertyStore,
-        fieldAccessInformation:       FieldAccessInformation,
-        project:                      SomeProject,
-        implicit val declaredFields:  DeclaredFields,
-        implicit val contextProvider: ContextProvider
+    ps:                           PropertyStore,
+    fieldAccessInformation:       FieldAccessInformation,
+    project:                      SomeProject,
+    implicit val declaredFields:  DeclaredFields,
+    implicit val contextProvider: ContextProvider
 ) extends L1StringInterpreter[State] {
 
     override type T = FieldRead[V]

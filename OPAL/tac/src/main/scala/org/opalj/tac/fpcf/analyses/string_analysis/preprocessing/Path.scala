@@ -88,8 +88,8 @@ case object NestedPathType extends Enumeration {
  * possible, i.e., when they compute / have this information.
  */
 case class NestedPathElement(
-        element:     ListBuffer[SubPath],
-        elementType: Option[NestedPathType.Value]
+    element:     ListBuffer[SubPath],
+    elementType: Option[NestedPathType.Value]
 ) extends SubPath
 
 /**

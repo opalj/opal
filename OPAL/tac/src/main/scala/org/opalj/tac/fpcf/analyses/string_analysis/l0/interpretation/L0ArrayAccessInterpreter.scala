@@ -22,7 +22,7 @@ import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.Interpretation
  * @author Maximilian Rüsch
  */
 case class L0ArrayAccessInterpreter[State <: L0ComputationState[State]](
-        exprHandler: InterpretationHandler[State]
+    exprHandler: InterpretationHandler[State]
 ) extends L0StringInterpreter[State] with DependingStringInterpreter[State] {
 
     implicit val _exprHandler: InterpretationHandler[State] = exprHandler

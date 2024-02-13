@@ -31,7 +31,7 @@ import org.opalj.value.TheIntegerValue
  * @author Maximilian Rüsch
  */
 case class L0VirtualFunctionCallInterpreter[State <: L0ComputationState[State]](
-        exprHandler: InterpretationHandler[State]
+    exprHandler: InterpretationHandler[State]
 ) extends L0StringInterpreter[State] with DependingStringInterpreter[State] {
 
     implicit val _exprHandler: InterpretationHandler[State] = exprHandler
@@ -74,9 +74,9 @@ case class L0VirtualFunctionCallInterpreter[State <: L0ComputationState[State]](
         state: State
     ): Option[StringConstancyInformation] = {
         instr.name match {
-            case "append"   => interpretAppendCall(instr)
-            case "toString" => interpretToStringCall(instr)
-            case "replace"  => Some(interpretReplaceCall)
+            case "append"                                                        => interpretAppendCall(instr)
+            case "toString"                                                      => interpretToStringCall(instr)
+            case "replace"                                                       => Some(interpretReplaceCall)
             case "substring" if instr.descriptor.returnType == ObjectType.String => interpretSubstringCall(instr)
             case _ =>
                 instr.descriptor.returnType match {
@@ -215,8 +215,8 @@ case class L0VirtualFunctionCallInterpreter[State <: L0ComputationState[State]](
                     }
 
                 case _ => throw new IllegalStateException(
-                    s"Unexpected parameter count for ${substringCall.descriptor.toJava}. Expected one or two, got $parameterCount"
-                )
+                        s"Unexpected parameter count for ${substringCall.descriptor.toJava}. Expected one or two, got $parameterCount"
+                    )
             }
         }
     }

@@ -21,8 +21,8 @@ import org.opalj.fpcf.PropertyStore
  * @author Maximilian Rüsch
  */
 case class L1NonVirtualFunctionCallInterpreter[State <: L1ComputationState[State]]()(
-        implicit val ps:              PropertyStore,
-        implicit val contextProvider: ContextProvider
+    implicit val ps:              PropertyStore,
+    implicit val contextProvider: ContextProvider
 ) extends L1StringInterpreter[State] {
 
     override type T = NonVirtualFunctionCall[V]

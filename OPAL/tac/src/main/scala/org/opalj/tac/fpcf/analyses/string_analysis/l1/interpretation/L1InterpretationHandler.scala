@@ -44,11 +44,11 @@ import org.opalj.tac.fpcf.analyses.string_analysis.l1.finalizer.VirtualFunctionC
  * @author Patrick Mell
  */
 class L1InterpretationHandler[State <: L1ComputationState[State]](
-        project:                      SomeProject,
-        declaredFields:               DeclaredFields,
-        fieldAccessInformation:       FieldAccessInformation,
-        implicit val ps:              PropertyStore,
-        implicit val contextProvider: ContextProvider
+    project:                      SomeProject,
+    declaredFields:               DeclaredFields,
+    fieldAccessInformation:       FieldAccessInformation,
+    implicit val ps:              PropertyStore,
+    implicit val contextProvider: ContextProvider
 ) extends InterpretationHandler[State] {
 
     /**

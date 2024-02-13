@@ -21,7 +21,7 @@ import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.Interpretation
  * @author Patrick Mell
  */
 case class L1NonVirtualMethodCallInterpreter[State <: L1ComputationState[State]](
-        exprHandler: InterpretationHandler[State]
+    exprHandler: InterpretationHandler[State]
 ) extends L1StringInterpreter[State] {
 
     override type T = NonVirtualMethodCall[V]

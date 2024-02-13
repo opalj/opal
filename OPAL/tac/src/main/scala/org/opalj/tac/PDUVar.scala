@@ -36,8 +36,8 @@ abstract class PDUVar[+Value <: ValueInformation] {
 }
 
 class PUVar[+Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/ ] private (
-        val value:  Value,
-        val defPCs: PCs
+    val value:  Value,
+    val defPCs: PCs
 ) extends PDUVar[Value] {
 
     def usePCs: Nothing = throw new UnsupportedOperationException

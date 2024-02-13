@@ -59,8 +59,8 @@ trait L0ComputationState[State <: L0ComputationState[State]] extends Computation
 class L0StringAnalysis(override val project: SomeProject) extends StringAnalysis {
 
     protected[l0] case class CState(
-            override val dm:     DeclaredMethod,
-            override val entity: SContext
+        override val dm:     DeclaredMethod,
+        override val entity: SContext
     ) extends L0ComputationState[CState]
 
     override type State = CState

@@ -12,9 +12,9 @@ package string_definition
  * @author Patrick Mell
  */
 case class StringConstancyInformation(
-        constancyLevel:  StringConstancyLevel.Value = StringConstancyLevel.DYNAMIC,
-        constancyType:   StringConstancyType.Value  = StringConstancyType.APPEND,
-        possibleStrings: String                     = ""
+    constancyLevel:  StringConstancyLevel.Value = StringConstancyLevel.DYNAMIC,
+    constancyType:   StringConstancyType.Value  = StringConstancyType.APPEND,
+    possibleStrings: String                     = ""
 ) {
 
     /**
@@ -100,7 +100,7 @@ object StringConstancyInformation {
                         seenStrings += sci.possibleStrings
                         Some(sci)
                     }
-                } reduceLeft((o, n) =>
+                } reduceLeft ((o, n) =>
                     StringConstancyInformation(
                         StringConstancyLevel.determineMoreGeneral(
                             o.constancyLevel,
