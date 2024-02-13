@@ -121,7 +121,7 @@ public class L0TestMethods {
             value = "checks if the substring of a constant string value is determined correctly",
             stringDefinitions = {
                     @StringDefinitions(
-                            expectedLevel = CONSTANT, expectedStrings = "va"
+                            expectedLevel = CONSTANT, expectedStrings = "va."
                     ),
                     @StringDefinitions(
                             expectedLevel = CONSTANT, expectedStrings = "va.lang."
