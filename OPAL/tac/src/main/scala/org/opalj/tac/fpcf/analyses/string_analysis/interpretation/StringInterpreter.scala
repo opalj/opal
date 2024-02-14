@@ -20,7 +20,7 @@ import org.opalj.tac.fpcf.properties.TACAI
  */
 trait StringInterpreter[State <: ComputationState[State]] {
 
-    type T <: Any
+    type T <: ASTNode[V]
 
     /**
      * @param instr   The instruction that is to be interpreted. It is the responsibility of implementations to make sure
