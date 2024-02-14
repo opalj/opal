@@ -7,13 +7,9 @@ package string_analysis
 package l0
 package interpretation
 
-import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyType
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.FinalEP
 
 /**
  * Responsible for processing [[VirtualMethodCall]]s in an intraprocedural fashion.
@@ -36,13 +32,14 @@ case class L0VirtualMethodCallInterpreter[State <: L0ComputationState[State]]() 
      * </li>
      * </ul>
      *
-     * For all other calls, a result containing [[StringConstancyProperty.getNeutralElement]] will be returned.
+     * For all other calls, a [[NoIPResult]] will be returned.
      */
-    override def interpret(instr: T, defSite: Int)(implicit state: State): EOptionP[Entity, StringConstancyProperty] = {
-        val sci = instr.name match {
-            case "setLength" => StringConstancyInformation(StringConstancyLevel.CONSTANT, StringConstancyType.RESET)
-            case _           => StringConstancyInformation.getNeutralElement
+    override def interpret(instr: T, defSite: Int)(implicit state: State): IPResult = {
+        instr.name match {
+            case "setLength" => FinalIPResult(
+                    StringConstancyInformation(StringConstancyLevel.CONSTANT, StringConstancyType.RESET)
+                )
+            case _ => NoIPResult
         }
-        FinalEP(instr, StringConstancyProperty(sci))
     }
 }

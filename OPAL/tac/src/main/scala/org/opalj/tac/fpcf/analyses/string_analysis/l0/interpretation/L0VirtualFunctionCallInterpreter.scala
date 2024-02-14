@@ -15,13 +15,9 @@ import org.opalj.br.ComputationalTypeInt
 import org.opalj.br.DoubleType
 import org.opalj.br.FloatType
 import org.opalj.br.ObjectType
-import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyType
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.FinalEP
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.DependingStringInterpreter
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 import org.opalj.value.TheIntegerValue
@@ -40,13 +36,13 @@ case class L0VirtualFunctionCallInterpreter[State <: L0ComputationState[State]](
 
     override type T = VirtualFunctionCall[V]
 
-    override def interpret(instr: T, defSite: Int)(implicit state: State): EOptionP[Entity, StringConstancyProperty] = {
+    override def interpret(instr: T, defSite: Int)(implicit state: State): IPResult = {
         val result = handleInterpretation(instr, defSite)
 
-        if (result.isDefined) {
-            state.appendToFpe2Sci(pcOfDefSite(defSite)(state.tac.stmts), result.get)
+        if (result.sciOpt.isDefined) {
+            state.appendToFpe2Sci(pcOfDefSite(defSite)(state.tac.stmts), result.sciOpt.get)
         }
-        FinalEP(defSite.asInstanceOf[Integer], StringConstancyProperty(result.getOrElse(StringConstancyInformation.lb)))
+        result
     }
 
     /**
@@ -64,31 +60,28 @@ case class L0VirtualFunctionCallInterpreter[State <: L0ComputationState[State]](
      * [[L0VirtualFunctionCallInterpreter.interpretReplaceCall]].
      * </li>
      * <li>
-     * Apart from these supported methods, a list with [[StringConstancyProperty.lb]]
-     * will be returned in case the passed method returns a [[java.lang.String]].
+     * Apart from these supported methods, a [[StringConstancyInformation.lb]] will be returned in case the passed
+     * method returns a [[java.lang.String]].
      * </li>
      * </ul>
      *
-     * If none of the above-described cases match, a result containing
-     * [[StringConstancyProperty.getNeutralElement]] will be returned.
+     * If none of the above-described cases match, a [[NoResult]] will be returned.
      */
-    protected def handleInterpretation(instr: T, defSite: Int)(implicit
-        state: State
-    ): Option[StringConstancyInformation] = {
+    protected def handleInterpretation(instr: T, defSite: Int)(implicit state: State): IPResult = {
         instr.name match {
             case "append"                                                        => interpretAppendCall(instr)
             case "toString"                                                      => interpretToStringCall(instr)
-            case "replace"                                                       => Some(interpretReplaceCall)
+            case "replace"                                                       => interpretReplaceCall
             case "substring" if instr.descriptor.returnType == ObjectType.String => interpretSubstringCall(instr)
             case _ =>
                 instr.descriptor.returnType match {
-                    case obj: ObjectType if obj == ObjectType.String => Some(StringConstancyInformation.lb)
-                    case FloatType | DoubleType => Some(StringConstancyInformation(
+                    case obj: ObjectType if obj == ObjectType.String => FinalIPResult.lb
+                    case FloatType | DoubleType => FinalIPResult(StringConstancyInformation(
                             StringConstancyLevel.DYNAMIC,
                             StringConstancyType.APPEND,
                             StringConstancyInformation.FloatValue
                         ))
-                    case _ => Some(StringConstancyInformation.getNeutralElement)
+                    case _ => NoIPResult
                 }
         }
     }
@@ -98,14 +91,12 @@ case class L0VirtualFunctionCallInterpreter[State <: L0ComputationState[State]](
      * that this function assumes that the given `appendCall` is such a function call! Otherwise,
      * the expected behavior cannot be guaranteed.
      */
-    private def interpretAppendCall(appendCall: VirtualFunctionCall[V])(implicit
-        state: State
-    ): Option[StringConstancyInformation] = {
+    private def interpretAppendCall(appendCall: T)(implicit state: State): IPResult = {
         val receiverSci = receiverValuesOfCall(appendCall)
         val appendSci = valueOfAppendCall(appendCall)
 
         if (appendSci.isEmpty) {
-            None
+            InterimIPResult.lb
         } else {
             val sci = if (receiverSci.isTheNeutralElement && appendSci.get.isTheNeutralElement) {
                 // although counter-intuitive, this case may occur if both the receiver and the parameter have been
@@ -128,7 +119,7 @@ case class L0VirtualFunctionCallInterpreter[State <: L0ComputationState[State]](
                 )
             }
 
-            Some(sci)
+            FinalIPResult(sci)
         }
     }
 
@@ -136,23 +127,21 @@ case class L0VirtualFunctionCallInterpreter[State <: L0ComputationState[State]](
      * Determines the (string) value that was passed to a `String{Builder, Buffer}#append` method.
      * This function can process string constants as well as function calls as argument to append.
      */
-    private def valueOfAppendCall(call: VirtualFunctionCall[V])(implicit
-        state: State
-    ): Option[StringConstancyInformation] = {
+    private def valueOfAppendCall(call: T)(implicit state: State): Option[StringConstancyInformation] = {
         val param = call.params.head.asVar
         // .head because we want to evaluate only the first argument of append
         val defSiteHead = param.definedBy.head
         var value = handleDependentDefSite(defSiteHead)
-        // If defSiteHead points to a New, value will be the empty list. In that case, process
-        // the first use site (which is the <init> call)
-        if (value.isDefined && value.get.isTheNeutralElement) {
+        // If defSiteHead points to a New, value will be the empty list. In that case, process the first use site
+        // (which is the <init> call)
+        if (value.isNoResult) {
             value = handleDependentDefSite(state.tac.stmts(defSiteHead).asAssignment.targetVar.usedBy.toArray.min)
         }
 
-        if (value.isEmpty) {
+        if (value.isRefinable) {
             None
         } else {
-            val sci = value.get
+            val sci = value.asFinal.sci
             val finalSci = param.value.computationalType match {
                 // For some types, we know the (dynamic) values
                 case ComputationalTypeInt =>
@@ -186,37 +175,37 @@ case class L0VirtualFunctionCallInterpreter[State <: L0ComputationState[State]](
     /**
      * Processes calls to [[String#substring]].
      */
-    private def interpretSubstringCall(substringCall: T)(implicit state: State): Option[StringConstancyInformation] = {
+    private def interpretSubstringCall(substringCall: T)(implicit state: State): IPResult = {
         val receiverSci = receiverValuesOfCall(substringCall)
 
         if (receiverSci.isComplex) {
             // We cannot yet interpret substrings of mixed values
-            Some(StringConstancyInformation.lb)
+            FinalIPResult.lb
         } else {
             val parameterCount = substringCall.params.size
             parameterCount match {
                 case 1 =>
                     substringCall.params.head.asVar.value match {
                         case intValue: TheIntegerValue =>
-                            Some(StringConstancyInformation(
+                            FinalIPResult(StringConstancyInformation(
                                 StringConstancyLevel.CONSTANT,
                                 StringConstancyType.REPLACE,
                                 receiverSci.possibleStrings.substring(intValue.value)
                             ))
                         case _ =>
-                            Some(StringConstancyInformation.lb)
+                            FinalIPResult.lb
                     }
 
                 case 2 =>
                     (substringCall.params.head.asVar.value, substringCall.params(1).asVar.value) match {
                         case (firstIntValue: TheIntegerValue, secondIntValue: TheIntegerValue) =>
-                            Some(StringConstancyInformation(
+                            FinalIPResult(StringConstancyInformation(
                                 StringConstancyLevel.CONSTANT,
                                 StringConstancyType.APPEND,
                                 receiverSci.possibleStrings.substring(firstIntValue.value, secondIntValue.value)
                             ))
                         case _ =>
-                            Some(StringConstancyInformation.lb)
+                            FinalIPResult.lb
                     }
 
                 case _ => throw new IllegalStateException(
@@ -234,8 +223,7 @@ case class L0VirtualFunctionCallInterpreter[State <: L0ComputationState[State]](
         // only the head as a single receiver interpretation will produce one element
         val scis = call.receiver.asVar.definedBy.toArray.sorted.map { ds =>
             // IMPROVE enable handling dependees here
-            val r = exprHandler.processDefSite(ds)
-            r.asFinal.p.stringConstancyInformation
+            exprHandler.processDefSite(ds).asFinal.sci
         }.filter { sci => !sci.isTheNeutralElement }
         scis.headOption.getOrElse(StringConstancyInformation.getNeutralElement)
     }
@@ -244,14 +232,13 @@ case class L0VirtualFunctionCallInterpreter[State <: L0ComputationState[State]](
      * Processes calls to [[StringBuilder#toString]] or [[StringBuffer#toString]]. Note that this function assumes that
      * the given `toString` is such a function call! Otherwise, the expected behavior cannot be guaranteed.
      */
-    private def interpretToStringCall(call: T)(implicit state: State): Option[StringConstancyInformation] = {
-        handleInterpretationResult(exprHandler.processDefSite(call.receiver.asVar.definedBy.head))
+    private def interpretToStringCall(call: T)(implicit state: State): IPResult = {
+        handleDependentDefSite(call.receiver.asVar.definedBy.head)
     }
 
     /**
-     * Processes calls to [[StringBuilder#replace]] or [[StringBuffer#replace]]. (Currently, this function simply
-     * approximates `replace` functions by returning the lower bound of [[StringConstancyProperty]]).
+     * Processes calls to [[StringBuilder#replace]] or [[StringBuffer#replace]].
      */
-    private def interpretReplaceCall: StringConstancyInformation =
-        InterpretationHandler.getStringConstancyInformationForReplace
+    private def interpretReplaceCall: IPResult =
+        FinalIPResult(InterpretationHandler.getStringConstancyInformationForReplace)
 }

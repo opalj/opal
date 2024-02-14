@@ -9,18 +9,13 @@ package interpretation
 
 import org.opalj.ai.ImmediateVMExceptionsOriginOffset
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.PropertyStore
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.BinaryExprInterpreter
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.DoubleValueInterpreter
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.FloatValueInterpreter
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.IntegerValueInterpreter
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
-import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.NewInterpreter
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.StringConstInterpreter
 
 /**
@@ -44,56 +39,52 @@ class L0InterpretationHandler[State <: L0ComputationState[State]]()(
      * <p>
      * @inheritdoc
      */
-    override def processDefSite(defSite: Int)(implicit
-        state: State
-    ): EOptionP[Entity, StringConstancyProperty] = {
-        // Without doing the following conversion, the following compile error will occur: "the
-        // result type of an implicit conversion must be more specific than org.opalj.fpcf.Entity"
-        val e: Integer = defSite
+    override def processDefSite(defSite: Int)(implicit state: State): IPResult = {
         val defSitePC = pcOfDefSite(defSite)(state.tac.stmts)
 
         if (defSite < 0) {
             val params = state.params.toList.map(_.toList)
             if (params.isEmpty || defSite == -1 || defSite <= ImmediateVMExceptionsOriginOffset) {
                 state.appendToInterimFpe2Sci(defSitePC, StringConstancyInformation.lb)
-                return FinalEP(e, StringConstancyProperty.lb)
+                return FinalIPResult.lb
             } else {
                 val sci = getParam(params, defSite)
                 state.appendToInterimFpe2Sci(defSitePC, sci)
-                return FinalEP(e, StringConstancyProperty(sci))
+                return FinalIPResult(sci)
             }
         } else if (processedDefSites.contains(defSite)) {
             state.appendToInterimFpe2Sci(defSitePC, StringConstancyInformation.getNeutralElement)
-            return FinalEP(e, StringConstancyProperty.getNeutralElement)
+            return FinalIPResult(StringConstancyInformation.getNeutralElement)
         }
 
         processedDefSites(defSite) = ()
 
         state.tac.stmts(defSite) match {
             case Assignment(_, _, expr: StringConst) =>
-                StringConstInterpreter.interpret(expr)
+                StringConstInterpreter.interpret(expr, defSite)(state)
             case Assignment(_, _, expr: IntConst) =>
-                IntegerValueInterpreter.interpret(expr)
+                IntegerValueInterpreter.interpret(expr, defSite)(state)
             case Assignment(_, _, expr: FloatConst) =>
-                FloatValueInterpreter.interpret(expr)
+                FloatValueInterpreter.interpret(expr, defSite)(state)
             case Assignment(_, _, expr: DoubleConst) =>
-                DoubleValueInterpreter.interpret(expr)
+                DoubleValueInterpreter.interpret(expr, defSite)(state)
             case Assignment(_, _, expr: BinaryExpr[V]) =>
-                BinaryExprInterpreter.interpret(expr)
+                BinaryExprInterpreter.interpret(expr, defSite)(state)
             case Assignment(_, _, expr: ArrayLoad[V]) =>
                 L0ArrayAccessInterpreter(this).interpret(expr, defSite)(state)
-            case Assignment(_, _, expr: New) =>
-                NewInterpreter.interpret(expr)
-            case Assignment(_, _, expr: GetField[V]) =>
+            case Assignment(_, _, _: New) =>
+                state.appendToInterimFpe2Sci(defSitePC, StringConstancyInformation.getNeutralElement)
+                NoIPResult
+            case Assignment(_, _, _: GetField[V]) =>
                 // Currently unsupported
-                FinalEP(expr, StringConstancyProperty.lb)
+                FinalIPResult.lb
             case Assignment(_, _, expr: VirtualFunctionCall[V]) =>
                 L0VirtualFunctionCallInterpreter(this).interpret(expr, defSite)
             case Assignment(_, _, expr: StaticFunctionCall[V]) =>
                 L0StaticFunctionCallInterpreter(this).interpret(expr, defSite)
-            case Assignment(_, _, expr: NonVirtualFunctionCall[V]) =>
+            case Assignment(_, _, _: NonVirtualFunctionCall[V]) =>
                 // Currently unsupported
-                FinalEP(expr, StringConstancyProperty.lb)
+                FinalIPResult.lb
             case ExprStmt(_, expr: VirtualFunctionCall[V]) =>
                 L0VirtualFunctionCallInterpreter(this).interpret(expr, defSite)
             case ExprStmt(_, expr: StaticFunctionCall[V]) =>
@@ -104,7 +95,7 @@ class L0InterpretationHandler[State <: L0ComputationState[State]]()(
                 L0NonVirtualMethodCallInterpreter(this).interpret(nvmc, defSite)
             case _ =>
                 state.appendToInterimFpe2Sci(defSitePC, StringConstancyInformation.getNeutralElement)
-                FinalEP(e, StringConstancyProperty.getNeutralElement)
+                NoIPResult
         }
     }
 }

@@ -8,9 +8,6 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 import org.opalj.br.Method
-import org.opalj.br.fpcf.properties.StringConstancyProperty
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.EOptionP
 
 /**
  * @author Patrick Mell
@@ -38,7 +35,7 @@ package object string_analysis {
      * reason for the inner-most list is that a parameter might have different definition sites; to
      * capture all, the third (inner-most) list is necessary.
      */
-    type NonFinalFunctionArgs = ListBuffer[ListBuffer[ListBuffer[EOptionP[Entity, StringConstancyProperty]]]]
+    type NonFinalFunctionArgs = ListBuffer[ListBuffer[ListBuffer[IPResult]]]
 
     /**
      * This type serves as a lookup mechanism to find out which functions parameters map to which

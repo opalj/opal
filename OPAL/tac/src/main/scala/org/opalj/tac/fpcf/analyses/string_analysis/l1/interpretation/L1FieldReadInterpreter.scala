@@ -16,10 +16,6 @@ import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.EPK
-import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.PropertyStore
 import org.opalj.log.Error
 import org.opalj.log.Info
@@ -74,21 +70,21 @@ case class L1FieldReadInterpreter[State <: L1ComputationState[State]](
      * approximated using all write accesses as well as with the lower bound and "null" => in these cases fields are
      * [[StringConstancyLevel.DYNAMIC]].
      */
-    override def interpret(instr: T, defSite: Int)(implicit state: State): EOptionP[Entity, StringConstancyProperty] = {
+    override def interpret(instr: T, defSite: Int)(implicit state: State): IPResult = {
         // TODO: The approximation of fields might be outsourced into a dedicated analysis. Then, one could add a
         //  finer-grained processing or provide different abstraction levels. This analysis could then use that analysis.
         if (!StringAnalysis.isSupportedType(instr.declaredFieldType)) {
-            return FinalEP(instr, StringConstancyProperty.lb)
+            return FinalIPResult.lb
         }
 
         val definedField = declaredFields(instr.declaringClass, instr.name, instr.declaredFieldType).asDefinedField
         val writeAccesses = fieldAccessInformation.writeAccesses(definedField.definedField).toSeq
         if (writeAccesses.length > fieldWriteThreshold) {
-            return FinalEP(instr, StringConstancyProperty.lb)
+            return FinalIPResult.lb
         }
 
         var hasInit = false
-        val results = ListBuffer[EOptionP[Entity, StringConstancyProperty]]()
+        val results = ListBuffer[IPResult]()
         writeAccesses.foreach {
             case (contextId, _, _, parameter) =>
                 val method = contextProvider.contextFromId(contextId).method.definedMethod
@@ -99,9 +95,9 @@ case class L1FieldReadInterpreter[State <: L1ComputationState[State]](
                 val (tacEps, tac) = getTACAI(ps, method, state)
                 val nextResult = if (parameter.isEmpty) {
                     // Field parameter information is not available
-                    FinalEP(defSite.asInstanceOf[Integer], StringConstancyProperty.lb)
+                    FinalIPResult.lb
                 } else if (tacEps.isRefinable) {
-                    EPK(state.entity, StringConstancyProperty.key)
+                    EmptyIPResult
                 } else {
                     tac match {
                         case Some(_) =>
@@ -115,11 +111,13 @@ case class L1FieldReadInterpreter[State <: L1ComputationState[State]](
                                 // though it might not be. Thus, we use -1 as it is a safe dummy
                                 // value
                                 state.appendToVar2IndexMapping(entity._1, -1)
+                                InterimIPResult(eps.lb.stringConstancyInformation)
+                            } else {
+                                FinalIPResult(eps.asFinal.p.stringConstancyInformation)
                             }
-                            eps
                         case _ =>
                             // No TAC available
-                            FinalEP(defSite.asInstanceOf[Integer], StringConstancyProperty.lb)
+                            FinalIPResult.lb
                     }
                 }
                 results.append(nextResult)
@@ -133,25 +131,20 @@ case class L1FieldReadInterpreter[State <: L1ComputationState[State]](
                     s"(${StringConstancyInformation.NullStringValue}|${StringConstancyInformation.UnknownWordSymbol})"
             )
             state.appendToFpe2Sci(pcOfDefSite(defSite)(state.tac.stmts), StringConstancyInformation.lb)
-            FinalEP(defSite.asInstanceOf[Integer], StringConstancyProperty(sci))
+            FinalIPResult(sci)
         } else {
             if (results.forall(_.isFinal)) {
                 // No init is present => append a `null` element to indicate that the field might be null; this behavior
                 // could be refined by only setting the null element if no statement is guaranteed to be executed prior
                 // to the field read
                 if (!hasInit) {
-                    results.append(FinalEP(
-                        instr,
-                        StringConstancyProperty(StringConstancyInformation.getNullElement)
-                    ))
+                    results.append(FinalIPResult.nullElement)
                 }
-                val finalSci = StringConstancyInformation.reduceMultiple(results.map {
-                    _.asFinal.p.stringConstancyInformation
-                })
+                val finalSci = StringConstancyInformation.reduceMultiple(results.map(_.asFinal.sci))
                 state.appendToFpe2Sci(pcOfDefSite(defSite)(state.tac.stmts), finalSci)
-                FinalEP(defSite.asInstanceOf[Integer], StringConstancyProperty(finalSci))
+                FinalIPResult(finalSci)
             } else {
-                results.find(!_.isFinal).get
+                InterimIPResult.lb
             }
         }
     }

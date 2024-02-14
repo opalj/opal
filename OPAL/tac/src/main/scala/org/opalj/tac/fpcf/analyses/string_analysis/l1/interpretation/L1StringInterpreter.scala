@@ -12,9 +12,6 @@ import scala.collection.mutable.ListBuffer
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.br.fpcf.analyses.ContextProvider
-import org.opalj.br.fpcf.properties.StringConstancyProperty
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.PropertyStore
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.StringInterpreter
 
@@ -22,24 +19,6 @@ import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.StringInterpre
  * @author Maximilian Rüsch
  */
 trait L1StringInterpreter[State <: L1ComputationState[State]] extends StringInterpreter[State] {
-
-    /**
-     * @param instr The instruction that is to be interpreted. It is the responsibility of implementations to make sure
-     *              that an instruction is properly and comprehensively evaluated.
-     * @param defSite The definition site that corresponds to the given instruction. `defSite` is
-     *                not necessary for processing `instr`, however, may be used, e.g., for
-     *                housekeeping purposes. Thus, concrete implementations should indicate whether
-     *                this value is of importance for (further) processing.
-     * @return The interpreted instruction. A neutral StringConstancyProperty contained in the
-     *         result indicates that an instruction was not / could not be interpreted (e.g.,
-     *         because it is not supported or it was processed before).
-     *         <p>
-     *         As demanded by [[org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler]], the
-     *         entity of the result should be the definition site. However, as interpreters know the instruction to
-     *         interpret but not the definition site, this function returns the interpreted instruction as entity.
-     *         Thus, the entity needs to be replaced by the calling client.
-     */
-    def interpret(instr: T, defSite: Int)(implicit state: State): EOptionP[Entity, StringConstancyProperty]
 
     /**
      * This function returns all methods for a given `pc` among a set of `declaredMethods`. The

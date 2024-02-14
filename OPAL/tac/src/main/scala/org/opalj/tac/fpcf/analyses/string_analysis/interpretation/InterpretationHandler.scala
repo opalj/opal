@@ -10,12 +10,9 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 import org.opalj.br.ObjectType
-import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyType
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.EOptionP
 
 abstract class InterpretationHandler[State <: ComputationState[State]] {
 
@@ -40,7 +37,7 @@ abstract class InterpretationHandler[State <: ComputationState[State]] {
      *         [[org.opalj.br.fpcf.properties.StringConstancyProperty.isTheNeutralElement]]).
      *         The entity of the result will be the given `defSite`.
      */
-    def processDefSite(defSite: Int)(implicit state: State): EOptionP[Entity, StringConstancyProperty]
+    def processDefSite(defSite: Int)(implicit state: State): IPResult
 
     /**
      * [[InterpretationHandler]]s keeps an internal state for correct and faster processing. As

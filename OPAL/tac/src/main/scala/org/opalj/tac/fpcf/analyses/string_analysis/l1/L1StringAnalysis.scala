@@ -232,7 +232,7 @@ class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
         // Interpret a function / method parameter using the parameter information in state
         if (defSites.head < 0) {
             val r = state.iHandler.processDefSite(defSites.head)(state)
-            return Result(state.entity, StringConstancyProperty(r.asFinal.p.stringConstancyInformation))
+            return Result(state.entity, StringConstancyProperty(r.asFinal.sci))
         }
 
         val call = stmts(defSites.head).asAssignment.expr
@@ -261,15 +261,17 @@ class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
             }
         }
 
-        var sci = StringConstancyInformation.lb
-        if (attemptFinalResultComputation
-            && state.dependees.isEmpty
-            && computeResultsForPath(state.computedLeanPath)(state)
-        ) {
-            sci = new PathTransformer(state.iHandler)
-                .pathToStringTree(state.computedLeanPath, state.fpe2sci)
-                .reduce(true)
-        }
+        val sci =
+            if (attemptFinalResultComputation
+                && state.dependees.isEmpty
+                && computeResultsForPath(state.computedLeanPath)(state)
+            ) {
+                new PathTransformer(state.iHandler)
+                    .pathToStringTree(state.computedLeanPath, state.fpe2sci)
+                    .reduce(true)
+            } else {
+                StringConstancyInformation.lb
+            }
 
         if (state.dependees.nonEmpty) {
             getInterimResult(state)

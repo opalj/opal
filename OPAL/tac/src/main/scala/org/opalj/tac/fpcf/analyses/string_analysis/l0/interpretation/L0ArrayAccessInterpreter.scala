@@ -7,17 +7,13 @@ package string_analysis
 package l0
 package interpretation
 
-import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.FinalEP
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.DependingStringInterpreter
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 
 /**
- * Responsible for processing [[ArrayLoad]] as well as [[ArrayStore]] expressions in an intraprocedural fashion.
+ * Responsible for processing [[ArrayLoad]] as well as [[ArrayStore]] expressions without a call graph.
  *
  * @author Maximilian Rüsch
  */
@@ -25,22 +21,20 @@ case class L0ArrayAccessInterpreter[State <: L0ComputationState[State]](
     exprHandler: InterpretationHandler[State]
 ) extends L0StringInterpreter[State] with DependingStringInterpreter[State] {
 
-    implicit val _exprHandler: InterpretationHandler[State] = exprHandler
-
     override type T = ArrayLoad[V]
 
-    override def interpret(instr: T, defSite: Int)(implicit state: State): EOptionP[Entity, StringConstancyProperty] = {
+    override def interpret(instr: T, defSite: Int)(implicit state: State): IPResult = {
         implicit val stmts: Array[Stmt[V]] = state.tac.stmts
 
         val allDefSitesByPC =
             L0ArrayAccessInterpreter.getStoreAndLoadDefSites(instr).map(ds => (pcOfDefSite(ds), ds)).toMap
-        val sciOpts = allDefSitesByPC.keys.toList.sorted.map { pc =>
-            (pc, handleDependentDefSite(allDefSitesByPC(pc)))
+        val results = allDefSitesByPC.keys.toList.sorted.map { pc =>
+            (pc, handleDependentDefSite(allDefSitesByPC(pc))(state, exprHandler))
         }.map {
-            case (pc, sciOpt) =>
-                if (sciOpt.isDefined)
-                    state.appendToFpe2Sci(pc, sciOpt.get)
-                sciOpt
+            case (pc, result) =>
+                if (result.isFinal)
+                    state.appendToFpe2Sci(pc, result.asFinal.sci)
+                result
         }
 
         // Add information of parameters
@@ -51,18 +45,17 @@ case class L0ArrayAccessInterpreter[State <: L0ComputationState[State]](
             state.appendToFpe2Sci(pc, sci)
         }
 
-        val unfinishedDependees = sciOpts.exists(_.isEmpty)
+        val unfinishedDependees = results.exists(_.isRefinable)
         if (unfinishedDependees) {
-            // IMPROVE return interim here
-            FinalEP((instr.arrayRef.asVar, state.entity._2), StringConstancyProperty.lb)
+            InterimIPResult.lb
         } else {
-            var resultSci = StringConstancyInformation.reduceMultiple(sciOpts.map(_.get))
+            var resultSci = StringConstancyInformation.reduceMultiple(results.map(_.asFinal.sci))
             if (resultSci.isTheNeutralElement) {
                 resultSci = StringConstancyInformation.lb
             }
 
             state.appendToFpe2Sci(pcOfDefSite(defSite), resultSci)
-            FinalEP((instr.arrayRef.asVar, state.entity._2), StringConstancyProperty(resultSci))
+            FinalIPResult(resultSci)
         }
     }
 }

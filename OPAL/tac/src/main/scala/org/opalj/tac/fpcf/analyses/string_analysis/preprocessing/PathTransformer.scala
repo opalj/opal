@@ -16,8 +16,6 @@ import org.opalj.br.fpcf.properties.string_definition.StringTreeCond
 import org.opalj.br.fpcf.properties.string_definition.StringTreeConst
 import org.opalj.br.fpcf.properties.string_definition.StringTreeOr
 import org.opalj.br.fpcf.properties.string_definition.StringTreeRepetition
-import org.opalj.fpcf.FinalP
-import org.opalj.fpcf.InterimUBP
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 
 /**
@@ -47,9 +45,9 @@ class PathTransformer[State <: ComputationState[State]](val interpretationHandle
                     StringConstancyInformation.reduceMultiple(fpe2Sci(fpe.pc))
                 } else {
                     val sciToAdd = interpretationHandler.processDefSite(fpe.stmtIndex(state.tac.pcToIndex)) match {
-                        case FinalP(p)      => p.stringConstancyInformation
-                        case InterimUBP(ub) => ub.stringConstancyInformation
-                        case _              => StringConstancyInformation.lb
+                        case ValueIPResult(sci) => sci
+                        case NoIPResult         => StringConstancyInformation.getNeutralElement
+                        case _                  => StringConstancyInformation.lb
                     }
 
                     fpe2Sci(fpe.pc) = ListBuffer(sciToAdd)

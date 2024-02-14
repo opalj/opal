@@ -10,11 +10,8 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 import org.opalj.br.Method
-import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
-import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.PropertyStore
 import org.opalj.tac.fpcf.properties.TACAI
 
@@ -24,6 +21,24 @@ import org.opalj.tac.fpcf.properties.TACAI
 trait StringInterpreter[State <: ComputationState[State]] {
 
     type T <: Any
+
+    /**
+     * @param instr   The instruction that is to be interpreted. It is the responsibility of implementations to make sure
+     *                that an instruction is properly and comprehensively evaluated.
+     * @param defSite The definition site that corresponds to the given instruction. `defSite` is
+     *                not necessary for processing `instr`, however, may be used, e.g., for
+     *                housekeeping purposes. Thus, concrete implementations should indicate whether
+     *                this value is of importance for (further) processing.
+     * @return The interpreted instruction. A neutral StringConstancyProperty contained in the
+     *         result indicates that an instruction was not / could not be interpreted (e.g.,
+     *         because it is not supported or it was processed before).
+     *         <p>
+     *         As demanded by [[org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler]],
+     *         the entity of the result should be the definition site. However, as interpreters know the instruction to
+     *         interpret but not the definition site, this function returns the interpreted instruction as entity.
+     *         Thus, the entity needs to be replaced by the calling client.
+     */
+    def interpret(instr: T, defSite: Int)(implicit state: State): IPResult
 
     /**
      * Returns the EPS retrieved from querying the given property store for the given method as well
@@ -90,21 +105,21 @@ trait StringInterpreter[State <: ComputationState[State]] {
         case (nextParamList, outerIndex) =>
             ListBuffer.from(nextParamList.zipWithIndex.map {
                 case (nextParam, middleIndex) =>
+                    val e = (nextParam.asVar.toPersistentForm(state.tac.stmts), state.dm.definedMethod)
                     ListBuffer.from(nextParam.asVar.definedBy.toArray.sorted.zipWithIndex.map {
                         case (ds, innerIndex) =>
-                            val ep = iHandler.processDefSite(ds)
-                            if (ep.isRefinable) {
+                            val result = iHandler.processDefSite(ds)
+                            if (result.isRefinable) {
                                 if (!state.nonFinalFunctionArgsPos.contains(funCall)) {
                                     state.nonFinalFunctionArgsPos(funCall) = mutable.Map()
                                 }
-                                val e = ep.e.asInstanceOf[SContext]
                                 state.nonFinalFunctionArgsPos(funCall)(e) = (outerIndex, middleIndex, innerIndex)
                                 if (!state.entity2Function.contains(e)) {
                                     state.entity2Function(e) = ListBuffer()
                                 }
                                 state.entity2Function(e).append(funCall)
                             }
-                            ep
+                            result
                     })
             })
     })
@@ -113,9 +128,7 @@ trait StringInterpreter[State <: ComputationState[State]] {
      * Checks whether the interpretation of parameters, as, e.g., produced by [[evaluateParameters()]], is final or not
      * and returns all refinable results as a list. Hence, an empty list is returned, all parameters are fully evaluated.
      */
-    protected def getRefinableParameterResults(
-        evaluatedParameters: Seq[Seq[Seq[EOptionP[Entity, StringConstancyProperty]]]]
-    ): List[EOptionP[Entity, StringConstancyProperty]] =
+    protected def getRefinableParameterResults(evaluatedParameters: Seq[Seq[Seq[IPResult]]]): List[IPResult] =
         evaluatedParameters.flatten.flatten.filter { _.isRefinable }.toList
 
     /**
@@ -125,11 +138,33 @@ trait StringInterpreter[State <: ComputationState[State]] {
      * all results in the inner-most sequence are final!
      */
     protected def convertEvaluatedParameters(
-        evaluatedParameters: Seq[Seq[Seq[FinalEP[Entity, StringConstancyProperty]]]]
+        evaluatedParameters: Seq[Seq[Seq[FinalIPResult]]]
     ): ListBuffer[ListBuffer[StringConstancyInformation]] =
         ListBuffer.from(evaluatedParameters.map { paramList =>
-            ListBuffer.from(paramList.map { param =>
-                StringConstancyInformation.reduceMultiple(param.map { _.p.stringConstancyInformation })
-            })
+            ListBuffer.from(paramList.map { param => StringConstancyInformation.reduceMultiple(param.map { _.sci }) })
         })
+}
+
+/**
+ * @author Maximilian Rüsch
+ */
+trait DependingStringInterpreter[State <: ComputationState[State]] extends StringInterpreter[State] {
+
+    protected def handleDependentDefSite(defSite: Int)(implicit
+        state:       State,
+        exprHandler: InterpretationHandler[State]
+    ): IPResult = {
+        exprHandler.processDefSite(defSite) match {
+            case ipr: FinalIPResult =>
+                state.dependeeDefSites = state.dependeeDefSites.filter(_ != ipr)
+                ipr
+            case ipr: InterimIPResult =>
+                if (!state.dependeeDefSites.contains(ipr)) {
+                    state.dependeeDefSites = ipr :: state.dependeeDefSites
+                }
+                ipr
+            case ipr =>
+                ipr
+        }
+    }
 }

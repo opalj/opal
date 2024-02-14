@@ -7,11 +7,7 @@ package string_analysis
 package l1
 package interpretation
 
-import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.FinalEP
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 
 /**
@@ -36,10 +32,10 @@ class L1NewArrayInterpreter[State <: L1ComputationState[State]](
      *       definition sites producing a refinable result will have to be handled later on to
      *       not miss this information.
      */
-    override def interpret(instr: T, defSite: Int)(implicit state: State): EOptionP[Entity, StringConstancyProperty] = {
+    override def interpret(instr: T, defSite: Int)(implicit state: State): IPResult = {
         // Only support for 1-D arrays
         if (instr.counts.length != 1) {
-            return FinalEP(instr, StringConstancyProperty.lb)
+            return FinalIPResult.lb
         }
 
         // Get all sites that define array values and process them
@@ -52,7 +48,7 @@ class L1NewArrayInterpreter[State <: L1ComputationState[State]](
             state.tac.stmts(ds).asArrayStore.value.asVar.definedBy.toArray.toList.sorted.map { d =>
                 val r = exprHandler.processDefSite(d)
                 if (r.isFinal) {
-                    state.appendToFpe2Sci(pcOfDefSite(d)(state.tac.stmts), r.asFinal.p.stringConstancyInformation)
+                    state.appendToFpe2Sci(pcOfDefSite(d)(state.tac.stmts), r.asFinal.sci)
                 }
                 r
             }
@@ -61,31 +57,28 @@ class L1NewArrayInterpreter[State <: L1ComputationState[State]](
         // Add information of parameters
         arrValuesDefSites.filter(_ < 0).foreach { ds =>
             val paramPos = Math.abs(ds + 2)
-            // lb is the fallback value
+            // IMPROVE should we use lb as the fallback value
             val sci = StringConstancyInformation.reduceMultiple(state.params.map(_(paramPos)))
             state.appendToFpe2Sci(pcOfDefSite(ds)(state.tac.stmts), sci)
-            val e: Integer = ds
-            allResults ::= FinalEP(e, StringConstancyProperty(sci))
+            allResults ::= FinalIPResult(sci)
         }
 
         val interims = allResults.find(!_.isFinal)
         if (interims.isDefined) {
-            interims.get
+            InterimIPResult.lb
         } else {
-            var resultSci = StringConstancyInformation.reduceMultiple(allResults.map {
-                _.asFinal.p.stringConstancyInformation
-            })
+            var resultSci = StringConstancyInformation.reduceMultiple(allResults.map(_.asFinal.sci))
             // It might be that there are no results; in such a case, set the string information to
             // the lower bound and manually add an entry to the results list
             if (resultSci.isTheNeutralElement) {
                 resultSci = StringConstancyInformation.lb
             }
             if (allResults.isEmpty) {
-                val toAppend = FinalEP(instr, StringConstancyProperty(resultSci))
+                val toAppend = FinalIPResult(resultSci)
                 allResults = toAppend :: allResults
             }
             state.appendToFpe2Sci(pcOfDefSite(defSite)(state.tac.stmts), resultSci)
-            FinalEP(Integer.valueOf(defSite), StringConstancyProperty(resultSci))
+            FinalIPResult(resultSci)
         }
     }
 }

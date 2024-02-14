@@ -7,28 +7,27 @@ package analyses
 package string_analysis
 package interpretation
 
-import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyType
-import org.opalj.fpcf.FinalEP
 
 /**
- * Responsible for processing [[IntConst]]s.
- *
  * @author Maximilian Rüsch
  */
-object IntegerValueInterpreter extends StringInterpreter[Nothing] {
+case class IntegerValueInterpreter[State <: ComputationState[State]]() extends StringInterpreter[State] {
 
     override type T = IntConst
 
-    def interpret(instr: T): FinalEP[T, StringConstancyProperty] =
-        FinalEP(
-            instr,
-            StringConstancyProperty(StringConstancyInformation(
-                StringConstancyLevel.CONSTANT,
-                StringConstancyType.APPEND,
-                instr.value.toString
-            ))
-        )
+    def interpret(instr: T, defSite: Int)(implicit state: State): FinalIPResult =
+        FinalIPResult(StringConstancyInformation(
+            StringConstancyLevel.CONSTANT,
+            StringConstancyType.APPEND,
+            instr.value.toString
+        ))
+}
+
+object IntegerValueInterpreter {
+
+    def interpret[State <: ComputationState[State]](instr: IntConst, defSite: Int)(implicit state: State): FinalIPResult =
+        IntegerValueInterpreter[State]().interpret(instr, defSite)
 }

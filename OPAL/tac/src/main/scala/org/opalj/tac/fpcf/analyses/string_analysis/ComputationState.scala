@@ -58,6 +58,8 @@ trait ComputationState[State <: ComputationState[State]] {
      */
     var dependees: List[EOptionP[Entity, Property]] = List()
 
+    var dependeeDefSites: List[IPResult] = List()
+
     /**
      * A mapping from DUVar elements to the corresponding values of the FlatPathElements
      */

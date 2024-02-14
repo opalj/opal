@@ -9,14 +9,10 @@ package interpretation
 
 import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.br.fpcf.properties.StringConstancyProperty
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.EPK
-import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.PropertyStore
 
 /**
- * Responsible for processing [[NonVirtualFunctionCall]]s in an interprocedural fashion.
+ * Responsible for processing [[NonVirtualFunctionCall]]s with a call graph.
  *
  * @author Maximilian Rüsch
  */
@@ -27,13 +23,11 @@ case class L1NonVirtualFunctionCallInterpreter[State <: L1ComputationState[State
 
     override type T = NonVirtualFunctionCall[V]
 
-    override def interpret(instr: T, defSite: Int)(implicit
-        state: State
-    ): EOptionP[Entity, StringConstancyProperty] = {
+    override def interpret(instr: T, defSite: Int)(implicit state: State): IPResult = {
         val methods = getMethodsForPC(instr.pc)
         if (methods._1.isEmpty) {
             // No methods available => Return lower bound
-            return FinalEP(instr, StringConstancyProperty.lb)
+            return FinalIPResult.lb
         }
         val m = methods._1.head
 
@@ -43,9 +37,9 @@ case class L1NonVirtualFunctionCallInterpreter[State <: L1ComputationState[State
             // TAC available => Get return UVars and start the string analysis
             val returns = tac.get.stmts.filter(_.isInstanceOf[ReturnValue[V]])
             if (returns.isEmpty) {
-                // A function without returns, e.g., because it is guaranteed to throw an exception,
-                // is approximated with the lower bound
-                FinalEP(instr, StringConstancyProperty.lb)
+                // A function without returns, e.g., because it is guaranteed to throw an exception, is approximated
+                // with the lower bound
+                FinalIPResult.lb
             } else {
                 val results = returns.map { ret =>
                     val puVar = ret.asInstanceOf[ReturnValue[V]].expr.asVar.toPersistentForm(tac.get.stmts)
@@ -58,11 +52,15 @@ case class L1NonVirtualFunctionCallInterpreter[State <: L1ComputationState[State
                     }
                     eps
                 }
-                results.find(_.isRefinable).getOrElse(results.head)
+                if (results.exists(_.isRefinable)) {
+                    InterimIPResult.lb
+                } else {
+                    FinalIPResult(results.head.asFinal.p.stringConstancyInformation)
+                }
             }
         } else {
             state.appendToMethodPrep2defSite(m, defSite)
-            EPK(state.entity, StringConstancyProperty.key)
+            EmptyIPResult
         }
     }
 }

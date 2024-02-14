@@ -118,7 +118,7 @@ class L0StringAnalysis(override val project: SomeProject) extends StringAnalysis
         // Interpret a function / method parameter using the parameter information in state
         if (defSites.head < 0) {
             val r = state.iHandler.processDefSite(defSites.head)(state)
-            return Result(state.entity, StringConstancyProperty(r.asFinal.p.stringConstancyInformation))
+            return Result(state.entity, StringConstancyProperty(r.asFinal.sci))
         }
 
         val expr = stmts(defSites.head).asAssignment.expr
@@ -155,9 +155,7 @@ class L0StringAnalysis(override val project: SomeProject) extends StringAnalysis
         } else {
             // We deal with pure strings TODO unify result handling
             val sci = StringConstancyInformation.reduceMultiple(
-                uVar.definedBy.toArray.sorted.map { ds =>
-                    state.iHandler.processDefSite(ds).asFinal.p.stringConstancyInformation
-                }
+                uVar.definedBy.toArray.sorted.map { ds => state.iHandler.processDefSite(ds).asFinal.sci }
             )
 
             if (state.dependees.isEmpty) {

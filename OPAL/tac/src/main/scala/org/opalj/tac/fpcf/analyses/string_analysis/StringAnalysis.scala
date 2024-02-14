@@ -120,8 +120,8 @@ trait StringAnalysis extends FPCFAnalysis {
                     // Update the state
                     state.entity2Function(e).foreach { f =>
                         val pos = state.nonFinalFunctionArgsPos(f)(e)
-                        val finalEp = FinalEP(e, p)
-                        state.nonFinalFunctionArgs(f)(pos._1)(pos._2)(pos._3) = finalEp
+                        state.nonFinalFunctionArgs(f)(pos._1)(pos._2)(pos._3) =
+                            FinalIPResult(p.stringConstancyInformation)
                         // Housekeeping
                         val index = state.entity2Function(e).indexOf(f)
                         state.entity2Function(e).remove(index)
@@ -230,9 +230,9 @@ trait StringAnalysis extends FPCFAnalysis {
         p.elements.foreach {
             case fpe: FlatPathElement =>
                 if (!state.fpe2sci.contains(fpe.pc)) {
-                    val eOptP = state.iHandler.processDefSite(valueOriginOfPC(fpe.pc, state.tac.pcToIndex).get)
-                    if (eOptP.isFinal) {
-                        state.appendToFpe2Sci(fpe.pc, eOptP.asFinal.p.stringConstancyInformation, reset = true)
+                    val r = state.iHandler.processDefSite(valueOriginOfPC(fpe.pc, state.tac.pcToIndex).get)
+                    if (r.isFinal) {
+                        state.appendToFpe2Sci(fpe.pc, r.asFinal.sci, reset = true)
                     } else {
                         hasFinalResult = false
                     }

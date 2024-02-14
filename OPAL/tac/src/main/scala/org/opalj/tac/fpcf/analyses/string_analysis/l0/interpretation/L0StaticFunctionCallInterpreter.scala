@@ -13,10 +13,6 @@ import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.EPK
-import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.PropertyStore
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 
@@ -35,7 +31,7 @@ case class L0StaticFunctionCallInterpreter[State <: L0ComputationState[State]](
 
     override type T = StaticFunctionCall[V]
 
-    override def interpret(instr: T, defSite: Int)(implicit state: State): EOptionP[Entity, StringConstancyProperty] = {
+    override def interpret(instr: T, defSite: Int)(implicit state: State): IPResult = {
         if (instr.declaringClass == ObjectType.String && instr.name == "valueOf") {
             processStringValueOf(instr)
         } else {
@@ -45,16 +41,16 @@ case class L0StaticFunctionCallInterpreter[State <: L0ComputationState[State]](
 
     private def processStringValueOf(call: StaticFunctionCall[V])(
         implicit state: State
-    ): EOptionP[Entity, StringConstancyProperty] = {
+    ): IPResult = {
         val results = call.params.head.asVar.definedBy.toArray.sorted.map {
             exprHandler.processDefSite(_)
         }
         val interim = results.find(_.isRefinable)
         if (interim.isDefined) {
-            interim.get
+            InterimIPResult.lb
         } else {
             // For char values, we need to do a conversion (as the returned results are integers)
-            val scis = results.map { r => r.asFinal.p.stringConstancyInformation }
+            val scis = results.map { r => r.asFinal.sci }
             val finalScis = if (call.descriptor.parameterType(0).toJava == "char") {
                 scis.map { sci =>
                     if (Try(sci.possibleStrings.toInt).isSuccess) {
@@ -66,17 +62,17 @@ case class L0StaticFunctionCallInterpreter[State <: L0ComputationState[State]](
             } else {
                 scis
             }
-            FinalEP(call, StringConstancyProperty(StringConstancyInformation.reduceMultiple(finalScis)))
+            FinalIPResult(StringConstancyInformation.reduceMultiple(finalScis))
         }
     }
 
     protected def processArbitraryCall(instr: T, defSite: Int)(implicit
         state: State
-    ): EOptionP[Entity, StringConstancyProperty] = {
+    ): IPResult = {
         val calleeMethod = instr.resolveCallTarget(state.entity._2.classFile.thisType)
         if (calleeMethod.isEmpty) {
             state.appendToFpe2Sci(pcOfDefSite(defSite)(state.tac.stmts), StringConstancyInformation.lb)
-            return FinalEP(instr, StringConstancyProperty.lb)
+            return FinalIPResult(StringConstancyInformation.lb)
         }
 
         // Collect all parameters; either from the state if the interpretation of instr was started before (in this case,
@@ -105,7 +101,7 @@ case class L0StaticFunctionCallInterpreter[State <: L0ComputationState[State]](
             }
             state.nonFinalFunctionArgs(instr) = params
             state.appendToMethodPrep2defSite(m, defSite)
-            return refinableResults.head
+            return InterimIPResult.lb
         }
 
         state.nonFinalFunctionArgs.remove(instr)
@@ -118,7 +114,7 @@ case class L0StaticFunctionCallInterpreter[State <: L0ComputationState[State]](
             if (returns.isEmpty) {
                 // A function without returns, e.g., because it is guaranteed to throw an exception, is approximated
                 // with the lower bound
-                FinalEP(instr, StringConstancyProperty.lb)
+                FinalIPResult.lb
             } else {
                 val results = returns.map { ret =>
                     val entity = (ret.asInstanceOf[ReturnValue[V]].expr.asVar.toPersistentForm(calleeTac.get.stmts), m)
@@ -131,12 +127,16 @@ case class L0StaticFunctionCallInterpreter[State <: L0ComputationState[State]](
                     }
                     eps
                 }
-                results.find(_.isRefinable).getOrElse(results.head)
+                if (results.exists(_.isRefinable)) {
+                    InterimIPResult.lb
+                } else {
+                    FinalIPResult(results.head.asFinal.p.stringConstancyInformation)
+                }
             }
         } else {
             // No TAC => Register dependee and continue
             state.appendToMethodPrep2defSite(m, defSite)
-            EPK(state.entity, StringConstancyProperty.key)
+            EmptyIPResult
         }
     }
 }

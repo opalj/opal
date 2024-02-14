@@ -7,17 +7,12 @@ package string_analysis
 package l0
 package interpretation
 
-import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.FinalEP
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.DependingStringInterpreter
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 
 /**
  * Responsible for processing [[NonVirtualMethodCall]]s without a call graph.
- * For supported method calls, see the documentation of the `interpret` function.
  *
  * @author Maximilian Rüsch
  */
@@ -39,42 +34,40 @@ case class L0NonVirtualMethodCallInterpreter[State <: L0ComputationState[State]]
      * </li>
      * </ul>
      *
-     * For all other calls, a result containing [[StringConstancyInformation.getNeutralElement]] will be returned.
+     * For all other calls, a [[NoIPResult]] will be returned.
      */
-    override def interpret(instr: T, defSite: Int)(implicit state: State): EOptionP[Entity, StringConstancyProperty] = {
-        val sciOpt = instr.name match {
+    override def interpret(instr: T, defSite: Int)(implicit state: State): IPResult = {
+        instr.name match {
             case "<init>" => interpretInit(instr)
-            case _        => Some(StringConstancyInformation.getNeutralElement)
+            case _        => NoIPResult
         }
-        // IMPROVE DO PROPER DEPENDENCY HANDLING
-        FinalEP(instr, StringConstancyProperty(sciOpt.getOrElse(StringConstancyInformation.lb)))
     }
 
     /**
-     * Processes an `&lt;init&gt;` method call. If it has no parameters,
-     * [[StringConstancyProperty.getNeutralElement]] will be returned. Otherwise, only the very
-     * first parameter will be evaluated and its result returned (this is reasonable as both,
-     * [[StringBuffer]] and [[StringBuilder]], have only constructors with <= 1 arguments and only
-     * these are currently interpreted).
+     * Processes an `&lt;init&gt;` method call. If it has no parameters, [[NoIPResult]] will be returned. Otherwise,
+     * only the very first parameter will be evaluated and its result returned (this is reasonable as both,
+     * [[StringBuffer]] and [[StringBuilder]], have only constructors with <= 1 arguments and only these are currently
+     * interpreted).
      */
-    private def interpretInit(init: T)(implicit state: State): Option[StringConstancyInformation] = {
+    private def interpretInit(init: T)(implicit state: State): IPResult = {
         init.params.size match {
-            case 0 => Some(StringConstancyInformation.getNeutralElement)
+            case 0 => NoIPResult
             case _ =>
-                val sciOptsWithPC = init.params.head.asVar.definedBy.toList.map { ds: Int =>
+                val resultsWithPC = init.params.head.asVar.definedBy.toList.map { ds: Int =>
                     (pcOfDefSite(ds)(state.tac.stmts), handleDependentDefSite(ds))
                 }
-                if (sciOptsWithPC.forall(_._2.isDefined)) {
-                    Some(StringConstancyInformation.reduceMultiple(sciOptsWithPC.map(_._2.get)))
+                if (resultsWithPC.forall(_._2.isFinal)) {
+                    FinalIPResult(StringConstancyInformation.reduceMultiple(resultsWithPC.map(_._2.asFinal.sci)))
                 } else {
                     // Some intermediate results => register necessary information from final results and return an
                     // intermediate result
-                    sciOptsWithPC.foreach { sciOptWithPC =>
-                        if (sciOptWithPC._2.isDefined) {
-                            state.appendToFpe2Sci(sciOptWithPC._1, sciOptWithPC._2.get, reset = true)
+                    // IMPROVE DO PROPER DEPENDENCY HANDLING
+                    resultsWithPC.foreach { resultWithPC =>
+                        if (resultWithPC._2.isFinal) {
+                            state.appendToFpe2Sci(resultWithPC._1, resultWithPC._2.asFinal.sci, reset = true)
                         }
                     }
-                    None
+                    InterimIPResult.lb
                 }
         }
     }
