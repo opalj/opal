@@ -175,33 +175,6 @@ class L1InterpretationHandler[State <: L1ComputationState[State]](
         defSite: Int
     )(implicit state: State): IPResult = {
         val r = new L1VirtualFunctionCallInterpreter(this, ps, contextProvider).interpret(expr, defSite)
-        // Set whether the virtual function call is fully prepared. This is the case if 1) the
-        // call was not fully prepared before (no final result available) or 2) the preparation is
-        // now done (methodPrep2defSite makes sure we have the TAC ready for a method required by
-        // this virtual function call).
-        val isFinalResult = r.isFinal
-        if (!isFinalResult && !state.isVFCFullyPrepared.contains(expr)) {
-            state.isVFCFullyPrepared(expr) = false
-        } else if (state.isVFCFullyPrepared.contains(expr) && state.methodPrep2defSite.isEmpty) {
-            state.isVFCFullyPrepared(expr) = true
-        }
-        val isPrepDone = !state.isVFCFullyPrepared.contains(expr) || state.isVFCFullyPrepared(expr)
-
-        // In case no final result could be computed, remove this def site from the list of
-        // processed def sites to make sure that is can be compute again (when all final
-        // results are available); we use nonFinalFunctionArgs because if it does not
-        // contain expr, it can be finalized later on without processing the function again.
-        // A differentiation between "toString" and other calls is made since toString calls are not
-        // prepared in the same way as other calls are as toString does not take any arguments that
-        // might need to be prepared (however, toString needs a finalization procedure)
-        if (expr.name == "toString" &&
-            (state.nonFinalFunctionArgs.contains(expr) || !isFinalResult)
-        ) {
-            processedDefSites.remove(defSite)
-        } else if (state.nonFinalFunctionArgs.contains(expr) || !isPrepDone) {
-            processedDefSites.remove(defSite)
-        }
-
         doInterimResultHandling(r, defSite)
         r
     }

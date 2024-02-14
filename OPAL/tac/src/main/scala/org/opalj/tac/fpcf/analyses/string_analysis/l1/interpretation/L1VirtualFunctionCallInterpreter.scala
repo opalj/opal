@@ -15,7 +15,6 @@ import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyType
-import org.opalj.fpcf.EPK
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.PropertyStore
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
@@ -123,12 +122,10 @@ class L1VirtualFunctionCallInterpreter[State <: L1ComputationState[State]](
         val results = methods.map { nextMethod =>
             val (_, tac) = getTACAI(ps, nextMethod, state)
             if (tac.isDefined) {
-                state.methodPrep2defSite.remove(nextMethod)
                 val returns = tac.get.stmts.filter(_.isInstanceOf[ReturnValue[V]])
                 if (returns.isEmpty) {
-                    // It might be that a function has no return value, e. g., in case it is
-                    // guaranteed to throw an exception
-                    FinalEP(instr, StringConstancyProperty.lb)
+                    // It might be that a function has no return value, e.g., in case it always throws an exception
+                    FinalIPResult.lb
                 } else {
                     val results = returns.map { ret =>
                         val entity =
@@ -140,23 +137,22 @@ class L1VirtualFunctionCallInterpreter[State <: L1ComputationState[State]](
                                     pcOfDefSite(defSite)(state.tac.stmts),
                                     r.p.stringConstancyInformation
                                 )
-                                r
+                                FinalIPResult(r.p.stringConstancyInformation)
                             case eps =>
                                 state.dependees = eps :: state.dependees
                                 state.appendToVar2IndexMapping(entity._1, defSite)
-                                eps
+                                InterimIPResult.lb
                         }
                     }
                     results.find(_.isRefinable).getOrElse(results.head)
                 }
             } else {
-                state.appendToMethodPrep2defSite(nextMethod, defSite)
-                EPK(state.entity, StringConstancyProperty.key)
+                EmptyIPResult
             }
         }
 
         if (results.forall(_.isFinal)) {
-            FinalIPResult(results.head.asFinal.p.stringConstancyInformation)
+            FinalIPResult(results.head.asFinal.sci)
         } else {
             InterimIPResult.lb
         }

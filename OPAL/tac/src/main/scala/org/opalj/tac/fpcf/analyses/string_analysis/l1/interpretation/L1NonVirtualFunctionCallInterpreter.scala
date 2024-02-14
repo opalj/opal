@@ -33,7 +33,6 @@ case class L1NonVirtualFunctionCallInterpreter[State <: L1ComputationState[State
 
         val (_, tac) = getTACAI(ps, m, state)
         if (tac.isDefined) {
-            state.removeFromMethodPrep2defSite(m, defSite)
             // TAC available => Get return UVars and start the string analysis
             val returns = tac.get.stmts.filter(_.isInstanceOf[ReturnValue[V]])
             if (returns.isEmpty) {
@@ -59,7 +58,6 @@ case class L1NonVirtualFunctionCallInterpreter[State <: L1ComputationState[State
                 }
             }
         } else {
-            state.appendToMethodPrep2defSite(m, defSite)
             EmptyIPResult
         }
     }

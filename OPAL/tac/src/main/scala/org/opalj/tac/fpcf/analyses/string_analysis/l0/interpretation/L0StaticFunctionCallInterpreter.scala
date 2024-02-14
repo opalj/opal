@@ -66,7 +66,7 @@ case class L0StaticFunctionCallInterpreter[State <: L0ComputationState[State]](
         }
     }
 
-    protected def processArbitraryCall(instr: T, defSite: Int)(implicit
+    private def processArbitraryCall(instr: T, defSite: Int)(implicit
         state: State
     ): IPResult = {
         val calleeMethod = instr.resolveCallTarget(state.entity._2.classFile.thisType)
@@ -84,7 +84,7 @@ case class L0StaticFunctionCallInterpreter[State <: L0ComputationState[State]](
         }
 
         val m = calleeMethod.value
-        val (_, calleeTac) = getTACAI(ps, m, state)
+        val (tacEOptP, calleeTac) = getTACAI(ps, m, state)
 
         // Continue only when all parameter information are available
         val refinableResults = getRefinableParameterResults(params.toSeq.map(t => t.toSeq.map(_.toSeq)))
@@ -98,9 +98,10 @@ case class L0StaticFunctionCallInterpreter[State <: L0ComputationState[State]](
                     state.dependees = eps :: state.dependees
                     state.appendToVar2IndexMapping(entity._1, defSite)
                 }
+            } else {
+                state.dependees = tacEOptP :: state.dependees
             }
             state.nonFinalFunctionArgs(instr) = params
-            state.appendToMethodPrep2defSite(m, defSite)
             return InterimIPResult.lb
         }
 
@@ -108,7 +109,6 @@ case class L0StaticFunctionCallInterpreter[State <: L0ComputationState[State]](
         state.nonFinalFunctionArgsPos.remove(instr)
         val evaluatedParams = convertEvaluatedParameters(params.toSeq.map(t => t.toSeq.map(_.toSeq.map(_.asFinal))))
         if (calleeTac.isDefined) {
-            state.removeFromMethodPrep2defSite(m, defSite)
             // TAC available => Get return UVar and start the string analysis
             val returns = calleeTac.get.stmts.filter(_.isInstanceOf[ReturnValue[V]])
             if (returns.isEmpty) {
@@ -134,8 +134,7 @@ case class L0StaticFunctionCallInterpreter[State <: L0ComputationState[State]](
                 }
             }
         } else {
-            // No TAC => Register dependee and continue
-            state.appendToMethodPrep2defSite(m, defSite)
+            state.dependees = tacEOptP :: state.dependees
             EmptyIPResult
         }
     }

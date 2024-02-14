@@ -10,7 +10,6 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 import org.opalj.br.DeclaredMethod
-import org.opalj.br.Method
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
@@ -133,18 +132,6 @@ trait ComputationState[State <: ComputationState[State]] {
     val entity2Function: mutable.Map[SContext, ListBuffer[FunctionCall[V]]] = mutable.Map()
 
     /**
-     * A mapping from a method to definition sites which indicates that a method is still prepared,
-     * e.g., the TAC is still to be retrieved, and the list values indicate the defintion sites
-     * which depend on the preparations.
-     */
-    val methodPrep2defSite: mutable.Map[Method, ListBuffer[Int]] = mutable.Map()
-
-    /**
-     * A mapping which indicates whether a virtual function call is fully prepared.
-     */
-    val isVFCFullyPrepared: mutable.Map[VirtualFunctionCall[V], Boolean] = mutable.Map()
-
-    /**
      * Takes a `pc` as well as [[StringConstancyInformation]] and extends the [[fpe2sci]] map accordingly, however, only
      * if `pc` is not yet present or `sci` not present within the list of `pc`.
      */
@@ -225,33 +212,5 @@ trait ComputationState[State <: ComputationState[State]] {
             var2IndexMapping(entity) = ListBuffer()
         }
         var2IndexMapping(entity).append(pc)
-    }
-
-    /**
-     * Takes a TAC EPS as well as a definition site and append it to [[methodPrep2defSite]].
-     */
-    def appendToMethodPrep2defSite(m: Method, defSite: Int): Unit = {
-        if (!methodPrep2defSite.contains(m)) {
-            methodPrep2defSite(m) = ListBuffer()
-        }
-        if (!methodPrep2defSite(m).contains(defSite)) {
-            methodPrep2defSite(m).append(defSite)
-        }
-    }
-
-    /**
-     * Removed the given definition site for the given method from [[methodPrep2defSite]]. If the
-     * entry for `m` in `methodPrep2defSite` is empty, the entry for `m` is removed.
-     */
-    def removeFromMethodPrep2defSite(m: Method, defSite: Int): Unit = {
-        if (methodPrep2defSite.contains(m)) {
-            val index = methodPrep2defSite(m).indexOf(defSite)
-            if (index > -1) {
-                methodPrep2defSite(m).remove(index)
-            }
-            if (methodPrep2defSite(m).isEmpty) {
-                methodPrep2defSite.remove(m)
-            }
-        }
     }
 }
