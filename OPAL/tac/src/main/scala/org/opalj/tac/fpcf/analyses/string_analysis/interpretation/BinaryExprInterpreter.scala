@@ -12,7 +12,7 @@ import org.opalj.br.ComputationalTypeInt
 /**
  * @author Maximilian Rüsch
  */
-case class BinaryExprInterpreter[State <: ComputationState[State]]() extends StringInterpreter[State] {
+case class BinaryExprInterpreter[State <: ComputationState[State]]() extends SingleStepStringInterpreter[State] {
 
     override type T = BinaryExpr[V]
 
@@ -24,7 +24,7 @@ case class BinaryExprInterpreter[State <: ComputationState[State]]() extends Str
      * </li>
      * For all other expressions, a [[NoIPResult]] will be returned.
      */
-    def interpret(instr: T, defSite: Int)(implicit state: State): IPResult = {
+    def interpret(instr: T, defSite: Int)(implicit state: State): NonRefinableIPResult = {
         instr.cTpe match {
             case ComputationalTypeInt   => FinalIPResult(InterpretationHandler.getConstancyInfoForDynamicInt)
             case ComputationalTypeFloat => FinalIPResult(InterpretationHandler.getConstancyInfoForDynamicFloat)

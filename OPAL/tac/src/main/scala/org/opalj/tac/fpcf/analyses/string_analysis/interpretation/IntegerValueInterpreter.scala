@@ -14,7 +14,7 @@ import org.opalj.br.fpcf.properties.string_definition.StringConstancyType
 /**
  * @author Maximilian Rüsch
  */
-case class IntegerValueInterpreter[State <: ComputationState[State]]() extends StringInterpreter[State] {
+case class IntegerValueInterpreter[State <: ComputationState[State]]() extends SingleStepStringInterpreter[State] {
 
     override type T = IntConst
 

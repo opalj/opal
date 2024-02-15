@@ -14,7 +14,7 @@ import org.opalj.tac.StringConst
 /**
  * @author Maximilian Rüsch
  */
-case class StringConstInterpreter[State <: ComputationState[State]]() extends StringInterpreter[State] {
+case class StringConstInterpreter[State <: ComputationState[State]]() extends SingleStepStringInterpreter[State] {
 
     override type T = StringConst
 

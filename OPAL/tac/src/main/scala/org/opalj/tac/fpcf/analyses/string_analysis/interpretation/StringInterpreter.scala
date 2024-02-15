@@ -145,6 +145,14 @@ trait StringInterpreter[State <: ComputationState[State]] {
         })
 }
 
+trait SingleStepStringInterpreter[State <: ComputationState[State]] extends StringInterpreter[State] {
+
+    /**
+     * @inheritdoc
+     */
+    override def interpret(instr: T, defSite: Int)(implicit state: State): NonRefinableIPResult
+}
+
 /**
  * @author Maximilian Rüsch
  */

@@ -13,7 +13,7 @@ import org.opalj.br.fpcf.properties.string_definition.StringConstancyType
 /**
  * @author Maximilian Rüsch
  */
-case class FloatValueInterpreter[State <: ComputationState[State]]() extends StringInterpreter[State] {
+case class FloatValueInterpreter[State <: ComputationState[State]]() extends SingleStepStringInterpreter[State] {
 
     override type T = FloatConst
 
