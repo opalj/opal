@@ -25,10 +25,14 @@ case class BinaryExprInterpreter[State <: ComputationState[State]]() extends Sin
      * For all other expressions, a [[NoIPResult]] will be returned.
      */
     def interpret(instr: T, defSite: Int)(implicit state: State): NonRefinableIPResult = {
+        val defSitePC = pcOfDefSite(defSite)(state.tac.stmts)
         instr.cTpe match {
-            case ComputationalTypeInt   => FinalIPResult(InterpretationHandler.getConstancyInfoForDynamicInt)
-            case ComputationalTypeFloat => FinalIPResult(InterpretationHandler.getConstancyInfoForDynamicFloat)
-            case _                      => NoIPResult
+            case ComputationalTypeInt =>
+                FinalIPResult(InterpretationHandler.getConstancyInfoForDynamicInt, state.dm, defSitePC)
+            case ComputationalTypeFloat =>
+                FinalIPResult(InterpretationHandler.getConstancyInfoForDynamicFloat, state.dm, defSitePC)
+            case _ =>
+                NoIPResult(state.dm, defSitePC)
         }
     }
 }

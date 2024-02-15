@@ -8,7 +8,7 @@ package l1
 
 import scala.collection.mutable.ListBuffer
 
-import org.opalj.br.DeclaredMethod
+import org.opalj.br.DefinedMethod
 import org.opalj.br.FieldType
 import org.opalj.br.Method
 import org.opalj.br.analyses.DeclaredFields
@@ -41,9 +41,6 @@ import org.opalj.log.OPALLogger.logOnce
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 import org.opalj.tac.fpcf.analyses.string_analysis.l0.interpretation.L0ArrayAccessInterpreter
 import org.opalj.tac.fpcf.analyses.string_analysis.l1.interpretation.L1InterpretationHandler
-import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.FlatPathElement
-import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.NestedPathElement
-import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.Path
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.PathTransformer
 import org.opalj.tac.fpcf.properties.TACAI
 
@@ -75,7 +72,7 @@ import org.opalj.tac.fpcf.properties.TACAI
 class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
 
     protected[l1] case class CState(
-        override val dm:            DeclaredMethod,
+        override val dm:            DefinedMethod,
         override val entity:        (SEntity, Method),
         override val methodContext: Context
     ) extends L1ComputationState[CState]
@@ -117,27 +114,29 @@ class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
         val dm = declaredMethods(data._2)
         // IMPROVE enable handling call string contexts here (build a chain, probably via SContext)
         val state = CState(dm, data, contextProvider.newContext(declaredMethods(data._2)))
+        state.iHandler = L1InterpretationHandler(declaredFields, fieldAccessInformation, project, ps, contextProvider)
 
         val tacaiEOptP = ps(data._2, TACAI.key)
-        if (tacaiEOptP.hasUBP) {
-            if (tacaiEOptP.ub.tac.isEmpty) {
-                // No TAC available, e.g., because the method has no body
-                return Result(state.entity, StringConstancyProperty.lb)
-            } else {
-                state.tac = tacaiEOptP.ub.tac.get
-            }
-        } else {
-            state.dependees = tacaiEOptP :: state.dependees
+        if (tacaiEOptP.isRefinable) {
+            state.tacDependee = Some(tacaiEOptP)
+            return getInterimResult(state)
         }
 
-        val calleesEOptP = ps(dm, Callees.key)
-        if (calleesEOptP.hasUBP) {
-            state.callees = calleesEOptP.ub
-            determinePossibleStrings(state)
-        } else {
-            state.dependees = calleesEOptP :: state.dependees
-            getInterimResult(state)
+        if (tacaiEOptP.ub.tac.isEmpty) {
+            // No TAC available, e.g., because the method has no body
+            return Result(state.entity, StringConstancyProperty.lb)
         }
+
+        state.tac = tacaiEOptP.ub.tac.get
+
+        val calleesEOptP = ps(dm, Callees.key)
+        if (calleesEOptP.hasNoUBP) {
+            state.calleesDependee = Some(calleesEOptP)
+            return getInterimResult(state)
+        }
+
+        state.callees = calleesEOptP.ub
+        determinePossibleStrings(state)
     }
 
     /**
@@ -160,13 +159,6 @@ class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
 
         if (state.computedLeanPath == null) {
             state.computedLeanPath = computeLeanPath(uVar)(state.tac)
-        }
-
-        if (state.iHandler == null) {
-            state.iHandler =
-                L1InterpretationHandler(declaredFields, fieldAccessInformation, project, ps, contextProvider)
-            state.interimIHandler =
-                L1InterpretationHandler(declaredFields, fieldAccessInformation, project, ps, contextProvider)
         }
 
         var requiresCallersInfo = false
@@ -225,8 +217,6 @@ class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
 
         if (state.parameterDependeesCount > 0) {
             return getInterimResult(state)
-        } else {
-            state.isSetupCompleted = true
         }
 
         // Interpret a function / method parameter using the parameter information in state
@@ -246,7 +236,7 @@ class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
                     val ep = propertyStore((nextVar, state.entity._2), StringConstancyProperty.key)
                     ep match {
                         case FinalEP(e, p) =>
-                            processFinalP(state, e, p)
+                            state.dependees = state.dependees.filter(_.e != e)
                             // No more dependees => Return the result for this analysis run
                             if (state.dependees.isEmpty) {
                                 return computeFinalResult(state)
@@ -266,8 +256,8 @@ class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
                 && state.dependees.isEmpty
                 && computeResultsForPath(state.computedLeanPath)(state)
             ) {
-                new PathTransformer(state.iHandler)
-                    .pathToStringTree(state.computedLeanPath, state.fpe2sci)
+                PathTransformer
+                    .pathToStringTree(state.computedLeanPath)(state)
                     .reduce(true)
             } else {
                 StringConstancyInformation.lb
@@ -312,20 +302,6 @@ class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
             case _ =>
                 super.continuation(state)(eps)
         }
-    }
-
-    override protected[string_analysis] def finalizePreparations(
-        path:     Path,
-        state:    State,
-        iHandler: InterpretationHandler[State]
-    ): Unit = path.elements.foreach {
-        case fpe: FlatPathElement =>
-            if (!state.fpe2sci.contains(fpe.pc)) {
-                iHandler.finalizeDefSite(valueOriginOfPC(fpe.pc, state.tac.pcToIndex).get)(state)
-            }
-        case npe: NestedPathElement =>
-            finalizePreparations(Path(npe.element.toList), state, iHandler)
-        case _ =>
     }
 
     /**
@@ -393,7 +369,7 @@ class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
     }
 
     override protected def hasExprFormalParamUsage(expr: Expr[V])(implicit tac: TAC): Boolean = expr match {
-        case al: ArrayLoad[V] => L0ArrayAccessInterpreter.getStoreAndLoadDefSites(al)(tac.stmts).exists(_ < 0)
+        case al: ArrayLoad[V] => L0ArrayAccessInterpreter.getStoreAndLoadDefSitePCs(al)(tac.stmts).exists(_ < 0)
         case _                => super.hasExprFormalParamUsage(expr)
     }
 }

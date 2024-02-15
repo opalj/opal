@@ -7,8 +7,6 @@ package string_analysis
 package l0
 package interpretation
 
-import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.StringInterpreter
-
 /**
  * @author Maximilian Rüsch
  */

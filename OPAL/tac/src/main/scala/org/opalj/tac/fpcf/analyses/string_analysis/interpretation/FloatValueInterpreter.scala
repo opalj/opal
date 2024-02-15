@@ -18,11 +18,15 @@ case class FloatValueInterpreter[State <: ComputationState[State]]() extends Sin
     override type T = FloatConst
 
     def interpret(instr: T, defSite: Int)(implicit state: State): FinalIPResult =
-        FinalIPResult(StringConstancyInformation(
-            StringConstancyLevel.CONSTANT,
-            StringConstancyType.APPEND,
-            instr.value.toString
-        ))
+        FinalIPResult(
+            StringConstancyInformation(
+                StringConstancyLevel.CONSTANT,
+                StringConstancyType.APPEND,
+                instr.value.toString
+            ),
+            state.dm,
+            pcOfDefSite(defSite)(state.tac.stmts)
+        )
 }
 
 object FloatValueInterpreter {

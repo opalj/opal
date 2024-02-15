@@ -18,11 +18,15 @@ case class DoubleValueInterpreter[State <: ComputationState[State]]() extends Si
     override type T = DoubleConst
 
     def interpret(instr: T, defSite: Int)(implicit state: State): FinalIPResult =
-        FinalIPResult(StringConstancyInformation(
-            StringConstancyLevel.CONSTANT,
-            StringConstancyType.APPEND,
-            instr.value.toString
-        ))
+        FinalIPResult(
+            StringConstancyInformation(
+                StringConstancyLevel.CONSTANT,
+                StringConstancyType.APPEND,
+                instr.value.toString
+            ),
+            state.dm,
+            pcOfDefSite(defSite)(state.tac.stmts)
+        )
 }
 
 object DoubleValueInterpreter {

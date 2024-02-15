@@ -8,7 +8,6 @@ package l0
 package interpretation
 
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
-import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.DependingStringInterpreter
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 
 /**
@@ -18,9 +17,7 @@ import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.Interpretation
  */
 case class L0NonVirtualMethodCallInterpreter[State <: L0ComputationState[State]](
     exprHandler: InterpretationHandler[State]
-) extends L0StringInterpreter[State] with DependingStringInterpreter[State] {
-
-    implicit val _exprHandler: InterpretationHandler[State] = exprHandler
+) extends L0StringInterpreter[State] with IPResultDependingStringInterpreter[State] {
 
     override type T = NonVirtualMethodCall[V]
 
@@ -39,7 +36,7 @@ case class L0NonVirtualMethodCallInterpreter[State <: L0ComputationState[State]]
     override def interpret(instr: T, defSite: Int)(implicit state: State): IPResult = {
         instr.name match {
             case "<init>" => interpretInit(instr)
-            case _        => NoIPResult
+            case _        => NoIPResult(state.dm, instr.pc)
         }
     }
 
@@ -51,24 +48,26 @@ case class L0NonVirtualMethodCallInterpreter[State <: L0ComputationState[State]]
      */
     private def interpretInit(init: T)(implicit state: State): IPResult = {
         init.params.size match {
-            case 0 => NoIPResult
+            case 0 => NoIPResult(state.dm, init.pc)
             case _ =>
-                val resultsWithPC = init.params.head.asVar.definedBy.toList.map { ds: Int =>
-                    (pcOfDefSite(ds)(state.tac.stmts), handleDependentDefSite(ds))
-                }
-                if (resultsWithPC.forall(_._2.isFinal)) {
-                    FinalIPResult(StringConstancyInformation.reduceMultiple(resultsWithPC.map(_._2.asFinal.sci)))
+                val results = init.params.head.asVar.definedBy.toList.map(exprHandler.processDefSite)
+                if (results.forall(_.isFinal)) {
+                    finalResult(init.pc)(results)
                 } else {
-                    // Some intermediate results => register necessary information from final results and return an
-                    // intermediate result
-                    // IMPROVE DO PROPER DEPENDENCY HANDLING
-                    resultsWithPC.foreach { resultWithPC =>
-                        if (resultWithPC._2.isFinal) {
-                            state.appendToFpe2Sci(resultWithPC._1, resultWithPC._2.asFinal.sci, reset = true)
-                        }
-                    }
-                    InterimIPResult.lb
+                    InterimIPResult.lbWithIPResultDependees(
+                        state.dm,
+                        init.pc,
+                        results.filter(_.isRefinable).asInstanceOf[Iterable[RefinableIPResult]],
+                        awaitAllFinalContinuation(
+                            SimpleIPResultDepender(init, init.pc, state, results),
+                            finalResult(init.pc)
+                        )
+                    )
                 }
         }
+    }
+
+    private def finalResult(pc: Int)(results: Iterable[IPResult])(implicit state: State): FinalIPResult = {
+        FinalIPResult(StringConstancyInformation.reduceMultiple(results.map(_.asFinal.sci)), state.dm, pc)
     }
 }

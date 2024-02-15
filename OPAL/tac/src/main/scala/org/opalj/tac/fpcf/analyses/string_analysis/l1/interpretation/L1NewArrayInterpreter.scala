@@ -8,34 +8,26 @@ package l1
 package interpretation
 
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
+import org.opalj.tac.fpcf.analyses.string_analysis.IPResultDependingStringInterpreter
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 
 /**
- * Responsible for preparing [[NewArray]] expressions.
+ * Interprets [[NewArray]] expressions without a call graph.
  * <p>
- * Not all (partial) results are guaranteed to be available at once, thus intermediate results
- * might be produced. This interpreter will only compute the parts necessary to later on fully
- * assemble the final result for the array interpretation.
- * For more information, see the [[interpret]] method.
  *
- * @author Patrick Mell
+ * @author Maximilian Rüsch
  */
 class L1NewArrayInterpreter[State <: L1ComputationState[State]](
     exprHandler: InterpretationHandler[State]
-) extends L1StringInterpreter[State] {
+) extends L1StringInterpreter[State] with IPResultDependingStringInterpreter[State] {
 
     override type T = NewArray[V]
 
-    /**
-     * @note This implementation will extend [[ComputationState.fpe2sci]] in a way that it adds the string
-     *       constancy information for each definition site where it can compute a final result. All
-     *       definition sites producing a refinable result will have to be handled later on to
-     *       not miss this information.
-     */
     override def interpret(instr: T, defSite: Int)(implicit state: State): IPResult = {
-        // Only support for 1-D arrays
+        val defSitePC = pcOfDefSite(defSite)(state.tac.stmts)
         if (instr.counts.length != 1) {
-            return FinalIPResult.lb
+            // Only supports 1-D arrays
+            return FinalIPResult.lb(state.dm, defSitePC)
         }
 
         // Get all sites that define array values and process them
@@ -46,11 +38,7 @@ class L1NewArrayInterpreter[State <: L1ComputationState[State]](
         }.flatMap { ds =>
             // ds holds a site an of array stores; these need to be evaluated for the actual values
             state.tac.stmts(ds).asArrayStore.value.asVar.definedBy.toArray.toList.sorted.map { d =>
-                val r = exprHandler.processDefSite(d)
-                if (r.isFinal) {
-                    state.appendToFpe2Sci(pcOfDefSite(d)(state.tac.stmts), r.asFinal.sci)
-                }
-                r
+                exprHandler.processDefSite(d)
             }
         }
 
@@ -59,26 +47,35 @@ class L1NewArrayInterpreter[State <: L1ComputationState[State]](
             val paramPos = Math.abs(ds + 2)
             // IMPROVE should we use lb as the fallback value
             val sci = StringConstancyInformation.reduceMultiple(state.params.map(_(paramPos)))
-            state.appendToFpe2Sci(pcOfDefSite(ds)(state.tac.stmts), sci)
-            allResults ::= FinalIPResult(sci)
+            val r = FinalIPResult(sci, state.dm, pcOfDefSite(ds)(state.tac.stmts))
+            state.fpe2ipr(pcOfDefSite(ds)(state.tac.stmts)) = r
+            allResults ::= r
         }
 
-        val interims = allResults.find(!_.isFinal)
-        if (interims.isDefined) {
-            InterimIPResult.lb
+        if (allResults.exists(_.isRefinable)) {
+            InterimIPResult.lbWithIPResultDependees(
+                state.dm,
+                defSitePC,
+                allResults.filter(_.isRefinable).asInstanceOf[Iterable[RefinableIPResult]],
+                awaitAllFinalContinuation(
+                    SimpleIPResultDepender(instr, defSitePC, state, allResults),
+                    finalResult(defSitePC)
+                )
+            )
         } else {
-            var resultSci = StringConstancyInformation.reduceMultiple(allResults.map(_.asFinal.sci))
+            finalResult(defSitePC)(allResults)
+        }
+    }
+
+    private def finalResult(pc: Int)(results: Iterable[IPResult])(implicit state: State): FinalIPResult = {
+        val resultSci = if (results.forall(_.isNoResult)) {
+            StringConstancyInformation.lb
             // It might be that there are no results; in such a case, set the string information to
             // the lower bound and manually add an entry to the results list
-            if (resultSci.isTheNeutralElement) {
-                resultSci = StringConstancyInformation.lb
-            }
-            if (allResults.isEmpty) {
-                val toAppend = FinalIPResult(resultSci)
-                allResults = toAppend :: allResults
-            }
-            state.appendToFpe2Sci(pcOfDefSite(defSite)(state.tac.stmts), resultSci)
-            FinalIPResult(resultSci)
+        } else {
+            StringConstancyInformation.reduceMultiple(results.map(_.asFinal.sci))
         }
+
+        FinalIPResult(resultSci, state.dm, pc)
     }
 }

@@ -4,15 +4,18 @@ package tac
 package fpcf
 package analyses
 package string_analysis
-package interpretation
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 import org.opalj.br.Method
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
+import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.SomeEPS
+import org.opalj.fpcf.SomeFinalEP
+import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
@@ -60,9 +63,6 @@ trait StringInterpreter[State <: ComputationState[State]] {
         if (tacai.hasUBP) {
             (tacai, tacai.ub.tac)
         } else {
-            if (tacai.isRefinable) {
-                s.dependees = tacai :: s.dependees
-            }
             (tacai, None)
         }
     }
@@ -156,23 +156,75 @@ trait SingleStepStringInterpreter[State <: ComputationState[State]] extends Stri
 /**
  * @author Maximilian Rüsch
  */
-trait DependingStringInterpreter[State <: ComputationState[State]] extends StringInterpreter[State] {
+trait IPResultDependingStringInterpreter[State <: ComputationState[State]] extends StringInterpreter[State] {
 
-    protected def handleDependentDefSite(defSite: Int)(implicit
-        state:       State,
-        exprHandler: InterpretationHandler[State]
-    ): IPResult = {
-        exprHandler.processDefSite(defSite) match {
-            case ipr: FinalIPResult =>
-                state.dependeeDefSites = state.dependeeDefSites.filter(_ != ipr)
-                ipr
-            case ipr: InterimIPResult =>
-                if (!state.dependeeDefSites.contains(ipr)) {
-                    state.dependeeDefSites = ipr :: state.dependeeDefSites
-                }
-                ipr
-            case ipr =>
-                ipr
+    protected final def awaitAllFinalContinuation(
+        depender:    IPResultDepender[T, State],
+        finalResult: Iterable[IPResult] => IPResult
+    )(result: IPResult): IPResult = {
+        if (result.isFinal) {
+            val updatedDependees = depender.dependees.updated(
+                depender.dependees.indexWhere(_.e == result.e),
+                result
+            )
+
+            if (updatedDependees.forall(_.isFinal)) {
+                finalResult(updatedDependees)
+            } else {
+                InterimIPResult.fromRefinableIPResults(
+                    StringConstancyInformation.lb,
+                    depender.state.dm,
+                    depender.pc,
+                    updatedDependees.filter(_.isRefinable).asInstanceOf[Seq[RefinableIPResult]],
+                    awaitAllFinalContinuation(depender.withDependees(updatedDependees), finalResult)
+                )
+            }
+        } else {
+            InterimIPResult.fromRefinableIPResults(
+                StringConstancyInformation.lb,
+                depender.state.dm,
+                depender.pc,
+                depender.dependees.asInstanceOf[Seq[RefinableIPResult]],
+                awaitAllFinalContinuation(depender, finalResult)
+            )
+        }
+    }
+}
+
+/**
+ * @author Maximilian Rüsch
+ */
+trait EPSDependingStringInterpreter[State <: ComputationState[State]] extends StringInterpreter[State] {
+
+    protected final def awaitAllFinalContinuation(
+        depender:    EPSDepender[T, State],
+        finalResult: Iterable[SomeFinalEP] => IPResult
+    )(result: SomeEPS): IPResult = {
+        if (result.isFinal) {
+            val updatedDependees = depender.dependees.updated(
+                depender.dependees.indexWhere(_.e.asInstanceOf[Entity] == result.e.asInstanceOf[Entity]),
+                result
+            )
+
+            if (updatedDependees.forall(_.isFinal)) {
+                finalResult(updatedDependees.asInstanceOf[Iterable[SomeFinalEP]])
+            } else {
+                InterimIPResult.fromRefinableEPSResults(
+                    StringConstancyInformation.lb,
+                    depender.state.dm,
+                    depender.pc,
+                    updatedDependees.filter(_.isRefinable),
+                    awaitAllFinalContinuation(depender.withDependees(updatedDependees), finalResult)
+                )
+            }
+        } else {
+            InterimIPResult.fromRefinableEPSResults(
+                StringConstancyInformation.lb,
+                depender.state.dm,
+                depender.pc,
+                depender.dependees,
+                awaitAllFinalContinuation(depender, finalResult)
+            )
         }
     }
 }

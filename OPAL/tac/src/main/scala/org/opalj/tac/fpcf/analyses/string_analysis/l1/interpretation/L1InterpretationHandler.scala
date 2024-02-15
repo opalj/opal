@@ -7,12 +7,10 @@ package string_analysis
 package l1
 package interpretation
 
-import org.opalj.ai.ImmediateVMExceptionsOriginOffset
 import org.opalj.br.analyses.DeclaredFields
 import org.opalj.br.analyses.FieldAccessInformation
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.analyses.ContextProvider
-import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.fpcf.PropertyStore
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.BinaryExprInterpreter
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.DoubleValueInterpreter
@@ -24,21 +22,11 @@ import org.opalj.tac.fpcf.analyses.string_analysis.l0.interpretation.L0ArrayAcce
 import org.opalj.tac.fpcf.analyses.string_analysis.l0.interpretation.L0NonVirtualMethodCallInterpreter
 import org.opalj.tac.fpcf.analyses.string_analysis.l0.interpretation.L0StaticFunctionCallInterpreter
 import org.opalj.tac.fpcf.analyses.string_analysis.l0.interpretation.L0VirtualMethodCallInterpreter
-import org.opalj.tac.fpcf.analyses.string_analysis.l1.finalizer.ArrayLoadFinalizer
-import org.opalj.tac.fpcf.analyses.string_analysis.l1.finalizer.FieldReadFinalizer
-import org.opalj.tac.fpcf.analyses.string_analysis.l1.finalizer.NewArrayFinalizer
-import org.opalj.tac.fpcf.analyses.string_analysis.l1.finalizer.NonVirtualMethodCallFinalizer
-import org.opalj.tac.fpcf.analyses.string_analysis.l1.finalizer.StaticFunctionCallFinalizer
-import org.opalj.tac.fpcf.analyses.string_analysis.l1.finalizer.VirtualFunctionCallFinalizer
 
 /**
- * Responsible for processing expressions that are relevant in order to determine which value(s) a string read operation
- * might have. These expressions usually come from the definitions sites of the variable of interest.
- * <p>
- * This handler may use [[L1StringInterpreter]]s and general
- * [[org.opalj.tac.fpcf.analyses.string_analysis.interpretation.StringInterpreter]]s.
+ * @inheritdoc
  *
- * @author Patrick Mell
+ * @author Maximilian Rüsch
  */
 class L1InterpretationHandler[State <: L1ComputationState[State]](
     declaredFields:               DeclaredFields,
@@ -48,276 +36,67 @@ class L1InterpretationHandler[State <: L1ComputationState[State]](
     implicit val contextProvider: ContextProvider
 ) extends InterpretationHandler[State] {
 
-    /**
-     * Processed the given definition site in an interprocedural fashion.
-     * <p>
-     *
-     * @inheritdoc
-     */
-    override def processDefSite(defSite: Int)(implicit state: State): IPResult = {
-        // Function parameters are not evaluated when none are present (this always includes the
-        // implicit parameter for "this" and for exceptions thrown outside the current function)
-        if (defSite < 0) {
-            val params = state.params.toList.map(_.toList)
-            if (params.isEmpty || defSite == -1 || defSite <= ImmediateVMExceptionsOriginOffset) {
-                state.appendToInterimFpe2Sci(pcOfDefSite(defSite)(state.tac.stmts), StringConstancyInformation.lb)
-                return FinalIPResult.lb
-            } else {
-                val sci = getParam(params, defSite)
-                state.appendToInterimFpe2Sci(pcOfDefSite(defSite)(state.tac.stmts), sci)
-                return FinalIPResult(sci)
-            }
-        } else if (processedDefSites.contains(defSite)) {
-            state.appendToInterimFpe2Sci(
-                pcOfDefSite(defSite)(state.tac.stmts),
-                StringConstancyInformation.getNeutralElement
-            )
-            return NoIPResult
-        }
-        // Note that def sites referring to constant expressions will be deleted further down
-        processedDefSites(defSite) = ()
+    override protected def processNewDefSite(defSite: Int)(implicit state: State): IPResult = {
+        val defSitePC = pcOfDefSite(defSite)(state.tac.stmts)
 
         state.tac.stmts(defSite) match {
-            case Assignment(_, _, expr: StringConst)  => processConstExpr(expr, defSite)
-            case Assignment(_, _, expr: IntConst)     => processConstExpr(expr, defSite)
-            case Assignment(_, _, expr: FloatConst)   => processConstExpr(expr, defSite)
-            case Assignment(_, _, expr: DoubleConst)  => processConstExpr(expr, defSite) // TODO what about long consts
-            case Assignment(_, _, expr: ArrayLoad[V]) => processArrayLoad(expr, defSite)
-            case Assignment(_, _, expr: NewArray[V])  => processNewArray(expr, defSite)
-            case Assignment(_, _, _: New) =>
-                state.appendToInterimFpe2Sci(
-                    pcOfDefSite(defSite)(state.tac.stmts),
-                    StringConstancyInformation.getNeutralElement
-                )
-                NoIPResult
-            case Assignment(_, _, expr: GetStatic)                 => processGetField(expr, defSite)
-            case ExprStmt(_, expr: GetStatic)                      => processGetField(expr, defSite)
-            case Assignment(_, _, expr: VirtualFunctionCall[V])    => processVFC(expr, defSite)
-            case ExprStmt(_, expr: VirtualFunctionCall[V])         => processVFC(expr, defSite)
-            case Assignment(_, _, expr: StaticFunctionCall[V])     => processStaticFunctionCall(expr, defSite)
-            case ExprStmt(_, expr: StaticFunctionCall[V])          => processStaticFunctionCall(expr, defSite)
-            case Assignment(_, _, expr: BinaryExpr[V])             => processBinaryExpr(expr, defSite)
-            case Assignment(_, _, expr: NonVirtualFunctionCall[V]) => processNonVirtualFunctionCall(expr, defSite)
-            case Assignment(_, _, expr: GetField[V])               => processGetField(expr, defSite)
-            case vmc: VirtualMethodCall[V]                         => processVirtualMethodCall(vmc, defSite)
-            case nvmc: NonVirtualMethodCall[V]                     => processNonVirtualMethodCall(nvmc, defSite)
-            case _ =>
-                state.appendToInterimFpe2Sci(
-                    pcOfDefSite(defSite)(state.tac.stmts),
-                    StringConstancyInformation.getNeutralElement
-                )
-                NoIPResult
-        }
-    }
+            case Assignment(_, _, expr: StringConst) => StringConstInterpreter.interpret(expr, defSite)(state)
+            case Assignment(_, _, expr: IntConst)    => IntegerValueInterpreter.interpret(expr, defSite)(state)
+            case Assignment(_, _, expr: FloatConst)  => FloatValueInterpreter.interpret(expr, defSite)(state)
+            case Assignment(_, _, expr: DoubleConst) => DoubleValueInterpreter.interpret(expr, defSite)(state) // TODO what about long consts
 
-    /**
-     * Helper / utility function for processing [[StringConst]], [[IntConst]], [[FloatConst]], and
-     * [[DoubleConst]].
-     */
-    private def processConstExpr(
-        constExpr: SimpleValueConst,
-        defSite:   Int
-    )(implicit state: State): FinalIPResult = {
-        val result = constExpr match {
-            case ic: IntConst    => IntegerValueInterpreter.interpret(ic, defSite)(state)
-            case fc: FloatConst  => FloatValueInterpreter.interpret(fc, defSite)(state)
-            case dc: DoubleConst => DoubleValueInterpreter.interpret(dc, defSite)(state)
-            case sc: StringConst => StringConstInterpreter.interpret(sc, defSite)(state)
-            case c               => throw new IllegalArgumentException(s"Unsupported const value: $c")
-        }
-        state.appendToFpe2Sci(pcOfDefSite(defSite)(state.tac.stmts), result.sci)
-        state.appendToInterimFpe2Sci(pcOfDefSite(defSite)(state.tac.stmts), result.sci)
-        processedDefSites.remove(defSite)
-        result
-    }
+            case Assignment(_, _, expr: ArrayLoad[V]) =>
+                new L0ArrayAccessInterpreter(this).interpret(expr, defSite)
+            case Assignment(_, _, expr: NewArray[V]) =>
+                new L1NewArrayInterpreter(this).interpret(expr, defSite)
 
-    /**
-     * Helper / utility function for processing [[ArrayLoad]]s.
-     */
-    private def processArrayLoad(
-        expr:    ArrayLoad[V],
-        defSite: Int
-    )(implicit state: State): IPResult = {
-        val r = new L0ArrayAccessInterpreter(this).interpret(expr, defSite)
-        val sci = if (r.isFinal) {
-            r.asFinal.sci
-        } else {
-            processedDefSites.remove(defSite)
-            StringConstancyInformation.lb
-        }
-        state.appendToInterimFpe2Sci(pcOfDefSite(defSite)(state.tac.stmts), sci)
-        r
-    }
+            case Assignment(_, _, _: New) => NoIPResult(state.dm, defSitePC)
 
-    /**
-     * Helper / utility function for processing [[NewArray]]s.
-     */
-    private def processNewArray(
-        expr:    NewArray[V],
-        defSite: Int
-    )(implicit state: State): IPResult = {
-        val r = new L1NewArrayInterpreter(this).interpret(expr, defSite)
-        val sci = if (r.isFinal) {
-            r.asFinal.sci
-        } else {
-            processedDefSites.remove(defSite)
-            StringConstancyInformation.lb
-        }
-        state.appendToInterimFpe2Sci(pcOfDefSite(defSite)(state.tac.stmts), sci)
-        r
-    }
+            case Assignment(_, _, expr: GetStatic) =>
+                L1FieldReadInterpreter(ps, fieldAccessInformation, p, declaredFields, contextProvider).interpret(
+                    expr,
+                    defSite
+                )(state)
+            case Assignment(_, _, expr: GetField[V]) =>
+                L1FieldReadInterpreter(ps, fieldAccessInformation, p, declaredFields, contextProvider).interpret(
+                    expr,
+                    defSite
+                )(state)
+            case ExprStmt(_, expr: GetStatic) =>
+                L1FieldReadInterpreter(ps, fieldAccessInformation, p, declaredFields, contextProvider).interpret(
+                    expr,
+                    defSite
+                )(state)
+            case ExprStmt(_, expr: GetField[V]) =>
+                L1FieldReadInterpreter(ps, fieldAccessInformation, p, declaredFields, contextProvider).interpret(
+                    expr,
+                    defSite
+                )(state)
 
-    /**
-     * Helper / utility function for interpreting [[VirtualFunctionCall]]s.
-     */
-    private def processVFC(
-        expr:    VirtualFunctionCall[V],
-        defSite: Int
-    )(implicit state: State): IPResult = {
-        val r = new L1VirtualFunctionCallInterpreter(this, ps, contextProvider).interpret(expr, defSite)
-        doInterimResultHandling(r, defSite)
-        r
-    }
+            case Assignment(_, _, expr: VirtualFunctionCall[V]) =>
+                new L1VirtualFunctionCallInterpreter(this, ps, contextProvider).interpret(expr, defSite)
+            case ExprStmt(_, expr: VirtualFunctionCall[V]) =>
+                new L1VirtualFunctionCallInterpreter(this, ps, contextProvider).interpret(expr, defSite)
 
-    /**
-     * Helper / utility function for processing [[StaticFunctionCall]]s.
-     */
-    private def processStaticFunctionCall(
-        expr:    StaticFunctionCall[V],
-        defSite: Int
-    )(implicit state: State): IPResult = {
-        val r = L0StaticFunctionCallInterpreter(this).interpret(expr, defSite)
-        if (r.isRefinable || state.nonFinalFunctionArgs.contains(expr)) {
-            processedDefSites.remove(defSite)
-        }
-        doInterimResultHandling(r, defSite)
-        r
-    }
+            case Assignment(_, _, expr: NonVirtualFunctionCall[V]) =>
+                L1NonVirtualFunctionCallInterpreter().interpret(expr, defSite)(state)
+            case ExprStmt(_, expr: NonVirtualFunctionCall[V]) =>
+                L1NonVirtualFunctionCallInterpreter().interpret(expr, defSite)(state)
 
-    /**
-     * Helper / utility function for processing [[BinaryExpr]]s.
-     */
-    private def processBinaryExpr(expr: BinaryExpr[V], defSite: Int)(implicit state: State): IPResult = {
-        // TODO: For binary expressions, use the underlying domain to retrieve the result of such expressions
-        val result = BinaryExprInterpreter.interpret(expr, defSite)(state)
-        doInterimResultHandling(result, defSite)
-        result
-    }
+            case Assignment(_, _, expr: StaticFunctionCall[V]) =>
+                L0StaticFunctionCallInterpreter(this).interpret(expr, defSite)
+            case ExprStmt(_, expr: StaticFunctionCall[V]) =>
+                L0StaticFunctionCallInterpreter(this).interpret(expr, defSite)
 
-    /**
-     * Helper / utility function for processing [[GetField]]s.
-     */
-    private def processGetField(expr: FieldRead[V], defSite: Int)(implicit state: State): IPResult = {
-        val r = L1FieldReadInterpreter(ps, fieldAccessInformation, p, declaredFields, contextProvider)
-            .interpret(expr, defSite)(state)
-        if (r.isRefinable) {
-            processedDefSites.remove(defSite)
-        }
-        doInterimResultHandling(r, defSite)
-        r
-    }
+            // TODO: For binary expressions, use the underlying domain to retrieve the result of such expressions
+            case Assignment(_, _, expr: BinaryExpr[V]) => BinaryExprInterpreter.interpret(expr, defSite)(state)
 
-    /**
-     * Helper / utility function for processing [[NonVirtualMethodCall]]s.
-     */
-    private def processNonVirtualFunctionCall(
-        expr:    NonVirtualFunctionCall[V],
-        defSite: Int
-    )(implicit state: State): IPResult = {
-        val r = L1NonVirtualFunctionCallInterpreter().interpret(expr, defSite)(state)
-        if (r.isRefinable || state.nonFinalFunctionArgs.contains(expr)) {
-            processedDefSites.remove(defSite)
-        }
-        doInterimResultHandling(r, defSite)
-        r
-    }
+            case vmc: VirtualMethodCall[V] =>
+                L0VirtualMethodCallInterpreter().interpret(vmc, defSite)(state)
+            case nvmc: NonVirtualMethodCall[V] =>
+                L0NonVirtualMethodCallInterpreter(this).interpret(nvmc, defSite)
 
-    /**
-     * Helper / utility function for processing [[VirtualMethodCall]]s.
-     */
-    def processVirtualMethodCall(
-        expr:    VirtualMethodCall[V],
-        defSite: Int
-    )(implicit state: State): IPResult = {
-        val r = L0VirtualMethodCallInterpreter().interpret(expr, defSite)(state)
-        doInterimResultHandling(r, defSite)
-        r
-    }
-
-    /**
-     * Helper / utility function for processing [[NonVirtualMethodCall]]s.
-     */
-    private def processNonVirtualMethodCall(
-        nvmc:    NonVirtualMethodCall[V],
-        defSite: Int
-    )(implicit state: State): IPResult = {
-        val r = L0NonVirtualMethodCallInterpreter(this).interpret(nvmc, defSite)
-        r match {
-            case FinalIPResult(sci) =>
-                state.appendToInterimFpe2Sci(pcOfDefSite(defSite)(state.tac.stmts), sci)
-                state.appendToFpe2Sci(pcOfDefSite(defSite)(state.tac.stmts), sci)
-            case InterimIPResult(interimSci) =>
-                state.appendToInterimFpe2Sci(pcOfDefSite(defSite)(state.tac.stmts), interimSci)
-                processedDefSites.remove(defSite)
-            case _ =>
-                state.appendToInterimFpe2Sci(pcOfDefSite(defSite)(state.tac.stmts), StringConstancyInformation.lb)
-                processedDefSites.remove(defSite)
-        }
-        r
-    }
-
-    /**
-     * Takes a result, which can be final or not, as well as a definition site. Takes the steps necessary to provide
-     * information for computing intermediate results.
-     */
-    private def doInterimResultHandling(result: IPResult, defSite: Int)(implicit state: State): Unit = {
-        result match {
-            case FinalIPResult(sci) =>
-                state.appendToInterimFpe2Sci(pcOfDefSite(defSite)(state.tac.stmts), sci)
-            case InterimIPResult(interimSci) =>
-                state.appendToInterimFpe2Sci(pcOfDefSite(defSite)(state.tac.stmts), interimSci)
-            case _ =>
-                state.appendToInterimFpe2Sci(pcOfDefSite(defSite)(state.tac.stmts), StringConstancyInformation.lb)
-        }
-    }
-
-    /**
-     * Finalized a given definition state.
-     */
-    override def finalizeDefSite(defSite: Int)(implicit state: State): Unit = {
-        if (defSite < 0) {
-            state.appendToFpe2Sci(
-                pcOfDefSite(defSite)(state.tac.stmts),
-                getParam(state.params.toSeq.map(_.toSeq), defSite),
-                reset = true
-            )
-        } else {
-            state.tac.stmts(defSite) match {
-                case nvmc: NonVirtualMethodCall[V] =>
-                    NonVirtualMethodCallFinalizer().finalizeInterpretation(nvmc, defSite)(state)
-                case Assignment(_, _, al: ArrayLoad[V]) =>
-                    ArrayLoadFinalizer().finalizeInterpretation(al, defSite)(state)
-                case Assignment(_, _, na: NewArray[V]) =>
-                    NewArrayFinalizer().finalizeInterpretation(na, defSite)(state)
-                case Assignment(_, _, vfc: VirtualFunctionCall[V]) =>
-                    VirtualFunctionCallFinalizer().finalizeInterpretation(vfc, defSite)(state)
-                case ExprStmt(_, vfc: VirtualFunctionCall[V]) =>
-                    VirtualFunctionCallFinalizer().finalizeInterpretation(vfc, defSite)(state)
-                case Assignment(_, _, fr: FieldRead[V]) =>
-                    FieldReadFinalizer().finalizeInterpretation(fr, defSite)(state)
-                case ExprStmt(_, fr: FieldRead[V]) =>
-                    FieldReadFinalizer().finalizeInterpretation(fr, defSite)(state)
-                case Assignment(_, _, sfc: StaticFunctionCall[V]) =>
-                    StaticFunctionCallFinalizer().finalizeInterpretation(sfc, defSite)(state)
-                case ExprStmt(_, sfc: StaticFunctionCall[V]) =>
-                    StaticFunctionCallFinalizer().finalizeInterpretation(sfc, defSite)(state)
-                case _ =>
-                    state.appendToFpe2Sci(
-                        pcOfDefSite(defSite)(state.tac.stmts),
-                        StringConstancyInformation.lb,
-                        reset = true
-                    )
-            }
+            case _ => NoIPResult(state.dm, defSitePC)
         }
     }
 }

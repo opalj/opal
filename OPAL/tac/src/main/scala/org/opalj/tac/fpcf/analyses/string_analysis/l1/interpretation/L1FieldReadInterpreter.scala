@@ -71,16 +71,18 @@ case class L1FieldReadInterpreter[State <: L1ComputationState[State]](
      * [[StringConstancyLevel.DYNAMIC]].
      */
     override def interpret(instr: T, defSite: Int)(implicit state: State): IPResult = {
+        val defSitePC = pcOfDefSite(defSite)(state.tac.stmts)
+
         // TODO: The approximation of fields might be outsourced into a dedicated analysis. Then, one could add a
         //  finer-grained processing or provide different abstraction levels. This analysis could then use that analysis.
         if (!StringAnalysis.isSupportedType(instr.declaredFieldType)) {
-            return FinalIPResult.lb
+            return FinalIPResult.lb(state.dm, defSitePC)
         }
 
         val definedField = declaredFields(instr.declaringClass, instr.name, instr.declaredFieldType).asDefinedField
         val writeAccesses = fieldAccessInformation.writeAccesses(definedField.definedField).toSeq
         if (writeAccesses.length > fieldWriteThreshold) {
-            return FinalIPResult.lb
+            return FinalIPResult.lb(state.dm, defSitePC)
         }
 
         var hasInit = false
@@ -95,9 +97,9 @@ case class L1FieldReadInterpreter[State <: L1ComputationState[State]](
                 val (tacEps, tac) = getTACAI(ps, method, state)
                 val nextResult = if (parameter.isEmpty) {
                     // Field parameter information is not available
-                    FinalIPResult.lb
+                    FinalIPResult.lb(state.dm, defSitePC)
                 } else if (tacEps.isRefinable) {
-                    EmptyIPResult
+                    EmptyIPResult(state.dm, defSitePC)
                 } else {
                     tac match {
                         case Some(_) =>
@@ -111,13 +113,13 @@ case class L1FieldReadInterpreter[State <: L1ComputationState[State]](
                                 // though it might not be. Thus, we use -1 as it is a safe dummy
                                 // value
                                 state.appendToVar2IndexMapping(entity._1, -1)
-                                InterimIPResult(eps.lb.stringConstancyInformation)
+                                EmptyIPResult(state.dm, defSitePC)
                             } else {
-                                FinalIPResult(eps.asFinal.p.stringConstancyInformation)
+                                FinalIPResult(eps.asFinal.p.stringConstancyInformation, state.dm, defSitePC)
                             }
                         case _ =>
                             // No TAC available
-                            FinalIPResult.lb
+                            FinalIPResult.lb(state.dm, defSitePC)
                     }
                 }
                 results.append(nextResult)
@@ -130,21 +132,20 @@ case class L1FieldReadInterpreter[State <: L1ComputationState[State]](
                 possibleStrings =
                     s"(${StringConstancyInformation.NullStringValue}|${StringConstancyInformation.UnknownWordSymbol})"
             )
-            state.appendToFpe2Sci(pcOfDefSite(defSite)(state.tac.stmts), StringConstancyInformation.lb)
-            FinalIPResult(sci)
+            FinalIPResult(sci, state.dm, defSitePC)
         } else {
             if (results.forall(_.isFinal)) {
                 // No init is present => append a `null` element to indicate that the field might be null; this behavior
                 // could be refined by only setting the null element if no statement is guaranteed to be executed prior
                 // to the field read
                 if (!hasInit) {
-                    results.append(FinalIPResult.nullElement)
+                    results.append(FinalIPResult.nullElement(state.dm, defSitePC))
                 }
                 val finalSci = StringConstancyInformation.reduceMultiple(results.map(_.asFinal.sci))
-                state.appendToFpe2Sci(pcOfDefSite(defSite)(state.tac.stmts), finalSci)
-                FinalIPResult(finalSci)
+                FinalIPResult(finalSci, state.dm, defSitePC)
             } else {
-                InterimIPResult.lb
+                // IMPROVE return interim result here and depend on EPS
+                EmptyIPResult(state.dm, defSitePC)
             }
         }
     }

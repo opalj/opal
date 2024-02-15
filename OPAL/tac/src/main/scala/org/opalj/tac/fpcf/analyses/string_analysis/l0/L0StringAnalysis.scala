@@ -6,25 +6,20 @@ package analyses
 package string_analysis
 package l0
 
-import org.opalj.br.DeclaredMethod
+import org.opalj.br.DefinedMethod
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.FPCFLazyAnalysisScheduler
 import org.opalj.br.fpcf.properties.StringConstancyProperty
-import org.opalj.br.fpcf.properties.cg.Callees
-import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.FinalEP
-import org.opalj.fpcf.InterimLUBP
-import org.opalj.fpcf.InterimResult
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEPS
-import org.opalj.fpcf.UBP
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 import org.opalj.tac.fpcf.analyses.string_analysis.l0.interpretation.L0InterpretationHandler
 import org.opalj.tac.fpcf.properties.TACAI
@@ -45,7 +40,8 @@ trait L0ComputationState[State <: L0ComputationState[State]] extends Computation
  * and directly corresponds to a leaf node in the string tree (such trees consist of only one node).
  * Multiple definition sites indicate > 1 possible initialization values and are transformed into a
  * string tree whose root node is an OR element and the children are the possible initialization
- * values. Note that all this is handled by [[StringConstancyInformation.reduceMultiple]].
+ * values. Note that all this is handled by
+ * [[org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation.reduceMultiple]].
  * <p>
  * For the latter, String{Buffer, Builder}, lean paths from the definition sites to the usage
  * (indicated by the given DUVar) is computed. That is, all paths from all definition sites to the
@@ -59,26 +55,28 @@ trait L0ComputationState[State <: L0ComputationState[State]] extends Computation
 class L0StringAnalysis(override val project: SomeProject) extends StringAnalysis {
 
     protected[l0] case class CState(
-        override val dm:     DeclaredMethod,
+        override val dm:     DefinedMethod,
         override val entity: SContext
     ) extends L0ComputationState[CState]
 
     override type State = CState
 
     def analyze(data: SContext): ProperPropertyComputationResult = {
-        // Retrieve TAC from property store
-        val tacOpt: Option[TAC] = ps(data._2, TACAI.key) match {
-            case UBP(tac) => if (tac.tac.isEmpty) None else Some(tac.tac.get)
-            case _        => None
-        }
-        // No TAC available, e.g., because the method has no body
-        if (tacOpt.isEmpty)
-            return Result(data, StringConstancyProperty.lb) // TODO add continuation
-
         val state = CState(declaredMethods(data._2), data)
         state.iHandler = L0InterpretationHandler()
-        state.interimIHandler = L0InterpretationHandler()
-        state.tac = tacOpt.get
+
+        val tacaiEOptP = ps(data._2, TACAI.key)
+        if (tacaiEOptP.isRefinable) {
+            state.tacDependee = Some(tacaiEOptP)
+            return getInterimResult(state)
+        }
+
+        if (tacaiEOptP.ub.tac.isEmpty) {
+            // No TAC available, e.g., because the method has no body
+            return Result(state.entity, StringConstancyProperty.lb)
+        }
+
+        state.tac = tacaiEOptP.ub.tac.get
         determinePossibleStrings(state)
     }
 
@@ -86,7 +84,6 @@ class L0StringAnalysis(override val project: SomeProject) extends StringAnalysis
         state: State
     ): ProperPropertyComputationResult = {
         implicit val tac: TAC = state.tac
-        val stmts = tac.stmts
 
         val puVar = state.entity._1
         val uVar = puVar.toValueOriginForm(tac.pcToIndex)
@@ -111,8 +108,10 @@ class L0StringAnalysis(override val project: SomeProject) extends StringAnalysis
 
         if (state.parameterDependeesCount > 0) {
             return getInterimResult(state)
-        } else {
-            state.isSetupCompleted = true
+        }
+
+        if (state.computedLeanPath == null) {
+            state.computedLeanPath = computeLeanPath(uVar)
         }
 
         // Interpret a function / method parameter using the parameter information in state
@@ -121,14 +120,8 @@ class L0StringAnalysis(override val project: SomeProject) extends StringAnalysis
             return Result(state.entity, StringConstancyProperty(r.asFinal.sci))
         }
 
-        val expr = stmts(defSites.head).asAssignment.expr
+        val expr = tac.stmts(defSites.head).asAssignment.expr
         if (InterpretationHandler.isStringBuilderBufferToStringCall(expr)) {
-            val leanPath = computeLeanPathForStringBuilder(uVar)
-            if (leanPath.isEmpty) {
-                return Result(state.entity, StringConstancyProperty.lb)
-            }
-            state.computedLeanPath = leanPath.get
-
             // Find DUVars, that the analysis of the current entity depends on
             val dependentVars = findDependentVars(state.computedLeanPath, puVar)
             if (dependentVars.nonEmpty) {
@@ -137,32 +130,19 @@ class L0StringAnalysis(override val project: SomeProject) extends StringAnalysis
                     propertyStore((nextVar, state.entity._2), StringConstancyProperty.key) match {
                         case FinalEP(e, p) =>
                             // Add mapping information (which will be used for computing the final result)
-                            state.var2IndexMapping(e._1).foreach {
-                                state.appendToFpe2Sci(_, p.stringConstancyInformation)
-                            }
+                            // state.var2IndexMapping(e._1).foreach(state.appendToFpe2Sci(_, p.stringConstancyInformation))
                             state.dependees = state.dependees.filter(_.e.asInstanceOf[SContext] != e)
                         case ep =>
                             state.dependees = ep :: state.dependees
                     }
                 }
             }
+        }
 
-            if (state.dependees.isEmpty) {
-                computeFinalResult(state)
-            } else {
-                getInterimResult(state)
-            }
+        if (state.dependees.isEmpty) {
+            computeFinalResult(state)
         } else {
-            // We deal with pure strings TODO unify result handling
-            val sci = StringConstancyInformation.reduceMultiple(
-                uVar.definedBy.toArray.sorted.map { ds => state.iHandler.processDefSite(ds).asFinal.sci }
-            )
-
-            if (state.dependees.isEmpty) {
-                Result(state.entity, StringConstancyProperty(sci))
-            } else {
-                getInterimResult(state)
-            }
+            getInterimResult(state)
         }
     }
 
@@ -177,17 +157,14 @@ class L0StringAnalysis(override val project: SomeProject) extends StringAnalysis
         state: State
     )(eps: SomeEPS): ProperPropertyComputationResult = eps match {
         case FinalEP(e: Entity, p: StringConstancyProperty) if eps.pk.equals(StringConstancyProperty.key) =>
-            processFinalP(state, e, p)
+            state.dependees = state.dependees.filter(_.e != e)
             if (state.dependees.isEmpty) {
                 computeFinalResult(state)
             } else {
                 getInterimResult(state)
             }
-
-        case InterimLUBP(lb, ub) =>
-            InterimResult(state.entity, lb, ub, state.dependees.toSet, continuation(state))
         case _ =>
-            throw new IllegalStateException("Could not process the continuation successfully.")
+            super.continuation(state)(eps)
     }
 }
 
@@ -197,7 +174,6 @@ sealed trait L0StringAnalysisScheduler extends FPCFAnalysisScheduler {
 
     override final def uses: Set[PropertyBounds] = Set(
         PropertyBounds.ub(TACAI),
-        PropertyBounds.ub(Callees),
         PropertyBounds.lub(StringConstancyProperty)
     )
 

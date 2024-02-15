@@ -19,11 +19,15 @@ case class StringConstInterpreter[State <: ComputationState[State]]() extends Si
     override type T = StringConst
 
     def interpret(instr: T, defSite: Int)(implicit state: State): FinalIPResult =
-        FinalIPResult(StringConstancyInformation(
-            StringConstancyLevel.CONSTANT,
-            StringConstancyType.APPEND,
-            instr.value
-        ))
+        FinalIPResult(
+            StringConstancyInformation(
+                StringConstancyLevel.CONSTANT,
+                StringConstancyType.APPEND,
+                instr.value
+            ),
+            state.dm,
+            pcOfDefSite(defSite)(state.tac.stmts)
+        )
 }
 
 object StringConstInterpreter {

@@ -7,18 +7,16 @@ package string_analysis
 package l1
 package interpretation
 
-import org.opalj.br.ComputationalTypeFloat
-import org.opalj.br.ComputationalTypeInt
-import org.opalj.br.ObjectType
+import org.opalj.br.Method
 import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
-import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
-import org.opalj.br.fpcf.properties.string_definition.StringConstancyType
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.SomeFinalEP
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 import org.opalj.tac.fpcf.analyses.string_analysis.l0.interpretation.L0VirtualFunctionCallInterpreter
+import org.opalj.tac.fpcf.properties.TACAI
 
 /**
  * Responsible for processing [[VirtualFunctionCall]]s with a call graph where applicable.
@@ -31,50 +29,11 @@ class L1VirtualFunctionCallInterpreter[State <: L1ComputationState[State]](
     implicit val ps:              PropertyStore,
     implicit val contextProvider: ContextProvider
 ) extends L0VirtualFunctionCallInterpreter[State](exprHandler)
-    with L1StringInterpreter[State] {
+    with L1StringInterpreter[State]
+    with IPResultDependingStringInterpreter[State]
+    with EPSDependingStringInterpreter[State] {
 
     override type T = VirtualFunctionCall[V]
-
-    /**
-     * Currently, this implementation supports the interpretation of the following function calls:
-     * <ul>
-     * <li>`append`: Calls to the `append` function of [[StringBuilder]] and [[StringBuffer]].</li>
-     * <li>
-     *     `toString`: Calls to the `append` function of [[StringBuilder]] and [[StringBuffer]]. As
-     *     a `toString` call does not change the state of such an object, an empty list will be
-     *     returned.
-     * </li>
-     * <li>
-     *     `replace`: Calls to the `replace` function of [[StringBuilder]] and [[StringBuffer]]. For
-     *     further information how this operation is processed, see
-     *     [[L1VirtualFunctionCallInterpreter.interpretReplaceCall]].
-     * </li>
-     * <li>
-     *     Apart from these supported methods, a list with [[StringConstancyProperty.lb]]
-     *     will be returned in case the passed method returns a [[java.lang.String]].
-     * </li>
-     * </ul>
-     *
-     * If none of the above-described cases match, a final result containing
-     * [[StringConstancyProperty.lb]] is returned.
-     *
-     * @note This function takes care of updating [[ComputationState.fpe2sci]] as necessary.
-     */
-    override protected def handleInterpretation(instr: T, defSite: Int)(implicit
-        state: State
-    ): IPResult = {
-        instr.name match {
-            case "append"               => interpretAppendCall(instr)
-            case "toString" | "replace" => super.handleInterpretation(instr, defSite)
-            case _ =>
-                instr.descriptor.returnType match {
-                    case obj: ObjectType if obj == ObjectType.String =>
-                        interpretArbitraryCall(instr, defSite)
-                    case _ =>
-                        super.handleInterpretation(instr, defSite)
-                }
-        }
-    }
 
     /**
      * This function interprets an arbitrary [[VirtualFunctionCall]]. If this method returns a
@@ -82,13 +41,14 @@ class L1VirtualFunctionCallInterpreter[State <: L1ComputationState[State]](
      * analysis was triggered whose result is not yet ready. In this case, the result needs to be
      * finalized later on.
      */
-    private def interpretArbitraryCall(instr: T, defSite: Int)(
+    override protected def interpretArbitraryCall(instr: T, defSite: Int)(
         implicit state: State
     ): IPResult = {
-        val (methods, _) = getMethodsForPC(instr.pc)
+        val defSitePC = pcOfDefSite(defSite)(state.tac.stmts)
 
+        val (methods, _) = getMethodsForPC(instr.pc)
         if (methods.isEmpty) {
-            return FinalIPResult.lb
+            return FinalIPResult.lb(state.dm, defSitePC)
         }
         // TODO: Type Iterator!
         val directCallSites = state.callees.directCallSites(state.methodContext)(ps, contextProvider)
@@ -101,214 +61,149 @@ class L1VirtualFunctionCallInterpreter[State <: L1ComputationState[State]](
                 }
         }.keys
 
-        // Collect all parameters; either from the state, if the interpretation of instr was started
-        // before (in this case, the assumption is that all parameters are fully interpreted) or
-        // start a new interpretation
-        val params = if (state.nonFinalFunctionArgs.contains(instr)) {
-            state.nonFinalFunctionArgs(instr)
-        } else {
-            evaluateParameters(getParametersForPCs(relevantPCs), exprHandler, instr)
-        }
-        // Continue only when all parameter information are available
+        val params = evaluateParameters(getParametersForPCs(relevantPCs), exprHandler, instr)
         val refinableResults = getRefinableParameterResults(params.toSeq.map(t => t.toSeq.map(_.toSeq)))
         if (refinableResults.nonEmpty) {
             state.nonFinalFunctionArgs(instr) = params
-            return InterimIPResult.lb
-        }
-
-        state.nonFinalFunctionArgs.remove(instr)
-        state.nonFinalFunctionArgsPos.remove(instr)
-        val evaluatedParams = convertEvaluatedParameters(params.toSeq.map(t => t.toSeq.map(_.toSeq.map(_.asFinal))))
-        val results = methods.map { nextMethod =>
-            val (_, tac) = getTACAI(ps, nextMethod, state)
-            if (tac.isDefined) {
-                val returns = tac.get.stmts.filter(_.isInstanceOf[ReturnValue[V]])
-                if (returns.isEmpty) {
-                    // It might be that a function has no return value, e.g., in case it always throws an exception
-                    FinalIPResult.lb
-                } else {
-                    val results = returns.map { ret =>
-                        val entity =
-                            (ret.asInstanceOf[ReturnValue[V]].expr.asVar.toPersistentForm(tac.get.stmts), nextMethod)
-                        StringAnalysis.registerParams(entity, evaluatedParams)
-                        ps(entity, StringConstancyProperty.key) match {
-                            case r: FinalEP[SContext, StringConstancyProperty] =>
-                                state.appendToFpe2Sci(
-                                    pcOfDefSite(defSite)(state.tac.stmts),
-                                    r.p.stringConstancyInformation
-                                )
-                                FinalIPResult(r.p.stringConstancyInformation)
-                            case eps =>
-                                state.dependees = eps :: state.dependees
-                                state.appendToVar2IndexMapping(entity._1, defSite)
-                                InterimIPResult.lb
-                        }
+            InterimIPResult.lbWithIPResultDependees(
+                state.dm,
+                defSitePC,
+                refinableResults.asInstanceOf[Iterable[RefinableIPResult]],
+                awaitAllFinalContinuation(
+                    SimpleIPResultDepender(instr, instr.pc, state, refinableResults),
+                    (_: Iterable[IPResult]) => {
+                        val params = state.nonFinalFunctionArgs(instr)
+                        state.nonFinalFunctionArgs.remove(instr)
+                        interpretArbitraryCallWithParams(instr, defSite, methods)(
+                            params.toSeq.map(t => t.toSeq.map(_.toSeq.map(_.asFinal)))
+                        )
                     }
-                    results.find(_.isRefinable).getOrElse(results.head)
-                }
-            } else {
-                EmptyIPResult
-            }
-        }
-
-        if (results.forall(_.isFinal)) {
-            FinalIPResult(results.head.asFinal.sci)
+                )
+            )
         } else {
-            InterimIPResult.lb
-        }
-    }
-
-    /**
-     * Function for processing calls to [[StringBuilder#append]] or [[StringBuffer#append]]. Note
-     * that this function assumes that the given `appendCall` is such a function call! Otherwise,
-     * the expected behavior cannot be guaranteed.
-     */
-    private def interpretAppendCall(appendCall: VirtualFunctionCall[V])(
-        implicit state: State
-    ): IPResult = {
-        val receiverResults = receiverValuesOfAppendCall(appendCall)
-        val appendResult = valueOfAppendCall(appendCall)
-
-        if (receiverResults.head.isRefinable || appendResult.isRefinable) {
-            return InterimIPResult.lb
-        }
-
-        val receiverScis = receiverResults.map { _.asFinal.sci }
-        val appendSci = appendResult.asFinal.sci
-
-        // The case can occur that receiver and append value are empty; although, it is
-        // counter-intuitive, this case may occur if both, the receiver and the parameter, have been
-        // processed before
-        val areAllReceiversNeutral = receiverScis.forall(_.isTheNeutralElement)
-        val finalSci = if (areAllReceiversNeutral && appendSci.isTheNeutralElement) {
-            StringConstancyInformation.getNeutralElement
-        } // It might be that we have to go back as much as to a New expression. As they do not
-        // produce a result (= empty list), the if part
-        else if (areAllReceiversNeutral) {
-            appendSci
-        } // The append value might be empty, if the site has already been processed (then this
-        // information will come from another StringConstancyInformation object
-        else if (appendSci.isTheNeutralElement) {
-            StringConstancyInformation.reduceMultiple(receiverScis)
-        } // Receiver and parameter information are available => Combine them
-        else {
-            val receiverSci = StringConstancyInformation.reduceMultiple(receiverScis)
-            StringConstancyInformation(
-                StringConstancyLevel.determineForConcat(
-                    receiverSci.constancyLevel,
-                    appendSci.constancyLevel
-                ),
-                StringConstancyType.APPEND,
-                receiverSci.possibleStrings + appendSci.possibleStrings
+            interpretArbitraryCallWithParams(instr, defSite, methods)(
+                params.toSeq.map(t => t.toSeq.map(_.toSeq.map(_.asFinal)))
             )
         }
-
-        FinalIPResult(finalSci)
     }
 
-    /**
-     * This function determines the current value of the receiver object of an `append` call. For
-     * the result list, there is the following convention: A list with one element of type
-     * [[org.opalj.fpcf.InterimResult]] indicates that a final result for the receiver value could
-     * not be computed. Otherwise, the result list will contain >= 1 elements of type [[FinalEP]]
-     * indicating that all final results for the receiver value are available.
-     *
-     * @note All final results computed by this function are put int [[ComputationState.fpe2sci]] even if the returned
-     *       list contains an [[org.opalj.fpcf.InterimResult]].
-     */
-    private def receiverValuesOfAppendCall(
-        call: VirtualFunctionCall[V]
-    )(implicit state: State): List[IPResult] = {
-        val defSites = call.receiver.asVar.definedBy.toArray.sorted
-
-        val allResults = defSites.map(ds => (pcOfDefSite(ds)(state.tac.stmts), exprHandler.processDefSite(ds)))
-        val finalResults = allResults.filter(_._2.isFinal)
-        val finalResultsWithoutNeutralElements = finalResults.filter {
-            case (_, FinalIPResult(sci)) => sci.isTheNeutralElement
-            case _                       => false
-        }
-        val intermediateResults = allResults.filter(_._2.isRefinable)
-
-        // Extend the state by the final results not being the neutral elements (they might need to be finalized later)
-        finalResultsWithoutNeutralElements.foreach { next => state.appendToFpe2Sci(next._1, next._2.asFinal.sci) }
-
-        if (intermediateResults.isEmpty) {
-            finalResults.map(_._2).toList
-        } else {
-            List(intermediateResults.head._2)
-        }
-    }
-
-    /**
-     * Determines the (string) value that was passed to a `String{Builder, Buffer}#append` method.
-     * This function can process string constants as well as function calls as argument to append.
-     */
-    private def valueOfAppendCall(call: T)(implicit state: State): IPResult = {
-        // .head because we want to evaluate only the first argument of append
-        val param = call.params.head.asVar
-        val defSites = param.definedBy.toArray.sorted
-        val values = defSites.map(exprHandler.processDefSite(_))
-
-        // Defer the computation if there is at least one intermediate result
-        if (values.exists(_.isRefinable)) {
-            return InterimIPResult.lb
+    private def interpretArbitraryCallWithParams(instr: T, defSite: Int, methods: Seq[Method])(
+        params: Seq[Seq[Seq[FinalIPResult]]]
+    )(implicit state: State): IPResult = {
+        def finalResult(results: Iterable[IPResult]): FinalIPResult = {
+            val sci = StringConstancyInformation.reduceMultiple(results.map(_.asFinal.sci))
+            FinalIPResult(sci, state.dm, instr.pc)
         }
 
-        val sciValues = values.map { _.asFinal.sci }
-        val defSitesValueSci = StringConstancyInformation.reduceMultiple(sciValues)
-        // If defSiteHead points to a "New", value will be the empty list. In that case, process the first use site
-        val newValueSci = if (defSitesValueSci.isTheNeutralElement) {
-            if (defSites.head < 0) {
-                StringConstancyInformation.lb
+        val results = methods.map { m =>
+            val (tacEOptP, calleeTac) = getTACAI(ps, m, state)
+
+            if (tacEOptP.isRefinable) {
+                InterimIPResult.lbWithEPSDependees(
+                    state.dm,
+                    instr.pc,
+                    Seq(tacEOptP),
+                    awaitAllFinalContinuation(
+                        SimpleEPSDepender(instr, instr.pc, state, Seq(tacEOptP)),
+                        (finalEPs: Iterable[SomeFinalEP]) =>
+                            interpretArbitraryCallWithCalleeTACAndParams(instr, defSite, m)(
+                                finalEPs.head.ub.asInstanceOf[TACAI].tac.get,
+                                params
+                            )
+                    )
+                )
+            } else if (calleeTac.isEmpty) {
+                // When the tac ep is final but we still do not have a callee tac, we cannot infer arbitrary call values at all
+                FinalIPResult.lb(state.dm, instr.pc)
             } else {
-                val ds = state.tac.stmts(defSites.head).asAssignment.targetVar.usedBy.toArray.min
-                exprHandler.processDefSite(ds) match {
-                    case FinalIPResult(sci) => sci
-                    // Defer the computation if there is no final result yet
-                    case _ => return InterimIPResult.lb
+                interpretArbitraryCallWithCalleeTACAndParams(instr, defSite, m)(calleeTac.get, params)
+            }
+
+            val returns = calleeTac.get.stmts.filter(_.isInstanceOf[ReturnValue[V]])
+            if (returns.isEmpty) {
+                // A function without returns, e.g., because it is guaranteed to throw an exception, is approximated
+                // with the lower bound
+                FinalIPResult.lb(state.dm, instr.pc)
+            } else {
+                val params = evaluateParameters(getParametersForPCs(List(instr.pc)), exprHandler, instr)
+                val refinableResults = getRefinableParameterResults(params.toSeq.map(t => t.toSeq.map(_.toSeq)))
+                if (refinableResults.nonEmpty) {
+                    state.nonFinalFunctionArgs(instr) = params
+                    InterimIPResult.lbWithIPResultDependees(
+                        state.dm,
+                        instr.pc,
+                        refinableResults.asInstanceOf[Iterable[RefinableIPResult]],
+                        awaitAllFinalContinuation(
+                            SimpleIPResultDepender(instr, instr.pc, state, refinableResults),
+                            (_: Iterable[IPResult]) => {
+                                val params = state.nonFinalFunctionArgs(instr)
+                                state.nonFinalFunctionArgs.remove(instr)
+
+                                interpretArbitraryCallWithCalleeTACAndParams(instr, defSite, m)(
+                                    calleeTac.get,
+                                    params.toSeq.map(t => t.toSeq.map(_.toSeq.map(_.asFinal)))
+                                )
+                            }
+                        )
+                    )
+                } else {
+                    interpretArbitraryCallWithCalleeTACAndParams(instr, defSite, m)(
+                        calleeTac.get,
+                        params.toSeq.map(t => t.toSeq.map(_.toSeq.map(_.asFinal)))
+                    )
                 }
             }
+        }
+
+        if (results.exists(_.isRefinable)) {
+            InterimIPResult.lbWithIPResultDependees(
+                state.dm,
+                instr.pc,
+                results.filter(_.isRefinable).asInstanceOf[Iterable[RefinableIPResult]],
+                awaitAllFinalContinuation(
+                    SimpleIPResultDepender(instr, instr.pc, state, results),
+                    finalResult _
+                )
+            )
         } else {
-            defSitesValueSci
+            finalResult(results)
         }
-
-        val finalSci = param.value.computationalType match {
-            // For some types, we know the (dynamic) values
-            case ComputationalTypeInt =>
-                // The value was already computed above; however, we need to check whether the
-                // append takes an int value or a char (if it is a constant char, convert it)
-                if (call.descriptor.parameterType(0).isCharType &&
-                    defSitesValueSci.constancyLevel == StringConstancyLevel.CONSTANT
-                ) {
-                    if (defSitesValueSci.isTheNeutralElement) {
-                        StringConstancyProperty.lb.stringConstancyInformation
-                    } else {
-                        val charSciValues = sciValues.filter(_.possibleStrings != "") map { sci =>
-                            if (isIntegerValue(sci.possibleStrings)) {
-                                sci.copy(possibleStrings = sci.possibleStrings.toInt.toChar.toString)
-                            } else {
-                                sci
-                            }
-                        }
-                        StringConstancyInformation.reduceMultiple(charSciValues)
-                    }
-                } else {
-                    newValueSci
-                }
-            case ComputationalTypeFloat =>
-                InterpretationHandler.getConstancyInfoForDynamicFloat
-            // Otherwise, try to compute
-            case _ =>
-                newValueSci
-        }
-
-        val e: Integer = defSites.head
-        state.appendToFpe2Sci(pcOfDefSite(e)(state.tac.stmts), newValueSci, reset = true)
-        FinalIPResult(finalSci)
     }
 
-    /**
-     * Checks whether a given string is an integer value, i.e. contains only numbers.
-     */
-    private def isIntegerValue(toTest: String): Boolean = toTest.forall(_.isDigit)
+    private def interpretArbitraryCallWithCalleeTACAndParams(instr: T, defSite: Int, calleeMethod: Method)(
+        calleeTac: TAC,
+        params:    Seq[Seq[Seq[FinalIPResult]]]
+    )(implicit state: State): IPResult = {
+        def finalResult(results: Iterable[SomeFinalEP]): FinalIPResult = {
+            val sci = StringConstancyInformation.reduceMultiple(
+                results.asInstanceOf[Iterable[FinalEP[_, StringConstancyProperty]]].map {
+                    _.p.stringConstancyInformation
+                }
+            )
+            FinalIPResult(sci, state.dm, instr.pc)
+        }
+
+        val evaluatedParams = convertEvaluatedParameters(params)
+        val returns = calleeTac.stmts.filter(_.isInstanceOf[ReturnValue[V]])
+        val results = returns.map { ret =>
+            val entity = (ret.asInstanceOf[ReturnValue[V]].expr.asVar.toPersistentForm(calleeTac.stmts), calleeMethod)
+            state.appendToVar2IndexMapping(entity._1, defSite)
+
+            StringAnalysis.registerParams(entity, evaluatedParams)
+            ps(entity, StringConstancyProperty.key)
+        }
+        if (results.exists(_.isRefinable)) {
+            InterimIPResult.lbWithEPSDependees(
+                state.dm,
+                instr.pc,
+                results.filter(_.isRefinable),
+                awaitAllFinalContinuation(
+                    SimpleEPSDepender(instr, instr.pc, state, results.toIndexedSeq),
+                    finalResult _
+                )
+            )
+        } else {
+            finalResult(results.asInstanceOf[Iterable[SomeFinalEP]])
+        }
+    }
 }

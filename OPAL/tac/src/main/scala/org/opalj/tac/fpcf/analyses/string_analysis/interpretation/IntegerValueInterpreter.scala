@@ -19,11 +19,15 @@ case class IntegerValueInterpreter[State <: ComputationState[State]]() extends S
     override type T = IntConst
 
     def interpret(instr: T, defSite: Int)(implicit state: State): FinalIPResult =
-        FinalIPResult(StringConstancyInformation(
-            StringConstancyLevel.CONSTANT,
-            StringConstancyType.APPEND,
-            instr.value.toString
-        ))
+        FinalIPResult(
+            StringConstancyInformation(
+                StringConstancyLevel.CONSTANT,
+                StringConstancyType.APPEND,
+                instr.value.toString
+            ),
+            state.dm,
+            pcOfDefSite(defSite)(state.tac.stmts)
+        )
 }
 
 object IntegerValueInterpreter {

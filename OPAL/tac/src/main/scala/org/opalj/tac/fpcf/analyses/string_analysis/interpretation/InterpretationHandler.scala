@@ -9,18 +9,22 @@ package interpretation
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
+import org.opalj.ai.ImmediateVMExceptionsOriginOffset
 import org.opalj.br.ObjectType
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyType
 
+/**
+ * Processes expressions that are relevant in order to determine which value(s) the string value at a given def site
+ * might have.
+ *
+ * [[InterpretationHandler]]s of any level may use [[StringInterpreter]]s from their level or any level below.
+ * [[SingleStepStringInterpreter]]s defined in the [[interpretation]] package may be used by any level.
+ *
+ * @author Maximilian Rüsch
+ */
 abstract class InterpretationHandler[State <: ComputationState[State]] {
-
-    /**
-     * A list of definition sites that have already been processed. Store it as a map for constant
-     * look-ups (the value is not relevant and thus set to [[Unit]]).
-     */
-    protected val processedDefSites: mutable.Map[Int, Unit] = mutable.Map()
 
     /**
      * Processes a given definition site. That is, this function determines the interpretation of
@@ -37,24 +41,67 @@ abstract class InterpretationHandler[State <: ComputationState[State]] {
      *         [[org.opalj.br.fpcf.properties.StringConstancyProperty.isTheNeutralElement]]).
      *         The entity of the result will be the given `defSite`.
      */
-    def processDefSite(defSite: Int)(implicit state: State): IPResult
+    def processDefSite(defSite: Int)(implicit state: State): IPResult = {
+        val defSitePC = pcOfDefSite(defSite)(state.tac.stmts)
 
-    /**
-     * [[InterpretationHandler]]s keeps an internal state for correct and faster processing. As
-     * long as a single object within a CFG is analyzed, there is no need to reset the state.
-     * However, when analyzing a second object (even the same object) it is necessary to call
-     * `reset` to reset the internal state. Otherwise, incorrect results will be produced.
-     * (Alternatively, another instance of an implementation of [[InterpretationHandler]] could be
-     * instantiated.)
-     */
-    def reset(): Unit = {
-        processedDefSites.clear()
+        if (state.fpe2ipr.contains(defSitePC) && state.fpe2ipr(defSitePC).isFinal) {
+            if (state.fpe2ipr(defSitePC).isFallThroughResult) {
+                return processDefSite(valueOriginOfPC(
+                    state.fpe2ipr(defSitePC).asInstanceOf[FallThroughIPResult].fallThroughPC,
+                    state.tac.pcToIndex
+                ).get)
+            } else {
+                return state.fpe2ipr(defSitePC)
+            }
+        }
+
+        if (defSite < 0) {
+            val params = state.params.toList.map(_.toList)
+            if (params.isEmpty || defSite == -1 || defSite <= ImmediateVMExceptionsOriginOffset) {
+                state.fpe2ipr(defSitePC) = FinalIPResult.lb(state.dm, defSitePC)
+                return FinalIPResult.lb(state.dm, defSitePC)
+            } else {
+                val sci = getParam(params, defSite)
+                state.fpe2ipr(defSitePC) = FinalIPResult(sci, state.dm, defSitePC)
+                return FinalIPResult(sci, state.dm, defSitePC)
+            }
+        }
+
+        if (state.fpe2iprDependees.contains(defSitePC)) {
+            val oldDependees = state.fpe2iprDependees(defSitePC)
+            val updatedDependees = oldDependees._1.map {
+                case ripr: RefinableIPResult => processDefSite(valueOriginOfPC(ripr.pc, state.tac.pcToIndex).get)
+                case ipr                     => ipr
+            }
+            if (updatedDependees == oldDependees._1) {
+                state.fpe2ipr(defSitePC)
+            } else {
+                state.fpe2iprDependees(defSitePC) = (updatedDependees, oldDependees._2)
+                var newResult = state.fpe2ipr(defSitePC)
+                for {
+                    ipr <- updatedDependees
+                    if !oldDependees._1.contains(ipr)
+                } {
+                    newResult = oldDependees._2(ipr)
+                }
+                newResult
+            }
+        } else {
+            val result = processNewDefSite(defSite)
+            state.fpe2ipr(defSitePC) = result
+
+            if (result.isFallThroughResult) {
+                processDefSite(valueOriginOfPC(
+                    result.asInstanceOf[FallThroughIPResult].fallThroughPC,
+                    state.tac.pcToIndex
+                ).get)
+            } else {
+                result
+            }
+        }
     }
 
-    /**
-     * Finalized a given definition state.
-     */
-    def finalizeDefSite(defSite: Int)(implicit state: State): Unit = {}
+    protected def processNewDefSite(defSite: Int)(implicit state: State): IPResult
 
     /**
      * This function takes parameters and a definition site and extracts the desired parameter from
@@ -112,10 +159,9 @@ object InterpretationHandler {
      */
     def isStringBuilderBufferAppendCall(expr: Expr[V]): Boolean = {
         expr match {
-            case VirtualFunctionCall(_, clazz, _, name, _, _, _) =>
-                val className = clazz.toJavaClass.getName
-                (className == "java.lang.StringBuilder" || className == "java.lang.StringBuffer") &&
-                    name == "append"
+            case VirtualFunctionCall(_, clazz, _, "append", _, _, _) =>
+                clazz.mostPreciseObjectType == ObjectType.StringBuilder ||
+                    clazz.mostPreciseObjectType == ObjectType.StringBuffer
             case _ => false
         }
     }

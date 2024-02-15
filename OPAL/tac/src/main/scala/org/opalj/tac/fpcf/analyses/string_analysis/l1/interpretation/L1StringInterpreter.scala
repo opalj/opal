@@ -13,7 +13,7 @@ import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.fpcf.PropertyStore
-import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.StringInterpreter
+import org.opalj.tac.fpcf.analyses.string_analysis.StringInterpreter
 
 /**
  * @author Maximilian Rüsch

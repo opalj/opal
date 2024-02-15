@@ -9,7 +9,6 @@ package interpretation
 
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.DependingStringInterpreter
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 
 /**
@@ -19,44 +18,48 @@ import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.Interpretation
  */
 case class L0ArrayAccessInterpreter[State <: L0ComputationState[State]](
     exprHandler: InterpretationHandler[State]
-) extends L0StringInterpreter[State] with DependingStringInterpreter[State] {
+) extends L0StringInterpreter[State] with IPResultDependingStringInterpreter[State] {
 
     override type T = ArrayLoad[V]
 
     override def interpret(instr: T, defSite: Int)(implicit state: State): IPResult = {
         implicit val stmts: Array[Stmt[V]] = state.tac.stmts
 
-        val allDefSitesByPC =
-            L0ArrayAccessInterpreter.getStoreAndLoadDefSites(instr).map(ds => (pcOfDefSite(ds), ds)).toMap
-        val results = allDefSitesByPC.keys.toList.sorted.map { pc =>
-            (pc, handleDependentDefSite(allDefSitesByPC(pc))(state, exprHandler))
-        }.map {
-            case (pc, result) =>
-                if (result.isFinal)
-                    state.appendToFpe2Sci(pc, result.asFinal.sci)
-                result
-        }
+        val defSitePCs = L0ArrayAccessInterpreter.getStoreAndLoadDefSitePCs(instr)
+        val results = defSitePCs.map { pc => exprHandler.processDefSite(valueOriginOfPC(pc, state.tac.pcToIndex).get) }
 
         // Add information of parameters
         // TODO dont we have to incorporate parameter information into the scis?
         instr.arrayRef.asVar.toPersistentForm.defPCs.filter(_ < 0).foreach { pc =>
             val paramPos = Math.abs(pc + 2)
             val sci = StringConstancyInformation.reduceMultiple(state.params.map(_(paramPos)))
-            state.appendToFpe2Sci(pc, sci)
+            val r = FinalIPResult(sci, state.dm, pc)
+            state.fpe2ipr(pc) = r
         }
 
         val unfinishedDependees = results.exists(_.isRefinable)
         if (unfinishedDependees) {
-            InterimIPResult.lb
+            InterimIPResult.lbWithIPResultDependees(
+                state.dm,
+                pcOfDefSite(defSite),
+                results.filter(_.isRefinable).map(_.asRefinable),
+                awaitAllFinalContinuation(
+                    SimpleIPResultDepender(instr, pcOfDefSite(defSite), state, results),
+                    finalResult(pcOfDefSite(defSite))
+                )
+            )
         } else {
-            var resultSci = StringConstancyInformation.reduceMultiple(results.map(_.asFinal.sci))
-            if (resultSci.isTheNeutralElement) {
-                resultSci = StringConstancyInformation.lb
-            }
-
-            state.appendToFpe2Sci(pcOfDefSite(defSite), resultSci)
-            FinalIPResult(resultSci)
+            finalResult(pcOfDefSite(defSite))(results)
         }
+    }
+
+    private def finalResult(pc: Int)(results: Iterable[IPResult])(implicit state: State): FinalIPResult = {
+        var resultSci = StringConstancyInformation.reduceMultiple(results.map(_.asFinal.sci))
+        if (resultSci.isTheNeutralElement) {
+            resultSci = StringConstancyInformation.lb
+        }
+
+        FinalIPResult(resultSci, state.dm, pc)
     }
 }
 
@@ -69,7 +72,7 @@ object L0ArrayAccessInterpreter {
      *
      * @return All definition sites associated with the array stores and array loads sorted in ascending order.
      */
-    def getStoreAndLoadDefSites(instr: T)(implicit stmts: Array[Stmt[V]]): List[Int] = {
+    def getStoreAndLoadDefSitePCs(instr: T)(implicit stmts: Array[Stmt[V]]): List[Int] = {
         var defSites = IntTrieSet.empty
         instr.arrayRef.asVar.definedBy.toArray.filter(_ >= 0).sorted.foreach { next =>
             stmts(next).asAssignment.targetVar.usedBy.toArray.sorted.foreach {
@@ -83,6 +86,6 @@ object L0ArrayAccessInterpreter {
             }
         }
 
-        defSites.toList.sorted
+        defSites.toList.map(pcOfDefSite(_)).sorted
     }
 }

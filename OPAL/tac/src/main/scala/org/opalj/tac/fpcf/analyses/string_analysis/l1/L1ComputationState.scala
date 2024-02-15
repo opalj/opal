@@ -6,14 +6,18 @@ package analyses
 package string_analysis
 package l1
 
+import org.opalj.br.DefinedMethod
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.fpcf.EOptionP
 import org.opalj.tac.fpcf.analyses.string_analysis.l0.L0ComputationState
 
 trait L1ComputationState[State <: L1ComputationState[State]] extends L0ComputationState[State] {
 
     val methodContext: Context
+
+    var calleesDependee: Option[EOptionP[DefinedMethod, Callees]] = _
 
     /**
      * Callees information regarding the declared method that corresponds to the entity's method

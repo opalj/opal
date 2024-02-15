@@ -9,7 +9,12 @@ package interpretation
 
 import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.br.fpcf.properties.StringConstancyProperty
+import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.SomeFinalEP
+import org.opalj.tac.fpcf.analyses.string_analysis.EPSDependingStringInterpreter
 
 /**
  * Responsible for processing [[NonVirtualFunctionCall]]s with a call graph.
@@ -19,7 +24,7 @@ import org.opalj.fpcf.PropertyStore
 case class L1NonVirtualFunctionCallInterpreter[State <: L1ComputationState[State]]()(
     implicit val ps:              PropertyStore,
     implicit val contextProvider: ContextProvider
-) extends L1StringInterpreter[State] {
+) extends L1StringInterpreter[State] with EPSDependingStringInterpreter[State] {
 
     override type T = NonVirtualFunctionCall[V]
 
@@ -27,7 +32,7 @@ case class L1NonVirtualFunctionCallInterpreter[State <: L1ComputationState[State
         val methods = getMethodsForPC(instr.pc)
         if (methods._1.isEmpty) {
             // No methods available => Return lower bound
-            return FinalIPResult.lb
+            return FinalIPResult.lb(state.dm, instr.pc)
         }
         val m = methods._1.head
 
@@ -38,13 +43,13 @@ case class L1NonVirtualFunctionCallInterpreter[State <: L1ComputationState[State
             if (returns.isEmpty) {
                 // A function without returns, e.g., because it is guaranteed to throw an exception, is approximated
                 // with the lower bound
-                FinalIPResult.lb
+                FinalIPResult.lb(state.dm, instr.pc)
             } else {
                 val results = returns.map { ret =>
                     val puVar = ret.asInstanceOf[ReturnValue[V]].expr.asVar.toPersistentForm(tac.get.stmts)
                     val entity = (puVar, m)
 
-                    val eps = ps(entity, StringConstancyProperty.key)
+                    val eps = ps(entity.asInstanceOf[Entity], StringConstancyProperty.key)
                     if (eps.isRefinable) {
                         state.dependees = eps :: state.dependees
                         state.appendToVar2IndexMapping(puVar, defSite)
@@ -52,13 +57,31 @@ case class L1NonVirtualFunctionCallInterpreter[State <: L1ComputationState[State
                     eps
                 }
                 if (results.exists(_.isRefinable)) {
-                    InterimIPResult.lb
+                    InterimIPResult.lbWithEPSDependees(
+                        state.dm,
+                        instr.pc,
+                        results.filter(_.isRefinable),
+                        awaitAllFinalContinuation(
+                            SimpleEPSDepender(instr, instr.pc, state, results.toIndexedSeq),
+                            finalResult(instr.pc)
+                        )
+                    )
                 } else {
-                    FinalIPResult(results.head.asFinal.p.stringConstancyInformation)
+                    finalResult(instr.pc)(results.asInstanceOf[Iterable[SomeFinalEP]])
                 }
             }
         } else {
-            EmptyIPResult
+            EmptyIPResult(state.dm, instr.pc)
         }
+    }
+
+    def finalResult(pc: Int)(results: Iterable[SomeFinalEP])(implicit state: State): FinalIPResult = {
+        val sci = StringConstancyInformation.reduceMultiple(
+            results.asInstanceOf[Iterable[EOptionP[_, StringConstancyProperty]]].map(
+                _.asFinal.p.stringConstancyInformation
+            )
+        )
+
+        FinalIPResult(sci, state.dm, pc)
     }
 }

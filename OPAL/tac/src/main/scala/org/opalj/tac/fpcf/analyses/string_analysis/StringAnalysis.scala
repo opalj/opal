@@ -9,6 +9,7 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 import org.opalj.br.FieldType
+import org.opalj.br.Method
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.fpcf.FPCFAnalysis
@@ -23,6 +24,8 @@ import org.opalj.fpcf.InterimResult
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEPS
+import org.opalj.log.OPALLogger
+import org.opalj.log.Warn
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.FlatPathElement
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.NestedPathElement
@@ -44,13 +47,9 @@ trait StringAnalysis extends FPCFAnalysis {
 
     val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
-    /**
-     * Returns the current interim result for the given state. If required, custom lower and upper bounds can be used
-     * for the interim result.
-     */
     protected def getInterimResult(state: State): InterimResult[StringConstancyProperty] = InterimResult(
         state.entity,
-        computeNewLowerBound(state),
+        StringConstancyProperty.lb,
         computeNewUpperBound(state),
         state.dependees.toSet,
         continuation(state)
@@ -58,16 +57,15 @@ trait StringAnalysis extends FPCFAnalysis {
 
     private def computeNewUpperBound(state: State): StringConstancyProperty = {
         if (state.computedLeanPath != null) {
-            StringConstancyProperty(new PathTransformer(state.interimIHandler).pathToStringTree(
-                state.computedLeanPath,
-                state.interimFpe2sci
-            )(state).reduce(true))
+            StringConstancyProperty(
+                PathTransformer
+                    .pathToStringTree(state.computedLeanPath)(state)
+                    .reduce(true)
+            )
         } else {
             StringConstancyProperty.lb
         }
     }
-
-    private def computeNewLowerBound(state: State): StringConstancyProperty = StringConstancyProperty.lb
 
     /**
      * Takes the `data` an analysis was started with as well as a computation `state` and determines
@@ -86,24 +84,20 @@ trait StringAnalysis extends FPCFAnalysis {
      *         be returned.
      */
     protected[this] def continuation(state: State)(eps: SomeEPS): ProperPropertyComputationResult = {
-        state.dependees = state.dependees.filter(_.e != eps.e)
-
         eps match {
-            case FinalP(tac: TACAI) if eps.pk.equals(TACAI.key) =>
-                // Set the TAC only once (the TAC might be requested for other methods, so this
-                // makes sure we do not overwrite the state's TAC)
-                if (state.tac == null) {
-                    state.tac = tac.tac.get
-                }
+            case FinalP(tac: TACAI) if
+                    eps.pk.equals(TACAI.key) &&
+                        state.tacDependee.isDefined &&
+                        state.tacDependee.get == eps =>
+                state.tac = tac.tac.get
+                state.tacDependee = Some(eps.asInstanceOf[FinalEP[Method, TACAI]])
                 determinePossibleStrings(state)
+
             case FinalEP(entity, p: StringConstancyProperty) if eps.pk.equals(StringConstancyProperty.key) =>
+                state.dependees = state.dependees.filter(_.e != eps.e)
+
                 val e = entity.asInstanceOf[SContext]
-                // For updating the interim state
-                state.var2IndexMapping(eps.e.asInstanceOf[SContext]._1).foreach { i =>
-                    state.appendToInterimFpe2Sci(i, p.stringConstancyInformation)
-                }
-                // If necessary, update the parameter information with which the
-                // surrounding function / method of the entity was called with
+                // If necessary, update the parameter information with which the surrounding function / method of the entity was called with
                 if (state.paramResultPositions.contains(e)) {
                     val pos = state.paramResultPositions(e)
                     state.params(pos._1)(pos._2) = p.stringConstancyInformation
@@ -113,15 +107,11 @@ trait StringAnalysis extends FPCFAnalysis {
 
                 // If necessary, update parameter information of function calls
                 if (state.entity2Function.contains(e)) {
-                    state.var2IndexMapping(e._1).foreach(state.appendToFpe2Sci(
-                        _,
-                        p.stringConstancyInformation
-                    ))
                     // Update the state
                     state.entity2Function(e).foreach { f =>
                         val pos = state.nonFinalFunctionArgsPos(f)(e)
                         state.nonFinalFunctionArgs(f)(pos._1)(pos._2)(pos._3) =
-                            FinalIPResult(p.stringConstancyInformation)
+                            FinalIPResult(p.stringConstancyInformation, declaredMethods(e._2), pos._3)
                         // Housekeeping
                         val index = state.entity2Function(e).indexOf(f)
                         state.entity2Function(e).remove(index)
@@ -145,8 +135,8 @@ trait StringAnalysis extends FPCFAnalysis {
                     }
                 }
 
-                if (state.isSetupCompleted && state.parameterDependeesCount == 0) {
-                    processFinalP(state, eps.e, p)
+                if (state.parameterDependeesCount == 0) {
+                    state.dependees = state.dependees.filter(_.e != e)
                     // No more dependees => Return the result for this analysis run
                     if (state.dependees.isEmpty) {
                         computeFinalResult(state)
@@ -158,28 +148,11 @@ trait StringAnalysis extends FPCFAnalysis {
                 }
             case InterimLUBP(_: StringConstancyProperty, ub: StringConstancyProperty)
                 if eps.pk.equals(StringConstancyProperty.key) =>
-                state.dependees = eps :: state.dependees
-                val puVar = eps.e.asInstanceOf[SContext]._1
-                state.var2IndexMapping(puVar).foreach { i =>
-                    state.appendToInterimFpe2Sci(
-                        i,
-                        ub.stringConstancyInformation,
-                        Some(puVar)
-                    )
-                }
                 getInterimResult(state)
             case _ =>
-                state.dependees = eps :: state.dependees
                 getInterimResult(state)
-
         }
     }
-
-    protected[string_analysis] def finalizePreparations(
-        path:     Path,
-        state:    State,
-        iHandler: InterpretationHandler[State]
-    ): Unit = {}
 
     /**
      * computeFinalResult computes the final result of an analysis. This includes the computation
@@ -194,27 +167,17 @@ trait StringAnalysis extends FPCFAnalysis {
      * @return Returns the final result.
      */
     protected def computeFinalResult(state: State): Result = {
-        finalizePreparations(state.computedLeanPath, state, state.iHandler)
-        val finalSci = new PathTransformer(state.iHandler).pathToStringTree(
-            state.computedLeanPath,
-            state.fpe2sci,
-            resetExprHandler = false
-        )(state).reduce(true)
+        val finalSci = PathTransformer
+            .pathToStringTree(state.computedLeanPath)(state)
+            .reduce(true)
+        if (state.fpe2iprDependees.nonEmpty) {
+            OPALLogger.logOnce(Warn(
+                "string analysis",
+                "The state still contains IPResult dependees after all EPS dependees were resolved!"
+            ))
+        }
         StringAnalysis.unregisterParams(state.entity)
         Result(state.entity, StringConstancyProperty(finalSci))
-    }
-
-    protected def processFinalP(
-        state: State,
-        e:     Entity,
-        p:     StringConstancyProperty
-    ): Unit = {
-        // Add mapping information (which will be used for computing the final result)
-        state.var2IndexMapping(e.asInstanceOf[SContext]._1).foreach {
-            state.appendToFpe2Sci(_, p.stringConstancyInformation)
-        }
-
-        state.dependees = state.dependees.filter(_.e != e)
     }
 
     /**
@@ -222,18 +185,17 @@ trait StringAnalysis extends FPCFAnalysis {
      * these information in the given state.
      *
      * @param p     The path to traverse.
-     * @param state The current state of the computation. This function will alter [[ComputationState.fpe2sci]].
+     * @param state The current state of the computation. This function will alter [[ComputationState.fpe2ipr]].
      * @return Returns `true` if all values computed for the path are final results.
      */
     protected def computeResultsForPath(p: Path)(implicit state: State): Boolean = {
         var hasFinalResult = true
         p.elements.foreach {
             case fpe: FlatPathElement =>
-                if (!state.fpe2sci.contains(fpe.pc)) {
+                if (!state.fpe2ipr.contains(fpe.pc) || state.fpe2ipr(fpe.pc).isRefinable) {
                     val r = state.iHandler.processDefSite(valueOriginOfPC(fpe.pc, state.tac.pcToIndex).get)
-                    if (r.isFinal) {
-                        state.appendToFpe2Sci(fpe.pc, r.asFinal.sci, reset = true)
-                    } else {
+                    state.fpe2ipr(fpe.pc) = r
+                    if (r.isRefinable) {
                         hasFinalResult = false
                     }
                 }
