@@ -46,8 +46,8 @@ class FieldAccessInformationAnalysis(val project: SomeProject) extends FPCFAnaly
     type ContextType <: Context
 
     private[this] class State(
-            override val callContext:                  ContextType,
-            override protected[this] var _tacDependee: EOptionP[Method, TACAI]
+        override val callContext:                  ContextType,
+        override protected[this] var _tacDependee: EOptionP[Method, TACAI]
     ) extends BaseAnalysisState with TACAIBasedAnalysisState[ContextType]
 
     private val declaredMethods = project.get(DeclaredMethodsKey)

@@ -14,10 +14,10 @@ import org.opalj.bi.AccessFlagsContexts
  * @author Noorulla Sharief
  */
 case class InnerClassesEntry(
-        inner_class_info_index:   Int,
-        outer_class_info_index:   Int,
-        inner_name_index:         Int,
-        inner_class_access_flags: Int
+    inner_class_info_index:   Int,
+    outer_class_info_index:   Int,
+    inner_name_index:         Int,
+    inner_class_access_flags: Int
 ) {
 
     def toXHTML(definingClass: FieldTypeInfo)(implicit cp: Constant_Pool): Node = {

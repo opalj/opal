@@ -107,8 +107,8 @@ object PerformInvocationsWithRecursionDetectionTestFixture {
     }
 
     abstract class SharedInvocationDomain(
-            project:    Project[java.net.URL],
-            val method: Method
+        project:    Project[java.net.URL],
+        val method: Method
     ) extends BaseDomain(project) with Domain
         with TheMethod
         with l0.TypeLevelInvokeInstructions
@@ -134,9 +134,9 @@ object PerformInvocationsWithRecursionDetectionTestFixture {
     }
 
     class InvocationDomain(
-            project:                            Project[java.net.URL],
-            method:                             Method,
-            val frequentEvaluationWarningLevel: Int = 10
+        project:                            Project[java.net.URL],
+        method:                             Method,
+        val frequentEvaluationWarningLevel: Int = 10
     ) extends SharedInvocationDomain(project, method) {
         callingDomain =>
 
@@ -178,9 +178,9 @@ object PerformInvocationsWithRecursionDetectionTestFixture {
     }
 
     class ChildInvocationDomain(
-            project:          Project[java.net.URL],
-            method:           Method,
-            val callerDomain: SharedInvocationDomain
+        project:          Project[java.net.URL],
+        method:           Method,
+        val callerDomain: SharedInvocationDomain
     ) extends SharedInvocationDomain(project, method)
         with ChildPerformInvocationsWithRecursionDetection { callingDomain =>
 

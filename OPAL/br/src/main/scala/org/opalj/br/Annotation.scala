@@ -19,8 +19,8 @@ import scala.collection.immutable.ArraySeq
  * @author Arne Lottmann
  */
 case class Annotation(
-        annotationType:    FieldType,
-        elementValuePairs: ElementValuePairs = NoElementValuePairs
+    annotationType:    FieldType,
+    elementValuePairs: ElementValuePairs = NoElementValuePairs
 ) extends AnnotationLike {
 
     def similar(other: Annotation): Boolean = {

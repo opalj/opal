@@ -8,8 +8,8 @@ package br
  * @author Michael Eichberg
  */
 case class BootstrapMethod(
-        handle:    MethodHandle,
-        arguments: BootstrapArguments
+    handle:    MethodHandle,
+    arguments: BootstrapArguments
 ) {
 
     def toJava: String = arguments.map(_.toJava).mkString(handle.toJava + "(", ",", ")")

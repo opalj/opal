@@ -19,16 +19,16 @@ import net.ceedubs.ficus.readers.ArbitraryTypeReader._
  * @author Dominik Helm
  */
 class ConfiguredPurity(
-        project:         SomeProject,
-        declaredMethods: DeclaredMethods
+    project:         SomeProject,
+    declaredMethods: DeclaredMethods
 ) {
 
     private case class PurityValue(
-            cf:    String,
-            m:     String,
-            desc:  String,
-            p:     String,
-            conds: Option[Seq[String]]
+        cf:    String,
+        m:     String,
+        desc:  String,
+        p:     String,
+        conds: Option[Seq[String]]
     )
 
     private val classExtensibility = project.get(ClassExtensibilityKey)

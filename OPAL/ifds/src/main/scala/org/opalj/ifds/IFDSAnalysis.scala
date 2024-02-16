@@ -37,10 +37,10 @@ import org.opalj.ifds.Dependees.Getter
  * @author Marc Clement
  */
 class IFDSFact[Fact <: AbstractIFDSFact, S <: Statement[_, _]](
-        val fact:               Fact,
-        val isUnbalancedReturn: Boolean,
-        val callStmt:           Option[S],
-        val callChain:          Option[Seq[Callable]]
+    val fact:               Fact,
+    val isUnbalancedReturn: Boolean,
+    val callStmt:           Option[S],
+    val callChain:          Option[Seq[Callable]]
 ) {
 
     def this(fact: Fact) = {
@@ -112,7 +112,7 @@ object Dependees {
  * Source fact is the fact within the analysis entity.
  */
 case class PathEdges[Fact <: AbstractIFDSFact, S <: Statement[_ <: C, _], C <: AnyRef](
-        subsumes: (Set[Fact], Fact) => Boolean
+    subsumes: (Set[Fact], Fact) => Boolean
 ) {
     /**
      * Left denotes a single relevant predecessor
@@ -194,8 +194,8 @@ case class PathEdges[Fact <: AbstractIFDSFact, S <: Statement[_ <: C, _], C <: A
  * @param subsumes The subsuming function, return whether a new fact is subsume by the existing ones
  */
 protected class IFDSState[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C, _], WorklistItem](
-        val source: (C, IFDSFact[Fact, S]),
-        subsumes:   (Set[Fact], Fact) => Boolean
+    val source: (C, IFDSFact[Fact, S]),
+    subsumes:   (Set[Fact], Fact) => Boolean
 ) {
     val dependees: Dependees[WorklistItem] = Dependees()
     val pathEdges: PathEdges[Fact, S, C] = PathEdges(subsumes)
@@ -207,13 +207,13 @@ protected class IFDSState[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[
  * Contains int variables, which count how many times some method was called.
  */
 case class Statistics(
-        var normalFlow:       Int = 0,
-        var callFlow:         Int = 0,
-        var returnFlow:       Int = 0,
-        var callToReturnFlow: Int = 0,
-        // TODO unbalanced return flow
-        var subsumeTries: Int = 0,
-        var subsumptions: Int = 0
+    var normalFlow:       Int = 0,
+    var callFlow:         Int = 0,
+    var returnFlow:       Int = 0,
+    var callToReturnFlow: Int = 0,
+    // TODO unbalanced return flow
+    var subsumeTries: Int = 0,
+    var subsumptions: Int = 0
 )
 
 /**
@@ -227,9 +227,9 @@ case class Statistics(
  * @author Marc Clement
  */
 class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C, _]](
-        val project:     SomeProject,
-        val ifdsProblem: IFDSProblem[Fact, C, S],
-        val propertyKey: IFDSPropertyMetaInformation[S, Fact]
+    val project:     SomeProject,
+    val ifdsProblem: IFDSProblem[Fact, C, S],
+    val propertyKey: IFDSPropertyMetaInformation[S, Fact]
 ) extends FPCFAnalysis {
     private type WorklistItem = (Option[S], IFDSFact[Fact, S], Option[S]) // statement, fact, predecessor
     private type Worklist = mutable.Queue[WorklistItem]

@@ -25,8 +25,8 @@ sealed trait ForNameClassesMetaInformation extends PropertyMetaInformation {
  * @author Dominik Helm
  */
 sealed class ForNameClasses private[properties] (
-        final val orderedClasses: List[ReferenceType],
-        final val classes:        UIDSet[ReferenceType]
+    final val orderedClasses: List[ReferenceType],
+    final val classes:        UIDSet[ReferenceType]
 ) extends OrderedProperty with ForNameClassesMetaInformation {
 
     assert(orderedClasses == null || orderedClasses.size == classes.size)

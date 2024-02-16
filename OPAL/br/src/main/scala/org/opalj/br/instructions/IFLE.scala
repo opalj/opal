@@ -50,7 +50,7 @@ object IFLE extends InstructionMetaInformation {
 }
 
 case class LabeledIFLE(
-        branchTarget: InstructionLabel
+    branchTarget: InstructionLabel
 ) extends LabeledSimpleConditionalBranchInstruction
     with IFLELike {
 

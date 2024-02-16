@@ -14,8 +14,8 @@ import org.opalj.br.analyses.Project
  * @author Michael Eichberg
  */
 class DefaultSingletonValuesDomain[Source](
-        val project: Project[Source],
-        val method:  Method
+    val project: Project[Source],
+    val method:  Method
 ) extends Domain
     with TypedValuesFactory
     with TheProject

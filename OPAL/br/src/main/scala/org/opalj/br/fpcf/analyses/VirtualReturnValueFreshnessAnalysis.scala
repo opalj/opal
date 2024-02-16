@@ -34,7 +34,7 @@ import org.opalj.fpcf.UBP
  * @author Florian Kübler
  */
 class VirtualReturnValueFreshnessAnalysis private[analyses] (
-        final val project: SomeProject
+    final val project: SomeProject
 ) extends FPCFAnalysis {
 
     private[this] val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)

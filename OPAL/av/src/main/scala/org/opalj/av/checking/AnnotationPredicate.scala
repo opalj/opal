@@ -104,8 +104,8 @@ object HasAnnotation {
  * @author Marco Torsello
  */
 case class AnnotatedWith(
-        annotationType:    FieldType,
-        elementValuePairs: Seq[ElementValuePair]
+    annotationType:    FieldType,
+    elementValuePairs: Seq[ElementValuePair]
 ) extends AnnotationPredicate {
 
     /**

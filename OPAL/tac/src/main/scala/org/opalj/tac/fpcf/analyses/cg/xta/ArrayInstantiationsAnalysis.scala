@@ -41,8 +41,8 @@ import org.opalj.tac.fpcf.properties.TACAI
  * @author Andreas Bauer
  */
 final class ArrayInstantiationsAnalysis(
-        val project:     SomeProject,
-        selectSetEntity: TypeSetEntitySelector
+    val project:     SomeProject,
+    selectSetEntity: TypeSetEntitySelector
 ) extends ReachableMethodAnalysis {
 
     override def processMethod(
@@ -114,7 +114,7 @@ final class ArrayInstantiationsAnalysis(
 }
 
 class ArrayInstantiationsAnalysisScheduler(
-        selectSetEntity: TypeSetEntitySelector
+    selectSetEntity: TypeSetEntitySelector
 ) extends BasicFPCFTriggeredAnalysisScheduler {
 
     override def requiredProjectInformation: ProjectInformationKeys = Seq(TypeIteratorKey)

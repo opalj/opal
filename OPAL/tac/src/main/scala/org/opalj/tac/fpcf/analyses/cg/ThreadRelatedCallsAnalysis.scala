@@ -47,8 +47,8 @@ class ThreadStartAnalysisResults extends IndirectCalls with VMReachableMethodsBa
  * @author Julius Naeumann
  */
 class ThreadStartAnalysis private[cg] (
-        override val project:   SomeProject,
-        override val apiMethod: DeclaredMethod
+    override val project:   SomeProject,
+    override val apiMethod: DeclaredMethod
 ) extends TACAIBasedAPIBasedAnalysis with TypeConsumerAnalysis {
 
     override def processNewCaller(
@@ -464,8 +464,8 @@ class ThreadStartAnalysis private[cg] (
 }
 
 class UncaughtExceptionHandlerAnalysis private[analyses] (
-        override val project:   SomeProject,
-        override val apiMethod: DeclaredMethod
+    override val project:   SomeProject,
+    override val apiMethod: DeclaredMethod
 ) extends TACAIBasedAPIBasedAnalysis with TypeConsumerAnalysis {
 
     override def processNewCaller(
@@ -599,7 +599,7 @@ class UncaughtExceptionHandlerAnalysis private[analyses] (
  * @author Michael Reif
  */
 class ThreadRelatedCallsAnalysis private[cg] (
-        val project: SomeProject
+    val project: SomeProject
 ) extends FPCFAnalysis {
 
     def process(p: SomeProject): PropertyComputationResult = {

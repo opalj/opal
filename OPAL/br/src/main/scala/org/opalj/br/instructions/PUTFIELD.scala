@@ -12,9 +12,9 @@ package instructions
  * @author Michael Eichberg
  */
 case class PUTFIELD(
-        declaringClass: ObjectType,
-        name:           String,
-        fieldType:      FieldType
+    declaringClass: ObjectType,
+    name:           String,
+    fieldType:      FieldType
 ) extends FieldWriteAccess {
 
     final def opcode: Opcode = PUTFIELD.opcode

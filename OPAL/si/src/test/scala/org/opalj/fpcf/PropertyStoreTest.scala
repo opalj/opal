@@ -958,7 +958,7 @@ sealed abstract class PropertyStoreTest[PS <: PropertyStore]
             }
 
             class ReachableNodesCountAnalysis(
-                    val ps: PropertyStore
+                val ps: PropertyStore
             ) extends (Node => ProperPropertyComputationResult) {
 
                 def apply(n: Node): ProperPropertyComputationResult = {
@@ -1039,7 +1039,7 @@ sealed abstract class PropertyStoreTest[PS <: PropertyStore]
             }
 
             class ReachableNodesCountViaReachableNodesAnalysis(
-                    val ps: PropertyStore
+                val ps: PropertyStore
             ) extends (Node => ProperPropertyComputationResult) {
                 def apply(n: Node): ProperPropertyComputationResult = {
 

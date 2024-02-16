@@ -389,11 +389,11 @@ sealed abstract class JVMMethod
  * A method which is not (yet) associated with a class file.
  */
 final class MethodTemplate private[br] (
-        val accessFlags: Int,
-        val name:        String,
-        val descriptor:  MethodDescriptor,
-        val body:        Option[Code],
-        val attributes:  Attributes
+    val accessFlags: Int,
+    val name:        String,
+    val descriptor:  MethodDescriptor,
+    val body:        Option[Code],
+    val attributes:  Attributes
 ) extends JVMMethod {
 
     /** This template is not (yet) a [[Method]] which is a [[SourceElement]]. */
@@ -408,12 +408,12 @@ final class MethodTemplate private[br] (
  * @param declaringClassFile The declaring class file.
  */
 final class Method private[br] (
-        private[br] var declaringClassFile: ClassFile, // the back-link can be updated to enable efficient load-time transformations
-        val accessFlags:                    Int,
-        val name:                           String,
-        val descriptor:                     MethodDescriptor,
-        val body:                           Option[Code],
-        val attributes:                     Attributes
+    private[br] var declaringClassFile: ClassFile, // the back-link can be updated to enable efficient load-time transformations
+    val accessFlags:                    Int,
+    val name:                           String,
+    val descriptor:                     MethodDescriptor,
+    val body:                           Option[Code],
+    val attributes:                     Attributes
 ) extends JVMMethod {
 
     // see ClassFile._UNSAFE_replaceMethod for THE usage!

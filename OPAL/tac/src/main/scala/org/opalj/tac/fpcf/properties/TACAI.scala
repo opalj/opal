@@ -50,7 +50,7 @@ case object NoTACAI extends TACAI {
 }
 
 case class TheTACAI(
-        theTAC: TACode[TACMethodParameter, DUVar[ValueInformation]]
+    theTAC: TACode[TACMethodParameter, DUVar[ValueInformation]]
 ) extends TACAI {
     def tac: Option[TACode[TACMethodParameter, DUVar[ValueInformation]]] = Some(theTAC)
 }

@@ -20,9 +20,9 @@ package instructions
  * @author Michael Eichberg
  */
 case class GETFIELD(
-        declaringClass: ObjectType,
-        name:           String,
-        fieldType:      FieldType
+    declaringClass: ObjectType,
+    name:           String,
+    fieldType:      FieldType
 ) extends FieldReadAccess {
 
     final def opcode: Opcode = GETFIELD.opcode

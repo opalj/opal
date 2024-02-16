@@ -50,7 +50,7 @@ object IFEQ extends InstructionMetaInformation {
 }
 
 case class LabeledIFEQ(
-        branchTarget: InstructionLabel
+    branchTarget: InstructionLabel
 ) extends LabeledSimpleConditionalBranchInstruction
     with IFEQLike {
 

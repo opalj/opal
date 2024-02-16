@@ -12,7 +12,7 @@ import org.opalj.bi.ConstantPoolTags
  * @author Michael Eichberg
  */
 case class CONSTANT_MethodType_info(
-        descriptor_index: Constant_Pool_Index
+    descriptor_index: Constant_Pool_Index
 ) extends Constant_Pool_Entry {
 
     override final def size: Int = 1 + 2

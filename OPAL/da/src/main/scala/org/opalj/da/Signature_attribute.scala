@@ -12,8 +12,8 @@ import scala.xml.Node
  * @author Andre Pacak
  */
 case class Signature_attribute(
-        attribute_name_index: Constant_Pool_Index,
-        signature_index:      Constant_Pool_Index
+    attribute_name_index: Constant_Pool_Index,
+    signature_index:      Constant_Pool_Index
 ) extends Attribute {
 
     /**

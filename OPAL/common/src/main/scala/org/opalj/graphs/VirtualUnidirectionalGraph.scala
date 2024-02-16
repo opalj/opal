@@ -27,8 +27,8 @@ import org.opalj.collection.IntIterator
  * @author Michael Eichberg
  */
 class VirtualUnidirectionalGraph(
-        val verticesCount: Int,
-        val successors:    Int => IntIterator
+    val verticesCount: Int,
+    val successors:    Int => IntIterator
 ) extends AbstractGraph[Int] {
 
     def vertices: Range = 0 until this.verticesCount

@@ -77,8 +77,8 @@ final case class LongLinkedTrieSet1(v1: Long) extends LongLinkedTrieSet {
 }
 
 private[immutable] final case class LongLinkedTrieSet2(
-        v1: Long,
-        v2: Long
+    v1: Long,
+    v2: Long
 ) extends LongLinkedTrieSet {
 
     override final def size: Int = 2
@@ -105,9 +105,9 @@ private[immutable] final case class LongLinkedTrieSet2(
 }
 
 private[immutable] final case class LongLinkedTrieSet3(
-        v1: Long,
-        v2: Long,
-        v3: Long
+    v1: Long,
+    v2: Long,
+    v3: Long
 ) extends LongLinkedTrieSet {
 
     override final def size: Int = 3
@@ -178,8 +178,8 @@ sealed abstract private[immutable] class LongLinkedTrieSetNode {
 
 /** The leaves of the trie set. */
 private[immutable] final class LongLinkedTrieSetL(
-        final val value: Long,
-        final val next:  LongLinkedTrieSetL = null // `null` if this leaf is the first element that was added to the set.
+    final val value: Long,
+    final val next:  LongLinkedTrieSetL = null // `null` if this leaf is the first element that was added to the set.
 ) extends LongLinkedTrieSetNode {
 
     override def isN: Boolean = false
@@ -364,7 +364,7 @@ private[immutable] object LongLinkedTrieSetNShared {
 }
 
 private[immutable] final class LongLinkedTrieSetNShared_0(
-        final val n: LongLinkedTrieSetNode
+    final val n: LongLinkedTrieSetNode
 ) extends LongLinkedTrieSetNShared {
 
     override def sharedBits: Long = 0
@@ -402,7 +402,7 @@ private[immutable] final class LongLinkedTrieSetNShared_0(
 }
 
 private[immutable] final class LongLinkedTrieSetNShared_1(
-        final val n: LongLinkedTrieSetNode
+    final val n: LongLinkedTrieSetNode
 ) extends LongLinkedTrieSetNShared {
 
     override def sharedBits: Long = 1
@@ -440,7 +440,7 @@ private[immutable] final class LongLinkedTrieSetNShared_1(
 }
 
 private[immutable] final class LongLinkedTrieSetNShared_00(
-        final val n: LongLinkedTrieSetNode
+    final val n: LongLinkedTrieSetNode
 ) extends LongLinkedTrieSetNShared {
     override def sharedBits: Long = 0
     override def length: Int = 2
@@ -456,7 +456,7 @@ private[immutable] final class LongLinkedTrieSetNShared_00(
 }
 
 private[immutable] final class LongLinkedTrieSetNShared_01(
-        final val n: LongLinkedTrieSetNode
+    final val n: LongLinkedTrieSetNode
 ) extends LongLinkedTrieSetNShared {
     def sharedBits: Long = 1
     def length: Int = 2
@@ -471,7 +471,7 @@ private[immutable] final class LongLinkedTrieSetNShared_01(
 }
 
 private[immutable] final class LongLinkedTrieSetNShared_10(
-        final val n: LongLinkedTrieSetNode
+    final val n: LongLinkedTrieSetNode
 ) extends LongLinkedTrieSetNShared {
     def sharedBits: Long = 2
     def length: Int = 2
@@ -486,7 +486,7 @@ private[immutable] final class LongLinkedTrieSetNShared_10(
 }
 
 private[immutable] final class LongLinkedTrieSetNShared_11(
-        final val n: LongLinkedTrieSetNode
+    final val n: LongLinkedTrieSetNode
 ) extends LongLinkedTrieSetNShared {
     def sharedBits: Long = 3
     def length: Int = 2
@@ -501,9 +501,9 @@ private[immutable] final class LongLinkedTrieSetNShared_11(
 }
 
 private[immutable] final class LongLinkedTrieSetNShared_X(
-        val sharedBits: Long,
-        val length:     Int,
-        val n:          LongLinkedTrieSetNode
+    val sharedBits: Long,
+    val length:     Int,
+    val n:          LongLinkedTrieSetNode
 ) extends LongLinkedTrieSetNShared {
 
     override def split_0(level: Int): LongLinkedTrieSetNode = {
@@ -539,8 +539,8 @@ private[immutable] final class LongLinkedTrieSetNShared_X(
 
 /** The inner nodes of the trie set. */
 private[immutable] final class LongLinkedTrieSetN2(
-        final val _0: LongLinkedTrieSetNode,
-        final val _1: LongLinkedTrieSetNode
+    final val _0: LongLinkedTrieSetNode,
+    final val _1: LongLinkedTrieSetNode
 ) extends LongLinkedTrieSetInnerNode {
 
     override def isN4: Boolean = false
@@ -833,8 +833,8 @@ abstract private[immutable] class LongLinkedTrieSetN4 extends LongLinkedTrieSetI
 }
 
 private[immutable] final class LongLinkedTrieSetN4_0_1(
-        final val _0: LongLinkedTrieSetNode,
-        final val _1: LongLinkedTrieSetNode
+    final val _0: LongLinkedTrieSetNode,
+    final val _1: LongLinkedTrieSetNode
 ) extends LongLinkedTrieSetN4 {
     override protected final def _2: LongLinkedTrieSetNode = null
     override protected final def _3: LongLinkedTrieSetNode = null
@@ -874,8 +874,8 @@ private[immutable] final class LongLinkedTrieSetN4_0_1(
 }
 
 private[immutable] final class LongLinkedTrieSetN4_0_2(
-        final val _0: LongLinkedTrieSetNode,
-        final val _2: LongLinkedTrieSetNode
+    final val _0: LongLinkedTrieSetNode,
+    final val _2: LongLinkedTrieSetNode
 ) extends LongLinkedTrieSetN4 {
     override protected final def _1: LongLinkedTrieSetNode = null
     override protected final def _3: LongLinkedTrieSetNode = null
@@ -916,8 +916,8 @@ private[immutable] final class LongLinkedTrieSetN4_0_2(
 }
 
 private[immutable] final class LongLinkedTrieSetN4_0_3(
-        final val _0: LongLinkedTrieSetNode,
-        final val _3: LongLinkedTrieSetNode
+    final val _0: LongLinkedTrieSetNode,
+    final val _3: LongLinkedTrieSetNode
 ) extends LongLinkedTrieSetN4 {
 
     override protected final def _1: LongLinkedTrieSetNode = null
@@ -959,8 +959,8 @@ private[immutable] final class LongLinkedTrieSetN4_0_3(
 }
 
 private[immutable] final class LongLinkedTrieSetN4_1_2(
-        final val _1: LongLinkedTrieSetNode,
-        final val _2: LongLinkedTrieSetNode
+    final val _1: LongLinkedTrieSetNode,
+    final val _2: LongLinkedTrieSetNode
 ) extends LongLinkedTrieSetN4 {
     override protected final def _0: LongLinkedTrieSetNode = null
     override protected final def _3: LongLinkedTrieSetNode = null
@@ -1002,8 +1002,8 @@ private[immutable] final class LongLinkedTrieSetN4_1_2(
 }
 
 private[immutable] final class LongLinkedTrieSetN4_1_3(
-        final val _1: LongLinkedTrieSetNode,
-        final val _3: LongLinkedTrieSetNode
+    final val _1: LongLinkedTrieSetNode,
+    final val _3: LongLinkedTrieSetNode
 ) extends LongLinkedTrieSetN4 {
     override protected final def _0: LongLinkedTrieSetNode = null
     override protected final def _2: LongLinkedTrieSetNode = null
@@ -1044,8 +1044,8 @@ private[immutable] final class LongLinkedTrieSetN4_1_3(
 }
 
 private[immutable] final class LongLinkedTrieSetN4_2_3(
-        final val _2: LongLinkedTrieSetNode,
-        final val _3: LongLinkedTrieSetNode
+    final val _2: LongLinkedTrieSetNode,
+    final val _3: LongLinkedTrieSetNode
 ) extends LongLinkedTrieSetN4 {
     override protected final def _0: LongLinkedTrieSetNode = null
     override protected final def _1: LongLinkedTrieSetNode = null
@@ -1087,11 +1087,11 @@ private[immutable] final class LongLinkedTrieSetN4_2_3(
 }
 
 private[immutable] final class LongLinkedTrieSetN4_0_1_2_3(
-        // least significant bits _ (current) second most important bit _ (current) most important bit
-        final val _0: LongLinkedTrieSetNode, // a tree node, a leaf node or null
-        final val _1: LongLinkedTrieSetNode, // a tree node, a leaf node or null
-        final val _2: LongLinkedTrieSetNode, // a tree node, a leaf node or null
-        final val _3: LongLinkedTrieSetNode // a tree node, a leaf node or null
+    // least significant bits _ (current) second most important bit _ (current) most important bit
+    final val _0: LongLinkedTrieSetNode, // a tree node, a leaf node or null
+    final val _1: LongLinkedTrieSetNode, // a tree node, a leaf node or null
+    final val _2: LongLinkedTrieSetNode, // a tree node, a leaf node or null
+    final val _3: LongLinkedTrieSetNode // a tree node, a leaf node or null
 ) extends LongLinkedTrieSetN4 {
 
     override def contains(v: Long, key: Long): Boolean = {
@@ -1169,10 +1169,10 @@ object LargeLongLinkedTrieSet {
 }
 
 private[immutable] class LargeLongLinkedTrieSet(
-        var size: Int = 0,
-        // the length of the array must be a power of 2!
-        val tries: Array[LongLinkedTrieSetNode] = new Array(LargeLongLinkedTrieSet.InitialBucketsCount),
-        var l:     LongLinkedTrieSetL           = null // points to the latest element that was added...
+    var size: Int = 0,
+    // the length of the array must be a power of 2!
+    val tries: Array[LongLinkedTrieSetNode] = new Array(LargeLongLinkedTrieSet.InitialBucketsCount),
+    var l:     LongLinkedTrieSetL           = null // points to the latest element that was added...
 ) extends LongLinkedTrieSet { set =>
 
     override final def +(v: Long): LargeLongLinkedTrieSet = {

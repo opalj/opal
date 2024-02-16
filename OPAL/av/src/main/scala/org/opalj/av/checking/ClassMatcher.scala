@@ -50,13 +50,13 @@ case object AllClasses extends ClassMatcher {
  * @author Marco Torsello
  */
 case class DefaultClassMatcher(
-        accessFlagsMatcher:       AccessFlagsMatcher   = AccessFlagsMatcher.ANY,
-        namePredicate:            NamePredicate        = RegexNamePredicate(""".*""".r),
-        annotationsPredicate:     AnnotationsPredicate = AnyAnnotations,
-        matchSubclasses:          Boolean              = false,
-        matchImplementingclasses: Boolean              = false,
-        matchMethods:             Boolean              = true,
-        matchFields:              Boolean              = true
+    accessFlagsMatcher:       AccessFlagsMatcher   = AccessFlagsMatcher.ANY,
+    namePredicate:            NamePredicate        = RegexNamePredicate(""".*""".r),
+    annotationsPredicate:     AnnotationsPredicate = AnyAnnotations,
+    matchSubclasses:          Boolean              = false,
+    matchImplementingclasses: Boolean              = false,
+    matchMethods:             Boolean              = true,
+    matchFields:              Boolean              = true
 ) extends ClassMatcher {
 
     def isSubClass(classFile: ClassFile, project: SomeProject): Boolean = {

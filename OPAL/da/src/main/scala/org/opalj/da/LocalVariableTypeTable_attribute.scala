@@ -12,8 +12,8 @@ import scala.xml.Node
  * @author Andre Pacak
  */
 case class LocalVariableTypeTable_attribute(
-        attribute_name_index:      Constant_Pool_Index,
-        local_variable_type_table: Seq[LocalVariableTypeTableEntry]
+    attribute_name_index:      Constant_Pool_Index,
+    local_variable_type_table: Seq[LocalVariableTypeTableEntry]
 ) extends Attribute {
 
     override final def attribute_length: Int = 2 + (local_variable_type_table.size * 10)

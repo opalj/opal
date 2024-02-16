@@ -13,12 +13,12 @@ import scala.xml.NodeSeq
  * @author Andre Pacak
  */
 case class Code_attribute(
-        attribute_name_index: Constant_Pool_Index,
-        max_stack:            Int,
-        max_locals:           Int,
-        code:                 Code,
-        exceptionTable:       ExceptionTable = NoExceptionTable,
-        attributes:           Attributes     = NoAttributes
+    attribute_name_index: Constant_Pool_Index,
+    max_stack:            Int,
+    max_locals:           Int,
+    code:                 Code,
+    exceptionTable:       ExceptionTable = NoExceptionTable,
+    attributes:           Attributes     = NoAttributes
 ) extends Attribute {
 
     override def attribute_length: Int = {

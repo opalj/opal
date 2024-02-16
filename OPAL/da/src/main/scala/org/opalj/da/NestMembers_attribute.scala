@@ -11,8 +11,8 @@ import scala.xml.NodeBuffer
  * @author Dominik Helm
  */
 case class NestMembers_attribute(
-        attribute_name_index: Constant_Pool_Index,
-        classes_array:        ClassesArray // Array[Constant_Pool_Index]
+    attribute_name_index: Constant_Pool_Index,
+    classes_array:        ClassesArray // Array[Constant_Pool_Index]
 ) extends Attribute {
 
     override final def attribute_length: Int = 2 + classes_array.size * 2

@@ -27,7 +27,7 @@ import org.opalj.fpcf.PropertyMetaInformation
  * @author Florian Kuebler
  */
 class TypeBasedPointsToAnalysis private[analyses] (
-        final val project: SomeProject
+    final val project: SomeProject
 ) extends AbstractPointsToAnalysis with TypeBasedAnalysis
 
 object TypeBasedPointsToAnalysisScheduler extends AbstractPointsToAnalysisScheduler {

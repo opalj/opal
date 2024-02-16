@@ -43,7 +43,7 @@ object GOTO extends InstructionMetaInformation {
 }
 
 case class LabeledGOTO(
-        branchTarget: InstructionLabel
+    branchTarget: InstructionLabel
 ) extends LabeledUnconditionalBranchInstruction with GOTOLike {
 
     @throws[BranchoffsetOutOfBoundsException]("if the branchoffset is invalid")

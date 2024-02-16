@@ -16,10 +16,10 @@ import org.opalj.bi.AccessFlagsContexts.METHOD
  * @author Andre Pacak
  */
 case class Method_Info(
-        access_flags:     Int,
-        name_index:       Constant_Pool_Index,
-        descriptor_index: Constant_Pool_Index,
-        attributes:       Attributes = NoAttributes
+    access_flags:     Int,
+    name_index:       Constant_Pool_Index,
+    descriptor_index: Constant_Pool_Index,
+    attributes:       Attributes = NoAttributes
 ) extends ClassMember {
 
     /**

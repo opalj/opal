@@ -77,8 +77,8 @@ import org.opalj.value.ValueInformation
  * @author Maximilian Rüsch
  */
 private[reflection] class ReflectionState[ContextType <: Context](
-        override val callContext:                  ContextType,
-        override protected[this] var _tacDependee: EOptionP[Method, TACAI]
+    override val callContext:                  ContextType,
+    override protected[this] var _tacDependee: EOptionP[Method, TACAI]
 ) extends BaseAnalysisState with TypeIteratorState with TACAIBasedAnalysisState[ContextType]
 
 sealed trait ReflectionAnalysis extends TACAIBasedAPIBasedAnalysis {
@@ -144,36 +144,36 @@ sealed trait ReflectionAnalysis extends TACAIBasedAPIBasedAnalysis {
 sealed trait FieldInstanceBasedReflectiveFieldAccessAnalysis extends ReflectionAnalysis with TypeConsumerAnalysis {
 
     protected case class FieldDepender(
-            pc:       Int,
-            receiver: AccessReceiver,
-            param:    Option[AccessParameter],
-            matchers: Set[FieldMatcher]
+        pc:       Int,
+        receiver: AccessReceiver,
+        param:    Option[AccessParameter],
+        matchers: Set[FieldMatcher]
     )
     private case class ArrayDepender(
-            pc:               Int,
-            receiver:         AccessReceiver,
-            param:            Option[AccessParameter],
-            matchers:         Set[FieldMatcher],
-            arrayVar:         V,
-            callerStatements: Array[Stmt[V]]
+        pc:               Int,
+        receiver:         AccessReceiver,
+        param:            Option[AccessParameter],
+        matchers:         Set[FieldMatcher],
+        arrayVar:         V,
+        callerStatements: Array[Stmt[V]]
     )
     private case class NameDepender(
-            pc:               Int,
-            receiver:         AccessReceiver,
-            param:            Option[AccessParameter],
-            matchers:         Set[FieldMatcher],
-            nameVar:          V,
-            callerStatements: Array[Stmt[V]],
-            classVar:         V,
-            callerContext:    ContextType
+        pc:               Int,
+        receiver:         AccessReceiver,
+        param:            Option[AccessParameter],
+        matchers:         Set[FieldMatcher],
+        nameVar:          V,
+        callerStatements: Array[Stmt[V]],
+        classVar:         V,
+        callerContext:    ContextType
     )
     private case class ClassDepender(
-            pc:               Int,
-            receiver:         AccessReceiver,
-            param:            Option[AccessParameter],
-            matchers:         Set[FieldMatcher],
-            classVar:         V,
-            callerStatements: Array[Stmt[V]]
+        pc:               Int,
+        receiver:         AccessReceiver,
+        param:            Option[AccessParameter],
+        matchers:         Set[FieldMatcher],
+        classVar:         V,
+        callerStatements: Array[Stmt[V]]
     )
 
     override final def processNewCaller(
@@ -495,9 +495,9 @@ sealed trait FieldInstanceBasedReflectiveFieldAccessAnalysis extends ReflectionA
 }
 
 class FieldGetAnalysis private[analyses] (
-        final val project:       SomeProject,
-        final val apiMethodName: String,
-        final val fieldType:     Option[BaseType]
+    final val project:       SomeProject,
+    final val apiMethodName: String,
+    final val fieldType:     Option[BaseType]
 ) extends ReflectionAnalysis with FieldInstanceBasedReflectiveFieldAccessAnalysis {
 
     override val apiMethod: DeclaredMethod = declaredMethods(
@@ -576,9 +576,9 @@ class FieldGetAnalysis private[analyses] (
 }
 
 class FieldSetAnalysis private[analyses] (
-        final val project:       SomeProject,
-        final val apiMethodName: String,
-        final val fieldType:     Option[BaseType]
+    final val project:       SomeProject,
+    final val apiMethodName: String,
+    final val fieldType:     Option[BaseType]
 ) extends ReflectionAnalysis with FieldInstanceBasedReflectiveFieldAccessAnalysis {
 
     override val apiMethod: DeclaredMethod = declaredMethods(
@@ -668,10 +668,10 @@ class FieldSetAnalysis private[analyses] (
 }
 
 class MethodHandleInvokeAnalysis private[analyses] (
-        final val project:                SomeProject,
-        final val apiMethodName:          String,
-        final val parameterType:          Option[FieldType],
-        final val isSignaturePolymorphic: Boolean
+    final val project:                SomeProject,
+    final val apiMethodName:          String,
+    final val parameterType:          Option[FieldType],
+    final val isSignaturePolymorphic: Boolean
 ) extends ReflectionAnalysis with TypeConsumerAnalysis {
 
     override final val apiMethod =
@@ -739,29 +739,29 @@ class MethodHandleInvokeAnalysis private[analyses] (
     }
 
     private case class MethodHandleDepender(
-            pc:                     Int,
-            descriptor:             Option[MethodDescriptor],
-            invokeParams:           Option[Seq[Option[V]]],
-            persistentActualParams: Seq[Option[(ValueInformation, PCs)]],
-            matchers:               Set[FieldMatcher]
+        pc:                     Int,
+        descriptor:             Option[MethodDescriptor],
+        invokeParams:           Option[Seq[Option[V]]],
+        persistentActualParams: Seq[Option[(ValueInformation, PCs)]],
+        matchers:               Set[FieldMatcher]
     )
     private case class NameDepender(
-            pc:                     Int,
-            isStatic:               Boolean,
-            persistentActualParams: Seq[Option[(ValueInformation, PCs)]],
-            matchers:               Set[FieldMatcher],
-            nameVar:                V,
-            stmts:                  Array[Stmt[V]],
-            classVar:               V,
-            accessContext:          ContextType
+        pc:                     Int,
+        isStatic:               Boolean,
+        persistentActualParams: Seq[Option[(ValueInformation, PCs)]],
+        matchers:               Set[FieldMatcher],
+        nameVar:                V,
+        stmts:                  Array[Stmt[V]],
+        classVar:               V,
+        accessContext:          ContextType
     )
     private case class ClassDepender(
-            pc:                     Int,
-            isStatic:               Boolean,
-            persistentActualParams: Seq[Option[(ValueInformation, PCs)]],
-            matchers:               Set[FieldMatcher],
-            classVar:               V,
-            stmts:                  Array[Stmt[V]]
+        pc:                     Int,
+        isStatic:               Boolean,
+        persistentActualParams: Seq[Option[(ValueInformation, PCs)]],
+        matchers:               Set[FieldMatcher],
+        classVar:               V,
+        stmts:                  Array[Stmt[V]]
     )
 
     private def continuation(
@@ -994,11 +994,11 @@ class MethodHandleInvokeAnalysis private[analyses] (
             }
         } else if (definition.isVirtualFunctionCall) {
             case class MethodHandleData(
-                    classVar:  V,
-                    nameVar:   V,
-                    fieldType: Expr[V],
-                    isStatic:  Boolean,
-                    isSetter:  Boolean
+                classVar:  V,
+                nameVar:   V,
+                fieldType: Expr[V],
+                isStatic:  Boolean,
+                isSetter:  Boolean
             )
 
             def handleParams(params: Seq[Expr[V]], isStatic: Boolean, isSetter: Boolean): MethodHandleData = {
@@ -1124,7 +1124,7 @@ object ReflectionRelatedFieldAccessesAnalysis {
  * @author Maximilian Rüsch
  */
 class ReflectionRelatedFieldAccessesAnalysis private[analyses] (
-        final val project: SomeProject
+    final val project: SomeProject
 ) extends FPCFAnalysis {
 
     def process(): PropertyComputationResult = {
