@@ -370,7 +370,10 @@ case class TheShortValue(value: Short) extends IsShortValue {
 trait IsIntegerValue extends IsIntegerLikeValue[IntegerType] {
     override final def primitiveType: IntegerType = IntegerType
     override final def hasCategory2ComputationalType: Boolean = false
-    override def toCanonicalForm: ValueInformation = AnIntegerValue
+    override def toCanonicalForm: ValueInformation = {
+        if (constantValue.isDefined) TheIntegerValue(constantValue.get)
+        else AnIntegerValue
+    }
     override def asConstantInteger: Integer = constantValue.get // Expected to be overridden!
     def lowerBound: Int
     def upperBound: Int
