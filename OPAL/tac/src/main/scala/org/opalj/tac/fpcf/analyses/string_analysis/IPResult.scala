@@ -67,14 +67,6 @@ case class NoIPResult(method: DefinedMethod, pc: Int) extends NonRefinableIPResu
     override def sciOpt: Option[StringConstancyInformation] = None
 }
 
-case class FallThroughIPResult(method: DefinedMethod, pc: Int, fallThroughPC: Int) extends NonRefinableIPResult {
-    override def isNoResult: Boolean = true
-    override def isFallThroughResult: Boolean = true
-
-    override def asFinal: FinalIPResult = FinalIPResult(StringConstancyInformation.getNeutralElement, method, pc)
-    override def sciOpt: Option[StringConstancyInformation] = None
-}
-
 sealed trait SomeIPResult extends IPResult {
     override final def isNoResult: Boolean = false
     override final def isFallThroughResult: Boolean = false

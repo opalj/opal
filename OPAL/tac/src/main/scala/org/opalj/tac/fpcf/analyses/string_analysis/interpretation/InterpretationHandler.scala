@@ -45,14 +45,7 @@ abstract class InterpretationHandler[State <: ComputationState[State]] {
         val defSitePC = pcOfDefSite(defSite)(state.tac.stmts)
 
         if (state.fpe2ipr.contains(defSitePC) && state.fpe2ipr(defSitePC).isFinal) {
-            if (state.fpe2ipr(defSitePC).isFallThroughResult) {
-                return processDefSite(valueOriginOfPC(
-                    state.fpe2ipr(defSitePC).asInstanceOf[FallThroughIPResult].fallThroughPC,
-                    state.tac.pcToIndex
-                ).get)
-            } else {
-                return state.fpe2ipr(defSitePC)
-            }
+            return state.fpe2ipr(defSitePC)
         }
 
         if (defSite < 0) {
@@ -89,15 +82,7 @@ abstract class InterpretationHandler[State <: ComputationState[State]] {
         } else {
             val result = processNewDefSite(defSite)
             state.fpe2ipr(defSitePC) = result
-
-            if (result.isFallThroughResult) {
-                processDefSite(valueOriginOfPC(
-                    result.asInstanceOf[FallThroughIPResult].fallThroughPC,
-                    state.tac.pcToIndex
-                ).get)
-            } else {
-                result
-            }
+            result
         }
     }
 

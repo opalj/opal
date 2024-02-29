@@ -35,9 +35,9 @@ object PathTransformer {
                     state.fpe2ipr(fpe.pc).asFinal.sci
                 } else {
                     state.iHandler.processDefSite(fpe.stmtIndex(state.tac.pcToIndex)) match {
-                        case ValueIPResult(sci)                     => sci
-                        case _: NoIPResult | _: FallThroughIPResult => StringConstancyInformation.getNeutralElement
-                        case _: EmptyIPResult                       => StringConstancyInformation.lb
+                        case ValueIPResult(sci) => sci
+                        case _: NoIPResult      => StringConstancyInformation.getNeutralElement
+                        case _: EmptyIPResult   => StringConstancyInformation.lb
                     }
                 }
                 Option.unless(sci.isTheNeutralElement)(StringTreeConst(sci))

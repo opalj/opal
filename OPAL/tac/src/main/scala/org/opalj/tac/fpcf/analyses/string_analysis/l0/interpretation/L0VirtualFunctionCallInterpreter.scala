@@ -298,7 +298,8 @@ case class L0VirtualFunctionCallInterpreter[State <: L0ComputationState[State]](
      * the given `toString` is such a function call! Otherwise, the expected behavior cannot be guaranteed.
      */
     private def interpretToStringCall(call: T)(implicit state: State): IPResult = {
-        FallThroughIPResult(state.dm, call.pc, call.receiver.asVar.definedBy.head)
+        val ipResult = exprHandler.processDefSite(call.receiver.asVar.definedBy.head)
+        FinalIPResult(ipResult.sciOpt.get, state.dm, call.pc)
     }
 
     /**
