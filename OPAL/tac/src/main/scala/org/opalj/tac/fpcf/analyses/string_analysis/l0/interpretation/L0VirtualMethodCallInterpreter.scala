@@ -16,7 +16,7 @@ import org.opalj.br.fpcf.properties.string_definition.StringConstancyType
  *
  * @author Maximilian Rüsch
  */
-case class L0VirtualMethodCallInterpreter[State <: L0ComputationState[State]]()
+case class L0VirtualMethodCallInterpreter[State <: L0ComputationState]()
     extends L0StringInterpreter[State] with SingleStepStringInterpreter[State] {
 
     override type T = VirtualMethodCall[V]

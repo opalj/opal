@@ -16,7 +16,6 @@ import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.SomeEPS
-import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.Path
 import org.opalj.tac.fpcf.properties.TACAI
 
@@ -25,7 +24,7 @@ import org.opalj.tac.fpcf.properties.TACAI
  * time during the analysis, e.g., due to the fact that another analysis had to be triggered to
  * have all required information ready for a final result.
  */
-trait ComputationState[State <: ComputationState[State]] {
+trait ComputationState {
     val dm: DefinedMethod
 
     /**
@@ -37,11 +36,6 @@ trait ComputationState[State <: ComputationState[State]] {
      * The Three-Address Code of the entity's method
      */
     var tac: TAC = _
-
-    /**
-     * The interpretation handler to use for computing a final result (if possible).
-     */
-    var iHandler: InterpretationHandler[State] = _
 
     /**
      * The computed lean path that corresponds to the given entity

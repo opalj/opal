@@ -8,7 +8,7 @@ package string_analysis
 /**
  * @author Maximilian Rüsch
  */
-trait IPResultDepender[T <: ASTNode[V], State <: ComputationState[State]] {
+trait IPResultDepender[T <: ASTNode[V], State <: ComputationState] {
     type Self <: IPResultDepender[T, State]
 
     def instr: T
@@ -19,7 +19,7 @@ trait IPResultDepender[T <: ASTNode[V], State <: ComputationState[State]] {
     def withDependees(newDependees: Seq[IPResult]): Self
 }
 
-private[string_analysis] case class SimpleIPResultDepender[T <: ASTNode[V], State <: ComputationState[State]](
+private[string_analysis] case class SimpleIPResultDepender[T <: ASTNode[V], State <: ComputationState](
     override val instr:     T,
     override val pc:        Int,
     override val state:     State,

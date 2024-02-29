@@ -15,6 +15,7 @@ import org.opalj.br.fpcf.properties.string_definition.StringTreeCond
 import org.opalj.br.fpcf.properties.string_definition.StringTreeConst
 import org.opalj.br.fpcf.properties.string_definition.StringTreeOr
 import org.opalj.br.fpcf.properties.string_definition.StringTreeRepetition
+import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 
 /**
  * Transforms a [[Path]] into a [[org.opalj.br.fpcf.properties.string_definition.StringTree]].
@@ -26,15 +27,16 @@ object PathTransformer {
     /**
      * Accumulator function for transforming a path into a StringTree element.
      */
-    private def pathToTreeAcc[State <: ComputationState[State]](subpath: SubPath)(implicit
-        state: State
+    private def pathToTreeAcc[State <: ComputationState](subpath: SubPath)(implicit
+        state:    State,
+        iHandler: InterpretationHandler[State]
     ): Option[StringTree] = {
         subpath match {
             case fpe: FlatPathElement =>
                 val sci = if (state.fpe2ipr.contains(fpe.pc) && state.fpe2ipr(fpe.pc).isFinal) {
                     state.fpe2ipr(fpe.pc).asFinal.sci
                 } else {
-                    state.iHandler.processDefSite(fpe.stmtIndex(state.tac.pcToIndex)) match {
+                    iHandler.processDefSite(fpe.stmtIndex(state.tac.pcToIndex)) match {
                         case ValueIPResult(sci) => sci
                         case _: NoIPResult      => StringConstancyInformation.getNeutralElement
                         case _: EmptyIPResult   => StringConstancyInformation.lb
@@ -45,10 +47,10 @@ object PathTransformer {
                 if (npe.elementType.isDefined) {
                     npe.elementType.get match {
                         case NestedPathType.Repetition =>
-                            val processedSubPath = pathToStringTree(Path(npe.element.toList))(state)
+                            val processedSubPath = pathToStringTree(Path(npe.element.toList))
                             Some(StringTreeRepetition(processedSubPath))
                         case _ =>
-                            val processedSubPaths = npe.element.flatMap { ne => pathToTreeAcc(ne)(state) }
+                            val processedSubPaths = npe.element.flatMap { ne => pathToTreeAcc(ne) }
                             if (processedSubPaths.nonEmpty) {
                                 npe.elementType.get match {
                                     case NestedPathType.TryCatchFinally =>
@@ -79,9 +81,9 @@ object PathTransformer {
                 } else {
                     npe.element.size match {
                         case 0 => None
-                        case 1 => pathToTreeAcc(npe.element.head)(state)
+                        case 1 => pathToTreeAcc(npe.element.head)
                         case _ =>
-                            val processed = npe.element.flatMap { ne => pathToTreeAcc(ne)(state) }
+                            val processed = npe.element.flatMap { ne => pathToTreeAcc(ne) }
                             if (processed.isEmpty) {
                                 None
                             } else {
@@ -103,14 +105,17 @@ object PathTransformer {
      *         all elements of the tree will be defined, i.e., if `path` contains sites that could
      *         not be processed (successfully), they will not occur in the tree.
      */
-    def pathToStringTree[State <: ComputationState[State]](path: Path)(implicit state: State): StringTree = {
+    def pathToStringTree[State <: ComputationState](path: Path)(implicit
+        state:    State,
+        iHandler: InterpretationHandler[State]
+    ): StringTree = {
         val tree = path.elements.size match {
             case 1 =>
                 // It might be that for some expressions, a neutral element is produced which is
                 // filtered out by pathToTreeAcc; return the lower bound in such cases
-                pathToTreeAcc(path.elements.head)(state).getOrElse(StringTreeConst(StringConstancyInformation.lb))
+                pathToTreeAcc(path.elements.head).getOrElse(StringTreeConst(StringConstancyInformation.lb))
             case _ =>
-                val children = ListBuffer.from(path.elements.flatMap { pathToTreeAcc(_)(state) })
+                val children = ListBuffer.from(path.elements.flatMap { pathToTreeAcc(_) })
                 if (children.size == 1) {
                     // The concatenation of one child is the child itself
                     children.head

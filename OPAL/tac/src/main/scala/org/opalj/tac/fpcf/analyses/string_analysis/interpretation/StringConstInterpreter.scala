@@ -14,7 +14,7 @@ import org.opalj.tac.StringConst
 /**
  * @author Maximilian Rüsch
  */
-case class StringConstInterpreter[State <: ComputationState[State]]() extends SingleStepStringInterpreter[State] {
+case class StringConstInterpreter[State <: ComputationState]() extends SingleStepStringInterpreter[State] {
 
     override type T = StringConst
 
@@ -32,8 +32,6 @@ case class StringConstInterpreter[State <: ComputationState[State]]() extends Si
 
 object StringConstInterpreter {
 
-    def interpret[State <: ComputationState[State]](instr: StringConst, defSite: Int)(implicit
-        state: State
-    ): FinalIPResult =
+    def interpret[State <: ComputationState](instr: StringConst, defSite: Int)(implicit state: State): FinalIPResult =
         StringConstInterpreter[State]().interpret(instr, defSite)
 }

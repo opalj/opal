@@ -13,7 +13,7 @@ import org.opalj.br.fpcf.properties.string_definition.StringConstancyType
 /**
  * @author Maximilian Rüsch
  */
-case class DoubleValueInterpreter[State <: ComputationState[State]]() extends SingleStepStringInterpreter[State] {
+case class DoubleValueInterpreter[State <: ComputationState]() extends SingleStepStringInterpreter[State] {
 
     override type T = DoubleConst
 
@@ -31,8 +31,6 @@ case class DoubleValueInterpreter[State <: ComputationState[State]]() extends Si
 
 object DoubleValueInterpreter {
 
-    def interpret[State <: ComputationState[State]](instr: DoubleConst, defSite: Int)(implicit
-        state: State
-    ): FinalIPResult =
+    def interpret[State <: ComputationState](instr: DoubleConst, defSite: Int)(implicit state: State): FinalIPResult =
         DoubleValueInterpreter[State]().interpret(instr, defSite)
 }

@@ -10,7 +10,7 @@ import org.opalj.fpcf.SomeEOptionP
 /**
  * @author Maximilian Rüsch
  */
-trait EPSDepender[T <: ASTNode[V], State <: ComputationState[State]] {
+trait EPSDepender[T <: ASTNode[V], State <: ComputationState] {
     type Self <: EPSDepender[T, State]
 
     def instr: T
@@ -21,7 +21,7 @@ trait EPSDepender[T <: ASTNode[V], State <: ComputationState[State]] {
     def withDependees(newDependees: Seq[SomeEOptionP]): Self
 }
 
-private[string_analysis] case class SimpleEPSDepender[T <: ASTNode[V], State <: ComputationState[State]](
+private[string_analysis] case class SimpleEPSDepender[T <: ASTNode[V], State <: ComputationState](
     override val instr:     T,
     override val pc:        Int,
     override val state:     State,

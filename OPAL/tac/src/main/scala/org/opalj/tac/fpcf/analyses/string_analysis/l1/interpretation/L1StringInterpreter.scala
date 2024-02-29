@@ -18,7 +18,7 @@ import org.opalj.tac.fpcf.analyses.string_analysis.StringInterpreter
 /**
  * @author Maximilian Rüsch
  */
-trait L1StringInterpreter[State <: L1ComputationState[State]] extends StringInterpreter[State] {
+trait L1StringInterpreter[State <: L1ComputationState] extends StringInterpreter[State] {
 
     /**
      * This function returns all methods for a given `pc` among a set of `declaredMethods`. The

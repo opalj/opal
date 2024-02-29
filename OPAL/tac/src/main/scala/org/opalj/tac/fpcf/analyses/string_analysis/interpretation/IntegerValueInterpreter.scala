@@ -14,7 +14,7 @@ import org.opalj.br.fpcf.properties.string_definition.StringConstancyType
 /**
  * @author Maximilian Rüsch
  */
-case class IntegerValueInterpreter[State <: ComputationState[State]]() extends SingleStepStringInterpreter[State] {
+case class IntegerValueInterpreter[State <: ComputationState]() extends SingleStepStringInterpreter[State] {
 
     override type T = IntConst
 
@@ -32,6 +32,6 @@ case class IntegerValueInterpreter[State <: ComputationState[State]]() extends S
 
 object IntegerValueInterpreter {
 
-    def interpret[State <: ComputationState[State]](instr: IntConst, defSite: Int)(implicit state: State): FinalIPResult =
+    def interpret[State <: ComputationState](instr: IntConst, defSite: Int)(implicit state: State): FinalIPResult =
         IntegerValueInterpreter[State]().interpret(instr, defSite)
 }

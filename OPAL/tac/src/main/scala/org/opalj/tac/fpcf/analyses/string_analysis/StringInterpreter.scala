@@ -21,7 +21,7 @@ import org.opalj.tac.fpcf.properties.TACAI
 /**
  * @author Maximilian Rüsch
  */
-trait StringInterpreter[State <: ComputationState[State]] {
+trait StringInterpreter[State <: ComputationState] {
 
     type T <: ASTNode[V]
 
@@ -145,7 +145,7 @@ trait StringInterpreter[State <: ComputationState[State]] {
         })
 }
 
-trait SingleStepStringInterpreter[State <: ComputationState[State]] extends StringInterpreter[State] {
+trait SingleStepStringInterpreter[State <: ComputationState] extends StringInterpreter[State] {
 
     /**
      * @inheritdoc
@@ -156,7 +156,7 @@ trait SingleStepStringInterpreter[State <: ComputationState[State]] extends Stri
 /**
  * @author Maximilian Rüsch
  */
-trait IPResultDependingStringInterpreter[State <: ComputationState[State]] extends StringInterpreter[State] {
+trait IPResultDependingStringInterpreter[State <: ComputationState] extends StringInterpreter[State] {
 
     protected final def awaitAllFinalContinuation(
         depender:    IPResultDepender[T, State],
@@ -194,7 +194,7 @@ trait IPResultDependingStringInterpreter[State <: ComputationState[State]] exten
 /**
  * @author Maximilian Rüsch
  */
-trait EPSDependingStringInterpreter[State <: ComputationState[State]] extends StringInterpreter[State] {
+trait EPSDependingStringInterpreter[State <: ComputationState] extends StringInterpreter[State] {
 
     protected final def awaitAllFinalContinuation(
         depender:    EPSDepender[T, State],

@@ -12,7 +12,7 @@ import org.opalj.br.ComputationalTypeInt
 /**
  * @author Maximilian Rüsch
  */
-case class BinaryExprInterpreter[State <: ComputationState[State]]() extends SingleStepStringInterpreter[State] {
+case class BinaryExprInterpreter[State <: ComputationState]() extends SingleStepStringInterpreter[State] {
 
     override type T = BinaryExpr[V]
 
@@ -39,6 +39,6 @@ case class BinaryExprInterpreter[State <: ComputationState[State]]() extends Sin
 
 object BinaryExprInterpreter {
 
-    def interpret[State <: ComputationState[State]](instr: BinaryExpr[V], defSite: Int)(implicit state: State): IPResult =
+    def interpret[State <: ComputationState](instr: BinaryExpr[V], defSite: Int)(implicit state: State): IPResult =
         BinaryExprInterpreter[State]().interpret(instr, defSite)
 }

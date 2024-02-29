@@ -28,7 +28,7 @@ import org.opalj.tac.fpcf.analyses.string_analysis.l0.interpretation.L0VirtualMe
  *
  * @author Maximilian Rüsch
  */
-class L1InterpretationHandler[State <: L1ComputationState[State]](
+class L1InterpretationHandler[State <: L1ComputationState](
     declaredFields:               DeclaredFields,
     fieldAccessInformation:       FieldAccessInformation,
     implicit val p:               SomeProject,
@@ -103,7 +103,7 @@ class L1InterpretationHandler[State <: L1ComputationState[State]](
 
 object L1InterpretationHandler {
 
-    def apply[State <: L1ComputationState[State]](
+    def apply[State <: L1ComputationState](
         declaredFields:         DeclaredFields,
         fieldAccessInformation: FieldAccessInformation,
         project:                SomeProject,

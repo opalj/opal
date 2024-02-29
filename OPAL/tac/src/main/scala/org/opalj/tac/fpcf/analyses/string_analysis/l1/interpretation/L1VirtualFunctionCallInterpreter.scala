@@ -24,7 +24,7 @@ import org.opalj.tac.fpcf.properties.TACAI
  *
  * @author Patrick Mell
  */
-class L1VirtualFunctionCallInterpreter[State <: L1ComputationState[State]](
+class L1VirtualFunctionCallInterpreter[State <: L1ComputationState](
     exprHandler:                  InterpretationHandler[State],
     implicit val ps:              PropertyStore,
     implicit val contextProvider: ContextProvider

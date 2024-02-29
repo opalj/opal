@@ -43,23 +43,26 @@ import org.opalj.tac.fpcf.properties.TACAI
  */
 trait StringAnalysis extends FPCFAnalysis {
 
-    type State <: ComputationState[State]
+    type State <: ComputationState
 
     val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
-    protected def getInterimResult(state: State): InterimResult[StringConstancyProperty] = InterimResult(
+    protected def getInterimResult(
+        state:    State,
+        iHandler: InterpretationHandler[State]
+    ): InterimResult[StringConstancyProperty] = InterimResult(
         state.entity,
         StringConstancyProperty.lb,
-        computeNewUpperBound(state),
+        computeNewUpperBound(state, iHandler),
         state.dependees.toSet,
-        continuation(state)
+        continuation(state, iHandler)
     )
 
-    private def computeNewUpperBound(state: State): StringConstancyProperty = {
+    private def computeNewUpperBound(state: State, iHandler: InterpretationHandler[State]): StringConstancyProperty = {
         if (state.computedLeanPath != null) {
             StringConstancyProperty(
                 PathTransformer
-                    .pathToStringTree(state.computedLeanPath)(state)
+                    .pathToStringTree(state.computedLeanPath)(state, iHandler)
                     .reduce(true)
             )
         } else {
@@ -72,7 +75,10 @@ trait StringAnalysis extends FPCFAnalysis {
      * the possible string values. This method returns either a final [[Result]] or an
      * [[InterimResult]] depending on whether other information needs to be computed first.
      */
-    protected[string_analysis] def determinePossibleStrings(implicit state: State): ProperPropertyComputationResult
+    protected[string_analysis] def determinePossibleStrings(implicit
+        state:    State,
+        iHandler: InterpretationHandler[State]
+    ): ProperPropertyComputationResult
 
     /**
      * Continuation function for this analysis.
@@ -83,7 +89,10 @@ trait StringAnalysis extends FPCFAnalysis {
      * @return Returns a final result if (already) available. Otherwise, an intermediate result will
      *         be returned.
      */
-    protected[this] def continuation(state: State)(eps: SomeEPS): ProperPropertyComputationResult = {
+    protected[this] def continuation(
+        state:    State,
+        iHandler: InterpretationHandler[State]
+    )(eps: SomeEPS): ProperPropertyComputationResult = {
         eps match {
             case FinalP(tac: TACAI) if
                     eps.pk.equals(TACAI.key) &&
@@ -91,7 +100,7 @@ trait StringAnalysis extends FPCFAnalysis {
                         state.tacDependee.get == eps =>
                 state.tac = tac.tac.get
                 state.tacDependee = Some(eps.asInstanceOf[FinalEP[Method, TACAI]])
-                determinePossibleStrings(state)
+                determinePossibleStrings(state, iHandler)
 
             case FinalEP(entity, p: StringConstancyProperty) if eps.pk.equals(StringConstancyProperty.key) =>
                 state.dependees = state.dependees.filter(_.e != eps.e)
@@ -121,7 +130,7 @@ trait StringAnalysis extends FPCFAnalysis {
                     }
                     // Continue only after all necessary function parameters are evaluated
                     if (state.entity2Function.nonEmpty) {
-                        return getInterimResult(state)
+                        return getInterimResult(state, iHandler)
                     } else {
                         // We could try to determine a final result before all function
                         // parameter information are available, however, this will
@@ -129,8 +138,8 @@ trait StringAnalysis extends FPCFAnalysis {
                         // defer this computations when we know that all necessary
                         // information are available
                         state.entity2Function.clear()
-                        if (!computeResultsForPath(state.computedLeanPath)(state)) {
-                            return determinePossibleStrings(state)
+                        if (!computeResultsForPath(state.computedLeanPath)(state, iHandler)) {
+                            return determinePossibleStrings(state, iHandler)
                         }
                     }
                 }
@@ -139,18 +148,18 @@ trait StringAnalysis extends FPCFAnalysis {
                     state.dependees = state.dependees.filter(_.e != e)
                     // No more dependees => Return the result for this analysis run
                     if (state.dependees.isEmpty) {
-                        computeFinalResult(state)
+                        computeFinalResult(state, iHandler)
                     } else {
-                        getInterimResult(state)
+                        getInterimResult(state, iHandler)
                     }
                 } else {
-                    determinePossibleStrings(state)
+                    determinePossibleStrings(state, iHandler)
                 }
             case InterimLUBP(_: StringConstancyProperty, ub: StringConstancyProperty)
                 if eps.pk.equals(StringConstancyProperty.key) =>
-                getInterimResult(state)
+                getInterimResult(state, iHandler)
             case _ =>
-                getInterimResult(state)
+                getInterimResult(state, iHandler)
         }
     }
 
@@ -166,9 +175,9 @@ trait StringAnalysis extends FPCFAnalysis {
      *              not have been called)!
      * @return Returns the final result.
      */
-    protected def computeFinalResult(state: State): Result = {
+    protected def computeFinalResult(state: State, iHandler: InterpretationHandler[State]): Result = {
         val finalSci = PathTransformer
-            .pathToStringTree(state.computedLeanPath)(state)
+            .pathToStringTree(state.computedLeanPath)(state, iHandler)
             .reduce(true)
         if (state.fpe2iprDependees.nonEmpty) {
             OPALLogger.logOnce(Warn(
@@ -188,12 +197,15 @@ trait StringAnalysis extends FPCFAnalysis {
      * @param state The current state of the computation. This function will alter [[ComputationState.fpe2ipr]].
      * @return Returns `true` if all values computed for the path are final results.
      */
-    protected def computeResultsForPath(p: Path)(implicit state: State): Boolean = {
+    protected def computeResultsForPath(p: Path)(implicit
+        state:    State,
+        iHandler: InterpretationHandler[State]
+    ): Boolean = {
         var hasFinalResult = true
         p.elements.foreach {
             case fpe: FlatPathElement =>
                 if (!state.fpe2ipr.contains(fpe.pc) || state.fpe2ipr(fpe.pc).isRefinable) {
-                    val r = state.iHandler.processDefSite(valueOriginOfPC(fpe.pc, state.tac.pcToIndex).get)
+                    val r = iHandler.processDefSite(valueOriginOfPC(fpe.pc, state.tac.pcToIndex).get)
                     state.fpe2ipr(fpe.pc) = r
                     if (r.isRefinable) {
                         hasFinalResult = false

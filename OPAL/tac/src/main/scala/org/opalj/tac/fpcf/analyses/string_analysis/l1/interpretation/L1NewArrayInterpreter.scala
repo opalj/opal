@@ -17,7 +17,7 @@ import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.Interpretation
  *
  * @author Maximilian Rüsch
  */
-class L1NewArrayInterpreter[State <: L1ComputationState[State]](
+class L1NewArrayInterpreter[State <: L1ComputationState](
     exprHandler: InterpretationHandler[State]
 ) extends L1StringInterpreter[State] with IPResultDependingStringInterpreter[State] {
 

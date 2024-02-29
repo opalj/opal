@@ -24,7 +24,7 @@ import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.Interpretation
 import org.opalj.tac.fpcf.analyses.string_analysis.l0.interpretation.L0InterpretationHandler
 import org.opalj.tac.fpcf.properties.TACAI
 
-trait L0ComputationState[State <: L0ComputationState[State]] extends ComputationState[State]
+trait L0ComputationState extends ComputationState
 
 /**
  * IntraproceduralStringAnalysis processes a read operation of a local string variable at a program
@@ -57,18 +57,18 @@ class L0StringAnalysis(override val project: SomeProject) extends StringAnalysis
     protected[l0] case class CState(
         override val dm:     DefinedMethod,
         override val entity: SContext
-    ) extends L0ComputationState[CState]
+    ) extends L0ComputationState
 
     override type State = CState
 
     def analyze(data: SContext): ProperPropertyComputationResult = {
         val state = CState(declaredMethods(data._2), data)
-        state.iHandler = L0InterpretationHandler()
+        val iHandler = L0InterpretationHandler[CState]()
 
         val tacaiEOptP = ps(data._2, TACAI.key)
         if (tacaiEOptP.isRefinable) {
             state.tacDependee = Some(tacaiEOptP)
-            return getInterimResult(state)
+            return getInterimResult(state, iHandler)
         }
 
         if (tacaiEOptP.ub.tac.isEmpty) {
@@ -77,11 +77,12 @@ class L0StringAnalysis(override val project: SomeProject) extends StringAnalysis
         }
 
         state.tac = tacaiEOptP.ub.tac.get
-        determinePossibleStrings(state)
+        determinePossibleStrings(state, iHandler)
     }
 
     override protected[string_analysis] def determinePossibleStrings(implicit
-        state: State
+        state:    State,
+        iHandler: InterpretationHandler[State]
     ): ProperPropertyComputationResult = {
         implicit val tac: TAC = state.tac
 
@@ -107,7 +108,7 @@ class L0StringAnalysis(override val project: SomeProject) extends StringAnalysis
         }
 
         if (state.parameterDependeesCount > 0) {
-            return getInterimResult(state)
+            return getInterimResult(state, iHandler)
         }
 
         if (state.computedLeanPath == null) {
@@ -116,7 +117,7 @@ class L0StringAnalysis(override val project: SomeProject) extends StringAnalysis
 
         // Interpret a function / method parameter using the parameter information in state
         if (defSites.head < 0) {
-            val r = state.iHandler.processDefSite(defSites.head)(state)
+            val r = iHandler.processDefSite(defSites.head)(state)
             return Result(state.entity, StringConstancyProperty(r.asFinal.sci))
         }
 
@@ -140,9 +141,9 @@ class L0StringAnalysis(override val project: SomeProject) extends StringAnalysis
         }
 
         if (state.dependees.isEmpty) {
-            computeFinalResult(state)
+            computeFinalResult(state, iHandler)
         } else {
-            getInterimResult(state)
+            getInterimResult(state, iHandler)
         }
     }
 
@@ -154,17 +155,18 @@ class L0StringAnalysis(override val project: SomeProject) extends StringAnalysis
      * @return This function can either produce a final result or another intermediate result.
      */
     override protected def continuation(
-        state: State
+        state:    State,
+        iHandler: InterpretationHandler[State]
     )(eps: SomeEPS): ProperPropertyComputationResult = eps match {
         case FinalEP(e: Entity, p: StringConstancyProperty) if eps.pk.equals(StringConstancyProperty.key) =>
             state.dependees = state.dependees.filter(_.e != e)
             if (state.dependees.isEmpty) {
-                computeFinalResult(state)
+                computeFinalResult(state, iHandler)
             } else {
-                getInterimResult(state)
+                getInterimResult(state, iHandler)
             }
         case _ =>
-            super.continuation(state)(eps)
+            super.continuation(state, iHandler)(eps)
     }
 }
 

@@ -15,7 +15,7 @@ import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.Interpretation
  *
  * @author Maximilian Rüsch
  */
-case class L0NonVirtualMethodCallInterpreter[State <: L0ComputationState[State]](
+case class L0NonVirtualMethodCallInterpreter[State <: L0ComputationState](
     exprHandler: InterpretationHandler[State]
 ) extends L0StringInterpreter[State] with IPResultDependingStringInterpreter[State] {
 

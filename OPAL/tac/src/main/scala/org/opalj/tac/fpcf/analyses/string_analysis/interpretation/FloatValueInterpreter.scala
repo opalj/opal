@@ -13,7 +13,7 @@ import org.opalj.br.fpcf.properties.string_definition.StringConstancyType
 /**
  * @author Maximilian Rüsch
  */
-case class FloatValueInterpreter[State <: ComputationState[State]]() extends SingleStepStringInterpreter[State] {
+case class FloatValueInterpreter[State <: ComputationState]() extends SingleStepStringInterpreter[State] {
 
     override type T = FloatConst
 
@@ -31,7 +31,7 @@ case class FloatValueInterpreter[State <: ComputationState[State]]() extends Sin
 
 object FloatValueInterpreter {
 
-    def interpret[State <: ComputationState[State]](instr: FloatConst, defSite: Int)(implicit
+    def interpret[State <: ComputationState](instr: FloatConst, defSite: Int)(implicit
         state: State
     ): FinalIPResult =
         FloatValueInterpreter[State]().interpret(instr, defSite)

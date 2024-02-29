@@ -21,7 +21,7 @@ import org.opalj.tac.fpcf.analyses.string_analysis.EPSDependingStringInterpreter
  *
  * @author Maximilian Rüsch
  */
-case class L1NonVirtualFunctionCallInterpreter[State <: L1ComputationState[State]]()(
+case class L1NonVirtualFunctionCallInterpreter[State <: L1ComputationState]()(
     implicit val ps:              PropertyStore,
     implicit val contextProvider: ContextProvider
 ) extends L1StringInterpreter[State] with EPSDependingStringInterpreter[State] {

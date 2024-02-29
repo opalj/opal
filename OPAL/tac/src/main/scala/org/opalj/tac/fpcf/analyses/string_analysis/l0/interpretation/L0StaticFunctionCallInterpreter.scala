@@ -25,7 +25,7 @@ import org.opalj.tac.fpcf.properties.TACAI
  *
  * @author Maximilian Rüsch
  */
-case class L0StaticFunctionCallInterpreter[State <: L0ComputationState[State]](
+case class L0StaticFunctionCallInterpreter[State <: L0ComputationState](
     exprHandler: InterpretationHandler[State]
 )(
     implicit

@@ -26,7 +26,7 @@ import org.opalj.value.TheIntegerValue
  *
  * @author Maximilian Rüsch
  */
-case class L0VirtualFunctionCallInterpreter[State <: L0ComputationState[State]](
+case class L0VirtualFunctionCallInterpreter[State <: L0ComputationState](
     exprHandler: InterpretationHandler[State]
 ) extends L0StringInterpreter[State] with IPResultDependingStringInterpreter[State] {
 

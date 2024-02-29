@@ -13,7 +13,7 @@ import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.fpcf.EOptionP
 import org.opalj.tac.fpcf.analyses.string_analysis.l0.L0ComputationState
 
-trait L1ComputationState[State <: L1ComputationState[State]] extends L0ComputationState[State] {
+trait L1ComputationState extends L0ComputationState {
 
     val methodContext: Context
 

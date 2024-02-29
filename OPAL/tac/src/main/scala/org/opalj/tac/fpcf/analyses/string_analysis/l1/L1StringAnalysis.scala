@@ -75,7 +75,7 @@ class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
         override val dm:            DefinedMethod,
         override val entity:        (SEntity, Method),
         override val methodContext: Context
-    ) extends L1ComputationState[CState]
+    ) extends L1ComputationState
 
     override type State = CState
 
@@ -114,12 +114,13 @@ class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
         val dm = declaredMethods(data._2)
         // IMPROVE enable handling call string contexts here (build a chain, probably via SContext)
         val state = CState(dm, data, contextProvider.newContext(declaredMethods(data._2)))
-        state.iHandler = L1InterpretationHandler(declaredFields, fieldAccessInformation, project, ps, contextProvider)
+        val iHandler =
+            L1InterpretationHandler[CState](declaredFields, fieldAccessInformation, project, ps, contextProvider)
 
         val tacaiEOptP = ps(data._2, TACAI.key)
         if (tacaiEOptP.isRefinable) {
             state.tacDependee = Some(tacaiEOptP)
-            return getInterimResult(state)
+            return getInterimResult(state, iHandler)
         }
 
         if (tacaiEOptP.ub.tac.isEmpty) {
@@ -132,11 +133,11 @@ class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
         val calleesEOptP = ps(dm, Callees.key)
         if (calleesEOptP.hasNoUBP) {
             state.calleesDependee = Some(calleesEOptP)
-            return getInterimResult(state)
+            return getInterimResult(state, iHandler)
         }
 
         state.callees = calleesEOptP.ub
-        determinePossibleStrings(state)
+        determinePossibleStrings(state, iHandler)
     }
 
     /**
@@ -145,14 +146,15 @@ class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
      * [[org.opalj.fpcf.InterimResult]] depending on whether other information needs to be computed first.
      */
     override protected[string_analysis] def determinePossibleStrings(implicit
-        state: State
+        state:    State,
+        iHandler: InterpretationHandler[State]
     ): ProperPropertyComputationResult = {
         val puVar = state.entity._1
         val uVar = puVar.toValueOriginForm(state.tac.pcToIndex)
         val defSites = uVar.definedBy.toArray.sorted
 
         if (state.tac == null || state.callees == null) {
-            return getInterimResult(state)
+            return getInterimResult(state, iHandler)
         }
 
         val stmts = state.tac.stmts
@@ -207,21 +209,21 @@ class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
             if (callersEOptP.hasUBP) {
                 state.callers = callersEOptP.ub
                 if (!registerParams(state)) {
-                    return getInterimResult(state)
+                    return getInterimResult(state, iHandler)
                 }
             } else {
                 state.dependees = callersEOptP :: state.dependees
-                return getInterimResult(state)
+                return getInterimResult(state, iHandler)
             }
         }
 
         if (state.parameterDependeesCount > 0) {
-            return getInterimResult(state)
+            return getInterimResult(state, iHandler)
         }
 
         // Interpret a function / method parameter using the parameter information in state
         if (defSites.head < 0) {
-            val r = state.iHandler.processDefSite(defSites.head)(state)
+            val r = iHandler.processDefSite(defSites.head)(state)
             return Result(state.entity, StringConstancyProperty(r.asFinal.sci))
         }
 
@@ -239,9 +241,9 @@ class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
                             state.dependees = state.dependees.filter(_.e != e)
                             // No more dependees => Return the result for this analysis run
                             if (state.dependees.isEmpty) {
-                                return computeFinalResult(state)
+                                return computeFinalResult(state, iHandler)
                             } else {
-                                return getInterimResult(state)
+                                return getInterimResult(state, iHandler)
                             }
                         case _ =>
                             state.dependees = ep :: state.dependees
@@ -254,17 +256,17 @@ class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
         val sci =
             if (attemptFinalResultComputation
                 && state.dependees.isEmpty
-                && computeResultsForPath(state.computedLeanPath)(state)
+                && computeResultsForPath(state.computedLeanPath)(state, iHandler)
             ) {
                 PathTransformer
-                    .pathToStringTree(state.computedLeanPath)(state)
+                    .pathToStringTree(state.computedLeanPath)(state, iHandler)
                     .reduce(true)
             } else {
                 StringConstancyInformation.lb
             }
 
         if (state.dependees.nonEmpty) {
-            getInterimResult(state)
+            getInterimResult(state, iHandler)
         } else {
             StringAnalysis.unregisterParams(state.entity)
             Result(state.entity, StringConstancyProperty(sci))
@@ -279,7 +281,8 @@ class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
      * @return Returns a final result if (already) available. Otherwise, an intermediate result will be returned.
      */
     override protected def continuation(
-        state: State
+        state:    State,
+        iHandler: InterpretationHandler[State]
     )(eps: SomeEPS): ProperPropertyComputationResult = {
         state.dependees = state.dependees.filter(_.e != eps.e)
 
@@ -287,20 +290,20 @@ class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
             case FinalP(callees: Callees) if eps.pk.equals(Callees.key) =>
                 state.callees = callees
                 if (state.dependees.isEmpty) {
-                    determinePossibleStrings(state)
+                    determinePossibleStrings(state, iHandler)
                 } else {
-                    getInterimResult(state)
+                    getInterimResult(state, iHandler)
                 }
             case FinalP(callers: Callers) if eps.pk.equals(Callers.key) =>
                 state.callers = callers
                 if (state.dependees.isEmpty) {
                     registerParams(state)
-                    determinePossibleStrings(state)
+                    determinePossibleStrings(state, iHandler)
                 } else {
-                    getInterimResult(state)
+                    getInterimResult(state, iHandler)
                 }
             case _ =>
-                super.continuation(state)(eps)
+                super.continuation(state, iHandler)(eps)
         }
     }
 

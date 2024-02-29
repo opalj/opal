@@ -10,4 +10,4 @@ package interpretation
 /**
  * @author Maximilian Rüsch
  */
-trait L0StringInterpreter[State <: L0ComputationState[State]] extends StringInterpreter[State]
+trait L0StringInterpreter[State <: L0ComputationState] extends StringInterpreter[State]

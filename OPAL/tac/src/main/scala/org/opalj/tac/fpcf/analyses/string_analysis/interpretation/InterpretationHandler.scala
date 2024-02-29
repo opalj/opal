@@ -24,7 +24,7 @@ import org.opalj.br.fpcf.properties.string_definition.StringConstancyType
  *
  * @author Maximilian Rüsch
  */
-abstract class InterpretationHandler[State <: ComputationState[State]] {
+abstract class InterpretationHandler[State <: ComputationState] {
 
     /**
      * Processes a given definition site. That is, this function determines the interpretation of
