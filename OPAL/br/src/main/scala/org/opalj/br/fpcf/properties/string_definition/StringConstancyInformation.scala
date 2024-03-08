@@ -37,7 +37,8 @@ case class StringConstancyInformation(
             possibleStrings.contains("|") ||
             possibleStrings.contains("?") ||
             possibleStrings.contains("(") ||
-            possibleStrings.contains(")")
+            possibleStrings.contains(")") ||
+            possibleStrings.contains(StringConstancyInformation.ParameterPrefix)
 
     def fillInParameters(paramScis: Seq[StringConstancyInformation]): StringConstancyInformation = {
         if (possibleStrings.contains(
