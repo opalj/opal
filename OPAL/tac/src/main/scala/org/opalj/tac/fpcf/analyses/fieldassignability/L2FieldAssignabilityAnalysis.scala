@@ -92,18 +92,17 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
         pc:            PC,
         receiver:      AccessReceiver
     )(implicit state: AnalysisState): Boolean = {
+
         val field = state.field
         val method = definedMethod.definedMethod
         val stmts = taCode.stmts
         val receiverVar = receiver.map(uVarForDefSites(_, taCode.pcToIndex))
 
         val index = taCode.pcToIndex(pc)
-        if (method.isInitializer) {
-            if (field.isStatic) {
-                method.isConstructor
-            } else {
-                receiverVar.isDefined && receiverVar.get.definedBy != SelfReferenceParameter
-            }
+        if (method.isInitializer && method.classFile == field.classFile) {
+            field.isStatic && method.isConstructor ||
+            receiverVar.isDefined && receiverVar.get.definedBy != SelfReferenceParameter ||
+            checkWriteDominance(definedMethod, taCode, receiverVar, index)
         } else {
             if (field.isStatic || receiverVar.isDefined && receiverVar.get.definedBy == SelfReferenceParameter) {
                 // We consider lazy initialization if there is only single write
@@ -152,24 +151,45 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
         if (writesInMethod.distinctBy(_._2).size > 1)
             return true; // Field is written in multiple locations, thus must be assignable
 
-        // If we have no information about the receiver, we soundly return
-        if (receiverVar.isEmpty)
+        // If we have no information about the receiver, we soundly return true
+        // However, a static field has no receiver
+        if (receiverVar.isEmpty && !state.field.isStatic)
             return true;
 
-        val assignedValueObject = receiverVar.get
-        if (assignedValueObject.definedBy.exists(_ < 0))
+        val assignedValueObject =
+            if (index > 0 && stmts(index).isPutStatic) {
+                stmts(index).asPutStatic.value.asVar
+            } else
+                receiverVar.get
+
+        // When there are more than 1 definitionsite, we soundly return true
+        if (assignedValueObject.definedBy.size != 1)
             return true;
 
-        val assignedValueObjectVar = stmts(assignedValueObject.definedBy.head).asAssignment.targetVar.asVar
+        val definitionSite = assignedValueObject.definedBy.head
+
+        if (definitionSite < -1 ||
+            (definitionSite == -1 && !definedMethod.definedMethod.isConstructor)
+        )
+            return true;
+
+        val uses = if (definitionSite == -1)
+            taCode.params.thisParameter.useSites
+        else {
+            val assignedValueObjectVar = stmts(definitionSite).asAssignment.targetVar.asVar
+            if (assignedValueObjectVar != null)
+                assignedValueObjectVar.usedBy
+            else IntTrieSet.empty
+        }
 
         val fieldWriteInMethodIndex = taCode.pcToIndex(writesInMethod.head._2)
-        if (assignedValueObjectVar != null && !assignedValueObjectVar.usedBy.forall { index =>
+        if (!uses.forall { index =>
                 val stmt = stmts(index)
 
                 fieldWriteInMethodIndex == index || // The value is itself written to another object
                     // IMPROVE: Can we use field access information to care about reflective accesses here?
                     stmt.isPutField && stmt.asPutField.name != state.field.name ||
-                    stmt.isAssignment && stmt.asAssignment.targetVar == assignedValueObjectVar ||
+                    //  stmt.isAssignment && stmt.asAssignment.targetVar == assignedValueObjectVar ||
                     stmt.isMethodCall && stmt.asMethodCall.name == "<init>" ||
                     // CHECK do we really need the taCode here?
                     dominates(fieldWriteInMethodIndex, index, taCode)
@@ -256,15 +276,17 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
                 fieldReadAccessInformation.numIndirectAccesses - seenIndirectAccesses
             ).exists { readAccess =>
                 val method = contextProvider.contextFromId(readAccess._1).method
-                (writeAccess._1 eq method) && {
-                    val taCode = state.tacDependees(method.asDefinedMethod).ub.tac.get
 
-                    if (readAccess._3.isDefined && readAccess._3.get._2.forall(isFormalParameter)) {
-                        false
-                    } else {
-                        !dominates(writeAccess._4, taCode.pcToIndex(readAccess._2), taCode)
+                method.definedMethod.classFile != state.field.classFile ||
+                    (writeAccess._1 eq method) && {
+                        val taCode = state.tacDependees(method.asDefinedMethod).ub.tac.get
+
+                        if (readAccess._3.isDefined && readAccess._3.get._2.forall(isFormalParameter)) {
+                            false
+                        } else {
+                            !dominates(writeAccess._4, taCode.pcToIndex(readAccess._2), taCode)
+                        }
                     }
-                }
             }
         }
     }
