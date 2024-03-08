@@ -18,8 +18,6 @@ import org.opalj.fpcf.SomeEPS
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 
 /**
- * Responsible for processing [[NonVirtualMethodCall]]s without a call graph.
- *
  * @author Maximilian Rüsch
  */
 case class L0NonVirtualMethodCallInterpreter[State <: L0ComputationState](ps: PropertyStore)
@@ -27,37 +25,18 @@ case class L0NonVirtualMethodCallInterpreter[State <: L0ComputationState](ps: Pr
 
     override type T = NonVirtualMethodCall[V]
 
-    /**
-     * Currently, this function supports the interpretation of the following non virtual methods:
-     * <ul>
-     * <li>
-     * `&lt;init&gt;`, when initializing an object (for this case, currently zero constructor or
-     * one constructor parameter are supported; if more params are available, only the very first
-     * one is interpreted).
-     * </li>
-     * </ul>
-     *
-     * For all other calls, a [[NoIPResult]] will be returned.
-     */
-    override def interpret(instr: T, defSite: Int)(implicit state: State): ProperPropertyComputationResult = {
+    override def interpret(instr: T, pc: Int)(implicit state: State): ProperPropertyComputationResult = {
         instr.name match {
-            case "<init>" => interpretInit(instr)
-            case _        => computeFinalResult(defSite, StringConstancyInformation.getNeutralElement)
+            case "<init>" => interpretInit(instr, pc)
+            case _        => computeFinalResult(pc, StringConstancyInformation.getNeutralElement)
         }
     }
 
-    /**
-     * Processes an `&lt;init&gt;` method call. If it has no parameters, [[NoIPResult]] will be returned. Otherwise,
-     * only the very first parameter will be evaluated and its result returned (this is reasonable as both,
-     * [[StringBuffer]] and [[StringBuilder]], have only constructors with <= 1 arguments and only these are currently
-     * interpreted).
-     */
-    private def interpretInit(init: T)(implicit state: State): ProperPropertyComputationResult = {
-        val entity = InterpretationHandler.getEntityFromDefSitePC(init.pc)
-
+    private def interpretInit(init: T, pc: Int)(implicit state: State): ProperPropertyComputationResult = {
         init.params.size match {
-            case 0 => computeFinalResult(FinalEP(entity, StringConstancyProperty.getNeutralElement))
+            case 0 => computeFinalResult(pc, StringConstancyInformation.getNeutralElement)
             case _ =>
+                // Only StringBuffer and StringBuilder are interpreted which have constructors with <= 1 parameters
                 val results = init.params.head.asVar.definedBy.toList.map { ds =>
                     ps(InterpretationHandler.getEntityFromDefSite(ds), StringConstancyProperty.key)
                 }
@@ -65,12 +44,12 @@ case class L0NonVirtualMethodCallInterpreter[State <: L0ComputationState](ps: Pr
                     finalResult(init.pc)(results.asInstanceOf[Iterable[FinalEP[DefSiteEntity, StringConstancyProperty]]])
                 } else {
                     InterimResult.forLB(
-                        entity,
+                        InterpretationHandler.getEntityFromDefSitePC(pc),
                         StringConstancyProperty.lb,
                         results.toSet,
                         awaitAllFinalContinuation(
-                            EPSDepender(init, init.pc, state, results),
-                            finalResult(init.pc)
+                            EPSDepender(init, pc, state, results),
+                            finalResult(pc)
                         )
                     )
                 }
@@ -80,10 +59,10 @@ case class L0NonVirtualMethodCallInterpreter[State <: L0ComputationState](ps: Pr
     private def finalResult(pc: Int)(results: Iterable[SomeEPS])(implicit
         state: State
     ): Result =
-        computeFinalResult(FinalEP(
-            InterpretationHandler.getEntityFromDefSitePC(pc),
-            StringConstancyProperty(StringConstancyInformation.reduceMultiple(results.map {
+        computeFinalResult(
+            pc,
+            StringConstancyInformation.reduceMultiple(results.map {
                 _.asFinal.p.asInstanceOf[StringConstancyProperty].sci
-            }))
-        ))
+            })
+        )
 }

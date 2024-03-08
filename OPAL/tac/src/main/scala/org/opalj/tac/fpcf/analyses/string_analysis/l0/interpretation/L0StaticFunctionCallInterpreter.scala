@@ -22,8 +22,6 @@ import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.Interpretation
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
- * Processes [[StaticFunctionCall]]s without a call graph.
- *
  * @author Maximilian Rüsch
  */
 case class L0StaticFunctionCallInterpreter[State <: L0ComputationState]()(
@@ -36,10 +34,10 @@ case class L0StaticFunctionCallInterpreter[State <: L0ComputationState]()(
 
     override type T = StaticFunctionCall[V]
 
-    override def interpret(instr: T, defSite: Int)(implicit state: State): ProperPropertyComputationResult = {
+    override def interpret(instr: T, pc: Int)(implicit state: State): ProperPropertyComputationResult = {
         instr.name match {
-            case "valueOf" if instr.declaringClass == ObjectType.String => processStringValueOf(instr, defSite)
-            case _                                                      => interpretArbitraryCall(instr, defSite)
+            case "valueOf" if instr.declaringClass == ObjectType.String => processStringValueOf(instr, pc)
+            case _                                                      => interpretArbitraryCall(instr, pc)
         }
     }
 }
@@ -52,19 +50,17 @@ private[string_analysis] trait L0ArbitraryStaticFunctionCallInterpreter[State <:
 
     override type T = StaticFunctionCall[V]
 
-    def interpretArbitraryCall(instr: T, defSite: Int)(implicit
+    def interpretArbitraryCall(instr: T, pc: Int)(implicit
         state: State
     ): ProperPropertyComputationResult = {
         val calleeMethod = instr.resolveCallTarget(state.entity._2.classFile.thisType)
         if (calleeMethod.isEmpty) {
-            return computeFinalResult(defSite, StringConstancyInformation.lb)
+            return computeFinalResult(pc, StringConstancyInformation.lb)
         }
 
         val m = calleeMethod.value
-        val callState = FunctionCallState(pcOfDefSite(defSite)(state.tac.stmts), Seq(m), Map((m, ps(m, TACAI.key))))
-
-        val params = evaluateParameters(getParametersForPC(pcOfDefSite(defSite)(state.tac.stmts)))
-        callState.setParamDependees(params)
+        val callState = FunctionCallState(pc, Seq(m), Map((m, ps(m, TACAI.key))))
+        callState.setParamDependees(evaluateParameters(getParametersForPC(pc)))
 
         interpretArbitraryCallToMethods(state, callState)
     }
@@ -77,7 +73,7 @@ private[string_analysis] trait L0StringValueOfFunctionCallInterpreter[State <: L
 
     val ps: PropertyStore
 
-    def processStringValueOf(call: T, defSite: Int)(implicit state: State): ProperPropertyComputationResult = {
+    def processStringValueOf(call: T, pc: Int)(implicit state: State): ProperPropertyComputationResult = {
         def finalResult(results: Iterable[SomeFinalEP]): Result = {
             // For char values, we need to do a conversion (as the returned results are integers)
             val scis = results.map { r => r.p.asInstanceOf[StringConstancyProperty].sci }
@@ -92,7 +88,7 @@ private[string_analysis] trait L0StringValueOfFunctionCallInterpreter[State <: L
             } else {
                 scis
             }
-            computeFinalResult(defSite, StringConstancyInformation.reduceMultiple(finalScis))
+            computeFinalResult(pc, StringConstancyInformation.reduceMultiple(finalScis))
         }
 
         val results = call.params.head.asVar.definedBy.toList.sorted.map { ds =>
@@ -100,7 +96,7 @@ private[string_analysis] trait L0StringValueOfFunctionCallInterpreter[State <: L
         }
         if (results.exists(_.isRefinable)) {
             InterimResult.forLB(
-                InterpretationHandler.getEntityFromDefSite(defSite),
+                InterpretationHandler.getEntityFromDefSitePC(pc),
                 StringConstancyProperty.lb,
                 results.filter(_.isRefinable).toSet,
                 awaitAllFinalContinuation(

@@ -30,22 +30,18 @@ class L1VirtualFunctionCallInterpreter[State <: L1ComputationState](
 
     override type T = VirtualFunctionCall[V]
 
-    override protected def interpretArbitraryCall(instr: T, defSite: Int)(
+    override protected def interpretArbitraryCall(instr: T, pc: Int)(
         implicit state: State
     ): ProperPropertyComputationResult = {
-        val defSitePC = pcOfDefSite(defSite)(state.tac.stmts)
-
         // IMPROVE add some uncertainty element if methods with unknown body exist
         val (methods, _) = getMethodsForPC(instr.pc)
         if (methods.isEmpty) {
-            return computeFinalResult(defSite, StringConstancyInformation.lb)
+            return computeFinalResult(pc, StringConstancyInformation.lb)
         }
 
-        val params = evaluateParameters(getParametersForPC(defSitePC))
         val tacDependees = methods.map(m => (m, ps(m, TACAI.key))).toMap
-
-        val callState = FunctionCallState(defSitePC, tacDependees.keys.toSeq, tacDependees)
-        callState.setParamDependees(params)
+        val callState = FunctionCallState(pc, tacDependees.keys.toSeq, tacDependees)
+        callState.setParamDependees(evaluateParameters(getParametersForPC(pc)))
 
         interpretArbitraryCallToMethods(state, callState)
     }

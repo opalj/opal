@@ -27,17 +27,14 @@ trait StringInterpreter[State <: ComputationState] {
 
     /**
      * @param instr   The instruction that is to be interpreted.
-     * @param defSite The definition site that corresponds to the given instruction.
-     * @return A [[ProperPropertyComputationResult]] for the given def site containing the interpretation of the given
+     * @param pc The pc that corresponds to the given instruction.
+     * @return A [[ProperPropertyComputationResult]] for the given pc containing the interpretation of the given
      *         instruction.
      */
-    def interpret(instr: T, defSite: Int)(implicit state: State): ProperPropertyComputationResult
+    def interpret(instr: T, pc: Int)(implicit state: State): ProperPropertyComputationResult
 
-    def computeFinalResult(finalEP: FinalEP[DefSiteEntity, StringConstancyProperty]): Result =
-        StringInterpreter.computeFinalResult(finalEP)
-
-    def computeFinalResult(defSite: Int, sci: StringConstancyInformation)(implicit state: State): Result =
-        StringInterpreter.computeFinalResult(defSite, sci)
+    def computeFinalResult(pc: Int, sci: StringConstancyInformation)(implicit state: State): Result =
+        StringInterpreter.computeFinalResult(pc, sci)
 
     // IMPROVE remove this since awaiting all final is not really feasible
     // replace with intermediate lattice result approach
@@ -74,12 +71,10 @@ trait StringInterpreter[State <: ComputationState] {
 
 object StringInterpreter {
 
-    def computeFinalResult(finalEP: FinalEP[DefSiteEntity, StringConstancyProperty]): Result = Result(finalEP)
-
-    def computeFinalResult[State <: ComputationState](defSite: Int, sci: StringConstancyInformation)(implicit
+    def computeFinalResult[State <: ComputationState](pc: Int, sci: StringConstancyInformation)(implicit
         state: State
     ): Result =
-        computeFinalResult(FinalEP(InterpretationHandler.getEntityFromDefSite(defSite), StringConstancyProperty(sci)))
+        Result(FinalEP(InterpretationHandler.getEntityFromDefSitePC(pc), StringConstancyProperty(sci)))
 }
 
 trait ParameterEvaluatingStringInterpreter[State <: ComputationState] extends StringInterpreter[State] {

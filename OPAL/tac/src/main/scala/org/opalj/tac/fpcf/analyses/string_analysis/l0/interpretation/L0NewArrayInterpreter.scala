@@ -28,16 +28,15 @@ class L0NewArrayInterpreter[State <: L0ComputationState](ps: PropertyStore)
 
     override type T = NewArray[V]
 
-    override def interpret(instr: T, defSite: Int)(implicit state: State): ProperPropertyComputationResult = {
-        val defSitePC = pcOfDefSite(defSite)(state.tac.stmts)
+    override def interpret(instr: T, pc: Int)(implicit state: State): ProperPropertyComputationResult = {
         if (instr.counts.length != 1) {
             // Only supports 1-D arrays
-            return computeFinalResult(defSite, StringConstancyInformation.lb)
+            return computeFinalResult(pc, StringConstancyInformation.lb)
         }
 
         // Get all sites that define array values and process them
-        val arrValuesDefSites =
-            state.tac.stmts(defSite).asAssignment.targetVar.asVar.usedBy.toArray.toList.sorted
+        val defSite = valueOriginOfPC(pc, state.tac.pcToIndex).get;
+        val arrValuesDefSites = state.tac.stmts(defSite).asAssignment.targetVar.asVar.usedBy.toArray.toList.sorted
         val allResults = arrValuesDefSites.flatMap { ds =>
             if (ds >= 0 && state.tac.stmts(ds).isInstanceOf[ArrayStore[V]]) {
                 state.tac.stmts(ds).asArrayStore.value.asVar.definedBy.toArray.toList.sorted.map { ds =>
@@ -52,16 +51,16 @@ class L0NewArrayInterpreter[State <: L0ComputationState](ps: PropertyStore)
 
         if (allResults.exists(_.isRefinable)) {
             InterimResult.forLB(
-                InterpretationHandler.getEntityFromDefSite(defSite),
+                InterpretationHandler.getEntityFromDefSitePC(pc),
                 StringConstancyProperty.lb,
                 allResults.filter(_.isRefinable).toSet,
                 awaitAllFinalContinuation(
-                    EPSDepender(instr, defSitePC, state, allResults),
-                    finalResult(defSitePC)
+                    EPSDepender(instr, pc, state, allResults),
+                    finalResult(pc)
                 )
             )
         } else {
-            finalResult(defSitePC)(allResults.asInstanceOf[Iterable[FinalEP[DefSiteEntity, StringConstancyProperty]]])
+            finalResult(pc)(allResults.asInstanceOf[Iterable[FinalEP[DefSiteEntity, StringConstancyProperty]]])
         }
     }
 
@@ -74,6 +73,6 @@ class L0NewArrayInterpreter[State <: L0ComputationState](ps: PropertyStore)
             StringConstancyInformation.reduceMultiple(resultsScis)
         }
 
-        computeFinalResult(valueOriginOfPC(pc, state.tac.pcToIndex).get, sci)
+        computeFinalResult(pc, sci)
     }
 }

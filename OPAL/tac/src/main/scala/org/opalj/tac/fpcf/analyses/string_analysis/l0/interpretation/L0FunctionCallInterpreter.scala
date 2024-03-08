@@ -12,7 +12,6 @@ import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EUBP
-import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.InterimResult
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyStore
@@ -152,10 +151,7 @@ trait L0FunctionCallInterpreter[State <: L0ComputationState]
                 }
             }
 
-            computeFinalResult(FinalEP(
-                InterpretationHandler.getEntityFromDefSitePC(callState.defSitePC),
-                StringConstancyProperty(StringConstancyInformation.reduceMultiple(methodScis))
-            ))
+            computeFinalResult(callState.defSitePC, StringConstancyInformation.reduceMultiple(methodScis))
         }
     }
 

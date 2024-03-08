@@ -26,19 +26,19 @@ case class BinaryExprInterpreter[State <: ComputationState]() extends StringInte
      * </li>
      * For all other expressions, a [[StringConstancyInformation.getNeutralElement]] will be returned.
      */
-    def interpret(instr: T, defSite: Int)(implicit state: State): ProperPropertyComputationResult = {
+    def interpret(instr: T, pc: Int)(implicit state: State): ProperPropertyComputationResult = {
         val sci = instr.cTpe match {
             case ComputationalTypeInt   => InterpretationHandler.getConstancyInfoForDynamicInt
             case ComputationalTypeFloat => InterpretationHandler.getConstancyInfoForDynamicFloat
             case _                      => StringConstancyInformation.getNeutralElement
         }
-        computeFinalResult(defSite, sci)
+        computeFinalResult(pc, sci)
     }
 }
 
 object BinaryExprInterpreter {
 
-    def interpret[State <: ComputationState](instr: BinaryExpr[V], defSite: Int)(implicit
+    def interpret[State <: ComputationState](instr: BinaryExpr[V], pc: Int)(implicit
         state: State
-    ): ProperPropertyComputationResult = BinaryExprInterpreter[State]().interpret(instr, defSite)
+    ): ProperPropertyComputationResult = BinaryExprInterpreter[State]().interpret(instr, pc)
 }

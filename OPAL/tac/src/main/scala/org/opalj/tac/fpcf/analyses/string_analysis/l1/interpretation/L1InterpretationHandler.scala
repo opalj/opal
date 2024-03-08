@@ -42,51 +42,56 @@ class L1InterpretationHandler[State <: L1ComputationState](
     val fieldAccessInformation: FieldAccessInformation = p.get(FieldAccessInformationKey)
     implicit val contextProvider: ContextProvider = p.get(ContextProviderKey)
 
-    override protected def processNewDefSite(defSite: Int)(implicit state: State): ProperPropertyComputationResult = {
-        state.tac.stmts(defSite) match {
-            case Assignment(_, _, expr: SimpleValueConst) => SimpleValueConstExprInterpreter.interpret(expr, defSite)
+    override protected def processNewDefSitePC(pc: Int)(implicit state: State): ProperPropertyComputationResult = {
+        val defSiteOpt = valueOriginOfPC(pc, state.tac.pcToIndex);
+        if (defSiteOpt.isEmpty) {
+            throw new IllegalArgumentException(s"Obtained a pc that does not represent a definition site: $pc")
+        }
 
-            case Assignment(_, _, expr: ArrayLoad[V]) => L0ArrayAccessInterpreter(ps).interpret(expr, defSite)
-            case Assignment(_, _, expr: NewArray[V])  => new L0NewArrayInterpreter(ps).interpret(expr, defSite)
+        state.tac.stmts(defSiteOpt.get) match {
+            case Assignment(_, _, expr: SimpleValueConst) => SimpleValueConstExprInterpreter.interpret(expr, pc)
+
+            case Assignment(_, _, expr: ArrayLoad[V]) => L0ArrayAccessInterpreter(ps).interpret(expr, pc)
+            case Assignment(_, _, expr: NewArray[V])  => new L0NewArrayInterpreter(ps).interpret(expr, pc)
             case Assignment(_, _, _: New) =>
-                StringInterpreter.computeFinalResult(defSite, StringConstancyInformation.getNeutralElement)
+                StringInterpreter.computeFinalResult(pc, StringConstancyInformation.getNeutralElement)
 
             case Assignment(_, _, expr: FieldRead[V]) =>
                 L1FieldReadInterpreter(ps, fieldAccessInformation, p, declaredFields, contextProvider).interpret(
                     expr,
-                    defSite
+                    pc
                 )
             case ExprStmt(_, expr: FieldRead[V]) =>
                 L1FieldReadInterpreter(ps, fieldAccessInformation, p, declaredFields, contextProvider).interpret(
                     expr,
-                    defSite
+                    pc
                 )
 
             case Assignment(_, _, expr: VirtualFunctionCall[V]) =>
-                new L1VirtualFunctionCallInterpreter().interpret(expr, defSite)
+                new L1VirtualFunctionCallInterpreter().interpret(expr, pc)
             case ExprStmt(_, expr: VirtualFunctionCall[V]) =>
-                new L1VirtualFunctionCallInterpreter().interpret(expr, defSite)
+                new L1VirtualFunctionCallInterpreter().interpret(expr, pc)
 
             case Assignment(_, _, expr: NonVirtualFunctionCall[V]) =>
-                L0NonVirtualFunctionCallInterpreter().interpret(expr, defSite)
+                L0NonVirtualFunctionCallInterpreter().interpret(expr, pc)
             case ExprStmt(_, expr: NonVirtualFunctionCall[V]) =>
-                L0NonVirtualFunctionCallInterpreter().interpret(expr, defSite)
+                L0NonVirtualFunctionCallInterpreter().interpret(expr, pc)
 
             case Assignment(_, _, expr: StaticFunctionCall[V]) =>
-                L0StaticFunctionCallInterpreter().interpret(expr, defSite)
+                L0StaticFunctionCallInterpreter().interpret(expr, pc)
             case ExprStmt(_, expr: StaticFunctionCall[V]) =>
-                L0StaticFunctionCallInterpreter().interpret(expr, defSite)
+                L0StaticFunctionCallInterpreter().interpret(expr, pc)
 
             // TODO: For binary expressions, use the underlying domain to retrieve the result of such expressions
-            case Assignment(_, _, expr: BinaryExpr[V]) => BinaryExprInterpreter.interpret(expr, defSite)
+            case Assignment(_, _, expr: BinaryExpr[V]) => BinaryExprInterpreter.interpret(expr, pc)
 
             case vmc: VirtualMethodCall[V] =>
-                L0VirtualMethodCallInterpreter().interpret(vmc, defSite)
+                L0VirtualMethodCallInterpreter().interpret(vmc, pc)
             case nvmc: NonVirtualMethodCall[V] =>
-                L0NonVirtualMethodCallInterpreter(ps).interpret(nvmc, defSite)
+                L0NonVirtualMethodCallInterpreter(ps).interpret(nvmc, pc)
 
             case _ =>
-                StringInterpreter.computeFinalResult(defSite, StringConstancyInformation.getNeutralElement)
+                StringInterpreter.computeFinalResult(pc, StringConstancyInformation.getNeutralElement)
         }
     }
 }

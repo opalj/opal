@@ -15,7 +15,6 @@ import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
 import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.InterimResult
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyStore
@@ -95,19 +94,17 @@ case class L1FieldReadInterpreter[State <: L1ComputationState](
      * approximated using all write accesses as well as with the lower bound and "null" => in these cases fields are
      * [[StringConstancyLevel.DYNAMIC]].
      */
-    override def interpret(instr: T, defSite: Int)(implicit state: State): ProperPropertyComputationResult = {
-        val defSitePC = pcOfDefSite(defSite)(state.tac.stmts)
-
+    override def interpret(instr: T, pc: Int)(implicit state: State): ProperPropertyComputationResult = {
         // TODO: The approximation of fields might be outsourced into a dedicated analysis. Then, one could add a
         //  finer-grained processing or provide different abstraction levels. This analysis could then use that analysis.
         if (!StringAnalysis.isSupportedType(instr.declaredFieldType)) {
-            return computeFinalResult(defSite, StringConstancyInformation.lb)
+            return computeFinalResult(pc, StringConstancyInformation.lb)
         }
 
         val definedField = declaredFields(instr.declaringClass, instr.name, instr.declaredFieldType).asDefinedField
         val writeAccesses = fieldAccessInformation.writeAccesses(definedField.definedField).toSeq
         if (writeAccesses.length > fieldWriteThreshold) {
-            return computeFinalResult(defSite, StringConstancyInformation.lb)
+            return computeFinalResult(pc, StringConstancyInformation.lb)
         }
 
         if (writeAccesses.isEmpty) {
@@ -117,10 +114,10 @@ case class L1FieldReadInterpreter[State <: L1ComputationState](
                 possibleStrings =
                     s"(${StringConstancyInformation.NullStringValue}|${StringConstancyInformation.UnknownWordSymbol})"
             )
-            return computeFinalResult(defSite, sci)
+            return computeFinalResult(pc, sci)
         }
 
-        implicit val accessState: FieldReadState = FieldReadState(defSitePC)
+        implicit val accessState: FieldReadState = FieldReadState(pc)
         writeAccesses.foreach {
             case (contextId, _, _, parameter) =>
                 val method = contextProvider.contextFromId(contextId).method.definedMethod
@@ -165,10 +162,7 @@ case class L1FieldReadInterpreter[State <: L1ComputationState](
                 scis = scis :+ StringConstancyInformation.lb
             }
 
-            computeFinalResult(FinalEP(
-                InterpretationHandler.getEntityFromDefSitePC(accessState.defSitePC),
-                StringConstancyProperty(StringConstancyInformation.reduceMultiple(scis))
-            ))
+            computeFinalResult(accessState.defSitePC, StringConstancyInformation.reduceMultiple(scis))
         }
     }
 

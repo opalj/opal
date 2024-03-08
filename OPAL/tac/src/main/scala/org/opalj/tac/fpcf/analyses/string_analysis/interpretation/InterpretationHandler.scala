@@ -12,13 +12,10 @@ import scala.collection.mutable.ListBuffer
 import org.opalj.ai.FormalParametersOriginOffset
 import org.opalj.ai.ImmediateVMExceptionsOriginOffset
 import org.opalj.br.ObjectType
-import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyType
-import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.ProperPropertyComputationResult
-import org.opalj.fpcf.Result
 
 /**
  * Processes expressions that are relevant in order to determine which value(s) the string value at a given def site
@@ -32,37 +29,21 @@ import org.opalj.fpcf.Result
 abstract class InterpretationHandler[State <: ComputationState] {
 
     def analyze(entity: DefSiteEntity): ProperPropertyComputationResult =
-        processDefSite(valueOriginOfPC(entity.pc, entity.state.tac.pcToIndex).get)(entity.state.asInstanceOf[State])
+        processDefSitePC(entity.pc)(entity.state.asInstanceOf[State])
 
-    /**
-     * Processes a given definition site. That is, this function determines the interpretation of
-     * the specified instruction.
-     *
-     * @param defSite The definition site to process. Make sure that (1) the value is >= 0, (2) it actually exists, and
-     *                (3) can be processed by one of the subclasses of [[StringInterpreter]] (in case (3) is violated,
-     *                an [[IllegalArgumentException]] will be thrown).
-     * @return Returns the result of the interpretation. Note that depending on the concrete
-     *         interpreter either a final or an intermediate result can be returned!
-     *         In case the rules listed above or the ones of the different concrete interpreters are
-     *         not met, the neutral [[org.opalj.br.fpcf.properties.StringConstancyProperty]] element
-     *         will be encapsulated in the result (see
-     *         [[org.opalj.br.fpcf.properties.StringConstancyProperty.isTheNeutralElement]]).
-     *         The entity of the result will be the given `defSite`.
-     */
-    private def processDefSite(defSite: Int)(implicit state: State): ProperPropertyComputationResult = {
-        if (defSite <= FormalParametersOriginOffset) {
-            if (defSite == -1 || defSite <= ImmediateVMExceptionsOriginOffset) {
-                return Result(FinalEP(InterpretationHandler.getEntityFromDefSite(defSite), StringConstancyProperty.lb))
+    private def processDefSitePC(pc: Int)(implicit state: State): ProperPropertyComputationResult = {
+        if (pc <= FormalParametersOriginOffset) {
+            if (pc == -1 || pc <= ImmediateVMExceptionsOriginOffset) {
+                return StringInterpreter.computeFinalResult(pc, StringConstancyInformation.lb)
             } else {
-                val sci = StringConstancyInformation.getElementForParameterPC(pcOfDefSite(defSite)(state.tac.stmts))
-                return Result(FinalEP(InterpretationHandler.getEntityFromDefSite(defSite), StringConstancyProperty(sci)))
+                return StringInterpreter.computeFinalResult(pc, StringConstancyInformation.getElementForParameterPC(pc))
             }
         }
 
-        processNewDefSite(defSite)
+        processNewDefSitePC(pc)
     }
 
-    protected def processNewDefSite(defSite: Int)(implicit state: State): ProperPropertyComputationResult
+    protected def processNewDefSitePC(pc: Int)(implicit state: State): ProperPropertyComputationResult
 }
 
 object InterpretationHandler {

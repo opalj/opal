@@ -18,7 +18,7 @@ case class SimpleValueConstExprInterpreter[State <: ComputationState]() extends 
 
     override type T = SimpleValueConst
 
-    def interpret(expr: T, defSite: Int)(implicit state: State): ProperPropertyComputationResult = {
+    def interpret(expr: T, pc: Int)(implicit state: State): ProperPropertyComputationResult = {
         val sci = expr match {
             case ic: IntConst =>
                 StringConstancyInformation(StringConstancyLevel.CONSTANT, StringConstancyType.APPEND, ic.value.toString)
@@ -33,13 +33,13 @@ case class SimpleValueConstExprInterpreter[State <: ComputationState]() extends 
             case _ =>
                 StringConstancyInformation.getNeutralElement
         }
-        computeFinalResult(defSite, sci)
+        computeFinalResult(pc, sci)
     }
 }
 
 object SimpleValueConstExprInterpreter {
 
-    def interpret[State <: ComputationState](instr: SimpleValueConst, defSite: Int)(implicit
+    def interpret[State <: ComputationState](instr: SimpleValueConst, pc: Int)(implicit
         state: State
-    ): ProperPropertyComputationResult = SimpleValueConstExprInterpreter[State]().interpret(instr, defSite)
+    ): ProperPropertyComputationResult = SimpleValueConstExprInterpreter[State]().interpret(instr, pc)
 }

@@ -26,30 +26,28 @@ case class L0ArrayAccessInterpreter[State <: L0ComputationState](ps: PropertySto
 
     override type T = ArrayLoad[V]
 
-    override def interpret(instr: T, defSite: Int)(implicit state: State): ProperPropertyComputationResult = {
-        implicit val stmts: Array[Stmt[V]] = state.tac.stmts
-
-        val defSitePCs = getStoreAndLoadDefSitePCs(instr)
+    override def interpret(instr: T, pc: Int)(implicit state: State): ProperPropertyComputationResult = {
+        val defSitePCs = getStoreAndLoadDefSitePCs(instr)(state.tac.stmts)
         val results = defSitePCs.map { pc =>
             ps(InterpretationHandler.getEntityFromDefSitePC(pc), StringConstancyProperty.key)
         }
 
         if (results.exists(_.isRefinable)) {
             InterimResult.forLB(
-                InterpretationHandler.getEntityFromDefSite(defSite),
+                InterpretationHandler.getEntityFromDefSitePC(pc),
                 StringConstancyProperty.lb,
                 results.filter(_.isRefinable).toSet,
                 awaitAllFinalContinuation(
-                    EPSDepender(instr, pcOfDefSite(defSite), state, results),
-                    finalResult(pcOfDefSite(defSite))
+                    EPSDepender(instr, pc, state, results),
+                    finalResult(pc)
                 )
             )
         } else {
-            finalResult(defSite)(results.asInstanceOf[Iterable[FinalEP[DefSiteEntity, StringConstancyProperty]]])
+            finalResult(pc)(results.asInstanceOf[Iterable[FinalEP[DefSiteEntity, StringConstancyProperty]]])
         }
     }
 
-    private def finalResult(defSite: Int)(results: Iterable[SomeFinalEP])(implicit
+    private def finalResult(pc: Int)(results: Iterable[SomeFinalEP])(implicit
         state: State
     ): ProperPropertyComputationResult = {
         var resultSci = StringConstancyInformation.reduceMultiple(results.map {
@@ -59,7 +57,7 @@ case class L0ArrayAccessInterpreter[State <: L0ComputationState](ps: PropertySto
             resultSci = StringConstancyInformation.lb
         }
 
-        computeFinalResult(defSite, resultSci)
+        computeFinalResult(pc, resultSci)
     }
 
     private def getStoreAndLoadDefSitePCs(instr: T)(implicit stmts: Array[Stmt[V]]): List[Int] = {

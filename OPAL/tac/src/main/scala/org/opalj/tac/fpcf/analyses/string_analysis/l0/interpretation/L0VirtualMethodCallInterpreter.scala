@@ -13,8 +13,6 @@ import org.opalj.br.fpcf.properties.string_definition.StringConstancyType
 import org.opalj.fpcf.ProperPropertyComputationResult
 
 /**
- * Responsible for processing [[VirtualMethodCall]]s without a call graph.
- *
  * @author Maximilian Rüsch
  */
 case class L0VirtualMethodCallInterpreter[State <: L0ComputationState]() extends L0StringInterpreter[State] {
@@ -34,12 +32,12 @@ case class L0VirtualMethodCallInterpreter[State <: L0ComputationState]() extends
      *
      * For all other calls, a [[StringConstancyInformation.getNeutralElement]] will be returned.
      */
-    override def interpret(instr: T, defSite: Int)(implicit state: State): ProperPropertyComputationResult = {
+    override def interpret(instr: T, pc: Int)(implicit state: State): ProperPropertyComputationResult = {
         val sci = instr.name match {
             // IMPROVE interpret argument for setLength
             case "setLength" => StringConstancyInformation(StringConstancyLevel.CONSTANT, StringConstancyType.RESET)
             case _           => StringConstancyInformation.getNeutralElement
         }
-        computeFinalResult(defSite, sci)
+        computeFinalResult(pc, sci)
     }
 }
