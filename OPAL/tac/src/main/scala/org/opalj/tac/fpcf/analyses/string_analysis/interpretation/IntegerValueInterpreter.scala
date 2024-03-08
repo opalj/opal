@@ -10,28 +10,29 @@ package interpretation
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyType
+import org.opalj.fpcf.ProperPropertyComputationResult
 
 /**
  * @author Maximilian Rüsch
  */
-case class IntegerValueInterpreter[State <: ComputationState]() extends SingleStepStringInterpreter[State] {
+case class IntegerValueInterpreter[State <: ComputationState]() extends StringInterpreter[State] {
 
     override type T = IntConst
 
-    def interpret(instr: T, defSite: Int)(implicit state: State): FinalIPResult =
-        FinalIPResult(
+    def interpret(instr: T, defSite: Int)(implicit state: State): ProperPropertyComputationResult =
+        computeFinalResult(
+            defSite,
             StringConstancyInformation(
                 StringConstancyLevel.CONSTANT,
                 StringConstancyType.APPEND,
                 instr.value.toString
-            ),
-            state.dm,
-            pcOfDefSite(defSite)(state.tac.stmts)
+            )
         )
 }
 
 object IntegerValueInterpreter {
 
-    def interpret[State <: ComputationState](instr: IntConst, defSite: Int)(implicit state: State): FinalIPResult =
-        IntegerValueInterpreter[State]().interpret(instr, defSite)
+    def interpret[State <: ComputationState](instr: IntConst, defSite: Int)(implicit
+        state: State
+    ): ProperPropertyComputationResult = IntegerValueInterpreter[State]().interpret(instr, defSite)
 }

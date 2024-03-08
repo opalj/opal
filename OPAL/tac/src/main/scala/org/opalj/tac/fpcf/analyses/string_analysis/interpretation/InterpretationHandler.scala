@@ -9,22 +9,30 @@ package interpretation
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
+import org.opalj.ai.FormalParametersOriginOffset
 import org.opalj.ai.ImmediateVMExceptionsOriginOffset
 import org.opalj.br.ObjectType
+import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyType
+import org.opalj.fpcf.FinalEP
+import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.Result
 
 /**
  * Processes expressions that are relevant in order to determine which value(s) the string value at a given def site
  * might have.
  *
  * [[InterpretationHandler]]s of any level may use [[StringInterpreter]]s from their level or any level below.
- * [[SingleStepStringInterpreter]]s defined in the [[interpretation]] package may be used by any level.
+ * [[StringInterpreter]]s defined in the [[interpretation]] package may be used by any level.
  *
  * @author Maximilian Rüsch
  */
 abstract class InterpretationHandler[State <: ComputationState] {
+
+    def analyze(entity: DefSiteEntity): ProperPropertyComputationResult =
+        processDefSite(valueOriginOfPC(entity.pc, entity.state.tac.pcToIndex).get)(entity.state.asInstanceOf[State])
 
     /**
      * Processes a given definition site. That is, this function determines the interpretation of
@@ -41,66 +49,20 @@ abstract class InterpretationHandler[State <: ComputationState] {
      *         [[org.opalj.br.fpcf.properties.StringConstancyProperty.isTheNeutralElement]]).
      *         The entity of the result will be the given `defSite`.
      */
-    def processDefSite(defSite: Int)(implicit state: State): IPResult = {
-        val defSitePC = pcOfDefSite(defSite)(state.tac.stmts)
-
-        if (state.fpe2ipr.contains(defSitePC) && state.fpe2ipr(defSitePC).isFinal) {
-            return state.fpe2ipr(defSitePC)
-        }
-
-        if (defSite < 0) {
-            val params = state.params.toList.map(_.toList)
-            if (params.isEmpty || defSite == -1 || defSite <= ImmediateVMExceptionsOriginOffset) {
-                state.fpe2ipr(defSitePC) = FinalIPResult.lb(state.dm, defSitePC)
-                return FinalIPResult.lb(state.dm, defSitePC)
+    private def processDefSite(defSite: Int)(implicit state: State): ProperPropertyComputationResult = {
+        if (defSite <= FormalParametersOriginOffset) {
+            if (defSite == -1 || defSite <= ImmediateVMExceptionsOriginOffset) {
+                return Result(FinalEP(InterpretationHandler.getEntityFromDefSite(defSite), StringConstancyProperty.lb))
             } else {
-                val sci = getParam(params, defSite)
-                state.fpe2ipr(defSitePC) = FinalIPResult(sci, state.dm, defSitePC)
-                return FinalIPResult(sci, state.dm, defSitePC)
+                val sci = StringConstancyInformation.getElementForParameterPC(pcOfDefSite(defSite)(state.tac.stmts))
+                return Result(FinalEP(InterpretationHandler.getEntityFromDefSite(defSite), StringConstancyProperty(sci)))
             }
         }
 
-        if (state.fpe2iprDependees.contains(defSitePC)) {
-            val oldDependees = state.fpe2iprDependees(defSitePC)
-            val updatedDependees = oldDependees._1.map {
-                case ripr: RefinableIPResult => processDefSite(valueOriginOfPC(ripr.pc, state.tac.pcToIndex).get)
-                case ipr                     => ipr
-            }
-            if (updatedDependees == oldDependees._1) {
-                state.fpe2ipr(defSitePC)
-            } else {
-                state.fpe2iprDependees(defSitePC) = (updatedDependees, oldDependees._2)
-                var newResult = state.fpe2ipr(defSitePC)
-                for {
-                    ipr <- updatedDependees
-                    if !oldDependees._1.contains(ipr)
-                } {
-                    newResult = oldDependees._2(ipr)
-                }
-                newResult
-            }
-        } else {
-            val result = processNewDefSite(defSite)
-            state.fpe2ipr(defSitePC) = result
-            result
-        }
+        processNewDefSite(defSite)
     }
 
-    protected def processNewDefSite(defSite: Int)(implicit state: State): IPResult
-
-    /**
-     * This function takes parameters and a definition site and extracts the desired parameter from
-     * the given list of parameters. Note that `defSite` is required to be <= -2.
-     */
-    protected def getParam(params: Seq[Seq[StringConstancyInformation]], defSite: Int): StringConstancyInformation = {
-        val paramPos = Math.abs(defSite + 2)
-        if (params.exists(_.length <= paramPos)) {
-            // IMPROVE cant we just map each list of params with a nonexistent pos to lb and still reduce?
-            StringConstancyInformation.lb
-        } else {
-            StringConstancyInformation.reduceMultiple(params.map(_(paramPos)).distinct)
-        }
-    }
+    protected def processNewDefSite(defSite: Int)(implicit state: State): ProperPropertyComputationResult
 }
 
 object InterpretationHandler {
@@ -292,4 +254,10 @@ object InterpretationHandler {
             StringConstancyType.REPLACE,
             StringConstancyInformation.UnknownWordSymbol
         )
+
+    def getEntityFromDefSite(defSite: Int)(implicit state: ComputationState): DefSiteEntity =
+        getEntityFromDefSitePC(pcOfDefSite(defSite)(state.tac.stmts))
+
+    def getEntityFromDefSitePC(defSitePC: Int)(implicit state: ComputationState): DefSiteEntity =
+        DefSiteEntity(defSitePC, state)
 }

@@ -9,46 +9,78 @@ package interpretation
 
 import scala.util.Try
 
-import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
-import org.opalj.fpcf.FinalEP
+import org.opalj.fpcf.InterimResult
+import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeFinalEP
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
- * Processes [[StaticFunctionCall]]s in without a call graph.
+ * Processes [[StaticFunctionCall]]s without a call graph.
  *
  * @author Maximilian Rüsch
  */
-case class L0StaticFunctionCallInterpreter[State <: L0ComputationState](
-    exprHandler: InterpretationHandler[State]
-)(
+case class L0StaticFunctionCallInterpreter[State <: L0ComputationState]()(
     implicit
-    p:  SomeProject,
-    ps: PropertyStore
+    override val p:  SomeProject,
+    override val ps: PropertyStore
 ) extends L0StringInterpreter[State]
-    with IPResultDependingStringInterpreter[State]
-    with EPSDependingStringInterpreter[State] {
+    with L0ArbitraryStaticFunctionCallInterpreter[State]
+    with L0StringValueOfFunctionCallInterpreter[State] {
 
     override type T = StaticFunctionCall[V]
 
-    override def interpret(instr: T, defSite: Int)(implicit state: State): IPResult = {
-        if (instr.declaringClass == ObjectType.String && instr.name == "valueOf") {
-            processStringValueOf(instr)
-        } else {
-            processArbitraryCall(instr, defSite)
+    override def interpret(instr: T, defSite: Int)(implicit state: State): ProperPropertyComputationResult = {
+        instr.name match {
+            case "valueOf" if instr.declaringClass == ObjectType.String => processStringValueOf(instr, defSite)
+            case _                                                      => interpretArbitraryCall(instr, defSite)
         }
     }
+}
 
-    private def processStringValueOf(call: T)(implicit state: State): IPResult = {
-        def finalResult(results: Iterable[IPResult]): FinalIPResult = {
+private[string_analysis] trait L0ArbitraryStaticFunctionCallInterpreter[State <: L0ComputationState]
+    extends StringInterpreter[State]
+    with L0FunctionCallInterpreter[State] {
+
+    implicit val p: SomeProject
+
+    override type T = StaticFunctionCall[V]
+
+    def interpretArbitraryCall(instr: T, defSite: Int)(implicit
+        state: State
+    ): ProperPropertyComputationResult = {
+        val calleeMethod = instr.resolveCallTarget(state.entity._2.classFile.thisType)
+        if (calleeMethod.isEmpty) {
+            return computeFinalResult(defSite, StringConstancyInformation.lb)
+        }
+
+        val m = calleeMethod.value
+        val callState = FunctionCallState(pcOfDefSite(defSite)(state.tac.stmts), Seq(m), Map((m, ps(m, TACAI.key))))
+
+        val params = evaluateParameters(getParametersForPC(pcOfDefSite(defSite)(state.tac.stmts)))
+        callState.setParamDependees(params)
+
+        interpretArbitraryCallToMethods(state, callState)
+    }
+}
+
+private[string_analysis] trait L0StringValueOfFunctionCallInterpreter[State <: L0ComputationState]
+    extends StringInterpreter[State] {
+
+    override type T <: StaticFunctionCall[V]
+
+    val ps: PropertyStore
+
+    def processStringValueOf(call: T, defSite: Int)(implicit state: State): ProperPropertyComputationResult = {
+        def finalResult(results: Iterable[SomeFinalEP]): Result = {
             // For char values, we need to do a conversion (as the returned results are integers)
-            val scis = results.map { r => r.asFinal.sci }
+            val scis = results.map { r => r.p.asInstanceOf[StringConstancyProperty].sci }
             val finalScis = if (call.descriptor.parameterType(0).toJava == "char") {
                 scis.map { sci =>
                     if (Try(sci.possibleStrings.toInt).isSuccess) {
@@ -60,131 +92,24 @@ case class L0StaticFunctionCallInterpreter[State <: L0ComputationState](
             } else {
                 scis
             }
-            FinalIPResult(StringConstancyInformation.reduceMultiple(finalScis), state.dm, call.pc)
+            computeFinalResult(defSite, StringConstancyInformation.reduceMultiple(finalScis))
         }
 
-        val results = call.params.head.asVar.definedBy.toArray.sorted.map(exprHandler.processDefSite)
-        val hasRefinableResults = results.exists(_.isRefinable)
-        if (hasRefinableResults) {
-            InterimIPResult.lbWithIPResultDependees(
-                state.dm,
-                call.pc,
-                results.filter(_.isRefinable).asInstanceOf[Iterable[RefinableIPResult]],
-                awaitAllFinalContinuation(
-                    SimpleIPResultDepender(call, call.pc, state, results.toIndexedSeq),
-                    finalResult _
-                )
-            )
-        } else {
-            finalResult(results)
-        }
-    }
-
-    private def processArbitraryCall(instr: T, defSite: Int)(implicit
-        state: State
-    ): IPResult = {
-        val calleeMethod = instr.resolveCallTarget(state.entity._2.classFile.thisType)
-        if (calleeMethod.isEmpty) {
-            return FinalIPResult.lb(state.dm, instr.pc)
-        }
-
-        val m = calleeMethod.value
-        val (tacEOptP, calleeTac) = getTACAI(ps, m, state)
-
-        if (tacEOptP.isRefinable) {
-            InterimIPResult.lbWithEPSDependees(
-                state.dm,
-                instr.pc,
-                Seq(tacEOptP),
-                awaitAllFinalContinuation(
-                    SimpleEPSDepender(instr, instr.pc, state, Seq(tacEOptP)),
-                    (finalEPs: Iterable[SomeFinalEP]) =>
-                        interpretArbitraryCallWithCalleeTAC(instr, defSite, m)(
-                            finalEPs.head.ub.asInstanceOf[TACAI].tac.get
-                        )
-                )
-            )
-        } else if (calleeTac.isEmpty) {
-            // When the tac ep is final but we still do not have a callee tac, we cannot infer arbitrary call values at all
-            FinalIPResult.lb(state.dm, instr.pc)
-        } else {
-            interpretArbitraryCallWithCalleeTAC(instr, defSite, m)(calleeTac.get)
-        }
-    }
-
-    private def interpretArbitraryCallWithCalleeTAC(instr: T, defSite: Int, calleeMethod: Method)(
-        calleeTac: TAC
-    )(implicit state: State): IPResult = {
-        val returns = calleeTac.stmts.filter(_.isInstanceOf[ReturnValue[V]])
-        if (returns.isEmpty) {
-            // A function without returns, e.g., because it is guaranteed to throw an exception, is approximated
-            // with the lower bound
-            return FinalIPResult.lb(state.dm, instr.pc)
-        }
-
-        val params = evaluateParameters(getParametersForPCs(List(instr.pc)), exprHandler, instr)
-        val refinableResults = getRefinableParameterResults(params.toSeq.map(t => t.toSeq.map(_.toSeq)))
-        if (refinableResults.nonEmpty) {
-            state.nonFinalFunctionArgs(instr) = params
-            InterimIPResult.lbWithIPResultDependees(
-                state.dm,
-                instr.pc,
-                refinableResults.asInstanceOf[Iterable[RefinableIPResult]],
-                awaitAllFinalContinuation(
-                    SimpleIPResultDepender(instr, instr.pc, state, refinableResults),
-                    (_: Iterable[IPResult]) => {
-                        val params = state.nonFinalFunctionArgs(instr)
-                        state.nonFinalFunctionArgs.remove(instr)
-
-                        interpretArbitraryCallWithCalleeTACAndParams(instr, defSite, calleeMethod)(
-                            calleeTac,
-                            params.toSeq.map(t => t.toSeq.map(_.toSeq.map(_.asFinal)))
-                        )
-                    }
-                )
-            )
-        } else {
-            interpretArbitraryCallWithCalleeTACAndParams(instr, defSite, calleeMethod)(
-                calleeTac,
-                params.toSeq.map(t => t.toSeq.map(_.toSeq.map(_.asFinal)))
-            )
-        }
-    }
-
-    private def interpretArbitraryCallWithCalleeTACAndParams(instr: T, defSite: Int, calleeMethod: Method)(
-        calleeTac: TAC,
-        params:    Seq[Seq[Seq[FinalIPResult]]]
-    )(implicit state: State): IPResult = {
-        def finalResult(results: Iterable[SomeFinalEP]): FinalIPResult = {
-            val sci = StringConstancyInformation.reduceMultiple(
-                results.asInstanceOf[Iterable[FinalEP[_, StringConstancyProperty]]].map {
-                    _.p.stringConstancyInformation
-                }
-            )
-            FinalIPResult(sci, state.dm, instr.pc)
-        }
-
-        val evaluatedParams = convertEvaluatedParameters(params)
-        val returns = calleeTac.stmts.filter(_.isInstanceOf[ReturnValue[V]])
-        val results = returns.map { ret =>
-            val entity = (ret.asInstanceOf[ReturnValue[V]].expr.asVar.toPersistentForm(calleeTac.stmts), calleeMethod)
-            state.appendToVar2IndexMapping(entity._1, defSite)
-
-            StringAnalysis.registerParams(entity, evaluatedParams)
-            ps(entity, StringConstancyProperty.key)
+        val results = call.params.head.asVar.definedBy.toList.sorted.map { ds =>
+            ps(InterpretationHandler.getEntityFromDefSite(ds), StringConstancyProperty.key)
         }
         if (results.exists(_.isRefinable)) {
-            InterimIPResult.lbWithEPSDependees(
-                state.dm,
-                instr.pc,
-                results.filter(_.isRefinable),
+            InterimResult.forLB(
+                InterpretationHandler.getEntityFromDefSite(defSite),
+                StringConstancyProperty.lb,
+                results.filter(_.isRefinable).toSet,
                 awaitAllFinalContinuation(
-                    SimpleEPSDepender(instr, instr.pc, state, results.toIndexedSeq),
-                    finalResult _
+                    EPSDepender(call, call.pc, state, results),
+                    finalResult
                 )
             )
         } else {
-            finalResult(results.toIndexedSeq.asInstanceOf[Iterable[SomeFinalEP]])
+            finalResult(results.asInstanceOf[Iterable[SomeFinalEP]])
         }
     }
 }

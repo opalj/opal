@@ -8,6 +8,7 @@ package preprocessing
 
 import scala.collection.mutable.ListBuffer
 
+import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.br.fpcf.properties.string_definition.StringTree
 import org.opalj.br.fpcf.properties.string_definition.StringTreeConcat
@@ -15,6 +16,8 @@ import org.opalj.br.fpcf.properties.string_definition.StringTreeCond
 import org.opalj.br.fpcf.properties.string_definition.StringTreeConst
 import org.opalj.br.fpcf.properties.string_definition.StringTreeOr
 import org.opalj.br.fpcf.properties.string_definition.StringTreeRepetition
+import org.opalj.fpcf.FinalP
+import org.opalj.fpcf.PropertyStore
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 
 /**
@@ -28,19 +31,14 @@ object PathTransformer {
      * Accumulator function for transforming a path into a StringTree element.
      */
     private def pathToTreeAcc[State <: ComputationState](subpath: SubPath)(implicit
-        state:    State,
-        iHandler: InterpretationHandler[State]
+        state: State,
+        ps:    PropertyStore
     ): Option[StringTree] = {
         subpath match {
             case fpe: FlatPathElement =>
-                val sci = if (state.fpe2ipr.contains(fpe.pc) && state.fpe2ipr(fpe.pc).isFinal) {
-                    state.fpe2ipr(fpe.pc).asFinal.sci
-                } else {
-                    iHandler.processDefSite(fpe.stmtIndex(state.tac.pcToIndex)) match {
-                        case ValueIPResult(sci) => sci
-                        case _: NoIPResult      => StringConstancyInformation.getNeutralElement
-                        case _: EmptyIPResult   => StringConstancyInformation.lb
-                    }
+                val sci = ps(InterpretationHandler.getEntityFromDefSitePC(fpe.pc), StringConstancyProperty.key) match {
+                    case FinalP(scp) => scp.sci
+                    case _           => StringConstancyInformation.lb
                 }
                 Option.unless(sci.isTheNeutralElement)(StringTreeConst(sci))
             case npe: NestedPathElement =>
@@ -106,8 +104,8 @@ object PathTransformer {
      *         not be processed (successfully), they will not occur in the tree.
      */
     def pathToStringTree[State <: ComputationState](path: Path)(implicit
-        state:    State,
-        iHandler: InterpretationHandler[State]
+        state: State,
+        ps:    PropertyStore
     ): StringTree = {
         val tree = path.elements.size match {
             case 1 =>

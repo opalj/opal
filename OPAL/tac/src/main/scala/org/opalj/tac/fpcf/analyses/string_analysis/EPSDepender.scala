@@ -10,27 +10,14 @@ import org.opalj.fpcf.SomeEOptionP
 /**
  * @author Maximilian Rüsch
  */
-trait EPSDepender[T <: ASTNode[V], State <: ComputationState] {
-    type Self <: EPSDepender[T, State]
+private[string_analysis] case class EPSDepender[T <: ASTNode[V], State <: ComputationState](
+    instr:     T,
+    pc:        Int,
+    state:     State,
+    dependees: Seq[SomeEOptionP]
+) {
 
-    def instr: T
-    def pc: Int
-    def state: State
-    def dependees: Seq[SomeEOptionP]
-
-    def withDependees(newDependees: Seq[SomeEOptionP]): Self
-}
-
-private[string_analysis] case class SimpleEPSDepender[T <: ASTNode[V], State <: ComputationState](
-    override val instr:     T,
-    override val pc:        Int,
-    override val state:     State,
-    override val dependees: Seq[SomeEOptionP]
-) extends EPSDepender[T, State] {
-
-    type Self = SimpleEPSDepender[T, State]
-
-    override def withDependees(newDependees: Seq[SomeEOptionP]): SimpleEPSDepender[T, State] = SimpleEPSDepender(
+    def withDependees(newDependees: Seq[SomeEOptionP]): EPSDepender[T, State] = EPSDepender(
         instr,
         pc,
         state,

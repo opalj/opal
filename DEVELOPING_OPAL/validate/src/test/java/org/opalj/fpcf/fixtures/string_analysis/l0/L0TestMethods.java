@@ -1147,6 +1147,20 @@ public class L0TestMethods {
     }
 
     @StringDefinitionsCollection(
+            value = "examples that use a passed parameter to define strings that are analyzed",
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "value=.*"
+                    )
+            })
+    public void parameterRead2(String stringValue, StringBuilder sbValue) {
+        StringBuilder sb = new StringBuilder("value=");
+        System.out.println(sb.toString());
+        sb.append(stringValue);
+        analyzeString(sb.toString());
+    }
+
+    @StringDefinitionsCollection(
             value = "an example extracted from "
                     + "com.oracle.webservices.internal.api.message.BasePropertySet with two "
                     + "definition sites and one usage site",

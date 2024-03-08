@@ -7,24 +7,20 @@ package string_analysis
 package l0
 
 import org.opalj.br.DefinedMethod
-import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.FPCFAnalysisScheduler
-import org.opalj.br.fpcf.FPCFLazyAnalysisScheduler
 import org.opalj.br.fpcf.properties.StringConstancyProperty
-import org.opalj.fpcf.Entity
 import org.opalj.fpcf.FinalEP
+import org.opalj.fpcf.InterimResult
 import org.opalj.fpcf.ProperPropertyComputationResult
-import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
-import org.opalj.fpcf.SomeEPS
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 import org.opalj.tac.fpcf.analyses.string_analysis.l0.interpretation.L0InterpretationHandler
 import org.opalj.tac.fpcf.properties.TACAI
 
 trait L0ComputationState extends ComputationState
+
+trait L0StringInterpreter[State <: L0ComputationState] extends StringInterpreter[State]
 
 /**
  * IntraproceduralStringAnalysis processes a read operation of a local string variable at a program
@@ -61,7 +57,7 @@ class L0StringAnalysis(override val project: SomeProject) extends StringAnalysis
 
     override type State = CState
 
-    def analyze(data: SContext): ProperPropertyComputationResult = {
+    override def analyze(data: SContext): ProperPropertyComputationResult = {
         val state = CState(declaredMethods(data._2), data)
         val iHandler = L0InterpretationHandler[CState]()
 
@@ -90,11 +86,7 @@ class L0StringAnalysis(override val project: SomeProject) extends StringAnalysis
         val uVar = puVar.toValueOriginForm(tac.pcToIndex)
         val defSites = uVar.definedBy.toArray.sorted
 
-        if (state.params.isEmpty) {
-            state.params = StringAnalysis.getParams(state.entity)
-        }
-
-        if (state.params.isEmpty && defSites.exists(_ < 0)) {
+        if (defSites.exists(_ < 0)) {
             if (InterpretationHandler.isStringConstExpression(uVar)) {
                 // We can evaluate string const expressions as function parameters
             } else if (StringAnalysis.isSupportedPrimitiveNumberType(uVar)) {
@@ -107,18 +99,24 @@ class L0StringAnalysis(override val project: SomeProject) extends StringAnalysis
             }
         }
 
-        if (state.parameterDependeesCount > 0) {
-            return getInterimResult(state, iHandler)
+        // Interpret a function / method parameter using the parameter information in state
+        if (defSites.head < 0) {
+            val ep = ps(InterpretationHandler.getEntityFromDefSite(defSites.head), StringConstancyProperty.key)
+            if (ep.isRefinable) {
+                state.dependees = ep :: state.dependees
+                InterimResult.forLB(
+                    state.entity,
+                    StringConstancyProperty.lb,
+                    state.dependees.toSet,
+                    continuation(state, iHandler)
+                )
+            } else {
+                return Result(state.entity, StringConstancyProperty(ep.asFinal.p.sci))
+            }
         }
 
         if (state.computedLeanPath == null) {
             state.computedLeanPath = computeLeanPath(uVar)
-        }
-
-        // Interpret a function / method parameter using the parameter information in state
-        if (defSites.head < 0) {
-            val r = iHandler.processDefSite(defSites.head)(state)
-            return Result(state.entity, StringConstancyProperty(r.asFinal.sci))
         }
 
         val expr = tac.stmts(defSites.head).asAssignment.expr
@@ -126,13 +124,10 @@ class L0StringAnalysis(override val project: SomeProject) extends StringAnalysis
             // Find DUVars, that the analysis of the current entity depends on
             val dependentVars = findDependentVars(state.computedLeanPath, puVar)
             if (dependentVars.nonEmpty) {
-                dependentVars.foreach { case (k, v) => state.appendToVar2IndexMapping(k, v) }
                 dependentVars.keys.foreach { nextVar =>
                     propertyStore((nextVar, state.entity._2), StringConstancyProperty.key) match {
-                        case FinalEP(e, p) =>
-                            // Add mapping information (which will be used for computing the final result)
-                            // state.var2IndexMapping(e._1).foreach(state.appendToFpe2Sci(_, p.stringConstancyInformation))
-                            state.dependees = state.dependees.filter(_.e.asInstanceOf[SContext] != e)
+                        case FinalEP(e, _) =>
+                            state.dependees = state.dependees.filter(_.e != e)
                         case ep =>
                             state.dependees = ep :: state.dependees
                     }
@@ -140,75 +135,27 @@ class L0StringAnalysis(override val project: SomeProject) extends StringAnalysis
             }
         }
 
+        getPCsInPath(state.computedLeanPath).foreach { pc =>
+            propertyStore(InterpretationHandler.getEntityFromDefSitePC(pc), StringConstancyProperty.key) match {
+                case FinalEP(e, _) =>
+                    state.dependees = state.dependees.filter(_.e != e)
+                case ep =>
+                    state.dependees = ep :: state.dependees
+            }
+        }
+
         if (state.dependees.isEmpty) {
-            computeFinalResult(state, iHandler)
+            computeFinalResult(state)
         } else {
             getInterimResult(state, iHandler)
         }
     }
-
-    /**
-     * Continuation function.
-     *
-     * @param state The computation state (which was originally captured by `analyze` and possibly
-     *              extended / updated by other methods involved in computing the final result.
-     * @return This function can either produce a final result or another intermediate result.
-     */
-    override protected def continuation(
-        state:    State,
-        iHandler: InterpretationHandler[State]
-    )(eps: SomeEPS): ProperPropertyComputationResult = eps match {
-        case FinalEP(e: Entity, p: StringConstancyProperty) if eps.pk.equals(StringConstancyProperty.key) =>
-            state.dependees = state.dependees.filter(_.e != e)
-            if (state.dependees.isEmpty) {
-                computeFinalResult(state, iHandler)
-            } else {
-                getInterimResult(state, iHandler)
-            }
-        case _ =>
-            super.continuation(state, iHandler)(eps)
-    }
 }
 
-sealed trait L0StringAnalysisScheduler extends FPCFAnalysisScheduler {
+object LazyL0StringAnalysis extends LazyStringAnalysis {
 
-    final def derivedProperty: PropertyBounds = PropertyBounds.lub(StringConstancyProperty)
+    override type State = L0ComputationState
 
-    override final def uses: Set[PropertyBounds] = Set(
-        PropertyBounds.ub(TACAI),
-        PropertyBounds.lub(StringConstancyProperty)
-    )
-
-    override final type InitializationData = L0StringAnalysis
-    override final def init(p: SomeProject, ps: PropertyStore): InitializationData = {
-        new L0StringAnalysis(p)
-    }
-
-    override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
-
-    override def afterPhaseScheduling(ps: PropertyStore, analysis: FPCFAnalysis): Unit = {}
-
-    override def afterPhaseCompletion(
-        p:        SomeProject,
-        ps:       PropertyStore,
-        analysis: FPCFAnalysis
-    ): Unit = {}
-}
-
-object LazyL0StringAnalysis
-    extends L0StringAnalysisScheduler with FPCFLazyAnalysisScheduler {
-
-    override def register(
-        p:        SomeProject,
-        ps:       PropertyStore,
-        analysis: InitializationData
-    ): FPCFAnalysis = {
-        val analysis = new L0StringAnalysis(p)
-        ps.registerLazyPropertyComputation(StringConstancyProperty.key, analysis.analyze)
-        analysis
-    }
-
-    override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
-
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(EagerDetachedTACAIKey)
+    override def init(p: SomeProject, ps: PropertyStore): InitializationData =
+        (new L0StringAnalysis(p), L0InterpretationHandler()(p, ps))
 }

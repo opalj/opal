@@ -22,6 +22,8 @@ class StringConstancyProperty(
     val stringConstancyInformation: StringConstancyInformation
 ) extends Property with StringConstancyPropertyMetaInformation {
 
+    def sci: StringConstancyInformation = stringConstancyInformation
+
     final def key: PropertyKey[StringConstancyProperty] = StringConstancyProperty.key
 
     override def toString: String = {
@@ -48,7 +50,7 @@ class StringConstancyProperty(
 
 object StringConstancyProperty extends Property with StringConstancyPropertyMetaInformation {
 
-    final val PropertyKeyName = "StringConstancy"
+    final val PropertyKeyName = "opalj.StringConstancy"
 
     final val key: PropertyKey[StringConstancyProperty] = {
         PropertyKey.create(

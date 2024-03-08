@@ -4,13 +4,10 @@ package tac
 package fpcf
 package analyses
 
-import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
-
 import org.opalj.br.Method
 
 /**
- * @author Patrick Mell
+ * @author Maximilian Rüsch
  */
 package object string_analysis {
 
@@ -29,20 +26,8 @@ package object string_analysis {
     type SContext = (SEntity, Method)
 
     /**
-     * This type indicates how (non-final) parameters of functions are represented. The outer-most
-     * list holds all parameter lists a function is called with. The list in the middle holds the
-     * parameters of a concrete call and the inner-most list holds interpreted parameters. The
-     * reason for the inner-most list is that a parameter might have different definition sites; to
-     * capture all, the third (inner-most) list is necessary.
+     * The entity used for requesting string constancy information for specific def sites of an entity. The def site
+     * should be given as a [[org.opalj.br.PC]].
      */
-    type NonFinalFunctionArgs = ListBuffer[ListBuffer[ListBuffer[IPResult]]]
-
-    /**
-     * This type serves as a lookup mechanism to find out which functions parameters map to which
-     * argument position. That is, the element of type [[SContext]] of the inner map maps from this entity
-     * to its position in a data structure of type [[NonFinalFunctionArgs]]. The outer map is
-     * necessary to uniquely identify a position as an entity might be used for different function
-     * calls.
-     */
-    type NonFinalFunctionArgsPos = mutable.Map[FunctionCall[V], mutable.Map[SContext, (Int, Int, Int)]]
+    case class DefSiteEntity(pc: Int, state: ComputationState)
 }

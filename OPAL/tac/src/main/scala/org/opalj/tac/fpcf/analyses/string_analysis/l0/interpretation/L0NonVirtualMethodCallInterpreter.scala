@@ -7,7 +7,14 @@ package string_analysis
 package l0
 package interpretation
 
+import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
+import org.opalj.fpcf.FinalEP
+import org.opalj.fpcf.InterimResult
+import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.Result
+import org.opalj.fpcf.SomeEPS
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 
 /**
@@ -15,9 +22,8 @@ import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.Interpretation
  *
  * @author Maximilian Rüsch
  */
-case class L0NonVirtualMethodCallInterpreter[State <: L0ComputationState](
-    exprHandler: InterpretationHandler[State]
-) extends L0StringInterpreter[State] with IPResultDependingStringInterpreter[State] {
+case class L0NonVirtualMethodCallInterpreter[State <: L0ComputationState](ps: PropertyStore)
+    extends L0StringInterpreter[State] {
 
     override type T = NonVirtualMethodCall[V]
 
@@ -33,10 +39,10 @@ case class L0NonVirtualMethodCallInterpreter[State <: L0ComputationState](
      *
      * For all other calls, a [[NoIPResult]] will be returned.
      */
-    override def interpret(instr: T, defSite: Int)(implicit state: State): IPResult = {
+    override def interpret(instr: T, defSite: Int)(implicit state: State): ProperPropertyComputationResult = {
         instr.name match {
             case "<init>" => interpretInit(instr)
-            case _        => NoIPResult(state.dm, instr.pc)
+            case _        => computeFinalResult(defSite, StringConstancyInformation.getNeutralElement)
         }
     }
 
@@ -46,20 +52,24 @@ case class L0NonVirtualMethodCallInterpreter[State <: L0ComputationState](
      * [[StringBuffer]] and [[StringBuilder]], have only constructors with <= 1 arguments and only these are currently
      * interpreted).
      */
-    private def interpretInit(init: T)(implicit state: State): IPResult = {
+    private def interpretInit(init: T)(implicit state: State): ProperPropertyComputationResult = {
+        val entity = InterpretationHandler.getEntityFromDefSitePC(init.pc)
+
         init.params.size match {
-            case 0 => NoIPResult(state.dm, init.pc)
+            case 0 => computeFinalResult(FinalEP(entity, StringConstancyProperty.getNeutralElement))
             case _ =>
-                val results = init.params.head.asVar.definedBy.toList.map(exprHandler.processDefSite)
+                val results = init.params.head.asVar.definedBy.toList.map { ds =>
+                    ps(InterpretationHandler.getEntityFromDefSite(ds), StringConstancyProperty.key)
+                }
                 if (results.forall(_.isFinal)) {
-                    finalResult(init.pc)(results)
+                    finalResult(init.pc)(results.asInstanceOf[Iterable[FinalEP[DefSiteEntity, StringConstancyProperty]]])
                 } else {
-                    InterimIPResult.lbWithIPResultDependees(
-                        state.dm,
-                        init.pc,
-                        results.filter(_.isRefinable).asInstanceOf[Iterable[RefinableIPResult]],
+                    InterimResult.forLB(
+                        entity,
+                        StringConstancyProperty.lb,
+                        results.toSet,
                         awaitAllFinalContinuation(
-                            SimpleIPResultDepender(init, init.pc, state, results),
+                            EPSDepender(init, init.pc, state, results),
                             finalResult(init.pc)
                         )
                     )
@@ -67,7 +77,13 @@ case class L0NonVirtualMethodCallInterpreter[State <: L0ComputationState](
         }
     }
 
-    private def finalResult(pc: Int)(results: Iterable[IPResult])(implicit state: State): FinalIPResult = {
-        FinalIPResult(StringConstancyInformation.reduceMultiple(results.map(_.asFinal.sci)), state.dm, pc)
-    }
+    private def finalResult(pc: Int)(results: Iterable[SomeEPS])(implicit
+        state: State
+    ): Result =
+        computeFinalResult(FinalEP(
+            InterpretationHandler.getEntityFromDefSitePC(pc),
+            StringConstancyProperty(StringConstancyInformation.reduceMultiple(results.map {
+                _.asFinal.p.asInstanceOf[StringConstancyProperty].sci
+            }))
+        ))
 }

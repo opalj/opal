@@ -34,7 +34,7 @@ trait L1StringInterpreter[State <: L1ComputationState] extends StringInterpreter
         var hasMethodWithUnknownBody = false
         val methods = ListBuffer[Method]()
 
-        state.callees.callees(state.methodContext, pc)(ps, contextProvider).map(_.method).foreach {
+        state.callees.callees(state.methodContext, pc).map(_.method).foreach {
             case definedMethod: DefinedMethod => methods.append(definedMethod.definedMethod)
             case _                            => hasMethodWithUnknownBody = true
         }

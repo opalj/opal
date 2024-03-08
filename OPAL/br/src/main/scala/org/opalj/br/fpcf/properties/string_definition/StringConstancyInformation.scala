@@ -8,7 +8,6 @@ package string_definition
 /**
  * @param possibleStrings Only relevant for some [[StringConstancyType]]s, i.e., sometimes this
  *                        parameter can be omitted.
- *
  * @author Patrick Mell
  */
 case class StringConstancyInformation(
@@ -39,6 +38,36 @@ case class StringConstancyInformation(
             possibleStrings.contains("?") ||
             possibleStrings.contains("(") ||
             possibleStrings.contains(")")
+
+    def fillInParameters(paramScis: Seq[StringConstancyInformation]): StringConstancyInformation = {
+        if (possibleStrings.contains(
+                StringConstancyInformation.ParameterPrefix + paramScis.size + StringConstancyInformation.ParameterSuffix
+            )
+        ) {
+            throw new IllegalStateException("Insufficient parameters given!")
+        }
+
+        var strings = possibleStrings
+        paramScis.zipWithIndex.foreach {
+            case (sci, index) =>
+                strings = strings.replace(
+                    StringConstancyInformation.ParameterPrefix + index + StringConstancyInformation.ParameterSuffix,
+                    sci.possibleStrings
+                )
+        }
+
+        this.copy(possibleStrings = strings)
+    }
+
+    def fillInParametersWithLB: StringConstancyInformation = {
+        val strings = possibleStrings.replaceAll("""\$_\[\d+]""", ".*")
+
+        // IMPROVE enable backwards parse of string constancy information
+        val level = if (strings == ".*") StringConstancyLevel.DYNAMIC
+        else StringConstancyLevel.PARTIALLY_CONSTANT
+
+        this.copy(possibleStrings = strings, constancyLevel = level)
+    }
 }
 
 /**
@@ -71,6 +100,20 @@ object StringConstancyInformation {
      * A value to be used to indicate that a string expression might be null.
      */
     val NullStringValue: String = "^null$"
+
+    /**
+     * The prefix given to placeholders representing function parameters.
+     *
+     * @see [[getElementForParameterPC]]
+     */
+    val ParameterPrefix: String = "$_["
+
+    /**
+     * The suffix given to placeholders representing function parameters.
+     *
+     * @see [[getElementForParameterPC]]
+     */
+    val ParameterSuffix: String = "]"
 
     /**
      * Takes a list of [[StringConstancyInformation]] and reduces them to a single one by or-ing
@@ -142,4 +185,15 @@ object StringConstancyInformation {
     def getNullElement: StringConstancyInformation =
         StringConstancyInformation(StringConstancyLevel.CONSTANT, possibleStrings = NullStringValue)
 
+    def getElementForParameterPC(paramPC: Int): StringConstancyInformation = {
+        if (paramPC >= -1) {
+            throw new IllegalArgumentException(s"Invalid parameter pc given: $paramPC")
+        }
+        // Parameters start at PC -2 downwards
+        val paramPosition = Math.abs(paramPC + 2)
+        StringConstancyInformation(
+            StringConstancyLevel.CONSTANT,
+            possibleStrings = ParameterPrefix + paramPosition + ParameterSuffix
+        )
+    }
 }

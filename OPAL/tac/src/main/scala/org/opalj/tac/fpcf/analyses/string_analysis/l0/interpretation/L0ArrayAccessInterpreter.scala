@@ -7,8 +7,14 @@ package string_analysis
 package l0
 package interpretation
 
+import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.fpcf.FinalEP
+import org.opalj.fpcf.InterimResult
+import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.SomeFinalEP
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 
 /**
@@ -16,63 +22,47 @@ import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.Interpretation
  *
  * @author Maximilian Rüsch
  */
-case class L0ArrayAccessInterpreter[State <: L0ComputationState](
-    exprHandler: InterpretationHandler[State]
-) extends L0StringInterpreter[State] with IPResultDependingStringInterpreter[State] {
+case class L0ArrayAccessInterpreter[State <: L0ComputationState](ps: PropertyStore) extends L0StringInterpreter[State] {
 
     override type T = ArrayLoad[V]
 
-    override def interpret(instr: T, defSite: Int)(implicit state: State): IPResult = {
+    override def interpret(instr: T, defSite: Int)(implicit state: State): ProperPropertyComputationResult = {
         implicit val stmts: Array[Stmt[V]] = state.tac.stmts
 
-        val defSitePCs = L0ArrayAccessInterpreter.getStoreAndLoadDefSitePCs(instr)
-        val results = defSitePCs.map { pc => exprHandler.processDefSite(valueOriginOfPC(pc, state.tac.pcToIndex).get) }
-
-        // Add information of parameters
-        // TODO dont we have to incorporate parameter information into the scis?
-        instr.arrayRef.asVar.toPersistentForm.defPCs.filter(_ < 0).foreach { pc =>
-            val paramPos = Math.abs(pc + 2)
-            val sci = StringConstancyInformation.reduceMultiple(state.params.map(_(paramPos)))
-            val r = FinalIPResult(sci, state.dm, pc)
-            state.fpe2ipr(pc) = r
+        val defSitePCs = getStoreAndLoadDefSitePCs(instr)
+        val results = defSitePCs.map { pc =>
+            ps(InterpretationHandler.getEntityFromDefSitePC(pc), StringConstancyProperty.key)
         }
 
-        val unfinishedDependees = results.exists(_.isRefinable)
-        if (unfinishedDependees) {
-            InterimIPResult.lbWithIPResultDependees(
-                state.dm,
-                pcOfDefSite(defSite),
-                results.filter(_.isRefinable).map(_.asRefinable),
+        if (results.exists(_.isRefinable)) {
+            InterimResult.forLB(
+                InterpretationHandler.getEntityFromDefSite(defSite),
+                StringConstancyProperty.lb,
+                results.filter(_.isRefinable).toSet,
                 awaitAllFinalContinuation(
-                    SimpleIPResultDepender(instr, pcOfDefSite(defSite), state, results),
+                    EPSDepender(instr, pcOfDefSite(defSite), state, results),
                     finalResult(pcOfDefSite(defSite))
                 )
             )
         } else {
-            finalResult(pcOfDefSite(defSite))(results)
+            finalResult(defSite)(results.asInstanceOf[Iterable[FinalEP[DefSiteEntity, StringConstancyProperty]]])
         }
     }
 
-    private def finalResult(pc: Int)(results: Iterable[IPResult])(implicit state: State): FinalIPResult = {
-        var resultSci = StringConstancyInformation.reduceMultiple(results.map(_.asFinal.sci))
+    private def finalResult(defSite: Int)(results: Iterable[SomeFinalEP])(implicit
+        state: State
+    ): ProperPropertyComputationResult = {
+        var resultSci = StringConstancyInformation.reduceMultiple(results.map {
+            _.asFinal.p.asInstanceOf[StringConstancyProperty].stringConstancyInformation
+        })
         if (resultSci.isTheNeutralElement) {
             resultSci = StringConstancyInformation.lb
         }
 
-        FinalIPResult(resultSci, state.dm, pc)
+        computeFinalResult(defSite, resultSci)
     }
-}
 
-object L0ArrayAccessInterpreter {
-
-    type T = ArrayLoad[V]
-
-    /**
-     * This function retrieves all definition sites of the array stores and array loads that belong to the given instruction.
-     *
-     * @return All definition sites associated with the array stores and array loads sorted in ascending order.
-     */
-    def getStoreAndLoadDefSitePCs(instr: T)(implicit stmts: Array[Stmt[V]]): List[Int] = {
+    private def getStoreAndLoadDefSitePCs(instr: T)(implicit stmts: Array[Stmt[V]]): List[Int] = {
         var defSites = IntTrieSet.empty
         instr.arrayRef.asVar.definedBy.toArray.filter(_ >= 0).sorted.foreach { next =>
             stmts(next).asAssignment.targetVar.usedBy.toArray.sorted.foreach {
@@ -86,6 +76,7 @@ object L0ArrayAccessInterpreter {
             }
         }
 
-        defSites.toList.map(pcOfDefSite(_)).sorted
+        val allDefSites = defSites ++ instr.arrayRef.asVar.definedBy.toArray.toIndexedSeq.filter(_ < 0)
+        allDefSites.toList.map(pcOfDefSite(_)).sorted
     }
 }

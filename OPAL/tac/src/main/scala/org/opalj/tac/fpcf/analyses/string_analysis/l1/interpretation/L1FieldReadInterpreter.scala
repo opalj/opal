@@ -7,8 +7,6 @@ package string_analysis
 package l1
 package interpretation
 
-import scala.collection.mutable.ListBuffer
-
 import org.opalj.br.analyses.DeclaredFields
 import org.opalj.br.analyses.FieldAccessInformation
 import org.opalj.br.analyses.SomeProject
@@ -16,10 +14,18 @@ import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
+import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.FinalEP
+import org.opalj.fpcf.InterimResult
+import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.SomeEOptionP
+import org.opalj.fpcf.SomeEPS
+import org.opalj.fpcf.UBP
 import org.opalj.log.Error
 import org.opalj.log.Info
 import org.opalj.log.OPALLogger.logOnce
+import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 import org.opalj.tac.fpcf.analyses.string_analysis.l1.L1StringAnalysis
 
 /**
@@ -63,6 +69,25 @@ case class L1FieldReadInterpreter[State <: L1ComputationState](
         threshold
     }
 
+    private case class FieldReadState(
+        defSitePC:                 Int,
+        var hasInit:               Boolean                                          = false,
+        var hasUnresolvableAccess: Boolean                                          = false,
+        var accessDependees:       Seq[EOptionP[SContext, StringConstancyProperty]] = Seq.empty
+    ) {
+
+        def updateAccessDependee(newDependee: EOptionP[SContext, StringConstancyProperty]): Unit = {
+            accessDependees = accessDependees.updated(
+                accessDependees.indexWhere(_.e == newDependee.e),
+                newDependee
+            )
+        }
+
+        def hasDependees: Boolean = accessDependees.exists(_.isRefinable)
+
+        def dependees: Iterable[SomeEOptionP] = accessDependees.filter(_.isRefinable)
+    }
+
     /**
      * Currently, fields are approximated using the following approach: If a field of a type not supported by the
      * [[L1StringAnalysis]] is passed, [[StringConstancyInformation.lb]] will be produces. Otherwise, all write accesses
@@ -70,83 +95,90 @@ case class L1FieldReadInterpreter[State <: L1ComputationState](
      * approximated using all write accesses as well as with the lower bound and "null" => in these cases fields are
      * [[StringConstancyLevel.DYNAMIC]].
      */
-    override def interpret(instr: T, defSite: Int)(implicit state: State): IPResult = {
+    override def interpret(instr: T, defSite: Int)(implicit state: State): ProperPropertyComputationResult = {
         val defSitePC = pcOfDefSite(defSite)(state.tac.stmts)
 
         // TODO: The approximation of fields might be outsourced into a dedicated analysis. Then, one could add a
         //  finer-grained processing or provide different abstraction levels. This analysis could then use that analysis.
         if (!StringAnalysis.isSupportedType(instr.declaredFieldType)) {
-            return FinalIPResult.lb(state.dm, defSitePC)
+            return computeFinalResult(defSite, StringConstancyInformation.lb)
         }
 
         val definedField = declaredFields(instr.declaringClass, instr.name, instr.declaredFieldType).asDefinedField
         val writeAccesses = fieldAccessInformation.writeAccesses(definedField.definedField).toSeq
         if (writeAccesses.length > fieldWriteThreshold) {
-            return FinalIPResult.lb(state.dm, defSitePC)
+            return computeFinalResult(defSite, StringConstancyInformation.lb)
         }
 
-        var hasInit = false
-        val results = ListBuffer[IPResult]()
-        writeAccesses.foreach {
-            case (contextId, _, _, parameter) =>
-                val method = contextProvider.contextFromId(contextId).method.definedMethod
-
-                if (method.name == "<init>" || method.name == "<clinit>") {
-                    hasInit = true
-                }
-                val (tacEps, tac) = getTACAI(ps, method, state)
-                val nextResult = if (parameter.isEmpty) {
-                    // Field parameter information is not available
-                    FinalIPResult.lb(state.dm, defSitePC)
-                } else if (tacEps.isRefinable) {
-                    EmptyIPResult(state.dm, defSitePC)
-                } else {
-                    tac match {
-                        case Some(_) =>
-                            val entity = (PUVar(parameter.get._1, parameter.get._2), method)
-                            val eps = ps(entity, StringConstancyProperty.key)
-                            if (eps.isRefinable) {
-                                state.dependees = eps :: state.dependees
-                                // We need some mapping from an entity to an index in order for
-                                // the processFinalP to find an entry. We cannot use the given
-                                // def site as this would mark the def site as finalized even
-                                // though it might not be. Thus, we use -1 as it is a safe dummy
-                                // value
-                                state.appendToVar2IndexMapping(entity._1, -1)
-                                EmptyIPResult(state.dm, defSitePC)
-                            } else {
-                                FinalIPResult(eps.asFinal.p.stringConstancyInformation, state.dm, defSitePC)
-                            }
-                        case _ =>
-                            // No TAC available
-                            FinalIPResult.lb(state.dm, defSitePC)
-                    }
-                }
-                results.append(nextResult)
-        }
-
-        if (results.isEmpty) {
+        if (writeAccesses.isEmpty) {
             // No methods which write the field were found => Field could either be null or any value
             val sci = StringConstancyInformation(
                 StringConstancyLevel.DYNAMIC,
                 possibleStrings =
                     s"(${StringConstancyInformation.NullStringValue}|${StringConstancyInformation.UnknownWordSymbol})"
             )
-            FinalIPResult(sci, state.dm, defSitePC)
-        } else {
-            if (results.forall(_.isFinal)) {
-                // No init is present => append a `null` element to indicate that the field might be null; this behavior
-                // could be refined by only setting the null element if no statement is guaranteed to be executed prior
-                // to the field read
-                if (!hasInit) {
-                    results.append(FinalIPResult.nullElement(state.dm, defSitePC))
+            return computeFinalResult(defSite, sci)
+        }
+
+        implicit val accessState: FieldReadState = FieldReadState(defSitePC)
+        writeAccesses.foreach {
+            case (contextId, _, _, parameter) =>
+                val method = contextProvider.contextFromId(contextId).method.definedMethod
+
+                if (method.name == "<init>" || method.name == "<clinit>") {
+                    accessState.hasInit = true
                 }
-                val finalSci = StringConstancyInformation.reduceMultiple(results.map(_.asFinal.sci))
-                FinalIPResult(finalSci, state.dm, defSitePC)
-            } else {
-                // IMPROVE return interim result here and depend on EPS
-                EmptyIPResult(state.dm, defSitePC)
+
+                if (parameter.isEmpty) {
+                    // Field parameter information is not available
+                    accessState.hasUnresolvableAccess = true
+                } else {
+                    val entity: SContext = (PUVar(parameter.get._1, parameter.get._2), method)
+                    accessState.accessDependees = accessState.accessDependees :+ ps(entity, StringConstancyProperty.key)
+                }
+        }
+
+        tryComputeFinalResult
+    }
+
+    private def tryComputeFinalResult(implicit
+        state:       State,
+        accessState: FieldReadState
+    ): ProperPropertyComputationResult = {
+        if (accessState.hasDependees) {
+            InterimResult.forLB(
+                InterpretationHandler.getEntityFromDefSitePC(accessState.defSitePC),
+                StringConstancyProperty.lb,
+                accessState.dependees.toSet,
+                continuation(state, accessState)
+            )
+        } else {
+            var scis = accessState.accessDependees.map(_.asFinal.p.sci)
+            // No init is present => append a `null` element to indicate that the field might be null; this behavior
+            // could be refined by only setting the null element if no statement is guaranteed to be executed prior
+            // to the field read
+            if (!accessState.hasInit) {
+                scis = scis :+ StringConstancyInformation.getNullElement
             }
+            // If an access could not be resolved, append a dynamic element
+            if (accessState.hasUnresolvableAccess) {
+                scis = scis :+ StringConstancyInformation.lb
+            }
+
+            computeFinalResult(FinalEP(
+                InterpretationHandler.getEntityFromDefSitePC(accessState.defSitePC),
+                StringConstancyProperty(StringConstancyInformation.reduceMultiple(scis))
+            ))
+        }
+    }
+
+    private def continuation(state: State, accessState: FieldReadState)(eps: SomeEPS): ProperPropertyComputationResult = {
+        eps match {
+            case UBP(_: StringConstancyProperty) =>
+                accessState.updateAccessDependee(eps.asInstanceOf[EOptionP[SContext, StringConstancyProperty]])
+                tryComputeFinalResult(state, accessState)
+
+            case _ => throw new IllegalArgumentException(s"Encountered unknown eps: $eps")
         }
     }
 }

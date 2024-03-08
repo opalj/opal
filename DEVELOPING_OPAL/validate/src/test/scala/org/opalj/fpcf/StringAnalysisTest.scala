@@ -160,6 +160,7 @@ class L0StringAnalysisTest extends StringAnalysisTest {
 
         val entities = determineEntitiesToAnalyze(as.project)
         val newEntities = entities
+            // .filter(entity => entity._2.name.startsWith("fromConstantAndFunctionCall"))
             // .filter(entity => entity._2.name.startsWith("tryCatchFinally"))
             // .filter(entity => entity._2.name.startsWith("tryCatchFinallyWithThrowable"))
             .filterNot(entity => entity._2.name.startsWith("switchNested"))
@@ -170,6 +171,7 @@ class L0StringAnalysisTest extends StringAnalysisTest {
         // it("can be executed without exceptions") {
         newEntities.foreach(as.propertyStore.force(_, StringConstancyProperty.key))
 
+        as.propertyStore.waitOnPhaseCompletion()
         as.propertyStore.shutdown()
 
         validateProperties(as, determineEAS(newEntities, as.project), Set("StringConstancy"))

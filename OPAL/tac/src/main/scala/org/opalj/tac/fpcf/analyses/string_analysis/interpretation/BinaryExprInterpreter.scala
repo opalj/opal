@@ -8,11 +8,13 @@ package interpretation
 
 import org.opalj.br.ComputationalTypeFloat
 import org.opalj.br.ComputationalTypeInt
+import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
+import org.opalj.fpcf.ProperPropertyComputationResult
 
 /**
  * @author Maximilian Rüsch
  */
-case class BinaryExprInterpreter[State <: ComputationState]() extends SingleStepStringInterpreter[State] {
+case class BinaryExprInterpreter[State <: ComputationState]() extends StringInterpreter[State] {
 
     override type T = BinaryExpr[V]
 
@@ -22,23 +24,21 @@ case class BinaryExprInterpreter[State <: ComputationState]() extends SingleStep
      * <li>[[ComputationalTypeInt]]
      * <li>[[ComputationalTypeFloat]]</li>
      * </li>
-     * For all other expressions, a [[NoIPResult]] will be returned.
+     * For all other expressions, a [[StringConstancyInformation.getNeutralElement]] will be returned.
      */
-    def interpret(instr: T, defSite: Int)(implicit state: State): NonRefinableIPResult = {
-        val defSitePC = pcOfDefSite(defSite)(state.tac.stmts)
-        instr.cTpe match {
-            case ComputationalTypeInt =>
-                FinalIPResult(InterpretationHandler.getConstancyInfoForDynamicInt, state.dm, defSitePC)
-            case ComputationalTypeFloat =>
-                FinalIPResult(InterpretationHandler.getConstancyInfoForDynamicFloat, state.dm, defSitePC)
-            case _ =>
-                NoIPResult(state.dm, defSitePC)
+    def interpret(instr: T, defSite: Int)(implicit state: State): ProperPropertyComputationResult = {
+        val sci = instr.cTpe match {
+            case ComputationalTypeInt   => InterpretationHandler.getConstancyInfoForDynamicInt
+            case ComputationalTypeFloat => InterpretationHandler.getConstancyInfoForDynamicFloat
+            case _                      => StringConstancyInformation.getNeutralElement
         }
+        computeFinalResult(defSite, sci)
     }
 }
 
 object BinaryExprInterpreter {
 
-    def interpret[State <: ComputationState](instr: BinaryExpr[V], defSite: Int)(implicit state: State): IPResult =
-        BinaryExprInterpreter[State]().interpret(instr, defSite)
+    def interpret[State <: ComputationState](instr: BinaryExpr[V], defSite: Int)(implicit
+        state: State
+    ): ProperPropertyComputationResult = BinaryExprInterpreter[State]().interpret(instr, defSite)
 }

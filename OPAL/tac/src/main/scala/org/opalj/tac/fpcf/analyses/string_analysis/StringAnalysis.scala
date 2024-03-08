@@ -12,20 +12,23 @@ import org.opalj.br.FieldType
 import org.opalj.br.Method
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.FPCFAnalysisScheduler
+import org.opalj.br.fpcf.FPCFLazyAnalysisScheduler
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.FinalP
-import org.opalj.fpcf.InterimLUBP
 import org.opalj.fpcf.InterimResult
 import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.PropertyBounds
+import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEPS
-import org.opalj.log.OPALLogger
-import org.opalj.log.Warn
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.FlatPathElement
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.NestedPathElement
@@ -47,28 +50,7 @@ trait StringAnalysis extends FPCFAnalysis {
 
     val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
-    protected def getInterimResult(
-        state:    State,
-        iHandler: InterpretationHandler[State]
-    ): InterimResult[StringConstancyProperty] = InterimResult(
-        state.entity,
-        StringConstancyProperty.lb,
-        computeNewUpperBound(state, iHandler),
-        state.dependees.toSet,
-        continuation(state, iHandler)
-    )
-
-    private def computeNewUpperBound(state: State, iHandler: InterpretationHandler[State]): StringConstancyProperty = {
-        if (state.computedLeanPath != null) {
-            StringConstancyProperty(
-                PathTransformer
-                    .pathToStringTree(state.computedLeanPath)(state, iHandler)
-                    .reduce(true)
-            )
-        } else {
-            StringConstancyProperty.lb
-        }
-    }
+    def analyze(data: SContext): ProperPropertyComputationResult
 
     /**
      * Takes the `data` an analysis was started with as well as a computation `state` and determines
@@ -102,62 +84,15 @@ trait StringAnalysis extends FPCFAnalysis {
                 state.tacDependee = Some(eps.asInstanceOf[FinalEP[Method, TACAI]])
                 determinePossibleStrings(state, iHandler)
 
-            case FinalEP(entity, p: StringConstancyProperty) if eps.pk.equals(StringConstancyProperty.key) =>
-                state.dependees = state.dependees.filter(_.e != eps.e)
+            case FinalEP(e, _) if eps.pk.equals(StringConstancyProperty.key) =>
+                state.dependees = state.dependees.filter(_.e != e)
 
-                val e = entity.asInstanceOf[SContext]
-                // If necessary, update the parameter information with which the surrounding function / method of the entity was called with
-                if (state.paramResultPositions.contains(e)) {
-                    val pos = state.paramResultPositions(e)
-                    state.params(pos._1)(pos._2) = p.stringConstancyInformation
-                    state.paramResultPositions.remove(e)
-                    state.parameterDependeesCount -= 1
-                }
-
-                // If necessary, update parameter information of function calls
-                if (state.entity2Function.contains(e)) {
-                    // Update the state
-                    state.entity2Function(e).foreach { f =>
-                        val pos = state.nonFinalFunctionArgsPos(f)(e)
-                        state.nonFinalFunctionArgs(f)(pos._1)(pos._2)(pos._3) =
-                            FinalIPResult(p.stringConstancyInformation, declaredMethods(e._2), pos._3)
-                        // Housekeeping
-                        val index = state.entity2Function(e).indexOf(f)
-                        state.entity2Function(e).remove(index)
-                        if (state.entity2Function(e).isEmpty) {
-                            state.entity2Function.remove(e)
-                        }
-                    }
-                    // Continue only after all necessary function parameters are evaluated
-                    if (state.entity2Function.nonEmpty) {
-                        return getInterimResult(state, iHandler)
-                    } else {
-                        // We could try to determine a final result before all function
-                        // parameter information are available, however, this will
-                        // definitely result in finding some intermediate result. Thus,
-                        // defer this computations when we know that all necessary
-                        // information are available
-                        state.entity2Function.clear()
-                        if (!computeResultsForPath(state.computedLeanPath)(state, iHandler)) {
-                            return determinePossibleStrings(state, iHandler)
-                        }
-                    }
-                }
-
-                if (state.parameterDependeesCount == 0) {
-                    state.dependees = state.dependees.filter(_.e != e)
-                    // No more dependees => Return the result for this analysis run
-                    if (state.dependees.isEmpty) {
-                        computeFinalResult(state, iHandler)
-                    } else {
-                        getInterimResult(state, iHandler)
-                    }
+                // No more dependees => Return the result for this analysis run
+                if (state.dependees.isEmpty) {
+                    computeFinalResult(state)
                 } else {
-                    determinePossibleStrings(state, iHandler)
+                    getInterimResult(state, iHandler)
                 }
-            case InterimLUBP(_: StringConstancyProperty, ub: StringConstancyProperty)
-                if eps.pk.equals(StringConstancyProperty.key) =>
-                getInterimResult(state, iHandler)
             case _ =>
                 getInterimResult(state, iHandler)
         }
@@ -175,18 +110,36 @@ trait StringAnalysis extends FPCFAnalysis {
      *              not have been called)!
      * @return Returns the final result.
      */
-    protected def computeFinalResult(state: State, iHandler: InterpretationHandler[State]): Result = {
+    protected def computeFinalResult(state: State): Result = {
         val finalSci = PathTransformer
-            .pathToStringTree(state.computedLeanPath)(state, iHandler)
+            .pathToStringTree(state.computedLeanPath)(state, ps)
             .reduce(true)
-        if (state.fpe2iprDependees.nonEmpty) {
-            OPALLogger.logOnce(Warn(
-                "string analysis",
-                "The state still contains IPResult dependees after all EPS dependees were resolved!"
-            ))
-        }
-        StringAnalysis.unregisterParams(state.entity)
         Result(state.entity, StringConstancyProperty(finalSci))
+    }
+
+    protected def getInterimResult(
+        state:    State,
+        iHandler: InterpretationHandler[State]
+    ): InterimResult[StringConstancyProperty] = {
+        InterimResult(
+            state.entity,
+            StringConstancyProperty.lb,
+            computeNewUpperBound(state),
+            state.dependees.toSet,
+            continuation(state, iHandler)
+        )
+    }
+
+    private def computeNewUpperBound(state: State): StringConstancyProperty = {
+        if (state.computedLeanPath != null) {
+            StringConstancyProperty(
+                PathTransformer
+                    .pathToStringTree(state.computedLeanPath)(state, ps)
+                    .reduce(true)
+            )
+        } else {
+            StringConstancyProperty.lb
+        }
     }
 
     /**
@@ -194,25 +147,19 @@ trait StringAnalysis extends FPCFAnalysis {
      * these information in the given state.
      *
      * @param p     The path to traverse.
-     * @param state The current state of the computation. This function will alter [[ComputationState.fpe2ipr]].
+     * @param state The current state of the computation.
      * @return Returns `true` if all values computed for the path are final results.
      */
-    protected def computeResultsForPath(p: Path)(implicit
-        state:    State,
-        iHandler: InterpretationHandler[State]
-    ): Boolean = {
+    protected def computeResultsForPath(p: Path)(implicit state: State): Boolean = {
         var hasFinalResult = true
         p.elements.foreach {
             case fpe: FlatPathElement =>
-                if (!state.fpe2ipr.contains(fpe.pc) || state.fpe2ipr(fpe.pc).isRefinable) {
-                    val r = iHandler.processDefSite(valueOriginOfPC(fpe.pc, state.tac.pcToIndex).get)
-                    state.fpe2ipr(fpe.pc) = r
-                    if (r.isRefinable) {
-                        hasFinalResult = false
-                    }
+                val eOptP = ps(InterpretationHandler.getEntityFromDefSitePC(fpe.pc), StringConstancyProperty.key)
+                if (eOptP.isRefinable) {
+                    hasFinalResult = false
                 }
             case npe: NestedPathElement =>
-                hasFinalResult = hasFinalResult && computeResultsForPath(Path(npe.element.toList))
+                hasFinalResult = hasFinalResult && computeResultsForPath(Path(npe.element.toList))(state)
             case _ =>
         }
 
@@ -271,27 +218,6 @@ trait StringAnalysis extends FPCFAnalysis {
         }
     }
 
-    protected def hasExprFormalParamUsage(expr: Expr[V])(implicit tac: TAC): Boolean = expr match {
-        case duVar: V            => duVar.definedBy.exists(_ < 0)
-        case fc: FunctionCall[V] => fc.params.exists(hasExprFormalParamUsage)
-        case mc: MethodCall[V]   => mc.params.exists(hasExprFormalParamUsage)
-        case be: BinaryExpr[V]   => hasExprFormalParamUsage(be.left) || hasExprFormalParamUsage(be.right)
-        case _                   => false
-    }
-
-    protected def hasFormalParamUsageAlongPath(path: Path)(implicit tac: TAC): Boolean = {
-        implicit val pcToIndex: Array[Int] = tac.pcToIndex
-        path.elements.exists {
-            case FlatPathElement(index) => tac.stmts(index) match {
-                    case Assignment(_, _, expr) => hasExprFormalParamUsage(expr)
-                    case ExprStmt(_, expr)      => hasExprFormalParamUsage(expr)
-                    case _                      => false
-                }
-            case NestedPathElement(subPath, _) => hasFormalParamUsageAlongPath(Path(subPath.toList))
-            case _                             => false
-        }
-    }
-
     /**
      * Finds [[PUVar]]s the string constancy information computation for the given [[Path]] depends on. Enables passing
      * an entity to ignore (usually the entity for which the path was created so it does not depend on itself).
@@ -340,33 +266,21 @@ trait StringAnalysis extends FPCFAnalysis {
         }
         dependees
     }
+
+    protected def getPCsInPath(path: Path): Iterable[Int] = {
+        def getDefSitesOfPathAcc(subpath: SubPath): Iterable[Int] = {
+            subpath match {
+                case fpe: FlatPathElement   => Seq(fpe.pc)
+                case npe: NestedPathElement => npe.element.flatMap(getDefSitesOfPathAcc)
+                case _                      => Seq.empty
+            }
+        }
+
+        path.elements.flatMap(getDefSitesOfPathAcc)
+    }
 }
 
 object StringAnalysis {
-
-    /**
-     * Maps entities to a list of lists of parameters. As currently this analysis works context-
-     * insensitive, we have a list of lists to capture all parameters of all potential method /
-     * function calls.
-     */
-    private val paramInfos = mutable.Map[Entity, ListBuffer[ListBuffer[StringConstancyInformation]]]()
-
-    def registerParams(e: Entity, scis: ListBuffer[ListBuffer[StringConstancyInformation]]): Unit = {
-        if (!paramInfos.contains(e)) {
-            paramInfos(e) = scis
-        } else {
-            paramInfos(e).appendAll(scis)
-        }
-    }
-
-    def unregisterParams(e: Entity): Unit = paramInfos.remove(e)
-
-    def getParams(e: Entity): ListBuffer[ListBuffer[StringConstancyInformation]] =
-        if (paramInfos.contains(e)) {
-            paramInfos(e)
-        } else {
-            ListBuffer()
-        }
 
     /**
      * This function checks whether a given type is a supported primitive type. Supported currently
@@ -438,4 +352,45 @@ object StringAnalysis {
         }
         StringConstancyInformation(StringConstancyLevel.DYNAMIC, possibleStrings = possibleStrings)
     }
+}
+
+sealed trait StringAnalysisScheduler extends FPCFAnalysisScheduler {
+
+    final def derivedProperty: PropertyBounds = PropertyBounds.lub(StringConstancyProperty)
+
+    override def uses: Set[PropertyBounds] = Set(
+        PropertyBounds.ub(TACAI),
+        PropertyBounds.lub(StringConstancyProperty)
+    )
+
+    type State <: ComputationState
+    override final type InitializationData = (StringAnalysis, InterpretationHandler[State])
+
+    override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
+
+    override def afterPhaseScheduling(ps: PropertyStore, analysis: FPCFAnalysis): Unit = {}
+
+    override def afterPhaseCompletion(p: SomeProject, ps: PropertyStore, analysis: FPCFAnalysis): Unit = {}
+}
+
+trait LazyStringAnalysis
+    extends StringAnalysisScheduler with FPCFLazyAnalysisScheduler {
+
+    override def register(p: SomeProject, ps: PropertyStore, initData: InitializationData): FPCFAnalysis = {
+        ps.registerLazyPropertyComputation(
+            StringConstancyProperty.key,
+            (e: Entity) => {
+                e match {
+                    case _: (_, _)             => initData._1.analyze(e.asInstanceOf[SContext])
+                    case entity: DefSiteEntity => initData._2.analyze(entity)
+                    case _                     => throw new IllegalArgumentException(s"Unexpected entity passed for string analysis: $e")
+                }
+            }
+        )
+        initData._1
+    }
+
+    override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
+
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
 }

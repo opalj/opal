@@ -10,14 +10,14 @@ package interpretation
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyType
+import org.opalj.fpcf.ProperPropertyComputationResult
 
 /**
  * Responsible for processing [[VirtualMethodCall]]s without a call graph.
  *
  * @author Maximilian Rüsch
  */
-case class L0VirtualMethodCallInterpreter[State <: L0ComputationState]()
-    extends L0StringInterpreter[State] with SingleStepStringInterpreter[State] {
+case class L0VirtualMethodCallInterpreter[State <: L0ComputationState]() extends L0StringInterpreter[State] {
 
     override type T = VirtualMethodCall[V]
 
@@ -32,17 +32,14 @@ case class L0VirtualMethodCallInterpreter[State <: L0ComputationState]()
      * </li>
      * </ul>
      *
-     * For all other calls, a [[NoIPResult]] will be returned.
+     * For all other calls, a [[StringConstancyInformation.getNeutralElement]] will be returned.
      */
-    override def interpret(instr: T, defSite: Int)(implicit state: State): NonRefinableIPResult = {
-        instr.name match {
+    override def interpret(instr: T, defSite: Int)(implicit state: State): ProperPropertyComputationResult = {
+        val sci = instr.name match {
             // IMPROVE interpret argument for setLength
-            case "setLength" => FinalIPResult(
-                    StringConstancyInformation(StringConstancyLevel.CONSTANT, StringConstancyType.RESET),
-                    state.dm,
-                    instr.pc
-                )
-            case _ => NoIPResult(state.dm, instr.pc)
+            case "setLength" => StringConstancyInformation(StringConstancyLevel.CONSTANT, StringConstancyType.RESET)
+            case _           => StringConstancyInformation.getNeutralElement
         }
+        computeFinalResult(defSite, sci)
     }
 }
