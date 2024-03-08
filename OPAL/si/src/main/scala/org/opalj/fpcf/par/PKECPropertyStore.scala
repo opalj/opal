@@ -4,7 +4,6 @@ package fpcf
 package par
 
 import scala.annotation.switch
-import scala.annotation.unused
 
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.LinkedBlockingQueue
@@ -362,10 +361,6 @@ class PKECPropertyStore(
     ): Unit = {
         val SomeEPS(e, pk) = interimEP
         var isFresh = false
-
-        if (interimEP.pk.id == 0 && ps(pk.id).containsKey(e)) {
-            @unused val a = ""
-        }
 
         val ePKState =
             ps(pk.id).computeIfAbsent(e, { _ => isFresh = true; EPKState(interimEP, c, dependees) })
