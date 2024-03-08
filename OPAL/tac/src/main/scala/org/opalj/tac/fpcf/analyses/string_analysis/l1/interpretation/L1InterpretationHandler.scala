@@ -19,11 +19,8 @@ import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyStore
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.BinaryExprInterpreter
-import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.DoubleValueInterpreter
-import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.FloatValueInterpreter
-import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.IntegerValueInterpreter
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
-import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.StringConstInterpreter
+import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.SimpleValueConstExprInterpreter
 import org.opalj.tac.fpcf.analyses.string_analysis.l0.interpretation.L0ArrayAccessInterpreter
 import org.opalj.tac.fpcf.analyses.string_analysis.l0.interpretation.L0NewArrayInterpreter
 import org.opalj.tac.fpcf.analyses.string_analysis.l0.interpretation.L0NonVirtualFunctionCallInterpreter
@@ -47,10 +44,7 @@ class L1InterpretationHandler[State <: L1ComputationState](
 
     override protected def processNewDefSite(defSite: Int)(implicit state: State): ProperPropertyComputationResult = {
         state.tac.stmts(defSite) match {
-            case Assignment(_, _, expr: StringConst) => StringConstInterpreter.interpret(expr, defSite)
-            case Assignment(_, _, expr: IntConst)    => IntegerValueInterpreter.interpret(expr, defSite)
-            case Assignment(_, _, expr: FloatConst)  => FloatValueInterpreter.interpret(expr, defSite)
-            case Assignment(_, _, expr: DoubleConst) => DoubleValueInterpreter.interpret(expr, defSite) // TODO what about long const
+            case Assignment(_, _, expr: SimpleValueConst) => SimpleValueConstExprInterpreter.interpret(expr, defSite)
 
             case Assignment(_, _, expr: ArrayLoad[V]) => L0ArrayAccessInterpreter(ps).interpret(expr, defSite)
             case Assignment(_, _, expr: NewArray[V])  => new L0NewArrayInterpreter(ps).interpret(expr, defSite)
