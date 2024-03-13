@@ -5,8 +5,6 @@ package fpcf
 package properties
 
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
-import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
-import org.opalj.br.fpcf.properties.string_definition.StringConstancyType
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.FallbackReason
 import org.opalj.fpcf.Property
@@ -28,7 +26,7 @@ class StringConstancyProperty(
 
     override def toString: String = {
         val level = stringConstancyInformation.constancyLevel.toString.toLowerCase
-        s"Level: $level, Possible Strings: ${stringConstancyInformation.possibleStrings}"
+        s"Level: $level, Possible Strings: ${stringConstancyInformation.toRegex}"
     }
 
     /**
@@ -62,30 +60,16 @@ object StringConstancyProperty extends Property with StringConstancyPropertyMeta
         )
     }
 
-    def apply(
-        stringConstancyInformation: StringConstancyInformation
-    ): StringConstancyProperty = new StringConstancyProperty(stringConstancyInformation)
-
-    /**
-     * @return Returns the / a neutral [[StringConstancyProperty]] element, i.e., an element for
-     *         which [[StringConstancyProperty.isTheNeutralElement]] is `true`.
-     */
-    def getNeutralElement: StringConstancyProperty =
-        StringConstancyProperty(StringConstancyInformation.getNeutralElement)
-
-    /**
-     * @return Returns the upper bound from a lattice-point of view.
-     */
-    def ub: StringConstancyProperty =
-        StringConstancyProperty(StringConstancyInformation(
-            StringConstancyLevel.CONSTANT,
-            StringConstancyType.APPEND
-        ))
+    def apply(stringConstancyInformation: StringConstancyInformation): StringConstancyProperty =
+        new StringConstancyProperty(stringConstancyInformation)
 
     /**
      * @return Returns the lower bound from a lattice-point of view.
      */
-    def lb: StringConstancyProperty =
-        StringConstancyProperty(StringConstancyInformation.lb)
+    def lb: StringConstancyProperty = StringConstancyProperty(StringConstancyInformation.lb)
 
+    /**
+     * @return Returns the upper bound from a lattice-point of view.
+     */
+    def ub: StringConstancyProperty = StringConstancyProperty(StringConstancyInformation.ub)
 }

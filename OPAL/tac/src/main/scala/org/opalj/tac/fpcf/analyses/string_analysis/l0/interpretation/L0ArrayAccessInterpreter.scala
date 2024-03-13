@@ -43,15 +43,15 @@ case class L0ArrayAccessInterpreter[State <: L0ComputationState](ps: PropertySto
                 )
             )
         } else {
-            finalResult(pc)(results.asInstanceOf[Iterable[FinalEP[DefSiteEntity, StringConstancyProperty]]])
+            finalResult(pc)(results.asInstanceOf[Seq[FinalEP[DefSiteEntity, StringConstancyProperty]]])
         }
     }
 
-    private def finalResult(pc: Int)(results: Iterable[SomeFinalEP])(implicit
+    private def finalResult(pc: Int)(results: Seq[SomeFinalEP])(implicit
         state: State
     ): ProperPropertyComputationResult = {
         var resultSci = StringConstancyInformation.reduceMultiple(results.map {
-            _.asFinal.p.asInstanceOf[StringConstancyProperty].stringConstancyInformation
+            _.asFinal.p.asInstanceOf[StringConstancyProperty].sci
         })
         if (resultSci.isTheNeutralElement) {
             resultSci = StringConstancyInformation.lb

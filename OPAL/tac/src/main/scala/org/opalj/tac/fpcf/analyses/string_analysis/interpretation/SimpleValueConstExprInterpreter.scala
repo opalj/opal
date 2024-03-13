@@ -7,8 +7,8 @@ package string_analysis
 package interpretation
 
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
-import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyType
+import org.opalj.br.fpcf.properties.string_definition.StringTreeConst
 import org.opalj.fpcf.ProperPropertyComputationResult
 
 /**
@@ -19,20 +19,18 @@ case class SimpleValueConstExprInterpreter[State <: ComputationState]() extends 
     override type T = SimpleValueConst
 
     def interpret(expr: T, pc: Int)(implicit state: State): ProperPropertyComputationResult = {
-        val sci = expr match {
-            case ic: IntConst =>
-                StringConstancyInformation(StringConstancyLevel.CONSTANT, StringConstancyType.APPEND, ic.value.toString)
-            case fc: FloatConst =>
-                StringConstancyInformation(StringConstancyLevel.CONSTANT, StringConstancyType.APPEND, fc.value.toString)
-            case dc: DoubleConst =>
-                StringConstancyInformation(StringConstancyLevel.CONSTANT, StringConstancyType.APPEND, dc.value.toString)
-            case lc: LongConst =>
-                StringConstancyInformation(StringConstancyLevel.CONSTANT, StringConstancyType.APPEND, lc.value.toString)
-            case sc: StringConst =>
-                StringConstancyInformation(StringConstancyLevel.CONSTANT, StringConstancyType.APPEND, sc.value)
-            case _ =>
-                StringConstancyInformation.getNeutralElement
+        val treeOpt = expr match {
+            case ic: IntConst    => Some(StringTreeConst(ic.value.toString))
+            case fc: FloatConst  => Some(StringTreeConst(fc.value.toString))
+            case dc: DoubleConst => Some(StringTreeConst(dc.value.toString))
+            case lc: LongConst   => Some(StringTreeConst(lc.value.toString))
+            case sc: StringConst => Some(StringTreeConst(sc.value))
+            case _               => None
         }
+
+        val sci = treeOpt
+            .map(StringConstancyInformation(StringConstancyType.APPEND, _))
+            .getOrElse(StringConstancyInformation.neutralElement)
         computeFinalResult(pc, sci)
     }
 }

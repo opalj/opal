@@ -67,7 +67,7 @@ class StringAnalysisMatcher extends AbstractPropertyMatcher {
             case prop: StringConstancyProperty =>
                 val sci = prop.stringConstancyInformation
                 actLevel = sci.constancyLevel.toString.toLowerCase
-                actString = sci.possibleStrings
+                actString = sci.tree.toRegex
             case _ =>
         }
 

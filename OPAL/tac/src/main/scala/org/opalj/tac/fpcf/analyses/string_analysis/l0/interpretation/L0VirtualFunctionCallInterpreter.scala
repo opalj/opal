@@ -7,8 +7,6 @@ package string_analysis
 package l0
 package interpretation
 
-import scala.util.Try
-
 import org.opalj.br.ComputationalTypeDouble
 import org.opalj.br.ComputationalTypeFloat
 import org.opalj.br.ComputationalTypeInt
@@ -19,6 +17,8 @@ import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyType
+import org.opalj.br.fpcf.properties.string_definition.StringTreeConcat
+import org.opalj.br.fpcf.properties.string_definition.StringTreeConst
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.FinalP
@@ -80,16 +80,9 @@ case class L0VirtualFunctionCallInterpreter[State <: L0ComputationState](
                     case obj: ObjectType if obj == ObjectType.String =>
                         interpretArbitraryCall(instr, pc)
                     case FloatType | DoubleType =>
-                        computeFinalResult(
-                            pc,
-                            StringConstancyInformation(
-                                StringConstancyLevel.DYNAMIC,
-                                StringConstancyType.APPEND,
-                                StringConstancyInformation.FloatValue
-                            )
-                        )
+                        computeFinalResult(pc, StringConstancyInformation.dynamicFloat)
                     case _ =>
-                        computeFinalResult(pc, StringConstancyInformation.getNeutralElement)
+                        computeFinalResult(pc, StringConstancyInformation.neutralElement)
                 }
         }
     }
@@ -235,22 +228,21 @@ private[string_analysis] trait L0AppendCallInterpreter[State <: L0ComputationSta
                 _.asFinal.p.sci
             })
             val valueSci = transformAppendValueResult(
-                appendState.valueDependees.asInstanceOf[Iterable[FinalEP[DefSiteEntity, StringConstancyProperty]]]
+                appendState.valueDependees.asInstanceOf[Seq[FinalEP[DefSiteEntity, StringConstancyProperty]]]
             )
 
             computeFinalResult(
                 appendState.defSitePC,
                 StringConstancyInformation(
-                    StringConstancyLevel.determineForConcat(receiverSci.constancyLevel, valueSci.constancyLevel),
                     StringConstancyType.APPEND,
-                    receiverSci.possibleStrings + valueSci.possibleStrings
+                    StringTreeConcat.fromNodes(receiverSci.tree, valueSci.tree)
                 )
             )
         }
     }
 
     private def transformAppendValueResult(
-        results: Iterable[FinalEP[DefSiteEntity, StringConstancyProperty]]
+        results: Seq[FinalEP[DefSiteEntity, StringConstancyProperty]]
     )(implicit appendState: AppendCallState): StringConstancyInformation = {
         val sciValues = results.map(_.p.sci)
         val newValueSci = StringConstancyInformation.reduceMultiple(sciValues)
@@ -261,12 +253,11 @@ private[string_analysis] trait L0AppendCallInterpreter[State <: L0ComputationSta
                     newValueSci.constancyLevel == StringConstancyLevel.CONSTANT &&
                     sciValues.exists(!_.isTheNeutralElement)
                 ) {
-                    val charSciValues = sciValues.filter(_.possibleStrings != "") map { sci =>
-                        if (Try(sci.possibleStrings.toInt).isSuccess) {
-                            sci.copy(possibleStrings = sci.possibleStrings.toInt.toChar.toString)
-                        } else {
+                    val charSciValues = sciValues map {
+                        case sci @ StringConstancyInformation(_, const: StringTreeConst) if const.isIntConst =>
+                            sci.copy(tree = StringTreeConst(const.string.toInt.toChar.toString))
+                        case sci =>
                             sci
-                        }
                     }
                     StringConstancyInformation.reduceMultiple(charSciValues)
                 } else {
@@ -276,7 +267,7 @@ private[string_analysis] trait L0AppendCallInterpreter[State <: L0ComputationSta
                 if (newValueSci.constancyLevel == StringConstancyLevel.CONSTANT) {
                     newValueSci
                 } else {
-                    InterpretationHandler.getConstancyInfoForDynamicFloat
+                    StringConstancyInformation.dynamicFloat
                 }
             case _ =>
                 newValueSci
@@ -312,17 +303,17 @@ private[string_analysis] trait L0SubstringCallInterpreter[State <: L0Computation
                 )
             )
         } else {
-            computeFinalSubstringCallResult(substringCall, pc)(receiverResults.asInstanceOf[Iterable[SomeFinalEP]])
+            computeFinalSubstringCallResult(substringCall, pc)(receiverResults.asInstanceOf[Seq[SomeFinalEP]])
         }
     }
 
     private def computeFinalSubstringCallResult(substringCall: T, pc: Int)(
-        results: Iterable[SomeFinalEP]
+        results: Seq[SomeFinalEP]
     )(implicit state: State): Result = {
         val receiverSci = StringConstancyInformation.reduceMultiple(results.map {
             _.p.asInstanceOf[StringConstancyProperty].sci
         })
-        if (receiverSci.isTheNeutralElement || receiverSci.isComplex) {
+        if (!receiverSci.tree.isInstanceOf[StringTreeConst]) {
             // We cannot yet interpret substrings of mixed values
             computeFinalResult(pc, StringConstancyInformation.lb)
         } else {
@@ -334,9 +325,10 @@ private[string_analysis] trait L0SubstringCallInterpreter[State <: L0Computation
                             computeFinalResult(
                                 pc,
                                 StringConstancyInformation(
-                                    StringConstancyLevel.CONSTANT,
                                     StringConstancyType.REPLACE,
-                                    receiverSci.possibleStrings.substring(intValue.value)
+                                    StringTreeConst(
+                                        receiverSci.tree.asInstanceOf[StringTreeConst].string.substring(intValue.value)
+                                    )
                                 )
                             )
                         case _ =>
@@ -349,9 +341,13 @@ private[string_analysis] trait L0SubstringCallInterpreter[State <: L0Computation
                             computeFinalResult(
                                 pc,
                                 StringConstancyInformation(
-                                    StringConstancyLevel.CONSTANT,
                                     StringConstancyType.APPEND,
-                                    receiverSci.possibleStrings.substring(firstIntValue.value, secondIntValue.value)
+                                    StringTreeConst(
+                                        receiverSci.tree.asInstanceOf[StringTreeConst].string.substring(
+                                            firstIntValue.value,
+                                            secondIntValue.value
+                                        )
+                                    )
                                 )
                             )
                         case _ =>

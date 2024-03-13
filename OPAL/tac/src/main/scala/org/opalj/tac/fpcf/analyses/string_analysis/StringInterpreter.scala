@@ -40,7 +40,7 @@ trait StringInterpreter[State <: ComputationState] {
     // replace with intermediate lattice result approach
     protected final def awaitAllFinalContinuation(
         depender:    EPSDepender[T, State],
-        finalResult: Iterable[SomeFinalEP] => ProperPropertyComputationResult
+        finalResult: Seq[SomeFinalEP] => ProperPropertyComputationResult
     )(result: SomeEPS): ProperPropertyComputationResult = {
         if (result.isFinal) {
             val updatedDependees = depender.dependees.updated(
@@ -49,7 +49,7 @@ trait StringInterpreter[State <: ComputationState] {
             )
 
             if (updatedDependees.forall(_.isFinal)) {
-                finalResult(updatedDependees.asInstanceOf[Iterable[SomeFinalEP]])
+                finalResult(updatedDependees.asInstanceOf[Seq[SomeFinalEP]])
             } else {
                 InterimResult.forLB(
                     InterpretationHandler.getEntityFromDefSitePC(depender.pc)(depender.state),

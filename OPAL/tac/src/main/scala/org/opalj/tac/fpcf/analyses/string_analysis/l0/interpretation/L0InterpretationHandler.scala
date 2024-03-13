@@ -39,7 +39,7 @@ class L0InterpretationHandler[State <: L0ComputationState]()(
             case Assignment(_, _, expr: ArrayLoad[V]) => L0ArrayAccessInterpreter(ps).interpret(expr, pc)
             case Assignment(_, _, expr: NewArray[V])  => new L0NewArrayInterpreter(ps).interpret(expr, pc)
             case Assignment(_, _, _: New) =>
-                StringInterpreter.computeFinalResult(pc, StringConstancyInformation.getNeutralElement)
+                StringInterpreter.computeFinalResult(pc, StringConstancyInformation.neutralElement)
 
             // Currently unsupported
             case Assignment(_, _, _: GetField[V]) =>
@@ -64,7 +64,7 @@ class L0InterpretationHandler[State <: L0ComputationState]()(
             case nvmc: NonVirtualMethodCall[V] => L0NonVirtualMethodCallInterpreter(ps).interpret(nvmc, pc)
 
             case _ =>
-                StringInterpreter.computeFinalResult(pc, StringConstancyInformation.getNeutralElement)
+                StringInterpreter.computeFinalResult(pc, StringConstancyInformation.neutralElement)
         }
     }
 }

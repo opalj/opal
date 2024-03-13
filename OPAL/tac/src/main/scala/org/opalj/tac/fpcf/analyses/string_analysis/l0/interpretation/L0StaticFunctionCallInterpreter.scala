@@ -7,12 +7,11 @@ package string_analysis
 package l0
 package interpretation
 
-import scala.util.Try
-
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
+import org.opalj.br.fpcf.properties.string_definition.StringTreeConst
 import org.opalj.fpcf.InterimResult
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyStore
@@ -74,15 +73,16 @@ private[string_analysis] trait L0StringValueOfFunctionCallInterpreter[State <: L
     val ps: PropertyStore
 
     def processStringValueOf(call: T, pc: Int)(implicit state: State): ProperPropertyComputationResult = {
-        def finalResult(results: Iterable[SomeFinalEP]): Result = {
+        def finalResult(results: Seq[SomeFinalEP]): Result = {
             // For char values, we need to do a conversion (as the returned results are integers)
             val scis = results.map { r => r.p.asInstanceOf[StringConstancyProperty].sci }
             val finalScis = if (call.descriptor.parameterType(0).toJava == "char") {
                 scis.map { sci =>
-                    if (Try(sci.possibleStrings.toInt).isSuccess) {
-                        sci.copy(possibleStrings = sci.possibleStrings.toInt.toChar.toString)
-                    } else {
-                        sci
+                    sci.tree match {
+                        case const: StringTreeConst if const.isIntConst =>
+                            sci.copy(tree = StringTreeConst(const.string.toInt.toChar.toString))
+                        case _ =>
+                            sci
                     }
                 }
             } else {
@@ -105,7 +105,7 @@ private[string_analysis] trait L0StringValueOfFunctionCallInterpreter[State <: L
                 )
             )
         } else {
-            finalResult(results.asInstanceOf[Iterable[SomeFinalEP]])
+            finalResult(results.asInstanceOf[Seq[SomeFinalEP]])
         }
     }
 }

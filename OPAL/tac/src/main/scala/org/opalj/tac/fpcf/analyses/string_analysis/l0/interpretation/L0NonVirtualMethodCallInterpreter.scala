@@ -28,20 +28,20 @@ case class L0NonVirtualMethodCallInterpreter[State <: L0ComputationState](ps: Pr
     override def interpret(instr: T, pc: Int)(implicit state: State): ProperPropertyComputationResult = {
         instr.name match {
             case "<init>" => interpretInit(instr, pc)
-            case _        => computeFinalResult(pc, StringConstancyInformation.getNeutralElement)
+            case _        => computeFinalResult(pc, StringConstancyInformation.neutralElement)
         }
     }
 
     private def interpretInit(init: T, pc: Int)(implicit state: State): ProperPropertyComputationResult = {
         init.params.size match {
-            case 0 => computeFinalResult(pc, StringConstancyInformation.getNeutralElement)
+            case 0 => computeFinalResult(pc, StringConstancyInformation.neutralElement)
             case _ =>
                 // Only StringBuffer and StringBuilder are interpreted which have constructors with <= 1 parameters
                 val results = init.params.head.asVar.definedBy.toList.map { ds =>
                     ps(InterpretationHandler.getEntityFromDefSite(ds), StringConstancyProperty.key)
                 }
                 if (results.forall(_.isFinal)) {
-                    finalResult(init.pc)(results.asInstanceOf[Iterable[FinalEP[DefSiteEntity, StringConstancyProperty]]])
+                    finalResult(init.pc)(results.asInstanceOf[Seq[FinalEP[DefSiteEntity, StringConstancyProperty]]])
                 } else {
                     InterimResult.forLB(
                         InterpretationHandler.getEntityFromDefSitePC(pc),
@@ -56,7 +56,7 @@ case class L0NonVirtualMethodCallInterpreter[State <: L0ComputationState](ps: Pr
         }
     }
 
-    private def finalResult(pc: Int)(results: Iterable[SomeEPS])(implicit
+    private def finalResult(pc: Int)(results: Seq[SomeEPS])(implicit
         state: State
     ): Result =
         computeFinalResult(

@@ -88,7 +88,7 @@ case object NestedPathType extends Enumeration {
  * possible, i.e., when they compute / have this information.
  */
 case class NestedPathElement(
-    element:     ListBuffer[SubPath],
+    element:     Seq[SubPath],
     elementType: Option[NestedPathType.Value]
 ) extends SubPath
 
@@ -147,11 +147,11 @@ case class Path(elements: List[SubPath]) {
      * Takes a [[NestedPathElement]] and removes the outermost nesting, i.e., the path contained
      * in `npe` will be the path being returned.
      */
-    @tailrec private def removeOuterBranching(npe: NestedPathElement): ListBuffer[SubPath] = {
+    @tailrec private def removeOuterBranching(npe: NestedPathElement): Seq[SubPath] = {
         if (npe.element.tail.isEmpty) {
             npe.element.head match {
                 case innerNpe: NestedPathElement => removeOuterBranching(innerNpe)
-                case fpe: SubPath                => ListBuffer[SubPath](fpe)
+                case fpe: SubPath                => Seq(fpe)
             }
         } else {
             npe.element
@@ -166,18 +166,18 @@ case class Path(elements: List[SubPath]) {
      * well.
      */
     private def stripUnnecessaryBranches(npe: NestedPathElement, endSite: Int): NestedPathElement = {
-        npe.element.foreach {
-            case innerNpe: NestedPathElement =>
-                if (innerNpe.elementType.isEmpty) {
-                    if (!containsPathElementWithPC(innerNpe, endSite)) {
-                        innerNpe.element.clear()
-                    }
+        val strippedElements = npe.element.map {
+            case innerNpe @ NestedPathElement(_, elementType) if elementType.isEmpty =>
+                if (!containsPathElementWithPC(innerNpe, endSite)) {
+                    NestedPathElement(Seq.empty, None)
                 } else {
-                    stripUnnecessaryBranches(innerNpe, endSite)
+                    innerNpe
                 }
-            case _ =>
+            case innerNpe: NestedPathElement =>
+                stripUnnecessaryBranches(innerNpe, endSite)
+            case pe => pe
         }
-        npe
+        NestedPathElement(strippedElements, npe.elementType)
     }
 
     /**
@@ -213,13 +213,13 @@ case class Path(elements: List[SubPath]) {
                 if (leanedSubPath.isDefined) {
                     elements.append(leanedSubPath.get)
                 } else if (keepAlternativeBranches) {
-                    elements.append(NestedPathElement(ListBuffer[SubPath](), None))
+                    elements.append(NestedPathElement(Seq.empty, None))
                 }
             case e => throw new IllegalStateException(s"Unexpected sub path element found: $e")
         }
 
         if (elements.nonEmpty) {
-            Some(NestedPathElement(elements, toProcess.elementType))
+            Some(NestedPathElement(elements.toSeq, toProcess.elementType))
         } else {
             None
         }
@@ -259,7 +259,7 @@ case class Path(elements: List[SubPath]) {
                 case _ => true
             }
         }.map { s => (pcOfDefSite(s), ()) }.toMap
-        var leanPath = ListBuffer[SubPath]()
+        val leanPath = ListBuffer[SubPath]()
         val endSite = obj.definedBy.toArray.max
 
         elements.foreach {
@@ -281,7 +281,8 @@ case class Path(elements: List[SubPath]) {
                 case npe: NestedPathElement
                     if npe.elementType.get == NestedPathType.Repetition ||
                         npe.element.tail.isEmpty =>
-                    leanPath = removeOuterBranching(npe)
+                    leanPath.clear()
+                    leanPath.appendAll(removeOuterBranching(npe))
                 case _ =>
             }
         } else {
@@ -309,9 +310,9 @@ object Path {
      * exists, [[FlatPathElement.invalid]] is returned.
      */
     @tailrec def getLastElementInNPE(npe: NestedPathElement): FlatPathElement = {
-        npe.element.last match {
-            case fpe: FlatPathElement => fpe
-            case npe: NestedPathElement =>
+        npe.element.lastOption match {
+            case Some(fpe: FlatPathElement) => fpe
+            case Some(npe: NestedPathElement) =>
                 npe.element.last match {
                     case fpe: FlatPathElement        => fpe
                     case innerNpe: NestedPathElement => getLastElementInNPE(innerNpe)

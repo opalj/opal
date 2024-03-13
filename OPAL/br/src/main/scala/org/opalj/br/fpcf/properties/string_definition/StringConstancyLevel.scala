@@ -79,5 +79,4 @@ object StringConstancyLevel extends Enumeration {
             level1
         }
     }
-
 }

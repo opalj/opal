@@ -6,14 +6,12 @@ package analyses
 package string_analysis
 package preprocessing
 
-import scala.collection.mutable.ListBuffer
-
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
-import org.opalj.br.fpcf.properties.string_definition.StringTree
 import org.opalj.br.fpcf.properties.string_definition.StringTreeConcat
 import org.opalj.br.fpcf.properties.string_definition.StringTreeCond
-import org.opalj.br.fpcf.properties.string_definition.StringTreeConst
+import org.opalj.br.fpcf.properties.string_definition.StringTreeDynamicString
+import org.opalj.br.fpcf.properties.string_definition.StringTreeNode
 import org.opalj.br.fpcf.properties.string_definition.StringTreeOr
 import org.opalj.br.fpcf.properties.string_definition.StringTreeRepetition
 import org.opalj.fpcf.FinalP
@@ -21,7 +19,7 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 
 /**
- * Transforms a [[Path]] into a [[org.opalj.br.fpcf.properties.string_definition.StringTree]].
+ * Transforms a [[Path]] into a string tree of [[StringTreeNode]]s.
  *
  * @author Maximilian Rüsch
  */
@@ -33,14 +31,14 @@ object PathTransformer {
     private def pathToTreeAcc[State <: ComputationState](subpath: SubPath)(implicit
         state: State,
         ps:    PropertyStore
-    ): Option[StringTree] = {
+    ): Option[StringTreeNode] = {
         subpath match {
             case fpe: FlatPathElement =>
                 val sci = ps(InterpretationHandler.getEntityFromDefSitePC(fpe.pc), StringConstancyProperty.key) match {
                     case FinalP(scp) => scp.sci
                     case _           => StringConstancyInformation.lb
                 }
-                Option.unless(sci.isTheNeutralElement)(StringTreeConst(sci))
+                Option.unless(sci.isTheNeutralElement)(sci.tree)
             case npe: NestedPathElement =>
                 if (npe.elementType.isDefined) {
                     npe.elementType.get match {
@@ -94,26 +92,26 @@ object PathTransformer {
     }
 
     /**
-     * Takes a [[Path]] and transforms it into a [[StringTree]]. This implies an interpretation of
+     * Takes a [[Path]] and transforms it into a [[StringTreeNode]]. This implies an interpretation of
      * how to handle methods called on the object of interest (like `append`).
      *
      * @param path             The path element to be transformed.
      * @return If an empty [[Path]] is given, `None` will be returned. Otherwise, the transformed
-     *         [[org.opalj.br.fpcf.properties.string_definition.StringTree]] will be returned. Note that
+     *         [[StringTreeNode]] will be returned. Note that
      *         all elements of the tree will be defined, i.e., if `path` contains sites that could
      *         not be processed (successfully), they will not occur in the tree.
      */
     def pathToStringTree[State <: ComputationState](path: Path)(implicit
         state: State,
         ps:    PropertyStore
-    ): StringTree = {
-        val tree = path.elements.size match {
+    ): StringTreeNode = {
+        path.elements.size match {
             case 1 =>
                 // It might be that for some expressions, a neutral element is produced which is
                 // filtered out by pathToTreeAcc; return the lower bound in such cases
-                pathToTreeAcc(path.elements.head).getOrElse(StringTreeConst(StringConstancyInformation.lb))
+                pathToTreeAcc(path.elements.head).getOrElse(StringTreeDynamicString)
             case _ =>
-                val children = ListBuffer.from(path.elements.flatMap { pathToTreeAcc(_) })
+                val children = path.elements.flatMap { pathToTreeAcc(_) }
                 if (children.size == 1) {
                     // The concatenation of one child is the child itself
                     children.head
@@ -121,6 +119,5 @@ object PathTransformer {
                     StringTreeConcat(children)
                 }
         }
-        tree
     }
 }

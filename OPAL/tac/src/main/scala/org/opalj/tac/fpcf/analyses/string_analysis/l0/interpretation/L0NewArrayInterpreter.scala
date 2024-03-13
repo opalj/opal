@@ -60,11 +60,11 @@ class L0NewArrayInterpreter[State <: L0ComputationState](ps: PropertyStore)
                 )
             )
         } else {
-            finalResult(pc)(allResults.asInstanceOf[Iterable[FinalEP[DefSiteEntity, StringConstancyProperty]]])
+            finalResult(pc)(allResults.asInstanceOf[Seq[FinalEP[DefSiteEntity, StringConstancyProperty]]])
         }
     }
 
-    private def finalResult(pc: Int)(results: Iterable[SomeFinalEP])(implicit state: State): Result = {
+    private def finalResult(pc: Int)(results: Seq[SomeFinalEP])(implicit state: State): Result = {
         val resultsScis = results.map(_.p.asInstanceOf[StringConstancyProperty].sci)
         val sci = if (resultsScis.forall(_.isTheNeutralElement)) {
             // It might be that there are no results; in such a case, set the string information to the lower bound

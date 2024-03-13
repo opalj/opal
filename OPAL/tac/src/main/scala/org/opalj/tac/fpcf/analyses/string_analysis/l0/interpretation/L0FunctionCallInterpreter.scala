@@ -136,17 +136,16 @@ trait L0FunctionCallInterpreter[State <: L0ComputationState]
                 continuation(state, callState)
             )
         } else {
-            val parameterScis = callState.paramDependees.map { param =>
-                StringConstancyInformation.reduceMultiple(param.map {
-                    _.asFinal.p.sci
-                })
-            }
+            val parameterScis = callState.paramDependees.zipWithIndex.map {
+                case (params, index) =>
+                    (index, StringConstancyInformation.reduceMultiple(params.map(_.asFinal.p.sci)))
+            }.toMap
             val methodScis = callState.calleeMethods.map { m =>
                 if (callState.hasUnresolvableReturnValue(m)) {
                     StringConstancyInformation.lb
                 } else {
                     StringConstancyInformation.reduceMultiple(callState.returnDependees(m).map {
-                        _.asFinal.p.sci.fillInParameters(parameterScis)
+                        _.asFinal.p.sci.replaceParameters(parameterScis)
                     })
                 }
             }

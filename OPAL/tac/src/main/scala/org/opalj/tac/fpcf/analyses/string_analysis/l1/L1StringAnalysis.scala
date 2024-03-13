@@ -15,7 +15,6 @@ import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.cg.Callees
-import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.InterimResult
@@ -26,7 +25,6 @@ import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEPS
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 import org.opalj.tac.fpcf.analyses.string_analysis.l1.interpretation.L1InterpretationHandler
-import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.PathTransformer
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
@@ -70,8 +68,7 @@ class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
         val dm = declaredMethods(data._2)
         // IMPROVE enable handling call string contexts here (build a chain, probably via SContext)
         val state = CState(dm, data, contextProvider.newContext(declaredMethods(data._2)))
-        val iHandler =
-            L1InterpretationHandler[CState](project, ps)
+        val iHandler = L1InterpretationHandler[CState](project, ps)
 
         val tacaiEOptP = ps(data._2, TACAI.key)
         if (tacaiEOptP.isRefinable) {
@@ -168,22 +165,10 @@ class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
             }
         }
 
-        val sci =
-            if (attemptFinalResultComputation
-                && state.dependees.isEmpty
-                && computeResultsForPath(state.computedLeanPath)(state)
-            ) {
-                PathTransformer
-                    .pathToStringTree(state.computedLeanPath)(state, ps)
-                    .reduce(true)
-            } else {
-                StringConstancyInformation.lb
-            }
-
         if (state.dependees.nonEmpty) {
             getInterimResult(state, iHandler)
         } else {
-            Result(state.entity, StringConstancyProperty(sci))
+            computeFinalResult(state)
         }
     }
 

@@ -13,8 +13,8 @@ import org.opalj.ai.FormalParametersOriginOffset
 import org.opalj.ai.ImmediateVMExceptionsOriginOffset
 import org.opalj.br.ObjectType
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
-import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyType
+import org.opalj.br.fpcf.properties.string_definition.StringTreeDynamicString
 import org.opalj.fpcf.ProperPropertyComputationResult
 
 /**
@@ -199,42 +199,8 @@ object InterpretationHandler {
         news.toList
     }
 
-    /**
-     * @return Returns a [[StringConstancyInformation]] element that describes an `int` value.
-     *         That is, the returned element consists of the value [[StringConstancyLevel.DYNAMIC]],
-     *         [[StringConstancyType.APPEND]], and [[StringConstancyInformation.IntValue]].
-     */
-    def getConstancyInfoForDynamicInt: StringConstancyInformation =
-        StringConstancyInformation(
-            StringConstancyLevel.DYNAMIC,
-            StringConstancyType.APPEND,
-            StringConstancyInformation.IntValue
-        )
-
-    /**
-     * @return Returns a [[StringConstancyInformation]] element that describes a `float` value.
-     *         That is, the returned element consists of the value [[StringConstancyLevel.DYNAMIC]],
-     *         [[StringConstancyType.APPEND]], and [[StringConstancyInformation.IntValue]].
-     */
-    def getConstancyInfoForDynamicFloat: StringConstancyInformation =
-        StringConstancyInformation(
-            StringConstancyLevel.DYNAMIC,
-            StringConstancyType.APPEND,
-            StringConstancyInformation.FloatValue
-        )
-
-    /**
-     * @return Returns a [[StringConstancyInformation]] element that describes the result of a
-     *         `replace` operation. That is, the returned element currently consists of the value
-     *         [[StringConstancyLevel.DYNAMIC]], [[StringConstancyType.REPLACE]], and
-     *         [[StringConstancyInformation.UnknownWordSymbol]].
-     */
     def getStringConstancyInformationForReplace: StringConstancyInformation =
-        StringConstancyInformation(
-            StringConstancyLevel.DYNAMIC,
-            StringConstancyType.REPLACE,
-            StringConstancyInformation.UnknownWordSymbol
-        )
+        StringConstancyInformation(StringConstancyType.REPLACE, StringTreeDynamicString)
 
     def getEntityFromDefSite(defSite: Int)(implicit state: ComputationState): DefSiteEntity =
         getEntityFromDefSitePC(pcOfDefSite(defSite)(state.tac.stmts))

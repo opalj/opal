@@ -19,7 +19,6 @@ import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.FPCFLazyAnalysisScheduler
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
-import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.FinalP
@@ -111,10 +110,12 @@ trait StringAnalysis extends FPCFAnalysis {
      * @return Returns the final result.
      */
     protected def computeFinalResult(state: State): Result = {
-        val finalSci = PathTransformer
-            .pathToStringTree(state.computedLeanPath)(state, ps)
-            .reduce(true)
-        Result(state.entity, StringConstancyProperty(finalSci))
+        Result(
+            state.entity,
+            StringConstancyProperty(StringConstancyInformation(
+                tree = PathTransformer.pathToStringTree(state.computedLeanPath)(state, ps).simplify
+            ))
+        )
     }
 
     protected def getInterimResult(
@@ -132,11 +133,9 @@ trait StringAnalysis extends FPCFAnalysis {
 
     private def computeNewUpperBound(state: State): StringConstancyProperty = {
         if (state.computedLeanPath != null) {
-            StringConstancyProperty(
-                PathTransformer
-                    .pathToStringTree(state.computedLeanPath)(state, ps)
-                    .reduce(true)
-            )
+            StringConstancyProperty(StringConstancyInformation(
+                tree = PathTransformer.pathToStringTree(state.computedLeanPath)(state, ps).simplify
+            ))
         } else {
             StringConstancyProperty.lb
         }
@@ -192,8 +191,10 @@ trait StringAnalysis extends FPCFAnalysis {
             FlatPathElement(defSites.head)
         } else {
             // Create alternative branches with intermediate None-Type nested path elements
-            val children = defSites.map { ds => NestedPathElement(ListBuffer(FlatPathElement(ds)), None) }
-            NestedPathElement(ListBuffer.from(children), Some(NestedPathType.CondWithAlternative))
+            NestedPathElement(
+                defSites.toIndexedSeq.map { ds => NestedPathElement(Seq(FlatPathElement(ds)), None) },
+                Some(NestedPathType.CondWithAlternative)
+            )
         }
         Path(List(element))
     }
@@ -327,30 +328,14 @@ object StringAnalysis {
             }
         }
 
-    /**
-     * Determines whether a given [[FieldType]] element is supported by the string analysis.
-     *
-     * @param fieldType The element to check.
-     * @return Returns true if the given [[FieldType]] is of a supported type. For supported types,
-     *         see [[StringAnalysis.isSupportedType(String)]].
-     */
     def isSupportedType(fieldType: FieldType): Boolean = isSupportedType(fieldType.toJava)
 
-    /**
-     * Takes the name of a primitive number type - supported types are short, int, float, double -
-     * and returns the dynamic [[StringConstancyInformation]] for that type. In case an unsupported
-     * type is given [[StringConstancyInformation.UnknownWordSymbol]] is returned as possible
-     * strings.
-     */
-    def getDynamicStringInformationForNumberType(
-        numberType: String
-    ): StringConstancyInformation = {
-        val possibleStrings = numberType match {
-            case "short" | "int"    => StringConstancyInformation.IntValue
-            case "float" | "double" => StringConstancyInformation.FloatValue
-            case _                  => StringConstancyInformation.UnknownWordSymbol
+    def getDynamicStringInformationForNumberType(numberType: String): StringConstancyInformation = {
+        numberType match {
+            case "short" | "int"    => StringConstancyInformation.dynamicInt
+            case "float" | "double" => StringConstancyInformation.dynamicFloat
+            case _                  => StringConstancyInformation.lb
         }
-        StringConstancyInformation(StringConstancyLevel.DYNAMIC, possibleStrings = possibleStrings)
     }
 }
 

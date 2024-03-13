@@ -441,8 +441,7 @@ public class L0TestMethods {
     }
 
     @StringDefinitionsCollection(
-            value = "if-else control structure which append to a string builder with an int expr "
-                    + "and an int",
+            value = "if-else control structure which append to a string builder with an int expr and an int",
             stringDefinitions = {
                     @StringDefinitions(
                             expectedLevel = DYNAMIC, expectedStrings = "(x|^-?\\d+$)"
@@ -958,6 +957,30 @@ public class L0TestMethods {
         analyzeString(sb3.toString());
     }
 
+
+
+    @StringDefinitionsCollection(
+            value = "loops that use breaks and continues (or both)",
+            stringDefinitions = {
+                    @StringDefinitions(
+                            // The bytecode produces an "if" within an "if" inside the first loop, => two conditions
+                            expectedLevel = CONSTANT, expectedStrings = "abc((d)?)*"
+                    )
+            })
+    public void breakContinueExamples2(int value) {
+        StringBuilder sb1 = new StringBuilder("abc");
+        for (int i = 0; i < value; i++) {
+            if (i % 7 == 1) {
+                break;
+            } else if (i % 3 == 0) {
+                continue;
+            } else {
+                sb1.append("d");
+            }
+        }
+        analyzeString(sb1.toString());
+    }
+
     @StringDefinitionsCollection(
             value = "an example where in the condition of an 'if', a string is appended to a "
                     + "StringBuilder",
@@ -1080,7 +1103,7 @@ public class L0TestMethods {
 
     @StringDefinitionsCollection(
             value = "an example that reads a public final static field; for these, the string "
-                    + "information are available (at lease on modern compilers)",
+                    + "information are available (at least on modern compilers)",
             stringDefinitions = {
                     @StringDefinitions(
                             expectedLevel = CONSTANT, expectedStrings = "Field Value:mine"

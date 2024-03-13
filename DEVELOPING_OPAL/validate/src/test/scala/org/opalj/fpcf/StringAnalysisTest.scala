@@ -160,7 +160,7 @@ class L0StringAnalysisTest extends StringAnalysisTest {
 
         val entities = determineEntitiesToAnalyze(as.project)
         val newEntities = entities
-            // .filter(entity => entity._2.name.startsWith("fromConstantAndFunctionCall"))
+            // .filter(entity => entity._2.name.startsWith("whileWithBreak"))
             // .filter(entity => entity._2.name.startsWith("tryCatchFinally"))
             // .filter(entity => entity._2.name.startsWith("tryCatchFinallyWithThrowable"))
             .filterNot(entity => entity._2.name.startsWith("switchNested"))

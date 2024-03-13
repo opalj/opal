@@ -13,7 +13,9 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
-import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
+import org.opalj.br.fpcf.properties.string_definition.StringTreeDynamicString
+import org.opalj.br.fpcf.properties.string_definition.StringTreeNull
+import org.opalj.br.fpcf.properties.string_definition.StringTreeOr
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.InterimResult
 import org.opalj.fpcf.ProperPropertyComputationResult
@@ -92,7 +94,7 @@ case class L1FieldReadInterpreter[State <: L1ComputationState](
      * [[L1StringAnalysis]] is passed, [[StringConstancyInformation.lb]] will be produces. Otherwise, all write accesses
      * are considered and analyzed. If a field is not initialized within a constructor or the class itself, it will be
      * approximated using all write accesses as well as with the lower bound and "null" => in these cases fields are
-     * [[StringConstancyLevel.DYNAMIC]].
+     * [[org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel.DYNAMIC]].
      */
     override def interpret(instr: T, pc: Int)(implicit state: State): ProperPropertyComputationResult = {
         // TODO: The approximation of fields might be outsourced into a dedicated analysis. Then, one could add a
@@ -109,12 +111,12 @@ case class L1FieldReadInterpreter[State <: L1ComputationState](
 
         if (writeAccesses.isEmpty) {
             // No methods which write the field were found => Field could either be null or any value
-            val sci = StringConstancyInformation(
-                StringConstancyLevel.DYNAMIC,
-                possibleStrings =
-                    s"(${StringConstancyInformation.NullStringValue}|${StringConstancyInformation.UnknownWordSymbol})"
+            return computeFinalResult(
+                pc,
+                StringConstancyInformation(
+                    tree = StringTreeOr.fromNodes(StringTreeNull, StringTreeDynamicString)
+                )
             )
-            return computeFinalResult(pc, sci)
         }
 
         implicit val accessState: FieldReadState = FieldReadState(pc)
@@ -155,7 +157,7 @@ case class L1FieldReadInterpreter[State <: L1ComputationState](
             // could be refined by only setting the null element if no statement is guaranteed to be executed prior
             // to the field read
             if (!accessState.hasInit) {
-                scis = scis :+ StringConstancyInformation.getNullElement
+                scis = scis :+ StringConstancyInformation.nullElement
             }
             // If an access could not be resolved, append a dynamic element
             if (accessState.hasUnresolvableAccess) {

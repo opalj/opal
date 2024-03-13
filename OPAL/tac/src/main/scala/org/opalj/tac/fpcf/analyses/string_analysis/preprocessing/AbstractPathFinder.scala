@@ -399,10 +399,9 @@ abstract class AbstractPathFinder(tac: TAC) {
         end:   Int,
         fill:  Boolean
     ): (Path, List[(Int, Int)]) = {
-        val path = ListBuffer[SubPath]()
-        if (fill) {
-            start.to(end).foreach(i => path.append(FlatPathElement(i)))
-        }
+        val path = if (fill) {
+            start.to(end).map(FlatPathElement.apply)
+        } else Seq.empty[SubPath]
         (Path(List(NestedPathElement(path, Some(NestedPathType.Repetition)))), List((start, end)))
     }
 
@@ -483,15 +482,14 @@ abstract class AbstractPathFinder(tac: TAC) {
             startEndPairs.append((startEndPairs.last._2 + 1, end))
         }
 
-        val subPaths = ListBuffer[SubPath]()
-        startEndPairs.foreach {
+        val subPaths = startEndPairs.toSeq.flatMap {
             case (startSubpath, endSubpath) =>
-                val subpathElements = ListBuffer[SubPath]()
-                if (fill) {
-                    subpathElements.appendAll(startSubpath.to(endSubpath).map(FlatPathElement.apply))
-                }
+                val subpathElements = if (fill) {
+                    startSubpath.to(endSubpath).map(FlatPathElement.apply)
+                } else Seq.empty[SubPath]
                 if (!fill || subpathElements.nonEmpty)
-                    subPaths.append(NestedPathElement(subpathElements, None))
+                    Some(NestedPathElement(subpathElements, None))
+                else None
         }
 
         val pathTypeToUse =
@@ -536,11 +534,10 @@ abstract class AbstractPathFinder(tac: TAC) {
             startEndPairs.append((previousStart, end))
         }
 
-        val subPaths: ListBuffer[SubPath] = startEndPairs.map { pair =>
-            val subpathElements = ListBuffer[SubPath]()
-            if (fill) {
-                subpathElements.appendAll(Range.inclusive(pair._1, pair._2).map(FlatPathElement.apply))
-            }
+        val subPaths = startEndPairs.toSeq.map { pair =>
+            val subpathElements = if (fill) {
+                Range.inclusive(pair._1, pair._2).map(FlatPathElement.apply)
+            } else Seq.empty[SubPath]
             NestedPathElement(subpathElements, None)
         }
         (Path(List(NestedPathElement(subPaths, Some(pathType)))), startEndPairs.toList)
@@ -651,20 +648,18 @@ abstract class AbstractPathFinder(tac: TAC) {
             startEndPairs.append((cn.endPC, endOfCatch))
         }
 
-        val subPaths = ListBuffer[SubPath]()
-        startEndPairs.foreach {
+        var subPaths: Seq[SubPath] = startEndPairs.toSeq.map {
             case (startSubpath, endSubpath) =>
-                val subpathElements = ListBuffer[SubPath]()
-                subPaths.append(NestedPathElement(subpathElements, None))
-                if (fill) {
-                    subpathElements.appendAll(startSubpath.to(endSubpath).map(FlatPathElement.apply))
-                }
+                val subpathElements = if (fill) {
+                    startSubpath.to(endSubpath).map(FlatPathElement.apply)
+                } else Seq.empty[SubPath]
+                NestedPathElement(subpathElements, None)
         }
 
         // If there is a finally part, append everything after the end of the try block up to the
         // very first catch block
         if (hasFinallyBlock && fill) {
-            subPaths.appendAll((startEndPairs.head._2 + 1).until(startEndPairs(1)._1).map(FlatPathElement.apply))
+            subPaths = subPaths ++ (startEndPairs.head._2 + 1).until(startEndPairs(1)._1).map(FlatPathElement.apply)
         }
 
         (
@@ -680,11 +675,8 @@ abstract class AbstractPathFinder(tac: TAC) {
         numInnerElements: Int,
         elementType:      NestedPathType.Value
     ): NestedPathElement = {
-        val outerNested = NestedPathElement(ListBuffer(), Some(elementType))
-        for (_ <- 0.until(numInnerElements)) {
-            outerNested.element.append(NestedPathElement(ListBuffer(), None))
-        }
-        outerNested
+        val innerElements = 0.until(numInnerElements).map(_ => NestedPathElement(Seq.empty, None))
+        NestedPathElement(innerElements, Some(elementType))
     }
 
     /**
@@ -1212,8 +1204,7 @@ abstract class AbstractPathFinder(tac: TAC) {
             if (children.isEmpty) {
                 // Recursion anchor: Build path for the correct type
                 val (subpath, _) = buildPathForElement(nextTopCsInfo, fill = true)
-                // Control structures consist of only one element (NestedPathElement), thus "head"
-                // is enough
+                // Control structures consist of only one element (NestedPathElement), thus "head" is enough
                 finalPath.append(subpath.elements.head)
             } else {
                 val startIndex = nextTopCsInfo._1
@@ -1226,14 +1217,17 @@ abstract class AbstractPathFinder(tac: TAC) {
                 val npe = subpath.elements.head.asInstanceOf[NestedPathElement]
                 val isRepElement =
                     npe.elementType.getOrElse(NestedPathType.TryCatchFinally) == NestedPathType.Repetition
+                var newElements = npe.element
                 var lastInsertedIndex = 0
                 childrenPath.elements.foreach { nextEle =>
                     if (isRepElement) {
-                        npe.element.append(nextEle)
+                        newElements :+= nextEle
                     } else {
-                        if (insertIndex < npe.element.length) {
-                            npe.element(insertIndex).asInstanceOf[NestedPathElement].element.append(
-                                nextEle
+                        if (insertIndex < newElements.length) {
+                            val innerNpe = newElements(insertIndex).asInstanceOf[NestedPathElement]
+                            newElements = newElements.updated(
+                                insertIndex,
+                                NestedPathElement(innerNpe.element :+ nextEle, innerNpe.elementType)
                             )
                         }
                     }
@@ -1249,34 +1243,39 @@ abstract class AbstractPathFinder(tac: TAC) {
                     }
                 }
                 // Fill the current NPE if necessary
-                val currentToInsert = ListBuffer[FlatPathElement]()
                 if (insertIndex < startEndPairs.length) {
-                    currentToInsert.appendAll((lastInsertedIndex + 1).to(
-                        startEndPairs(insertIndex)._2
-                    ).map(FlatPathElement.apply))
+                    val currentToInsert =
+                        (lastInsertedIndex + 1).to(startEndPairs(insertIndex)._2).map(FlatPathElement.apply)
                     if (isRepElement) {
-                        npe.element.appendAll(currentToInsert)
+                        newElements ++= currentToInsert
                     } else {
-                        var insertPos = npe.element(insertIndex).asInstanceOf[NestedPathElement]
-                        insertPos.element.appendAll(currentToInsert)
+                        val innerNpe = newElements(insertIndex).asInstanceOf[NestedPathElement]
+                        newElements = newElements.updated(
+                            insertIndex,
+                            NestedPathElement(innerNpe.element ++ currentToInsert, innerNpe.elementType)
+                        )
                         insertIndex += 1
                         // Fill the rest NPEs if necessary
                         insertIndex.until(startEndPairs.length).foreach { i =>
-                            insertPos = npe.element(i).asInstanceOf[NestedPathElement]
-                            insertPos.element.appendAll(
-                                startEndPairs(i)._1.to(startEndPairs(i)._2).map(FlatPathElement.apply)
+                            val innerNpe = newElements(i).asInstanceOf[NestedPathElement]
+                            newElements = newElements.updated(
+                                i,
+                                NestedPathElement(
+                                    innerNpe.element ++
+                                        startEndPairs(i)._1.to(startEndPairs(i)._2).map(FlatPathElement.apply),
+                                    innerNpe.elementType
+                                )
                             )
                         }
                     }
                 }
                 // Make sure to have no empty lists
-                val subPathNpe = subpath.elements.head.asInstanceOf[NestedPathElement]
                 val subPathToAdd = NestedPathElement(
-                    subPathNpe.element.filter {
+                    newElements.filter {
                         case npe: NestedPathElement => npe.element.nonEmpty
                         case _                      => true
                     },
-                    subPathNpe.elementType
+                    npe.elementType
                 )
                 finalPath.append(subPathToAdd)
             }
