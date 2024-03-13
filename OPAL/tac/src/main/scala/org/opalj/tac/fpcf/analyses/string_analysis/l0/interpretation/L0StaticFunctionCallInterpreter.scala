@@ -23,17 +23,17 @@ import org.opalj.tac.fpcf.properties.TACAI
 /**
  * @author Maximilian Rüsch
  */
-case class L0StaticFunctionCallInterpreter[State <: L0ComputationState]()(
+case class L0StaticFunctionCallInterpreter()(
     implicit
     override val p:  SomeProject,
     override val ps: PropertyStore
-) extends L0StringInterpreter[State]
-    with L0ArbitraryStaticFunctionCallInterpreter[State]
-    with L0StringValueOfFunctionCallInterpreter[State] {
+) extends StringInterpreter
+    with L0ArbitraryStaticFunctionCallInterpreter
+    with L0StringValueOfFunctionCallInterpreter {
 
     override type T = StaticFunctionCall[V]
 
-    override def interpret(instr: T, pc: Int)(implicit state: State): ProperPropertyComputationResult = {
+    override def interpret(instr: T, pc: Int)(implicit state: ComputationState): ProperPropertyComputationResult = {
         instr.name match {
             case "valueOf" if instr.declaringClass == ObjectType.String => processStringValueOf(instr, pc)
             case _                                                      => interpretArbitraryCall(instr, pc)
@@ -41,16 +41,16 @@ case class L0StaticFunctionCallInterpreter[State <: L0ComputationState]()(
     }
 }
 
-private[string_analysis] trait L0ArbitraryStaticFunctionCallInterpreter[State <: L0ComputationState]
-    extends StringInterpreter[State]
-    with L0FunctionCallInterpreter[State] {
+private[string_analysis] trait L0ArbitraryStaticFunctionCallInterpreter
+    extends StringInterpreter
+    with L0FunctionCallInterpreter {
 
     implicit val p: SomeProject
 
     override type T = StaticFunctionCall[V]
 
     def interpretArbitraryCall(instr: T, pc: Int)(implicit
-        state: State
+        state: ComputationState
     ): ProperPropertyComputationResult = {
         val calleeMethod = instr.resolveCallTarget(state.entity._2.classFile.thisType)
         if (calleeMethod.isEmpty) {
@@ -65,14 +65,13 @@ private[string_analysis] trait L0ArbitraryStaticFunctionCallInterpreter[State <:
     }
 }
 
-private[string_analysis] trait L0StringValueOfFunctionCallInterpreter[State <: L0ComputationState]
-    extends StringInterpreter[State] {
+private[string_analysis] trait L0StringValueOfFunctionCallInterpreter extends StringInterpreter {
 
     override type T <: StaticFunctionCall[V]
 
     val ps: PropertyStore
 
-    def processStringValueOf(call: T, pc: Int)(implicit state: State): ProperPropertyComputationResult = {
+    def processStringValueOf(call: T, pc: Int)(implicit state: ComputationState): ProperPropertyComputationResult = {
         def finalResult(results: Seq[SomeFinalEP]): Result = {
             // For char values, we need to do a conversion (as the returned results are integers)
             val scis = results.map { r => r.p.asInstanceOf[StringConstancyProperty].sci }

@@ -20,13 +20,15 @@ import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.SimpleValueCon
  *
  * @author Maximilian Rüsch
  */
-class L0InterpretationHandler[State <: L0ComputationState]()(
+class L0InterpretationHandler()(
     implicit
     p:  SomeProject,
     ps: PropertyStore
-) extends InterpretationHandler[State] {
+) extends InterpretationHandler {
 
-    override protected def processNewDefSitePC(pc: Int)(implicit state: State): ProperPropertyComputationResult = {
+    override protected def processNewDefSitePC(pc: Int)(implicit
+        state: ComputationState
+    ): ProperPropertyComputationResult = {
         val defSiteOpt = valueOriginOfPC(pc, state.tac.pcToIndex);
         if (defSiteOpt.isEmpty) {
             throw new IllegalArgumentException(s"Obtained a pc that does not represent a definition site: $pc")
@@ -60,7 +62,7 @@ class L0InterpretationHandler[State <: L0ComputationState]()(
             case ExprStmt(_, expr: StaticFunctionCall[V]) =>
                 L0StaticFunctionCallInterpreter().interpret(expr, pc)
 
-            case vmc: VirtualMethodCall[V]     => L0VirtualMethodCallInterpreter().interpret(vmc, pc)
+            case vmc: VirtualMethodCall[V]     => L0VirtualMethodCallInterpreter.interpret(vmc, pc)
             case nvmc: NonVirtualMethodCall[V] => L0NonVirtualMethodCallInterpreter(ps).interpret(nvmc, pc)
 
             case _ =>
@@ -71,9 +73,9 @@ class L0InterpretationHandler[State <: L0ComputationState]()(
 
 object L0InterpretationHandler {
 
-    def apply[State <: L0ComputationState]()(
+    def apply()(
         implicit
         p:  SomeProject,
         ps: PropertyStore
-    ): L0InterpretationHandler[State] = new L0InterpretationHandler[State]
+    ): L0InterpretationHandler = new L0InterpretationHandler
 }

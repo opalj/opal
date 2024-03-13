@@ -26,12 +26,12 @@ import org.opalj.fpcf.ProperPropertyComputationResult
  *
  * @author Maximilian Rüsch
  */
-abstract class InterpretationHandler[State <: ComputationState] {
+abstract class InterpretationHandler {
 
     def analyze(entity: DefSiteEntity): ProperPropertyComputationResult =
-        processDefSitePC(entity.pc)(entity.state.asInstanceOf[State])
+        processDefSitePC(entity.pc)(entity.state)
 
-    private def processDefSitePC(pc: Int)(implicit state: State): ProperPropertyComputationResult = {
+    private def processDefSitePC(pc: Int)(implicit state: ComputationState): ProperPropertyComputationResult = {
         if (pc <= FormalParametersOriginOffset) {
             if (pc == -1 || pc <= ImmediateVMExceptionsOriginOffset) {
                 return StringInterpreter.computeFinalResult(pc, StringConstancyInformation.lb)
@@ -43,7 +43,7 @@ abstract class InterpretationHandler[State <: ComputationState] {
         processNewDefSitePC(pc)
     }
 
-    protected def processNewDefSitePC(pc: Int)(implicit state: State): ProperPropertyComputationResult
+    protected def processNewDefSitePC(pc: Int)(implicit state: ComputationState): ProperPropertyComputationResult
 }
 
 object InterpretationHandler {

@@ -35,13 +35,13 @@ import org.opalj.tac.fpcf.analyses.string_analysis.l1.L1StringAnalysis
  *
  * @author Maximilian Rüsch
  */
-case class L1FieldReadInterpreter[State <: L1ComputationState](
+case class L1FieldReadInterpreter(
     ps:                           PropertyStore,
     fieldAccessInformation:       FieldAccessInformation,
     project:                      SomeProject,
     implicit val declaredFields:  DeclaredFields,
     implicit val contextProvider: ContextProvider
-) extends L1StringInterpreter[State] {
+) extends StringInterpreter {
 
     override type T = FieldRead[V]
 
@@ -96,7 +96,7 @@ case class L1FieldReadInterpreter[State <: L1ComputationState](
      * approximated using all write accesses as well as with the lower bound and "null" => in these cases fields are
      * [[org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel.DYNAMIC]].
      */
-    override def interpret(instr: T, pc: Int)(implicit state: State): ProperPropertyComputationResult = {
+    override def interpret(instr: T, pc: Int)(implicit state: ComputationState): ProperPropertyComputationResult = {
         // TODO: The approximation of fields might be outsourced into a dedicated analysis. Then, one could add a
         //  finer-grained processing or provide different abstraction levels. This analysis could then use that analysis.
         if (!StringAnalysis.isSupportedType(instr.declaredFieldType)) {
@@ -141,7 +141,7 @@ case class L1FieldReadInterpreter[State <: L1ComputationState](
     }
 
     private def tryComputeFinalResult(implicit
-        state:       State,
+        state:       ComputationState,
         accessState: FieldReadState
     ): ProperPropertyComputationResult = {
         if (accessState.hasDependees) {
@@ -168,7 +168,10 @@ case class L1FieldReadInterpreter[State <: L1ComputationState](
         }
     }
 
-    private def continuation(state: State, accessState: FieldReadState)(eps: SomeEPS): ProperPropertyComputationResult = {
+    private def continuation(
+        state:       ComputationState,
+        accessState: FieldReadState
+    )(eps: SomeEPS): ProperPropertyComputationResult = {
         eps match {
             case UBP(_: StringConstancyProperty) =>
                 accessState.updateAccessDependee(eps.asInstanceOf[EOptionP[SContext, StringConstancyProperty]])

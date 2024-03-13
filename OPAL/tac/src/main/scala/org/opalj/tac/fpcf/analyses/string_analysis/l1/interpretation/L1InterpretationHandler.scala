@@ -33,16 +33,18 @@ import org.opalj.tac.fpcf.analyses.string_analysis.l0.interpretation.L0VirtualMe
  *
  * @author Maximilian Rüsch
  */
-class L1InterpretationHandler[State <: L1ComputationState](
+class L1InterpretationHandler(
     implicit val p:  SomeProject,
     implicit val ps: PropertyStore
-) extends InterpretationHandler[State] {
+) extends InterpretationHandler {
 
     val declaredFields: DeclaredFields = p.get(DeclaredFieldsKey)
     val fieldAccessInformation: FieldAccessInformation = p.get(FieldAccessInformationKey)
     implicit val contextProvider: ContextProvider = p.get(ContextProviderKey)
 
-    override protected def processNewDefSitePC(pc: Int)(implicit state: State): ProperPropertyComputationResult = {
+    override protected def processNewDefSitePC(pc: Int)(implicit
+        state: ComputationState
+    ): ProperPropertyComputationResult = {
         val defSiteOpt = valueOriginOfPC(pc, state.tac.pcToIndex);
         if (defSiteOpt.isEmpty) {
             throw new IllegalArgumentException(s"Obtained a pc that does not represent a definition site: $pc")
@@ -86,7 +88,7 @@ class L1InterpretationHandler[State <: L1ComputationState](
             case Assignment(_, _, expr: BinaryExpr[V]) => BinaryExprInterpreter.interpret(expr, pc)
 
             case vmc: VirtualMethodCall[V] =>
-                L0VirtualMethodCallInterpreter().interpret(vmc, pc)
+                L0VirtualMethodCallInterpreter.interpret(vmc, pc)
             case nvmc: NonVirtualMethodCall[V] =>
                 L0NonVirtualMethodCallInterpreter(ps).interpret(nvmc, pc)
 
@@ -101,6 +103,6 @@ object L1InterpretationHandler {
     def requiredProjectInformation: ProjectInformationKeys =
         Seq(DeclaredFieldsKey, FieldAccessInformationKey, ContextProviderKey)
 
-    def apply[State <: L1ComputationState](project: SomeProject, ps: PropertyStore): L1InterpretationHandler[State] =
-        new L1InterpretationHandler[State]()(project, ps)
+    def apply(project: SomeProject, ps: PropertyStore): L1InterpretationHandler =
+        new L1InterpretationHandler()(project, ps)
 }

@@ -6,7 +6,6 @@ package analyses
 package string_analysis
 package l0
 
-import org.opalj.br.DefinedMethod
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.fpcf.FinalEP
@@ -17,10 +16,6 @@ import org.opalj.fpcf.Result
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 import org.opalj.tac.fpcf.analyses.string_analysis.l0.interpretation.L0InterpretationHandler
 import org.opalj.tac.fpcf.properties.TACAI
-
-trait L0ComputationState extends ComputationState
-
-trait L0StringInterpreter[State <: L0ComputationState] extends StringInterpreter[State]
 
 /**
  * IntraproceduralStringAnalysis processes a read operation of a local string variable at a program
@@ -50,16 +45,9 @@ trait L0StringInterpreter[State <: L0ComputationState] extends StringInterpreter
  */
 class L0StringAnalysis(override val project: SomeProject) extends StringAnalysis {
 
-    protected[l0] case class CState(
-        override val dm:     DefinedMethod,
-        override val entity: SContext
-    ) extends L0ComputationState
-
-    override type State = CState
-
     override def analyze(data: SContext): ProperPropertyComputationResult = {
-        val state = CState(declaredMethods(data._2), data)
-        val iHandler = L0InterpretationHandler[CState]()
+        val state = ComputationState(declaredMethods(data._2), data)
+        val iHandler = L0InterpretationHandler()
 
         val tacaiEOptP = ps(data._2, TACAI.key)
         if (tacaiEOptP.isRefinable) {
@@ -77,8 +65,8 @@ class L0StringAnalysis(override val project: SomeProject) extends StringAnalysis
     }
 
     override protected[string_analysis] def determinePossibleStrings(implicit
-        state:    State,
-        iHandler: InterpretationHandler[State]
+        state:    ComputationState,
+        iHandler: InterpretationHandler
     ): ProperPropertyComputationResult = {
         implicit val tac: TAC = state.tac
 
@@ -153,8 +141,6 @@ class L0StringAnalysis(override val project: SomeProject) extends StringAnalysis
 }
 
 object LazyL0StringAnalysis extends LazyStringAnalysis {
-
-    override type State = L0ComputationState
 
     override def init(p: SomeProject, ps: PropertyStore): InitializationData =
         (new L0StringAnalysis(p), L0InterpretationHandler()(p, ps))

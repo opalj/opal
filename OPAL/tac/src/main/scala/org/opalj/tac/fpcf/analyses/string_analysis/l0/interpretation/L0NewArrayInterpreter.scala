@@ -18,17 +18,13 @@ import org.opalj.fpcf.SomeFinalEP
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 
 /**
- * Interprets [[NewArray]] expressions without a call graph.
- * <p>
- *
  * @author Maximilian Rüsch
  */
-class L0NewArrayInterpreter[State <: L0ComputationState](ps: PropertyStore)
-    extends L0StringInterpreter[State] {
+class L0NewArrayInterpreter(ps: PropertyStore) extends StringInterpreter {
 
     override type T = NewArray[V]
 
-    override def interpret(instr: T, pc: Int)(implicit state: State): ProperPropertyComputationResult = {
+    override def interpret(instr: T, pc: Int)(implicit state: ComputationState): ProperPropertyComputationResult = {
         if (instr.counts.length != 1) {
             // Only supports 1-D arrays
             return computeFinalResult(pc, StringConstancyInformation.lb)
@@ -64,7 +60,7 @@ class L0NewArrayInterpreter[State <: L0ComputationState](ps: PropertyStore)
         }
     }
 
-    private def finalResult(pc: Int)(results: Seq[SomeFinalEP])(implicit state: State): Result = {
+    private def finalResult(pc: Int)(results: Seq[SomeFinalEP])(implicit state: ComputationState): Result = {
         val resultsScis = results.map(_.p.asInstanceOf[StringConstancyProperty].sci)
         val sci = if (resultsScis.forall(_.isTheNeutralElement)) {
             // It might be that there are no results; in such a case, set the string information to the lower bound

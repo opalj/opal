@@ -45,8 +45,6 @@ import org.opalj.tac.fpcf.properties.TACAI
  */
 trait StringAnalysis extends FPCFAnalysis {
 
-    type State <: ComputationState
-
     val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
     def analyze(data: SContext): ProperPropertyComputationResult
@@ -57,8 +55,8 @@ trait StringAnalysis extends FPCFAnalysis {
      * [[InterimResult]] depending on whether other information needs to be computed first.
      */
     protected[string_analysis] def determinePossibleStrings(implicit
-        state:    State,
-        iHandler: InterpretationHandler[State]
+        state:    ComputationState,
+        iHandler: InterpretationHandler
     ): ProperPropertyComputationResult
 
     /**
@@ -71,8 +69,8 @@ trait StringAnalysis extends FPCFAnalysis {
      *         be returned.
      */
     protected[this] def continuation(
-        state:    State,
-        iHandler: InterpretationHandler[State]
+        state:    ComputationState,
+        iHandler: InterpretationHandler
     )(eps: SomeEPS): ProperPropertyComputationResult = {
         eps match {
             case FinalP(tac: TACAI) if
@@ -109,7 +107,7 @@ trait StringAnalysis extends FPCFAnalysis {
      *              not have been called)!
      * @return Returns the final result.
      */
-    protected def computeFinalResult(state: State): Result = {
+    protected def computeFinalResult(state: ComputationState): Result = {
         Result(
             state.entity,
             StringConstancyProperty(StringConstancyInformation(
@@ -119,8 +117,8 @@ trait StringAnalysis extends FPCFAnalysis {
     }
 
     protected def getInterimResult(
-        state:    State,
-        iHandler: InterpretationHandler[State]
+        state:    ComputationState,
+        iHandler: InterpretationHandler
     ): InterimResult[StringConstancyProperty] = {
         InterimResult(
             state.entity,
@@ -131,7 +129,7 @@ trait StringAnalysis extends FPCFAnalysis {
         )
     }
 
-    private def computeNewUpperBound(state: State): StringConstancyProperty = {
+    private def computeNewUpperBound(state: ComputationState): StringConstancyProperty = {
         if (state.computedLeanPath != null) {
             StringConstancyProperty(StringConstancyInformation(
                 tree = PathTransformer.pathToStringTree(state.computedLeanPath)(state, ps).simplify
@@ -149,7 +147,7 @@ trait StringAnalysis extends FPCFAnalysis {
      * @param state The current state of the computation.
      * @return Returns `true` if all values computed for the path are final results.
      */
-    protected def computeResultsForPath(p: Path)(implicit state: State): Boolean = {
+    protected def computeResultsForPath(p: Path)(implicit state: ComputationState): Boolean = {
         var hasFinalResult = true
         p.elements.foreach {
             case fpe: FlatPathElement =>
@@ -226,7 +224,7 @@ trait StringAnalysis extends FPCFAnalysis {
      * @return A mapping from dependent [[PUVar]]s to the [[FlatPathElement]] indices they occur in.
      */
     protected def findDependentVars(path: Path, ignore: SEntity)( // We may need to register the old path with them
-        implicit state: State): mutable.LinkedHashMap[SEntity, Int] = {
+        implicit state: ComputationState): mutable.LinkedHashMap[SEntity, Int] = {
         val stmts = state.tac.stmts
 
         def findDependeesAcc(subpath: SubPath): ListBuffer[(SEntity, Int)] = {
@@ -348,8 +346,7 @@ sealed trait StringAnalysisScheduler extends FPCFAnalysisScheduler {
         PropertyBounds.lub(StringConstancyProperty)
     )
 
-    type State <: ComputationState
-    override final type InitializationData = (StringAnalysis, InterpretationHandler[State])
+    override final type InitializationData = (StringAnalysis, InterpretationHandler)
 
     override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
 

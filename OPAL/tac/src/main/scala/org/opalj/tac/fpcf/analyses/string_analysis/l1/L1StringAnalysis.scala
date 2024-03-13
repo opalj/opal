@@ -6,8 +6,6 @@ package analyses
 package string_analysis
 package l1
 
-import org.opalj.br.DefinedMethod
-import org.opalj.br.Method
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.ContextProviderKey
@@ -21,13 +19,8 @@ import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
-import org.opalj.tac.fpcf.analyses.string_analysis.l0.L0ComputationState
 import org.opalj.tac.fpcf.analyses.string_analysis.l1.interpretation.L1InterpretationHandler
 import org.opalj.tac.fpcf.properties.TACAI
-
-trait L1ComputationState extends L0ComputationState
-
-trait L1StringInterpreter[State <: L1ComputationState] extends StringInterpreter[State]
 
 /**
  * InterproceduralStringAnalysis processes a read operation of a string variable at a program
@@ -56,19 +49,12 @@ trait L1StringInterpreter[State <: L1ComputationState] extends StringInterpreter
  */
 class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
 
-    protected[l1] case class CState(
-        override val dm:     DefinedMethod,
-        override val entity: (SEntity, Method)
-    ) extends L1ComputationState
-
-    override type State = CState
-
     protected implicit val contextProvider: ContextProvider = project.get(ContextProviderKey)
 
     override def analyze(data: SContext): ProperPropertyComputationResult = {
         // IMPROVE enable handling call string contexts here (build a chain, probably via SContext)
-        val state = CState(declaredMethods(data._2), data)
-        val iHandler = L1InterpretationHandler[CState](project, ps)
+        val state = ComputationState(declaredMethods(data._2), data)
+        val iHandler = L1InterpretationHandler(project, ps)
 
         val tacaiEOptP = ps(data._2, TACAI.key)
         if (tacaiEOptP.isRefinable) {
@@ -92,8 +78,8 @@ class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
      * [[org.opalj.fpcf.InterimResult]] depending on whether other information needs to be computed first.
      */
     override protected[string_analysis] def determinePossibleStrings(implicit
-        state:    State,
-        iHandler: InterpretationHandler[State]
+        state:    ComputationState,
+        iHandler: InterpretationHandler
     ): ProperPropertyComputationResult = {
         val puVar = state.entity._1
         val uVar = puVar.toValueOriginForm(state.tac.pcToIndex)
@@ -174,8 +160,6 @@ object L1StringAnalysis {
 }
 
 object LazyL1StringAnalysis extends LazyStringAnalysis {
-
-    override type State = L1ComputationState
 
     override final def uses: Set[PropertyBounds] = Set(PropertyBounds.ub(Callees)) ++ super.uses
 

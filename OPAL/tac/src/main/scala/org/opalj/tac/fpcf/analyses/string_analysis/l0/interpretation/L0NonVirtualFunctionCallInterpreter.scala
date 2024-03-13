@@ -18,15 +18,15 @@ import org.opalj.tac.fpcf.properties.TACAI
  *
  * @author Maximilian Rüsch
  */
-case class L0NonVirtualFunctionCallInterpreter[State <: L0ComputationState]()(
+case class L0NonVirtualFunctionCallInterpreter()(
     implicit val p:  SomeProject,
     implicit val ps: PropertyStore
-) extends L0StringInterpreter[State]
-    with L0FunctionCallInterpreter[State] {
+) extends StringInterpreter
+    with L0FunctionCallInterpreter {
 
     override type T = NonVirtualFunctionCall[V]
 
-    override def interpret(instr: T, pc: Int)(implicit state: State): ProperPropertyComputationResult = {
+    override def interpret(instr: T, pc: Int)(implicit state: ComputationState): ProperPropertyComputationResult = {
         val calleeMethod = instr.resolveCallTarget(state.entity._2.classFile.thisType)
         if (calleeMethod.isEmpty) {
             return computeFinalResult(pc, StringConstancyInformation.lb)

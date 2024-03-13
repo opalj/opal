@@ -14,7 +14,7 @@ import org.opalj.fpcf.ProperPropertyComputationResult
 /**
  * @author Maximilian Rüsch
  */
-case class BinaryExprInterpreter[State <: ComputationState]() extends StringInterpreter[State] {
+object BinaryExprInterpreter extends StringInterpreter {
 
     override type T = BinaryExpr[V]
 
@@ -26,7 +26,7 @@ case class BinaryExprInterpreter[State <: ComputationState]() extends StringInte
      * </li>
      * For all other expressions, a [[StringConstancyInformation.neutralElement]] will be returned.
      */
-    def interpret(instr: T, pc: Int)(implicit state: State): ProperPropertyComputationResult = {
+    def interpret(instr: T, pc: Int)(implicit state: ComputationState): ProperPropertyComputationResult = {
         val sci = instr.cTpe match {
             case ComputationalTypeInt   => StringConstancyInformation.dynamicInt
             case ComputationalTypeFloat => StringConstancyInformation.dynamicFloat
@@ -34,11 +34,4 @@ case class BinaryExprInterpreter[State <: ComputationState]() extends StringInte
         }
         computeFinalResult(pc, sci)
     }
-}
-
-object BinaryExprInterpreter {
-
-    def interpret[State <: ComputationState](instr: BinaryExpr[V], pc: Int)(implicit
-        state: State
-    ): ProperPropertyComputationResult = BinaryExprInterpreter[State]().interpret(instr, pc)
 }

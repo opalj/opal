@@ -14,11 +14,11 @@ import org.opalj.fpcf.ProperPropertyComputationResult
 /**
  * @author Maximilian Rüsch
  */
-case class SimpleValueConstExprInterpreter[State <: ComputationState]() extends StringInterpreter[State] {
+object SimpleValueConstExprInterpreter extends StringInterpreter {
 
     override type T = SimpleValueConst
 
-    def interpret(expr: T, pc: Int)(implicit state: State): ProperPropertyComputationResult = {
+    def interpret(expr: T, pc: Int)(implicit state: ComputationState): ProperPropertyComputationResult = {
         val treeOpt = expr match {
             case ic: IntConst    => Some(StringTreeConst(ic.value.toString))
             case fc: FloatConst  => Some(StringTreeConst(fc.value.toString))
@@ -33,11 +33,4 @@ case class SimpleValueConstExprInterpreter[State <: ComputationState]() extends 
             .getOrElse(StringConstancyInformation.neutralElement)
         computeFinalResult(pc, sci)
     }
-}
-
-object SimpleValueConstExprInterpreter {
-
-    def interpret[State <: ComputationState](instr: SimpleValueConst, pc: Int)(implicit
-        state: State
-    ): ProperPropertyComputationResult = SimpleValueConstExprInterpreter[State]().interpret(instr, pc)
 }

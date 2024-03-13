@@ -19,13 +19,7 @@ import org.opalj.tac.fpcf.properties.TACAI
  * time during the analysis, e.g., due to the fact that another analysis had to be triggered to
  * have all required information ready for a final result.
  */
-trait ComputationState {
-    val dm: DefinedMethod
-
-    /**
-     * The entity for which the analysis was started with.
-     */
-    val entity: SContext
+case class ComputationState(dm: DefinedMethod, entity: SContext) {
 
     /**
      * The Three-Address Code of the entity's method

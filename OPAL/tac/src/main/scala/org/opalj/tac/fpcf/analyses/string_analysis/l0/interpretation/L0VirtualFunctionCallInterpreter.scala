@@ -39,12 +39,12 @@ import org.opalj.value.TheIntegerValue
  *
  * @author Maximilian Rüsch
  */
-case class L0VirtualFunctionCallInterpreter[State <: L0ComputationState](
+case class L0VirtualFunctionCallInterpreter(
     override val ps: PropertyStore
-) extends L0StringInterpreter[State]
-    with L0ArbitraryVirtualFunctionCallInterpreter[State]
-    with L0AppendCallInterpreter[State]
-    with L0SubstringCallInterpreter[State] {
+) extends StringInterpreter
+    with L0ArbitraryVirtualFunctionCallInterpreter
+    with L0AppendCallInterpreter
+    with L0SubstringCallInterpreter {
 
     override type T = VirtualFunctionCall[V]
 
@@ -68,7 +68,7 @@ case class L0VirtualFunctionCallInterpreter[State <: L0ComputationState](
      *
      * If none of the above-described cases match, a [[NoResult]] will be returned.
      */
-    override def interpret(instr: T, pc: Int)(implicit state: State): ProperPropertyComputationResult = {
+    override def interpret(instr: T, pc: Int)(implicit state: ComputationState): ProperPropertyComputationResult = {
         instr.name match {
             case "append"   => interpretAppendCall(instr, pc)
             case "toString" => interpretToStringCall(instr, pc)
@@ -91,7 +91,9 @@ case class L0VirtualFunctionCallInterpreter[State <: L0ComputationState](
      * Processes calls to [[StringBuilder#toString]] or [[StringBuffer#toString]]. Note that this function assumes that
      * the given `toString` is such a function call! Otherwise, the expected behavior cannot be guaranteed.
      */
-    private def interpretToStringCall(call: T, pc: Int)(implicit state: State): ProperPropertyComputationResult = {
+    private def interpretToStringCall(call: T, pc: Int)(implicit
+        state: ComputationState
+    ): ProperPropertyComputationResult = {
         def computeResult(eps: SomeEOptionP): ProperPropertyComputationResult = {
             eps match {
                 case FinalP(sciP: StringConstancyProperty) =>
@@ -126,22 +128,22 @@ case class L0VirtualFunctionCallInterpreter[State <: L0ComputationState](
     /**
      * Processes calls to [[StringBuilder#replace]] or [[StringBuffer#replace]].
      */
-    private def interpretReplaceCall(pc: Int)(implicit state: State): ProperPropertyComputationResult =
+    private def interpretReplaceCall(pc: Int)(implicit state: ComputationState): ProperPropertyComputationResult =
         computeFinalResult(pc, InterpretationHandler.getStringConstancyInformationForReplace)
 }
 
-private[string_analysis] trait L0ArbitraryVirtualFunctionCallInterpreter[State <: L0ComputationState]
-    extends L0StringInterpreter[State] {
+private[string_analysis] trait L0ArbitraryVirtualFunctionCallInterpreter extends StringInterpreter {
 
-    protected def interpretArbitraryCall(call: T, pc: Int)(implicit state: State): ProperPropertyComputationResult =
+    protected def interpretArbitraryCall(call: T, pc: Int)(implicit
+        state: ComputationState
+    ): ProperPropertyComputationResult =
         computeFinalResult(pc, StringConstancyInformation.lb)
 }
 
 /**
  * Interprets calls to [[StringBuilder#append]] or [[StringBuffer#append]].
  */
-private[string_analysis] trait L0AppendCallInterpreter[State <: L0ComputationState]
-    extends L0StringInterpreter[State] {
+private[string_analysis] trait L0AppendCallInterpreter extends StringInterpreter {
 
     override type T = VirtualFunctionCall[V]
 
@@ -177,7 +179,7 @@ private[string_analysis] trait L0AppendCallInterpreter[State <: L0ComputationSta
     }
 
     def interpretAppendCall(appendCall: T, pc: Int)(implicit
-        state: State
+        state: ComputationState
     ): ProperPropertyComputationResult = {
         // Get receiver results
         val receiverResults = appendCall.receiver.asVar.definedBy.toList.sorted.map { ds =>
@@ -200,7 +202,7 @@ private[string_analysis] trait L0AppendCallInterpreter[State <: L0ComputationSta
     }
 
     private def continuation(
-        state:       State,
+        state:       ComputationState,
         appendState: AppendCallState
     )(eps: SomeEPS): ProperPropertyComputationResult = {
         eps match {
@@ -213,7 +215,7 @@ private[string_analysis] trait L0AppendCallInterpreter[State <: L0ComputationSta
     }
 
     private def tryComputeFinalAppendCallResult(implicit
-        state:       State,
+        state:       ComputationState,
         appendState: AppendCallState
     ): ProperPropertyComputationResult = {
         if (appendState.hasDependees) {
@@ -278,15 +280,14 @@ private[string_analysis] trait L0AppendCallInterpreter[State <: L0ComputationSta
 /**
  * Interprets calls to [[String#substring]].
  */
-private[string_analysis] trait L0SubstringCallInterpreter[State <: L0ComputationState]
-    extends L0StringInterpreter[State] {
+private[string_analysis] trait L0SubstringCallInterpreter extends StringInterpreter {
 
     override type T = VirtualFunctionCall[V]
 
     val ps: PropertyStore
 
     def interpretSubstringCall(substringCall: T, pc: Int)(implicit
-        state: State
+        state: ComputationState
     ): ProperPropertyComputationResult = {
         val receiverResults = substringCall.receiver.asVar.definedBy.toList.sorted.map { ds =>
             ps(InterpretationHandler.getEntityFromDefSite(ds), StringConstancyProperty.key)
@@ -309,7 +310,7 @@ private[string_analysis] trait L0SubstringCallInterpreter[State <: L0Computation
 
     private def computeFinalSubstringCallResult(substringCall: T, pc: Int)(
         results: Seq[SomeFinalEP]
-    )(implicit state: State): Result = {
+    )(implicit state: ComputationState): Result = {
         val receiverSci = StringConstancyInformation.reduceMultiple(results.map {
             _.p.asInstanceOf[StringConstancyProperty].sci
         })

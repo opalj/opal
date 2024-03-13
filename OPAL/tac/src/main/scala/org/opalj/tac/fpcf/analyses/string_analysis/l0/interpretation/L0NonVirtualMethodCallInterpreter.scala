@@ -20,19 +20,19 @@ import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.Interpretation
 /**
  * @author Maximilian Rüsch
  */
-case class L0NonVirtualMethodCallInterpreter[State <: L0ComputationState](ps: PropertyStore)
-    extends L0StringInterpreter[State] {
+case class L0NonVirtualMethodCallInterpreter(ps: PropertyStore)
+    extends StringInterpreter {
 
     override type T = NonVirtualMethodCall[V]
 
-    override def interpret(instr: T, pc: Int)(implicit state: State): ProperPropertyComputationResult = {
+    override def interpret(instr: T, pc: Int)(implicit state: ComputationState): ProperPropertyComputationResult = {
         instr.name match {
             case "<init>" => interpretInit(instr, pc)
             case _        => computeFinalResult(pc, StringConstancyInformation.neutralElement)
         }
     }
 
-    private def interpretInit(init: T, pc: Int)(implicit state: State): ProperPropertyComputationResult = {
+    private def interpretInit(init: T, pc: Int)(implicit state: ComputationState): ProperPropertyComputationResult = {
         init.params.size match {
             case 0 => computeFinalResult(pc, StringConstancyInformation.neutralElement)
             case _ =>
@@ -57,7 +57,7 @@ case class L0NonVirtualMethodCallInterpreter[State <: L0ComputationState](ps: Pr
     }
 
     private def finalResult(pc: Int)(results: Seq[SomeEPS])(implicit
-        state: State
+        state: ComputationState
     ): Result =
         computeFinalResult(
             pc,

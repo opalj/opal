@@ -22,11 +22,11 @@ import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.Interpretation
  *
  * @author Maximilian Rüsch
  */
-case class L0ArrayAccessInterpreter[State <: L0ComputationState](ps: PropertyStore) extends L0StringInterpreter[State] {
+case class L0ArrayAccessInterpreter(ps: PropertyStore) extends StringInterpreter {
 
     override type T = ArrayLoad[V]
 
-    override def interpret(instr: T, pc: Int)(implicit state: State): ProperPropertyComputationResult = {
+    override def interpret(instr: T, pc: Int)(implicit state: ComputationState): ProperPropertyComputationResult = {
         val defSitePCs = getStoreAndLoadDefSitePCs(instr)(state.tac.stmts)
         val results = defSitePCs.map { pc =>
             ps(InterpretationHandler.getEntityFromDefSitePC(pc), StringConstancyProperty.key)
@@ -48,7 +48,7 @@ case class L0ArrayAccessInterpreter[State <: L0ComputationState](ps: PropertySto
     }
 
     private def finalResult(pc: Int)(results: Seq[SomeFinalEP])(implicit
-        state: State
+        state: ComputationState
     ): ProperPropertyComputationResult = {
         var resultSci = StringConstancyInformation.reduceMultiple(results.map {
             _.asFinal.p.asInstanceOf[StringConstancyProperty].sci

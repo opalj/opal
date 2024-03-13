@@ -21,7 +21,7 @@ import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.Interpretation
 /**
  * @author Maximilian Rüsch
  */
-trait StringInterpreter[State <: ComputationState] {
+trait StringInterpreter {
 
     type T <: ASTNode[V]
 
@@ -31,15 +31,15 @@ trait StringInterpreter[State <: ComputationState] {
      * @return A [[ProperPropertyComputationResult]] for the given pc containing the interpretation of the given
      *         instruction.
      */
-    def interpret(instr: T, pc: Int)(implicit state: State): ProperPropertyComputationResult
+    def interpret(instr: T, pc: Int)(implicit state: ComputationState): ProperPropertyComputationResult
 
-    def computeFinalResult(pc: Int, sci: StringConstancyInformation)(implicit state: State): Result =
+    def computeFinalResult(pc: Int, sci: StringConstancyInformation)(implicit state: ComputationState): Result =
         StringInterpreter.computeFinalResult(pc, sci)
 
     // IMPROVE remove this since awaiting all final is not really feasible
     // replace with intermediate lattice result approach
     protected final def awaitAllFinalContinuation(
-        depender:    EPSDepender[T, State],
+        depender:    EPSDepender[T, ComputationState],
         finalResult: Seq[SomeFinalEP] => ProperPropertyComputationResult
     )(result: SomeEPS): ProperPropertyComputationResult = {
         if (result.isFinal) {
@@ -77,11 +77,11 @@ object StringInterpreter {
         Result(FinalEP(InterpretationHandler.getEntityFromDefSitePC(pc), StringConstancyProperty(sci)))
 }
 
-trait ParameterEvaluatingStringInterpreter[State <: ComputationState] extends StringInterpreter[State] {
+trait ParameterEvaluatingStringInterpreter extends StringInterpreter {
 
     val ps: PropertyStore
 
-    protected def getParametersForPC(pc: Int)(implicit state: State): Seq[Expr[V]] = {
+    protected def getParametersForPC(pc: Int)(implicit state: ComputationState): Seq[Expr[V]] = {
         state.tac.stmts(state.tac.pcToIndex(pc)) match {
             case ExprStmt(_, vfc: FunctionCall[V])     => vfc.params
             case Assignment(_, _, fc: FunctionCall[V]) => fc.params
@@ -90,7 +90,7 @@ trait ParameterEvaluatingStringInterpreter[State <: ComputationState] extends St
     }
 
     protected def evaluateParameters(params: Seq[Expr[V]])(implicit
-        state: State
+        state: ComputationState
     ): Seq[Seq[EOptionP[DefSiteEntity, StringConstancyProperty]]] = {
         params.map { nextParam =>
             Seq.from(nextParam.asVar.definedBy.toArray.sorted.map { ds =>

@@ -25,9 +25,9 @@ import org.opalj.tac.fpcf.properties.TACAI
  *
  * @author Maximilian Rüsch
  */
-trait L0FunctionCallInterpreter[State <: L0ComputationState]
-    extends L0StringInterpreter[State]
-    with ParameterEvaluatingStringInterpreter[State] {
+trait L0FunctionCallInterpreter
+    extends StringInterpreter
+    with ParameterEvaluatingStringInterpreter {
 
     override type T <: FunctionCall[V]
 
@@ -92,7 +92,7 @@ trait L0FunctionCallInterpreter[State <: L0ComputationState]
     }
 
     protected def interpretArbitraryCallToMethods(implicit
-        state:     State,
+        state:     ComputationState,
         callState: FunctionCallState
     ): ProperPropertyComputationResult = {
         callState.calleeMethods.foreach { m =>
@@ -125,7 +125,7 @@ trait L0FunctionCallInterpreter[State <: L0ComputationState]
     }
 
     private def tryComputeFinalResult(implicit
-        state:     State,
+        state:     ComputationState,
         callState: FunctionCallState
     ): ProperPropertyComputationResult = {
         if (callState.hasDependees) {
@@ -155,7 +155,7 @@ trait L0FunctionCallInterpreter[State <: L0ComputationState]
     }
 
     private def continuation(
-        state:     State,
+        state:     ComputationState,
         callState: FunctionCallState
     )(eps: SomeEPS): ProperPropertyComputationResult = {
         eps match {

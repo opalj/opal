@@ -28,8 +28,8 @@ object PathTransformer {
     /**
      * Accumulator function for transforming a path into a StringTree element.
      */
-    private def pathToTreeAcc[State <: ComputationState](subpath: SubPath)(implicit
-        state: State,
+    private def pathToTreeAcc(subpath: SubPath)(implicit
+        state: ComputationState,
         ps:    PropertyStore
     ): Option[StringTreeNode] = {
         subpath match {
@@ -101,8 +101,8 @@ object PathTransformer {
      *         all elements of the tree will be defined, i.e., if `path` contains sites that could
      *         not be processed (successfully), they will not occur in the tree.
      */
-    def pathToStringTree[State <: ComputationState](path: Path)(implicit
-        state: State,
+    def pathToStringTree(path: Path)(implicit
+        state: ComputationState,
         ps:    PropertyStore
     ): StringTreeNode = {
         path.elements.size match {

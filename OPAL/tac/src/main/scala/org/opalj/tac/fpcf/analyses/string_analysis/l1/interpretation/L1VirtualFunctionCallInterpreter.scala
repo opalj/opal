@@ -34,12 +34,12 @@ import org.opalj.tac.fpcf.properties.TACAI
  *
  * @author Maximilian Rüsch
  */
-class L1VirtualFunctionCallInterpreter[State <: L1ComputationState](
+class L1VirtualFunctionCallInterpreter(
     override implicit val ps:     PropertyStore,
     implicit val contextProvider: ContextProvider
-) extends L0VirtualFunctionCallInterpreter[State](ps)
-    with L1StringInterpreter[State]
-    with L0FunctionCallInterpreter[State] {
+) extends L0VirtualFunctionCallInterpreter(ps)
+    with StringInterpreter
+    with L0FunctionCallInterpreter {
 
     override type T = VirtualFunctionCall[V]
 
@@ -50,7 +50,7 @@ class L1VirtualFunctionCallInterpreter[State <: L1ComputationState](
     )
 
     override protected def interpretArbitraryCall(instr: T, pc: Int)(
-        implicit state: State
+        implicit state: ComputationState
     ): ProperPropertyComputationResult = {
         val depender = CalleeDepender(pc, contextProvider.newContext(state.dm), ps(state.dm, Callees.key))
 
@@ -77,7 +77,10 @@ class L1VirtualFunctionCallInterpreter[State <: L1ComputationState](
         }
     }
 
-    private def continuation(state: State, depender: CalleeDepender)(eps: SomeEPS): ProperPropertyComputationResult = {
+    private def continuation(
+        state:    ComputationState,
+        depender: CalleeDepender
+    )(eps: SomeEPS): ProperPropertyComputationResult = {
         eps match {
             case FinalP(c: Callees) =>
                 val methods = getMethodsFromCallees(depender.pc, depender.methodContext, c)
