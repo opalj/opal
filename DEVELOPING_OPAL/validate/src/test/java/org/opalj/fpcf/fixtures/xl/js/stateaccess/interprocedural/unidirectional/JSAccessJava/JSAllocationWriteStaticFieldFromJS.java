@@ -13,17 +13,17 @@ import javax.script.ScriptException;
  *
  */
 public class JSAllocationWriteStaticFieldFromJS {
-    @PointsToSet(variableDefinition = 30,
+    @PointsToSet(variableDefinition = 28,
             expectedJavaScriptAllocSites = @JavaScriptContextAllocSite(
                     cf = JSAllocationWriteStaticFieldFromJS.class,
-                    nodeIdTAJS = 11,
+                    nodeIdTAJS = 16,
                     allocatedType = "java.lang.Object"
             )
     )
     public static void main(String args[]) throws ScriptException, NoSuchMethodException {
         ScriptEngineManager sem = new ScriptEngineManager();
         ScriptEngine se = sem.getEngineByName("JavaScript");
-        se.eval("var javaTestClass = Java.type(\"org.opalj.fpcf.fixtures.xl.js.stateaccess.interprocedural.unidirectional.JSAccessJava\"); var myobject = {'a' : 3}; javaTestClass.myfield = myobject");
+        se.eval("var javaTestClass = Java.type(\"org.opalj.fpcf.fixtures.xl.js.stateaccess.interprocedural.unidirectional.JSAccessJava.JSAllocationWriteStaticFieldFromJS\"); var myobject = {'a' : 3}; javaTestClass.myfield = myobject");
 
         Object instancefield = JSAllocationWriteStaticFieldFromJS.myfield;
         System.out.println(instancefield);

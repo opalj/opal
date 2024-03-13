@@ -21,7 +21,7 @@ class TAJSEnvironmentMatcher extends AbstractPropertyMatcher {
         a:          AnnotationLike,
         properties: Iterable[Property]
     ): Option[String] = {
-        val singleAnnotation = ObjectType("org/opalj/fpcf/properties/xl/TAJSEnvironment")
+        val singleAnnotation = ObjectType("org/opalj/fpcf/properties/xl/JSEnvironment")
         if (a.annotationType == singleAnnotation) {
             validateSingleAnnotation(p, as, entity, a, properties)
         } else {
