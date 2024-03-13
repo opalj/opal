@@ -16,13 +16,11 @@ import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.fpcf.FinalEP
-import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.InterimResult
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
-import org.opalj.fpcf.SomeEPS
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 import org.opalj.tac.fpcf.analyses.string_analysis.l1.interpretation.L1InterpretationHandler
 import org.opalj.tac.fpcf.properties.TACAI
@@ -67,7 +65,7 @@ class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
     override def analyze(data: SContext): ProperPropertyComputationResult = {
         val dm = declaredMethods(data._2)
         // IMPROVE enable handling call string contexts here (build a chain, probably via SContext)
-        val state = CState(dm, data, contextProvider.newContext(declaredMethods(data._2)))
+        val state = CState(dm, data, contextProvider.newContext(dm))
         val iHandler = L1InterpretationHandler[CState](project, ps)
 
         val tacaiEOptP = ps(data._2, TACAI.key)
@@ -83,13 +81,6 @@ class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
 
         state.tac = tacaiEOptP.ub.tac.get
 
-        val calleesEOptP = ps(dm, Callees.key)
-        if (calleesEOptP.hasNoUBP) {
-            state.calleesDependee = Some(calleesEOptP)
-            return getInterimResult(state, iHandler)
-        }
-
-        state.callees = calleesEOptP.ub
         determinePossibleStrings(state, iHandler)
     }
 
@@ -106,7 +97,7 @@ class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
         val uVar = puVar.toValueOriginForm(state.tac.pcToIndex)
         val defSites = uVar.definedBy.toArray.sorted
 
-        if (state.tac == null || state.callees == null) {
+        if (state.tac == null) {
             return getInterimResult(state, iHandler)
         }
 
@@ -169,32 +160,6 @@ class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
             getInterimResult(state, iHandler)
         } else {
             computeFinalResult(state)
-        }
-    }
-
-    /**
-     * Continuation function for this analysis.
-     *
-     * @param state The current computation state. Within this continuation, dependees of the state might be updated.
-     *              Furthermore, methods processing this continuation might alter the state.
-     * @return Returns a final result if (already) available. Otherwise, an intermediate result will be returned.
-     */
-    override protected def continuation(
-        state:    State,
-        iHandler: InterpretationHandler[State]
-    )(eps: SomeEPS): ProperPropertyComputationResult = {
-        state.dependees = state.dependees.filter(_.e != eps.e)
-
-        eps match {
-            case FinalP(callees: Callees) if eps.pk.equals(Callees.key) =>
-                state.callees = callees
-                if (state.dependees.isEmpty) {
-                    determinePossibleStrings(state, iHandler)
-                } else {
-                    getInterimResult(state, iHandler)
-                }
-            case _ =>
-                super.continuation(state, iHandler)(eps)
         }
     }
 }
