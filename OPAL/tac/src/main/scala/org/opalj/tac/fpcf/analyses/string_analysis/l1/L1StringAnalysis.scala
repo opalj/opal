@@ -9,7 +9,6 @@ package l1
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.ContextProviderKey
-import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.fpcf.FinalEP
@@ -48,8 +47,6 @@ import org.opalj.tac.fpcf.properties.TACAI
  * @author Patrick Mell
  */
 class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
-
-    protected implicit val contextProvider: ContextProvider = project.get(ContextProviderKey)
 
     override def analyze(data: SContext): ProperPropertyComputationResult = {
         // IMPROVE enable handling call string contexts here (build a chain, probably via SContext)
