@@ -2,7 +2,7 @@
 package org.opalj.xl
 
 import java.net.URL
-
+import org.opalj.xl.connector.AllocationSiteBasedTriggeredTajsConnectorScheduler
 import org.opalj.xl.javaanalyses.detector.scriptengine.AllocationSiteBasedScriptEngineDetectorScheduler
 import org.opalj.xl.utility.AnalysisResult
 import org.opalj.xl.utility.InterimAnalysisResult

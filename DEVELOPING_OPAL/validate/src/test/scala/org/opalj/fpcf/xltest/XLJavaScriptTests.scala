@@ -4,10 +4,11 @@ package fpcf
 package xltest
 
 import java.net.URL
+
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
-import org.opalj.xl.AllocationSiteBasedTriggeredTajsConnectorScheduler
 import org.opalj.xl.javaanalyses.detector.scriptengine.AllocationSiteBasedScriptEngineDetectorScheduler
+
 import org.opalj.fpcf.PropertiesTest
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.SomeEPS
@@ -24,8 +25,9 @@ import org.opalj.tac.fpcf.analyses.cg.AllocationSitesPointsToTypeIterator
 import org.scalatest.Reporter
 import org.scalatest.events.{Event, SuiteCompleted, TestFailed, TestSucceeded}
 import org.scalatest.tools.Runner
-
 import scala.util.matching.Regex
+
+import org.opalj.xl.connector.AllocationSiteBasedTriggeredTajsConnectorScheduler
 
 object RunXLTests {
     def main(args: Array[String]): Unit = {
