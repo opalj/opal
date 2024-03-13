@@ -12,7 +12,6 @@ import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.br.fpcf.analyses.ContextProvider
-import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.fpcf.FinalEP
@@ -22,8 +21,13 @@ import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
+import org.opalj.tac.fpcf.analyses.string_analysis.l0.L0ComputationState
 import org.opalj.tac.fpcf.analyses.string_analysis.l1.interpretation.L1InterpretationHandler
 import org.opalj.tac.fpcf.properties.TACAI
+
+trait L1ComputationState extends L0ComputationState
+
+trait L1StringInterpreter[State <: L1ComputationState] extends StringInterpreter[State]
 
 /**
  * InterproceduralStringAnalysis processes a read operation of a string variable at a program
@@ -53,9 +57,8 @@ import org.opalj.tac.fpcf.properties.TACAI
 class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
 
     protected[l1] case class CState(
-        override val dm:            DefinedMethod,
-        override val entity:        (SEntity, Method),
-        override val methodContext: Context
+        override val dm:     DefinedMethod,
+        override val entity: (SEntity, Method)
     ) extends L1ComputationState
 
     override type State = CState
@@ -63,9 +66,8 @@ class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
     protected implicit val contextProvider: ContextProvider = project.get(ContextProviderKey)
 
     override def analyze(data: SContext): ProperPropertyComputationResult = {
-        val dm = declaredMethods(data._2)
         // IMPROVE enable handling call string contexts here (build a chain, probably via SContext)
-        val state = CState(dm, data, contextProvider.newContext(dm))
+        val state = CState(declaredMethods(data._2), data)
         val iHandler = L1InterpretationHandler[CState](project, ps)
 
         val tacaiEOptP = ps(data._2, TACAI.key)

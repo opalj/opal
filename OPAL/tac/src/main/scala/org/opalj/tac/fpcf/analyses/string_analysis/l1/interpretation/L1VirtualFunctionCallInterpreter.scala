@@ -12,6 +12,7 @@ import scala.collection.mutable.ListBuffer
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.br.fpcf.analyses.ContextProvider
+import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
@@ -44,17 +45,18 @@ class L1VirtualFunctionCallInterpreter[State <: L1ComputationState](
 
     private case class CalleeDepender(
         pc:                 Int,
+        methodContext:      Context,
         var calleeDependee: EOptionP[DefinedMethod, Callees]
     )
 
     override protected def interpretArbitraryCall(instr: T, pc: Int)(
         implicit state: State
     ): ProperPropertyComputationResult = {
-        val depender = CalleeDepender(pc, ps(state.dm, Callees.key))
+        val depender = CalleeDepender(pc, contextProvider.newContext(state.dm), ps(state.dm, Callees.key))
 
         depender.calleeDependee match {
             case FinalP(c: Callees) =>
-                val methods = getMethodsFromCallees(depender.pc, state, c)
+                val methods = getMethodsFromCallees(depender.pc, depender.methodContext, c)
                 if (methods.isEmpty) {
                     computeFinalResult(pc, StringConstancyInformation.lb)
                 } else {
@@ -78,7 +80,7 @@ class L1VirtualFunctionCallInterpreter[State <: L1ComputationState](
     private def continuation(state: State, depender: CalleeDepender)(eps: SomeEPS): ProperPropertyComputationResult = {
         eps match {
             case FinalP(c: Callees) =>
-                val methods = getMethodsFromCallees(depender.pc, state, c)
+                val methods = getMethodsFromCallees(depender.pc, depender.methodContext, c)
                 if (methods.isEmpty) {
                     computeFinalResult(depender.pc, StringConstancyInformation.lb)(state)
                 } else {
@@ -102,10 +104,10 @@ class L1VirtualFunctionCallInterpreter[State <: L1ComputationState](
         }
     }
 
-    private def getMethodsFromCallees(pc: Int, state: State, callees: Callees): Seq[Method] = {
+    private def getMethodsFromCallees(pc: Int, context: Context, callees: Callees): Seq[Method] = {
         val methods = ListBuffer[Method]()
         // IMPROVE only process newest callees
-        callees.callees(state.methodContext, pc).map(_.method).foreach {
+        callees.callees(context, pc).map(_.method).foreach {
             case definedMethod: DefinedMethod => methods.append(definedMethod.definedMethod)
             case _                            => // IMPROVE add some uncertainty element if methods with unknown body exist
         }
