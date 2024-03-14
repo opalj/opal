@@ -31,15 +31,15 @@ trait StringInterpreter {
      * @return A [[ProperPropertyComputationResult]] for the given pc containing the interpretation of the given
      *         instruction.
      */
-    def interpret(instr: T, pc: Int)(implicit state: ComputationState): ProperPropertyComputationResult
+    def interpret(instr: T, pc: Int)(implicit state: DefSiteState): ProperPropertyComputationResult
 
-    def computeFinalResult(pc: Int, sci: StringConstancyInformation)(implicit state: ComputationState): Result =
+    def computeFinalResult(pc: Int, sci: StringConstancyInformation)(implicit state: DefSiteState): Result =
         StringInterpreter.computeFinalResult(pc, sci)
 
     // IMPROVE remove this since awaiting all final is not really feasible
     // replace with intermediate lattice result approach
     protected final def awaitAllFinalContinuation(
-        depender:    EPSDepender[T, ComputationState],
+        depender:    EPSDepender[T],
         finalResult: Seq[SomeFinalEP] => ProperPropertyComputationResult
     )(result: SomeEPS): ProperPropertyComputationResult = {
         if (result.isFinal) {
@@ -52,7 +52,7 @@ trait StringInterpreter {
                 finalResult(updatedDependees.asInstanceOf[Seq[SomeFinalEP]])
             } else {
                 InterimResult.forLB(
-                    InterpretationHandler.getEntityFromDefSitePC(depender.pc)(depender.state),
+                    InterpretationHandler.getEntityForPC(depender.pc)(depender.state),
                     StringConstancyProperty.lb,
                     depender.dependees.toSet,
                     awaitAllFinalContinuation(depender.withDependees(updatedDependees), finalResult)
@@ -60,7 +60,7 @@ trait StringInterpreter {
             }
         } else {
             InterimResult.forLB(
-                InterpretationHandler.getEntityFromDefSitePC(depender.pc)(depender.state),
+                InterpretationHandler.getEntityForPC(depender.pc)(depender.state),
                 StringConstancyProperty.lb,
                 depender.dependees.toSet,
                 awaitAllFinalContinuation(depender, finalResult)
@@ -71,17 +71,18 @@ trait StringInterpreter {
 
 object StringInterpreter {
 
-    def computeFinalResult[State <: ComputationState](pc: Int, sci: StringConstancyInformation)(implicit
-        state: State
-    ): Result =
-        Result(FinalEP(InterpretationHandler.getEntityFromDefSitePC(pc), StringConstancyProperty(sci)))
+    def computeFinalResult(pc: Int, sci: StringConstancyInformation)(implicit state: DefSiteState): Result =
+        Result(FinalEP(
+            InterpretationHandler.getEntityForPC(pc),
+            StringConstancyProperty(sci.copy(tree = sci.tree.simplify))
+        ))
 }
 
 trait ParameterEvaluatingStringInterpreter extends StringInterpreter {
 
     val ps: PropertyStore
 
-    protected def getParametersForPC(pc: Int)(implicit state: ComputationState): Seq[Expr[V]] = {
+    protected def getParametersForPC(pc: Int)(implicit state: DefSiteState): Seq[Expr[V]] = {
         state.tac.stmts(state.tac.pcToIndex(pc)) match {
             case ExprStmt(_, vfc: FunctionCall[V])     => vfc.params
             case Assignment(_, _, fc: FunctionCall[V]) => fc.params
@@ -90,11 +91,11 @@ trait ParameterEvaluatingStringInterpreter extends StringInterpreter {
     }
 
     protected def evaluateParameters(params: Seq[Expr[V]])(implicit
-        state: ComputationState
+        state: DefSiteState
     ): Seq[Seq[EOptionP[DefSiteEntity, StringConstancyProperty]]] = {
         params.map { nextParam =>
             Seq.from(nextParam.asVar.definedBy.toArray.sorted.map { ds =>
-                ps(InterpretationHandler.getEntityFromDefSite(ds), StringConstancyProperty.key)
+                ps(InterpretationHandler.getEntityForDefSite(ds), StringConstancyProperty.key)
             })
         }
     }

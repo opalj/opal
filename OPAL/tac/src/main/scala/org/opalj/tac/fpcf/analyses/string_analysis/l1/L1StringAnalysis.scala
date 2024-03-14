@@ -101,7 +101,10 @@ class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
 
         // Interpret a function / method parameter using the parameter information in state
         if (defSites.head < 0) {
-            val ep = ps(InterpretationHandler.getEntityFromDefSite(defSites.head), StringConstancyProperty.key)
+            val ep = ps(
+                InterpretationHandler.getEntityForDefSite(defSites.head, state.dm, state.tac),
+                StringConstancyProperty.key
+            )
             if (ep.isRefinable) {
                 state.dependees = ep :: state.dependees
                 InterimResult.forLB(

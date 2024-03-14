@@ -34,7 +34,10 @@ object PathTransformer {
     ): Option[StringTreeNode] = {
         subpath match {
             case fpe: FlatPathElement =>
-                val sci = ps(InterpretationHandler.getEntityFromDefSitePC(fpe.pc), StringConstancyProperty.key) match {
+                val sci = ps(
+                    InterpretationHandler.getEntityForPC(fpe.pc, state.dm, state.tac),
+                    StringConstancyProperty.key
+                ) match {
                     case FinalP(scp) => scp.sci
                     case _           => StringConstancyInformation.lb
                 }

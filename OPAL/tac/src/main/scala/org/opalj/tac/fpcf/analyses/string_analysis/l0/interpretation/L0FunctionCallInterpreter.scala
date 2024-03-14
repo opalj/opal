@@ -34,11 +34,13 @@ trait L0FunctionCallInterpreter
     implicit val ps: PropertyStore
 
     protected[this] case class FunctionCallState(
-        defSitePC:           Int,
+        state:               DefSiteState,
         calleeMethods:       Seq[Method],
         var tacDependees:    Map[Method, EOptionP[Method, TACAI]],
         var returnDependees: Map[Method, Seq[EOptionP[SContext, StringConstancyProperty]]] = Map.empty
     ) {
+        def pc: Int = state.pc
+
         var hasUnresolvableReturnValue: Map[Method, Boolean] = Map.empty.withDefaultValue(false)
 
         private var _paramDependees: Seq[Seq[EOptionP[DefSiteEntity, StringConstancyProperty]]] = Seq.empty
@@ -92,7 +94,6 @@ trait L0FunctionCallInterpreter
     }
 
     protected def interpretArbitraryCallToMethods(implicit
-        state:     ComputationState,
         callState: FunctionCallState
     ): ProperPropertyComputationResult = {
         callState.calleeMethods.foreach { m =>
@@ -124,16 +125,13 @@ trait L0FunctionCallInterpreter
         tryComputeFinalResult
     }
 
-    private def tryComputeFinalResult(implicit
-        state:     ComputationState,
-        callState: FunctionCallState
-    ): ProperPropertyComputationResult = {
+    private def tryComputeFinalResult(implicit callState: FunctionCallState): ProperPropertyComputationResult = {
         if (callState.hasDependees) {
-            InterimResult.forLB(
-                InterpretationHandler.getEntityFromDefSitePC(callState.defSitePC),
-                StringConstancyProperty.lb,
+            InterimResult.forUB(
+                InterpretationHandler.getEntityForPC(callState.pc)(callState.state),
+                StringConstancyProperty.ub,
                 callState.dependees.toSet,
-                continuation(state, callState)
+                continuation(callState)
             )
         } else {
             val parameterScis = callState.paramDependees.zipWithIndex.map {
@@ -150,27 +148,24 @@ trait L0FunctionCallInterpreter
                 }
             }
 
-            computeFinalResult(callState.defSitePC, StringConstancyInformation.reduceMultiple(methodScis))
+            computeFinalResult(callState.pc, StringConstancyInformation.reduceMultiple(methodScis))(callState.state)
         }
     }
 
-    private def continuation(
-        state:     ComputationState,
-        callState: FunctionCallState
-    )(eps: SomeEPS): ProperPropertyComputationResult = {
+    private def continuation(callState: FunctionCallState)(eps: SomeEPS): ProperPropertyComputationResult = {
         eps match {
             case EUBP(m: Method, _: TACAI) =>
                 callState.tacDependees += m -> eps.asInstanceOf[EOptionP[Method, TACAI]]
-                interpretArbitraryCallToMethods(state, callState)
+                interpretArbitraryCallToMethods(callState)
 
             case EUBP(_: (_, _), _: StringConstancyProperty) =>
                 val contextEPS = eps.asInstanceOf[EOptionP[SContext, StringConstancyProperty]]
                 callState.updateReturnDependee(contextEPS.e._2, contextEPS)
-                tryComputeFinalResult(state, callState)
+                tryComputeFinalResult(callState)
 
             case EUBP(_: DefSiteEntity, _: StringConstancyProperty) =>
                 callState.updateParamDependee(eps.asInstanceOf[EOptionP[DefSiteEntity, StringConstancyProperty]])
-                tryComputeFinalResult(state, callState)
+                tryComputeFinalResult(callState)
 
             case _ => throw new IllegalArgumentException(s"Encountered unknown eps: $eps")
         }

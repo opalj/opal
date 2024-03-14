@@ -31,7 +31,7 @@ object L0VirtualMethodCallInterpreter extends StringInterpreter {
      *
      * For all other calls, a [[StringConstancyInformation.neutralElement]] will be returned.
      */
-    override def interpret(instr: T, pc: Int)(implicit state: ComputationState): ProperPropertyComputationResult = {
+    override def interpret(instr: T, pc: Int)(implicit state: DefSiteState): ProperPropertyComputationResult = {
         val sci = instr.name match {
             // IMPROVE interpret argument for setLength
             case "setLength" => StringConstancyInformation(StringConstancyType.RESET)

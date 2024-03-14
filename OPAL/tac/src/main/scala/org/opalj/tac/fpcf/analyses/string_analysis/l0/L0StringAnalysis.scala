@@ -89,7 +89,10 @@ class L0StringAnalysis(override val project: SomeProject) extends StringAnalysis
 
         // Interpret a function / method parameter using the parameter information in state
         if (defSites.head < 0) {
-            val ep = ps(InterpretationHandler.getEntityFromDefSite(defSites.head), StringConstancyProperty.key)
+            val ep = ps(
+                InterpretationHandler.getEntityForDefSite(defSites.head, state.dm, state.tac),
+                StringConstancyProperty.key
+            )
             if (ep.isRefinable) {
                 state.dependees = ep :: state.dependees
                 InterimResult.forLB(
@@ -124,7 +127,10 @@ class L0StringAnalysis(override val project: SomeProject) extends StringAnalysis
         }
 
         getPCsInPath(state.computedLeanPath).foreach { pc =>
-            propertyStore(InterpretationHandler.getEntityFromDefSitePC(pc), StringConstancyProperty.key) match {
+            propertyStore(
+                InterpretationHandler.getEntityForPC(pc, state.dm, state.tac),
+                StringConstancyProperty.key
+            ) match {
                 case FinalEP(e, _) =>
                     state.dependees = state.dependees.filter(_.e != e)
                 case ep =>

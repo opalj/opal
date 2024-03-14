@@ -26,9 +26,7 @@ class L0InterpretationHandler()(
     ps: PropertyStore
 ) extends InterpretationHandler {
 
-    override protected def processNewDefSitePC(pc: Int)(implicit
-        state: ComputationState
-    ): ProperPropertyComputationResult = {
+    override protected def processNewDefSitePC(pc: Int)(implicit state: DefSiteState): ProperPropertyComputationResult = {
         val defSiteOpt = valueOriginOfPC(pc, state.tac.pcToIndex);
         if (defSiteOpt.isEmpty) {
             throw new IllegalArgumentException(s"Obtained a pc that does not represent a definition site: $pc")
@@ -39,7 +37,7 @@ class L0InterpretationHandler()(
             case Assignment(_, _, expr: BinaryExpr[V])    => BinaryExprInterpreter.interpret(expr, pc)
 
             case Assignment(_, _, expr: ArrayLoad[V]) => L0ArrayAccessInterpreter(ps).interpret(expr, pc)
-            case Assignment(_, _, expr: NewArray[V])  => new L0NewArrayInterpreter(ps).interpret(expr, pc)
+            case Assignment(_, _, expr: NewArray[V])  => L0NewArrayInterpreter(ps).interpret(expr, pc)
             case Assignment(_, _, _: New) =>
                 StringInterpreter.computeFinalResult(pc, StringConstancyInformation.neutralElement)
 

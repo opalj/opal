@@ -10,14 +10,14 @@ import org.opalj.fpcf.SomeEOptionP
 /**
  * @author Maximilian Rüsch
  */
-private[string_analysis] case class EPSDepender[T <: ASTNode[V], State <: ComputationState](
+private[string_analysis] case class EPSDepender[T <: ASTNode[V]](
     instr:     T,
     pc:        Int,
-    state:     State,
+    state:     DefSiteState,
     dependees: Seq[SomeEOptionP]
 ) {
 
-    def withDependees(newDependees: Seq[SomeEOptionP]): EPSDepender[T, State] = EPSDepender(
+    def withDependees(newDependees: Seq[SomeEOptionP]): EPSDepender[T] = EPSDepender(
         instr,
         pc,
         state,

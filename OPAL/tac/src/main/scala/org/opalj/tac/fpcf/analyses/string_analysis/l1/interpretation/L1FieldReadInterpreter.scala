@@ -72,6 +72,7 @@ case class L1FieldReadInterpreter(
 
     private case class FieldReadState(
         defSitePC:                 Int,
+        state:                     DefSiteState,
         var hasInit:               Boolean                                          = false,
         var hasUnresolvableAccess: Boolean                                          = false,
         var accessDependees:       Seq[EOptionP[SContext, StringConstancyProperty]] = Seq.empty
@@ -96,7 +97,7 @@ case class L1FieldReadInterpreter(
      * approximated using all write accesses as well as with the lower bound and "null" => in these cases fields are
      * [[org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel.DYNAMIC]].
      */
-    override def interpret(instr: T, pc: Int)(implicit state: ComputationState): ProperPropertyComputationResult = {
+    override def interpret(instr: T, pc: Int)(implicit state: DefSiteState): ProperPropertyComputationResult = {
         // TODO: The approximation of fields might be outsourced into a dedicated analysis. Then, one could add a
         //  finer-grained processing or provide different abstraction levels. This analysis could then use that analysis.
         if (!StringAnalysis.isSupportedType(instr.declaredFieldType)) {
@@ -119,7 +120,7 @@ case class L1FieldReadInterpreter(
             )
         }
 
-        implicit val accessState: FieldReadState = FieldReadState(pc)
+        implicit val accessState: FieldReadState = FieldReadState(pc, state)
         writeAccesses.foreach {
             case (contextId, _, _, parameter) =>
                 val method = contextProvider.contextFromId(contextId).method.definedMethod
@@ -140,16 +141,13 @@ case class L1FieldReadInterpreter(
         tryComputeFinalResult
     }
 
-    private def tryComputeFinalResult(implicit
-        state:       ComputationState,
-        accessState: FieldReadState
-    ): ProperPropertyComputationResult = {
+    private def tryComputeFinalResult(implicit accessState: FieldReadState): ProperPropertyComputationResult = {
         if (accessState.hasDependees) {
             InterimResult.forLB(
-                InterpretationHandler.getEntityFromDefSitePC(accessState.defSitePC),
+                InterpretationHandler.getEntityForPC(accessState.defSitePC)(accessState.state),
                 StringConstancyProperty.lb,
                 accessState.dependees.toSet,
-                continuation(state, accessState)
+                continuation(accessState)
             )
         } else {
             var scis = accessState.accessDependees.map(_.asFinal.p.sci)
@@ -164,18 +162,15 @@ case class L1FieldReadInterpreter(
                 scis = scis :+ StringConstancyInformation.lb
             }
 
-            computeFinalResult(accessState.defSitePC, StringConstancyInformation.reduceMultiple(scis))
+            computeFinalResult(accessState.defSitePC, StringConstancyInformation.reduceMultiple(scis))(accessState.state)
         }
     }
 
-    private def continuation(
-        state:       ComputationState,
-        accessState: FieldReadState
-    )(eps: SomeEPS): ProperPropertyComputationResult = {
+    private def continuation(accessState: FieldReadState)(eps: SomeEPS): ProperPropertyComputationResult = {
         eps match {
             case UBP(_: StringConstancyProperty) =>
                 accessState.updateAccessDependee(eps.asInstanceOf[EOptionP[SContext, StringConstancyProperty]])
-                tryComputeFinalResult(state, accessState)
+                tryComputeFinalResult(accessState)
 
             case _ => throw new IllegalArgumentException(s"Encountered unknown eps: $eps")
         }

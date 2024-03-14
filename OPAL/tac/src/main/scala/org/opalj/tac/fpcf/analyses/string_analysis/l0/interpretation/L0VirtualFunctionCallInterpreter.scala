@@ -68,7 +68,7 @@ case class L0VirtualFunctionCallInterpreter(
      *
      * If none of the above-described cases match, a [[NoResult]] will be returned.
      */
-    override def interpret(instr: T, pc: Int)(implicit state: ComputationState): ProperPropertyComputationResult = {
+    override def interpret(instr: T, pc: Int)(implicit state: DefSiteState): ProperPropertyComputationResult = {
         instr.name match {
             case "append"   => interpretAppendCall(instr, pc)
             case "toString" => interpretToStringCall(instr, pc)
@@ -92,7 +92,7 @@ case class L0VirtualFunctionCallInterpreter(
      * the given `toString` is such a function call! Otherwise, the expected behavior cannot be guaranteed.
      */
     private def interpretToStringCall(call: T, pc: Int)(implicit
-        state: ComputationState
+        state: DefSiteState
     ): ProperPropertyComputationResult = {
         def computeResult(eps: SomeEOptionP): ProperPropertyComputationResult = {
             eps match {
@@ -101,7 +101,7 @@ case class L0VirtualFunctionCallInterpreter(
 
                 case iep: InterimEP[_, _] if eps.pk == StringConstancyProperty.key =>
                     InterimResult.forLB(
-                        InterpretationHandler.getEntityFromDefSitePC(pc),
+                        InterpretationHandler.getEntityForPC(pc),
                         iep.lb.asInstanceOf[StringConstancyProperty],
                         Set(eps),
                         computeResult
@@ -109,7 +109,7 @@ case class L0VirtualFunctionCallInterpreter(
 
                 case _ if eps.pk == StringConstancyProperty.key =>
                     InterimResult.forLB(
-                        InterpretationHandler.getEntityFromDefSitePC(pc),
+                        InterpretationHandler.getEntityForPC(pc),
                         StringConstancyProperty.lb,
                         Set(eps),
                         computeResult
@@ -120,7 +120,7 @@ case class L0VirtualFunctionCallInterpreter(
         }
 
         computeResult(ps(
-            InterpretationHandler.getEntityFromDefSite(call.receiver.asVar.definedBy.head),
+            InterpretationHandler.getEntityForDefSite(call.receiver.asVar.definedBy.head),
             StringConstancyProperty.key
         ))
     }
@@ -128,14 +128,14 @@ case class L0VirtualFunctionCallInterpreter(
     /**
      * Processes calls to [[StringBuilder#replace]] or [[StringBuffer#replace]].
      */
-    private def interpretReplaceCall(pc: Int)(implicit state: ComputationState): ProperPropertyComputationResult =
+    private def interpretReplaceCall(pc: Int)(implicit state: DefSiteState): ProperPropertyComputationResult =
         computeFinalResult(pc, InterpretationHandler.getStringConstancyInformationForReplace)
 }
 
 private[string_analysis] trait L0ArbitraryVirtualFunctionCallInterpreter extends StringInterpreter {
 
     protected def interpretArbitraryCall(call: T, pc: Int)(implicit
-        state: ComputationState
+        state: DefSiteState
     ): ProperPropertyComputationResult =
         computeFinalResult(pc, StringConstancyInformation.lb)
 }
@@ -153,6 +153,7 @@ private[string_analysis] trait L0AppendCallInterpreter extends StringInterpreter
         appendCall:            T,
         param:                 V,
         defSitePC:             Int,
+        state:                 DefSiteState,
         var receiverDependees: Seq[EOptionP[DefSiteEntity, StringConstancyProperty]],
         var valueDependees:    Seq[EOptionP[DefSiteEntity, StringConstancyProperty]]
     ) {
@@ -179,11 +180,11 @@ private[string_analysis] trait L0AppendCallInterpreter extends StringInterpreter
     }
 
     def interpretAppendCall(appendCall: T, pc: Int)(implicit
-        state: ComputationState
+        state: DefSiteState
     ): ProperPropertyComputationResult = {
         // Get receiver results
         val receiverResults = appendCall.receiver.asVar.definedBy.toList.sorted.map { ds =>
-            ps(InterpretationHandler.getEntityFromDefSite(ds), StringConstancyProperty.key)
+            ps(InterpretationHandler.getEntityForDefSite(ds), StringConstancyProperty.key)
         }
         // Get parameter results
         // .head because we want to evaluate only the first argument of append
@@ -194,36 +195,33 @@ private[string_analysis] trait L0AppendCallInterpreter extends StringInterpreter
             } else {
                 ds
             }
-            ps(InterpretationHandler.getEntityFromDefSite(usedDS), StringConstancyProperty.key)
+            ps(InterpretationHandler.getEntityForDefSite(usedDS), StringConstancyProperty.key)
         }
-        implicit val appendState: AppendCallState = AppendCallState(appendCall, param, pc, receiverResults, valueResults)
+        implicit val appendState: AppendCallState =
+            AppendCallState(appendCall, param, pc, state, receiverResults, valueResults)
 
         tryComputeFinalAppendCallResult
     }
 
-    private def continuation(
-        state:       ComputationState,
-        appendState: AppendCallState
-    )(eps: SomeEPS): ProperPropertyComputationResult = {
+    private def continuation(appendState: AppendCallState)(eps: SomeEPS): ProperPropertyComputationResult = {
         eps match {
             case UBP(_: StringConstancyProperty) =>
                 appendState.updateDependee(eps.asInstanceOf[EOptionP[DefSiteEntity, StringConstancyProperty]])
-                tryComputeFinalAppendCallResult(state, appendState)
+                tryComputeFinalAppendCallResult(appendState)
 
             case _ => throw new IllegalArgumentException(s"Encountered unknown eps: $eps")
         }
     }
 
     private def tryComputeFinalAppendCallResult(implicit
-        state:       ComputationState,
         appendState: AppendCallState
     ): ProperPropertyComputationResult = {
         if (appendState.hasDependees) {
             InterimResult.forLB(
-                InterpretationHandler.getEntityFromDefSitePC(appendState.defSitePC),
+                InterpretationHandler.getEntityForPC(appendState.defSitePC)(appendState.state),
                 StringConstancyProperty.lb,
                 appendState.dependees.toSet,
-                continuation(state, appendState)
+                continuation(appendState)
             )
         } else {
             val receiverSci = StringConstancyInformation.reduceMultiple(appendState.receiverDependees.map {
@@ -239,7 +237,7 @@ private[string_analysis] trait L0AppendCallInterpreter extends StringInterpreter
                     StringConstancyType.APPEND,
                     StringTreeConcat.fromNodes(receiverSci.tree, valueSci.tree)
                 )
-            )
+            )(appendState.state)
         }
     }
 
@@ -287,15 +285,15 @@ private[string_analysis] trait L0SubstringCallInterpreter extends StringInterpre
     val ps: PropertyStore
 
     def interpretSubstringCall(substringCall: T, pc: Int)(implicit
-        state: ComputationState
+        state: DefSiteState
     ): ProperPropertyComputationResult = {
         val receiverResults = substringCall.receiver.asVar.definedBy.toList.sorted.map { ds =>
-            ps(InterpretationHandler.getEntityFromDefSite(ds), StringConstancyProperty.key)
+            ps(InterpretationHandler.getEntityForDefSite(ds), StringConstancyProperty.key)
         }
 
         if (receiverResults.exists(_.isRefinable)) {
             InterimResult.forLB(
-                InterpretationHandler.getEntityFromDefSitePC(pc),
+                InterpretationHandler.getEntityForPC(pc),
                 StringConstancyProperty.lb,
                 receiverResults.toSet,
                 awaitAllFinalContinuation(
@@ -310,7 +308,7 @@ private[string_analysis] trait L0SubstringCallInterpreter extends StringInterpre
 
     private def computeFinalSubstringCallResult(substringCall: T, pc: Int)(
         results: Seq[SomeFinalEP]
-    )(implicit state: ComputationState): Result = {
+    )(implicit state: DefSiteState): Result = {
         val receiverSci = StringConstancyInformation.reduceMultiple(results.map {
             _.p.asInstanceOf[StringConstancyProperty].sci
         })

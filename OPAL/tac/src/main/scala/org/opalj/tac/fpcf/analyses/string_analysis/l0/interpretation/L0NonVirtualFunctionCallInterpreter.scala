@@ -26,16 +26,16 @@ case class L0NonVirtualFunctionCallInterpreter()(
 
     override type T = NonVirtualFunctionCall[V]
 
-    override def interpret(instr: T, pc: Int)(implicit state: ComputationState): ProperPropertyComputationResult = {
-        val calleeMethod = instr.resolveCallTarget(state.entity._2.classFile.thisType)
+    override def interpret(instr: T, pc: Int)(implicit state: DefSiteState): ProperPropertyComputationResult = {
+        val calleeMethod = instr.resolveCallTarget(state.dm.definedMethod.classFile.thisType)
         if (calleeMethod.isEmpty) {
             return computeFinalResult(pc, StringConstancyInformation.lb)
         }
 
         val m = calleeMethod.value
-        val callState = FunctionCallState(pc, Seq(m), Map((m, ps(m, TACAI.key))))
+        val callState = FunctionCallState(state, Seq(m), Map((m, ps(m, TACAI.key))))
         callState.setParamDependees(evaluateParameters(getParametersForPC(pc)))
 
-        interpretArbitraryCallToMethods(state, callState)
+        interpretArbitraryCallToMethods(callState)
     }
 }

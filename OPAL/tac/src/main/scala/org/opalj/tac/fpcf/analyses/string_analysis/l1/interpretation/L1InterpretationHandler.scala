@@ -43,7 +43,7 @@ class L1InterpretationHandler(
     implicit val contextProvider: ContextProvider = p.get(ContextProviderKey)
 
     override protected def processNewDefSitePC(pc: Int)(implicit
-        state: ComputationState
+        state: DefSiteState
     ): ProperPropertyComputationResult = {
         val defSiteOpt = valueOriginOfPC(pc, state.tac.pcToIndex);
         if (defSiteOpt.isEmpty) {
@@ -54,7 +54,7 @@ class L1InterpretationHandler(
             case Assignment(_, _, expr: SimpleValueConst) => SimpleValueConstExprInterpreter.interpret(expr, pc)
 
             case Assignment(_, _, expr: ArrayLoad[V]) => L0ArrayAccessInterpreter(ps).interpret(expr, pc)
-            case Assignment(_, _, expr: NewArray[V])  => new L0NewArrayInterpreter(ps).interpret(expr, pc)
+            case Assignment(_, _, expr: NewArray[V])  => L0NewArrayInterpreter(ps).interpret(expr, pc)
             case Assignment(_, _, _: New) =>
                 StringInterpreter.computeFinalResult(pc, StringConstancyInformation.neutralElement)
 

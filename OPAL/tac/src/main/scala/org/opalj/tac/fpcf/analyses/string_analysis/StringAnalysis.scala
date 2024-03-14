@@ -151,7 +151,8 @@ trait StringAnalysis extends FPCFAnalysis {
         var hasFinalResult = true
         p.elements.foreach {
             case fpe: FlatPathElement =>
-                val eOptP = ps(InterpretationHandler.getEntityFromDefSitePC(fpe.pc), StringConstancyProperty.key)
+                val eOptP =
+                    ps(InterpretationHandler.getEntityForPC(fpe.pc, state.dm, state.tac), StringConstancyProperty.key)
                 if (eOptP.isRefinable) {
                     hasFinalResult = false
                 }

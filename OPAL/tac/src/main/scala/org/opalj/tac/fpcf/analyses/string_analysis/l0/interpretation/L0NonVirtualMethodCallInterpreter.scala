@@ -20,31 +20,30 @@ import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.Interpretation
 /**
  * @author Maximilian Rüsch
  */
-case class L0NonVirtualMethodCallInterpreter(ps: PropertyStore)
-    extends StringInterpreter {
+case class L0NonVirtualMethodCallInterpreter(ps: PropertyStore) extends StringInterpreter {
 
     override type T = NonVirtualMethodCall[V]
 
-    override def interpret(instr: T, pc: Int)(implicit state: ComputationState): ProperPropertyComputationResult = {
+    override def interpret(instr: T, pc: Int)(implicit state: DefSiteState): ProperPropertyComputationResult = {
         instr.name match {
             case "<init>" => interpretInit(instr, pc)
             case _        => computeFinalResult(pc, StringConstancyInformation.neutralElement)
         }
     }
 
-    private def interpretInit(init: T, pc: Int)(implicit state: ComputationState): ProperPropertyComputationResult = {
+    private def interpretInit(init: T, pc: Int)(implicit state: DefSiteState): ProperPropertyComputationResult = {
         init.params.size match {
             case 0 => computeFinalResult(pc, StringConstancyInformation.neutralElement)
             case _ =>
                 // Only StringBuffer and StringBuilder are interpreted which have constructors with <= 1 parameters
                 val results = init.params.head.asVar.definedBy.toList.map { ds =>
-                    ps(InterpretationHandler.getEntityFromDefSite(ds), StringConstancyProperty.key)
+                    ps(InterpretationHandler.getEntityForDefSite(ds), StringConstancyProperty.key)
                 }
                 if (results.forall(_.isFinal)) {
                     finalResult(init.pc)(results.asInstanceOf[Seq[FinalEP[DefSiteEntity, StringConstancyProperty]]])
                 } else {
                     InterimResult.forLB(
-                        InterpretationHandler.getEntityFromDefSitePC(pc),
+                        InterpretationHandler.getEntityForPC(pc),
                         StringConstancyProperty.lb,
                         results.toSet,
                         awaitAllFinalContinuation(
@@ -56,9 +55,7 @@ case class L0NonVirtualMethodCallInterpreter(ps: PropertyStore)
         }
     }
 
-    private def finalResult(pc: Int)(results: Seq[SomeEPS])(implicit
-        state: ComputationState
-    ): Result =
+    private def finalResult(pc: Int)(results: Seq[SomeEPS])(implicit state: DefSiteState): Result =
         computeFinalResult(
             pc,
             StringConstancyInformation.reduceMultiple(results.map {

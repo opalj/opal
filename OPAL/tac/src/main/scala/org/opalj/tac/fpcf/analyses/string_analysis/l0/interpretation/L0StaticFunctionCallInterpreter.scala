@@ -33,7 +33,7 @@ case class L0StaticFunctionCallInterpreter()(
 
     override type T = StaticFunctionCall[V]
 
-    override def interpret(instr: T, pc: Int)(implicit state: ComputationState): ProperPropertyComputationResult = {
+    override def interpret(instr: T, pc: Int)(implicit state: DefSiteState): ProperPropertyComputationResult = {
         instr.name match {
             case "valueOf" if instr.declaringClass == ObjectType.String => processStringValueOf(instr, pc)
             case _                                                      => interpretArbitraryCall(instr, pc)
@@ -50,18 +50,18 @@ private[string_analysis] trait L0ArbitraryStaticFunctionCallInterpreter
     override type T = StaticFunctionCall[V]
 
     def interpretArbitraryCall(instr: T, pc: Int)(implicit
-        state: ComputationState
+        state: DefSiteState
     ): ProperPropertyComputationResult = {
-        val calleeMethod = instr.resolveCallTarget(state.entity._2.classFile.thisType)
+        val calleeMethod = instr.resolveCallTarget(state.dm.definedMethod.classFile.thisType)
         if (calleeMethod.isEmpty) {
             return computeFinalResult(pc, StringConstancyInformation.lb)
         }
 
         val m = calleeMethod.value
-        val callState = FunctionCallState(pc, Seq(m), Map((m, ps(m, TACAI.key))))
+        val callState = FunctionCallState(state, Seq(m), Map((m, ps(m, TACAI.key))))
         callState.setParamDependees(evaluateParameters(getParametersForPC(pc)))
 
-        interpretArbitraryCallToMethods(state, callState)
+        interpretArbitraryCallToMethods(callState)
     }
 }
 
@@ -71,7 +71,7 @@ private[string_analysis] trait L0StringValueOfFunctionCallInterpreter extends St
 
     val ps: PropertyStore
 
-    def processStringValueOf(call: T, pc: Int)(implicit state: ComputationState): ProperPropertyComputationResult = {
+    def processStringValueOf(call: T, pc: Int)(implicit state: DefSiteState): ProperPropertyComputationResult = {
         def finalResult(results: Seq[SomeFinalEP]): Result = {
             // For char values, we need to do a conversion (as the returned results are integers)
             val scis = results.map { r => r.p.asInstanceOf[StringConstancyProperty].sci }
@@ -91,11 +91,11 @@ private[string_analysis] trait L0StringValueOfFunctionCallInterpreter extends St
         }
 
         val results = call.params.head.asVar.definedBy.toList.sorted.map { ds =>
-            ps(InterpretationHandler.getEntityFromDefSite(ds), StringConstancyProperty.key)
+            ps(InterpretationHandler.getEntityForDefSite(ds), StringConstancyProperty.key)
         }
         if (results.exists(_.isRefinable)) {
             InterimResult.forLB(
-                InterpretationHandler.getEntityFromDefSitePC(pc),
+                InterpretationHandler.getEntityForPC(pc),
                 StringConstancyProperty.lb,
                 results.filter(_.isRefinable).toSet,
                 awaitAllFinalContinuation(

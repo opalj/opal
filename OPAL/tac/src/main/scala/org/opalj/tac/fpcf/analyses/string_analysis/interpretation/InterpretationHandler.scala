@@ -11,6 +11,7 @@ import scala.collection.mutable.ListBuffer
 
 import org.opalj.ai.FormalParametersOriginOffset
 import org.opalj.ai.ImmediateVMExceptionsOriginOffset
+import org.opalj.br.DefinedMethod
 import org.opalj.br.ObjectType
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyType
@@ -28,10 +29,9 @@ import org.opalj.fpcf.ProperPropertyComputationResult
  */
 abstract class InterpretationHandler {
 
-    def analyze(entity: DefSiteEntity): ProperPropertyComputationResult =
-        processDefSitePC(entity.pc)(entity.state)
-
-    private def processDefSitePC(pc: Int)(implicit state: ComputationState): ProperPropertyComputationResult = {
+    def analyze(entity: DefSiteEntity): ProperPropertyComputationResult = {
+        val pc = entity.pc
+        implicit val defSiteState: DefSiteState = DefSiteState(pc, entity.dm, entity.tac)
         if (pc <= FormalParametersOriginOffset) {
             if (pc == -1 || pc <= ImmediateVMExceptionsOriginOffset) {
                 return StringInterpreter.computeFinalResult(pc, StringConstancyInformation.lb)
@@ -43,7 +43,7 @@ abstract class InterpretationHandler {
         processNewDefSitePC(pc)
     }
 
-    protected def processNewDefSitePC(pc: Int)(implicit state: ComputationState): ProperPropertyComputationResult
+    protected def processNewDefSitePC(pc: Int)(implicit state: DefSiteState): ProperPropertyComputationResult
 }
 
 object InterpretationHandler {
@@ -202,9 +202,18 @@ object InterpretationHandler {
     def getStringConstancyInformationForReplace: StringConstancyInformation =
         StringConstancyInformation(StringConstancyType.REPLACE, StringTreeDynamicString)
 
-    def getEntityFromDefSite(defSite: Int)(implicit state: ComputationState): DefSiteEntity =
-        getEntityFromDefSitePC(pcOfDefSite(defSite)(state.tac.stmts))
+    def getEntityForDefSite(defSite: Int)(implicit state: DefSiteState): DefSiteEntity =
+        getEntityForPC(pcOfDefSite(defSite)(state.tac.stmts))
 
-    def getEntityFromDefSitePC(defSitePC: Int)(implicit state: ComputationState): DefSiteEntity =
-        DefSiteEntity(defSitePC, state)
+    def getEntityForDefSite(defSite: Int, dm: DefinedMethod, tac: TAC): DefSiteEntity =
+        getEntityForPC(pcOfDefSite(defSite)(tac.stmts), dm, tac)
+
+    def getEntityForPC(pc: Int)(implicit state: DefSiteState): DefSiteEntity =
+        getEntityForPC(pc, state.dm, state.tac)
+
+    def getEntity(state: DefSiteState): DefSiteEntity =
+        getEntityForPC(state.pc, state.dm, state.tac)
+
+    def getEntityForPC(pc: Int, dm: DefinedMethod, tac: TAC): DefSiteEntity =
+        DefSiteEntity(pc, dm, tac)
 }

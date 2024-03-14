@@ -26,15 +26,13 @@ case class L0ArrayAccessInterpreter(ps: PropertyStore) extends StringInterpreter
 
     override type T = ArrayLoad[V]
 
-    override def interpret(instr: T, pc: Int)(implicit state: ComputationState): ProperPropertyComputationResult = {
+    override def interpret(instr: T, pc: Int)(implicit state: DefSiteState): ProperPropertyComputationResult = {
         val defSitePCs = getStoreAndLoadDefSitePCs(instr)(state.tac.stmts)
-        val results = defSitePCs.map { pc =>
-            ps(InterpretationHandler.getEntityFromDefSitePC(pc), StringConstancyProperty.key)
-        }
+        val results = defSitePCs.map { pc => ps(InterpretationHandler.getEntityForPC(pc), StringConstancyProperty.key) }
 
         if (results.exists(_.isRefinable)) {
             InterimResult.forLB(
-                InterpretationHandler.getEntityFromDefSitePC(pc),
+                InterpretationHandler.getEntityForPC(pc),
                 StringConstancyProperty.lb,
                 results.filter(_.isRefinable).toSet,
                 awaitAllFinalContinuation(
@@ -48,7 +46,7 @@ case class L0ArrayAccessInterpreter(ps: PropertyStore) extends StringInterpreter
     }
 
     private def finalResult(pc: Int)(results: Seq[SomeFinalEP])(implicit
-        state: ComputationState
+        state: DefSiteState
     ): ProperPropertyComputationResult = {
         var resultSci = StringConstancyInformation.reduceMultiple(results.map {
             _.asFinal.p.asInstanceOf[StringConstancyProperty].sci

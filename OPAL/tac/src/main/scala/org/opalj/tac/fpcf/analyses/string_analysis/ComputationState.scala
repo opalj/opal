@@ -38,3 +38,5 @@ case class ComputationState(dm: DefinedMethod, entity: SContext) {
      */
     var dependees: List[EOptionP[Entity, Property]] = List()
 }
+
+case class DefSiteState(pc: Int, dm: DefinedMethod, tac: TAC)

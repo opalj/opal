@@ -299,12 +299,11 @@ public class L1TestMethods extends L0TestMethods {
     }
 
     @StringDefinitionsCollection(
-            value = "a case taken from javax.management.remote.rmi.RMIConnector where a GetStatic "
-                    + "is involved",
+            value = "a function parameter being analyzed on its own",
             stringDefinitions = {
                     @StringDefinitions(
-                            expectedLevel = CONSTANT,
-                            expectedStrings = "Hello, World"
+                            expectedLevel = DYNAMIC,
+                            expectedStrings = ".*"
                     )
 
             })
@@ -313,12 +312,18 @@ public class L1TestMethods extends L0TestMethods {
         return s;
     }
 
-    /**
-     * Necessary for the callerWithFunctionParameterTest.
-     */
+    @StringDefinitionsCollection(
+            value = "a case taken from javax.management.remote.rmi.RMIConnector where a GetStatic is involved",
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT,
+                            expectedStrings = "Hello, World"
+                    )
+
+            })
     public void belongsToSomeTestCase() {
         String s = callerWithFunctionParameterTest(belongsToTheSameTestCase(), 900);
-        System.out.println(s);
+        analyzeString(s);
     }
 
     /**
