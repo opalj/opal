@@ -28,34 +28,24 @@ sealed trait StringTreeNode {
     def isNeutralElement: Boolean = false
 }
 
-case class StringTreeRepetition(
-    child:      StringTreeNode,
-    lowerBound: Option[Int] = None,
-    upperBound: Option[Int] = None
-) extends StringTreeNode {
+case class StringTreeRepetition(child: StringTreeNode) extends StringTreeNode {
 
     override val children: Seq[StringTreeNode] = Seq(child)
 
-    override def toRegex: String = {
-        (lowerBound, upperBound) match {
-            case (Some(lb), Some(ub)) => s"(${child.toRegex}){$lb,$ub}"
-            case (Some(lb), None)     => s"(${child.toRegex}){$lb,}"
-            case _                    => s"(${child.toRegex})*"
-        }
-    }
+    override def toRegex: String = s"(${child.toRegex})*"
 
     override def simplify: StringTreeNode = {
         val simplifiedChild = child.simplify
         if (simplifiedChild.isNeutralElement)
             StringTreeNeutralElement
         else
-            this.copy(child = simplifiedChild)
+            StringTreeRepetition(simplifiedChild)
     }
 
     override def constancyLevel: StringConstancyLevel.Value = child.constancyLevel
 
     def replaceParameters(parameters: Map[Int, StringTreeNode]): StringTreeNode =
-        this.copy(child = child.replaceParameters(parameters))
+        StringTreeRepetition(child.replaceParameters(parameters))
 }
 
 case class StringTreeConcat(override val children: Seq[StringTreeNode]) extends StringTreeNode {
