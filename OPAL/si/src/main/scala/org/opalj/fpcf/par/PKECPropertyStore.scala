@@ -361,7 +361,6 @@ class PKECPropertyStore(
     ): Unit = {
         val SomeEPS(e, pk) = interimEP
         var isFresh = false
-
         val ePKState =
             ps(pk.id).computeIfAbsent(e, { _ => isFresh = true; EPKState(interimEP, c, dependees) })
         if (isFresh) {

@@ -45,6 +45,7 @@ object ReturnValueFreshness extends ReturnValueFreshnessPropertyMetaInformation 
         // fallback value
         NoFreshReturnValue
     )
+
 }
 
 /**
