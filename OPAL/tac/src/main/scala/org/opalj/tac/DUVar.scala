@@ -45,6 +45,8 @@ abstract class DUVar[+Value <: ValueInformation] extends Var[DUVar[Value]] {
      */
     def definedBy: IntTrieSet
 
+    def toPersistentForm(implicit stmts: Array[Stmt[V]]): PDUVar[Value]
+
     override def toCanonicalForm(
         implicit ev: DUVar[Value] <:< DUVar[ValueInformation]
     ): DUVar[ValueInformation]
@@ -183,6 +185,8 @@ class DVar[+Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/ 
         s"DVar(useSites=${useSites.mkString("{", ",", "}")},value=$value,origin=$origin)"
     }
 
+    override def toPersistentForm(implicit stmts: Array[Stmt[V]]): Nothing = throw new UnsupportedOperationException
+
 }
 
 object DVar {
@@ -269,6 +273,10 @@ class UVar[+Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/ 
         s"UVar(defSites=${defSites.mkString("{", ",", "}")},value=$value)"
     }
 
+    override def toPersistentForm(
+        implicit stmts: Array[Stmt[V]]
+    ): PUVar[Value] = PUVar(value, definedBy.map(pcOfDefSite _))
+
 }
 
 object UVar {
@@ -282,9 +290,7 @@ object UVar {
         new UVar[d.DomainValue](value, defSites)
     }
 
-    def apply(value: ValueInformation, defSites: IntTrieSet): UVar[ValueInformation] = {
-        new UVar(value, defSites)
-    }
+    def apply[Value <: ValueInformation](value: Value, defSites: IntTrieSet): UVar[Value] = new UVar(value, defSites)
 
     def unapply[Value <: ValueInformation /* org.opalj.ai.ValuesDomain#DomainValue*/ ](
         u: UVar[Value]
