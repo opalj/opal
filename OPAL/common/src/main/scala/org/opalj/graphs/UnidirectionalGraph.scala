@@ -22,10 +22,9 @@ import org.opalj.collection.immutable.IntTrieSet
  * @author Michael Eichberg
  */
 class UnidirectionalGraph(
-        val verticesCount: Int
+    val verticesCount: Int
 )( // a graph which contains the nodes with the ids: [0...vertices-1]
-        private val successors: Array[IntTrieSet] = new Array[IntTrieSet](verticesCount)
-) extends AbstractGraph[Int] {
+    private val successors: Array[IntTrieSet] = new Array[IntTrieSet](verticesCount)) extends AbstractGraph[Int] {
 
     def vertices: Range = (0 until this.verticesCount)
 

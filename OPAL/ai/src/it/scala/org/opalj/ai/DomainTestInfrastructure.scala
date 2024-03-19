@@ -8,6 +8,9 @@ import java.util.concurrent.ConcurrentLinkedQueue
 import scala.util.control.ControlThrowable
 import scala.xml.NodeSeq
 
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+
 import org.opalj.ai.util.XHTML
 import org.opalj.bi.TestResources
 import org.opalj.br.{TestSupport => BRTestSupport}
@@ -21,9 +24,6 @@ import org.opalj.io.writeAndOpen
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.util.PerformanceEvaluation
-
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
 
 /**
  * Provides the basic infrastructure to load a very large number of class files and to perform
@@ -54,9 +54,7 @@ abstract class DomainTestInfrastructure(domainName: String) extends AnyFlatSpec 
     ): Unit = {
         // validate that we can get the computational type of each value stored on the stack
         // (this test will fail by throwing an exception)
-        result.operandsArray.forall { ops =>
-            (ops eq null) || { ops.foreach(op => op.computationalType); true }
-        }
+        result.operandsArray.forall { ops => (ops eq null) || { ops.foreach(op => op.computationalType); true } }
     }
 
     /**
@@ -96,7 +94,7 @@ abstract class DomainTestInfrastructure(domainName: String) extends AnyFlatSpec 
                 None
             } catch {
                 case ct: ControlThrowable => throw ct
-                case t: Throwable =>
+                case t: Throwable         =>
                     // basically, we want to catch everything!
                     Some((project.source(classFile).get.toString, classFile, method, t))
             }
@@ -123,17 +121,17 @@ abstract class DomainTestInfrastructure(domainName: String) extends AnyFlatSpec 
                         exInstances.map { ex =>
                             val (_, classFile, method, throwable) = ex
                             <div>
-                                <b>{ classFile.thisType.fqn }</b>
-                                <i>"{ method.signatureToJava(false) }"</i><br/>
-                                { "Length: " + method.body.get.instructions.length }
-                                <div>{ XHTML.throwableToXHTML(throwable) }</div>
+                                <b>{classFile.thisType.fqn}</b>
+                                <i>"{method.signatureToJava(false)}"</i><br/>
+                                {"Length: " + method.body.get.instructions.length}
+                                <div>{XHTML.throwableToXHTML(throwable)}</div>
                             </div>
                         }
 
                     <section>
-                        <h1>{ exResource }</h1>
-                        <p>Number of thrown exceptions: { exInstances.size }</p>
-                        { exDetails }
+                        <h1>{exResource}</h1>
+                        <p>Number of thrown exceptions: {exInstances.size}</p>
+                        {exDetails}
                     </section>
                 }
             val node = XHTML.createXHTML(Some("Thrown Exceptions"), NodeSeq.fromSeq(body.toSeq))

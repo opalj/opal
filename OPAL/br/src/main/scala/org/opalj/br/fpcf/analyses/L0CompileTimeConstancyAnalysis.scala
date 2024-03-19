@@ -35,7 +35,7 @@ import org.opalj.fpcf.UBP
  *
  * @author Dominik Helm
  */
-class L0CompileTimeConstancyAnalysis private[analyses] ( final val project: SomeProject)
+class L0CompileTimeConstancyAnalysis private[analyses] (final val project: SomeProject)
     extends FPCFAnalysis {
 
     /**
@@ -96,7 +96,7 @@ trait L0CompileTimeConstancyAnalysisScheduler extends FPCFAnalysisScheduler {
 
     override def requiredProjectInformation: ProjectInformationKeys = Seq.empty
 
-    final override def uses: Set[PropertyBounds] = PropertyBounds.lubs(FieldAssignability)
+    override final def uses: Set[PropertyBounds] = PropertyBounds.lubs(FieldAssignability)
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(CompileTimeConstancy)
 

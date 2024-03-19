@@ -41,7 +41,7 @@ import org.opalj.tac.fpcf.properties.TACAI
  * @author Florian Kuebler
  */
 class LoadedClassesAnalysis(
-        val project: SomeProject
+    val project: SomeProject
 ) extends FPCFAnalysis {
     /**
      * If the method in `callersOfMethod` has no callers
@@ -90,7 +90,9 @@ class LoadedClassesAnalysis(
                             getSuperclassesNotYetLoaded(declClassType, currentLoadedClasses)
 
                         PartialResult[SomeProject, LoadedClasses](
-                            project, LoadedClasses.key, update(newLoadedClasses)
+                            project,
+                            LoadedClasses.key,
+                            update(newLoadedClasses)
                         )
                     } else {
                         NoResult
@@ -126,7 +128,8 @@ class LoadedClassesAnalysis(
     }
 
     private[this] def processMethod(
-        declaredMethod: DeclaredMethod, tacaiEP: EPS[Method, TACAI]
+        declaredMethod: DeclaredMethod,
+        tacaiEP:        EPS[Method, TACAI]
     ): PropertyComputationResult = {
         assert(tacaiEP.hasUBP && tacaiEP.ub.tac.isDefined)
 
@@ -145,7 +148,9 @@ class LoadedClassesAnalysis(
             )
         } else if (newLoadedClasses.nonEmpty) {
             PartialResult[SomeProject, LoadedClasses](
-                project, LoadedClasses.key, update(newLoadedClasses)
+                project,
+                LoadedClasses.key,
+                update(newLoadedClasses)
             )
         } else {
             NoResult
@@ -184,7 +189,8 @@ class LoadedClassesAnalysis(
      * @return The set of classes being loaded.
      */
     def handleNewReachableMethod(
-        declClassType: ObjectType, stmts: Array[Stmt[V]]
+        declClassType: ObjectType,
+        stmts:         Array[Stmt[V]]
     ): UIDSet[ObjectType] = {
         var newLoadedClasses = UIDSet.empty[ObjectType]
         val currentLoadedClasses = getCurrentLoadedClasses()
@@ -217,7 +223,8 @@ class LoadedClassesAnalysis(
     }
 
     private[this] def getSuperclassesNotYetLoaded(
-        declClassType: ObjectType, currentLoadedClasses: UIDSet[ObjectType]
+        declClassType:        ObjectType,
+        currentLoadedClasses: UIDSet[ObjectType]
     ): UIDSet[ObjectType] = {
         ch.allSupertypes(declClassType, reflexive = true).filterNot(currentLoadedClasses.contains)
     }

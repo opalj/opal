@@ -23,7 +23,8 @@ trait StackMapTable_attributeBinding
     with AttributeBinding {
 
     type VerificationTypeInfo = br.VerificationTypeInfo
-    override implicit val verificationTypeInfoType: ClassTag[VerificationTypeInfo] = ClassTag(classOf[br.VerificationTypeInfo])
+    override implicit val verificationTypeInfoType: ClassTag[VerificationTypeInfo] =
+        ClassTag(classOf[br.VerificationTypeInfo])
     type StackMapTable_attribute = br.StackMapTable
     type StackMapFrame = br.StackMapFrame
     override implicit val stackMapFrameType: ClassTag[StackMapFrame] = ClassTag(classOf[br.StackMapFrame])

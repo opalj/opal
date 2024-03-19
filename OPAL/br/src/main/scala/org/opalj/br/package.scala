@@ -6,6 +6,9 @@ import scala.collection.mutable.Builder
 import scala.xml.Node
 import scala.xml.Text
 
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
+
 import org.opalj.bi.AccessFlags
 import org.opalj.bi.AccessFlagsContexts
 import org.opalj.collection.immutable.BitArraySet
@@ -14,9 +17,6 @@ import org.opalj.collection.immutable.UIDSet
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.info
-
-import com.typesafe.config.Config
-import com.typesafe.config.ConfigFactory
 
 /**
  * In this representation of Java bytecode references to a Java class file's constant
@@ -155,8 +155,8 @@ package object br {
      */
     def annotationsToJava(
         annotations: Annotations,
-        before:      String      = "",
-        after:       String      = ""
+        before:      String = "",
+        after:       String = ""
     ): String = {
 
         val annotationToJava: Annotation => String = { (annotation: Annotation) =>
@@ -200,26 +200,26 @@ package object br {
         t match {
             case ot: ObjectType =>
                 if (abbreviateType)
-                    <abbr class="type object_type" title={ ot.toJava }>
-                        { ot.simpleName }
+                    <abbr class="type object_type" title={ot.toJava}>
+                        {ot.simpleName}
                     </abbr>
                 else
-                    <span class="type object_type">{ ot.toJava }</span>
+                    <span class="type object_type">{ot.toJava}</span>
             case at: ArrayType =>
                 <span class="type array_type">
-                    { typeToXHTML(at.elementType, abbreviateType) }{ "[]" * at.dimensions }
+                    {typeToXHTML(at.elementType, abbreviateType)}{"[]" * at.dimensions}
                 </span>
             case bt: BaseType =>
-                <span class="type base_type">{ bt.toJava }</span>
+                <span class="type base_type">{bt.toJava}</span>
             case VoidType =>
                 <span class="type void_type">void</span>
             case CTIntType =>
-                <span class="type base_type">{ "<Computational Type Integer>" }</span>
+                <span class="type base_type">{"<Computational Type Integer>"}</span>
         }
     }
 
     def classAccessFlagsToXHTML(accessFlags: Int): Node = {
-        <span class="access_flags">{ AccessFlags.toString(accessFlags, AccessFlagsContexts.CLASS) }</span>
+        <span class="access_flags">{AccessFlags.toString(accessFlags, AccessFlagsContexts.CLASS)}</span>
     }
 
     def classAccessFlagsToString(accessFlags: Int): String = {
@@ -231,8 +231,8 @@ package object br {
         val signature = typeToXHTML(t, abbreviateTypes)
 
         <span class="type_signature_with_access_flags">
-            { classAccessFlagsToXHTML(accessFlags) }
-            { signature }
+            {classAccessFlagsToXHTML(accessFlags)}
+            {signature}
         </span>
     }
 
@@ -242,7 +242,7 @@ package object br {
     def methodToXHTML(
         name:            String,
         descriptor:      MethodDescriptor,
-        abbreviateTypes: Boolean          = true
+        abbreviateTypes: Boolean = true
     ): Node = {
 
         val parameterTypes =
@@ -250,15 +250,13 @@ package object br {
                 List(Text(""))
             else {
                 val parameterTypes = descriptor.parameterTypes.map(typeToXHTML(_, abbreviateTypes))
-                parameterTypes.tail.foldLeft(List(parameterTypes.head)) { (c, r) =>
-                    r :: Text(", ") :: c
-                }.reverse
+                parameterTypes.tail.foldLeft(List(parameterTypes.head)) { (c, r) => r :: Text(", ") :: c }.reverse
             }
 
         <span class="method_signature">
-            <span class="method_return_type">{ typeToXHTML(descriptor.returnType, abbreviateTypes) }</span>
-            <span class="method_name">{ name }</span>
-            <span class="method_parameters">({ parameterTypes })</span>
+            <span class="method_return_type">{typeToXHTML(descriptor.returnType, abbreviateTypes)}</span>
+            <span class="method_name">{name}</span>
+            <span class="method_parameters">({parameterTypes})</span>
         </span>
     }
 
@@ -272,8 +270,8 @@ package object br {
         val signature = methodToXHTML(name, descriptor, abbreviateTypes)
 
         <span class="method_signature_with_access_flags">
-            <span class="access_flags">{ methodAccessFlagsToString(accessFlags) }</span>
-            { signature }
+            <span class="access_flags">{methodAccessFlagsToString(accessFlags)}</span>
+            {signature}
         </span>
     }
 

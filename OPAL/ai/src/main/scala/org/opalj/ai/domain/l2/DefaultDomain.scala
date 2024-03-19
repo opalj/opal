@@ -8,10 +8,10 @@ import org.opalj.br.Method
 import org.opalj.br.analyses.Project
 
 class DefaultDomain[Source](
-        project:                            Project[Source],
-        method:                             Method,
-        val frequentEvaluationWarningLevel: Int,
-        val maxCallChainLength:             Int
+    project:                            Project[Source],
+    method:                             Method,
+    val frequentEvaluationWarningLevel: Int,
+    val maxCallChainLength:             Int
 ) extends SharedDefaultDomain[Source](project, method)
     with PerformInvocationsWithRecursionDetection
     with RecordCFG
@@ -42,21 +42,26 @@ class DefaultDomain[Source](
     lazy val calledMethodsStore: CalledMethodsStore { val domain: coordinatingDomain.type } = {
         val operands =
             localsArray(0).foldLeft(List.empty[DomainValue])((l, n) =>
-                if (n ne null) n :: l else l)
+                if (n ne null) n :: l else l
+            )
         CalledMethodsStore(
-            coordinatingDomain, callingDomain.frequentEvaluationWarningLevel
+            coordinatingDomain,
+            callingDomain.frequentEvaluationWarningLevel
         )(
-            method, mapOperands(operands, coordinatingDomain)
+            method,
+            mapOperands(operands, coordinatingDomain)
         )
     }
 
 }
 
 class ChildDefaultDomain[Source](
-        project:                Project[Source],
-        method:                 Method,
-        val callerDomain:       PerformInvocationsWithRecursionDetection { type CalledMethodDomain = ChildDefaultDomain[Source] },
-        val maxCallChainLength: Int
+    project: Project[Source],
+    method:  Method,
+    val callerDomain: PerformInvocationsWithRecursionDetection {
+        type CalledMethodDomain = ChildDefaultDomain[Source]
+    },
+    val maxCallChainLength: Int
 ) extends SharedDefaultDomain[Source](project, method)
     with ChildPerformInvocationsWithRecursionDetection
     with DefaultRecordMethodCallResults { callingDomain =>

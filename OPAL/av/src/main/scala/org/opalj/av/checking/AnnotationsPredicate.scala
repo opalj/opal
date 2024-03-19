@@ -34,13 +34,14 @@ case object AnyAnnotations extends AnnotationsPredicate {
  * @author Marco Torsello
  */
 case class HasAtLeastTheAnnotations(
-        annotationPredicates: Set[_ <: AnnotationPredicate]
+    annotationPredicates: Set[_ <: AnnotationPredicate]
 ) extends AnnotationsPredicate {
 
     def apply(others: Iterable[Annotation]): Boolean = {
         annotationPredicates.forall(p => others.exists(a => p(a)))
     }
 }
+
 object HasAtLeastTheAnnotations {
 
     def apply(annotationPredicate: AnnotationPredicate): HasAtLeastTheAnnotations = {
@@ -52,15 +53,16 @@ object HasAtLeastTheAnnotations {
  * @author Marco Torsello
  */
 case class HasTheAnnotations(
-        annotationPredicates: Set[_ <: AnnotationPredicate]
+    annotationPredicates: Set[_ <: AnnotationPredicate]
 ) extends AnnotationsPredicate {
 
     def apply(others: Iterable[Annotation]): Boolean = {
         others.size == annotationPredicates.size &&
-            annotationPredicates.forall(p => others.exists(a => p(a)))
+        annotationPredicates.forall(p => others.exists(a => p(a)))
     }
 
 }
+
 object HasTheAnnotations {
 
     def apply(annotationPredicate: AnnotationPredicate): HasTheAnnotations = {
@@ -72,7 +74,7 @@ object HasTheAnnotations {
  * @author Marco Torsello
  */
 case class HasAtLeastOneAnnotation(
-        annotationPredicates: Set[_ <: AnnotationPredicate]
+    annotationPredicates: Set[_ <: AnnotationPredicate]
 ) extends AnnotationsPredicate {
 
     def apply(annotations: Iterable[Annotation]): Boolean = {

@@ -33,12 +33,12 @@ import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.properties.TACAI
 
 class SimpleEscapeAnalysisContext(
-        val entity:                  (Context, Entity),
-        val targetMethod:            Method,
-        val declaredMethods:         DeclaredMethods,
-        val virtualFormalParameters: VirtualFormalParameters,
-        val project:                 SomeProject,
-        val propertyStore:           PropertyStore
+    val entity:                  (Context, Entity),
+    val targetMethod:            Method,
+    val declaredMethods:         DeclaredMethods,
+    val virtualFormalParameters: VirtualFormalParameters,
+    val project:                 SomeProject,
+    val propertyStore:           PropertyStore
 ) extends AbstractEscapeAnalysisContext
     with PropertyStoreContainer
     with VirtualFormalParametersContainer
@@ -52,7 +52,7 @@ class SimpleEscapeAnalysisContext(
  *
  * @author Florian Kuebler
  */
-class SimpleEscapeAnalysis( final val project: SomeProject)
+class SimpleEscapeAnalysis(final val project: SomeProject)
     extends DefaultEscapeAnalysis
     with ConstructorSensitiveEscapeAnalysis
     with ConfigurationBasedConstructorEscapeAnalysis
@@ -96,7 +96,7 @@ trait SimpleEscapeAnalysisScheduler extends FPCFAnalysisScheduler {
     override def requiredProjectInformation: ProjectInformationKeys =
         Seq(DeclaredMethodsKey, VirtualFormalParametersKey, ContextProviderKey)
 
-    final override def uses: Set[PropertyBounds] = Set(
+    override final def uses: Set[PropertyBounds] = Set(
         PropertyBounds.lub(EscapeProperty),
         PropertyBounds.ub(TACAI)
     )

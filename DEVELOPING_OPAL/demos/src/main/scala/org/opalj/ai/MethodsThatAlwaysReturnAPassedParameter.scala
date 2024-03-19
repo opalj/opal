@@ -40,7 +40,7 @@ object MethodsThatAlwaysReturnAPassedParameter extends ProjectAnalysisApplicatio
             if method.descriptor.returnType.isReferenceType
             if (
                 method.descriptor.parametersCount > 0 &&
-                method.descriptor.parameterTypes.exists(_.isReferenceType)
+                    method.descriptor.parameterTypes.exists(_.isReferenceType)
             ) || !method.isStatic
             result = BaseAI(
                 method,
@@ -54,8 +54,7 @@ object MethodsThatAlwaysReturnAPassedParameter extends ProjectAnalysisApplicatio
         } yield {
             // collect the origin information
             val origins =
-                result.domain.allReturnedValues.values.
-                    map(result.domain.originsIterator(_).toList).flatten.toSet
+                result.domain.allReturnedValues.values.map(result.domain.originsIterator(_).toList).flatten.toSet
 
             method.toJava + (
                 if (origins.nonEmpty)

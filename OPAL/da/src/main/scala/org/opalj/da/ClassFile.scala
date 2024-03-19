@@ -22,16 +22,16 @@ import org.opalj.io.process
  * @author Andre Pacak
  */
 case class ClassFile(
-        constant_pool: Constant_Pool,
-        minor_version: Int,
-        major_version: Int,
-        access_flags:  Int                 = ACC_PUBLIC.mask | ACC_SUPER.mask,
-        this_class:    Constant_Pool_Index,
-        super_class:   Constant_Pool_Index,
-        interfaces:    Interfaces          = NoInterfaces,
-        fields:        Fields              = NoFields,
-        methods:       Methods             = NoMethods,
-        attributes:    Attributes          = NoAttributes
+    constant_pool: Constant_Pool,
+    minor_version: Int,
+    major_version: Int,
+    access_flags:  Int        = ACC_PUBLIC.mask | ACC_SUPER.mask,
+    this_class:    Constant_Pool_Index,
+    super_class:   Constant_Pool_Index,
+    interfaces:    Interfaces = NoInterfaces,
+    fields:        Fields     = NoFields,
+    methods:       Methods    = NoMethods,
+    attributes:    Attributes = NoAttributes
 ) {
 
     assert({
@@ -50,10 +50,7 @@ case class ClassFile(
             {
                 val cpIt = constant_pool.iterator
                 cpIt.next() // the first entry is always empty in the class file
-                cpIt.
-                    filter(_ ne null /*handles the case of Constant_Long and Constant_Double*/ ).
-                    map(_.size).
-                    sum
+                cpIt.filter(_ ne null /*handles the case of Constant_Long and Constant_Double*/ ).map(_.size).sum
             } +
             2 + // access_flags
             2 + // this_class
@@ -93,9 +90,7 @@ case class ClassFile(
                 Seq(
                     Text("implements "),
                     asJavaObjectType(cp(interfaces.head).toString).asSpan("implements"),
-                    interfaces.tail.map { i =>
-                        Seq(Text(", "), asJavaObjectType(cp(i).toString).asSpan("implements"))
-                    }
+                    interfaces.tail.map { i => Seq(Text(", "), asJavaObjectType(cp(i).toString).asSpan("implements")) }
                 )
             else
                 NodeSeq.Empty
@@ -112,10 +107,10 @@ case class ClassFile(
                 cpNode = cp(cpIndex)
                 if cpNode != null /* <= need for constant_double/_long entries */
             } yield {
-                <li value={ cpIndex.toString }>{ cpNode.asCPNode }</li>
+                <li value={cpIndex.toString}>{cpNode.asCPNode}</li>
             }
 
-        <ol class="cp_entries">{ cpEntries }</ol>
+        <ol class="cp_entries">{cpEntries}</ol>
     }
 
     def attributeToXHTML(attribute: Attribute): Node = {
@@ -128,11 +123,13 @@ case class ClassFile(
     def fieldsToXHTML: Iterator[Node] = fields.iterator.map { field => field.toXHTML }
 
     def methodsToXHTML: Iterator[Node] = {
-        methods.iterator.zipWithIndex.map { mi => val (method, index) = mi; method.toXHTML(index) }
+        methods.iterator.zipWithIndex.map { mi =>
+            val (method, index) = mi; method.toXHTML(index)
+        }
     }
 
     protected def accessFlags: Node = {
-        <span class="access_flags">{ AccessFlags.classFlagsToJava(access_flags) }</span>
+        <span class="access_flags">{AccessFlags.classFlagsToJava(access_flags)}</span>
     }
 
     protected def filter: Node = {
@@ -182,26 +179,26 @@ case class ClassFile(
     ): Node =
         <html>
             <head>
-                <title>Java Bytecode of { thisType.asJava }</title>
-                <style type="text/css">{ scala.xml.Unparsed(ClassFile.ResetCSS) }</style>
+                <title>Java Bytecode of {thisType.asJava}</title>
+                <style type="text/css">{scala.xml.Unparsed(ClassFile.ResetCSS)}</style>
                 {
                     if (embeddedCSS.isDefined)
-                        <style type="text/css">{ scala.xml.Unparsed(embeddedCSS.get) }</style>
+                        <style type="text/css">{scala.xml.Unparsed(embeddedCSS.get)}</style>
                 }
                 {
                     if (cssFile.isDefined)
-                        <link rel="stylesheet" href={ cssFile.get }></link>
+                        <link rel="stylesheet" href={cssFile.get}></link>
                 }{
                     if (withMethodsFilter)
-                        <script>{ scala.xml.Unparsed(ClassFile.FilterJS) }</script>
+                        <script>{scala.xml.Unparsed(ClassFile.FilterJS)}</script>
                 }
                 {
                     if (jsFile.isDefined)
-                        <script type="text/javascript" src={ jsFile.get }></script>
+                        <script type="text/javascript" src={jsFile.get}></script>
                 }
             </head>
             <body>
-                { classFileToXHTML(source, withMethodsFilter) }
+                {classFileToXHTML(source, withMethodsFilter)}
             </body>
         </html>
 
@@ -215,11 +212,11 @@ case class ClassFile(
         val (signatureAttributes, attributes1) = partitionByType(attributes0, classOf[Signature_attribute])
 
         <div class="class_file">
-            { if (source.isDefined) <div id="source">{ source.get }</div> }
+            {if (source.isDefined) <div id="source">{source.get}</div>}
             <div id="class_file_header">
-                { accessFlags }
-                <span id="defined_class">{ thisType.asJava }</span>
-                { superTypes }
+                {accessFlags}
+                <span id="defined_class">{thisType.asJava}</span>
+                {superTypes}
                 {
                     if (signatureAttributes.nonEmpty) {
                         Seq(<br/>, signatureAttributes.head.signatureSpan)
@@ -230,19 +227,19 @@ case class ClassFile(
                     sourceFileAttributes.headOption.map { a =>
                         Seq(
                             Text("Source file: "),
-                            <span class="source_file">{ a.sourceFile } </span>,
+                            <span class="source_file">{a.sourceFile} </span>,
                             Unparsed("&nbsp; &mdash; &nbsp;")
                         )
                     }.getOrElse(NodeSeq.Empty)
                 }
-                <span id="class_file_version">Version:&nbsp;{ s"$major_version.$minor_version ($jdkVersion)" }</span>
+                <span id="class_file_version">Version:&nbsp;{s"$major_version.$minor_version ($jdkVersion)"}</span>
                 &nbsp; &mdash; &nbsp;
-                <span>Size:&nbsp;{ size }bytes</span>
+                <span>Size:&nbsp;{size}bytes</span>
             </div>
             <div class="constant_pool">
                 <details>
                     <summary>Constant Pool</summary>
-                    { cpToXHTML }
+                    {cpToXHTML}
                 </details>
             </div>
             <div class="members">
@@ -251,14 +248,14 @@ case class ClassFile(
                         <div class="attributes">
                             <details>
                                 <summary>Attributes</summary>
-                                { attributes1.map[Node](attributeToXHTML) }
+                                {attributes1.map[Node](attributeToXHTML)}
                             </details>
                         </div>
                 }{
                     if (fields.nonEmpty) {
                         <div class="fields">
                             <details open="">
-                                <summary>Fields</summary>{ fieldsToXHTML }
+                                <summary>Fields</summary>{fieldsToXHTML}
                             </details>
                         </div>
                     }
@@ -268,8 +265,8 @@ case class ClassFile(
                         <div class="methods">
                             <details open="">
                                 <summary>Methods</summary>
-                                { if (withMethodsFilter) filter else NodeSeq.Empty }
-                                { methodsToXHTML }
+                                {if (withMethodsFilter) filter else NodeSeq.Empty}
+                                {methodsToXHTML}
                             </details>
                         </div>
                     }

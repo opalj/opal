@@ -20,9 +20,9 @@ package instructions
  * @author Michael Eichberg
  */
 case class GETFIELD(
-        declaringClass: ObjectType,
-        name:           String,
-        fieldType:      FieldType
+    declaringClass: ObjectType,
+    name:           String,
+    fieldType:      FieldType
 ) extends FieldReadAccess {
 
     final def opcode: Opcode = GETFIELD.opcode
@@ -49,7 +49,9 @@ case class GETFIELD(
             List(indexOfNextInstruction(currentPC))
         else
             Instruction.nextInstructionOrExceptionHandler(
-                this, currentPC, ObjectType.NullPointerException
+                this,
+                currentPC,
+                ObjectType.NullPointerException
             )
     }
 

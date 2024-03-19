@@ -3,12 +3,12 @@ package org
 
 import scala.collection.immutable.ArraySeq
 
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
+
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
-
-import com.typesafe.config.Config
-import com.typesafe.config.ConfigFactory
 
 /**
  * OPAL is a Scala-based framework for the static analysis, manipulation and creation of

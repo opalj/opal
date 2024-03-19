@@ -70,7 +70,8 @@ trait ProjectInformationKey[T <: AnyRef, I <: AnyRef] {
      * @note   Classes/Objects that implement this trait should not make the method `public`
      *         to avoid that this method is called accidentally by regular user code.
      */
-    /*ABSTRACT*/ def requirements(project: SomeProject): ProjectInformationKeys
+    /*ABSTRACT*/
+    def requirements(project: SomeProject): ProjectInformationKeys
 
     /**
      * Computes the information for the given project.
@@ -79,7 +80,8 @@ trait ProjectInformationKey[T <: AnyRef, I <: AnyRef] {
      *      make this method public. This method is only expected to be called
      *      by an instance of a `Project`.
      */
-    /*ABSTRACT*/ def compute(project: SomeProject): T
+    /*ABSTRACT*/
+    def compute(project: SomeProject): T
 
 }
 

@@ -16,9 +16,9 @@ import org.opalj.log.OPALLogger
  * for the specified project. This typically initialized by the [[AIDomainFactoryKey$]].
  */
 class ProjectSpecificAIExecutor(
-        val project:       SomeProject,
-        val domainClass:   Class[_ <: Domain],
-        val domainFactory: (SomeProject, Method) => Domain
+    val project:       SomeProject,
+    val domainClass:   Class[_ <: Domain],
+    val domainFactory: (SomeProject, Method) => Domain
 ) extends (Method => AIResult) {
 
     def apply(m: Method): AIResult = { BaseAI(m, domainFactory(project, m)) }
@@ -67,15 +67,15 @@ object AIDomainFactoryKey
     ): ProjectSpecificAIExecutor = {
         implicit val logContext: LogContext = project.logContext
 
-        val domainFactoryRequirements = project.
-            getProjectInformationKeyInitializationData(this).
-            getOrElse(Set.empty)
+        val domainFactoryRequirements = project.getProjectInformationKeyInitializationData(this).getOrElse(Set.empty)
 
         val theDomainFactories = domainFactories(domainFactoryRequirements)
 
         if (theDomainFactories.isEmpty) {
             val message = domainFactoryRequirements.mkString(
-                "no abstract domain that satisfies the requirements: {", ", ", "} exists."
+                "no abstract domain that satisfies the requirements: {",
+                ", ",
+                "} exists."
             )
             throw new IllegalArgumentException(message)
         }

@@ -8,8 +8,8 @@ import scala.xml.Node
  * @author Michael Eichberg
  */
 case class BootstrapMethods_attribute(
-        attribute_name_index: Constant_Pool_Index,
-        bootstrap_methods:    Seq[BootstrapMethod]
+    attribute_name_index: Constant_Pool_Index,
+    bootstrap_methods:    Seq[BootstrapMethod]
 ) extends Attribute {
 
     override def attribute_length: Int = {
@@ -19,7 +19,7 @@ case class BootstrapMethods_attribute(
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         <details class="attribute">
             <summary class="attribute_name">BootstrapMethods</summary>
-            { methodsToXHTML(cp) }
+            {methodsToXHTML(cp)}
         </details>
     }
 

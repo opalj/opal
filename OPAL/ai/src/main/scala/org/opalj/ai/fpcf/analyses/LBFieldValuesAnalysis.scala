@@ -103,7 +103,7 @@ import org.opalj.log.OPALLogger
  * @author Michael Eichberg
  */
 class LBFieldValuesAnalysis private[analyses] (
-        val project: SomeProject
+    val project: SomeProject
 ) extends FPCFAnalysis { analysis =>
 
     final val fieldAccessInformation = project.get(FieldAccessInformationKey)
@@ -148,8 +148,8 @@ class LBFieldValuesAnalysis private[analyses] (
      * @author Michael Eichberg
      */
     class FieldValuesAnalysisDomain private (
-            val classFile: ClassFile,
-            val dependees: EOptionPSet[Entity, Property]
+        val classFile: ClassFile,
+        val dependees: EOptionPSet[Entity, Property]
     ) extends CorrelationalDomain
         with domain.TheProject
         with domain.TheCode
@@ -191,9 +191,9 @@ class LBFieldValuesAnalysis private[analyses] (
             fieldInformation = relevantFields.iterator.map[(Field, Option[DomainValue])](_ -> None).toMap
         }
 
-        final override val UsedPropertiesBound: SinglePropertiesBoundType = LBProperties
+        override final val UsedPropertiesBound: SinglePropertiesBoundType = LBProperties
 
-        final override implicit def project: SomeProject = analysis.project
+        override implicit final def project: SomeProject = analysis.project
 
         def hasCandidateFields: Boolean = fieldInformation.nonEmpty
         def candidateFields: Iterable[Field] = fieldInformation.keys
@@ -222,7 +222,7 @@ class LBFieldValuesAnalysis private[analyses] (
             calledMethods.getOrElseUpdate(currentMethod, mutable.Set.empty) += calledMethod
             super.doInvokeWithRefinedReturnValue(calledMethod, result)
         }
-        */
+         */
 
         private def updateFieldInformation(
             value:              DomainValue,
@@ -231,7 +231,7 @@ class LBFieldValuesAnalysis private[analyses] (
             fieldType:          FieldType
         ): Unit = {
             if (declaringClassType ne thisClassType)
-                return ;
+                return;
 
             classFile.findField(name, fieldType).foreach { field =>
                 if (fieldInformation.contains(field)) {
@@ -284,7 +284,9 @@ class LBFieldValuesAnalysis private[analyses] (
             domain.fieldInformation.keys.foldLeft(Set.empty[Method]) { (ms, field) =>
                 // IMPROVE: This requires that the key was computed in a previous FPCF phase as it internally uses an
                 // analysis.
-                ms ++ fieldAccessInformation.writeAccesses(field).map(wa => contextProvider.contextFromId(wa._1).method.definedMethod)
+                ms ++ fieldAccessInformation.writeAccesses(field).map(wa =>
+                    contextProvider.contextFromId(wa._1).method.definedMethod
+                )
             }
         relevantMethods.foreach { method =>
             domain.setMethodContext(method)
@@ -298,9 +300,7 @@ class LBFieldValuesAnalysis private[analyses] (
         val relevantFields = relevantFieldsIterable(classFile)
         if (relevantFields.isEmpty) {
             return MultiResult(
-                classFile.fields.iterator map { f =>
-                    FinalEP(f, TypeBasedFieldValueInformation(f.fieldType))
-                }
+                classFile.fields.iterator map { f => FinalEP(f, TypeBasedFieldValueInformation(f.fieldType)) }
             )
         }
         val domain = new FieldValuesAnalysisDomain(classFile, relevantFields)
@@ -317,7 +317,10 @@ class LBFieldValuesAnalysis private[analyses] (
                     Result(FinalEP(f, fv))
 
                 case Some(Some(domain.DomainReferenceValueTag(dv))) =>
-                    if ( /* ultimate refinements => */ dv.isNull.isYes || classHierarchy.isKnownToBeFinal(dv.leastUpperType.get)) {
+                    if (/* ultimate refinements => */ dv.isNull.isYes || classHierarchy.isKnownToBeFinal(
+                            dv.leastUpperType.get
+                        )
+                    ) {
                         val vi = ValueBasedFieldValueInformation(dv.toCanonicalForm)
                         // println(f.toJava+"!!!!!!>>>>>> "+vi)
                         Result(FinalEP(f, vi))
@@ -329,7 +332,9 @@ class LBFieldValuesAnalysis private[analyses] (
                         //    precise information or methods called by the methods that
                         //    write the field.
                         val methodsWithFieldWrites =
-                            fieldAccessInformation.writeAccesses(f).map(wa => contextProvider.contextFromId(wa._1).method).toSet
+                            fieldAccessInformation.writeAccesses(f).map(wa =>
+                                contextProvider.contextFromId(wa._1).method
+                            ).toSet
                         val relevantDependees = domain.dependees.filter { eOptionP =>
                             eOptionP match {
                                 case EOptionP(readField: Field, _) =>
@@ -378,7 +383,8 @@ class LBFieldValuesAnalysis private[analyses] (
                             // println("======>>>>>>\n\t\t"+vi+"\n\t\t"+relevantDependees)
                             if (newDependees.isEmpty ||
                                 dv.isNull.isYes ||
-                                classHierarchy.isKnownToBeFinal(dv.leastUpperType.get)) {
+                                classHierarchy.isKnownToBeFinal(dv.leastUpperType.get)
+                            ) {
                                 Result(FinalEP(f, vi))
                             } else {
                                 InterimResult.forLB(f, vi, newDependees.toSet, c)
@@ -415,7 +421,7 @@ class LBFieldValuesAnalysis private[analyses] (
                     }
                 }
             }
-            */
+         */
         Results(results)
     }
 
@@ -451,8 +457,8 @@ object EagerLBFieldValuesAnalysis extends BasicFPCFEagerAnalysisScheduler {
         // To ensure that subsequent analyses are able to pick-up the results of this
         // analysis, we state that the domain that has to be used when computing
         // the AIResult has to use the (partial) domain: RefinedTypeLevelFieldAccessInstructions.
-        p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey)(
-            i => i.getOrElse(Set.empty) + classOf[RefinedTypeLevelFieldAccessInstructions]
+        p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey)(i =>
+            i.getOrElse(Set.empty) + classOf[RefinedTypeLevelFieldAccessInstructions]
         )
         null
     }

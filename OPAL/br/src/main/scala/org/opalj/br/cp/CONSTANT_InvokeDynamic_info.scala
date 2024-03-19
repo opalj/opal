@@ -19,8 +19,8 @@ import org.opalj.bi.ConstantPoolTags
  * @author Andre Pacak
  */
 case class CONSTANT_InvokeDynamic_info(
-        bootstrapMethodAttributeIndex: Int,
-        nameAndTypeIndex:              Constant_Pool_Index
+    bootstrapMethodAttributeIndex: Int,
+    nameAndTypeIndex:              Constant_Pool_Index
 ) extends Constant_Pool_Entry {
 
     override def asInvokeDynamic: this.type = this

@@ -2,6 +2,11 @@
 package org.opalj
 package tac
 
+import org.junit.runner.RunWith
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
+
 import org.opalj.ai.BaseAI
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
@@ -13,11 +18,6 @@ import org.opalj.br.TestSupport
 import org.opalj.br.analyses.SomeProject
 import org.opalj.util.PerformanceEvaluation
 import org.opalj.util.PerformanceEvaluation.time
-
-import org.junit.runner.RunWith
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.matchers.should.Matchers
-import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests that all methods of OPAL's test projects + the JDK can be converted to the ai-based
@@ -35,7 +35,7 @@ class TACAIIntegrationTest extends AnyFunSpec with Matchers {
         performanceEvaluation: PerformanceEvaluation
     ): Unit = {
         import performanceEvaluation.time
-        if (Thread.currentThread().isInterrupted) return ;
+        if (Thread.currentThread().isInterrupted) return;
 
         var errors: List[(String, Throwable)] = Nil
         val successfullyCompleted = new java.util.concurrent.atomic.AtomicInteger(0)
@@ -69,23 +69,23 @@ class TACAIIntegrationTest extends AnyFunSpec with Matchers {
                 successfullyCompleted.incrementAndGet()
             } catch {
                 case e: Throwable => this.synchronized {
-                    val methodSignature = m.toJava
+                        val methodSignature = m.toJava
 
-                    println(methodSignature + " - size: " + body.instructions.length)
-                    e.printStackTrace(Console.out)
-                    if (e.getCause != null) {
-                        println("\tcause:")
-                        e.getCause.printStackTrace(Console.out)
+                        println(methodSignature + " - size: " + body.instructions.length)
+                        e.printStackTrace(Console.out)
+                        if (e.getCause != null) {
+                            println("\tcause:")
+                            e.getCause.printStackTrace(Console.out)
+                        }
+                        val instrWithIndex = body.instructions.zipWithIndex.filter(_._1 != null)
+                        println(
+                            instrWithIndex.map(_.swap).mkString("Instructions:\n\t", "\n\t", "\n")
+                        )
+                        println(
+                            body.exceptionHandlers.mkString("Exception Handlers:\n\t", "\n\t", "\n")
+                        )
+                        errors = (s"${project.source(m.classFile)}:$methodSignature", e) :: errors
                     }
-                    val instrWithIndex = body.instructions.zipWithIndex.filter(_._1 != null)
-                    println(
-                        instrWithIndex.map(_.swap).mkString("Instructions:\n\t", "\n\t", "\n")
-                    )
-                    println(
-                        body.exceptionHandlers.mkString("Exception Handlers:\n\t", "\n\t", "\n")
-                    )
-                    errors = (s"${project.source(m.classFile)}:$methodSignature", e) :: errors
-                }
             }
         }
         if (errors.nonEmpty) {

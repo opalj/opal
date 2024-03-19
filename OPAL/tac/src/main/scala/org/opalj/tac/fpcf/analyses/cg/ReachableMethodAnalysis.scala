@@ -85,7 +85,9 @@ trait ReachableMethodAnalysis extends FPCFAnalysis with TypeConsumerAnalysis {
     }
 
     private[this] def processMethod(
-        eOptP: EOptionP[DeclaredMethod, Callers], seen: Callers, tacEP: EPS[Method, TACAI]
+        eOptP: EOptionP[DeclaredMethod, Callers],
+        seen:  Callers,
+        tacEP: EPS[Method, TACAI]
     ): ProperPropertyComputationResult = {
         var results: List[ProperPropertyComputationResult] = Nil
         eOptP.ub.forNewCalleeContexts(seen, eOptP.e) { calleeContext =>
@@ -102,7 +104,8 @@ trait ReachableMethodAnalysis extends FPCFAnalysis with TypeConsumerAnalysis {
     }
 
     def processMethod(
-        callContext: ContextType, tacEP: EPS[Method, TACAI]
+        callContext: ContextType,
+        tacEP:       EPS[Method, TACAI]
     ): ProperPropertyComputationResult
 
     protected def continuationForTAC(
@@ -121,7 +124,8 @@ trait ReachableMethodAnalysis extends FPCFAnalysis with TypeConsumerAnalysis {
     }
 
     private[this] def continuationForCallers(
-        oldCallers: Callers, tacEP: EPS[Method, TACAI]
+        oldCallers: Callers,
+        tacEP:      EPS[Method, TACAI]
     )(
         update: SomeEPS
     ): ProperPropertyComputationResult = {

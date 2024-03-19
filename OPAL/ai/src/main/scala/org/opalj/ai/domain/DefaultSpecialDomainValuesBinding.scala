@@ -21,17 +21,17 @@ trait DefaultSpecialDomainValuesBinding extends ValuesDomain {
 
     final type DomainTypedValue[+T <: Type] = TypedValue[T]
 
-    final override val DomainValueTag: ClassTag[DomainValue] = implicitly
+    override final val DomainValueTag: ClassTag[DomainValue] = implicitly
 
     final type DomainIllegalValue = IllegalValue
 
-    final override val TheIllegalValue: DomainIllegalValue = new IllegalValue
+    override final val TheIllegalValue: DomainIllegalValue = new IllegalValue
 
-    final override val MetaInformationUpdateIllegalValue = MetaInformationUpdate(TheIllegalValue)
+    override final val MetaInformationUpdateIllegalValue = MetaInformationUpdate(TheIllegalValue)
 
     final type DomainReturnAddressValue = ReturnAddressValue
 
-    final override def ReturnAddressValue(address: Int): ReturnAddressValue = {
+    override final def ReturnAddressValue(address: Int): ReturnAddressValue = {
         new ReturnAddressValue(address)
     }
 

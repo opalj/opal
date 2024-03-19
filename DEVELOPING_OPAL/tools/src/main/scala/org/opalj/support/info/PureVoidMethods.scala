@@ -40,7 +40,9 @@ object PureVoidMethods extends ProjectAnalysisApplication {
     }
 
     override def doAnalyze(
-        project: Project[URL], parameters: Seq[String], isInterrupted: () => Boolean
+        project:       Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () => Boolean
     ): BasicReport = {
 
         val propertyStore = project.get(PropertyStoreKey)
@@ -63,9 +65,9 @@ object PureVoidMethods extends ProjectAnalysisApplication {
 
         val voidReturn = entities.collect {
             case FinalEP(m: DefinedMethod, p @ (CompileTimePure | Pure | SideEffectFree)) // Do not report empty methods, they are e.g. used for base implementations of listeners
-            // Empty methods still have a return instruction and therefore a body size of 1
-            if m.definedMethod.returnType.isVoidType && !m.definedMethod.isConstructor &&
-                m.definedMethod.body.isDefined && m.definedMethod.body.get.instructions.length != 1 =>
+                // Empty methods still have a return instruction and therefore a body size of 1
+                if m.definedMethod.returnType.isVoidType && !m.definedMethod.isConstructor &&
+                    m.definedMethod.body.isDefined && m.definedMethod.body.get.instructions.length != 1 =>
                 (m, p)
         }
 

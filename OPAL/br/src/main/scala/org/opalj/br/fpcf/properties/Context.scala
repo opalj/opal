@@ -97,9 +97,7 @@ class SimpleContexts private[properties] (declaredMethods: DeclaredMethods) {
                     }
                 } else {
                     val newContext = SimpleContext(method)
-                    val newMap = java.util.Arrays.copyOf(
-                        id2Context, Math.max(declaredMethods._UNSAFE_size, id + 1)
-                    )
+                    val newMap = java.util.Arrays.copyOf(id2Context, Math.max(declaredMethods._UNSAFE_size, id + 1))
                     newMap(id) = newContext
                     id2Context = newMap
                     newContext
@@ -113,9 +111,9 @@ class SimpleContexts private[properties] (declaredMethods: DeclaredMethods) {
  * A context that includes a call string
  */
 class CallStringContext private[properties] (
-        val id:         Int,
-        val method:     DeclaredMethod,
-        val callString: List[(DeclaredMethod, Int)]
+    val id:         Int,
+    val method:     DeclaredMethod,
+    val callString: List[(DeclaredMethod, Int)]
 ) extends Context {
     override def toString: String = {
         s"CallStringContext($method, $callString)"

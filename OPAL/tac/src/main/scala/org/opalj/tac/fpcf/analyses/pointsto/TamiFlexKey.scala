@@ -27,15 +27,28 @@ import org.opalj.log.OPALLogger
  * @author Florian Kuebler
  */
 class TamiFlexLogData(
-        private[this] val _classes: scala.collection.Map[(String /*Caller*/ , String /*Reflection Method*/ , Int /*Line Number*/ ), scala.collection.Set[ReferenceType]],
-        private[this] val _methods: scala.collection.Map[(String /*Caller*/ , String /*Reflection Method*/ , Int /*Line Number*/ ), scala.collection.Set[DeclaredMethod]],
-        private[this] val _fields:  scala.collection.Map[(String /*Caller*/ , String /*Reflection Method*/ , Int /*Line Number*/ ), scala.collection.Set[Field]]
+    private[this] val _classes: scala.collection.Map[
+        (String /*Caller*/, String /*Reflection Method*/, Int /*Line Number*/ ),
+        scala.collection.Set[ReferenceType]
+    ],
+    private[this] val _methods: scala.collection.Map[
+        (String /*Caller*/, String /*Reflection Method*/, Int /*Line Number*/ ),
+        scala.collection.Set[DeclaredMethod]
+    ],
+    private[this] val _fields: scala.collection.Map[
+        (String /*Caller*/, String /*Reflection Method*/, Int /*Line Number*/ ),
+        scala.collection.Set[Field]
+    ]
 ) {
     private[this] def toMethodDesc(method: DeclaredMethod): String = {
         s"${method.declaringClassType.toJava}.${method.name}"
     }
 
-    def classes(source: DeclaredMethod, reflectionTarget: String, sourceLine: Int): scala.collection.Set[ReferenceType] = {
+    def classes(
+        source:           DeclaredMethod,
+        reflectionTarget: String,
+        sourceLine:       Int
+    ): scala.collection.Set[ReferenceType] = {
         val sourceDesc = toMethodDesc(source)
         val key = (sourceDesc, reflectionTarget, sourceLine)
         if (_classes.contains(key))
@@ -93,12 +106,25 @@ object TamiFlexKey extends ProjectInformationKey[TamiFlexLogData, Nothing] {
 
     override def compute(project: SomeProject): TamiFlexLogData = {
         implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
-        val classes: mutable.Map[(String /*Caller*/ , String /*Reflection Method*/ , Int /*Line Number*/ ), mutable.Set[ReferenceType]] = mutable.Map.empty
-        val methods: mutable.Map[(String /*Caller*/ , String /*Reflection Method*/ , Int /*Line Number*/ ), mutable.Set[DeclaredMethod]] = mutable.Map.empty
-        val fields: mutable.Map[(String /*Caller*/ , String /*Reflection Method*/ , Int /*Line Number*/ ), mutable.Set[Field]] = mutable.Map.empty
+        val classes: mutable.Map[
+            (String /*Caller*/, String /*Reflection Method*/, Int /*Line Number*/ ),
+            mutable.Set[ReferenceType]
+        ] = mutable.Map.empty
+        val methods: mutable.Map[
+            (String /*Caller*/, String /*Reflection Method*/, Int /*Line Number*/ ),
+            mutable.Set[DeclaredMethod]
+        ] = mutable.Map.empty
+        val fields: mutable.Map[
+            (String /*Caller*/, String /*Reflection Method*/, Int /*Line Number*/ ),
+            mutable.Set[Field]
+        ] =
+            mutable.Map.empty
 
         @inline def addClassType(
-            classType: String, sourceMethod: String, reflectionTarget: String, sourceLine: String
+            classType:        String,
+            sourceMethod:     String,
+            reflectionTarget: String,
+            sourceLine:       String
         ): Unit = {
             val line = if (sourceLine == "") -1 else sourceLine.toInt
             val oldSet =
@@ -107,7 +133,10 @@ object TamiFlexKey extends ProjectInformationKey[TamiFlexLogData, Nothing] {
         }
 
         @inline def addField(
-            fieldDesc: String, sourceMethod: String, reflectionTarget: String, sourceLine: String
+            fieldDesc:        String,
+            sourceMethod:     String,
+            reflectionTarget: String,
+            sourceLine:       String
         ): Unit = {
             val line = if (sourceLine == "") -1 else sourceLine.toInt
             val oldSet =
@@ -118,7 +147,10 @@ object TamiFlexKey extends ProjectInformationKey[TamiFlexLogData, Nothing] {
         }
 
         @inline def addMethod(
-            methodDesc: String, sourceMethod: String, reflectionTarget: String, sourceLine: String
+            methodDesc:       String,
+            sourceMethod:     String,
+            reflectionTarget: String,
+            sourceLine:       String
         ): Unit = {
             val line = if (sourceLine == "") -1 else sourceLine.toInt
             val method = toDeclaredMethod(methodDesc)
@@ -135,25 +167,49 @@ object TamiFlexKey extends ProjectInformationKey[TamiFlexLogData, Nothing] {
             Source.fromFile(logName).getLines().foreach { line =>
                 val entries = line.split(";", -1)
                 entries match {
-                    case Array("Array.newInstance" | "Array.get*" | "Array.set*",
-                        arrayType, sourceMethod, sourceLine, _, _) =>
+                    case Array(
+                            "Array.newInstance" | "Array.get*" | "Array.set*",
+                            arrayType,
+                            sourceMethod,
+                            sourceLine,
+                            _,
+                            _
+                        ) =>
                         addClassType(arrayType, sourceMethod, entries.head, sourceLine)
 
-                    case Array("Class.forName" |
-                        "Class.getDeclaredConstructors" | "Class.getConstructors" |
-                        "Class.getDeclaredFields" | "Class.getFields" |
-                        "Class.getDeclaredMethods" | "Class.getMethods" |
-                        "Class.getModifiers",
-                        classType, sourceMethod, sourceLine, _, _) =>
+                    case Array(
+                            "Class.forName" |
+                            "Class.getDeclaredConstructors" | "Class.getConstructors" |
+                            "Class.getDeclaredFields" | "Class.getFields" |
+                            "Class.getDeclaredMethods" | "Class.getMethods" |
+                            "Class.getModifiers",
+                            classType,
+                            sourceMethod,
+                            sourceLine,
+                            _,
+                            _
+                        ) =>
                         addClassType(classType, sourceMethod, entries.head, sourceLine)
 
-                    case Array("Class.getDeclaredField" | "Class.getField",
-                        fieldDesc, sourceMethod, sourceLine, _, _) =>
+                    case Array(
+                            "Class.getDeclaredField" | "Class.getField",
+                            fieldDesc,
+                            sourceMethod,
+                            sourceLine,
+                            _,
+                            _
+                        ) =>
                         addField(fieldDesc, sourceMethod, entries.head, sourceLine)
 
-                    case Array("Class.getDeclaredConstructor" | "Class.getConstructor" |
-                        "Class.getDeclaredMethod" | "Class.getMethod",
-                        methodDesc, sourceMethod, sourceLine, _, _) =>
+                    case Array(
+                            "Class.getDeclaredConstructor" | "Class.getConstructor" |
+                            "Class.getDeclaredMethod" | "Class.getMethod",
+                            methodDesc,
+                            sourceMethod,
+                            sourceLine,
+                            _,
+                            _
+                        ) =>
                         addMethod(methodDesc, sourceMethod, entries.head, sourceLine)
 
                     case Array("Class.newInstance", instantiatedTypeDesc, sourceMethod, sourceLine, _, _) =>
@@ -183,14 +239,26 @@ object TamiFlexKey extends ProjectInformationKey[TamiFlexLogData, Nothing] {
                         val oldInvokes = methods.getOrElseUpdate((sourceMethod, entries.head, line), mutable.Set.empty)
                         oldInvokes.add(constructor)
 
-                    case Array("Field.getDeclaringClass" | "Field.getModifiers" | "Field.getName" |
-                        "Field.get*" | "Field.set*",
-                        fieldDesc, sourceMethod, sourceLine, _, _) =>
+                    case Array(
+                            "Field.getDeclaringClass" | "Field.getModifiers" | "Field.getName" |
+                            "Field.get*" | "Field.set*",
+                            fieldDesc,
+                            sourceMethod,
+                            sourceLine,
+                            _,
+                            _
+                        ) =>
                         addField(fieldDesc, sourceMethod, entries.head, sourceLine)
 
-                    case Array("Method.getDeclaringClass" | "Method.getModifiers" |
-                        "Method.getName" | "Method.invoke",
-                        methodDesc, sourceMethod, sourceLine, _, _) =>
+                    case Array(
+                            "Method.getDeclaringClass" | "Method.getModifiers" |
+                            "Method.getName" | "Method.invoke",
+                            methodDesc,
+                            sourceMethod,
+                            sourceLine,
+                            _,
+                            _
+                        ) =>
                         addMethod(methodDesc, sourceMethod, entries.head, sourceLine)
 
                     case e => throw new RuntimeException(s"unexpected log entry ${e.mkString(",")}")
@@ -227,8 +295,15 @@ object TamiFlexKey extends ProjectInformationKey[TamiFlexLogData, Nothing] {
         methodDesc match {
             case regex(declaringClass, returnType, name, parameterTypes) =>
                 val declaringClassType = FieldType(toJVMType(declaringClass)).asObjectType
-                val jvmSignature = parameterTypes.split(',').map(toJVMType).mkString("(", "", ")" + toJVMType(returnType))
-                declaredMethods(declaringClassType, declaringClassType.packageName, declaringClassType, name, MethodDescriptor(jvmSignature))
+                val jvmSignature =
+                    parameterTypes.split(',').map(toJVMType).mkString("(", "", ")" + toJVMType(returnType))
+                declaredMethods(
+                    declaringClassType,
+                    declaringClassType.packageName,
+                    declaringClassType,
+                    name,
+                    MethodDescriptor(jvmSignature)
+                )
         }
 
     }

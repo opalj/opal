@@ -46,9 +46,7 @@ object ThrownExceptions extends ProjectAnalysisApplication {
 
     override def checkAnalysisSpecificParameters(parameters: Seq[String]): Iterable[String] = {
         val remainingParameters =
-            parameters.filter { p =>
-                p != AnalysisLevelL0 && p != AnalysisLevelL1 && p != SuppressPerMethodReports
-            }
+            parameters.filter { p => p != AnalysisLevelL0 && p != AnalysisLevelL1 && p != SuppressPerMethodReports }
         super.checkAnalysisSpecificParameters(remainingParameters)
     }
 
@@ -106,7 +104,8 @@ object ThrownExceptions extends ProjectAnalysisApplication {
                 }.mkString("\n", "\n", "\n")
             }
 
-        val psStatistics = ps.statistics.map(e => e._1 + ": " + e._2).mkString("Property Store Statistics:\n\t", "\n\t", "\n")
+        val psStatistics =
+            ps.statistics.map(e => e._1 + ": " + e._2).mkString("Property Store Statistics:\n\t", "\n\t", "\n")
 
         val analysisStatistics: String =
             "\nStatistics:\n" +

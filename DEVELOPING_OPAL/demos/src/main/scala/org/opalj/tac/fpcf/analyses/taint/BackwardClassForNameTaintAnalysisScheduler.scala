@@ -76,9 +76,9 @@ class BackwardClassForNameTaintProblem(p: SomeProject) extends JavaBackwardTaint
         source: (Method, IFDSFact[TaintFact, JavaStatement])
     ): Boolean = {
         super.shouldPerformUnbalancedReturn(source) &&
-            (!icfg.canBeCalledFromOutside(source._1) ||
-                // The source is callable from outside, but should create unbalanced return facts.
-                entryPoints.contains(source))
+        (!icfg.canBeCalledFromOutside(source._1) ||
+        // The source is callable from outside, but should create unbalanced return facts.
+        entryPoints.contains(source))
     }
 
     /**
@@ -118,7 +118,8 @@ class BackwardClassForNameTaintProblem(p: SomeProject) extends JavaBackwardTaint
                 case ArrayElement(index, _) if index < 0     => true
                 case InstanceField(index, _, _) if index < 0 => true
                 case _                                       => false
-            })) {
+            })
+        ) {
             Some(FlowFact(unbCallChain.prepended(JavaMethod(callee))))
         } else None
     }
@@ -152,10 +153,11 @@ class BackwardClassForNameTaintAnalysisRunner extends IFDSEvaluationRunner {
         val propertyKey = BackwardClassForNameTaintAnalysisScheduler.property.key
         ps.entities(propertyKey)
             .collect {
-                case EPS((m: Method, inputFact)) if analysis.ifdsProblem
-                    .asInstanceOf[BackwardClassForNameTaintProblem]
-                    .icfg
-                    .canBeCalledFromOutside(m) =>
+                case EPS((m: Method, inputFact))
+                    if analysis.ifdsProblem
+                        .asInstanceOf[BackwardClassForNameTaintProblem]
+                        .icfg
+                        .canBeCalledFromOutside(m) =>
                     (m, inputFact)
             }
             .flatMap(ps(_, propertyKey) match {

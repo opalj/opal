@@ -9,6 +9,11 @@ import java.net.URL
 import java.net.URLClassLoader
 import java.nio.file.Files
 
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
+
+import com.typesafe.config.Config
+
 import org.opalj.ba.ProjectBasedInMemoryClassLoader
 import org.opalj.bc.Assembler
 import org.opalj.bi.TestResources.locateTestResources
@@ -19,10 +24,6 @@ import org.opalj.br.reader.InvokedynamicRewriting
 import org.opalj.bytecode.RTJar
 import org.opalj.io.JARsFileFilter
 import org.opalj.util.InMemoryClassLoader
-
-import com.typesafe.config.Config
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.matchers.should.Matchers
 
 /**
  * Tests if OPAL is able to rewrite invokedynamics and checks if the rewritten bytecode is
@@ -95,7 +96,8 @@ class InvokedynamicRewritingExecutionTest extends AnyFunSpec with Matchers {
                 "simpleLambdaAdd",
                 Array(classOf[Int], classOf[Int]),
                 Array(Int.box(2), Int.box(2)),
-                Some(Array.empty), Some(Array.empty)
+                Some(Array.empty),
+                Some(Array.empty)
             )
         }
 
@@ -301,7 +303,8 @@ class InvokedynamicRewritingExecutionTest extends AnyFunSpec with Matchers {
                     fixtureClassLoader,
                     testClassType,
                     "toString",
-                    Array.empty, Array.empty,
+                    Array.empty,
+                    Array.empty,
                     Some(Array(classOf[Int], classOf[Object])),
                     Some(Array(Int.box(42), "foo"))
                 )
@@ -350,7 +353,8 @@ class InvokedynamicRewritingExecutionTest extends AnyFunSpec with Matchers {
                     fixtureClassLoader,
                     testClassType,
                     "hashCode",
-                    Array.empty, Array.empty,
+                    Array.empty,
+                    Array.empty,
                     Some(Array(classOf[Int], classOf[Object])),
                     Some(Array(Int.box(42), "foo"))
                 )
@@ -364,11 +368,8 @@ class InvokedynamicRewritingExecutionTest extends AnyFunSpec with Matchers {
             val resources = locateTestResources("classfiles/OPAL-MultiJar-SNAPSHOT-01-04-2018.jar", "bi")
             val p = JavaFixtureProject(resources)
             val opalDependencies =
-                locateTestResources(
-                    "classfiles/OPAL-MultiJar-SNAPSHOT-01-04-2018-dependencies/", "bi"
-                ).
-                    listFiles(JARsFileFilter).
-                    map(_.toURI.toURL)
+                locateTestResources("classfiles/OPAL-MultiJar-SNAPSHOT-01-04-2018-dependencies/", "bi")
+                    .listFiles(JARsFileFilter).map(_.toURI.toURL)
 
             // Otherwise, the hermes resources are not included and hermes won't find
             // HermesCLI.txt for example
@@ -392,10 +393,15 @@ class InvokedynamicRewritingExecutionTest extends AnyFunSpec with Matchers {
             tempFile.delete()
 
             info("Starting Hermes...")
-            m.invoke(null, Array(
-                "-config", "DEVELOPING_OPAL/validate/src/it/resources/hermes-test-fixtures.json",
-                "-statistics", tempFile.getAbsolutePath
-            ))
+            m.invoke(
+                null,
+                Array(
+                    "-config",
+                    "DEVELOPING_OPAL/validate/src/it/resources/hermes-test-fixtures.json",
+                    "-statistics",
+                    tempFile.getAbsolutePath
+                )
+            )
 
             assert(tempFile.exists())
             assert(tempFile.length() > 0)

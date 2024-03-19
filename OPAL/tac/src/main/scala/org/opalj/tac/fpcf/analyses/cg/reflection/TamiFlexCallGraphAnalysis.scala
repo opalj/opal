@@ -39,7 +39,7 @@ import org.opalj.value.ValueInformation
  * @author Florian Kuebler
  */
 class TamiFlexCallGraphAnalysis private[analyses] (
-        final val project: SomeProject
+    final val project: SomeProject
 ) extends FPCFAnalysis {
 
     val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
@@ -54,9 +54,7 @@ class TamiFlexCallGraphAnalysis private[analyses] (
                     "",
                     ObjectType.Method,
                     "invoke",
-                    MethodDescriptor.apply(
-                        ArraySeq(ObjectType.Object, ArrayType.ArrayOfObject), ObjectType.Object
-                    )
+                    MethodDescriptor.apply(ArraySeq(ObjectType.Object, ArrayType.ArrayOfObject), ObjectType.Object)
                 ),
                 "Method.invoke"
             ),
@@ -88,12 +86,12 @@ class TamiFlexCallGraphAnalysis private[analyses] (
 }
 
 class TamiFlexMethodInvokeAnalysis private[analyses] (
-        final val project:      SomeProject,
-        override val apiMethod: DeclaredMethod,
-        val key:                String
+    final val project:      SomeProject,
+    override val apiMethod: DeclaredMethod,
+    val key:                String
 ) extends TACAIBasedAPIBasedAnalysis with TypeConsumerAnalysis {
 
-    final private[this] val tamiFlexLogData = project.get(TamiFlexKey)
+    private[this] final val tamiFlexLogData = project.get(TamiFlexKey)
 
     override def processNewCaller(
         calleeContext:   ContextType,
@@ -125,7 +123,7 @@ class TamiFlexMethodInvokeAnalysis private[analyses] (
         val line = context.method.definedMethod.body.flatMap(b => b.lineNumber(pc)).getOrElse(-1)
         val targets = tamiFlexLogData.methods(context.method, key, line)
         if (targets.isEmpty)
-            return ;
+            return;
 
         val (methodInvokeReceiver, methodInvokeActualParamsOpt) = if (methodParams.size == 2) { // Method.invoke
             // TODO we should probably match the method receiver information (e.g. points-to) to

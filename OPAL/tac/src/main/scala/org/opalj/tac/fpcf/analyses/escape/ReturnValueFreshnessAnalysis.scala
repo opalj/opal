@@ -68,7 +68,10 @@ import org.opalj.tac.fpcf.properties.TACAI
 class ReturnValueFreshnessState(val context: Context) {
     private[this] var returnValueDependees: Map[Context, EOptionP[Context, ReturnValueFreshness]] = Map.empty
     private[this] var fieldDependees: Map[Field, EOptionP[Field, FieldLocality]] = Map.empty
-    private[this] var defSiteDependees: Map[(Context, DefinitionSite), EOptionP[(Context, DefinitionSite), EscapeProperty]] = Map.empty
+    private[this] var defSiteDependees: Map[
+        (Context, DefinitionSite),
+        EOptionP[(Context, DefinitionSite), EscapeProperty]
+    ] = Map.empty
     private[this] var tacaiDependee: Option[EOptionP[Method, TACAI]] = None
     private[this] var _calleesDependee: Option[EOptionP[DeclaredMethod, Callees]] = None
 
@@ -87,10 +90,10 @@ class ReturnValueFreshnessState(val context: Context) {
 
     def hasDependees: Boolean = {
         returnValueDependees.nonEmpty ||
-            fieldDependees.nonEmpty ||
-            defSiteDependees.nonEmpty ||
-            tacaiDependee.nonEmpty ||
-            _calleesDependee.exists(_.isRefinable)
+        fieldDependees.nonEmpty ||
+        defSiteDependees.nonEmpty ||
+        tacaiDependee.nonEmpty ||
+        _calleesDependee.exists(_.isRefinable)
     }
 
     def hasTacaiDependee: Boolean = tacaiDependee.isDefined
@@ -172,7 +175,7 @@ class ReturnValueFreshnessState(val context: Context) {
  * @author Dominik Helm
  */
 class ReturnValueFreshnessAnalysis private[analyses] (
-        final val project: SomeProject
+    final val project: SomeProject
 ) extends FPCFAnalysis {
 
     private[this] implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
@@ -187,7 +190,8 @@ class ReturnValueFreshnessAnalysis private[analyses] (
         case context: Context if context.method.hasSingleDefinedMethod =>
             val dm = context.method
             if (dm.definedMethod.classFile.thisType == dm.declaringClassType ||
-                !context.isInstanceOf[SimpleContext])
+                !context.isInstanceOf[SimpleContext]
+            )
                 doDetermineFreshness(context)
             else {
                 // if the method is inherited, query the result for the one in its defining class
@@ -222,7 +226,7 @@ class ReturnValueFreshnessAnalysis private[analyses] (
         // We treat VirtualDeclaredMethods and MultipleDefinedMethods as NoFreshReturnValue for now
         case context: Context => Result(context, NoFreshReturnValue)
 
-        case _                => throw new RuntimeException(s"Unsupported entity $e")
+        case _ => throw new RuntimeException(s"Unsupported entity $e")
     }
 
     /**
@@ -335,8 +339,7 @@ class ReturnValueFreshnessAnalysis private[analyses] (
     }
 
     def handleCallSite(callerContext: Context, pc: Int)(
-        implicit
-        state: ReturnValueFreshnessState
+        implicit state: ReturnValueFreshnessState
     ): Boolean = {
         if (state.calleesDependee.isEmpty)
             state.setCalleesDependee(propertyStore(callerContext.method, Callees.key))
@@ -348,10 +351,10 @@ class ReturnValueFreshnessAnalysis private[analyses] (
         } else {
             calleesEP.ub.callees(callerContext, pc).exists { callee =>
                 (callee ne callerContext) && // Recursive calls don't influence return value freshness
-                    {
-                        val rvf = propertyStore(callee, ReturnValueFreshness.key)
-                        !state.containsMethodDependee(rvf) && handleReturnValueFreshness(rvf)
-                    }
+                {
+                    val rvf = propertyStore(callee, ReturnValueFreshness.key)
+                    !state.containsMethodDependee(rvf) && handleReturnValueFreshness(rvf)
+                }
             }
         }
     }
@@ -364,16 +367,15 @@ class ReturnValueFreshnessAnalysis private[analyses] (
     def handleEscapeProperty(
         ep: EOptionP[(Context, DefinitionSite), EscapeProperty]
     )(
-        implicit
-        state: ReturnValueFreshnessState
+        implicit state: ReturnValueFreshnessState
     ): Boolean = ep match {
         case FinalP(NoEscape | EscapeInCallee) =>
             // throw new RuntimeException(s"unexpected result $ep for entity ${state.dm}")
             false // TODO this has happened - why?
 
-        case FinalP(EscapeViaReturn)                               => false
+        case FinalP(EscapeViaReturn) => false
 
-        case FinalP(AtMost(_))                                     => true
+        case FinalP(AtMost(_)) => true
 
         case _: FinalEP[(Context, DefinitionSite), EscapeProperty] => true // Escape state is worse than via return
 
@@ -387,7 +389,7 @@ class ReturnValueFreshnessAnalysis private[analyses] (
 
         case InterimUBP(AtMost(_)) => true
 
-        case _: SomeInterimEP      => true // Escape state is worse than via return
+        case _: SomeInterimEP => true // Escape state is worse than via return
 
         case _ =>
             state.addDefSiteDependee(ep)
@@ -402,8 +404,7 @@ class ReturnValueFreshnessAnalysis private[analyses] (
     def handleFieldLocalityProperty(
         ep: EOptionP[Field, FieldLocality]
     )(
-        implicit
-        state: ReturnValueFreshnessState
+        implicit state: ReturnValueFreshnessState
     ): Boolean = ep match {
         case FinalP(LocalFieldWithGetter) =>
             state.atMost(Getter)
@@ -445,14 +446,14 @@ class ReturnValueFreshnessAnalysis private[analyses] (
     )(implicit state: ReturnValueFreshnessState): Boolean = ep match {
         case FinalP(NoFreshReturnValue) => true
 
-        case FinalP(FreshReturnValue)   => false
+        case FinalP(FreshReturnValue) => false
 
-        case UBP(PrimitiveReturnValue)  => false
+        case UBP(PrimitiveReturnValue) => false
 
         // IMPROVE: We can still be a getter if the callee has the same receiver
-        case UBP(Getter)                => true
+        case UBP(Getter) => true
 
-        case UBP(ExtensibleGetter)      => true
+        case UBP(ExtensibleGetter) => true
 
         case InterimUBP(FreshReturnValue) =>
             state.addMethodDependee(ep)

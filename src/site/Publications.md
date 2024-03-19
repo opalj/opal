@@ -5,7 +5,7 @@ There are also links to [related presentations](#related-presentations) below.
 
 ## Core Papers
 
-> [**Modular Collaborative Program Analysis in OPAL**](https://2020.esec-fse.org/details/fse-2020-papers/191")  
+> [**Modular Collaborative Program Analysis in OPAL**](https://2020.esec-fse.org/details/fse-2020-papers/191)  
 > ESEC/FSE 2020  
 > *Dominik Helm, Florian Kübler, Michael Reif, Michael Eichberg, Mira Mezini*
 > <details><summary>Abstract</summary>
@@ -66,7 +66,7 @@ There are also links to [related presentations](#related-presentations) below.
 > This subset enables effective and efficient integration test suites.</details>
 
 > [**Call Graph Construction for Java Libraries**](https://doi.acm.org/10.1145/2950290.2950312)  
-> FSE 2016
+> FSE 2016  
 > *Michael Reif, Michael Eichberg, Ben Hermann, Johannes Lerch, Mira Mezini*  
 > <details><summary>Abstract</summary>
 > Today, every application uses software libraries.
@@ -84,7 +84,7 @@ There are also links to [related presentations](#related-presentations) below.
 > Overall, we observed that the proposed call graph algorithms reduce the number of call edges up to 30% when compared to existing approaches.</details>
 
 > [**A software product line for static analyses: the OPAL framework**](https://doi.acm.org/10.1145/2614628.2614630)  
-> SOAP 2014
+> SOAP 2014  
 > *Michael Eichberg, Ben Hermann*  
 > <details><summary>Abstract</summary>
 > Implementations of static analyses are usually tailored toward a single goal to be efficient, hampering reusability and adaptability of the components of an analysis.
@@ -96,7 +96,7 @@ There are also links to [related presentations](#related-presentations) below.
 
 ## Research Using OPAL
 
-> [**CiFi: Versatile Analysis of Class and Field Immutability**](/articles/CiFi@ASE21.pdf) 
+> [**CiFi: Versatile Analysis of Class and Field Immutability**](/articles/CiFi@ASE21.pdf)  
 > ASE 2021  
 > *Tobias Roth, Dominik Helm, Michael Reif, Mira Mezini*  
 > <details><summary>Abstract</summary>

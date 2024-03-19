@@ -42,9 +42,9 @@ object EagerDetachedTACAIKey extends TACAIKey[Method => Domain with RecordDefUse
     override def compute(
         project: SomeProject
     ): Method => AITACode[TACMethodParameter, ValueInformation] = {
-        val domainFactory = project.
-            getProjectInformationKeyInitializationData(this).
-            getOrElse((m: Method) => new DefaultDomainWithCFGAndDefUse(project, m))
+        val domainFactory = project
+            .getProjectInformationKeyInitializationData(this)
+            .getOrElse((m: Method) => new DefaultDomainWithCFGAndDefUse(project, m))
 
         val taCodes =
             new ConcurrentLinkedQueue[(Method, AITACode[TACMethodParameter, ValueInformation])]()

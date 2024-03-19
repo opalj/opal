@@ -4,11 +4,11 @@ package tac
 
 import scala.collection.immutable.ArraySeq
 
-import org.opalj.br._
-import org.opalj.br.TestSupport.biProject
-
 import org.junit.runner.RunWith
 import org.scalatestplus.junit.JUnitRunner
+
+import org.opalj.br._
+import org.opalj.br.TestSupport.biProject
 
 /**
  * @author Roberts Kolosovs
@@ -54,7 +54,8 @@ class TACNaiveStackAndSynchronizationTest extends TACNaiveTest {
                     SimpleVar(0, ComputationalTypeInt),
                     VirtualFunctionCall(
                         1,
-                        ObjectType("tactest/StackManipulationAndSynchronization"), false,
+                        ObjectType("tactest/StackManipulationAndSynchronization"),
+                        false,
                         "returnInt",
                         MethodDescriptor(NoFieldTypes, IntegerType),
                         SimpleVar(0, ComputationalTypeReference),
@@ -74,7 +75,8 @@ class TACNaiveStackAndSynchronizationTest extends TACNaiveTest {
         }
 
         it("should correctly reflect pop2 mode 2") {
-            val statements = TACNaive(method = Pop2Case2Method, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
+            val statements =
+                TACNaive(method = Pop2Case2Method, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
@@ -108,7 +110,8 @@ class TACNaiveStackAndSynchronizationTest extends TACNaiveTest {
         }
 
         it("should correctly reflect dup") {
-            val statements = TACNaive(method = DupMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
+            val statements =
+                TACNaive(method = DupMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
@@ -117,7 +120,15 @@ class TACNaiveStackAndSynchronizationTest extends TACNaiveTest {
                 Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
                 Assignment(0, SimpleVar(0, ComputationalTypeReference), New(0, ObjectType.Object)),
                 Nop(3),
-                NonVirtualMethodCall(4, ObjectType.Object, false, "<init>", MethodDescriptor(NoFieldTypes, VoidType), SimpleVar(0, ComputationalTypeReference), List()),
+                NonVirtualMethodCall(
+                    4,
+                    ObjectType.Object,
+                    false,
+                    "<init>",
+                    MethodDescriptor(NoFieldTypes, VoidType),
+                    SimpleVar(0, ComputationalTypeReference),
+                    List()
+                ),
                 Assignment(7, SimpleVar(-2, ComputationalTypeReference), SimpleVar(0, ComputationalTypeReference)),
                 Return(8)
             ))
@@ -132,7 +143,10 @@ class TACNaiveStackAndSynchronizationTest extends TACNaiveTest {
         }
 
         it("should correctly reflect monitorenter and -exit") {
-            val statements = TACNaive(method = MonitorEnterAndExitMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
+            val statements = TACNaive(
+                method = MonitorEnterAndExitMethod,
+                classHierarchy = ClassHierarchy.PreInitializedClassHierarchy
+            ).stmts
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
@@ -144,9 +158,18 @@ class TACNaiveStackAndSynchronizationTest extends TACNaiveTest {
                 Assignment(2, SimpleVar(-2, ComputationalTypeReference), SimpleVar(0, ComputationalTypeReference)),
                 MonitorEnter(3, SimpleVar(0, ComputationalTypeReference)),
                 Assignment(4, SimpleVar(0, ComputationalTypeReference), SimpleVar(-1, ComputationalTypeReference)),
-                VirtualMethodCall(5, ObjectType("tactest/StackManipulationAndSynchronization"), false, "pop", MethodDescriptor("()V"), SimpleVar(0, ComputationalTypeReference), List()),
+                VirtualMethodCall(
+                    5,
+                    ObjectType("tactest/StackManipulationAndSynchronization"),
+                    false,
+                    "pop",
+                    MethodDescriptor("()V"),
+                    SimpleVar(0, ComputationalTypeReference),
+                    List()
+                ),
                 Assignment(8, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
-                MonitorExit(9, SimpleVar(0, ComputationalTypeReference)), Goto(10, 13),
+                MonitorExit(9, SimpleVar(0, ComputationalTypeReference)),
+                Goto(10, 13),
                 Assignment(13, SimpleVar(1, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
                 MonitorExit(14, SimpleVar(1, ComputationalTypeReference)),
                 Throw(15, SimpleVar(0, ComputationalTypeReference)),
@@ -171,7 +194,10 @@ class TACNaiveStackAndSynchronizationTest extends TACNaiveTest {
         }
 
         it("should correctly reflect invokestatic") {
-            val statements = TACNaive(method = InvokeStaticMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
+            val statements = TACNaive(
+                method = InvokeStaticMethod,
+                classHierarchy = ClassHierarchy.PreInitializedClassHierarchy
+            ).stmts
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
@@ -185,7 +211,8 @@ class TACNaiveStackAndSynchronizationTest extends TACNaiveTest {
                     SimpleVar(0, ComputationalTypeInt),
                     StaticFunctionCall(
                         2,
-                        ObjectType("tactest/StackManipulationAndSynchronization"), false,
+                        ObjectType("tactest/StackManipulationAndSynchronization"),
+                        false,
                         "staticMethod",
                         MethodDescriptor(ArraySeq(IntegerType, IntegerType), IntegerType),
                         List(SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt))
@@ -205,7 +232,10 @@ class TACNaiveStackAndSynchronizationTest extends TACNaiveTest {
         }
 
         it("should correctly reflect invokeinterface") {
-            val statements = TACNaive(method = InvokeInterfaceMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
+            val statements = TACNaive(
+                method = InvokeInterfaceMethod,
+                classHierarchy = ClassHierarchy.PreInitializedClassHierarchy
+            ).stmts
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
@@ -214,12 +244,28 @@ class TACNaiveStackAndSynchronizationTest extends TACNaiveTest {
                 Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
                 Assignment(0, SimpleVar(0, ComputationalTypeReference), New(0, ObjectType("java/util/ArrayList"))),
                 Nop(3),
-                NonVirtualMethodCall(4, ObjectType("java/util/ArrayList"), false, "<init>", MethodDescriptor(NoFieldTypes, VoidType), SimpleVar(0, ComputationalTypeReference), List()),
+                NonVirtualMethodCall(
+                    4,
+                    ObjectType("java/util/ArrayList"),
+                    false,
+                    "<init>",
+                    MethodDescriptor(NoFieldTypes, VoidType),
+                    SimpleVar(0, ComputationalTypeReference),
+                    List()
+                ),
                 Assignment(7, SimpleVar(-2, ComputationalTypeReference), SimpleVar(0, ComputationalTypeReference)),
                 Assignment(8, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
                 Assignment(9, SimpleVar(1, ComputationalTypeReference), New(9, ObjectType.Object)),
                 Nop(12),
-                NonVirtualMethodCall(13, ObjectType.Object, false, "<init>", MethodDescriptor(NoFieldTypes, VoidType), SimpleVar(1, ComputationalTypeReference), List()),
+                NonVirtualMethodCall(
+                    13,
+                    ObjectType.Object,
+                    false,
+                    "<init>",
+                    MethodDescriptor(NoFieldTypes, VoidType),
+                    SimpleVar(1, ComputationalTypeReference),
+                    List()
+                ),
                 Assignment(
                     16,
                     SimpleVar(0, ComputationalTypeInt),

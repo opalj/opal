@@ -4,11 +4,12 @@ package br
 package analyses
 package cg
 
-import org.opalj.br.TestSupport.biProject
-
-import com.typesafe.config.ConfigFactory
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
+
+import com.typesafe.config.ConfigFactory
+
+import org.opalj.br.TestSupport.biProject
 
 /**
  * This tests the basic functionality of the [[TypeExtensibilityKey]] and determines whether the
@@ -60,9 +61,7 @@ class TypeExtensibilityTest extends AnyFunSpec with Matchers {
             if (relevantTypes.isEmpty)
                 fail("No directly extensible types found!")
 
-            relevantTypes.foreach { objectType =>
-                isExtensible(objectType) should be(Yes)
-            }
+            relevantTypes.foreach { objectType => isExtensible(objectType) should be(Yes) }
 
             // closed package
             project = Project.recreate(project, closedConf, true)

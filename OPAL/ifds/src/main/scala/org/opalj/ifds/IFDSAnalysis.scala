@@ -37,10 +37,10 @@ import org.opalj.ifds.Dependees.Getter
  * @author Marc Clement
  */
 class IFDSFact[Fact <: AbstractIFDSFact, S <: Statement[_, _]](
-        val fact:               Fact,
-        val isUnbalancedReturn: Boolean,
-        val callStmt:           Option[S],
-        val callChain:          Option[Seq[Callable]]
+    val fact:               Fact,
+    val isUnbalancedReturn: Boolean,
+    val callStmt:           Option[S],
+    val callChain:          Option[Seq[Callable]]
 ) {
 
     def this(fact: Fact) = {
@@ -55,9 +55,9 @@ class IFDSFact[Fact <: AbstractIFDSFact, S <: Statement[_, _]](
         case other: IFDSFact[Fact @unchecked, S @unchecked] =>
             this.eq(other) ||
                 (this.hashCode() == other.hashCode()
-                    && this.fact == other.fact
-                    && this.isUnbalancedReturn == other.isUnbalancedReturn
-                    && this.callStmt == other.callStmt)
+                && this.fact == other.fact
+                && this.isUnbalancedReturn == other.isUnbalancedReturn
+                && this.callStmt == other.callStmt)
         case _ => false
     }
 
@@ -112,7 +112,7 @@ object Dependees {
  * Source fact is the fact within the analysis entity.
  */
 case class PathEdges[Fact <: AbstractIFDSFact, S <: Statement[_ <: C, _], C <: AnyRef](
-        subsumes: (Set[Fact], Fact) => Boolean
+    subsumes: (Set[Fact], Fact) => Boolean
 ) {
     /**
      * Left denotes a single relevant predecessor
@@ -194,8 +194,8 @@ case class PathEdges[Fact <: AbstractIFDSFact, S <: Statement[_ <: C, _], C <: A
  * @param subsumes The subsuming function, return whether a new fact is subsume by the existing ones
  */
 protected class IFDSState[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C, _], WorklistItem](
-        val source: (C, IFDSFact[Fact, S]),
-        subsumes:   (Set[Fact], Fact) => Boolean
+    val source: (C, IFDSFact[Fact, S]),
+    subsumes:   (Set[Fact], Fact) => Boolean
 ) {
     val dependees: Dependees[WorklistItem] = Dependees()
     val pathEdges: PathEdges[Fact, S, C] = PathEdges(subsumes)
@@ -207,13 +207,13 @@ protected class IFDSState[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[
  * Contains int variables, which count how many times some method was called.
  */
 case class Statistics(
-        var normalFlow:       Int = 0,
-        var callFlow:         Int = 0,
-        var returnFlow:       Int = 0,
-        var callToReturnFlow: Int = 0,
-        // TODO unbalanced return flow
-        var subsumeTries: Int = 0,
-        var subsumptions: Int = 0
+    var normalFlow:       Int = 0,
+    var callFlow:         Int = 0,
+    var returnFlow:       Int = 0,
+    var callToReturnFlow: Int = 0,
+    // TODO unbalanced return flow
+    var subsumeTries: Int = 0,
+    var subsumptions: Int = 0
 )
 
 /**
@@ -227,9 +227,9 @@ case class Statistics(
  * @author Marc Clement
  */
 class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C, _]](
-        val project:     SomeProject,
-        val ifdsProblem: IFDSProblem[Fact, C, S],
-        val propertyKey: IFDSPropertyMetaInformation[S, Fact]
+    val project:     SomeProject,
+    val ifdsProblem: IFDSProblem[Fact, C, S],
+    val propertyKey: IFDSPropertyMetaInformation[S, Fact]
 ) extends FPCFAnalysis {
     private type WorklistItem = (Option[S], IFDSFact[Fact, S], Option[S]) // statement, fact, predecessor
     private type Worklist = mutable.Queue[WorklistItem]
@@ -305,9 +305,8 @@ class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C,
      * @return A map, mapping from each exit statement to the facts, which flow into exit statement.
      */
     private def collectResult(implicit state: State): Map[S, Set[Fact]] = {
-        state.endSummaries.foldLeft(Map.empty[S, Set[Fact]])(
-            (result, entry) =>
-                result.updated(entry._1, result.getOrElse(entry._1, Set.empty[Fact]) + entry._2)
+        state.endSummaries.foldLeft(Map.empty[S, Set[Fact]])((result, entry) =>
+            result.updated(entry._1, result.getOrElse(entry._1, Set.empty[Fact]) + entry._2)
         )
     }
 
@@ -384,7 +383,7 @@ class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C,
                 case Some(outsideAnalysisHandler) =>
                     outsideAnalysisHandler
                 case None => (call: S, successor: Option[S], in: Fact, _: Seq[Callable], _: Getter) =>
-                    concreteCallFlow(call, callee, in, successor)
+                        concreteCallFlow(call, callee, in, successor)
             }
             for {
                 successor <- successors
@@ -466,7 +465,8 @@ class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C,
                 state.selfDependees.foreach(selfDependee => worklist.enqueue(selfDependee))
 
                 if (ifdsProblem.enableUnbalancedReturns &&
-                    ifdsProblem.shouldPerformUnbalancedReturn(state.source)) {
+                    ifdsProblem.shouldPerformUnbalancedReturn(state.source)
+                ) {
                     handleUnbalancedReturn(statement, in)
                 }
             }
@@ -539,7 +539,8 @@ class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C,
 
         // ifds line 9
         if (successor.isEmpty // last statement was reached, must be processed to trigger handleExit
-            || state.pathEdges.add(successor.get, out, predecessorOption)) {
+            || state.pathEdges.add(successor.get, out, predecessorOption)
+        ) {
             worklist.enqueue((successor, new IFDSFact(out), Some(predecessor)))
         }
     }
@@ -617,8 +618,7 @@ class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C,
     }
 
     private def subsumes(existingFacts: Set[Fact], newFact: Fact)(
-        implicit
-        project: SomeProject
+        implicit project: SomeProject
     ): Boolean = {
         statistics.subsumeTries += 1
         if (ifdsProblem.subsumeFacts && existingFacts.exists(_.subsumes(newFact, project))) {
@@ -631,9 +631,9 @@ class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C,
 abstract class IFDSAnalysisScheduler[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C, _]]
     extends FPCFLazyAnalysisScheduler {
 
-    final override type InitializationData = IFDSAnalysis[Fact, C, S]
+    override final type InitializationData = IFDSAnalysis[Fact, C, S]
     def property: IFDSPropertyMetaInformation[S, Fact]
-    final override def derivesLazily: Some[PropertyBounds] = Some(PropertyBounds.ub(property))
+    override final def derivesLazily: Some[PropertyBounds] = Some(PropertyBounds.ub(property))
     override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
 
     override def register(

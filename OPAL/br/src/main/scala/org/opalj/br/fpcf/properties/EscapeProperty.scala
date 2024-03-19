@@ -226,7 +226,7 @@ case object NoEscape extends FinalEscapeProperty {
 
     override def meet(that: FinalEscapeProperty): FinalEscapeProperty = that
 
-    final override def lessOrEqualRestrictive(that: EscapeProperty): Boolean = {
+    override final def lessOrEqualRestrictive(that: EscapeProperty): Boolean = {
         PID == that.propertyValueID
     }
 
@@ -323,7 +323,7 @@ case object EscapeViaParameter extends FinalEscapeProperty {
     override def lessOrEqualRestrictive(that: EscapeProperty): Boolean =
         (that.propertyValueID: @switch) match {
             case NoEscape.PID | EscapeInCallee.PID | EscapeViaParameter.PID => true
-            case _ => false
+            case _                                                          => false
         }
 
     override def isBottom: Boolean = false
@@ -374,7 +374,7 @@ case object EscapeViaReturn extends FinalEscapeProperty {
     override def lessOrEqualRestrictive(that: EscapeProperty): Boolean =
         (that.propertyValueID: @switch) match {
             case NoEscape.PID | EscapeInCallee.PID | EscapeViaReturn.PID => true
-            case _ => false
+            case _                                                       => false
         }
 
     override def isBottom: Boolean = false
@@ -429,7 +429,7 @@ case object EscapeViaAbnormalReturn extends FinalEscapeProperty {
     override def lessOrEqualRestrictive(that: EscapeProperty): Boolean =
         (that.propertyValueID: @switch) match {
             case NoEscape.PID | EscapeInCallee.PID | EscapeViaAbnormalReturn.PID => true
-            case _ => false
+            case _                                                               => false
         }
 
     override def isBottom: Boolean = false
@@ -524,12 +524,12 @@ case object EscapeViaParameterAndAbnormalReturn extends FinalEscapeProperty {
     }
 
     override def meet(that: FinalEscapeProperty): FinalEscapeProperty = (that.propertyValueID: @switch) match {
-        case NoEscape.PID | EscapeInCallee.PID => this
+        case NoEscape.PID | EscapeInCallee.PID                    => this
         case EscapeViaParameter.PID | EscapeViaAbnormalReturn.PID => this
-        case EscapeViaReturn.PID => EscapeViaParameterAndNormalAndAbnormalReturn
-        case EscapeViaParameterAndReturn.PID => EscapeViaParameterAndNormalAndAbnormalReturn
-        case EscapeViaNormalAndAbnormalReturn.PID => EscapeViaParameterAndNormalAndAbnormalReturn
-        case _ => that
+        case EscapeViaReturn.PID                                  => EscapeViaParameterAndNormalAndAbnormalReturn
+        case EscapeViaParameterAndReturn.PID                      => EscapeViaParameterAndNormalAndAbnormalReturn
+        case EscapeViaNormalAndAbnormalReturn.PID                 => EscapeViaParameterAndNormalAndAbnormalReturn
+        case _                                                    => that
     }
 }
 
@@ -775,7 +775,8 @@ object AtMost {
     final val AtMostEscapeViaParameterAndReturn = new AtMost(EscapeViaParameterAndReturn)
     final val AtMostEscapeViaParameterAndAbnormalReturn = new AtMost(EscapeViaParameterAndAbnormalReturn)
     final val AtMostEscapeViaNormalAndAbnormalReturn = new AtMost(EscapeViaNormalAndAbnormalReturn)
-    final val AtMostEscapeViaParameterAndNormalAndAbnormalReturn = new AtMost(EscapeViaParameterAndNormalAndAbnormalReturn)
+    final val AtMostEscapeViaParameterAndNormalAndAbnormalReturn =
+        new AtMost(EscapeViaParameterAndNormalAndAbnormalReturn)
 
     /**
      * Ensures for each [[FinalEscapeProperty]] only one object will be created.

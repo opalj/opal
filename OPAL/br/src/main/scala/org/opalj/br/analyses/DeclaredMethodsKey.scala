@@ -94,10 +94,13 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
             computeDeclaredMethod: Int => DeclaredMethod
         ): Unit = {
             var computedDM: DeclaredMethod = null
-            val oldDm = dms.computeIfAbsent(context, _ => {
-                computedDM = computeDeclaredMethod(idCounter.getAndIncrement())
-                computedDM
-            })
+            val oldDm = dms.computeIfAbsent(
+                context,
+                _ => {
+                    computedDM = computeDeclaredMethod(idCounter.getAndIncrement())
+                    computedDM
+                }
+            )
 
             assert(
                 (computedDM ne null) || {
@@ -155,11 +158,12 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
                                         insertDeclaredMethod(
                                             subtypeDms,
                                             new MethodContext(m.name, m.descriptor),
-                                            id => new MultipleDefinedMethods(
-                                                subtype,
-                                                methods,
-                                                id
-                                            )
+                                            id =>
+                                                new MultipleDefinedMethods(
+                                                    subtype,
+                                                    methods,
+                                                    id
+                                                )
                                         )
                                 }
 
@@ -169,7 +173,8 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
                             }
                     }
                 } else if (m.isStatic && !m.isPrivate &&
-                    !m.isStaticInitializer && !cf.isInterfaceDeclaration) {
+                           !m.isStaticInitializer && !cf.isInterfaceDeclaration
+                ) {
                     // Static methods are inherited as well - they can be invoked on subtypes
                     // this is not true for static initializers and static methods on interfaces
                     p.classHierarchy.processSubtypes(classType)(initial = null) {
@@ -225,9 +230,11 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
             val dms = result.computeIfAbsent(MethodHandle, _ => new ConcurrentHashMap)
             for (name <- methodHandleSignaturePolymorphicMethods) {
                 val context = new MethodContext(name, SignaturePolymorphicMethodObject)
-                insertDeclaredMethod(dms, context, id => new VirtualDeclaredMethod(
-                    MethodHandle, name, SignaturePolymorphicMethodObject, id
-                ))
+                insertDeclaredMethod(
+                    dms,
+                    context,
+                    id => new VirtualDeclaredMethod(MethodHandle, name, SignaturePolymorphicMethodObject, id)
+                )
             }
         }
         if (p.VarHandleClassFile.isEmpty) {
@@ -240,13 +247,9 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
                 else if (name.startsWith("get") || name.startsWith("compare"))
                     SignaturePolymorphicMethodObject
                 else
-                    throw new IllegalArgumentException(
-                        s"Unexpected signature polymorphic method $name"
-                    )
+                    throw new IllegalArgumentException(s"Unexpected signature polymorphic method $name")
                 val context = new MethodContext(name, descriptor)
-                insertDeclaredMethod(dms, context, id => new VirtualDeclaredMethod(
-                    VarHandle, name, descriptor, id
-                ))
+                insertDeclaredMethod(dms, context, id => new VirtualDeclaredMethod(VarHandle, name, descriptor, id))
             }
         }
 
@@ -268,9 +271,9 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
      * a `PackagePrivateMethodContext`, in which case the equals method guarantees that it matches
      * any `PackagePrivateMethodContext` with the same signature.
      */
-    private[analyses] sealed class MethodContext(
-            val methodName: String,
-            val descriptor: MethodDescriptor
+    sealed private[analyses] class MethodContext(
+        val methodName: String,
+        val descriptor: MethodDescriptor
     ) {
 
         override def equals(other: Any): Boolean = other match {
@@ -315,7 +318,8 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
             if (isPackagePrivate)
                 new PackagePrivateMethodContext(declaringPackage, methodName, descriptor)
             else if (project.classFile(objectType).isDefined &&
-                project.hasInstanceMethod(objectType, methodName, descriptor, true))
+                     project.hasInstanceMethod(objectType, methodName, descriptor, true)
+            )
                 new ShadowsPackagePrivateMethodContext(methodName, descriptor)
             else
                 new MethodContext(methodName, descriptor)
@@ -331,9 +335,9 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
      * names are the same, though.
      */
     private[this] class PackagePrivateMethodContext(
-            val packageName: String,
-            methodName:      String,
-            descriptor:      MethodDescriptor
+        val packageName: String,
+        methodName:      String,
+        descriptor:      MethodDescriptor
     ) extends MethodContext(methodName, descriptor) {
 
         override def equals(other: Any): Boolean = other match {
@@ -357,8 +361,8 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
      * `MethodContext` with the same signature regardless of the package name.
      */
     private[this] class ShadowsPackagePrivateMethodContext(
-            methodName: String,
-            descriptor: MethodDescriptor
+        methodName: String,
+        descriptor: MethodDescriptor
     ) extends MethodContext(methodName, descriptor) {
 
         override def equals(other: Any): Boolean = other match {
@@ -377,11 +381,11 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
      * hashCode, but differ in their equality with this type.
      */
     private[analyses] class MethodContextQuery(
-            project:          SomeProject,
-            val receiverType: ObjectType,
-            val packageName:  String,
-            methodName:       String,
-            descriptor:       MethodDescriptor
+        project:          SomeProject,
+        val receiverType: ObjectType,
+        val packageName:  String,
+        methodName:       String,
+        descriptor:       MethodDescriptor
     ) extends MethodContext(methodName, descriptor) {
 
         override def equals(other: Any): Boolean = other match {

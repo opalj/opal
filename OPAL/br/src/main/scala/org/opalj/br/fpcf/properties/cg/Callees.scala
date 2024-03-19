@@ -50,7 +50,8 @@ sealed trait Callees extends Property with CalleesPropertyMetaInformation {
      * Returns whether at least on analysis could not resolve the call site at `pc` completely.
      */
     def isIncompleteCallSite(
-        callerContext: Context, pc: Int
+        callerContext: Context,
+        pc:            Int
     )(implicit propertyStore: PropertyStore): Boolean
 
     /**
@@ -155,9 +156,7 @@ sealed trait Callees extends Property with CalleesPropertyMetaInformation {
      * The parameter at index 0 always corresponds to the *this* local and is `null` for static
      * methods.
      */
-    def indirectCallReceiver(
-        callerContext: Context, pc: Int, calleeContext: Context
-    ): Option[(ValueInformation, br.PCs)]
+    def indirectCallReceiver(callerContext: Context, pc: Int, calleeContext: Context): Option[(ValueInformation, br.PCs)]
 
     /**
      * Returns for a given call site pc and indirect target method the sequence of parameter
@@ -193,11 +192,11 @@ sealed trait Callees extends Property with CalleesPropertyMetaInformation {
  * Callees class used for final results where the callees are already aggregated.
  */
 sealed class ConcreteCallees(
-        private[this] val directCalleesIds:        IntMap[IntMap[IntTrieSet]], // Caller Context => PC => Callees
-        private[this] val indirectCalleesIds:      IntMap[IntMap[IntTrieSet]], // Caller Context => PC => Callees
-        private[this] val _incompleteCallSites:    IntMap[br.PCs], // Caller Context => PCs
-        private[this] val _indirectCallReceivers:  IntMap[IntMap[IntMap[Option[(ValueInformation, br.PCs)]]]], // Caller Context => PC => Callee => Receiver
-        private[this] val _indirectCallParameters: IntMap[IntMap[IntMap[Seq[Option[(ValueInformation, br.PCs)]]]]] // Caller Context => PC => Callee => Parameters
+    private[this] val directCalleesIds:        IntMap[IntMap[IntTrieSet]], // Caller Context => PC => Callees
+    private[this] val indirectCalleesIds:      IntMap[IntMap[IntTrieSet]], // Caller Context => PC => Callees
+    private[this] val _incompleteCallSites:    IntMap[br.PCs], // Caller Context => PCs
+    private[this] val _indirectCallReceivers:  IntMap[IntMap[IntMap[Option[(ValueInformation, br.PCs)]]]], // Caller Context => PC => Callee => Receiver
+    private[this] val _indirectCallParameters: IntMap[IntMap[IntMap[Seq[Option[(ValueInformation, br.PCs)]]]]] // Caller Context => PC => Callee => Parameters
 ) extends Callees {
 
     override def incompleteCallSites(callerContext: Context)(implicit propertyStore: PropertyStore): IntIterator = {
@@ -304,7 +303,9 @@ sealed class ConcreteCallees(
     }
 
     override def indirectCallReceiver(
-        callerContext: Context, pc: Opcode, calleeContext: Context
+        callerContext: Context,
+        pc:            Opcode,
+        calleeContext: Context
     ): Option[(ValueInformation, br.PCs)] = {
         _indirectCallReceivers(callerContext.id)(pc)(calleeContext.id)
     }
@@ -314,8 +315,7 @@ sealed class ConcreteCallees(
         pc:            Int,
         calleeContext: Context
     )(
-        implicit
-        propertyStore: PropertyStore
+        implicit propertyStore: PropertyStore
     ): Seq[Option[(ValueInformation, IntTrieSet)]] = {
         _indirectCallParameters(callerContext.id)(pc)(calleeContext.id)
     }
@@ -332,10 +332,14 @@ sealed class ConcreteCallees(
         directCalleesIds.updateWith(cId, directCallees, (o, n) => o.unionWith(n, (_, l, r) => l ++ r))
         new ConcreteCallees(
             directCalleesIds.updateWith(
-                cId, directCallees, (o, n) => o.unionWith(n, (_, l, r) => l ++ r)
+                cId,
+                directCallees,
+                (o, n) => o.unionWith(n, (_, l, r) => l ++ r)
             ),
             indirectCalleesIds.updateWith(
-                cId, indirectCallees, (o, n) => o.unionWith(n, (_, l, r) => l ++ r)
+                cId,
+                indirectCallees,
+                (o, n) => o.unionWith(n, (_, l, r) => l ++ r)
             ),
             _incompleteCallSites.updateWith(cId, incompleteCallSites, (o, n) => o ++ n),
             _indirectCallReceivers.updateWith(
@@ -376,11 +380,13 @@ sealed class ConcreteCallees(
 
     override def containsCall(callerContext: Context, pc: Int, calleeContext: Context): Boolean = {
         containsDirectCall(callerContext, pc, calleeContext) ||
-            containsIndirectCall(callerContext, pc, calleeContext)
+        containsIndirectCall(callerContext, pc, calleeContext)
     }
 
     override def containsDirectCall(
-        callerContext: Context, pc: Int, calleeContext: Context
+        callerContext: Context,
+        pc:            Int,
+        calleeContext: Context
     ): Boolean = {
         val cId = callerContext.id
         directCalleesIds.contains(cId) && directCalleesIds(cId).contains(pc) &&
@@ -388,7 +394,9 @@ sealed class ConcreteCallees(
     }
 
     override def containsIndirectCall(
-        callerContext: Context, pc: Int, calleeContext: Context
+        callerContext: Context,
+        pc:            Int,
+        calleeContext: Context
     ): Boolean = {
         val cId = callerContext.id
         indirectCalleesIds.contains(cId) && indirectCalleesIds(cId).contains(pc) &&
@@ -425,7 +433,8 @@ object NoCallees extends Callees {
     )(implicit propertyStore: PropertyStore): IntIterator = IntIterator.empty
 
     override def isIncompleteCallSite(
-        callerContext: Context, pc: Int
+        callerContext: Context,
+        pc:            Int
     )(implicit propertyStore: PropertyStore): Boolean = false
 
     override def hasIncompleteCallSites(callerContext: Context): Boolean = false
@@ -476,7 +485,9 @@ object NoCallees extends Callees {
     ): IntMap[Iterator[Context]] = IntMap.empty
 
     override def indirectCallReceiver(
-        callerContext: Context, pc: Opcode, calleeContext: Context
+        callerContext: Context,
+        pc:            Opcode,
+        calleeContext: Context
     ): Option[(ValueInformation, br.PCs)] = None
 
     override def indirectCallParameters(
@@ -484,8 +495,7 @@ object NoCallees extends Callees {
         pc:            Int,
         calleeContext: Context
     )(
-        implicit
-        propertyStore: PropertyStore
+        implicit propertyStore: PropertyStore
     ): Seq[Option[(ValueInformation, IntTrieSet)]] = Seq.empty
 
     override def updateWithCallees(
@@ -506,17 +516,11 @@ object NoCallees extends Callees {
         )
     }
 
-    override def containsCall(
-        callerContext: Context, pc: Int, calleeContext: Context
-    ): Boolean = false
+    override def containsCall(callerContext: Context, pc: Int, calleeContext: Context): Boolean = false
 
-    override def containsDirectCall(
-        callerContext: Context, pc: Int, calleeContext: Context
-    ): Boolean = false
+    override def containsDirectCall(callerContext: Context, pc: Int, calleeContext: Context): Boolean = false
 
-    override def containsIndirectCall(
-        callerContext: Context, pc: Int, calleeContext: Context
-    ): Boolean = false
+    override def containsIndirectCall(callerContext: Context, pc: Int, calleeContext: Context): Boolean = false
 }
 
 object NoCalleesDueToNotReachableMethod extends Callees {
@@ -526,7 +530,8 @@ object NoCalleesDueToNotReachableMethod extends Callees {
     )(implicit propertyStore: PropertyStore): IntIterator = IntIterator.empty
 
     override def isIncompleteCallSite(
-        callerContext: Context, pc: Int
+        callerContext: Context,
+        pc:            Int
     )(implicit propertyStore: PropertyStore): Boolean = false
 
     override def hasIncompleteCallSites(callerContext: Context): Boolean = false
@@ -577,7 +582,9 @@ object NoCalleesDueToNotReachableMethod extends Callees {
     ): IntMap[Iterator[Context]] = IntMap.empty
 
     override def indirectCallReceiver(
-        callerContext: Context, pc: Opcode, calleeContext: Context
+        callerContext: Context,
+        pc:            Opcode,
+        calleeContext: Context
     ): Option[(ValueInformation, br.PCs)] = None
 
     override def indirectCallParameters(
@@ -585,8 +592,7 @@ object NoCalleesDueToNotReachableMethod extends Callees {
         pc:            Int,
         calleeContext: Context
     )(
-        implicit
-        propertyStore: PropertyStore
+        implicit propertyStore: PropertyStore
     ): Seq[Option[(ValueInformation, IntTrieSet)]] = Seq.empty
 
     override def updateWithCallees(
@@ -598,17 +604,11 @@ object NoCalleesDueToNotReachableMethod extends Callees {
         indirectCallParameters: IntMap[IntMap[Seq[Option[(ValueInformation, br.PCs)]]]]
     ): Callees = throw new IllegalStateException("Unreachable methods can't be updated!")
 
-    override def containsCall(
-        callerContext: Context, pc: Int, calleeContext: Context
-    ): Boolean = false
+    override def containsCall(callerContext: Context, pc: Int, calleeContext: Context): Boolean = false
 
-    override def containsDirectCall(
-        callerContext: Context, pc: Int, calleeContext: Context
-    ): Boolean = false
+    override def containsDirectCall(callerContext: Context, pc: Int, calleeContext: Context): Boolean = false
 
-    override def containsIndirectCall(
-        callerContext: Context, pc: Int, calleeContext: Context
-    ): Boolean = false
+    override def containsIndirectCall(callerContext: Context, pc: Int, calleeContext: Context): Boolean = false
 }
 
 object Callees extends CalleesPropertyMetaInformation {
@@ -617,12 +617,13 @@ object Callees extends CalleesPropertyMetaInformation {
         val name = "opalj.Callees"
         PropertyKey.create(
             name,
-            (_: PropertyStore, reason: FallbackReason, _: Entity) => reason match {
-                case PropertyIsNotDerivedByPreviouslyExecutedAnalysis =>
-                    NoCalleesDueToNotReachableMethod
-                case _ =>
-                    throw new IllegalStateException(s"analysis required for property: $name")
-            }
+            (_: PropertyStore, reason: FallbackReason, _: Entity) =>
+                reason match {
+                    case PropertyIsNotDerivedByPreviouslyExecutedAnalysis =>
+                        NoCalleesDueToNotReachableMethod
+                    case _ =>
+                        throw new IllegalStateException(s"analysis required for property: $name")
+                }
         )
     }
 }

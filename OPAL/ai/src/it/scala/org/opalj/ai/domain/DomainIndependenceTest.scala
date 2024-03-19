@@ -3,16 +3,16 @@ package org.opalj
 package ai
 package domain
 
+import org.junit.runner.RunWith
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
+
 import org.opalj.br.Code
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 
 import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParallelizable
-
-import org.junit.runner.RunWith
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
-import org.scalatestplus.junit.JUnitRunner
 
 /**
  * This system test(suite) just loads a very large number of class files and performs
@@ -113,38 +113,49 @@ class DomainIndependenceTest extends AnyFlatSpec with Matchers {
         def corresponds(r1: AIResult, r2: AIResult): Option[String] = {
             r1.operandsArray.corresponds(r2.operandsArray) { (lOperands, rOperands) =>
                 (lOperands == null && rOperands == null) ||
-                    (lOperands != null && rOperands != null &&
-                        lOperands.corresponds(rOperands) { (lValue, rValue) =>
-                            val lVD = lValue.adapt(ValuesDomain, -1 /*Irrelevant*/ )
-                            val rVD = rValue.adapt(ValuesDomain, -1 /*Irrelevant*/ )
-                            if (!(lVD.abstractsOver(rVD) && rVD.abstractsOver(lVD)))
-                                return Some(Console.RED_B + "the operand stack value " + lVD + " and " + rVD + " do not correspond ")
-                            else
-                                true
-                        })
+                (lOperands != null && rOperands != null &&
+                lOperands.corresponds(rOperands) { (lValue, rValue) =>
+                    val lVD = lValue.adapt(ValuesDomain, -1 /*Irrelevant*/ )
+                    val rVD = rValue.adapt(ValuesDomain, -1 /*Irrelevant*/ )
+                    if (!(lVD.abstractsOver(rVD) && rVD.abstractsOver(lVD)))
+                        return Some(
+                            Console.RED_B + "the operand stack value " + lVD + " and " + rVD + " do not correspond "
+                        )
+                    else
+                        true
+                })
             }
 
             r1.localsArray.corresponds(r2.localsArray) { (lLocals, rLocals) =>
                 (lLocals == null && rLocals == null) ||
-                    (lLocals != null && rLocals != null &&
-                        lLocals.corresponds(rLocals) { (lValue, rValue) =>
-                            (lValue == null && rValue == null) || (
-                                lValue != null && rValue != null && {
-                                    val lVD = lValue.adapt(ValuesDomain, -1 /*Irrelevant*/ )
-                                    val rVD = rValue.adapt(ValuesDomain, -1 /*Irrelevant*/ )
-                                    if (lVD.isInstanceOf[ValuesDomain.ReturnAddressValue] || rVD.isInstanceOf[ValuesDomain.ReturnAddressValue]) {
-                                        if ((lVD.isInstanceOf[ValuesDomain.ReturnAddressValue] && !rVD.isInstanceOf[ValuesDomain.ReturnAddressValue]) ||
-                                            (rVD.isInstanceOf[ValuesDomain.ReturnAddressValue] && !lVD.isInstanceOf[ValuesDomain.ReturnAddressValue]))
-                                            return Some(Console.BLUE_B + "the register value " + lVD + " does not correspond with " + rVD)
-                                        else
-                                            true
-                                    } else if (!(lVD.abstractsOver(rVD) && rVD.abstractsOver(lVD)))
-                                        return Some(Console.BLUE_B + "the register value " + lVD + " does not correspond with " + rVD)
-                                    else
-                                        true
-                                }
-                            )
-                        })
+                (lLocals != null && rLocals != null &&
+                lLocals.corresponds(rLocals) { (lValue, rValue) =>
+                    (lValue == null && rValue == null) || (
+                        lValue != null && rValue != null && {
+                            val lVD = lValue.adapt(ValuesDomain, -1 /*Irrelevant*/ )
+                            val rVD = rValue.adapt(ValuesDomain, -1 /*Irrelevant*/ )
+                            if (lVD.isInstanceOf[ValuesDomain.ReturnAddressValue] ||
+                                rVD.isInstanceOf[ValuesDomain.ReturnAddressValue]
+                            ) {
+                                if ((lVD.isInstanceOf[ValuesDomain.ReturnAddressValue] &&
+                                        !rVD.isInstanceOf[ValuesDomain.ReturnAddressValue]) ||
+                                    (rVD.isInstanceOf[ValuesDomain.ReturnAddressValue] &&
+                                    !lVD.isInstanceOf[ValuesDomain.ReturnAddressValue])
+                                )
+                                    return Some(
+                                        Console.BLUE_B + "the register value " + lVD + " does not correspond with " + rVD
+                                    )
+                                else
+                                    true
+                            } else if (!(lVD.abstractsOver(rVD) && rVD.abstractsOver(lVD)))
+                                return Some(
+                                    Console.BLUE_B + "the register value " + lVD + " does not correspond with " + rVD
+                                )
+                            else
+                                true
+                        }
+                    )
+                })
             }
 
             None
@@ -194,14 +205,16 @@ class DomainIndependenceTest extends AnyFlatSpec with Matchers {
                     failed.incrementAndGet()
                     info(
                         classFile.thisType.toJava + "{ " +
-                            method.signatureToJava(false) + "(Instructions " + method.body.get.instructions.size + ")}\n" +
+                            method.signatureToJava(false) +
+                            "(Instructions " + method.body.get.instructions.size + ")}\n" +
                             Console.BLUE + "\t// domain r1 is not deterministic (concurrency bug?)\n" +
                             Console.RESET
                     )
                 } else
                     info(
                         classFile.thisType.toJava + "{ " +
-                            method.signatureToJava(false) + "(Instructions " + method.body.get.instructions.size + ")} \n" +
+                            method.signatureToJava(false) +
+                            "(Instructions " + method.body.get.instructions.size + ")} \n" +
                             "\t// the results of r1 and r2 do not correspond\n" +
                             "\t// " + Console.BOLD + m + Console.RESET + "\n"
                     )

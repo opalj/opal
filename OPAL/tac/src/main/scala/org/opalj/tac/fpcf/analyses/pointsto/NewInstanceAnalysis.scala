@@ -41,7 +41,7 @@ import org.opalj.tac.common.DefinitionSite
  * @author Dominik Helm
  */
 abstract class NewInstanceAnalysis private[analyses] (
-        final val project: SomeProject
+    final val project: SomeProject
 ) extends PointsToAnalysisBase { self =>
 
     val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
@@ -114,8 +114,8 @@ abstract class NewInstanceAnalysis private[analyses] (
 }
 
 abstract class NewInstanceMethodAnalysis(
-        final val project:            SomeProject,
-        final override val apiMethod: DeclaredMethod
+    final val project:            SomeProject,
+    override final val apiMethod: DeclaredMethod
 ) extends PointsToAnalysisBase with APIBasedAnalysis {
 
     override def handleNewCaller(

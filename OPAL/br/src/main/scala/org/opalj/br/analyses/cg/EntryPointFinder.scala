@@ -46,9 +46,11 @@ trait ApplicationEntryPointsFinder extends EntryPointFinder {
         val MAIN_METHOD_DESCRIPTOR = MethodDescriptor.JustTakes(FieldType.apply("[Ljava/lang/String;"))
 
         super.collectEntryPoints(project) ++ project.allMethodsWithBody.collect {
-            case m: Method if m.isStatic
-                && (m.descriptor == MAIN_METHOD_DESCRIPTOR)
-                && (m.name == "main") => m
+            case m: Method
+                if m.isStatic
+                    && (m.descriptor == MAIN_METHOD_DESCRIPTOR)
+                    && (m.name == "main") =>
+                m
         }
     }
 }
@@ -62,15 +64,13 @@ trait ApplicationEntryPointsFinder extends EntryPointFinder {
  * @author Florian Kuebler
  */
 trait ApplicationWithoutJREEntryPointsFinder extends ApplicationEntryPointsFinder {
-    private val packagesToExclude = Set(
-        "com/sun", "sun", "oracle", "jdk", "java", "com/oracle", "javax", "sunw"
-    )
+    private val packagesToExclude = Set("com/sun", "sun", "oracle", "jdk", "java", "com/oracle", "javax", "sunw")
 
     override def collectEntryPoints(project: SomeProject): Iterable[Method] = {
         super.collectEntryPoints(project).filterNot { ep =>
             packagesToExclude.exists { prefix =>
                 ep.declaringClassFile.thisType.packageName.startsWith(prefix) &&
-                    ep.name == "main"
+                ep.name == "main"
             }
         }.filterNot { ep =>
             // The WrapperGenerator class file is part of the rt.jar in 1.7., but is in the
@@ -109,23 +109,21 @@ trait LibraryEntryPointsFinder extends EntryPointFinder {
                         subtypeCFOption.forall(_.isPublic) &&
                             // Method must be static or class instantiable
                             (method.isStatic ||
-                                // Note: This is not enough to ensure that the type is instantiable
-                                // (supertype might have no accessible constructor),
-                                // but it soundly overapproximates
-                                subtypeCFOption.forall(_.constructors.exists { c =>
-                                    c.isPublic || (c.isProtected && isExtensible(st).isYesOrUnknown)
-                                }) || classFile.methods.exists {
-                                    m => m.isStatic && m.isPublic && m.returnType == ot
-                                })
+                            // Note: This is not enough to ensure that the type is instantiable
+                            // (supertype might have no accessible constructor),
+                            // but it soundly overapproximates
+                            subtypeCFOption.forall(_.constructors.exists { c =>
+                                c.isPublic || (c.isProtected && isExtensible(st).isYesOrUnknown)
+                            }) || classFile.methods.exists {
+                                m => m.isStatic && m.isPublic && m.returnType == ot
+                            })
                     }
                 } else if (method.isProtected) {
                     isExtensible(ot).isYesOrUnknown &&
-                        (method.isStatic ||
-                            classHierarchy.allSubtypes(ot, reflexive = true).exists { st =>
-                                project.classFile(st).forall(_.constructors.exists { c =>
-                                    c.isPublic || c.isProtected
-                                })
-                            })
+                    (method.isStatic ||
+                    classHierarchy.allSubtypes(ot, reflexive = true).exists { st =>
+                        project.classFile(st).forall(_.constructors.exists { c => c.isPublic || c.isProtected })
+                    })
                 } else false
             } else {
                 // all methods in an open package are accessible
@@ -290,9 +288,9 @@ trait ConfigurationEntryPointsFinder extends EntryPointFinder {
 
     /* Required by Ficus' `ArbitraryTypeReader`*/
     private case class EntryPointContainer(
-            declaringClass: String,
-            name:           String,
-            descriptor:     Option[String]
+        declaringClass: String,
+        name:           String,
+        descriptor:     Option[String]
     )
 }
 

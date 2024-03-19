@@ -4,12 +4,12 @@ package ai
 package domain
 package l1
 
-import org.opalj.br.ObjectType
-
 import org.junit.runner.RunWith
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
+
+import org.opalj.br.ObjectType
 
 /**
  * Tests the `ConstraintsBetweenIntegerValuesTest` Domain extension.
@@ -22,7 +22,7 @@ class ConstraintsBetweenIntegerValuesTest extends AnyFunSpec with Matchers {
     final val IrrelevantPC = Int.MinValue
 
     class IntegerRangesWithInterIntegerConstraintsTestDomain(
-            override val maxCardinalityOfIntegerRanges: Long = -(Int.MinValue.toLong) + Int.MaxValue
+        override val maxCardinalityOfIntegerRanges: Long = -(Int.MinValue.toLong) + Int.MaxValue
     ) extends CorrelationalDomain
         with ThrowAllPotentialExceptionsConfiguration
         with l0.DefaultTypeLevelLongValues
@@ -49,7 +49,8 @@ class ConstraintsBetweenIntegerValuesTest extends AnyFunSpec with Matchers {
         it("it should handle cases where we constrain and compare unknown values (without join)") {
             val domain = new IntegerRangesWithInterIntegerConstraintsTestDomain(4)
             val method = IntegerValues.findMethod("multipleConstraints1").head
-            /*val result =*/ BaseAI(method, domain)
+            /*val result =*/
+            BaseAI(method, domain)
 
             // TODO result.operandsArray(29) should be(null)
         }
@@ -57,7 +58,8 @@ class ConstraintsBetweenIntegerValuesTest extends AnyFunSpec with Matchers {
         it("it should handle cases where we constrain and compare unknown values (with join)") {
             val domain = new IntegerRangesWithInterIntegerConstraintsTestDomain(4)
             val method = IntegerValues.findMethod("multipleConstraints2").head
-            /*val result =*/ BaseAI(method, domain)
+            /*val result =*/
+            BaseAI(method, domain)
 
             // TODO result.operandsArray(25) should be(null)
         }

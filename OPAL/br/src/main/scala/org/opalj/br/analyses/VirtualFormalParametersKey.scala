@@ -17,7 +17,7 @@ import scala.collection.mutable
  * @author Florian Kuebler
  */
 class VirtualFormalParameters private[analyses] (
-        val data: scala.collection.Map[DeclaredMethod, ArraySeq[VirtualFormalParameter]]
+    val data: scala.collection.Map[DeclaredMethod, ArraySeq[VirtualFormalParameter]]
 ) {
     /**
      * Returns the virtual formal parameters array for the given method. If the method is not known,

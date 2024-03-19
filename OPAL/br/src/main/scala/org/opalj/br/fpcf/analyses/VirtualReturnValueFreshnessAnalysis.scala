@@ -34,7 +34,7 @@ import org.opalj.fpcf.UBP
  * @author Florian Kübler
  */
 class VirtualReturnValueFreshnessAnalysis private[analyses] (
-        final val project: SomeProject
+    final val project: SomeProject
 ) extends FPCFAnalysis {
 
     private[this] val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
@@ -121,7 +121,7 @@ sealed trait VirtualReturnValueFreshnessAnalysisScheduler extends FPCFAnalysisSc
         PropertyBounds.lub(VirtualMethodReturnValueFreshness)
     }
 
-    final override def uses: Set[PropertyBounds] = Set(PropertyBounds.lub(ReturnValueFreshness))
+    override final def uses: Set[PropertyBounds] = Set(PropertyBounds.lub(ReturnValueFreshness))
 
 }
 

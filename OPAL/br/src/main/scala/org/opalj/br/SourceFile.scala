@@ -18,6 +18,7 @@ case class SourceFile(sourceFile: String) extends Attribute {
     override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = this == other
 
 }
+
 object SourceFile {
 
     final val KindId = 17

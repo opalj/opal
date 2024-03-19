@@ -24,8 +24,8 @@ import scala.collection.mutable
  * @author Michael Eichberg
  */
 class ProjectIndex private (
-        val fields:  Map[String, Map[FieldType, List[Field]]],
-        val methods: Map[String, Map[MethodDescriptor, List[Method]]]
+    val fields:  Map[String, Map[FieldType, List[Field]]],
+    val methods: Map[String, Map[MethodDescriptor, List[Method]]]
 ) {
 
     def findFields(name: String, fieldType: FieldType): List[Field] = {

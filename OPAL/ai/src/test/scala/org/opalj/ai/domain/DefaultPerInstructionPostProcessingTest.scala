@@ -5,14 +5,14 @@ package domain
 
 import scala.collection.immutable.LongMap
 
-import org.opalj.ai.common.XHTML.dumpOnFailureDuringValidation
-import org.opalj.br._
-import org.opalj.collection.immutable.IntTrieSet
-
 import org.junit.runner.RunWith
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
+
+import org.opalj.ai.common.XHTML.dumpOnFailureDuringValidation
+import org.opalj.br._
+import org.opalj.collection.immutable.IntTrieSet
 
 /**
  * Tests the `DefaultPerInstructionPostProcessing`.
@@ -118,12 +118,36 @@ class DefaultPerInstructionPostProcessingTest extends AnyFlatSpec with Matchers 
             import domain._
             allThrownExceptions should be(
                 Map(
-                    (19, Set(ObjectValue(ImmediateVMExceptionsOriginOffset - 19, No, true, ObjectType.NullPointerException))),
-                    (23, Set(
-                        ObjectValue(-1, No, false, ObjectType.Throwable),
-                        ObjectValue(ImmediateVMExceptionsOriginOffset - 11, No, true, ObjectType.NullPointerException)
-                    )),
-                    (25, Set(ObjectValue(ImmediateVMExceptionsOriginOffset - 25, No, true, ObjectType.NullPointerException)))
+                    (
+                        19,
+                        Set(ObjectValue(
+                            ImmediateVMExceptionsOriginOffset - 19,
+                            No,
+                            true,
+                            ObjectType.NullPointerException
+                        ))
+                    ),
+                    (
+                        23,
+                        Set(
+                            ObjectValue(-1, No, false, ObjectType.Throwable),
+                            ObjectValue(
+                                ImmediateVMExceptionsOriginOffset - 11,
+                                No,
+                                true,
+                                ObjectType.NullPointerException
+                            )
+                        )
+                    ),
+                    (
+                        25,
+                        Set(ObjectValue(
+                            ImmediateVMExceptionsOriginOffset - 25,
+                            No,
+                            true,
+                            ObjectType.NullPointerException
+                        ))
+                    )
                 )
             )
         }

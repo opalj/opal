@@ -11,10 +11,13 @@ import org.opalj.br.instructions.FieldAccess
 import org.opalj.log.OPALLogger.info
 
 class DeclaredFields(
-        private[this] val project:                SomeProject,
-        private[this] var id2declaredField:       Array[DeclaredField],
-        private[this] val declaredInformation2id: ConcurrentHashMap[ObjectType, ConcurrentHashMap[String, ConcurrentHashMap[FieldType, DeclaredField]]],
-        private[this] val nextId:                 AtomicInteger
+    private[this] val project:          SomeProject,
+    private[this] var id2declaredField: Array[DeclaredField],
+    private[this] val declaredInformation2id: ConcurrentHashMap[
+        ObjectType,
+        ConcurrentHashMap[String, ConcurrentHashMap[FieldType, DeclaredField]]
+    ],
+    private[this] val nextId: AtomicInteger
 ) {
     private var extensionSize = 1000
     private val rwLock = new ReentrantReadWriteLock()
@@ -47,11 +50,11 @@ class DeclaredFields(
         project.resolveFieldReference(declaringClassType, name, fieldType) match {
             case Some(field) => apply(field)
             case None => getDeclaredField(
-                declaringClassType,
-                name,
-                fieldType,
-                id => new VirtualDeclaredField(declaringClassType, name, fieldType, id)
-            )
+                    declaringClassType,
+                    name,
+                    fieldType,
+                    id => new VirtualDeclaredField(declaringClassType, name, fieldType, id)
+                )
         }
     }
 

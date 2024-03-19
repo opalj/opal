@@ -28,7 +28,7 @@ sealed abstract class BitArraySet extends BitSet { thisSet =>
     override def equals(other: Any): Boolean
     override def hashCode: Int
 
-    final override def toString: String = mkString("BitArraySet(", ",", ")")
+    override final def toString: String = mkString("BitArraySet(", ",", ")")
 
 }
 

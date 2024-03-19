@@ -154,8 +154,8 @@ object DAandBR extends App {
         minor_version = 0,
         major_version = 46,
         access_flags = ACC_PUBLIC.mask | ACC_SUPER.mask,
-        this_class = 1 /*Test*/ ,
-        super_class = 3 /*extends java.lang.Object*/ ,
+        this_class = 1 /*Test*/,
+        super_class = 3 /*extends java.lang.Object*/,
         // Interfaces.empty,
         // Fields.empty,
         methods = ArraySeq(
@@ -172,10 +172,10 @@ object DAandBR extends App {
                             new Code(
                                 Array[Byte](
                                     42, // aload_0
-                                    (0xff & 183).toByte, // invokespecial
+                                    (0xFF & 183).toByte, // invokespecial
                                     0, //                    -> Methodref
                                     8, //                       #8
-                                    (0xff & 177).toByte
+                                    (0xFF & 177).toByte
                                 )
                             )
                     )
@@ -193,15 +193,15 @@ object DAandBR extends App {
                         code =
                             new Code(
                                 Array[Byte](
-                                    (0xff & 178).toByte, // getstatic
+                                    (0xFF & 178).toByte, // getstatic
                                     0,
                                     16,
                                     18, // ldc
                                     22,
-                                    (0xff & 182).toByte, // invokevirtual
+                                    (0xFF & 182).toByte, // invokevirtual
                                     0,
                                     24,
-                                    (0xff & 177).toByte // return
+                                    (0xFF & 177).toByte // return
                                 )
                             )
                     )
@@ -215,16 +215,14 @@ object DAandBR extends App {
 
     val brClassFile = Java8Framework.ClassFile(() => new ByteArrayInputStream(assembledCF)).head
     val newBRMethods =
-        brClassFile.methods.
-            filter(m => /*due some sophisticated analysis...*/ m.name == "<init>").
-            map[MethodTemplate](m => m.copy())
+        brClassFile.methods
+            .filter(m => /*due some sophisticated analysis...*/ m.name == "<init>")
+            .map[MethodTemplate](m => m.copy())
     val newBRClassFile = brClassFile.copy(methods = newBRMethods)
 
     val newDAClassFile = cf.copy(methods = cf.methods.filter { daM =>
         implicit val cp: Constant_Pool = cf.constant_pool
-        brClassFile.methods.exists { brM =>
-            brM.name == daM.name && brM.descriptor.toJVMDescriptor == daM.descriptor
-        }
+        brClassFile.methods.exists { brM => brM.name == daM.name && brM.descriptor.toJVMDescriptor == daM.descriptor }
     })
 
     println("Created class file: " + Files.write(Paths.get("Test.class"), assembledCF).toAbsolutePath)

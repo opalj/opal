@@ -26,8 +26,8 @@ sealed trait LoadedClassesMetaInformation extends PropertyMetaInformation {
  * @author Florian Kuebler
  */
 sealed class LoadedClasses private[properties] (
-        final val orderedClasses: List[ObjectType],
-        final val classes:        UIDSet[ObjectType]
+    final val orderedClasses: List[ObjectType],
+    final val classes:        UIDSet[ObjectType]
 ) extends OrderedProperty with LoadedClassesMetaInformation {
 
     assert(orderedClasses == null || orderedClasses.size == classes.size)
@@ -77,13 +77,14 @@ object LoadedClasses extends LoadedClassesMetaInformation {
         val name = "opalj.LoadedClasses"
         PropertyKey.create(
             name,
-            (ps: PropertyStore, reason: FallbackReason, _: Entity) => reason match {
-                case PropertyIsNotDerivedByPreviouslyExecutedAnalysis =>
-                    OPALLogger.error("call graph analysis", "there was no class loaded")(ps.logContext)
-                    NoLoadedClasses
-                case _ =>
-                    throw new IllegalStateException(s"analysis required for property: $name")
-            }
+            (ps: PropertyStore, reason: FallbackReason, _: Entity) =>
+                reason match {
+                    case PropertyIsNotDerivedByPreviouslyExecutedAnalysis =>
+                        OPALLogger.error("call graph analysis", "there was no class loaded")(ps.logContext)
+                        NoLoadedClasses
+                    case _ =>
+                        throw new IllegalStateException(s"analysis required for property: $name")
+                }
         )
     }
 }

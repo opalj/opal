@@ -7,6 +7,11 @@ import java.net.URL
 import scala.collection.mutable
 import scala.jdk.CollectionConverters._
 
+import org.junit.runner.RunWith
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
+
 import org.opalj.br.Method
 import org.opalj.br.TestSupport.createJREProject
 import org.opalj.br.analyses.Project
@@ -17,11 +22,6 @@ import org.opalj.br.reader.Java8FrameworkWithCaching
 import org.opalj.graphs.ControlDependencies
 import org.opalj.util.PerformanceEvaluation
 import org.opalj.util.PerformanceEvaluation.time
-
-import org.junit.runner.RunWith
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.matchers.should.Matchers
-import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests if we are able to compute the CFG as well as the dominator/post-dominator tree for
@@ -91,7 +91,6 @@ class RecordCFGTest extends AnyFunSpec with Matchers {
 
                 val pcs = new mutable.BitSet(method.body.size)
                 bbAICFG.allBBs.foreach { bbAI =>
-
                     assert(bbAI.startPC <= bbAI.endPC, s"${bbAI.startPC}> ${bbAI.endPC}")
 
                     if (!pcs.add(bbAI.startPC))
@@ -125,7 +124,6 @@ class RecordCFGTest extends AnyFunSpec with Matchers {
                 }
 
                 evaluatedInstructions.iterator.foreach { pc =>
-
                     domain.foreachSuccessorOf(pc) { succPC =>
                         domain.predecessorsOf(succPC).contains(pc) should be(true)
                     }
@@ -154,7 +152,8 @@ class RecordCFGTest extends AnyFunSpec with Matchers {
                 evaluatedInstructions.iterator.foreach { pc =>
                     if (pc != dt.startNode &&
                         (dt.dom(pc) != dt.startNode) &&
-                        !evaluatedInstructions.contains(dt.dom(pc))) {
+                        !evaluatedInstructions.contains(dt.dom(pc))
+                    ) {
                         fail(
                             s"the dominator instruction ${dt.dom(pc)} of instruction $pc " +
                                 s"was not evaluated (dominator tree start node: ${dt.startNode}); " +
@@ -163,7 +162,8 @@ class RecordCFGTest extends AnyFunSpec with Matchers {
                     }
                     if (pc != postDT.startNode &&
                         postDT.dom(pc) != postDT.startNode &&
-                        !evaluatedInstructions.contains(postDT.dom(pc))) {
+                        !evaluatedInstructions.contains(postDT.dom(pc))
+                    ) {
                         fail(s"the post-dominator ${postDT.dom(pc)} of $pc was not evaluated")
                     }
                     try {
@@ -223,7 +223,8 @@ class RecordCFGTest extends AnyFunSpec with Matchers {
 
                 import DominatorsPerformanceEvaluation.getTime
                 info("performing AI took (CPU time):                            " + getTime(Symbol("AI")).toSeconds)
-                info("computing dominator information took (CPU time):          " + getTime(Symbol("Dominators")).toSeconds)
+                info("computing dominator information took (CPU time):          " +
+                    getTime(Symbol("Dominators")).toSeconds)
 
                 val postDominatorsTime = getTime(Symbol("PostDominators")).toSeconds
                 info("computing post-dominator information took (CPU time):     " + postDominatorsTime)

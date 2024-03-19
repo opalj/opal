@@ -2,9 +2,9 @@
 package org.opalj
 package br
 
-import org.opalj.bi.TestResources.locateTestResources
-
 import org.scalatest.funsuite.AnyFunSuite
+
+import org.opalj.bi.TestResources.locateTestResources
 
 /**
  * @author Michael Eichberg

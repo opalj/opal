@@ -434,7 +434,7 @@ trait ValuesDomain { domain =>
                 ObjectVariableInfo(leastUpperType.get.asReferenceType)
             }
         }
-        */
+         */
     }
 
     /**
@@ -583,7 +583,7 @@ trait ValuesDomain { domain =>
      */
     class ReturnAddressValue(val address: Int) extends RETValue { this: DomainReturnAddressValue =>
 
-        private[ai] final override def asReturnAddressValue: Int = address
+        override private[ai] final def asReturnAddressValue: Int = address
 
         override protected def doJoin(pc: Int, other: DomainValue): Update[DomainValue] = {
             other match {

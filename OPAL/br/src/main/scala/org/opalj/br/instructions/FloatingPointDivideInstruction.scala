@@ -10,11 +10,11 @@ package instructions
  */
 abstract class FloatingPointDivideInstruction extends DivideInstruction {
 
-    final override def jvmExceptions: List[ObjectType] = Nil
+    override final def jvmExceptions: List[ObjectType] = Nil
 
     final def mayThrowExceptions: Boolean = false
 
-    final override def nextInstructions(
+    override final def nextInstructions(
         currentPC:             PC,
         regularSuccessorsOnly: Boolean
     )(

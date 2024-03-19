@@ -192,10 +192,10 @@ class ArrayMap[T >: Null <: AnyRef: ClassTag] private (private var data: Array[T
                     java.util.Arrays.equals(thisData, thatData)
                 } else if (thisLength < thatLength) {
                     thatData.startsWith(thisData) &&
-                        (thatData.view.slice(thisLength, thatLength).forall { _ eq null })
+                    (thatData.view.slice(thisLength, thatLength).forall { _ eq null })
                 } else {
                     thisData.startsWith(thatData) &&
-                        (thisData.view.slice(thatLength, thisLength).forall { _ eq null })
+                    (thisData.view.slice(thatLength, thisLength).forall { _ eq null })
                 }
             case _ => false
         }
@@ -203,9 +203,7 @@ class ArrayMap[T >: Null <: AnyRef: ClassTag] private (private var data: Array[T
 
     override def hashCode: Int = {
         var hc = 1
-        foreachValue { e =>
-            hc = hc * 41 + { if (e ne null) e.hashCode else 0 /* === identityHashCode(null) */ }
-        }
+        foreachValue { e => hc = hc * 41 + { if (e ne null) e.hashCode else 0 /* === identityHashCode(null) */ } }
         hc
     }
 
@@ -227,6 +225,7 @@ class ArrayMap[T >: Null <: AnyRef: ClassTag] private (private var data: Array[T
     override def toString: String = mkString("ArrayMap(", ", ", ")")
 
 }
+
 object ArrayMap {
 
     /**

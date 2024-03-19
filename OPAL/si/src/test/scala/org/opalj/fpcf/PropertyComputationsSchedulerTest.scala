@@ -2,14 +2,14 @@
 package org.opalj
 package fpcf
 
-import org.opalj.fpcf.fixtures.PropertyStoreConfigurationRecorder
-import org.opalj.log.GlobalLogContext
-
 import org.junit.runner.RunWith
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
+
+import org.opalj.fpcf.fixtures.PropertyStoreConfigurationRecorder
+import org.opalj.log.GlobalLogContext
 
 /**
  * Tests the property computations scheduler.
@@ -22,12 +22,12 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
     implicit val logContext: GlobalLogContext.type = GlobalLogContext
 
     case class BasicComputationSpecification(
-            override val name:      String,
-            computationType:        ComputationType,
-            uses:                   Set[PropertyBounds]    = Set.empty,
-            derivesLazily:          Option[PropertyBounds] = None,
-            derivesEagerly:         Set[PropertyBounds]    = Set.empty,
-            derivesCollaboratively: Set[PropertyBounds]    = Set.empty
+        override val name:      String,
+        computationType:        ComputationType,
+        uses:                   Set[PropertyBounds]    = Set.empty,
+        derivesLazily:          Option[PropertyBounds] = None,
+        derivesEagerly:         Set[PropertyBounds]    = Set.empty,
+        derivesCollaboratively: Set[PropertyBounds]    = Set.empty
     ) extends SimpleComputationSpecification[Unit] {
         override def schedule(ps: PropertyStore, unused: Null): Unit = {}
 
@@ -62,7 +62,8 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 val ps = new PropertyStoreConfigurationRecorder()
                 val scenario = AnalysisScenario(Set.empty, ps)
                 val schedule = scenario.computeSchedule(ps)
-                /*smoke test: */ schedule(ps, trace = false)
+                /*smoke test: */
+                schedule(ps, trace = false)
                 schedule.batches should be(Symbol("Empty"))
                 ps.phaseConfigurations.head should be((Set.empty, Set.empty, Map.empty))
             }

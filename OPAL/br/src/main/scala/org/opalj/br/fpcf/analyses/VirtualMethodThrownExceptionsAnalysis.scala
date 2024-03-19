@@ -38,7 +38,7 @@ import org.opalj.fpcf.UBP
  * @author Michael Eichberg
  */
 class VirtualMethodThrownExceptionsAnalysis private[analyses] (
-        final val project: SomeProject
+    final val project: SomeProject
 ) extends FPCFAnalysis {
 
     private[analyses] def lazilyAggregateExceptionsThrownByOverridingMethods(
@@ -96,9 +96,7 @@ class VirtualMethodThrownExceptionsAnalysis private[analyses] (
         var exceptions = initialExceptions.toImmutableTypesSet
 
         def c(eps: SomeEPS): ProperPropertyComputationResult = {
-            dependees = dependees.filter { d =>
-                d.e != eps.e || d.pk != eps.pk
-            }
+            dependees = dependees.filter { d => d.e != eps.e || d.pk != eps.pk }
             // If the property is not final we want to keep updated of new values
             if (eps.isRefinable) {
                 dependees = dependees + eps
@@ -140,7 +138,7 @@ trait VirtualMethodThrownExceptionsAnalysisScheduler extends FPCFAnalysisSchedul
 
     override def requiredProjectInformation: ProjectInformationKeys = Seq(IsOverridableMethodKey)
 
-    final override def uses: Set[PropertyBounds] = Set(PropertyBounds.lub(ThrownExceptions))
+    override final def uses: Set[PropertyBounds] = Set(PropertyBounds.lub(ThrownExceptions))
 
     final def derivedProperty: PropertyBounds = {
         PropertyBounds.lub(ThrownExceptionsByOverridingMethods)

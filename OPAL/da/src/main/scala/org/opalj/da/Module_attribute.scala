@@ -15,15 +15,15 @@ import org.opalj.bi.AccessFlagsContexts.MODULE
  * @author Michael Eichberg
  */
 case class Module_attribute(
-        attribute_name_index: Constant_Pool_Index,
-        module_name_index:    Constant_Pool_Index,
-        module_flags:         Int,
-        module_version_index: Constant_Pool_Index, // can be "0"!
-        requires:             Requires,
-        exports:              Exports,
-        opens:                Opens,
-        uses:                 Uses,
-        provides:             Provides
+    attribute_name_index: Constant_Pool_Index,
+    module_name_index:    Constant_Pool_Index,
+    module_flags:         Int,
+    module_version_index: Constant_Pool_Index, // can be "0"!
+    requires:             Requires,
+    exports:              Exports,
+    opens:                Opens,
+    uses:                 Uses,
+    provides:             Provides
 ) extends Attribute {
 
     def attribute_length: Int = {
@@ -47,40 +47,30 @@ case class Module_attribute(
         val module = s"Module(name=$name, flags=$flags, version=$version)"
 
         <details>
-            <summary class="attribute">{ module }</summary>
+            <summary class="attribute">{module}</summary>
             <div>
                 {
-                    requires.view.map[String](_.toString).sorted.map[NodeBuffer] { r =>
-                        <span>{ r }</span><br/>
-                    }
+                    requires.view.map[String](_.toString).sorted.map[NodeBuffer] { r => <span>{r}</span><br/> }
                 }
             </div>
             <div>
                 {
-                    exports.view.map[String](_.toString).sorted.map[NodeBuffer] { r =>
-                        <span>{ r }</span><br/>
-                    }
+                    exports.view.map[String](_.toString).sorted.map[NodeBuffer] { r => <span>{r}</span><br/> }
                 }
             </div>
             <div>
                 {
-                    opens.view.map[String](_.toString).sorted.map[NodeBuffer] { r =>
-                        <span>{ r }</span><br/>
-                    }
+                    opens.view.map[String](_.toString).sorted.map[NodeBuffer] { r => <span>{r}</span><br/> }
                 }
             </div>
             <div>
                 {
-                    uses.view.map(cp(_).toString).sorted.map[NodeBuffer] { r =>
-                        <span>{ s"uses $r" }</span><br/>
-                    }
+                    uses.view.map(cp(_).toString).sorted.map[NodeBuffer] { r => <span>{s"uses $r"}</span><br/> }
                 }
             </div>
             <div>
                 {
-                    provides.view.map[String](_.toString).sorted.map[NodeBuffer] { r =>
-                        <span>{ r }</span><br/>
-                    }
+                    provides.view.map[String](_.toString).sorted.map[NodeBuffer] { r => <span>{r}</span><br/> }
                 }
             </div>
         </details>
@@ -89,9 +79,9 @@ case class Module_attribute(
 }
 
 case class RequiresEntry(
-        requires_index:         Constant_Pool_Index,
-        requires_flags:         Int,
-        requires_version_index: Constant_Pool_Index // can be "0" (<=> no version...)
+    requires_index:         Constant_Pool_Index,
+    requires_flags:         Int,
+    requires_version_index: Constant_Pool_Index // can be "0" (<=> no version...)
 ) {
 
     def toString(implicit cp: Constant_Pool): String = {
@@ -109,9 +99,9 @@ case class RequiresEntry(
 }
 
 case class ExportsEntry(
-        exports_index:          Constant_Pool_Index,
-        exports_flags:          Int,
-        exports_to_index_table: ExportsToIndexTable
+    exports_index:          Constant_Pool_Index,
+    exports_flags:          Int,
+    exports_to_index_table: ExportsToIndexTable
 ) {
 
     def attribute_length: Int = 6 + exports_to_index_table.size * 2
@@ -134,9 +124,9 @@ case class ExportsEntry(
 }
 
 case class OpensEntry(
-        opens_index:          Constant_Pool_Index,
-        opens_flags:          Int,
-        opens_to_index_table: OpensToIndexTable
+    opens_index:          Constant_Pool_Index,
+    opens_flags:          Int,
+    opens_to_index_table: OpensToIndexTable
 ) {
 
     def attribute_length: Int = 6 + opens_to_index_table.size * 2
@@ -147,11 +137,7 @@ case class OpensEntry(
             if (opens_to_index_table.isEmpty)
                 ";"
             else
-                opens_to_index_table.
-                    view.
-                    map(cp(_).toString).
-                    sorted.
-                    mkString(" to ", ", ", ";")
+                opens_to_index_table.view.map(cp(_).toString).sorted.mkString(" to ", ", ", ";")
         }
 
         s"opens $flags ${cp(opens_index).toString(cp)}$opens_to"
@@ -159,19 +145,15 @@ case class OpensEntry(
 }
 
 case class ProvidesEntry(
-        provides_index:            Constant_Pool_Index,
-        provides_with_index_table: ProvidesWithIndexTable
+    provides_index:            Constant_Pool_Index,
+    provides_with_index_table: ProvidesWithIndexTable
 ) {
 
     def attribute_length: Int = 4 + provides_with_index_table.size * 2
 
     def toString(implicit cp: Constant_Pool): String = {
         val provides_with =
-            provides_with_index_table.
-                view.
-                map(cp(_).toString).
-                sorted.
-                mkString(" with ", ", ", ";")
+            provides_with_index_table.view.map(cp(_).toString).sorted.mkString(" with ", ", ", ";")
 
         s"provides ${cp(provides_index).toString(cp)}$provides_with"
     }

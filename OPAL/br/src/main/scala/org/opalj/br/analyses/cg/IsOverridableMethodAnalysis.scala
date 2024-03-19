@@ -24,9 +24,9 @@ import scala.collection.mutable
  * @author Michael Eichberg
  */
 private[analyses] class IsOverridableMethodAnalysis(
-        project:           SomeProject,
-        isClassExtensible: ObjectType => Answer,
-        isTypeExtensible:  ObjectType => Answer
+    project:           SomeProject,
+    isClassExtensible: ObjectType => Answer,
+    isTypeExtensible:  ObjectType => Answer
 ) extends (Method => Answer) {
 
     // private[this] val cache: ConcurrentHashMap[Method, Answer] = new ConcurrentHashMap()
@@ -58,19 +58,20 @@ private[analyses] class IsOverridableMethodAnalysis(
                         // let's test if this "final override", is for a different method...
                         method.isPackagePrivate &&
                         subtypeMethod.get.declaringClassFile.thisType.packageName !=
-                        objectType.packageName &&
-                        !subtypeMethod.get.isPackagePrivate /**/ &&
-                        {
-                            // ... the original method is package private
-                            // ... both methods are defined in different packages
-                            // ... the subtypeMethod is protected or public
-                            val candidateMethods = instanceMethods(ot).iterator.filter(mdc =>
-                                mdc.name == methodName && mdc.descriptor == methodDescriptor)
-                            // if we still have the original method in the list then this method
-                            // does not override that method...
-                            candidateMethods.exists(mdc => mdc.packageName == methodPackageName)
-                        }
-                    )) {
+                            objectType.packageName &&
+                            !subtypeMethod.get.isPackagePrivate /**/ && {
+                                // ... the original method is package private
+                                // ... both methods are defined in different packages
+                                // ... the subtypeMethod is protected or public
+                                val candidateMethods = instanceMethods(ot).iterator.filter(mdc =>
+                                    mdc.name == methodName && mdc.descriptor == methodDescriptor
+                                )
+                                // if we still have the original method in the list then this method
+                                // does not override that method...
+                                candidateMethods.exists(mdc => mdc.packageName == methodPackageName)
+                            }
+                    )
+                ) {
                     // the type as a whole is extensible and
                     // the method is not (finally) overridden by this type...
                     isClassExtensible(ot) match {

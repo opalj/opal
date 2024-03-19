@@ -8,7 +8,7 @@ package br
  * @author Michael Eichberg
  */
 case class RuntimeInvisibleTypeAnnotationTable(
-        typeAnnotations: TypeAnnotations
+    typeAnnotations: TypeAnnotations
 ) extends TypeAnnotationTable {
 
     final def isRuntimeVisible: Boolean = false
@@ -20,6 +20,7 @@ case class RuntimeInvisibleTypeAnnotationTable(
     }
 
 }
+
 object RuntimeInvisibleTypeAnnotationTable {
 
     final val KindId = 28

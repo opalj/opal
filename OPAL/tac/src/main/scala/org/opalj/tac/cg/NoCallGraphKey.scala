@@ -34,8 +34,6 @@ object NoCallGraphKey extends CallGraphKey {
     override protected def runAnalyses(project: SomeProject, ps: PropertyStore): Unit = {
         val methods = project.getProjectInformationKeyInitializationData(this).getOrElse(project.allMethods)
 
-        methods.foreach { method =>
-            ps.set(method, OnlyCallersWithUnknownContext)
-        }
+        methods.foreach { method => ps.set(method, OnlyCallersWithUnknownContext) }
     }
 }

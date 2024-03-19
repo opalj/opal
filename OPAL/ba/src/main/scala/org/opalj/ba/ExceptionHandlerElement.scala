@@ -14,7 +14,7 @@ package ba
  * @author Malte Limmeroth
  */
 trait ExceptionHandlerElement extends PseudoInstruction {
-    final override def isExceptionHandlerElement: Boolean = true
+    override final def isExceptionHandlerElement: Boolean = true
     def id: Symbol
 }
 
@@ -24,9 +24,9 @@ trait ExceptionHandlerElement extends PseudoInstruction {
  * @see [[ExceptionHandlerElement]]
  */
 case class TRY(id: Symbol) extends ExceptionHandlerElement {
-    final override def isTry: Boolean = true
-    final override def isCatch: Boolean = false
-    final override def asTry: TRY = this
+    override final def isTry: Boolean = true
+    override final def isCatch: Boolean = false
+    override final def asTry: TRY = this
 }
 
 /**
@@ -35,8 +35,8 @@ case class TRY(id: Symbol) extends ExceptionHandlerElement {
  * @see [[ExceptionHandlerElement]]
  */
 case class TRYEND(id: Symbol) extends ExceptionHandlerElement {
-    final override def isTry: Boolean = false
-    final override def isCatch: Boolean = false
+    override final def isTry: Boolean = false
+    override final def isCatch: Boolean = false
 }
 
 /**
@@ -55,12 +55,12 @@ case class TRYEND(id: Symbol) extends ExceptionHandlerElement {
  *         (finally handler).
  */
 case class CATCH(
-        id:          Symbol,
-        position:    Int,
-        handlerType: Option[br.ObjectType] = None
+    id:          Symbol,
+    position:    Int,
+    handlerType: Option[br.ObjectType] = None
 ) extends ExceptionHandlerElement {
-    final override def isTry: Boolean = false
-    final override def isCatch: Boolean = true
+    override final def isTry: Boolean = false
+    override final def isCatch: Boolean = true
 }
 
 /**

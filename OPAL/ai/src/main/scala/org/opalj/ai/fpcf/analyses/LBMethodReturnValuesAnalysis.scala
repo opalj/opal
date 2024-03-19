@@ -38,7 +38,7 @@ import org.opalj.value.ValueInformation
  * @author Michael Eichberg
  */
 class LBMethodReturnValuesAnalysis private[analyses] (
-        val project: SomeProject
+    val project: SomeProject
 ) extends FPCFAnalysis { analysis =>
 
     /**
@@ -47,9 +47,9 @@ class LBMethodReturnValuesAnalysis private[analyses] (
      * @author Michael Eichberg
      */
     class MethodReturnValuesAnalysisDomain(
-            val ai:        InterruptableAI[MethodReturnValuesAnalysisDomain],
-            val method:    Method,
-            val dependees: EOptionPSet[Entity, Property]
+        val ai:        InterruptableAI[MethodReturnValuesAnalysisDomain],
+        val method:    Method,
+        val dependees: EOptionPSet[Entity, Property]
     ) extends CorrelationalDomain
         with domain.TheProject
         with domain.TheMethod
@@ -71,7 +71,7 @@ class LBMethodReturnValuesAnalysis private[analyses] (
         with RefinedTypeLevelFieldAccessInstructions
         with RefinedTypeLevelInvokeInstructions {
 
-        final override val UsedPropertiesBound: SinglePropertiesBoundType = LBProperties
+        override final val UsedPropertiesBound: SinglePropertiesBoundType = LBProperties
 
         override implicit val project: SomeProject = analysis.project
 
@@ -108,9 +108,10 @@ class LBMethodReturnValuesAnalysis private[analyses] (
                     // the type hierarchy is incomplete...
                     ai.interrupt()
                 } else if (returnedReferenceValue.isNull.isUnknown &&
-                    returnedValueUTB.isSingletonSet &&
-                    returnedValueUTB.head == methodReturnType &&
-                    !returnedReferenceValue.isPrecise) {
+                           returnedValueUTB.isSingletonSet &&
+                           returnedValueUTB.head == methodReturnType &&
+                           !returnedReferenceValue.isPrecise
+                ) {
                     // we don't get more precise information
                     ai.interrupt()
                 }
@@ -155,7 +156,7 @@ class LBMethodReturnValuesAnalysis private[analyses] (
                 // METHOD WILL ALWAYS THROW AN EXCEPTION!
                 // || vi.get.asReferenceValue.isNull.isYes
                 // || (vi.get.asReferenceValue.isPrecise && vi.get.asReferenceValue.isNull.isNo)
-                ) {
+            ) {
                 Result(method, MethodReturnValue(vi))
             } else {
                 // We have potentially relevant dependencies (please, recall that we are currently
@@ -186,8 +187,8 @@ object EagerLBMethodReturnValuesAnalysis extends BasicFPCFEagerAnalysisScheduler
         // To ensure that subsequent analyses are able to pick-up the results of this
         // analysis, we state that the domain that has to be used when computing
         // the AIResult has to use the (partial) domain: RefinedTypeLevelInvokeInstructions.
-        p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey)(
-            i => i.getOrElse(Set.empty) + classOf[RefinedTypeLevelInvokeInstructions]
+        p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey)(i =>
+            i.getOrElse(Set.empty) + classOf[RefinedTypeLevelInvokeInstructions]
         )
         null
     }

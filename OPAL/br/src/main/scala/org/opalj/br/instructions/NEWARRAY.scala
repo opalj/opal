@@ -14,48 +14,48 @@ sealed abstract class NEWARRAY extends CreateNewOneDimensionalArrayInstruction {
 
     def elementType: BaseType
 
-    final override val arrayType: ArrayType = ArrayType(elementType)
+    override final val arrayType: ArrayType = ArrayType(elementType)
 
-    final override def mnemonic: String = "newarray"
+    override final def mnemonic: String = "newarray"
 
-    final override def opcode: Opcode = NEWARRAY.opcode
+    override final def opcode: Opcode = NEWARRAY.opcode
 
-    final override def length: Int = 2
+    override final def length: Int = 2
 
-    final override def toString: String = "NEWARRAY(" + elementType.toJava + "[])"
+    override final def toString: String = "NEWARRAY(" + elementType.toJava + "[])"
 
 }
 
 private object NEWARRAY_Boolean extends NEWARRAY {
-    final override def elementType: BaseType = BooleanType
+    override final def elementType: BaseType = BooleanType
 }
 
 private object NEWARRAY_Char extends NEWARRAY {
-    final override def elementType: BaseType = CharType
+    override final def elementType: BaseType = CharType
 }
 
 private object NEWARRAY_Float extends NEWARRAY {
-    final override def elementType: BaseType = FloatType
+    override final def elementType: BaseType = FloatType
 }
 
 private object NEWARRAY_Double extends NEWARRAY {
-    final override def elementType: BaseType = DoubleType
+    override final def elementType: BaseType = DoubleType
 }
 
 private object NEWARRAY_Byte extends NEWARRAY {
-    final override def elementType: BaseType = ByteType
+    override final def elementType: BaseType = ByteType
 }
 
 private object NEWARRAY_Short extends NEWARRAY {
-    final override def elementType: BaseType = ShortType
+    override final def elementType: BaseType = ShortType
 }
 
 private object NEWARRAY_Integer extends NEWARRAY {
-    final override def elementType: BaseType = IntegerType
+    override final def elementType: BaseType = IntegerType
 }
 
 private object NEWARRAY_Long extends NEWARRAY {
-    final override def elementType: BaseType = LongType
+    override final def elementType: BaseType = LongType
 }
 
 object NEWARRAY extends InstructionMetaInformation {

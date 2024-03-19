@@ -43,12 +43,17 @@ import org.opalj.tac.fpcf.properties.TACAI
  *
  * @author Florian Kuebler
  */
-class PointsToAnalysisState[ElementType, PointsToSet <: PointsToSetLike[ElementType, _, PointsToSet], ContextType <: Context](
-        override val callContext:                  ContextType,
-        override protected[this] var _tacDependee: EOptionP[Method, TACAI]
+class PointsToAnalysisState[
+    ElementType,
+    PointsToSet <: PointsToSetLike[ElementType, _, PointsToSet],
+    ContextType <: Context
+](
+    override val callContext:                  ContextType,
+    override protected[this] var _tacDependee: EOptionP[Method, TACAI]
 ) extends BaseAnalysisState with TACAIBasedAnalysisState[ContextType] {
 
-    private[this] val getFields: ArrayBuffer[(Entity, Option[DeclaredField], ReferenceType => Boolean)] = ArrayBuffer.empty
+    private[this] val getFields: ArrayBuffer[(Entity, Option[DeclaredField], ReferenceType => Boolean)] =
+        ArrayBuffer.empty
     private[this] val putFields: ArrayBuffer[(IntTrieSet, Option[DeclaredField])] = ArrayBuffer.empty
 
     def addGetFieldEntity(fakeEntity: (Entity, Option[DeclaredField], ReferenceType => Boolean)): Unit = {
@@ -118,7 +123,9 @@ class PointsToAnalysisState[ElementType, PointsToSet <: PointsToSetLike[ElementT
     }
 
     def includeSharedPointsToSets(
-        e: Entity, pointsToSets: Iterator[PointsToSet], typeFilter: ReferenceType => Boolean
+        e:            Entity,
+        pointsToSets: Iterator[PointsToSet],
+        typeFilter:   ReferenceType => Boolean
     ): Unit = {
         pointsToSets.foreach(pointsToSet => includeSharedPointsToSet(e, pointsToSet, typeFilter))
     }
@@ -150,7 +157,9 @@ class PointsToAnalysisState[ElementType, PointsToSet <: PointsToSetLike[ElementT
 
         assert(
             !_dependerToDependees.contains(depender) ||
-                !_dependerToDependees(depender).exists(other => other._1.e == dependee.e && other._1.pk.id == dependee.pk.id)
+            !_dependerToDependees(depender).exists(other =>
+                other._1.e == dependee.e && other._1.pk.id == dependee.pk.id
+            )
         )
         assert(!_dependees.contains(dependeeEPK) || _dependees(dependeeEPK) == dependee)
         if (_dependerToDependees.contains(depender)) {
@@ -174,7 +183,7 @@ class PointsToAnalysisState[ElementType, PointsToSet <: PointsToSetLike[ElementT
     // IMPROVE: potentially inefficient exists check
     final def hasDependency(depender: Entity, dependee: SomeEPK): Boolean = {
         _dependerToDependees.contains(depender) &&
-            _dependerToDependees(depender).exists(other => other._1.e == dependee.e && other._1.pk.id == dependee.pk.id)
+        _dependerToDependees(depender).exists(other => other._1.e == dependee.e && other._1.pk.id == dependee.pk.id)
     }
 
     // IMPROVE: make it efficient

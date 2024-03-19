@@ -12,8 +12,8 @@ package util
  * @author  Michael Eichberg
  */
 class InMemoryClassLoader(
-        private[this] var rawClasses: Map[String, Array[Byte]],
-        parent:                       ClassLoader              = ClassLoader.getSystemClassLoader
+    private[this] var rawClasses: Map[String, Array[Byte]],
+    parent:                       ClassLoader = ClassLoader.getSystemClassLoader
 ) extends ClassLoader(parent) {
 
     /**

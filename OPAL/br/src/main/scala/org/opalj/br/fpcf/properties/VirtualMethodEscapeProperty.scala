@@ -13,7 +13,7 @@ sealed trait VirtualMethodEscapePropertyMetaInformation extends PropertyMetaInfo
 }
 
 sealed case class VirtualMethodEscapeProperty(
-        escapeProperty: EscapeProperty
+    escapeProperty: EscapeProperty
 ) extends Property with VirtualMethodEscapePropertyMetaInformation {
     final def key: PropertyKey[VirtualMethodEscapeProperty] = VirtualMethodEscapeProperty.key
 
@@ -33,28 +33,28 @@ object VirtualMethodEscapeProperty extends VirtualMethodEscapePropertyMetaInform
     def apply(
         escapeProperty: EscapeProperty
     ): VirtualMethodEscapeProperty = escapeProperty match {
-        case GlobalEscape => VGlobalEscape
+        case GlobalEscape         => VGlobalEscape
         case EscapeViaStaticField => VEscapeViaStaticField
-        case EscapeViaHeapObject => VEscapeViaHeapObject
+        case EscapeViaHeapObject  => VEscapeViaHeapObject
 
-        case NoEscape => VNoEscape
-        case EscapeInCallee => VEscapeInCallee
-        case EscapeViaParameter => VEscapeViaParameter
-        case EscapeViaReturn => VEscapeViaReturn
-        case EscapeViaAbnormalReturn => VEscapeViaAbnormalReturn
-        case EscapeViaParameterAndReturn => VEscapeViaParameterAndReturn
-        case EscapeViaParameterAndAbnormalReturn => VEscapeViaParameterAndAbnormalReturn
-        case EscapeViaNormalAndAbnormalReturn => VEscapeViaNormalAndAbnormalReturn
+        case NoEscape                                     => VNoEscape
+        case EscapeInCallee                               => VEscapeInCallee
+        case EscapeViaParameter                           => VEscapeViaParameter
+        case EscapeViaReturn                              => VEscapeViaReturn
+        case EscapeViaAbnormalReturn                      => VEscapeViaAbnormalReturn
+        case EscapeViaParameterAndReturn                  => VEscapeViaParameterAndReturn
+        case EscapeViaParameterAndAbnormalReturn          => VEscapeViaParameterAndAbnormalReturn
+        case EscapeViaNormalAndAbnormalReturn             => VEscapeViaNormalAndAbnormalReturn
         case EscapeViaParameterAndNormalAndAbnormalReturn => VEscapeViaParameterAndNormalAndAbnormalReturn
 
-        case AtMost(NoEscape) => VAtMostNoEscape
-        case AtMost(EscapeInCallee) => VAtMostEscapeInCallee
-        case AtMost(EscapeViaParameter) => VAtMostEscapeViaParameter
-        case AtMost(EscapeViaReturn) => VAtMostEscapeViaReturn
-        case AtMost(EscapeViaAbnormalReturn) => VAtMostEscapeViaAbnormalReturn
-        case AtMost(EscapeViaParameterAndReturn) => VAtMostEscapeViaParameterAndReturn
-        case AtMost(EscapeViaParameterAndAbnormalReturn) => VAtMostEscapeViaParameterAndAbnormalReturn
-        case AtMost(EscapeViaNormalAndAbnormalReturn) => VAtMostEscapeViaNormalAndAbnormalReturn
+        case AtMost(NoEscape)                                     => VAtMostNoEscape
+        case AtMost(EscapeInCallee)                               => VAtMostEscapeInCallee
+        case AtMost(EscapeViaParameter)                           => VAtMostEscapeViaParameter
+        case AtMost(EscapeViaReturn)                              => VAtMostEscapeViaReturn
+        case AtMost(EscapeViaAbnormalReturn)                      => VAtMostEscapeViaAbnormalReturn
+        case AtMost(EscapeViaParameterAndReturn)                  => VAtMostEscapeViaParameterAndReturn
+        case AtMost(EscapeViaParameterAndAbnormalReturn)          => VAtMostEscapeViaParameterAndAbnormalReturn
+        case AtMost(EscapeViaNormalAndAbnormalReturn)             => VAtMostEscapeViaNormalAndAbnormalReturn
         case AtMost(EscapeViaParameterAndNormalAndAbnormalReturn) => VAtMostEscapeViaParameterAndNormalAndAbnormalReturn
 
         case _ => throw new RuntimeException(s"Unsupported property: $escapeProperty")
@@ -75,7 +75,8 @@ object VirtualMethodEscapeProperty extends VirtualMethodEscapePropertyMetaInform
     final val VEscapeViaNormalAndAbnormalReturn = new VirtualMethodEscapeProperty(EscapeViaNormalAndAbnormalReturn)
     final val VEscapeViaParameterAndReturn = new VirtualMethodEscapeProperty(EscapeViaParameterAndReturn)
     final val VEscapeViaParameterAndAbnormalReturn = new VirtualMethodEscapeProperty(EscapeViaParameterAndAbnormalReturn)
-    final val VEscapeViaParameterAndNormalAndAbnormalReturn = new VirtualMethodEscapeProperty(EscapeViaParameterAndNormalAndAbnormalReturn)
+    final val VEscapeViaParameterAndNormalAndAbnormalReturn =
+        new VirtualMethodEscapeProperty(EscapeViaParameterAndNormalAndAbnormalReturn)
 
     final val VAtMostNoEscape = new VirtualMethodEscapeProperty(AtMost(NoEscape))
     final val VAtMostEscapeInCallee = new VirtualMethodEscapeProperty(AtMost(EscapeInCallee))
@@ -84,14 +85,18 @@ object VirtualMethodEscapeProperty extends VirtualMethodEscapePropertyMetaInform
     final val VAtMostEscapeViaReturn = new VirtualMethodEscapeProperty(AtMost(EscapeViaReturn))
     final val VAtMostEscapeViaAbnormalReturn = new VirtualMethodEscapeProperty(AtMost(EscapeViaAbnormalReturn))
 
-    final val VAtMostEscapeViaNormalAndAbnormalReturn = new VirtualMethodEscapeProperty(AtMost(EscapeViaNormalAndAbnormalReturn))
+    final val VAtMostEscapeViaNormalAndAbnormalReturn =
+        new VirtualMethodEscapeProperty(AtMost(EscapeViaNormalAndAbnormalReturn))
     final val VAtMostEscapeViaParameterAndReturn = new VirtualMethodEscapeProperty(AtMost(EscapeViaParameterAndReturn))
-    final val VAtMostEscapeViaParameterAndAbnormalReturn = new VirtualMethodEscapeProperty(AtMost(EscapeViaParameterAndAbnormalReturn))
-    final val VAtMostEscapeViaParameterAndNormalAndAbnormalReturn = new VirtualMethodEscapeProperty(AtMost(EscapeViaParameterAndNormalAndAbnormalReturn))
+    final val VAtMostEscapeViaParameterAndAbnormalReturn =
+        new VirtualMethodEscapeProperty(AtMost(EscapeViaParameterAndAbnormalReturn))
+    final val VAtMostEscapeViaParameterAndNormalAndAbnormalReturn =
+        new VirtualMethodEscapeProperty(AtMost(EscapeViaParameterAndNormalAndAbnormalReturn))
 
-    final val key: PropertyKey[VirtualMethodEscapeProperty] = PropertyKey.create[DeclaredMethod, VirtualMethodEscapeProperty](
-        "VirtualMethodEscapeProperty",
-        VAtMostNoEscape
-    )
+    final val key: PropertyKey[VirtualMethodEscapeProperty] =
+        PropertyKey.create[DeclaredMethod, VirtualMethodEscapeProperty](
+            "VirtualMethodEscapeProperty",
+            VAtMostNoEscape
+        )
 
 }

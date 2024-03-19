@@ -17,6 +17,8 @@ import scala.sys.process.stringToProcess
 import scala.xml.Node
 import scala.xml.XML
 
+import com.typesafe.config.Config
+
 import org.opalj.apk.ApkComponent
 import org.opalj.apk.ApkComponentsKey
 import org.opalj.apk.ApkComponentType
@@ -29,8 +31,8 @@ import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 import org.opalj.util.PerformanceEvaluation.time
 
-import com.typesafe.config.Config
 import net.dongliu.apk.parser.ApkFile
+
 /**
  * Parses an APK file and generates a [[Project]] for it.
  *
@@ -46,7 +48,7 @@ import net.dongliu.apk.parser.ApkFile
  */
 class ApkParser(val apkPath: String)(implicit config: Config) {
 
-    implicit private val LogContext: LogContext = GlobalLogContext
+    private implicit val LogContext: LogContext = GlobalLogContext
     private val LogCategory = "APK parser"
 
     private var tmpDir: Option[File] = None
@@ -78,13 +80,9 @@ class ApkParser(val apkPath: String)(implicit config: Config) {
         val services = manifestXml \ "application" \ "service"
         services.foreach(s => entryPoints.append(nodeToEntryPoint(ApkComponentType.Service, s)))
         val receivers = manifestXml \ "application" \ "receiver"
-        receivers.foreach(
-            r => entryPoints.append(nodeToEntryPoint(ApkComponentType.BroadcastReceiver, r))
-        )
+        receivers.foreach(r => entryPoints.append(nodeToEntryPoint(ApkComponentType.BroadcastReceiver, r)))
         val providers = manifestXml \ "application" \ "provider"
-        providers.foreach(
-            p => entryPoints.append(nodeToEntryPoint(ApkComponentType.ContentProvider, p))
-        )
+        providers.foreach(p => entryPoints.append(nodeToEntryPoint(ApkComponentType.ContentProvider, p)))
 
         entryPoints.toSeq
     }
@@ -136,9 +134,7 @@ class ApkParser(val apkPath: String)(implicit config: Config) {
                     }
                     OPALLogger.info(LogCategory, s"${i + 1} of ${dexFiles.length} dex code files parsed")
             }
-        } { t =>
-            OPALLogger.info(LogCategory, s"dex code parsing finished, took ${t.toSeconds}")
-        }
+        } { t => OPALLogger.info(LogCategory, s"dex code parsing finished, took ${t.toSeconds}") }
         (jarsDir, jarFiles.toSeq)
     }
 
@@ -207,9 +203,7 @@ class ApkParser(val apkPath: String)(implicit config: Config) {
                         )
                 }
 
-        } { t =>
-            OPALLogger.info(LogCategory, s"native code parsing finished, took ${t.toSeconds}")
-        }
+        } { t => OPALLogger.info(LogCategory, s"native code parsing finished, took ${t.toSeconds}") }
         Some((llvmDir, llvmFiles.toSeq))
     }
 
@@ -240,7 +234,7 @@ class ApkParser(val apkPath: String)(implicit config: Config) {
 
 object ApkParser {
 
-    implicit private val logContext: LogContext = GlobalLogContext
+    private implicit val logContext: LogContext = GlobalLogContext
 
     /**
      * Creates a new [[Project]] from an APK file.
@@ -268,15 +262,13 @@ object ApkParser {
                 projectConfig
             )
 
-        project.updateProjectInformationKeyInitializationData(ApkComponentsKey)(
-            _ => apkParser
-        )
+        project.updateProjectInformationKeyInitializationData(ApkComponentsKey)(_ => apkParser)
         project.get(ApkComponentsKey)
 
         apkParser.parseNativeCode match {
             case Some((_, llvmModules)) =>
-                project.updateProjectInformationKeyInitializationData(LLVMProjectKey)(
-                    _ => llvmModules.map(f => f.toString)
+                project.updateProjectInformationKeyInitializationData(LLVMProjectKey)(_ =>
+                    llvmModules.map(f => f.toString)
                 )
                 project.get(LLVMProjectKey)
             case None =>
@@ -345,8 +337,8 @@ object ApkParser {
 }
 
 case class ApkParserException(
-        message: String,
-        cause:   Throwable = null
+    message: String,
+    cause:   Throwable = null
 ) extends Exception(message, cause)
 
 object DexParser extends Enumeration {

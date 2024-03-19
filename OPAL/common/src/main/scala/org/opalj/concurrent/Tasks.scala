@@ -32,9 +32,9 @@ sealed trait Tasks[T] {
  * @tparam T Type of the processed data.
  */
 final class SequentialTasks[T](
-        val process:                               (Tasks[T], T) => Unit,
-        val abortOnExceptions:                     Boolean               = false,
-        @volatile private[this] var isInterrupted: () => Boolean         = () => Thread.currentThread().isInterrupted()
+    val process:                               (Tasks[T], T) => Unit,
+    val abortOnExceptions:                     Boolean       = false,
+    @volatile private[this] var isInterrupted: () => Boolean = () => Thread.currentThread().isInterrupted()
 ) extends Tasks[T] {
 
     private[this] val tasksQueue = scala.collection.mutable.Queue.empty[T]
@@ -60,7 +60,7 @@ final class SequentialTasks[T](
 
     def submit(t: T): Unit = {
         if (isInterrupted())
-            return ;
+            return;
 
         tasksQueue += t
     }
@@ -106,12 +106,11 @@ final class SequentialTasks[T](
  * @author Michael Eichberg
  */
 final class ConcurrentTasks[T](
-        val process:                               (Tasks[T], T) => Unit,
-        val abortOnExceptions:                     Boolean               = false,
-        @volatile private[this] var isInterrupted: () => Boolean         = () => Thread.currentThread().isInterrupted()
+    val process:                               (Tasks[T], T) => Unit,
+    val abortOnExceptions:                     Boolean       = false,
+    @volatile private[this] var isInterrupted: () => Boolean = () => Thread.currentThread().isInterrupted()
 )(
-        implicit
-        val executionContext: ExecutionContext
+    implicit val executionContext: ExecutionContext
 ) extends Tasks[T] { self =>
 
     @volatile private[this] var tasksCount = 0
@@ -135,18 +134,18 @@ final class ConcurrentTasks[T](
 
     def submit(t: T): Unit = {
         if (isInterrupted())
-            return ;
+            return;
         val runnable: Runnable = () => {
             try {
                 if (!isInterrupted()) process(self, t)
             } catch {
                 case userException: Throwable => self.synchronized {
-                    if (exceptions == null) exceptions = new ConcurrentExceptions()
-                    exceptions.addSuppressed(userException)
-                    if (abortOnExceptions) {
-                        isInterrupted = () => true // prevent further submissions...
+                        if (exceptions == null) exceptions = new ConcurrentExceptions()
+                        exceptions.addSuppressed(userException)
+                        if (abortOnExceptions) {
+                            isInterrupted = () => true // prevent further submissions...
+                        }
                     }
-                }
             } finally {
                 withLock(tasksLock) {
                     val newTasksCount = tasksCount - 1
@@ -191,7 +190,7 @@ final class ConcurrentTasks[T](
                 tasksLock.synchronized { tasksLock.notifyAll() }
             }
         }(executionContext)
-        */
+         */
     }
 
     /**
@@ -227,7 +226,7 @@ final class ConcurrentTasks[T](
             }
         }
     }
-    */
+     */
 }
 
 /**
@@ -239,11 +238,10 @@ object Tasks {
 
     def apply[T](
         process:           (Tasks[T], T) => Unit,
-        abortOnExceptions: Boolean               = false,
-        isInterrupted:     () => Boolean         = () => Thread.currentThread().isInterrupted()
+        abortOnExceptions: Boolean       = false,
+        isInterrupted:     () => Boolean = () => Thread.currentThread().isInterrupted()
     )(
-        implicit
-        executionContext: ExecutionContext
+        implicit executionContext: ExecutionContext
     ): Tasks[T] = {
         if (executionContext eq null) {
             new SequentialTasks[T](process, abortOnExceptions, isInterrupted)

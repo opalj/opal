@@ -18,9 +18,7 @@ abstract class ForeachRefIterator[+T] { self =>
     final def filter(p: T => Boolean): ForeachRefIterator[T] = {
         new ForeachRefIterator[T] {
             def foreach[U](f: T => U): Unit = {
-                self.foreach { e =>
-                    if (p(e)) f(e)
-                }
+                self.foreach { e => if (p(e)) f(e) }
             }
         }
     }

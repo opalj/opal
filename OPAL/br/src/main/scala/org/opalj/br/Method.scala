@@ -80,8 +80,12 @@ sealed abstract class JVMMethod
     // with the respective class file.
     private[br] def prepareClassFileAttachement(): Method = {
         new Method(
-            null /*will be set by class file*/ ,
-            accessFlags, name, descriptor, body, attributes
+            null /*will be set by class file*/,
+            accessFlags,
+            name,
+            descriptor,
+            body,
+            attributes
         )
     }
 
@@ -121,25 +125,27 @@ sealed abstract class JVMMethod
         // IMPROVE Define a method "findDissimilarity" as in case of ClassFile to report the difference
         if (this.accessFlags != other.accessFlags ||
             this.name != other.name ||
-            this.descriptor != other.descriptor) {
+            this.descriptor != other.descriptor
+        ) {
             return false;
         }
 
         val (thisBody, otherBody) = config.compareCode(this, this.body, other.body)
         if (!(
-            (thisBody.isEmpty && otherBody.isEmpty) ||
-            (
-                thisBody.nonEmpty && otherBody.nonEmpty &&
-                thisBody.get.similar(otherBody.get, config)
+                (thisBody.isEmpty && otherBody.isEmpty) ||
+                    (
+                        thisBody.nonEmpty && otherBody.nonEmpty &&
+                        thisBody.get.similar(otherBody.get, config)
+                    )
             )
-        )) {
+        ) {
             return false;
         }
 
         compareAttributes(other.attributes, config).isEmpty
     }
 
-    final override def instructionsOption: Option[Array[Instruction]] = body.map(_.instructions)
+    override final def instructionsOption: Option[Array[Instruction]] = body.map(_.instructions)
 
     /**
      * The number of registers required to store this method's parameters (
@@ -291,7 +297,7 @@ sealed abstract class JVMMethod
      */
     final def isVirtualCallTarget: Boolean = {
         isNotAbstract && !isPrivate && !isStatic && !isInitializer &&
-            !isStaticInitializer // before Java 8 <clinit> was not required to be static
+        !isStaticInitializer // before Java 8 <clinit> was not required to be static
     }
 
     /**
@@ -300,7 +306,7 @@ sealed abstract class JVMMethod
      */
     final def isVirtualMethodDeclaration: Boolean = {
         !isPrivate && !isStatic && !isInitializer &&
-            !isStaticInitializer // before Java 8 <clinit> was not required to be static
+        !isStaticInitializer // before Java 8 <clinit> was not required to be static
     }
 
     def returnType: Type = descriptor.returnType
@@ -383,11 +389,11 @@ sealed abstract class JVMMethod
  * A method which is not (yet) associated with a class file.
  */
 final class MethodTemplate private[br] (
-        val accessFlags: Int,
-        val name:        String,
-        val descriptor:  MethodDescriptor,
-        val body:        Option[Code],
-        val attributes:  Attributes
+    val accessFlags: Int,
+    val name:        String,
+    val descriptor:  MethodDescriptor,
+    val body:        Option[Code],
+    val attributes:  Attributes
 ) extends JVMMethod {
 
     /** This template is not (yet) a [[Method]] which is a [[SourceElement]]. */
@@ -402,12 +408,12 @@ final class MethodTemplate private[br] (
  * @param declaringClassFile The declaring class file.
  */
 final class Method private[br] (
-        private[br] var declaringClassFile: ClassFile, // the back-link can be updated to enable efficient load-time transformations
-        val accessFlags:                    Int,
-        val name:                           String,
-        val descriptor:                     MethodDescriptor,
-        val body:                           Option[Code],
-        val attributes:                     Attributes
+    private[br] var declaringClassFile: ClassFile, // the back-link can be updated to enable efficient load-time transformations
+    val accessFlags:                    Int,
+    val name:                           String,
+    val descriptor:                     MethodDescriptor,
+    val body:                           Option[Code],
+    val attributes:                     Attributes
 ) extends JVMMethod {
 
     // see ClassFile._UNSAFE_replaceMethod for THE usage!
@@ -469,7 +475,6 @@ final class Method private[br] (
     override def asMethod: this.type = this
 
     /**
-     *
      * @return wether this class is defined as strict. Starting from Java 17, this is true by default.
      *         Strict evaluation of float expressions was also required in Java 1.0 and 1.1.
      */
@@ -483,8 +488,7 @@ final class Method private[br] (
         objectType: ObjectType,
         nests:      SomeMap[ObjectType, ObjectType]
     )(
-        implicit
-        classHierarchy: ClassHierarchy
+        implicit classHierarchy: ClassHierarchy
     ): Boolean = {
         visibilityModifier match {
             // TODO Respect Java 9 modules
@@ -554,16 +558,16 @@ object Method {
             (name == "writeReplace" && descriptor == JustReturnsObject) ||
             ((
                 (name == "readObject" && descriptor == ReadObjectDescriptor) ||
-                (name == "writeObject" && descriptor == WriteObjectDescriptor)
+                    (name == "writeObject" && descriptor == WriteObjectDescriptor)
             ) && isInheritedBySerializableOnlyClass.isYesOrUnknown) ||
+            (
+                method.isPublic /*we are implementing an interface...*/ &&
                 (
-                    method.isPublic /*we are implementing an interface...*/ &&
-                    (
-                        (name == "readExternal" && descriptor == ReadObjectInputDescriptor) ||
-                        (name == "writeExternal" && descriptor == WriteObjectOutputDescriptor)
-                    ) &&
-                        isInheritedByExternalizableClass.isYesOrUnknown
-                )
+                    (name == "readExternal" && descriptor == ReadObjectInputDescriptor) ||
+                    (name == "writeExternal" && descriptor == WriteObjectOutputDescriptor)
+                ) &&
+                isInheritedByExternalizableClass.isYesOrUnknown
+            )
     }
 
     /**

@@ -22,26 +22,26 @@ trait TABLESWITCHLike extends CompoundConditionalBranchInstructionLike {
     /** The largest '''case''' value. `high` &geq; `low` */
     def high: Int
 
-    final override def opcode: Opcode = TABLESWITCH.opcode
+    override final def opcode: Opcode = TABLESWITCH.opcode
 
-    final override def mnemonic: String = "tableswitch"
+    override final def mnemonic: String = "tableswitch"
 
-    final override def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean): Int = {
+    override final def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean): Int = {
         currentPC + 1 + (3 - (currentPC % 4)) + 12 + (high - low + 1) * 4
     }
 
 }
 
 case class TABLESWITCH(
-        defaultOffset: Int,
-        low:           Int,
-        high:          Int,
-        jumpOffsets:   ArraySeq[Int]
+    defaultOffset: Int,
+    low:           Int,
+    high:          Int,
+    jumpOffsets:   ArraySeq[Int]
 ) extends CompoundConditionalBranchInstruction with TABLESWITCHLike {
 
-    final override def asTABLESWITCH: this.type = this
+    override final def asTABLESWITCH: this.type = this
 
-    final override def indexOfNextInstruction(currentPC: Int)(implicit code: Code): Int = {
+    override final def indexOfNextInstruction(currentPC: Int)(implicit code: Code): Int = {
         indexOfNextInstruction(currentPC, false)
     }
 
@@ -90,7 +90,7 @@ case class TABLESWITCH(
         pcs
     }
 
-    final override def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
+    override final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
         val paddingOffset = (thisPC % 4) - (otherPC % 4)
 
         code.instructions(otherPC) match {
@@ -165,10 +165,10 @@ object TABLESWITCH extends InstructionMetaInformation {
  * @author Malte Limmeroth
  */
 case class LabeledTABLESWITCH(
-        defaultBranchTarget: InstructionLabel,
-        low:                 Int,
-        high:                Int,
-        jumpTargets:         ArraySeq[InstructionLabel]
+    defaultBranchTarget: InstructionLabel,
+    low:                 Int,
+    high:                Int,
+    jumpTargets:         ArraySeq[InstructionLabel]
 ) extends LabeledInstruction with TABLESWITCHLike {
 
     @throws[BranchoffsetOutOfBoundsException]("if the branchoffset is invalid")

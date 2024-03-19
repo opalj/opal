@@ -23,11 +23,11 @@ case class METHODS[T](methods: ArraySeq[METHOD[T]]) {
         classFileVersion:   UShortPair,
         declaringClassType: ObjectType
     )(
-        implicit
-        classHierarchy: ClassHierarchy = br.ClassHierarchy.PreInitializedClassHierarchy
+        implicit classHierarchy: ClassHierarchy = br.ClassHierarchy.PreInitializedClassHierarchy
     ): ArraySeq[(br.MethodTemplate, Option[T])] = {
         methods.map[(br.MethodTemplate, Option[T])](m =>
-            m.result(classFileVersion, declaringClassType))
+            m.result(classFileVersion, declaringClassType)
+        )
     }
 
 }

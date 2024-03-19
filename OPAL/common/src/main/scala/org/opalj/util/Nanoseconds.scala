@@ -42,6 +42,7 @@ class Nanoseconds(val timeSpan: Long) extends AnyVal with Serializable {
 
     override def toString: String = toString(withUnit = true)
 }
+
 /**
  * Defines factory methods and constants related to time spans in [[Nanoseconds]].
  *

@@ -4,16 +4,16 @@ package ai
 package domain
 package l2
 
+import org.junit.runner.RunWith
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
+
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.TestSupport.biProject
 import org.opalj.br.analyses.Project
-
-import org.junit.runner.RunWith
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
-import org.scalatestplus.junit.JUnitRunner
 
 /**
  * @author Michael Eichberg
@@ -46,7 +46,7 @@ class PerformInvocationsTest extends AnyFlatSpec with Matchers {
         if (exs.size != 1) fail(exs.mkString("expected one exception: ", ", ", "."))
         exs forall {
             case domain.SObjectValueLike(ObjectType("java/lang/UnsupportedOperationException")) => true
-            case _ => false
+            case _                                                                              => false
         } should be(true)
     }
 
@@ -60,7 +60,7 @@ class PerformInvocationsTest extends AnyFlatSpec with Matchers {
         if (exs.size != 1) fail(exs.mkString("expected one exception: ", ", ", "."))
         exs forall {
             case domain.SObjectValueLike(ObjectType("java/lang/UnsupportedOperationException")) => true
-            case _ => false
+            case _                                                                              => false
         } should be(true)
     }
 
@@ -85,7 +85,8 @@ class PerformInvocationsTest extends AnyFlatSpec with Matchers {
     it should ("be able to analyze a static method that processes the results of other static methods") in {
         val method = StaticCalls.findMethod("callComplexMult").head
         val domain = new LiInvocationDomain(PerformInvocationsTestFixture.project, method)
-        /*val result =*/ BaseAI(method, domain)
+        /*val result =*/
+        BaseAI(method, domain)
         domain.returnedNormally should be(true)
         domain.allThrownExceptions should be(empty)
         domain.returnedValue(domain, -1).flatMap(domain.intValueOption(_)) should equal(Some(110))
@@ -122,9 +123,10 @@ class PerformInvocationsTest extends AnyFlatSpec with Matchers {
             }
         } should be(true)
         if (!(foundUnknownError &&
-            foundUnsupportedOperationException &&
-            foundIllegalArgumentException &&
-            foundNullPointerException)) fail("Not all expected exceptions were thrown")
+                foundUnsupportedOperationException &&
+                foundIllegalArgumentException &&
+                foundNullPointerException)
+        ) fail("Not all expected exceptions were thrown")
     }
 
     it should ("be able to analyze a static method that calls another static method that calls ...") in {
@@ -141,20 +143,23 @@ class PerformInvocationsTest extends AnyFlatSpec with Matchers {
     it should ("be able to analyze a method that analyzes the correlation between values") in {
         val method = StaticCalls.findMethod("callAreEqual").head
         val domain = new L1InvocationDomain(PerformInvocationsTestFixture.project, method)
-        /*val result =*/ BaseAI(method, domain)
+        /*val result =*/
+        BaseAI(method, domain)
         domain.returnedNormally should be(true)
         domain.allThrownExceptions.size should be(2) // the ArithmeticExceptions due to "%"
 
         domain.allReturnedValues.size should be(2)
         if (!domain.allReturnedValues.forall {
-            e => domain.intValueOption(e._2).map(_ == 1).getOrElse(false)
-        }) fail("unexpected result: " + domain.allReturnedValues)
+                e => domain.intValueOption(e._2).map(_ == 1).getOrElse(false)
+            }
+        ) fail("unexpected result: " + domain.allReturnedValues)
     }
 
     it should ("be able to identify the situation where a passed value is returned as is") in {
         val method = StaticCalls.findMethod("uselessReferenceTest").head
         val domain = new L1InvocationDomain(PerformInvocationsTestFixture.project, method)
-        /*val result =*/ BaseAI(method, domain)
+        /*val result =*/
+        BaseAI(method, domain)
         domain.returnedNormally should be(true)
         domain.allThrownExceptions.size should be(0)
 
@@ -214,8 +219,8 @@ object PerformInvocationsTestFixture {
         with TheMethod
 
     abstract class InvocationDomain(
-            val project: Project[java.net.URL],
-            val method:  Method
+        val project: Project[java.net.URL],
+        val method:  Method
     ) extends Domain
         with l0.TypeLevelInvokeInstructions
         with PerformInvocations
@@ -256,8 +261,8 @@ object PerformInvocationsTestFixture {
     }
 
     class LiInvocationDomain(
-            project: Project[java.net.URL],
-            method:  Method
+        project: Project[java.net.URL],
+        method:  Method
     ) extends InvocationDomain(project, method) with LiDomain {
 
         protected[this] def createInvocationDomain(

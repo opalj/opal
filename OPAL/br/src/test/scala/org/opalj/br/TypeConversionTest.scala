@@ -2,12 +2,12 @@
 package org.opalj
 package br
 
-import org.opalj.br.instructions._
-
 import org.junit.runner.RunWith
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
+
+import org.opalj.br.instructions._
 
 /**
  * Tests the factory methods for [[NumericConversionInstruction]]s.
@@ -136,8 +136,7 @@ class TypeConversionTest extends AnyFunSpec with Matchers {
                 it(s"should convert ${t.WrapperType.toJava} to ${t.toJava}") {
                     val instructions = t.WrapperType.unboxValue
                     instructions should be(Array(
-                        INVOKEVIRTUAL(t.WrapperType, s"${t.toJava}Value",
-                            MethodDescriptor(NoFieldTypes, t)),
+                        INVOKEVIRTUAL(t.WrapperType, s"${t.toJava}Value", MethodDescriptor(NoFieldTypes, t)),
                         null,
                         null
                     ))

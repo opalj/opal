@@ -13,8 +13,8 @@ import org.opalj.br.ObjectType
  * @author Andreas Muttscheller
  */
 class ProjectBasedInMemoryClassLoader(
-        val project: ClassFileRepository,
-        parent:      ClassLoader         = classOf[ProjectBasedInMemoryClassLoader].getClassLoader
+    val project: ClassFileRepository,
+    parent:      ClassLoader = classOf[ProjectBasedInMemoryClassLoader].getClassLoader
 ) extends ClassLoader(parent) {
 
     @throws[ClassNotFoundException]

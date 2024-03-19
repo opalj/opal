@@ -208,7 +208,8 @@ object ClassFileFactory {
                     receiverType,
                     implMethod.methodDescriptor,
                     methodDescriptor
-                )) {
+                )
+            ) {
                 ArraySeq.empty
             } else {
                 ArraySeq(createField(fieldType = receiverType, name = ReceiverFieldName))
@@ -293,7 +294,8 @@ object ClassFileFactory {
         // Given that none of the generated methods contains any control-flow instructions
         // (gotos, ifs, switches, ...) we don't have to create a StackmapTableAttribute.
         ClassFile(
-            0, 52,
+            0,
+            52,
             bi.ACC_SYNTHETIC.mask | bi.ACC_PUBLIC.mask | bi.ACC_SUPER.mask,
             definingType.objectType,
             definingType.theSuperclassType,
@@ -337,7 +339,7 @@ object ClassFileFactory {
             36  |     aload_0
             37  |     invokevirtual java.lang.invoke.MethodHandle { java.lang.Object invoke (java.lang.invoke.SerializedLambda) }
             40  |     areturn
-            */
+         */
         // val a = new ArrayBuffer[Object](100)
         var buildMethodType: Array[Instruction] = Array() // IMPROVE [L10] Use ArrayBuffer
 
@@ -353,7 +355,8 @@ object ClassFileFactory {
                     // Primitive type handling
                     Array(
                         GETSTATIC(t.asBaseType.WrapperType, "TYPE", ObjectType.Class),
-                        null, null
+                        null,
+                        null
                     )
                 } else {
                     // Handling for void type
@@ -362,7 +365,9 @@ object ClassFileFactory {
                             VoidType.WrapperType,
                             "TYPE",
                             ObjectType.Class
-                        ), null, null
+                        ),
+                        null,
+                        null
                     )
                 }
 
@@ -381,7 +386,9 @@ object ClassFileFactory {
                             ArraySeq(ObjectType.Class),
                             ObjectType.MethodType
                         )
-                    ), null, null
+                    ),
+                    null,
+                    null
                 )
             } else if (staticHandle.methodDescriptor.parametersCount == 1) {
                 // We have ONE parameters, call MethodType.methodType with return and one parameter only
@@ -395,7 +402,9 @@ object ClassFileFactory {
                             ArraySeq(ObjectType.Class, ObjectType.Class),
                             ObjectType.MethodType
                         )
-                    ), null, null
+                    ),
+                    null,
+                    null
                 )
             } else {
                 // We have MULTIPLE parameters
@@ -403,7 +412,9 @@ object ClassFileFactory {
                 buildMethodType ++= Array(
                     // The first parameter has its own parameter field
                     ICONST_4,
-                    ANEWARRAY(ObjectType.Class), null, null
+                    ANEWARRAY(ObjectType.Class),
+                    null,
+                    null
                 )
 
                 // The following parameters are put into an array of Class
@@ -411,10 +422,11 @@ object ClassFileFactory {
                     val (param, i) = pt
                     buildMethodType ++= Array(
                         DUP,
-                        BIPUSH(i), null // Use BIPUSH instead of ICONST_<i>, it is equivalent, see https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.iconst_i
+                        BIPUSH(i),
+                        null // Use BIPUSH instead of ICONST_<i>, it is equivalent, see https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.iconst_i
                     ) ++ getParameterTypeInstruction(param) ++ Array(
-                            AASTORE
-                        )
+                        AASTORE
+                    )
                 }
 
                 buildMethodType ++= Array(
@@ -430,13 +442,17 @@ object ClassFileFactory {
                             ),
                             ObjectType.MethodType
                         )
-                    ), null, null
+                    ),
+                    null,
+                    null
                 )
             }
 
             buildMethodType ++= Array(
-                LDC(ConstantString(staticHandle.name)), null, // method name
-                LDC(ConstantClass(staticHandle.receiverType)), null // reference class
+                LDC(ConstantString(staticHandle.name)),
+                null, // method name
+                LDC(ConstantClass(staticHandle.receiverType)),
+                null // reference class
             )
 
             // Now we have to call lookup.getStatic
@@ -453,8 +469,11 @@ object ClassFileFactory {
                         ),
                         ObjectType.MethodHandle
                     )
-                ), null, null,
-                LoadInt(idx), null,
+                ),
+                null,
+                null,
+                LoadInt(idx),
+                null,
                 AASTORE
             )
         }
@@ -466,18 +485,22 @@ object ClassFileFactory {
                     false,
                     "lookup",
                     MethodDescriptor.withNoArgs(ObjectType.MethodHandles$Lookup)
-                ), null, null,
+                ),
+                null,
+                null,
                 ASTORE_2,
-                LoadClass(ObjectType.Object), null,
-                LoadClass(ObjectType.SerializedLambda), null,
+                LoadClass(ObjectType.Object),
+                null,
+                LoadClass(ObjectType.SerializedLambda),
+                null,
                 INVOKESTATIC(
                     ObjectType.MethodType,
                     false,
                     "methodType",
-                    MethodDescriptor(
-                        ArraySeq(ObjectType.Class, ObjectType.Class), ObjectType.MethodType
-                    )
-                ), null, null,
+                    MethodDescriptor(ArraySeq(ObjectType.Class, ObjectType.Class), ObjectType.MethodType)
+                ),
+                null,
+                null,
                 ASTORE_3,
                 ALOAD_2,
                 ALOAD_0,
@@ -485,10 +508,15 @@ object ClassFileFactory {
                     ObjectType.SerializedLambda,
                     "getImplMethodName",
                     MethodDescriptor.JustReturnsString
-                ), null, null,
+                ),
+                null,
+                null,
                 ALOAD_3,
-                LoadInt(bootstrapArguments.length), null,
-                ANEWARRAY(ObjectType.MethodHandle), null, null
+                LoadInt(bootstrapArguments.length),
+                null,
+                ANEWARRAY(ObjectType.MethodHandle),
+                null,
+                null
             ) ++
                 // *** START Add lookup for each argument ***
                 buildMethodType ++
@@ -507,14 +535,20 @@ object ClassFileFactory {
                             ),
                             ObjectType.CallSite
                         )
-                    ), null, null,
-                    ASTORE(4), null,
-                    ALOAD(4), null,
+                    ),
+                    null,
+                    null,
+                    ASTORE(4),
+                    null,
+                    ALOAD(4),
+                    null,
                     INVOKEVIRTUAL(
                         ObjectType.CallSite,
                         "getTarget",
                         MethodDescriptor.withNoArgs(ObjectType.MethodHandle)
-                    ), null, null,
+                    ),
+                    null,
+                    null,
                     ALOAD_0,
                     INVOKEVIRTUAL(
                         ObjectType.MethodHandle,
@@ -523,7 +557,9 @@ object ClassFileFactory {
                             ObjectType.SerializedLambda, // Parameter
                             ObjectType.Object // Return
                         )
-                    ), null, null,
+                    ),
+                    null,
+                    null,
                     ARETURN
                 )
 
@@ -548,7 +584,8 @@ object ClassFileFactory {
         // Given that none of the generated methods contains any control-flow instructions
         // (gotos, ifs, switches, ...) we don't have to create a StackmapTableAttribute.
         ClassFile(
-            0, 52,
+            0,
+            52,
             bi.ACC_SYNTHETIC.mask | bi.ACC_PUBLIC.mask | bi.ACC_SUPER.mask,
             definingType.objectType,
             definingType.theSuperclassType,
@@ -582,9 +619,8 @@ object ClassFileFactory {
         proxyInterfaceMethodDescriptor: MethodDescriptor
     ): Boolean = {
         (opcode == INVOKEVIRTUAL.opcode || opcode == INVOKEINTERFACE.opcode) &&
-            targetMethodDescriptor.parametersCount + 1 ==
-            proxyInterfaceMethodDescriptor.parametersCount &&
-            (proxyInterfaceMethodDescriptor.parameterType(0) eq targetMethodDeclaringType)
+        targetMethodDescriptor.parametersCount + 1 == proxyInterfaceMethodDescriptor.parametersCount &&
+        (proxyInterfaceMethodDescriptor.parameterType(0) eq targetMethodDeclaringType)
     }
 
     /**
@@ -655,7 +691,8 @@ object ClassFileFactory {
         Array(
             ALOAD_0,
             INVOKESPECIAL(theSuperclassType, false, "<init>", DefaultConstructorDescriptor),
-            null, null
+            null,
+            null
         )
     }
 
@@ -804,29 +841,46 @@ object ClassFileFactory {
         additionalFieldsForStaticParameters: FieldTemplates
     ): MethodTemplate = {
         var instructions: Array[Instruction] = Array(
-            NEW(ObjectType.SerializedLambda), null, null,
+            NEW(ObjectType.SerializedLambda),
+            null,
+            null,
             DUP,
-            LoadClass(definingType.objectType), null,
-            LDC(ConstantString(definingType.theSuperinterfaceTypes.head.fqn)), null,
-            LDC(ConstantString(methodName)), null,
-            LDC(ConstantString(samMethodType.toJVMDescriptor)), null,
-            LDC(ConstantInteger(implMethod.referenceKind.referenceKind)), null,
-            LDC(ConstantString(implMethod.receiverType.asObjectType.fqn)), null,
-            LDC(ConstantString(implMethod.name)), null,
-            LDC(ConstantString(implMethod.methodDescriptor.toJVMDescriptor)), null,
-            LDC(ConstantString(instantiatedMethodType.toJVMDescriptor)), null,
+            LoadClass(definingType.objectType),
+            null,
+            LDC(ConstantString(definingType.theSuperinterfaceTypes.head.fqn)),
+            null,
+            LDC(ConstantString(methodName)),
+            null,
+            LDC(ConstantString(samMethodType.toJVMDescriptor)),
+            null,
+            LDC(ConstantInteger(implMethod.referenceKind.referenceKind)),
+            null,
+            LDC(ConstantString(implMethod.receiverType.asObjectType.fqn)),
+            null,
+            LDC(ConstantString(implMethod.name)),
+            null,
+            LDC(ConstantString(implMethod.methodDescriptor.toJVMDescriptor)),
+            null,
+            LDC(ConstantString(instantiatedMethodType.toJVMDescriptor)),
+            null,
             // Add the capturedArgs
-            BIPUSH(additionalFieldsForStaticParameters.length), null,
-            ANEWARRAY(ObjectType.Object), null, null
+            BIPUSH(additionalFieldsForStaticParameters.length),
+            null,
+            ANEWARRAY(ObjectType.Object),
+            null,
+            null
         )
 
         additionalFieldsForStaticParameters.zipWithIndex.foreach {
             case (x, i) =>
                 instructions ++= Array(
                     DUP,
-                    BIPUSH(i), null,
+                    BIPUSH(i),
+                    null,
                     ALOAD_0,
-                    GETFIELD(definingType.objectType, x.name, x.fieldType), null, null
+                    GETFIELD(definingType.objectType, x.name, x.fieldType),
+                    null,
+                    null
                 )
                 if (x.fieldType.isBaseType) {
                     instructions ++= x.fieldType.asBaseType.boxValue
@@ -854,7 +908,9 @@ object ClassFileFactory {
                     ),
                     VoidType
                 )
-            ), null, null,
+            ),
+            null,
+            null,
             ARETURN
         )
 
@@ -891,7 +947,9 @@ object ClassFileFactory {
                 callerIsInterface,
                 "$deserializeLambda$",
                 deserializedLambdaMethodDescriptor
-            ), null, null,
+            ),
+            null,
+            null,
             ARETURN
         )
         val maxStack = Code.computeMaxStack(instructions)
@@ -924,8 +982,12 @@ object ClassFileFactory {
 
         val code =
             createProxyMethodBytecode(
-                definingType, methodDescriptor, staticParameters,
-                receiverType, receiverIsInterface, implMethod,
+                definingType,
+                methodDescriptor,
+                staticParameters,
+                receiverType,
+                receiverIsInterface,
+                implMethod,
                 invocationInstruction
             )
 
@@ -978,13 +1040,17 @@ object ClassFileFactory {
                 Array()
             } else if (implMethod.name == "<init>") {
                 Array(
-                    NEW(receiverType), null, null,
+                    NEW(receiverType),
+                    null,
+                    null,
                     DUP
                 )
             } else {
                 Array(
                     ALOAD_0,
-                    GETFIELD(definingType, ReceiverFieldName, receiverType), null, null
+                    GETFIELD(definingType, ReceiverFieldName, receiverType),
+                    null,
+                    null
                 )
             }
 
@@ -993,17 +1059,24 @@ object ClassFileFactory {
 
         val forwardParametersInstructions =
             parameterForwardingInstructions(
-                methodDescriptor, fixedImplDescriptor, variableOffset,
-                staticParameters, definingType
+                methodDescriptor,
+                fixedImplDescriptor,
+                variableOffset,
+                staticParameters,
+                definingType
             )
 
         val forwardingCallInstruction: Array[Instruction] = (invocationInstruction: @switch) match {
             case INVOKESTATIC.opcode =>
                 Array(
                     INVOKESTATIC(
-                        implMethod.receiverType.asObjectType, receiverIsInterface,
-                        implMethod.name, fixedImplDescriptor
-                    ), null, null
+                        implMethod.receiverType.asObjectType,
+                        receiverIsInterface,
+                        implMethod.name,
+                        fixedImplDescriptor
+                    ),
+                    null,
+                    null
                 )
 
             case INVOKESPECIAL.opcode =>
@@ -1014,8 +1087,10 @@ object ClassFileFactory {
                         fixedImplDescriptor
                     }
                 val invoke = INVOKESPECIAL(
-                    implMethod.receiverType.asObjectType, receiverIsInterface,
-                    implMethod.name, methodDescriptor
+                    implMethod.receiverType.asObjectType,
+                    receiverIsInterface,
+                    implMethod.name,
+                    methodDescriptor
                 )
                 Array(invoke, null, null)
 
@@ -1090,193 +1165,195 @@ object ClassFileFactory {
         variableOffset:            Int,
         staticParameters:          Seq[FieldTemplate],
         definingType:              ObjectType
-    ): Array[Instruction] = try {
-        val receiverParameters = receiverMethodDescriptor.parameterTypes
-        val forwarderParameters = forwarderMethodDescriptor.parameterTypes
+    ): Array[Instruction] =
+        try {
+            val receiverParameters = receiverMethodDescriptor.parameterTypes
+            val forwarderParameters = forwarderMethodDescriptor.parameterTypes
 
-        var lvIndex = variableOffset
+            var lvIndex = variableOffset
 
-        val receiverTakesObjectArray =
-            receiverParameters.size == 1 && receiverParameters(0) == ArrayType(ObjectType.Object)
-        val callerDoesNotTakeObjectArray =
-            forwarderParameters.isEmpty || forwarderParameters(0) != ArrayType(ObjectType.Object)
+            val receiverTakesObjectArray =
+                receiverParameters.size == 1 && receiverParameters(0) == ArrayType(ObjectType.Object)
+            val callerDoesNotTakeObjectArray =
+                forwarderParameters.isEmpty || forwarderParameters(0) != ArrayType(ObjectType.Object)
 
-        if (receiverTakesObjectArray && callerDoesNotTakeObjectArray) {
+            if (receiverTakesObjectArray && callerDoesNotTakeObjectArray) {
 
-            // now we need to construct a new object[] array on the stack
-            // and shove everything (boxed, if necessary) in there
-            val arraySize = forwarderParameters.size
+                // now we need to construct a new object[] array on the stack
+                // and shove everything (boxed, if necessary) in there
+                val arraySize = forwarderParameters.size
 
-            var numberOfInstructions = 3 + // need to create a new object array
-                LoadConstantInstruction(arraySize).length
-            forwarderParameters.zipWithIndex foreach { p =>
-                val (t, i) = p
-                val loadInstructions = if (lvIndex > 3) 2 else 1
-                // primitive types need 3 for a boxing (invokestatic)
-                val conversionInstructions = if (t.isBaseType) 3 else 0
-                val storeInstructions =
-                    1 + // dup
-                        LoadConstantInstruction(i).length +
-                        1 // aastore
-                numberOfInstructions += loadInstructions + conversionInstructions +
-                    storeInstructions
-                lvIndex += t.computationalType.operandSize
-            }
+                var numberOfInstructions = 3 + // need to create a new object array
+                    LoadConstantInstruction(arraySize).length
+                forwarderParameters.zipWithIndex foreach { p =>
+                    val (t, i) = p
+                    val loadInstructions = if (lvIndex > 3) 2 else 1
+                    // primitive types need 3 for a boxing (invokestatic)
+                    val conversionInstructions = if (t.isBaseType) 3 else 0
+                    val storeInstructions =
+                        1 + // dup
+                            LoadConstantInstruction(i).length +
+                            1 // aastore
+                    numberOfInstructions += loadInstructions + conversionInstructions +
+                        storeInstructions
+                    lvIndex += t.computationalType.operandSize
+                }
 
-            val instructions = new Array[Instruction](numberOfInstructions)
-            var nextIndex = 0
+                val instructions = new Array[Instruction](numberOfInstructions)
+                var nextIndex = 0
 
-            lvIndex = variableOffset
+                lvIndex = variableOffset
 
-            instructions(nextIndex) = LoadConstantInstruction(arraySize)
-            nextIndex = instructions(nextIndex).indexOfNextInstruction(nextIndex, false)
-            instructions(nextIndex) = ANEWARRAY(ObjectType.Object)
-            nextIndex = instructions(nextIndex).indexOfNextInstruction(nextIndex, false)
-
-            forwarderParameters.zipWithIndex foreach { p =>
-                val (t, i) = p
-
-                instructions(nextIndex) = DUP
+                instructions(nextIndex) = LoadConstantInstruction(arraySize)
+                nextIndex = instructions(nextIndex).indexOfNextInstruction(nextIndex, false)
+                instructions(nextIndex) = ANEWARRAY(ObjectType.Object)
                 nextIndex = instructions(nextIndex).indexOfNextInstruction(nextIndex, false)
 
-                instructions(nextIndex) = LoadConstantInstruction(i)
-                nextIndex = instructions(nextIndex).indexOfNextInstruction(nextIndex, false)
+                forwarderParameters.zipWithIndex foreach { p =>
+                    val (t, i) = p
 
-                val llv = LoadLocalVariableInstruction(t, lvIndex)
-                lvIndex += t.computationalType.operandSize
+                    instructions(nextIndex) = DUP
+                    nextIndex = instructions(nextIndex).indexOfNextInstruction(nextIndex, false)
 
-                instructions(nextIndex) = llv
-                nextIndex = instructions(nextIndex).indexOfNextInstruction(nextIndex, false)
+                    instructions(nextIndex) = LoadConstantInstruction(i)
+                    nextIndex = instructions(nextIndex).indexOfNextInstruction(nextIndex, false)
 
-                if (t.isBaseType) {
-                    // boxing always needs one instruction
-                    val boxInstructions = t.asBaseType.boxValue
-                    val boxInstruction = boxInstructions(0)
-                    instructions(nextIndex) = boxInstruction
+                    val llv = LoadLocalVariableInstruction(t, lvIndex)
+                    lvIndex += t.computationalType.operandSize
+
+                    instructions(nextIndex) = llv
+                    nextIndex = instructions(nextIndex).indexOfNextInstruction(nextIndex, false)
+
+                    if (t.isBaseType) {
+                        // boxing always needs one instruction
+                        val boxInstructions = t.asBaseType.boxValue
+                        val boxInstruction = boxInstructions(0)
+                        instructions(nextIndex) = boxInstruction
+                        nextIndex = instructions(nextIndex).indexOfNextInstruction(nextIndex, false)
+                    }
+
+                    instructions(nextIndex) = AASTORE
                     nextIndex = instructions(nextIndex).indexOfNextInstruction(nextIndex, false)
                 }
 
-                instructions(nextIndex) = AASTORE
-                nextIndex = instructions(nextIndex).indexOfNextInstruction(nextIndex, false)
-            }
+                instructions
 
-            instructions
+            } else {
+                val staticParametersCount = staticParameters.size
+                val forwarderParametersCount = forwarderParameters.size
+                val receiverParametersCount = receiverParameters.size
 
-        } else {
-            val staticParametersCount = staticParameters.size
-            val forwarderParametersCount = forwarderParameters.size
-            val receiverParametersCount = receiverParameters.size
-
-            var forwarderParameterIndex = 0
-            var numberOfInstructions = 4 * staticParametersCount
-            var receiverParametersOffset = staticParametersCount
-            if (forwarderParametersCount > receiverParametersCount) {
-                /* This is the case of an implicit receiver becoming explicit in the
-                 * forwarder, hence we get one instruction for loading the first
-                 * parameter. Subsequently we need to ignore that parameter, though.
-                 */
-                numberOfInstructions += 1
-                lvIndex += forwarderParameters(0).computationalType.operandSize
-                forwarderParameterIndex = 1
-                receiverParametersOffset = -1
-            }
-            while (forwarderParameterIndex < forwarderParametersCount) {
-                val ft = forwarderParameters(forwarderParameterIndex)
-                val rt = receiverParameters(forwarderParameterIndex + receiverParametersOffset)
-                val loadInstructions = if (lvIndex > 3) 2 else 1
-                lvIndex += ft.computationalType.operandSize
-                val conversionInstructions =
-                    if (rt != ft) {
-                        if (rt.isBaseType && ft.isBaseType) {
-                            if (rt.isIntLikeType && ft.isIntLikeType &&
-                                rt.asIntLikeType.isWiderThan(ft.asIntLikeType)) {
-                                0 // smaller int values can directly be stored in "wider" types
-                            } else {
-                                1 // we only do safe conversions => 1 instruction
-                            }
-                        } else if ((rt.isBaseType && ft.isObjectType) || (ft.isBaseType && rt.isObjectType)) {
-                            // can (un)box to fit => invokestatic/invokevirtual
-                            3
-                        } else if (rt.isReferenceType && ft.isReferenceType && (rt ne ObjectType.Object)) {
-                            3 // checkcast
-                        } else 0
-                    } else 0
-                numberOfInstructions += loadInstructions + conversionInstructions
-                forwarderParameterIndex += 1
-            }
-
-            val instructions = new Array[Instruction](numberOfInstructions)
-            lvIndex = variableOffset
-
-            var currentIndex = 0
-            var receiverParameterIndex = 0
-            if (receiverParametersOffset == -1) {
-                // we have an explicit receiver in the forwarder parameters
-                val llv = LoadLocalVariableInstruction(forwarderParameters(0), 1)
-                instructions(currentIndex) = llv
-                currentIndex = llv.indexOfNextInstruction(currentIndex, false)
-                lvIndex += 1
-            }
-            while (receiverParameterIndex < receiverParametersCount) {
-                val rt = receiverParameters(receiverParameterIndex)
-                if (receiverParameterIndex < staticParametersCount) {
-                    val sp = staticParameters(receiverParameterIndex)
-                    instructions(currentIndex) = ALOAD_0
-                    currentIndex = ALOAD_0.indexOfNextInstruction(currentIndex, false)
-                    val gf = GETFIELD(definingType, sp.name, sp.fieldType)
-                    instructions(currentIndex) = gf
-                    currentIndex = gf.indexOfNextInstruction(currentIndex, false)
-                } else {
-                    val ft = forwarderParameters(receiverParameterIndex - receiverParametersOffset)
-                    val llv = LoadLocalVariableInstruction(ft, lvIndex)
-                    instructions(currentIndex) = llv
+                var forwarderParameterIndex = 0
+                var numberOfInstructions = 4 * staticParametersCount
+                var receiverParametersOffset = staticParametersCount
+                if (forwarderParametersCount > receiverParametersCount) {
+                    /* This is the case of an implicit receiver becoming explicit in the
+                     * forwarder, hence we get one instruction for loading the first
+                     * parameter. Subsequently we need to ignore that parameter, though.
+                     */
+                    numberOfInstructions += 1
+                    lvIndex += forwarderParameters(0).computationalType.operandSize
+                    forwarderParameterIndex = 1
+                    receiverParametersOffset = -1
+                }
+                while (forwarderParameterIndex < forwarderParametersCount) {
+                    val ft = forwarderParameters(forwarderParameterIndex)
+                    val rt = receiverParameters(forwarderParameterIndex + receiverParametersOffset)
+                    val loadInstructions = if (lvIndex > 3) 2 else 1
                     lvIndex += ft.computationalType.operandSize
-                    currentIndex = llv.indexOfNextInstruction(currentIndex, false)
+                    val conversionInstructions =
+                        if (rt != ft) {
+                            if (rt.isBaseType && ft.isBaseType) {
+                                if (rt.isIntLikeType && ft.isIntLikeType &&
+                                    rt.asIntLikeType.isWiderThan(ft.asIntLikeType)
+                                ) {
+                                    0 // smaller int values can directly be stored in "wider" types
+                                } else {
+                                    1 // we only do safe conversions => 1 instruction
+                                }
+                            } else if ((rt.isBaseType && ft.isObjectType) || (ft.isBaseType && rt.isObjectType)) {
+                                // can (un)box to fit => invokestatic/invokevirtual
+                                3
+                            } else if (rt.isReferenceType && ft.isReferenceType && (rt ne ObjectType.Object)) {
+                                3 // checkcast
+                            } else 0
+                        } else 0
+                    numberOfInstructions += loadInstructions + conversionInstructions
+                    forwarderParameterIndex += 1
+                }
 
-                    if (rt != ft) {
-                        if (ft.isNumericType && rt.isNumericType) {
-                            val conversion = ft.asNumericType.convertTo(rt.asNumericType)
-                            conversion foreach { instr =>
-                                instructions(currentIndex) = instr
-                                currentIndex = instr.indexOfNextInstruction(currentIndex, false)
+                val instructions = new Array[Instruction](numberOfInstructions)
+                lvIndex = variableOffset
+
+                var currentIndex = 0
+                var receiverParameterIndex = 0
+                if (receiverParametersOffset == -1) {
+                    // we have an explicit receiver in the forwarder parameters
+                    val llv = LoadLocalVariableInstruction(forwarderParameters(0), 1)
+                    instructions(currentIndex) = llv
+                    currentIndex = llv.indexOfNextInstruction(currentIndex, false)
+                    lvIndex += 1
+                }
+                while (receiverParameterIndex < receiverParametersCount) {
+                    val rt = receiverParameters(receiverParameterIndex)
+                    if (receiverParameterIndex < staticParametersCount) {
+                        val sp = staticParameters(receiverParameterIndex)
+                        instructions(currentIndex) = ALOAD_0
+                        currentIndex = ALOAD_0.indexOfNextInstruction(currentIndex, false)
+                        val gf = GETFIELD(definingType, sp.name, sp.fieldType)
+                        instructions(currentIndex) = gf
+                        currentIndex = gf.indexOfNextInstruction(currentIndex, false)
+                    } else {
+                        val ft = forwarderParameters(receiverParameterIndex - receiverParametersOffset)
+                        val llv = LoadLocalVariableInstruction(ft, lvIndex)
+                        instructions(currentIndex) = llv
+                        lvIndex += ft.computationalType.operandSize
+                        currentIndex = llv.indexOfNextInstruction(currentIndex, false)
+
+                        if (rt != ft) {
+                            if (ft.isNumericType && rt.isNumericType) {
+                                val conversion = ft.asNumericType.convertTo(rt.asNumericType)
+                                conversion foreach { instr =>
+                                    instructions(currentIndex) = instr
+                                    currentIndex = instr.indexOfNextInstruction(currentIndex, false)
+                                }
+                            } else if (rt.isReferenceType && ft.isReferenceType) {
+                                if (rt ne ObjectType.Object) {
+                                    val conversion = CHECKCAST(rt.asReferenceType)
+                                    instructions(currentIndex) = conversion
+                                    currentIndex = conversion.indexOfNextInstruction(currentIndex, false)
+                                }
+                            } else if (rt.isBaseType && ft.isObjectType) {
+                                val unboxInstructions = ft.asObjectType.unboxValue
+                                val unboxInstruction = unboxInstructions(0)
+                                instructions(currentIndex) = unboxInstruction
+                                currentIndex = unboxInstruction.indexOfNextInstruction(currentIndex, false)
+                            } else if (ft.isBaseType && rt.isObjectType) {
+                                val boxInstructions = ft.asBaseType.boxValue
+                                val boxInstruction = boxInstructions(0)
+                                instructions(currentIndex) = boxInstruction
+                                currentIndex = boxInstruction.indexOfNextInstruction(currentIndex, false)
+                            } else {
+                                throw new UnknownError("Should not occur: " + ft + " -> " + rt)
                             }
-                        } else if (rt.isReferenceType && ft.isReferenceType) {
-                            if (rt ne ObjectType.Object) {
-                                val conversion = CHECKCAST(rt.asReferenceType)
-                                instructions(currentIndex) = conversion
-                                currentIndex = conversion.indexOfNextInstruction(currentIndex, false)
-                            }
-                        } else if (rt.isBaseType && ft.isObjectType) {
-                            val unboxInstructions = ft.asObjectType.unboxValue
-                            val unboxInstruction = unboxInstructions(0)
-                            instructions(currentIndex) = unboxInstruction
-                            currentIndex = unboxInstruction.indexOfNextInstruction(currentIndex, false)
-                        } else if (ft.isBaseType && rt.isObjectType) {
-                            val boxInstructions = ft.asBaseType.boxValue
-                            val boxInstruction = boxInstructions(0)
-                            instructions(currentIndex) = boxInstruction
-                            currentIndex = boxInstruction.indexOfNextInstruction(currentIndex, false)
-                        } else {
-                            throw new UnknownError("Should not occur: " + ft + " -> " + rt)
                         }
                     }
+                    receiverParameterIndex += 1
                 }
-                receiverParameterIndex += 1
+                instructions
             }
-            instructions
+        } catch {
+            case t: Throwable =>
+                OPALLogger.error(
+                    "internal error",
+                    s"${definingType.toJava}: failed to create parameter forwarding instructions for:\n\t" +
+                        s"forwarder descriptor = ${forwarderMethodDescriptor.toJava} =>\n\t" +
+                        s"receiver descriptor  = $receiverMethodDescriptor +\n\t " +
+                        s"static parameters    = $staticParameters (variableOffset=$variableOffset)",
+                    t
+                )(GlobalLogContext)
+                throw t;
         }
-    } catch {
-        case t: Throwable =>
-            OPALLogger.error(
-                "internal error",
-                s"${definingType.toJava}: failed to create parameter forwarding instructions for:\n\t" +
-                    s"forwarder descriptor = ${forwarderMethodDescriptor.toJava} =>\n\t" +
-                    s"receiver descriptor  = $receiverMethodDescriptor +\n\t " +
-                    s"static parameters    = $staticParameters (variableOffset=$variableOffset)",
-                t
-            )(GlobalLogContext)
-            throw t;
-    }
 
     /**
      * Returns the instructions that return a value of type `typeToBeReturned`, converting
@@ -1315,8 +1392,9 @@ object ClassFileFactory {
             } else if (typeOnStack.isObjectType && toBeReturnedType.isBooleanType) {
                 typeOnStack.asObjectType.unboxValue
             } else if (typeOnStack.isArrayType && (typeOnStack.asArrayType.elementType eq ObjectType.Object)
-                && toBeReturnedType.isArrayType &&
-                typeOnStack.asArrayType.dimensions <= toBeReturnedType.asArrayType.dimensions) {
+                       && toBeReturnedType.isArrayType &&
+                       typeOnStack.asArrayType.dimensions <= toBeReturnedType.asArrayType.dimensions
+            ) {
                 Array(CHECKCAST(toBeReturnedType.asReferenceType), null, null)
             } else {
                 throw new IllegalArgumentException(
@@ -1390,8 +1468,7 @@ object ClassFileFactory {
             lvIndex += parameter.computationalType.operandSize
         }
 
-        val invokeTarget = INVOKEVIRTUAL(targetMethodDeclaringType, methodName,
-            targetMethodDescriptor)
+        val invokeTarget = INVOKEVIRTUAL(targetMethodDeclaringType, methodName, targetMethodDescriptor)
         instructions(currentPC) = invokeTarget
         currentPC = invokeTarget.indexOfNextInstruction(currentPC, false)
 

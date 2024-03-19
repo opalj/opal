@@ -32,7 +32,7 @@ import org.opalj.fpcf.SomeEPS
  * @author Dominik Helm
  */
 class VirtualMethodStaticDataUsageAnalysis private[analyses] (
-        final val project: SomeProject
+    final val project: SomeProject
 ) extends FPCFAnalysis {
     private[this] val declaredMethods = project.get(DeclaredMethodsKey)
 
@@ -89,8 +89,11 @@ class VirtualMethodStaticDataUsageAnalysis private[analyses] (
                 Result(dm, maxLevel.aggregatedProperty)
             } else {
                 InterimResult(
-                    dm, VUsesVaryingData, maxLevel.aggregatedProperty,
-                    dependees, c
+                    dm,
+                    VUsesVaryingData,
+                    maxLevel.aggregatedProperty,
+                    dependees,
+                    c
                 )
             }
         }
@@ -99,8 +102,11 @@ class VirtualMethodStaticDataUsageAnalysis private[analyses] (
             Result(dm, maxLevel.aggregatedProperty)
         } else {
             org.opalj.fpcf.InterimResult(
-                dm, VUsesVaryingData, maxLevel.aggregatedProperty,
-                dependees, c
+                dm,
+                VUsesVaryingData,
+                maxLevel.aggregatedProperty,
+                dependees,
+                c
             )
         }
     }
@@ -119,7 +125,7 @@ trait VirtualMethodStaticDataUsageAnalysisScheduler extends FPCFAnalysisSchedule
 
     override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
 
-    final override def uses: Set[PropertyBounds] = Set(PropertyBounds.lub(StaticDataUsage))
+    override final def uses: Set[PropertyBounds] = Set(PropertyBounds.lub(StaticDataUsage))
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(VirtualMethodStaticDataUsage)
 

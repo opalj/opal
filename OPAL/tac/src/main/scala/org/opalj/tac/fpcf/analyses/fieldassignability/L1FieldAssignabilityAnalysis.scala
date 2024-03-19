@@ -102,7 +102,8 @@ object LazyL1FieldAssignabilityAnalysis
     override def register(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new L1FieldAssignabilityAnalysis(p)
         ps.registerLazyPropertyComputation(
-            FieldAssignability.key, analysis.doDetermineFieldAssignability
+            FieldAssignability.key,
+            analysis.doDetermineFieldAssignability
         )
         analysis
     }

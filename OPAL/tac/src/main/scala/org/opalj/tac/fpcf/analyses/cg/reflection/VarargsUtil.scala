@@ -5,6 +5,7 @@ package fpcf
 package analyses
 package cg
 package reflection
+
 import scala.reflect.ClassTag
 
 import scala.collection.immutable.ArraySeq
@@ -61,20 +62,21 @@ object VarargsUtil {
                 val uses = IntArraySetBuilder(definition.targetVar.usedBy.toList).result()
                 var params: ArraySeq[T] = ArraySeq.unsafeWrapArray(new Array[T](uses.size - 1))
                 if (!uses.forall { useSite =>
-                    val use = stmts(useSite)
-                    if (useSite == uses.last)
-                        // todo: should we just check for invocations?
-                        use.astID == Assignment.ASTID || use.astID == ExprStmt.ASTID
-                    else {
-                        if (use.astID != ArrayStore.ASTID)
-                            false
+                        val use = stmts(useSite)
+                        if (useSite == uses.last)
+                            // todo: should we just check for invocations?
+                            use.astID == Assignment.ASTID || use.astID == ExprStmt.ASTID
                         else {
-                            val update = fillEntry(use.asArrayStore, stmts, params)
-                            if (update.isDefined) params = update.get
-                            update.isDefined
+                            if (use.astID != ArrayStore.ASTID)
+                                false
+                            else {
+                                val update = fillEntry(use.asArrayStore, stmts, params)
+                                if (update.isDefined) params = update.get
+                                update.isDefined
+                            }
                         }
-                    }
-                } || params.contains(null)) {
+                    } || params.contains(null)
+                ) {
                     None
                 } else {
                     Some(params)
@@ -85,7 +87,9 @@ object VarargsUtil {
 
     // todo: merge both methods
     @inline private[this] def fillParam(
-        use: ArrayStore[V], stmts: Array[Stmt[V]], params: ArraySeq[V]
+        use:    ArrayStore[V],
+        stmts:  Array[Stmt[V]],
+        params: ArraySeq[V]
     ): Option[ArraySeq[V]] = {
         val indices = use.index.asVar.definedBy
         if (!indices.isSingletonSet || indices.head < 0)
@@ -104,12 +108,15 @@ object VarargsUtil {
     }
 
     @inline private[this] def fillType(
-        use: ArrayStore[V], stmts: Array[Stmt[V]], params: ArraySeq[FieldType]
+        use:    ArrayStore[V],
+        stmts:  Array[Stmt[V]],
+        params: ArraySeq[FieldType]
     ): Option[ArraySeq[FieldType]] = {
         val typeDefs = use.asArrayStore.value.asVar.definedBy
         val indices = use.asArrayStore.index.asVar.definedBy
         if (!typeDefs.isSingletonSet || typeDefs.head < 0 ||
-            !indices.isSingletonSet || indices.head < 0)
+            !indices.isSingletonSet || indices.head < 0
+        )
             None
         else {
             val typeDef = stmts(typeDefs.head).asAssignment.expr

@@ -50,7 +50,8 @@ trait ValuesCoordinatingDomain extends CorrelationalDomain with Configuration {
     def throwNegativeArraySizeException: Boolean = true
     def throwClassNotFoundException: Boolean = true
 
-    /*override*/ def invokevirtual(
+    /*override*/
+    def invokevirtual(
         pc:               Int,
         declaringClass:   ReferenceType,
         name:             String,
@@ -60,7 +61,8 @@ trait ValuesCoordinatingDomain extends CorrelationalDomain with Configuration {
         throw new UnsupportedOperationException
     }
 
-    /*override*/ def invokeinterface(
+    /*override*/
+    def invokeinterface(
         pc:               Int,
         declaringClass:   ObjectType,
         name:             String,
@@ -70,18 +72,8 @@ trait ValuesCoordinatingDomain extends CorrelationalDomain with Configuration {
         throw new UnsupportedOperationException
     }
 
-    /*override*/ def invokespecial(
-        pc:               Int,
-        declaringClass:   ObjectType,
-        isInterface:      Boolean,
-        name:             String,
-        methodDescriptor: MethodDescriptor,
-        operands:         Operands
-    ): MethodCallResult = {
-        throw new UnsupportedOperationException
-    }
-
-    /*override*/ def invokestatic(
+    /*override*/
+    def invokespecial(
         pc:               Int,
         declaringClass:   ObjectType,
         isInterface:      Boolean,
@@ -92,7 +84,20 @@ trait ValuesCoordinatingDomain extends CorrelationalDomain with Configuration {
         throw new UnsupportedOperationException
     }
 
-    /*override*/ def invokedynamic(
+    /*override*/
+    def invokestatic(
+        pc:               Int,
+        declaringClass:   ObjectType,
+        isInterface:      Boolean,
+        name:             String,
+        methodDescriptor: MethodDescriptor,
+        operands:         Operands
+    ): MethodCallResult = {
+        throw new UnsupportedOperationException
+    }
+
+    /*override*/
+    def invokedynamic(
         pc:               Int,
         bootstrapMethod:  BootstrapMethod,
         name:             String,
@@ -102,7 +107,8 @@ trait ValuesCoordinatingDomain extends CorrelationalDomain with Configuration {
         throw new UnsupportedOperationException
     }
 
-    /* override*/ def getfield(
+    /* override*/
+    def getfield(
         pc:             Int,
         objectref:      DomainValue,
         declaringClass: ObjectType,
@@ -112,7 +118,8 @@ trait ValuesCoordinatingDomain extends CorrelationalDomain with Configuration {
         throw new UnsupportedOperationException
     }
 
-    /*override*/ def getstatic(
+    /*override*/
+    def getstatic(
         pc:             Int,
         declaringClass: ObjectType,
         name:           String,
@@ -121,7 +128,8 @@ trait ValuesCoordinatingDomain extends CorrelationalDomain with Configuration {
         throw new UnsupportedOperationException
     }
 
-    /*override*/ def putfield(
+    /*override*/
+    def putfield(
         pc:             Int,
         objectref:      DomainValue,
         value:          DomainValue,
@@ -132,7 +140,8 @@ trait ValuesCoordinatingDomain extends CorrelationalDomain with Configuration {
         throw new UnsupportedOperationException
     }
 
-    /*override*/ def putstatic(
+    /*override*/
+    def putstatic(
         pc:             Int,
         value:          DomainValue,
         declaringClass: ObjectType,
@@ -142,75 +151,99 @@ trait ValuesCoordinatingDomain extends CorrelationalDomain with Configuration {
         throw new UnsupportedOperationException
     }
 
-    /*override*/ def monitorenter(
+    /*override*/
+    def monitorenter(
         pc:    Int,
         value: DomainValue
     ): Computation[Nothing, ExceptionValue] = {
         throw new UnsupportedOperationException
     }
 
-    /*override*/ def monitorexit(
+    /*override*/
+    def monitorexit(
         pc:    Int,
         value: DomainValue
     ): Computation[Nothing, ExceptionValues] = {
         throw new UnsupportedOperationException
     }
 
-    /*override*/ def returnVoid(pc: Int): Computation[Nothing, ExceptionValue] =
+    /*override*/
+    def returnVoid(pc: Int): Computation[Nothing, ExceptionValue] =
         throw new UnsupportedOperationException
 
-    /*override*/ def abruptMethodExecution(pc: Int, exception: ExceptionValue): Unit =
+    /*override*/
+    def abruptMethodExecution(pc: Int, exception: ExceptionValue): Unit =
         throw new UnsupportedOperationException
 
-    /*override*/ def areturn(pc: Int, value: DomainValue): Computation[Nothing, ExceptionValue] =
+    /*override*/
+    def areturn(pc: Int, value: DomainValue): Computation[Nothing, ExceptionValue] =
         throw new UnsupportedOperationException
 
-    /*override*/ def dreturn(pc: Int, value: DomainValue): Computation[Nothing, ExceptionValue] =
+    /*override*/
+    def dreturn(pc: Int, value: DomainValue): Computation[Nothing, ExceptionValue] =
         throw new UnsupportedOperationException
 
-    /*override*/ def freturn(pc: Int, value: DomainValue): Computation[Nothing, ExceptionValue] =
+    /*override*/
+    def freturn(pc: Int, value: DomainValue): Computation[Nothing, ExceptionValue] =
         throw new UnsupportedOperationException
 
-    /*override*/ def ireturn(pc: Int, value: DomainValue): Computation[Nothing, ExceptionValue] =
+    /*override*/
+    def ireturn(pc: Int, value: DomainValue): Computation[Nothing, ExceptionValue] =
         throw new UnsupportedOperationException
 
-    /*override*/ def lreturn(pc: Int, value: DomainValue): Computation[Nothing, ExceptionValue] =
+    /*override*/
+    def lreturn(pc: Int, value: DomainValue): Computation[Nothing, ExceptionValue] =
         throw new UnsupportedOperationException
 
-    /*override*/ def l2d(pc: Int, value: DomainValue): DomainValue =
+    /*override*/
+    def l2d(pc: Int, value: DomainValue): DomainValue =
         throw new UnsupportedOperationException
-    /*override*/ def l2f(pc: Int, value: DomainValue): DomainValue =
+    /*override*/
+    def l2f(pc: Int, value: DomainValue): DomainValue =
         throw new UnsupportedOperationException
-    /*override*/ def l2i(pc: Int, value: DomainValue): DomainValue =
-        throw new UnsupportedOperationException
-
-    /*override*/ def i2d(pc: Int, value: DomainValue): DomainValue =
-        throw new UnsupportedOperationException
-    /*override*/ def i2f(pc: Int, value: DomainValue): DomainValue =
-        throw new UnsupportedOperationException
-    /*override*/ def i2l(pc: Int, value: DomainValue): DomainValue =
+    /*override*/
+    def l2i(pc: Int, value: DomainValue): DomainValue =
         throw new UnsupportedOperationException
 
-    /*override*/ def f2d(pc: Int, value: DomainValue): DomainValue =
+    /*override*/
+    def i2d(pc: Int, value: DomainValue): DomainValue =
         throw new UnsupportedOperationException
-    /*override*/ def f2i(pc: Int, value: DomainValue): DomainValue =
+    /*override*/
+    def i2f(pc: Int, value: DomainValue): DomainValue =
         throw new UnsupportedOperationException
-    /*override*/ def f2l(pc: Int, value: DomainValue): DomainValue =
-        throw new UnsupportedOperationException
-
-    /*override*/ def d2f(pc: Int, value: DomainValue): DomainValue =
-        throw new UnsupportedOperationException
-    /*override*/ def d2i(pc: Int, value: DomainValue): DomainValue =
-        throw new UnsupportedOperationException
-    /*override*/ def d2l(pc: Int, value: DomainValue): DomainValue =
+    /*override*/
+    def i2l(pc: Int, value: DomainValue): DomainValue =
         throw new UnsupportedOperationException
 
-    /*override*/ def lshl(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+    /*override*/
+    def f2d(pc: Int, value: DomainValue): DomainValue =
+        throw new UnsupportedOperationException
+    /*override*/
+    def f2i(pc: Int, value: DomainValue): DomainValue =
+        throw new UnsupportedOperationException
+    /*override*/
+    def f2l(pc: Int, value: DomainValue): DomainValue =
         throw new UnsupportedOperationException
 
-    /*override*/ def lshr(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+    /*override*/
+    def d2f(pc: Int, value: DomainValue): DomainValue =
+        throw new UnsupportedOperationException
+    /*override*/
+    def d2i(pc: Int, value: DomainValue): DomainValue =
+        throw new UnsupportedOperationException
+    /*override*/
+    def d2l(pc: Int, value: DomainValue): DomainValue =
         throw new UnsupportedOperationException
 
-    /*override*/ def lushr(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+    /*override*/
+    def lshl(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+        throw new UnsupportedOperationException
+
+    /*override*/
+    def lshr(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+        throw new UnsupportedOperationException
+
+    /*override*/
+    def lushr(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
         throw new UnsupportedOperationException
 }

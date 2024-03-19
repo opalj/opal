@@ -5,11 +5,11 @@ package fpcf
 import scala.collection.immutable.IntMap
 import scala.collection.mutable
 
+import org.scalatest.funsuite.AnyFunSuite
+
 import org.opalj.fpcf.fixtures.InitializedPropertyStore
 import org.opalj.fpcf.fixtures.Marker
 import org.opalj.fpcf.fixtures.Palindromes
-
-import org.scalatest.funsuite.AnyFunSuite
 
 class EOptionPSetTest extends AnyFunSuite {
 
@@ -197,7 +197,7 @@ class EOptionPSetTest extends AnyFunSuite {
         // the following query is passed through to the property store...
         assert(set.getOrQueryAndUpdate(e2, Palindromes.PalindromeKey) == ie2Pal)
     }
-    */
+     */
 
     test("filters filters the respective value") {
         val e1 = "e1"

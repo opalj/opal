@@ -50,7 +50,7 @@ trait AllocationSiteBasedAnalysis extends AbstractPointsToBasedAnalysis {
         callContext:   ContextType,
         allocatedType: ReferenceType,
         isConstant:    Boolean,
-        isEmptyArray:  Boolean       = false
+        isEmptyArray:  Boolean = false
     ): AllocationSitePointsToSet = {
         @inline def createNewPointsToSet(): AllocationSitePointsToSet = {
             val as = allocationSiteToLong(callContext, pc, allocatedType, isEmptyArray)
@@ -80,7 +80,8 @@ trait AllocationSiteBasedAnalysis extends AbstractPointsToBasedAnalysis {
                     createNewPointsToSet()
             case _ =>
                 if (mergeExceptions &&
-                    classHierarchy.isSubtypeOf(allocatedType, ObjectType.Throwable)) {
+                    classHierarchy.isSubtypeOf(allocatedType, ObjectType.Throwable)
+                ) {
                     val ptsO = exceptionPointsToSets.get(allocatedType.id)
                     if (ptsO.isDefined)
                         ptsO.get

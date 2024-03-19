@@ -2,6 +2,7 @@
 package org.opalj
 package tac
 package cg
+
 import java.io.BufferedWriter
 import java.io.File
 import java.io.FileWriter
@@ -88,13 +89,12 @@ object CallGraphSerializer {
                             else
                                 dc.asObjectType
 
-                        val declaredTarget = declaredMethods(
-                            declaredType, declaredType.packageName, declaredType, name, desc
-                        )
+                        val declaredTarget =
+                            declaredMethods(declaredType, declaredType.packageName, declaredType, name, desc)
 
                         val (directCallees, indirectCallees) = targets.partition { callee =>
                             callee.method.name == name && // TODO check descriptor correctly for refinement
-                                callee.method.descriptor.parametersCount == desc.parametersCount
+                            callee.method.descriptor.parametersCount == desc.parametersCount
                         }
 
                         for (tgt <- indirectCallees) {
@@ -154,7 +154,9 @@ object CallGraphSerializer {
         out.write(method.descriptor.returnType.toJVMTypeName)
         out.write("\",\"parameterTypes\":[")
         if (method.descriptor.parametersCount > 0)
-            out.write(method.descriptor.parameterTypes.iterator.map[String](_.toJVMTypeName).mkString("\"", "\",\"", "\""))
+            out.write(
+                method.descriptor.parameterTypes.iterator.map[String](_.toJVMTypeName).mkString("\"", "\",\"", "\"")
+            )
         out.write("]}")
     }
 }

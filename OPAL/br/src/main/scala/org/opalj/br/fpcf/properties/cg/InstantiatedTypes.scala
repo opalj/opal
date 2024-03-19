@@ -31,8 +31,8 @@ sealed trait InstantiatedTypesPropertyMetaInformation extends PropertyMetaInform
 }
 
 case class InstantiatedTypes private[properties] (
-        private val orderedTypes: List[ReferenceType],
-        types:                    UIDSet[ReferenceType]
+    private val orderedTypes: List[ReferenceType],
+    types:                    UIDSet[ReferenceType]
 ) extends OrderedProperty
     with InstantiatedTypesPropertyMetaInformation {
 
@@ -81,11 +81,12 @@ object InstantiatedTypes extends InstantiatedTypesPropertyMetaInformation {
         val name = "opalj.InstantiatedTypes"
         PropertyKey.create(
             name,
-            (_: PropertyStore, reason: FallbackReason, _: Entity) => reason match {
-                case PropertyIsNotDerivedByPreviouslyExecutedAnalysis => NoInstantiatedTypes
-                case _ =>
-                    throw new IllegalStateException(s"No analysis is scheduled for property: $name")
-            }
+            (_: PropertyStore, reason: FallbackReason, _: Entity) =>
+                reason match {
+                    case PropertyIsNotDerivedByPreviouslyExecutedAnalysis => NoInstantiatedTypes
+                    case _ =>
+                        throw new IllegalStateException(s"No analysis is scheduled for property: $name")
+                }
         )
     }
 

@@ -29,8 +29,8 @@ sealed abstract class Location[S] {
 }
 
 final case class PackageLocation[S](
-        override val source: Option[S],
-        packageName:         String
+    override val source: Option[S],
+    packageName:         String
 ) extends Location[S] {
 
     override def toString: String = {
@@ -40,6 +40,7 @@ final case class PackageLocation[S](
         }
     }
 }
+
 object PackageLocation {
 
     def apply[S](source: S, packageName: String): PackageLocation[S] = {
@@ -52,8 +53,8 @@ object PackageLocation {
 }
 
 final case class ClassFileLocation[S](
-        override val source: Option[S],
-        classFileFQN:        String
+    override val source: Option[S],
+    classFileFQN:        String
 ) extends Location[S] {
 
     override def toString: String = {
@@ -90,9 +91,9 @@ object ClassFileLocation {
 }
 
 final case class FieldLocation[S](
-        classFileLocation: ClassFileLocation[S],
-        fieldName:         String,
-        fieldType:         FieldType
+    classFileLocation: ClassFileLocation[S],
+    fieldName:         String,
+    fieldType:         FieldType
 ) extends Location[S] {
 
     override def source: Option[S] = classFileLocation.source
@@ -118,9 +119,9 @@ object FieldLocation {
 }
 
 final case class MethodLocation[S](
-        classFileLocation: ClassFileLocation[S],
-        methodName:        String,
-        methodDescriptor:  MethodDescriptor
+    classFileLocation: ClassFileLocation[S],
+    methodName:        String,
+    methodDescriptor:  MethodDescriptor
 ) extends Location[S] {
 
     override def source: Option[S] = classFileLocation.source
@@ -175,6 +176,7 @@ final case class InstructionLocation[S](methodLocation: MethodLocation[S], pc: I
             s
     }
 }
+
 object InstructionLocation {
 
     def apply[S](source: S, method: Method, pc: Int): InstructionLocation[S] = {

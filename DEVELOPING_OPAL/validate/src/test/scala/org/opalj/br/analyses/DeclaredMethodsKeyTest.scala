@@ -6,10 +6,10 @@ package analyses
 import java.io.File
 import java.net.URL
 
-import org.opalj.util.ScalaMajorVersion
-
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
+
+import org.opalj.util.ScalaMajorVersion
 
 /**
  * Tests whether the DeclaredMethodsKey creates the correct declared method objects for each class
@@ -113,8 +113,7 @@ class DeclaredMethodsKeyTest extends AnyFunSpec with Matchers {
             actual.hasSingleDefinedMethod && (actual.definedMethod eq methodOs.head._2.get)
         } else {
             actual.hasMultipleDefinedMethods &&
-                methodOs.map(_._2.get) == actual.definedMethods
-
+            methodOs.map(_._2.get) == actual.definedMethods
         }
 
         if (foundMethod)

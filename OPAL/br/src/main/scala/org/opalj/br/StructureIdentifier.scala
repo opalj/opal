@@ -41,9 +41,9 @@ case class TypeIdentifier(t: Type) extends StructureIdentifier {
 }
 
 case class MethodIdentifier(
-        declaringReferenceType: ReferenceType,
-        methodName:             String,
-        methodDescriptor:       MethodDescriptor
+    declaringReferenceType: ReferenceType,
+    methodName:             String,
+    methodDescriptor:       MethodDescriptor
 ) extends StructureIdentifier {
 
     def toHRR: String =
@@ -59,8 +59,8 @@ case class MethodIdentifier(
 }
 
 case class FieldIdentifier(
-        declaringObjectType: ObjectType,
-        fieldName:           String
+    declaringObjectType: ObjectType,
+    fieldName:           String
 ) extends StructureIdentifier {
 
     def toHRR: String = declaringObjectType.toJava + "." + fieldName

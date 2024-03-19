@@ -165,7 +165,8 @@ trait CallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
     private[this] def requiresCallBySignatureKey(p: SomeProject): ProjectInformationKeys = {
         val config = p.config
         if (config.hasPath(CallBySignatureConfigKey)
-            && config.getBoolean(CallBySignatureConfigKey)) {
+            && config.getBoolean(CallBySignatureConfigKey)
+        ) {
             return Seq(CallBySignatureKey);
         }
         Seq.empty

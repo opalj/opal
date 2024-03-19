@@ -11,8 +11,8 @@ import scala.xml.NodeBuffer
  * @author Michael Eichberg
  */
 case class ModulePackages_attribute(
-        attribute_name_index: Constant_Pool_Index,
-        package_index_table:  PackageIndexTable // Array[Constant_Pool_Index]
+    attribute_name_index: Constant_Pool_Index,
+    package_index_table:  PackageIndexTable // Array[Constant_Pool_Index]
 ) extends Attribute {
 
     override def attribute_length: Int = 2 + package_index_table.size * 2
@@ -22,7 +22,7 @@ case class ModulePackages_attribute(
             <summary>ModulePackages</summary>
             {
                 package_index_table.map[String](p => cp(p).toString).sorted.map[NodeBuffer] { p =>
-                    <span>{ p }</span><br/>
+                    <span>{p}</span><br/>
                 }
             }
         </details>

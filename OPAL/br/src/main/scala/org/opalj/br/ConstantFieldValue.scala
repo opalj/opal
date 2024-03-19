@@ -37,6 +37,7 @@ final case class ConstantLong(value: Long) extends ConstantFieldValue[Long] with
     override def kindId: Int = ConstantLong.KindId
 
 }
+
 object ConstantLong {
 
     final val KindId = 1
@@ -70,6 +71,7 @@ final case class ConstantInteger(value: Int) extends ConstantFieldValue[Int] wit
     override def kindId: Int = ConstantInteger.KindId
 
 }
+
 object ConstantInteger {
 
     final val KindId = 2
@@ -100,6 +102,7 @@ final case class ConstantDouble(value: Double) extends ConstantFieldValue[Double
     }
 
 }
+
 object ConstantDouble {
 
     final val KindId = 3
@@ -130,6 +133,7 @@ final case class ConstantFloat(value: Float) extends ConstantFieldValue[Float] w
     }
 
 }
+
 object ConstantFloat {
 
     final val KindId = 4
@@ -137,7 +141,7 @@ object ConstantFloat {
 }
 
 final case class ConstantString(
-        value: String
+    value: String
 ) extends ConstantFieldValue[String]
     with IsStringValue {
 
@@ -155,6 +159,7 @@ final case class ConstantString(
 
     override def toCanonicalForm: IsStringValue = this
 }
+
 object ConstantString {
 
     final val KindId = 5

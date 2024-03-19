@@ -54,7 +54,8 @@ class ExpectedCalleeMatcher extends VTAMatcher {
                         case CalleeType(index, t, upperBound) =>
                             Seq((
                                 taCode.lineNumber(method.body.get, index).get,
-                                referenceTypeToString(t), upperBound
+                                referenceTypeToString(t),
+                                upperBound
                             ))
                     }
                 case _ => Seq.empty

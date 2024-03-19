@@ -17,9 +17,9 @@ import org.opalj.collection.mutable.Locals
  * @param   localVariables The register values at the given location.
  */
 class LocalVariables(
-        val code:           Code,
-        val pc:             PC,
-        val localVariables: Locals[_ <: AnyRef]
+    val code:           Code,
+    val pc:             PC,
+    val localVariables: Locals[_ <: AnyRef]
 ) extends IssueDetails {
 
     def toXHTML(basicInfoOnly: Boolean): Node = {
@@ -41,7 +41,7 @@ class LocalVariables(
                         Text(localVariableToString(theLV, localValue))
 
                 <tr>
-                    <td>{ index }</td><td>{ theLV.name }</td><td>{ localValueAsXHTML }</td>
+                    <td>{index}</td><td>{theLV.name}</td><td>{localValueAsXHTML}</td>
                 </tr>
             }
 
@@ -49,7 +49,7 @@ class LocalVariables(
             <summary>Local Variable State</summary>
             <table>
                 <tr><th>Index</th><th>Name</th><th>Value</th></tr>
-                { lvsAsXHTML }
+                {lvsAsXHTML}
             </table>
         </details>
 

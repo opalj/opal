@@ -5,6 +5,10 @@ package fpcf
 
 import scala.reflect.runtime.universe.runtimeMirror
 
+import com.typesafe.config.ConfigFactory
+import com.typesafe.config.ConfigObject
+import com.typesafe.config.ConfigValueFactory
+
 import org.opalj.fpcf.ComputationSpecification
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyKey
@@ -12,10 +16,6 @@ import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.error
 import org.opalj.log.OPALLogger.info
-
-import com.typesafe.config.ConfigFactory
-import com.typesafe.config.ConfigObject
-import com.typesafe.config.ConfigValueFactory
 
 /**
  * Registry for all factories for analyses that are implemented using the fixpoint computations
@@ -118,7 +118,7 @@ object FPCFAnalysesRegistry {
             registeredAnalyses foreach { a =>
                 register(a.id, a.description, a.factory)
             }
-            */
+             */
             val registeredAnalyses = config.getObject("org.opalj.fpcf.registry.analyses")
             val entriesIterator = registeredAnalyses.entrySet.iterator
             while (entriesIterator.hasNext) {
@@ -126,7 +126,8 @@ object FPCFAnalysesRegistry {
                 val id = entry.getKey
                 val metaData = entry.getValue.asInstanceOf[ConfigObject]
                 val description = metaData.getOrDefault("description", null).unwrapped.toString
-                val default = metaData.getOrDefault("default", ConfigValueFactory.fromAnyRef(false)).unwrapped().asInstanceOf[Boolean]
+                val default = metaData.getOrDefault("default", ConfigValueFactory.fromAnyRef(false))
+                    .unwrapped().asInstanceOf[Boolean]
                 val lazyFactory = metaData.getOrDefault("lazyFactory", null)
                 if (lazyFactory ne null)
                     register(id, description, lazyFactory.unwrapped.toString, true, default)

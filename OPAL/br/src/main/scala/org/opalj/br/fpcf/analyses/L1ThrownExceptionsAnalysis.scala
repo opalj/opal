@@ -77,7 +77,7 @@ import org.opalj.fpcf.UBP
  * @author Andreas Muttscheller
  */
 class L1ThrownExceptionsAnalysis private[analyses] (
-        final val project: SomeProject
+    final val project: SomeProject
 ) extends FPCFAnalysis {
 
     private[analyses] def lazilyDetermineThrownExceptions(
@@ -139,18 +139,19 @@ class L1ThrownExceptionsAnalysis private[analyses] (
                         instruction
 
                     if ((declaringClass eq ObjectType.Object) && (
-                        (name == "<init>" && descriptor == MethodDescriptor.NoArgsAndReturnVoid) ||
-                        (name == "hashCode" && descriptor == MethodDescriptor.JustReturnsInteger) ||
-                        (name == "equals" &&
+                            (name == "<init>" && descriptor == MethodDescriptor.NoArgsAndReturnVoid) ||
+                            (name == "hashCode" && descriptor == MethodDescriptor.JustReturnsInteger) ||
+                            (name == "equals" &&
                             descriptor == ThrownExceptionsFallback.ObjectEqualsMethodDescriptor) ||
                             (name == "toString" && descriptor == MethodDescriptor.JustReturnsString)
-                    )) {
+                        )
+                    ) {
                         true
                     } else {
                         instruction match {
                             case mii: NonVirtualMethodInvocationInstruction =>
                                 project.nonVirtualCall(m.classFile.thisType, mii) match {
-                                    case Success(`m`) => true // we basically ignore self-dependencies
+                                    case Success(`m`)    => true // we basically ignore self-dependencies
                                     case Success(callee) =>
                                         // Query the store for information about the callee
                                         ps(callee, ThrownExceptions.key) match {
@@ -200,7 +201,7 @@ class L1ThrownExceptionsAnalysis private[analyses] (
                         case _                   => None
                     }
                     calleeOption match {
-                        case Some(`m`) => // nothing to do...
+                        case Some(`m`)    => // nothing to do...
                         case Some(callee) =>
                             // Check the class hierarchy for thrown exceptions
                             ps(callee, ThrownExceptionsByOverridingMethods.key) match {
@@ -244,9 +245,9 @@ class L1ThrownExceptionsAnalysis private[analyses] (
                     isFieldAccessed = true
                     fieldAccessMayThrowNullPointerException ||=
                         isStaticMethod || // <= the receiver is some object
-                        isLocalVariable0Updated || // <= we don't know the receiver object at all
-                        cfJoins.contains(pc) || // <= we cannot locally decide who is the receiver
-                        instructions(code.pcOfPreviousInstruction(pc)) != ALOAD_0 // <= the receiver may be null..
+                            isLocalVariable0Updated || // <= we don't know the receiver object at all
+                            cfJoins.contains(pc) || // <= we cannot locally decide who is the receiver
+                            instructions(code.pcOfPreviousInstruction(pc)) != ALOAD_0 // <= the receiver may be null..
                     true
 
                 case PUTFIELD.opcode =>
@@ -332,7 +333,8 @@ class L1ThrownExceptionsAnalysis private[analyses] (
             return Result(m, result);
         }
         if (fieldAccessMayThrowNullPointerException ||
-            (isFieldAccessed && isLocalVariable0Updated)) {
+            (isFieldAccessed && isLocalVariable0Updated)
+        ) {
             initialExceptions += ObjectType.NullPointerException
         }
         if (isSynchronizationUsed) {
@@ -342,9 +344,7 @@ class L1ThrownExceptionsAnalysis private[analyses] (
         var exceptions = initialExceptions.toImmutableTypesSet
 
         def c(eps: SomeEPS): ProperPropertyComputationResult = {
-            dependees = dependees.filter { d =>
-                d.e != eps.e || d.pk != eps.pk
-            }
+            dependees = dependees.filter { d => d.e != eps.e || d.pk != eps.pk }
             // If the property is not final we want to keep updated of new values
             if (eps.isRefinable) {
                 dependees = dependees + eps
@@ -393,7 +393,7 @@ abstract class ThrownExceptionsAnalysisScheduler extends FPCFAnalysisScheduler {
 
     override def requiredProjectInformation: ProjectInformationKeys = Seq.empty
 
-    final override def uses: Set[PropertyBounds] = {
+    override final def uses: Set[PropertyBounds] = {
         Set(PropertyBounds.lub(ThrownExceptionsByOverridingMethods))
     }
 

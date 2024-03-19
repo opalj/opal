@@ -2,16 +2,16 @@
 package org.opalj
 package br
 
+import org.junit.runner.RunWith
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
+
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions._
 import org.opalj.br.reader.Java8Framework.ClassFiles
 import org.opalj.collection.immutable.IntTrieSet
-
-import org.junit.runner.RunWith
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
-import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests some of the core methods of the Code attribute.
@@ -38,15 +38,18 @@ class CodeAttributeTest extends AnyFlatSpec with Matchers {
     behavior of "the \"Code\" attribute's collect method"
 
     it should "be able to correctly collect all matching instructions" in {
-        codeOfPut collect ({ case DUP => DUP }: PartialFunction[Instruction, Instruction]) should equal(Seq(PCAndAnyRef(31, DUP)))
+        codeOfPut collect ({ case DUP => DUP }: PartialFunction[Instruction, Instruction]) should
+            equal(Seq(PCAndAnyRef(31, DUP)))
 
         codeOfPut collect ({
             case ICONST_1 => ICONST_1
-        }: PartialFunction[Instruction, Instruction]) should equal(Seq(PCAndAnyRef(20, ICONST_1), PCAndAnyRef(35, ICONST_1)))
+        }: PartialFunction[Instruction, Instruction]) should
+            equal(Seq(PCAndAnyRef(20, ICONST_1), PCAndAnyRef(35, ICONST_1)))
 
         codeOfPut collect ({
             case GETFIELD(declaringClass, "last", _) => declaringClass
-        }: PartialFunction[Instruction, ObjectType]) should equal(Seq(PCAndAnyRef(17, boundedBufferClass), PCAndAnyRef(45, boundedBufferClass)))
+        }: PartialFunction[Instruction, ObjectType]) should
+            equal(Seq(PCAndAnyRef(17, boundedBufferClass), PCAndAnyRef(45, boundedBufferClass)))
 
         codeOfPut collect ({
             case RETURN => "The very last instruction."
@@ -130,28 +133,28 @@ class CodeAttributeTest extends AnyFlatSpec with Matchers {
     behavior of "the \"Code\" attribute's lookupLineNumber method"
 
     it should "be able to correctly extract the line number for the first instruction" in {
-        codeOfConstructor.lineNumberTable.get.lookupLineNumber(0) should be(Some(47))
+        codeOfConstructor.lineNumberTable.get.lookupLineNumber(0) should be(Some(20))
     }
 
     it should "be able to correctly extract the line number of some intermediate instruction" in {
-        codeOfConstructor.lineNumberTable.get.lookupLineNumber(14) should be(Some(50))
+        codeOfConstructor.lineNumberTable.get.lookupLineNumber(14) should be(Some(23))
     }
 
     it should "be able to correctly extract the line number of an instruction that is not directly associated with a line number" in {
-        codeOfConstructor.lineNumberTable.get.lookupLineNumber(5) should be(Some(45))
+        codeOfConstructor.lineNumberTable.get.lookupLineNumber(5) should be(Some(18))
     }
 
     it should "be able to correctly extract the line number of the last instruction" in {
-        codeOfConstructor.lineNumberTable.get.lookupLineNumber(34) should be(Some(52))
+        codeOfConstructor.lineNumberTable.get.lookupLineNumber(34) should be(Some(25))
     }
 
     behavior of "the \"Code\" attribute's firstLineNumber method"
 
     it should "be able to correctly extract the line number for the first instruction of aconstructor" in {
-        codeOfConstructor.firstLineNumber should be(Some(45))
+        codeOfConstructor.firstLineNumber should be(Some(18))
     }
     it should "be able to correctly extract the line number for the first instruction" in {
-        codeOfPut.firstLineNumber should be(Some(57))
+        codeOfPut.firstLineNumber should be(Some(30))
     }
 
     behavior of "the \"Code\" attribute's cfJoins method"
@@ -214,6 +217,7 @@ class CodeAttributeTest extends AnyFlatSpec with Matchers {
     }
 
 }
+
 private object CodeAttributeTest {
 
     //
@@ -231,9 +235,8 @@ private object CodeAttributeTest {
         )
 
     val nestedCatch =
-        project.
-            classFile(ObjectType("controlflow/ExceptionCode")).get.
-            methods.find(_.name == "nestedCatch").get.body.get
+        project.classFile(ObjectType("controlflow/ExceptionCode")).get.methods
+            .find(_.name == "nestedCatch").get.body.get
 
     val boundedBufferClass = ObjectType("code/BoundedBuffer")
     val immutbleListClass = ObjectType("code/ImmutableList")

@@ -12,8 +12,8 @@ package instructions
  * @author Michael Eichberg
  */
 case class MULTIANEWARRAY(
-        arrayType:  ArrayType,
-        dimensions: Int
+    arrayType:  ArrayType,
+    dimensions: Int
 ) extends CreateNewArrayInstruction
     with InstructionMetaInformation {
 

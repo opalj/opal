@@ -11,13 +11,14 @@ package analyses
  */
 trait OneStepAnalysis[Source, +AnalysisResult] extends Analysis[Source, AnalysisResult] {
 
-    /*abstract*/ def doAnalyze(
+    /*abstract*/
+    def doAnalyze(
         project:       Project[Source],
-        parameters:    Seq[String]     = List.empty,
+        parameters:    Seq[String] = List.empty,
         isInterrupted: () => Boolean
     ): AnalysisResult
 
-    final override def analyze(
+    override final def analyze(
         project:                Project[Source],
         parameters:             Seq[String]               = List.empty,
         initProgressManagement: Int => ProgressManagement = ProgressManagement.None
@@ -26,9 +27,7 @@ trait OneStepAnalysis[Source, +AnalysisResult] extends Analysis[Source, Analysis
         val pm = initProgressManagement(1 /* number of steps */ )
         pm.progress(1, ProgressEvents.Start, Some(title))
         var wasKilled = false
-        val result = doAnalyze(
-            project, parameters, () => { wasKilled = pm.isInterrupted(); wasKilled }
-        )
+        val result = doAnalyze(project, parameters, () => { wasKilled = pm.isInterrupted(); wasKilled })
 
         if (wasKilled)
             pm.progress(-1, ProgressEvents.Killed, None)

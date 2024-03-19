@@ -76,6 +76,7 @@ trait PrimitiveAccessFlagsMatcher extends AccessFlagsMatcher { left =>
             override def toString: String = "!(" + mask.toString + ")"
         }
 }
+
 /**
  * Extractor for the bitmask used by a [[PrimitiveAccessFlagsMatcher]].
  */

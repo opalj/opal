@@ -13,16 +13,16 @@ import scala.collection.immutable
  * @author Michael Eichberg
  */
 class DefaultMutableNode[I](
-        theIdentifier:       I,
-        identifierToString:  I => String                   = (_: Any).toString,
-        theVisualProperties: immutable.Map[String, String] = immutable.Map.empty,
-        theChildren:         List[DefaultMutableNode[I]]   = List.empty
+    theIdentifier:       I,
+    identifierToString:  I => String                   = (_: Any).toString,
+    theVisualProperties: immutable.Map[String, String] = immutable.Map.empty,
+    theChildren:         List[DefaultMutableNode[I]]   = List.empty
 ) extends MutableNodeLike[I, DefaultMutableNode[I]](
-    theIdentifier,
-    identifierToString,
-    theVisualProperties,
-    theChildren
-) with MutableNode[I, DefaultMutableNode[I]] {
+        theIdentifier,
+        identifierToString,
+        theVisualProperties,
+        theChildren
+    ) with MutableNode[I, DefaultMutableNode[I]] {
 
     def this(
         identifier:         I,
@@ -33,11 +33,12 @@ class DefaultMutableNode[I](
             identifier,
             identifierToString,
             theVisualProperties =
-                fillcolor.map(c => DefaultMutableMode.BaseVirtualPropertiers + ("fillcolor" -> c)).
-                    getOrElse(DefaultMutableMode.BaseVirtualPropertiers)
+                fillcolor.map(c => DefaultMutableMode.BaseVirtualPropertiers + ("fillcolor" -> c))
+                    .getOrElse(DefaultMutableMode.BaseVirtualPropertiers)
         )
 
 }
+
 object DefaultMutableMode {
 
     val BaseVirtualPropertiers = immutable.Map("style" -> "filled", "fillcolor" -> "white")

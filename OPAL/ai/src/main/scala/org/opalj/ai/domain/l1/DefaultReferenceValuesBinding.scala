@@ -44,26 +44,26 @@ trait DefaultReferenceValuesBinding extends l1.ReferenceValues with DefaultExcep
     //
 
     protected case class DefaultSObjectValue(
-            origin:                 ValueOrigin,
-            isNull:                 Answer,
-            override val isPrecise: Boolean,
-            theUpperTypeBound:      ObjectType,
-            refId:                  RefId
+        origin:                 ValueOrigin,
+        isNull:                 Answer,
+        override val isPrecise: Boolean,
+        theUpperTypeBound:      ObjectType,
+        refId:                  RefId
     ) extends SObjectValue
 
     protected case class DefaultMObjectValue(
-            origin:              ValueOrigin,
-            override val isNull: Answer,
-            upperTypeBound:      UIDSet[ObjectType],
-            refId:               RefId
+        origin:              ValueOrigin,
+        override val isNull: Answer,
+        upperTypeBound:      UIDSet[ObjectType],
+        refId:               RefId
     ) extends MObjectValue
 
     private case class DefaultArrayValue(
-            origin:                 ValueOrigin,
-            isNull:                 Answer,
-            override val isPrecise: Boolean,
-            theUpperTypeBound:      ArrayType,
-            refId:                  RefId
+        origin:                 ValueOrigin,
+        isNull:                 Answer,
+        override val isPrecise: Boolean,
+        theUpperTypeBound:      ArrayType,
+        refId:                  RefId
     ) extends ArrayValue
 
     override def NullValue(origin: ValueOrigin): DomainNullValue = new NullValue(origin)
@@ -79,7 +79,8 @@ trait DefaultReferenceValuesBinding extends l1.ReferenceValues with DefaultExcep
             origin,
             isNull,
             isPrecise || classHierarchy.isKnownToBeFinal(theUpperTypeBound),
-            theUpperTypeBound, refId
+            theUpperTypeBound,
+            refId
         )
     }
 

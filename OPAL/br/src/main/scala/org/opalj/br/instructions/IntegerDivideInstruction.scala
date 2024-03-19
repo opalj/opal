@@ -26,7 +26,9 @@ abstract class IntegerDivideInstruction extends DivideInstruction {
             List(indexOfNextInstruction(currentPC))
         else
             Instruction.nextInstructionOrExceptionHandler(
-                this, currentPC, ObjectType.ArithmeticException
+                this,
+                currentPC,
+                ObjectType.ArithmeticException
             )
     }
 

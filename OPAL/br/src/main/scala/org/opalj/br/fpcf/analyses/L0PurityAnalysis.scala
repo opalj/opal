@@ -90,7 +90,7 @@ import org.opalj.fpcf.SomeEPS
  * @author Michael Eichberg
  * @author Dominik Helm
  */
-class L0PurityAnalysis private[analyses] ( final val project: SomeProject) extends FPCFAnalysis {
+class L0PurityAnalysis private[analyses] (final val project: SomeProject) extends FPCFAnalysis {
 
     import project.nonVirtualCall
     import project.resolveFieldReference
@@ -160,41 +160,40 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
 
                 case INVOKESPECIAL.opcode | INVOKESTATIC.opcode => instruction match {
 
-                    case MethodInvocationInstruction(`declaringClassType`, _, `methodName`, `methodDescriptor`) =>
-                    // We have a self-recursive call; such calls do not influence
-                    // the computation of the method's purity and are ignored.
-                    // Let's continue with the evaluation of the next instruction.
+                        case MethodInvocationInstruction(`declaringClassType`, _, `methodName`, `methodDescriptor`) =>
+                        // We have a self-recursive call; such calls do not influence
+                        // the computation of the method's purity and are ignored.
+                        // Let's continue with the evaluation of the next instruction.
 
-                    case mii: NonVirtualMethodInvocationInstruction =>
+                        case mii: NonVirtualMethodInvocationInstruction =>
+                            nonVirtualCall(declaringClassType, mii) match {
 
-                        nonVirtualCall(declaringClassType, mii) match {
+                                case Success(callee) =>
+                                    /* Recall that self-recursive calls are handled earlier! */
+                                    val purity = propertyStore(
+                                        simpleContexts(declaredMethods(callee)),
+                                        Purity.key
+                                    )
 
-                            case Success(callee) =>
-                                /* Recall that self-recursive calls are handled earlier! */
-                                val purity = propertyStore(
-                                    simpleContexts(declaredMethods(callee)), Purity.key
-                                )
+                                    purity match {
+                                        case FinalP(CompileTimePure | Pure) => /* Nothing to do */
+                                        // Handling cyclic computations
+                                        case ep @ InterimUBP(Pure) => dependees += ep
 
-                                purity match {
-                                    case FinalP(CompileTimePure | Pure) => /* Nothing to do */
+                                        case _: EPS[_, _] =>
+                                            return Result(context, ImpureByAnalysis);
 
-                                    // Handling cyclic computations
-                                    case ep @ InterimUBP(Pure)          => dependees += ep
+                                        case epk =>
+                                            dependees += epk
+                                    }
 
-                                    case _: EPS[_, _] =>
-                                        return Result(context, ImpureByAnalysis);
+                                case _ /* Empty or Failure */ =>
+                                    // We know nothing about the target method (it is not
+                                    // found in the scope of the current project).
+                                    return Result(context, ImpureByAnalysis);
 
-                                    case epk =>
-                                        dependees += epk
-                                }
-
-                            case _ /* Empty or Failure */ =>
-                                // We know nothing about the target method (it is not
-                                // found in the scope of the current project).
-                                return Result(context, ImpureByAnalysis);
-
-                        }
-                }
+                            }
+                    }
 
                 case GETFIELD.opcode |
                     PUTFIELD.opcode | PUTSTATIC.opcode |
@@ -343,7 +342,8 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
         // If this is not the method's declaration, but a non-overwritten method in a subtype,
         // don't re-analyze the code
         if ((method.classFile.thisType ne context.method.declaringClassType) &&
-            context.isInstanceOf[SimpleContext])
+            context.isInstanceOf[SimpleContext]
+        )
             return baseMethodPurity(context);
 
         if (method.body.isEmpty)
@@ -363,7 +363,7 @@ trait L0PurityAnalysisScheduler extends FPCFAnalysisScheduler {
     override def requiredProjectInformation: ProjectInformationKeys =
         Seq(DeclaredMethodsKey, SimpleContextsKey)
 
-    final override def uses: Set[PropertyBounds] = {
+    override final def uses: Set[PropertyBounds] = {
         Set(PropertyBounds.ub(TypeImmutability), PropertyBounds.ub(FieldImmutability))
     }
 

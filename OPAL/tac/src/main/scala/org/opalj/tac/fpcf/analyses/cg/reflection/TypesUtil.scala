@@ -92,7 +92,9 @@ object TypesUtil {
     }
 
     @inline private[this] def referenceTypeFromFQN(fqn: String): Option[ReferenceType] = {
-        if (fqn.matches("(^\\[+[BCDFIJSZ]$)|(^[A-Za-z](\\w|\\$)*(\\.[A-Za-z](\\w|\\$)*)*$)|(^\\[+L[A-Za-z](\\w|\\$)*(\\.[A-Za-z](\\w|\\$)*)*;$)"))
+        if (
+            fqn.matches("(^\\[+[BCDFIJSZ]$)|(^[A-Za-z](\\w|\\$)*(\\.[A-Za-z](\\w|\\$)*)*$)|(^\\[+L[A-Za-z](\\w|\\$)*(\\.[A-Za-z](\\w|\\$)*)*;$)")
+        )
             Some(ReferenceType(fqn.replace('.', '/')))
         else
             None
@@ -107,18 +109,18 @@ object TypesUtil {
         value:           Expr[V],
         stmts:           Array[Stmt[V]],
         project:         SomeProject,
-        onlyObjectTypes: Boolean        = false
+        onlyObjectTypes: Boolean = false
     ): Option[Iterator[Type]] = {
 
         def isForName(expr: Expr[V]): Boolean = { // static call to Class.forName
             expr.isStaticFunctionCall &&
-                (expr.asStaticFunctionCall.declaringClass eq ObjectType.Class) &&
-                expr.asStaticFunctionCall.name == "forName"
+            (expr.asStaticFunctionCall.declaringClass eq ObjectType.Class) &&
+            expr.asStaticFunctionCall.name == "forName"
         }
 
         def isGetClass(expr: Expr[V]): Boolean = { // virtual call to Object.getClass
             expr.isVirtualFunctionCall && expr.asVirtualFunctionCall.name == "getClass" &&
-                expr.asVirtualFunctionCall.descriptor ==
+            expr.asVirtualFunctionCall.descriptor ==
                 MethodDescriptor.withNoArgs(ObjectType.Class)
         }
 
@@ -133,7 +135,8 @@ object TypesUtil {
             val expr = stmts(defSite).asAssignment.expr
 
             if (!expr.isClassConst && !isForName(expr) && !isBaseTypeLoad(expr) &
-                !isGetClass(expr)) {
+                    !isGetClass(expr)
+            ) {
                 return None;
             }
 
@@ -148,9 +151,7 @@ object TypesUtil {
                     else
                         expr.asStaticFunctionCall.params(1)
 
-                val possibleClassesOpt = getPossibleForNameClasses(
-                    className, stmts, project, onlyObjectTypes
-                )
+                val possibleClassesOpt = getPossibleForNameClasses(className, stmts, project, onlyObjectTypes)
                 if (possibleClassesOpt.isEmpty) {
                     return None;
                 }
@@ -162,9 +163,7 @@ object TypesUtil {
                     return None;
                 }
 
-                possibleTypes ++= typesOfVarOpt.get.filter { tpe =>
-                    tpe.isObjectType || !onlyObjectTypes
-                }
+                possibleTypes ++= typesOfVarOpt.get.filter { tpe => tpe.isObjectType || !onlyObjectTypes }
             } else if (!onlyObjectTypes) {
                 possibleTypes += getBaseType(expr)
             }
@@ -198,11 +197,14 @@ object TypesUtil {
         var possibleTypes: Set[Type] = Set.empty
 
         AllocationsUtil.handleAllocations(
-            value, context, depender, stmts, _ eq ObjectType.Class, failure
+            value,
+            context,
+            depender,
+            stmts,
+            _ eq ObjectType.Class,
+            failure
         ) { (allocationContext, defSite, _stmts) =>
-            possibleTypes ++= getPossibleClasses(
-                allocationContext, defSite, depender, _stmts, failure, onlyObjectTypes
-            )
+            possibleTypes ++= getPossibleClasses(allocationContext, defSite, depender, _stmts, failure, onlyObjectTypes)
         }
 
         possibleTypes
@@ -258,9 +260,7 @@ object TypesUtil {
             if (typesOfVarOpt.isEmpty)
                 failure()
             else
-                possibleTypes ++= typesOfVarOpt.get.filter { tpe =>
-                    tpe.isObjectType || !onlyObjectTypes
-                }
+                possibleTypes ++= typesOfVarOpt.get.filter { tpe => tpe.isObjectType || !onlyObjectTypes }
         } else if (isBaseTypeLoad(expr) && !onlyObjectTypes) {
             possibleTypes += getBaseType(expr)
         } else {
@@ -273,13 +273,13 @@ object TypesUtil {
 
     private[this] def isForName(expr: Expr[V]): Boolean = { // static call to Class.forName
         expr.isStaticFunctionCall &&
-            (expr.asStaticFunctionCall.declaringClass eq ObjectType.Class) &&
-            expr.asStaticFunctionCall.name == "forName"
+        (expr.asStaticFunctionCall.declaringClass eq ObjectType.Class) &&
+        expr.asStaticFunctionCall.name == "forName"
     }
 
     private[this] def isGetClass(expr: Expr[V]): Boolean = { // virtual call to Object.getClass
         expr.isVirtualFunctionCall && expr.asVirtualFunctionCall.name == "getClass" &&
-            expr.asVirtualFunctionCall.descriptor == MethodDescriptor.withNoArgs(ObjectType.Class)
+        expr.asVirtualFunctionCall.descriptor == MethodDescriptor.withNoArgs(ObjectType.Class)
     }
 
     /**

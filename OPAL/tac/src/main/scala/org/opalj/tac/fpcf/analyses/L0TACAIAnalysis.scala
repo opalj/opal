@@ -39,7 +39,7 @@ class L0TACAIAnalysis private[analyses] (val project: SomeProject) extends FPCFA
 
     import org.opalj.tac.fpcf.analyses.TACAIAnalysis.computeTheTACAI
 
-    final implicit val aiFactory: ProjectSpecificAIExecutor = project.get(AIDomainFactoryKey)
+    implicit final val aiFactory: ProjectSpecificAIExecutor = project.get(AIDomainFactoryKey)
 
     def computeTAC(e: Entity): ProperPropertyComputationResult = {
         e match {
@@ -97,7 +97,7 @@ sealed trait L0TACAIAnalysisScheduler extends TACAIInitializer {
 
     override def requiredProjectInformation: ProjectInformationKeys = Seq(AIDomainFactoryKey)
 
-    final override def uses: Set[PropertyBounds] = Set(PropertyBounds.lub(BaseAIResult))
+    override final def uses: Set[PropertyBounds] = Set(PropertyBounds.lub(BaseAIResult))
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(TACAI)
 

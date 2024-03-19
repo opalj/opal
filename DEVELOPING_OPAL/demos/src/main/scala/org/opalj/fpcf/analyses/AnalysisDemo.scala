@@ -17,8 +17,7 @@ trait AnalysisDemo extends ProjectAnalysisApplication {
     def entitiesByProperty[P <: Property](
         property: P
     )(
-        implicit
-        propertyStore: PropertyStore
+        implicit propertyStore: PropertyStore
     ): Iterator[Entity] = {
         propertyStore.entities(property, property)
     }
@@ -32,10 +31,9 @@ trait MethodAnalysisDemo extends AnalysisDemo {
 
     def buildMethodInfo(
         entities:    Iterable[SomeEPS],
-        withJarInfo: Boolean           = false
+        withJarInfo: Boolean = false
     )(
-        implicit
-        project: Project[URL]
+        implicit project: Project[URL]
     ): Iterable[String] = {
         entities map { eps =>
             val method = eps.e.asInstanceOf[Method]

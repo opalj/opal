@@ -107,17 +107,19 @@ object FieldAndArrayUsageAnalysis extends ProjectAnalysisApplication {
                                     if (objRef.isVar && objRef.asVar.definedBy != IntTrieSet(-1)) {
                                         val defSitesOfObjRef = objRef.asVar.definedBy
                                         if (defSitesOfObjRef.exists { defSite =>
-                                            if (defSite > 0) {
-                                                stmts(defSite) match {
-                                                    case Assignment(_, _, New(_, _)) => true
-                                                    case _                           => false
-                                                }
-                                            } else false
-                                        }) {
+                                                if (defSite > 0) {
+                                                    stmts(defSite) match {
+                                                        case Assignment(_, _, New(_, _)) => true
+                                                        case _                           => false
+                                                    }
+                                                } else false
+                                            }
+                                        ) {
                                             putFieldsOfAllocation += 1
                                             for (stmt <- stmts) {
                                                 stmt match {
-                                                    case Assignment(_, DVar(_, _), GetField(_, _, `name`, _, objRef2)) if objRef2.isVar =>
+                                                    case Assignment(_, DVar(_, _), GetField(_, _, `name`, _, objRef2))
+                                                        if objRef2.isVar =>
                                                         if (objRef2.asVar.definedBy.exists(defSitesOfObjRef.contains)) {
                                                             getFields += 1
                                                         }
@@ -161,7 +163,9 @@ object FieldAndArrayUsageAnalysis extends ProjectAnalysisApplication {
                                                         maybeViaParamArrays += 1
                                                     case FinalP(EscapeViaReturn | AtMost(EscapeViaReturn)) =>
                                                         maybeViaReturn += 1
-                                                    case FinalP(EscapeViaAbnormalReturn | AtMost(EscapeViaAbnormalReturn)) =>
+                                                    case FinalP(
+                                                            EscapeViaAbnormalReturn | AtMost(EscapeViaAbnormalReturn)
+                                                        ) =>
                                                         maybeViaAbnormal += 1
                                                     case FinalP(p) if p.isBottom => globalArrays += 1
                                                     case _                       => maybeInCallerArrays += 1
@@ -177,8 +181,10 @@ object FieldAndArrayUsageAnalysis extends ProjectAnalysisApplication {
                                                 println(
                                                     s"""
                                                        |${m.toJava}:
-                                                       |  ${body.lineNumber(as.pc).map("line: " + _.toString).getOrElse("")} new $as
-                                                       |  ${body.lineNumber(pcOfStore).map("line: " + _.toString).getOrElse("")} $arrayStore}
+                                                       |  ${body.lineNumber(as.pc).map("line: " + _.toString)
+                                                            .getOrElse("")} new $as
+                                                       |  ${body.lineNumber(pcOfStore)
+                                                            .map("line: " + _.toString).getOrElse("")} $arrayStore}
                                                        |""".stripMargin
                                                 )
                                             }

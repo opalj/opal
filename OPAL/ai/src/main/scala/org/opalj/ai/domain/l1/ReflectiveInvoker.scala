@@ -63,9 +63,7 @@ trait ReflectiveInvoker extends DefaultJavaObjectToDomainValueConversion with As
                 }
                 val jParameterClassTypes = descriptor.parameterTypes map (_.toJavaClass)
                 val method =
-                    declaringClass.toJavaClass.getDeclaredMethod(
-                        name, jParameterClassTypes: _*
-                    )
+                    declaringClass.toJavaClass.getDeclaredMethod(name, jParameterClassTypes: _*)
                 (method, jReceiver, jOperands)
             } catch {
                 case e: ClassNotFoundException =>

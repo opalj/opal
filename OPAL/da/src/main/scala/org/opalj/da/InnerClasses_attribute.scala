@@ -25,11 +25,11 @@ import scala.xml.Node
  * @author Andre Pacak
  */
 case class InnerClasses_attribute(
-        attribute_name_index: Int,
-        classes:              Seq[InnerClassesEntry]
+    attribute_name_index: Int,
+    classes:              Seq[InnerClassesEntry]
 ) extends Attribute {
 
-    final override def attribute_length = 2 + (classes.size * 8)
+    override final def attribute_length = 2 + (classes.size * 8)
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         throw new UnsupportedOperationException(
@@ -40,8 +40,8 @@ case class InnerClasses_attribute(
     def toXHTML(definingClass: FieldTypeInfo)(implicit cp: Constant_Pool): Node = {
         <div id="inner_classes">
             <details>
-                <summary class="attribute_name">InnerClasses [size: { classes.size } item(s)]</summary>
-                { classes.map(_.toXHTML(definingClass)) }
+                <summary class="attribute_name">InnerClasses [size: {classes.size} item(s)]</summary>
+                {classes.map(_.toXHTML(definingClass))}
             </details>
         </div>
     }

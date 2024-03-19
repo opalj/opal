@@ -28,7 +28,7 @@ sealed trait InterpretationFailedException {
     val cfJoins: IntTrieSet
     val operandsArray: domain.OperandsArray
     val localsArray: domain.LocalsArray
-    val memoryLayoutBeforeSubroutineCall: List[(Int /*PC*/ , domain.OperandsArray, domain.LocalsArray)]
+    val memoryLayoutBeforeSubroutineCall: List[(Int /*PC*/, domain.OperandsArray, domain.LocalsArray)]
 }
 
 /**
@@ -49,7 +49,7 @@ object InterpretationFailedException {
         theEvaluatedPCs:                     IntArrayStack,
         theOperandsArray:                    theDomain.OperandsArray,
         theLocalsArray:                      theDomain.LocalsArray,
-        theMemoryLayoutBeforeSubroutineCall: List[(Int /*PC*/ , theDomain.OperandsArray, theDomain.LocalsArray)]
+        theMemoryLayoutBeforeSubroutineCall: List[(Int /*PC*/, theDomain.OperandsArray, theDomain.LocalsArray)]
     ): AIException with InterpretationFailedException = {
 
         new AIException("the interpretation failed", theCause) with InterpretationFailedException {
@@ -64,9 +64,10 @@ object InterpretationFailedException {
 
             val operandsArray: theDomain.OperandsArray = theOperandsArray
             val localsArray: theDomain.LocalsArray = theLocalsArray
-            val memoryLayoutBeforeSubroutineCall: List[(Int /*PC*/ , theDomain.OperandsArray, theDomain.LocalsArray)] = theMemoryLayoutBeforeSubroutineCall
+            val memoryLayoutBeforeSubroutineCall: List[(Int /*PC*/, theDomain.OperandsArray, theDomain.LocalsArray)] =
+                theMemoryLayoutBeforeSubroutineCall
 
-            final override def toString: String = {
+            override final def toString: String = {
                 s"InterpretationFailedException(\n\tdomain=$domain," +
                     s"\n\tai=${ai.getClass},\n\tcause=$cause," +
                     s"\n\tpc=$pc," +
@@ -76,16 +77,16 @@ object InterpretationFailedException {
                         else
                             s"\n\toperands=N/A (the pc is invalid: $pc)"
                     ) +
-                        (
-                            if (pc < theLocalsArray.length)
-                                s"\n\tregisters=${localsArray(pc).zipWithIndex.map(_.swap).mkString(",")}"
-                            else
-                                s"\n\tregisters=N/A (the pc is invalid: $pc)"
-                        ) +
-                            s"\n)"
+                    (
+                        if (pc < theLocalsArray.length)
+                            s"\n\tregisters=${localsArray(pc).zipWithIndex.map(_.swap).mkString(",")}"
+                        else
+                            s"\n\tregisters=N/A (the pc is invalid: $pc)"
+                    ) +
+                    s"\n)"
             }
 
-            final override def getMessage(): String = toString
+            override final def getMessage(): String = toString
         }
     }
 }

@@ -116,23 +116,23 @@ private[seq] final class FIFOTasksManager extends TasksManager {
 }
 
 private class WeightedQualifiedTask(
-        val task:   QualifiedTask,
-        val weight: Int
+    val task:   QualifiedTask,
+    val weight: Int
 ) extends Comparable[WeightedQualifiedTask] {
     def compareTo(other: WeightedQualifiedTask) = this.weight - other.weight
 }
 
 private class WeightedExtendedQualifiedTask(
-        val task:    QualifiedTask,
-        val taskEPK: SomeEPK,
-        val weight:  Int
+    val task:    QualifiedTask,
+    val taskEPK: SomeEPK,
+    val weight:  Int
 ) extends Comparable[WeightedQualifiedTask] {
     def compareTo(other: WeightedQualifiedTask) = this.weight - other.weight
 }
 
 private class ExtendedQualifiedTask(
-        val task:    QualifiedTask,
-        val taskEPK: SomeEPK
+    val task:    QualifiedTask,
+    val taskEPK: SomeEPK
 )
 
 trait PropertyStoreDependentTasksManager extends TasksManager {
@@ -334,7 +334,7 @@ private[seq] final class ManyDependeesOfDirectDependersLastTasksManager
         val t = this.initialTasks.pollFirst()
         if (t ne null) {
             t()
-            return ;
+            return;
         }
 
         val wt = this.tasks.poll()
@@ -386,7 +386,7 @@ private[seq] final class ManyDependeesOfDirectDependersFirstTasksManager
         val t = this.initialTasks.pollFirst()
         if (t ne null) {
             t()
-            return ;
+            return;
         }
 
         val wt = this.tasks.poll()
@@ -423,9 +423,7 @@ private[seq] final class ManyDependeesAndDependersOfDirectDependersLastTasksMana
         currentDependers: Iterable[SomeEPK]
     ): Unit = {
         var weight = 0
-        currentDependers foreach { epk =>
-            weight += ps.dependeesCount(epk) + ps.dependersCount(epk)
-        }
+        currentDependers foreach { epk => weight += ps.dependeesCount(epk) + ps.dependersCount(epk) }
         this.tasks.add(new WeightedQualifiedTask(task, weight))
     }
 
@@ -462,9 +460,7 @@ private[seq] final class ManyDependeesAndDependersOfDirectDependersFirstTasksMan
         currentDependers: Iterable[SomeEPK]
     ): Unit = {
         var weight = 0
-        currentDependers foreach { epk =>
-            weight -= ps.dependeesCount(epk) + ps.dependersCount(epk)
-        }
+        currentDependers foreach { epk => weight -= ps.dependeesCount(epk) + ps.dependersCount(epk) }
         this.tasks.add(new WeightedQualifiedTask(task, weight))
     }
 
@@ -484,8 +480,8 @@ private[seq] final class ManyDependeesAndDependersOfDirectDependersFirstTasksMan
 }
 
 private[seq] final class AllDependeesTasksManager(
-        final val forward:           Boolean = true,
-        final val manyDependeesLast: Boolean = true
+    final val forward:           Boolean = true,
+    final val manyDependeesLast: Boolean = true
 ) extends PropertyStoreDependentTasksManager {
 
     private[this] val initialTasks: ArrayDeque[QualifiedTask] = new ArrayDeque(50000)

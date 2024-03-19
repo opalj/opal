@@ -100,13 +100,13 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
      *                  checkPurityOfX methods to aggregrate the purity
      */
     class State(
-            var dependees: Set[EOptionP[Entity, Property]],
-            val method:    Method,
-            val context:   Context,
-            val declClass: ObjectType,
-            var tac:       TACode[TACMethodParameter, V]   = null,
-            var lbPurity:  Purity                          = Pure,
-            var ubPurity:  Purity                          = Pure
+        var dependees: Set[EOptionP[Entity, Property]],
+        val method:    Method,
+        val context:   Context,
+        val declClass: ObjectType,
+        var tac:       TACode[TACMethodParameter, V] = null,
+        var lbPurity:  Purity                        = Pure,
+        var ubPurity:  Purity                        = Pure
     ) extends AnalysisState
 
     override type StateType = State
@@ -124,7 +124,11 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
      * @note Fresh references can be treated as non-escaping as the analysis result will be impure
      *       if anything escapes the method via parameters, static field assignments or calls.
      */
-    override def isLocal(expr: Expr[V], otherwise: Purity, excludedDefSites: IntTrieSet = EmptyIntTrieSet)(implicit state: State): Boolean = {
+    override def isLocal(
+        expr:             Expr[V],
+        otherwise:        Purity,
+        excludedDefSites: IntTrieSet = EmptyIntTrieSet
+    )(implicit state: State): Boolean = {
         if (expr.isConst)
             true
         else if (expr.asVar.value.computationalType ne ComputationalTypeReference) {
@@ -133,30 +137,31 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         } else if (expr.isVar) {
             val defSites = expr.asVar.definedBy -- excludedDefSites
             if (defSites.forall { defSite =>
-                if (defSite >= 0) {
-                    val rhs = state.tac.stmts(defSite).asAssignment.expr
-                    if (rhs.isConst)
-                        true
-                    else {
-                        val astID = rhs.astID
-                        astID match {
-                            case New.ASTID | NewArray.ASTID => true
-                            case GetField.ASTID =>
-                                val objRef = rhs.asGetField.objRef
-                                isLocal(objRef, otherwise, excludedDefSites ++ defSites)
-                            case ArrayLoad.ASTID =>
-                                val arrayRef = rhs.asArrayLoad.arrayRef
-                                isLocal(arrayRef, otherwise, excludedDefSites ++ defSites)
-                            case _ => false
+                    if (defSite >= 0) {
+                        val rhs = state.tac.stmts(defSite).asAssignment.expr
+                        if (rhs.isConst)
+                            true
+                        else {
+                            val astID = rhs.astID
+                            astID match {
+                                case New.ASTID | NewArray.ASTID => true
+                                case GetField.ASTID =>
+                                    val objRef = rhs.asGetField.objRef
+                                    isLocal(objRef, otherwise, excludedDefSites ++ defSites)
+                                case ArrayLoad.ASTID =>
+                                    val arrayRef = rhs.asArrayLoad.arrayRef
+                                    isLocal(arrayRef, otherwise, excludedDefSites ++ defSites)
+                                case _ => false
+                            }
                         }
+                    } else if (isImmediateVMException(defSite)) {
+                        true // immediate VM exceptions are freshly created
+                    } else {
+                        // In initializers the self reference (this) is local
+                        state.method.isConstructor && defSite == OriginOfThis
                     }
-                } else if (isImmediateVMException(defSite)) {
-                    true // immediate VM exceptions are freshly created
-                } else {
-                    // In initializers the self reference (this) is local
-                    state.method.isConstructor && defSite == OriginOfThis
                 }
-            }) {
+            ) {
                 true
             } else {
                 atMost(otherwise)
@@ -250,7 +255,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         if (!state.ubPurity.isDeterministic) {
             state.dependees = state.dependees.filter { ep =>
                 ep.pk == Purity.key || ep.pk == VirtualMethodPurity.key || ep.pk == Callees.key ||
-                    ep.pk == TACAI.key
+                ep.pk == TACAI.key
             }
         }
         // IMPROVE: We could filter Purity/VPurity dependees with an lb not less than maxPurity
@@ -287,7 +292,6 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 LazilyInitialized) => // Reading not assignable fields
             case FinalP(TransitivelyImmutableType |
                 TransitivelyImmutableClass) => // Returning not assignable field
-
             // Cases resulting in side-effect freeness
             case FinalP(_: FieldAssignability | // Reading assignable field
                 _: TypeImmutability | _: ClassImmutability) => // Returning assignable field
@@ -452,7 +456,7 @@ trait L1PurityAnalysisScheduler extends FPCFAnalysisScheduler {
         )
     }
 
-    final override type InitializationData = L1PurityAnalysis
+    override final type InitializationData = L1PurityAnalysis
     final def init(p: SomeProject, ps: PropertyStore): InitializationData = new L1PurityAnalysis(p)
 
     override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
@@ -473,12 +477,15 @@ object EagerL1PurityAnalysis extends L1PurityAnalysisScheduler with FPCFEagerAna
         super.requiredProjectInformation :+ CallGraphKey
 
     override def start(
-        p: SomeProject, ps: PropertyStore, analysis: InitializationData
+        p:        SomeProject,
+        ps:       PropertyStore,
+        analysis: InitializationData
     ): FPCFAnalysis = {
         val cg = p.get(CallGraphKey)
         val methods = cg.reachableMethods().collect {
-            case c @ Context(dm) if dm.hasSingleDefinedMethod && dm.definedMethod.body.isDefined &&
-                !analysis.configuredPurity.wasSet(dm) && ps(dm, Callers.key).ub != NoCallers =>
+            case c @ Context(dm)
+                if dm.hasSingleDefinedMethod && dm.definedMethod.body.isDefined &&
+                    !analysis.configuredPurity.wasSet(dm) && ps(dm, Callers.key).ub != NoCallers =>
                 c
         }
 
@@ -498,7 +505,9 @@ object EagerL1PurityAnalysis extends L1PurityAnalysisScheduler with FPCFEagerAna
 object LazyL1PurityAnalysis extends L1PurityAnalysisScheduler with FPCFLazyAnalysisScheduler {
 
     override def register(
-        p: SomeProject, ps: PropertyStore, analysis: InitializationData
+        p:        SomeProject,
+        ps:       PropertyStore,
+        analysis: InitializationData
     ): FPCFAnalysis = {
         ps.registerLazyPropertyComputation(Purity.key, analysis.doDeterminePurity)
         analysis

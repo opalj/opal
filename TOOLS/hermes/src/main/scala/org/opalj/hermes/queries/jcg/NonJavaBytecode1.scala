@@ -55,7 +55,8 @@ class NonJavaBytecode1(implicit hermes: HermesConfig) extends DefaultFeatureQuer
                         sintfCfO.isDefined &&
                             sintfCfO.get.findMethod(name, desc).exists(_.isStatic) &&
                             classHierarchy.allSuperinterfacetypes(sintf).contains(declIntf.thisType)
-                    }) {
+                    }
+                ) {
 
                     val pc = pcAndInstruction.pc
                     val l = InstructionLocation(methodLocation, pc)

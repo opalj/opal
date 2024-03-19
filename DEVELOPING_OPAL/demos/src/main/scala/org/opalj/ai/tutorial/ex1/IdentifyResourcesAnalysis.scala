@@ -24,8 +24,8 @@ import scala.collection.parallel.CollectionConverters.IterableIsParallelizable
 object IdentifyResourcesAnalysis extends ProjectAnalysisApplication {
 
     class AnalysisDomain(
-            override val project: Project[URL],
-            val method:           Method
+        override val project: Project[URL],
+        val method:           Method
     ) extends CorrelationalDomain
         with domain.DefaultSpecialDomainValuesBinding
         with domain.ThrowAllPotentialExceptionsConfiguration
@@ -67,9 +67,10 @@ object IdentifyResourcesAnalysis extends ProjectAnalysisApplication {
                     m.body.get.foldLeft(List.empty[Int /*PC*/ ]) { (pcs, pc, instruction) =>
                         instruction match {
                             case INVOKESPECIAL(
-                                ObjectType("java/io/File"), false /* = isInterface*/ ,
-                                "<init>",
-                                SingleArgumentMethodDescriptor((ObjectType.String, VoidType))
+                                    ObjectType("java/io/File"),
+                                    false /* = isInterface*/,
+                                    "<init>",
+                                    SingleArgumentMethodDescriptor((ObjectType.String, VoidType))
                                 ) =>
                                 pc :: pcs
                             case _ =>
@@ -93,7 +94,7 @@ object IdentifyResourcesAnalysis extends ProjectAnalysisApplication {
             } yield (m, pc, value)
         } { ns => println(s"Performing the abstract interpretations took ${ns.toSeconds}") }
 
-        def callSiteToString(callSite: (Method, Int /* PC*/ , String)): String = {
+        def callSiteToString(callSite: (Method, Int /* PC*/, String)): String = {
             val (m, pc, v) = callSite
             m.toJava(s"$pc: $v")
         }

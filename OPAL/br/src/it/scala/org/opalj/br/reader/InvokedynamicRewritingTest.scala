@@ -8,14 +8,14 @@ import scala.language.existentials
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.jdk.CollectionConverters._
 
+import org.scalatest.funsuite.AnyFunSuite
+
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.reader.InvokedynamicRewriting.TargetMethodNameRegEx
 import org.opalj.log.OPALLogger
 import org.opalj.log.StandardLogContext
-
-import org.scalatest.funsuite.AnyFunSuite
 
 /**
  * Infrastructure to load a project containing Jars.
@@ -48,7 +48,7 @@ abstract class InvokedynamicRewritingTest extends AnyFunSuite {
             } {
                 factoryCalls.add(i)
             }
-            */
+             */
         }
         info(s"found ${factoryCalls.size} lambda proxy factory method calls")
         factoryCalls.asScala
@@ -100,9 +100,8 @@ abstract class InvokedynamicRewritingTest extends AnyFunSuite {
 
         if (missingProxyClassFiles.nonEmpty) {
             val failures = missingProxyClassFiles.size
-            val data = missingProxyClassFiles.mkString(
-                "missing proxy ClassFiles for the following instructions:\n\t", "\n\t", "\n"
-            )
+            val data = missingProxyClassFiles
+                .mkString("missing proxy ClassFiles for the following instructions:\n\t", "\n\t", "\n")
             val logFile = io.writeAndOpen(data, "MissingProxyClassFiles", ".txt")
             val msg = s"missing $failures proxy ClassFiles for lambdas; see $logFile for details"
             fail(msg)

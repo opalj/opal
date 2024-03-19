@@ -105,6 +105,7 @@ final case class StructuralUpdate[V](value: V) extends SomeUpdate[V] {
         StructuralUpdate(newValue)
     }
 }
+
 /**
  * Characterizes an update that did not affect the abstract state but instead just
  * updated some meta information.

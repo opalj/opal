@@ -8,6 +8,11 @@ import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicLong
 import scala.jdk.CollectionConverters._
 
+import org.junit.runner.RunWith
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
+
 import org.opalj.br.Method
 import org.opalj.br.TestSupport.createJREProject
 import org.opalj.br.analyses.Project
@@ -17,11 +22,6 @@ import org.opalj.br.reader.BytecodeInstructionsCache
 import org.opalj.br.reader.Java8FrameworkWithCaching
 import org.opalj.util.PerformanceEvaluation
 import org.opalj.util.PerformanceEvaluation.time
-
-import org.junit.runner.RunWith
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.matchers.should.Matchers
-import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests if we are able to collect useful and self-consistent def/use information for the entire
@@ -35,8 +35,8 @@ class RecordDefUseTest extends AnyFunSpec with Matchers {
     protected[this] object DominatorsPerformanceEvaluation extends PerformanceEvaluation
 
     protected[this] class DefUseDomain(
-            val method:  Method,
-            val project: Project[URL]
+        val method:  Method,
+        val project: Project[URL]
     ) extends CorrelationalDomain
         with TheProject
         with TheMethod
@@ -57,8 +57,8 @@ class RecordDefUseTest extends AnyFunSpec with Matchers {
         with RecordDefUse // <=== we are going to test!
 
     protected[this] class RefinedDefUseDomain(
-            method:  Method,
-            project: Project[URL]
+        method:  Method,
+        project: Project[URL]
     ) extends DefUseDomain(method, project)
         with RefineDefUseUsingOrigins // this should not really affect the results...
 
@@ -105,11 +105,9 @@ class RecordDefUseTest extends AnyFunSpec with Matchers {
                 val useInstruction = instructions(useSite)
                 val poppedOperands = useInstruction.numberOfPoppedOperands(NotRequired)
                 val hasDefSite =
-                    (0 until poppedOperands).exists { poIndex =>
-                        d.operandOrigin(useSite, poIndex).contains(pc)
-                    } || {
+                    (0 until poppedOperands).exists { poIndex => d.operandOrigin(useSite, poIndex).contains(pc) } || {
                         useInstruction.readsLocal &&
-                            d.localOrigin(useSite, useInstruction.indexOfReadLocal).contains(pc)
+                        d.localOrigin(useSite, useInstruction.indexOfReadLocal).contains(pc)
                     }
                 if (!hasDefSite) {
                     fail(s"use at $useSite has no def site $pc ($instruction)")
@@ -126,7 +124,7 @@ class RecordDefUseTest extends AnyFunSpec with Matchers {
                             defSites.contains(ai.ValueOriginForImmediateVMException(pc))
                     } || {
                         useInstruction.readsLocal &&
-                            d.localOrigin(useSite, useInstruction.indexOfReadLocal).contains(pc)
+                        d.localOrigin(useSite, useInstruction.indexOfReadLocal).contains(pc)
                     }
                 if (!hasDefSite) {
                     fail(s"exception use at $useSite has no def site $pc ($instruction)")
@@ -147,9 +145,10 @@ class RecordDefUseTest extends AnyFunSpec with Matchers {
                 val domainOrigins = d.origins(op)
                 domainOrigins foreach { o =>
                     if (!(
-                        defUseOrigins.contains(o) ||
-                        defUseOrigins.exists(duo => ehs.exists(_.handlerPC == duo))
-                    )) {
+                            defUseOrigins.contains(o) ||
+                                defUseOrigins.exists(duo => ehs.exists(_.handlerPC == duo))
+                        )
+                    ) {
                         val instruction = code.instructions(pc)
                         val isHandler = code.exceptionHandlers.exists(_.handlerPC == pc)
                         val message =
@@ -172,7 +171,8 @@ class RecordDefUseTest extends AnyFunSpec with Matchers {
                 // is a relevant use-site
                 if (opIndex < usedOperands &&
                     // we already tested: !instruction.isStackManagementInstruction
-                    !instruction.isStoreLocalVariableInstruction) {
+                    !instruction.isStoreLocalVariableInstruction
+                ) {
                     defUseOrigins foreach { defUseOrigin => // the origins of a value...
                         val defUseUseSites = d.usedBy(defUseOrigin)
                         if (defUseUseSites == null) {

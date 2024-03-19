@@ -41,8 +41,8 @@ import org.opalj.tac.fpcf.properties.TACAI
  * @author Andreas Bauer
  */
 final class ArrayInstantiationsAnalysis(
-        val project:     SomeProject,
-        selectSetEntity: TypeSetEntitySelector
+    val project:     SomeProject,
+    selectSetEntity: TypeSetEntitySelector
 ) extends ReachableMethodAnalysis {
 
     override def processMethod(
@@ -95,10 +95,10 @@ final class ArrayInstantiationsAnalysis(
 
         // Note: Since 'until' is an exclusive range, all array types in 'arrays' with
         // dimension 1 are not processed here.
-        for (
+        for {
             at <- arrays;
             dim <- 1 until at.dimensions
-        ) {
+        } {
 
             val targetAT = ArrayType(dim + 1, at.elementType)
             val assignedAT = targetAT.componentType.asArrayType
@@ -114,7 +114,7 @@ final class ArrayInstantiationsAnalysis(
 }
 
 class ArrayInstantiationsAnalysisScheduler(
-        selectSetEntity: TypeSetEntitySelector
+    selectSetEntity: TypeSetEntitySelector
 ) extends BasicFPCFTriggeredAnalysisScheduler {
 
     override def requiredProjectInformation: ProjectInformationKeys = Seq(TypeIteratorKey)

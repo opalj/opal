@@ -52,7 +52,8 @@ object FirstInstrumentation extends App {
                     } {
                         modified = true
                         lCode.insert(
-                            pc, InsertionPosition.After,
+                            pc,
+                            InsertionPosition.After,
                             Seq(
                                 DUP,
                                 GETSTATIC(SystemType, "out", PrintStreamType),
@@ -62,7 +63,8 @@ object FirstInstrumentation extends App {
                         )
                         // print out the receiver's hashCode (it has to be on the stack!)
                         lCode.insert(
-                            pc, InsertionPosition.Before,
+                            pc,
+                            InsertionPosition.Before,
                             Seq(
                                 DUP,
                                 INVOKEVIRTUAL(ObjectType.Object, "hashCode", JustReturnsInteger),
@@ -75,8 +77,8 @@ object FirstInstrumentation extends App {
                     if (modified) {
                         val (newCode, _) =
                             lCode.result(cf.version, m)( // We can use the default class hierarchy in this example
-                            // as we only instrument linear methods using linear code,
-                            // hence, we don't need to compute a new stack map table attribute!
+                                // as we only instrument linear methods using linear code,
+                                // hence, we don't need to compute a new stack map table attribute!
                             )
                         m.copy(body = Some(newCode))
                     } else {

@@ -38,14 +38,13 @@ import org.opalj.tac.fpcf.properties.TACAI
  * @param _calleeDependee Dependee for the callee property of the method.
  */
 final class TypePropagationState[ContextType <: Context](
-        override val callContext:                  ContextType,
-        val typeSetEntity:                         TypeSetEntity,
-        override protected[this] var _tacDependee: EOptionP[Method, TACAI],
-
-        private[this] var _ownInstantiatedTypesDependee: EOptionP[TypeSetEntity, InstantiatedTypes],
-        private[this] var _calleeDependee:               EOptionP[DeclaredMethod, Callees],
-        private[this] var _readAccessDependee:           EOptionP[Method, MethodFieldReadAccessInformation],
-        private[this] var _writeAccessDependee:          EOptionP[Method, MethodFieldWriteAccessInformation]
+    override val callContext:                        ContextType,
+    val typeSetEntity:                               TypeSetEntity,
+    override protected[this] var _tacDependee:       EOptionP[Method, TACAI],
+    private[this] var _ownInstantiatedTypesDependee: EOptionP[TypeSetEntity, InstantiatedTypes],
+    private[this] var _calleeDependee:               EOptionP[DeclaredMethod, Callees],
+    private[this] var _readAccessDependee:           EOptionP[Method, MethodFieldReadAccessInformation],
+    private[this] var _writeAccessDependee:          EOptionP[Method, MethodFieldWriteAccessInformation]
 ) extends BaseAnalysisState with TACAIBasedAnalysisState[ContextType] {
 
     var methodWritesArrays: Boolean = false
@@ -158,8 +157,7 @@ final class TypePropagationState[ContextType <: Context](
         typeSetEntity: TypeSetEntity,
         typeFilters:   UIDSet[ReferenceType]
     )(
-        implicit
-        classHierarchy: ClassHierarchy
+        implicit classHierarchy: ClassHierarchy
     ): Boolean = {
         assert(typeFilters.nonEmpty)
         val alreadyExists = _forwardPropagationEntities.contains(typeSetEntity)
@@ -205,8 +203,7 @@ final class TypePropagationState[ContextType <: Context](
         typeSetEntity: TypeSetEntity,
         typeFilters:   UIDSet[ReferenceType]
     )(
-        implicit
-        classHierarchy: ClassHierarchy
+        implicit classHierarchy: ClassHierarchy
     ): Boolean = {
         assert(typeFilters.nonEmpty)
         val alreadyExists = _backwardPropagationFilters.containsKey(typeSetEntity)
@@ -242,9 +239,9 @@ final class TypePropagationState[ContextType <: Context](
 
     override def hasOpenDependencies: Boolean = {
         super.hasOpenDependencies ||
-            _ownInstantiatedTypesDependee.isRefinable ||
-            _calleeDependee.isRefinable ||
-            !_backwardPropagationDependees.isEmpty
+        _ownInstantiatedTypesDependee.isRefinable ||
+        _calleeDependee.isRefinable ||
+        !_backwardPropagationDependees.isEmpty
     }
 
     override def dependees: Set[SomeEOptionP] = {
@@ -286,8 +283,7 @@ final class TypePropagationState[ContextType <: Context](
     private[this] def rootTypes(
         types: UIDSet[ReferenceType]
     )(
-        implicit
-        classHierarchy: ClassHierarchy
+        implicit classHierarchy: ClassHierarchy
     ): UIDSet[ReferenceType] = {
         if (types.size <= 1)
             return types;

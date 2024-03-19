@@ -85,10 +85,10 @@ object AvailableExpressions extends MethodAnalysisApplication {
 
         ToTxt(taCode).mkString("Code:\n", "\n", "\n") +
             stmtFacts
-            .map(factsToString)
-            .zipWithIndex
-            .map(e => { val (f, index) = e; s"$index: $f" })
-            .mkString("Available expressions:\n\t", "\n\t", "\n\n") +
+                .map(factsToString)
+                .zipWithIndex
+                .map(e => { val (f, index) = e; s"$index: $f" })
+                .mkString("Available expressions:\n\t", "\n\t", "\n\n") +
             "\tNormal return(s): " +
             (if (normalRetFacts != null) factsToString(normalRetFacts) else "N/A") + "\n" +
             "\tAbnormal return(s): " +

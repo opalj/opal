@@ -28,10 +28,10 @@ package fpcf
  * @author Michael Eichberg
  */
 case class PropertyKindsConfiguration(
-        propertyKindsComputedInThisPhase:                      Set[PropertyKind],
-        propertyKindsComputedInLaterPhase:                     Set[PropertyKind]                    = Set.empty,
-        suppressInterimUpdates:                                Map[PropertyKind, Set[PropertyKind]] = Map.empty,
-        collaborativelyComputedPropertyKindsFinalizationOrder: List[List[PropertyKind]]             = List.empty
+    propertyKindsComputedInThisPhase:                      Set[PropertyKind],
+    propertyKindsComputedInLaterPhase:                     Set[PropertyKind]                    = Set.empty,
+    suppressInterimUpdates:                                Map[PropertyKind, Set[PropertyKind]] = Map.empty,
+    collaborativelyComputedPropertyKindsFinalizationOrder: List[List[PropertyKind]]             = List.empty
 ) {
 
     override def toString: String = {
@@ -45,8 +45,8 @@ case class PropertyKindsConfiguration(
                         sourcePKs.map(PropertyKey.name).mkString("{", ", ", "}")
             }.mkString("suppressInterimUpdates={", ",", "}\n\t") +
             collaborativelyComputedPropertyKindsFinalizationOrder
-            .map(_.map(PropertyKey.name).mkString("[", ",", "]"))
-            .mkString("finalizationOrder=[ ", " , ", " ]\n") +
+                .map(_.map(PropertyKey.name).mkString("[", ",", "]"))
+                .mkString("finalizationOrder=[ ", " , ", " ]\n") +
             ")"
     }
 }

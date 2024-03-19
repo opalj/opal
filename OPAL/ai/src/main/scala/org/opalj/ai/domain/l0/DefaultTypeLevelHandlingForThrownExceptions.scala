@@ -13,7 +13,8 @@ package l0
 trait DefaultTypeLevelHandlingForThrownExceptions extends ReturnInstructionsDomain {
     domain: ValuesDomain with Configuration with ExceptionsFactory =>
 
-    /*base impl.*/ def abruptMethodExecution(pc: Int, exception: ExceptionValue): Unit = {
+    /*base impl.*/
+    def abruptMethodExecution(pc: Int, exception: ExceptionValue): Unit = {
         /* Nothing to do. */
     }
 }

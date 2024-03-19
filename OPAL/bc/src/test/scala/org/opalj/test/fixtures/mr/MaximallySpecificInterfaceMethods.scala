@@ -58,16 +58,23 @@ object MaximallySpecificInterfaceMethods extends App {
                 /* 16 */ CONSTANT_Utf8("println"),
                 /* 17 */ CONSTANT_Utf8("(Ljava/lang/String;)V")
             ),
-            minor_version = 0, major_version = 52, access_flags = InterfaceAccessFlags,
-            this_class = 1, super_class = 3 /*extends java.lang.Object*/ ,
+            minor_version = 0,
+            major_version = 52,
+            access_flags = InterfaceAccessFlags,
+            this_class = 1,
+            super_class = 3 /*extends java.lang.Object*/,
             methods = ArraySeq(Method_Info(
-                access_flags = ACC_PUBLIC.mask, name_index = 7, descriptor_index = 8,
+                access_flags = ACC_PUBLIC.mask,
+                name_index = 7,
+                descriptor_index = 8,
                 attributes = ArraySeq(Code_attribute(
-                    attribute_name_index = 9, max_stack = 1, max_locals = 1,
+                    attribute_name_index = 9,
+                    max_stack = 1,
+                    max_locals = 1,
                     code = new Code(Array[Byte](
                         18, /* ldc*/ 10, /* #10*/
-                        (0xff & 184).toByte, /* invokestatic*/ 0, /* -> Methodref */ 12, /* #12 */
-                        (0xff & 177).toByte /* return */
+                        (0xFF & 184).toByte, /* invokestatic*/ 0, /* -> Methodref */ 12, /* #12 */
+                        (0xFF & 177).toByte /* return */
                     ))
                 ))
             ))
@@ -100,16 +107,23 @@ object MaximallySpecificInterfaceMethods extends App {
                 /* 16 */ CONSTANT_Utf8("println"),
                 /* 17 */ CONSTANT_Utf8("(Ljava/lang/String;)V")
             ),
-            minor_version = 0, major_version = 52, access_flags = InterfaceAccessFlags,
-            this_class = 1, super_class = 3 /*extends java.lang.Object*/ ,
+            minor_version = 0,
+            major_version = 52,
+            access_flags = InterfaceAccessFlags,
+            this_class = 1,
+            super_class = 3 /*extends java.lang.Object*/,
             methods = ArraySeq(Method_Info(
-                access_flags = ACC_PUBLIC.mask, name_index = 7, descriptor_index = 8,
+                access_flags = ACC_PUBLIC.mask,
+                name_index = 7,
+                descriptor_index = 8,
                 attributes = ArraySeq(Code_attribute(
-                    attribute_name_index = 9, max_stack = 1, max_locals = 1,
+                    attribute_name_index = 9,
+                    max_stack = 1,
+                    max_locals = 1,
                     code = new Code(Array[Byte](
                         18, /* ldc*/ 10, /* #10*/
-                        (0xff & 184).toByte, /* invokestatic*/ 0, /* -> Methodref */ 12, /* #12 */
-                        (0xff & 177).toByte /* return */
+                        (0xFF & 184).toByte, /* invokestatic*/ 0, /* -> Methodref */ 12, /* #12 */
+                        (0xFF & 177).toByte /* return */
                     ))
                 ))
             ))
@@ -133,11 +147,16 @@ object MaximallySpecificInterfaceMethods extends App {
                 /*  7 */ CONSTANT_Utf8("m"),
                 /*  8 */ CONSTANT_Utf8("()V")
             ),
-            minor_version = 0, major_version = 52, access_flags = InterfaceAccessFlags,
-            this_class = 1, super_class = 3 /*extends java.lang.Object*/ , interfaces = ArraySeq(5),
+            minor_version = 0,
+            major_version = 52,
+            access_flags = InterfaceAccessFlags,
+            this_class = 1,
+            super_class = 3 /*extends java.lang.Object*/,
+            interfaces = ArraySeq(5),
             methods = ArraySeq(Method_Info(
                 access_flags = ACC_PUBLIC.mask | ACC_ABSTRACT.mask,
-                name_index = 7, descriptor_index = 8
+                name_index = 7,
+                descriptor_index = 8
             ))
         )
         val assembledS1_a = Assembler(s1_aCF)
@@ -170,16 +189,24 @@ object MaximallySpecificInterfaceMethods extends App {
                 /* 18 */ CONSTANT_Class_info(19),
                 /* 19 */ CONSTANT_Utf8("mr/S0_2")
             ),
-            minor_version = 0, major_version = 52, access_flags = InterfaceAccessFlags,
-            this_class = 1, super_class = 3 /*extends java.lang.Object*/ , interfaces = ArraySeq(5, 18),
+            minor_version = 0,
+            major_version = 52,
+            access_flags = InterfaceAccessFlags,
+            this_class = 1,
+            super_class = 3 /*extends java.lang.Object*/,
+            interfaces = ArraySeq(5, 18),
             methods = ArraySeq(Method_Info(
-                access_flags = ACC_PUBLIC.mask, name_index = 7, descriptor_index = 8,
+                access_flags = ACC_PUBLIC.mask,
+                name_index = 7,
+                descriptor_index = 8,
                 attributes = ArraySeq(Code_attribute(
-                    attribute_name_index = 9, max_stack = 1, max_locals = 1,
+                    attribute_name_index = 9,
+                    max_stack = 1,
+                    max_locals = 1,
                     code = new Code(Array[Byte](
                         18, /* ldc*/ 10, /* #10*/
-                        (0xff & 184).toByte, /* invokestatic*/ 0, /* -> Methodref */ 12, /* #12 */
-                        (0xff & 177).toByte /* return */
+                        (0xFF & 184).toByte, /* invokestatic*/ 0, /* -> Methodref */ 12, /* #12 */
+                        (0xFF & 177).toByte /* return */
                     ))
                 ))
             ))
@@ -203,8 +230,12 @@ object MaximallySpecificInterfaceMethods extends App {
                 /*  7 */ CONSTANT_Class_info(8),
                 /*  8 */ CONSTANT_Utf8("mr/S1_c")
             ),
-            minor_version = 0, major_version = 52, access_flags = InterfaceAccessFlags,
-            this_class = 1, super_class = 3 /*extends java.lang.Object*/ , interfaces = ArraySeq(5, 7)
+            minor_version = 0,
+            major_version = 52,
+            access_flags = InterfaceAccessFlags,
+            this_class = 1,
+            super_class = 3 /*extends java.lang.Object*/,
+            interfaces = ArraySeq(5, 7)
         )
         val assembledS2_1 = Assembler(s2_1CF)
         val assembledS2_1Path = Paths.get("OPAL/bc/src/test/resources/MaximallySpecificInterfaceMethods/mr/S2_1.class")
@@ -223,8 +254,12 @@ object MaximallySpecificInterfaceMethods extends App {
                 /*  5 */ CONSTANT_Class_info(6),
                 /*  6 */ CONSTANT_Utf8("mr/S0_2")
             ),
-            minor_version = 0, major_version = 52, access_flags = InterfaceAccessFlags,
-            this_class = 1, super_class = 3 /*extends java.lang.Object*/ , interfaces = ArraySeq(5)
+            minor_version = 0,
+            major_version = 52,
+            access_flags = InterfaceAccessFlags,
+            this_class = 1,
+            super_class = 3 /*extends java.lang.Object*/,
+            interfaces = ArraySeq(5)
         )
         val assembledS2_2 = Assembler(s2_2CF)
         val assembledS2_2Path = Paths.get("OPAL/bc/src/test/resources/MaximallySpecificInterfaceMethods/mr/S2_2.class")
@@ -245,8 +280,12 @@ object MaximallySpecificInterfaceMethods extends App {
                 /*  7 */ CONSTANT_Class_info(8),
                 /*  8 */ CONSTANT_Utf8("mr/S2_2")
             ),
-            minor_version = 0, major_version = 52, access_flags = InterfaceAccessFlags,
-            this_class = 1, super_class = 3 /*extends java.lang.Object*/ , interfaces = ArraySeq(5, 7)
+            minor_version = 0,
+            major_version = 52,
+            access_flags = InterfaceAccessFlags,
+            this_class = 1,
+            super_class = 3 /*extends java.lang.Object*/,
+            interfaces = ArraySeq(5, 7)
         )
         val assembledIntf = Assembler(intfCF)
         val assembledIntfPath = Paths.get("OPAL/bc/src/test/resources/MaximallySpecificInterfaceMethods/mr/Intf.class")

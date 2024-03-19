@@ -8,7 +8,7 @@ package br
  * @author Dominik Helm
  */
 case class RecordComponent(
-        name:          String,
-        componentType: FieldType,
-        attributes:    Attributes
+    name:          String,
+    componentType: FieldType,
+    attributes:    Attributes
 )

@@ -10,7 +10,7 @@ import scala.xml.NodeSeq
  */
 trait CONSTANT_Ref extends Constant_Pool_Entry {
 
-    final override def size: Int = 1 + 2 + 2
+    override final def size: Int = 1 + 2 + 2
 
     val class_index: Constant_Pool_Index
 
@@ -18,17 +18,17 @@ trait CONSTANT_Ref extends Constant_Pool_Entry {
 
     override def asCPNode(implicit cp: Constant_Pool): Node =
         <div class="cp_entry">
-            { this.getClass().getSimpleName }
+            {this.getClass().getSimpleName}
             (<div class="cp_ref">
-                 class_index={ class_index }
+                 class_index={class_index}
                  &laquo;
-                 { cp(class_index).asCPNode }
+                 {cp(class_index).asCPNode}
                  &raquo;
              </div>
             <div class="cp_ref">
-                name_and_type_index={ name_and_type_index }
+                name_and_type_index={name_and_type_index}
                 &laquo;
-                { cp(name_and_type_index).asCPNode }
+                {cp(name_and_type_index).asCPNode}
                 &raquo;
             </div>
             )
@@ -36,9 +36,9 @@ trait CONSTANT_Ref extends Constant_Pool_Entry {
 
     def asInstructionParameter(classType: Option[String])(implicit cp: Constant_Pool): NodeSeq = {
         <span class="ref">
-            { if (classType.isDefined) <span>{ classType.get }&nbsp;</span> else NodeSeq.Empty }
-            { asJavaReferenceType(class_index).asSpan("") }
-            <span>{{ { cp(name_and_type_index).asInstructionParameter } }}</span>
+            {if (classType.isDefined) <span>{classType.get}&nbsp;</span> else NodeSeq.Empty}
+            {asJavaReferenceType(class_index).asSpan("")}
+            <span>{{ {cp(name_and_type_index).asInstructionParameter} }}</span>
         </span>
     }
 

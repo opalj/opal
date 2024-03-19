@@ -71,7 +71,7 @@ trait RecordThrownExceptions extends ai.ReturnInstructionsDomain {
     def allThrownExceptions: LongMap[ThrownException] = thrownExceptions
 
     abstract override def abruptMethodExecution(
-        pc:        Int /*PC*/ ,
+        pc:        Int /*PC*/,
         exception: ExceptionValue
     ): Unit = {
         val longPC = pc.toLong

@@ -31,11 +31,12 @@ import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.value.ValueInformation
 
 class SystemPropertiesAnalysisScheduler private[analyses] (
-        final val project: SomeProject
+    final val project: SomeProject
 ) extends ReachableMethodAnalysis {
 
     def processMethod(
-        callContext: ContextType, tacaiEP: EPS[Method, TACAI]
+        callContext: ContextType,
+        tacaiEP:     EPS[Method, TACAI]
     ): ProperPropertyComputationResult = {
         assert(tacaiEP.hasUBP && tacaiEP.ub.tac.isDefined)
         val stmts = tacaiEP.ub.tac.get.stmts
@@ -43,7 +44,11 @@ class SystemPropertiesAnalysisScheduler private[analyses] (
         var propertyMap: Map[String, Set[String]] = Map.empty
 
         for (stmt <- stmts) stmt match {
-            case VirtualFunctionCallStatement(call) if (call.name == "setProperty" || call.name == "put") && classHierarchy.isSubtypeOf(call.declaringClass, ObjectType("java/util/Properties")) =>
+            case VirtualFunctionCallStatement(call)
+                if (call.name == "setProperty" || call.name == "put") && classHierarchy.isSubtypeOf(
+                    call.declaringClass,
+                    ObjectType("java/util/Properties")
+                ) =>
                 propertyMap = computeProperties(propertyMap, call.params, stmts)
             case StaticMethodCall(_, ObjectType.System, _, "setProperty", _, params) =>
                 propertyMap = computeProperties(propertyMap, params, stmts)
@@ -118,11 +123,12 @@ class SystemPropertiesAnalysisScheduler private[analyses] (
     }
 
     def getPossibleStrings(
-        value: Expr[DUVar[ValueInformation]], stmts: Array[Stmt[DUVar[ValueInformation]]]
+        value: Expr[DUVar[ValueInformation]],
+        stmts: Array[Stmt[DUVar[ValueInformation]]]
     ): Set[String] = {
-        value.asVar.definedBy filter { index =>
-            index >= 0 && stmts(index).asAssignment.expr.isStringConst
-        } map { stmts(_).asAssignment.expr.asStringConst.value }
+        value.asVar.definedBy filter { index => index >= 0 && stmts(index).asAssignment.expr.isStringConst } map {
+            stmts(_).asAssignment.expr.asStringConst.value
+        }
     }
 
 }
@@ -140,7 +146,9 @@ object SystemPropertiesAnalysisScheduler extends BasicFPCFTriggeredAnalysisSched
     override def triggeredBy: PropertyKey[Callers] = Callers.key
 
     override def register(
-        p: SomeProject, ps: PropertyStore, unused: Null
+        p:      SomeProject,
+        ps:     PropertyStore,
+        unused: Null
     ): SystemPropertiesAnalysisScheduler = {
         val analysis = new SystemPropertiesAnalysisScheduler(p)
         ps.registerTriggeredComputation(triggeredBy, analysis.analyze)

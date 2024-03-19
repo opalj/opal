@@ -20,7 +20,7 @@ import org.opalj.de._
  */
 sealed trait SpecificationViolation {
 
-    final override def toString(): String = toString(useAnsiColors = false)
+    override final def toString(): String = toString(useAnsiColors = false)
 
     def toString(useAnsiColors: Boolean): String
 
@@ -33,12 +33,12 @@ sealed trait SpecificationViolation {
  * @author Marco Torsello
  */
 case class DependencyViolation(
-        project:           SomeProject,
-        dependencyChecker: DependencyChecker,
-        source:            VirtualSourceElement,
-        target:            VirtualSourceElement,
-        dependencyType:    DependencyType,
-        description:       String
+    project:           SomeProject,
+    dependencyChecker: DependencyChecker,
+    source:            VirtualSourceElement,
+    target:            VirtualSourceElement,
+    dependencyType:    DependencyType,
+    description:       String
 ) extends SpecificationViolation {
 
     override def toString(useAnsiColors: Boolean): String = {
@@ -69,11 +69,11 @@ case class DependencyViolation(
  * @author Marco Torsello
  */
 case class PropertyViolation(
-        project:         SomeProject,
-        propertyChecker: PropertyChecker,
-        source:          VirtualSourceElement,
-        propertyType:    String,
-        description:     String
+    project:         SomeProject,
+    propertyChecker: PropertyChecker,
+    source:          VirtualSourceElement,
+    propertyType:    String,
+    description:     String
 ) extends SpecificationViolation {
 
     override def toString(useAnsiColors: Boolean): String = {

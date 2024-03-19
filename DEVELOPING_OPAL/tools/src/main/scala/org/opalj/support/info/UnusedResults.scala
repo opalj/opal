@@ -64,7 +64,9 @@ object UnusedResults extends ProjectAnalysisApplication {
     }
 
     override def doAnalyze(
-        project: Project[URL], parameters: Seq[String], isInterrupted: () => Boolean
+        project:       Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () => Boolean
     ): BasicReport = {
 
         val issues = new ConcurrentLinkedQueue[String]

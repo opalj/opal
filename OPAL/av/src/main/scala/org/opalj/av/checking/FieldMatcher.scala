@@ -18,10 +18,10 @@ import org.opalj.br.analyses.SomeProject
  * @author Michael Eichberg
  */
 case class FieldMatcher(
-        declaringClass: ClassLevelMatcher,
-        annotations:    AnnotationsPredicate,
-        theType:        Option[FieldType],
-        theName:        Option[NamePredicate]
+    declaringClass: ClassLevelMatcher,
+    annotations:    AnnotationsPredicate,
+    theType:        Option[FieldType],
+    theName:        Option[NamePredicate]
 ) extends SourceElementsMatcher {
 
     def doesClassFileMatch(classFile: ClassFile)(implicit project: SomeProject): Boolean = {
@@ -32,7 +32,7 @@ case class FieldMatcher(
         (theType.isEmpty || (theType.get eq field.fieldType)) && (
             (theName.isEmpty || theName.get(field.name))
         ) &&
-            annotations(field.annotations)
+        annotations(field.annotations)
     }
 
     def extension(implicit project: SomeProject): immutable.Set[VirtualSourceElement] = {

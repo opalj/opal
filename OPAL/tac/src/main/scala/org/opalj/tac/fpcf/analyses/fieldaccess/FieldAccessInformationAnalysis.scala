@@ -46,8 +46,8 @@ class FieldAccessInformationAnalysis(val project: SomeProject) extends FPCFAnaly
     type ContextType <: Context
 
     private[this] class State(
-            override val callContext:                  ContextType,
-            override protected[this] var _tacDependee: EOptionP[Method, TACAI]
+        override val callContext:                  ContextType,
+        override protected[this] var _tacDependee: EOptionP[Method, TACAI]
     ) extends BaseAnalysisState with TACAIBasedAnalysisState[ContextType]
 
     private val declaredMethods = project.get(DeclaredMethodsKey)
@@ -88,7 +88,10 @@ class FieldAccessInformationAnalysis(val project: SomeProject) extends FPCFAnaly
         }
     }
 
-    private def returnResult(context: ContextType)(implicit state: State, fieldAccesses: DirectFieldAccesses): ProperPropertyComputationResult = {
+    private def returnResult(context: ContextType)(implicit
+        state:         State,
+        fieldAccesses: DirectFieldAccesses
+    ): ProperPropertyComputationResult = {
         if (state.hasOpenDependencies)
             Results(
                 InterimPartialResult(state.dependees, continuation(context, state)),
@@ -103,31 +106,39 @@ class FieldAccessInformationAnalysis(val project: SomeProject) extends FPCFAnaly
         tac:     TACode[TACMethodParameter, DUVar[ValueInformation]]
     )(implicit fieldAccesses: DirectFieldAccesses): Unit = {
         tac.stmts.foreach {
-            case _@ Assignment(_, _, GetField(pc, declaringClass, fieldName, fieldType, objRef)) =>
+            case _ @Assignment(_, _, GetField(pc, declaringClass, fieldName, fieldType, objRef)) =>
                 fieldAccesses.addFieldRead(
-                    context, pc, declaredFields(declaringClass, fieldName, fieldType),
+                    context,
+                    pc,
+                    declaredFields(declaringClass, fieldName, fieldType),
                     persistentUVar(objRef.asVar)(tac.stmts)
                 )
-            case _@ ExprStmt(_, GetField(pc, declaringClass, fieldName, fieldType, objRef)) =>
+            case _ @ExprStmt(_, GetField(pc, declaringClass, fieldName, fieldType, objRef)) =>
                 fieldAccesses.addFieldRead(
-                    context, pc, declaredFields(declaringClass, fieldName, fieldType),
+                    context,
+                    pc,
+                    declaredFields(declaringClass, fieldName, fieldType),
                     persistentUVar(objRef.asVar)(tac.stmts)
                 )
 
-            case _@ Assignment(_, _, GetStatic(pc, declaringClass, fieldName, fieldType)) =>
+            case _ @Assignment(_, _, GetStatic(pc, declaringClass, fieldName, fieldType)) =>
                 fieldAccesses.addFieldRead(context, pc, declaredFields(declaringClass, fieldName, fieldType), None)
-            case _@ ExprStmt(_, GetStatic(pc, declaringClass, fieldName, fieldType)) =>
+            case _ @ExprStmt(_, GetStatic(pc, declaringClass, fieldName, fieldType)) =>
                 fieldAccesses.addFieldRead(context, pc, declaredFields(declaringClass, fieldName, fieldType), None)
 
             case PutField(pc, declaringClass, fieldName, fieldType, objRef, value) =>
                 fieldAccesses.addFieldWrite(
-                    context, pc, declaredFields(declaringClass, fieldName, fieldType),
+                    context,
+                    pc,
+                    declaredFields(declaringClass, fieldName, fieldType),
                     persistentUVar(objRef.asVar)(tac.stmts),
                     persistentUVar(value.asVar)(tac.stmts)
                 )
             case PutStatic(pc, declaringClass, fieldName, fieldType, value) =>
                 fieldAccesses.addFieldWrite(
-                    context, pc, declaredFields(declaringClass, fieldName, fieldType),
+                    context,
+                    pc,
+                    declaredFields(declaringClass, fieldName, fieldType),
                     None,
                     persistentUVar(value.asVar)(tac.stmts)
                 )

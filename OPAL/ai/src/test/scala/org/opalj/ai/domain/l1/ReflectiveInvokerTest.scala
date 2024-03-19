@@ -6,11 +6,12 @@ package l1
 
 import scala.collection.immutable.ArraySeq
 
-import br._
 import org.junit.runner.RunWith
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
+
+import br._
 
 /**
  * Tests the ReflectiveInvoker trait.
@@ -84,8 +85,9 @@ class ReflectiveInvokerTest extends AnyFlatSpec with Matchers {
         val descriptor = MethodDescriptor(FieldTypes(ObjectType.Object), ObjectType.String)
         val operands = List(stringValue)
 
-        //static String String.valueOf(Object)
-        /*val result =*/ domain.invokeReflective(IrrelevantPC, declaringClass, "valueOf", descriptor, operands)
+        // static String String.valueOf(Object)
+        /*val result =*/
+        domain.invokeReflective(IrrelevantPC, declaringClass, "valueOf", descriptor, operands)
         val javaResult = domain.lastObject.asInstanceOf[java.lang.String]
         javaResult should be("A")
     }
@@ -99,8 +101,9 @@ class ReflectiveInvokerTest extends AnyFlatSpec with Matchers {
         val descriptor = MethodDescriptor(FieldTypes(IntegerType), ObjectType.String)
         val operands = List(integerValue)
 
-        //static String String.valueOf(int)
-        /*val result =*/ domain.invokeReflective(IrrelevantPC, declaringClass, "valueOf", descriptor, operands)
+        // static String String.valueOf(int)
+        /*val result =*/
+        domain.invokeReflective(IrrelevantPC, declaringClass, "valueOf", descriptor, operands)
         val javaResult = domain.lastObject.asInstanceOf[java.lang.String]
         javaResult should be("1")
     }
@@ -114,8 +117,9 @@ class ReflectiveInvokerTest extends AnyFlatSpec with Matchers {
         val descriptor = MethodDescriptor(FieldTypes.empty, IntegerType)
         val operands = List(stringValue)
 
-        //int String.length()
-        /*val result =*/ domain.invokeReflective(IrrelevantPC, declaringClass, "length", descriptor, operands)
+        // int String.length()
+        /*val result =*/
+        domain.invokeReflective(IrrelevantPC, declaringClass, "length", descriptor, operands)
         domain.lastObject /* IT IS A PRIMITIVE VALUE*/ should equal(null)
     }
 
@@ -147,8 +151,9 @@ class ReflectiveInvokerTest extends AnyFlatSpec with Matchers {
         )
 
         // String <String>.substring(int int)
-        //String <String>.substring(int int)
-        /*val result =*/ domain.invokeReflective(IrrelevantPC, declaringClass, "substring", descriptor, operands)
+        // String <String>.substring(int int)
+        /*val result =*/
+        domain.invokeReflective(IrrelevantPC, declaringClass, "substring", descriptor, operands)
         val javaResult = domain.lastObject.asInstanceOf[java.lang.String]
         javaResult should equal("es")
     }

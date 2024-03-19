@@ -4,14 +4,14 @@ package br
 
 import scala.collection.immutable.ArraySeq
 
-import org.opalj.bi.TestResources.locateTestResources
-import org.opalj.br.analyses.Project
-import org.opalj.br.reader.Java8Framework.ClassFiles
-
 import org.junit.runner.RunWith
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
+
+import org.opalj.bi.TestResources.locateTestResources
+import org.opalj.br.analyses.Project
+import org.opalj.br.reader.Java8Framework.ClassFiles
 
 /**
  * Tests that type annotations can be read.
@@ -50,6 +50,7 @@ class TypeAnnotationsTest extends AnyFlatSpec with Matchers {
         )
     }
 }
+
 private object TypeAnnotationsTest {
 
     //

@@ -4,6 +4,10 @@ package ba
 
 import scala.collection.immutable.ArraySeq
 
+import org.junit.runner.RunWith
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatestplus.junit.JUnitRunner
+
 import org.opalj.ai.domain.l0.TypeCheckingDomain
 import org.opalj.ai.util.XHTML
 import org.opalj.bc.Assembler
@@ -16,10 +20,6 @@ import org.opalj.br.MethodDescriptor.JustTakes
 import org.opalj.br.ObjectType
 import org.opalj.br.instructions._
 import org.opalj.util.InMemoryClassLoader
-
-import org.junit.runner.RunWith
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests the require statements and warnings of a CodeAttributeBuilder.
@@ -57,7 +57,11 @@ class CodeAttributeBuilderTest extends AnyFlatSpec {
             CODE(Symbol("default"), LOOKUPSWITCH(Symbol("default"), ArraySeq((0, Symbol("label")))))
         )
         assertThrows[java.util.NoSuchElementException](
-            CODE(Symbol("default"), Symbol("label1"), LOOKUPSWITCH(Symbol("default"), ArraySeq((0, Symbol("label1")), (0, Symbol("label2")))))
+            CODE(
+                Symbol("default"),
+                Symbol("label1"),
+                LOOKUPSWITCH(Symbol("default"), ArraySeq((0, Symbol("label1")), (0, Symbol("label2"))))
+            )
         )
     }
 
@@ -76,24 +80,23 @@ class CodeAttributeBuilderTest extends AnyFlatSpec {
 
                 info(e.toString)
                 info(
-                    codeElements.
-                        zipWithIndex.
-                        map(_.swap).
-                        mkString("Code Elements:\n\t\t", "\n\t\t", "\n\t")
+                    codeElements.zipWithIndex
+                        .map(_.swap)
+                        .mkString("Code Elements:\n\t\t", "\n\t\t", "\n\t")
                 )
                 info(
-                    theCode.
-                        instructions.zipWithIndex.filter(_._1 != null).
-                        map(_.swap).
-                        mkString("Instructions:\n\t\t", "\n\t\t", "\n")
+                    theCode
+                        .instructions.zipWithIndex
+                        .filter(_._1 != null).map(_.swap)
+                        .mkString("Instructions:\n\t\t", "\n\t\t", "\n")
                 )
                 info(
                     theCode.exceptionHandlers.mkString("Exception Handlers:\n\t\t", "\n\t\t", "\n")
                 )
                 info(
-                    theCode.liveVariables(PreInitializedClassHierarchy).
-                        zipWithIndex.filter(_._1 != null).map(_.swap).
-                        mkString("Live variables:\n\t\t", "\n\t\t", "\n")
+                    theCode.liveVariables(PreInitializedClassHierarchy).zipWithIndex
+                        .filter(_._1 != null).map(_.swap)
+                        .mkString("Live variables:\n\t\t", "\n\t\t", "\n")
                 )
                 info(theSMT.pcs.mkString("Stack map table pcs: ", ", ", ""))
                 info(theSMT.stackMapFrames.mkString("Stack map table entries:\n\t\t", "\n\t\t", "\n"))
@@ -128,12 +131,14 @@ class CodeAttributeBuilderTest extends AnyFlatSpec {
             ALOAD_0,
             LabelElement(PCLabel(1)),
             NOP, // INVOKESTATIC(effekt.Effekt{ void beforeEffect() }),
-            POP, ICONST_1, // INVOKEINTERFACE(run.amb.Amb{ boolean flip() }),
+            POP,
+            ICONST_1, // INVOKEINTERFACE(run.amb.Amb{ boolean flip() }),
             ICONST_1, // INVOKESTATIC(effekt.Effekt{ boolean isEffectful() }),
             LabeledIFEQ(Symbol("EPResume1")),
             POP,
             ALOAD_0,
-            POP, ACONST_NULL, // INVOKEDYNAMIC(enter(run.amb.Amb)),
+            POP,
+            ACONST_NULL, // INVOKEDYNAMIC(enter(run.amb.Amb)),
             POP, // INVOKESTATIC(effekt.Effekt{ void push(effekt.Frame) }),
             ACONST_NULL,
             ARETURN,
@@ -148,7 +153,8 @@ class CodeAttributeBuilderTest extends AnyFlatSpec {
             ALOAD_0,
             LabelElement(PCLabel(10)),
             NOP, // INVOKESTATIC(effekt.Effekt{ void beforeEffect() }),
-            POP, ICONST_1, // INVOKEINTERFACE(run.amb.Amb{ boolean flip() }),
+            POP,
+            ICONST_1, // INVOKEINTERFACE(run.amb.Amb{ boolean flip() }),
             ICONST_1, // INVOKESTATIC(effekt.Effekt{ boolean isEffectful() }),
             LabeledIFEQ(Symbol("EPResume2")),
             POP,
@@ -189,7 +195,9 @@ class CodeAttributeBuilderTest extends AnyFlatSpec {
             thisType = "TheClass",
             methods = METHODS(
                 METHOD(
-                    PUBLIC, "<init>", "()V",
+                    PUBLIC,
+                    "<init>",
+                    "()V",
                     CODE[AnyRef](
                         LINENUMBER(0),
                         ALOAD_0,
@@ -208,9 +216,7 @@ class CodeAttributeBuilderTest extends AnyFlatSpec {
         val daClassFile = ba.toDA(brClassFile)
         val rawClassFile = Assembler(daClassFile)
 
-        val loader = new InMemoryClassLoader(
-            Map("TheClass" -> rawClassFile), this.getClass.getClassLoader
-        )
+        val loader = new InMemoryClassLoader(Map("TheClass" -> rawClassFile), this.getClass.getClassLoader)
         val clazz = loader.loadClass("TheClass")
         testEvaluation(codeElements, brClassFile, brMethod) {
             val clazzInstance = clazz.getDeclaredConstructor().newInstance()
@@ -235,23 +241,27 @@ class CodeAttributeBuilderTest extends AnyFlatSpec {
             /*DEAD*/ LabelElement(PCLabel(4)),
             /*DEAD*/ ACONST_NULL,
             /*DEAD*/ LabelElement(PCLabel(5)),
-            /*DEAD*/ POP, ACONST_NULL, // INVOKEDYNAMIC run(run.coroutines.Benchmark)),
+            /*DEAD*/ POP,
+            ACONST_NULL, // INVOKEDYNAMIC run(run.coroutines.Benchmark)),
             /*DEAD*/ LabelElement(PCLabel(10)),
             /*DEAD*/ ACONST_NULL, //  get static run.coroutines.Benchmark.DATA : java.util.List[],
             /*DEAD*/ LabelElement(PCLabel(13)),
             /*DEAD*/ ASTORE(8),
             /*DEAD*/ ASTORE(7),
             /*DEAD*/ LLOAD_1,
-            /*DEAD*/ POP2, ACONST_NULL, // INVOKEDYNAMIC enter(long)
+            /*DEAD*/ POP2,
+            ACONST_NULL, // INVOKEDYNAMIC enter(long)
             /*DEAD*/ POP, // effekt.Effekt{ void push(effekt.runtime.Frame) }),
             /*DEAD*/ ALOAD(7),
             /*DEAD*/ ALOAD(8),
             /*DEAD*/ TRY(Symbol("EHlambda$findMaxCoroutines$2$entrypoint$1")),
-            /*DEAD*/ POP, POP, ACONST_NULL, // INVOKESTATIC(run.coroutines.Coroutine{ run.coroutines.Coroutine call(run.coroutines.CoroutineBody,java.lang.Object) }),
+            /*DEAD*/ POP,
+            POP,
+            ACONST_NULL, // INVOKESTATIC(run.coroutines.Coroutine{ run.coroutines.Coroutine call(run.coroutines.CoroutineBody,java.lang.Object) }),
             /*DEAD*/ RETURN,
             /*DEAD*/ TRYEND(Symbol("EHlambda$findMaxCoroutines$2$entrypoint$1")),
             /*DEAD*/ CATCH(Symbol("EHlambda$findMaxCoroutines$2$entrypoint$1"), position = 0, Some(ExceptionType)),
-            /*DEAD*/ POP, //INVOKESTATIC(effekt.Effekt{ void onThrow(java.lang.Throwable) }),
+            /*DEAD*/ POP, // INVOKESTATIC(effekt.Effekt{ void onThrow(java.lang.Throwable) }),
             /*DEAD*/ RETURN,
             Symbol("EP1"),
             LLOAD_0,
@@ -263,7 +273,9 @@ class CodeAttributeBuilderTest extends AnyFlatSpec {
             LabelElement(PCLabel(17)),
             ALOAD_3,
             LabelElement(PCLabel(18)),
-            POP, LCONST_0, INVOKESTATIC("java/lang/Long", false, "valueOf", "(J)Ljava/lang/Long;"), // INVOKEINTERFACE(run.coroutines.Coroutine{ java.lang.Object value() }),
+            POP,
+            LCONST_0,
+            INVOKESTATIC("java/lang/Long", false, "valueOf", "(J)Ljava/lang/Long;"), // INVOKEINTERFACE(run.coroutines.Coroutine{ java.lang.Object value() }),
             LabelElement(PCLabel(23)),
             CHECKCAST(LongType),
             LabelElement(PCLabel(26)),
@@ -288,11 +300,14 @@ class CodeAttributeBuilderTest extends AnyFlatSpec {
             ASTORE(7),
             LLOAD_1,
             ALOAD_3,
-            POP, POP2, ACONST_NULL, // INVOKEDYNAMIC(enter(long,run.coroutines.Coroutine)),
+            POP,
+            POP2,
+            ACONST_NULL, // INVOKEDYNAMIC(enter(long,run.coroutines.Coroutine)),
             POP, // INVOKESTATIC(effekt.Effekt{ void push(effekt.runtime.Frame) }),
             ALOAD(7),
             TRY(Symbol("EHlambda$findMaxCoroutines$2$entrypoint$2")),
-            POP, ICONST_1, // INVOKEINTERFACE(run.coroutines.Coroutine{ boolean resume() }),
+            POP,
+            ICONST_1, // INVOKEINTERFACE(run.coroutines.Coroutine{ boolean resume() }),
             RETURN,
             TRYEND(Symbol("EHlambda$findMaxCoroutines$2$entrypoint$2")),
             CATCH(Symbol("EHlambda$findMaxCoroutines$2$entrypoint$2"), 1, Some(ExceptionType)),
@@ -324,7 +339,9 @@ class CodeAttributeBuilderTest extends AnyFlatSpec {
             thisType = "CodeAttributeBuilderTestClass",
             methods = METHODS(
                 METHOD(
-                    PUBLIC, "<init>", "()V",
+                    PUBLIC,
+                    "<init>",
+                    "()V",
                     CODE[AnyRef](
                         LINENUMBER(0),
                         ALOAD_0,
@@ -346,9 +363,8 @@ class CodeAttributeBuilderTest extends AnyFlatSpec {
         // )
         val rawClassFile = Assembler(daClassFile)
 
-        val loader = new InMemoryClassLoader(
-            Map("CodeAttributeBuilderTestClass" -> rawClassFile), this.getClass.getClassLoader
-        )
+        val loader =
+            new InMemoryClassLoader(Map("CodeAttributeBuilderTestClass" -> rawClassFile), this.getClass.getClassLoader)
         val clazz = loader.loadClass("CodeAttributeBuilderTestClass")
         testEvaluation(codeElements, brClassFile, brMethod) {
             val clazzInstance = clazz.getDeclaredConstructor().newInstance()
@@ -361,13 +377,23 @@ class CodeAttributeBuilderTest extends AnyFlatSpec {
         val thisName = "TestClass"
         val PrintStreamType = ObjectType("java/io/PrintStream")
 
-        val otherMethod = METHOD(PUBLIC.STATIC, "otherMethod", "()Z", CODE[AnyRef](
-            ICONST_0,
-            IRETURN
-        ))
-        val returnWith = METHOD(PUBLIC.STATIC, "returnWith", "(I)V", CODE[AnyRef](
-            RETURN
-        ))
+        val otherMethod = METHOD(
+            PUBLIC.STATIC,
+            "otherMethod",
+            "()Z",
+            CODE[AnyRef](
+                ICONST_0,
+                IRETURN
+            )
+        )
+        val returnWith = METHOD(
+            PUBLIC.STATIC,
+            "returnWith",
+            "(I)V",
+            CODE[AnyRef](
+                RETURN
+            )
+        )
 
         val codeElements = Array[CodeElement[AnyRef]](
             TRY(Symbol("eh1")),
@@ -402,7 +428,9 @@ class CodeAttributeBuilderTest extends AnyFlatSpec {
             thisType = thisName,
             methods = METHODS(
                 METHOD(
-                    PUBLIC, "<init>", "()V",
+                    PUBLIC,
+                    "<init>",
+                    "()V",
                     CODE[AnyRef](
                         LINENUMBER(0),
                         ALOAD_0,
@@ -430,9 +458,7 @@ class CodeAttributeBuilderTest extends AnyFlatSpec {
         //        )
         val rawClassFile = Assembler(daClassFile)
 
-        val loader = new InMemoryClassLoader(
-            Map(thisName -> rawClassFile), this.getClass.getClassLoader
-        )
+        val loader = new InMemoryClassLoader(Map(thisName -> rawClassFile), this.getClass.getClassLoader)
         val clazz = loader.loadClass(thisName)
         testEvaluation(codeElements, brClassFile, brMethod) {
             val clazzInstance = clazz.getDeclaredConstructor().newInstance()
@@ -498,19 +524,23 @@ class CodeAttributeBuilderTest extends AnyFlatSpec {
     }
 
     it should "allow explicitly specified ExceptionHandlers that include the last PC" in {
-        val code = br.Code(0, 0, Array(
-            /* 0 */ GOTO(6),
-            /* 1 */ null,
-            /* 2 */ null,
-            /* 3 */ POP,
-            /* 4 */ ICONST_2,
-            /* 5 */ IRETURN,
-            /* 6 */ ICONST_0,
-            /* 7 */ ICONST_1,
-            /* 8 */ IADD,
-            /* 9 */ IRETURN
-        ),
-            ArraySeq(ExceptionHandler(7, 10, 3, Some(ObjectType.RuntimeException))))
+        val code = br.Code(
+            0,
+            0,
+            Array(
+                /* 0 */ GOTO(6),
+                /* 1 */ null,
+                /* 2 */ null,
+                /* 3 */ POP,
+                /* 4 */ ICONST_2,
+                /* 5 */ IRETURN,
+                /* 6 */ ICONST_0,
+                /* 7 */ ICONST_1,
+                /* 8 */ IADD,
+                /* 9 */ IRETURN
+            ),
+            ArraySeq(ExceptionHandler(7, 10, 3, Some(ObjectType.RuntimeException)))
+        )
         val labeledCode = LabeledCode(code)
         val labeledInstructions = labeledCode.codeElements.toIndexedSeq
         assert(labeledInstructions(2) == CATCH(Symbol("eh0"), 0, Some(ObjectType.RuntimeException)))

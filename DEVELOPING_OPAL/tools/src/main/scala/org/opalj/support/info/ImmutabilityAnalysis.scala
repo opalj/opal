@@ -56,26 +56,26 @@ object ImmutabilityAnalysis extends ProjectAnalysisApplication {
         } { r => t = r.toSeconds }
 
         val immutableClasses =
-            ps.entities(ClassImmutability.key).toSeq.
-                filter(ep => project.classHierarchy.isInterface(ep.e.asInstanceOf[ObjectType]).isNo).
-                groupBy { _.ub }.map { kv =>
-                    (
-                        kv._1,
-                        kv._2.toList.sortWith { (a, b) =>
-                            val cfA = a.e.asInstanceOf[ObjectType]
-                            val cfB = b.e.asInstanceOf[ObjectType]
-                            cfA.toJava < cfB.toJava
-                        }
-                    )
-                }
+            ps.entities(ClassImmutability.key).toSeq.filter(ep =>
+                project.classHierarchy.isInterface(ep.e.asInstanceOf[ObjectType]).isNo
+            ).groupBy { _.ub }.map { kv =>
+                (
+                    kv._1,
+                    kv._2.toList.sortWith { (a, b) =>
+                        val cfA = a.e.asInstanceOf[ObjectType]
+                        val cfB = b.e.asInstanceOf[ObjectType]
+                        cfA.toJava < cfB.toJava
+                    }
+                )
+            }
 
         val immutableClassesPerCategory =
             immutableClasses.map(kv => "\t\t" + kv._1 + ": " + kv._2.size).toList.sorted.mkString("\n")
 
         val immutableTypes =
-            ps.entities(TypeImmutability.key).toSeq.
-                filter(ep => project.classHierarchy.isInterface(ep.e.asInstanceOf[ObjectType]).isNo).
-                groupBy { _.ub }.map { kv => (kv._1, kv._2.size) }
+            ps.entities(TypeImmutability.key).toSeq.filter(ep =>
+                project.classHierarchy.isInterface(ep.e.asInstanceOf[ObjectType]).isNo
+            ).groupBy { _.ub }.map { kv => (kv._1, kv._2.size) }
         val immutableTypesPerCategory =
             immutableTypes.map(kv => "\t\t" + kv._1 + ": " + kv._2).toList.sorted.mkString("\n")
 

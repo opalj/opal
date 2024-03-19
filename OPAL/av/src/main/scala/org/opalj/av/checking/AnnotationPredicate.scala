@@ -64,6 +64,7 @@ case class HasAnnotation(annotationType: FieldType) extends AnnotationPredicate 
     override def toDescription(): String = "@" + annotationType.toJava
 
 }
+
 /**
  * Factory methods to create [[AnnotatedWith]] predicates.
  */
@@ -103,8 +104,8 @@ object HasAnnotation {
  * @author Marco Torsello
  */
 case class AnnotatedWith(
-        annotationType:    FieldType,
-        elementValuePairs: Seq[ElementValuePair]
+    annotationType:    FieldType,
+    elementValuePairs: Seq[ElementValuePair]
 ) extends AnnotationPredicate {
 
     /**

@@ -3,10 +3,10 @@ package org.opalj
 package ai
 package common
 
+import com.typesafe.config.Config
+
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
-
-import com.typesafe.config.Config
 
 /**
  * Registry for all domains that can be instantiated given a `Project`, and a `Method` with a
@@ -27,8 +27,8 @@ import com.typesafe.config.Config
 object DomainRegistry {
 
     case class DomainMetaInformation(
-            lessPreciseDomains: Set[Class[_ <: Domain]],
-            factory:            (SomeProject, Method) => Domain
+        lessPreciseDomains: Set[Class[_ <: Domain]],
+        factory:            (SomeProject, Method) => Domain
     )
 
     type ClassRegistry = Map[Class[_ <: Domain], DomainMetaInformation]
@@ -70,18 +70,14 @@ object DomainRegistry {
             val domain = domainsToAnalyze.head
             domainsToAnalyze = domainsToAnalyze.tail
             domains += domain
-            classRegistry(domain).lessPreciseDomains.foreach { d =>
-                if (!domains.contains(d)) domainsToAnalyze += d
-            }
+            classRegistry(domain).lessPreciseDomains.foreach { d => if (!domains.contains(d)) domainsToAnalyze += d }
         }
 
         domains
     }
 
     def selectCandidates(requirements: Iterable[Class[_ <: AnyRef]]): Set[Class[_ <: Domain]] = {
-        classRegistry.keys.filter { candidate =>
-            requirements.forall(r => r.isAssignableFrom(candidate))
-        }.toSet
+        classRegistry.keys.filter { candidate => requirements.forall(r => r.isAssignableFrom(candidate)) }.toSet
     }
 
     /**

@@ -55,7 +55,8 @@ object ExceptionUsage extends ProjectAnalysisApplication {
             //    to analyze the operands.)
             def collectExceptions(value: result.domain.DomainSingleOriginReferenceValue): Unit = {
                 if (value.isNull.isNoOrUnknown &&
-                    value.isValueASubtypeOf(ObjectType.Throwable).isYes) {
+                    value.isValueASubtypeOf(ObjectType.Throwable).isYes
+                ) {
                     val key = (value.origin, typeName(value))
                     if (!exceptionUsages.contains(key)) {
                         exceptionUsages += ((key, Set.empty))
@@ -92,9 +93,7 @@ object ExceptionUsage extends ProjectAnalysisApplication {
                     case v: result.domain.SingleOriginReferenceValue =>
                         updateUsageKindForValue(v, usageKind)
                     case result.domain.MultipleReferenceValues(singleOriginReferenceValues) =>
-                        singleOriginReferenceValues.foreach { v =>
-                            updateUsageKindForValue(v, usageKind)
-                        }
+                        singleOriginReferenceValues.foreach { v => updateUsageKindForValue(v, usageKind) }
                     case _ => /*not relevant*/
                 }
             }
@@ -125,8 +124,9 @@ object ExceptionUsage extends ProjectAnalysisApplication {
             }
 
             val usages =
-                for { ((pc, typeName), exceptionUsage) <- exceptionUsages }
-                    yield ExceptionUsage(method, pc, typeName, exceptionUsage)
+                for {
+                    ((pc, typeName), exceptionUsage) <- exceptionUsages
+                } yield ExceptionUsage(method, pc, typeName, exceptionUsage)
 
             if (usages.isEmpty)
                 None
@@ -145,19 +145,17 @@ object ExceptionUsage extends ProjectAnalysisApplication {
 }
 
 case class ExceptionUsage(
-        method:           Method,
-        definitionSite:   PC,
-        exceptionType:    String,
-        usageInformation: scala.collection.Set[UsageKind.Value]
+    method:           Method,
+    definitionSite:   PC,
+    exceptionType:    String,
+    usageInformation: scala.collection.Set[UsageKind.Value]
 ) extends scala.math.Ordered[ExceptionUsage] {
 
     override def toString: String = {
         val lineNumber = method.body.get.lineNumber(definitionSite).map("line=" + _ + ";").getOrElse("")
         import Console._
         method.toJava(
-            usageInformation.mkString(
-                s"$BOLD[$lineNumber;pc=$definitionSite]$exceptionType => ", ", ", RESET
-            )
+            usageInformation.mkString(s"$BOLD[$lineNumber;pc=$definitionSite]$exceptionType => ", ", ", RESET)
         )
     }
 

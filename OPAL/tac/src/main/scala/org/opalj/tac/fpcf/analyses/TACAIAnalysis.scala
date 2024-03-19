@@ -20,8 +20,7 @@ object TACAIAnalysis {
         aiResult:           AIResult,
         detachFromAIResult: Boolean
     )(
-        implicit
-        p: SomeProject
+        implicit p: SomeProject
     ): TheTACAI = {
         val typedAIResult = aiResult.asInstanceOf[AIResult { val domain: Domain with RecordDefUse }]
         val taCode = TACAIFactory(p, m, typedAIResult)

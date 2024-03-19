@@ -13,21 +13,22 @@ import org.opalj.bytecode.BytecodeProcessingFailedException
  */
 trait INVOKEDYNAMIC extends InvocationInstruction {
 
-    /*abstract*/ def bootstrapMethod: BootstrapMethod
+    /*abstract*/
+    def bootstrapMethod: BootstrapMethod
 
-    final override def opcode: Opcode = INVOKEDYNAMIC.opcode
+    override final def opcode: Opcode = INVOKEDYNAMIC.opcode
 
-    final override def mnemonic: String = "invokedynamic"
+    override final def mnemonic: String = "invokedynamic"
 
-    final override def length: Int = 5
+    override final def length: Int = 5
 
     final def isInstanceMethod: Boolean = false
 
-    final override def numberOfPoppedOperands(ctg: Int => ComputationalTypeCategory): Int = {
+    override final def numberOfPoppedOperands(ctg: Int => ComputationalTypeCategory): Int = {
         methodDescriptor.parametersCount
     }
 
-    final override def jvmExceptions: List[ObjectType] = INVOKEDYNAMIC.jvmExceptions
+    override final def jvmExceptions: List[ObjectType] = INVOKEDYNAMIC.jvmExceptions
 
 }
 
@@ -64,11 +65,11 @@ case object INCOMPLETE_INVOKEDYNAMIC extends INVOKEDYNAMIC {
         throw new BytecodeProcessingFailedException(message)
     }
 
-    final override def bootstrapMethod: BootstrapMethod = error
+    override final def bootstrapMethod: BootstrapMethod = error
 
-    final override def name: String = error
+    override final def name: String = error
 
-    final override def methodDescriptor: MethodDescriptor = error
+    override final def methodDescriptor: MethodDescriptor = error
 
 }
 
@@ -86,9 +87,9 @@ case object INCOMPLETE_INVOKEDYNAMIC extends INVOKEDYNAMIC {
  * @author Arne Lottmann
  */
 case class DEFAULT_INVOKEDYNAMIC(
-        bootstrapMethod:  BootstrapMethod,
-        name:             String,
-        methodDescriptor: MethodDescriptor
+    bootstrapMethod:  BootstrapMethod,
+    name:             String,
+    methodDescriptor: MethodDescriptor
 ) extends INVOKEDYNAMIC {
 
     override def toString: String = {

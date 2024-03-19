@@ -75,6 +75,7 @@ case class Result(finalEP: FinalEP[Entity, Property]) extends FinalPropertyCompu
         s"Result($e@${System.identityHashCode(e).toHexString},p=$p)"
     }
 }
+
 object Result {
 
     def apply(e: Entity, p: Property): Result = Result(FinalEP(e, p))
@@ -141,9 +142,9 @@ object MultiResult { private[fpcf] final val id = 2 }
  *      before (using one of the `apply` functions of the property store.)
  */
 final class InterimResult[P >: Null <: Property] private (
-        val eps:       InterimEP[Entity, P],
-        val dependees: Set[SomeEOptionP], // IMPROVE: require EOptionPSets?
-        val c:         ProperOnUpdateContinuation
+    val eps:       InterimEP[Entity, P],
+    val dependees: Set[SomeEOptionP], // IMPROVE: require EOptionPSets?
+    val c:         ProperOnUpdateContinuation
 ) extends ProperPropertyComputationResult { result =>
 
     def key: PropertyKey[P] = eps.pk
@@ -170,8 +171,8 @@ final class InterimResult[P >: Null <: Property] private (
 
     private[fpcf] def id: Int = InterimResult.id
 
-    private[fpcf] override def isInterimResult: Boolean = true
-    private[fpcf] override def asInterimResult: InterimResult[P] = this
+    override private[fpcf] def isInterimResult: Boolean = true
+    override private[fpcf] def asInterimResult: InterimResult[P] = this
 
     override def hashCode: Int = eps.e.hashCode * 17 + dependees.hashCode
 
@@ -274,8 +275,8 @@ object InterimResult {
  *       computation returns `IncrementalResult` objects.
  */
 case class IncrementalResult[E <: Entity](
-        result:           ProperPropertyComputationResult,
-        nextComputations: Iterator[(PropertyComputation[E], E)]
+    result:           ProperPropertyComputationResult,
+    nextComputations: Iterator[(PropertyComputation[E], E)]
 ) extends ProperPropertyComputationResult {
 
     private[fpcf] final def id = IncrementalResult.id
@@ -292,11 +293,12 @@ sealed abstract class Results extends ProperPropertyComputationResult {
 
     private[fpcf] final def id = Results.id
 
-    private[fpcf] final override def asResults: Results = this
+    override private[fpcf] final def asResults: Results = this
 
     def foreach(f: ProperPropertyComputationResult => Unit): Unit
 
 }
+
 object Results {
 
     private[fpcf] final val id = 5
@@ -371,9 +373,9 @@ object Results {
  * @tparam P The type of the property.
  */
 case class PartialResult[E >: Null <: Entity, P >: Null <: Property](
-        e:  E,
-        pk: PropertyKey[P],
-        u:  UpdateComputation[E, P]
+    e:  E,
+    pk: PropertyKey[P],
+    u:  UpdateComputation[E, P]
 ) extends ProperPropertyComputationResult {
 
     final def epk: EPK[E, P] = EPK(e, pk)
@@ -390,9 +392,9 @@ object PartialResult { private[fpcf] final val id = 6 }
  * of all instantiated types will use an `InterimPartialResult` to commit those results.
  */
 case class InterimPartialResult[SE >: Null <: Property](
-        us:        Iterable[SomePartialResult], // can be empty!
-        dependees: Set[SomeEOptionP], // IMPROVE: require EOptionPSets?
-        c:         OnUpdateContinuation
+    us:        Iterable[SomePartialResult], // can be empty!
+    dependees: Set[SomeEOptionP], // IMPROVE: require EOptionPSets?
+    c:         OnUpdateContinuation
 ) extends ProperPropertyComputationResult {
 
     assert(dependees.nonEmpty)
@@ -403,6 +405,7 @@ case class InterimPartialResult[SE >: Null <: Property](
     private[fpcf] final def id = InterimPartialResult.id
 
 }
+
 object InterimPartialResult {
 
     private[fpcf] final val id = 8

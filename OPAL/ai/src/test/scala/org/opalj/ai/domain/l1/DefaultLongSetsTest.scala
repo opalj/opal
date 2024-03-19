@@ -6,12 +6,12 @@ package l1
 
 import scala.collection.immutable.SortedSet
 
-import org.opalj.br.ObjectType
-
 import org.junit.runner.RunWith
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
+
+import org.opalj.br.ObjectType
 
 /**
  * Tests the LongSets Domain.
@@ -26,7 +26,7 @@ class DefaultLongSetsTest extends AnyFunSpec with Matchers {
     final val SomePC = 100000
 
     class LongSetsTestDomain(
-            override val maxCardinalityOfLongSets: Int = Int.MaxValue
+        override val maxCardinalityOfLongSets: Int = Int.MaxValue
     ) extends CorrelationalDomain
         with DefaultSpecialDomainValuesBinding
         with ThrowAllPotentialExceptionsConfiguration
@@ -378,10 +378,7 @@ class DefaultLongSetsTest extends AnyFunSpec with Matchers {
                 val v1 = LongSet(SortedSet(Long.MinValue, Long.MaxValue))
                 val v2 = LongSet(SortedSet(8L, 19L))
                 val expected =
-                    SortedSet(
-                        Long.MinValue + 8L, Long.MinValue + 19L,
-                        Long.MaxValue - 19L, Long.MaxValue - 8L
-                    )
+                    SortedSet(Long.MinValue + 8L, Long.MinValue + 19L, Long.MaxValue - 19L, Long.MaxValue - 8L)
                 lxor(-1, v1, v2) should be(LongSet(expected))
                 lxor(-1, v2, v1) should be(LongSet(expected))
             }

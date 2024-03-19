@@ -29,29 +29,30 @@ class BytecodeInstrumentationAPIUsage(implicit hermes: HermesConfig) extends API
                     InstanceAPIMethod(Instrumentation, "isRetransformClassesSupported"),
                     InstanceAPIMethod(Instrumentation, "isRedefineClassesSupported"),
                     InstanceAPIMethod(Instrumentation, "redefineClasses")
-                ), "class file retransformation"
+                ),
+                "class file retransformation"
             ),
-
             APIFeatureGroup(
                 List(
                     InstanceAPIMethod(Instrumentation, "setNativeMethodPrefix"),
                     InstanceAPIMethod(Instrumentation, "isNativeMethodPrefixSupported")
-                ), "instrumenting native methods"
+                ),
+                "instrumenting native methods"
             ),
-
             APIFeatureGroup(
                 List(
                     InstanceAPIMethod(Instrumentation, "appendToBootstrapClassLoaderSearch"),
                     InstanceAPIMethod(Instrumentation, "appendToSystemClassLoaderSearch")
-                ), "appending class loader search"
+                ),
+                "appending class loader search"
             ),
-
             APIFeatureGroup(
                 List(
                     InstanceAPIMethod(Instrumentation, "getAllLoadedClasses"),
                     InstanceAPIMethod(Instrumentation, "getInitiatedClasses"),
                     InstanceAPIMethod(Instrumentation, "getObjectSize")
-                ), "retrieve classes information"
+                ),
+                "retrieve classes information"
             )
         )
     }

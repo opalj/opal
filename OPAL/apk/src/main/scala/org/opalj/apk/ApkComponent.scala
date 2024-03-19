@@ -4,9 +4,9 @@ package apk
 
 import scala.jdk.CollectionConverters.ListHasAsScala
 
-import org.opalj.apk.ApkComponentType.ApkComponentType
-
 import com.typesafe.config.Config
+
+import org.opalj.apk.ApkComponentType.ApkComponentType
 
 /**
  * Component of an APK. Each component is a potential entry point. A component is either an
@@ -23,10 +23,10 @@ import com.typesafe.config.Config
  * @author Nicolas Gross
  */
 class ApkComponent(
-        val componentType:    ApkComponentType,
-        val clazz:            String,
-        val intentActions:    Seq[String],
-        val intentCategories: Seq[String]
+    val componentType:    ApkComponentType,
+    val clazz:            String,
+    val intentActions:    Seq[String],
+    val intentCategories: Seq[String]
 )(implicit config: Config) {
 
     private val ActivityEntryPoints = Seq.from(

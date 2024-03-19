@@ -12,8 +12,8 @@ import org.opalj.bi.ConstantPoolTags
  * @author Andre Pacak
  */
 case class CONSTANT_Fieldref_info(
-        class_index:         Constant_Pool_Index,
-        name_and_type_index: Constant_Pool_Index
+    class_index:         Constant_Pool_Index,
+    name_and_type_index: Constant_Pool_Index
 ) extends Constant_Pool_Entry {
 
     override def tag: Int = ConstantPoolTags.CONSTANT_Fieldref_ID

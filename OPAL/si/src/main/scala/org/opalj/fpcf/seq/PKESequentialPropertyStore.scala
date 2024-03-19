@@ -9,13 +9,13 @@ import scala.collection.mutable
 import scala.collection.mutable.AnyRefMap
 import scala.collection.mutable.ArrayBuffer
 
+import com.typesafe.config.Config
+
 import org.opalj.control.foreachWithIndex
 import org.opalj.fpcf.PropertyKind.SupportedPropertyKinds
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.{debug => trace}
 import org.opalj.log.OPALLogger.info
-
-import com.typesafe.config.Config
 
 /**
  * A reasonably optimized, complete, but non-concurrent implementation of the property store.
@@ -24,12 +24,11 @@ import com.typesafe.config.Config
  * @author Michael Eichberg
  */
 final class PKESequentialPropertyStore protected (
-        val ctx:                Map[Class[_], AnyRef],
-        val tasksManager:       TasksManager,
-        val MaxEvaluationDepth: Int
+    val ctx:                Map[Class[_], AnyRef],
+    val tasksManager:       TasksManager,
+    val MaxEvaluationDepth: Int
 )(
-        implicit
-        val logContext: LogContext
+    implicit val logContext: LogContext
 ) extends SeqPropertyStore { store =>
 
     info("property store", s"using $tasksManager for managing tasks")
@@ -122,7 +121,9 @@ final class PKESequentialPropertyStore protected (
     }
 
     // The registered triggered computations along with the set of entities for which the analysis was triggered
-    private[this] val triggeredComputations: Array[mutable.AnyRefMap[SomePropertyComputation, mutable.HashSet[Entity]]] = {
+    private[this] val triggeredComputations: Array[
+        mutable.AnyRefMap[SomePropertyComputation, mutable.HashSet[Entity]]
+    ] = {
         Array.fill(PropertyKind.SupportedPropertyKinds) { mutable.AnyRefMap.empty }
     }
 
@@ -262,7 +263,6 @@ final class PKESequentialPropertyStore protected (
                         }
 
                     case lc: PropertyComputation[E] @unchecked =>
-
                         // associate e with EPK to ensure that we do not schedule
                         // multiple (lazy) computations and that we do not run in cycles
                         // => the entity is now known
@@ -498,7 +498,8 @@ final class PKESequentialPropertyStore protected (
 
                         case Results(results) =>
                             results.foreach {
-                                case InterimPartialResult(newPartialResults, newProcessedDependees, newC) if nextC == null =>
+                                case InterimPartialResult(newPartialResults, newProcessedDependees, newC)
+                                    if nextC == null =>
                                     nextPartialResults = newPartialResults
                                     nextProcessedDependees = newProcessedDependees
                                     nextC = newC
@@ -604,7 +605,9 @@ final class PKESequentialPropertyStore protected (
             case IncrementalResult.id =>
                 val IncrementalResult(ir, npcs /*: Iterator[(PropertyComputation[e],e)]*/ ) = r
                 handleResult(ir)
-                npcs foreach { npc => val (pc, e) = npc; scheduleEagerComputationForEntity(e)(pc) }
+                npcs foreach { npc =>
+                    val (pc, e) = npc; scheduleEagerComputationForEntity(e)(pc)
+                }
 
             case Results.id =>
                 r.asResults.foreach(r => handleResult(r))
@@ -730,8 +733,8 @@ final class PKESequentialPropertyStore protected (
                             .valuesIterator
                             .filter { eOptionP =>
                                 eOptionP.isEPK &&
-                                    // There is no suppression; i.e., we have no dependees
-                                    dependees(pkId).get(eOptionP.e).isEmpty
+                                // There is no suppression; i.e., we have no dependees
+                                dependees(pkId).get(eOptionP.e).isEmpty
                             }
                     continueComputation |= epkIterator.hasNext
                     epkIterator.foreach { eOptionP =>
@@ -756,9 +759,7 @@ final class PKESequentialPropertyStore protected (
                 var pkId = 0
                 while (pkId <= maxPKIndex) {
                     if (propertyKindsComputedInThisPhase(pkId)) {
-                        ps(pkId).valuesIterator foreach { eps =>
-                            if (eps.isRefinable) interimEPs += eps
-                        }
+                        ps(pkId).valuesIterator foreach { eps => if (eps.isRefinable) interimEPs += eps }
                     }
                     pkId += 1
                 }
@@ -797,9 +798,7 @@ final class PKESequentialPropertyStore protected (
                 pksToFinalize foreach { pk =>
                     val dependeesIt = dependees(pk.id).keysIterator
                     continueComputation |= dependeesIt.nonEmpty
-                    dependeesIt foreach { e =>
-                        removeDependerFromDependees(EPK(e, PropertyKey.key(pk.id)))
-                    }
+                    dependeesIt foreach { e => removeDependerFromDependees(EPK(e, PropertyKey.key(pk.id))) }
                 }
                 pksToFinalize foreach { pk =>
                     val interimEPSs = ps(pk.id).valuesIterator.filter(_.isRefinable)
@@ -866,8 +865,7 @@ object PKESequentialPropertyStore extends PropertyStoreFactory[PKESequentialProp
     def apply(
         context: PropertyStoreContext[_ <: AnyRef]*
     )(
-        implicit
-        logContext: LogContext
+        implicit logContext: LogContext
     ): PKESequentialPropertyStore = {
         val contextMap: Map[Class[_], AnyRef] = context.map(_.asTuple).toMap
         val config =
@@ -886,13 +884,12 @@ object PKESequentialPropertyStore extends PropertyStoreFactory[PKESequentialProp
     )(
         context: Map[Class[_], AnyRef] = Map.empty
     )(
-        implicit
-        logContext: LogContext
+        implicit logContext: LogContext
     ): PKESequentialPropertyStore = {
         val tasksManager: TasksManager = taskManagerId match {
 
-            case "FIFO"                       => new FIFOTasksManager
-            case "LIFO"                       => new LIFOTasksManager
+            case "FIFO" => new FIFOTasksManager
+            case "LIFO" => new LIFOTasksManager
 
             case "ManyDirectDependenciesLast" => new ManyDirectDependenciesLastTasksManager
             case "ManyDirectDependersLast"    => new ManyDirectDependersLastTasksManager

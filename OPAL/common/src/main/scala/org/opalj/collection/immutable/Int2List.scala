@@ -46,7 +46,7 @@ sealed trait Int2List extends Serializable { self =>
     /** Prepends the given value to this list. E.g., `l = 2 +: l`. */
     def +:(v: Int): Int2List
 
-    final override def equals(other: Any): Boolean = {
+    override final def equals(other: Any): Boolean = {
         other match {
             case l: Int2List => equals(l)
             case _           => false
@@ -99,9 +99,9 @@ case object Int2ListEnd extends Int2List {
  * @author Michael Eichberg
  */
 final case class Int2ListNode(
-        private[immutable] var h:    Int,
-        private[immutable] var t:    Int,
-        private[immutable] var rest: Int2List = Int2ListEnd
+    private[immutable] var h:    Int,
+    private[immutable] var t:    Int,
+    private[immutable] var rest: Int2List = Int2ListEnd
 ) extends Int2List { list =>
 
     override def isEmpty: Boolean = false
@@ -122,13 +122,13 @@ final case class Int2ListNode(
     override def forFirstN[U](n: Int)(f: Int => U): Unit = {
         n match {
             case 0 =>
-                return ;
+                return;
             case 1 =>
                 if (h != Int.MinValue)
                     f(h)
                 else
                     f(t)
-                return ;
+                return;
             case _ =>
                 // ... n >= 2
                 var i = n - 1 // <= for the second element...

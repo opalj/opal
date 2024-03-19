@@ -1,5 +1,4 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-
 package org.opalj
 package collection
 package immutable
@@ -28,14 +27,20 @@ sealed abstract class UIDTrieSet[T <: UID] { set =>
      * are compared.
      */
     final def contains(value: T): Boolean = containsId(value.id)
+
     def containsId(id: Int): Boolean
+
     def foreach[U](f: T => U): Unit
+
     def forall(p: T => Boolean): Boolean
     def exists(p: T => Boolean): Boolean
+
     def foldLeft[B](z: B)(op: (B, T) => B): B
+
     final def foreachIterator: ForeachRefIterator[T] = new ForeachRefIterator[T] {
         override def foreach[U](f: T => U): Unit = set.foreach(f)
     }
+
     def iterator: Iterator[T]
     def add(value: T): UIDTrieSet[T]
     def head: T
@@ -43,7 +48,7 @@ sealed abstract class UIDTrieSet[T <: UID] { set =>
     // TODO: optimize implementation
     def ++(other: UIDTrieSet[T]): UIDTrieSet[T] = other.foldLeft(this)((r, e) => r add e)
 
-    final override def equals(other: Any): Boolean = {
+    override final def equals(other: Any): Boolean = {
         other match {
             case that: UIDTrieSet[_] => this.equals(that)
             case _                   => false
@@ -77,12 +82,15 @@ object UIDTrieSet {
 /**
  * The common superclass of the nodes of the trie.
  */
-private[immutable] sealed trait UIDTrieSetNode[T <: UID] {
+sealed private[immutable] trait UIDTrieSetNode[T <: UID] {
 
     def foreach[U](f: T => U): Unit
+
     def foldLeft[B](z: B)(op: (B, T) => B): B
+
     def forall(p: T => Boolean): Boolean
     def exists(p: T => Boolean): Boolean
+
     def head: T
 
     //
@@ -90,22 +98,24 @@ private[immutable] sealed trait UIDTrieSetNode[T <: UID] {
     //
     // Adds the value with the id to the trie at the specified level where `key is id >> level`.
     private[immutable] def add(value: T, id: Int, key: Int, level: Int): UIDTrieSetNode[T]
+
     private[immutable] def containsId(id: Int, key: Int): Boolean
+
     private[immutable] def toString(indent: Int): String
 }
 
 /**
  * The common superclass of the leafs of the trie.
  */
-private[immutable] sealed abstract class UIDTrieSetLeaf[T <: UID]
+sealed abstract private[immutable] class UIDTrieSetLeaf[T <: UID]
     extends UIDTrieSet[T]
     with UIDTrieSetNode[T] {
 
-    final override private[immutable] def containsId(id: Int, key: Int): Boolean = {
+    override private[immutable] final def containsId(id: Int, key: Int): Boolean = {
         this.containsId(id)
     }
 
-    final override private[immutable] def toString(indent: Int): String = {
+    override private[immutable] final def toString(indent: Int): String = {
         (" " * indent) + toString()
     }
 
@@ -116,11 +126,16 @@ case object UIDTrieSet0 extends UIDTrieSetLeaf[UID] {
     override def isEmpty: Boolean = true
     override def nonEmpty: Boolean = false
     override def size: Int = 0
+
     override def foreach[U](f: UID => U): Unit = {}
+
     override def forall(p: UID => Boolean): Boolean = true
     override def exists(p: UID => Boolean): Boolean = false
+
     override def foldLeft[B](z: B)(op: (B, UID) => B): B = z
+
     override def add(i: UID): UIDTrieSet1[UID] = new UIDTrieSet1(i)
+
     override def iterator: Iterator[UID] = Iterator.empty
     override def containsId(id: Int): Boolean = false
     override def head: UID = throw new NoSuchElementException
@@ -144,10 +159,14 @@ final class UIDTrieSet1[T <: UID](val i: T) extends UIDTrieSetLeaf[T] {
     override def nonEmpty: Boolean = true
     override def isSingletonSet: Boolean = true
     override def size: Int = 1
+
     override def foreach[U](f: T => U): Unit = { f(i) }
+
     override def forall(p: T => Boolean): Boolean = p(i)
     override def exists(p: T => Boolean): Boolean = p(i)
+
     override def foldLeft[B](z: B)(op: (B, T) => B): B = op(z, i)
+
     override def add(value: T): UIDTrieSetLeaf[T] = {
         val v = this.i
         if (v.id == value.id) this else new UIDTrieSet2(v, value)
@@ -181,7 +200,8 @@ final class UIDTrieSet1[T <: UID](val i: T) extends UIDTrieSetLeaf[T] {
  * Represents an ordered set of two values where i1 has to be smaller than i2.
  */
 private[immutable] final class UIDTrieSet2[T <: UID] private[immutable] (
-        val i1: T, val i2: T
+    val i1: T,
+    val i2: T
 ) extends UIDTrieSetLeaf[T] {
 
     override def isEmpty: Boolean = false
@@ -189,10 +209,14 @@ private[immutable] final class UIDTrieSet2[T <: UID] private[immutable] (
     override def isSingletonSet: Boolean = false
     override def size: Int = 2
     override def iterator: Iterator[T] = Iterator(i1, i2)
+
     override def foreach[U](f: T => U): Unit = { f(i1); f(i2) }
+
     override def forall(p: T => Boolean): Boolean = { p(i1) && p(i2) }
     override def exists(p: T => Boolean): Boolean = { p(i1) || p(i2) }
+
     override def foldLeft[B](z: B)(op: (B, T) => B): B = op(op(z, i1), i2)
+
     override def containsId(id: Int): Boolean = id == i1.id || id == i2.id
     override def head: T = i1
     override def add(value: T): UIDTrieSetLeaf[T] = {
@@ -242,7 +266,9 @@ private[immutable] final class UIDTrieSet2[T <: UID] private[immutable] (
  * Represents an ordered set of three int values: i1 < i2 < i3.
  */
 private[immutable] final class UIDTrieSet3[T <: UID] private[immutable] (
-        val i1: T, val i2: T, val i3: T
+    val i1: T,
+    val i2: T,
+    val i3: T
 ) extends UIDTrieSetLeaf[T] {
 
     override def size: Int = 3
@@ -252,9 +278,12 @@ private[immutable] final class UIDTrieSet3[T <: UID] private[immutable] (
     override def containsId(id: Int): Boolean = id == i1.id || id == i2.id || id == i3.id
     override def head: T = i1
     override def iterator: Iterator[T] = Iterator(i1, i2, i3)
+
     override def foreach[U](f: T => U): Unit = { f(i1); f(i2); f(i3) }
+
     override def forall(p: T => Boolean): Boolean = { p(i1) && p(i2) && p(i3) }
     override def exists(p: T => Boolean): Boolean = { p(i1) || p(i2) || p(i3) }
+
     override def foldLeft[B](z: B)(op: (B, T) => B): B = op(op(op(z, i1), i2), i3)
 
     override def add(value: T): UIDTrieSet[T] = {
@@ -422,8 +451,8 @@ private[immutable] final class UIDTrieSet3[T <: UID] private[immutable] (
  * A UIDTrieSet with four or more values.
  */
 private[immutable] final class UIDTrieSetN[T <: UID](
-        val size: Int,
-        root:     UIDTrieSetNode[T]
+    val size: Int,
+    root:     UIDTrieSetNode[T]
 ) extends UIDTrieSet[T] {
 
     // assert(size >= 4)
@@ -433,9 +462,12 @@ private[immutable] final class UIDTrieSetN[T <: UID](
     override def isSingletonSet: Boolean = false
     override def containsId(id: Int): Boolean = root.containsId(id, id)
     override def head: T = root.head
+
     override def foreach[U](f: T => U): Unit = root.foreach(f)
+
     override def forall(p: T => Boolean): Boolean = root.forall(p)
     override def exists(p: T => Boolean): Boolean = root.exists(p)
+
     override def foldLeft[B](z: B)(op: (B, T) => B): B = root.foldLeft(z)(op)
 
     override def iterator: Iterator[T] = new Iterator[T] {
@@ -485,9 +517,9 @@ private[immutable] final class UIDTrieSetN[T <: UID](
 
     override def equals(that: UIDTrieSet[_]): Boolean = {
         (that eq this) ||
-            // recall that the shape of the trie depends on the insertion order
-            // (but doesn't reflect the order)
-            (that.size == this.size && this.forall(uid => that.containsId(uid.id)))
+        // recall that the shape of the trie depends on the insertion order
+        // (but doesn't reflect the order)
+        (that.size == this.size && this.forall(uid => that.containsId(uid.id)))
     }
 
     override def hashCode: Int = root.hashCode * size
@@ -508,15 +540,18 @@ private[immutable] final class UIDTrieSetN[T <: UID](
 }
 
 private[immutable] final class UIDTrieSetNode_0_1[T <: UID](
-        val v:  T, // value with the current prefix...
-        val _0: UIDTrieSetNode[T],
-        val _1: UIDTrieSetNode[T]
+    val v:  T, // value with the current prefix...
+    val _0: UIDTrieSetNode[T],
+    val _1: UIDTrieSetNode[T]
 ) extends UIDTrieSetNode[T] {
 
     override def foreach[U](f: T => U): Unit = { f(v); _0.foreach(f); _1.foreach(f) }
+
     override def foldLeft[B](z: B)(op: (B, T) => B): B = _1.foldLeft(_0.foldLeft(op(z, v))(op))(op)
+
     override def forall(p: T => Boolean): Boolean = { p(v) && _0.forall(p) && _1.forall(p) }
     override def exists(p: T => Boolean): Boolean = { p(v) || _0.forall(p) || _1.forall(p) }
+
     override def head: T = v
 
     override def hashCode: Int = v.id ^ _0.hashCode ^ _1.hashCode
@@ -564,16 +599,19 @@ private[immutable] final class UIDTrieSetNode_0_1[T <: UID](
 }
 
 private[immutable] final class UIDTrieSetNode_0[T <: UID](
-        val v:  T,
-        val _0: UIDTrieSetNode[T]
+    val v:  T,
+    val _0: UIDTrieSetNode[T]
 ) extends UIDTrieSetNode[T] {
 
     override def hashCode: Int = v.id ^ _0.hashCode
 
     override def foreach[U](f: T => U): Unit = { f(v); _0.foreach(f) }
+
     override def foldLeft[B](z: B)(op: (B, T) => B): B = _0.foldLeft(op(z, v))(op)
+
     override def forall(p: T => Boolean): Boolean = { p(v) && _0.forall(p) }
     override def exists(p: T => Boolean): Boolean = { p(v) || _0.forall(p) }
+
     override def head: T = v
 
     override private[immutable] def add(
@@ -622,16 +660,19 @@ private[immutable] final class UIDTrieSetNode_0[T <: UID](
 }
 
 private[immutable] final class UIDTrieSetNode_1[T <: UID](
-        val v:  T,
-        val _1: UIDTrieSetNode[T]
+    val v:  T,
+    val _1: UIDTrieSetNode[T]
 ) extends UIDTrieSetNode[T] {
 
     override def hashCode: Int = v.id ^ _1.hashCode
 
     override def foreach[U](f: T => U): Unit = { f(v); _1.foreach(f) }
+
     override def foldLeft[B](z: B)(op: (B, T) => B): B = _1.foldLeft(op(z, v))(op)
+
     override def forall(p: T => Boolean): Boolean = { p(v) && _1.forall(p) }
     override def exists(p: T => Boolean): Boolean = { p(v) || _1.forall(p) }
+
     override def head: T = v
 
     override private[immutable] def add(

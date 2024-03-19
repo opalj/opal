@@ -16,7 +16,7 @@ package mutable
  * @author Michael Eichberg
  */
 final class RefAccumulator[A <: AnyRef] private (
-        private var data: List[AnyRef] // either a value of type A or a non-empty iterator of A
+    private var data: List[AnyRef] // either a value of type A or a non-empty iterator of A
 ) {
 
     def isEmpty: Boolean = data.isEmpty

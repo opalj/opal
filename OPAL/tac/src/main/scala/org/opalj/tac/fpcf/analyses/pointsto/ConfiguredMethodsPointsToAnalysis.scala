@@ -49,7 +49,7 @@ import org.opalj.tac.fpcf.analyses.cg.TypeConsumerAnalysis
  * @author Florian Kuebler
  */
 abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
-        final val project: SomeProject
+    final val project: SomeProject
 ) extends PointsToAnalysisBase with TypeConsumerAnalysis {
 
     private[this] implicit val declaredMethods: DeclaredMethods = p.get(DeclaredMethodsKey)
@@ -57,7 +57,8 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
 
     private[this] val nativeMethodData: Map[DeclaredMethod, Option[Array[PointsToRelation]]] = {
         ConfiguredMethods.reader.read(
-            p.config, "org.opalj.fpcf.analyses.ConfiguredNativeMethodsAnalysis"
+            p.config,
+            "org.opalj.fpcf.analyses.ConfiguredNativeMethodsAnalysis"
         ).nativeMethods.map { v => (v.method, v.pointsTo) }.toMap
     }
 
@@ -82,7 +83,8 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
             if (nativeMethodData.contains(dm) && nativeMethodData(dm).nonEmpty)
                 handleCallers(callers, null, nativeMethodData(dm).get)
             else if (dm.hasSingleDefinedMethod && dm.definedMethod.body.isEmpty &&
-                dm.descriptor.returnType.isReferenceType) {
+                     dm.descriptor.returnType.isReferenceType
+            ) {
                 val m = dm.definedMethod
                 val cf = m.classFile.thisType.fqn
                 val name = m.name
@@ -90,13 +92,19 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
                 val tpe = m.returnType.asReferenceType.toJVMTypeName
                 val arrayTypes = // TODO We should probably handle ArrayTypes as well
                     if (m.returnType.isArrayType &&
-                        m.returnType.asArrayType.elementType.isObjectType)
+                        m.returnType.asArrayType.elementType.isObjectType
+                    )
                         Seq(m.returnType.asArrayType.elementType.asObjectType.fqn)
                     else Seq.empty
-                handleCallers(callers, null, Array(PointsToRelation(
-                    MethodDescription(cf, name, desc),
-                    AllocationSiteDescription(cf, name, desc, tpe, arrayTypes)
-                )), true)
+                handleCallers(
+                    callers,
+                    null,
+                    Array(PointsToRelation(
+                        MethodDescription(cf, name, desc),
+                        AllocationSiteDescription(cf, name, desc, tpe, arrayTypes)
+                    )),
+                    true
+                )
             } else
                 NoResult
         } else
@@ -107,14 +115,12 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
         newCallers:                 EOptionP[DeclaredMethod, Callers],
         oldCallers:                 Callers,
         data:                       Array[PointsToRelation],
-        filterNonInstantiableTypes: Boolean                           = false
+        filterNonInstantiableTypes: Boolean = false
     ): ProperPropertyComputationResult = {
         val dm = newCallers.e
         var results: Iterator[ProperPropertyComputationResult] = Iterator.empty
         newCallers.ub.forNewCalleeContexts(oldCallers, dm) { callContext =>
-            results ++= handleNativeMethod(
-                callContext.asInstanceOf[ContextType], data, filterNonInstantiableTypes
-            )
+            results ++= handleNativeMethod(callContext.asInstanceOf[ContextType], data, filterNonInstantiableTypes)
         }
         if (newCallers.isRefinable) {
             results ++= Iterator(InterimPartialResult(
@@ -163,7 +169,10 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
     }
 
     private[this] def handleGet(
-        rhs: EntityDescription, pc: Int, nextPC: Int, filterNonInstantiableTypes: Boolean
+        rhs:                        EntityDescription,
+        pc:                         Int,
+        nextPC:                     Int,
+        filterNonInstantiableTypes: Boolean
     )(implicit state: State): Int = {
         val defSiteObject = getDefSite(pc)
         rhs match {
@@ -214,16 +223,13 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
                             val componentType = ObjectType(componentTypeString)
                             if (!filterNonInstantiableTypes || canBeInstantiated(componentType))
                                 arrayPTS = arrayPTS.included(
-                                    createPointsToSet(
-                                        pc,
-                                        allocationContext,
-                                        componentType,
-                                        isConstant = false
-                                    )
+                                    createPointsToSet(pc, allocationContext, componentType, isConstant = false)
                                 )
                         }
                         state.includeSharedPointsToSet(
-                            arrayEntity, arrayPTS, PointsToSetLike.noFilter
+                            arrayEntity,
+                            arrayPTS,
+                            PointsToSetLike.noFilter
                         )
                     }
                 } else {
@@ -231,12 +237,7 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
                     if (!filterNonInstantiableTypes || canBeInstantiated(theInstantiatedType))
                         state.includeSharedPointsToSet(
                             defSiteObject,
-                            createPointsToSet(
-                                pc,
-                                allocationContext,
-                                theInstantiatedType,
-                                isConstant = false
-                            ),
+                            createPointsToSet(pc, allocationContext, theInstantiatedType, isConstant = false),
                             PointsToSetLike.noFilter
                         )
                 }
@@ -244,16 +245,16 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
             case ArrayDescription(array, arrayType) =>
                 val arrayPC = nextPC
                 val theNextPC = handleGet(array, arrayPC, nextPC, filterNonInstantiableTypes) - 1
-                handleArrayLoad(
-                    ArrayType(ObjectType(arrayType)), pc, IntTrieSet(arrayPC), checkForCast = false
-                )
+                handleArrayLoad(ArrayType(ObjectType(arrayType)), pc, IntTrieSet(arrayPC), checkForCast = false)
                 return theNextPC;
         }
         nextPC
     }
 
     private[this] def handlePut(
-        lhs: EntityDescription, pc: Int, nextPC: Int
+        lhs:    EntityDescription,
+        pc:     Int,
+        nextPC: Int
     )(implicit state: State): Int = {
         lhs match {
             case md: MethodDescription =>
@@ -295,9 +296,7 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
             case ArrayDescription(array, arrayType) =>
                 val arrayPC = nextPC
                 val theNextPC = handleGet(array, arrayPC, nextPC, false) - 1
-                handleArrayStore(
-                    ArrayType(ObjectType(arrayType)), IntTrieSet(arrayPC), IntTrieSet(pc)
-                )
+                handleArrayStore(ArrayType(ObjectType(arrayType)), IntTrieSet(arrayPC), IntTrieSet(pc))
                 return theNextPC;
         }
         nextPC
@@ -330,7 +329,9 @@ trait ConfiguredMethodsPointsToAnalysisScheduler extends FPCFTriggeredAnalysisSc
     override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
 
     override def register(
-        p: SomeProject, ps: PropertyStore, unused: Null
+        p:      SomeProject,
+        ps:     PropertyStore,
+        unused: Null
     ): ConfiguredMethodsPointsToAnalysis = {
         val analysis = createAnalysis(p)
         // register the analysis for initial values for callers (i.e. methods becoming reachable)

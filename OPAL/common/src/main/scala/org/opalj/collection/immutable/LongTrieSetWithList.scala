@@ -50,10 +50,10 @@ private[immutable] case object LongTrieSetWithList0 extends LongTrieSetWithList 
     override def head: Long = throw new UnsupportedOperationException
     override def contains(value: Long): Boolean = false
 
-    override def forall(p: Long => Boolean): Boolean = true
+    override def forall(p:     Long => Boolean): Boolean = true
     override def foreach[U](f: Long => U): Unit = {}
     override def iterator: LongIterator = LongIterator.empty
-    override def foldLeft[B](z: B)(op: (B, Long) => B): B = z
+    override def foldLeft[B](z:  B)(op:  (B, Long) => B): B = z
     override def forFirstN[U](n: Int)(f: Long => U): Unit = { /*nothing to do*/ }
 
     override def +(i: Long): LongTrieSetWithList1 = new LongTrieSetWithList1(i)
@@ -69,7 +69,7 @@ private[immutable] case object LongTrieSetWithList0 extends LongTrieSetWithList 
 }
 
 private[immutable] final class LongTrieSetWithList1 private[immutable] (
-        private[immutable] final val i1: Long
+    private[immutable] final val i1: Long
 ) extends LongTrieSetWithList {
 
     override def isEmpty: Boolean = false
@@ -79,12 +79,12 @@ private[immutable] final class LongTrieSetWithList1 private[immutable] (
     override def contains(i: Long): Boolean = i == i1
     override def head: Long = i1
 
-    override def forall(p: Long => Boolean): Boolean = p(i1)
+    override def forall(p:     Long => Boolean): Boolean = p(i1)
     override def foreach[U](f: Long => U): Unit = f(i1)
     override def iterator: LongIterator = LongIterator(i1)
     override def foldLeft[B](z: B)(op: (B, Long) => B): B = op(z, i1)
     override def forFirstN[U](n: Int)(f: Long => U): Unit = {
-        if (n == 0) return ;
+        if (n == 0) return;
         f(i1)
     }
 
@@ -109,8 +109,8 @@ private[immutable] final class LongTrieSetWithList1 private[immutable] (
 }
 
 private[immutable] final class LongTrieSetWithList2 private[immutable] (
-        private[immutable] final val i1: Long,
-        private[immutable] final val i2: Long
+    private[immutable] final val i1: Long,
+    private[immutable] final val i2: Long
 ) extends LongTrieSetWithList {
 
     override def isEmpty: Boolean = false
@@ -120,14 +120,14 @@ private[immutable] final class LongTrieSetWithList2 private[immutable] (
     override def contains(i: Long): Boolean = i == i1 || i == i2
     override def head: Long = i1
 
-    override def forall(p: Long => Boolean): Boolean = { p(i1) && p(i2) }
+    override def forall(p:     Long => Boolean): Boolean = { p(i1) && p(i2) }
     override def foreach[U](f: Long => U): Unit = { f(i1); f(i2) }
     override def iterator: LongIterator = LongIterator(i1, i2)
     override def foldLeft[B](z: B)(op: (B, Long) => B): B = op(op(z, i1), i2)
     override def forFirstN[U](n: Int)(f: Long => U): Unit = {
-        if (n == 0) return ;
+        if (n == 0) return;
         f(i1)
-        if (n == 1) return ;
+        if (n == 1) return;
         f(i2)
     }
 
@@ -155,9 +155,9 @@ private[immutable] final class LongTrieSetWithList2 private[immutable] (
 }
 
 private[immutable] final class LongTrieSetWithList3 private[immutable] (
-        private[immutable] final val i1: Long,
-        private[immutable] final val i2: Long,
-        private[immutable] final val i3: Long
+    private[immutable] final val i1: Long,
+    private[immutable] final val i2: Long,
+    private[immutable] final val i3: Long
 ) extends LongTrieSetWithList {
 
     override def size: Int = 3
@@ -167,16 +167,16 @@ private[immutable] final class LongTrieSetWithList3 private[immutable] (
     override def contains(i: Long): Boolean = i == i1 || i == i2 || i == i3
     override def head: Long = i1
 
-    override def forall(p: Long => Boolean): Boolean = { p(i1) && p(i2) && p(i3) }
+    override def forall(p:     Long => Boolean): Boolean = { p(i1) && p(i2) && p(i3) }
     override def foreach[U](f: Long => U): Unit = { f(i1); f(i2); f(i3) }
     override def iterator: LongIterator = LongIterator(i1, i2, i3)
     override def foldLeft[B](z: B)(op: (B, Long) => B): B = op(op(op(z, i1), i2), i3)
     override def forFirstN[U](n: Int)(f: Long => U): Unit = {
-        if (n == 0) return ;
+        if (n == 0) return;
         f(i1)
-        if (n == 1) return ;
+        if (n == 1) return;
         f(i2)
-        if (n == 2) return ;
+        if (n == 2) return;
         f(i3)
     }
 
@@ -210,9 +210,9 @@ private[immutable] final class LongTrieSetWithList3 private[immutable] (
 }
 
 private[immutable] final class LongTrieSetWithListN(
-        final val size: Int,
-        final val root: LongTrieSetNode,
-        final val list: Long2List
+    final val size: Int,
+    final val root: LongTrieSetNode,
+    final val list: Long2List
 ) extends LongTrieSetWithList {
 
     // assert(size >= 4)
@@ -221,8 +221,8 @@ private[immutable] final class LongTrieSetWithListN(
     override def isSingletonSet: Boolean = false
     override def contains(value: Long): Boolean = root.contains(value, value)
     override def head: Long = list.head
-    override def forall(p: Long => Boolean): Boolean = list.forall(p)
-    override def foreach[U](f: Long => U): Unit = list.foreach(f)
+    override def forall(p:       Long => Boolean): Boolean = list.forall(p)
+    override def foreach[U](f:   Long => U): Unit = list.foreach(f)
     override def forFirstN[U](n: Int)(f: Long => U): Unit = list.forFirstN(n)(f)
     override def iterator: LongIterator = list.iterator
     override def foldLeft[B](z: B)(op: (B, Long) => B): B = list.foldLeft(z)(op)

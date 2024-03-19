@@ -17,8 +17,8 @@ import scala.collection.mutable
  * @author Michael Eichberg
  */
 final class IntArrayStack private (
-        private var data:  Array[Int],
-        private var size0: Int
+    private var data:  Array[Int],
+    private var size0: Int
 ) extends mutable.IndexedSeq[Int]
     with mutable.IndexedSeqOps[Int, mutable.Stack, IntArrayStack]
     with mutable.Cloneable[IntArrayStack]
@@ -88,7 +88,7 @@ final class IntArrayStack private (
         val thatSize = that.size0
 
         if (thatSize == 0) {
-            return ;
+            return;
         }
 
         val thisSize = this.size0

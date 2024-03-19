@@ -25,12 +25,15 @@ class MultiTracer(val tracers: AITracer*) extends AITracer {
         alreadyEvaluatedPCs:              IntArrayStack,
         operandsArray:                    domain.OperandsArray,
         localsArray:                      domain.LocalsArray,
-        memoryLayoutBeforeSubroutineCall: List[(Int /*PC*/ , domain.OperandsArray, domain.LocalsArray)]
+        memoryLayoutBeforeSubroutineCall: List[(Int /*PC*/, domain.OperandsArray, domain.LocalsArray)]
     ): Unit = {
         tracers foreach { tracer =>
             tracer.continuingInterpretation(code, domain)(
-                initialWorkList, alreadyEvaluatedPCs,
-                operandsArray, localsArray, memoryLayoutBeforeSubroutineCall
+                initialWorkList,
+                alreadyEvaluatedPCs,
+                operandsArray,
+                localsArray,
+                memoryLayoutBeforeSubroutineCall
             )
         }
     }
@@ -43,9 +46,7 @@ class MultiTracer(val tracers: AITracer*) extends AITracer {
         operands:    domain.Operands,
         locals:      domain.Locals
     ): Unit = {
-        tracers foreach { tracer =>
-            tracer.instructionEvalution(domain)(pc, instruction, operands, locals)
-        }
+        tracers foreach { tracer => tracer.instructionEvalution(domain)(pc, instruction, operands, locals) }
     }
 
     override def flow(
@@ -65,7 +66,8 @@ class MultiTracer(val tracers: AITracer*) extends AITracer {
     override def noFlow(
         domain: Domain
     )(
-        currentPC: Int, targetPC: Int
+        currentPC: Int,
+        targetPC:  Int
     ): Unit = {
         tracers foreach { _.noFlow(domain)(currentPC, targetPC) }
     }
@@ -73,11 +75,12 @@ class MultiTracer(val tracers: AITracer*) extends AITracer {
     override def rescheduled(
         domain: Domain
     )(
-        sourcePC: Int, targetPC: Int, isExceptionalControlFlow: Boolean, worklist: List[Int /*PC*/ ]
+        sourcePC:                 Int,
+        targetPC:                 Int,
+        isExceptionalControlFlow: Boolean,
+        worklist:                 List[Int /*PC*/ ]
     ): Unit = {
-        tracers foreach { tracer =>
-            tracer.rescheduled(domain)(sourcePC, targetPC, isExceptionalControlFlow, worklist)
-        }
+        tracers foreach { tracer => tracer.rescheduled(domain)(sourcePC, targetPC, isExceptionalControlFlow, worklist) }
     }
 
     override def join(
@@ -93,16 +96,15 @@ class MultiTracer(val tracers: AITracer*) extends AITracer {
         tracers foreach { tracer =>
             tracer.join(
                 domain
-            )(
-                pc, thisOperands, thisLocals, otherOperands, otherLocals, result
-            )
+            )(pc, thisOperands, thisLocals, otherOperands, otherLocals, result)
         }
     }
 
     override def abruptMethodExecution(
         domain: Domain
     )(
-        pc: Int, exception: domain.ExceptionValue
+        pc:        Int,
+        exception: domain.ExceptionValue
     ): Unit = {
         tracers foreach { _.abruptMethodExecution(domain)(pc, exception) }
     }
@@ -115,15 +117,15 @@ class MultiTracer(val tracers: AITracer*) extends AITracer {
         oldWorklist:     List[Int /*PC*/ ],
         newWorklist:     List[Int /*PC*/ ]
     ): Unit = {
-        tracers foreach { tracer =>
-            tracer.ret(domain)(pc, returnAddressPC, oldWorklist, newWorklist)
-        }
+        tracers foreach { tracer => tracer.ret(domain)(pc, returnAddressPC, oldWorklist, newWorklist) }
     }
 
     override def jumpToSubroutine(
         domain: Domain
     )(
-        pc: Int, target: Int, nestingLevel: Int
+        pc:           Int,
+        target:       Int,
+        nestingLevel: Int
     ): Unit = {
         tracers foreach { _.jumpToSubroutine(domain)(pc, target, nestingLevel) }
     }
@@ -131,18 +133,20 @@ class MultiTracer(val tracers: AITracer*) extends AITracer {
     override def returnFromSubroutine(
         domain: Domain
     )(
-        pc: Int, returnAddress: Int, subroutinePCs: List[Int]
+        pc:            Int,
+        returnAddress: Int,
+        subroutinePCs: List[Int]
     ): Unit = {
-        tracers foreach { tracer =>
-            tracer.returnFromSubroutine(domain)(pc, returnAddress, subroutinePCs)
-        }
+        tracers foreach { tracer => tracer.returnFromSubroutine(domain)(pc, returnAddress, subroutinePCs) }
     }
 
     override def abruptSubroutineTermination(
         domain: Domain
     )(
-        details:  String,
-        sourcePC: Int, targetPC: Int, jumpToSubroutineId: Int,
+        details:                    String,
+        sourcePC:                   Int,
+        targetPC:                   Int,
+        jumpToSubroutineId:         Int,
         terminatedSubroutinesCount: Int,
         forceScheduling:            Boolean,
         oldWorklist:                List[Int /*PC*/ ],
@@ -151,10 +155,13 @@ class MultiTracer(val tracers: AITracer*) extends AITracer {
         tracers foreach { tracer =>
             tracer.abruptSubroutineTermination(domain)(
                 details,
-                sourcePC, targetPC,
-                jumpToSubroutineId, terminatedSubroutinesCount,
+                sourcePC,
+                targetPC,
+                jumpToSubroutineId,
+                terminatedSubroutinesCount,
                 forceScheduling,
-                oldWorklist, newWorklist
+                oldWorklist,
+                newWorklist
             )
         }
     }
@@ -174,19 +181,17 @@ class MultiTracer(val tracers: AITracer*) extends AITracer {
         newLocals:   domain.Locals
     ): Unit = {
         tracers foreach { tracer =>
-            tracer.establishedConstraint(domain)(
-                pc, effectivePC, operands, locals, newOperands, newLocals
-            )
+            tracer.establishedConstraint(domain)(pc, effectivePC, operands, locals, newOperands, newLocals)
         }
     }
 
     override def domainMessage(
-        domain: Domain,
-        source: Class[_], typeID: String,
-        pc: Option[Int /*PC*/ ], message: => String
+        domain:  Domain,
+        source:  Class[_],
+        typeID:  String,
+        pc:      Option[Int /*PC*/ ],
+        message: => String
     ): Unit = {
-        tracers foreach { tracer =>
-            tracer.domainMessage(domain, source, typeID, pc, message)
-        }
+        tracers foreach { tracer => tracer.domainMessage(domain, source, typeID, pc, message) }
     }
 }

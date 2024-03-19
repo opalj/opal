@@ -48,7 +48,7 @@ object IFLT extends InstructionMetaInformation {
 }
 
 case class LabeledIFLT(
-        branchTarget: InstructionLabel
+    branchTarget: InstructionLabel
 ) extends LabeledSimpleConditionalBranchInstruction
     with IFLTLike {
 

@@ -54,7 +54,7 @@ import org.opalj.value.IsSObjectValue
  * @author Dominik Helm
  */
 class CallGraphAnalysis private[cg] (
-        override val project: SomeProject
+    override val project: SomeProject
 ) extends ReachableMethodAnalysis with TypeConsumerAnalysis {
     type LocalTypeInformation
 
@@ -83,7 +83,9 @@ class CallGraphAnalysis private[cg] (
                 for (cs <- relevantCallSites) {
                     val (receiver, cbsTargets) = state.callSiteData(cs)
                     typeIterator.continuation(
-                        receiver, eps.asInstanceOf[EPS[Entity, PropertyType]], cbsTargets
+                        receiver,
+                        eps.asInstanceOf[EPS[Entity, PropertyType]],
+                        cbsTargets
                     ) {
                         newType =>
                             val CallSite(pc, name, descriptor, declaredType) = cs
@@ -118,7 +120,8 @@ class CallGraphAnalysis private[cg] (
     }
 
     override final def processMethod(
-        callContext: ContextType, tacEP: EPS[Method, TACAI]
+        callContext: ContextType,
+        tacEP:       EPS[Method, TACAI]
     ): ProperPropertyComputationResult = {
         val state = new CGState[ContextType](callContext, tacEP)
         if (tacEP ne null)
@@ -142,21 +145,18 @@ class CallGraphAnalysis private[cg] (
 
         val cbsTargets: Set[ReferenceType] =
             if (!isPrecise && resovleCallBySignature && call.isInterface &&
-                call.declaringClass.isObjectType) {
+                call.declaringClass.isObjectType
+            ) {
                 val cf = project.classFile(call.declaringClass.asObjectType)
                 cf.flatMap { _.findMethod(call.name, call.descriptor) }.map {
                     getCBSTargets(_).toSet[ReferenceType]
                 }.getOrElse(Set.empty)
             } else Set.empty
 
-        val actualTypes = typeIterator.typesProperty(
-            call.receiver.asVar, state.callContext, callSite, state.tac.stmts
-        )
+        val actualTypes = typeIterator.typesProperty(call.receiver.asVar, state.callContext, callSite, state.tac.stmts)
 
         typeIterator.foreachType(call.receiver.asVar, actualTypes, cbsTargets) { possibleTgtType =>
-            val tgtR = project.instanceCall(
-                callerType, possibleTgtType, call.name, call.descriptor
-            )
+            val tgtR = project.instanceCall(callerType, possibleTgtType, call.name, call.descriptor)
 
             handleCall(
                 callContext,
@@ -180,9 +180,7 @@ class CallGraphAnalysis private[cg] (
                 val declType = specializedDeclaringClassType.asObjectType
 
                 val mResult = if (classHierarchy.isInterface(declType).isYes)
-                    org.opalj.Result(project.resolveInterfaceMethodReference(
-                        declType, call.name, call.descriptor
-                    ))
+                    org.opalj.Result(project.resolveInterfaceMethodReference(declType, call.name, call.descriptor))
                 else
                     org.opalj.Result(project.resolveMethodReference(
                         declType,
@@ -211,7 +209,8 @@ class CallGraphAnalysis private[cg] (
     }
 
     protected final def processMethod(
-        state: CGState[ContextType], calls: DirectCalls
+        state: CGState[ContextType],
+        calls: DirectCalls
     ): ProperPropertyComputationResult = {
         val tac = state.tac
 
@@ -299,7 +298,8 @@ class CallGraphAnalysis private[cg] (
     }
 
     protected[this] def returnResult(
-        calleesAndCallers: DirectCalls, enforceCalleesResult: Boolean = false
+        calleesAndCallers:    DirectCalls,
+        enforceCalleesResult: Boolean = false
     )(implicit state: CGState[ContextType]): ProperPropertyComputationResult = {
         val results = calleesAndCallers.partialResults(state.callContext, enforceCalleesResult)
 
@@ -327,9 +327,7 @@ class CallGraphAnalysis private[cg] (
     ): Unit = {
         if (target.hasValue) {
             val tgtDM = declaredMethods(target.value)
-            calleesAndCallers.addCall(
-                callContext, pc, typeIterator.expandContext(callContext, tgtDM, pc)
-            )
+            calleesAndCallers.addCall(callContext, pc, typeIterator.expandContext(callContext, tgtDM, pc))
         } else {
             val packageName = callContext.method.definedMethod.classFile.thisType.packageName
             unknownLibraryCall(
@@ -360,30 +358,18 @@ class CallGraphAnalysis private[cg] (
         val declaringClassType = callDeclaringClass.mostPreciseObjectType
         val runtimeType = runtimeReceiverType.mostPreciseObjectType
 
-        val declTgt = declaredMethods.apply(
-            declaringClassType,
-            packageName,
-            runtimeType,
-            callName,
-            callDescriptor
-        )
+        val declTgt = declaredMethods.apply(declaringClassType, packageName, runtimeType, callName, callDescriptor)
 
         if (declTgt.hasSingleDefinedMethod) {
             if (declTgt.definedMethod.isStatic == isStatic)
-                calleesAndCallers.addCall(
-                    callContext, pc, typeIterator.expandContext(callContext, declTgt, pc)
-                )
+                calleesAndCallers.addCall(callContext, pc, typeIterator.expandContext(callContext, declTgt, pc))
         } else if (declTgt.isVirtualOrHasSingleDefinedMethod) {
-            calleesAndCallers.addCall(
-                callContext, pc, typeIterator.expandContext(callContext, declTgt, pc)
-            )
+            calleesAndCallers.addCall(callContext, pc, typeIterator.expandContext(callContext, declTgt, pc))
         } else {
             declTgt.definedMethods foreach { m =>
                 if (m.isStatic == isStatic) {
                     val dm = declaredMethods(m)
-                    calleesAndCallers.addCall(
-                        callContext, pc, typeIterator.expandContext(callContext, dm, pc)
-                    )
+                    calleesAndCallers.addCall(callContext, pc, typeIterator.expandContext(callContext, dm, pc))
                 }
             }
         }
@@ -410,9 +396,7 @@ class CallGraphAnalysis private[cg] (
 
             case ov: IsSObjectValue =>
                 if (ov.isPrecise) {
-                    handlePreciseCall(
-                        ov.theUpperTypeBound, callContext, call, pc, calleesAndCallers
-                    )
+                    handlePreciseCall(ov.theUpperTypeBound, callContext, call, pc, calleesAndCallers)
                 } else {
                     doHandleVirtualCall(
                         callContext,
@@ -425,14 +409,7 @@ class CallGraphAnalysis private[cg] (
                 }
 
             case _: IsMObjectValue =>
-                doHandleVirtualCall(
-                    callContext,
-                    call,
-                    pc,
-                    call.declaringClass,
-                    isPrecise = false,
-                    calleesAndCallers
-                )
+                doHandleVirtualCall(callContext, call, pc, call.declaringClass, isPrecise = false, calleesAndCallers)
 
             case _: IsNullValue =>
             // TODO: do not ignore the implicit calls to NullPointerException.<init>
@@ -446,14 +423,7 @@ class CallGraphAnalysis private[cg] (
         pc:                Int,
         calleesAndCallers: DirectCalls
     )(implicit state: CGState[ContextType]): Unit = {
-        doHandleVirtualCall(
-            callContext,
-            call,
-            pc,
-            calleeType,
-            isPrecise = true,
-            calleesAndCallers
-        )
+        doHandleVirtualCall(callContext, call, pc, calleeType, isPrecise = true, calleesAndCallers)
     }
 }
 

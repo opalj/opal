@@ -37,8 +37,7 @@ import org.opalj.da
  * @author Michael Reif
  */
 class Java8Invokedynamics(
-        implicit
-        val hermesConfig: HermesConfig
+    implicit val hermesConfig: HermesConfig
 ) extends DefaultFeatureQuery {
 
     override def featureIDs: Seq[String] =
@@ -74,53 +73,54 @@ class Java8Invokedynamics(
             val l = InstructionLocation(project.source(m.classFile).get, m, pc)
 
             val testCaseId = pcAndInvocation.value match {
-                case invDyn: INVOKEDYNAMIC =>
-                    {
+                case invDyn: INVOKEDYNAMIC => {
 
-                        if (isJava10StringConcatInvokedynamic(invDyn)) {
-                            11 /* Lambda5 */
-                        } else if (isScalaLambdaDeserializeExpression(invDyn)) {
-                            12 /* Lambda6 */
-                        } else if (isScalaSymbolExpression(invDyn)) {
-                            13 /* Lambda7 */
-                        } else if (m.instructionsOption.nonEmpty
-                            && isScalaStructuralCallSite(invDyn, m.instructionsOption.get, pc)) {
-                            14 /* Lambda8 */
-                        } else if (isGroovyInvokedynamic(invDyn)) {
-                            15 /* Lambda9 */
-                        } else if (isJava8LikeLambdaExpression(invDyn)) {
-                            val bm = invDyn.bootstrapMethod
-                            val handle = bm.arguments(1).asInstanceOf[MethodCallMethodHandle]
+                    if (isJava10StringConcatInvokedynamic(invDyn)) {
+                        11 /* Lambda5 */
+                    } else if (isScalaLambdaDeserializeExpression(invDyn)) {
+                        12 /* Lambda6 */
+                    } else if (isScalaSymbolExpression(invDyn)) {
+                        13 /* Lambda7 */
+                    } else if (m.instructionsOption.nonEmpty
+                               && isScalaStructuralCallSite(invDyn, m.instructionsOption.get, pc)
+                    ) {
+                        14 /* Lambda8 */
+                    } else if (isGroovyInvokedynamic(invDyn)) {
+                        15 /* Lambda9 */
+                    } else if (isJava8LikeLambdaExpression(invDyn)) {
+                        val bm = invDyn.bootstrapMethod
+                        val handle = bm.arguments(1).asInstanceOf[MethodCallMethodHandle]
 
-                            if (bm.handle.isInvokeStaticMethodHandle) {
-                                val InvokeStaticMethodHandle(LambdaMetafactory, false, name, descriptor) = bm.handle
-                                if (descriptor == MethodDescriptor.LambdaAltMetafactoryDescriptor &&
-                                    name == "altMetafactory") {
-                                    10 /*Lambda4 */
-                                } else if (code.pcOfNextInstruction(pc) != -1) {
-                                    val nextPC = code.pcOfNextInstruction(pc)
-                                    if (code.instructions(nextPC).opcode == ARETURN.opcode)
-                                        8 /* Lambda2*/
-                                    else {
-                                        val ai = new InterruptableAI[Domain]
-                                        val domain = new DefaultDomainWithCFGAndDefUse(project, m)
-                                        val result = ai(m, domain)
-                                        val instructions = result.domain.code.instructions
-                                        val users = result.domain.usedBy(pc)
-                                        if (users.exists(instructions(_).opcode == AASTORE.opcode))
-                                            9 /* Lambda3 */
-                                        else
-                                            handleJava8InvokeDynamic(m, handle)
-                                    }
-                                } else
-                                    handleJava8InvokeDynamic(m, handle)
+                        if (bm.handle.isInvokeStaticMethodHandle) {
+                            val InvokeStaticMethodHandle(LambdaMetafactory, false, name, descriptor) = bm.handle
+                            if (descriptor == MethodDescriptor.LambdaAltMetafactoryDescriptor &&
+                                name == "altMetafactory"
+                            ) {
+                                10 /*Lambda4 */
+                            } else if (code.pcOfNextInstruction(pc) != -1) {
+                                val nextPC = code.pcOfNextInstruction(pc)
+                                if (code.instructions(nextPC).opcode == ARETURN.opcode)
+                                    8 /* Lambda2*/
+                                else {
+                                    val ai = new InterruptableAI[Domain]
+                                    val domain = new DefaultDomainWithCFGAndDefUse(project, m)
+                                    val result = ai(m, domain)
+                                    val instructions = result.domain.code.instructions
+                                    val users = result.domain.usedBy(pc)
+                                    if (users.exists(instructions(_).opcode == AASTORE.opcode))
+                                        9 /* Lambda3 */
+                                    else
+                                        handleJava8InvokeDynamic(m, handle)
+                                }
                             } else
                                 handleJava8InvokeDynamic(m, handle)
-                        } else {
-                            //throw new RuntimeException("Unexpected handle Kind." + invDyn)
-                            -1
-                        }
+                        } else
+                            handleJava8InvokeDynamic(m, handle)
+                    } else {
+                        // throw new RuntimeException("Unexpected handle Kind." + invDyn)
+                        -1
                     }
+                }
             }
 
             if (testCaseId >= 0 && testCaseId < featureIDs.size) {
@@ -154,7 +154,8 @@ class Java8Invokedynamics(
                             }
                         }
                     } else {
-                        /* something unexpected */ -1
+                        /* something unexpected */
+                        -1
                     }
                 } else {
                     8 /* Lambda2 */

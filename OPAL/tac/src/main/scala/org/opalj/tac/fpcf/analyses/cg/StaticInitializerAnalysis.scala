@@ -49,10 +49,10 @@ class StaticInitializerAnalysis(val project: SomeProject) extends FPCFAnalysis {
     private val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
     private case class LCState(
-            // only present for non-final values
-            var lcDependee:      Option[EOptionP[SomeProject, LoadedClasses]],
-            var loadedClassesUB: Option[LoadedClasses],
-            var seenClasses:     Int
+        // only present for non-final values
+        var lcDependee:      Option[EOptionP[SomeProject, LoadedClasses]],
+        var loadedClassesUB: Option[LoadedClasses],
+        var seenClasses:     Int
     )
 
     /**
@@ -67,16 +67,13 @@ class StaticInitializerAnalysis(val project: SomeProject) extends FPCFAnalysis {
             case epk                                            => Some(epk) -> None
         }
 
-        implicit val state: LCState = LCState(
-            lcDependee, loadedClassesUB, 0
-        )
+        implicit val state: LCState = LCState(lcDependee, loadedClassesUB, 0)
 
         handleLoadedClasses()
     }
 
     private[this] def handleLoadedClasses()(
-        implicit
-        state: LCState
+        implicit state: LCState
     ): PropertyComputationResult = {
         val (unseenLoadedClasses, seenClasses) =
             if (state.loadedClassesUB.isDefined) {
@@ -107,7 +104,7 @@ class StaticInitializerAnalysis(val project: SomeProject) extends FPCFAnalysis {
                             case InterimUBP(ub: Callers) if !ub.hasVMLevelCallers =>
                                 Some(InterimEUBP(clInit, ub.updatedWithVMLevelCall()))
 
-                            case _: InterimEP[_, _]  => None
+                            case _: InterimEP[_, _] => None
 
                             case _: EPK[_, _]        => Some(InterimEUBP(clInit, OnlyVMLevelCallers))
                             case epk @ FinalEP(_, _) => throw new MatchError(epk)
@@ -122,8 +119,7 @@ class StaticInitializerAnalysis(val project: SomeProject) extends FPCFAnalysis {
     private[this] def continuation(
         someEPS: SomeEPS
     )(
-        implicit
-        state: LCState
+        implicit state: LCState
     ): PropertyComputationResult = {
         (someEPS: @unchecked) match {
 

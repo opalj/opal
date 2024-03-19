@@ -20,11 +20,25 @@ class Metrics(implicit hermes: HermesConfig) extends FeatureQuery {
      */
     override val featureIDs: Seq[String] = {
         Seq(
-            "0 FPC", "1-3 FPC", "4-10 FPC", ">10 FPC", // 0, 1, 2, 3
-            "0 MPC", "1-3 MPC", "4-10 MPC", ">10 MPC", // 4, 5, 6, 7
-            "1-3 CPP", "4-10 CPP", ">10 CPP", // 8, 9, 10
-            "0 NOC", "1-3 NOC", "4-10 NOC", ">10 NOC", //  11, 12, 13, 14
-            "linear methods (McCabe)", "2-3 McCabe", "4-10 McCabe", ">10 McCabe" // 15, 16, 17 ,18
+            "0 FPC",
+            "1-3 FPC",
+            "4-10 FPC",
+            ">10 FPC", // 0, 1, 2, 3
+            "0 MPC",
+            "1-3 MPC",
+            "4-10 MPC",
+            ">10 MPC", // 4, 5, 6, 7
+            "1-3 CPP",
+            "4-10 CPP",
+            ">10 CPP", // 8, 9, 10
+            "0 NOC",
+            "1-3 NOC",
+            "4-10 NOC",
+            ">10 NOC", //  11, 12, 13, 14
+            "linear methods (McCabe)",
+            "2-3 McCabe",
+            "4-10 McCabe",
+            ">10 McCabe" // 15, 16, 17 ,18
         )
     }
 
@@ -85,9 +99,7 @@ class Metrics(implicit hermes: HermesConfig) extends FeatureQuery {
                 CFGFactory(method, project.classHierarchy) foreach { cfg =>
                     val methodLocation = MethodLocation(classLocation, method)
                     val bbs = cfg.reachableBBs
-                    val edges = bbs.foldLeft(0) { (res, node) =>
-                        res + node.successors.size
-                    }
+                    val edges = bbs.foldLeft(0) { (res, node) => res + node.successors.size }
                     val mcCabe = edges - bbs.size + 2
                     mcCabe match {
                         case 1            => classLocations(15) += methodLocation

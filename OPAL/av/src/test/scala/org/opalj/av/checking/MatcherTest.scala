@@ -5,6 +5,12 @@ package checking
 
 import scala.collection.IndexedSeq
 
+import org.junit.runner.RunWith
+import org.scalatest.BeforeAndAfterAll
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
+
 import org.opalj.bi.AccessFlagsMatcher._
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.Annotation
@@ -17,12 +23,6 @@ import org.opalj.br.ObjectType
 import org.opalj.br.StringValue
 import org.opalj.br.analyses.Project
 import org.opalj.br.reader.Java8Framework.ClassFiles
-
-import org.junit.runner.RunWith
-import org.scalatest.BeforeAndAfterAll
-import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.matchers.should.Matchers
-import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests matchers of the Architecture Validation Framework.
@@ -61,7 +61,8 @@ class MatcherTest extends AnyFunSuite with Matchers with BeforeAndAfterAll {
      */
     test("the simple MethodPredicates") {
         MethodMatcher(
-            ClassMatcher("entity.impl.User"), MethodWithName("lastName")
+            ClassMatcher("entity.impl.User"),
+            MethodWithName("lastName")
         ).extension(project).size should be(1)
 
         MethodMatcher(
@@ -88,7 +89,8 @@ class MatcherTest extends AnyFunSuite with Matchers with BeforeAndAfterAll {
         ).extension(project).size should be(1)
 
         MethodMatcher(
-            ClassMatcher("entity.impl.User"), AnyMethod having AccessFlags(STATIC)
+            ClassMatcher("entity.impl.User"),
+            AnyMethod having AccessFlags(STATIC)
         ).extension(project).size should be(0)
     }
 
@@ -198,13 +200,13 @@ class MatcherTest extends AnyFunSuite with Matchers with BeforeAndAfterAll {
         HasAtLeastTheAnnotations(
             AnnotatedWith("entity.annotation.Column", Map("name" -> StringValue("first_name")))
         )(
-                IndexedSeq(
-                    Annotation(
-                        ObjectType("entity/annotation/Transient"),
-                        ElementValuePairs(ElementValuePair("name", StringValue("last_name")))
-                    )
+            IndexedSeq(
+                Annotation(
+                    ObjectType("entity/annotation/Transient"),
+                    ElementValuePairs(ElementValuePair("name", StringValue("last_name")))
                 )
-            ) should be(false)
+            )
+        ) should be(false)
 
         HasTheAnnotations(AnnotatedWith("entity.annotation.Column"))(
             IndexedSeq(
@@ -241,22 +243,26 @@ class MatcherTest extends AnyFunSuite with Matchers with BeforeAndAfterAll {
     test("the ClassMatcher should match only classes") {
         DefaultClassMatcher(
             namePredicate = Equals("entity.impl.User"),
-            matchMethods = false, matchFields = false
+            matchMethods = false,
+            matchFields = false
         ).extension(project).size should be(1)
 
         DefaultClassMatcher(
             namePredicate = Equals("entity/impl/User"),
-            matchMethods = false, matchFields = false
+            matchMethods = false,
+            matchFields = false
         ).extension(project).size should be(1)
 
         DefaultClassMatcher(
             namePredicate = StartsWith("entity"),
-            matchMethods = false, matchFields = false
+            matchMethods = false,
+            matchFields = false
         ).extension(project).size should be(8)
 
         DefaultClassMatcher(
             namePredicate = RegexNamePredicate(""".+User""".r),
-            matchMethods = false, matchFields = false
+            matchMethods = false,
+            matchFields = false
         ).extension(project).size should be(1)
     }
 
@@ -276,37 +282,53 @@ class MatcherTest extends AnyFunSuite with Matchers with BeforeAndAfterAll {
     test("the ClassMatcher should match only classes with the given access flags") {
 
         DefaultClassMatcher(
-            NOT_ABSTRACT, matchMethods = false, matchFields = false
+            NOT_ABSTRACT,
+            matchMethods = false,
+            matchFields = false
         ).extension(project).size should be(2)
 
         DefaultClassMatcher(
-            PUBLIC_ABSTRACT, matchMethods = false, matchFields = false
+            PUBLIC_ABSTRACT,
+            matchMethods = false,
+            matchFields = false
         ).extension(project).size should be(6)
 
         DefaultClassMatcher(
-            PUBLIC, matchMethods = false, matchFields = false
+            PUBLIC,
+            matchMethods = false,
+            matchFields = false
         ).extension(project).size should be(8)
 
         DefaultClassMatcher(
-            ANY, matchMethods = false, matchFields = false
+            ANY,
+            matchMethods = false,
+            matchFields = false
         ).extension(project).size should be(8)
 
         DefaultClassMatcher(
-            PUBLIC && NOT_ABSTRACT, matchMethods = false, matchFields = false
+            PUBLIC && NOT_ABSTRACT,
+            matchMethods = false,
+            matchFields = false
         ).extension(project).size should be(2)
     }
 
     test("the ClassMatcher should not match any class with the given access flags") {
         DefaultClassMatcher(
-            PRIVATE_FINAL, matchMethods = false, matchFields = false
+            PRIVATE_FINAL,
+            matchMethods = false,
+            matchFields = false
         ).extension(project) should be(empty)
 
         DefaultClassMatcher(
-            PUBLIC_STATIC_FINAL, matchMethods = false, matchFields = false
+            PUBLIC_STATIC_FINAL,
+            matchMethods = false,
+            matchFields = false
         ).extension(project) should be(empty)
 
         DefaultClassMatcher(
-            PUBLIC_STATIC, matchMethods = false, matchFields = false
+            PUBLIC_STATIC,
+            matchMethods = false,
+            matchFields = false
         ).extension(project) should be(empty)
     }
 
@@ -317,14 +339,16 @@ class MatcherTest extends AnyFunSuite with Matchers with BeforeAndAfterAll {
 
         DefaultClassMatcher(
             annotationsPredicate = HasAtLeastTheAnnotations(AnnotatedWith("entity.annotation.Entity")),
-            matchMethods = false, matchFields = false
+            matchMethods = false,
+            matchFields = false
         ).extension(project).size should be(2)
     }
 
     test("the ClassMatcher should not match any class with the given annotation") {
         DefaultClassMatcher(
             annotationsPredicate = HasAtLeastTheAnnotations(AnnotatedWith("entity.annotation.Transient")),
-            matchMethods = false, matchFields = false
+            matchMethods = false,
+            matchFields = false
         ).extension(project) should be(empty)
     }
 
@@ -381,7 +405,8 @@ class MatcherTest extends AnyFunSuite with Matchers with BeforeAndAfterAll {
         PackageMatcher(Equals("entity"), classMatcher).extension(project).size should be(1)
 
         PackageMatcher(
-            RegexNamePredicate(""".+impl""".r), classMatcher
+            RegexNamePredicate(""".+impl""".r),
+            classMatcher
         ).extension(project).size should be(2)
     }
 
@@ -395,13 +420,14 @@ class MatcherTest extends AnyFunSuite with Matchers with BeforeAndAfterAll {
         PackageMatcher(StartsWith("entity/u"), classMatcher).extension(project) should be(empty)
 
         PackageMatcher(
-            RegexNamePredicate(""".+user""".r), classMatcher
+            RegexNamePredicate(""".+user""".r),
+            classMatcher
         ).extension(project) should be(empty)
     }
 
     /*
-         * PackageMatcher matching complete classes
-         */
+     * PackageMatcher matching complete classes
+     */
     test("the PackageMatcher should match all elements of the class") {
         PackageMatcher("entity").extension(project).size should be(3)
 
@@ -489,11 +515,13 @@ class MatcherTest extends AnyFunSuite with Matchers with BeforeAndAfterAll {
         ).extension(project).size should be(12)
 
         MethodMatcher(
-            ClassMatcher("entity.impl.User"), AnnotatedWith("entity.annotation.Transient")
+            ClassMatcher("entity.impl.User"),
+            AnnotatedWith("entity.annotation.Transient")
         ).extension(project).size should be(1)
 
         MethodMatcher(
-            ClassMatcher("entity.impl.User"), MethodWithName("getFullName")
+            ClassMatcher("entity.impl.User"),
+            MethodWithName("getFullName")
         ).extension(project).size should be(1)
     }
 
@@ -506,12 +534,14 @@ class MatcherTest extends AnyFunSuite with Matchers with BeforeAndAfterAll {
             ClassMatcher("entity.impl.User"),
             AnnotatedWith(
                 "entity.annotation.Column",
-                "name" -> StringValue("street"), "nullable" -> BooleanValue(false)
+                "name" -> StringValue("street"),
+                "nullable" -> BooleanValue(false)
             )
         ).extension(project) should be(empty)
 
         MethodMatcher(
-            ClassMatcher("entity.impl.User"), MethodWithName("getStreet")
+            ClassMatcher("entity.impl.User"),
+            MethodWithName("getStreet")
         ).extension(project) should be(empty)
     }
 

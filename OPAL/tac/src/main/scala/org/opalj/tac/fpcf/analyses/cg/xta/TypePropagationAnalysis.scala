@@ -54,8 +54,8 @@ import org.opalj.tac.fpcf.properties.TACAI
  * @author Andreas Bauer
  */
 final class TypePropagationAnalysis private[analyses] (
-        val project:         SomeProject,
-        selectTypeSetEntity: TypeSetEntitySelector
+    val project:         SomeProject,
+    selectTypeSetEntity: TypeSetEntitySelector
 ) extends ReachableMethodAnalysis {
 
     private[this] val debug = false
@@ -82,7 +82,13 @@ final class TypePropagationAnalysis private[analyses] (
         if (debug) _trace.traceInit(definedMethod)
 
         implicit val state: TypePropagationState[ContextType] = new TypePropagationState(
-            callContext, typeSetEntity, tacEP, instantiatedTypesEOptP, calleesEOptP, readAccessEOptP, writeAccessEOptP
+            callContext,
+            typeSetEntity,
+            tacEP,
+            instantiatedTypesEOptP,
+            calleesEOptP,
+            readAccessEOptP,
+            writeAccessEOptP
         )
         implicit val partialResults: ArrayBuffer[SomePartialResult] = ArrayBuffer.empty[SomePartialResult]
 
@@ -152,8 +158,7 @@ final class TypePropagationAnalysis private[analyses] (
     private def handleUpdateOfCallees(
         eps: EPS[DeclaredMethod, Callees]
     )(
-        implicit
-        state: State
+        implicit state: State
     ): ProperPropertyComputationResult = {
         state.updateCalleeDependee(eps)
         implicit val partialResults: ArrayBuffer[SomePartialResult] = ArrayBuffer.empty[SomePartialResult]
@@ -182,8 +187,7 @@ final class TypePropagationAnalysis private[analyses] (
     private def handleUpdateOfOwnTypeSet(
         eps: EPS[TypeSetEntity, InstantiatedTypes]
     )(
-        implicit
-        state: State
+        implicit state: State
     ): ProperPropertyComputationResult = {
         val previouslySeenTypes = state.ownInstantiatedTypes.size
         state.updateOwnInstantiatedTypesDependee(eps)
@@ -205,8 +209,7 @@ final class TypePropagationAnalysis private[analyses] (
     private def handleUpdateOfBackwardPropagationTypeSet(
         eps: EPS[TypeSetEntity, InstantiatedTypes]
     )(
-        implicit
-        state: State
+        implicit state: State
     ): ProperPropertyComputationResult = {
         val typeSetEntity = eps.e
         val previouslySeenTypes = state.seenTypes(typeSetEntity)
@@ -334,7 +337,10 @@ final class TypePropagationAnalysis private[analyses] (
             if (fieldType.isReferenceType) {
                 declaredField match {
                     case DefinedField(f) if project.isProjectType(f.classFile.thisType) =>
-                        registerEntityForForwardPropagation(declaredField.asDefinedField, UIDSet(fieldType.asReferenceType))
+                        registerEntityForForwardPropagation(
+                            declaredField.asDefinedField,
+                            UIDSet(fieldType.asReferenceType)
+                        )
 
                     case _ =>
                         registerEntityForForwardPropagation(declaredField, UIDSet(fieldType.asReferenceType))
@@ -365,14 +371,15 @@ final class TypePropagationAnalysis private[analyses] (
 
         // If the call is not static, we need to take the implicit "this" parameter into account.
         if (callee.hasSingleDefinedMethod && !callee.definedMethod.isStatic ||
-            !callee.hasSingleDefinedMethod && !bytecode.instructions(pc).isInvokeStatic) {
+            !callee.hasSingleDefinedMethod && !bytecode.instructions(pc).isInvokeStatic
+        ) {
             params += callee.declaringClassType
         }
 
         // If we do not have any params at this point, there is no forward propagation!
         val typeFilters = params.result()
         if (typeFilters.isEmpty) {
-            return ;
+            return;
         }
 
         registerEntityForForwardPropagation(callee, typeFilters)
@@ -425,12 +432,13 @@ final class TypePropagationAnalysis private[analyses] (
         // Propagation from and to the same entity can be ignored.
         val typeSetEntity = selectTypeSetEntity(e)
         if (typeSetEntity == state.typeSetEntity) {
-            return ;
+            return;
         }
 
         val filterSetHasChanged = state.registerForwardPropagationEntity(typeSetEntity, filters)
         if (filterSetHasChanged) {
-            val propagationResult = propagateTypes(typeSetEntity, state.ownInstantiatedTypes, state.forwardPropagationFilters(typeSetEntity))
+            val propagationResult =
+                propagateTypes(typeSetEntity, state.ownInstantiatedTypes, state.forwardPropagationFilters(typeSetEntity))
             if (propagationResult.isDefined)
                 partialResults += propagationResult.get
         }
@@ -446,7 +454,7 @@ final class TypePropagationAnalysis private[analyses] (
     ): Unit = {
         val typeSetEntity = selectTypeSetEntity(e)
         if (typeSetEntity == state.typeSetEntity) {
-            return ;
+            return;
         }
 
         val filter = UIDSet(mostPreciseUpperBound)
@@ -458,7 +466,7 @@ final class TypePropagationAnalysis private[analyses] (
             state.updateBackwardPropagationFilters(typeSetEntity, filter)
 
             if (dependee.hasNoUBP) {
-                return ;
+                return;
             }
 
             val propagation = propagateTypes(state.typeSetEntity, dependee.ub.types, filter)
@@ -566,7 +574,7 @@ final class TypePropagationAnalysis private[analyses] (
 }
 
 final class TypePropagationAnalysisScheduler(
-        val selectSetEntity: TypeSetEntitySelector
+    val selectSetEntity: TypeSetEntitySelector
 ) extends BasicFPCFTriggeredAnalysisScheduler {
 
     override def requiredProjectInformation: ProjectInformationKeys = Seq(TypeIteratorKey, DeclaredFieldsKey)

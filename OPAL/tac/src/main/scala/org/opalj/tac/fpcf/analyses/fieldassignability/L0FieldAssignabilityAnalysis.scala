@@ -120,19 +120,19 @@ class L0FieldAssignabilityAnalysis private[analyses] (val project: SomeProject) 
                 faiEP.ub.numDirectAccesses - seenDirectAccesses,
                 faiEP.ub.numIndirectAccesses - seenIndirectAccesses
             ) exists { wa =>
-                    val method = contextProvider.contextFromId(wa._1).method.definedMethod
-                    if (method.isStaticInitializer) {
-                        if (wa._3.isDefined) {
-                            // If a receiver is defined, we know that the access was not static
-                            // IMPROVE: Add static information to accesses and resolve this
-                            false
-                        } else {
-                            // As a fallback, we soundly assume assignability
-                            true
-                        }
-                    } else
+                val method = contextProvider.contextFromId(wa._1).method.definedMethod
+                if (method.isStaticInitializer) {
+                    if (wa._3.isDefined) {
+                        // If a receiver is defined, we know that the access was not static
+                        // IMPROVE: Add static information to accesses and resolve this
                         false
-                }
+                    } else {
+                        // As a fallback, we soundly assume assignability
+                        true
+                    }
+                } else
+                    false
+            }
         } else
             false
 
@@ -166,7 +166,7 @@ trait L0FieldAssignabilityAnalysisScheduler extends FPCFAnalysisScheduler {
 
     override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey, DeclaredFieldsKey)
 
-    final override def uses: Set[PropertyBounds] = PropertyBounds.ubs(FieldWriteAccessInformation)
+    override final def uses: Set[PropertyBounds] = PropertyBounds.ubs(FieldWriteAccessInformation)
 
     final def derivedProperty: PropertyBounds = {
         // currently, the analysis will derive the final result in a single step

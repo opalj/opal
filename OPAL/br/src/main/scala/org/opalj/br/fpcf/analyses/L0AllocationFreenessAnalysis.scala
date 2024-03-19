@@ -34,7 +34,7 @@ import org.opalj.fpcf.SomeInterimEP
  * @author Dominik Helm
  */
 class L0AllocationFreenessAnalysis private[analyses] (
-        final val project: SomeProject
+    final val project: SomeProject
 ) extends FPCFAnalysis {
 
     import project.nonVirtualCall
@@ -109,39 +109,38 @@ class L0AllocationFreenessAnalysis private[analyses] (
                     return Result(definedMethod, MethodWithAllocations);
 
                 case INVOKESPECIAL.opcode | INVOKESTATIC.opcode => instruction match {
-                    case MethodInvocationInstruction(`declaringClassType`, _, `methodName`, `methodDescriptor`) =>
-                    // We have a self-recursive call; such calls do not influence the allocation
-                    // freeness and are ignored.
-                    // Let's continue with the evaluation of the next instruction.
+                        case MethodInvocationInstruction(`declaringClassType`, _, `methodName`, `methodDescriptor`) =>
+                        // We have a self-recursive call; such calls do not influence the allocation
+                        // freeness and are ignored.
+                        // Let's continue with the evaluation of the next instruction.
 
-                    case mii: NonVirtualMethodInvocationInstruction =>
-                        nonVirtualCall(declaringClassType, mii) match {
-                            case Success(callee) =>
-                                /* Recall that self-recursive calls are handled earlier! */
-                                val allocationFreeness =
-                                    propertyStore(declaredMethods(callee), AllocationFreeness.key)
+                        case mii: NonVirtualMethodInvocationInstruction =>
+                            nonVirtualCall(declaringClassType, mii) match {
+                                case Success(callee) =>
+                                    /* Recall that self-recursive calls are handled earlier! */
+                                    val allocationFreeness =
+                                        propertyStore(declaredMethods(callee), AllocationFreeness.key)
 
-                                allocationFreeness match {
-                                    case FinalP(AllocationFreeMethod) => /* Nothing to do */
+                                    allocationFreeness match {
+                                        case FinalP(AllocationFreeMethod) => /* Nothing to do */
+                                        // Handling cyclic computations
+                                        case ep @ InterimUBP(AllocationFreeMethod) =>
+                                            dependees += ep
 
-                                    // Handling cyclic computations
-                                    case ep @ InterimUBP(AllocationFreeMethod) =>
-                                        dependees += ep
+                                        case _: SomeEPS =>
+                                            return Result(definedMethod, MethodWithAllocations);
 
-                                    case _: SomeEPS =>
-                                        return Result(definedMethod, MethodWithAllocations);
+                                        case epk =>
+                                            dependees += epk
+                                    }
 
-                                    case epk =>
-                                        dependees += epk
-                                }
+                                case _ /* Empty or Failure */ =>
+                                    // We know nothing about the target method (it is not
+                                    // found in the scope of the current project).
+                                    return Result(definedMethod, MethodWithAllocations);
 
-                            case _ /* Empty or Failure */ =>
-                                // We know nothing about the target method (it is not
-                                // found in the scope of the current project).
-                                return Result(definedMethod, MethodWithAllocations);
-
-                        }
-                }
+                            }
+                    }
 
                 case ASTORE_0.opcode if !method.isStatic =>
                     if (mayOverwriteSelf) overwritesSelf = true
@@ -152,7 +151,8 @@ class L0AllocationFreenessAnalysis private[analyses] (
                     if (method.isStatic || overwritesSelf)
                         return Result(definedMethod, MethodWithAllocations);
                     else if (instructions(prevPC(currentPC)).opcode != ALOAD_0.opcode ||
-                        body.cfJoins.contains(currentPC))
+                             body.cfJoins.contains(currentPC)
+                    )
                         return Result(definedMethod, MethodWithAllocations);
                     else mayOverwriteSelf = false
 
@@ -168,7 +168,8 @@ class L0AllocationFreenessAnalysis private[analyses] (
                         // cannot guarantee that the receiver is `this`.
                         if (body.cfJoins.contains(currentPC) || body.cfJoins.contains(previousPC) ||
                             previousInst.numberOfPoppedOperands(someTypeCategory) != 0 ||
-                            prevPrevInst.opcode != ALOAD_0.opcode)
+                            prevPrevInst.opcode != ALOAD_0.opcode
+                        )
                             return Result(definedMethod, MethodWithAllocations)
                         else mayOverwriteSelf = false
                     }
@@ -232,10 +233,7 @@ class L0AllocationFreenessAnalysis private[analyses] (
             }
         }
 
-        InterimResult(
-            definedMethod, MethodWithAllocations, AllocationFreeMethod,
-            dependees, c
-        )
+        InterimResult(definedMethod, MethodWithAllocations, AllocationFreeMethod, dependees, c)
     }
 
     /** Called when the analysis is scheduled lazily. */
@@ -252,7 +250,7 @@ trait L0AllocationFreenessAnalysisScheduler extends FPCFAnalysisScheduler {
 
     override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
 
-    final override def uses: Set[PropertyBounds] = Set.empty
+    override final def uses: Set[PropertyBounds] = Set.empty
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(AllocationFreeness)
 

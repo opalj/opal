@@ -114,10 +114,10 @@ case class DeferredProcessingResultEvent(eventId: Int, r: PropertyComputationRes
 }
 
 case class FirstExceptionEvent(
-        eventId:    Int,
-        t:          Throwable,
-        thread:     String,
-        stackTrace: String
+    eventId:    Int,
+    t:          Throwable,
+    thread:     String,
+    stackTrace: String
 ) extends StoreEvent {
 
     override def toTxt: String = {
@@ -139,24 +139,24 @@ case class SubphaseFinalizationEvent(eventId: Int, properties: String) extends S
 }
 
 case class FinalizedPropertyEvent(
-        eventId: Int,
-        oldEP:   SomeEOptionP,
-        finalEP: SomeFinalEP
+    eventId: Int,
+    oldEP:   SomeEOptionP,
+    finalEP: SomeFinalEP
 ) extends StoreEvent {
     override def toTxt: String = s"$eventId: FinalizedProperty($oldEP => $finalEP)"
 }
 
 case class AppliedUpdateComputationEvent(
-        eventId:     Int,
-        newEPKState: EPKState,
-        result:      Option[(SomeEOptionP, SomeInterimEP, Iterable[SomeEPK])]
+    eventId:     Int,
+    newEPKState: EPKState,
+    result:      Option[(SomeEOptionP, SomeInterimEP, Iterable[SomeEPK])]
 ) extends StoreEvent {
     override def toTxt: String = s"$eventId: AppliedUpdateComputation($newEPKState; result: $result)"
 }
 
 case class IdempotentUpdateEvent(
-        eventId:     Int,
-        newEPKState: EPKState
+    eventId:     Int,
+    newEPKState: EPKState
 ) extends StoreEvent {
     override def toTxt: String = s"$eventId: IdempotentUpdate($newEPKState)"
 }
@@ -182,10 +182,10 @@ case class ForcingEPKEvaluationEvent(eventId: Int, epk: SomeEPK) extends StoreEv
 }
 
 case class TriggeredComputationEvent(
-        eventId: Int,
-        e:       Entity,
-        pkId:    UShort,
-        c:       SomePropertyComputation
+    eventId: Int,
+    e:       Entity,
+    pkId:    UShort,
+    c:       SomePropertyComputation
 ) extends StoreEvent {
     override def toTxt: String = {
         s"$eventId: TriggeredComputation(${anyRefToShortString(e)},${PropertyKey.name(pkId)},${anyRefToShortString(c)})"
@@ -193,7 +193,9 @@ case class TriggeredComputationEvent(
 }
 
 case class ComputedFallbackEvent(
-        eventId: Int, ep: SomeFinalEP, why: String
+    eventId: Int,
+    ep:      SomeFinalEP,
+    why:     String
 ) extends StoreEvent {
     override def toTxt: String = {
         s"$eventId: ComputedFallback($ep,$why)"
@@ -201,9 +203,9 @@ case class ComputedFallbackEvent(
 }
 
 case class ScheduledLazyComputationEvent(
-        eventId: Int,
-        epk:     SomeEPK,
-        c:       SomePropertyComputation
+    eventId: Int,
+    epk:     SomeEPK,
+    c:       SomePropertyComputation
 ) extends StoreEvent {
     override def toTxt: String = {
         s"$eventId: ScheduledLazyComputation($epk,c=${anyRefToShortString(c)})"
@@ -211,10 +213,10 @@ case class ScheduledLazyComputationEvent(
 }
 
 case class ImmediatelyExecutedLazyComputationEvent(
-        eventId:         Int,
-        newEOptionP:     SomeEOptionP,
-        evaluationDepth: Int,
-        c:               SomePropertyComputation
+    eventId:         Int,
+    newEOptionP:     SomeEOptionP,
+    evaluationDepth: Int,
+    c:               SomePropertyComputation
 ) extends StoreEvent {
     override def toTxt: String = {
         s"$eventId: ImmediatelyExecutedLazyComputation" +
@@ -223,9 +225,9 @@ case class ImmediatelyExecutedLazyComputationEvent(
 }
 
 case class EvaluatedTransformerEvent(
-        eventId: Int,
-        source:  SomeEOptionP,
-        target:  SomeFinalEP
+    eventId: Int,
+    source:  SomeEOptionP,
+    target:  SomeFinalEP
 ) extends StoreEvent {
     override def toTxt: String = {
         s"$eventId: EvaluatedTransformer($source => $target)"
@@ -233,9 +235,9 @@ case class EvaluatedTransformerEvent(
 }
 
 case class RegisteredTransformerEvent(
-        eventId: Int,
-        source:  EPKState,
-        target:  EPKState
+    eventId: Int,
+    source:  EPKState,
+    target:  EPKState
 ) extends StoreEvent {
     override def toTxt: String = {
         s"$eventId: RegisteredTransformer($source => $target)"
@@ -243,9 +245,9 @@ case class RegisteredTransformerEvent(
 }
 
 case class HandlingInterimEPKsDueToSuppressionEvent(
-        eventId:     Int,
-        interimEPKs: String,
-        cSCCs:       String
+    eventId:     Int,
+    interimEPKs: String,
+    cSCCs:       String
 ) extends StoreEvent {
     override def toTxt: String = {
         val mEPKs = interimEPKs.replace("\t", "\t\t")
@@ -255,8 +257,8 @@ case class HandlingInterimEPKsDueToSuppressionEvent(
 }
 
 case class MakingIntermediateEPKStateFinalEvent(
-        eventId:         Int,
-        interimEPKState: EPKState
+    eventId:         Int,
+    interimEPKState: EPKState
 ) extends StoreEvent {
     override def toTxt: String = {
         s"$eventId: MakingIntermediateEPKStateFinal($interimEPKState)"
@@ -264,11 +266,11 @@ case class MakingIntermediateEPKStateFinalEvent(
 }
 
 case class ScheduledOnUpdateComputationEvent(
-        eventId:     Int,
-        dependerEPK: SomeEPK,
-        oldEOptionP: SomeEOptionP,
-        newEOptionP: SomeEOptionP,
-        c:           OnUpdateContinuation
+    eventId:     Int,
+    dependerEPK: SomeEPK,
+    oldEOptionP: SomeEOptionP,
+    newEOptionP: SomeEOptionP,
+    c:           OnUpdateContinuation
 ) extends StoreEvent {
     override def toTxt: String = {
         s"$eventId: ScheduledOnUpdateComputation($dependerEPK, $oldEOptionP => $newEOptionP,${anyRefToShortString(c)})"
@@ -276,11 +278,11 @@ case class ScheduledOnUpdateComputationEvent(
 }
 
 case class ImmediatelyRescheduledOnUpdateComputationEvent(
-        eventId:     Int,
-        dependerEPK: SomeEPK,
-        oldEOptionP: SomeEOptionP,
-        newEOptionP: SomeEOptionP,
-        c:           OnUpdateContinuation
+    eventId:     Int,
+    dependerEPK: SomeEPK,
+    oldEOptionP: SomeEOptionP,
+    newEOptionP: SomeEOptionP,
+    c:           OnUpdateContinuation
 ) extends StoreEvent {
     override def toTxt: String = {
         s"$eventId: ImmediatelyRescheduledOnUpdateComputation($dependerEPK, $oldEOptionP => $newEOptionP,${anyRefToShortString(c)})"
@@ -288,11 +290,11 @@ case class ImmediatelyRescheduledOnUpdateComputationEvent(
 }
 
 case class ScheduledOnUpdateComputationForFinalEPEvent(
-        eventId:     Int,
-        dependerEPK: SomeEPK,
-        oldEOptionP: SomeEOptionP,
-        finalEP:     SomeFinalEP,
-        c:           OnUpdateContinuation
+    eventId:     Int,
+    dependerEPK: SomeEPK,
+    oldEOptionP: SomeEOptionP,
+    finalEP:     SomeFinalEP,
+    c:           OnUpdateContinuation
 ) extends StoreEvent {
     override def toTxt: String = {
         s"$eventId: ScheduledOnUpdateComputationForFinalEP($dependerEPK, $oldEOptionP => $finalEP,${anyRefToShortString(c)})"
@@ -348,7 +350,10 @@ private[par] class RecordAllPropertyStoreEvents extends PropertyStoreTracer {
         lazyPC:                 SomePropertyComputation
     ): Unit = {
         events offer ImmediatelyExecutedLazyComputationEvent(
-            nextEventId(), newEOptionP, evaluationDepthCounter, lazyPC
+            nextEventId(),
+            newEOptionP,
+            evaluationDepthCounter,
+            lazyPC
         )
     }
 
@@ -371,7 +376,11 @@ private[par] class RecordAllPropertyStoreEvents extends PropertyStoreTracer {
         c:           OnUpdateContinuation
     ): Unit = {
         events offer ScheduledOnUpdateComputationEvent(
-            nextEventId(), dependerEPK, oldEOptionP, newEOptionP, c
+            nextEventId(),
+            dependerEPK,
+            oldEOptionP,
+            newEOptionP,
+            c
         )
 
     }
@@ -383,7 +392,11 @@ private[par] class RecordAllPropertyStoreEvents extends PropertyStoreTracer {
         c:           OnUpdateContinuation
     ): Unit = {
         events offer ImmediatelyRescheduledOnUpdateComputationEvent(
-            nextEventId(), dependerEPK, oldEOptionP, newEOptionP, c
+            nextEventId(),
+            dependerEPK,
+            oldEOptionP,
+            newEOptionP,
+            c
         )
 
     }
@@ -395,7 +408,11 @@ private[par] class RecordAllPropertyStoreEvents extends PropertyStoreTracer {
         c:           OnUpdateContinuation
     ): Unit = {
         events offer ScheduledOnUpdateComputationForFinalEPEvent(
-            nextEventId(), dependerEPK, oldEOptionP, finalEP, c
+            nextEventId(),
+            dependerEPK,
+            oldEOptionP,
+            finalEP,
+            c
         )
     }
 

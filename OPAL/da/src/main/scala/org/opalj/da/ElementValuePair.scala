@@ -13,8 +13,8 @@ import scala.xml.Text
  * @author Andre Pacak
  */
 case class ElementValuePair(
-        element_name_index: Constant_Pool_Index,
-        element_value:      ElementValue
+    element_name_index: Constant_Pool_Index,
+    element_value:      ElementValue
 ) {
 
     final def attribute_length: Int = 2 + element_value.attribute_length
@@ -23,7 +23,7 @@ case class ElementValuePair(
         val name = cp(element_name_index).toString(cp)
 
         <li class="element_value_pair">
-            { Seq(<span class="element_name">{ name }</span>, Text("="), element_value.toXHTML) }
+            {Seq(<span class="element_name">{name}</span>, Text("="), element_value.toXHTML)}
         </li>
     }
 

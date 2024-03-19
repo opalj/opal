@@ -30,7 +30,7 @@ import org.opalj.fpcf.SomeEPS
  * @author Dominik Helm
  */
 class VirtualMethodAllocationFreenessAnalysis private[analyses] (
-        final val project: SomeProject
+    final val project: SomeProject
 ) extends FPCFAnalysis {
 
     private[this] val declaredMethods = project.get(DeclaredMethodsKey)
@@ -103,7 +103,7 @@ trait VirtualMethodAllocationFreenessAnalysisScheduler extends FPCFAnalysisSched
 
     override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
 
-    final override def uses: Set[PropertyBounds] = Set(PropertyBounds.lub(AllocationFreeness))
+    override final def uses: Set[PropertyBounds] = Set(PropertyBounds.lub(AllocationFreeness))
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(VirtualMethodAllocationFreeness)
 

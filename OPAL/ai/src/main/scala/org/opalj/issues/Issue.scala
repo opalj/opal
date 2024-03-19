@@ -30,13 +30,13 @@ import scala.xml.Unparsed
  * @author Michael Eichberg
  */
 case class Issue(
-        analysis:   String,
-        relevance:  Relevance,
-        summary:    String,
-        categories: Set[String],
-        kinds:      Set[String],
-        locations:  Seq[IssueLocation],
-        details:    Iterable[IssueDetails] = Nil
+    analysis:   String,
+    relevance:  Relevance,
+    summary:    String,
+    categories: Set[String],
+    kinds:      Set[String],
+    locations:  Seq[IssueLocation],
+    details:    Iterable[IssueDetails] = Nil
 ) extends IssueRepresentations {
 
     assert(!summary.contains('\n'), s"the summary must not contain new lines:\n$summary")
@@ -50,29 +50,31 @@ case class Issue(
         val dataCategories =
             categories.map(_.replace(' ', '_')).mkString(" ")
 
-        <div class="an_issue" style={ s"color:${relevance.toHTMLColor};" } data-relevance={ relevance.value.toString } data-kind={ dataKinds } data-category={ dataCategories }>
+        <div class="an_issue" style={s"color:${relevance.toHTMLColor};"} data-relevance={
+            relevance.value.toString
+        } data-kind={dataKinds} data-category={dataCategories}>
             <dl>
                 <dt class="analysis">analysis</dt>
                 <dd>
-                    <span class="analysis_id">{ analysis }</span>
+                    <span class="analysis_id">{analysis}</span>
                     |
-                    <span class="relevance">relevance={ relevance.value.toString + " (" + relevance.name + ")" }</span>
+                    <span class="relevance">relevance={relevance.value.toString + " (" + relevance.name + ")"}</span>
                     |
-                    <span class="data_kinds">kind={ kinds.mkString(", ") }</span>
+                    <span class="data_kinds">kind={kinds.mkString(", ")}</span>
                     |
-                    <span class="data_categories">category={ categories.mkString(", ") }</span>
+                    <span class="data_categories">category={categories.mkString(", ")}</span>
                 </dd>
                 <dt>summary</dt>
                 <dd>
-                    <span class="issue_summary">{ Unparsed(summary.replace("\n", "<br>")) }</span>
+                    <span class="issue_summary">{Unparsed(summary.replace("\n", "<br>"))}</span>
                 </dd>
-                { locations.map(_.toXHTML(basicInfoOnly)) }
+                {locations.map(_.toXHTML(basicInfoOnly))}
                 {
                     if (!basicInfoOnly && details.nonEmpty)
                         List(
                             <dt>facts</dt>,
                             <dd>
-                                { details.map(_.toXHTML(false)) }
+                                {details.map(_.toXHTML(false))}
                             </dd>
                         )
                     else
@@ -92,9 +94,8 @@ case class Issue(
     }
 
     def toEclipseConsoleString: String = {
-        locations.map(_.toEclipseConsoleString).mkString(
-            s"$summary«$analysis ${relevance.toEclipseConsoleString}» ", " ", ""
-        )
+        locations.map(_.toEclipseConsoleString)
+            .mkString(s"$summary«$analysis ${relevance.toEclipseConsoleString}» ", " ", "")
     }
 
     override def toIDL: JsValue = {

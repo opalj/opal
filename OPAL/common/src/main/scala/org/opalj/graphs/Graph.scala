@@ -21,9 +21,9 @@ import org.opalj.collection.IntIterator
  * @author Michael Eichberg
  */
 class Graph[@specialized(Int) N: ClassTag] private (
-        val vertices:     Set[N],
-        val successors:   LinkedHashMap[N, List[N]],
-        val predecessors: LinkedHashMap[N, List[N]]
+    val vertices:     Set[N],
+    val successors:   LinkedHashMap[N, List[N]],
+    val predecessors: LinkedHashMap[N, List[N]]
 ) extends AbstractGraph[N] {
 
     def apply(s: N): List[N] = successors.getOrElse(s, List.empty)
@@ -99,9 +99,7 @@ class Graph[@specialized(Int) N: ClassTag] private (
             }
         }
 
-        org.opalj.graphs.sccs(size, es, filterSingletons).iterator.map { scc =>
-            scc.iterator.map(indexToN)
-        }
+        org.opalj.graphs.sccs(size, es, filterSingletons).iterator.map { scc => scc.iterator.map(indexToN) }
     }
 }
 
@@ -122,9 +120,7 @@ object Graph {
         val g = Graph.empty[N]
         edges foreach { e =>
             val (s, ts) = e
-            ts foreach { t =>
-                g addEdge (s -> t)
-            }
+            ts foreach { t => g addEdge (s -> t) }
         }
         g
     }

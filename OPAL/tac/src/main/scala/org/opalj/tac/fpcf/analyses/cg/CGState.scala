@@ -17,8 +17,8 @@ import org.opalj.tac.fpcf.properties.TACAI
  * @author Florian Kuebler
  */
 class CGState[ContextType <: Context](
-        override val callContext:                  ContextType,
-        override protected[this] var _tacDependee: EOptionP[Method, TACAI]
+    override val callContext:                  ContextType,
+    override protected[this] var _tacDependee: EOptionP[Method, TACAI]
 ) extends BaseAnalysisState with TypeIteratorState with TACAIBasedAnalysisState[ContextType] {
 
     // maps a definition site to the receiver var
@@ -31,9 +31,7 @@ class CGState[ContextType <: Context](
 
     def addCallSite(callSite: CallSite, receiver: V, cbsTargets: Set[ReferenceType]): Unit = {
         if (_virtualCallSites.contains(callSite))
-            _virtualCallSites.put(
-                callSite, (receiver, _virtualCallSites(callSite)._2 ++ cbsTargets)
-            )
+            _virtualCallSites.put(callSite, (receiver, _virtualCallSites(callSite)._2 ++ cbsTargets))
         else
             _virtualCallSites.put(callSite, (receiver, cbsTargets))
     }

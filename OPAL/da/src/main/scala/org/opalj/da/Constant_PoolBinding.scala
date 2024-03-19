@@ -47,7 +47,8 @@ trait Constant_PoolBinding extends Constant_PoolReader with Constant_PoolAbstrac
     //
 
     type Constant_Pool_Entry = org.opalj.da.Constant_Pool_Entry
-    override implicit val constantPoolEntryType: ClassTag[Constant_Pool_Entry] = ClassTag(classOf[org.opalj.da.Constant_Pool_Entry])
+    override implicit val constantPoolEntryType: ClassTag[Constant_Pool_Entry] =
+        ClassTag(classOf[org.opalj.da.Constant_Pool_Entry])
 
     type CONSTANT_Class_info = org.opalj.da.CONSTANT_Class_info
     def CONSTANT_Class_info(i: Int): CONSTANT_Class_info = da.CONSTANT_Class_info(i)
@@ -74,28 +75,32 @@ trait Constant_PoolBinding extends Constant_PoolReader with Constant_PoolAbstrac
 
     type CONSTANT_Fieldref_info = org.opalj.da.CONSTANT_Fieldref_info
     def CONSTANT_Fieldref_info(
-        class_index: Constant_Pool_Index, name_and_type_index: Constant_Pool_Index
+        class_index:         Constant_Pool_Index,
+        name_and_type_index: Constant_Pool_Index
     ): CONSTANT_Fieldref_info = {
         new CONSTANT_Fieldref_info(class_index, name_and_type_index)
     }
 
     type CONSTANT_Methodref_info = org.opalj.da.CONSTANT_Methodref_info
     def CONSTANT_Methodref_info(
-        class_index: Constant_Pool_Index, name_and_type_index: Constant_Pool_Index
+        class_index:         Constant_Pool_Index,
+        name_and_type_index: Constant_Pool_Index
     ): CONSTANT_Methodref_info = {
         new CONSTANT_Methodref_info(class_index, name_and_type_index)
     }
 
     type CONSTANT_InterfaceMethodref_info = org.opalj.da.CONSTANT_InterfaceMethodref_info
     def CONSTANT_InterfaceMethodref_info(
-        class_index: Constant_Pool_Index, name_and_type_index: Constant_Pool_Index
+        class_index:         Constant_Pool_Index,
+        name_and_type_index: Constant_Pool_Index
     ): CONSTANT_InterfaceMethodref_info = {
         new CONSTANT_InterfaceMethodref_info(class_index, name_and_type_index)
     }
 
     type CONSTANT_NameAndType_info = org.opalj.da.CONSTANT_NameAndType_info
     def CONSTANT_NameAndType_info(
-        name_index: Constant_Pool_Index, descriptor_index: Constant_Pool_Index
+        name_index:       Constant_Pool_Index,
+        descriptor_index: Constant_Pool_Index
     ): CONSTANT_NameAndType_info = {
         new CONSTANT_NameAndType_info(name_index, descriptor_index)
     }

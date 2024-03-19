@@ -30,8 +30,7 @@ sealed abstract class StackMapFrame {
     protected def verification_type_infos_toXHTML(
         verification_type_infos: VerificationTypeInfos
     )(
-        implicit
-        cp: Constant_Pool
+        implicit cp: Constant_Pool
     ): NodeSeq = {
         NodeSeq.fromSeq(
             if (verification_type_infos.isEmpty) {
@@ -49,7 +48,7 @@ sealed abstract class StackMapFrame {
 
 case class SameFrame(frame_type: Int) extends StackMapFrame {
 
-    final override def attribute_length: Int = 1
+    override final def attribute_length: Int = 1
 
     override def toXHTML(
         implicit
@@ -59,10 +58,10 @@ case class SameFrame(frame_type: Int) extends StackMapFrame {
         val newOffset = previous_frame_offset + frame_type + 1
         (
             <tr>
-                <td>{ newOffset }</td>
+                <td>{newOffset}</td>
                 <td>SameFrame</td>
-                <td>{ frame_type }</td>
-                <td>{ frame_type }</td>
+                <td>{frame_type}</td>
+                <td>{frame_type}</td>
                 <td>Stack:&nbsp;&lt;Empty&gt;<br/>Locals:&nbsp;Unchanged</td>
             </tr>,
             newOffset
@@ -72,11 +71,11 @@ case class SameFrame(frame_type: Int) extends StackMapFrame {
 }
 
 case class SameLocals1StackItemFrame(
-        frame_type:                   Int,
-        verification_type_info_stack: VerificationTypeInfo
+    frame_type:                   Int,
+    verification_type_info_stack: VerificationTypeInfo
 ) extends StackMapFrame {
 
-    final override def attribute_length: Int = 1 + verification_type_info_stack.attribute_length
+    override final def attribute_length: Int = 1 + verification_type_info_stack.attribute_length
 
     override def toXHTML(
         implicit
@@ -86,13 +85,13 @@ case class SameLocals1StackItemFrame(
         val newOffset = previous_frame_offset + frame_type - 64 + 1
         (
             <tr>
-                <td>{ newOffset }</td>
+                <td>{newOffset}</td>
                 <td>SameLocals1StackItemFrame</td>
-                <td>{ frame_type }</td>
-                <td>{ frame_type - 64 }</td>
+                <td>{frame_type}</td>
+                <td>{frame_type - 64}</td>
                 <td>
                     Stack:&nbsp;<i>&lt;Empty&gt;</i>
-                    ,&nbsp;{ verification_type_info_stack.toXHTML(cp) }<br/>
+                    ,&nbsp;{verification_type_info_stack.toXHTML(cp)}<br/>
                     Locals:&nbsp;Unchanged
                 </td>
             </tr>,
@@ -102,12 +101,12 @@ case class SameLocals1StackItemFrame(
 }
 
 case class SameLocals1StackItemFrameExtended(
-        frame_type:                   Int                  = 247,
-        offset_delta:                 Int,
-        verification_type_info_stack: VerificationTypeInfo
+    frame_type:                   Int = 247,
+    offset_delta:                 Int,
+    verification_type_info_stack: VerificationTypeInfo
 ) extends StackMapFrame {
 
-    final override def attribute_length: Int = 1 + 2 + verification_type_info_stack.attribute_length
+    override final def attribute_length: Int = 1 + 2 + verification_type_info_stack.attribute_length
 
     override def toXHTML(
         implicit
@@ -117,13 +116,13 @@ case class SameLocals1StackItemFrameExtended(
         val newOffset = previous_frame_offset + offset_delta + 1
         (
             <tr>
-                <td>{ newOffset }</td>
+                <td>{newOffset}</td>
                 <td>SameLocals1StackItemFrameExtended</td>
                 <td>247</td>
-                <td>{ offset_delta }</td>
+                <td>{offset_delta}</td>
                 <td>
                     Stack:&nbsp;<i>&lt;Empty&gt;</i>
-                    ,&nbsp;{ verification_type_info_stack.toXHTML(cp) }<br/>
+                    ,&nbsp;{verification_type_info_stack.toXHTML(cp)}<br/>
                     Locals:&nbsp;Unchanged
                 </td>
             </tr>,
@@ -134,7 +133,7 @@ case class SameLocals1StackItemFrameExtended(
 
 case class ChopFrame(frame_type: Int, offset_delta: Int) extends StackMapFrame {
 
-    final override def attribute_length: Int = 1 + 2
+    override final def attribute_length: Int = 1 + 2
 
     override def toXHTML(
         implicit
@@ -144,13 +143,13 @@ case class ChopFrame(frame_type: Int, offset_delta: Int) extends StackMapFrame {
         val newOffset = previous_frame_offset + offset_delta + 1
         (
             <tr>
-                <td>{ newOffset }</td>
+                <td>{newOffset}</td>
                 <td>ChopFrame</td>
-                <td>{ frame_type }</td>
-                <td>{ offset_delta }</td>
+                <td>{frame_type}</td>
+                <td>{offset_delta}</td>
                 <td>
                     Stack:&nbsp;<i>&lt;Empty&gt;</i><br/>
-                    Locals:&nbsp;The last&nbsp;{ 251 - frame_type }
+                    Locals:&nbsp;The last&nbsp;{251 - frame_type}
                     locals(s) are absent
                 </td>
             </tr>,
@@ -161,7 +160,7 @@ case class ChopFrame(frame_type: Int, offset_delta: Int) extends StackMapFrame {
 
 case class SameFrameExtended(frame_type: Int = 251, offset_delta: Int) extends StackMapFrame {
 
-    final override def attribute_length: Int = 1 + 2
+    override final def attribute_length: Int = 1 + 2
 
     override def toXHTML(
         implicit
@@ -171,10 +170,10 @@ case class SameFrameExtended(frame_type: Int = 251, offset_delta: Int) extends S
         val newOffset = previous_frame_offset + offset_delta + 1
         (
             <tr>
-                <td>{ newOffset }</td>
+                <td>{newOffset}</td>
                 <td>SameFrameExtended</td>
                 <td>251</td>
-                <td>{ offset_delta }</td>
+                <td>{offset_delta}</td>
                 <td>
                     Stack:&nbsp;<i>&lt;Empty&gt;</i><br/>
                     Locals:&nbsp;Unchanged
@@ -186,12 +185,12 @@ case class SameFrameExtended(frame_type: Int = 251, offset_delta: Int) extends S
 }
 
 case class AppendFrame(
-        frame_type:                    Int,
-        offset_delta:                  Int,
-        verification_type_info_locals: VerificationTypeInfos
+    frame_type:                    Int,
+    offset_delta:                  Int,
+    verification_type_info_locals: VerificationTypeInfos
 ) extends StackMapFrame {
 
-    final override def attribute_length: Int = {
+    override final def attribute_length: Int = {
         val initial = 1 + 2
         verification_type_info_locals.foldLeft(initial)((c, n) => c + n.attribute_length)
     }
@@ -204,13 +203,13 @@ case class AppendFrame(
         val newOffset = previous_frame_offset + offset_delta + 1
         (
             <tr>
-                <td>{ newOffset }</td>
+                <td>{newOffset}</td>
                 <td>AppendFrame</td>
-                <td>{ frame_type }</td>
-                <td>{ offset_delta }</td>
+                <td>{frame_type}</td>
+                <td>{offset_delta}</td>
                 <td>
                     Stack:&nbsp;<i>&lt;Empty&gt;</i><br/>
-                    Locals:&nbsp;{ verification_type_infos_toXHTML(verification_type_info_locals) }
+                    Locals:&nbsp;{verification_type_infos_toXHTML(verification_type_info_locals)}
                 </td>
             </tr>,
             newOffset
@@ -220,13 +219,13 @@ case class AppendFrame(
 }
 
 case class FullFrame(
-        frame_type:                    Int,
-        offset_delta:                  Int,
-        verification_type_info_locals: VerificationTypeInfos,
-        verification_type_info_stack:  VerificationTypeInfos
+    frame_type:                    Int,
+    offset_delta:                  Int,
+    verification_type_info_locals: VerificationTypeInfos,
+    verification_type_info_stack:  VerificationTypeInfos
 ) extends StackMapFrame {
 
-    final override def attribute_length: Int = {
+    override final def attribute_length: Int = {
         val initial = 1 + 2
         val locals = verification_type_info_locals.foldLeft(2 /*count*/ )(_ + _.attribute_length)
         val stack = verification_type_info_stack.foldLeft(2 /*count*/ )(_ + _.attribute_length)
@@ -241,13 +240,13 @@ case class FullFrame(
         val newOffset = previous_frame_offset + offset_delta + 1
         (
             <tr>
-                <td>{ newOffset }</td>
+                <td>{newOffset}</td>
                 <td>FullFrame</td>
-                <td>{ frame_type }</td>
-                <td>{ offset_delta }</td>
+                <td>{frame_type}</td>
+                <td>{offset_delta}</td>
                 <td>
-                    Stack:&nbsp;{ verification_type_infos_toXHTML(verification_type_info_stack) }<br/>
-                    Locals:&nbsp;{ verification_type_infos_toXHTML(verification_type_info_locals) }
+                    Stack:&nbsp;{verification_type_infos_toXHTML(verification_type_info_stack)}<br/>
+                    Locals:&nbsp;{verification_type_infos_toXHTML(verification_type_info_locals)}
                 </td>
             </tr>,
             newOffset

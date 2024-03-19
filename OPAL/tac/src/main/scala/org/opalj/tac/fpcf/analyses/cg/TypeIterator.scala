@@ -95,11 +95,15 @@ abstract class TypeIterator(val project: SomeProject) extends ContextProvider {
     val usedPropertyKinds: Set[PropertyBounds]
 
     def typesProperty(
-        use: V, context: ContextType, depender: Entity, stmts: Array[Stmt[V]]
+        use:      V,
+        context:  ContextType,
+        depender: Entity,
+        stmts:    Array[Stmt[V]]
     )(implicit state: TypeIteratorState): InformationType
 
     def typesProperty(
-        field: DeclaredField, depender: Entity
+        field:    DeclaredField,
+        depender: Entity
     )(
         implicit
         propertyStore: PropertyStore,
@@ -174,7 +178,8 @@ abstract class TypeIterator(val project: SomeProject) extends ContextProvider {
     }
 
     def foreachAllocation(
-        field: DeclaredField, typesProperty: InformationType
+        field:         DeclaredField,
+        typesProperty: InformationType
     )(
         handleAllocation: (ReferenceType, Context, Int) => Unit
     ): Unit = {
@@ -184,7 +189,7 @@ abstract class TypeIterator(val project: SomeProject) extends ContextProvider {
     def continuation(
         use:             V,
         updatedEPS:      EPS[Entity, PropertyType],
-        additionalTypes: Set[ReferenceType]        = Set.empty
+        additionalTypes: Set[ReferenceType] = Set.empty
     )(
         handleNewType: ReferenceType => Unit
     )(implicit state: TypeIteratorState): Unit = {
@@ -224,7 +229,7 @@ abstract class TypeIterator(val project: SomeProject) extends ContextProvider {
     def continuationForAllocations(
         use:             V,
         updatedEPS:      EPS[Entity, PropertyType],
-        additionalTypes: Set[ReferenceType]        = Set.empty
+        additionalTypes: Set[ReferenceType] = Set.empty
     )(
         handleNewAllocation: (ReferenceType, Context, Int) => Unit
     )(implicit state: TypeIteratorState): Unit = {
@@ -262,8 +267,7 @@ abstract class TypeIterator(val project: SomeProject) extends ContextProvider {
         oldEOptP:            EOptionP[Entity, Property],
         handleNewAllocation: (ReferenceType, Context, Int) => Unit
     )(
-        implicit
-        @nowarn state: TypeIteratorState
+        implicit @nowarn state: TypeIteratorState
     ): Unit = {
         // Do nothing
     }
@@ -282,18 +286,16 @@ abstract class TypeIterator(val project: SomeProject) extends ContextProvider {
                         tpe eq tub
                     } else {
                         ch.isSubtypeOf(tpe, tub) &&
-                            // Exclude unknown types even if the upper bound is Object for
-                            // consistency with CHA and bounds != Object
-                            ((tub ne ObjectType.Object) || tpe.isArrayType ||
-                                project.classFile(tpe.asObjectType).isDefined) &&
-                                ch.isASubtypeOf(tpe, use.value.asReferenceValue.upperTypeBound).isNotNo
+                        // Exclude unknown types even if the upper bound is Object for
+                        // consistency with CHA and bounds != Object
+                        ((tub ne ObjectType.Object) || tpe.isArrayType ||
+                        project.classFile(tpe.asObjectType).isDefined) &&
+                        ch.isASubtypeOf(tpe, use.value.asReferenceValue.upperTypeBound).isNotNo
                     }
 
                 case mv: IsMObjectValue =>
                     val typeBounds = mv.upperTypeBound
-                    typeBounds.forall { supertype =>
-                        ch.isSubtypeOf(tpe, supertype)
-                    }
+                    typeBounds.forall { supertype => ch.isSubtypeOf(tpe, supertype) }
 
                 case _: IsNullValue =>
                     false
@@ -318,11 +320,15 @@ class CHATypeIterator(project: SomeProject)
     val usedPropertyKinds: Set[PropertyBounds] = Set.empty
 
     @inline override def typesProperty(
-        use: V, context: SimpleContext, depender: Entity, stmts: Array[Stmt[V]]
+        use:      V,
+        context:  SimpleContext,
+        depender: Entity,
+        stmts:    Array[Stmt[V]]
     )(implicit state: TypeIteratorState): Null = null
 
     @inline override def typesProperty(
-        field: DeclaredField, depender: Entity
+        field:    DeclaredField,
+        depender: Entity
     )(
         implicit
         propertyStore: PropertyStore,
@@ -330,7 +336,9 @@ class CHATypeIterator(project: SomeProject)
     ): Null = null
 
     def foreachType(
-        use: V, typesProperty: Null, additionalTypes: Set[ReferenceType]
+        use:             V,
+        typesProperty:   Null,
+        additionalTypes: Set[ReferenceType]
     )(handleType: ReferenceType => Unit): Unit = {
         additionalTypes.foreach(handleType)
         val ch = project.classHierarchy
@@ -342,16 +350,17 @@ class CHATypeIterator(project: SomeProject)
                 } else {
                     if (sv.theUpperTypeBound.isObjectType) {
                         ch.allSubtypesForeachIterator(
-                            sv.theUpperTypeBound.asObjectType, reflexive = true
+                            sv.theUpperTypeBound.asObjectType,
+                            reflexive = true
                         ).filter { subtype =>
-                                val cfOption = project.classFile(subtype)
-                                cfOption.isDefined && {
-                                    val cf = cfOption.get
-                                    !cf.isInterfaceDeclaration && !cf.isAbstract
-                                } && {
-                                    ch.isASubtypeOf(subtype, use.value.asReferenceValue.upperTypeBound)
-                                }.isNotNo
-                            }.foreach(handleType)
+                            val cfOption = project.classFile(subtype)
+                            cfOption.isDefined && {
+                                val cf = cfOption.get
+                                !cf.isInterfaceDeclaration && !cf.isAbstract
+                            } && {
+                                ch.isASubtypeOf(subtype, use.value.asReferenceValue.upperTypeBound)
+                            }.isNotNo
+                        }.foreach(handleType)
                     } else handleType(ObjectType.Object)
                 }
 
@@ -360,15 +369,14 @@ class CHATypeIterator(project: SomeProject)
                 val remainingTypeBounds = typeBounds.tail
                 val firstTypeBound = typeBounds.head
                 val potentialTypes = ch.allSubtypesForeachIterator(
-                    firstTypeBound, reflexive = true
+                    firstTypeBound,
+                    reflexive = true
                 ).filter { subtype =>
                     val cfOption = project.classFile(subtype)
                     cfOption.isDefined && {
                         val cf = cfOption.get
                         !cf.isInterfaceDeclaration && !cf.isAbstract &&
-                            remainingTypeBounds.forall { supertype =>
-                                ch.isSubtypeOf(subtype, supertype)
-                            }
+                            remainingTypeBounds.forall { supertype => ch.isSubtypeOf(subtype, supertype) }
                     }
                 }
 
@@ -380,23 +388,25 @@ class CHATypeIterator(project: SomeProject)
     }
 
     def foreachType(
-        field: DeclaredField, typesProperty: Null
+        field:         DeclaredField,
+        typesProperty: Null
     )(handleType: ReferenceType => Unit): Unit = {
         if (field.fieldType.isObjectType) {
             project.classHierarchy.allSubtypesForeachIterator(
-                field.fieldType.asObjectType, reflexive = true
+                field.fieldType.asObjectType,
+                reflexive = true
             ).filter { subtype =>
-                    val cfOption = project.classFile(subtype)
-                    cfOption.isDefined && {
-                        val cf = cfOption.get
-                        !cf.isInterfaceDeclaration && !cf.isAbstract
-                    }
-                }.foreach(handleType)
+                val cfOption = project.classFile(subtype)
+                cfOption.isDefined && {
+                    val cf = cfOption.get
+                    !cf.isInterfaceDeclaration && !cf.isAbstract
+                }
+            }.foreach(handleType)
         } else
             handleType(field.fieldType.asReferenceType)
     }
 
-    @inline protected[this] override def continuation(
+    @inline override protected[this] def continuation(
         use:             V,
         updatedEPS:      EPS[Entity, Nothing],
         oldEOptP:        EOptionP[Entity, Nothing],
@@ -406,7 +416,7 @@ class CHATypeIterator(project: SomeProject)
         throw new UnsupportedOperationException
     }
 
-    @inline protected[this] override def continuation(
+    @inline override protected[this] def continuation(
         field:         DeclaredField,
         updatedEPS:    EPS[Entity, Property],
         oldEOptP:      EOptionP[Entity, Property],
@@ -430,12 +440,16 @@ class RTATypeIterator(project: SomeProject)
     private[this] lazy val propertyStore = project.get(PropertyStoreKey)
 
     @inline override def typesProperty(
-        use: V, context: SimpleContext, depender: Entity, stmts: Array[Stmt[V]]
+        use:      V,
+        context:  SimpleContext,
+        depender: Entity,
+        stmts:    Array[Stmt[V]]
     )(implicit state: TypeIteratorState): InstantiatedTypes =
         typesProperty(depender, requiresDependency = true)
 
     @inline override def typesProperty(
-        field: DeclaredField, depender: Entity
+        field:    DeclaredField,
+        depender: Entity
     )(
         implicit
         propertyStore: PropertyStore,
@@ -444,7 +458,8 @@ class RTATypeIterator(project: SomeProject)
         typesProperty(depender, field.fieldType.isObjectType)
 
     @inline def typesProperty(
-        depender: Entity, requiresDependency: Boolean
+        depender:           Entity,
+        requiresDependency: Boolean
     )(implicit state: TypeIteratorState): InstantiatedTypes = {
         val epk = EPK(project, InstantiatedTypes.key)
         val instantiatedTypesProperty = if (state.hasDependee(epk)) state.getProperty(epk)
@@ -460,7 +475,9 @@ class RTATypeIterator(project: SomeProject)
     }
 
     @inline override def foreachType(
-        use: V, typesProperty: InstantiatedTypes, additionalTypes: Set[ReferenceType]
+        use:             V,
+        typesProperty:   InstantiatedTypes,
+        additionalTypes: Set[ReferenceType]
     )(
         handleType: ReferenceType => Unit
     ): Unit = {
@@ -476,7 +493,8 @@ class RTATypeIterator(project: SomeProject)
     }
 
     @inline override def foreachType(
-        field: DeclaredField, typesProperty: InstantiatedTypes
+        field:         DeclaredField,
+        typesProperty: InstantiatedTypes
     )(
         handleType: ReferenceType => Unit
     ): Unit = {
@@ -520,8 +538,8 @@ class RTATypeIterator(project: SomeProject)
  * entity plus a global set of types.
  */
 class PropagationBasedTypeIterator(
-        project:               SomeProject,
-        typeSetEntitySelector: TypeSetEntitySelector
+    project:               SomeProject,
+    typeSetEntitySelector: TypeSetEntitySelector
 ) extends TypeIterator(project) with SimpleContextProvider {
 
     override type InformationType = (InstantiatedTypes, InstantiatedTypes)
@@ -532,7 +550,10 @@ class PropagationBasedTypeIterator(
     private[this] lazy val propertyStore = project.get(PropertyStoreKey)
 
     @inline override def typesProperty(
-        use: V, context: SimpleContext, depender: Entity, stmts: Array[Stmt[V]]
+        use:      V,
+        context:  SimpleContext,
+        depender: Entity,
+        stmts:    Array[Stmt[V]]
     )(implicit state: TypeIteratorState): (InstantiatedTypes, InstantiatedTypes) = {
         (
             getProperty(typeSetEntitySelector(context.method), depender, requiresDependency = true),
@@ -541,7 +562,8 @@ class PropagationBasedTypeIterator(
     }
 
     @inline override def typesProperty(
-        field: DeclaredField, depender: Entity
+        field:    DeclaredField,
+        depender: Entity
     )(
         implicit
         propertyStore: PropertyStore,
@@ -549,14 +571,18 @@ class PropagationBasedTypeIterator(
     ): (InstantiatedTypes, InstantiatedTypes) = {
         (
             getProperty(
-                typeSetEntitySelector(field), depender, field.fieldType.isObjectType
+                typeSetEntitySelector(field),
+                depender,
+                field.fieldType.isObjectType
             ),
-                getProperty(project, depender, field.fieldType.isObjectType)
+            getProperty(project, depender, field.fieldType.isObjectType)
         )
     }
 
     @inline private[this] def getProperty(
-        entity: TypeSetEntity, depender: Entity, requiresDependency: Boolean
+        entity:             TypeSetEntity,
+        depender:           Entity,
+        requiresDependency: Boolean
     )(implicit state: TypeIteratorState): InstantiatedTypes = {
         val epk = EPK(entity, InstantiatedTypes.key)
         val instantiatedTypesProperty = if (state.hasDependee(epk)) state.getProperty(epk)
@@ -645,13 +671,16 @@ trait PointsToTypeIterator[ElementType, PointsToSet >: Null <: PointsToSetLike[E
         context:       ContextType,
         allocatedType: ReferenceType,
         isConstant:    Boolean,
-        isEmptyArray:  Boolean       = false
+        isEmptyArray:  Boolean = false
     ): PointsToSet
 
     val usedPropertyKinds: Set[PropertyBounds] = PropertyBounds.ubs(pointsToProperty, FieldWriteAccessInformation)
 
     def typesProperty(
-        use: V, context: ContextType, depender: Entity, stmts: Array[Stmt[V]]
+        use:      V,
+        context:  ContextType,
+        depender: Entity,
+        stmts:    Array[Stmt[V]]
     )(implicit state: TypeIteratorState): PointsToSet = {
         use.definedBy.foldLeft(emptyPointsToSet) { (result, defSite) =>
             val pc = pcOfDefSite(defSite)(stmts)
@@ -668,7 +697,8 @@ trait PointsToTypeIterator[ElementType, PointsToSet >: Null <: PointsToSetLike[E
                 )
             } else {
                 combine(
-                    result, currentPointsTo(depender, pointsto.toEntity(defSite, context, stmts))
+                    result,
+                    currentPointsTo(depender, pointsto.toEntity(defSite, context, stmts))
                 )
             }
         }
@@ -701,7 +731,9 @@ trait PointsToTypeIterator[ElementType, PointsToSet >: Null <: PointsToSetLike[E
     }
 
     @inline override def foreachType(
-        use: V, typesProperty: PointsToSet, additionalTypes: Set[ReferenceType]
+        use:             V,
+        typesProperty:   PointsToSet,
+        additionalTypes: Set[ReferenceType]
     )(
         handleType: ReferenceType => Unit
     ): Unit = {
@@ -711,13 +743,12 @@ trait PointsToTypeIterator[ElementType, PointsToSet >: Null <: PointsToSetLike[E
     }
 
     @inline override def foreachType(
-        field: DeclaredField, typesProperty: PointsToSet
+        field:         DeclaredField,
+        typesProperty: PointsToSet
     )(
         handleType: ReferenceType => Unit
     ): Unit = {
-        typesProperty.forNewestNTypes(typesProperty.numTypes) { tpe =>
-            if (isPossibleType(field, tpe)) handleType(tpe)
-        }
+        typesProperty.forNewestNTypes(typesProperty.numTypes) { tpe => if (isPossibleType(field, tpe)) handleType(tpe) }
     }
 
     @inline protected[this] def continuation(
@@ -742,17 +773,14 @@ trait PointsToTypeIterator[ElementType, PointsToSet >: Null <: PointsToSetLike[E
     )(implicit state: TypeIteratorState): Unit = {
         val ub = updatedEPS.ub.asInstanceOf[PointsToSet]
         val seenTypes = if (oldEOptP.hasUBP) oldEOptP.ub.asInstanceOf[PointsToSet].numTypes else 0
-        ub.forNewestNTypes(ub.numTypes - seenTypes) { tpe =>
-            if (isPossibleType(field, tpe)) handleNewType(tpe)
-        }
+        ub.forNewestNTypes(ub.numTypes - seenTypes) { tpe => if (isPossibleType(field, tpe)) handleNewType(tpe) }
     }
 
     @inline protected[this] def currentPointsTo(
         depender: Entity,
         dependee: Entity
     )(
-        implicit
-        state: TypeIteratorState
+        implicit state: TypeIteratorState
     ): PointsToSet = {
         val epk = EPK(dependee, pointsToProperty.key).asInstanceOf[EPK[Entity, PointsToSet]]
         val p2s = if (state.hasDependee(epk)) state.getProperty(epk) else propertyStore(epk)
@@ -801,16 +829,15 @@ trait TypesBasedPointsToTypeIterator
     protected[this] val emptyPointsToSet: TypeBasedPointsToSet = NoTypes
 
     override def typesProperty(
-        field: DeclaredField, depender: Entity
+        field:    DeclaredField,
+        depender: Entity
     )(
         implicit
         propertyStore: PropertyStore,
         state:         TypeIteratorState
     ): TypeBasedPointsToSet = {
         val types = project.classHierarchy.allSubtypes(field.declaringClassType, reflexive = true)
-        types.foldLeft(emptyPointsToSet) { (result, tpe) =>
-            combine(result, currentPointsTo(depender, (tpe, field)))
-        }
+        types.foldLeft(emptyPointsToSet) { (result, tpe) => combine(result, currentPointsTo(depender, (tpe, field))) }
     }
 
     @inline override protected[this] def createPointsToSet(
@@ -818,7 +845,7 @@ trait TypesBasedPointsToTypeIterator
         context:       ContextType,
         allocatedType: ReferenceType,
         isConstant:    Boolean,
-        isEmptyArray:  Boolean       = false
+        isEmptyArray:  Boolean = false
     ): TypeBasedPointsToSet = TypeBasedPointsToSet(UIDSet(allocatedType))
 }
 
@@ -850,7 +877,7 @@ abstract class AbstractAllocationSitesPointsToTypeIterator(project: SomeProject)
         }
     }
 
-    @inline protected[this] override def continuationForAllocations(
+    @inline override protected[this] def continuationForAllocations(
         use:                 V,
         updatedEPS:          EPS[Entity, PropertyType],
         oldEOptP:            EOptionP[Entity, PropertyType],
@@ -876,7 +903,7 @@ abstract class AbstractAllocationSitesPointsToTypeIterator(project: SomeProject)
         context:       ContextType,
         allocatedType: ReferenceType,
         isConstant:    Boolean,
-        isEmptyArray:  Boolean       = false
+        isEmptyArray:  Boolean = false
     ): AllocationSitePointsToSet = {
         @inline def createNewPointsToSet(): AllocationSitePointsToSet = {
             val as = allocationSiteToLong(context, pc, allocatedType, isEmptyArray)
@@ -906,7 +933,8 @@ abstract class AbstractAllocationSitesPointsToTypeIterator(project: SomeProject)
                     createNewPointsToSet()
             case _ =>
                 if (mergeExceptions &&
-                    project.classHierarchy.isSubtypeOf(allocatedType, ObjectType.Throwable)) {
+                    project.classHierarchy.isSubtypeOf(allocatedType, ObjectType.Throwable)
+                ) {
                     val ptsO = exceptionPointsToSets.get(allocatedType.id)
                     if (ptsO.isDefined)
                         ptsO.get
@@ -929,7 +957,8 @@ class AllocationSitesPointsToTypeIterator(project: SomeProject)
     implicit lazy val propertyStore: PropertyStore = project.get(PropertyStoreKey)
 
     override def typesProperty(
-        field: DeclaredField, depender: Entity
+        field:    DeclaredField,
+        depender: Entity
     )(
         implicit
         propertyStore: PropertyStore,
@@ -943,14 +972,16 @@ class AllocationSitesPointsToTypeIterator(project: SomeProject)
             for {
                 // Extract FieldWriteAccessInformation
                 fai <- extractPropertyUB(
-                    EPK(field, FieldWriteAccessInformation.key), state.addDependency(depender, _)
+                    EPK(field, FieldWriteAccessInformation.key),
+                    state.addDependency(depender, _)
                 )
                 (accessContextId, _, receiver, _) <- fai.accesses
                 // Extract TAC
                 definedMethod = contextFromId(accessContextId).method
                 method = contextFromId(accessContextId).method.definedMethod
                 tacEP <- extractPropertyUB(
-                    EPK(method, TACAI.key), state.addDependency((depender, definedMethod, receiver), _)
+                    EPK(method, TACAI.key),
+                    state.addDependency((depender, definedMethod, receiver), _)
                 )
                 theTAC <- tacEP.tac
                 defSite <- uVarForDefSites(receiver.get, theTAC.pcToIndex).definedBy
@@ -960,7 +991,11 @@ class AllocationSitesPointsToTypeIterator(project: SomeProject)
                 result = combine(
                     result,
                     typesProperty(
-                        field, DefinitionSite(method, defPC), depender, newContext(definedMethod), theTAC.stmts
+                        field,
+                        DefinitionSite(method, defPC),
+                        depender,
+                        newContext(definedMethod),
+                        theTAC.stmts
                     )
                 )
             }
@@ -970,7 +1005,8 @@ class AllocationSitesPointsToTypeIterator(project: SomeProject)
     }
 
     @inline override def foreachAllocation(
-        field: DeclaredField, typesProperty: AllocationSitePointsToSet
+        field:         DeclaredField,
+        typesProperty: AllocationSitePointsToSet
     )(
         handleAllocation: (ReferenceType, Context, Int) => Unit
     ): Unit = {
@@ -994,14 +1030,18 @@ class AllocationSitesPointsToTypeIterator(project: SomeProject)
             val defPC = if (defSite < 0) defSite else theTAC.stmts(defSite).pc
             val objects = currentPointsTo(
                 depender,
-                pointsto.toEntity(defPC, newContext(definedMethod), theTAC.stmts)(formalParameters, definitionSites, this)
+                pointsto.toEntity(defPC, newContext(definedMethod), theTAC.stmts)(
+                    formalParameters,
+                    definitionSites,
+                    this
+                )
             )
 
             objects.forNewestNElements(objects.numElements)(handleAllocation)
         }
     }
 
-    @inline protected[this] override def continuation(
+    @inline override protected[this] def continuation(
         field:         DeclaredField,
         updatedEPS:    EPS[Entity, Property],
         oldEOptP:      EOptionP[Entity, Property],
@@ -1040,10 +1080,13 @@ class AllocationSitesPointsToTypeIterator(project: SomeProject)
             case tac: TheTACAI =>
                 val theTAC = tac.theTAC
                 state.dependersOf(updatedEPS.toEPK).foreach {
-                    case (depender: Entity, definedMethod: DefinedMethod, receiver: AnyRef) if receiver.isInstanceOf[Option[_]] &&
-                        receiver.asInstanceOf[Option[_]].isDefined =>
+                    case (depender: Entity, definedMethod: DefinedMethod, receiver: AnyRef)
+                        if receiver.isInstanceOf[Option[_]] &&
+                            receiver.asInstanceOf[Option[_]].isDefined =>
                         handleAllocationTacUpdate(
-                            depender, definedMethod, theTAC,
+                            depender,
+                            definedMethod,
+                            theTAC,
                             receiver.asInstanceOf[AccessReceiver].get
                         )(handleAllocationSiteTypes(depender, _))
                 }
@@ -1053,7 +1096,7 @@ class AllocationSitesPointsToTypeIterator(project: SomeProject)
         }
     }
 
-    @inline protected[this] override def continuationForAllocations(
+    @inline override protected[this] def continuationForAllocations(
         field:               DeclaredField,
         updatedEPS:          EPS[Entity, Property],
         oldEOptP:            EOptionP[Entity, Property],
@@ -1089,10 +1132,13 @@ class AllocationSitesPointsToTypeIterator(project: SomeProject)
 
             case tac: TheTACAI =>
                 state.dependersOf(updatedEPS.toEPK).foreach {
-                    case (depender: Entity, definedMethod: DefinedMethod, receiver: AnyRef) if receiver.isInstanceOf[Option[_]] &&
-                        receiver.asInstanceOf[Option[_]].isDefined =>
+                    case (depender: Entity, definedMethod: DefinedMethod, receiver: AnyRef)
+                        if receiver.isInstanceOf[Option[_]] &&
+                            receiver.asInstanceOf[Option[_]].isDefined =>
                         handleAllocationTacUpdate(
-                            depender, definedMethod, tac.theTAC,
+                            depender,
+                            definedMethod,
+                            tac.theTAC,
                             receiver.asInstanceOf[AccessReceiver].get
                         )(handlePointsToOfAllocationSite(depender, _))
                 }
@@ -1109,27 +1155,31 @@ class AllocationSitesPointsToTypeIterator(project: SomeProject)
     )(
         handleAllocationSite: (Entity, AllocationSite) => Unit
     )(implicit state: TypeIteratorState): Unit = {
-        val (seenDirectAccesses, seenIndirectAccesses) = oldEOptP.asInstanceOf[EOptionP[DeclaredField, FieldWriteAccessInformation]] match {
-            case UBP(fai) => (fai.numDirectAccesses, fai.numIndirectAccesses)
-            case _        => (0, 0)
-        }
+        val (seenDirectAccesses, seenIndirectAccesses) =
+            oldEOptP.asInstanceOf[EOptionP[DeclaredField, FieldWriteAccessInformation]] match {
+                case UBP(fai) => (fai.numDirectAccesses, fai.numIndirectAccesses)
+                case _        => (0, 0)
+            }
 
         state.dependersOf(updatedEPS.toEPK).foreach { depender =>
             fai.getNewestAccesses(
                 fai.numDirectAccesses - seenDirectAccesses,
                 fai.numIndirectAccesses - seenIndirectAccesses
             ) foreach { wa =>
-                    val definedMethod = contextFromId(wa._1).method.asDefinedMethod
+                val definedMethod = contextFromId(wa._1).method.asDefinedMethod
 
-                    val receiverOpt = wa._3
+                val receiverOpt = wa._3
 
-                    val tacEPK = EPK(definedMethod.definedMethod, TACAI.key)
-                    val tacEP = if (state.hasDependee(tacEPK)) state.getProperty(tacEPK) else propertyStore(definedMethod.definedMethod, TACAI.key)
-                    if (tacEP.isRefinable) state.addDependency((depender, definedMethod, receiverOpt), tacEP)
+                val tacEPK = EPK(definedMethod.definedMethod, TACAI.key)
+                val tacEP = if (state.hasDependee(tacEPK)) state.getProperty(tacEPK)
+                else propertyStore(definedMethod.definedMethod, TACAI.key)
+                if (tacEP.isRefinable) state.addDependency((depender, definedMethod, receiverOpt), tacEP)
 
-                    if (tacEP.hasUBP && tacEP.ub.tac.isDefined && receiverOpt.isDefined)
-                        handleAllocationTacUpdate(depender, definedMethod, tacEP.ub.tac.get, receiverOpt.get)(handleAllocationSite(depender, _))
-                }
+                if (tacEP.hasUBP && tacEP.ub.tac.isDefined && receiverOpt.isDefined)
+                    handleAllocationTacUpdate(depender, definedMethod, tacEP.ub.tac.get, receiverOpt.get)(
+                        handleAllocationSite(depender, _)
+                    )
+            }
         }
     }
 }
@@ -1144,7 +1194,8 @@ class CFA_k_l_TypeIterator(project: SomeProject, val k: Int, val l: Int)
     assert(k > 0 && l > 0 && k >= l - 1)
 
     override def typesProperty(
-        field: DeclaredField, depender: Entity
+        field:    DeclaredField,
+        depender: Entity
     )(
         implicit
         propertyStore: PropertyStore,
@@ -1158,7 +1209,8 @@ class CFA_k_l_TypeIterator(project: SomeProject, val k: Int, val l: Int)
             for {
                 // Extract FieldWriteAccessInformation
                 fai <- extractPropertyUB(
-                    EPK(field, FieldWriteAccessInformation.key), state.addDependency(depender, _)
+                    EPK(field, FieldWriteAccessInformation.key),
+                    state.addDependency(depender, _)
                 )
                 (accessContextId, _, receiver, _) <- fai.accesses
                 if receiver.isDefined
@@ -1167,7 +1219,8 @@ class CFA_k_l_TypeIterator(project: SomeProject, val k: Int, val l: Int)
                 definedMethod = contextFromId(accessContextId).method.asDefinedMethod
                 method = definedMethod.definedMethod
                 tacEP <- extractPropertyUB(
-                    EPK(method, TACAI.key), state.addDependency((depender, definedMethod, receiver), _)
+                    EPK(method, TACAI.key),
+                    state.addDependency((depender, definedMethod, receiver), _)
                 )
                 theTAC <- tacEP.tac
                 defSite <- uVarForDefSites(receiver.get, theTAC.pcToIndex).definedBy

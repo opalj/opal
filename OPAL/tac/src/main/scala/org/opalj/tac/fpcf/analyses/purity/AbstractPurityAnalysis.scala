@@ -43,6 +43,7 @@ import org.opalj.collection.immutable.EmptyIntTrieSet
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.EPK
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.InterimLUBP
@@ -53,6 +54,7 @@ import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEOptionP
+import org.opalj.fpcf.UBP
 import org.opalj.fpcf.UBPS
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger
@@ -151,7 +153,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
 
                 case StaticFunctionCall.ASTID => false
 
-                case _                        => true
+                case _ => true
             }
         }
 
@@ -168,9 +170,9 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
 
             case Assignment.ASTID => evaluationMayCauseVMLevelException(stmt.asAssignment.expr)
 
-            case ExprStmt.ASTID   => evaluationMayCauseVMLevelException(stmt.asExprStmt.expr)
+            case ExprStmt.ASTID => evaluationMayCauseVMLevelException(stmt.asExprStmt.expr)
 
-            case _                => true
+            case _ => true
         }
     }
 
@@ -339,7 +341,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
      */
     def checkMethodPurity(
         ep:     EOptionP[Context, Purity],
-        params: Seq[Expr[V]]              = Seq.empty
+        params: Seq[Expr[V]] = Seq.empty
     )(implicit state: StateType): Boolean
 
     /**
@@ -357,7 +359,8 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
                     checkFieldAssignability(propertyStore(field, FieldAssignability.key), None)
                 case Some(field) =>
                     checkFieldAssignability(
-                        propertyStore(field, FieldAssignability.key), Some(fieldRef.asGetField.objRef)
+                        propertyStore(field, FieldAssignability.key),
+                        Some(fieldRef.asGetField.objRef)
                     )
                 case _ => // Unknown field
                     if (fieldRef.isGetField) isLocal(fieldRef.asGetField.objRef, SideEffectFree)
@@ -404,10 +407,10 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
      */
     def checkPurityOfReturn(returnValue: Expr[V])(implicit state: StateType): Unit = {
         if (returnValue.cTpe != ComputationalTypeReference)
-            return ; // Only non-primitive return values influence purity.
+            return; // Only non-primitive return values influence purity.
 
         if (!state.ubPurity.isDeterministic)
-            return ; // If the method can't be pure, the return value is not important.
+            return; // If the method can't be pure, the return value is not important.
 
         if (!returnValue.isVar) {
             // The expression could refer to further expressions in a non-flat representation. To
@@ -415,17 +418,17 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
             // the return value is not local as the analysis is intended to be used on flat
             // representations anyway.
             isLocal(returnValue, SideEffectFree)
-            return ;
+            return;
         }
 
         val value = returnValue.asVar.value.asReferenceValue
         if (value.isNull.isYes)
-            return ; // Null is immutable
+            return; // Null is immutable
 
         if (value.upperTypeBound.exists(_.isArrayType)) {
             // Arrays are always mutable
             isLocal(returnValue, SideEffectFree)
-            return ;
+            return;
         }
 
         if (value.isPrecise) { // Precise class known, use ClassImmutability
@@ -463,16 +466,16 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
     )(implicit state: StateType): Boolean = ep match {
         // Returning immutable object is pure
         case LBP(TransitivelyImmutableType | TransitivelyImmutableClass) => true
-        case _: FinalEP[ObjectType, Property] =>
-            atMost(Pure) // Can not be compile time pure if mutable object is returned
-            if (state.ubPurity.isDeterministic)
-                isLocal(returnValue, SideEffectFree)
-            false // Return early if we are already side-effect free
-        case _ =>
+        case UBP(TransitivelyImmutableType | TransitivelyImmutableClass) | _: EPK[_, _] =>
             reducePurityLB(SideEffectFree)
             if (state.ubPurity.isDeterministic)
                 handleUnknownTypeImmutability(ep, returnValue)
             true
+        case _ =>
+            atMost(Pure) // Can not be compile time pure if mutable object is returned
+            if (state.ubPurity.isDeterministic)
+                isLocal(returnValue, SideEffectFree)
+            false // Return early if we are already side-effect free
     }
 
     /**
@@ -490,8 +493,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
     def checkPurityOfCallees(
         calleesEOptP: EOptionP[DeclaredMethod, Callees]
     )(
-        implicit
-        state: StateType
+        implicit state: StateType
     ): Boolean = {
         handleCalleesUpdate(calleesEOptP)
         calleesEOptP match {
@@ -545,9 +547,8 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
                                 callees.forall { callee =>
                                     checkPurityOfMethod(
                                         callee,
-                                        p.indirectCallReceiver(state.context, pc, callee).map(
-                                            receiver =>
-                                                uVarForDefSites(receiver, state.tac.pcToIndex)
+                                        p.indirectCallReceiver(state.context, pc, callee).map(receiver =>
+                                            uVarForDefSites(receiver, state.tac.pcToIndex)
                                         ).orNull +:
                                             p.indirectCallParameters(state.context, pc, callee).map {
                                                 paramO =>

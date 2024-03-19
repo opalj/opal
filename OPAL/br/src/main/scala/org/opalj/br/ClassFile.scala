@@ -73,14 +73,14 @@ import org.opalj.log.OPALLogger
  * @author  Michael Eichberg
  */
 final class ClassFile private (
-        val version:        UShortPair,
-        val accessFlags:    Int,
-        val thisType:       ObjectType,
-        val superclassType: Option[ObjectType],
-        val interfaceTypes: ObjectTypes,
-        val fields:         Fields,
-        val methods:        Methods,
-        val attributes:     Attributes
+    val version:        UShortPair,
+    val accessFlags:    Int,
+    val thisType:       ObjectType,
+    val superclassType: Option[ObjectType],
+    val interfaceTypes: ObjectTypes,
+    val fields:         Fields,
+    val methods:        Methods,
+    val attributes:     Attributes
 ) extends ConcreteSourceElement {
 
     methods.foreach { m => assert(m.declaringClassFile == null); m.declaringClassFile = this }
@@ -192,8 +192,12 @@ final class ClassFile private (
         attributes:     Attributes         = this.attributes
     ): ClassFile = {
         ClassFile(
-            version.minor, version.major, accessFlags,
-            thisType, superclassType, interfaceTypes,
+            version.minor,
+            version.major,
+            accessFlags,
+            thisType,
+            superclassType,
+            interfaceTypes,
             fields,
             methods,
             attributes
@@ -440,7 +444,7 @@ final class ClassFile private (
                         if (i.innerName.isEmpty) true else return false;
                     }
             }
-        */
+         */
         isClassDeclaration && innerClasses.isDefined && !innerClasses.get.forall { i =>
             i.innerClassType != thisType || i.innerName.nonEmpty
         }
@@ -486,7 +490,8 @@ final class ClassFile private (
                             (
                                 innerClass.outerClassType.isEmpty ||
                                 (innerClass.outerClassType.get eq thisType)
-                            ))
+                            )
+                    )
                     .map[ObjectType](_.innerClassType)
             }.getOrElse {
                 ArraySeq.empty
@@ -533,8 +538,9 @@ final class ClassFile private (
                     // (indirect) outertype (they cannot be innerclasses of this class..)
                     var nestedClassesOfOuterClass = outerClass.nestedClasses(classFileRepository)
                     while (nestedClassesOfOuterClass.nonEmpty &&
-                        !nestedClassesOfOuterClass.contains(thisType) &&
-                        !nestedClassesOfOuterClass.exists(nestedClassesCandidates.contains)) {
+                           !nestedClassesOfOuterClass.contains(thisType) &&
+                           !nestedClassesOfOuterClass.exists(nestedClassesCandidates.contains)
+                    ) {
                         // We are still lacking sufficient information to make a decision
                         // which class is a nested class of which other class
                         // e.g., we might have the following situation:
@@ -576,8 +582,7 @@ final class ClassFile private (
     def foreachNestedClass(
         f: (ClassFile) => Unit
     )(
-        implicit
-        classFileRepository: ClassFileRepository
+        implicit classFileRepository: ClassFileRepository
     ): Unit = {
         nestedClasses(classFileRepository) foreach { nestedType =>
             classFileRepository.classFile(nestedType) foreach { nestedClassFile =>
@@ -694,9 +699,9 @@ final class ClassFile private (
 
             if (methodNameComparison == 0 &&
                 method.descriptor == noArgsAndReturnVoidDescriptor &&
-                (majorVersion < 51 || method.isStatic))
+                (majorVersion < 51 || method.isStatic)
+            )
                 return Some(method);
-
             else if (methodNameComparison < 0)
                 return None;
 
@@ -840,7 +845,8 @@ final class ClassFile private (
             case Some(candidateMethod) =>
                 import VisibilityModifier.isAtLeastAsVisibleAs
                 if (Method.canDirectlyOverride(thisType.packageName, visibility, packageName) &&
-                    isAtLeastAsVisibleAs(candidateMethod.visibilityModifier, visibility))
+                    isAtLeastAsVisibleAs(candidateMethod.visibilityModifier, visibility)
+                )
                     Success(candidateMethod)
                 else
                     Failure
@@ -903,6 +909,7 @@ final class ClassFile private (
     }
 
 }
+
 /**
  * Defines factory and extractor methods for `ClassFile` objects as well as related
  * constants.
@@ -939,7 +946,9 @@ object ClassFile {
         new ClassFile(
             UShortPair(minorVersion, majorVersion),
             accessFlags,
-            thisType, superclassType, interfaceTypes,
+            thisType,
+            superclassType,
+            interfaceTypes,
             fields.sorted[JVMField].map[Field](f => f.prepareClassFileAttachement()),
             methods.sorted[JVMMethod].map[Method](f => f.prepareClassFileAttachement()),
             attributes
@@ -961,7 +970,9 @@ object ClassFile {
         new ClassFile(
             UShortPair(minorVersion, majorVersion),
             accessFlags,
-            thisType, superclassType, interfaceTypes,
+            thisType,
+            superclassType,
+            interfaceTypes,
             fields.sorted[JVMField],
             methods.sorted[JVMMethod],
             attributes

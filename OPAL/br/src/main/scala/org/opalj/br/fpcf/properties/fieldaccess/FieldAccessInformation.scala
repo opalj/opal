@@ -21,7 +21,7 @@ import org.opalj.fpcf.PropertyStore
 
 sealed trait FieldAccessInformationPropertyMetaInformation[S <: FieldAccessInformation[S]]
     extends PropertyMetaInformation {
-    final override type Self = S;
+    override final type Self = S;
 
     /**
      * Creates a property key to be associated with every field access property of the respective type. The fallback is
@@ -90,7 +90,10 @@ sealed trait FieldAccessInformation[S <: FieldAccessInformation[S]] extends Orde
         }
     }
 
-    def getNewestAccesses(newestDirectAccesses: Int, newestIndirectAccesses: Int): Iterator[(Int, PC, AccessReceiver, AccessParameter)] =
+    def getNewestAccesses(
+        newestDirectAccesses:   Int,
+        newestIndirectAccesses: Int
+    ): Iterator[(Int, PC, AccessReceiver, AccessParameter)] =
         getNewestNDirectAccesses(newestDirectAccesses) ++ getNewestNIndirectAccesses(newestIndirectAccesses)
 
     def getNewestNDirectAccesses(n: Int): Iterator[(Int, PC, AccessReceiver, AccessParameter)] =
@@ -119,7 +122,14 @@ sealed trait FieldAccessInformation[S <: FieldAccessInformation[S]] extends Orde
         other:                S,
         seenDirectAccesses:   Int,
         seenIndirectAccesses: Int,
-        propertyFactory:      (LongLinkedSet, LongMap[AccessReceiver], LongMap[AccessParameter], LongLinkedSet, LongMap[AccessReceiver], LongMap[AccessParameter]) => S
+        propertyFactory: (
+            LongLinkedSet,
+            LongMap[AccessReceiver],
+            LongMap[AccessParameter],
+            LongLinkedSet,
+            LongMap[AccessReceiver],
+            LongMap[AccessParameter]
+        ) => S
     ): S = {
         var newDirectAccesses = encodedDirectAccesses
         var newDirectReceivers = encodedDirectAccessReceivers
@@ -174,10 +184,10 @@ sealed trait FieldAccessInformation[S <: FieldAccessInformation[S]] extends Orde
 }
 
 case class FieldReadAccessInformation(
-        protected val encodedDirectAccesses:          LongLinkedSet,
-        protected val encodedDirectAccessReceivers:   LongMap[AccessReceiver],
-        protected val encodedIndirectAccesses:        LongLinkedSet,
-        protected val encodedIndirectAccessReceivers: LongMap[AccessReceiver]
+    protected val encodedDirectAccesses:          LongLinkedSet,
+    protected val encodedDirectAccessReceivers:   LongMap[AccessReceiver],
+    protected val encodedIndirectAccesses:        LongLinkedSet,
+    protected val encodedIndirectAccessReceivers: LongMap[AccessReceiver]
 ) extends FieldAccessInformation[FieldReadAccessInformation]
     with FieldAccessInformationPropertyMetaInformation[FieldReadAccessInformation] {
 
@@ -186,7 +196,11 @@ case class FieldReadAccessInformation(
 
     final def key: PropertyKey[FieldReadAccessInformation] = FieldReadAccessInformation.key
 
-    def included(other: FieldReadAccessInformation, seenDirectAccesses: Int, seenIndirectAccesses: Int): FieldReadAccessInformation =
+    def included(
+        other:                FieldReadAccessInformation,
+        seenDirectAccesses:   Int,
+        seenIndirectAccesses: Int
+    ): FieldReadAccessInformation =
         included(
             other,
             seenDirectAccesses,
@@ -202,23 +216,34 @@ case class FieldReadAccessInformation(
 }
 
 case class FieldWriteAccessInformation(
-        protected val encodedDirectAccesses:                 LongLinkedSet,
-        protected[this] val encodedDirectAccessReceivers:    LongMap[AccessReceiver],
-        protected[this] val encodedDirectAccessParameters:   LongMap[AccessParameter],
-        protected val encodedIndirectAccesses:               LongLinkedSet,
-        protected[this] val encodedIndirectAccessReceivers:  LongMap[AccessReceiver],
-        protected[this] val encodedIndirectAccessParameters: LongMap[AccessParameter]
+    protected val encodedDirectAccesses:                 LongLinkedSet,
+    protected[this] val encodedDirectAccessReceivers:    LongMap[AccessReceiver],
+    protected[this] val encodedDirectAccessParameters:   LongMap[AccessParameter],
+    protected val encodedIndirectAccesses:               LongLinkedSet,
+    protected[this] val encodedIndirectAccessReceivers:  LongMap[AccessReceiver],
+    protected[this] val encodedIndirectAccessParameters: LongMap[AccessParameter]
 ) extends FieldAccessInformation[FieldWriteAccessInformation]
     with FieldAccessInformationPropertyMetaInformation[FieldWriteAccessInformation] {
 
     final def key: PropertyKey[FieldWriteAccessInformation] = FieldWriteAccessInformation.key
 
-    def included(other: FieldWriteAccessInformation, seenDirectAccesses: Int, seenIndirectAccesses: Int): FieldWriteAccessInformation =
+    def included(
+        other:                FieldWriteAccessInformation,
+        seenDirectAccesses:   Int,
+        seenIndirectAccesses: Int
+    ): FieldWriteAccessInformation =
         included(
             other,
             seenDirectAccesses,
             seenIndirectAccesses,
-            (newDirectAccesses, newDirectReceivers, newDirectParameters, newIndirectAccesses, newIndirectReceivers, newIndirectParameters) =>
+            (
+                newDirectAccesses,
+                newDirectReceivers,
+                newDirectParameters,
+                newIndirectAccesses,
+                newIndirectReceivers,
+                newIndirectParameters
+            ) =>
                 FieldWriteAccessInformation(
                     newDirectAccesses,
                     newDirectReceivers,
@@ -274,6 +299,7 @@ object FieldWriteAccessInformation
 
 object NoFieldReadAccessInformation
     extends FieldReadAccessInformation(LongLinkedTrieSet.empty, LongMap.empty, LongLinkedTrieSet.empty, LongMap.empty)
+
 object NoFieldWriteAccessInformation
     extends FieldWriteAccessInformation(
         LongLinkedTrieSet.empty,

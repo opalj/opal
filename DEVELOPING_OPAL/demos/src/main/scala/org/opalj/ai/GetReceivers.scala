@@ -43,7 +43,7 @@ object GetReceivers extends ProjectAnalysisApplication {
                 }
             } else {
                 p.updateProjectInformationKeyInitializationData(org.opalj.ai.common.SimpleAIKey) { // new org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse(p, m)
-                _ => (m: Method) => new org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse(p, m)
+                    _ => (m: Method) => new org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse(p, m)
                 }
                 p.get(org.opalj.ai.common.SimpleAIKey)
             }
@@ -86,10 +86,12 @@ object GetReceivers extends ProjectAnalysisApplication {
 
                 s += ", " + value.isNull
                 if (aiResult.domain.origins(value.asInstanceOf[aiResult.domain.DomainValue]).forall(pc =>
-                    pc >= 0 && {
-                        val i = m.body.get.instructions(pc)
-                        i.opcode == NEW.opcode || i.isLoadConstantInstruction
-                    }))
+                        pc >= 0 && {
+                            val i = m.body.get.instructions(pc)
+                            i.opcode == NEW.opcode || i.isLoadConstantInstruction
+                        }
+                    )
+                )
                     s += " (trivially)"
 
                 this.synchronized {
@@ -102,9 +104,9 @@ object GetReceivers extends ProjectAnalysisApplication {
         BasicReport(
             "type, isPrecise, isNull, count\n" +
                 counts
-                .iterator
-                .map(e => e._1 + ", " + e._2)
-                .mkString("\n")
+                    .iterator
+                    .map(e => e._1 + ", " + e._2)
+                    .mkString("\n")
         )
     }
 }

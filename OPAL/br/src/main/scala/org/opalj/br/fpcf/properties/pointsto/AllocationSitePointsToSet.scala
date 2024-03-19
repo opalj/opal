@@ -50,7 +50,8 @@ sealed trait AllocationSitePointsToSet
     }
 
     override def included(
-        other: AllocationSitePointsToSet, seenElements: Int
+        other:        AllocationSitePointsToSet,
+        seenElements: Int
     ): AllocationSitePointsToSet = {
         var newAllocationSites = elements
         var newTypes = types
@@ -75,7 +76,8 @@ sealed trait AllocationSitePointsToSet
     }
 
     override def included(
-        other: AllocationSitePointsToSet, typeFilter: ReferenceType => Boolean
+        other:      AllocationSitePointsToSet,
+        typeFilter: ReferenceType => Boolean
     ): AllocationSitePointsToSet = {
         if (typeFilter eq PointsToSetLike.noFilter)
             return included(other);
@@ -169,9 +171,7 @@ sealed trait AllocationSitePointsToSet
 
     assert {
         var asTypes = IntTrieSet.empty
-        elements.foreach { allocationSite =>
-            asTypes += allocationSiteLongToTypeId(allocationSite)
-        }
+        elements.foreach { allocationSite => asTypes += allocationSiteLongToTypeId(allocationSite) }
 
         val typeIds = types.foldLeft(IntTrieSet.empty) { (r, t) => r + t.id }
         typeIds == asTypes
@@ -182,7 +182,8 @@ sealed trait AllocationSitePointsToSet
 object AllocationSitePointsToSet extends AllocationSitePointsToSetPropertyMetaInformation {
 
     def apply(
-        allocationSite: AllocationSite, allocatedType: ReferenceType
+        allocationSite: AllocationSite,
+        allocatedType:  ReferenceType
     ): AllocationSitePointsToSet = {
         new AllocationSitePointsToSet1(allocationSite, allocatedType)
     }
@@ -205,7 +206,9 @@ object AllocationSitePointsToSet extends AllocationSitePointsToSetPropertyMetaIn
     }
 
     def apply(
-        elements: LongLinkedSet, types: UIDSet[ReferenceType], orderedTypes: List[ReferenceType]
+        elements:     LongLinkedSet,
+        types:        UIDSet[ReferenceType],
+        orderedTypes: List[ReferenceType]
     ): AllocationSitePointsToSet = {
 
         if (elements.isEmpty) {
@@ -221,19 +224,20 @@ object AllocationSitePointsToSet extends AllocationSitePointsToSetPropertyMetaIn
         val name = "opalj.AllocationSitePointsToSet"
         PropertyKey.create(
             name,
-            (_: PropertyStore, reason: FallbackReason, _: Entity) => reason match {
-                case PropertyIsNotDerivedByPreviouslyExecutedAnalysis => NoAllocationSites
-                case _ =>
-                    throw new IllegalStateException(s"no analysis is scheduled for property: $name")
-            }
+            (_: PropertyStore, reason: FallbackReason, _: Entity) =>
+                reason match {
+                    case PropertyIsNotDerivedByPreviouslyExecutedAnalysis => NoAllocationSites
+                    case _ =>
+                        throw new IllegalStateException(s"no analysis is scheduled for property: $name")
+                }
         )
     }
 }
 
 case class AllocationSitePointsToSetN private[pointsto] (
-        override val elements:                     LongLinkedSet,
-        override val types:                        UIDSet[ReferenceType],
-        override protected[this] val orderedTypes: List[ReferenceType]
+    override val elements:                     LongLinkedSet,
+    override val types:                        UIDSet[ReferenceType],
+    override protected[this] val orderedTypes: List[ReferenceType]
 ) extends AllocationSitePointsToSet {
 
     override def numTypes: Int = types.size
@@ -253,10 +257,10 @@ case class AllocationSitePointsToSetN private[pointsto] (
             case that: AllocationSitePointsToSetN =>
                 (this eq that) || {
                     that.elements.size == this.elements.size &&
-                        that.numTypes == this.numTypes &&
-                        // TODO: we should assert that:
-                        //  that.elements == this.elements => that.orderedTypes == this.orderedTypes
-                        that.elements == this.elements
+                    that.numTypes == this.numTypes &&
+                    // TODO: we should assert that:
+                    //  that.elements == this.elements => that.orderedTypes == this.orderedTypes
+                    that.elements == this.elements
                 }
             case _ => false
         }
@@ -274,13 +278,15 @@ object NoAllocationSites extends AllocationSitePointsToSet {
     }
 
     override def included(
-        other: AllocationSitePointsToSet, seenElements: Int
+        other:        AllocationSitePointsToSet,
+        seenElements: Int
     ): AllocationSitePointsToSet = {
         other
     }
 
     override def included(
-        other: AllocationSitePointsToSet, typeFilter: ReferenceType => Boolean
+        other:      AllocationSitePointsToSet,
+        typeFilter: ReferenceType => Boolean
     ): AllocationSitePointsToSet = {
         other.filter(typeFilter)
     }
@@ -311,7 +317,8 @@ object NoAllocationSites extends AllocationSitePointsToSet {
 }
 
 case class AllocationSitePointsToSet1(
-        allocationSite: AllocationSite, allocatedType: ReferenceType
+    allocationSite: AllocationSite,
+    allocatedType:  ReferenceType
 ) extends AllocationSitePointsToSet {
 
     override def numTypes: Int = 1
@@ -331,7 +338,10 @@ case class AllocationSitePointsToSet1(
 
             case AllocationSitePointsToSet1(otherAllocationSite, otherAllocatedType) =>
                 AllocationSitePointsToSet(
-                    otherAllocationSite, otherAllocatedType, allocationSite, allocatedType
+                    otherAllocationSite,
+                    otherAllocatedType,
+                    allocationSite,
+                    allocatedType
                 )
 
             case NoAllocationSites =>
@@ -361,7 +371,8 @@ case class AllocationSitePointsToSet1(
     }
 
     override def included(
-        other: AllocationSitePointsToSet, seenElements: Int
+        other:        AllocationSitePointsToSet,
+        seenElements: Int
     ): AllocationSitePointsToSet = {
         assert(seenElements >= 0 && seenElements <= other.numElements)
         // Note, that we can not assert, that seenElements is between 0 and 1, as this can
@@ -370,7 +381,8 @@ case class AllocationSitePointsToSet1(
     }
 
     override def included(
-        other: AllocationSitePointsToSet, typeFilter: ReferenceType => Boolean
+        other:      AllocationSitePointsToSet,
+        typeFilter: ReferenceType => Boolean
     ): AllocationSitePointsToSet = {
         if (typeFilter eq PointsToSetLike.noFilter)
             return included(other);

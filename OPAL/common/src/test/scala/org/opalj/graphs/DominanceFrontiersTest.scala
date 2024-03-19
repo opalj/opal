@@ -2,15 +2,15 @@
 package org.opalj
 package graphs
 
-import org.opalj.collection.immutable.EmptyIntArraySet
-import org.opalj.collection.immutable.IntArraySet
-import org.opalj.collection.immutable.IntArraySetBuilder
-import org.opalj.io.writeAndOpen
-
 import org.junit.runner.RunWith
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
+
+import org.opalj.collection.immutable.EmptyIntArraySet
+import org.opalj.collection.immutable.IntArraySet
+import org.opalj.collection.immutable.IntArraySetBuilder
+import org.opalj.io.writeAndOpen
 
 /**
  * Tests the [[DominanceFrontiers]] implementation.
@@ -32,7 +32,7 @@ class DominanceFrontiersTest extends AnyFlatSpec with Matchers {
         startNode:                Int,
         g:                        Graph[Int],
         maxNode:                  Int,
-        startNodeHasPredecessors: Boolean    = false
+        startNodeHasPredecessors: Boolean = false
     ): DominanceFrontiers = {
         setUpDominanceFrontiers(
             startNode,
@@ -52,13 +52,10 @@ class DominanceFrontiersTest extends AnyFlatSpec with Matchers {
     ): DominanceFrontiers = {
         val dominatorTree =
             DominatorTree(
-                startNode, startNodeHasPredecessors,
-                (n: Int) => { (f: (Int => Unit)) =>
-                    g.successors.getOrElse(n, List.empty).foreach[Unit](e => f(e))
-                },
-                (n: Int) => { (f: (Int => Unit)) =>
-                    g.predecessors.getOrElse(n, List.empty).foreach[Unit](e => f(e))
-                },
+                startNode,
+                startNodeHasPredecessors,
+                (n: Int) => { (f: (Int => Unit)) => g.successors.getOrElse(n, List.empty).foreach[Unit](e => f(e)) },
+                (n: Int) => { (f: (Int => Unit)) => g.predecessors.getOrElse(n, List.empty).foreach[Unit](e => f(e)) },
                 maxNode
             )
         try {

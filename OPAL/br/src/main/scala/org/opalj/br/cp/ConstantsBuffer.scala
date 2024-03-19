@@ -26,8 +26,8 @@ import org.opalj.br.instructions.LoadString
  * @author  Michael Eichberg
  */
 class ConstantsBuffer private (
-        private var nextIndex:    Int,
-        private val constantPool: mutable.Map[Constant_Pool_Entry, Constant_Pool_Index] // IMPROVE[L3] Use ObjectToIntMap
+    private var nextIndex:    Int,
+    private val constantPool: mutable.Map[Constant_Pool_Entry, Constant_Pool_Index] // IMPROVE[L3] Use ObjectToIntMap
 ) extends ConstantsPoolLike {
 
     private[this] val bootstrapMethods = new BootstrapMethodsBuffer()
@@ -35,8 +35,7 @@ class ConstantsBuffer private (
 
     private[this] def getOrElseUpdate(cpEntry: Constant_Pool_Entry, entry_size: Int): Int = {
         constantPool.getOrElseUpdate(
-            cpEntry,
-            {
+            cpEntry, {
                 val index = nextIndex
                 nextIndex += entry_size
                 index
@@ -371,7 +370,7 @@ object ConstantsBuffer {
         to dynamic constants (using two byte references), but the same constant pool entries might
         be used by a one byte reference from an LDC. Thus, we first create the LDC related entries,
         then create the bootstrap argument entries at the end.
-        */
+         */
         val (ldClasses, ldOtherConstants) = ldcs partition { ldc => ldc.isInstanceOf[LoadClass] }
 
         // 1. let's add the referenced CONSTANT_UTF8 entries required by LoadClass instructions

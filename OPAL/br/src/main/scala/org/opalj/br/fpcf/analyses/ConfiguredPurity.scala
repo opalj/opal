@@ -19,16 +19,16 @@ import net.ceedubs.ficus.readers.ArbitraryTypeReader._
  * @author Dominik Helm
  */
 class ConfiguredPurity(
-        project:         SomeProject,
-        declaredMethods: DeclaredMethods
+    project:         SomeProject,
+    declaredMethods: DeclaredMethods
 ) {
 
     private case class PurityValue(
-            cf:    String,
-            m:     String,
-            desc:  String,
-            p:     String,
-            conds: Option[Seq[String]]
+        cf:    String,
+        m:     String,
+        desc:  String,
+        p:     String,
+        conds: Option[Seq[String]]
     )
 
     private val classExtensibility = project.get(ClassExtensibilityKey)
@@ -54,19 +54,19 @@ class ConfiguredPurity(
             mdo = if (descriptor == "*") None else Some(MethodDescriptor(descriptor))
 
             ms = if (className == "*") {
-                project.allMethods.filter { m =>
-                    m.name == methodName && mdo.forall(_ == m.descriptor)
-                }.map(declaredMethods(_))
+                project.allMethods
+                    .filter { m => m.name == methodName && mdo.forall(_ == m.descriptor) }
+                    .map(declaredMethods(_))
             } else {
                 val classType = ObjectType(className)
 
                 mdo match {
                     case Some(md) => Seq(
-                        declaredMethods(classType, classType.packageName, classType, methodName, md)
-                    )
+                            declaredMethods(classType, classType.packageName, classType, methodName, md)
+                        )
                     case None => project.classFile(classType).map { cf =>
-                        cf.findMethod(methodName).map(declaredMethods(_))
-                    }.getOrElse(Seq.empty)
+                            cf.findMethod(methodName).map(declaredMethods(_))
+                        }.getOrElse(Seq.empty)
 
                 }
             }

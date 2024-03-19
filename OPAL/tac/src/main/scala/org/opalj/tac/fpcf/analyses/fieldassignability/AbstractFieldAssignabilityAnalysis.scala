@@ -76,11 +76,13 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
         var escapeDependees: Set[EOptionP[(Context, DefinitionSite), EscapeProperty]] = Set.empty
         var fieldWriteAccessDependee: Option[EOptionP[DeclaredField, FieldWriteAccessInformation]] = None
         var tacDependees: Map[DefinedMethod, EOptionP[Method, TACAI]] = Map.empty
-        var callerDependees: Map[DefinedMethod, EOptionP[DefinedMethod, Callers]] = Map.empty.withDefault { dm => propertyStore(dm, Callers.key) }
+        var callerDependees: Map[DefinedMethod, EOptionP[DefinedMethod, Callers]] = Map.empty.withDefault { dm =>
+            propertyStore(dm, Callers.key)
+        }
 
         def hasDependees: Boolean = {
             escapeDependees.nonEmpty || fieldWriteAccessDependee.exists(_.isRefinable) ||
-                tacDependees.valuesIterator.exists(_.isRefinable) || callerDependees.valuesIterator.exists(_.isRefinable)
+            tacDependees.valuesIterator.exists(_.isRefinable) || callerDependees.valuesIterator.exists(_.isRefinable)
         }
 
         def dependees: Set[SomeEOptionP] = {
@@ -251,33 +253,31 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
                 newFai.numDirectAccesses - seenDirectAccesses,
                 newFai.numIndirectAccesses - seenIndirectAccesses
             ) exists { writeAccess =>
-                    val method = contextProvider.contextFromId(writeAccess._1).method.asDefinedMethod
-                    state.fieldAccesses += method -> (state.fieldAccesses.getOrElse(method, Set.empty) +
-                        ((writeAccess._2, writeAccess._3)))
+                val method = contextProvider.contextFromId(writeAccess._1).method.asDefinedMethod
+                state.fieldAccesses += method -> (state.fieldAccesses.getOrElse(method, Set.empty) +
+                    ((writeAccess._2, writeAccess._3)))
 
-                    val tacEP = state.tacDependees.get(method) match {
-                        case Some(tacEP) => tacEP
-                        case None =>
-                            val tacEP = propertyStore(method.definedMethod, TACAI.key)
-                            state.tacDependees += method -> tacEP
-                            tacEP
-                    }
-
-                    val callersEP = state.callerDependees.get(method) match {
-                        case Some(callersEP) => callersEP
-                        case None =>
-                            val callersEP = propertyStore(method, Callers.key)
-                            state.callerDependees += method -> callersEP
-                            callersEP
-                    }
-
-                    if (tacEP.hasUBP && callersEP.hasUBP)
-                        methodUpdatesField(
-                            method, tacEP.ub.tac.get, callersEP.ub, writeAccess._2, writeAccess._3
-                        )
-                    else
-                        false
+                val tacEP = state.tacDependees.get(method) match {
+                    case Some(tacEP) => tacEP
+                    case None =>
+                        val tacEP = propertyStore(method.definedMethod, TACAI.key)
+                        state.tacDependees += method -> tacEP
+                        tacEP
                 }
+
+                val callersEP = state.callerDependees.get(method) match {
+                    case Some(callersEP) => callersEP
+                    case None =>
+                        val callersEP = propertyStore(method, Callers.key)
+                        state.callerDependees += method -> callersEP
+                        callersEP
+                }
+
+                if (tacEP.hasUBP && callersEP.hasUBP)
+                    methodUpdatesField(method, tacEP.ub.tac.get, callersEP.ub, writeAccess._2, writeAccess._3)
+                else
+                    false
+            }
         } else {
             state.fieldWriteAccessDependee = Some(newEP)
             false
@@ -304,7 +304,8 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
                 val callersProperty = state.callerDependees(method)
                 if (callersProperty.hasUBP && accesses.isDefined)
                     accesses.get.exists(access =>
-                        methodUpdatesField(method, newEP.ub.tac.get, callersProperty.ub, access._1, access._2))
+                        methodUpdatesField(method, newEP.ub.tac.get, callersProperty.ub, access._1, access._2)
+                    )
                 else false
             case Callers.key =>
                 val newEP = eps.asInstanceOf[EOptionP[DefinedMethod, Callers]]
@@ -314,7 +315,8 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
                 val tacProperty = state.tacDependees(method)
                 if (tacProperty.hasUBP && tacProperty.ub.tac.isDefined && accesses.isDefined)
                     accesses.get.exists(access =>
-                        methodUpdatesField(method, tacProperty.ub.tac.get, newEP.ub, access._1, access._2))
+                        methodUpdatesField(method, tacProperty.ub.tac.get, newEP.ub, access._1, access._2)
+                    )
                 else false
             case FieldWriteAccessInformation.key =>
                 val newEP = eps.asInstanceOf[EOptionP[DeclaredField, FieldWriteAccessInformation]]

@@ -16,8 +16,8 @@ import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.MethodInvocationInstruction
 
 class MethodReturnValues(
-        val method: Method,
-        val result: AIResult
+    val method: Method,
+    val result: AIResult
 ) extends IssueDetails with MethodComprehension {
 
     final def classFile: ClassFile = method.classFile
@@ -29,12 +29,13 @@ class MethodReturnValues(
     def collectMethodReturnValues: List[PCAndAnyRef[String]] = {
         code.foldLeft(List.empty[PCAndAnyRef[String]]) { (returnValues, pc, instruction) =>
             instruction match {
-                case instr @ MethodInvocationInstruction(declaringClassType, _, name, descriptor) if !descriptor.returnType.isVoidType && {
-                    val nextPC = instr.indexOfNextInstruction(pc)
-                    val operands = operandsArray(nextPC)
-                    operands != null &&
-                        operands.head.isMorePreciseThan(result.domain.TypedValue(pc, descriptor.returnType))
-                } =>
+                case instr @ MethodInvocationInstruction(declaringClassType, _, name, descriptor)
+                    if !descriptor.returnType.isVoidType && {
+                        val nextPC = instr.indexOfNextInstruction(pc)
+                        val operands = operandsArray(nextPC)
+                        operands != null &&
+                            operands.head.isMorePreciseThan(result.domain.TypedValue(pc, descriptor.returnType))
+                    } =>
                     val modifier = if (instr.isInstanceOf[INVOKESTATIC]) "static " else ""
                     val nextPCOperandHead = operandsArray(instr.indexOfNextInstruction(pc)).head
 
@@ -56,17 +57,17 @@ class MethodReturnValues(
                 val pc = methodData.pc
                 val details = methodData.value
                 <li>
-                    { pcNode(classFileFQN, methodJVMSignature, pc) }
+                    {pcNode(classFileFQN, methodJVMSignature, pc)}
                     &nbsp;
-                    { lineNode(classFileFQN, methodJVMSignature, pc, line(pc)) }
-                    <span class="value">{ details }</span>
+                    {lineNode(classFileFQN, methodJVMSignature, pc, line(pc))}
+                    <span class="value">{details}</span>
                 </li>
             }
 
         if (methodReturnValues.nonEmpty)
             <details class="method_return_values">
                 <summary>Method Return Values</summary>
-                <ul>{ methodReturnValues }</ul>
+                <ul>{methodReturnValues}</ul>
             </details>
         else
             Group(Nil)

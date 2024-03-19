@@ -45,13 +45,13 @@ import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.value.ValueInformation
 
 class InterProceduralEscapeAnalysisContext(
-        val entity:                  (Context, Entity),
-        val targetMethod:            Method,
-        val declaredMethods:         DeclaredMethods,
-        val virtualFormalParameters: VirtualFormalParameters,
-        val project:                 SomeProject,
-        val propertyStore:           PropertyStore,
-        val isMethodOverridable:     Method => Answer
+    val entity:                  (Context, Entity),
+    val targetMethod:            Method,
+    val declaredMethods:         DeclaredMethods,
+    val virtualFormalParameters: VirtualFormalParameters,
+    val project:                 SomeProject,
+    val propertyStore:           PropertyStore,
+    val isMethodOverridable:     Method => Answer
 ) extends AbstractEscapeAnalysisContext
     with PropertyStoreContainer
     with IsMethodOverridableContainer
@@ -67,7 +67,7 @@ class InterProceduralEscapeAnalysisState
  * @author Florian Kübler
  */
 class InterProceduralEscapeAnalysis private[analyses] (
-        final val project: SomeProject
+    final val project: SomeProject
 ) extends DefaultEscapeAnalysis
     with AbstractInterProceduralEscapeAnalysis
     with ConstructorSensitiveEscapeAnalysis
@@ -87,7 +87,8 @@ class InterProceduralEscapeAnalysis private[analyses] (
         fp._2 match {
             // if the underlying method is inherited, we avoid recomputation and query the
             // result of the method for its defining class.
-            case VirtualFormalParameter(dm: DefinedMethod, i) if fp._1.isInstanceOf[SimpleContext] && dm.declaringClassType != dm.definedMethod.classFile.thisType =>
+            case VirtualFormalParameter(dm: DefinedMethod, i)
+                if fp._1.isInstanceOf[SimpleContext] && dm.declaringClassType != dm.definedMethod.classFile.thisType =>
                 def handleEscapeState(eOptionP: SomeEOptionP): ProperPropertyComputationResult = {
                     eOptionP match {
                         case FinalP(p) =>

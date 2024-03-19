@@ -41,7 +41,7 @@ object JSR_W extends InstructionMetaInformation {
 }
 
 case class LabeledJSR_W(
-        branchTarget: InstructionLabel
+    branchTarget: InstructionLabel
 ) extends LabeledUnconditionalBranchInstruction with JSR_WLike {
 
     override def resolveJumpTargets(currentPC: PC, pcs: Map[InstructionLabel, PC]): JSR_W = {

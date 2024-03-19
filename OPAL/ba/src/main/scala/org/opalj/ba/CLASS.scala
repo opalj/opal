@@ -17,14 +17,14 @@ import org.opalj.collection.immutable.UShortPair
  * @author Michael Eichberg
  */
 class CLASS[T](
-        version:         UShortPair,
-        accessModifiers: AccessModifier,
-        thisType:        String,
-        superclassType:  Option[String],
-        interfaceTypes:  ArraySeq[String],
-        fields:          FIELDS,
-        methods:         METHODS[T],
-        attributes:      ArraySeq[br.ClassFileAttributeBuilder]
+    version:         UShortPair,
+    accessModifiers: AccessModifier,
+    thisType:        String,
+    superclassType:  Option[String],
+    interfaceTypes:  ArraySeq[String],
+    fields:          FIELDS,
+    methods:         METHODS[T],
+    attributes:      ArraySeq[br.ClassFileAttributeBuilder]
 ) {
 
     /**
@@ -44,8 +44,7 @@ class CLASS[T](
      *                       table attributes need to be automatically computed.
      */
     def toBR(
-        implicit
-        classHierarchy: ClassHierarchy = br.ClassHierarchy.PreInitializedClassHierarchy
+        implicit classHierarchy: ClassHierarchy = br.ClassHierarchy.PreInitializedClassHierarchy
     ): (br.ClassFile, Map[br.Method, T]) = {
 
         val accessFlags = accessModifiers.accessFlags
@@ -62,7 +61,7 @@ class CLASS[T](
             Map.empty ++
                 brAnnotatedMethods.iterator.map[(MethodSignature, Option[T])](mt =>
                     { val (m, t) = mt; (m.signature, t) })
-            */
+             */
             brAnnotatedMethods.foldLeft(Map.empty[MethodSignature, Option[T]]) { (map, mt) =>
                 val (m, t) = mt
                 map + ((m.signature, t))
@@ -72,21 +71,25 @@ class CLASS[T](
 
         var brMethods = brAnnotatedMethods.map[MethodTemplate](m => m._1)
         if (!(
-            bi.ACC_INTERFACE.isSet(accessFlags) ||
-            brMethods.exists(_.isConstructor) ||
-            // If "only" the following partial condition holds,
-            // then the class file will be invalid; we can't
-            // generate a default constructor, because we don't
-            // know the target!
-            superclassType.isEmpty
-        )) {
+                bi.ACC_INTERFACE.isSet(accessFlags) ||
+                    brMethods.exists(_.isConstructor) ||
+                    // If "only" the following partial condition holds,
+                    // then the class file will be invalid; we can't
+                    // generate a default constructor, because we don't
+                    // know the target!
+                    superclassType.isEmpty
+            )
+        ) {
             brMethods :+= br.Method.defaultConstructor(superclassType.get)
         }
 
         val attributes = this.attributes.map[br.Attribute] { attributeBuilder =>
             attributeBuilder(
                 version,
-                accessFlags, thisType, superclassType, interfaceTypes,
+                accessFlags,
+                thisType,
+                superclassType,
+                interfaceTypes,
                 brFields,
                 brMethods
             )
@@ -125,8 +128,7 @@ class CLASS[T](
      * @see [[toBR]] for details - in particula regarding `classHiearchy`.
      */
     def toDA(
-        implicit
-        classHierarchy: ClassHierarchy = br.ClassHierarchy.PreInitializedClassHierarchy
+        implicit classHierarchy: ClassHierarchy = br.ClassHierarchy.PreInitializedClassHierarchy
     ): (da.ClassFile, Map[br.Method, T]) = {
         val (brClassFile, annotations) = toBR(classHierarchy)
         (ba.toDA(brClassFile), annotations)
@@ -153,9 +155,13 @@ object CLASS {
         attributes:      ArraySeq[br.ClassFileAttributeBuilder] = ArraySeq.empty
     ): CLASS[T] = {
         new CLASS(
-            version, accessModifiers,
-            thisType, superclassType, interfaceTypes,
-            fields, methods,
+            version,
+            accessModifiers,
+            thisType,
+            superclassType,
+            interfaceTypes,
+            fields,
+            methods,
             attributes
         )
     }

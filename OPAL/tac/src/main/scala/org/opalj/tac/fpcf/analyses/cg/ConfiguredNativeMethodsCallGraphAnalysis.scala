@@ -49,7 +49,7 @@ import org.opalj.fpcf.SomeEPS
  * @author Florian Kuebler
  */
 class ConfiguredNativeMethodsCallGraphAnalysis private[analyses] (
-        final val project: SomeProject
+    final val project: SomeProject
 ) extends FPCFAnalysis {
 
     val configKey = "org.opalj.fpcf.analyses.ConfiguredNativeMethodsAnalysis"
@@ -58,9 +58,9 @@ class ConfiguredNativeMethodsCallGraphAnalysis private[analyses] (
     private[this] implicit val contextProvider: ContextProvider = project.get(ContextProviderKey)
 
     private[this] val nativeMethodData: Map[DeclaredMethod, Option[Array[MethodDescription]]] = {
-        ConfiguredMethods.reader.read(
-            p.config, configKey
-        ).nativeMethods.map { v => (v.method, v.methodInvocations) }.toMap
+        ConfiguredMethods.reader
+            .read(p.config, configKey)
+            .nativeMethods.map { v => (v.method, v.methodInvocations) }.toMap
     }
 
     def analyze(dm: DeclaredMethod): PropertyComputationResult = {
@@ -107,7 +107,9 @@ class ConfiguredNativeMethodsCallGraphAnalysis private[analyses] (
     }
 
     def returnResults(
-        eOptP: EOptionP[DeclaredMethod, Callers], seen: Callers, tgts: Array[MethodDescription]
+        eOptP: EOptionP[DeclaredMethod, Callers],
+        seen:  Callers,
+        tgts:  Array[MethodDescription]
     ): ProperPropertyComputationResult = {
         val callers = eOptP.ub
 
@@ -119,9 +121,7 @@ class ConfiguredNativeMethodsCallGraphAnalysis private[analyses] (
                 if (tgtMethod.name == "<clinit>") {
                     calls.addVMReachableMethod(tgtMethod);
                 } else {
-                    calls.addCall(
-                        calleeContext, 0, contextProvider.expandContext(calleeContext, tgtMethod, 0)
-                    )
+                    calls.addCall(calleeContext, 0, contextProvider.expandContext(calleeContext, tgtMethod, 0))
                 }
             }
             results ++= calls.partialResults(calleeContext)
@@ -142,7 +142,9 @@ object ConfiguredNativeMethodsCallGraphAnalysisScheduler extends BasicFPCFTrigge
     override def derivesEagerly: Set[PropertyBounds] = Set.empty
 
     override def register(
-        p: SomeProject, ps: PropertyStore, unused: Null
+        p:      SomeProject,
+        ps:     PropertyStore,
+        unused: Null
     ): ConfiguredNativeMethodsCallGraphAnalysis = {
         val analysis = new ConfiguredNativeMethodsCallGraphAnalysis(p)
         // register the analysis for initial values for callers (i.e. methods becoming reachable)

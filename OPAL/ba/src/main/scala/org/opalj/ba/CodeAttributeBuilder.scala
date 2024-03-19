@@ -40,14 +40,14 @@ import org.opalj.collection.mutable.Locals
  * @author Michael Eichberg
  */
 class CodeAttributeBuilder[T] private[ba] (
-        private[ba] val instructions:                   Array[Instruction],
-        private[ba] val hasControlTransferInstructions: Boolean,
-        private[ba] val pcMapping:                      PCMapping, // the PCMapping must not be complete w.r.t. the set of original PCs
-        private[ba] val annotations:                    Map[br.PC, T],
-        private[ba] var maxStack:                       Option[Int],
-        private[ba] var maxLocals:                      Option[Int],
-        private[ba] var exceptionHandlers:              br.ExceptionHandlers,
-        private[ba] var attributes:                     br.Attributes
+    private[ba] val instructions:                   Array[Instruction],
+    private[ba] val hasControlTransferInstructions: Boolean,
+    private[ba] val pcMapping:                      PCMapping, // the PCMapping must not be complete w.r.t. the set of original PCs
+    private[ba] val annotations:                    Map[br.PC, T],
+    private[ba] var maxStack:                       Option[Int],
+    private[ba] var maxLocals:                      Option[Int],
+    private[ba] var exceptionHandlers:              br.ExceptionHandlers,
+    private[ba] var attributes:                     br.Attributes
 ) extends br.CodeAttributeBuilder[(Map[br.PC, T], List[String])] {
 
     def copy(attributes: br.Attributes = this.attributes): CodeAttributeBuilder[T] = {
@@ -116,12 +116,14 @@ class CodeAttributeBuilder[T] private[ba] (
         classFileVersion: UShortPair,
         method:           Method
     )(
-        implicit
-        classHierarchy: ClassHierarchy = br.ClassHierarchy.PreInitializedClassHierarchy
+        implicit classHierarchy: ClassHierarchy = br.ClassHierarchy.PreInitializedClassHierarchy
     ): (br.Code, (Map[br.PC, T], List[String])) = {
         this(
-            classFileVersion, method.classFile.thisType,
-            method.accessFlags, method.name, method.descriptor
+            classFileVersion,
+            method.classFile.thisType,
+            method.accessFlags,
+            method.name,
+            method.descriptor
         )
     }
 
@@ -147,8 +149,7 @@ class CodeAttributeBuilder[T] private[ba] (
         name:               String,
         descriptor:         br.MethodDescriptor
     )(
-        implicit
-        classHierarchy: ClassHierarchy
+        implicit classHierarchy: ClassHierarchy
     ): (br.Code, (Map[br.PC, T], List[String])) = {
 
         import org.opalj.ba.CodeAttributeBuilder.warnMessage
@@ -193,7 +194,8 @@ class CodeAttributeBuilder[T] private[ba] (
         // We need to compute the stack map table if we don't have one already!
         if (classFileVersion.major >= bi.Java6MajorVersion &&
             attributes.forall(a => a.kindId != StackMapTable.KindId) &&
-            (hasControlTransferInstructions || exceptionHandlers.nonEmpty)) {
+            (hasControlTransferInstructions || exceptionHandlers.nonEmpty)
+        ) {
             // Let's create fake code and method objects to make it possible
             // to use the AI framework for computing the stack map table...
             val cf = ClassFile(
@@ -239,8 +241,7 @@ object CodeAttributeBuilder {
     def computeStackMapTable(
         m: Method
     )(
-        implicit
-        classHierarchy: ClassHierarchy
+        implicit classHierarchy: ClassHierarchy
     ): StackMapTable = {
         type VerificationTypeInfos = ArraySeq[VerificationTypeInfo]
 
@@ -299,15 +300,9 @@ object CodeAttributeBuilder {
                 val locals = r.localsArray(pc)
                 if (locals == null) {
                     // let's produce a "good" error message...
-                    val instructions =
-                        c.instructions.
-                            zipWithIndex.
-                            filter(_._1 != null).
-                            map(e => s"${e._2}: ${e._1}")
+                    val instructions = c.instructions.zipWithIndex.filter(_._1 != null).map(e => s"${e._2}: ${e._1}")
                     val instructionsAsString = instructions.mkString("\n\t\t", "\n\t\t", "\n")
-                    val body =
-                        s"; pc $pc is dead; unable to compute stack map table:" +
-                            instructionsAsString
+                    val body = s"; pc $pc is dead; unable to compute stack map table:" + instructionsAsString
                     val evaluationDetails = r.evaluatedPCs.mkString("evaluated: ", ", ", body)
                     val ehs = c.exceptionHandlers.mkString("Exception Handlers:\n", "\n", "\nt")
                     val message = m.toJava(evaluationDetails + ehs)
@@ -361,21 +356,23 @@ object CodeAttributeBuilder {
                         SameLocals1StackItemFrameExtended(offsetDelta, verificationTypeInfoStack(0))
                 }
             } else if (emptyStack && localsDiffCount < 0 && localsDiffCount >= -3 && (
-                // all "still" existing locals are equal...
-                verificationTypeInfoLocals.iterator
-                .zipWithIndex
-                .forall { case (vtil, index) => vtil == lastVerificationTypeInfoLocals(index) }
-            )) {
+                           // all "still" existing locals are equal...
+                           verificationTypeInfoLocals.iterator
+                               .zipWithIndex
+                               .forall { case (vtil, index) => vtil == lastVerificationTypeInfoLocals(index) }
+                       )
+            ) {
                 // ---- CHOP FRAME ...
                 //
                 val offsetDelta = pc - lastPC - 1
                 fs(frameIndex) = ChopFrame(251 + localsDiffCount, offsetDelta)
             } else if (emptyStack && localsDiffCount > 0 && localsDiffCount <= 3 && (
-                // all previously existing locals are equal...
-                lastVerificationTypeInfoLocals.iterator
-                .zipWithIndex
-                .forall { case (vtil, index) => vtil == verificationTypeInfoLocals(index) }
-            )) {
+                           // all previously existing locals are equal...
+                           lastVerificationTypeInfoLocals.iterator
+                               .zipWithIndex
+                               .forall { case (vtil, index) => vtil == verificationTypeInfoLocals(index) }
+                       )
+            ) {
                 // ---- APPEND FRAME ...
                 //
                 val offsetDelta = pc - lastPC - 1

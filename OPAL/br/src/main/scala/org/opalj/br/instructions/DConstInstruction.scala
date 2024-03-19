@@ -8,9 +8,10 @@ package instructions
  */
 trait DConstInstruction extends LoadConstantInstruction[Double] with ImplicitValue {
 
-    final override def computationalType = ComputationalTypeDouble
+    override final def computationalType = ComputationalTypeDouble
 
 }
+
 object DConstInstruction {
 
     def unapply(instr: DConstInstruction): Option[Double] = Some(instr.value)

@@ -19,7 +19,7 @@ import org.opalj.fpcf.PropertyStore
 
 sealed trait MethodFieldAccessInformationPropertyMetaInformation[S <: MethodFieldAccessInformation[S]]
     extends PropertyMetaInformation {
-    final override type Self = S;
+    override final type Self = S;
 
     /**
      * Creates a property key to be associated with every field access property of the respective type. The fallback is
@@ -126,7 +126,9 @@ sealed trait MethodFieldAccessInformation[S <: MethodFieldAccessInformation[S]] 
     }
 
     def indirectAccessReceiver(
-        accessContext: Context, pc: PC, field: DeclaredField
+        accessContext: Context,
+        pc:            PC,
+        field:         DeclaredField
     ): AccessReceiver = {
         _indirectAccessedReceiversByField(accessContext.id)(pc)(field.id)
     }
@@ -156,7 +158,8 @@ sealed trait MethodFieldAccessInformation[S <: MethodFieldAccessInformation[S]] 
 
     def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
         if (numDirectAccessesInAllAccessSites > other.numDirectAccessesInAllAccessSites ||
-            numIndirectAccessesInAllAccessSites > other.numIndirectAccessesInAllAccessSites) {
+            numIndirectAccessesInAllAccessSites > other.numIndirectAccessesInAllAccessSites
+        ) {
             throw new IllegalArgumentException(s"$e: illegal refinement of $other to $this")
         }
     }
@@ -203,11 +206,11 @@ sealed trait MethodFieldAccessInformation[S <: MethodFieldAccessInformation[S]] 
 }
 
 case class MethodFieldReadAccessInformation(
-        protected val _incompleteAccessSites:            IntMap[PCs],
-        protected val _directAccessedFields:             IntMap[IntMap[IntList]],
-        protected val _directAccessedReceiversByField:   IntMap[IntMap[IntMap[AccessReceiver]]],
-        protected val _indirectAccessedFields:           IntMap[IntMap[IntList]],
-        protected val _indirectAccessedReceiversByField: IntMap[IntMap[IntMap[AccessReceiver]]]
+    protected val _incompleteAccessSites:            IntMap[PCs],
+    protected val _directAccessedFields:             IntMap[IntMap[IntList]],
+    protected val _directAccessedReceiversByField:   IntMap[IntMap[IntMap[AccessReceiver]]],
+    protected val _indirectAccessedFields:           IntMap[IntMap[IntList]],
+    protected val _indirectAccessedReceiversByField: IntMap[IntMap[IntMap[AccessReceiver]]]
 ) extends MethodFieldAccessInformation[MethodFieldReadAccessInformation]
     with MethodFieldAccessInformationPropertyMetaInformation[MethodFieldReadAccessInformation] {
 
@@ -232,26 +235,30 @@ case class MethodFieldReadAccessInformation(
             _incompleteAccessSites.updateWith(cId, incompleteAccessSites, (o, n) => o ++ n),
             integrateAccessedFieldsForContext(_directAccessedFields, accessContext.id, directAccessedFields),
             integrateAccessInformationForContext(
-                _directAccessedReceiversByField, cId, directAccessReceivers,
+                _directAccessedReceiversByField,
+                cId,
+                directAccessReceivers,
                 () => new UnknownError("Incompatible receivers for direct call")
             ),
             integrateAccessedFieldsForContext(_indirectAccessedFields, accessContext.id, indirectAccessedFields),
             integrateAccessInformationForContext(
-                _indirectAccessedReceiversByField, cId, indirectAccessReceivers,
+                _indirectAccessedReceiversByField,
+                cId,
+                indirectAccessReceivers,
                 () => new UnknownError("Incompatible receivers for indirect call")
-            ),
+            )
         )
     }
 }
 
 case class MethodFieldWriteAccessInformation(
-        protected val _incompleteAccessSites:             IntMap[PCs],
-        protected val _directAccessedFields:              IntMap[IntMap[IntList]],
-        protected val _directAccessedReceiversByField:    IntMap[IntMap[IntMap[AccessReceiver]]],
-        protected val _directAccessedParametersByField:   IntMap[IntMap[IntMap[AccessParameter]]],
-        protected val _indirectAccessedFields:            IntMap[IntMap[IntList]],
-        protected val _indirectAccessedReceiversByField:  IntMap[IntMap[IntMap[AccessReceiver]]],
-        protected val _indirectAccessedParametersByField: IntMap[IntMap[IntMap[AccessParameter]]]
+    protected val _incompleteAccessSites:             IntMap[PCs],
+    protected val _directAccessedFields:              IntMap[IntMap[IntList]],
+    protected val _directAccessedReceiversByField:    IntMap[IntMap[IntMap[AccessReceiver]]],
+    protected val _directAccessedParametersByField:   IntMap[IntMap[IntMap[AccessParameter]]],
+    protected val _indirectAccessedFields:            IntMap[IntMap[IntList]],
+    protected val _indirectAccessedReceiversByField:  IntMap[IntMap[IntMap[AccessReceiver]]],
+    protected val _indirectAccessedParametersByField: IntMap[IntMap[IntMap[AccessParameter]]]
 ) extends MethodFieldAccessInformation[MethodFieldWriteAccessInformation]
     with MethodFieldAccessInformationPropertyMetaInformation[MethodFieldWriteAccessInformation] {
 
@@ -274,22 +281,30 @@ case class MethodFieldWriteAccessInformation(
             _incompleteAccessSites.updateWith(cId, incompleteAccessSites, (o, n) => o ++ n),
             integrateAccessedFieldsForContext(_directAccessedFields, accessContext.id, directAccessedFields),
             integrateAccessInformationForContext(
-                _directAccessedReceiversByField, cId, directAccessReceivers,
+                _directAccessedReceiversByField,
+                cId,
+                directAccessReceivers,
                 () => new UnknownError("Incompatible receivers for direct call")
             ),
             integrateAccessInformationForContext(
-                _indirectAccessedParametersByField, cId, directAccessParameters,
+                _indirectAccessedParametersByField,
+                cId,
+                directAccessParameters,
                 () => new UnknownError("Incompatible parameters for direct call")
             ),
             integrateAccessedFieldsForContext(_indirectAccessedFields, accessContext.id, indirectAccessedFields),
             integrateAccessInformationForContext(
-                _indirectAccessedReceiversByField, cId, indirectAccessReceivers,
+                _indirectAccessedReceiversByField,
+                cId,
+                indirectAccessReceivers,
                 () => new UnknownError("Incompatible receivers for indirect call")
             ),
             integrateAccessInformationForContext(
-                _indirectAccessedParametersByField, cId, indirectAccessParameters,
+                _indirectAccessedParametersByField,
+                cId,
+                indirectAccessParameters,
                 () => new UnknownError("Incompatible parameters for indirect call")
-            ),
+            )
         )
     }
 }
@@ -314,6 +329,7 @@ object NoMethodFieldReadAccessInformation
         IntMap.empty,
         IntMap.empty
     )
+
 object NoMethodFieldWriteAccessInformation
     extends MethodFieldWriteAccessInformation(
         IntMap.empty,

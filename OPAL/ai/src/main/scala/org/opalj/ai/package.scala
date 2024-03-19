@@ -64,8 +64,10 @@ package object ai {
      */
     type SomeAI[D <: Domain] = AI[_ >: D]
 
-    type PrimitiveValuesFactory = IntegerValuesFactory with LongValuesFactory with FloatValuesFactory with DoubleValuesFactory
-    type ValuesFactory = PrimitiveValuesFactory with ReferenceValuesFactory with ExceptionsFactory with TypedValuesFactory
+    type PrimitiveValuesFactory =
+        IntegerValuesFactory with LongValuesFactory with FloatValuesFactory with DoubleValuesFactory
+    type ValuesFactory =
+        PrimitiveValuesFactory with ReferenceValuesFactory with ExceptionsFactory with TypedValuesFactory
     type TargetDomain = ValuesDomain with ValuesFactory
 
     final type PCs = org.opalj.br.PCs
@@ -189,6 +191,23 @@ package object ai {
     assert(SUBROUTINE_RETURN_ADDRESS_LOCAL_VARIABLE <= SpecialValuesOriginOffset)
     assert(SUBROUTINE_RETURN_TO_TARGET <= SpecialValuesOriginOffset)
     assert(SUBROUTINE <= SpecialValuesOriginOffset)
+
+    /**
+     * Identifies the ''upper bound for those origin values that encode origin
+     * information about formal parameters''. That is, respective values
+     * identify formal parameters of a method including the `this` parameter (in first position).
+     */
+    final val FormalParametersOriginOffset /*: ValueOrigin*/ = -1
+
+    /**
+     * Returns `true` if the value with the given origin was (implicitly) created
+     * by the JVM while declaring a formal parameter.
+     *
+     * @see [[ImmediateVMExceptionsOriginOffset]] for further information.
+     */
+    final def isFormalParameter(origin: ValueOrigin): Boolean = {
+        FormalParametersOriginOffset >= origin && origin > ImmediateVMExceptionsOriginOffset
+    }
 
     /**
      * Identifies the ''upper bound for those origin values that encode origin
@@ -606,9 +625,10 @@ package object ai {
     def collectPCWithOperands[B](
         domain: ValuesDomain
     )(
-        code: Code, operandsArray: domain.OperandsArray
+        code:          Code,
+        operandsArray: domain.OperandsArray
     )(
-        f: PartialFunction[(Int /*PC*/ , Instruction, domain.Operands), B] // IMPROVE Use specialized data-structure to avoid (un)boxing
+        f: PartialFunction[(Int /*PC*/, Instruction, domain.Operands), B] // IMPROVE Use specialized data-structure to avoid (un)boxing
     ): Seq[B] = {
         val instructions = code.instructions
         val max_pc = instructions.length
@@ -632,9 +652,10 @@ package object ai {
     def foreachPCWithOperands[U](
         domain: ValuesDomain
     )(
-        code: Code, operandsArray: domain.OperandsArray
+        code:          Code,
+        operandsArray: domain.OperandsArray
     )(
-        f: (Int /*PC*/ , Instruction, domain.Operands) => U
+        f: (Int /*PC*/, Instruction, domain.Operands) => U
     ): Unit = {
         val instructions = code.instructions
         val max_pc = instructions.size

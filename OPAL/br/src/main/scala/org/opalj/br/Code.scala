@@ -48,11 +48,11 @@ import org.opalj.util.AnyToAnyThis
  * @author Michael Eichberg
  */
 final class Code private (
-        val maxStack:          Int,
-        val maxLocals:         Int,
-        val instructions:      Array[Instruction],
-        val exceptionHandlers: ExceptionHandlers,
-        val attributes:        Attributes
+    val maxStack:          Int,
+    val maxLocals:         Int,
+    val instructions:      Array[Instruction],
+    val exceptionHandlers: ExceptionHandlers,
+    val attributes:        Attributes
 ) extends Attribute
     with CommonAttributes
     with InstructionsContainer
@@ -87,20 +87,21 @@ final class Code private (
         }
 
         if (!(
-            this.instructions.length == other.instructions.length && {
-                var areEqual = true
-                val max = instructions.length
-                var i = 0
-                while (i < max && areEqual) {
-                    val thisI = this.instructions(i)
-                    val otherI = other.instructions(i)
-                    areEqual = (thisI == null && otherI == null) ||
-                        (thisI != null && otherI != null && thisI.similar(otherI))
-                    i += 1
+                this.instructions.length == other.instructions.length && {
+                    var areEqual = true
+                    val max = instructions.length
+                    var i = 0
+                    while (i < max && areEqual) {
+                        val thisI = this.instructions(i)
+                        val otherI = other.instructions(i)
+                        areEqual = (thisI == null && otherI == null) ||
+                            (thisI != null && otherI != null && thisI.similar(otherI))
+                        i += 1
+                    }
+                    areEqual
                 }
-                areEqual
-            }
-        )) {
+            )
+        ) {
             return false;
         }
 
@@ -197,13 +198,13 @@ final class Code private (
                     val instruction = instructions(pc)
 
                     (instruction.opcode: @switch) match {
-                        case ATHROW.opcode                                    =>
+                        case ATHROW.opcode =>
                         /* Nothing do to; will be handled when we deal with exceptions. */
 
                         case /* xReturn: */ 176 | 175 | 174 | 172 | 173 | 177 =>
                         /* Nothing to do; there are no successor! */
 
-                        case RET.opcode                                       =>
+                        case RET.opcode =>
                         /*Nothing to do; handled by JSR*/
                         case JSR.opcode | JSR_W.opcode =>
                             val UnconditionalBranchInstruction(branchoffset) = instruction
@@ -258,7 +259,7 @@ final class Code private (
 
             remainingExceptionHandlers = remainingExceptionHandlers filter { eh =>
                 subroutineIds(eh.handlerPC) == -1 && // we did not already analyze the handler
-                    !belongsToCurrentSubroutine(eh.startPC, eh.endPC, eh.handlerPC)
+                !belongsToCurrentSubroutine(eh.startPC, eh.endPC, eh.handlerPC)
             }
         }
 
@@ -284,8 +285,7 @@ final class Code private (
      * all exception handlers with a fitting type may be reached on multiple paths.
      */
     def cfJoins(
-        implicit
-        classHierarchy: ClassHierarchy = PreInitializedClassHierarchy
+        implicit classHierarchy: ClassHierarchy = PreInitializedClassHierarchy
     ): IntTrieSet = {
         /* OLD - DOESN'T USE THE CLASS HIERARCHY!
         val instructions = this.instructions
@@ -350,7 +350,7 @@ final class Code private (
             pc = nextPC
         }
         cfJoins
-        */
+         */
         val instructions = this.instructions
         val instructionsLength = instructions.length
 
@@ -372,7 +372,8 @@ final class Code private (
             }
 
             (instruction.opcode: @switch) match {
-                case RET.opcode => // potential path joins are determined when we process JSRs
+                case RET.opcode =>
+                // potential path joins are determined when we process JSRs
 
                 case JSR.opcode | JSR_W.opcode =>
                     val UnconditionalBranchInstruction(branchoffset) = instruction
@@ -576,9 +577,8 @@ final class Code private (
      *         the set of all potential targets.
      */
     def cfPCs(
-        implicit
-        classHierarchy: ClassHierarchy = PreInitializedClassHierarchy
-    ): (PCs /*cfJoins*/ , PCs /*forks*/ , IntMap[PCs] /*forkTargetPCs*/ ) = {
+        implicit classHierarchy: ClassHierarchy = PreInitializedClassHierarchy
+    ): (PCs /*cfJoins*/, PCs /*forks*/, IntMap[PCs] /*forkTargetPCs*/ ) = {
         val instructions = this.instructions
         val instructionsLength = instructions.length
 
@@ -764,8 +764,7 @@ final class Code private (
         pc:        Int,
         exception: ObjectType
     )(
-        implicit
-        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
+        implicit classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
     ): List[ExceptionHandler] = {
         import classHierarchy.isASubtypeOf
 
@@ -780,22 +779,27 @@ final class Code private (
                     val isSubtype = isASubtypeOf(exception, catchType)
                     if (isSubtype.isYes) {
                         ehs += eh
-                        /* we found a definitiv matching handler*/ false
+                        /* we found a definitiv matching handler*/
+                        false
                     } else if (isSubtype.isUnknown) {
                         if (!handledExceptions.contains(catchType)) {
                             handledExceptions += catchType
                             ehs += eh
                         }
-                        /* we may have a better fit */ true
+                        /* we may have a better fit */
+                        true
                     } else {
-                        /* the exception type is not relevant*/ true
+                        /* the exception type is not relevant*/
+                        true
                     }
                 } else {
                     ehs += eh
-                    /* we are done; we found a finally handler... */ false
+                    /* we are done; we found a finally handler... */
+                    false
                 }
             } else {
-                /* the handler is not relevant */ true
+                /* the handler is not relevant */
+                true
             }
         }
         ehs.result()
@@ -946,11 +950,11 @@ final class Code private (
             case Some(lvt) =>
                 lvt.collect {
                     case lv @ LocalVariable(
-                        startPC,
-                        length,
-                        _ /*name*/ ,
-                        _ /*fieldType*/ ,
-                        index
+                            startPC,
+                            length,
+                            _ /*name*/,
+                            _ /*fieldType*/,
+                            index
                         ) if startPC <= pc && startPC + length > pc =>
                         (index, lv)
                 }.toMap
@@ -1046,7 +1050,7 @@ final class Code private (
      */
     @inline def isModifiedByWide(pc: Int): Boolean = pc > 0 && instructions(pc - 1) == WIDE
 
-    def foldLeft[T <: Any](start: T)(f: (T, Int /*PC*/ , Instruction) => T): T = {
+    def foldLeft[T <: Any](start: T)(f: (T, Int /*PC*/, Instruction) => T): T = {
         val max_pc = instructions.length
         var pc = 0
         var vs = start
@@ -1296,7 +1300,7 @@ final class Code private (
      *                        passed to `f`.
      */
     def matchTriple(
-        matchMaxTriples: Int                                                = Int.MaxValue,
+        matchMaxTriples: Int = Int.MaxValue,
         f:               (Instruction, Instruction, Instruction) => Boolean
     ): List[Int /*PC*/ ] = {
         val max_pc = instructions.length
@@ -1658,8 +1662,8 @@ object Code {
         maxStack:          Int,
         maxLocals:         Int,
         instructions:      Array[Instruction],
-        exceptionHandlers: ExceptionHandlers  = NoExceptionHandlers,
-        attributes:        Attributes         = NoAttributes
+        exceptionHandlers: ExceptionHandlers = NoExceptionHandlers,
+        attributes:        Attributes        = NoAttributes
     ): Code = {
 
         var localVariableTablesCount = 0
@@ -1734,7 +1738,8 @@ object Code {
                 if (i.writesLocal) {
                     var lastRegisterIndex = i.indexOfWrittenLocal
                     if (i.isStoreLocalVariableInstruction &&
-                        i.asStoreLocalVariableInstruction.computationalType.operandSize == 2) {
+                        i.asStoreLocalVariableInstruction.computationalType.operandSize == 2
+                    ) {
                         // i.e., not IINC...
                         lastRegisterIndex += 1
                     }
@@ -1765,8 +1770,8 @@ object Code {
 
     def computeCFG(
         instructions:      Array[Instruction],
-        exceptionHandlers: ExceptionHandlers  = NoExceptionHandlers,
-        classHierarchy:    ClassHierarchy     = ClassHierarchy.PreInitializedClassHierarchy
+        exceptionHandlers: ExceptionHandlers = NoExceptionHandlers,
+        classHierarchy:    ClassHierarchy    = ClassHierarchy.PreInitializedClassHierarchy
     ): CFG[Instruction, Code] = {
         CFGFactory(
             Code(Int.MaxValue, Int.MaxValue, instructions, exceptionHandlers),
@@ -1784,8 +1789,8 @@ object Code {
     @throws[ClassFormatError]("if it is impossible to compute the maximum height of the stack")
     def computeMaxStack(
         instructions:      Array[Instruction],
-        classHierarchy:    ClassHierarchy     = ClassHierarchy.PreInitializedClassHierarchy,
-        exceptionHandlers: ExceptionHandlers  = NoExceptionHandlers
+        classHierarchy:    ClassHierarchy    = ClassHierarchy.PreInitializedClassHierarchy,
+        exceptionHandlers: ExceptionHandlers = NoExceptionHandlers
     ): Int = {
         computeMaxStack(
             instructions,
@@ -1848,24 +1853,27 @@ object Code {
     def invalidBytecode(
         descriptor:       MethodDescriptor,
         isInstanceMethod: Boolean,
-        message:          Option[String]   = None
+        message:          Option[String] = None
     ): Code = {
         new Code(
-            maxStack = 3 /* 3 for the message! */ ,
+            maxStack = 3 /* 3 for the message! */,
             maxLocals = descriptor.requiredRegisters + (if (isInstanceMethod) 1 else 0),
             instructions =
                 Array(
-                    NEW(ObjectType.Error), null, null,
+                    NEW(ObjectType.Error),
+                    null,
+                    null,
                     DUP,
-                    message.
-                        map(LoadString.apply).
-                        getOrElse(LoadString("OPAL: the underlying bytecode is invalid")), null,
+                    message.map(LoadString.apply).getOrElse(LoadString("OPAL: the underlying bytecode is invalid")),
+                    null,
                     INVOKESPECIAL(
                         ObjectType.Error,
                         isInterface = false,
                         "<init>",
                         MethodDescriptor.JustTakes(ObjectType.String)
-                    ), null, null,
+                    ),
+                    null,
+                    null,
                     ATHROW
                 ),
             exceptionHandlers = NoExceptionHandlers,

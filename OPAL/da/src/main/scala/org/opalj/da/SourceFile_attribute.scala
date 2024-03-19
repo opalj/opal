@@ -12,11 +12,11 @@ import scala.xml.Node
  * @author Andre Pacak
  */
 case class SourceFile_attribute(
-        attribute_name_index: Constant_Pool_Index,
-        sourceFile_index:     Constant_Pool_Index
+    attribute_name_index: Constant_Pool_Index,
+    sourceFile_index:     Constant_Pool_Index
 ) extends Attribute {
 
-    final override def attribute_length = 2
+    override final def attribute_length = 2
 
     def sourceFile(implicit cp: Constant_Pool): String = cp(sourceFile_index).asString
 
@@ -24,7 +24,7 @@ case class SourceFile_attribute(
         <div class="simple_attribute">
             <span class="attribute_name">SourceFile</span>
             -
-            { sourceFile }
+            {sourceFile}
         </div>
     }
 

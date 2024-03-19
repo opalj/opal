@@ -50,7 +50,7 @@ import org.opalj.fpcf.UBPS
  * @author Andreas Bauer
  */
 class LibraryInstantiatedTypesBasedEntryPointsAnalysis private[analyses] (
-        final val project: SomeProject
+    final val project: SomeProject
 ) extends FPCFAnalysis {
 
     val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
@@ -109,9 +109,8 @@ class LibraryInstantiatedTypesBasedEntryPointsAnalysis private[analyses] (
         types.flatMap {
             case ot: ObjectType if !globallySeenTypes.containsKey(ot) =>
                 globallySeenTypes.put(ot, true)
-                project.classFile(ot).map { cf =>
-                    cf.methodsWithBody.filter(m => !m.isStatic && m.isPublic)
-                }.getOrElse(Iterator.empty)
+                project.classFile(ot).map { cf => cf.methodsWithBody.filter(m => !m.isStatic && m.isPublic) }
+                    .getOrElse(Iterator.empty)
             case _ => Iterator.empty
         }.map(declaredMethods(_))
     }
@@ -120,18 +119,22 @@ class LibraryInstantiatedTypesBasedEntryPointsAnalysis private[analyses] (
         reachableMethods: Iterator[DeclaredMethod]
     ): Iterator[ProperPropertyComputationResult] = {
         reachableMethods.map { method =>
-            PartialResult[DeclaredMethod, Callers](method, Callers.key, {
-                case InterimUBP(ub) if !ub.hasCallersWithUnknownContext =>
-                    Some(InterimEUBP(method, ub.updatedWithUnknownContext()))
+            PartialResult[DeclaredMethod, Callers](
+                method,
+                Callers.key,
+                {
+                    case InterimUBP(ub) if !ub.hasCallersWithUnknownContext =>
+                        Some(InterimEUBP(method, ub.updatedWithUnknownContext()))
 
-                case _: InterimEP[_, _] => None
+                    case _: InterimEP[_, _] => None
 
-                case _: EPK[_, _] =>
-                    Some(InterimEUBP(method, OnlyCallersWithUnknownContext))
+                    case _: EPK[_, _] =>
+                        Some(InterimEUBP(method, OnlyCallersWithUnknownContext))
 
-                case r =>
-                    throw new IllegalStateException(s"unexpected previous result $r")
-            })
+                    case r =>
+                        throw new IllegalStateException(s"unexpected previous result $r")
+                }
+            )
         }
     }
 }

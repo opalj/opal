@@ -5,16 +5,16 @@ package instructions
 
 import scala.collection.immutable.ArraySeq
 
+import org.junit.runner.RunWith
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
+
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.reader.Java8Framework
 import org.opalj.br.reader.Java8LibraryFramework
-
-import org.junit.runner.RunWith
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.matchers.should.Matchers
-import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests that calls to inherited methods on lambda instances go to Object.
@@ -102,9 +102,7 @@ class ObjectMethodsOnFunctionalInterfacesTest extends AnyFunSpec with Matchers {
     }
 
     private def getReturnType(pairs: ElementValuePairs): Type = {
-        pairs.find(_.name == "returnType").map { p =>
-            p.value.asInstanceOf[ClassValue].value
-        }.getOrElse(VoidType)
+        pairs.find(_.name == "returnType").map { p => p.value.asInstanceOf[ClassValue].value }.getOrElse(VoidType)
     }
 
     describe("invocations of inherited methods on instances of functional interfaces") {

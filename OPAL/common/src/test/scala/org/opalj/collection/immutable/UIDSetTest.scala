@@ -5,9 +5,6 @@ package immutable
 
 import scala.language.implicitConversions
 
-import org.opalj.util.Nanoseconds
-import org.opalj.util.PerformanceEvaluation
-
 import org.junit.runner.RunWith
 import org.scalacheck.Arbitrary
 import org.scalacheck.Gen
@@ -17,6 +14,9 @@ import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
+
+import org.opalj.util.Nanoseconds
+import org.opalj.util.PerformanceEvaluation
 
 /**
  * Tests `UIDSets` by creating standard Sets and comparing
@@ -62,8 +62,8 @@ class UIDSetTest extends AnyFunSpec with Matchers with ScalaCheckDrivenPropertyC
             forAll { (i: Int, j: Int) =>
                 i != j ==> {
                     UIDSet[SUID](i, j).tail.isSingletonSet :| "tail" &&
-                        (UIDSet[SUID](i) + j).filter(_ == SUID(i)).isSingletonSet :| "filter first value" &&
-                        (UIDSet[SUID](i) + j).filter(_ == SUID(j)).isSingletonSet :| "filter second value"
+                    (UIDSet[SUID](i) + j).filter(_ == SUID(i)).isSingletonSet :| "filter first value" &&
+                    (UIDSet[SUID](i) + j).filter(_ == SUID(j)).isSingletonSet :| "filter second value"
                 }
             }
         }
@@ -145,7 +145,7 @@ class UIDSetTest extends AnyFunSpec with Matchers with ScalaCheckDrivenPropertyC
                 val us2 = UIDSet.empty[SUID] ++ s2.map(SUID(_))
                 classify(s1 == s2, "both sets are equal") {
                     (s1 == s2) == (us1 == us2) &&
-                        (us1 != us2 || us1.hashCode() == us2.hashCode())
+                    (us1 != us2 || us1.hashCode() == us2.hashCode())
                 }
             }
         }
@@ -305,9 +305,7 @@ class UIDSetTest extends AnyFunSpec with Matchers with ScalaCheckDrivenPropertyC
         }
 
         it("foldLeft") {
-            forAll { (s: Set[Int], i: Int) =>
-                toSUIDSet(s).foldLeft(0)(_ + _.id * 2) == s.foldLeft(0)(_ + _.id * 2)
-            }
+            forAll { (s: Set[Int], i: Int) => toSUIDSet(s).foldLeft(0)(_ + _.id * 2) == s.foldLeft(0)(_ + _.id * 2) }
         }
 
         it("map (check that the same type of collection is created)") {
@@ -335,22 +333,22 @@ class UIDSetTest extends AnyFunSpec with Matchers with ScalaCheckDrivenPropertyC
                 val (orig: Set[Int], i) = v
                 val us = toSUIDSet(orig)
                 val usTransformed: UIDSet[SUID] =
-                    (us.
-                        mapUIDSet[SUID] { e => SUID(e.id % i) }.
-                        filter(_.id < i / 2).
-                        +(SUID(i)) + SUID(-i) + SUID(i + 100))
+                    (us
+                        .mapUIDSet[SUID] { e => SUID(e.id % i) }
+                        .filter(_.id < i / 2)
+                        .+(SUID(i)) + SUID(-i) + SUID(i + 100))
 
                 val s = (Set.empty[SUID] ++ orig.map(SUID(_)))
                 val sTransformed: Set[SUID] =
-                    (s.
-                        map[SUID] { e => SUID(e.id % i) }.
-                        filter(_.id < i / 2).
-                        +(SUID(i)) + SUID(-i) + SUID(i + 100))
+                    (s
+                        .map[SUID] { e => SUID(e.id % i) }
+                        .filter(_.id < i / 2)
+                        .+(SUID(i)) + SUID(-i) + SUID(i + 100))
 
                 classify(orig.size > 20, "original set is large") {
                     classify(sTransformed.size > 20, "transformed set is large") {
                         usTransformed.forall(sTransformed.contains) :| "us <= s" &&
-                            sTransformed.forall(usTransformed.contains) :| "s <= us"
+                        sTransformed.forall(usTransformed.contains) :| "s <= us"
                     }
                 }
             }
@@ -381,24 +379,24 @@ class UIDSetTest extends AnyFunSpec with Matchers with ScalaCheckDrivenPropertyC
                 val base = orig.map(SUID.apply)
                 val usTransformed = {
                     val us = UIDSet.empty[SUID] ++ base
-                    (us.
-                        map[SUID] { e => SUID(e.id % i) }.
-                        filter(_.id < i / 2).
-                        +(SUID(i)) + SUID(-i) + SUID(i + 100)) - SUID(1002)
+                    (us
+                        .map[SUID] { e => SUID(e.id % i) }
+                        .filter(_.id < i / 2)
+                        .+(SUID(i)) + SUID(-i) + SUID(i + 100)) - SUID(1002)
                 }
 
                 val sTransformed = {
                     val s = Set.empty[SUID] ++ base
-                    (s.
-                        map[SUID] { e => SUID(e.id % i) }.
-                        filter(_.id < i / 2).
-                        +(SUID(i)) + SUID(-i) + SUID(i + 100)) - SUID(1002)
+                    (s
+                        .map[SUID] { e => SUID(e.id % i) }
+                        .filter(_.id < i / 2)
+                        .+(SUID(i)) + SUID(-i) + SUID(i + 100)) - SUID(1002)
                 }
 
                 classify(base.size > 25000, s"original set is very large (>25000)") {
                     classify(sTransformed.size > 25000, "transformed set is still very large (>25000)") {
                         usTransformed.forall(sTransformed.contains) :| "us <= s" &&
-                            sTransformed.forall(usTransformed.contains) :| "s <= us"
+                        sTransformed.forall(usTransformed.contains) :| "s <= us"
                     }
                 }
             }
@@ -418,12 +416,13 @@ class UIDSetTest extends AnyFunSpec with Matchers with ScalaCheckDrivenPropertyC
             forAll { (a: Set[Int], b: Set[Int]) =>
                 val aus = UIDSet.empty[SUID] ++ a.map(SUID.apply)
                 val toBeRemoved = b.size / 2
-                val newAUS = ((aus ++ b.map(SUID.apply)) -- b.slice(0, toBeRemoved).map(SUID.apply)).filter(i => b.contains(i.id))
+                val newAUS =
+                    ((aus ++ b.map(SUID.apply)) -- b.slice(0, toBeRemoved).map(SUID.apply)).filter(i => b.contains(i.id))
                 val newA = (a ++ b -- b.slice(0, toBeRemoved)).filter(b.contains)
                 classify(newA.size == 0, "new A is now empty") {
                     classify(newA.size < a.size, "new A is smaller than a") {
                         newAUS.size == newA.size &&
-                            newAUS.iterator.map[Int](_.id).toSet == newA
+                        newAUS.iterator.map[Int](_.id).toSet == newA
                     }
                 }
             }

@@ -9,6 +9,6 @@ package domain
  * @author Michael Eichberg
  */
 case class ImpossibleRefinement(
-        value:          AnyRef,
-        refinementGoal: String
+    value:          AnyRef,
+    refinementGoal: String
 ) extends AIException(s"refining $value failed: $refinementGoal" /*,null, true, false*/ )

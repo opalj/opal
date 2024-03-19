@@ -71,7 +71,10 @@ object ReachableMethodDescription {
  * contains the set of computed target methods (`targets`).
  */
 case class CallSiteDescription(
-        declaredTarget: MethodDesc, line: Int, pc: Option[Int], targets: List[MethodDesc]
+    declaredTarget: MethodDesc,
+    line:           Int,
+    pc:             Option[Int],
+    targets:        List[MethodDesc]
 )
 
 object CallSiteDescription {
@@ -116,8 +119,8 @@ object MethodDesc {
  * @author Florian Kuebler
  */
 private class CallGraphDeserializer private[analyses] (
-        final val serializedCG: File,
-        final val project:      SomeProject
+    final val serializedCG: File,
+    final val project:      SomeProject
 ) extends FPCFAnalysis {
     private implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
     private val simpleContexts: SimpleContexts = project.get(SimpleContextsKey)
@@ -128,15 +131,15 @@ private class CallGraphDeserializer private[analyses] (
 
     def analyze(p: SomeProject): PropertyComputationResult = {
         val results = ArrayBuffer.empty[ProperPropertyComputationResult]
-        for (
+        for {
             (methodDesc, callSites) <- data
-        ) {
+        } {
             val calls = new DirectCalls()
             val method = methodDesc.toDeclaredMethod
-            for (
+            for {
                 x <- callSites.groupBy(cs => (cs.declaredTarget, cs.line)).values;
                 (CallSiteDescription(declaredTgtDesc, line, pcOpt, tgts), index) <- x.zipWithIndex
-            ) {
+            } {
 
                 val pc = if (pcOpt.isDefined)
                     pcOpt.get
@@ -156,7 +159,10 @@ private class CallGraphDeserializer private[analyses] (
     }
 
     private[this] def getPCFromLineNumber(
-        dm: DeclaredMethod, lineNumber: Int, declaredTgt: DeclaredMethod, index: Int
+        dm:          DeclaredMethod,
+        lineNumber:  Int,
+        declaredTgt: DeclaredMethod,
+        index:       Int
     ): Int = {
         if (!dm.hasSingleDefinedMethod)
             return 0;

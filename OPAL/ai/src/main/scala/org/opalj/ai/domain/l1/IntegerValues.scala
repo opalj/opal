@@ -38,7 +38,7 @@ trait IntegerValues extends IntegerValuesDomain with ConcreteIntegerValues {
         with IsIntegerValue {
         this: DomainTypedValue[CTIntType] =>
 
-        final override def leastUpperType: Option[CTIntType] = Some(CTIntType)
+        override final def leastUpperType: Option[CTIntType] = Some(CTIntType)
 
     }
 
@@ -48,9 +48,9 @@ trait IntegerValues extends IntegerValuesDomain with ConcreteIntegerValues {
      * Models the top value of this domain's lattice.
      */
     trait AnIntegerValue extends IntegerLikeValue { this: DomainTypedValue[CTIntType] =>
-        final override def lowerBound: Int = Int.MinValue
-        final override def upperBound: Int = Int.MaxValue
-        final override def constantValue: Option[Int] = None
+        override final def lowerBound: Int = Int.MinValue
+        override final def upperBound: Int = Int.MaxValue
+        override final def constantValue: Option[Int] = None
     }
 
     /**
@@ -59,8 +59,8 @@ trait IntegerValues extends IntegerValuesDomain with ConcreteIntegerValues {
     abstract class TheIntegerValue extends IntegerLikeValue { this: DomainTypedValue[CTIntType] =>
         val value: Int
 
-        final override def lowerBound: Int = value
-        final override def upperBound: Int = value
+        override final def lowerBound: Int = value
+        override final def upperBound: Int = value
     }
 
     object TheIntegerValue { def unapply(v: TheIntegerValue): Some[Int] = Some(v.value) }
@@ -75,7 +75,7 @@ trait IntegerValues extends IntegerValuesDomain with ConcreteIntegerValues {
     // QUESTIONS ABOUT VALUES
     //
 
-    @inline final override def intValue[T](
+    @inline override final def intValue[T](
         value: DomainValue
     )(
         f: Int => T
@@ -85,14 +85,15 @@ trait IntegerValues extends IntegerValuesDomain with ConcreteIntegerValues {
             case _                  => orElse
         }
 
-    @inline final override def intValueOption(value: DomainValue): Option[Int] =
+    @inline override final def intValueOption(value: DomainValue): Option[Int] =
         value match {
             case v: TheIntegerValue => Some(v.value)
             case _                  => None
         }
 
     @inline protected final def intValues[T](
-        value1: DomainValue, value2: DomainValue
+        value1: DomainValue,
+        value2: DomainValue
     )(
         f: (Int, Int) => T
     )(
@@ -171,31 +172,27 @@ trait IntegerValues extends IntegerValuesDomain with ConcreteIntegerValues {
     }
 
     override def iadd(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = {
-        intValues(value1, value2) { (v1, v2) =>
-            IntegerValue(pc, v1 + v2)
-        } {
+        intValues(value1, value2) { (v1, v2) => IntegerValue(pc, v1 + v2) } {
             IntegerValue(origin = pc)
         }
     }
 
     override def isub(pc: Int, left: DomainValue, right: DomainValue): DomainValue = {
-        intValues(left, right) { (l, r) =>
-            IntegerValue(pc, l - r)
-        } {
+        intValues(left, right) { (l, r) => IntegerValue(pc, l - r) } {
             IntegerValue(origin = pc)
         }
     }
 
     override def imul(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = {
         (value1, value2) match {
-            case (_, TheIntegerValue(0))                  => value2
-            case (_, TheIntegerValue(1))                  => value1
-            case (TheIntegerValue(0), _)                  => value1
-            case (TheIntegerValue(1), _)                  => value2
+            case (_, TheIntegerValue(0)) => value2
+            case (_, TheIntegerValue(1)) => value1
+            case (TheIntegerValue(0), _) => value1
+            case (TheIntegerValue(1), _) => value2
 
             case (TheIntegerValue(l), TheIntegerValue(r)) => IntegerValue(pc, l * r)
 
-            case _                                        => IntegerValue(origin = pc)
+            case _ => IntegerValue(origin = pc)
         }
     }
 
@@ -237,56 +234,48 @@ trait IntegerValues extends IntegerValuesDomain with ConcreteIntegerValues {
 
     override def iand(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
         (value1, value2) match {
-            case (_, TheIntegerValue(-1))                 => value1
-            case (_, TheIntegerValue(0))                  => value2
-            case (TheIntegerValue(-1), _)                 => value2
-            case (TheIntegerValue(0), _)                  => value1
+            case (_, TheIntegerValue(-1)) => value1
+            case (_, TheIntegerValue(0))  => value2
+            case (TheIntegerValue(-1), _) => value2
+            case (TheIntegerValue(0), _)  => value1
 
             case (TheIntegerValue(l), TheIntegerValue(r)) => IntegerValue(pc, l & r)
 
-            case _                                        => IntegerValue(origin = pc)
+            case _ => IntegerValue(origin = pc)
         }
 
     override def ior(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
         (value1, value2) match {
-            case (_, TheIntegerValue(-1))                 => value2
-            case (_, TheIntegerValue(0))                  => value1
-            case (TheIntegerValue(-1), _)                 => value1
-            case (TheIntegerValue(0), _)                  => value2
+            case (_, TheIntegerValue(-1)) => value2
+            case (_, TheIntegerValue(0))  => value1
+            case (TheIntegerValue(-1), _) => value1
+            case (TheIntegerValue(0), _)  => value2
 
             case (TheIntegerValue(l), TheIntegerValue(r)) => IntegerValue(pc, l | r)
 
-            case _                                        => IntegerValue(origin = pc)
+            case _ => IntegerValue(origin = pc)
         }
 
     override def ishl(pc: Int, value: DomainValue, shift: DomainValue): DomainValue = {
-        intValues(value, shift) { (v1, v2) =>
-            IntegerValue(pc, v1 << v2)
-        } {
+        intValues(value, shift) { (v1, v2) => IntegerValue(pc, v1 << v2) } {
             IntegerValue(origin = pc)
         }
     }
 
     override def ishr(pc: Int, value: DomainValue, shift: DomainValue): DomainValue = {
-        intValues(value, shift) { (v1, v2) =>
-            IntegerValue(pc, v1 >> v2)
-        } {
+        intValues(value, shift) { (v1, v2) => IntegerValue(pc, v1 >> v2) } {
             IntegerValue(origin = pc)
         }
     }
 
     override def iushr(pc: Int, value: DomainValue, shift: DomainValue): DomainValue = {
-        intValues(value, shift) { (v1, v2) =>
-            IntegerValue(pc, v1 >>> v2)
-        } {
+        intValues(value, shift) { (v1, v2) => IntegerValue(pc, v1 >>> v2) } {
             IntegerValue(origin = pc)
         }
     }
 
     override def ixor(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = {
-        intValues(value1, value2) { (v1, v2) =>
-            IntegerValue(pc, v1 ^ v2)
-        } {
+        intValues(value1, value2) { (v1, v2) => IntegerValue(pc, v1 ^ v2) } {
             IntegerValue(origin = pc)
         }
     }

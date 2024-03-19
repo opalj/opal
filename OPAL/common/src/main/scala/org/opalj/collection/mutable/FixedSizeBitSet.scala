@@ -35,9 +35,11 @@ sealed abstract class FixedSizeBitSet extends BitSet with Serializable {
 
 private[mutable] object ZeroLengthBitSet extends FixedSizeBitSet {
     override def isEmpty: Boolean = true
-    override def +=(i: Int): this.type = throw new UnsupportedOperationException("fixed size is 0")
+
+    override def +=(i:  Int): this.type = throw new UnsupportedOperationException("fixed size is 0")
     override def add(i: Int): Boolean = throw new UnsupportedOperationException("fixed size is 0")
-    override def -=(i: Int): this.type = this
+    override def -=(i:  Int): this.type = this
+
     override def contains(i: Int): Boolean = false
     override def iterator: IntIterator = IntIterator.empty
     override def equals(other: Any): Boolean = {
@@ -58,9 +60,11 @@ private[mutable] final class FixedSizeBitSet64 extends FixedSizeBitSet { thisSet
     override def add(i: Int): Boolean = {
         val oldSet = set
         val newSet = oldSet | 1L << i
-        if (newSet != oldSet) { set = newSet; true } else false
+        if (newSet != oldSet) { set = newSet; true }
+        else false
     }
     override def -=(i: Int): this.type = { set &= (-1L & ~(1L << i)); this }
+
     override def contains(i: Int): Boolean = (set & (1L << i)) != 0L
 
     override def iterator: IntIterator = new IntIterator {
@@ -111,11 +115,13 @@ private[mutable] final class FixedSizeBitSet128 extends FixedSizeBitSet { thisSe
         if (i <= 63) {
             val oldSet1 = set1
             val newSet1 = oldSet1 | 1L << i
-            if (oldSet1 != newSet1) { set1 = newSet1; true } else false
+            if (oldSet1 != newSet1) { set1 = newSet1; true }
+            else false
         } else {
             val oldSet2 = set2
             val newSet2 = oldSet2 | 1L << (i - 64)
-            if (oldSet2 != newSet2) { set2 = newSet2; true } else false
+            if (oldSet2 != newSet2) { set2 = newSet2; true }
+            else false
         }
     }
     override def -=(i: Int): this.type = {
@@ -163,7 +169,7 @@ private[mutable] final class FixedSizeBitSet128 extends FixedSizeBitSet { thisSe
 }
 
 private[mutable] final class FixedSizeBitSetN private[mutable] (
-        private val set: Array[Long]
+    private val set: Array[Long]
 ) extends FixedSizeBitSet { thisSet =>
 
     assert(set.length > 2)
@@ -185,7 +191,8 @@ private[mutable] final class FixedSizeBitSetN private[mutable] (
         val bucket = i / 64
         val oldSet = set(bucket)
         val newSet = oldSet | (1L << (i - 64 * bucket))
-        if (newSet != oldSet) { set(bucket) = newSet; true } else false
+        if (newSet != oldSet) { set(bucket) = newSet; true }
+        else false
     }
     override def -=(i: Int): this.type = {
         val bucket = i / 64

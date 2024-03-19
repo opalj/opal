@@ -39,7 +39,8 @@ import org.opalj.value.ValueInformation
  */
 sealed trait CalleesAndCallers {
     final def partialResults(
-        callerContext: Context, enforceCalleesResult: Boolean = false
+        callerContext:        Context,
+        enforceCalleesResult: Boolean = false
     ): IterableOnce[PartialResult[_, _ >: Null <: Property]] =
         if (directCallees.isEmpty && indirectCallees.isEmpty && incompleteCallSites.isEmpty) {
             if (enforceCalleesResult)
@@ -62,40 +63,46 @@ sealed trait CalleesAndCallers {
     private[this] def partialResultForCallees(
         callerContext: Context
     ): PartialResult[DeclaredMethod, Callees] = {
-        PartialResult[DeclaredMethod, Callees](callerContext.method, Callees.key, {
-            case InterimUBP(_) if directCallees.isEmpty && indirectCallees.isEmpty && incompleteCallSites.isEmpty =>
-                None
+        PartialResult[DeclaredMethod, Callees](
+            callerContext.method,
+            Callees.key,
+            {
+                case InterimUBP(_) if directCallees.isEmpty && indirectCallees.isEmpty && incompleteCallSites.isEmpty =>
+                    None
 
-            case InterimUBP(ub: Callees) =>
-                Some(InterimEUBP(
-                    callerContext.method,
-                    ub.updateWithCallees(
-                        callerContext,
-                        directCallees, indirectCallees,
-                        incompleteCallSites,
-                        receivers, parameters
-                    )
-                ))
+                case InterimUBP(ub: Callees) =>
+                    Some(InterimEUBP(
+                        callerContext.method,
+                        ub.updateWithCallees(
+                            callerContext,
+                            directCallees,
+                            indirectCallees,
+                            incompleteCallSites,
+                            receivers,
+                            parameters
+                        )
+                    ))
 
-            case _: EPK[_, _] if directCallees.isEmpty && indirectCallees.isEmpty && incompleteCallSites.isEmpty =>
-                Some(InterimEUBP(
-                    callerContext.method, NoCallees
-                ))
+                case _: EPK[_, _] if directCallees.isEmpty && indirectCallees.isEmpty && incompleteCallSites.isEmpty =>
+                    Some(InterimEUBP(callerContext.method, NoCallees))
 
-            case _: EPK[_, _] =>
-                Some(InterimEUBP(
-                    callerContext.method,
-                    org.opalj.br.fpcf.properties.cg.ConcreteCallees(
-                        callerContext,
-                        directCallees, indirectCallees,
-                        incompleteCallSites,
-                        receivers, parameters
-                    )
-                ))
+                case _: EPK[_, _] =>
+                    Some(InterimEUBP(
+                        callerContext.method,
+                        org.opalj.br.fpcf.properties.cg.ConcreteCallees(
+                            callerContext,
+                            directCallees,
+                            indirectCallees,
+                            incompleteCallSites,
+                            receivers,
+                            parameters
+                        )
+                    ))
 
-            case r =>
-                throw new IllegalStateException(s"unexpected previous result $r")
-        })
+                case r =>
+                    throw new IllegalStateException(s"unexpected previous result $r")
+            }
+        )
     }
 
     protected def partialResultsForCallers: IterableOnce[PartialResult[DeclaredMethod, Callers]] = Iterator.empty
@@ -117,25 +124,29 @@ trait Calls extends CalleesAndCallers {
         calleeContext: Context,
         pc:            Int
     ): PartialResult[DeclaredMethod, Callers] = {
-        PartialResult[DeclaredMethod, Callers](calleeContext.method, Callers.key, {
-            case InterimUBP(ub: Callers) =>
-                val newCallers = ub.updated(calleeContext, callerContext, pc, isDirect)
-                // here we assert that update returns the identity if there is no change
-                if (ub ne newCallers)
-                    Some(InterimEUBP(calleeContext.method, newCallers))
-                else
-                    None
+        PartialResult[DeclaredMethod, Callers](
+            calleeContext.method,
+            Callers.key,
+            {
+                case InterimUBP(ub: Callers) =>
+                    val newCallers = ub.updated(calleeContext, callerContext, pc, isDirect)
+                    // here we assert that update returns the identity if there is no change
+                    if (ub ne newCallers)
+                        Some(InterimEUBP(calleeContext.method, newCallers))
+                    else
+                        None
 
-            case _: EPK[_, _] =>
-                val set = LongLinkedTrieSet(Callers.toLong(callerContext.id, pc, isDirect))
-                Some(InterimEUBP(
-                    calleeContext.method,
-                    new CallersOnlyWithConcreteCallers(IntMap(calleeContext.id -> set), 1)
-                ))
+                case _: EPK[_, _] =>
+                    val set = LongLinkedTrieSet(Callers.toLong(callerContext.id, pc, isDirect))
+                    Some(InterimEUBP(
+                        calleeContext.method,
+                        new CallersOnlyWithConcreteCallers(IntMap(calleeContext.id -> set), 1)
+                    ))
 
-            case r =>
-                throw new IllegalStateException(s"unexpected previous result $r")
-        })
+                case r =>
+                    throw new IllegalStateException(s"unexpected previous result $r")
+            }
+        )
     }
 
     protected var _callees: IntMap[IntTrieSet] = IntMap.empty
@@ -144,7 +155,9 @@ trait Calls extends CalleesAndCallers {
         List.empty
 
     def addCall(
-        callerContext: Context, pc: Int, calleeContext: Context
+        callerContext: Context,
+        pc:            Int,
+        calleeContext: Context
     ): Unit = {
         val calleeId = calleeContext.id
         val oldCalleesAtPCOpt = _callees.get(pc)
@@ -202,8 +215,9 @@ trait IndirectCallsBase extends Calls {
         if (callee.descriptor.parameterTypes.size == params.size) {
             if (receiver.isEmpty || isTypeCompatible(callee.declaringClassType, receiver.get._1, true)) {
                 if (params.zip(callee.descriptor.parameterTypes).forall { p =>
-                    p._1.isEmpty || isTypeCompatible(p._2, p._1.get._1)
-                }) {
+                        p._1.isEmpty || isTypeCompatible(p._2, p._1.get._1)
+                    }
+                ) {
                     val calleeContext = contextProvider.expandContext(callerContext, callee, pc)
                     addCall(callerContext, pc, calleeContext)
                     _parameters = _parameters.updated(
@@ -259,20 +273,24 @@ trait VMReachableMethodsBase extends CalleesAndCallers {
 
     override protected def partialResultsForCallers: IterableOnce[PartialResult[DeclaredMethod, Callers]] = {
         vmReachableMethods.iterator.map { m =>
-            PartialResult[DeclaredMethod, Callers](m, Callers.key, {
-                case _: EPK[_, _] =>
-                    Some(InterimEUBP(m, OnlyVMLevelCallers))
+            PartialResult[DeclaredMethod, Callers](
+                m,
+                Callers.key,
+                {
+                    case _: EPK[_, _] =>
+                        Some(InterimEUBP(m, OnlyVMLevelCallers))
 
-                case InterimUBP(ub: Callers) =>
-                    if (ub.hasVMLevelCallers)
-                        None
-                    else
-                        Some(InterimEUBP(m, ub.updatedWithVMLevelCall()))
+                    case InterimUBP(ub: Callers) =>
+                        if (ub.hasVMLevelCallers)
+                            None
+                        else
+                            Some(InterimEUBP(m, ub.updatedWithVMLevelCall()))
 
-                case r =>
-                    throw new IllegalStateException(s"unexpected previous result $r")
+                    case r =>
+                        throw new IllegalStateException(s"unexpected previous result $r")
 
-            })
+                }
+            )
         } ++ super.partialResultsForCallers
     }
 }

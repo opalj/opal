@@ -5,6 +5,9 @@ package br
 import java.io.File
 import java.net.URL
 
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigValueFactory
+
 import org.opalj.bi.TestResources.allBITestJARs
 import org.opalj.bi.TestResources.allBITestProjectFolders
 import org.opalj.bi.TestResources.allManagedBITestJARs
@@ -22,9 +25,6 @@ import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.bytecode.RTJar
 import org.opalj.log.GlobalLogContext
 import org.opalj.util.gc
-
-import com.typesafe.config.Config
-import com.typesafe.config.ConfigValueFactory
 
 /**
  * Common helper and factory methods required by tests.
@@ -92,12 +92,14 @@ object TestSupport {
             if (config ne BaseConfig) config
             else if (project.getParentFile.getName == "classfiles") BaseConfig
             else BaseConfig.withValue(
-                InitialEntryPointsKey.ConfigKey, ConfigValueFactory.fromAnyRef(
+                InitialEntryPointsKey.ConfigKey,
+                ConfigValueFactory.fromAnyRef(
                     "org.opalj.br.analyses.cg.AllEntryPointsFinder"
                 )
             ).withValue(
-                    AllEntryPointsFinder.ConfigKey, ConfigValueFactory.fromAnyRef(true)
-                )
+                AllEntryPointsFinder.ConfigKey,
+                ConfigValueFactory.fromAnyRef(true)
+            )
         }
 
         jreReader match {

@@ -46,7 +46,7 @@ trait AITracer {
         alreadyEvaluatedPCs:              IntArrayStack,
         operandsArray:                    domain.OperandsArray,
         localsArray:                      domain.LocalsArray,
-        memoryLayoutBeforeSubroutineCall: List[(Int /*PC*/ , domain.OperandsArray, domain.LocalsArray)]
+        memoryLayoutBeforeSubroutineCall: List[(Int /*PC*/, domain.OperandsArray, domain.LocalsArray)]
     ): Unit
 
     /**
@@ -200,8 +200,9 @@ trait AITracer {
     def abruptSubroutineTermination(
         domain: Domain
     )(
-        details:  String,
-        sourcePC: Int, targetPC: Int,
+        details:                    String,
+        sourcePC:                   Int,
+        targetPC:                   Int,
         jumpToSubroutineId:         Int,
         terminatedSubroutinesCount: Int,
         forceScheduling:            Boolean,
@@ -255,9 +256,11 @@ trait AITracer {
      * @param  message The message; a non-null `String` that is formatted for the console.
      */
     def domainMessage(
-        domain: Domain,
-        source: Class[_], typeID: String,
-        pc: Option[Int /*PC*/ ], message: => String // IMPROVE Use IntOption
+        domain:  Domain,
+        source:  Class[_],
+        typeID:  String,
+        pc:      Option[Int /*PC*/ ],
+        message: => String // IMPROVE Use IntOption
     ): Unit
 
 }

@@ -8,7 +8,7 @@ package br
  * @author Michael Eichberg
  */
 case class RuntimeVisibleParameterAnnotationTable(
-        parameterAnnotations: ParameterAnnotations
+    parameterAnnotations: ParameterAnnotations
 ) extends ParameterAnnotationTable {
 
     final def isRuntimeVisible: Boolean = true
@@ -16,6 +16,7 @@ case class RuntimeVisibleParameterAnnotationTable(
     override def kindId: Int = RuntimeVisibleParameterAnnotationTable.KindId
 
 }
+
 object RuntimeVisibleParameterAnnotationTable {
 
     final val KindId = 25

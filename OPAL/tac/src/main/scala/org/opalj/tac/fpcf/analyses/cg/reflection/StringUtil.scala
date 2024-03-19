@@ -55,7 +55,12 @@ object StringUtil {
         var strings = Set.empty[String]
 
         AllocationsUtil.handleAllocations(
-            value, context, depender, stmts, _ eq ObjectType.String, failure
+            value,
+            context,
+            depender,
+            stmts,
+            _ eq ObjectType.String,
+            failure
         ) { (_, defSite, _stmts) =>
             getString(defSite, _stmts) match {
                 case Some(v) =>

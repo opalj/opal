@@ -16,9 +16,9 @@ import java.io.IOException
  * @author Michael Eichberg
  */
 class FailAfterByteArrayOutputStream(
-        failAfter: Int
+    failAfter: Int
 )(
-        initialSize: Int = Math.min(32, failAfter)
+    initialSize: Int = Math.min(32, failAfter)
 ) extends ByteArrayOutputStream(initialSize) {
 
     /**

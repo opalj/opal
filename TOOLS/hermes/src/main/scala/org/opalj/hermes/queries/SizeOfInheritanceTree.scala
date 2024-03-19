@@ -67,7 +67,7 @@ class SizeOfInheritanceTree(implicit hermes: HermesConfig) extends FeatureQuery 
             if (classCount != 0) {
                 sumOfSizeOfInheritanceTrees.toDouble / classCount.toDouble
             } else {
-                0D
+                0d
             }
         )
 

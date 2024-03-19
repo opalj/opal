@@ -37,9 +37,9 @@ trait TypeAnnotationTable extends CodeAttribute {
 
     def similar(other: TypeAnnotationTable): Boolean = {
         this.isRuntimeVisible == other.isRuntimeVisible &&
-            // the order of two annotation tables does not need to be identical
-            this.typeAnnotations.size == other.typeAnnotations.size &&
-            this.typeAnnotations.forall(other.typeAnnotations.contains)
+        // the order of two annotation tables does not need to be identical
+        this.typeAnnotations.size == other.typeAnnotations.size &&
+        this.typeAnnotations.forall(other.typeAnnotations.contains)
     }
 }
 

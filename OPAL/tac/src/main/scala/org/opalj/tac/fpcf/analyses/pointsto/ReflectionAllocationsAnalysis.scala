@@ -33,7 +33,7 @@ import org.opalj.fpcf.Results
  * @author Dominik Helm
  */
 class ReflectionAllocationsAnalysis private[analyses] (
-        final val project: SomeProject
+    final val project: SomeProject
 ) extends FPCFAnalysis {
 
     val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
@@ -79,7 +79,9 @@ class ReflectionAllocationsAnalysis private[analyses] (
             new ReflectionMethodAllocationsAnalysis(
                 project,
                 declaredMethods(
-                    ObjectType.Class, "", ObjectType.Class,
+                    ObjectType.Class,
+                    "",
+                    ObjectType.Class,
                     "getConstructor",
                     MethodDescriptor(ArrayType(ObjectType.Class), ObjectType.Constructor)
                 )
@@ -87,7 +89,9 @@ class ReflectionAllocationsAnalysis private[analyses] (
             new ReflectionMethodAllocationsAnalysis(
                 project,
                 declaredMethods(
-                    ObjectType.Class, "", ObjectType.Class,
+                    ObjectType.Class,
+                    "",
+                    ObjectType.Class,
                     "getDeclaredConstructor",
                     MethodDescriptor(ArrayType(ObjectType.Class), ObjectType.Constructor)
                 )
@@ -95,7 +99,9 @@ class ReflectionAllocationsAnalysis private[analyses] (
             new ReflectionMethodAllocationsAnalysis(
                 project,
                 declaredMethods(
-                    ObjectType.Class, "", ObjectType.Class,
+                    ObjectType.Class,
+                    "",
+                    ObjectType.Class,
                     "getMethod",
                     MethodDescriptor(ArraySeq(ObjectType.String, ArrayType(ObjectType.Class)), ObjectType.Method)
                 )
@@ -103,7 +109,9 @@ class ReflectionAllocationsAnalysis private[analyses] (
             new ReflectionMethodAllocationsAnalysis(
                 project,
                 declaredMethods(
-                    ObjectType.Class, "", ObjectType.Class,
+                    ObjectType.Class,
+                    "",
+                    ObjectType.Class,
                     "getDeclaredMethod",
                     MethodDescriptor(ArraySeq(ObjectType.String, ArrayType(ObjectType.Class)), ObjectType.Method)
                 )
@@ -111,7 +119,9 @@ class ReflectionAllocationsAnalysis private[analyses] (
             new ReflectionMethodAllocationsAnalysis(
                 project,
                 declaredMethods(
-                    ObjectType.Class, "", ObjectType.Class,
+                    ObjectType.Class,
+                    "",
+                    ObjectType.Class,
                     "getField",
                     MethodDescriptor(ArraySeq(ObjectType.String), ObjectType.Field)
                 )
@@ -119,7 +129,9 @@ class ReflectionAllocationsAnalysis private[analyses] (
             new ReflectionMethodAllocationsAnalysis(
                 project,
                 declaredMethods(
-                    ObjectType.Class, "", ObjectType.Class,
+                    ObjectType.Class,
+                    "",
+                    ObjectType.Class,
                     "getDeclaredField",
                     MethodDescriptor(ArraySeq(ObjectType.String), ObjectType.Field)
                 )
@@ -127,7 +139,9 @@ class ReflectionAllocationsAnalysis private[analyses] (
             new ReflectionMethodAllocationsAnalysis(
                 project,
                 declaredMethods(
-                    ObjectType.MethodHandles, "", ObjectType.MethodHandles,
+                    ObjectType.MethodHandles,
+                    "",
+                    ObjectType.MethodHandles,
                     "lookup",
                     MethodDescriptor.withNoArgs(ObjectType.MethodHandles$Lookup)
                 )
@@ -135,23 +149,35 @@ class ReflectionAllocationsAnalysis private[analyses] (
             new ReflectionMethodAllocationsAnalysis(
                 project,
                 declaredMethods(
-                    ObjectType.MethodHandles$Lookup, "", ObjectType.MethodHandles$Lookup,
+                    ObjectType.MethodHandles$Lookup,
+                    "",
+                    ObjectType.MethodHandles$Lookup,
                     "findStatic",
-                    MethodDescriptor(ArraySeq(ObjectType.Class, ObjectType.String, ObjectType.MethodType), ObjectType.MethodHandle)
+                    MethodDescriptor(
+                        ArraySeq(ObjectType.Class, ObjectType.String, ObjectType.MethodType),
+                        ObjectType.MethodHandle
+                    )
                 )
             ),
             new ReflectionMethodAllocationsAnalysis(
                 project,
                 declaredMethods(
-                    ObjectType.MethodHandles$Lookup, "", ObjectType.MethodHandles$Lookup,
+                    ObjectType.MethodHandles$Lookup,
+                    "",
+                    ObjectType.MethodHandles$Lookup,
                     "findVirtual",
-                    MethodDescriptor(ArraySeq(ObjectType.Class, ObjectType.String, ObjectType.MethodType), ObjectType.MethodHandle)
+                    MethodDescriptor(
+                        ArraySeq(ObjectType.Class, ObjectType.String, ObjectType.MethodType),
+                        ObjectType.MethodHandle
+                    )
                 )
             ),
             new ReflectionMethodAllocationsAnalysis(
                 project,
                 declaredMethods(
-                    ObjectType.MethodHandles$Lookup, "", ObjectType.MethodHandles$Lookup,
+                    ObjectType.MethodHandles$Lookup,
+                    "",
+                    ObjectType.MethodHandles$Lookup,
                     "findConstructor",
                     MethodDescriptor(ArraySeq(ObjectType.Class, ObjectType.MethodType), ObjectType.MethodHandle)
                 )
@@ -159,41 +185,66 @@ class ReflectionAllocationsAnalysis private[analyses] (
             new ReflectionMethodAllocationsAnalysis(
                 project,
                 declaredMethods(
-                    ObjectType.MethodHandles$Lookup, "", ObjectType.MethodHandles$Lookup,
+                    ObjectType.MethodHandles$Lookup,
+                    "",
+                    ObjectType.MethodHandles$Lookup,
                     "findSpecial",
-                    MethodDescriptor(ArraySeq(ObjectType.Class, ObjectType.String, ObjectType.MethodType, ObjectType.Class), ObjectType.MethodHandle)
+                    MethodDescriptor(
+                        ArraySeq(ObjectType.Class, ObjectType.String, ObjectType.MethodType, ObjectType.Class),
+                        ObjectType.MethodHandle
+                    )
                 )
             ),
             new ReflectionMethodAllocationsAnalysis(
                 project,
                 declaredMethods(
-                    ObjectType.MethodHandles$Lookup, "", ObjectType.MethodHandles$Lookup,
+                    ObjectType.MethodHandles$Lookup,
+                    "",
+                    ObjectType.MethodHandles$Lookup,
                     "findGetter",
-                    MethodDescriptor(ArraySeq(ObjectType.Class, ObjectType.String, ObjectType.Class), ObjectType.MethodHandle)
+                    MethodDescriptor(
+                        ArraySeq(ObjectType.Class, ObjectType.String, ObjectType.Class),
+                        ObjectType.MethodHandle
+                    )
                 )
             ),
             new ReflectionMethodAllocationsAnalysis(
                 project,
                 declaredMethods(
-                    ObjectType.MethodHandles$Lookup, "", ObjectType.MethodHandles$Lookup,
+                    ObjectType.MethodHandles$Lookup,
+                    "",
+                    ObjectType.MethodHandles$Lookup,
                     "findStaticGetter",
-                    MethodDescriptor(ArraySeq(ObjectType.Class, ObjectType.String, ObjectType.Class), ObjectType.MethodHandle)
+                    MethodDescriptor(
+                        ArraySeq(ObjectType.Class, ObjectType.String, ObjectType.Class),
+                        ObjectType.MethodHandle
+                    )
                 )
             ),
             new ReflectionMethodAllocationsAnalysis(
                 project,
                 declaredMethods(
-                    ObjectType.MethodHandles$Lookup, "", ObjectType.MethodHandles$Lookup,
+                    ObjectType.MethodHandles$Lookup,
+                    "",
+                    ObjectType.MethodHandles$Lookup,
                     "findSetter",
-                    MethodDescriptor(ArraySeq(ObjectType.Class, ObjectType.String, ObjectType.Class), ObjectType.MethodHandle)
+                    MethodDescriptor(
+                        ArraySeq(ObjectType.Class, ObjectType.String, ObjectType.Class),
+                        ObjectType.MethodHandle
+                    )
                 )
             ),
             new ReflectionMethodAllocationsAnalysis(
                 project,
                 declaredMethods(
-                    ObjectType.MethodHandles$Lookup, "", ObjectType.MethodHandles$Lookup,
+                    ObjectType.MethodHandles$Lookup,
+                    "",
+                    ObjectType.MethodHandles$Lookup,
                     "findStaticSetter",
-                    MethodDescriptor(ArraySeq(ObjectType.Class, ObjectType.String, ObjectType.Class), ObjectType.MethodHandle)
+                    MethodDescriptor(
+                        ArraySeq(ObjectType.Class, ObjectType.String, ObjectType.Class),
+                        ObjectType.MethodHandle
+                    )
                 )
             )
         )
@@ -203,8 +254,8 @@ class ReflectionAllocationsAnalysis private[analyses] (
 }
 
 class ReflectionMethodAllocationsAnalysis(
-        final val project:            SomeProject,
-        final override val apiMethod: DeclaredMethod
+    final val project:            SomeProject,
+    override final val apiMethod: DeclaredMethod
 ) extends PointsToAnalysisBase with AllocationSiteBasedAnalysis with APIBasedAnalysis {
 
     override def handleNewCaller(

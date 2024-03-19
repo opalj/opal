@@ -40,25 +40,39 @@ trait Constant_PoolReader extends Constant_PoolAbstractions {
     //
 
     protected def CONSTANT_Class_info(i: Int): CONSTANT_Class_info
-    protected def CONSTANT_Fieldref_info(class_index: Int, name_and_type_index: Int): CONSTANT_Fieldref_info
+
+    protected def CONSTANT_Fieldref_info(class_index:  Int, name_and_type_index: Int): CONSTANT_Fieldref_info
     protected def CONSTANT_Methodref_info(class_index: Int, name_and_type_index: Int): CONSTANT_Methodref_info
-    protected def CONSTANT_InterfaceMethodref_info(class_index: Int, name_and_type_index: Int): CONSTANT_InterfaceMethodref_info
-    protected def CONSTANT_String_info(i: Int): CONSTANT_String_info
+    protected def CONSTANT_InterfaceMethodref_info(
+        class_index:         Int,
+        name_and_type_index: Int
+    ): CONSTANT_InterfaceMethodref_info
+
+    protected def CONSTANT_String_info(i:  Int): CONSTANT_String_info
     protected def CONSTANT_Integer_info(i: Int): CONSTANT_Integer_info
-    protected def CONSTANT_Float_info(f: Float): CONSTANT_Float_info
-    protected def CONSTANT_Long_info(l: Long): CONSTANT_Long_info
-    protected def CONSTANT_Double_info(d: Double): CONSTANT_Double_info
+    protected def CONSTANT_Float_info(f:   Float): CONSTANT_Float_info
+    protected def CONSTANT_Long_info(l:    Long): CONSTANT_Long_info
+    protected def CONSTANT_Double_info(d:  Double): CONSTANT_Double_info
+
     protected def CONSTANT_NameAndType_info(name_index: Int, descriptor_index: Int): CONSTANT_NameAndType_info
+
     protected def CONSTANT_Utf8_info(r: Array[Byte], s: String): CONSTANT_Utf8_info
+
     // JAVA 7 Constant Pool Entries
     protected def CONSTANT_MethodHandle_info(reference_kind: Int, reference_index: Int): CONSTANT_MethodHandle_info
     protected def CONSTANT_MethodType_info(descriptor_index: Int): CONSTANT_MethodType_info
-    protected def CONSTANT_InvokeDynamic_info(bootstrap_method_attr_index: Int, name_and_type_index: Int): CONSTANT_InvokeDynamic_info
+    protected def CONSTANT_InvokeDynamic_info(
+        bootstrap_method_attr_index: Int,
+        name_and_type_index:         Int
+    ): CONSTANT_InvokeDynamic_info
     // JAVA 9 Constant Pool Entries
-    protected def CONSTANT_Module_info(name_index: Int): CONSTANT_Module_info
+    protected def CONSTANT_Module_info(name_index:  Int): CONSTANT_Module_info
     protected def CONSTANT_Package_info(name_index: Int): CONSTANT_Package_info
     // JAVA 11 Constant Pool Entries
-    protected def CONSTANT_Dynamic_info(bootstrap_method_attr_index: Int, name_and_type_index: Int): CONSTANT_Dynamic_info
+    protected def CONSTANT_Dynamic_info(
+        bootstrap_method_attr_index: Int,
+        name_and_type_index:         Int
+    ): CONSTANT_Dynamic_info
 
     /**
      * Creates a storage area for functions that will be called after the class file was
@@ -163,8 +177,8 @@ trait Constant_PoolReader extends Constant_PoolAbstractions {
                         val raw = new Array[Byte](size)
                         in.readFully(raw)
                         val data = new Array[Byte](size + 2)
-                        data(0) = (0xff & (size >> 8)).toByte
-                        data(1) = (0xff & size).toByte
+                        data(0) = (0xFF & (size >> 8)).toByte
+                        data(1) = (0xFF & size).toByte
                         System.arraycopy(raw, 0, data, 2, size)
                         val tin = new DataInputStream(new ByteArrayInputStream(data))
                         CONSTANT_Utf8_info(raw, tin.readUTF)
@@ -193,9 +207,8 @@ trait Constant_PoolReader extends Constant_PoolAbstractions {
 
                 case _ =>
                     val header = s"wrong constant pool tag: $tag (entry: $i/$constant_pool_count); "
-                    val message =
-                        constant_pool_entries.iterator.zipWithIndex.slice(1, i).map(_.swap).
-                            mkString(header + "previous entries:\n\t", "\n\t", "\n")
+                    val message = constant_pool_entries.iterator.zipWithIndex.slice(1, i).map(_.swap)
+                        .mkString(header + "previous entries:\n\t", "\n\t", "\n")
                     throw new BytecodeProcessingFailedException(message)
             }
         }

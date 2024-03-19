@@ -42,11 +42,13 @@ object IdentifyResourcesAnalysis extends ProjectAnalysisApplication {
                 val pcs =
                     m.body.get.collectWithIndex {
                         case PCAndInstruction(
-                            pc,
-                            INVOKESPECIAL(
-                                ObjectType("java/io/File"), false /* = isInterface*/ ,
-                                "<init>",
-                                SingleArgumentMethodDescriptor((ObjectType.String, VoidType)))
+                                pc,
+                                INVOKESPECIAL(
+                                    ObjectType("java/io/File"),
+                                    false /* = isInterface*/,
+                                    "<init>",
+                                    SingleArgumentMethodDescriptor((ObjectType.String, VoidType))
+                                )
                             ) => pc
                     }
                 (m, pcs)
@@ -56,8 +58,8 @@ object IdentifyResourcesAnalysis extends ProjectAnalysisApplication {
         // Perform a simple abstract interpretation to check if there is some
         // method that passes a constant string to a method.
         class AnalysisDomain(
-                override val project: Project[URL],
-                val method:           Method
+            override val project: Project[URL],
+            val method:           Method
         ) extends CorrelationalDomain
             with domain.TheProject
             with domain.TheMethod

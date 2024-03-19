@@ -7,14 +7,14 @@ import java.net.URL
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.jdk.CollectionConverters._
 
+import com.typesafe.config.Config
+
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.instructions.INVOKEDYNAMIC
 import org.opalj.br.reader.InvokedynamicRewriting.{defaultConfig => invokedynamicRewritingConfig}
 import org.opalj.log.LogContext
-
-import com.typesafe.config.Config
 
 /**
  * Prints out the immediately available information about invokedynamic instructions.
@@ -32,8 +32,7 @@ object InvokedynamicPrinter extends ProjectAnalysisApplication {
         completelyLoadLibraries: Boolean,
         fallbackConfiguration:   Config
     )(
-        implicit
-        initialLogContext: LogContext
+        implicit initialLogContext: LogContext
     ): Project[URL] = {
         val baseConfig = invokedynamicRewritingConfig(rewrite = false, logRewrites = true)
         val config = baseConfig.withFallback(fallbackConfiguration)

@@ -45,14 +45,15 @@ trait NestHost_attributeReader extends AttributeReader {
      * </pre>
      */
     private[this] def parserFactory() = (
-        cp: Constant_Pool,
-        ap: AttributeParent,
-        ap_name_index: Constant_Pool_Index,
-        ap_descriptor_index: Constant_Pool_Index,
+        cp:                   Constant_Pool,
+        ap:                   AttributeParent,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
-        in: DataInputStream
+        in:                   DataInputStream
     ) => {
-        /*val attribute_length =*/ in.readInt
+        /*val attribute_length =*/
+        in.readInt
         NestHost_attribute(
             cp,
             ap_name_index,

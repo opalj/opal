@@ -71,7 +71,7 @@ private[immutable] case object LongTrieSet0 extends LongTrieSet {
 
     override def contains(value: Long): Boolean = false
 
-    override def forall(p: Long => Boolean): Boolean = true
+    override def forall(p:     Long => Boolean): Boolean = true
     override def foreach[U](f: Long => U): Unit = {}
     override def iterator: LongIterator = LongIterator.empty
     override def foldLeft[B](z: B)(op: (B, Long) => B): B = z
@@ -89,26 +89,26 @@ private[immutable] case object LongTrieSet0 extends LongTrieSet {
 }
 
 /** A node of the trie. */
-private[immutable] sealed trait LongTrieSetNode {
+sealed private[immutable] trait LongTrieSetNode {
 
-    def forall(p: Long => Boolean): Boolean
-    def foreach[U](f: Long => U): Unit
+    def forall(p:      Long => Boolean): Boolean
+    def foreach[U](f:  Long => U): Unit
     def foldLeft[B](z: B)(op: (B, Long) => B): B
 
     //
     // IMPLEMENTATION "INTERNAL" METHODS
     //
-    private[immutable] def add(i: Long, level: Int): LongTrieSetNode
-    private[immutable] def contains(value: Long, key: Long): Boolean
+    private[immutable] def add(i:           Long, level: Int): LongTrieSetNode
+    private[immutable] def contains(value:  Long, key:   Long): Boolean
     private[immutable] def toString(indent: Int): String
 
-    final private[immutable] def bitsToString(bits: Int): String = {
+    private[immutable] final def bitsToString(bits: Int): String = {
         bits.toBinaryString.reverse.padTo(3, '0').reverse
     }
 }
 
 /** The (potential) leaves of an IntTrie. */
-private[immutable] sealed abstract class LongTrieSetLeaf
+sealed abstract private[immutable] class LongTrieSetLeaf
     extends LongTrieSet
     with LongTrieSetNode {
 
@@ -118,11 +118,11 @@ private[immutable] sealed abstract class LongTrieSetLeaf
     /** The number of values stored by this leaf node. */
     def size: Int
 
-    final override private[immutable] def contains(value: Long, key: Long): Boolean = {
+    override private[immutable] final def contains(value: Long, key: Long): Boolean = {
         this.contains(value)
     }
 
-    final override private[immutable] def toString(indent: Int): String = {
+    override private[immutable] final def toString(indent: Int): String = {
         (" " * indent) + toString()
     }
 }
@@ -137,7 +137,7 @@ private[immutable] final class LongTrieSet1(val i1: Long) extends LongTrieSetLea
 
     override def apply(index: Int): Long = i1
 
-    override def forall(p: Long => Boolean): Boolean = p(i1)
+    override def forall(p:     Long => Boolean): Boolean = p(i1)
     override def foreach[U](f: Long => U): Unit = f(i1)
     override def iterator: LongIterator = LongIterator(i1)
     override def foldLeft[B](z: B)(op: (B, Long) => B): B = op(z, i1)
@@ -170,7 +170,8 @@ private[immutable] final class LongTrieSet1(val i1: Long) extends LongTrieSetLea
  * Represents an ordered set of two values where i1 has to be smaller than i2.
  */
 private[immutable] final class LongTrieSet2(
-        val i1: Long, val i2: Long
+    val i1: Long,
+    val i2: Long
 ) extends LongTrieSetLeaf {
 
     override def isEmpty: Boolean = false
@@ -181,7 +182,7 @@ private[immutable] final class LongTrieSet2(
 
     override def apply(index: Int): Long = if (index == 0) i1 else i2
 
-    override def forall(p: Long => Boolean): Boolean = { p(i1) && p(i2) }
+    override def forall(p:     Long => Boolean): Boolean = { p(i1) && p(i2) }
     override def foreach[U](f: Long => U): Unit = { f(i1); f(i2) }
     override def iterator: LongIterator = LongIterator(i1, i2)
     override def foldLeft[B](z: B)(op: (B, Long) => B): B = op(op(z, i1), i2)
@@ -222,7 +223,9 @@ private[immutable] final class LongTrieSet2(
  * Represents an ordered set of three int values: i1 < i2 < i3.
  */
 private[immutable] final class LongTrieSet3(
-        val i1: Long, val i2: Long, val i3: Long
+    val i1: Long,
+    val i2: Long,
+    val i3: Long
 ) extends LongTrieSetLeaf {
 
     override def size: Int = 3
@@ -241,7 +244,7 @@ private[immutable] final class LongTrieSet3(
 
     override def apply(index: Int): Long = if (index == 0) i1 else if (index == 1) i2 else i3
 
-    override def forall(p: Long => Boolean): Boolean = { p(i1) && p(i2) && p(i3) }
+    override def forall(p:     Long => Boolean): Boolean = { p(i1) && p(i2) && p(i3) }
     override def foreach[U](f: Long => U): Unit = { f(i1); f(i2); f(i3) }
     override def iterator: LongIterator = LongIterator(i1, i2, i3)
     override def foldLeft[B](z: B)(op: (B, Long) => B): B = op(op(op(z, i1), i2), i3)
@@ -289,7 +292,7 @@ private[immutable] final class LongTrieSet3(
                     new LongTrieSetNode1(i1_7L.toInt, grow(i, level + 3))
                 } else {
                     new LongTrieSetNode2(
-                        1 << (i_7L * 4) | 2 << (i1_7L * 4) /*lookuptable*/ ,
+                        1 << (i_7L * 4) | 2 << (i1_7L * 4) /*lookuptable*/,
                         new LongTrieSet1(i),
                         this
                     )
@@ -298,7 +301,7 @@ private[immutable] final class LongTrieSet3(
                 // i1_7L != i3_7L
                 if (i1_7L == i_7L) {
                     new LongTrieSetNode2(
-                        1 << (i3_7L * 4) | 2 << (i1_7L * 4) /*lookuptable*/ ,
+                        1 << (i3_7L * 4) | 2 << (i1_7L * 4) /*lookuptable*/,
                         new LongTrieSet1(i3),
                         LongTrieSet(i1, i2, i)
                     )
@@ -307,7 +310,7 @@ private[immutable] final class LongTrieSet3(
                     // i1_7L != i_7L
                     if (i3_7L == i_7L) {
                         new LongTrieSetNode2(
-                            1 << (i3_7L * 4) | 2 << (i1_7L * 4) /*lookuptable*/ ,
+                            1 << (i3_7L * 4) | 2 << (i1_7L * 4) /*lookuptable*/,
                             LongTrieSet(i3, i),
                             new LongTrieSet2(i1, i2)
                         )
@@ -326,7 +329,7 @@ private[immutable] final class LongTrieSet3(
             if (i2_7L == i3_7L) {
                 if (i2_7L == i_7L) {
                     new LongTrieSetNode2(
-                        1 << (i1_7L * 4) | 2 << (i2_7L * 4) /*lookuptable*/ ,
+                        1 << (i1_7L * 4) | 2 << (i2_7L * 4) /*lookuptable*/,
                         new LongTrieSet1(i1),
                         LongTrieSet(i2, i3, i)
                     )
@@ -335,7 +338,7 @@ private[immutable] final class LongTrieSet3(
                     // i2_7L != i_7L
                     if (i1_7L == i_7L) {
                         new LongTrieSetNode2(
-                            1 << (i1_7L * 4) | 2 << (i2_7L * 4) /*lookuptable*/ ,
+                            1 << (i1_7L * 4) | 2 << (i2_7L * 4) /*lookuptable*/,
                             LongTrieSet(i1, i),
                             new LongTrieSet2(i2, i3)
                         )
@@ -354,7 +357,7 @@ private[immutable] final class LongTrieSet3(
                 if (i1_7L == i3_7L) {
                     if (i1_7L == i_7L) {
                         new LongTrieSetNode2(
-                            1 << (i2_7L * 4) | 2 << (i1_7L * 4) /*lookuptable*/ ,
+                            1 << (i2_7L * 4) | 2 << (i1_7L * 4) /*lookuptable*/,
                             new LongTrieSet1(i2),
                             LongTrieSet(i1, i3, i)
                         )
@@ -364,7 +367,7 @@ private[immutable] final class LongTrieSet3(
                         // i1_7L != i_7L
                         if (i2_7L == i_7L) {
                             new LongTrieSetNode2(
-                                1 << (i1_7L * 4) | 2 << (i2_7L * 4) /*lookuptable*/ ,
+                                1 << (i1_7L * 4) | 2 << (i2_7L * 4) /*lookuptable*/,
                                 new LongTrieSet2(i1, i3),
                                 LongTrieSet(i2, i)
                             )
@@ -443,8 +446,8 @@ private[immutable] final class LongTrieSet3(
 }
 
 private[immutable] final class LongTrieSetN(
-        final val size: Int,
-        final val root: LongTrieSetNode
+    final val size: Int,
+    final val root: LongTrieSetNode
 ) extends LongTrieSet {
 
     // assert(size >= 4)
@@ -452,8 +455,8 @@ private[immutable] final class LongTrieSetN(
     override def isEmpty: Boolean = false
     override def isSingletonSet: Boolean = false
     override def contains(value: Long): Boolean = root.contains(value, value)
-    override def forall(p: Long => Boolean): Boolean = root.forall(p)
-    override def foreach[U](f: Long => U): Unit = root.foreach(f)
+    override def forall(p:       Long => Boolean): Boolean = root.forall(p)
+    override def foreach[U](f:   Long => U): Unit = root.foreach(f)
 
     override def iterator: LongIterator = new LongIterator {
         private[this] var leafNode: LongTrieSetLeaf = null
@@ -464,13 +467,13 @@ private[immutable] final class LongTrieSetN(
         @tailrec private[this] def moveToNextLeafNode(): Unit = {
             if (nodes.isEmpty) {
                 leafNode = null
-                return ;
+                return;
             }
             (nodes.pop(): @unchecked) match {
                 case n: LongTrieSetLeaf =>
                     leafNode = n
                     index = 0
-                    return ;
+                    return;
 
                 case n: LongTrieSetNode1 =>
                     nodes.push(n.n1)
@@ -576,12 +579,12 @@ private[immutable] final class LongTrieSetN(
 }
 
 private[immutable] final class LongTrieSetNode1(
-        final val n1Bits: Int,
-        final val n1:     LongTrieSetNode
+    final val n1Bits: Int,
+    final val n1:     LongTrieSetNode
 ) extends LongTrieSetNode {
 
-    override def foreach[U](f: Long => U): Unit = n1.foreach(f)
-    override def forall(p: Long => Boolean): Boolean = n1.forall(p)
+    override def foreach[U](f:  Long => U): Unit = n1.foreach(f)
+    override def forall(p:      Long => Boolean): Boolean = n1.forall(p)
     override def foldLeft[B](z: B)(op: (B, Long) => B): B = n1.foldLeft(z)(op)
 
     override private[immutable] def contains(value: Long, key: Long): Boolean = {
@@ -622,7 +625,7 @@ private[immutable] final class LongTrieSetNode1(
 
 }
 
-private[immutable] sealed abstract class LongTrieSetNode2_7 extends LongTrieSetNode {
+sealed abstract private[immutable] class LongTrieSetNode2_7 extends LongTrieSetNode {
 
     /**
      * The mapping between the three (relevant) bits of the value to the slot where the value
@@ -635,7 +638,7 @@ private[immutable] sealed abstract class LongTrieSetNode2_7 extends LongTrieSetN
      */
     def node(index: Int): LongTrieSetNode
 
-    final override private[immutable] def contains(v: Long, key: Long): Boolean = {
+    override private[immutable] final def contains(v: Long, key: Long): Boolean = {
         val vBits = (key & 7L).toInt
         val vIndex = (lookupTable >> (vBits * 4)) & 15
         val n = node(vIndex)
@@ -646,7 +649,7 @@ private[immutable] sealed abstract class LongTrieSetNode2_7 extends LongTrieSetN
         }
     }
 
-    final override def toString(level: Int): String = {
+    override final def toString(level: Int): String = {
         val indent = " " * level * 3
         var s = s"N("
         var i = 0
@@ -661,7 +664,7 @@ private[immutable] sealed abstract class LongTrieSetNode2_7 extends LongTrieSetN
         s + ")"
     }
 
-    final override def equals(other: Any): Boolean = {
+    override final def equals(other: Any): Boolean = {
         other match {
             case that: LongTrieSetNode2_7 =>
                 val thisLookupTable = this.lookupTable
@@ -695,9 +698,9 @@ private[immutable] sealed abstract class LongTrieSetNode2_7 extends LongTrieSetN
 }
 
 private[immutable] final class LongTrieSetNode2(
-        final val lookupTable: Int,
-        final val n1:          LongTrieSetNode,
-        final val n2:          LongTrieSetNode
+    final val lookupTable: Int,
+    final val n1:          LongTrieSetNode,
+    final val n2:          LongTrieSetNode
 ) extends LongTrieSetNode2_7 {
 
     override def node(index: Int): LongTrieSetNode = {
@@ -751,10 +754,10 @@ private[immutable] final class LongTrieSetNode2(
 }
 
 private[immutable] final class LongTrieSetNode3(
-        final val lookupTable: Int,
-        final val n1:          LongTrieSetNode,
-        final val n2:          LongTrieSetNode,
-        final val n3:          LongTrieSetNode
+    final val lookupTable: Int,
+    final val n1:          LongTrieSetNode,
+    final val n2:          LongTrieSetNode,
+    final val n3:          LongTrieSetNode
 ) extends LongTrieSetNode2_7 {
 
     override def foreach[U](f: Long => U): Unit = {
@@ -816,11 +819,11 @@ private[immutable] final class LongTrieSetNode3(
 }
 
 private[immutable] final class LongTrieSetNode4(
-        final val lookupTable: Int,
-        final val n1:          LongTrieSetNode,
-        final val n2:          LongTrieSetNode,
-        final val n3:          LongTrieSetNode,
-        final val n4:          LongTrieSetNode
+    final val lookupTable: Int,
+    final val n1:          LongTrieSetNode,
+    final val n2:          LongTrieSetNode,
+    final val n3:          LongTrieSetNode,
+    final val n4:          LongTrieSetNode
 ) extends LongTrieSetNode2_7 {
 
     override def foreach[U](f: Long => U): Unit = {
@@ -893,12 +896,12 @@ private[immutable] final class LongTrieSetNode4(
 }
 
 private[immutable] final class LongTrieSetNode5(
-        final val lookupTable: Int,
-        final val n1:          LongTrieSetNode,
-        final val n2:          LongTrieSetNode,
-        final val n3:          LongTrieSetNode,
-        final val n4:          LongTrieSetNode,
-        final val n5:          LongTrieSetNode
+    final val lookupTable: Int,
+    final val n1:          LongTrieSetNode,
+    final val n2:          LongTrieSetNode,
+    final val n3:          LongTrieSetNode,
+    final val n4:          LongTrieSetNode,
+    final val n5:          LongTrieSetNode
 ) extends LongTrieSetNode2_7 {
 
     override def foreach[U](f: Long => U): Unit = {
@@ -980,13 +983,13 @@ private[immutable] final class LongTrieSetNode5(
 }
 
 private[immutable] final class LongTrieSetNode6(
-        final val lookupTable: Int,
-        final val n1:          LongTrieSetNode,
-        final val n2:          LongTrieSetNode,
-        final val n3:          LongTrieSetNode,
-        final val n4:          LongTrieSetNode,
-        final val n5:          LongTrieSetNode,
-        final val n6:          LongTrieSetNode
+    final val lookupTable: Int,
+    final val n1:          LongTrieSetNode,
+    final val n2:          LongTrieSetNode,
+    final val n3:          LongTrieSetNode,
+    final val n4:          LongTrieSetNode,
+    final val n5:          LongTrieSetNode,
+    final val n6:          LongTrieSetNode
 ) extends LongTrieSetNode2_7 {
 
     override def foreach[U](f: Long => U): Unit = {
@@ -1000,11 +1003,11 @@ private[immutable] final class LongTrieSetNode6(
 
     override def forall(p: Long => Boolean): Boolean = {
         n1.forall(p) &&
-            n2.forall(p) &&
-            n3.forall(p) &&
-            n4.forall(p) &&
-            n5.forall(p) &&
-            n6.forall(p)
+        n2.forall(p) &&
+        n3.forall(p) &&
+        n4.forall(p) &&
+        n5.forall(p) &&
+        n6.forall(p)
     }
 
     override def foldLeft[B](z: B)(op: (B, Long) => B): B = {
@@ -1083,14 +1086,14 @@ private[immutable] final class LongTrieSetNode6(
 }
 
 private[immutable] final class LongTrieSetNode7(
-        final val lookupTable: Int,
-        final val n1:          LongTrieSetNode,
-        final val n2:          LongTrieSetNode,
-        final val n3:          LongTrieSetNode,
-        final val n4:          LongTrieSetNode,
-        final val n5:          LongTrieSetNode,
-        final val n6:          LongTrieSetNode,
-        final val n7:          LongTrieSetNode
+    final val lookupTable: Int,
+    final val n1:          LongTrieSetNode,
+    final val n2:          LongTrieSetNode,
+    final val n3:          LongTrieSetNode,
+    final val n4:          LongTrieSetNode,
+    final val n5:          LongTrieSetNode,
+    final val n6:          LongTrieSetNode,
+    final val n7:          LongTrieSetNode
 ) extends LongTrieSetNode2_7 {
 
     override def foreach[U](f: Long => U): Unit = {
@@ -1105,12 +1108,12 @@ private[immutable] final class LongTrieSetNode7(
 
     override def forall(p: Long => Boolean): Boolean = {
         n1.forall(p) &&
-            n2.forall(p) &&
-            n3.forall(p) &&
-            n4.forall(p) &&
-            n5.forall(p) &&
-            n6.forall(p) &&
-            n7.forall(p)
+        n2.forall(p) &&
+        n3.forall(p) &&
+        n4.forall(p) &&
+        n5.forall(p) &&
+        n6.forall(p) &&
+        n7.forall(p)
     }
 
     override def foldLeft[B](z: B)(op: (B, Long) => B): B = {
@@ -1207,14 +1210,14 @@ private[immutable] final class LongTrieSetNode7(
 }
 
 private[immutable] final class LongTrieSetNode8(
-        final val n1: LongTrieSetNode,
-        final val n2: LongTrieSetNode,
-        final val n3: LongTrieSetNode,
-        final val n4: LongTrieSetNode,
-        final val n5: LongTrieSetNode,
-        final val n6: LongTrieSetNode,
-        final val n7: LongTrieSetNode,
-        final val n8: LongTrieSetNode
+    final val n1: LongTrieSetNode,
+    final val n2: LongTrieSetNode,
+    final val n3: LongTrieSetNode,
+    final val n4: LongTrieSetNode,
+    final val n5: LongTrieSetNode,
+    final val n6: LongTrieSetNode,
+    final val n7: LongTrieSetNode,
+    final val n8: LongTrieSetNode
 ) extends LongTrieSetNode {
 
     override def foreach[U](f: Long => U): Unit = {
@@ -1230,13 +1233,13 @@ private[immutable] final class LongTrieSetNode8(
 
     override def forall(p: Long => Boolean): Boolean = {
         n1.forall(p) &&
-            n2.forall(p) &&
-            n3.forall(p) &&
-            n4.forall(p) &&
-            n5.forall(p) &&
-            n6.forall(p) &&
-            n7.forall(p) &&
-            n8.forall(p)
+        n2.forall(p) &&
+        n3.forall(p) &&
+        n4.forall(p) &&
+        n5.forall(p) &&
+        n6.forall(p) &&
+        n7.forall(p) &&
+        n8.forall(p)
     }
 
     override def foldLeft[B](z: B)(op: (B, Long) => B): B = {
@@ -1319,7 +1322,7 @@ private[immutable] final class LongTrieSetNode8(
         }
     }
 
-    final override def toString(level: Int): String = {
+    override final def toString(level: Int): String = {
         val indent = " " * level * 3
         var s = s"N("
         var i = 0

@@ -3,16 +3,16 @@ package org.opalj
 package ai
 package domain
 
+import org.junit.runner.RunWith
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
+
 import org.opalj.ai.common.XHTML.dumpOnFailureDuringValidation
 import org.opalj.ai.domain.l0._
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br._
 import org.opalj.br.reader.Java8Framework.ClassFiles
-
-import org.junit.runner.RunWith
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
-import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Basic tests of the abstract interpreter in the presence of simple control flow
@@ -150,6 +150,7 @@ class MethodsWithBranchesTest extends AnyFlatSpec with Matchers {
         }
     }
 }
+
 private object MethodsWithBranchesTest {
     val classFiles = ClassFiles(locateTestResources("ai-9.jar", "bi"))
     val classFile = classFiles.map(_._1).find(_.thisType.fqn == "ai/MethodsWithBranches").get

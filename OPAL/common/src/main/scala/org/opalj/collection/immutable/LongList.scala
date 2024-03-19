@@ -35,7 +35,7 @@ sealed trait LongList extends Serializable { self =>
     /** Prepends the given value to this list. E.g., `l = 2l +: l`. */
     def +:(v: Long): LongList
 
-    final override def equals(other: Any): Boolean = {
+    override final def equals(other: Any): Boolean = {
         other match {
             case l: LongList => equals(l)
             case _           => false
@@ -86,8 +86,8 @@ case object LongList0 extends LongList {
  * @author Michael Eichberg
  */
 final case class LongListNode(
-        head:                        Long,
-        private[immutable] var rest: LongList = LongList0
+    head:                        Long,
+    private[immutable] var rest: LongList = LongList0
 ) extends LongList { list =>
 
     override def tail: LongList = rest
@@ -104,7 +104,7 @@ final case class LongListNode(
     }
 
     override def forFirstN[U](n: Int)(f: Long => U): Unit = {
-        if (n == 0) return ;
+        if (n == 0) return;
 
         var i = 0
         var list: LongList = this
