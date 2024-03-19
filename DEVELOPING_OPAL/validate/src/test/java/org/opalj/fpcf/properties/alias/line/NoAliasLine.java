@@ -4,8 +4,6 @@ package org.opalj.fpcf.properties.alias.line;
 import org.opalj.br.fpcf.FPCFAnalysis;
 import org.opalj.fpcf.properties.PropertyValidator;
 import org.opalj.fpcf.properties.alias.NoAliasMatcher;
-import org.opalj.tac.fpcf.analyses.alias.IntraProceduralNoAliasAnalysis;
-import org.opalj.tac.fpcf.analyses.alias.pointsto.AllocationSitePointsToBasedAliasAnalysis;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.Repeatable;
@@ -113,8 +111,5 @@ public @interface NoAliasLine {
     /**
      * All analyses that should be able to correctly detect this relation.
      */
-    Class<? extends FPCFAnalysis>[] analyses() default {
-            AllocationSitePointsToBasedAliasAnalysis.class,
-            IntraProceduralNoAliasAnalysis.class
-    };
+    Class<? extends FPCFAnalysis>[] analyses() default {};
 }
