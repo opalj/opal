@@ -7,10 +7,14 @@ package alias
 import org.opalj.br.AnnotationLike
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
-import org.opalj.br.fpcf.properties.Alias
+import org.opalj.br.fpcf.properties.alias.Alias
+import org.opalj.br.fpcf.properties.alias.MayAlias
+import org.opalj.br.fpcf.properties.alias.MustAlias
+import org.opalj.br.fpcf.properties.alias.NoAlias
 
 /**
  * Base class for matching the assigned alias property of an entity with the expected alias property.
+ *
  * @param property The expected alias property
  */
 abstract class AliasPropertyMatcher(val property: Alias) extends AbstractPropertyMatcher {
@@ -21,7 +25,8 @@ abstract class AliasPropertyMatcher(val property: Alias) extends AbstractPropert
         entity: Any,
         a:      AnnotationLike
     ): Boolean = {
-        val analysesElementValues = getValue(p, a.annotationType.asObjectType, a.elementValuePairs, "analyses").asArrayValue.values
+        val analysesElementValues =
+            getValue(p, a.annotationType.asObjectType, a.elementValuePairs, "analyses").asArrayValue.values
         val analyses = analysesElementValues map {
             _.asClassValue.value.asObjectType
         }
@@ -36,33 +41,25 @@ abstract class AliasPropertyMatcher(val property: Alias) extends AbstractPropert
         a:          AnnotationLike,
         properties: Iterable[Property]
     ): Option[String] = {
-
-        if (properties.isEmpty) {
-            return Some("No Properties assigned to entity")
-        }
-        if (properties.count(_.isInstanceOf[Alias]) > 1) {
-            return Some("Multiple alias properties found")
-        }
         if (!properties.exists(p => p == property)) {
             Some(a.elementValuePairs.head.value.asStringValue.value)
         } else {
             None
         }
-
     }
 }
 
 /**
- * Matches if the entity has the [[org.opalj.br.fpcf.properties.NoAlias]] property.
+ * Matches if the entity has the [[NoAlias]] property.
  */
-class NoAliasMatcher extends AliasPropertyMatcher(org.opalj.br.fpcf.properties.NoAlias)
+class NoAliasMatcher extends AliasPropertyMatcher(NoAlias)
 
 /**
- * Matches if the entity has the [[org.opalj.br.fpcf.properties.MayAlias]] property.
+ * Matches if the entity has the [[MayAlias]] property.
  */
-class MayAliasMatcher extends AliasPropertyMatcher(org.opalj.br.fpcf.properties.MayAlias)
+class MayAliasMatcher extends AliasPropertyMatcher(MayAlias)
 
 /**
- * Matches if the entity has the [[org.opalj.br.fpcf.properties.MustAlias]] property.
+ * Matches if the entity has the [[MustAlias]] property.
  */
-class MustAliasMatcher extends AliasPropertyMatcher(org.opalj.br.fpcf.properties.MustAlias)
+class MustAliasMatcher extends AliasPropertyMatcher(MustAlias)
