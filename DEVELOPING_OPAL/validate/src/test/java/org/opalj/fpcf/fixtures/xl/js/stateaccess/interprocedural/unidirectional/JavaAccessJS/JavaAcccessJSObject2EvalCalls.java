@@ -1,6 +1,5 @@
 package org.opalj.fpcf.fixtures.xl.js.stateaccess.interprocedural.unidirectional.JavaAccessJS;
 
-import org.opalj.fpcf.fixtures.xl.js.stateaccess.interprocedural.unidirectional.JSAccessJava.JSAllocationWriteFieldFromJS;
 import org.opalj.fpcf.properties.pts.JavaMethodContextAllocSite;
 import org.opalj.fpcf.properties.pts.PointsToSet;
 
@@ -14,11 +13,11 @@ import javax.script.ScriptException;
  * (setMember: https://github.com/Sdk0815/logbook-kai/blob/6b6c62882de761c114c51c32425a885c55992137/src/main/java/logbook/internal/gui/BattleLogScriptController.java#L15)
  *
  */
-public class JavaAcccessJSObject2EvalCalls { /*
+public class JavaAcccessJSObject2EvalCalls {
     @PointsToSet(variableDefinition = 39,
             expectedJavaAllocSites = {
                     @JavaMethodContextAllocSite(
-                            cf = JSAllocationWriteFieldFromJS.class,
+                            cf = JavaAcccessJSObject2EvalCalls.class,
                             methodName = "main",
                             methodDescriptor = "(java.lang.String[]): void",
                             allocSiteLinenumber = 36,
@@ -42,7 +41,8 @@ public class JavaAcccessJSObject2EvalCalls { /*
 
     private static Object getJSField(ScriptEngine se, Object n) throws ScriptException {
         se.put("o2", n);
-        Object getField = se.eval("o2.field");
+        se.eval("var result = o2.field");
+        Object getField = se.get("result");
         return getField;
     }
 
@@ -51,6 +51,8 @@ public class JavaAcccessJSObject2EvalCalls { /*
         se.put("n2", jsObject);
         se.eval("n2.field = o;");
     }
-*/
 
+    class O{
+        Object field = new Object();
+    }
 }

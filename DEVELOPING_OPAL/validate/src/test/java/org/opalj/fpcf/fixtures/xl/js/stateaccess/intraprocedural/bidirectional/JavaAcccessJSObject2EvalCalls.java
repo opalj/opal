@@ -1,4 +1,4 @@
-package org.opalj.fpcf.fixtures.xl.js.stateaccess.intraprocedural.unidirectional.JavaAccessJS;
+package org.opalj.fpcf.fixtures.xl.js.stateaccess.intraprocedural.bidirectional;
 
 import org.opalj.fpcf.properties.pts.JavaMethodContextAllocSite;
 import org.opalj.fpcf.properties.pts.PointsToSet;

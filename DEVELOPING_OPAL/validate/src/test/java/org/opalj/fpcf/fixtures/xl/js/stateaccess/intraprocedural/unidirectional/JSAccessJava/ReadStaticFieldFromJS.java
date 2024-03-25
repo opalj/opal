@@ -1,4 +1,4 @@
-package org.opalj.fpcf.fixtures.xl.js.stateaccess.intraprocedural.unidirectional.JavaAccessJS;
+package org.opalj.fpcf.fixtures.xl.js.stateaccess.intraprocedural.unidirectional.JSAccessJava;
 
 import org.opalj.fpcf.properties.pts.JavaMethodContextAllocSite;
 import org.opalj.fpcf.properties.pts.PointsToSet;
@@ -30,7 +30,7 @@ public class ReadStaticFieldFromJS {
         Object myobject = new Object();
         System.out.println(myobject);
         ReadStaticFieldFromJS.myfield = myobject;
-        se.eval("var javaTestClass = Java.type(\"org.opalj.fpcf.fixtures.xl.js.stateaccess.intraprocedural.unidirectional.JavaAccessJS.ReadStaticFieldFromJS\"); var x = javaTestClass.myfield;");
+        se.eval("var javaTestClass = Java.type(\"org.opalj.fpcf.fixtures.xl.js.stateaccess.intraprocedural.unidirectional.JSAccessJava.ReadStaticFieldFromJS\"); var x = javaTestClass.myfield;");
         Object instancefield = se.get("x");
         System.out.println(instancefield);
 

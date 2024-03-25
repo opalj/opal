@@ -2,10 +2,6 @@
 package org.opalj.fpcf.properties.xl;
 
 import org.opalj.fpcf.properties.PropertyValidator;
-import org.opalj.fpcf.properties.pts.JavaMethodContextAllocSite;
-import org.opalj.fpcf.properties.pts.JavaScriptContextAllocSite;
-import org.opalj.fpcf.properties.pts.PointsToSetMatcher;
-import org.opalj.tac.fpcf.analyses.cg.TypeIterator;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
@@ -22,8 +18,8 @@ import static java.lang.annotation.RetentionPolicy.CLASS;
 @Target({METHOD, CONSTRUCTOR})
 @Documented
 @PropertyValidator(key = "TAJSEnvironment", validator = TAJSEnvironmentMatcher.class)
-public @interface TAJSEnvironment {
+public @interface JSEnvironment {
 
-    TAJSEnvironmentBinding[] bindings();
+    JSEnvironmentBinding[] bindings();
 
 }

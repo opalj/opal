@@ -90,17 +90,20 @@ class MyCustomReporter extends Reporter {
                 println(s"succeeded:$succeededString")
         }
         var total = 0
+        var totalsucceeded = 0
         sucdfaild.foreach {
             case (category, (succeededTests, failedTests)) =>
                 val failedCount = failedTests.size
                 val succeededCount = succeededTests.size
                 total += succeededCount + failedCount
+                totalsucceeded += succeededCount
                 println(s"\\newcommand{\\$category}{\\tnum{$succeededCount / ${succeededCount + failedCount}}}")
                 for (failed <- failedTests) {
                     println(s"%failed: $failed")
                 }
         }
-        println(s"\\newcommand{testcasecount}{\\tnum{$total}}")
+        println(s"\\newcommand{\\overalltests}{\\tnum{$totalsucceeded}}")
+        println(s"\\newcommand{\\testcasecount}{\\tnum{$total}}")
 
     }
 

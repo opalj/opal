@@ -65,8 +65,8 @@ class Dataset {
 }
 case class TruePositive(defsiteMethod: String, defsitePC: Int, instances: Set[Instance], allocSiteID: Long, allocsitePC: Int, allocsiteType: String) {
   override def toString: String =
-        s"TruePositive(defsitePC=$defsitePC, instances=${instances.mkString(" ")}, " +
-        s"allocSiteID=$allocSiteID, allocsitePC=$allocsitePC, allocsiteType=$allocsiteType)"
+    s"    TruePositive(defsitePC=$defsitePC, instances=${instances.mkString(" ")}, " +
+      s"allocSiteID=$allocSiteID, allocsitePC=$allocsitePC, allocsiteType=$allocsiteType)"
 }
 
 case class FalsePositive(defsiteMethod: String, defsitePC: Int, allocSiteType: String, allocSiteID: Long, allocsitePC: Int) {

@@ -7,11 +7,11 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
-public class JavaScriptAllocationSimple {
+public class JavaScriptAllocationNoPut {
     @PointsToSet(variableDefinition = 23,
             expectedJavaScriptAllocSites = {
             @JavaScriptContextAllocSite(
-                    cf = JavaScriptAllocationSimple.class,
+                    cf = JavaScriptAllocationNoPut.class,
                     nodeIdTAJS = 11,
                     allocatedType = "java.lang.Object"
             )}
