@@ -10,7 +10,8 @@ import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 import org.opalj.tac.fpcf.analyses.pointsto.longToAllocationSite
 import org.opalj.xl.Coordinator.ScriptEngineInstance
-import org.opalj.xl.utility.{AnalysisResult, InterimAnalysisResult}
+import org.opalj.xl.utility.AnalysisResult
+import org.opalj.xl.utility.InterimAnalysisResult
 
 class TAJSEnvironmentMatcher extends AbstractPropertyMatcher {
 
