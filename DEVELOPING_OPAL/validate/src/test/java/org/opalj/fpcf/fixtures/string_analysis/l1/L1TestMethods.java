@@ -4,7 +4,6 @@ package org.opalj.fpcf.fixtures.string_analysis.l1;
 import org.opalj.fpcf.fixtures.string_analysis.l1.hierarchies.GreetingService;
 import org.opalj.fpcf.fixtures.string_analysis.l1.hierarchies.HelloGreeting;
 import org.opalj.fpcf.fixtures.string_analysis.l0.L0TestMethods;
-import org.opalj.fpcf.fixtures.string_analysis.l0.StringProvider;
 import org.opalj.fpcf.properties.string_analysis.StringDefinitions;
 import org.opalj.fpcf.properties.string_analysis.StringDefinitionsCollection;
 
@@ -67,6 +66,20 @@ public class L1TestMethods extends L0TestMethods {
                     )
             })
     public void simpleNonVirtualFunctionCallTest(int i) {
+        analyzeString(getRuntimeClassName());
+    }
+
+    @StringDefinitionsCollection(
+            value = "a case where a non-virtual function call inside an if statement is interpreted",
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT,
+                            expectedStrings = "(java.lang.Runtime|java.lang.StringBuilder|ERROR)",
+                            realisticLevel = DYNAMIC,
+                            realisticStrings = ".*"
+                    )
+            })
+    public void simpleNonVirtualFunctionCallTestWithIf(int i) {
         String s;
         if (i == 0) {
             s = getRuntimeClassName();
@@ -84,7 +97,9 @@ public class L1TestMethods extends L0TestMethods {
             stringDefinitions = {
                     @StringDefinitions(
                             expectedLevel = CONSTANT,
-                            expectedStrings = "(java.lang.Runtime|java.lang.StringBuilder|ERROR)"
+                            expectedStrings = "(java.lang.Runtime|java.lang.StringBuilder|ERROR)",
+                            realisticLevel = DYNAMIC,
+                            realisticStrings = ".*"
                     )
             })
     public void initFromNonVirtualFunctionCallTest(int i) {
@@ -104,13 +119,9 @@ public class L1TestMethods extends L0TestMethods {
             value = "a case where a static method is called that returns a string but are not "
                     + "within this project => cannot / will not be interpret",
             stringDefinitions = {
-                    @StringDefinitions(
-                            expectedLevel = DYNAMIC,
-                            expectedStrings = ".*"
-                    ),
-
+                    @StringDefinitions(expectedLevel = DYNAMIC, expectedStrings = ".*"),
             })
-    public void staticMethodOutOfScopeTest() throws FileNotFoundException {
+    public void staticMethodOutOfScopeTest() {
         analyzeString(System.getProperty("os.version"));
     }
 
@@ -120,9 +131,10 @@ public class L1TestMethods extends L0TestMethods {
             stringDefinitions = {
                     @StringDefinitions(
                             expectedLevel = DYNAMIC,
-                            expectedStrings = "(.*)*"
+                            expectedStrings = "(.*)*",
+                            realisticLevel = DYNAMIC,
+                            realisticStrings = ".*"
                     )
-
             })
     public void methodOutOfScopeTest() throws FileNotFoundException {
         File file = new File("my-file.txt");
@@ -135,36 +147,14 @@ public class L1TestMethods extends L0TestMethods {
     }
 
     @StringDefinitionsCollection(
-            value = "a case that tests that the append interpretation of only intraprocedural "
-                    + "expressions still works",
-            stringDefinitions = {
-                    @StringDefinitions(
-                            expectedLevel = CONSTANT,
-                            expectedStrings = "value:(A|BC)Z"
-                    )
-
-            })
-    public void appendTest0(int i) {
-        StringBuilder sb = new StringBuilder("value:");
-        if (i % 2 == 0) {
-            sb.append('A');
-        } else {
-            sb.append("BC");
-        }
-        sb.append('Z');
-        analyzeString(sb.toString());
-    }
-
-    @StringDefinitionsCollection(
             value = "a case where function calls are involved in append operations",
             stringDefinitions = {
                     @StringDefinitions(
                             expectedLevel = PARTIALLY_CONSTANT,
                             expectedStrings = "classname:StringBuilder,osname:.*"
                     )
-
             })
-    public void appendTest1() {
+    public void appendTest() {
         StringBuilder sb = new StringBuilder("classname:");
         sb.append(getSimpleStringBuilderClassName());
         sb.append(",osname:");
@@ -173,36 +163,9 @@ public class L1TestMethods extends L0TestMethods {
     }
 
     @StringDefinitionsCollection(
-            value = "a case where function calls are involved in append operations",
-            stringDefinitions = {
-                    @StringDefinitions(
-                            expectedLevel = CONSTANT,
-                            expectedStrings = "(java.lang.Runtime|java.lang.StringBuilder|"
-                                    + "ERROR!) - Done"
-                    )
-
-            })
-    public void appendTest2(int classToLoad) {
-        StringBuilder sb;
-        if (classToLoad == 0) {
-            sb = new StringBuilder(getRuntimeClassName());
-        } else if (classToLoad == 1) {
-            sb = new StringBuilder(getStringBuilderClassName());
-        } else {
-            sb = new StringBuilder("ERROR!");
-        }
-        sb.append(" - Done");
-        analyzeString(sb.toString());
-    }
-
-    @StringDefinitionsCollection(
             value = "a case where the concrete instance of an interface is known",
             stringDefinitions = {
-                    @StringDefinitions(
-                            expectedLevel = CONSTANT,
-                            expectedStrings = "Hello World"
-                    )
-
+                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "Hello World")
             })
     public void knownHierarchyInstanceTest() {
         GreetingService gs = new HelloGreeting();
@@ -212,25 +175,16 @@ public class L1TestMethods extends L0TestMethods {
     @StringDefinitionsCollection(
             value = "a case where the concrete instance of an interface is NOT known",
             stringDefinitions = {
-                    @StringDefinitions(
-                            expectedLevel = CONSTANT,
-                            expectedStrings = "(Hello World|Hello)"
-                    )
-
+                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "(Hello World|Hello)")
             })
     public void unknownHierarchyInstanceTest(GreetingService greetingService) {
         analyzeString(greetingService.getGreeting("World"));
     }
 
     @StringDefinitionsCollection(
-            value = "a case taken from javax.management.remote.rmi.RMIConnector where a GetStatic "
-                    + "is involved",
+            value = "a case taken from javax.management.remote.rmi.RMIConnector where a GetStatic is involved",
             stringDefinitions = {
-                    @StringDefinitions(
-                            expectedLevel = PARTIALLY_CONSTANT,
-                            expectedStrings = ".*Impl_Stub"
-                    )
-
+                    @StringDefinitions(expectedLevel = PARTIALLY_CONSTANT, expectedStrings = ".*Impl_Stub")
             })
     public void getStaticTest() {
         analyzeString(rmiServerImplStubClassName);
@@ -240,10 +194,9 @@ public class L1TestMethods extends L0TestMethods {
             value = "a case where the append value has more than one def site",
             stringDefinitions = {
                     @StringDefinitions(
-                            expectedLevel = CONSTANT,
-                            expectedStrings = "It is (great|not great)"
+                            expectedLevel = CONSTANT, expectedStrings = "It is (great|not great)",
+                            realisticLevel = DYNAMIC, realisticStrings = ".*"
                     )
-
             })
     public void appendWithTwoDefSites(int i) {
         String s;
@@ -256,14 +209,12 @@ public class L1TestMethods extends L0TestMethods {
     }
 
     @StringDefinitionsCollection(
-            value = "a case where the append value has more than one def site with a function "
-                    + "call involved",
+            value = "a case where the append value has more than one def site with a function call involved",
             stringDefinitions = {
                     @StringDefinitions(
-                            expectedLevel = CONSTANT,
-                            expectedStrings = "It is (great|Hello, World)"
+                            expectedLevel = CONSTANT, expectedStrings = "It is (great|Hello, World)",
+                            realisticLevel = DYNAMIC, realisticStrings = ".*"
                     )
-
             })
     public void appendWithTwoDefSitesWithFuncCallTest(int i) {
         String s;
@@ -281,9 +232,10 @@ public class L1TestMethods extends L0TestMethods {
             stringDefinitions = {
                     @StringDefinitions(
                             expectedLevel = PARTIALLY_CONSTANT,
-                            expectedStrings = "get(.*|Hello, Worldjava.lang.Runtime)"
+                            expectedStrings = "get(.*|Hello, Worldjava.lang.Runtime)",
+                            realisticLevel = DYNAMIC,
+                            realisticStrings = ".*"
                     )
-
             })
     public void dependenciesWithinFinalizeTest(String s, Class clazz) {
         String properName = s.length() == 1 ? s.substring(0, 1).toUpperCase() :
@@ -301,11 +253,7 @@ public class L1TestMethods extends L0TestMethods {
     @StringDefinitionsCollection(
             value = "a function parameter being analyzed on its own",
             stringDefinitions = {
-                    @StringDefinitions(
-                            expectedLevel = DYNAMIC,
-                            expectedStrings = ".*"
-                    )
-
+                    @StringDefinitions(expectedLevel = DYNAMIC, expectedStrings = ".*")
             })
     public String callerWithFunctionParameterTest(String s, float i) {
         analyzeString(s);
@@ -315,11 +263,7 @@ public class L1TestMethods extends L0TestMethods {
     @StringDefinitionsCollection(
             value = "a case taken from javax.management.remote.rmi.RMIConnector where a GetStatic is involved",
             stringDefinitions = {
-                    @StringDefinitions(
-                            expectedLevel = CONSTANT,
-                            expectedStrings = "Hello, World"
-                    )
-
+                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "Hello, World")
             })
     public void belongsToSomeTestCase() {
         String s = callerWithFunctionParameterTest(belongsToTheSameTestCase(), 900);
@@ -336,14 +280,8 @@ public class L1TestMethods extends L0TestMethods {
     @StringDefinitionsCollection(
             value = "a case where a function takes another function as one of its parameters",
             stringDefinitions = {
-                    @StringDefinitions(
-                            expectedLevel = CONSTANT,
-                            expectedStrings = "Hello, World!"
-                    ),
-                    @StringDefinitions(
-                            expectedLevel = CONSTANT,
-                            expectedStrings = "Hello, World?"
-                    )
+                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "Hello, World!"),
+                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "Hello, World?")
             })
     public void functionWithFunctionParameter() {
         analyzeString(addExclamationMark(getHelloWorld()));
@@ -353,10 +291,7 @@ public class L1TestMethods extends L0TestMethods {
     @StringDefinitionsCollection(
             value = "a case where no callers information need to be computed",
             stringDefinitions = {
-                    @StringDefinitions(
-                            expectedLevel = CONSTANT,
-                            expectedStrings = "java.lang.String"
-                    )
+                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "java.lang.String")
             })
     public void noCallersInformationRequiredTest(String s) {
         System.out.println(s);
@@ -368,7 +303,9 @@ public class L1TestMethods extends L0TestMethods {
             stringDefinitions = {
                     @StringDefinitions(
                             expectedLevel = CONSTANT,
-                            expectedStrings = "Hello, World_paintname((_PAD|_REFLECT|_REPEAT)?)?(_AlphaTest)?"
+                            expectedStrings = "Hello, World_paintname((_PAD|_REFLECT|_REPEAT)?)?(_AlphaTest)?",
+                            realisticLevel = DYNAMIC,
+                            realisticStrings = ".*"
                     )
             })
     public void getPaintShader(boolean getPaintType, int spreadMethod, boolean alphaTest) {
@@ -576,10 +513,7 @@ public class L1TestMethods extends L0TestMethods {
     @StringDefinitionsCollection(
             value = "a case where a static property is read",
             stringDefinitions = {
-                    @StringDefinitions(
-                            expectedLevel = CONSTANT,
-                            expectedStrings = "will not be revealed here"
-                    )
+                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "will not be revealed here")
             })
     public void getStaticFieldTest() {
         analyzeString(someKey);
@@ -588,10 +522,7 @@ public class L1TestMethods extends L0TestMethods {
     @StringDefinitionsCollection(
             value = "a case where a String array field is read",
             stringDefinitions = {
-                    @StringDefinitions(
-                            expectedLevel = CONSTANT,
-                            expectedStrings = "(January|February|March|April)"
-                    )
+                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "(January|February|March|April)")
             })
     public void getStringArrayField(int i) {
         analyzeString(monthNames[i]);
@@ -602,18 +533,9 @@ public class L1TestMethods extends L0TestMethods {
     @StringDefinitionsCollection(
             value = "a test case which tests the interpretation of String#valueOf",
             stringDefinitions = {
-                    @StringDefinitions(
-                            expectedLevel = CONSTANT,
-                            expectedStrings = "c"
-                    ),
-                    @StringDefinitions(
-                            expectedLevel = CONSTANT,
-                            expectedStrings = "42.3"
-                    ),
-                    @StringDefinitions(
-                            expectedLevel = CONSTANT,
-                            expectedStrings = "java.lang.Runtime"
-                    )
+                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "c"),
+                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "42.3"),
+                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "java.lang.Runtime")
             })
     public void valueOfTest() {
         analyzeString(String.valueOf('c'));
@@ -624,9 +546,7 @@ public class L1TestMethods extends L0TestMethods {
     @StringDefinitionsCollection(
             value = "can handle virtual function calls",
             stringDefinitions = {
-                    @StringDefinitions(
-                            expectedLevel = CONSTANT, expectedStrings = "java.lang.StringBuilder"
-                    )
+                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "java.lang.StringBuilder")
             })
     public void fromFunctionCall() {
         String className = getStringBuilderClassName();
@@ -638,7 +558,9 @@ public class L1TestMethods extends L0TestMethods {
             stringDefinitions = {
                     @StringDefinitions(
                             expectedLevel = CONSTANT,
-                            expectedStrings = "Hello: (java.lang.Runtime|java.lang.StringBuilder|StringBuilder)?"
+                            expectedStrings = "Hello: (java.lang.Runtime|java.lang.StringBuilder|StringBuilder)?",
+                            realisticLevel = DYNAMIC,
+                            realisticStrings = ".*"
                     ),
             })
     protected void setDebugFlags(String[] var1) {
@@ -685,11 +607,14 @@ public class L1TestMethods extends L0TestMethods {
             value = "an extensive example with many control structures",
             stringDefinitions = {
                     @StringDefinitions(
-                            expectedLevel = CONSTANT, expectedStrings = "(iv1|iv2): "
+                            expectedLevel = CONSTANT, expectedStrings = "(iv1|iv2): ",
+                            realisticLevel = DYNAMIC, realisticStrings = ".*"
                     ),
                     @StringDefinitions(
                             expectedLevel = CONSTANT,
-                            expectedStrings = "(iv1|iv2): ((great!)?)*(java.lang.Runtime)?"
+                            expectedStrings = "(iv1|iv2): ((great!)?)*(java.lang.Runtime)?",
+                            realisticLevel = DYNAMIC,
+                            realisticStrings = ".*"
                     )
             })
     public void extensive(boolean cond) {
@@ -753,5 +678,4 @@ public class L1TestMethods extends L0TestMethods {
     private String getApril() {
         return "April";
     }
-
 }

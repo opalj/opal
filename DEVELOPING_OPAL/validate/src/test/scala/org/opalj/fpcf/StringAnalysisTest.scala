@@ -160,11 +160,6 @@ class L0StringAnalysisTest extends StringAnalysisTest {
 
         val entities = determineEntitiesToAnalyze(as.project)
         val newEntities = entities
-            // .filter(entity => entity._2.name.startsWith("whileWithBreak"))
-            // .filter(entity => entity._2.name.startsWith("tryCatchFinally"))
-            // .filter(entity => entity._2.name.startsWith("tryCatchFinallyWithThrowable"))
-            .filterNot(entity => entity._2.name.startsWith("switchNested"))
-            .filterNot(entity => entity._2.name.startsWith("tryCatchFinallyWithThrowable"))
             // Currently broken L0 Tests
             .filterNot(entity => entity._2.name.startsWith("unknownCharValue"))
 
@@ -202,39 +197,29 @@ class L1StringAnalysisTest extends StringAnalysisTest {
         val as = executeAnalyses(LazyL1StringAnalysis)
 
         val entities = determineEntitiesToAnalyze(as.project)
-            .filterNot(entity => entity._2.name.startsWith("switchNested"))
-            .filterNot(entity => entity._2.name.startsWith("tryCatchFinallyWithThrowable"))
             // L0 Tests
-            .filterNot(entity => entity._2.name.startsWith("twoDefinitionsOneUsage")) // Waits on string_concat and "substring"
             .filterNot(entity => entity._2.name == "simpleStringConcat") // Waits on string_concat and "substring"
-            .filterNot(entity => entity._2.name.startsWith("multipleDefSites")) // Waits on string_concat and "substring"
             .filterNot(entity => entity._2.name.startsWith("fromConstantAndFunctionCall")) // Waits on string_concat and "substring"
             // Currently broken L0 Tests
             .filterNot(entity => entity._2.name.startsWith("unknownCharValue"))
             // L1 Tests
             .filterNot(entity => entity._2.name.startsWith("getStaticTest")) // Waits on string_concat and "substring"
             .filterNot(entity => entity._2.name.startsWith("functionWithFunctionParameter")) // Waits on string_concat and "substring"
-            .filterNot(entity => entity._2.name.startsWith("dependenciesWithinFinalizeTest")) // Waits on string_concat and "substring"
-            .filterNot(entity => entity._2.name.startsWith("getPaintShader")) // Waits on string_concat and "substring"
             .filterNot(entity => entity._2.name.startsWith("knownHierarchyInstanceTest")) // Waits on string_concat and "substring"
             // Currently broken L1 Tests
             .filterNot(entity => entity._2.name.startsWith("cyclicDependencyTest"))
             .filterNot(entity => entity._2.name.startsWith("unknownHierarchyInstanceTest"))
             .filterNot(entity => entity._2.name.startsWith("severalReturnValuesTest1"))
             .filterNot(entity => entity._2.name.startsWith("severalReturnValuesTest2"))
-            .filterNot(entity => entity._2.name.startsWith("setDebugFlags"))
             .filterNot(entity => entity._2.name.startsWith("crissCrossExample"))
-            .filterNot(entity => entity._2.name.startsWith("breakContinueExamples"))
-            .filterNot(entity => entity._2.name.startsWith("simpleSecondStringBuilderRead"))
-            .filterNot(entity => entity._2.name.startsWith("complexSecondStringBuilderRead"))
             .filterNot(entity => entity._2.name.startsWith("directAppendConcatsWith2ndStringBuilder"))
             .filterNot(entity => entity._2.name.startsWith("parameterRead"))
-            .filterNot(entity => entity._2.name.startsWith("ifElseWithStringBuilder4"))
-            .filterNot(entity => entity._2.name.startsWith("ifElseWithStringBuilderWithFloatExpr"))
             .filterNot(entity => entity._2.name.startsWith("fromStringArray"))
         entities.foreach(as.propertyStore.force(_, StringConstancyProperty.key))
 
+        as.propertyStore.waitOnPhaseCompletion()
         as.propertyStore.shutdown()
+
         validateProperties(as, determineEAS(entities, as.project), Set("StringConstancy"))
     }
 }

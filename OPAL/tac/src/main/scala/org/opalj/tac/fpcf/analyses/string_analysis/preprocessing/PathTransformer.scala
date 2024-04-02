@@ -13,7 +13,6 @@ import org.opalj.br.fpcf.properties.string_definition.StringTreeCond
 import org.opalj.br.fpcf.properties.string_definition.StringTreeDynamicString
 import org.opalj.br.fpcf.properties.string_definition.StringTreeNode
 import org.opalj.br.fpcf.properties.string_definition.StringTreeOr
-import org.opalj.br.fpcf.properties.string_definition.StringTreeRepetition
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.PropertyStore
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
@@ -45,32 +44,16 @@ object PathTransformer {
             case npe: NestedPathElement =>
                 if (npe.elementType.isDefined) {
                     npe.elementType.get match {
-                        case NestedPathType.Repetition =>
-                            val processedSubPath = pathToStringTree(Path(npe.element.toList))
-                            Some(StringTreeRepetition(processedSubPath))
                         case _ =>
                             val processedSubPaths = npe.element.flatMap { ne => pathToTreeAcc(ne) }
                             if (processedSubPaths.nonEmpty) {
                                 npe.elementType.get match {
-                                    case NestedPathType.TryCatchFinally =>
-                                        // In case there is only one element in the sub path, transform it into a
-                                        // conditional element (as there is no alternative)
-                                        if (processedSubPaths.tail.nonEmpty) {
-                                            Some(StringTreeOr(processedSubPaths))
-                                        } else {
-                                            Some(StringTreeCond(processedSubPaths.head))
-                                        }
-                                    case NestedPathType.SwitchWithDefault |
-                                        NestedPathType.CondWithAlternative =>
+                                    case NestedPathType.CondWithAlternative =>
                                         if (npe.element.size == processedSubPaths.size) {
                                             Some(StringTreeOr(processedSubPaths))
                                         } else {
                                             Some(StringTreeCond(StringTreeOr(processedSubPaths)))
                                         }
-                                    case NestedPathType.SwitchWithoutDefault =>
-                                        Some(StringTreeCond(StringTreeOr(processedSubPaths)))
-                                    case NestedPathType.CondWithoutAlternative =>
-                                        Some(StringTreeCond(StringTreeOr(processedSubPaths)))
                                     case _ => None
                                 }
                             } else {
@@ -110,8 +93,6 @@ object PathTransformer {
     ): StringTreeNode = {
         path.elements.size match {
             case 1 =>
-                // It might be that for some expressions, a neutral element is produced which is
-                // filtered out by pathToTreeAcc; return the lower bound in such cases
                 pathToTreeAcc(path.elements.head).getOrElse(StringTreeDynamicString)
             case _ =>
                 val children = path.elements.flatMap { pathToTreeAcc(_) }

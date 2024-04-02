@@ -19,6 +19,7 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 import org.opalj.tac.fpcf.analyses.string_analysis.l1.interpretation.L1InterpretationHandler
+import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.SimplePathFinder
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
@@ -78,6 +79,10 @@ class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
         state:    ComputationState,
         iHandler: InterpretationHandler
     ): ProperPropertyComputationResult = {
+        if (SimplePathFinder.containsComplexControlFlow(state.tac)) {
+            return Result(state.entity, StringConstancyProperty.lb)
+        }
+
         val puVar = state.entity._1
         val uVar = puVar.toValueOriginForm(state.tac.pcToIndex)
         val defSites = uVar.definedBy.toArray.sorted
@@ -99,6 +104,10 @@ class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
             }
         }
 
+        if (state.computedLeanPath == null) {
+            state.computedLeanPath = computeLeanPath(uVar)(state.tac)
+        }
+
         // Interpret a function / method parameter using the parameter information in state
         if (defSites.head < 0) {
             val ep = ps(
@@ -107,7 +116,7 @@ class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
             )
             if (ep.isRefinable) {
                 state.dependees = ep :: state.dependees
-                InterimResult.forLB(
+                return InterimResult.forLB(
                     state.entity,
                     StringConstancyProperty.lb,
                     state.dependees.toSet,
@@ -118,29 +127,28 @@ class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
             }
         }
 
-        if (state.computedLeanPath == null) {
-            state.computedLeanPath = computeLeanPath(uVar)(state.tac)
-        }
-
-        val call = state.tac.stmts(defSites.head).asAssignment.expr
-        var attemptFinalResultComputation = true
-        if (InterpretationHandler.isStringBuilderBufferToStringCall(call)) {
+        val expr = state.tac.stmts(defSites.head).asAssignment.expr
+        if (InterpretationHandler.isStringBuilderBufferToStringCall(expr)) {
             // Find DUVars that the analysis of the current entity depends on
-            findDependentVars(state.computedLeanPath, puVar)(state).keys.foreach { nextVar =>
-                val ep = propertyStore((nextVar, state.entity._2), StringConstancyProperty.key)
-                ep match {
+            findDependentVars(state.computedLeanPath, puVar).keys.foreach { nextVar =>
+                propertyStore((nextVar, state.entity._2), StringConstancyProperty.key) match {
                     case FinalEP(e, _) =>
                         state.dependees = state.dependees.filter(_.e != e)
-                        // No more dependees => Return the result for this analysis run
-                        if (state.dependees.isEmpty) {
-                            return computeFinalResult(state)
-                        } else {
-                            return getInterimResult(state, iHandler)
-                        }
-                    case _ =>
+                    case ep =>
                         state.dependees = ep :: state.dependees
-                        attemptFinalResultComputation = false
                 }
+            }
+        }
+
+        getPCsInPath(state.computedLeanPath).foreach { pc =>
+            propertyStore(
+                InterpretationHandler.getEntityForPC(pc, state.dm, state.tac),
+                StringConstancyProperty.key
+            ) match {
+                case FinalEP(e, _) =>
+                    state.dependees = state.dependees.filter(_.e != e)
+                case ep =>
+                    state.dependees = ep :: state.dependees
             }
         }
 

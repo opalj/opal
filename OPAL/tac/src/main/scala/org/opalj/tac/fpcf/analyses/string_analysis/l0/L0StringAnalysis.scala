@@ -15,6 +15,7 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 import org.opalj.tac.fpcf.analyses.string_analysis.l0.interpretation.L0InterpretationHandler
+import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.SimplePathFinder
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
@@ -70,6 +71,10 @@ class L0StringAnalysis(override val project: SomeProject) extends StringAnalysis
     ): ProperPropertyComputationResult = {
         implicit val tac: TAC = state.tac
 
+        if (SimplePathFinder.containsComplexControlFlow(tac)) {
+            return Result(state.entity, StringConstancyProperty.lb)
+        }
+
         val puVar = state.entity._1
         val uVar = puVar.toValueOriginForm(tac.pcToIndex)
         val defSites = uVar.definedBy.toArray.sorted
@@ -95,7 +100,7 @@ class L0StringAnalysis(override val project: SomeProject) extends StringAnalysis
             )
             if (ep.isRefinable) {
                 state.dependees = ep :: state.dependees
-                InterimResult.forLB(
+                return InterimResult.forLB(
                     state.entity,
                     StringConstancyProperty.lb,
                     state.dependees.toSet,
@@ -112,16 +117,13 @@ class L0StringAnalysis(override val project: SomeProject) extends StringAnalysis
 
         val expr = tac.stmts(defSites.head).asAssignment.expr
         if (InterpretationHandler.isStringBuilderBufferToStringCall(expr)) {
-            // Find DUVars, that the analysis of the current entity depends on
-            val dependentVars = findDependentVars(state.computedLeanPath, puVar)
-            if (dependentVars.nonEmpty) {
-                dependentVars.keys.foreach { nextVar =>
-                    propertyStore((nextVar, state.entity._2), StringConstancyProperty.key) match {
-                        case FinalEP(e, _) =>
-                            state.dependees = state.dependees.filter(_.e != e)
-                        case ep =>
-                            state.dependees = ep :: state.dependees
-                    }
+            // Find DUVars that the analysis of the current entity depends on
+            findDependentVars(state.computedLeanPath, puVar).keys.foreach { nextVar =>
+                propertyStore((nextVar, state.entity._2), StringConstancyProperty.key) match {
+                    case FinalEP(e, _) =>
+                        state.dependees = state.dependees.filter(_.e != e)
+                    case ep =>
+                        state.dependees = ep :: state.dependees
                 }
             }
         }

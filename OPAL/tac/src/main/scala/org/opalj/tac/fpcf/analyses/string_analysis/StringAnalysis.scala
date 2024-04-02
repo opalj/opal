@@ -34,8 +34,8 @@ import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.NestedPathEleme
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.NestedPathType
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.Path
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.PathTransformer
+import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.SimplePathFinder
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.SubPath
-import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.WindowPathFinder
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
@@ -212,9 +212,7 @@ trait StringAnalysis extends FPCFAnalysis {
         if (initDefSites.isEmpty) {
             None
         } else {
-            val path = WindowPathFinder(tac).findPaths(initDefSites, value.definedBy.toArray.max)
-            val leanPath = path.makeLeanPath(value)
-            Some(leanPath)
+            Some(SimplePathFinder.findPath(tac).makeLeanPath(value))
         }
     }
 

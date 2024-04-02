@@ -47,39 +47,9 @@ object FlatPathElement extends SubPath {
 case object NestedPathType extends Enumeration {
 
     /**
-     * Used to mark any sort of loops.
-     */
-    val Repetition: NestedPathType.Value = Value
-
-    /**
-     *  Use this type to mark a conditional that has an alternative that is guaranteed to be
-     *  executed. For instance, an `if` with an `else` block would fit this type, as would a `case`
-     *  with a `default`. These are just examples for high-level languages. The concepts, however,
-     *  can be applied to low-level format as well.
+     * A conditional that is executed in all cases, such as an `if` with an `else` block.
      */
     val CondWithAlternative: NestedPathType.Value = Value
-
-    /**
-     * Use this type to mark a conditional that is not necessarily executed. For instance, an `if`
-     * without an `else` (but possibly several `else if` fits this category. Again, this is to be
-     * mapped to low-level representations as well.
-     */
-    val CondWithoutAlternative: NestedPathType.Value = Value
-
-    /**
-     * Use this type to mark a switch that does not contain a `default` statement.
-     */
-    val SwitchWithoutDefault: NestedPathType.Value = Value
-
-    /**
-     * Use this type to mark a switch that contains a `default` statement.
-     */
-    val SwitchWithDefault: NestedPathType.Value = Value
-
-    /**
-     * This type is to mark `try-catch` or `try-catch-finally` constructs.
-     */
-    val TryCatchFinally: NestedPathType.Value = Value
 }
 
 /**
@@ -205,10 +175,8 @@ case class Path(elements: List[SubPath]) {
             case npe: NestedPathElement =>
                 val leanedSubPath = makeLeanPathAcc(npe, relevantPCsMap)
                 val keepAlternativeBranches = toProcess.elementType match {
-                    case Some(NestedPathType.CondWithAlternative) |
-                        Some(NestedPathType.SwitchWithDefault) |
-                        Some(NestedPathType.TryCatchFinally) => true
-                    case _ => false
+                    case Some(NestedPathType.CondWithAlternative) => true
+                    case _                                        => false
                 }
                 if (leanedSubPath.isDefined) {
                     elements.append(leanedSubPath.get)
@@ -278,9 +246,7 @@ case class Path(elements: List[SubPath]) {
         // body in any case (as there is no alternative branch to consider) TODO check loops again what is with loops that are never executed?
         if (leanPath.tail.isEmpty) { // TODO this throws if lean path is only one element long
             leanPath.head match {
-                case npe: NestedPathElement
-                    if npe.elementType.get == NestedPathType.Repetition ||
-                        npe.element.tail.isEmpty =>
+                case npe: NestedPathElement if npe.element.tail.isEmpty =>
                     leanPath.clear()
                     leanPath.appendAll(removeOuterBranching(npe))
                 case _ =>
@@ -289,9 +255,7 @@ case class Path(elements: List[SubPath]) {
             // If the last element is a conditional, keep only the relevant branch (the other is not
             // necessary and stripping it simplifies further steps; explicitly exclude try-catch)
             leanPath.last match {
-                case npe: NestedPathElement
-                    if npe.elementType.isDefined &&
-                        (npe.elementType.get != NestedPathType.TryCatchFinally && npe.elementType.get != NestedPathType.SwitchWithDefault) =>
+                case npe: NestedPathElement if npe.elementType.isDefined =>
                     val newLast = stripUnnecessaryBranches(npe, endSite)
                     leanPath.remove(leanPath.size - 1)
                     leanPath.append(newLast)
