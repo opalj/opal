@@ -9,7 +9,7 @@ import java.lang.annotation.*;
 /**
  * The StringDefinitions annotation states how a string field or local variable looks like with
  * respect to the possible string values that can be read as well as the constancy level, i.e.,
- * whether the string contains only constan or only dynamic parts or a mixture.
+ * whether the string contains only constant or only dynamic parts or a mixture.
  * <p>
  * Note that the {@link StringDefinitions} annotation is designed in a way to be able to capture
  * only one read operation per test method. If this is a limitation, either (1) duplicate the
@@ -17,7 +17,7 @@ import java.lang.annotation.*;
  * relevant code of the test function into a dedicated function and then call it from different
  * test methods (to avoid copy&paste).
  *
- * @author Patrick Mell
+ * @author Maximilian Rüsch
  */
 @PropertyValidator(key = "StringConstancy", validator = StringAnalysisMatcher.class)
 @Documented
@@ -25,11 +25,14 @@ import java.lang.annotation.*;
 @Target({ ElementType.ANNOTATION_TYPE })
 public @interface StringDefinitions {
 
+    String NO_STRINGS = "N/A";
+
     /**
      * This value determines the expected level of freedom for a local variable to
      * be changed.
      */
     StringConstancyLevel expectedLevel();
+    StringConstancyLevel realisticLevel() default StringConstancyLevel.UNSPECIFIED;
 
     /**
      * A regexp like string that describes the element(s) that are expected. For the rules, refer to
@@ -38,5 +41,5 @@ public @interface StringDefinitions {
      * or 2) a five time concatenation of "hello" and/or "world".
      */
     String expectedStrings();
-
+    String realisticStrings() default NO_STRINGS;
 }

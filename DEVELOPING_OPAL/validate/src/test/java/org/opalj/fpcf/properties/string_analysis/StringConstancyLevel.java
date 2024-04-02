@@ -12,7 +12,9 @@ public enum StringConstancyLevel {
     // For details, see {@link org.opalj.fpcf.properties.StringConstancyLevel}.
     CONSTANT("constant"),
     PARTIALLY_CONSTANT("partially_constant"),
-    DYNAMIC("dynamic");
+    DYNAMIC("dynamic"),
+    // Added to enable leaving a string constancy level of a string definition unspecified
+    UNSPECIFIED("unspecified");
 
     private final String value;
 
@@ -23,5 +25,4 @@ public enum StringConstancyLevel {
     public String getValue() {
         return value;
     }
-
 }

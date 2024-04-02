@@ -10,44 +10,23 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 
 /**
- * Matches local variable's `StringConstancy` property. The match is successful if the
- * variable has a constancy level that matches its actual usage and the expected values are present.
- *
- * @author Patrick Mell
+ * @author Maximilian Rüsch
  */
 class StringAnalysisMatcher extends AbstractPropertyMatcher {
 
-    /**
-     * @param a An annotation like of type
-     *          [[org.opalj.fpcf.properties.string_analysis.StringDefinitions]].
-     *
-     * @return Returns the constancy level specified in the annotation as a string. In case an
-     *         annotation other than StringDefinitions is passed, an [[IllegalArgumentException]]
-     *         will be thrown (since it cannot be processed).
-     */
-    private def getConstancyLevel(a: AnnotationLike): String = {
-        a.elementValuePairs.find(_.name == "expectedLevel") match {
-            case Some(el) => el.value.asEnumValue.constName
-            case None => throw new IllegalArgumentException(
-                    "Can only extract the constancy level from a StringDefinitions annotation"
-                )
+    private def getLevelValue(a: AnnotationLike, valueName: String, optional: Boolean): StringConstancyLevel = {
+        a.elementValuePairs.find(_.name == valueName) match {
+            case Some(el)          => StringConstancyLevel.valueOf(el.value.asEnumValue.constName)
+            case None if !optional => throw new IllegalArgumentException(s"Could not find $valueName in annotation $a")
+            case None              => StringConstancyLevel.UNSPECIFIED
         }
     }
 
-    /**
-     * @param a An annotation like of type
-     *          [[org.opalj.fpcf.properties.string_analysis.StringDefinitions]].
-     *
-     * @return Returns the ''expectedStrings'' value from the annotation. In case an annotation
-     *         other than StringDefinitions is passed, an [[IllegalArgumentException]] will be
-     *         thrown (since it cannot be processed).
-     */
-    private def getExpectedStrings(a: AnnotationLike): String = {
-        a.elementValuePairs.find(_.name == "expectedStrings") match {
-            case Some(el) => el.value.asStringValue.value
-            case None => throw new IllegalArgumentException(
-                    "Can only extract the possible strings from a StringDefinitions annotation"
-                )
+    private def getStringsValue(a: AnnotationLike, valueName: String, optional: Boolean): String = {
+        a.elementValuePairs.find(_.name == valueName) match {
+            case Some(el)          => el.value.asStringValue.value
+            case None if !optional => throw new IllegalArgumentException(s"Could not find $valueName in annotation $a")
+            case None              => StringDefinitions.NO_STRINGS
         }
     }
 
@@ -61,25 +40,47 @@ class StringAnalysisMatcher extends AbstractPropertyMatcher {
         a:          AnnotationLike,
         properties: Iterable[Property]
     ): Option[String] = {
-        var actLevel = ""
-        var actString = ""
-        properties.head match {
+        if (
+            a.annotationType.asObjectType != ObjectType("org/opalj/fpcf/properties/string_analysis/StringDefinitions")
+        ) {
+            throw new IllegalArgumentException(
+                "Can only extract the constancy level from a @StringDefinitions annotation"
+            )
+        }
+
+        val realisticLevel = getLevelValue(a, "realisticLevel", optional = true)
+        val realisticStrings = getStringsValue(a, "realisticStrings", optional = true)
+        val expectedLevel = getLevelValue(a, "expectedLevel", optional = false)
+        val expectedStrings = getStringsValue(a, "expectedStrings", optional = false)
+
+        if (realisticLevel == expectedLevel && realisticStrings == expectedStrings) {
+            throw new IllegalStateException("Invalid test definition: Realistic and expected values are equal")
+        } else if (
+            realisticLevel == StringConstancyLevel.UNSPECIFIED ^ realisticStrings == StringDefinitions.NO_STRINGS
+        ) {
+            throw new IllegalStateException(
+                "Invalid test definition: Realistic values must either be fully specified or be absent"
+            )
+        }
+
+        val testRealisticValues =
+            realisticLevel != StringConstancyLevel.UNSPECIFIED && realisticStrings != StringDefinitions.NO_STRINGS
+        val (testedLevel, testedStrings) =
+            if (testRealisticValues) (realisticLevel.toString.toLowerCase, realisticStrings)
+            else (expectedLevel.toString.toLowerCase, expectedStrings)
+
+        val (actLevel, actString) = properties.head match {
             case prop: StringConstancyProperty =>
                 val sci = prop.stringConstancyInformation
-                actLevel = sci.constancyLevel.toString.toLowerCase
-                actString = sci.tree.toRegex
-            case _ =>
+                (sci.constancyLevel.toString.toLowerCase, sci.tree.toRegex)
+            case _ => ("", "")
         }
 
-        val expLevel = getConstancyLevel(a).toLowerCase
-        val expStrings = getExpectedStrings(a)
-        val errorMsg = s"Level: $expLevel, Strings: $expStrings"
-
-        if (expLevel != actLevel || expStrings != actString) {
-            return Some(errorMsg)
+        if (testedLevel != actLevel || testedStrings != actString) {
+            Some(s"Level: $testedLevel, Strings: $testedStrings")
+        } else {
+            None
         }
-
-        None
     }
 
 }

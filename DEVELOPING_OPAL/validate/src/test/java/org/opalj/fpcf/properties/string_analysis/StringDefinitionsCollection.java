@@ -8,7 +8,7 @@ import java.lang.annotation.*;
  * expected. This annotation is a wrapper for these expected results. For further information see
  * {@link StringDefinitions}.
  *
- * @author Patrick Mell
+ * @author Maximilian Rüsch
  */
 @Documented
 @Retention(RetentionPolicy.CLASS)
@@ -24,5 +24,4 @@ public @interface StringDefinitionsCollection {
      * The expected results in the correct order.
      */
     StringDefinitions[] stringDefinitions();
-
 }
