@@ -42,9 +42,9 @@ case class L0NonVirtualMethodCallInterpreter(ps: PropertyStore) extends StringIn
                 if (results.forall(_.isFinal)) {
                     finalResult(init.pc)(results.asInstanceOf[Seq[FinalEP[DefSiteEntity, StringConstancyProperty]]])
                 } else {
-                    InterimResult.forLB(
+                    InterimResult.forUB(
                         InterpretationHandler.getEntityForPC(pc),
-                        StringConstancyProperty.lb,
+                        StringConstancyProperty.ub,
                         results.toSet,
                         awaitAllFinalContinuation(
                             EPSDepender(init, pc, state, results),

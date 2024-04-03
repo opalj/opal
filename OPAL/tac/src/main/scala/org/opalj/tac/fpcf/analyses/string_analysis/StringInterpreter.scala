@@ -51,18 +51,18 @@ trait StringInterpreter {
             if (updatedDependees.forall(_.isFinal)) {
                 finalResult(updatedDependees.asInstanceOf[Seq[SomeFinalEP]])
             } else {
-                InterimResult.forLB(
+                InterimResult.forUB(
                     InterpretationHandler.getEntityForPC(depender.pc)(depender.state),
-                    StringConstancyProperty.lb,
-                    depender.dependees.toSet,
+                    StringConstancyProperty.ub,
+                    depender.dependees.filter(_.isRefinable).toSet,
                     awaitAllFinalContinuation(depender.withDependees(updatedDependees), finalResult)
                 )
             }
         } else {
-            InterimResult.forLB(
+            InterimResult.forUB(
                 InterpretationHandler.getEntityForPC(depender.pc)(depender.state),
-                StringConstancyProperty.lb,
-                depender.dependees.toSet,
+                StringConstancyProperty.ub,
+                depender.dependees.filter(_.isRefinable).toSet,
                 awaitAllFinalContinuation(depender, finalResult)
             )
         }

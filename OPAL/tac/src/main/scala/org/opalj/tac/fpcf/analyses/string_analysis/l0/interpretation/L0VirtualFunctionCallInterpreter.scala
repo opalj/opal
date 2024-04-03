@@ -100,17 +100,17 @@ case class L0VirtualFunctionCallInterpreter(
                     computeFinalResult(pc, sciP.sci)
 
                 case iep: InterimEP[_, _] if eps.pk == StringConstancyProperty.key =>
-                    InterimResult.forLB(
+                    InterimResult.forUB(
                         InterpretationHandler.getEntityForPC(pc),
-                        iep.lb.asInstanceOf[StringConstancyProperty],
+                        iep.ub.asInstanceOf[StringConstancyProperty],
                         Set(eps),
                         computeResult
                     )
 
                 case _ if eps.pk == StringConstancyProperty.key =>
-                    InterimResult.forLB(
+                    InterimResult.forUB(
                         InterpretationHandler.getEntityForPC(pc),
-                        StringConstancyProperty.lb,
+                        StringConstancyProperty.ub,
                         Set(eps),
                         computeResult
                     )
@@ -217,9 +217,9 @@ private[string_analysis] trait L0AppendCallInterpreter extends StringInterpreter
         appendState: AppendCallState
     ): ProperPropertyComputationResult = {
         if (appendState.hasDependees) {
-            InterimResult.forLB(
+            InterimResult.forUB(
                 InterpretationHandler.getEntityForPC(appendState.defSitePC)(appendState.state),
-                StringConstancyProperty.lb,
+                StringConstancyProperty.ub,
                 appendState.dependees.toSet,
                 continuation(appendState)
             )
@@ -292,9 +292,9 @@ private[string_analysis] trait L0SubstringCallInterpreter extends StringInterpre
         }
 
         if (receiverResults.exists(_.isRefinable)) {
-            InterimResult.forLB(
+            InterimResult.forUB(
                 InterpretationHandler.getEntityForPC(pc),
-                StringConstancyProperty.lb,
+                StringConstancyProperty.ub,
                 receiverResults.toSet,
                 awaitAllFinalContinuation(
                     EPSDepender(substringCall, substringCall.pc, state, receiverResults),

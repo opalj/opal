@@ -143,9 +143,9 @@ case class L1FieldReadInterpreter(
 
     private def tryComputeFinalResult(implicit accessState: FieldReadState): ProperPropertyComputationResult = {
         if (accessState.hasDependees) {
-            InterimResult.forLB(
+            InterimResult.forUB(
                 InterpretationHandler.getEntityForPC(accessState.defSitePC)(accessState.state),
-                StringConstancyProperty.lb,
+                StringConstancyProperty.ub,
                 accessState.dependees.toSet,
                 continuation(accessState)
             )

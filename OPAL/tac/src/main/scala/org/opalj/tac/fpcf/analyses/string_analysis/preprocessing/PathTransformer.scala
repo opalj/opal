@@ -13,8 +13,8 @@ import org.opalj.br.fpcf.properties.string_definition.StringTreeCond
 import org.opalj.br.fpcf.properties.string_definition.StringTreeDynamicString
 import org.opalj.br.fpcf.properties.string_definition.StringTreeNode
 import org.opalj.br.fpcf.properties.string_definition.StringTreeOr
-import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.UBP
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 
 /**
@@ -37,7 +37,7 @@ object PathTransformer {
                     InterpretationHandler.getEntityForPC(fpe.pc, state.dm, state.tac),
                     StringConstancyProperty.key
                 ) match {
-                    case FinalP(scp) => scp.sci
+                    case UBP(scp) => scp.sci
                     case _           => StringConstancyInformation.lb
                 }
                 Option.unless(sci.isTheNeutralElement)(sci.tree)

@@ -31,9 +31,9 @@ case class L0ArrayAccessInterpreter(ps: PropertyStore) extends StringInterpreter
         val results = defSitePCs.map { pc => ps(InterpretationHandler.getEntityForPC(pc), StringConstancyProperty.key) }
 
         if (results.exists(_.isRefinable)) {
-            InterimResult.forLB(
+            InterimResult.forUB(
                 InterpretationHandler.getEntityForPC(pc),
-                StringConstancyProperty.lb,
+                StringConstancyProperty.ub,
                 results.filter(_.isRefinable).toSet,
                 awaitAllFinalContinuation(
                     EPSDepender(instr, pc, state, results),

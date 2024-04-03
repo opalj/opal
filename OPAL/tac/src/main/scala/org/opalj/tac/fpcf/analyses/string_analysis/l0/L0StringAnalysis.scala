@@ -100,9 +100,9 @@ class L0StringAnalysis(override val project: SomeProject) extends StringAnalysis
             )
             if (ep.isRefinable) {
                 state.dependees = ep :: state.dependees
-                return InterimResult.forLB(
+                return InterimResult.forUB(
                     state.entity,
-                    StringConstancyProperty.lb,
+                    StringConstancyProperty.ub,
                     state.dependees.toSet,
                     continuation(state, iHandler)
                 )

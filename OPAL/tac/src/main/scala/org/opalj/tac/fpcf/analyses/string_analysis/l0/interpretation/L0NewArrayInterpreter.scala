@@ -46,9 +46,9 @@ case class L0NewArrayInterpreter(ps: PropertyStore) extends StringInterpreter {
         }
 
         if (allResults.exists(_.isRefinable)) {
-            InterimResult.forLB(
+            InterimResult.forUB(
                 InterpretationHandler.getEntityForPC(pc),
-                StringConstancyProperty.lb,
+                StringConstancyProperty.ub,
                 allResults.filter(_.isRefinable).toSet,
                 awaitAllFinalContinuation(
                     EPSDepender(instr, pc, state, allResults),

@@ -94,9 +94,9 @@ private[string_analysis] trait L0StringValueOfFunctionCallInterpreter extends St
             ps(InterpretationHandler.getEntityForDefSite(ds), StringConstancyProperty.key)
         }
         if (results.exists(_.isRefinable)) {
-            InterimResult.forLB(
+            InterimResult.forUB(
                 InterpretationHandler.getEntityForPC(pc),
-                StringConstancyProperty.lb,
+                StringConstancyProperty.ub,
                 results.filter(_.isRefinable).toSet,
                 awaitAllFinalContinuation(
                     EPSDepender(call, call.pc, state, results),
