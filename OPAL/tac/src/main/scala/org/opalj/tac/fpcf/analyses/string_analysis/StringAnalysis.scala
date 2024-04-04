@@ -47,7 +47,21 @@ trait StringAnalysis extends FPCFAnalysis {
 
     val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
-    def analyze(data: SContext): ProperPropertyComputationResult
+    def analyze(data: SContext): ProperPropertyComputationResult = {
+        val state = ComputationState(declaredMethods(data._2), data)
+
+        val tacaiEOptP = ps(data._2, TACAI.key)
+        if (tacaiEOptP.isRefinable) {
+            state.tacDependee = Some(tacaiEOptP)
+            getInterimResult(state)
+        } else if (tacaiEOptP.ub.tac.isEmpty) {
+            // No TAC available, e.g., because the method has no body
+            Result(state.entity, StringConstancyProperty.lb)
+        } else {
+            state.tac = tacaiEOptP.ub.tac.get
+            determinePossibleStrings(state)
+        }
+    }
 
     /**
      * Takes the `data` an analysis was started with as well as a computation `state` and determines
@@ -55,8 +69,7 @@ trait StringAnalysis extends FPCFAnalysis {
      * [[InterimResult]] depending on whether other information needs to be computed first.
      */
     protected[string_analysis] def determinePossibleStrings(implicit
-        state:    ComputationState,
-        iHandler: InterpretationHandler
+        state: ComputationState
     ): ProperPropertyComputationResult
 
     /**
@@ -68,10 +81,7 @@ trait StringAnalysis extends FPCFAnalysis {
      * @return Returns a final result if (already) available. Otherwise, an intermediate result will
      *         be returned.
      */
-    protected[this] def continuation(
-        state:    ComputationState,
-        iHandler: InterpretationHandler
-    )(eps: SomeEPS): ProperPropertyComputationResult = {
+    protected[this] def continuation(state: ComputationState)(eps: SomeEPS): ProperPropertyComputationResult = {
         eps match {
             case FinalP(tac: TACAI) if
                     eps.pk.equals(TACAI.key) &&
@@ -79,7 +89,7 @@ trait StringAnalysis extends FPCFAnalysis {
                         state.tacDependee.get == eps =>
                 state.tac = tac.tac.get
                 state.tacDependee = Some(eps.asInstanceOf[FinalEP[Method, TACAI]])
-                determinePossibleStrings(state, iHandler)
+                determinePossibleStrings(state)
 
             case FinalEP(e, _) if eps.pk.equals(StringConstancyProperty.key) =>
                 state.dependees = state.dependees.filter(_.e != e)
@@ -88,10 +98,10 @@ trait StringAnalysis extends FPCFAnalysis {
                 if (state.dependees.isEmpty) {
                     computeFinalResult(state)
                 } else {
-                    getInterimResult(state, iHandler)
+                    getInterimResult(state)
                 }
             case _ =>
-                getInterimResult(state, iHandler)
+                getInterimResult(state)
         }
     }
 
@@ -116,16 +126,13 @@ trait StringAnalysis extends FPCFAnalysis {
         )
     }
 
-    protected def getInterimResult(
-        state:    ComputationState,
-        iHandler: InterpretationHandler
-    ): InterimResult[StringConstancyProperty] = {
+    protected def getInterimResult(state: ComputationState): InterimResult[StringConstancyProperty] = {
         InterimResult(
             state.entity,
             StringConstancyProperty.lb,
             computeNewUpperBound(state),
             state.dependees.toSet,
-            continuation(state, iHandler)
+            continuation(state)
         )
     }
 

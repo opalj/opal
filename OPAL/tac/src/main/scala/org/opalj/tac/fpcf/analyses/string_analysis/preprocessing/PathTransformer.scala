@@ -38,7 +38,7 @@ object PathTransformer {
                     StringConstancyProperty.key
                 ) match {
                     case UBP(scp) => scp.sci
-                    case _           => StringConstancyInformation.lb
+                    case _        => StringConstancyInformation.lb
                 }
                 Option.unless(sci.isTheNeutralElement)(sci.tree)
             case npe: NestedPathElement =>

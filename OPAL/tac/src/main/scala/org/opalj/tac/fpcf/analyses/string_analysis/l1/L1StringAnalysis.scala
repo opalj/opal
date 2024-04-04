@@ -20,55 +20,11 @@ import org.opalj.fpcf.Result
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 import org.opalj.tac.fpcf.analyses.string_analysis.l1.interpretation.L1InterpretationHandler
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.SimplePathFinder
-import org.opalj.tac.fpcf.properties.TACAI
 
 /**
- * InterproceduralStringAnalysis processes a read operation of a string variable at a program
- * position, ''pp'', in a way that it finds the set of possible strings that can be read at ''pp''.
- * <p>
- * In comparison to [[org.opalj.tac.fpcf.analyses.string_analysis.l0.L0StringAnalysis]], this version tries to resolve
- * method calls that are involved in a string construction as far as possible.
- * <p>
- * The main difference in the intra- and interprocedural implementation is the following (see the
- * description of [[org.opalj.tac.fpcf.analyses.string_analysis.l0.L0StringAnalysis]] for a general overview):
- * This analysis can only start to transform the computed lean paths into a string tree (again using a
- * [[PathTransformer]]) after all relevant string values (determined by the [[L1InterpretationHandler]])
- * have been figured out. As the [[PropertyStore]] is used for recursively starting this analysis
- * to determine possible strings of called method and functions, the path transformation can take
- * place after all results for sub-expressions are available. Thus, the interprocedural
- * interpretation handler cannot determine final results, e.g., for the array interpreter or static
- * function call interpreter. This analysis handles this circumstance by first collecting all
- * information for all definition sites. Only when these are available, further information, e.g.,
- * for the final results of arrays or static function calls, are derived. Finally, after all
- * these information are ready as well, the path transformation takes place by only looking up what
- * string expression corresponds to which definition sites (remember, at this point, for all
- * definition sites all possible string values are known, thus look-ups are enough and no further
- * interpretation is required).
- *
- * @author Patrick Mell
+ * @author Maximilian Rüsch
  */
 class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
-
-    override def analyze(data: SContext): ProperPropertyComputationResult = {
-        // IMPROVE enable handling call string contexts here (build a chain, probably via SContext)
-        val state = ComputationState(declaredMethods(data._2), data)
-        val iHandler = L1InterpretationHandler(project, ps)
-
-        val tacaiEOptP = ps(data._2, TACAI.key)
-        if (tacaiEOptP.isRefinable) {
-            state.tacDependee = Some(tacaiEOptP)
-            return getInterimResult(state, iHandler)
-        }
-
-        if (tacaiEOptP.ub.tac.isEmpty) {
-            // No TAC available, e.g., because the method has no body
-            return Result(state.entity, StringConstancyProperty.lb)
-        }
-
-        state.tac = tacaiEOptP.ub.tac.get
-
-        determinePossibleStrings(state, iHandler)
-    }
 
     /**
      * Takes the `data` an analysis was started with as well as a computation `state` and determines
@@ -76,42 +32,21 @@ class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
      * [[org.opalj.fpcf.InterimResult]] depending on whether other information needs to be computed first.
      */
     override protected[string_analysis] def determinePossibleStrings(implicit
-        state:    ComputationState,
-        iHandler: InterpretationHandler
+        state: ComputationState
     ): ProperPropertyComputationResult = {
-        if (SimplePathFinder.containsComplexControlFlow(state.tac)) {
+        implicit val tac: TAC = state.tac
+
+        if (SimplePathFinder.containsComplexControlFlow(tac)) {
             return Result(state.entity, StringConstancyProperty.lb)
         }
 
-        val puVar = state.entity._1
-        val uVar = puVar.toValueOriginForm(state.tac.pcToIndex)
+        val uVar = state.entity._1.toValueOriginForm(tac.pcToIndex)
         val defSites = uVar.definedBy.toArray.sorted
-
-        if (state.tac == null) {
-            return getInterimResult(state, iHandler)
-        }
-
-        if (defSites.exists(_ < 0)) {
-            if (InterpretationHandler.isStringConstExpression(uVar)) {
-                // We can evaluate string const expressions as function parameters
-            } else if (StringAnalysis.isSupportedPrimitiveNumberType(uVar)) {
-                val numType = uVar.value.asPrimitiveValue.primitiveType.toJava
-                val sci = StringAnalysis.getDynamicStringInformationForNumberType(numType)
-                return Result(state.entity, StringConstancyProperty(sci))
-            } else {
-                // StringBuilders as parameters are currently not evaluated
-                return Result(state.entity, StringConstancyProperty.lb)
-            }
-        }
-
-        if (state.computedLeanPath == null) {
-            state.computedLeanPath = computeLeanPath(uVar)(state.tac)
-        }
 
         // Interpret a function / method parameter using the parameter information in state
         if (defSites.head < 0) {
             val ep = ps(
-                InterpretationHandler.getEntityForDefSite(defSites.head, state.dm, state.tac),
+                InterpretationHandler.getEntityForDefSite(defSites.head, state.dm, tac),
                 StringConstancyProperty.key
             )
             if (ep.isRefinable) {
@@ -120,29 +55,20 @@ class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
                     state.entity,
                     StringConstancyProperty.ub,
                     state.dependees.toSet,
-                    continuation(state, iHandler)
+                    continuation(state)
                 )
             } else {
                 return Result(state.entity, ep.asFinal.p)
             }
         }
 
-        val expr = state.tac.stmts(defSites.head).asAssignment.expr
-        if (InterpretationHandler.isStringBuilderBufferToStringCall(expr)) {
-            // Find DUVars that the analysis of the current entity depends on
-            findDependentVars(state.computedLeanPath, puVar).keys.foreach { nextVar =>
-                propertyStore((nextVar, state.entity._2), StringConstancyProperty.key) match {
-                    case FinalEP(e, _) =>
-                        state.dependees = state.dependees.filter(_.e != e)
-                    case ep =>
-                        state.dependees = ep :: state.dependees
-                }
-            }
+        if (state.computedLeanPath == null) {
+            state.computedLeanPath = computeLeanPath(uVar)
         }
 
         getPCsInPath(state.computedLeanPath).foreach { pc =>
             propertyStore(
-                InterpretationHandler.getEntityForPC(pc, state.dm, state.tac),
+                InterpretationHandler.getEntityForPC(pc, state.dm, tac),
                 StringConstancyProperty.key
             ) match {
                 case FinalEP(e, _) =>
@@ -153,7 +79,7 @@ class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
         }
 
         if (state.dependees.nonEmpty) {
-            getInterimResult(state, iHandler)
+            getInterimResult(state)
         } else {
             computeFinalResult(state)
         }
