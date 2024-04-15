@@ -27,8 +27,6 @@ import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEPS
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.FlatPathElement
-import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.NestedPathElement
-import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.NestedPathType
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.Path
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.PathTransformer
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.SimplePathFinder
@@ -94,11 +92,11 @@ trait StringAnalysis extends FPCFAnalysis {
             return Result(state.entity, StringConstancyProperty.lb)
         }
 
-        if (state.computedLeanPath == null) {
-            state.computedLeanPath = computeLeanPath(uVar)
+        if (state.computedLeanPaths == null) {
+            state.computedLeanPaths = computeLeanPaths(uVar)
         }
 
-        getPCsInPath(state.computedLeanPath).foreach { pc =>
+        state.computedLeanPaths.flatMap(getPCsInPath).distinct.foreach { pc =>
             propertyStore(
                 InterpretationHandler.getEntityForPC(pc, state.dm, state.tac),
                 StringConstancyProperty.key
@@ -166,7 +164,7 @@ trait StringAnalysis extends FPCFAnalysis {
         Result(
             state.entity,
             StringConstancyProperty(StringConstancyInformation(
-                tree = PathTransformer.pathToStringTree(state.computedLeanPath)(state, ps).simplify
+                tree = PathTransformer.pathsToStringTree(state.computedLeanPaths)(state, ps).simplify
             ))
         )
     }
@@ -182,58 +180,46 @@ trait StringAnalysis extends FPCFAnalysis {
     }
 
     private def computeNewUpperBound(state: ComputationState): StringConstancyProperty = {
-        if (state.computedLeanPath != null) {
+        if (state.computedLeanPaths != null) {
             StringConstancyProperty(StringConstancyInformation(
-                tree = PathTransformer.pathToStringTree(state.computedLeanPath)(state, ps).simplify
+                tree = PathTransformer.pathsToStringTree(state.computedLeanPaths)(state, ps).simplify
             ))
         } else {
             StringConstancyProperty.lb
         }
     }
 
-    private def computeLeanPath(value: V)(implicit tac: TAC): Path = {
+    private def computeLeanPaths(value: V)(implicit tac: TAC): Seq[Path] = {
         val defSites = value.definedBy.toArray.sorted
         if (defSites.head < 0) {
-            computeLeanPathForStringConst(value)(tac.stmts)
+            computeLeanPathsForStringConst(value)(tac.stmts)
         } else {
             val call = tac.stmts(defSites.head).asAssignment.expr
             if (InterpretationHandler.isStringBuilderBufferToStringCall(call)) {
-                computeLeanPathForStringBuilder(value).get
+                computeLeanPathsForStringBuilder(value)
             } else {
-                computeLeanPathForStringConst(value)(tac.stmts)
+                computeLeanPathsForStringConst(value)(tac.stmts)
             }
         }
     }
 
-    private def computeLeanPathForStringConst(value: V)(implicit stmts: Array[Stmt[V]]): Path = {
-        val defSites = value.definedBy.toArray.sorted
-        val element = if (defSites.length == 1) {
-            FlatPathElement(defSites.head)
-        } else {
-            // Create alternative branches with intermediate None-Type nested path elements
-            NestedPathElement(
-                defSites.toIndexedSeq.map { ds => NestedPathElement(Seq(FlatPathElement(ds)), None) },
-                Some(NestedPathType.CondWithAlternative)
-            )
-        }
-        Path(List(element))
-    }
+    private def computeLeanPathsForStringConst(value: V)(implicit stmts: Array[Stmt[V]]): Seq[Path] =
+        value.definedBy.toList.sorted.map(ds => Path(List(FlatPathElement(ds))))
 
-    private def computeLeanPathForStringBuilder(value: V)(implicit tac: TAC): Option[Path] = {
+    private def computeLeanPathsForStringBuilder(value: V)(implicit tac: TAC): Seq[Path] = {
         val initDefSites = InterpretationHandler.findDefSiteOfInit(value, tac.stmts)
         if (initDefSites.isEmpty) {
-            None
+            Seq.empty
         } else {
-            Some(SimplePathFinder.findPath(tac).makeLeanPath(value))
+            Seq(SimplePathFinder.findPath(tac).makeLeanPath(value))
         }
     }
 
     private def getPCsInPath(path: Path): Iterable[Int] = {
         def getDefSitesOfPathAcc(subpath: SubPath): Iterable[Int] = {
             subpath match {
-                case fpe: FlatPathElement   => Seq(fpe.pc)
-                case npe: NestedPathElement => npe.element.flatMap(getDefSitesOfPathAcc)
-                case _                      => Seq.empty
+                case fpe: FlatPathElement => Seq(fpe.pc)
+                case _                    => Seq.empty
             }
         }
 

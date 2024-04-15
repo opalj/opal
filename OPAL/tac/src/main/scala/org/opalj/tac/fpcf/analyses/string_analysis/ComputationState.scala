@@ -28,7 +28,7 @@ case class ComputationState(dm: DefinedMethod, entity: SContext) {
     /**
      * The computed lean path that corresponds to the given entity
      */
-    var computedLeanPath: Path = _
+    var computedLeanPaths: Seq[Path] = _
 
     var tacDependee: Option[EOptionP[Method, TACAI]] = _
 
