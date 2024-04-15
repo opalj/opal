@@ -5,9 +5,6 @@ package fpcf
 package analyses
 package string_analysis
 
-import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
-
 import org.opalj.br.FieldType
 import org.opalj.br.Method
 import org.opalj.br.analyses.DeclaredMethods
@@ -68,9 +65,57 @@ trait StringAnalysis extends FPCFAnalysis {
      * the possible string values. This method returns either a final [[Result]] or an
      * [[InterimResult]] depending on whether other information needs to be computed first.
      */
-    protected[string_analysis] def determinePossibleStrings(implicit
-        state: ComputationState
-    ): ProperPropertyComputationResult
+    private def determinePossibleStrings(implicit state: ComputationState): ProperPropertyComputationResult = {
+        implicit val tac: TAC = state.tac
+
+        val uVar = state.entity._1.toValueOriginForm(tac.pcToIndex)
+        val defSites = uVar.definedBy.toArray.sorted
+
+        // Interpret a function / method parameter using the parameter information in state
+        if (defSites.head < 0) {
+            val ep = ps(
+                InterpretationHandler.getEntityForDefSite(defSites.head, state.dm, tac),
+                StringConstancyProperty.key
+            )
+            if (ep.isRefinable) {
+                state.dependees = ep :: state.dependees
+                return InterimResult.forUB(
+                    state.entity,
+                    StringConstancyProperty.ub,
+                    state.dependees.toSet,
+                    continuation(state)
+                )
+            } else {
+                return Result(state.entity, ep.asFinal.p)
+            }
+        }
+
+        if (SimplePathFinder.containsComplexControlFlow(tac)) {
+            return Result(state.entity, StringConstancyProperty.lb)
+        }
+
+        if (state.computedLeanPath == null) {
+            state.computedLeanPath = computeLeanPath(uVar)
+        }
+
+        getPCsInPath(state.computedLeanPath).foreach { pc =>
+            propertyStore(
+                InterpretationHandler.getEntityForPC(pc, state.dm, state.tac),
+                StringConstancyProperty.key
+            ) match {
+                case FinalEP(e, _) =>
+                    state.dependees = state.dependees.filter(_.e != e)
+                case ep =>
+                    state.dependees = ep :: state.dependees
+            }
+        }
+
+        if (state.dependees.isEmpty) {
+            computeFinalResult(state)
+        } else {
+            getInterimResult(state)
+        }
+    }
 
     /**
      * Continuation function for this analysis.
@@ -91,7 +136,7 @@ trait StringAnalysis extends FPCFAnalysis {
                 state.tacDependee = Some(eps.asInstanceOf[FinalEP[Method, TACAI]])
                 determinePossibleStrings(state)
 
-            case FinalEP(e, _) if eps.pk.equals(StringConstancyProperty.key) =>
+            case FinalEP(e: DefSiteEntity, _) if eps.pk.equals(StringConstancyProperty.key) =>
                 state.dependees = state.dependees.filter(_.e != e)
 
                 // No more dependees => Return the result for this analysis run
@@ -117,7 +162,7 @@ trait StringAnalysis extends FPCFAnalysis {
      *              not have been called)!
      * @return Returns the final result.
      */
-    protected def computeFinalResult(state: ComputationState): Result = {
+    private def computeFinalResult(state: ComputationState): Result = {
         Result(
             state.entity,
             StringConstancyProperty(StringConstancyInformation(
@@ -126,7 +171,7 @@ trait StringAnalysis extends FPCFAnalysis {
         )
     }
 
-    protected def getInterimResult(state: ComputationState): InterimResult[StringConstancyProperty] = {
+    private def getInterimResult(state: ComputationState): InterimResult[StringConstancyProperty] = {
         InterimResult(
             state.entity,
             StringConstancyProperty.lb,
@@ -146,35 +191,7 @@ trait StringAnalysis extends FPCFAnalysis {
         }
     }
 
-    /**
-     * This function traverses the given path, computes all string values along the path and stores
-     * these information in the given state.
-     *
-     * @param p     The path to traverse.
-     * @param state The current state of the computation.
-     * @return Returns `true` if all values computed for the path are final results.
-     */
-    protected def computeResultsForPath(p: Path)(implicit state: ComputationState): Boolean = {
-        var hasFinalResult = true
-        p.elements.foreach {
-            case fpe: FlatPathElement =>
-                val eOptP =
-                    ps(InterpretationHandler.getEntityForPC(fpe.pc, state.dm, state.tac), StringConstancyProperty.key)
-                if (eOptP.isRefinable) {
-                    hasFinalResult = false
-                }
-            case npe: NestedPathElement =>
-                hasFinalResult = hasFinalResult && computeResultsForPath(Path(npe.element.toList))(state)
-            case _ =>
-        }
-
-        hasFinalResult
-    }
-
-    /**
-     * Wrapper function for [[computeLeanPathForStringConst]] and [[computeLeanPathForStringBuilder]].
-     */
-    protected def computeLeanPath(value: V)(implicit tac: TAC): Path = {
+    private def computeLeanPath(value: V)(implicit tac: TAC): Path = {
         val defSites = value.definedBy.toArray.sorted
         if (defSites.head < 0) {
             computeLeanPathForStringConst(value)(tac.stmts)
@@ -188,10 +205,7 @@ trait StringAnalysis extends FPCFAnalysis {
         }
     }
 
-    /**
-     * This function computes the lean path for a [[V]] which is required to be a string expression.
-     */
-    protected def computeLeanPathForStringConst(value: V)(implicit stmts: Array[Stmt[V]]): Path = {
+    private def computeLeanPathForStringConst(value: V)(implicit stmts: Array[Stmt[V]]): Path = {
         val defSites = value.definedBy.toArray.sorted
         val element = if (defSites.length == 1) {
             FlatPathElement(defSites.head)
@@ -205,16 +219,7 @@ trait StringAnalysis extends FPCFAnalysis {
         Path(List(element))
     }
 
-    /**
-     * This function computes the lean path for a [[V]] which is required to stem from a
-     * `String{Builder, Buffer}#toString()` call. For this, the `tac` of the method, in which `value` resides, is
-     * required.
-     *
-     * This function then returns a pair of values: The first value is the computed lean path and the second value
-     * indicates whether the String{Builder, Buffer} has initialization sites within the method stored in `tac`. If it
-     * has no initialization sites, it returns `(null, false)` and otherwise `(computed lean path, true)`.
-     */
-    protected def computeLeanPathForStringBuilder(value: V)(implicit tac: TAC): Option[Path] = {
+    private def computeLeanPathForStringBuilder(value: V)(implicit tac: TAC): Option[Path] = {
         val initDefSites = InterpretationHandler.findDefSiteOfInit(value, tac.stmts)
         if (initDefSites.isEmpty) {
             None
@@ -223,56 +228,7 @@ trait StringAnalysis extends FPCFAnalysis {
         }
     }
 
-    /**
-     * Finds [[PUVar]]s the string constancy information computation for the given [[Path]] depends on. Enables passing
-     * an entity to ignore (usually the entity for which the path was created so it does not depend on itself).
-     *
-     * @return A mapping from dependent [[PUVar]]s to the [[FlatPathElement]] indices they occur in.
-     */
-    protected def findDependentVars(path: Path, ignore: SEntity)( // We may need to register the old path with them
-        implicit state: ComputationState): mutable.LinkedHashMap[SEntity, Int] = {
-        val stmts = state.tac.stmts
-
-        def findDependeesAcc(subpath: SubPath): ListBuffer[(SEntity, Int)] = {
-            val foundDependees = ListBuffer[(SEntity, Int)]()
-            subpath match {
-                case fpe: FlatPathElement =>
-                    // For FlatPathElements, search for DUVars on which the toString method is called
-                    // and where these toString calls are the parameter of an append call
-                    stmts(fpe.stmtIndex(state.tac.pcToIndex)) match {
-                        case ExprStmt(_, outerExpr) =>
-                            if (InterpretationHandler.isStringBuilderBufferAppendCall(outerExpr)) {
-                                val param = outerExpr.asVirtualFunctionCall.params.head.asVar
-                                param.definedBy.filter(_ >= 0).foreach { ds =>
-                                    val expr = stmts(ds).asAssignment.expr
-                                    // TODO check support for passing nested string builder directly (e.g. with a test case)
-                                    if (InterpretationHandler.isStringBuilderBufferToStringCall(expr)) {
-                                        foundDependees.append((param.toPersistentForm(stmts), fpe.pc))
-                                    }
-                                }
-                            }
-                        case _ =>
-                    }
-                    foundDependees
-                case npe: NestedPathElement =>
-                    foundDependees.appendAll(npe.element.flatMap { findDependeesAcc })
-                    foundDependees
-                case _ => foundDependees
-            }
-        }
-
-        val dependees = mutable.LinkedHashMap[SEntity, Int]()
-        path.elements.foreach { nextSubpath =>
-            findDependeesAcc(nextSubpath).foreach { nextPair =>
-                if (ignore != nextPair._1) {
-                    dependees.put(nextPair._1, nextPair._2)
-                }
-            }
-        }
-        dependees
-    }
-
-    protected def getPCsInPath(path: Path): Iterable[Int] = {
+    private def getPCsInPath(path: Path): Iterable[Int] = {
         def getDefSitesOfPathAcc(subpath: SubPath): Iterable[Int] = {
             subpath match {
                 case fpe: FlatPathElement   => Seq(fpe.pc)
@@ -333,14 +289,6 @@ object StringAnalysis {
         }
 
     def isSupportedType(fieldType: FieldType): Boolean = isSupportedType(fieldType.toJava)
-
-    def getDynamicStringInformationForNumberType(numberType: String): StringConstancyInformation = {
-        numberType match {
-            case "short" | "int"    => StringConstancyInformation.dynamicInt
-            case "float" | "double" => StringConstancyInformation.dynamicFloat
-            case _                  => StringConstancyInformation.lb
-        }
-    }
 }
 
 sealed trait StringAnalysisScheduler extends FPCFAnalysisScheduler {

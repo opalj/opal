@@ -8,7 +8,6 @@ package string_analysis
 
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
-import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.Property
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.Path
@@ -36,7 +35,7 @@ case class ComputationState(dm: DefinedMethod, entity: SContext) {
     /**
      * If not empty, this routine can only produce an intermediate result
      */
-    var dependees: List[EOptionP[Entity, Property]] = List()
+    var dependees: List[EOptionP[DefSiteEntity, Property]] = List()
 }
 
 case class DefSiteState(pc: Int, dm: DefinedMethod, tac: TAC)
