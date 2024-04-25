@@ -8,12 +8,12 @@ import java.io.File
 import scala.jdk.CollectionConverters.MapHasAsScala
 
 import dk.brics.tajs.analysis.Analysis
-import dk.brics.tajs.analysis.xl.LocalTAJSAdapter
+import dk.brics.tajs.analysis.xl.adapter.LocalTAJSAdapter
+import dk.brics.tajs.analysis.xl.adapter.TajsAdapter
 import dk.brics.tajs.lattice.PKey
 import dk.brics.tajs.lattice.Value
 import dk.brics.tajs.Main
 import dk.brics.tajs.Main.run
-import dk.brics.tajs.analysis.xl.TajsAdapter
 import dk.brics.tajs.flowgraph.jsnodes.JNode
 import dk.brics.tajs.lattice.Context
 import dk.brics.tajs.solver.BlockAndContext
