@@ -9,13 +9,13 @@ import javax.script.ScriptException;
  * Native identity function called, String passed, return value should be string.
  */
 public class NativeIdentityFunction {
-    @PointsToSet(variableDefinition = 29,
+    @PointsToSet(variableDefinition = 25,
             expectedJavaAllocSites = {
             @JavaMethodContextAllocSite(
                 cf = NativeIdentityFunction.class,
                     methodName = "main",
                     methodDescriptor = "(java.lang.String[]): void",
-                    allocSiteLinenumber = 28,
+                    allocSiteLinenumber = 24,
                     allocatedType = "java.lang.String")
 
             }
