@@ -31,7 +31,7 @@ case object Improper extends CyclicRegionType
 
 case class Region(regionType: RegionType, nodeIds: Set[Int]) {
 
-    override def toString: String = s"Region(${regionType.productPrefix}; ${nodeIds.mkString(",")})"
+    override def toString: String = s"Region(${regionType.productPrefix}; ${nodeIds.toList.sorted.mkString(",")})"
 }
 
 /**
@@ -72,7 +72,17 @@ class StructuralAnalysis(cfg: CFG[Stmt[V], TACStmts[V]]) {
             )
         }
 
-        graph.toDot(root, edgeTransformer)
+        def iNodeTransformer(innerNode: SGraph#NodeT): Option[(DotGraph, DotNodeStmt)] = {
+            val node = innerNode.outer
+            Some(
+                (
+                    root,
+                    DotNodeStmt(NodeId(node.toString))
+                )
+            )
+        }
+
+        graph.toDot(root, edgeTransformer, iNodeTransformer = Some(iNodeTransformer))
     }
 
     def analyze(graph: SGraph, entry: Region): (Graph[Region, DiEdge[Region]], Graph[Region, DiEdge[Region]]) = {
@@ -208,7 +218,33 @@ object AcyclicRegionType {
 
         val newStartingNode = n
         val newDirectSuccessors = graph.get(newStartingNode).diSuccessors.map(_.outer)
-        val rType = if (nSet.size >= 2) {
+
+        def locateProperAcyclicInterval: Option[AcyclicRegionType] = {
+            assert(newDirectSuccessors.size > 1, "Detection for single direct successors should have already run!")
+
+            var currentNodeSet = Set(n)
+            var currentSuccessors = graph.get(n).diSuccessors.map(_.outer)
+            while (currentSuccessors.size > 1 && graph.filter(nodeP =
+                       node => currentNodeSet.contains(node.outer)
+                   ).isAcyclic
+            ) {
+                currentNodeSet = currentNodeSet ++ currentSuccessors
+                currentSuccessors = currentSuccessors.flatMap(node => graph.get(node).diSuccessors.map(_.outer))
+            }
+
+            val allPredecessors = currentNodeSet.excl(n).flatMap(node => graph.get(node).diPredecessors.map(_.outer))
+            if (graph.filter(nodeP = node => currentNodeSet.contains(node.outer)).isCyclic) {
+                None
+            } else if (!allPredecessors.equals(currentNodeSet.diff(currentSuccessors))) {
+                None
+            } else {
+                nSet = currentNodeSet ++ currentSuccessors
+
+                Some(Proper)
+            }
+        }
+
+        val rType = if (nSet.size > 1) {
             Some(Block)
         } else if (newDirectSuccessors.size == 2) {
             val m = newDirectSuccessors.head
@@ -235,13 +271,13 @@ object AcyclicRegionType {
                 nSet = Set(newStartingNode, m, k)
                 Some(IfThen)
             } else {
-                None // TODO add method "hasCycles" somehow for proper
+                locateProperAcyclicInterval
             }
         } else if (newDirectSuccessors.size > 2) {
-            // TODO implement Case
-            None
+            // TODO implement Case as well
+            locateProperAcyclicInterval
         } else {
-            None // TODO add method "hasCycles" somehow for proper
+            None
         }
 
         (newStartingNode, rType.map((_, nSet)))
