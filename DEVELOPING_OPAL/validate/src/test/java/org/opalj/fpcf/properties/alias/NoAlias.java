@@ -3,9 +3,6 @@ package org.opalj.fpcf.properties.alias;
 
 import org.opalj.br.fpcf.FPCFAnalysis;
 import org.opalj.fpcf.properties.PropertyValidator;
-import org.opalj.tac.fpcf.analyses.alias.IntraProceduralAliasAnalysis;
-import org.opalj.tac.fpcf.analyses.alias.pointsto.AllocationSitePointsToBasedAliasAnalysis;
-import org.opalj.tac.fpcf.analyses.alias.pointsto.TypePointsToBasedAliasAnalysis;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.Repeatable;
@@ -53,9 +50,5 @@ public @interface NoAlias {
      * All analyses that should be able to correctly detect this relation.
      * @return All analyses that should be able to correctly detect this relation.
      */
-    Class<? extends FPCFAnalysis>[] analyses() default {
-            AllocationSitePointsToBasedAliasAnalysis.class,
-            TypePointsToBasedAliasAnalysis.class,
-            IntraProceduralAliasAnalysis.class
-    };
+    Class<? extends FPCFAnalysis>[] analyses() default {};
 }
