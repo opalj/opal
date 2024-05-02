@@ -1,16 +1,16 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.alias;
 
-import org.opalj.fpcf.properties.alias.AliasMethodID;
 import org.opalj.fpcf.properties.alias.MayAlias;
 import org.opalj.fpcf.properties.alias.NoAlias;
 import org.opalj.fpcf.properties.alias.line.MayAliasLine;
 import org.opalj.fpcf.properties.alias.line.NoAliasLine;
 
+
+
 public class ReturnValueAlias {
 
-    @AliasMethodID(id = 0, clazz = ReturnValueAlias.class)
-    @NoAliasLine(reason = "no Alias with local variable", lineNumber = 17, methodID = 0, clazz = ReturnValueAlias.class)
+    @NoAliasLine(reason = "no Alias with local variable", lineNumber = 17)
     public static Object noAliasWithLocal() {
         Object o1 = new Object();
 
@@ -19,8 +19,7 @@ public class ReturnValueAlias {
         return new Object();
     }
 
-    @AliasMethodID(id = 1, clazz = ReturnValueAlias.class)
-    @MayAliasLine(reason = "mayAlias with local variable", lineNumber = 32, methodID = 1, clazz = ReturnValueAlias.class)
+    @MayAliasLine(reason = "mayAlias with local variable", lineNumber = 31)
     public static Object mayAliasWithLocal1() {
         Object o1 = new Object();
         Object o2 = new Object();
@@ -34,8 +33,7 @@ public class ReturnValueAlias {
         return o2;
     }
 
-    @AliasMethodID(id = 2, clazz = ReturnValueAlias.class)
-    @MayAliasLine(reason = "mayAlias with local variable", lineNumber = 42, methodID = 2, clazz = ReturnValueAlias.class)
+    @MayAliasLine(reason = "mayAlias with local variable", lineNumber = 40)
     public static Object mayAliasWithLocal2() {
         Object o1 = new Object();
 
@@ -44,31 +42,31 @@ public class ReturnValueAlias {
         return o1;
     }
 
-    @NoAlias(reason = "noAlias with parameter", id = 0, clazz = ReturnValueAlias.class)
+    @NoAlias(reason = "noAlias with parameter", id = 0)
     public static Object noAliasWithParam(
-            @NoAlias(reason = "noAlias with parameter", id = 0, clazz = ReturnValueAlias.class)
+            @NoAlias(reason = "noAlias with parameter", id = 0)
             Object a) {
         Object o1 = new Object();
         return o1;
     }
 
-    @MayAlias(reason = "mayAlias with parameter", id = 1, clazz = ReturnValueAlias.class)
+    @MayAlias(reason = "mayAlias with parameter", id = 1)
     public static Object mayAliasWithParam1(
-            @MayAlias(reason = "mayAlias with parameter", id = 1, clazz = ReturnValueAlias.class)
+            @MayAlias(reason = "mayAlias with parameter", id = 1)
             Object a) {
         return a;
     }
 
-    @MayAlias(reason = "mayAlias with parameter", id = 2, clazz = ReturnValueAlias.class)
+    @MayAlias(reason = "mayAlias with parameter", id = 2)
     public static Object mayAliasWithParam2(
-            @MayAlias(reason = "mayAlias with parameter", id = 2, clazz = ReturnValueAlias.class)
+            @MayAlias(reason = "mayAlias with parameter", id = 2)
             Object a) {
         return a;
     }
 
-    @MayAlias(reason = "mayAlias with parameter", id = 3, clazz = ReturnValueAlias.class)
+    @MayAlias(reason = "mayAlias with parameter", id = 3)
     public static Object mayAliasWithParam3(
-            @MayAlias(reason = "mayAlias with parameter", id = 3, clazz = ReturnValueAlias.class)
+            @MayAlias(reason = "mayAlias with parameter", id = 3)
             Object a) {
 
         Object o1 = new Object();
@@ -80,9 +78,9 @@ public class ReturnValueAlias {
         return o1;
     }
 
-    @MayAlias(reason = "mayAlias with parameter", id = 4, clazz = ReturnValueAlias.class)
+    @MayAlias(reason = "mayAlias with parameter", id = 4)
     public static Object mayAliasWithParam4(
-            @MayAlias(reason = "mayAlias with parameter", id = 4, clazz = ReturnValueAlias.class)
+            @MayAlias(reason = "mayAlias with parameter", id = 4)
             Object a) {
 
         Object o1 = new Object();

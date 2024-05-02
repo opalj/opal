@@ -133,7 +133,7 @@ object Alias extends AliasPropertyMetaInformation {
 case object MustAlias extends Alias {
 
     override def checkIsEqualOrBetterThan(e: Entity, other: Alias): Unit = {
-        if (other == MayAlias) {
+        if (other == NoAlias) {
             throw new IllegalArgumentException(s"$e: impossible refinement: $other => $this")
         }
     }
@@ -153,11 +153,7 @@ case object MustAlias extends Alias {
  */
 case object NoAlias extends Alias {
 
-    override def checkIsEqualOrBetterThan(e: Entity, other: Alias): Unit = {
-        if (other != NoAlias) {
-            throw new IllegalArgumentException(s"$e: impossible refinement: $other => $this")
-        }
-    }
+    override def checkIsEqualOrBetterThan(e: Entity, other: Alias): Unit = {}
 }
 
 /**
@@ -170,5 +166,9 @@ case object NoAlias extends Alias {
  */
 case object MayAlias extends Alias {
 
-    override def checkIsEqualOrBetterThan(e: Entity, other: Alias): Unit = {}
+    override def checkIsEqualOrBetterThan(e: Entity, other: Alias): Unit = {
+        if (other != MayAlias) {
+            throw new IllegalArgumentException(s"$e: impossible refinement: $other => $this")
+        }
+    }
 }
