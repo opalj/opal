@@ -191,15 +191,12 @@ trait StringAnalysis extends FPCFAnalysis {
 
     private def computeLeanPaths(value: V)(implicit tac: TAC): Seq[Path] = {
         val defSites = value.definedBy.toArray.sorted
-        if (defSites.head < 0) {
-            computeLeanPathsForStringConst(value)(tac.stmts)
+
+        val call = tac.stmts(defSites.head).asAssignment.expr
+        if (InterpretationHandler.isStringBuilderBufferToStringCall(call)) {
+            computeLeanPathsForStringBuilder(value)
         } else {
-            val call = tac.stmts(defSites.head).asAssignment.expr
-            if (InterpretationHandler.isStringBuilderBufferToStringCall(call)) {
-                computeLeanPathsForStringBuilder(value)
-            } else {
-                computeLeanPathsForStringConst(value)(tac.stmts)
-            }
+            computeLeanPathsForStringConst(value)(tac.stmts)
         }
     }
 
