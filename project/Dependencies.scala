@@ -25,6 +25,8 @@ object Dependencies {
     val jacksonDF = "2.12.2"
     val fastutil = "8.5.4"
     val apkparser = "2.6.10"
+    val scalagraphcore = "2.0.1"
+    val scalagraphdot = "2.0.0"
 
     val openjfx = "16"
 
@@ -56,6 +58,8 @@ object Dependencies {
     val fastutil = "it.unimi.dsi"                           % "fastutil"                    % version.fastutil withSources () withJavadoc ()
     val javafxBase = "org.openjfx"                          % "javafx-base"                 % version.openjfx classifier osName
     val apkparser = "net.dongliu"                           % "apk-parser"                  % version.apkparser
+    val scalagraphcore = "org.scala-graph"                  %% "graph-core"                 % version.scalagraphcore
+    val scalagraphdot = "org.scala-graph"                   %% "graph-dot"                  % version.scalagraphdot
 
     val javacpp = "org.bytedeco" % "javacpp" % version.javacpp
     val javacpp_llvm =  "org.bytedeco" % "llvm-platform" % (version.javacpp_llvm + "-" + version.javacpp)
@@ -76,6 +80,7 @@ object Dependencies {
   val si = Seq()
   val bi = Seq(commonstext)
   val br = Seq(scalaparsercombinators, scalaxml)
+  val tac = Seq(scalagraphcore, scalagraphdot)
   val ifds = Seq()
   val tools = Seq(txtmark, jacksonDF)
   val hermes = Seq(txtmark, jacksonDF, javafxBase)
