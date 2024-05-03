@@ -26,7 +26,7 @@ object BinaryExprInterpreter extends StringInterpreter {
      * </li>
      * For all other expressions, a [[StringConstancyInformation.neutralElement]] will be returned.
      */
-    def interpret(instr: T, pc: Int)(implicit state: DefSiteState): ProperPropertyComputationResult = {
+    def interpret(instr: T, pc: Int)(implicit state: DUSiteState): ProperPropertyComputationResult = {
         val sci = instr.cTpe match {
             case ComputationalTypeInt   => StringConstancyInformation.dynamicInt
             case ComputationalTypeFloat => StringConstancyInformation.dynamicFloat

@@ -18,7 +18,7 @@ object SimpleValueConstExprInterpreter extends StringInterpreter {
 
     override type T = SimpleValueConst
 
-    def interpret(expr: T, pc: Int)(implicit state: DefSiteState): ProperPropertyComputationResult = {
+    def interpret(expr: T, pc: Int)(implicit state: DUSiteState): ProperPropertyComputationResult = {
         val treeOpt = expr match {
             case ic: IntConst    => Some(StringTreeConst(ic.value.toString))
             case fc: FloatConst  => Some(StringTreeConst(fc.value.toString))

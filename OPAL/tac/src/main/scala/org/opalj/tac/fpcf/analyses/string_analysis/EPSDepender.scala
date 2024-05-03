@@ -13,7 +13,7 @@ import org.opalj.fpcf.SomeEOptionP
 private[string_analysis] case class EPSDepender[T <: ASTNode[V]](
     instr:     T,
     pc:        Int,
-    state:     DefSiteState,
+    state:     DUSiteState,
     dependees: Seq[SomeEOptionP]
 ) {
 

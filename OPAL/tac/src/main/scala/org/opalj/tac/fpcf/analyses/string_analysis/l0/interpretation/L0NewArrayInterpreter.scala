@@ -24,7 +24,7 @@ case class L0NewArrayInterpreter(ps: PropertyStore) extends StringInterpreter {
 
     override type T = NewArray[V]
 
-    override def interpret(instr: T, pc: Int)(implicit state: DefSiteState): ProperPropertyComputationResult = {
+    override def interpret(instr: T, pc: Int)(implicit state: DUSiteState): ProperPropertyComputationResult = {
         if (instr.counts.length != 1) {
             // Only supports 1-D arrays
             return computeFinalResult(pc, StringConstancyInformation.lb)
@@ -56,11 +56,11 @@ case class L0NewArrayInterpreter(ps: PropertyStore) extends StringInterpreter {
                 )
             )
         } else {
-            finalResult(pc)(allResults.asInstanceOf[Seq[FinalEP[DefSiteEntity, StringConstancyProperty]]])
+            finalResult(pc)(allResults.asInstanceOf[Seq[FinalEP[DUSiteEntity, StringConstancyProperty]]])
         }
     }
 
-    private def finalResult(pc: Int)(results: Seq[SomeFinalEP])(implicit state: DefSiteState): Result = {
+    private def finalResult(pc: Int)(results: Seq[SomeFinalEP])(implicit state: DUSiteState): Result = {
         val resultsScis = results.map(_.p.asInstanceOf[StringConstancyProperty].sci)
         val sci = if (resultsScis.forall(_.isTheNeutralElement)) {
             // It might be that there are no results; in such a case, set the string information to the lower bound

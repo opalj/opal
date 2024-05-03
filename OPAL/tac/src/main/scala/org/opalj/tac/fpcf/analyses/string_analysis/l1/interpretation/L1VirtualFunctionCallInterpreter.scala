@@ -50,7 +50,7 @@ class L1VirtualFunctionCallInterpreter(
     )
 
     override protected def interpretArbitraryCall(instr: T, pc: Int)(
-        implicit state: DefSiteState
+        implicit state: DUSiteState
     ): ProperPropertyComputationResult = {
         val depender = CalleeDepender(pc, contextProvider.newContext(state.dm), ps(state.dm, Callees.key))
 
@@ -78,7 +78,7 @@ class L1VirtualFunctionCallInterpreter(
     }
 
     private def continuation(
-        state:    DefSiteState,
+        state:    DUSiteState,
         depender: CalleeDepender
     )(eps: SomeEPS): ProperPropertyComputationResult = {
         eps match {

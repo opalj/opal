@@ -24,14 +24,14 @@ case class L0NonVirtualMethodCallInterpreter(ps: PropertyStore) extends StringIn
 
     override type T = NonVirtualMethodCall[V]
 
-    override def interpret(instr: T, pc: Int)(implicit state: DefSiteState): ProperPropertyComputationResult = {
+    override def interpret(instr: T, pc: Int)(implicit state: DUSiteState): ProperPropertyComputationResult = {
         instr.name match {
             case "<init>" => interpretInit(instr, pc)
             case _        => computeFinalResult(pc, StringConstancyInformation.neutralElement)
         }
     }
 
-    private def interpretInit(init: T, pc: Int)(implicit state: DefSiteState): ProperPropertyComputationResult = {
+    private def interpretInit(init: T, pc: Int)(implicit state: DUSiteState): ProperPropertyComputationResult = {
         init.params.size match {
             case 0 => computeFinalResult(pc, StringConstancyInformation.neutralElement)
             case _ =>
@@ -40,7 +40,7 @@ case class L0NonVirtualMethodCallInterpreter(ps: PropertyStore) extends StringIn
                     ps(InterpretationHandler.getEntityForDefSite(ds), StringConstancyProperty.key)
                 }
                 if (results.forall(_.isFinal)) {
-                    finalResult(init.pc)(results.asInstanceOf[Seq[FinalEP[DefSiteEntity, StringConstancyProperty]]])
+                    finalResult(init.pc)(results.asInstanceOf[Seq[FinalEP[DUSiteEntity, StringConstancyProperty]]])
                 } else {
                     InterimResult.forUB(
                         InterpretationHandler.getEntityForPC(pc),
@@ -55,7 +55,7 @@ case class L0NonVirtualMethodCallInterpreter(ps: PropertyStore) extends StringIn
         }
     }
 
-    private def finalResult(pc: Int)(results: Seq[SomeEPS])(implicit state: DefSiteState): Result =
+    private def finalResult(pc: Int)(results: Seq[SomeEPS])(implicit state: DUSiteState): Result =
         computeFinalResult(
             pc,
             StringConstancyInformation.reduceMultiple(results.map {

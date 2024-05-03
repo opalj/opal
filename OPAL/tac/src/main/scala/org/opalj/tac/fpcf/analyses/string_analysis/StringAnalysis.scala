@@ -72,7 +72,7 @@ trait StringAnalysis extends FPCFAnalysis {
         // Interpret a function / method parameter using the parameter information in state
         if (defSites.head < 0) {
             val ep = ps(
-                InterpretationHandler.getEntityForDefSite(defSites.head, state.dm, tac),
+                InterpretationHandler.getEntityForDefSite(defSites.head, state.dm, tac, state.entity._1),
                 StringConstancyProperty.key
             )
             if (ep.isRefinable) {
@@ -98,7 +98,7 @@ trait StringAnalysis extends FPCFAnalysis {
 
         state.computedLeanPaths.flatMap(getPCsInPath).distinct.foreach { pc =>
             propertyStore(
-                InterpretationHandler.getEntityForPC(pc, state.dm, state.tac),
+                InterpretationHandler.getEntityForPC(pc, state.dm, tac, state.entity._1),
                 StringConstancyProperty.key
             ) match {
                 case FinalEP(e, _) =>
@@ -134,7 +134,7 @@ trait StringAnalysis extends FPCFAnalysis {
                 state.tacDependee = Some(eps.asInstanceOf[FinalEP[Method, TACAI]])
                 determinePossibleStrings(state)
 
-            case FinalEP(e: DefSiteEntity, _) if eps.pk.equals(StringConstancyProperty.key) =>
+            case FinalEP(e: DUSiteEntity, _) if eps.pk.equals(StringConstancyProperty.key) =>
                 state.dependees = state.dependees.filter(_.e != e)
 
                 // No more dependees => Return the result for this analysis run
@@ -301,7 +301,7 @@ trait LazyStringAnalysis
             (e: Entity) => {
                 e match {
                     case _: (_, _)             => initData._1.analyze(e.asInstanceOf[SContext])
-                    case entity: DefSiteEntity => initData._2.analyze(entity)
+                    case entity: DUSiteEntity => initData._2.analyze(entity)
                     case _                     => throw new IllegalArgumentException(s"Unexpected entity passed for string analysis: $e")
                 }
             }

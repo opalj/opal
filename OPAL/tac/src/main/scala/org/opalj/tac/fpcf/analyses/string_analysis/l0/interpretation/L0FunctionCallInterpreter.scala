@@ -34,7 +34,7 @@ trait L0FunctionCallInterpreter
     implicit val ps: PropertyStore
 
     protected[this] case class FunctionCallState(
-        state:               DefSiteState,
+        state:               DUSiteState,
         calleeMethods:       Seq[Method],
         var tacDependees:    Map[Method, EOptionP[Method, TACAI]],
         var returnDependees: Map[Method, Seq[EOptionP[SContext, StringConstancyProperty]]] = Map.empty
@@ -43,12 +43,12 @@ trait L0FunctionCallInterpreter
 
         var hasUnresolvableReturnValue: Map[Method, Boolean] = Map.empty.withDefaultValue(false)
 
-        private var _paramDependees: Seq[Seq[EOptionP[DefSiteEntity, StringConstancyProperty]]] = Seq.empty
-        private var _paramEntityToPositionMapping: Map[DefSiteEntity, (Int, Int)] = Map.empty
+        private var _paramDependees: Seq[Seq[EOptionP[DUSiteEntity, StringConstancyProperty]]] = Seq.empty
+        private var _paramEntityToPositionMapping: Map[DUSiteEntity, (Int, Int)] = Map.empty
 
-        def paramDependees: Seq[Seq[EOptionP[DefSiteEntity, StringConstancyProperty]]] = _paramDependees
+        def paramDependees: Seq[Seq[EOptionP[DUSiteEntity, StringConstancyProperty]]] = _paramDependees
 
-        def updateParamDependee(newDependee: EOptionP[DefSiteEntity, StringConstancyProperty]): Unit = {
+        def updateParamDependee(newDependee: EOptionP[DUSiteEntity, StringConstancyProperty]): Unit = {
             val pos = _paramEntityToPositionMapping(newDependee.e)
             _paramDependees = _paramDependees.updated(
                 pos._1,
@@ -59,7 +59,7 @@ trait L0FunctionCallInterpreter
             )
         }
 
-        def setParamDependees(newParamDependees: Seq[Seq[EOptionP[DefSiteEntity, StringConstancyProperty]]]): Unit = {
+        def setParamDependees(newParamDependees: Seq[Seq[EOptionP[DUSiteEntity, StringConstancyProperty]]]): Unit = {
             _paramDependees = newParamDependees
             _paramEntityToPositionMapping = Map.empty
             _paramDependees.zipWithIndex.map {
@@ -163,8 +163,8 @@ trait L0FunctionCallInterpreter
                 callState.updateReturnDependee(contextEPS.e._2, contextEPS)
                 tryComputeFinalResult(callState)
 
-            case EUBP(_: DefSiteEntity, _: StringConstancyProperty) =>
-                callState.updateParamDependee(eps.asInstanceOf[EOptionP[DefSiteEntity, StringConstancyProperty]])
+            case EUBP(_: DUSiteEntity, _: StringConstancyProperty) =>
+                callState.updateParamDependee(eps.asInstanceOf[EOptionP[DUSiteEntity, StringConstancyProperty]])
                 tryComputeFinalResult(callState)
 
             case _ => throw new IllegalArgumentException(s"Encountered unknown eps: $eps")

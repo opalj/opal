@@ -35,7 +35,7 @@ case class ComputationState(dm: DefinedMethod, entity: SContext) {
     /**
      * If not empty, this routine can only produce an intermediate result
      */
-    var dependees: List[EOptionP[DefSiteEntity, Property]] = List()
+    var dependees: List[EOptionP[DUSiteEntity, Property]] = List()
 }
 
-case class DefSiteState(pc: Int, dm: DefinedMethod, tac: TAC)
+case class DUSiteState(pc: Int, dm: DefinedMethod, tac: TAC, entity: SEntity)

@@ -72,7 +72,7 @@ case class L1FieldReadInterpreter(
 
     private case class FieldReadState(
         defSitePC:                 Int,
-        state:                     DefSiteState,
+        state:                     DUSiteState,
         var hasInit:               Boolean                                          = false,
         var hasUnresolvableAccess: Boolean                                          = false,
         var accessDependees:       Seq[EOptionP[SContext, StringConstancyProperty]] = Seq.empty
@@ -97,7 +97,7 @@ case class L1FieldReadInterpreter(
      * approximated using all write accesses as well as with the lower bound and "null" => in these cases fields are
      * [[org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel.DYNAMIC]].
      */
-    override def interpret(instr: T, pc: Int)(implicit state: DefSiteState): ProperPropertyComputationResult = {
+    override def interpret(instr: T, pc: Int)(implicit state: DUSiteState): ProperPropertyComputationResult = {
         // TODO: The approximation of fields might be outsourced into a dedicated analysis. Then, one could add a
         //  finer-grained processing or provide different abstraction levels. This analysis could then use that analysis.
         if (!StringAnalysis.isSupportedType(instr.declaredFieldType)) {

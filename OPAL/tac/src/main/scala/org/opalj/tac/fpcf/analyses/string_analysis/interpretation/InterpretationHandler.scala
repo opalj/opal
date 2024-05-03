@@ -29,9 +29,9 @@ import org.opalj.fpcf.ProperPropertyComputationResult
  */
 abstract class InterpretationHandler {
 
-    def analyze(entity: DefSiteEntity): ProperPropertyComputationResult = {
+    def analyze(entity: DUSiteEntity): ProperPropertyComputationResult = {
         val pc = entity.pc
-        implicit val defSiteState: DefSiteState = DefSiteState(pc, entity.dm, entity.tac)
+        implicit val defSiteState: DUSiteState = DUSiteState(pc, entity.dm, entity.tac, entity.entity)
         if (pc <= FormalParametersOriginOffset) {
             if (pc == -1 || pc <= ImmediateVMExceptionsOriginOffset) {
                 return StringInterpreter.computeFinalResult(pc, StringConstancyInformation.lb)
@@ -43,7 +43,7 @@ abstract class InterpretationHandler {
         processNewDefSitePC(pc)
     }
 
-    protected def processNewDefSitePC(pc: Int)(implicit state: DefSiteState): ProperPropertyComputationResult
+    protected def processNewDefSitePC(pc: Int)(implicit state: DUSiteState): ProperPropertyComputationResult
 }
 
 object InterpretationHandler {
@@ -202,18 +202,18 @@ object InterpretationHandler {
     def getStringConstancyInformationForReplace: StringConstancyInformation =
         StringConstancyInformation(StringConstancyType.REPLACE, StringTreeDynamicString)
 
-    def getEntityForDefSite(defSite: Int)(implicit state: DefSiteState): DefSiteEntity =
+    def getEntityForDefSite(defSite: Int)(implicit state: DUSiteState): DUSiteEntity =
         getEntityForPC(pcOfDefSite(defSite)(state.tac.stmts))
 
-    def getEntityForDefSite(defSite: Int, dm: DefinedMethod, tac: TAC): DefSiteEntity =
-        getEntityForPC(pcOfDefSite(defSite)(tac.stmts), dm, tac)
+    def getEntityForDefSite(defSite: Int, dm: DefinedMethod, tac: TAC, entity: SEntity): DUSiteEntity =
+        getEntityForPC(pcOfDefSite(defSite)(tac.stmts), dm, tac, entity)
 
-    def getEntityForPC(pc: Int)(implicit state: DefSiteState): DefSiteEntity =
-        getEntityForPC(pc, state.dm, state.tac)
+    def getEntityForPC(pc: Int)(implicit state: DUSiteState): DUSiteEntity =
+        getEntityForPC(pc, state.dm, state.tac, state.entity)
 
-    def getEntity(state: DefSiteState): DefSiteEntity =
-        getEntityForPC(state.pc, state.dm, state.tac)
+    def getEntity(state: DUSiteState): DUSiteEntity =
+        getEntityForPC(state.pc, state.dm, state.tac, state.entity)
 
-    def getEntityForPC(pc: Int, dm: DefinedMethod, tac: TAC): DefSiteEntity =
-        DefSiteEntity(pc, dm, tac)
+    def getEntityForPC(pc: Int, dm: DefinedMethod, tac: TAC, entity: SEntity): DUSiteEntity =
+        DUSiteEntity(pc, dm, tac, entity)
 }

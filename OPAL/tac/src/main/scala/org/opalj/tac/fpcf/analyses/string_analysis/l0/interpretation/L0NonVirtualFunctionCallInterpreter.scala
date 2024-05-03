@@ -26,7 +26,7 @@ case class L0NonVirtualFunctionCallInterpreter()(
 
     override type T = NonVirtualFunctionCall[V]
 
-    override def interpret(instr: T, pc: Int)(implicit state: DefSiteState): ProperPropertyComputationResult = {
+    override def interpret(instr: T, pc: Int)(implicit state: DUSiteState): ProperPropertyComputationResult = {
         val calleeMethod = instr.resolveCallTarget(state.dm.definedMethod.classFile.thisType)
         if (calleeMethod.isEmpty) {
             return computeFinalResult(pc, StringConstancyInformation.lb)

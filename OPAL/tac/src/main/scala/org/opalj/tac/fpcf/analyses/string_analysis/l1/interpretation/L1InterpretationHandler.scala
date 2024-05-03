@@ -43,7 +43,7 @@ class L1InterpretationHandler(
     implicit val contextProvider: ContextProvider = p.get(ContextProviderKey)
 
     override protected def processNewDefSitePC(pc: Int)(implicit
-        state: DefSiteState
+        state: DUSiteState
     ): ProperPropertyComputationResult = {
         val defSiteOpt = valueOriginOfPC(pc, state.tac.pcToIndex);
         if (defSiteOpt.isEmpty) {

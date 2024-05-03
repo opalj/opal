@@ -31,7 +31,7 @@ object PathTransformer {
         subpath match {
             case fpe: FlatPathElement =>
                 val sci = ps(
-                    InterpretationHandler.getEntityForPC(fpe.pc, state.dm, state.tac),
+                    InterpretationHandler.getEntityForPC(fpe.pc, state.dm, state.tac, state.entity._1),
                     StringConstancyProperty.key
                 ) match {
                     case UBP(scp) => scp.sci

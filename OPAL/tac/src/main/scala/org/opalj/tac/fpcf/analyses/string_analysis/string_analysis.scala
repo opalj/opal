@@ -30,5 +30,5 @@ package object string_analysis {
      * The entity used for requesting string constancy information for specific def sites of an entity. The def site
      * should be given as a [[org.opalj.br.PC]].
      */
-    case class DefSiteEntity(pc: Int, dm: DefinedMethod, tac: TAC)
+    case class DUSiteEntity(pc: Int, dm: DefinedMethod, tac: TAC, entity: SEntity)
 }

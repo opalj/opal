@@ -31,9 +31,9 @@ trait StringInterpreter {
      * @return A [[ProperPropertyComputationResult]] for the given pc containing the interpretation of the given
      *         instruction.
      */
-    def interpret(instr: T, pc: Int)(implicit state: DefSiteState): ProperPropertyComputationResult
+    def interpret(instr: T, pc: Int)(implicit state: DUSiteState): ProperPropertyComputationResult
 
-    def computeFinalResult(pc: Int, sci: StringConstancyInformation)(implicit state: DefSiteState): Result =
+    def computeFinalResult(pc: Int, sci: StringConstancyInformation)(implicit state: DUSiteState): Result =
         StringInterpreter.computeFinalResult(pc, sci)
 
     // IMPROVE remove this since awaiting all final is not really feasible
@@ -71,7 +71,7 @@ trait StringInterpreter {
 
 object StringInterpreter {
 
-    def computeFinalResult(pc: Int, sci: StringConstancyInformation)(implicit state: DefSiteState): Result =
+    def computeFinalResult(pc: Int, sci: StringConstancyInformation)(implicit state: DUSiteState): Result =
         Result(FinalEP(
             InterpretationHandler.getEntityForPC(pc),
             StringConstancyProperty(sci.copy(tree = sci.tree.simplify))
@@ -82,7 +82,7 @@ trait ParameterEvaluatingStringInterpreter extends StringInterpreter {
 
     val ps: PropertyStore
 
-    protected def getParametersForPC(pc: Int)(implicit state: DefSiteState): Seq[Expr[V]] = {
+    protected def getParametersForPC(pc: Int)(implicit state: DUSiteState): Seq[Expr[V]] = {
         state.tac.stmts(state.tac.pcToIndex(pc)) match {
             case ExprStmt(_, vfc: FunctionCall[V])     => vfc.params
             case Assignment(_, _, fc: FunctionCall[V]) => fc.params
@@ -91,8 +91,8 @@ trait ParameterEvaluatingStringInterpreter extends StringInterpreter {
     }
 
     protected def evaluateParameters(params: Seq[Expr[V]])(implicit
-        state: DefSiteState
-    ): Seq[Seq[EOptionP[DefSiteEntity, StringConstancyProperty]]] = {
+        state: DUSiteState
+    ): Seq[Seq[EOptionP[DUSiteEntity, StringConstancyProperty]]] = {
         params.map { nextParam =>
             Seq.from(nextParam.asVar.definedBy.toArray.sorted.map { ds =>
                 ps(InterpretationHandler.getEntityForDefSite(ds), StringConstancyProperty.key)
