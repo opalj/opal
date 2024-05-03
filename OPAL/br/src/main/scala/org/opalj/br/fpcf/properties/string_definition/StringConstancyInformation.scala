@@ -8,61 +8,64 @@ package string_definition
 /**
  * @author Maximilian Rüsch
  */
-case class StringConstancyInformation(
-    constancyType: StringConstancyType.Value = StringConstancyType.APPEND,
-    tree:          StringTreeNode            = StringTreeNeutralElement
-) {
+trait StringConstancyInformation {
 
-    def isTheNeutralElement: Boolean =
-        constancyLevel == StringConstancyLevel.CONSTANT &&
-            constancyType == StringConstancyType.APPEND &&
-            tree.isNeutralElement
+    def treeFn: StringTreeNode => StringTreeNode
+    def tree: StringTreeNode
 
-    def constancyLevel: StringConstancyLevel.Value = tree.constancyLevel
+    def replaceParameters(parameters: Map[Int, StringConstancyInformation]): StringConstancyInformation
 
-    def toRegex: String = tree.toRegex
+    final def isTheNeutralElement: Boolean = tree.isNeutralElement
+    final def constancyLevel: StringConstancyLevel.Value = tree.constancyLevel
+    final def toRegex: String = tree.toRegex
+}
 
-    def replaceParameters(parameters: Map[Int, StringConstancyInformation]): StringConstancyInformation = {
-        val newTree = tree.replaceParameters(parameters.map {
+case class StringConstancyInformationConst(override val tree: StringTreeNode) extends StringConstancyInformation {
+
+    override def treeFn: StringTreeNode => StringTreeNode = _ => tree
+
+    override def replaceParameters(parameters: Map[Int, StringConstancyInformation]): StringConstancyInformation = {
+        StringConstancyInformationConst(tree.replaceParameters(parameters.map {
             case (index, sci) => (index, sci.tree)
-        })
-
-        StringConstancyInformation(constancyType, newTree)
+        }))
     }
 }
 
-/**
- * Provides a collection of instance-independent but string-constancy related values.
- */
+case class StringConstancyInformationFunction(override val treeFn: StringTreeNode => StringTreeNode)
+    extends StringConstancyInformation {
+
+    override def tree: StringTreeNode = treeFn(StringTreeNeutralElement)
+
+    override def replaceParameters(parameters: Map[Int, StringConstancyInformation]): StringConstancyInformation = {
+        StringConstancyInformationFunction((pv: StringTreeNode) =>
+            treeFn(pv).replaceParameters(parameters.map {
+                case (index, sci) => (index, sci.tree)
+            })
+        )
+    }
+}
+
 object StringConstancyInformation {
 
-    /**
-     * Takes a list of [[StringConstancyInformation]] and reduces them to a single one by or-ing
-     * them together (the level is determined by finding the most general level; the type is set to
-     * [[StringConstancyType.APPEND]] and the possible strings are concatenated using a pipe and
-     * then enclosed by brackets.
-     *
-     * @param scis The information to reduce. If a list with one element is passed, this element is
-     *             returned (without being modified in any way); a list with > 1 element is reduced
-     *             as described above; the empty list will throw an error!
-     * @return Returns the reduced information in the fashion described above.
-     */
     def reduceMultiple(scis: Seq[StringConstancyInformation]): StringConstancyInformation = {
         val relScis = scis.filter(!_.isTheNeutralElement)
         relScis.size match {
             case 0 => neutralElement
             case 1 => relScis.head
-            case _ => StringConstancyInformation(StringConstancyType.APPEND, StringTreeOr(relScis.map(_.tree)))
+            case _ if relScis.forall(_.isInstanceOf[StringConstancyInformationConst]) =>
+                StringConstancyInformationConst(StringTreeOr(relScis.map(_.tree)))
+            case _ =>
+                StringConstancyInformationFunction((pv: StringTreeNode) => StringTreeOr(relScis.map(_.treeFn(pv))))
         }
     }
 
-    def lb: StringConstancyInformation = StringConstancyInformation(tree = StringTreeDynamicString)
-    def ub: StringConstancyInformation = StringConstancyInformation(tree = StringTreeNeutralElement)
-    def dynamicInt: StringConstancyInformation = StringConstancyInformation(tree = StringTreeDynamicInt)
-    def dynamicFloat: StringConstancyInformation = StringConstancyInformation(tree = StringTreeDynamicFloat)
+    def lb: StringConstancyInformation = StringConstancyInformationConst(StringTreeDynamicString)
+    def ub: StringConstancyInformation = StringConstancyInformationConst(StringTreeNeutralElement)
+    def dynamicInt: StringConstancyInformation = StringConstancyInformationConst(StringTreeDynamicInt)
+    def dynamicFloat: StringConstancyInformation = StringConstancyInformationConst(StringTreeDynamicFloat)
 
-    def neutralElement: StringConstancyInformation = StringConstancyInformation(tree = StringTreeNeutralElement)
-    def nullElement: StringConstancyInformation = StringConstancyInformation(tree = StringTreeNull)
+    def neutralElement: StringConstancyInformation = StringConstancyInformationConst(StringTreeNeutralElement)
+    def nullElement: StringConstancyInformation = StringConstancyInformationConst(StringTreeNull)
 
     def getElementForParameterPC(paramPC: Int): StringConstancyInformation = {
         if (paramPC >= -1) {
@@ -70,6 +73,6 @@ object StringConstancyInformation {
         }
         // Parameters start at PC -2 downwards
         val paramPosition = Math.abs(paramPC + 2)
-        StringConstancyInformation(tree = StringTreeParameter(paramPosition))
+        StringConstancyInformationConst(StringTreeParameter(paramPosition))
     }
 }

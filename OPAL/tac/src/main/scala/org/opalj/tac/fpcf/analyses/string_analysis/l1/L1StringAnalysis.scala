@@ -13,11 +13,16 @@ import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
 import org.opalj.tac.fpcf.analyses.string_analysis.l1.interpretation.L1InterpretationHandler
+import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.PathFinder
+import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.SimplePathFinder
 
 /**
  * @author Maximilian Rüsch
  */
-class L1StringAnalysis(val project: SomeProject) extends StringAnalysis
+class L1StringAnalysis(val project: SomeProject) extends StringAnalysis {
+
+    override val pathFinder: PathFinder = SimplePathFinder
+}
 
 object L1StringAnalysis {
 

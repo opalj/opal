@@ -13,6 +13,7 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
+import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformationConst
 import org.opalj.br.fpcf.properties.string_definition.StringTreeDynamicString
 import org.opalj.br.fpcf.properties.string_definition.StringTreeNull
 import org.opalj.br.fpcf.properties.string_definition.StringTreeOr
@@ -114,9 +115,7 @@ case class L1FieldReadInterpreter(
             // No methods which write the field were found => Field could either be null or any value
             return computeFinalResult(
                 pc,
-                StringConstancyInformation(
-                    tree = StringTreeOr.fromNodes(StringTreeNull, StringTreeDynamicString)
-                )
+                StringConstancyInformationConst(StringTreeOr.fromNodes(StringTreeNull, StringTreeDynamicString))
             )
         }
 

@@ -15,7 +15,7 @@ import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.FPCFLazyAnalysisScheduler
 import org.opalj.br.fpcf.properties.StringConstancyProperty
-import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
+import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformationConst
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.FinalP
@@ -28,8 +28,8 @@ import org.opalj.fpcf.SomeEPS
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.Path
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.PathElement
+import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.PathFinder
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.PathTransformer
-import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.SimplePathFinder
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
@@ -38,6 +38,8 @@ import org.opalj.tac.fpcf.properties.TACAI
  * @author Maximilian Rüsch
  */
 trait StringAnalysis extends FPCFAnalysis {
+
+    val pathFinder: PathFinder
 
     val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
@@ -87,7 +89,7 @@ trait StringAnalysis extends FPCFAnalysis {
             }
         }
 
-        if (SimplePathFinder.containsComplexControlFlow(tac)) {
+        if (pathFinder.containsComplexControlFlowForValue(uVar, tac)) {
             return Result(state.entity, StringConstancyProperty.lb)
         }
 
@@ -162,8 +164,8 @@ trait StringAnalysis extends FPCFAnalysis {
     private def computeFinalResult(state: ComputationState): Result = {
         Result(
             state.entity,
-            StringConstancyProperty(StringConstancyInformation(
-                tree = PathTransformer.pathsToStringTree(state.computedLeanPaths)(state, ps).simplify
+            StringConstancyProperty(StringConstancyInformationConst(
+                PathTransformer.pathsToStringTree(state.computedLeanPaths)(state, ps).simplify
             ))
         )
     }
@@ -180,8 +182,8 @@ trait StringAnalysis extends FPCFAnalysis {
 
     private def computeNewUpperBound(state: ComputationState): StringConstancyProperty = {
         if (state.computedLeanPaths != null) {
-            StringConstancyProperty(StringConstancyInformation(
-                tree = PathTransformer.pathsToStringTree(state.computedLeanPaths)(state, ps).simplify
+            StringConstancyProperty(StringConstancyInformationConst(
+                PathTransformer.pathsToStringTree(state.computedLeanPaths)(state, ps).simplify
             ))
         } else {
             StringConstancyProperty.lb
@@ -207,7 +209,7 @@ trait StringAnalysis extends FPCFAnalysis {
         if (initDefSites.isEmpty) {
             Seq.empty
         } else {
-            Seq(SimplePathFinder.findPath(tac).makeLeanPath(value))
+            Seq(pathFinder.findPath(value, tac))
         }
     }
 }

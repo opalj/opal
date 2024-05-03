@@ -14,8 +14,6 @@ import org.opalj.ai.ImmediateVMExceptionsOriginOffset
 import org.opalj.br.DefinedMethod
 import org.opalj.br.ObjectType
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
-import org.opalj.br.fpcf.properties.string_definition.StringConstancyType
-import org.opalj.br.fpcf.properties.string_definition.StringTreeDynamicString
 import org.opalj.fpcf.ProperPropertyComputationResult
 
 /**
@@ -161,46 +159,6 @@ object InterpretationHandler {
 
         defSites.distinct.sorted.toList
     }
-
-    /**
-     * Determines the [[New]] expressions that belongs to a given `duvar`.
-     *
-     * @param value The [[V]] to get the [[New]]s for.
-     * @param stmts The context to search in, e.g., the surrounding method.
-     * @return Returns all found [[New]] expressions.
-     */
-    def findNewOfVar(value: V, stmts: Array[Stmt[V]]): List[New] = {
-        val news = ListBuffer[New]()
-
-        // HINT: It might be that the search has to be extended to further cases
-        value.definedBy.filter(_ >= 0).foreach { ds =>
-            stmts(ds) match {
-                // E.g., a call to `toString` or `append`
-                case Assignment(_, _, vfc: VirtualFunctionCall[V]) =>
-                    vfc.receiver.asVar.definedBy.filter(_ >= 0).foreach { innerDs =>
-                        stmts(innerDs) match {
-                            case Assignment(_, _, expr: New) =>
-                                news.append(expr)
-                            case Assignment(_, _, expr: VirtualFunctionCall[V]) =>
-                                val exprReceiverVar = expr.receiver.asVar
-                                // The "if" is to avoid endless recursion
-                                if (value.definedBy != exprReceiverVar.definedBy) {
-                                    news.appendAll(findNewOfVar(exprReceiverVar, stmts))
-                                }
-                            case _ =>
-                        }
-                    }
-                case Assignment(_, _, newExpr: New) =>
-                    news.append(newExpr)
-                case _ =>
-            }
-        }
-
-        news.toList
-    }
-
-    def getStringConstancyInformationForReplace: StringConstancyInformation =
-        StringConstancyInformation(StringConstancyType.REPLACE, StringTreeDynamicString)
 
     def getEntityForDefSite(defSite: Int)(implicit state: DUSiteState): DUSiteEntity =
         getEntityForPC(pcOfDefSite(defSite)(state.tac.stmts))

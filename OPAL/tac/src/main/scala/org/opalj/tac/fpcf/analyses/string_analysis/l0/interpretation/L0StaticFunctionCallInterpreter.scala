@@ -11,6 +11,7 @@ import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
+import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformationConst
 import org.opalj.br.fpcf.properties.string_definition.StringTreeConst
 import org.opalj.fpcf.InterimResult
 import org.opalj.fpcf.ProperPropertyComputationResult
@@ -76,13 +77,11 @@ private[string_analysis] trait L0StringValueOfFunctionCallInterpreter extends St
             // For char values, we need to do a conversion (as the returned results are integers)
             val scis = results.map { r => r.p.asInstanceOf[StringConstancyProperty].sci }
             val finalScis = if (call.descriptor.parameterType(0).toJava == "char") {
-                scis.map { sci =>
-                    sci.tree match {
-                        case const: StringTreeConst if const.isIntConst =>
-                            sci.copy(tree = StringTreeConst(const.string.toInt.toChar.toString))
-                        case _ =>
-                            sci
-                    }
+                scis.map {
+                    case StringConstancyInformationConst(const: StringTreeConst) if const.isIntConst =>
+                        StringConstancyInformationConst(StringTreeConst(const.string.toInt.toChar.toString))
+                    case sci =>
+                        sci
                 }
             } else {
                 scis

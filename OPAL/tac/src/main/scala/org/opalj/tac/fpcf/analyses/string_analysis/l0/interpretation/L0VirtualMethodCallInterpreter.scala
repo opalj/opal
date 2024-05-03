@@ -8,7 +8,6 @@ package l0
 package interpretation
 
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
-import org.opalj.br.fpcf.properties.string_definition.StringConstancyType
 import org.opalj.fpcf.ProperPropertyComputationResult
 
 /**
@@ -34,7 +33,7 @@ object L0VirtualMethodCallInterpreter extends StringInterpreter {
     override def interpret(instr: T, pc: Int)(implicit state: DUSiteState): ProperPropertyComputationResult = {
         val sci = instr.name match {
             // IMPROVE interpret argument for setLength
-            case "setLength" => StringConstancyInformation(StringConstancyType.RESET)
+            case "setLength" => StringConstancyInformation.neutralElement
             case _           => StringConstancyInformation.neutralElement
         }
         computeFinalResult(pc, sci)

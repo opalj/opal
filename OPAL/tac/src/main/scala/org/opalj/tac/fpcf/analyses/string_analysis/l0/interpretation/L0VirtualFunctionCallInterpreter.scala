@@ -15,10 +15,12 @@ import org.opalj.br.FloatType
 import org.opalj.br.ObjectType
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
+import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformationConst
+import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformationFunction
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
-import org.opalj.br.fpcf.properties.string_definition.StringConstancyType
 import org.opalj.br.fpcf.properties.string_definition.StringTreeConcat
 import org.opalj.br.fpcf.properties.string_definition.StringTreeConst
+import org.opalj.br.fpcf.properties.string_definition.StringTreeDynamicString
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.FinalP
@@ -87,10 +89,6 @@ case class L0VirtualFunctionCallInterpreter(
         }
     }
 
-    /**
-     * Processes calls to [[StringBuilder#toString]] or [[StringBuffer#toString]]. Note that this function assumes that
-     * the given `toString` is such a function call! Otherwise, the expected behavior cannot be guaranteed.
-     */
     private def interpretToStringCall(call: T, pc: Int)(implicit
         state: DUSiteState
     ): ProperPropertyComputationResult = {
@@ -129,7 +127,7 @@ case class L0VirtualFunctionCallInterpreter(
      * Processes calls to [[StringBuilder#replace]] or [[StringBuffer#replace]].
      */
     private def interpretReplaceCall(pc: Int)(implicit state: DUSiteState): ProperPropertyComputationResult =
-        computeFinalResult(pc, InterpretationHandler.getStringConstancyInformationForReplace)
+        computeFinalResult(pc, StringConstancyInformationConst(StringTreeDynamicString))
 }
 
 private[string_analysis] trait L0ArbitraryVirtualFunctionCallInterpreter extends StringInterpreter {
@@ -150,20 +148,21 @@ private[string_analysis] trait L0AppendCallInterpreter extends StringInterpreter
     val ps: PropertyStore
 
     private[this] case class AppendCallState(
-        appendCall:            T,
-        param:                 V,
-        defSitePC:             Int,
-        state:                 DUSiteState,
-        var receiverDependees: Seq[EOptionP[DUSiteEntity, StringConstancyProperty]],
-        var valueDependees:    Seq[EOptionP[DUSiteEntity, StringConstancyProperty]]
+        appendCall:               T,
+        param:                    V,
+        defSitePC:                Int,
+        state:                    DUSiteState,
+        var receiverDependeesOpt: Option[Seq[EOptionP[DUSiteEntity, StringConstancyProperty]]],
+        var valueDependees:       Seq[EOptionP[DUSiteEntity, StringConstancyProperty]]
     ) {
 
         def updateDependee(newDependee: EOptionP[DUSiteEntity, StringConstancyProperty]): Unit = {
-            if (receiverDependees.exists(_.e == newDependee.e)) {
-                receiverDependees = receiverDependees.updated(
+            if (receiverDependeesOpt.isDefined && receiverDependeesOpt.get.exists(_.e == newDependee.e)) {
+                val receiverDependees = receiverDependeesOpt.get
+                receiverDependeesOpt = Some(receiverDependees.updated(
                     receiverDependees.indexWhere(_.e == newDependee.e),
                     newDependee
-                )
+                ))
             } else {
                 valueDependees = valueDependees.updated(
                     valueDependees.indexWhere(_.e == newDependee.e),
@@ -173,19 +172,34 @@ private[string_analysis] trait L0AppendCallInterpreter extends StringInterpreter
         }
 
         def hasDependees: Boolean =
-            receiverDependees.exists(_.isRefinable) || valueDependees.exists(_.isRefinable)
+            (receiverDependeesOpt.isDefined && receiverDependeesOpt.get.exists(_.isRefinable)) || valueDependees.exists(
+                _.isRefinable
+            )
 
         def dependees: Iterable[EOptionP[DUSiteEntity, StringConstancyProperty]] =
-            receiverDependees.filter(_.isRefinable) ++ valueDependees.filter(_.isRefinable)
+            receiverDependeesOpt.iterator.toSeq.flatMap(Seq.from).filter(_.isRefinable) ++ valueDependees.filter(
+                _.isRefinable
+            )
     }
 
     def interpretAppendCall(appendCall: T, pc: Int)(implicit
         state: DUSiteState
     ): ProperPropertyComputationResult = {
-        // Get receiver results
-        val receiverResults = appendCall.receiver.asVar.definedBy.toList.sorted.map { ds =>
-            ps(InterpretationHandler.getEntityForDefSite(ds), StringConstancyProperty.key)
+        val receiverVar = appendCall.receiver.asVar
+
+        val receiverResults = if (receiverVar.toPersistentForm(state.tac.stmts).equals(state.entity)) {
+            // Previous state of the receiver will be handled by path resolution
+            System.out.println("DAMN WE ACHIEVED IT!")
+            None
+        } else {
+            // Get receiver results
+            Some(
+                receiverVar.definedBy.toList.sorted.map { ds =>
+                    ps(InterpretationHandler.getEntityForDefSite(ds), StringConstancyProperty.key)
+                }
+            )
         }
+
         // Get parameter results
         // .head because we want to evaluate only the first argument of append
         val param = appendCall.params.head.asVar
@@ -224,20 +238,20 @@ private[string_analysis] trait L0AppendCallInterpreter extends StringInterpreter
                 continuation(appendState)
             )
         } else {
-            val receiverSci = StringConstancyInformation.reduceMultiple(appendState.receiverDependees.map {
-                _.asFinal.p.sci
-            })
             val valueSci = transformAppendValueResult(
                 appendState.valueDependees.asInstanceOf[Seq[FinalEP[DUSiteEntity, StringConstancyProperty]]]
             )
 
-            computeFinalResult(
-                appendState.defSitePC,
-                StringConstancyInformation(
-                    StringConstancyType.APPEND,
-                    StringTreeConcat.fromNodes(receiverSci.tree, valueSci.tree)
-                )
-            )(appendState.state)
+            val resultSci = if (appendState.receiverDependeesOpt.isDefined) {
+                val receiverSci = StringConstancyInformation.reduceMultiple(appendState.receiverDependeesOpt.get.map {
+                    _.asFinal.p.sci
+                })
+                StringConstancyInformationConst(StringTreeConcat.fromNodes(receiverSci.tree, valueSci.tree))
+            } else {
+                StringConstancyInformationFunction(pv => StringTreeConcat.fromNodes(pv, valueSci.tree))
+            }
+
+            computeFinalResult(appendState.defSitePC, resultSci)(appendState.state)
         }
     }
 
@@ -254,8 +268,8 @@ private[string_analysis] trait L0AppendCallInterpreter extends StringInterpreter
                     sciValues.exists(!_.isTheNeutralElement)
                 ) {
                     val charSciValues = sciValues map {
-                        case sci @ StringConstancyInformation(_, const: StringTreeConst) if const.isIntConst =>
-                            sci.copy(tree = StringTreeConst(const.string.toInt.toChar.toString))
+                        case StringConstancyInformationConst(const: StringTreeConst) if const.isIntConst =>
+                            StringConstancyInformationConst(StringTreeConst(const.string.toInt.toChar.toString))
                         case sci =>
                             sci
                     }
@@ -323,8 +337,7 @@ private[string_analysis] trait L0SubstringCallInterpreter extends StringInterpre
                         case intValue: TheIntegerValue =>
                             computeFinalResult(
                                 pc,
-                                StringConstancyInformation(
-                                    StringConstancyType.REPLACE,
+                                StringConstancyInformationConst(
                                     StringTreeConst(
                                         receiverSci.tree.asInstanceOf[StringTreeConst].string.substring(intValue.value)
                                     )
@@ -339,8 +352,7 @@ private[string_analysis] trait L0SubstringCallInterpreter extends StringInterpre
                         case (firstIntValue: TheIntegerValue, secondIntValue: TheIntegerValue) =>
                             computeFinalResult(
                                 pc,
-                                StringConstancyInformation(
-                                    StringConstancyType.APPEND,
+                                StringConstancyInformationConst(
                                     StringTreeConst(
                                         receiverSci.tree.asInstanceOf[StringTreeConst].string.substring(
                                             firstIntValue.value,

@@ -74,7 +74,7 @@ object StringInterpreter {
     def computeFinalResult(pc: Int, sci: StringConstancyInformation)(implicit state: DUSiteState): Result =
         Result(FinalEP(
             InterpretationHandler.getEntityForPC(pc),
-            StringConstancyProperty(sci.copy(tree = sci.tree.simplify))
+            StringConstancyProperty(sci)
         ))
 }
 
