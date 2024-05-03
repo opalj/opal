@@ -150,12 +150,12 @@ private[string_analysis] trait L0AppendCallInterpreter extends StringInterpreter
     val ps: PropertyStore
 
     private[this] case class AppendCallState(
-                                                appendCall:            T,
-                                                param:                 V,
-                                                defSitePC:             Int,
-                                                state:                 DUSiteState,
-                                                var receiverDependees: Seq[EOptionP[DUSiteEntity, StringConstancyProperty]],
-                                                var valueDependees:    Seq[EOptionP[DUSiteEntity, StringConstancyProperty]]
+        appendCall:            T,
+        param:                 V,
+        defSitePC:             Int,
+        state:                 DUSiteState,
+        var receiverDependees: Seq[EOptionP[DUSiteEntity, StringConstancyProperty]],
+        var valueDependees:    Seq[EOptionP[DUSiteEntity, StringConstancyProperty]]
     ) {
 
         def updateDependee(newDependee: EOptionP[DUSiteEntity, StringConstancyProperty]): Unit = {

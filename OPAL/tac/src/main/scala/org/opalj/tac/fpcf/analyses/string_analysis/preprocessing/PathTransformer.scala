@@ -24,22 +24,18 @@ import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.Interpretation
  */
 object PathTransformer {
 
-    private def pathToTreeAcc(subpath: SubPath)(implicit
+    private def pathToTreeAcc(subpath: PathElement)(implicit
         state: ComputationState,
         ps:    PropertyStore
     ): Option[StringTreeNode] = {
-        subpath match {
-            case fpe: FlatPathElement =>
-                val sci = ps(
-                    InterpretationHandler.getEntityForPC(fpe.pc, state.dm, state.tac, state.entity._1),
-                    StringConstancyProperty.key
-                ) match {
-                    case UBP(scp) => scp.sci
-                    case _        => StringConstancyInformation.lb
-                }
-                Option.unless(sci.isTheNeutralElement)(sci.tree)
-            case _ => None
+        val sci = ps(
+            InterpretationHandler.getEntityForPC(subpath.pc, state.dm, state.tac, state.entity._1),
+            StringConstancyProperty.key
+        ) match {
+            case UBP(scp) => scp.sci
+            case _        => StringConstancyInformation.lb
         }
+        Option.unless(sci.isTheNeutralElement)(sci.tree)
     }
 
     def pathsToStringTree(paths: Seq[Path])(implicit

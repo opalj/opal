@@ -26,11 +26,10 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEPS
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
-import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.FlatPathElement
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.Path
+import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.PathElement
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.PathTransformer
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.SimplePathFinder
-import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.SubPath
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
@@ -96,7 +95,7 @@ trait StringAnalysis extends FPCFAnalysis {
             state.computedLeanPaths = computeLeanPaths(uVar)
         }
 
-        state.computedLeanPaths.flatMap(getPCsInPath).distinct.foreach { pc =>
+        state.computedLeanPaths.flatMap(_.elements.map(_.pc)).distinct.foreach { pc =>
             propertyStore(
                 InterpretationHandler.getEntityForPC(pc, state.dm, tac, state.entity._1),
                 StringConstancyProperty.key
@@ -154,7 +153,7 @@ trait StringAnalysis extends FPCFAnalysis {
      * its final result is not yet ready, however, this function finalizes, e.g., that load).
      *
      * @param state The final computation state. For this state the following criteria must apply:
-     *              For each [[FlatPathElement]], there must be a corresponding entry in
+     *              For each [[PathElement]], there must be a corresponding entry in
      *              `state.fpe2sci`. If this criteria is not met, a [[NullPointerException]] will
      *              be thrown (in this case there was some work to do left and this method should
      *              not have been called)!
@@ -201,7 +200,7 @@ trait StringAnalysis extends FPCFAnalysis {
     }
 
     private def computeLeanPathsForStringConst(value: V)(implicit stmts: Array[Stmt[V]]): Seq[Path] =
-        value.definedBy.toList.sorted.map(ds => Path(List(FlatPathElement(ds))))
+        value.definedBy.toList.sorted.map(ds => Path(List(PathElement(ds))))
 
     private def computeLeanPathsForStringBuilder(value: V)(implicit tac: TAC): Seq[Path] = {
         val initDefSites = InterpretationHandler.findDefSiteOfInit(value, tac.stmts)
@@ -210,17 +209,6 @@ trait StringAnalysis extends FPCFAnalysis {
         } else {
             Seq(SimplePathFinder.findPath(tac).makeLeanPath(value))
         }
-    }
-
-    private def getPCsInPath(path: Path): Iterable[Int] = {
-        def getDefSitesOfPathAcc(subpath: SubPath): Iterable[Int] = {
-            subpath match {
-                case fpe: FlatPathElement => Seq(fpe.pc)
-                case _                    => Seq.empty
-            }
-        }
-
-        path.elements.flatMap(getDefSitesOfPathAcc)
     }
 }
 
@@ -300,9 +288,9 @@ trait LazyStringAnalysis
             StringConstancyProperty.key,
             (e: Entity) => {
                 e match {
-                    case _: (_, _)             => initData._1.analyze(e.asInstanceOf[SContext])
+                    case _: (_, _)            => initData._1.analyze(e.asInstanceOf[SContext])
                     case entity: DUSiteEntity => initData._2.analyze(entity)
-                    case _                     => throw new IllegalArgumentException(s"Unexpected entity passed for string analysis: $e")
+                    case _                    => throw new IllegalArgumentException(s"Unexpected entity passed for string analysis: $e")
                 }
             }
         )

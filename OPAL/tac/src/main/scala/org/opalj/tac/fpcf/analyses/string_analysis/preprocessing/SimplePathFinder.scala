@@ -27,6 +27,6 @@ object SimplePathFinder {
      */
     def findPath(tac: TAC): Path = {
         val cfg = tac.cfg
-        Path(cfg.startBlock.startPC.until(cfg.code.instructions.last.pc).map(FlatPathElement.fromPC).toList)
+        Path(cfg.startBlock.startPC.until(cfg.code.instructions.last.pc).map(PathElement.fromPC).toList)
     }
 }

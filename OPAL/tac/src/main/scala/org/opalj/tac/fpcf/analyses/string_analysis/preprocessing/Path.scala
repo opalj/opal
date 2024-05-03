@@ -13,37 +13,25 @@ import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.Interpretation
 import org.opalj.value.ValueInformation
 
 /**
+ * A flat element, e.g., for representing a single statement. The statement is identified with `pc` by its [[org.opalj.br.PC]].
+ *
  * @author Maximilian Rüsch
  */
-
-/**
- * [[SubPath]] represents the general item that forms a [[Path]].
- */
-sealed class SubPath()
-
-/**
- * A flat element, e.g., for representing a single statement. The statement is identified with `pc` by its [[org.opalj.br.PC]].
- */
-class FlatPathElement private[FlatPathElement] (val pc: Int) extends SubPath {
+class PathElement private[PathElement] (val pc: Int) {
     def stmtIndex(implicit pcToIndex: Array[Int]): Int = valueOriginOfPC(pc, pcToIndex).get
 
-    def copy = new FlatPathElement(pc)
+    def copy = new PathElement(pc)
 }
 
-object FlatPathElement extends SubPath {
-    def apply(defSite: Int)(implicit stmts: Array[Stmt[V]]) = new FlatPathElement(pcOfDefSite(defSite))
+object PathElement {
+    def apply(defSite: Int)(implicit stmts: Array[Stmt[V]]) = new PathElement(pcOfDefSite(defSite))
 
-    def unapply(fpe: FlatPathElement)(implicit pcToIndex: Array[Int]): Some[Int] = Some(fpe.stmtIndex)
+    def unapply(fpe: PathElement)(implicit pcToIndex: Array[Int]): Some[Int] = Some(fpe.stmtIndex)
 
-    def fromPC(pc: Int) = new FlatPathElement(pc)
+    def fromPC(pc: Int) = new PathElement(pc)
 }
 
-/**
- * Models a path by assembling it out of [[SubPath]] elements.
- *
- * @param elements The elements that belong to a path.
- */
-case class Path(elements: List[SubPath]) {
+case class Path(elements: List[PathElement]) {
 
     /**
      * Takes an object of interest, `obj`, and a list of statements, `stmts` and finds all
@@ -104,12 +92,12 @@ case class Path(elements: List[SubPath]) {
                 case _ => true
             }
         }.map { s => (pcOfDefSite(s), ()) }.toMap
-        val leanPath = ListBuffer[SubPath]()
+        val leanPath = ListBuffer[PathElement]()
         val endSite = obj.definedBy.toArray.max
 
         elements.foreach {
-            case fpe: FlatPathElement if pcMap.contains(fpe.pc) && fpe.stmtIndex <= endSite => leanPath.append(fpe)
-            case _                                                                          =>
+            case fpe: PathElement if pcMap.contains(fpe.pc) && fpe.stmtIndex <= endSite => leanPath.append(fpe)
+            case _                                                                      =>
         }
 
         Path(leanPath.toList)
