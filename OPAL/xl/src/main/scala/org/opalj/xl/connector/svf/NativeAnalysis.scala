@@ -51,7 +51,7 @@ abstract class NativeAnalysis(
             project:                SomeProject,
             var svfModule:          SVFModule                            = null,
             var n:                  Integer                              = -1000,
-            var svfModuleName:      String                               = "/Users/tobiasroth/Desktop/test/libnative_test.bc",
+            var svfModuleName:      String                               = ???,
             var connectorDependees: Set[EOptionP[Entity, Property]]      = Set.empty,
             var connectorResults:   Set[ProperPropertyComputationResult] = Set.empty[ProperPropertyComputationResult],
             var javaJNIMapping:     Map[Long, PointsToSet]               = Map.empty,
@@ -135,17 +135,17 @@ abstract class NativeAnalysis(
         svfjava.SVFJava.init()
 
         svfConnectorState.svfModule = SVFModule.createSVFModule(svfConnectorState.svfModuleName, new SVFAnalysisListener() {
-          override def nativeToJavaCallDetected(basePTS: Array[Long], className: String, methodName: String, methodSignature: String, argsPTSs: Array[Array[Long]]): Array[Long] = {
-            val objectType = ObjectType(className.replace(";", "").substring(1))
-            var possibleMethods = Iterable.empty[Method]
-            if (!project.instanceMethods.contains(objectType))
-              return Array[Long]()
-            possibleMethods = project.instanceMethods(objectType).filter(_.name == methodName).map(_.method)
+            override def nativeToJavaCallDetected(basePTS: Array[Long], className: String, methodName: String, methodSignature: String, argsPTSs: Array[Array[Long]]): Array[Long] = {
+                val objectType = ObjectType(className.replace(";", "").substring(1))
+                var possibleMethods = Iterable.empty[Method]
+                if (!project.instanceMethods.contains(objectType))
+                    return Array[Long]()
+                possibleMethods = project.instanceMethods(objectType).filter(_.name == methodName).map(_.method)
 
-            implicit val pointsToAnalysisState: PointsToAnalysisState[ElementType, PointsToSet, ContextType] =
-              new PointsToAnalysisState(NoContext.asInstanceOf[ContextType], null)
+                implicit val pointsToAnalysisState: PointsToAnalysisState[ElementType, PointsToSet, ContextType] =
+                    new PointsToAnalysisState(NoContext.asInstanceOf[ContextType], null)
 
-            val resultListBuffer: ListBuffer[Long] = new ListBuffer[Long]
+                val resultListBuffer: ListBuffer[Long] = new ListBuffer[Long]
                 possibleMethods.foreach(method => {
 
                     val declaredMethod = declaredMethods(method)
@@ -223,114 +223,112 @@ abstract class NativeAnalysis(
                 result
             }
 
-          override def getField(baseLongArray: Array[Long], className: String, fieldName: String): Array[Long] = {
+            override def getField(baseLongArray: Array[Long], className: String, fieldName: String): Array[Long] = {
 
-            implicit val pointsToAnalysisState: PointsToAnalysisState[ElementType, PointsToSet, ContextType] =
-                  new PointsToAnalysisState(NoContext.asInstanceOf[ContextType], null)
+                implicit val pointsToAnalysisState: PointsToAnalysisState[ElementType, PointsToSet, ContextType] =
+                    new PointsToAnalysisState(NoContext.asInstanceOf[ContextType], null)
 
-            var result: List[Long] = List.empty
+                var result: List[Long] = List.empty
 
-            for (l <- baseLongArray) {
-              val baseObjectPointsToSet = svfConnectorState.javaJNIMapping(l)
+                for (l <- baseLongArray) {
+                    val baseObjectPointsToSet = svfConnectorState.javaJNIMapping(l)
 
-              var tpe: Option[ObjectType] = None
+                    var tpe: Option[ObjectType] = None
 
-              baseObjectPointsToSet.forNewestNTypes(baseObjectPointsToSet.numElements) { tmpTpe =>
-                if (tpe.isEmpty) {
-                  tpe = Some(tmpTpe.asObjectType)
-                  //TODO Supertype
-                }
-              }
-              if (tpe.isDefined) {
-                val objectType = tpe.get
-                val classFile = project.classFile(objectType)
-                val possibleFields = {
-                  if (classFile.isDefined)
-                    classFile.get.fields.find(_.name == fieldName).toList
-                  else
-                    List.empty[Fields]
-                }
-
-                possibleFields.foreach(field => {
-                  val fieldEntities = Iterator((baseObjectPointsToSet, field))
-                  for (fieldEntity <- fieldEntities) {
-                    val fieldPointsToSet =
-                      currentPointsTo("readField", fieldEntity, PointsToSetLike.noFilter)
-                    fieldPointsToSet.forNewestNElements(fieldPointsToSet.numElements) {
-                      element => result = element.asInstanceOf[Long] :: result
+                    baseObjectPointsToSet.forNewestNTypes(baseObjectPointsToSet.numElements) { tmpTpe =>
+                        if (tpe.isEmpty) {
+                            tpe = Some(tmpTpe.asObjectType)
+                            //TODO Supertype
+                        }
                     }
-                  }
-                })
-              }
+                    if (tpe.isDefined) {
+                        val objectType = tpe.get
+                        val classFile = project.classFile(objectType)
+                        val possibleFields = {
+                            if (classFile.isDefined)
+                                classFile.get.fields.find(_.name == fieldName).toList
+                            else
+                                List.empty[Fields]
+                        }
 
-              val readFieldDependeesMap = if (pointsToAnalysisState.hasDependees("readField"))
-                pointsToAnalysisState.dependeesOf("readField")
-              else
-                Map.empty[SomeEPK, (SomeEOptionP, ReferenceType => Boolean)]
-
-              svfConnectorState.connectorDependees = svfConnectorState.connectorDependees ++
-                readFieldDependeesMap.valuesIterator.map(_._1)
-              svfConnectorState.connectorResults ++= createResults
-            }
-            result.toArray
-          }
-
-
-          override def setField(baseLongArray: Array[Long], className: String, fieldName: String, rhs: Array[Long]): Unit = {
-
-            implicit
-            val pointsToAnalysisState: PointsToAnalysisState[ElementType, PointsToSet, ContextType] =
-              new PointsToAnalysisState(NoContext.asInstanceOf[ContextType], null)
-
-            var rhsPointsToSet = emptyPointsToSet
-            for (l <- rhs) {
-              rhsPointsToSet = rhsPointsToSet.included(svfConnectorState.javaJNIMapping(l))
-            }
-
-            for (l <- baseLongArray) {
-              val baseObjectPointsToSet = svfConnectorState.javaJNIMapping(l)
-
-              var tpe: Option[ObjectType] = None
-
-              baseObjectPointsToSet.forNewestNTypes(baseObjectPointsToSet.numElements) { tmpTpe =>
-                if (tpe.isEmpty) {
-                  tpe = Some(tmpTpe.asObjectType)
-                  //TODO Supertype
-                }
-              }
-              if (tpe.isDefined) {
-                val objectType = tpe.get
-                val classFile = project.classFile(objectType)
-                val possibleFields = {
-                  if (classFile.isDefined)
-                    classFile.get.fields.find(_.name == fieldName).toList
-                  else
-                    List.empty[Fields]
-                }
-                possibleFields.foreach(field => {
-                  baseObjectPointsToSet.forNewestNElements(baseObjectPointsToSet.numElements) { as =>
-                    val tpe = getTypeOf(as)
-                    if (tpe.isObjectType) {
-                      Iterator((as, field)).foreach(fieldEntity => {
-                        pointsToAnalysisState.includeSharedPointsToSet(
-                          fieldEntity,
-                          rhsPointsToSet,
-                          PointsToSetLike.noFilter
-                        )
-                      })
+                        possibleFields.foreach(field => {
+                            val fieldEntities = Iterator((baseObjectPointsToSet, field))
+                            for (fieldEntity <- fieldEntities) {
+                                val fieldPointsToSet =
+                                    currentPointsTo("getField", fieldEntity, PointsToSetLike.noFilter)
+                                fieldPointsToSet.forNewestNElements(fieldPointsToSet.numElements) {
+                                    element => result = element.asInstanceOf[Long] :: result
+                                }
+                            }
+                        })
                     }
-                  }
-                })
-              }
-            }
-            val setPropertyDependeesMap = if (pointsToAnalysisState.hasDependees("writeField"))
-              pointsToAnalysisState.dependeesOf("writeField")
-            else
-              Map.empty[SomeEPK, (SomeEOptionP, ReferenceType => Boolean)]
 
-            svfConnectorState.connectorDependees ++= setPropertyDependeesMap.valuesIterator.map(_._1)
-            svfConnectorState.connectorResults ++= createResults
-          }
+                    val readFieldDependeesMap = if (pointsToAnalysisState.hasDependees("getField"))
+                        pointsToAnalysisState.dependeesOf("getField")
+                    else
+                        Map.empty[SomeEPK, (SomeEOptionP, ReferenceType => Boolean)]
+
+                    svfConnectorState.connectorDependees = svfConnectorState.connectorDependees ++
+                        readFieldDependeesMap.valuesIterator.map(_._1)
+                    svfConnectorState.connectorResults ++= createResults
+                }
+                result.toArray
+            }
+
+            override def setField(baseLongArray: Array[Long], className: String, fieldName: String, rhs: Array[Long]): Unit = {
+
+                implicit val pointsToAnalysisState: PointsToAnalysisState[ElementType, PointsToSet, ContextType] =
+                    new PointsToAnalysisState(NoContext.asInstanceOf[ContextType], null)
+
+                var rhsPointsToSet = emptyPointsToSet
+                for (l <- rhs) {
+                    rhsPointsToSet = rhsPointsToSet.included(svfConnectorState.javaJNIMapping(l))
+                }
+
+                for (l <- baseLongArray) {
+                    val baseObjectPointsToSet = svfConnectorState.javaJNIMapping(l)
+
+                    var tpe: Option[ObjectType] = None
+
+                    baseObjectPointsToSet.forNewestNTypes(baseObjectPointsToSet.numElements) { tmpTpe =>
+                        if (tpe.isEmpty) {
+                            tpe = Some(tmpTpe.asObjectType)
+                            //TODO Supertype
+                        }
+                    }
+                    if (tpe.isDefined) {
+                        val objectType = tpe.get
+                        val classFile = project.classFile(objectType)
+                        val possibleFields = {
+                            if (classFile.isDefined)
+                                classFile.get.fields.find(_.name == fieldName).toList
+                            else
+                                List.empty[Fields]
+                        }
+                        possibleFields.foreach(field => {
+                            baseObjectPointsToSet.forNewestNElements(baseObjectPointsToSet.numElements) { as =>
+                                val tpe = getTypeOf(as)
+                                if (tpe.isObjectType) {
+                                    Iterator((as, field)).foreach(fieldEntity => {
+                                        pointsToAnalysisState.includeSharedPointsToSet(
+                                            fieldEntity,
+                                            rhsPointsToSet,
+                                            PointsToSetLike.noFilter
+                                        )
+                                    })
+                                }
+                            }
+                        })
+                    }
+                }
+                val setPropertyDependeesMap = if (pointsToAnalysisState.hasDependees("writeField"))
+                    pointsToAnalysisState.dependeesOf("writeField")
+                else
+                    Map.empty[SomeEPK, (SomeEOptionP, ReferenceType => Boolean)]
+
+                svfConnectorState.connectorDependees ++= setPropertyDependeesMap.valuesIterator.map(_._1)
+                svfConnectorState.connectorResults ++= createResults
+            }
         })
         runSVF(svfConnectorState)
     }
