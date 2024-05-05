@@ -12,6 +12,9 @@ package preprocessing
  * @author Maximilian Rüsch
  */
 class PathElement private[PathElement] (val pc: Int) {
+
+    override def toString: String = s"PathElement(pc=$pc)"
+
     def stmtIndex(implicit pcToIndex: Array[Int]): Int = valueOriginOfPC(pc, pcToIndex).get
 }
 

@@ -33,7 +33,8 @@ case class L0NonVirtualMethodCallInterpreter(ps: PropertyStore) extends StringIn
 
     private def interpretInit(init: T, pc: Int)(implicit state: DUSiteState): ProperPropertyComputationResult = {
         init.params.size match {
-            case 0 => computeFinalResult(pc, StringConstancyInformation.neutralElement)
+            case 0 =>
+                computeFinalResult(pc, StringConstancyInformation.neutralElement)
             case _ =>
                 // Only StringBuffer and StringBuilder are interpreted which have constructors with <= 1 parameters
                 val results = init.params.head.asVar.definedBy.toList.map { ds =>

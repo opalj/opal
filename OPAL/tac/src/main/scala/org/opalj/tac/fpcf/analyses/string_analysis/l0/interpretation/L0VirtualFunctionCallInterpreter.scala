@@ -21,7 +21,9 @@ import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
 import org.opalj.br.fpcf.properties.string_definition.StringTreeConcat
 import org.opalj.br.fpcf.properties.string_definition.StringTreeConst
 import org.opalj.br.fpcf.properties.string_definition.StringTreeDynamicString
+import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.EUBP
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.InterimEP
@@ -117,10 +119,15 @@ case class L0VirtualFunctionCallInterpreter(
             }
         }
 
-        computeResult(ps(
-            InterpretationHandler.getEntityForDefSite(call.receiver.asVar.definedBy.head),
-            StringConstancyProperty.key
-        ))
+        val persistentReceiverVar = call.receiver.asVar.toPersistentForm(state.tac.stmts)
+        if (persistentReceiverVar.equals(state.entity)) {
+            computeFinalResult(pc, StringConstancyInformationFunction(sci => sci))
+        } else {
+            computeResult(ps(
+                (persistentReceiverVar, state.dm.definedMethod),
+                StringConstancyProperty.key
+            ))
+        }
     }
 
     /**
@@ -148,56 +155,50 @@ private[string_analysis] trait L0AppendCallInterpreter extends StringInterpreter
     val ps: PropertyStore
 
     private[this] case class AppendCallState(
-        appendCall:               T,
-        param:                    V,
-        defSitePC:                Int,
-        state:                    DUSiteState,
-        var receiverDependeesOpt: Option[Seq[EOptionP[DUSiteEntity, StringConstancyProperty]]],
-        var valueDependees:       Seq[EOptionP[DUSiteEntity, StringConstancyProperty]]
+        appendCall:              T,
+        param:                   V,
+        defSitePC:               Int,
+        state:                   DUSiteState,
+        var receiverDependeeOpt: Option[EOptionP[SContext, StringConstancyProperty]],
+        var valueDependees:      Seq[EOptionP[DUSiteEntity, StringConstancyProperty]]
     ) {
 
-        def updateDependee(newDependee: EOptionP[DUSiteEntity, StringConstancyProperty]): Unit = {
-            if (receiverDependeesOpt.isDefined && receiverDependeesOpt.get.exists(_.e == newDependee.e)) {
-                val receiverDependees = receiverDependeesOpt.get
-                receiverDependeesOpt = Some(receiverDependees.updated(
-                    receiverDependees.indexWhere(_.e == newDependee.e),
-                    newDependee
-                ))
-            } else {
-                valueDependees = valueDependees.updated(
-                    valueDependees.indexWhere(_.e == newDependee.e),
-                    newDependee
-                )
+        def updateReceiverDependee(newDependee: EOptionP[SContext, StringConstancyProperty]): Unit = {
+            if (receiverDependeeOpt.isEmpty) {
+                throw new IllegalStateException("Encountered update of receiver when no dependee was defined!")
             }
+
+            receiverDependeeOpt = Some(newDependee)
+        }
+
+        def updateValueDependee(newDependee: EOptionP[DUSiteEntity, StringConstancyProperty]): Unit = {
+            valueDependees = valueDependees.updated(valueDependees.indexWhere(_.e == newDependee.e), newDependee)
         }
 
         def hasDependees: Boolean =
-            (receiverDependeesOpt.isDefined && receiverDependeesOpt.get.exists(_.isRefinable)) || valueDependees.exists(
+            (receiverDependeeOpt.isDefined && receiverDependeeOpt.get.isRefinable) || valueDependees.exists(
                 _.isRefinable
             )
 
-        def dependees: Iterable[EOptionP[DUSiteEntity, StringConstancyProperty]] =
-            receiverDependeesOpt.iterator.toSeq.flatMap(Seq.from).filter(_.isRefinable) ++ valueDependees.filter(
-                _.isRefinable
-            )
+        def dependees: Iterable[EOptionP[Entity, StringConstancyProperty]] = {
+            if (receiverDependeeOpt.isDefined && receiverDependeeOpt.get.isRefinable) {
+                valueDependees.filter(_.isRefinable) :+ receiverDependeeOpt.get
+            } else {
+                valueDependees.filter(_.isRefinable)
+            }
+        }
     }
 
     def interpretAppendCall(appendCall: T, pc: Int)(implicit
         state: DUSiteState
     ): ProperPropertyComputationResult = {
-        val receiverVar = appendCall.receiver.asVar
-
-        val receiverResults = if (receiverVar.toPersistentForm(state.tac.stmts).equals(state.entity)) {
+        val receiverVar = appendCall.receiver.asVar.toPersistentForm(state.tac.stmts)
+        val receiverResult = if (receiverVar.equals(state.entity)) {
             // Previous state of the receiver will be handled by path resolution
-            System.out.println("DAMN WE ACHIEVED IT!")
             None
         } else {
             // Get receiver results
-            Some(
-                receiverVar.definedBy.toList.sorted.map { ds =>
-                    ps(InterpretationHandler.getEntityForDefSite(ds), StringConstancyProperty.key)
-                }
-            )
+            Some(ps((receiverVar, state.dm.definedMethod), StringConstancyProperty.key))
         }
 
         // Get parameter results
@@ -212,15 +213,19 @@ private[string_analysis] trait L0AppendCallInterpreter extends StringInterpreter
             ps(InterpretationHandler.getEntityForDefSite(usedDS), StringConstancyProperty.key)
         }
         implicit val appendState: AppendCallState =
-            AppendCallState(appendCall, param, pc, state, receiverResults, valueResults)
+            AppendCallState(appendCall, param, pc, state, receiverResult, valueResults)
 
         tryComputeFinalAppendCallResult
     }
 
     private def continuation(appendState: AppendCallState)(eps: SomeEPS): ProperPropertyComputationResult = {
         eps match {
+            case EUBP(_: DUSiteEntity, _: StringConstancyProperty) =>
+                appendState.updateValueDependee(eps.asInstanceOf[EOptionP[DUSiteEntity, StringConstancyProperty]])
+                tryComputeFinalAppendCallResult(appendState)
+
             case UBP(_: StringConstancyProperty) =>
-                appendState.updateDependee(eps.asInstanceOf[EOptionP[DUSiteEntity, StringConstancyProperty]])
+                appendState.updateReceiverDependee(eps.asInstanceOf[EOptionP[SContext, StringConstancyProperty]])
                 tryComputeFinalAppendCallResult(appendState)
 
             case _ => throw new IllegalArgumentException(s"Encountered unknown eps: $eps")
@@ -242,10 +247,8 @@ private[string_analysis] trait L0AppendCallInterpreter extends StringInterpreter
                 appendState.valueDependees.asInstanceOf[Seq[FinalEP[DUSiteEntity, StringConstancyProperty]]]
             )
 
-            val resultSci = if (appendState.receiverDependeesOpt.isDefined) {
-                val receiverSci = StringConstancyInformation.reduceMultiple(appendState.receiverDependeesOpt.get.map {
-                    _.asFinal.p.sci
-                })
+            val resultSci = if (appendState.receiverDependeeOpt.isDefined) {
+                val receiverSci = appendState.receiverDependeeOpt.get.asFinal.p.sci
                 StringConstancyInformationConst(StringTreeConcat.fromNodes(receiverSci.tree, valueSci.tree))
             } else {
                 StringConstancyInformationFunction(pv => StringTreeConcat.fromNodes(pv, valueSci.tree))

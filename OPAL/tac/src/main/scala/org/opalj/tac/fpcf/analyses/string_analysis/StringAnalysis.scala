@@ -7,6 +7,7 @@ package string_analysis
 
 import org.opalj.br.FieldType
 import org.opalj.br.Method
+import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
@@ -16,6 +17,8 @@ import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.FPCFLazyAnalysisScheduler
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformationConst
+import org.opalj.br.fpcf.properties.string_definition.StringTreeNeutralElement
+import org.opalj.br.fpcf.properties.string_definition.StringTreeOr
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.FinalP
@@ -29,7 +32,6 @@ import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.Interpretation
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.Path
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.PathElement
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.PathFinder
-import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.PathTransformer
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
@@ -89,12 +91,12 @@ trait StringAnalysis extends FPCFAnalysis {
             }
         }
 
-        if (pathFinder.containsComplexControlFlowForValue(uVar, tac)) {
-            return Result(state.entity, StringConstancyProperty.lb)
-        }
-
         if (state.computedLeanPaths == null) {
             state.computedLeanPaths = computeLeanPaths(uVar)
+        }
+
+        if (state.computedLeanPaths.isEmpty) {
+            return Result(state.entity, StringConstancyProperty.lb)
         }
 
         state.computedLeanPaths.flatMap(_.elements.map(_.pc)).distinct.foreach { pc =>
@@ -161,14 +163,7 @@ trait StringAnalysis extends FPCFAnalysis {
      *              not have been called)!
      * @return Returns the final result.
      */
-    private def computeFinalResult(state: ComputationState): Result = {
-        Result(
-            state.entity,
-            StringConstancyProperty(StringConstancyInformationConst(
-                PathTransformer.pathsToStringTree(state.computedLeanPaths)(state, ps).simplify
-            ))
-        )
-    }
+    private def computeFinalResult(state: ComputationState): Result = Result(state.entity, computeNewUpperBound(state))
 
     private def getInterimResult(state: ComputationState): InterimResult[StringConstancyProperty] = {
         InterimResult(
@@ -182,34 +177,27 @@ trait StringAnalysis extends FPCFAnalysis {
 
     private def computeNewUpperBound(state: ComputationState): StringConstancyProperty = {
         if (state.computedLeanPaths != null) {
-            StringConstancyProperty(StringConstancyInformationConst(
-                PathTransformer.pathsToStringTree(state.computedLeanPaths)(state, ps).simplify
-            ))
+            val reducedStringTree = if (state.computedLeanPaths.isEmpty) {
+                StringTreeNeutralElement
+            } else {
+                StringTreeOr(state.computedLeanPaths.map { pathFinder.transformPath(_, state.tac)(state, ps) })
+            }
+
+            StringConstancyProperty(StringConstancyInformationConst(reducedStringTree.simplify))
         } else {
             StringConstancyProperty.lb
         }
     }
 
     private def computeLeanPaths(value: V)(implicit tac: TAC): Seq[Path] = {
-        val defSites = value.definedBy.toArray.sorted
-
-        val call = tac.stmts(defSites.head).asAssignment.expr
-        if (InterpretationHandler.isStringBuilderBufferToStringCall(call)) {
-            computeLeanPathsForStringBuilder(value)
+        if (value.value.isReferenceValue && (
+                value.value.asReferenceValue.asReferenceType.mostPreciseObjectType == ObjectType.StringBuilder
+                || value.value.asReferenceValue.asReferenceType.mostPreciseObjectType == ObjectType.StringBuffer
+            )
+        ) {
+            pathFinder.findPath(value, tac).map(Seq(_)).getOrElse(Seq.empty)
         } else {
-            computeLeanPathsForStringConst(value)(tac.stmts)
-        }
-    }
-
-    private def computeLeanPathsForStringConst(value: V)(implicit stmts: Array[Stmt[V]]): Seq[Path] =
-        value.definedBy.toList.sorted.map(ds => Path(List(PathElement(ds))))
-
-    private def computeLeanPathsForStringBuilder(value: V)(implicit tac: TAC): Seq[Path] = {
-        val initDefSites = InterpretationHandler.findDefSiteOfInit(value, tac.stmts)
-        if (initDefSites.isEmpty) {
-            Seq.empty
-        } else {
-            Seq(pathFinder.findPath(value, tac))
+            value.definedBy.toList.sorted.map(ds => Path(List(PathElement(ds)(tac.stmts))))
         }
     }
 }
@@ -220,14 +208,7 @@ object StringAnalysis {
      * This function checks whether a given type is a supported primitive type. Supported currently
      * means short, int, float, or double.
      */
-    def isSupportedPrimitiveNumberType(v: V): Boolean =
-        v.value.isPrimitiveValue && isSupportedPrimitiveNumberType(v.value.asPrimitiveValue.primitiveType.toJava)
-
-    /**
-     * This function checks whether a given type is a supported primitive type. Supported currently
-     * means short, int, float, or double.
-     */
-    def isSupportedPrimitiveNumberType(typeName: String): Boolean =
+    private def isSupportedPrimitiveNumberType(typeName: String): Boolean =
         typeName == "short" || typeName == "int" || typeName == "float" || typeName == "double"
 
     /**
