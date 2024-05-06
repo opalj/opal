@@ -10,9 +10,21 @@ import scala.collection.mutable
 
 import org.opalj.br.cfg.CFG
 
+import scalax.collection.OneOrMore
 import scalax.collection.edges.DiEdge
+import scalax.collection.generic.Edge
+import scalax.collection.hyperedges.DiHyperEdge
 import scalax.collection.immutable.Graph
-import scalax.collection.io.dot._
+import scalax.collection.io.dot.DotAttr
+import scalax.collection.io.dot.DotAttrStmt
+import scalax.collection.io.dot.DotEdgeStmt
+import scalax.collection.io.dot.DotGraph
+import scalax.collection.io.dot.DotNodeStmt
+import scalax.collection.io.dot.DotRootGraph
+import scalax.collection.io.dot.Elem
+import scalax.collection.io.dot.Graph2DotExport
+import scalax.collection.io.dot.Id
+import scalax.collection.io.dot.NodeId
 
 trait RegionType extends Product
 
@@ -54,7 +66,7 @@ class StructuralAnalysis(cfg: CFG[Stmt[V], TACStmts[V]]) {
     }
     val entry: Region = Region(Block, Set(cfg.startBlock.nodeId))
 
-    def graphDot(graph: Graph[Region, DiEdge[Region]]): String = {
+    def graphDot[N <: Region, E <: Edge[N]](graph: Graph[N, E]): String = {
         val root = DotRootGraph(
             directed = true,
             id = Some(Id("MyDot")),
@@ -62,27 +74,53 @@ class StructuralAnalysis(cfg: CFG[Stmt[V], TACStmts[V]]) {
             attrList = List(DotAttr(Id("attr_1"), Id(""""one"""")), DotAttr(Id("attr_2"), Id("<two>")))
         )
 
-        def edgeTransformer(innerEdge: SGraph#EdgeT): Option[(DotGraph, DotEdgeStmt)] = {
+        def edgeTransformer(innerEdge: Graph[N, E]#EdgeT): Option[(DotGraph, DotEdgeStmt)] = {
             val edge = innerEdge.outer
             Some(
                 (
                     root,
-                    DotEdgeStmt(NodeId(edge.source.toString), NodeId(edge.target.toString))
+                    DotEdgeStmt(NodeId(edge.sources.head.toString), NodeId(edge.targets.head.toString))
                 )
             )
         }
 
-        def iNodeTransformer(innerNode: SGraph#NodeT): Option[(DotGraph, DotNodeStmt)] = {
+        def hEdgeTransformer(innerHEdge: Graph[N, E]#EdgeT): Iterable[(DotGraph, DotEdgeStmt)] = {
+            val color = DotAttr(Id("color"), Id("#%06x".format(scala.util.Random.nextInt(1 << 24))))
+
+            innerHEdge.outer.targets.toList map (target =>
+                (
+                    root,
+                    DotEdgeStmt(
+                        NodeId(innerHEdge.outer.sources.head.toString),
+                        NodeId(target.toString),
+                        Seq(color)
+                    )
+                )
+            )
+        }
+
+        def nodeTransformer(innerNode: Graph[N, E]#NodeT): Option[(DotGraph, DotNodeStmt)] = {
             val node = innerNode.outer
+            val attributes = if (node.nodeIds.size == 1) Seq.empty
+            else Seq(
+                DotAttr(Id("style"), Id("filled")),
+                DotAttr(Id("fillcolor"), Id("\"green\""))
+            )
             Some(
                 (
                     root,
-                    DotNodeStmt(NodeId(node.toString))
+                    DotNodeStmt(NodeId(node.toString), attributes)
                 )
             )
         }
 
-        graph.toDot(root, edgeTransformer, iNodeTransformer = Some(iNodeTransformer))
+        graph.toDot(
+            root,
+            edgeTransformer,
+            hEdgeTransformer = Some(hEdgeTransformer),
+            cNodeTransformer = Some(nodeTransformer),
+            iNodeTransformer = Some(nodeTransformer)
+        )
     }
 
     def analyze(graph: SGraph, entry: Region): (Graph[Region, DiEdge[Region]], Graph[Region, DiEdge[Region]]) = {
@@ -160,6 +198,28 @@ class StructuralAnalysis(cfg: CFG[Stmt[V], TACStmts[V]]) {
         }
 
         (g, controlTree)
+    }
+
+    def combine(cfg: SGraph, controlTree: SGraph): Graph[Region, Edge[Region]] = {
+        var combinedGraph = cfg
+            .++[Region, DiEdge[Region]](controlTree.nodes.map(_.outer), Iterable.empty)
+            .asInstanceOf[Graph[Region, Edge[Region]]]
+
+        for {
+            iNode <- controlTree.nodes
+            nodes = combinedGraph.nodes.filter((n: Graph[Region, Edge[Region]]#NodeT) =>
+                n.outer.nodeIds.subsetOf(iNode.outer.nodeIds)
+            ).map(_.outer)
+            actualSubsetNodes = nodes.filter(n => n.nodeIds != iNode.outer.nodeIds)
+            remainingNodes = actualSubsetNodes.filter(n =>
+                !actualSubsetNodes.exists(nn => n.nodeIds != nn.nodeIds && n.nodeIds.subsetOf(nn.nodeIds))
+            )
+            if remainingNodes.size > 1
+        } {
+            combinedGraph = combinedGraph.incl(DiHyperEdge(OneOrMore(iNode.outer), OneOrMore.from(remainingNodes).get))
+        }
+
+        combinedGraph
     }
 }
 
