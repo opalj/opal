@@ -1,4 +1,4 @@
-package org.opalj.fpcf.fixtures.xl.llvm.stateacess.unidirectional;
+package org.opalj.fpcf.fixtures.xl.llvm.stateaccess.unidirectional;
 
 import org.opalj.fpcf.properties.pts.JavaMethodContextAllocSite;
 import org.opalj.fpcf.properties.pts.PointsToSet;
