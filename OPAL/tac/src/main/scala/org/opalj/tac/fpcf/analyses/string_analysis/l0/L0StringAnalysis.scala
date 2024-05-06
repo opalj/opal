@@ -9,16 +9,11 @@ package l0
 import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.PropertyStore
 import org.opalj.tac.fpcf.analyses.string_analysis.l0.interpretation.L0InterpretationHandler
-import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.PathFinder
-import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.StructuralAnalysisPathFinder
 
 /**
  * @author Maximilian Rüsch
  */
-class L0StringAnalysis(override val project: SomeProject) extends StringAnalysis {
-
-    override val pathFinder: PathFinder = StructuralAnalysisPathFinder
-}
+class L0StringAnalysis(override val project: SomeProject) extends StringAnalysis
 
 object LazyL0StringAnalysis extends LazyStringAnalysis {
 

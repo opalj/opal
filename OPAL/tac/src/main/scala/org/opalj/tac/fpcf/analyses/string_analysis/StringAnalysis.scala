@@ -41,8 +41,6 @@ import org.opalj.tac.fpcf.properties.TACAI
  */
 trait StringAnalysis extends FPCFAnalysis {
 
-    val pathFinder: PathFinder
-
     val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
     def analyze(data: SContext): ProperPropertyComputationResult = {
@@ -180,7 +178,7 @@ trait StringAnalysis extends FPCFAnalysis {
             val reducedStringTree = if (state.computedLeanPaths.isEmpty) {
                 StringTreeNeutralElement
             } else {
-                StringTreeOr(state.computedLeanPaths.map { pathFinder.transformPath(_, state.tac)(state, ps) })
+                StringTreeOr(state.computedLeanPaths.map { PathFinder.transformPath(_, state.tac)(state, ps) })
             }
 
             StringConstancyProperty(StringConstancyInformationConst(reducedStringTree.simplify))
@@ -195,7 +193,7 @@ trait StringAnalysis extends FPCFAnalysis {
                 || value.value.asReferenceValue.asReferenceType.mostPreciseObjectType == ObjectType.StringBuffer
             )
         ) {
-            pathFinder.findPath(value, tac).map(Seq(_)).getOrElse(Seq.empty)
+            PathFinder.findPath(value, tac).map(Seq(_)).getOrElse(Seq.empty)
         } else {
             value.definedBy.toList.sorted.map(ds => Path(List(PathElement(ds)(tac.stmts))))
         }
