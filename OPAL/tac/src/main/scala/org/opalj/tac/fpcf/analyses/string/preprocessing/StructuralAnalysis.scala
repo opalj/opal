@@ -142,7 +142,9 @@ class StructuralAnalysis(cfg: CFG[Stmt[V], TACStmts[V]]) {
     }
 
     def analyze(graph: SGraph, entry: Region): (Graph[Region, DiEdge[Region]], Graph[Region, DiEdge[Region]]) = {
-        assert(graph.isAcyclic, "The passed graph must not be cyclic!")
+        if (graph.isCyclic) {
+            throw new IllegalArgumentException("The passed graph must not be cyclic!")
+        }
 
         var g = graph
         var curEntry = entry
