@@ -167,7 +167,9 @@ class StructuralAnalysis(cfg: CFG[Stmt[V], TACStmts[V]]) {
                 (newGraph, newRegion)
             }
 
-            PostOrderTraversal.foreachInTraversalFrom[Region, SGraph](g, curEntry)(post.append)
+            PostOrderTraversal.foreachInTraversalFrom[Region, SGraph](g, curEntry)(post.append) { (x, y) =>
+                x.nodeIds.head.compare(y.nodeIds.head)
+            }
 
             while (g.order > 1 && postCtr < post.size) {
                 var n = post(postCtr)
@@ -229,19 +231,19 @@ object PostOrderTraversal {
         graph:   G,
         toVisit: Seq[A],
         visited: Set[A]
-    )(nodeHandler: A => Unit): Unit = {
+    )(nodeHandler: A => Unit)(implicit ordering: Ordering[A]): Unit = {
         if (toVisit.nonEmpty) {
             val next = toVisit.head
-            // TODO stabilize traversal
-            val nextSuccessors = (graph.get(next).diSuccessors.map(_.outer) -- visited -- toVisit).toSeq
+            val nextSuccessors = (graph.get(next).diSuccessors.map(_.outer) -- visited -- toVisit).toList.sorted
 
             foreachInTraversal(graph, nextSuccessors ++ toVisit.tail, visited + next)(nodeHandler)
             nodeHandler(next)
         }
     }
 
-    def foreachInTraversalFrom[A, G <: Graph[A, DiEdge[A]]](graph: G, initial: A)(nodeHandler: A => Unit): Unit =
-        foreachInTraversal(graph, Seq(initial), Set.empty)(nodeHandler)
+    def foreachInTraversalFrom[A, G <: Graph[A, DiEdge[A]]](graph: G, initial: A)(nodeHandler: A => Unit)(
+        implicit ordering: Ordering[A]
+    ): Unit = foreachInTraversal(graph, Seq(initial), Set.empty)(nodeHandler)
 }
 
 object AcyclicRegionType {
