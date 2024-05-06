@@ -8,6 +8,7 @@ package preprocessing
 
 import scala.collection.mutable
 
+import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.cfg.CFG
 
 import scalax.collection.OneOrMore
@@ -54,13 +55,30 @@ class StructuralAnalysis(cfg: CFG[Stmt[V], TACStmts[V]]) {
     type ControlTree = Graph[Region, DiEdge[Region]]
 
     val graph: SGraph = {
-        val edges = cfg.allNodes.flatMap(n =>
-            n.successors.map(s => DiEdge(Region(Block, Set(n.nodeId)), Region(Block, Set(s.nodeId))))
-        ).toSet
+        val edges = cfg.allNodes.flatMap {
+            case bb: BasicBlock =>
+                val firstNode = Region(Block, Set(bb.startPC))
+                var currentEdges = Seq.empty[DiEdge[Region]]
+                if (bb.startPC != bb.endPC) {
+                    Range.inclusive(bb.startPC, bb.endPC).tail.foreach { instrPC =>
+                        currentEdges :+= DiEdge(
+                            currentEdges.lastOption.map(_.target).getOrElse(firstNode),
+                            Region(Block, Set(instrPC))
+                        )
+                    }
+                }
+
+                val lastNode = if (currentEdges.nonEmpty) currentEdges.last.target
+                else firstNode
+                currentEdges ++ bb.successors.map(s => DiEdge(lastNode, Region(Block, Set(s.nodeId))))
+            case n =>
+                n.successors.map(s => DiEdge(Region(Block, Set(n.nodeId)), Region(Block, Set(s.nodeId))))
+        }.toSet
         var g = Graph.from(edges)
 
-        g = g.incl(DiEdge(Region(Block, Set(cfg.normalReturnNode.nodeId)), Region(Block, Set(-42))))
-        g = g.incl(DiEdge(Region(Block, Set(cfg.abnormalReturnNode.nodeId)), Region(Block, Set(-42))))
+        val allReturnNode = Region(Block, Set(-42))
+        g = g.incl(DiEdge(Region(Block, Set(cfg.normalReturnNode.nodeId)), allReturnNode))
+        g = g.incl(DiEdge(Region(Block, Set(cfg.abnormalReturnNode.nodeId)), allReturnNode))
 
         g
     }
