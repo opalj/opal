@@ -7,7 +7,7 @@ package string_analysis
 import org.opalj.br.AnnotationLike
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
-import org.opalj.br.fpcf.properties.StringConstancyProperty
+import org.opalj.br.fpcf.properties.string.StringConstancyProperty
 
 /**
  * @author Maximilian Rüsch

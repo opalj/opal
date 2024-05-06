@@ -5,10 +5,10 @@ package string_definition
 
 import org.scalatest.funsuite.AnyFunSuite
 
-import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
-import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel.CONSTANT
-import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel.DYNAMIC
-import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel.PARTIALLY_CONSTANT
+import org.opalj.br.fpcf.properties.string.StringConstancyLevel
+import org.opalj.br.fpcf.properties.string.StringConstancyLevel.CONSTANT
+import org.opalj.br.fpcf.properties.string.StringConstancyLevel.DYNAMIC
+import org.opalj.br.fpcf.properties.string.StringConstancyLevel.PARTIALLY_CONSTANT
 
 /**
  * Tests for [[StringConstancyLevel]] methods.

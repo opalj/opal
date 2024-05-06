@@ -16,9 +16,9 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.ReportableAnalysisResult
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
-import org.opalj.br.fpcf.properties.StringConstancyProperty
-import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
-import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
+import org.opalj.br.fpcf.properties.string.StringConstancyInformation
+import org.opalj.br.fpcf.properties.string.StringConstancyLevel
+import org.opalj.br.fpcf.properties.string.StringConstancyProperty
 import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.INVOKEVIRTUAL
@@ -40,9 +40,9 @@ import org.opalj.tac.TACode
 import org.opalj.tac.V
 import org.opalj.tac.VirtualFunctionCall
 import org.opalj.tac.cg.RTACallGraphKey
-import org.opalj.tac.fpcf.analyses.string_analysis.SContext
-import org.opalj.tac.fpcf.analyses.string_analysis.l0.LazyL0StringAnalysis
-import org.opalj.tac.fpcf.analyses.string_analysis.l1.LazyL1StringAnalysis
+import org.opalj.tac.fpcf.analyses.string.SContext
+import org.opalj.tac.fpcf.analyses.string.l0.LazyL0StringAnalysis
+import org.opalj.tac.fpcf.analyses.string.l1.LazyL1StringAnalysis
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
