@@ -60,7 +60,7 @@ abstract class SVFConnector( final val project: SomeProject) extends PointsToAna
 
     def process(project: SomeProject): PropertyComputationResult = {
 
-        val analyses = project.allMethods.find(_.isNative).map(method => {
+        val analyses = project.allMethods.filter(_.isNative).map(method => {
             new NativeAnalysis(project, declaredMethods(method)) with PointsToBase
         })
         Results(analyses.map(_.registerAPIMethod()))

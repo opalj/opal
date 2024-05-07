@@ -120,7 +120,7 @@ abstract class NativeAnalysis(
             })
         }
 
-        Results(createResults, InterimPartialResult(svfConnectorState.connectorDependees, svfConnectorContinuation))
+        Results(createResults ++ svfConnectorState.connectorResults, InterimPartialResult(svfConnectorState.connectorDependees, svfConnectorContinuation))
     }
 
     def handleNewCaller(
