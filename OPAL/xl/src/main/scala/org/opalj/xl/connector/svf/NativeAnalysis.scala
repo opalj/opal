@@ -108,7 +108,7 @@ abstract class NativeAnalysis(
         val javaFunctionFullName = ("Java/"+javaDeclaredMethod.declaringClassType.fqn+"/"+javaDeclaredMethod.name).replace("/", "_")
 
         val functionSelection = functions.filter(_.contains(javaFunctionFullName))
-
+        assert(functionSelection.nonEmpty)
         for (f <- functionSelection) {
             val resultPTS = svfConnectorState.svfModule.processFunction(f, basePTS.toArray, parameterPointsToSets)
 
