@@ -96,9 +96,9 @@ abstract class NativeAnalysis(
                 else
                     Map.empty[SomeEPK, (SomeEOptionP, ReferenceType => Boolean)]
             svfConnectorState.connectorDependees ++= setPropertyDependeesMap.valuesIterator.map(_._1)
-
-            outerResultListBuffer.addOne(innerResultListBuffer.toArray)
-
+            if(fp.origin != -1) {
+              outerResultListBuffer.addOne(innerResultListBuffer.toArray)
+            }
         }
 
         val parameterPointsToSets = outerResultListBuffer.toArray
