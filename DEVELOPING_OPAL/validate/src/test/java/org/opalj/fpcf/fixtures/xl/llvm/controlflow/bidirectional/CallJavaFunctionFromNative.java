@@ -13,10 +13,10 @@ public class CallJavaFunctionFromNative {
     public static void main(String args[]) throws ScriptException, NoSuchMethodException {
         Object o = new Object();
         CallJavaFunctionFromNative tb = new CallJavaFunctionFromNative();
-        tb.callMyFunctionFromNative(o);
+        tb.callMyJavaFunctionFromNative(o);
     }
 
-    public native void callMyFunctionFromNative(Object x);
+    public native void callMyJavaFunctionFromNative(Object x);
 
     @PointsToSet(parameterIndex = 0,
             expectedJavaAllocSites = {
@@ -25,7 +25,7 @@ public class CallJavaFunctionFromNative {
                             methodName = "main",
                             methodDescriptor = "(java.lang.String[]): void",
                             allocSiteLinenumber = 14,
-                            allocatedType = "java.lang.String")
+                            allocatedType = "java.lang.Object")
             }
     )
     public void myJavaFunction(Object x) {
