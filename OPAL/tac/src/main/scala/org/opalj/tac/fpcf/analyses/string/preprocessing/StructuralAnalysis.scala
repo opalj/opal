@@ -327,7 +327,11 @@ object AcyclicRegionType {
         }
 
         val rType = if (nSet.size > 1) {
-            Some(Block)
+            // This condition was not contained in the book this algorithm is based on, why was it missing?
+            if (graph.filter(nodeP = node => nSet.contains(node.outer)).isAcyclic)
+                Some(Block)
+            else
+                None
         } else if (newDirectSuccessors.size == 2) {
             val m = newDirectSuccessors.head
             val k = newDirectSuccessors.tail.head
