@@ -10,6 +10,7 @@ import scala.collection.mutable
 
 import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.cfg.CFG
+import org.opalj.graphs.DominatorTree
 
 import scalax.collection.OneOrMore
 import scalax.collection.edges.DiEdge
@@ -74,13 +75,27 @@ class StructuralAnalysis(cfg: CFG[Stmt[V], TACStmts[V]]) {
             case n =>
                 n.successors.map(s => DiEdge(Region(Block, Set(n.nodeId)), Region(Block, Set(s.nodeId))))
         }.toSet
-        var g = Graph.from(edges)
+        val g = Graph.from(edges)
 
-        val allReturnNode = Region(Block, Set(-42))
-        g = g.incl(DiEdge(Region(Block, Set(cfg.normalReturnNode.nodeId)), allReturnNode))
-        g = g.incl(DiEdge(Region(Block, Set(cfg.abnormalReturnNode.nodeId)), allReturnNode))
+        val normalReturnNode = Region(Block, Set(cfg.normalReturnNode.nodeId))
+        val abnormalReturnNode = Region(Block, Set(cfg.abnormalReturnNode.nodeId))
+        val hasNormalReturn = cfg.normalReturnNode.predecessors.nonEmpty
+        val hasAbnormalReturn = cfg.abnormalReturnNode.predecessors.nonEmpty
 
-        g
+        (hasNormalReturn, hasAbnormalReturn) match {
+            case (true, true) =>
+                val allReturnNode = Region(Block, Set(-42))
+                g.incl(DiEdge(normalReturnNode, allReturnNode)).incl(DiEdge(abnormalReturnNode, allReturnNode))
+
+            case (true, false) =>
+                g.excl(abnormalReturnNode)
+
+            case (false, true) =>
+                g.excl(normalReturnNode)
+
+            case _ =>
+                throw new IllegalStateException("Cannot transform a CFG with neither normal nor abnormal return edges!")
+        }
     }
     val entry: Region = Region(Block, Set(cfg.startBlock.nodeId))
 
@@ -142,10 +157,6 @@ class StructuralAnalysis(cfg: CFG[Stmt[V], TACStmts[V]]) {
     }
 
     def analyze(graph: SGraph, entry: Region): (Graph[Region, DiEdge[Region]], Graph[Region, DiEdge[Region]]) = {
-        if (graph.isCyclic) {
-            throw new IllegalArgumentException("The passed graph must not be cyclic!")
-        }
-
         var g = graph
         var curEntry = entry
         var controlTree = Graph.empty[Region, DiEdge[Region]]
@@ -158,7 +169,6 @@ class StructuralAnalysis(cfg: CFG[Stmt[V], TACStmts[V]]) {
 
             def replace(g: SGraph, subRegions: Set[Region], regionType: RegionType): (SGraph, Region) = {
                 val newRegion = Region(regionType, subRegions.flatMap(_.nodeIds))
-
                 var newGraph: SGraph = g
 
                 // Compact
@@ -176,9 +186,9 @@ class StructuralAnalysis(cfg: CFG[Stmt[V], TACStmts[V]]) {
                     val source: Region = e.outer.source
                     val target: Region = e.outer.target
 
-                    if (!subRegions.contains(source) && subRegions.contains(target) && source != newRegion) {
+                    if (!subRegions.contains(source) && subRegions.contains(target)) {
                         newGraph += DiEdge(source, newRegion)
-                    } else if (subRegions.contains(source) && !subRegions.contains(target) && target != newRegion) {
+                    } else if (subRegions.contains(source) && !subRegions.contains(target)) {
                         newGraph += DiEdge(newRegion, target)
                     }
                 }
@@ -211,8 +221,46 @@ class StructuralAnalysis(cfg: CFG[Stmt[V], TACStmts[V]]) {
                         curEntry = newRegion
                     }
                 } else {
-                    // Detect cyclic region
-                    postCtr += 1
+                    val indexedNodes = g.nodes.outerIterable.toList
+                    val domTree = DominatorTree(
+                        indexedNodes.indexOf(curEntry),
+                        g.get(curEntry).diPredecessors.nonEmpty,
+                        index => { f =>
+                            g.get(indexedNodes(index)).diSuccessors.foreach(ds => f(indexedNodes.indexOf(ds)))
+                        },
+                        index => { f =>
+                            g.get(indexedNodes(index)).diPredecessors.foreach(ds => f(indexedNodes.indexOf(ds)))
+                        },
+                        indexedNodes.size - 1
+                    )
+
+                    var reachUnder = Set(n)
+                    for {
+                        m <- g.nodes.outerIterator
+                        if !controlTree.contains(m) || controlTree.get(m).diPredecessors.isEmpty
+                        if StructuralAnalysis.pathBack(g, indexedNodes, domTree)(m, n)
+                    } {
+                        reachUnder = reachUnder.incl(m)
+                    }
+
+                    val cyclicRegionOpt = CyclicRegionType.locate(g, n, reachUnder)
+                    if (cyclicRegionOpt.isDefined) {
+                        val (crType, nodes) = cyclicRegionOpt.get
+
+                        val (newGraph, newRegion) = replace(g, nodes, crType)
+                        g = newGraph
+                        for {
+                            node <- nodes
+                        } {
+                            controlTree = controlTree.incl(DiEdge(newRegion, node))
+                        }
+
+                        if (nodes.contains(curEntry)) {
+                            curEntry = newRegion
+                        }
+                    } else {
+                        postCtr += 1
+                    }
                 }
             }
 
@@ -242,6 +290,27 @@ class StructuralAnalysis(cfg: CFG[Stmt[V], TACStmts[V]]) {
         }
 
         combinedGraph
+    }
+}
+
+object StructuralAnalysis {
+
+    private def pathBack[A, G <: Graph[A, DiEdge[A]]](graph: G, indexedNodes: Seq[A], domTree: DominatorTree)(
+        m: A,
+        n: A
+    ): Boolean = {
+        if (m == n) {
+            false
+        } else {
+            val graphWithoutN = graph.excl(n)
+            graphWithoutN.nodes.outerIterable.exists { k =>
+                graphWithoutN.get(m).pathTo(
+                    graphWithoutN.get(k)
+                ).isDefined &&
+                graph.edges.toOuter.contains(DiEdge(k, n)) &&
+                (k == n || domTree.strictlyDominates(indexedNodes.indexOf(n), indexedNodes.indexOf(k)))
+            }
+        }
     }
 }
 
@@ -327,8 +396,9 @@ object AcyclicRegionType {
         }
 
         val rType = if (nSet.size > 1) {
-            // This condition was not contained in the book this algorithm is based on, why was it missing?
-            if (graph.filter(nodeP = node => nSet.contains(node.outer)).isAcyclic)
+            // Condition is added to ensure chosen bb does not contain any self loops or other cyclic stuff
+            // IMPROVE weaken to allow back edges from the "last" nSet member to the first to enable reductions to self loops
+            if (graph.filter(nSet.contains(_)).isAcyclic)
                 Some(Block)
             else
                 None
@@ -367,5 +437,34 @@ object AcyclicRegionType {
         }
 
         (newStartingNode, rType.map((_, nSet)))
+    }
+}
+
+object CyclicRegionType {
+
+    def locate[A, G <: Graph[A, DiEdge[A]]](
+        graph:        G,
+        startingNode: A,
+        reachUnder:   Set[A]
+    ): Option[(CyclicRegionType, Set[A])] = {
+        if (reachUnder.size == 1) {
+            return if (graph.find(DiEdge(startingNode, startingNode)).isDefined) Some((SelfLoop, reachUnder))
+            else None
+        }
+
+        if (reachUnder.exists(m => graph.get(startingNode).pathTo(graph.get(m)).isEmpty)) {
+            throw new IllegalStateException("This implementation of structural analysis cannot handle improper regions!")
+        }
+
+        val m = reachUnder.excl(startingNode).head
+        if (graph.get(startingNode).diPredecessors.size == 2
+            && graph.get(startingNode).diSuccessors.size == 2
+            && graph.get(m).diPredecessors.size == 1
+            && graph.get(m).diSuccessors.size == 1
+        ) {
+            Some((WhileLoop, reachUnder))
+        } else {
+            Some((NaturalLoop, reachUnder))
+        }
     }
 }
