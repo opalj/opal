@@ -103,7 +103,7 @@ class StructuralAnalysis(cfg: CFG[Stmt[V], TACStmts[V]]) {
         }
 
         def hEdgeTransformer(innerHEdge: Graph[N, E]#EdgeT): Iterable[(DotGraph, DotEdgeStmt)] = {
-            val color = DotAttr(Id("color"), Id("#%06x".format(scala.util.Random.nextInt(1 << 24))))
+            val color = DotAttr(Id("color"), Id(s""""#%06x"""".format(scala.util.Random.nextInt(1 << 24))))
 
             innerHEdge.outer.targets.toList map (target =>
                 (
