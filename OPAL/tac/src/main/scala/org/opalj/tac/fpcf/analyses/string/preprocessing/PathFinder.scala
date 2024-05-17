@@ -13,6 +13,7 @@ import org.opalj.br.fpcf.properties.string.StringTreeNeutralElement
 import org.opalj.br.fpcf.properties.string.StringTreeNode
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.UBP
+import org.opalj.tac.fpcf.analyses.string.flowanalysis.FlowGraph
 import org.opalj.tac.fpcf.analyses.string.interpretation.InterpretationHandler
 
 object PathFinder {
@@ -32,16 +33,12 @@ object PathFinder {
     }
 
     def findPath(value: V, tac: TAC): Option[Path] = {
-        val structural = new StructuralAnalysis(tac.cfg)
-
-        if (structural.graph.isCyclic || value.definedBy.size > 1) {
+        if (FlowGraph(tac.cfg).isCyclic || value.definedBy.size > 1) {
             return None;
         }
 
         val defSite = value.definedBy.head
         val allDefAndUseSites = tac.stmts(defSite).asAssignment.targetVar.usedBy.+(defSite).toList.sorted
-
-        // val (_, _) = structural.analyze(structural.graph, Region(Block, Set(tac.cfg.startBlock.nodeId)))
 
         Some(Path(allDefAndUseSites.map(PathElement.apply(_)(tac.stmts))))
     }

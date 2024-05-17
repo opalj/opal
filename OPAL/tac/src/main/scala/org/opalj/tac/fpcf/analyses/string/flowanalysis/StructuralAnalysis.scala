@@ -4,159 +4,21 @@ package tac
 package fpcf
 package analyses
 package string
-package preprocessing
+package flowanalysis
 
 import scala.collection.mutable
 
-import org.opalj.br.cfg.BasicBlock
-import org.opalj.br.cfg.CFG
 import org.opalj.graphs.DominatorTree
 
-import scalax.collection.OneOrMore
 import scalax.collection.edges.DiEdge
-import scalax.collection.generic.Edge
-import scalax.collection.hyperedges.DiHyperEdge
 import scalax.collection.immutable.Graph
-import scalax.collection.io.dot.DotAttr
-import scalax.collection.io.dot.DotAttrStmt
-import scalax.collection.io.dot.DotEdgeStmt
-import scalax.collection.io.dot.DotGraph
-import scalax.collection.io.dot.DotNodeStmt
-import scalax.collection.io.dot.DotRootGraph
-import scalax.collection.io.dot.Elem
-import scalax.collection.io.dot.Graph2DotExport
-import scalax.collection.io.dot.Id
-import scalax.collection.io.dot.NodeId
-
-trait RegionType extends Product
-
-trait AcyclicRegionType extends RegionType
-trait CyclicRegionType extends RegionType
-
-case object Block extends AcyclicRegionType
-case object IfThen extends AcyclicRegionType
-case object IfThenElse extends AcyclicRegionType
-case object Case extends AcyclicRegionType
-case object Proper extends AcyclicRegionType
-case object SelfLoop extends CyclicRegionType
-case object WhileLoop extends CyclicRegionType
-case object NaturalLoop extends CyclicRegionType
-case object Improper extends CyclicRegionType
-
-case class Region(regionType: RegionType, nodeIds: Set[Int]) {
-
-    override def toString: String = s"Region(${regionType.productPrefix}; ${nodeIds.toList.sorted.mkString(",")})"
-}
 
 /**
  * @author Maximilian Rüsch
  */
-class StructuralAnalysis(cfg: CFG[Stmt[V], TACStmts[V]]) {
-    type SGraph = Graph[Region, DiEdge[Region]]
-    type ControlTree = Graph[Region, DiEdge[Region]]
+object StructuralAnalysis {
 
-    val graph: SGraph = {
-        val edges = cfg.allNodes.flatMap {
-            case bb: BasicBlock =>
-                val firstNode = Region(Block, Set(bb.startPC))
-                var currentEdges = Seq.empty[DiEdge[Region]]
-                if (bb.startPC != bb.endPC) {
-                    Range.inclusive(bb.startPC, bb.endPC).tail.foreach { instrPC =>
-                        currentEdges :+= DiEdge(
-                            currentEdges.lastOption.map(_.target).getOrElse(firstNode),
-                            Region(Block, Set(instrPC))
-                        )
-                    }
-                }
-
-                val lastNode = if (currentEdges.nonEmpty) currentEdges.last.target
-                else firstNode
-                currentEdges ++ bb.successors.map(s => DiEdge(lastNode, Region(Block, Set(s.nodeId))))
-            case n =>
-                n.successors.map(s => DiEdge(Region(Block, Set(n.nodeId)), Region(Block, Set(s.nodeId))))
-        }.toSet
-        val g = Graph.from(edges)
-
-        val normalReturnNode = Region(Block, Set(cfg.normalReturnNode.nodeId))
-        val abnormalReturnNode = Region(Block, Set(cfg.abnormalReturnNode.nodeId))
-        val hasNormalReturn = cfg.normalReturnNode.predecessors.nonEmpty
-        val hasAbnormalReturn = cfg.abnormalReturnNode.predecessors.nonEmpty
-
-        (hasNormalReturn, hasAbnormalReturn) match {
-            case (true, true) =>
-                val allReturnNode = Region(Block, Set(-42))
-                g.incl(DiEdge(normalReturnNode, allReturnNode)).incl(DiEdge(abnormalReturnNode, allReturnNode))
-
-            case (true, false) =>
-                g.excl(abnormalReturnNode)
-
-            case (false, true) =>
-                g.excl(normalReturnNode)
-
-            case _ =>
-                throw new IllegalStateException("Cannot transform a CFG with neither normal nor abnormal return edges!")
-        }
-    }
-    val entry: Region = Region(Block, Set(cfg.startBlock.nodeId))
-
-    def graphDot[N <: Region, E <: Edge[N]](graph: Graph[N, E]): String = {
-        val root = DotRootGraph(
-            directed = true,
-            id = Some(Id("MyDot")),
-            attrStmts = List(DotAttrStmt(Elem.node, List(DotAttr(Id("shape"), Id("record"))))),
-            attrList = List(DotAttr(Id("attr_1"), Id(""""one"""")), DotAttr(Id("attr_2"), Id("<two>")))
-        )
-
-        def edgeTransformer(innerEdge: Graph[N, E]#EdgeT): Option[(DotGraph, DotEdgeStmt)] = {
-            val edge = innerEdge.outer
-            Some(
-                (
-                    root,
-                    DotEdgeStmt(NodeId(edge.sources.head.toString), NodeId(edge.targets.head.toString))
-                )
-            )
-        }
-
-        def hEdgeTransformer(innerHEdge: Graph[N, E]#EdgeT): Iterable[(DotGraph, DotEdgeStmt)] = {
-            val color = DotAttr(Id("color"), Id(s""""#%06x"""".format(scala.util.Random.nextInt(1 << 24))))
-
-            innerHEdge.outer.targets.toList map (target =>
-                (
-                    root,
-                    DotEdgeStmt(
-                        NodeId(innerHEdge.outer.sources.head.toString),
-                        NodeId(target.toString),
-                        Seq(color)
-                    )
-                )
-            )
-        }
-
-        def nodeTransformer(innerNode: Graph[N, E]#NodeT): Option[(DotGraph, DotNodeStmt)] = {
-            val node = innerNode.outer
-            val attributes = if (node.nodeIds.size == 1) Seq.empty
-            else Seq(
-                DotAttr(Id("style"), Id("filled")),
-                DotAttr(Id("fillcolor"), Id("\"green\""))
-            )
-            Some(
-                (
-                    root,
-                    DotNodeStmt(NodeId(node.toString), attributes)
-                )
-            )
-        }
-
-        graph.toDot(
-            root,
-            edgeTransformer,
-            hEdgeTransformer = Some(hEdgeTransformer),
-            cNodeTransformer = Some(nodeTransformer),
-            iNodeTransformer = Some(nodeTransformer)
-        )
-    }
-
-    def analyze(graph: SGraph, entry: Region): (Graph[Region, DiEdge[Region]], Graph[Region, DiEdge[Region]]) = {
+    def analyze(graph: FlowGraph, entry: Region): (FlowGraph, ControlTree) = {
         var g = graph
         var curEntry = entry
         var controlTree = Graph.empty[Region, DiEdge[Region]]
@@ -167,9 +29,9 @@ class StructuralAnalysis(cfg: CFG[Stmt[V], TACStmts[V]]) {
             var postCtr = 1
             val post = mutable.ListBuffer.empty[Region]
 
-            def replace(g: SGraph, subRegions: Set[Region], regionType: RegionType): (SGraph, Region) = {
+            def replace(g: FlowGraph, subRegions: Set[Region], regionType: RegionType): (FlowGraph, Region) = {
                 val newRegion = Region(regionType, subRegions.flatMap(_.nodeIds))
-                var newGraph: SGraph = g
+                var newGraph: FlowGraph = g
 
                 // Compact
                 newGraph = newGraph.incl(newRegion)
@@ -197,14 +59,14 @@ class StructuralAnalysis(cfg: CFG[Stmt[V], TACStmts[V]]) {
                 (newGraph, newRegion)
             }
 
-            PostOrderTraversal.foreachInTraversalFrom[Region, SGraph](g, curEntry)(post.append) { (x, y) =>
+            PostOrderTraversal.foreachInTraversalFrom[Region, FlowGraph](g, curEntry)(post.append) { (x, y) =>
                 x.nodeIds.head.compare(y.nodeIds.head)
             }
 
             while (g.order > 1 && postCtr < post.size) {
                 var n = post(postCtr)
 
-                val (newStartingNode, acyclicRegionOpt) = AcyclicRegionType.locate(g, n)
+                val (newStartingNode, acyclicRegionOpt) = locateAcyclicRegion(g, n)
                 n = newStartingNode
                 if (acyclicRegionOpt.isDefined) {
                     val (arType, nodes) = acyclicRegionOpt.get
@@ -243,7 +105,7 @@ class StructuralAnalysis(cfg: CFG[Stmt[V], TACStmts[V]]) {
                         reachUnder = reachUnder.incl(m)
                     }
 
-                    val cyclicRegionOpt = CyclicRegionType.locate(g, n, reachUnder)
+                    val cyclicRegionOpt = locateCyclicRegion(g, n, reachUnder)
                     if (cyclicRegionOpt.isDefined) {
                         val (crType, nodes) = cyclicRegionOpt.get
 
@@ -270,31 +132,6 @@ class StructuralAnalysis(cfg: CFG[Stmt[V], TACStmts[V]]) {
         (g, controlTree)
     }
 
-    def combine(cfg: SGraph, controlTree: SGraph): Graph[Region, Edge[Region]] = {
-        var combinedGraph = cfg
-            .++[Region, DiEdge[Region]](controlTree.nodes.map(_.outer), Iterable.empty)
-            .asInstanceOf[Graph[Region, Edge[Region]]]
-
-        for {
-            iNode <- controlTree.nodes
-            nodes = combinedGraph.nodes.filter((n: Graph[Region, Edge[Region]]#NodeT) =>
-                n.outer.nodeIds.subsetOf(iNode.outer.nodeIds)
-            ).map(_.outer)
-            actualSubsetNodes = nodes.filter(n => n.nodeIds != iNode.outer.nodeIds)
-            remainingNodes = actualSubsetNodes.filter(n =>
-                !actualSubsetNodes.exists(nn => n.nodeIds != nn.nodeIds && n.nodeIds.subsetOf(nn.nodeIds))
-            )
-            if remainingNodes.size > 1
-        } {
-            combinedGraph = combinedGraph.incl(DiHyperEdge(OneOrMore(iNode.outer), OneOrMore.from(remainingNodes).get))
-        }
-
-        combinedGraph
-    }
-}
-
-object StructuralAnalysis {
-
     private def pathBack[A, G <: Graph[A, DiEdge[A]]](graph: G, indexedNodes: Seq[A], domTree: DominatorTree)(
         m: A,
         n: A
@@ -312,31 +149,11 @@ object StructuralAnalysis {
             }
         }
     }
-}
 
-object PostOrderTraversal {
-
-    private def foreachInTraversal[A, G <: Graph[A, DiEdge[A]]](
-        graph:   G,
-        toVisit: Seq[A],
-        visited: Set[A]
-    )(nodeHandler: A => Unit)(implicit ordering: Ordering[A]): Unit = {
-        if (toVisit.nonEmpty) {
-            val next = toVisit.head
-            val nextSuccessors = (graph.get(next).diSuccessors.map(_.outer) -- visited -- toVisit).toList.sorted
-
-            foreachInTraversal(graph, nextSuccessors ++ toVisit.tail, visited + next)(nodeHandler)
-            nodeHandler(next)
-        }
-    }
-
-    def foreachInTraversalFrom[A, G <: Graph[A, DiEdge[A]]](graph: G, initial: A)(nodeHandler: A => Unit)(
-        implicit ordering: Ordering[A]
-    ): Unit = foreachInTraversal(graph, Seq(initial), Set.empty)(nodeHandler)
-}
-
-object AcyclicRegionType {
-    def locate[A, G <: Graph[A, DiEdge[A]]](graph: G, startingNode: A): (A, Option[(AcyclicRegionType, Set[A])]) = {
+    private def locateAcyclicRegion[A, G <: Graph[A, DiEdge[A]]](
+        graph:        G,
+        startingNode: A
+    ): (A, Option[(AcyclicRegionType, Set[A])]) = {
         var nSet = Set.empty[A]
 
         // Expand nSet down
@@ -438,11 +255,8 @@ object AcyclicRegionType {
 
         (newStartingNode, rType.map((_, nSet)))
     }
-}
 
-object CyclicRegionType {
-
-    def locate[A, G <: Graph[A, DiEdge[A]]](
+    private def locateCyclicRegion[A, G <: Graph[A, DiEdge[A]]](
         graph:        G,
         startingNode: A,
         reachUnder:   Set[A]
@@ -467,4 +281,25 @@ object CyclicRegionType {
             Some((NaturalLoop, reachUnder))
         }
     }
+}
+
+object PostOrderTraversal {
+
+    private def foreachInTraversal[A, G <: Graph[A, DiEdge[A]]](
+        graph:   G,
+        toVisit: Seq[A],
+        visited: Set[A]
+    )(nodeHandler: A => Unit)(implicit ordering: Ordering[A]): Unit = {
+        if (toVisit.nonEmpty) {
+            val next = toVisit.head
+            val nextSuccessors = (graph.get(next).diSuccessors.map(_.outer) -- visited -- toVisit).toList.sorted
+
+            foreachInTraversal(graph, nextSuccessors ++ toVisit.tail, visited + next)(nodeHandler)
+            nodeHandler(next)
+        }
+    }
+
+    def foreachInTraversalFrom[A, G <: Graph[A, DiEdge[A]]](graph: G, initial: A)(nodeHandler: A => Unit)(
+        implicit ordering: Ordering[A]
+    ): Unit = foreachInTraversal(graph, Seq(initial), Set.empty)(nodeHandler)
 }
