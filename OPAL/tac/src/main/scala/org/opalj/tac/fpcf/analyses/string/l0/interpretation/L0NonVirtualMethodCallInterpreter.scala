@@ -7,60 +7,34 @@ package string
 package l0
 package interpretation
 
-import org.opalj.br.fpcf.properties.string.StringConstancyInformation
-import org.opalj.br.fpcf.properties.string.StringConstancyProperty
-import org.opalj.fpcf.FinalEP
-import org.opalj.fpcf.InterimResult
 import org.opalj.fpcf.ProperPropertyComputationResult
-import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.Result
-import org.opalj.fpcf.SomeEPS
-import org.opalj.tac.fpcf.analyses.string.interpretation.InterpretationHandler
+import org.opalj.tac.fpcf.properties.string.IdentityFlow
+import org.opalj.tac.fpcf.properties.string.StringTreeEnvironment
 
 /**
  * @author Maximilian Rüsch
  */
-case class L0NonVirtualMethodCallInterpreter(ps: PropertyStore) extends StringInterpreter {
+object L0NonVirtualMethodCallInterpreter extends StringInterpreter {
 
     override type T = NonVirtualMethodCall[V]
 
-    override def interpret(instr: T, pc: Int)(implicit state: DUSiteState): ProperPropertyComputationResult = {
+    override def interpret(instr: T)(implicit state: InterpretationState): ProperPropertyComputationResult = {
         instr.name match {
-            case "<init>" => interpretInit(instr, pc)
-            case _        => computeFinalResult(pc, StringConstancyInformation.neutralElement)
+            case "<init>" => interpretInit(instr)
+            case _        => computeFinalResult(IdentityFlow)
         }
     }
 
-    private def interpretInit(init: T, pc: Int)(implicit state: DUSiteState): ProperPropertyComputationResult = {
+    private def interpretInit(init: T)(implicit state: InterpretationState): ProperPropertyComputationResult = {
         init.params.size match {
             case 0 =>
-                computeFinalResult(pc, StringConstancyInformation.neutralElement)
+                computeFinalResult(IdentityFlow)
             case _ =>
+                val targetVar = init.receiver.asVar.toPersistentForm(state.tac.stmts)
                 // Only StringBuffer and StringBuilder are interpreted which have constructors with <= 1 parameters
-                val results = init.params.head.asVar.definedBy.toList.map { ds =>
-                    ps(InterpretationHandler.getEntityForDefSite(ds), StringConstancyProperty.key)
-                }
-                if (results.forall(_.isFinal)) {
-                    finalResult(init.pc)(results.asInstanceOf[Seq[FinalEP[DUSiteEntity, StringConstancyProperty]]])
-                } else {
-                    InterimResult.forUB(
-                        InterpretationHandler.getEntityForPC(pc),
-                        StringConstancyProperty.ub,
-                        results.toSet,
-                        awaitAllFinalContinuation(
-                            EPSDepender(init, pc, state, results),
-                            finalResult(pc)
-                        )
-                    )
-                }
+                val paramVar = init.params.head.asVar.toPersistentForm(state.tac.stmts)
+
+                computeFinalResult((env: StringTreeEnvironment) => env.update(targetVar, env(paramVar)))
         }
     }
-
-    private def finalResult(pc: Int)(results: Seq[SomeEPS])(implicit state: DUSiteState): Result =
-        computeFinalResult(
-            pc,
-            StringConstancyInformation.reduceMultiple(results.map {
-                _.asFinal.p.asInstanceOf[StringConstancyProperty].sci
-            })
-        )
 }

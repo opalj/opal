@@ -6,28 +6,29 @@ package analyses
 package string
 package interpretation
 
-import org.opalj.br.fpcf.properties.string.StringConstancyInformation
-import org.opalj.br.fpcf.properties.string.StringConstancyInformationConst
 import org.opalj.br.fpcf.properties.string.StringTreeConst
 import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.tac.fpcf.properties.string.ConstantResultFlow
+import org.opalj.tac.fpcf.properties.string.IdentityFlow
 
 /**
  * @author Maximilian Rüsch
  */
-object SimpleValueConstExprInterpreter extends StringInterpreter {
+object SimpleValueConstExprInterpreter extends AssignmentBasedStringInterpreter {
 
-    override type T = SimpleValueConst
+    override type E = SimpleValueConst
 
-    def interpret(expr: T, pc: Int)(implicit state: DUSiteState): ProperPropertyComputationResult = {
-        val sci = expr match {
-            case ic: IntConst    => StringConstancyInformationConst(StringTreeConst(ic.value.toString))
-            case fc: FloatConst  => StringConstancyInformationConst(StringTreeConst(fc.value.toString))
-            case dc: DoubleConst => StringConstancyInformationConst(StringTreeConst(dc.value.toString))
-            case lc: LongConst   => StringConstancyInformationConst(StringTreeConst(lc.value.toString))
-            case sc: StringConst => StringConstancyInformationConst(StringTreeConst(sc.value))
-            case _               => StringConstancyInformation.neutralElement
-        }
-
-        computeFinalResult(pc, sci)
+    override def interpretExpr(target: V, expr: E)(implicit
+        state: InterpretationState
+    ): ProperPropertyComputationResult = {
+        val pt = target.toPersistentForm(state.tac.stmts)
+        computeFinalResult(expr match {
+            case ic: IntConst    => ConstantResultFlow.forVariable(pt, StringTreeConst(ic.value.toString))
+            case fc: FloatConst  => ConstantResultFlow.forVariable(pt, StringTreeConst(fc.value.toString))
+            case dc: DoubleConst => ConstantResultFlow.forVariable(pt, StringTreeConst(dc.value.toString))
+            case lc: LongConst   => ConstantResultFlow.forVariable(pt, StringTreeConst(lc.value.toString))
+            case sc: StringConst => ConstantResultFlow.forVariable(pt, StringTreeConst(sc.value))
+            case _               => IdentityFlow
+        })
     }
 }

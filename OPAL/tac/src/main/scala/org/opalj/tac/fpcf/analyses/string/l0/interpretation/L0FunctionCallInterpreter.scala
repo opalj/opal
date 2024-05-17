@@ -8,8 +8,8 @@ package l0
 package interpretation
 
 import org.opalj.br.Method
-import org.opalj.br.fpcf.properties.string.StringConstancyInformation
 import org.opalj.br.fpcf.properties.string.StringConstancyProperty
+import org.opalj.br.fpcf.properties.string.StringTreeNode
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EUBP
 import org.opalj.fpcf.InterimResult
@@ -19,56 +19,31 @@ import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.SomeEPS
 import org.opalj.tac.fpcf.analyses.string.interpretation.InterpretationHandler
 import org.opalj.tac.fpcf.properties.TACAI
+import org.opalj.tac.fpcf.properties.string.StringFlowFunction
+import org.opalj.tac.fpcf.properties.string.StringTreeEnvironment
 
 /**
- * Processes [[NonVirtualFunctionCall]]s without a call graph.
- *
  * @author Maximilian Rüsch
  */
 trait L0FunctionCallInterpreter
-    extends StringInterpreter
+    extends AssignmentLikeBasedStringInterpreter
     with ParameterEvaluatingStringInterpreter {
 
-    override type T <: FunctionCall[V]
+    override type E <: FunctionCall[V]
 
     implicit val ps: PropertyStore
 
     protected[this] case class FunctionCallState(
-        state:               DUSiteState,
+        state:               InterpretationState,
+        target:              PV,
         calleeMethods:       Seq[Method],
+        parameters:          Seq[PV],
         var tacDependees:    Map[Method, EOptionP[Method, TACAI]],
         var returnDependees: Map[Method, Seq[EOptionP[SContext, StringConstancyProperty]]] = Map.empty
     ) {
         def pc: Int = state.pc
 
         var hasUnresolvableReturnValue: Map[Method, Boolean] = Map.empty.withDefaultValue(false)
-
-        private var _paramDependees: Seq[Seq[EOptionP[DUSiteEntity, StringConstancyProperty]]] = Seq.empty
-        private var _paramEntityToPositionMapping: Map[DUSiteEntity, (Int, Int)] = Map.empty
-
-        def paramDependees: Seq[Seq[EOptionP[DUSiteEntity, StringConstancyProperty]]] = _paramDependees
-
-        def updateParamDependee(newDependee: EOptionP[DUSiteEntity, StringConstancyProperty]): Unit = {
-            val pos = _paramEntityToPositionMapping(newDependee.e)
-            _paramDependees = _paramDependees.updated(
-                pos._1,
-                _paramDependees(pos._1).updated(
-                    pos._2,
-                    newDependee
-                )
-            )
-        }
-
-        def setParamDependees(newParamDependees: Seq[Seq[EOptionP[DUSiteEntity, StringConstancyProperty]]]): Unit = {
-            _paramDependees = newParamDependees
-            _paramEntityToPositionMapping = Map.empty
-            _paramDependees.zipWithIndex.map {
-                case (param, outerIndex) => param.zipWithIndex.map {
-                        case (dependee, innerIndex) =>
-                            _paramEntityToPositionMapping += dependee.e -> (outerIndex, innerIndex)
-                    }
-            }
-        }
 
         def updateReturnDependee(method: Method, newDependee: EOptionP[SContext, StringConstancyProperty]): Unit = {
             returnDependees = returnDependees.updated(
@@ -82,18 +57,16 @@ trait L0FunctionCallInterpreter
 
         def hasDependees: Boolean = {
             tacDependees.values.exists(_.isRefinable) ||
-            returnDependees.values.flatten.exists(_.isRefinable) ||
-            paramDependees.flatten.exists(_.isRefinable)
+            returnDependees.values.flatten.exists(_.isRefinable)
         }
 
         def dependees: Iterable[SomeEOptionP] = {
             tacDependees.values.filter(_.isRefinable) ++
-                returnDependees.values.flatten.filter(_.isRefinable) ++
-                paramDependees.flatten.filter(_.isRefinable)
+                returnDependees.values.flatten.filter(_.isRefinable)
         }
     }
 
-    protected def interpretArbitraryCallToMethods(implicit
+    protected def interpretArbitraryCallToFunctions(implicit
         callState: FunctionCallState
     ): ProperPropertyComputationResult = {
         callState.calleeMethods.foreach { m =>
@@ -128,27 +101,31 @@ trait L0FunctionCallInterpreter
     private def tryComputeFinalResult(implicit callState: FunctionCallState): ProperPropertyComputationResult = {
         if (callState.hasDependees) {
             InterimResult.forUB(
-                InterpretationHandler.getEntityForPC(callState.pc)(callState.state),
-                StringConstancyProperty.ub,
+                InterpretationHandler.getEntity(callState.state),
+                StringFlowFunction.ub,
                 callState.dependees.toSet,
                 continuation(callState)
             )
         } else {
-            val parameterScis = callState.paramDependees.zipWithIndex.map {
-                case (params, index) =>
-                    (index, StringConstancyInformation.reduceMultiple(params.map(_.asFinal.p.sci)))
-            }.toMap
-            val methodScis = callState.calleeMethods.map { m =>
-                if (callState.hasUnresolvableReturnValue(m)) {
-                    StringConstancyInformation.lb
-                } else {
-                    StringConstancyInformation.reduceMultiple(callState.returnDependees(m).map {
-                        _.asFinal.p.sci.replaceParameters(parameterScis)
-                    })
-                }
-            }
+            val parameters = callState.parameters.zipWithIndex.map(x => (x._2, x._1)).toMap
 
-            computeFinalResult(callState.pc, StringConstancyInformation.reduceMultiple(methodScis))(callState.state)
+            val flowFunction: StringFlowFunction = (env: StringTreeEnvironment) =>
+                env.update(
+                    callState.target,
+                    StringTreeNode.reduceMultiple {
+                        callState.calleeMethods.map { m =>
+                            if (callState.hasUnresolvableReturnValue(m)) {
+                                StringTreeNode.lb
+                            } else {
+                                StringTreeNode.reduceMultiple(callState.returnDependees(m).map {
+                                    _.asFinal.p.sci.tree.replaceParameters(parameters.map { kv => (kv._1, env(kv._2)) })
+                                })
+                            }
+                        }
+                    }
+                )
+
+            computeFinalResult(flowFunction)(callState.state)
         }
     }
 
@@ -156,15 +133,11 @@ trait L0FunctionCallInterpreter
         eps match {
             case EUBP(m: Method, _: TACAI) =>
                 callState.tacDependees += m -> eps.asInstanceOf[EOptionP[Method, TACAI]]
-                interpretArbitraryCallToMethods(callState)
+                interpretArbitraryCallToFunctions(callState)
 
-            case EUBP(_: (_, _), _: StringConstancyProperty) =>
+            case EUBP(_, _: StringConstancyProperty) =>
                 val contextEPS = eps.asInstanceOf[EOptionP[SContext, StringConstancyProperty]]
                 callState.updateReturnDependee(contextEPS.e._2, contextEPS)
-                tryComputeFinalResult(callState)
-
-            case EUBP(_: DUSiteEntity, _: StringConstancyProperty) =>
-                callState.updateParamDependee(eps.asInstanceOf[EOptionP[DUSiteEntity, StringConstancyProperty]])
                 tryComputeFinalResult(callState)
 
             case _ => throw new IllegalArgumentException(s"Encountered unknown eps: $eps")

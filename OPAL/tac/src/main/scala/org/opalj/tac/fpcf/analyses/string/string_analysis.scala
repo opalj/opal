@@ -31,4 +31,6 @@ package object string {
      * should be given as a [[org.opalj.br.PC]].
      */
     case class DUSiteEntity(pc: Int, dm: DefinedMethod, tac: TAC, entity: SEntity)
+
+    case class MethodPC(pc: Int, dm: DefinedMethod)
 }

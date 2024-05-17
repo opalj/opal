@@ -26,6 +26,18 @@ sealed trait StringTreeNode {
     def replaceParameters(parameters: Map[Int, StringTreeNode]): StringTreeNode
 
     def isNeutralElement: Boolean = false
+    def isInvalidElement: Boolean = false
+}
+
+object StringTreeNode {
+
+    def reduceMultiple(trees: Seq[StringTreeNode]): StringTreeNode = {
+        if (trees.size == 1) trees.head
+        else if (trees.exists(_.isInvalidElement)) StringTreeInvalidElement
+        else StringTreeOr(trees)
+    }
+
+    def lb: StringTreeNode = StringTreeDynamicString
 }
 
 case class StringTreeRepetition(child: StringTreeNode) extends StringTreeNode {
@@ -59,6 +71,7 @@ case class StringTreeConcat(override val children: Seq[StringTreeNode]) extends 
     }
 
     override def simplify: StringTreeNode = {
+        // TODO neutral concat something is always neutral
         val nonNeutralChildren = children.map(_.simplify).filterNot(_.isNeutralElement)
         if (nonNeutralChildren.isEmpty)
             StringTreeNeutralElement
@@ -183,12 +196,31 @@ case class StringTreeParameter(index: Int) extends SimpleStringTreeNode {
     override def constancyLevel: StringConstancyLevel.Value = StringConstancyLevel.DYNAMIC
 }
 
+object StringTreeParameter {
+
+    def forParameterPC(paramPC: Int): StringTreeParameter = {
+        if (paramPC >= -1) {
+            throw new IllegalArgumentException(s"Invalid parameter pc given: $paramPC")
+        }
+        // Parameters start at PC -2 downwards
+        StringTreeParameter(Math.abs(paramPC + 2))
+    }
+}
+
 object StringTreeNeutralElement extends SimpleStringTreeNode {
     override def toRegex: String = ""
 
     override def constancyLevel: StringConstancyLevel.Value = StringConstancyLevel.CONSTANT
 
     override def isNeutralElement: Boolean = true
+}
+
+object StringTreeInvalidElement extends SimpleStringTreeNode {
+    override def toRegex: String = throw new UnsupportedOperationException()
+
+    override def constancyLevel: StringConstancyLevel.Value = StringConstancyLevel.CONSTANT
+
+    override def isInvalidElement: Boolean = true
 }
 
 object StringTreeNull extends SimpleStringTreeNode {

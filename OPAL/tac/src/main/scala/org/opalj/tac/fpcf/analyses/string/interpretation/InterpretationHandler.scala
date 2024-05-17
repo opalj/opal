@@ -6,11 +6,17 @@ package analyses
 package string
 package interpretation
 
-import org.opalj.ai.FormalParametersOriginOffset
-import org.opalj.ai.ImmediateVMExceptionsOriginOffset
 import org.opalj.br.DefinedMethod
-import org.opalj.br.fpcf.properties.string.StringConstancyInformation
+import org.opalj.br.Method
+import org.opalj.br.fpcf.properties.string.StringTreeNode
+import org.opalj.fpcf.FinalEP
+import org.opalj.fpcf.InterimResult
 import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.SomeEPS
+import org.opalj.tac.fpcf.properties.TACAI
+import org.opalj.tac.fpcf.properties.string.ConstantResultFlow
+import org.opalj.tac.fpcf.properties.string.StringFlowFunction
 
 /**
  * Processes expressions that are relevant in order to determine which value(s) the string value at a given def site
@@ -23,37 +29,52 @@ import org.opalj.fpcf.ProperPropertyComputationResult
  */
 abstract class InterpretationHandler {
 
-    def analyze(entity: DUSiteEntity): ProperPropertyComputationResult = {
-        val pc = entity.pc
-        implicit val duSiteState: DUSiteState = DUSiteState(pc, entity.dm, entity.tac, entity.entity)
-        if (pc <= FormalParametersOriginOffset) {
-            if (pc == -1 || pc <= ImmediateVMExceptionsOriginOffset) {
-                return StringInterpreter.computeFinalResult(pc, StringConstancyInformation.lb)
-            } else {
-                return StringInterpreter.computeFinalResult(pc, StringConstancyInformation.getElementForParameterPC(pc))
-            }
-        }
+    def ps: PropertyStore
 
-        processNewPC(pc)
+    def analyze(entity: MethodPC): ProperPropertyComputationResult = {
+        val tacaiEOptP = ps(entity.dm.definedMethod, TACAI.key)
+        implicit val state: InterpretationState = InterpretationState(entity.pc, entity.dm, tacaiEOptP)
+
+        if (tacaiEOptP.isRefinable) {
+            InterimResult.forUB(
+                InterpretationHandler.getEntity,
+                StringFlowFunction.ub,
+                Set(state.tacDependee),
+                continuation(state)
+            )
+        } else if (tacaiEOptP.ub.tac.isEmpty) {
+            // No TAC available, e.g., because the method has no body
+            StringInterpreter.computeFinalResult(ConstantResultFlow.forAll(StringTreeNode.lb))
+        } else {
+            processNew
+        }
     }
 
-    protected def processNewPC(pc: Int)(implicit state: DUSiteState): ProperPropertyComputationResult
+    private def continuation(state: InterpretationState)(eps: SomeEPS): ProperPropertyComputationResult = {
+        eps match {
+            case finalEP: FinalEP[Method, TACAI] if
+                    eps.pk.equals(TACAI.key) =>
+                state.tacDependee = finalEP
+                processNew(state)
+
+            case _ =>
+                InterimResult.forUB(
+                    InterpretationHandler.getEntity(state),
+                    StringFlowFunction.ub,
+                    Set(state.tacDependee),
+                    continuation(state)
+                )
+        }
+    }
+
+    protected def processNew(implicit state: InterpretationState): ProperPropertyComputationResult
 }
 
 object InterpretationHandler {
 
-    def getEntityForDefSite(defSite: Int)(implicit state: DUSiteState): DUSiteEntity =
-        getEntityForPC(pcOfDefSite(defSite)(state.tac.stmts))
+    def getEntity(implicit state: InterpretationState): MethodPC = getEntity(state.pc, state.dm)
 
-    def getEntityForDefSite(defSite: Int, dm: DefinedMethod, tac: TAC, entity: SEntity): DUSiteEntity =
-        getEntityForPC(pcOfDefSite(defSite)(tac.stmts), dm, tac, entity)
+    def getEntity(pc: Int)(implicit state: InterpretationState): MethodPC = getEntity(pc, state.dm)
 
-    def getEntityForPC(pc: Int)(implicit state: DUSiteState): DUSiteEntity =
-        getEntityForPC(pc, state.dm, state.tac, state.entity)
-
-    def getEntity(state: DUSiteState): DUSiteEntity =
-        getEntityForPC(state.pc, state.dm, state.tac, state.entity)
-
-    def getEntityForPC(pc: Int, dm: DefinedMethod, tac: TAC, entity: SEntity): DUSiteEntity =
-        DUSiteEntity(pc, dm, tac, entity)
+    def getEntity(pc: Int, dm: DefinedMethod): MethodPC = MethodPC(pc, dm)
 }

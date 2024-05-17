@@ -39,3 +39,13 @@ case class ComputationState(dm: DefinedMethod, entity: SContext) {
 }
 
 case class DUSiteState(pc: Int, dm: DefinedMethod, tac: TAC, entity: SEntity)
+
+private[string] case class InterpretationState(pc: Int, dm: DefinedMethod, var tacDependee: EOptionP[Method, TACAI]) {
+
+    def tac: TAC = {
+        if (tacDependee.hasUBP && tacDependee.ub.tac.isDefined)
+            tacDependee.ub.tac.get
+        else
+            throw new IllegalStateException("Cannot get a tac from a TACAI with no or empty upper bound!")
+    }
+}

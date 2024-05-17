@@ -5,6 +5,8 @@ package fpcf
 package analyses
 package string
 
+import org.opalj.ai.FormalParametersOriginOffset
+import org.opalj.ai.ImmediateVMExceptionsOriginOffset
 import org.opalj.br.FieldType
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
@@ -19,7 +21,7 @@ import org.opalj.br.fpcf.properties.string.StringConstancyInformationConst
 import org.opalj.br.fpcf.properties.string.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string.StringTreeNeutralElement
 import org.opalj.br.fpcf.properties.string.StringTreeOr
-import org.opalj.fpcf.Entity
+import org.opalj.br.fpcf.properties.string.StringTreeParameter
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.InterimResult
@@ -33,10 +35,10 @@ import org.opalj.tac.fpcf.analyses.string.preprocessing.Path
 import org.opalj.tac.fpcf.analyses.string.preprocessing.PathElement
 import org.opalj.tac.fpcf.analyses.string.preprocessing.PathFinder
 import org.opalj.tac.fpcf.properties.TACAI
+import org.opalj.tac.fpcf.properties.string.ConstantResultFlow
+import org.opalj.tac.fpcf.properties.string.StringFlowFunction
 
 /**
- * String Analysis trait defining some basic dependency handling.
- *
  * @author Maximilian Rüsch
  */
 trait StringAnalysis extends FPCFAnalysis {
@@ -70,8 +72,23 @@ trait StringAnalysis extends FPCFAnalysis {
         val uVar = state.entity._1.toValueOriginForm(tac.pcToIndex)
         val defSites = uVar.definedBy.toArray.sorted
 
+        // TODO put a function parameter with their parameter string tree into the flow analysis
         // Interpret a function / method parameter using the parameter information in state
         if (defSites.head < 0) {
+            // TODO what do we do with string builder parameters?
+            if (pc <= FormalParametersOriginOffset) {
+                if (pc == -1 || pc <= ImmediateVMExceptionsOriginOffset) {
+                    return Result(FinalEP(InterpretationHandler.getEntity(state), sff))
+
+                    return StringInterpreter.computeFinalLBFor(state.entity._1)
+                } else {
+                    return StringInterpreter.computeFinalResult(ConstantResultFlow.forVariable(
+                        state.entity._1,
+                        StringTreeParameter.forParameterPC(pc)
+                    ))
+                }
+            }
+
             val ep = ps(
                 InterpretationHandler.getEntityForDefSite(defSites.head, state.dm, tac, state.entity._1),
                 StringConstancyProperty.key
@@ -249,6 +266,7 @@ sealed trait StringAnalysisScheduler extends FPCFAnalysisScheduler {
 
     override def uses: Set[PropertyBounds] = Set(
         PropertyBounds.ub(TACAI),
+        PropertyBounds.ub(StringFlowFunction),
         PropertyBounds.lub(StringConstancyProperty)
     )
 
@@ -265,16 +283,10 @@ trait LazyStringAnalysis
     extends StringAnalysisScheduler with FPCFLazyAnalysisScheduler {
 
     override def register(p: SomeProject, ps: PropertyStore, initData: InitializationData): FPCFAnalysis = {
-        ps.registerLazyPropertyComputation(
-            StringConstancyProperty.key,
-            (e: Entity) => {
-                e match {
-                    case _: (_, _)            => initData._1.analyze(e.asInstanceOf[SContext])
-                    case entity: DUSiteEntity => initData._2.analyze(entity)
-                    case _                    => throw new IllegalArgumentException(s"Unexpected entity passed for string analysis: $e")
-                }
-            }
-        )
+        // TODO double register lazy computation for pc scoped entities as well
+        ps.registerLazyPropertyComputation(StringConstancyProperty.key, initData._1.analyze)
+        ps.registerLazyPropertyComputation(StringFlowFunction.key, initData._2.analyze)
+
         initData._1
     }
 

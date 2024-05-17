@@ -15,18 +15,16 @@ import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.br.fpcf.analyses.ContextProvider
-import org.opalj.br.fpcf.properties.string.StringConstancyInformation
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyStore
 import org.opalj.tac.fpcf.analyses.string.interpretation.BinaryExprInterpreter
 import org.opalj.tac.fpcf.analyses.string.interpretation.InterpretationHandler
 import org.opalj.tac.fpcf.analyses.string.interpretation.SimpleValueConstExprInterpreter
-import org.opalj.tac.fpcf.analyses.string.l0.interpretation.L0ArrayAccessInterpreter
-import org.opalj.tac.fpcf.analyses.string.l0.interpretation.L0NewArrayInterpreter
 import org.opalj.tac.fpcf.analyses.string.l0.interpretation.L0NonVirtualFunctionCallInterpreter
 import org.opalj.tac.fpcf.analyses.string.l0.interpretation.L0NonVirtualMethodCallInterpreter
 import org.opalj.tac.fpcf.analyses.string.l0.interpretation.L0StaticFunctionCallInterpreter
 import org.opalj.tac.fpcf.analyses.string.l0.interpretation.L0VirtualMethodCallInterpreter
+import org.opalj.tac.fpcf.properties.string.IdentityFlow
 
 /**
  * @inheritdoc
@@ -42,58 +40,56 @@ class L1InterpretationHandler(
     val fieldAccessInformation: FieldAccessInformation = p.get(FieldAccessInformationKey)
     implicit val contextProvider: ContextProvider = p.get(ContextProviderKey)
 
-    override protected def processNewPC(pc: Int)(implicit
-        state: DUSiteState
+    override protected def processNew(implicit
+        state: InterpretationState
     ): ProperPropertyComputationResult = {
-        val defSiteOpt = valueOriginOfPC(pc, state.tac.pcToIndex);
+        val defSiteOpt = valueOriginOfPC(state.pc, state.tac.pcToIndex);
         if (defSiteOpt.isEmpty) {
-            throw new IllegalArgumentException(s"Obtained a pc that does not represent a definition site: $pc")
+            throw new IllegalArgumentException(s"Obtained a pc that does not represent a definition site: ${state.pc}")
         }
 
         state.tac.stmts(defSiteOpt.get) match {
-            case Assignment(_, _, expr: SimpleValueConst) => SimpleValueConstExprInterpreter.interpret(expr, pc)
+            case Assignment(_, target, expr: SimpleValueConst) =>
+                SimpleValueConstExprInterpreter.interpretExpr(target, expr)
 
-            case Assignment(_, _, expr: ArrayLoad[V]) => L0ArrayAccessInterpreter(ps).interpret(expr, pc)
-            case Assignment(_, _, expr: NewArray[V])  => L0NewArrayInterpreter(ps).interpret(expr, pc)
-            case Assignment(_, _, _: New) =>
-                StringInterpreter.computeFinalResult(pc, StringConstancyInformation.neutralElement)
+            // Currently unsupported
+            case Assignment(_, target, _: ArrayExpr[V]) => StringInterpreter.computeFinalLBFor(target)
+            case Assignment(_, target, _: GetField[V])  => StringInterpreter.computeFinalLBFor(target)
 
-            case Assignment(_, _, expr: FieldRead[V]) =>
-                L1FieldReadInterpreter(ps, fieldAccessInformation, p, declaredFields, contextProvider).interpret(
-                    expr,
-                    pc
+            case Assignment(_, _, _: New) => StringInterpreter.computeFinalResult(IdentityFlow)
+
+            case Assignment(_, targetVar, expr: FieldRead[V]) =>
+                L1FieldReadInterpreter(ps, fieldAccessInformation, p, declaredFields, contextProvider).interpretExpr(
+                    targetVar,
+                    expr
                 )
-            case ExprStmt(_, expr: FieldRead[V]) =>
-                L1FieldReadInterpreter(ps, fieldAccessInformation, p, declaredFields, contextProvider).interpret(
-                    expr,
-                    pc
-                )
+            // Field reads without result usage are irrelevant
+            case ExprStmt(_, _: FieldRead[V]) => StringInterpreter.computeFinalResult(IdentityFlow)
 
-            case Assignment(_, _, expr: VirtualFunctionCall[V]) =>
-                new L1VirtualFunctionCallInterpreter().interpret(expr, pc)
-            case ExprStmt(_, expr: VirtualFunctionCall[V]) =>
-                new L1VirtualFunctionCallInterpreter().interpret(expr, pc)
+            case stmt @ Assignment(_, _, expr: VirtualFunctionCall[V]) =>
+                new L1VirtualFunctionCallInterpreter().interpretExpr(stmt, expr)
+            case stmt @ ExprStmt(_, expr: VirtualFunctionCall[V]) =>
+                new L1VirtualFunctionCallInterpreter().interpretExpr(stmt, expr)
 
-            case Assignment(_, _, expr: NonVirtualFunctionCall[V]) =>
-                L0NonVirtualFunctionCallInterpreter().interpret(expr, pc)
-            case ExprStmt(_, expr: NonVirtualFunctionCall[V]) =>
-                L0NonVirtualFunctionCallInterpreter().interpret(expr, pc)
+            case stmt @ Assignment(_, _, expr: NonVirtualFunctionCall[V]) =>
+                L0NonVirtualFunctionCallInterpreter().interpretExpr(stmt, expr)
+            case stmt @ ExprStmt(_, expr: NonVirtualFunctionCall[V]) =>
+                L0NonVirtualFunctionCallInterpreter().interpretExpr(stmt, expr)
 
-            case Assignment(_, _, expr: StaticFunctionCall[V]) =>
-                L0StaticFunctionCallInterpreter().interpret(expr, pc)
-            case ExprStmt(_, expr: StaticFunctionCall[V]) =>
-                L0StaticFunctionCallInterpreter().interpret(expr, pc)
+            case Assignment(_, target, expr: StaticFunctionCall[V]) =>
+                L0StaticFunctionCallInterpreter().interpretExpr(target, expr)
+            // Static function calls without return value usage are irrelevant
+            case ExprStmt(_, _: StaticFunctionCall[V]) => StringInterpreter.computeFinalResult(IdentityFlow)
 
             // TODO: For binary expressions, use the underlying domain to retrieve the result of such expressions
-            case Assignment(_, _, expr: BinaryExpr[V]) => BinaryExprInterpreter.interpret(expr, pc)
+            case Assignment(_, target, expr: BinaryExpr[V]) => BinaryExprInterpreter.interpretExpr(target, expr)
 
             case vmc: VirtualMethodCall[V] =>
-                L0VirtualMethodCallInterpreter.interpret(vmc, pc)
+                L0VirtualMethodCallInterpreter.interpret(vmc)
             case nvmc: NonVirtualMethodCall[V] =>
-                L0NonVirtualMethodCallInterpreter(ps).interpret(nvmc, pc)
+                L0NonVirtualMethodCallInterpreter.interpret(nvmc)
 
-            case _ =>
-                StringInterpreter.computeFinalResult(pc, StringConstancyInformation.neutralElement)
+            case _ => StringInterpreter.computeFinalResult(IdentityFlow)
         }
     }
 }

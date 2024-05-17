@@ -8,15 +8,18 @@ package interpretation
 
 import org.opalj.br.ComputationalTypeFloat
 import org.opalj.br.ComputationalTypeInt
-import org.opalj.br.fpcf.properties.string.StringConstancyInformation
+import org.opalj.br.fpcf.properties.string.StringTreeDynamicFloat
+import org.opalj.br.fpcf.properties.string.StringTreeDynamicInt
 import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.tac.fpcf.properties.string.ConstantResultFlow
+import org.opalj.tac.fpcf.properties.string.IdentityFlow
 
 /**
  * @author Maximilian Rüsch
  */
-object BinaryExprInterpreter extends StringInterpreter {
+object BinaryExprInterpreter extends AssignmentBasedStringInterpreter {
 
-    override type T = BinaryExpr[V]
+    override type E = BinaryExpr[V]
 
     /**
      * Currently, this implementation supports the interpretation of the following binary expressions:
@@ -24,14 +27,16 @@ object BinaryExprInterpreter extends StringInterpreter {
      * <li>[[ComputationalTypeInt]]
      * <li>[[ComputationalTypeFloat]]</li>
      * </li>
-     * For all other expressions, a [[StringConstancyInformation.neutralElement]] will be returned.
+     * For all other expressions, [[IdentityFlow]] will be returned.
      */
-    def interpret(instr: T, pc: Int)(implicit state: DUSiteState): ProperPropertyComputationResult = {
-        val sci = instr.cTpe match {
-            case ComputationalTypeInt   => StringConstancyInformation.dynamicInt
-            case ComputationalTypeFloat => StringConstancyInformation.dynamicFloat
-            case _                      => StringConstancyInformation.neutralElement
-        }
-        computeFinalResult(pc, sci)
+    override def interpretExpr(target: V, expr: E)(implicit
+        state: InterpretationState
+    ): ProperPropertyComputationResult = {
+        val pt = target.toPersistentForm(state.tac.stmts)
+        computeFinalResult(expr.cTpe match {
+            case ComputationalTypeInt   => ConstantResultFlow.forVariable(pt, StringTreeDynamicInt)
+            case ComputationalTypeFloat => ConstantResultFlow.forVariable(pt, StringTreeDynamicFloat)
+            case _                      => IdentityFlow
+        })
     }
 }

@@ -8,7 +8,6 @@ package l0
 package interpretation
 
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.properties.string.StringConstancyInformation
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyStore
 import org.opalj.tac.fpcf.properties.TACAI
@@ -21,21 +20,25 @@ import org.opalj.tac.fpcf.properties.TACAI
 case class L0NonVirtualFunctionCallInterpreter()(
     implicit val p:  SomeProject,
     implicit val ps: PropertyStore
-) extends StringInterpreter
+) extends AssignmentLikeBasedStringInterpreter
     with L0FunctionCallInterpreter {
 
-    override type T = NonVirtualFunctionCall[V]
+    override type T = AssignmentLikeStmt[V]
+    override type E = NonVirtualFunctionCall[V]
 
-    override def interpret(instr: T, pc: Int)(implicit state: DUSiteState): ProperPropertyComputationResult = {
-        val calleeMethod = instr.resolveCallTarget(state.dm.definedMethod.classFile.thisType)
+    override def interpretExpr(instr: T, expr: E)(implicit
+        state: InterpretationState
+    ): ProperPropertyComputationResult = {
+        val target = expr.receiver.asVar.toPersistentForm(state.tac.stmts)
+        val calleeMethod = expr.resolveCallTarget(state.dm.definedMethod.classFile.thisType)
         if (calleeMethod.isEmpty) {
-            return computeFinalResult(pc, StringConstancyInformation.lb)
+            return computeFinalLBFor(target)
         }
 
         val m = calleeMethod.value
-        val callState = FunctionCallState(state, Seq(m), Map((m, ps(m, TACAI.key))))
-        callState.setParamDependees(evaluateParameters(getParametersForPC(pc)))
+        val params = getParametersForPC(state.pc).map(_.asVar.toPersistentForm(state.tac.stmts))
+        val callState = FunctionCallState(state, target, Seq(m), params, Map((m, ps(m, TACAI.key))))
 
-        interpretArbitraryCallToMethods(callState)
+        interpretArbitraryCallToFunctions(callState)
     }
 }
