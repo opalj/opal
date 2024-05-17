@@ -154,54 +154,38 @@ object StructuralAnalysis {
         graph:        G,
         startingNode: A
     ): (A, Option[(AcyclicRegionType, Set[A])]) = {
-        var nSet = Set.empty[A]
+        var nSet = Set.empty[graph.NodeT]
 
         // Expand nSet down
-        var n = startingNode
-        var p = true
-        var s = graph.get(n).diSuccessors.size == 1 // TODO refactor into own node type and `hasSingleSuccessor` / `getSingleSuccessor once running
-        while (p & s) {
+        var n = graph.get(startingNode)
+        while ((n.outer == startingNode || n.diPredecessors.size == 1) && n.diSuccessors.size == 1) {
             nSet += n
-            n = graph.get(n).diSuccessors.head.outer
-            p = graph.get(n).diPredecessors.size == 1
-            s = graph.get(n).diSuccessors.size == 1
+            n = n.diSuccessors.head
         }
-        if (p) {
+        if (n.diPredecessors.size == 1) {
             nSet += n
         }
 
         // Expand nSet up
-        n = startingNode
-        p = graph.get(n).diPredecessors.size == 1
-        s = true
-        while (p & s) {
+        n = graph.get(startingNode)
+        while (n.diPredecessors.size == 1 && (n.outer == startingNode || n.diSuccessors.size == 1)) {
             nSet += n
-            n = graph.get(n).diPredecessors.head.outer
-            p = graph.get(n).diPredecessors.size == 1
-            s = graph.get(n).diSuccessors.size == 1
+            n = n.diPredecessors.head
         }
-        if (s) {
+        if (n.diSuccessors.size == 1) {
             nSet += n
         }
-
-        val newStartingNode = n
-        val newDirectSuccessors = graph.get(newStartingNode).diSuccessors.map(_.outer)
 
         def locateProperAcyclicInterval: Option[AcyclicRegionType] = {
-            assert(newDirectSuccessors.size > 1, "Detection for single direct successors should have already run!")
-
             var currentNodeSet = Set(n)
-            var currentSuccessors = graph.get(n).diSuccessors.map(_.outer)
-            while (currentSuccessors.size > 1 && graph.filter(nodeP =
-                       node => currentNodeSet.contains(node.outer)
-                   ).isAcyclic
-            ) {
+            var currentSuccessors = n.diSuccessors
+            while (currentSuccessors.size > 1 && graph.filter(node => currentNodeSet.contains(node)).isAcyclic) {
                 currentNodeSet = currentNodeSet ++ currentSuccessors
-                currentSuccessors = currentSuccessors.flatMap(node => graph.get(node).diSuccessors.map(_.outer))
+                currentSuccessors = currentSuccessors.flatMap(node => node.diSuccessors)
             }
 
-            val allPredecessors = currentNodeSet.excl(n).flatMap(node => graph.get(node).diPredecessors.map(_.outer))
-            if (graph.filter(nodeP = node => currentNodeSet.contains(node.outer)).isCyclic) {
+            val allPredecessors = currentNodeSet.excl(n).flatMap(node => node.diPredecessors)
+            if (graph.filter(node => currentNodeSet.contains(node)).isCyclic) {
                 None
             } else if (!allPredecessors.equals(currentNodeSet.diff(currentSuccessors))) {
                 None
@@ -212,6 +196,7 @@ object StructuralAnalysis {
             }
         }
 
+        val newDirectSuccessors = n.diSuccessors
         val rType = if (nSet.size > 1) {
             // Condition is added to ensure chosen bb does not contain any self loops or other cyclic stuff
             // IMPROVE weaken to allow back edges from the "last" nSet member to the first to enable reductions to self loops
@@ -222,38 +207,37 @@ object StructuralAnalysis {
         } else if (newDirectSuccessors.size == 2) {
             val m = newDirectSuccessors.head
             val k = newDirectSuccessors.tail.head
-            if (graph.get(m).diSuccessors.headOption == graph.get(k).diSuccessors.headOption
-                && graph.get(m).diSuccessors.size == 1
-                && graph.get(m).diPredecessors.size == 1
-                && graph.get(k).diPredecessors.size == 1
+            if (m.diSuccessors.headOption == k.diSuccessors.headOption
+                && m.diSuccessors.size == 1
+                && m.diPredecessors.size == 1
+                && k.diPredecessors.size == 1
             ) {
-                nSet = Set(newStartingNode, m, k)
+                nSet = Set(n, m, k)
                 Some(IfThenElse)
             } else if ((
-                           graph.get(m).diSuccessors.size == 1
-                               && graph.get(m).diSuccessors.head.outer == k
-                               && graph.get(m).diPredecessors.size == 1
-                               && graph.get(k).diPredecessors.size == 2
+                           m.diSuccessors.size == 1
+                               && m.diSuccessors.head == k
+                               && m.diPredecessors.size == 1
+                               && k.diPredecessors.size == 2
                        ) || (
-                           graph.get(k).diSuccessors.size == 1
-                           && graph.get(k).diSuccessors.head.outer == m
-                           && graph.get(k).diPredecessors.size == 1
-                           && graph.get(m).diPredecessors.size == 2
+                           k.diSuccessors.size == 1
+                           && k.diSuccessors.head == m
+                           && k.diPredecessors.size == 1
+                           && m.diPredecessors.size == 2
                        )
             ) {
-                nSet = Set(newStartingNode, m, k)
+                nSet = Set(n, m, k)
                 Some(IfThen)
             } else {
                 locateProperAcyclicInterval
             }
         } else if (newDirectSuccessors.size > 2) {
-            // TODO implement Case as well
             locateProperAcyclicInterval
         } else {
             None
         }
 
-        (newStartingNode, rType.map((_, nSet)))
+        (n.outer, rType.map((_, nSet.map(_.outer))))
     }
 
     private def locateCyclicRegion[A, G <: Graph[A, DiEdge[A]]](
