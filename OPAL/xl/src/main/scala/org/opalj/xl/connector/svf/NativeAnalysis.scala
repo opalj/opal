@@ -96,8 +96,8 @@ abstract class NativeAnalysis(
                 else
                     Map.empty[SomeEPK, (SomeEOptionP, ReferenceType => Boolean)]
             svfConnectorState.connectorDependees ++= setPropertyDependeesMap.valuesIterator.map(_._1)
-            if(fp.origin != -1) {
-              outerResultListBuffer.addOne(innerResultListBuffer.toArray)
+            if (fp.origin != -1) {
+                outerResultListBuffer.addOne(innerResultListBuffer.toArray)
             }
         }
 
@@ -108,15 +108,15 @@ abstract class NativeAnalysis(
         val javaFunctionFullName = ("Java/"+javaDeclaredMethod.declaringClassType.fqn+"/"+javaDeclaredMethod.name).replace("/", "_")
 
         val functionSelection = functions.filter(_.contains(javaFunctionFullName))
-        assert(functionSelection.nonEmpty)
+        if (functionSelection.isEmpty) {
+            throw new RuntimeException("native function not found :"+javaFunctionFullName)
+        }
         for (f <- functionSelection) {
             val resultPTS = svfConnectorState.svfModule.processFunction(f, basePTS.toArray, parameterPointsToSets)
 
             resultPTS.foreach(l => {
-                if (svfConnectorState.javaJNIMapping.contains(l)) {
-                    val pointsToSet = svfConnectorState.javaJNIMapping(l)
-                    pointsToAnalysisState.includeSharedPointsToSet(svfConnectorState.calleeContext, pointsToSet, PointsToSetLike.noFilter)
-                }
+                val pointsToSet = svfConnectorState.javaJNIMapping(l)
+                pointsToAnalysisState.includeSharedPointsToSet(svfConnectorState.calleeContext, pointsToSet, PointsToSetLike.noFilter)
             })
         }
 
@@ -139,7 +139,7 @@ abstract class NativeAnalysis(
                 val objectType = ObjectType(className.replace(";", "").substring(1))
                 var possibleMethods = Iterable.empty[Method]
                 if (!project.instanceMethods.contains(objectType))
-                    return Array[Long]()
+                    throw new RuntimeException();
                 possibleMethods = project.instanceMethods(objectType).filter(_.name == methodName).map(_.method)
 
                 implicit val pointsToAnalysisState: PointsToAnalysisState[ElementType, PointsToSet, ContextType] =
@@ -252,24 +252,32 @@ abstract class NativeAnalysis(
                         }
 
                         possibleFields.foreach(field => {
-                            val fieldEntities = Iterator((baseObjectPointsToSet, field))
-                            for (fieldEntity <- fieldEntities) {
-                                val fieldPointsToSet =
-                                    currentPointsTo("getField", fieldEntity, PointsToSetLike.noFilter)
-                                fieldPointsToSet.forNewestNElements(fieldPointsToSet.numElements) {
-                                    element => result = element.asInstanceOf[Long] :: result
+                            baseObjectPointsToSet.forNewestNElements(baseObjectPointsToSet.numElements) { as =>
+                                {
+                                    val fieldEntity = (as, field)
+
+                                    val fieldPointsToSet =
+                                        currentPointsTo("getField", fieldEntity, PointsToSetLike.noFilter)
+
+                                    fieldPointsToSet.forNewestNElements(fieldPointsToSet.numElements) {
+                                        element =>
+                                            {
+                                                svfConnectorState.javaJNIMapping += element.asInstanceOf[Long] -> fieldPointsToSet
+                                                result = element.asInstanceOf[Long] :: result
+                                            }
+                                    }
+                                    val readFieldDependeesMap = if (pointsToAnalysisState.hasDependees("getField"))
+                                        pointsToAnalysisState.dependeesOf("getField")
+                                    else
+                                        Map.empty[SomeEPK, (SomeEOptionP, ReferenceType => Boolean)]
+
+                                    svfConnectorState.connectorDependees = svfConnectorState.connectorDependees ++
+                                        readFieldDependeesMap.valuesIterator.map(_._1)
                                 }
                             }
                         })
                     }
 
-                    val readFieldDependeesMap = if (pointsToAnalysisState.hasDependees("getField"))
-                        pointsToAnalysisState.dependeesOf("getField")
-                    else
-                        Map.empty[SomeEPK, (SomeEOptionP, ReferenceType => Boolean)]
-
-                    svfConnectorState.connectorDependees = svfConnectorState.connectorDependees ++
-                        readFieldDependeesMap.valuesIterator.map(_._1)
                     svfConnectorState.connectorResults ++= createResults
                 }
                 result.toArray
@@ -329,6 +337,14 @@ abstract class NativeAnalysis(
                 svfConnectorState.connectorDependees ++= setPropertyDependeesMap.valuesIterator.map(_._1)
                 svfConnectorState.connectorResults ++= createResults
             }
+
+          override def getArrayElement(longs: Array[Long]): Array[Long] = {
+             Array[Long]()
+          }
+
+          override def setArrayElement(longs: Array[Long], longs1: Array[Long]): Unit = {
+
+          }
         })
         runSVF(svfConnectorState)
     }
