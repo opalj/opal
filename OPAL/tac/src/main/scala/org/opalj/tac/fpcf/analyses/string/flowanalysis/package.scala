@@ -120,7 +120,13 @@ package object flowanalysis {
                 val attributes = if (node.nodeIds.size == 1) Seq.empty
                 else Seq(
                     DotAttr(Id("style"), Id("filled")),
-                    DotAttr(Id("fillcolor"), Id("\"green\""))
+                    DotAttr(
+                        Id("fillcolor"),
+                        node.regionType match {
+                            case _: AcyclicRegionType => Id(""""green"""")
+                            case _: CyclicRegionType => Id(""""purple"""")
+                        }
+                    )
                 )
                 Some(
                     (

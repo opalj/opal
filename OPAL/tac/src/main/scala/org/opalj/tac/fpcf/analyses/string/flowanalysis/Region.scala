@@ -6,10 +6,10 @@ package analyses
 package string
 package flowanalysis
 
-trait RegionType extends Product
+sealed trait RegionType extends Product
 
-trait AcyclicRegionType extends RegionType
-trait CyclicRegionType extends RegionType
+sealed trait AcyclicRegionType extends RegionType
+sealed trait CyclicRegionType extends RegionType
 
 case object Block extends AcyclicRegionType
 case object IfThen extends AcyclicRegionType
