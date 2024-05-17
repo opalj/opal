@@ -14,7 +14,6 @@ import org.opalj.br.Method
 import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.cg.Callees
-import org.opalj.br.fpcf.properties.string.StringConstancyProperty
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.InterimResult
@@ -26,6 +25,7 @@ import org.opalj.tac.fpcf.analyses.string.interpretation.InterpretationHandler
 import org.opalj.tac.fpcf.analyses.string.l0.interpretation.L0FunctionCallInterpreter
 import org.opalj.tac.fpcf.analyses.string.l0.interpretation.L0VirtualFunctionCallInterpreter
 import org.opalj.tac.fpcf.properties.TACAI
+import org.opalj.tac.fpcf.properties.string.StringFlowFunction
 
 /**
  * Processes [[VirtualFunctionCall]]s similar to the [[L0VirtualFunctionCallInterpreter]] but handles arbitrary calls
@@ -80,7 +80,7 @@ class L1VirtualFunctionCallInterpreter(
                 depender.calleeDependee = eps.asInstanceOf[EOptionP[DefinedMethod, Callees]]
                 InterimResult.forUB(
                     InterpretationHandler.getEntity(state),
-                    StringConstancyProperty.ub,
+                    StringFlowFunction.ub,
                     Set(depender.calleeDependee),
                     continuation(state, depender)
                 )
