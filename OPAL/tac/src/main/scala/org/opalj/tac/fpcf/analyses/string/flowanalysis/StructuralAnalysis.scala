@@ -29,9 +29,9 @@ object StructuralAnalysis {
             var postCtr = 1
             val post = mutable.ListBuffer.empty[Region]
 
-            def replace(g: FlowGraph, subRegions: Set[Region], regionType: RegionType): (FlowGraph, Region) = {
+            def replace(currentGraph: FlowGraph, subRegions: Set[Region], regionType: RegionType): (FlowGraph, Region) = {
                 val newRegion = Region(regionType, subRegions.flatMap(_.nodeIds))
-                var newGraph: FlowGraph = g
+                var newGraph: FlowGraph = currentGraph
 
                 // Compact
                 newGraph = newGraph.incl(newRegion)

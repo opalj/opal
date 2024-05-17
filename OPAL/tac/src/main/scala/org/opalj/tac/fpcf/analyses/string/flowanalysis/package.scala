@@ -124,7 +124,7 @@ package object flowanalysis {
                         Id("fillcolor"),
                         node.regionType match {
                             case _: AcyclicRegionType => Id(""""green"""")
-                            case _: CyclicRegionType => Id(""""purple"""")
+                            case _: CyclicRegionType  => Id(""""purple"""")
                         }
                     )
                 )
