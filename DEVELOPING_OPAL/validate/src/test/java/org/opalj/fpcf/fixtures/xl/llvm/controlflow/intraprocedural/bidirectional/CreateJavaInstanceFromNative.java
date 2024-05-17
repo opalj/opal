@@ -1,4 +1,4 @@
-package org.opalj.fpcf.fixtures.xl.llvm.controlflow.bidirectional;
+package org.opalj.fpcf.fixtures.xl.llvm.controlflow.intraprocedural.bidirectional;
 
 import org.opalj.fpcf.properties.pts.JavaMethodContextAllocSite;
 import org.opalj.fpcf.properties.pts.PointsToSet;

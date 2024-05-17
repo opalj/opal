@@ -1,4 +1,4 @@
-package org.opalj.fpcf.fixtures.xl.llvm.stateaccess.unidirectional;
+package org.opalj.fpcf.fixtures.xl.llvm.stateaccess.intraprocedural.unidirectional;
 
 import org.opalj.fpcf.properties.pts.JavaMethodContextAllocSite;
 import org.opalj.fpcf.properties.pts.PointsToSet;
@@ -10,7 +10,7 @@ import javax.script.ScriptException;
  */
 public class ReadJavaFieldFromNative {
     Object myfield;
-    @PointsToSet(parameterIndex = 0,
+    @PointsToSet(variableDefinition = 27,
             expectedJavaAllocSites = {
                     @JavaMethodContextAllocSite(
                             cf = ReadJavaFieldFromNative.class,
@@ -24,9 +24,9 @@ public class ReadJavaFieldFromNative {
         Object o = new Object();
         ReadJavaFieldFromNative tb = new ReadJavaFieldFromNative();
         tb.myfield = o;
-        Object x = tb.getMyfield(o);
+        Object x = tb.getMyfield();
         System.out.println(x);
     }
 
-    public native Object getMyfield(Object x);
+    public native Object getMyfield();
 }
