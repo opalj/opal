@@ -123,9 +123,9 @@ package object flowanalysis {
                     DotAttr(
                         Id("fillcolor"),
                         node match {
-                            case Region(_: AcyclicRegionType, _) => Id(""""green"""")
-                            case Region(_: CyclicRegionType, _)  => Id(""""purple"""")
-                            case _                               => Id(""""white"""")
+                            case Region(_: AcyclicRegionType, _, _) => Id(""""green"""")
+                            case Region(_: CyclicRegionType, _, _)  => Id(""""purple"""")
+                            case _                                  => Id(""""white"""")
                         }
                     )
                 )

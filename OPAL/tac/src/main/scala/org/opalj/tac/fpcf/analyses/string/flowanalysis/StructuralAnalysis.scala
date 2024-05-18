@@ -36,9 +36,10 @@ object StructuralAnalysis {
                 currentGraph:      FlowGraph,
                 currentSuperGraph: SuperFlowGraph,
                 subNodes:          Set[FlowGraphNode],
+                entry:             FlowGraphNode,
                 regionType:        RegionType
             ): (FlowGraph, SuperFlowGraph, Region) = {
-                val newRegion = Region(regionType, subNodes.flatMap(_.nodeIds))
+                val newRegion = Region(regionType, subNodes.flatMap(_.nodeIds), entry)
                 var newGraph: FlowGraph = currentGraph
                 var newSuperGraph: SuperFlowGraph = currentSuperGraph
 
@@ -84,9 +85,9 @@ object StructuralAnalysis {
                 val (newStartingNode, acyclicRegionOpt) = locateAcyclicRegion(g, n)
                 n = newStartingNode
                 if (acyclicRegionOpt.isDefined) {
-                    val (arType, nodes) = acyclicRegionOpt.get
+                    val (arType, nodes, entry) = acyclicRegionOpt.get
 
-                    val (newGraph, newSuperGraph, newRegion) = replace(g, sg, nodes, arType)
+                    val (newGraph, newSuperGraph, newRegion) = replace(g, sg, nodes, entry, arType)
                     g = newGraph
                     sg = newSuperGraph
                     for {
@@ -123,9 +124,9 @@ object StructuralAnalysis {
 
                     val cyclicRegionOpt = locateCyclicRegion(g, n, reachUnder)
                     if (cyclicRegionOpt.isDefined) {
-                        val (crType, nodes) = cyclicRegionOpt.get
+                        val (crType, nodes, entry) = cyclicRegionOpt.get
 
-                        val (newGraph, newSuperGraph, newRegion) = replace(g, sg, nodes, crType)
+                        val (newGraph, newSuperGraph, newRegion) = replace(g, sg, nodes, entry, crType)
                         g = newGraph
                         sg = newSuperGraph
                         for {
@@ -170,8 +171,9 @@ object StructuralAnalysis {
     private def locateAcyclicRegion[A, G <: Graph[A, DiEdge[A]]](
         graph:        G,
         startingNode: A
-    ): (A, Option[(AcyclicRegionType, Set[A])]) = {
+    ): (A, Option[(AcyclicRegionType, Set[A], A)]) = {
         var nSet = Set.empty[graph.NodeT]
+        var entry: graph.NodeT = graph.get(startingNode)
 
         // Expand nSet down
         var n = graph.get(startingNode)
@@ -187,10 +189,12 @@ object StructuralAnalysis {
         n = graph.get(startingNode)
         while (n.diPredecessors.size == 1 && (n.outer == startingNode || n.diSuccessors.size == 1)) {
             nSet += n
+            entry = n
             n = n.diPredecessors.head
         }
         if (n.diSuccessors.size == 1) {
             nSet += n
+            entry = n
         }
 
         def locateProperAcyclicInterval: Option[AcyclicRegionType] = {
@@ -208,6 +212,7 @@ object StructuralAnalysis {
                 None
             } else {
                 nSet = currentNodeSet ++ currentSuccessors
+                entry = n
 
                 Some(Proper)
             }
@@ -230,6 +235,7 @@ object StructuralAnalysis {
                 && k.diPredecessors.size == 1
             ) {
                 nSet = Set(n, m, k)
+                entry = n
                 Some(IfThenElse)
             } else if ((
                            m.diSuccessors.size == 1
@@ -244,6 +250,7 @@ object StructuralAnalysis {
                        )
             ) {
                 nSet = Set(n, m, k)
+                entry = n
                 Some(IfThen)
             } else {
                 locateProperAcyclicInterval
@@ -254,16 +261,17 @@ object StructuralAnalysis {
             None
         }
 
-        (n.outer, rType.map((_, nSet.map(_.outer))))
+        (n.outer, rType.map((_, nSet.map(_.outer), entry)))
     }
 
     private def locateCyclicRegion[A, G <: Graph[A, DiEdge[A]]](
         graph:        G,
         startingNode: A,
         reachUnder:   Set[A]
-    ): Option[(CyclicRegionType, Set[A])] = {
+    ): Option[(CyclicRegionType, Set[A], A)] = {
         if (reachUnder.size == 1) {
-            return if (graph.find(DiEdge(startingNode, startingNode)).isDefined) Some((SelfLoop, reachUnder))
+            return if (graph.find(DiEdge(startingNode, startingNode)).isDefined)
+                Some((SelfLoop, reachUnder, reachUnder.head))
             else None
         }
 
@@ -277,9 +285,16 @@ object StructuralAnalysis {
             && graph.get(m).diPredecessors.size == 1
             && graph.get(m).diSuccessors.size == 1
         ) {
-            Some((WhileLoop, reachUnder))
+            Some((WhileLoop, reachUnder, startingNode))
         } else {
-            Some((NaturalLoop, reachUnder))
+            val enteringNodes =
+                reachUnder.filter(graph.get(_).diPredecessors.exists(dp => !reachUnder.contains(dp.outer)))
+
+            if (enteringNodes.size > 1) {
+                throw new IllegalStateException("Found more than one entering node for a natural loop!")
+            }
+
+            Some((NaturalLoop, reachUnder, enteringNodes.head))
         }
     }
 }

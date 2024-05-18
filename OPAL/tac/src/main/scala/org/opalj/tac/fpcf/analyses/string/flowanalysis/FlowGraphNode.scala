@@ -25,9 +25,10 @@ sealed trait FlowGraphNode {
     def nodeIds: Set[Int]
 }
 
-case class Region(regionType: RegionType, override val nodeIds: Set[Int]) extends FlowGraphNode {
+case class Region(regionType: RegionType, override val nodeIds: Set[Int], entry: FlowGraphNode) extends FlowGraphNode {
 
-    override def toString: String = s"Region(${regionType.productPrefix}; ${nodeIds.toList.sorted.mkString(",")})"
+    override def toString: String =
+        s"Region(${regionType.productPrefix}; ${nodeIds.toList.sorted.mkString(",")}; ${entry.toString})"
 }
 
 case class Statement(nodeId: Int) extends FlowGraphNode {
