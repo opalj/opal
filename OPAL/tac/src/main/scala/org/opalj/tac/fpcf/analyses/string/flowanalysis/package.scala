@@ -32,6 +32,7 @@ package object flowanalysis {
 
     type ControlTree = Graph[Region, DiEdge[Region]]
     type FlowGraph = Graph[Region, DiEdge[Region]]
+    type SuperFlowGraph = Graph[Region, Edge[Region]]
 
     object FlowGraph extends TypedGraphFactory[Region, DiEdge[Region]] {
 

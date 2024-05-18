@@ -10,7 +10,9 @@ import scala.collection.mutable
 
 import org.opalj.graphs.DominatorTree
 
+import scalax.collection.OneOrMore
 import scalax.collection.edges.DiEdge
+import scalax.collection.hyperedges.DiHyperEdge
 import scalax.collection.immutable.Graph
 
 /**
@@ -18,8 +20,9 @@ import scalax.collection.immutable.Graph
  */
 object StructuralAnalysis {
 
-    def analyze(graph: FlowGraph, entry: Region): (FlowGraph, ControlTree) = {
+    def analyze(graph: FlowGraph, entry: Region): (FlowGraph, SuperFlowGraph, ControlTree) = {
         var g = graph
+        var sg = graph.asInstanceOf[SuperFlowGraph]
         var curEntry = entry
         var controlTree = Graph.empty[Region, DiEdge[Region]]
 
@@ -29,12 +32,19 @@ object StructuralAnalysis {
             var postCtr = 1
             val post = mutable.ListBuffer.empty[Region]
 
-            def replace(currentGraph: FlowGraph, subRegions: Set[Region], regionType: RegionType): (FlowGraph, Region) = {
+            def replace(
+                currentGraph:      FlowGraph,
+                currentSuperGraph: SuperFlowGraph,
+                subRegions:        Set[Region],
+                regionType:        RegionType
+            ): (FlowGraph, SuperFlowGraph, Region) = {
                 val newRegion = Region(regionType, subRegions.flatMap(_.nodeIds))
                 var newGraph: FlowGraph = currentGraph
+                var newSuperGraph: SuperFlowGraph = currentSuperGraph
 
                 // Compact
                 newGraph = newGraph.incl(newRegion)
+                newSuperGraph = newSuperGraph.incl(newRegion)
                 val maxPost = post.indexOf(subRegions.maxBy(post.indexOf))
                 post(maxPost) = newRegion
                 // Removing old regions from the graph is done later
@@ -50,13 +60,18 @@ object StructuralAnalysis {
 
                     if (!subRegions.contains(source) && subRegions.contains(target)) {
                         newGraph += DiEdge(source, newRegion)
+                        newSuperGraph += DiEdge(source, newRegion)
+                        newSuperGraph -= DiEdge(source, target)
                     } else if (subRegions.contains(source) && !subRegions.contains(target)) {
                         newGraph += DiEdge(newRegion, target)
+                        newSuperGraph += DiEdge(newRegion, target)
+                        newSuperGraph -= DiEdge(source, target)
                     }
                 }
                 newGraph = newGraph.removedAll(subRegions, Set.empty)
+                newSuperGraph = newSuperGraph.incl(DiHyperEdge(OneOrMore(newRegion), OneOrMore.from(subRegions).get))
 
-                (newGraph, newRegion)
+                (newGraph, newSuperGraph, newRegion)
             }
 
             PostOrderTraversal.foreachInTraversalFrom[Region, FlowGraph](g, curEntry)(post.append) { (x, y) =>
@@ -71,8 +86,9 @@ object StructuralAnalysis {
                 if (acyclicRegionOpt.isDefined) {
                     val (arType, nodes) = acyclicRegionOpt.get
 
-                    val (newGraph, newRegion) = replace(g, nodes, arType)
+                    val (newGraph, newSuperGraph, newRegion) = replace(g, sg, nodes, arType)
                     g = newGraph
+                    sg = newSuperGraph
                     for {
                         node <- nodes
                     } {
@@ -109,8 +125,9 @@ object StructuralAnalysis {
                     if (cyclicRegionOpt.isDefined) {
                         val (crType, nodes) = cyclicRegionOpt.get
 
-                        val (newGraph, newRegion) = replace(g, nodes, crType)
+                        val (newGraph, newSuperGraph, newRegion) = replace(g, sg, nodes, crType)
                         g = newGraph
+                        sg = newSuperGraph
                         for {
                             node <- nodes
                         } {
@@ -129,7 +146,7 @@ object StructuralAnalysis {
             outerIterations += 1
         }
 
-        (g, controlTree)
+        (g, sg, controlTree)
     }
 
     private def pathBack[A, G <: Graph[A, DiEdge[A]]](graph: G, indexedNodes: Seq[A], domTree: DominatorTree)(
