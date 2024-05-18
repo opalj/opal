@@ -20,61 +20,61 @@ import scalax.collection.immutable.Graph
  */
 object StructuralAnalysis {
 
-    def analyze(graph: FlowGraph, entry: Region): (FlowGraph, SuperFlowGraph, ControlTree) = {
+    def analyze(graph: FlowGraph, entry: FlowGraphNode): (FlowGraph, SuperFlowGraph, ControlTree) = {
         var g = graph
         var sg = graph.asInstanceOf[SuperFlowGraph]
         var curEntry = entry
-        var controlTree = Graph.empty[Region, DiEdge[Region]]
+        var controlTree = Graph.empty[FlowGraphNode, DiEdge[FlowGraphNode]]
 
         var outerIterations = 0
         while (g.order > 1 && outerIterations < 100) {
             // Find post order depth first traversal order for nodes
             var postCtr = 1
-            val post = mutable.ListBuffer.empty[Region]
+            val post = mutable.ListBuffer.empty[FlowGraphNode]
 
             def replace(
                 currentGraph:      FlowGraph,
                 currentSuperGraph: SuperFlowGraph,
-                subRegions:        Set[Region],
+                subNodes:          Set[FlowGraphNode],
                 regionType:        RegionType
             ): (FlowGraph, SuperFlowGraph, Region) = {
-                val newRegion = Region(regionType, subRegions.flatMap(_.nodeIds))
+                val newRegion = Region(regionType, subNodes.flatMap(_.nodeIds))
                 var newGraph: FlowGraph = currentGraph
                 var newSuperGraph: SuperFlowGraph = currentSuperGraph
 
                 // Compact
                 newGraph = newGraph.incl(newRegion)
                 newSuperGraph = newSuperGraph.incl(newRegion)
-                val maxPost = post.indexOf(subRegions.maxBy(post.indexOf))
+                val maxPost = post.indexOf(subNodes.maxBy(post.indexOf))
                 post(maxPost) = newRegion
                 // Removing old regions from the graph is done later
-                post.filterInPlace(r => !subRegions.contains(r))
+                post.filterInPlace(r => !subNodes.contains(r))
                 postCtr = post.indexOf(newRegion)
 
                 // Replace edges
                 for {
                     e <- newGraph.edges
                 } {
-                    val source: Region = e.outer.source
-                    val target: Region = e.outer.target
+                    val source: FlowGraphNode = e.outer.source
+                    val target: FlowGraphNode = e.outer.target
 
-                    if (!subRegions.contains(source) && subRegions.contains(target)) {
+                    if (!subNodes.contains(source) && subNodes.contains(target)) {
                         newGraph += DiEdge(source, newRegion)
                         newSuperGraph += DiEdge(source, newRegion)
                         newSuperGraph -= DiEdge(source, target)
-                    } else if (subRegions.contains(source) && !subRegions.contains(target)) {
+                    } else if (subNodes.contains(source) && !subNodes.contains(target)) {
                         newGraph += DiEdge(newRegion, target)
                         newSuperGraph += DiEdge(newRegion, target)
                         newSuperGraph -= DiEdge(source, target)
                     }
                 }
-                newGraph = newGraph.removedAll(subRegions, Set.empty)
-                newSuperGraph = newSuperGraph.incl(DiHyperEdge(OneOrMore(newRegion), OneOrMore.from(subRegions).get))
+                newGraph = newGraph.removedAll(subNodes, Set.empty)
+                newSuperGraph = newSuperGraph.incl(DiHyperEdge(OneOrMore(newRegion), OneOrMore.from(subNodes).get))
 
                 (newGraph, newSuperGraph, newRegion)
             }
 
-            PostOrderTraversal.foreachInTraversalFrom[Region, FlowGraph](g, curEntry)(post.append) { (x, y) =>
+            PostOrderTraversal.foreachInTraversalFrom[FlowGraphNode, FlowGraph](g, curEntry)(post.append) { (x, y) =>
                 x.nodeIds.head.compare(y.nodeIds.head)
             }
 
@@ -104,10 +104,10 @@ object StructuralAnalysis {
                         indexedNodes.indexOf(curEntry),
                         g.get(curEntry).diPredecessors.nonEmpty,
                         index => { f =>
-                            g.get(indexedNodes(index)).diSuccessors.foreach(ds => f(indexedNodes.indexOf(ds)))
+                            g.get(indexedNodes(index)).diSuccessors.foreach(ds => f(indexedNodes.indexOf(ds.outer)))
                         },
                         index => { f =>
-                            g.get(indexedNodes(index)).diPredecessors.foreach(ds => f(indexedNodes.indexOf(ds)))
+                            g.get(indexedNodes(index)).diPredecessors.foreach(ds => f(indexedNodes.indexOf(ds.outer)))
                         },
                         indexedNodes.size - 1
                     )

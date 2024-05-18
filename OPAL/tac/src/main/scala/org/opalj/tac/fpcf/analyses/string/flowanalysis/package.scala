@@ -30,42 +30,42 @@ import scalax.collection.io.dot.NodeId
  */
 package object flowanalysis {
 
-    type ControlTree = Graph[Region, DiEdge[Region]]
-    type FlowGraph = Graph[Region, DiEdge[Region]]
-    type SuperFlowGraph = Graph[Region, Edge[Region]]
+    type ControlTree = Graph[FlowGraphNode, DiEdge[FlowGraphNode]]
+    type FlowGraph = Graph[FlowGraphNode, DiEdge[FlowGraphNode]]
+    type SuperFlowGraph = Graph[FlowGraphNode, Edge[FlowGraphNode]]
 
-    object FlowGraph extends TypedGraphFactory[Region, DiEdge[Region]] {
+    object FlowGraph extends TypedGraphFactory[FlowGraphNode, DiEdge[FlowGraphNode]] {
 
         def apply[V <: Var[V]](cfg: CFG[Stmt[V], TACStmts[V]]): FlowGraph = {
             val edges = cfg.allNodes.flatMap {
                 case bb: BasicBlock =>
-                    val firstNode = Region(Block, Set(bb.startPC))
-                    var currentEdges = Seq.empty[DiEdge[Region]]
+                    val firstNode = Statement(bb.startPC)
+                    var currentEdges = Seq.empty[DiEdge[FlowGraphNode]]
                     if (bb.startPC != bb.endPC) {
                         Range.inclusive(bb.startPC, bb.endPC).tail.foreach { instrPC =>
                             currentEdges :+= DiEdge(
                                 currentEdges.lastOption.map(_.target).getOrElse(firstNode),
-                                Region(Block, Set(instrPC))
+                                Statement(instrPC)
                             )
                         }
                     }
 
                     val lastNode = if (currentEdges.nonEmpty) currentEdges.last.target
                     else firstNode
-                    currentEdges ++ bb.successors.map(s => DiEdge(lastNode, Region(Block, Set(s.nodeId))))
+                    currentEdges ++ bb.successors.map(s => DiEdge(lastNode, Statement(s.nodeId)))
                 case n =>
-                    n.successors.map(s => DiEdge(Region(Block, Set(n.nodeId)), Region(Block, Set(s.nodeId))))
+                    n.successors.map(s => DiEdge(Statement(n.nodeId), Statement(s.nodeId)))
             }.toSet
             val g = Graph.from(edges)
 
-            val normalReturnNode = Region(Block, Set(cfg.normalReturnNode.nodeId))
-            val abnormalReturnNode = Region(Block, Set(cfg.abnormalReturnNode.nodeId))
+            val normalReturnNode = Statement(cfg.normalReturnNode.nodeId)
+            val abnormalReturnNode = Statement(cfg.abnormalReturnNode.nodeId)
             val hasNormalReturn = cfg.normalReturnNode.predecessors.nonEmpty
             val hasAbnormalReturn = cfg.abnormalReturnNode.predecessors.nonEmpty
 
             (hasNormalReturn, hasAbnormalReturn) match {
                 case (true, true) =>
-                    val allReturnNode = Region(Block, Set(-42))
+                    val allReturnNode = Statement(-42)
                     g.incl(DiEdge(normalReturnNode, allReturnNode)).incl(DiEdge(abnormalReturnNode, allReturnNode))
 
                 case (true, false) =>
@@ -81,9 +81,9 @@ package object flowanalysis {
             }
         }
 
-        def entryFromCFG[V <: Var[V]](cfg: CFG[Stmt[V], TACStmts[V]]): Region = Region(Block, Set(cfg.startBlock.nodeId))
+        def entryFromCFG[V <: Var[V]](cfg: CFG[Stmt[V], TACStmts[V]]): Statement = Statement(cfg.startBlock.nodeId)
 
-        def toDot[N <: Region, E <: Edge[N]](graph: Graph[N, E]): String = {
+        def toDot[N <: FlowGraphNode, E <: Edge[N]](graph: Graph[N, E]): String = {
             val root = DotRootGraph(
                 directed = true,
                 id = Some(Id("MyDot")),
@@ -123,9 +123,10 @@ package object flowanalysis {
                     DotAttr(Id("style"), Id("filled")),
                     DotAttr(
                         Id("fillcolor"),
-                        node.regionType match {
-                            case _: AcyclicRegionType => Id(""""green"""")
-                            case _: CyclicRegionType  => Id(""""purple"""")
+                        node match {
+                            case Region(_: AcyclicRegionType, _) => Id(""""green"""")
+                            case Region(_: CyclicRegionType, _)  => Id(""""purple"""")
+                            case _                               => Id(""""white"""")
                         }
                     )
                 )
@@ -146,14 +147,17 @@ package object flowanalysis {
             )
         }
 
-        def enrichWithControlTree(flowGraph: FlowGraph, controlTree: ControlTree): Graph[Region, Edge[Region]] = {
+        def enrichWithControlTree(
+            flowGraph:   FlowGraph,
+            controlTree: ControlTree
+        ): Graph[FlowGraphNode, Edge[FlowGraphNode]] = {
             var combinedGraph = flowGraph
-                .++(controlTree.nodes.map(_.outer), Iterable.empty)
-                .asInstanceOf[Graph[Region, Edge[Region]]]
+                .++[FlowGraphNode, DiEdge[FlowGraphNode]](controlTree.nodes.map(_.outer), Iterable.empty)
+                .asInstanceOf[Graph[FlowGraphNode, Edge[FlowGraphNode]]]
 
             for {
-                node <- controlTree.nodes.toOuter.asInstanceOf[Set[Region]]
-                nodes = combinedGraph.nodes.filter((n: Graph[Region, Edge[Region]]#NodeT) =>
+                node <- controlTree.nodes.toOuter
+                nodes = combinedGraph.nodes.filter((n: Graph[FlowGraphNode, Edge[FlowGraphNode]]#NodeT) =>
                     n.outer.nodeIds.subsetOf(node.nodeIds)
                 ).map(_.outer)
                 actualSubsetNodes = nodes.filter(n => n.nodeIds != node.nodeIds)

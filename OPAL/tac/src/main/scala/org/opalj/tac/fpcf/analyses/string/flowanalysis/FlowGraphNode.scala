@@ -21,7 +21,17 @@ case object WhileLoop extends CyclicRegionType
 case object NaturalLoop extends CyclicRegionType
 case object Improper extends CyclicRegionType
 
-case class Region(regionType: RegionType, nodeIds: Set[Int]) {
+sealed trait FlowGraphNode {
+    def nodeIds: Set[Int]
+}
+
+case class Region(regionType: RegionType, override val nodeIds: Set[Int]) extends FlowGraphNode {
 
     override def toString: String = s"Region(${regionType.productPrefix}; ${nodeIds.toList.sorted.mkString(",")})"
+}
+
+case class Statement(nodeId: Int) extends FlowGraphNode {
+    override val nodeIds: Set[Int] = Set(nodeId)
+
+    override def toString: String = s"Statement($nodeId)"
 }
