@@ -65,8 +65,7 @@ package object flowanalysis {
 
             (hasNormalReturn, hasAbnormalReturn) match {
                 case (true, true) =>
-                    val allReturnNode = Statement(-42)
-                    g.incl(DiEdge(normalReturnNode, allReturnNode)).incl(DiEdge(abnormalReturnNode, allReturnNode))
+                    g.incl(DiEdge(normalReturnNode, GlobalExit)).incl(DiEdge(abnormalReturnNode, GlobalExit))
 
                 case (true, false) =>
                     g.excl(abnormalReturnNode)

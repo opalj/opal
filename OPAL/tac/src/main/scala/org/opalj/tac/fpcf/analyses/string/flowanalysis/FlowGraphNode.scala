@@ -35,3 +35,9 @@ case class Statement(nodeId: Int) extends FlowGraphNode {
 
     override def toString: String = s"Statement($nodeId)"
 }
+
+object GlobalExit extends FlowGraphNode {
+    override val nodeIds: Set[Int] = Set(Int.MinValue)
+
+    override def toString: String = s"GlobalExit"
+}
