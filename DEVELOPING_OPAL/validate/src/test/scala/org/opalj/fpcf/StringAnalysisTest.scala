@@ -166,14 +166,14 @@ class L0StringAnalysisTest extends StringAnalysisTest {
             // Currently broken L0 Tests
             .filterNot(entity => entity._3.name.startsWith("unknownCharValue"))
 
-        it("can be executed without exceptions") {
-            newEntities.foreach(as.propertyStore.force(_, StringConstancyProperty.key))
+        // it("can be executed without exceptions") {
+        newEntities.foreach(as.propertyStore.force(_, StringConstancyProperty.key))
 
-            as.propertyStore.waitOnPhaseCompletion()
-            as.propertyStore.shutdown()
+        as.propertyStore.waitOnPhaseCompletion()
+        as.propertyStore.shutdown()
 
-            validateProperties(as, determineEAS(newEntities, as.project), Set("StringConstancy"))
-        }
+        validateProperties(as, determineEAS(newEntities, as.project), Set("StringConstancy"))
+        // }
     }
 }
 
