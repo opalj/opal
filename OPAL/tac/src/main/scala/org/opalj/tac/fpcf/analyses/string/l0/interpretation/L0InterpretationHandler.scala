@@ -12,7 +12,7 @@ import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.tac.fpcf.analyses.string.interpretation.BinaryExprInterpreter
 import org.opalj.tac.fpcf.analyses.string.interpretation.InterpretationHandler
 import org.opalj.tac.fpcf.analyses.string.interpretation.SimpleValueConstExprInterpreter
-import org.opalj.tac.fpcf.properties.string.IdentityFlow
+import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
 
 /**
  * @inheritdoc
@@ -39,7 +39,7 @@ class L0InterpretationHandler(implicit override val project: SomeProject) extend
             case Assignment(_, target, _: FieldRead[V]) => StringInterpreter.computeFinalLBFor(target)
 
             case Assignment(_, _, _: New) =>
-                StringInterpreter.computeFinalResult(IdentityFlow)
+                StringInterpreter.computeFinalResult(StringFlowFunctionProperty.identity)
 
             case stmt @ Assignment(_, _, expr: VirtualFunctionCall[V]) =>
                 L0VirtualFunctionCallInterpreter().interpretExpr(stmt, expr)
@@ -51,15 +51,17 @@ class L0InterpretationHandler(implicit override val project: SomeProject) extend
             case stmt @ ExprStmt(_, expr: NonVirtualFunctionCall[V]) =>
                 L0NonVirtualFunctionCallInterpreter().interpretExpr(stmt, expr)
 
-            case stmt @ Assignment(_, target, expr: StaticFunctionCall[V]) =>
+            case stmt @ Assignment(_, _, expr: StaticFunctionCall[V]) =>
                 L0StaticFunctionCallInterpreter().interpretExpr(stmt, expr)
             // Static function calls without return value usage are irrelevant
-            case ExprStmt(_, _: StaticFunctionCall[V]) => StringInterpreter.computeFinalResult(IdentityFlow)
+            case ExprStmt(_, _: StaticFunctionCall[V]) =>
+                StringInterpreter.computeFinalResult(StringFlowFunctionProperty.identity)
 
             case vmc: VirtualMethodCall[V]     => L0VirtualMethodCallInterpreter.interpret(vmc)
             case nvmc: NonVirtualMethodCall[V] => L0NonVirtualMethodCallInterpreter.interpret(nvmc)
 
-            case _ => StringInterpreter.computeFinalResult(IdentityFlow)
+            case _ =>
+                StringInterpreter.computeFinalResult(StringFlowFunctionProperty.identity)
         }
     }
 }

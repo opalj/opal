@@ -10,6 +10,7 @@ import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.Result
 import org.opalj.tac.fpcf.analyses.string.interpretation.InterpretationHandler
 import org.opalj.tac.fpcf.properties.string.StringFlowFunction
+import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
 
 /**
  * @author Maximilian Rüsch
@@ -31,8 +32,14 @@ trait StringInterpreter {
     def computeFinalLBFor(v: PV)(implicit state: InterpretationState): Result =
         StringInterpreter.computeFinalLBFor(v)
 
-    def computeFinalResult(sff: StringFlowFunction)(implicit state: InterpretationState): Result =
-        StringInterpreter.computeFinalResult(sff)
+    def computeFinalResult(web: PDUWeb, sff: StringFlowFunction)(implicit state: InterpretationState): Result =
+        StringInterpreter.computeFinalResult(web, sff)
+
+    def computeFinalResult(webs: Set[PDUWeb], sff: StringFlowFunction)(implicit state: InterpretationState): Result =
+        StringInterpreter.computeFinalResult(webs, sff)
+
+    def computeFinalResult(p: StringFlowFunctionProperty)(implicit state: InterpretationState): Result =
+        StringInterpreter.computeFinalResult(p)
 }
 
 object StringInterpreter {
@@ -41,25 +48,16 @@ object StringInterpreter {
         computeFinalLBFor(v.toPersistentForm(state.tac.stmts))
 
     def computeFinalLBFor(v: PV)(implicit state: InterpretationState): Result =
-        computeFinalResult(StringFlowFunction.lb(v))
+        computeFinalResult(StringFlowFunctionProperty.lb(state.pc, v))
 
-    def computeFinalResult(sff: StringFlowFunction)(implicit state: InterpretationState): Result =
-        Result(FinalEP(InterpretationHandler.getEntity(state), sff))
+    def computeFinalResult(web: PDUWeb, sff: StringFlowFunction)(implicit state: InterpretationState): Result =
+        Result(FinalEP(InterpretationHandler.getEntity(state), StringFlowFunctionProperty(web, sff)))
 
-    def findUVarForDVar(dVar: V)(implicit state: InterpretationState): V = {
-        state.tac.stmts(dVar.usedBy.head) match {
-            case Assignment(_, _, expr: Var[V]) => expr.asVar
-            case ExprStmt(_, expr: Var[V])      => expr.asVar
+    def computeFinalResult(webs: Set[PDUWeb], sff: StringFlowFunction)(implicit state: InterpretationState): Result =
+        Result(FinalEP(InterpretationHandler.getEntity(state), StringFlowFunctionProperty(webs, sff)))
 
-            case Assignment(_, _, call: InstanceFunctionCall[V]) => call.receiver.asVar
-            case ExprStmt(_, call: InstanceFunctionCall[V])      => call.receiver.asVar
-
-            case ExprStmt(_, call: InstanceMethodCall[V]) => call.receiver.asVar
-
-            case _ =>
-                throw new IllegalArgumentException(s"Cannot determine uVar from $dVar")
-        }
-    }
+    def computeFinalResult(p: StringFlowFunctionProperty)(implicit state: InterpretationState): Result =
+        Result(FinalEP(InterpretationHandler.getEntity(state), p))
 }
 
 trait ParameterEvaluatingStringInterpreter extends StringInterpreter {
@@ -92,7 +90,7 @@ trait AssignmentBasedStringInterpreter extends AssignmentLikeBasedStringInterpre
     override final def interpretExpr(instr: T, expr: E)(implicit
         state: InterpretationState
     ): ProperPropertyComputationResult = {
-        interpretExpr(StringInterpreter.findUVarForDVar(instr.targetVar).toPersistentForm(state.tac.stmts), expr)
+        interpretExpr(instr.targetVar.toPersistentForm(state.tac.stmts), expr)
     }
 
     def interpretExpr(target: PV, expr: E)(implicit state: InterpretationState): ProperPropertyComputationResult

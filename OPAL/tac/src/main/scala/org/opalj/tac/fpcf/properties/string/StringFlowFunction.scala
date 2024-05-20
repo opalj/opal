@@ -18,35 +18,66 @@ import org.opalj.fpcf.PropertyMetaInformation
  */
 sealed trait StringFlowFunctionPropertyMetaInformation extends PropertyMetaInformation {
 
-    final type Self = StringFlowFunction
+    final type Self = StringFlowFunctionProperty
 }
 
-trait StringFlowFunction extends (StringTreeEnvironment => StringTreeEnvironment)
-    with Property
+case class StringFlowFunctionProperty private (
+    webs: Set[PDUWeb],
+    flow: StringFlowFunction
+) extends Property
     with StringFlowFunctionPropertyMetaInformation {
 
-    final def key: PropertyKey[StringFlowFunction] = StringFlowFunction.key
+    final def key: PropertyKey[StringFlowFunctionProperty] = StringFlowFunctionProperty.key
 }
 
-object StringFlowFunction extends StringFlowFunctionPropertyMetaInformation {
+object StringFlowFunctionProperty extends StringFlowFunctionPropertyMetaInformation {
 
     private final val propertyName = "opalj.StringFlowFunction"
 
-    override val key: PropertyKey[StringFlowFunction] = PropertyKey.create(propertyName)
+    override val key: PropertyKey[StringFlowFunctionProperty] = PropertyKey.create(propertyName)
 
-    def ub: StringFlowFunction = ConstantResultFlow.forAll(StringTreeNeutralElement) // TODO should this be the real bottom element?
-    def ub(v:     PV): StringFlowFunction = ConstantResultFlow.forVariable(v, StringTreeNeutralElement)
-    def lb(v:     PV): StringFlowFunction = ConstantResultFlow.forVariable(v, StringTreeDynamicString)
-    def noFlow(v: PV): StringFlowFunction = ConstantResultFlow.forVariable(v, StringTreeInvalidElement)
+    def apply(webs: Set[PDUWeb], flow: StringFlowFunction): StringFlowFunctionProperty = {
+        new StringFlowFunctionProperty(
+            webs.foldLeft(Seq.empty[PDUWeb]) { (reducedWebs, web) =>
+                val index = reducedWebs.indexWhere(_.intersectsWith(web))
+                if (index == -1)
+                    reducedWebs :+ web
+                else
+                    reducedWebs.updated(index, reducedWebs(index).intersect(web))
+            }.toSet,
+            flow
+        )
+    }
+
+    def apply(web: PDUWeb, flow: StringFlowFunction): StringFlowFunctionProperty =
+        new StringFlowFunctionProperty(Set(web), flow)
+
+    def apply(pc: Int, pv: PV, flow: StringFlowFunction): StringFlowFunctionProperty =
+        StringFlowFunctionProperty(PDUWeb(pc, pv), flow)
+
+    // TODO should this be the real bottom element?
+    def ub: StringFlowFunctionProperty = constForAll(StringTreeNeutralElement)
+
+    def identity: StringFlowFunctionProperty =
+        StringFlowFunctionProperty(Set.empty[PDUWeb], IdentityFlow)
+
+    def ub(pc: Int, v: PV): StringFlowFunctionProperty =
+        constForVariableAt(pc, v, StringTreeNeutralElement)
+
+    def lb(pc: Int, v: PV): StringFlowFunctionProperty =
+        constForVariableAt(pc, v, StringTreeDynamicString)
+
+    def noFlow(pc: Int, v: PV): StringFlowFunctionProperty =
+        constForVariableAt(pc, v, StringTreeInvalidElement)
+
+    def constForVariableAt(pc: Int, v: PV, result: StringTreeNode): StringFlowFunctionProperty =
+        StringFlowFunctionProperty(pc, v, (env: StringTreeEnvironment) => env.update(pc, v, result))
+
+    def constForAll(result: StringTreeNode): StringFlowFunctionProperty =
+        StringFlowFunctionProperty(Set.empty[PDUWeb], (env: StringTreeEnvironment) => env.updateAll(result))
 }
 
-object ConstantResultFlow {
-    def forAll(result: StringTreeNode): StringFlowFunction =
-        (env: StringTreeEnvironment) => env.updateAll(result)
-
-    def forVariable(v: PV, result: StringTreeNode): StringFlowFunction =
-        (env: StringTreeEnvironment) => env.update(v, result)
-}
+trait StringFlowFunction extends (StringTreeEnvironment => StringTreeEnvironment)
 
 object IdentityFlow extends StringFlowFunction {
 

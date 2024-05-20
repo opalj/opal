@@ -28,8 +28,7 @@ import org.opalj.log.Info
 import org.opalj.log.OPALLogger.logOnce
 import org.opalj.tac.fpcf.analyses.string.interpretation.InterpretationHandler
 import org.opalj.tac.fpcf.analyses.string.l1.L1StringAnalysis
-import org.opalj.tac.fpcf.properties.string.ConstantResultFlow
-import org.opalj.tac.fpcf.properties.string.StringFlowFunction
+import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
 
 /**
  * Responsible for processing direct reads to fields (see [[FieldRead]]) by analyzing the write accesses to these fields
@@ -73,7 +72,7 @@ case class L1FieldReadInterpreter(
     }
 
     private case class FieldReadState(
-        var target:                PV,
+        target:                    PV,
         var hasWriteInSameMethod:  Boolean                                          = false,
         var hasInit:               Boolean                                          = false,
         var hasUnresolvableAccess: Boolean                                          = false,
@@ -115,7 +114,8 @@ case class L1FieldReadInterpreter(
 
         if (writeAccesses.isEmpty) {
             // No methods which write the field were found => Field could either be null or any value
-            return computeFinalResult(ConstantResultFlow.forVariable(
+            return computeFinalResult(StringFlowFunctionProperty.constForVariableAt(
+                state.pc,
                 target,
                 StringTreeOr.fromNodes(StringTreeNull, StringTreeDynamicString)
             ))
@@ -123,7 +123,7 @@ case class L1FieldReadInterpreter(
 
         implicit val accessState: FieldReadState = FieldReadState(target)
         writeAccesses.foreach {
-            case (contextId, _, _, parameter) =>
+            case (contextId, pc, _, parameter) =>
                 val method = contextProvider.contextFromId(contextId).method.definedMethod
 
                 if (method == state.dm.definedMethod) {
@@ -138,7 +138,7 @@ case class L1FieldReadInterpreter(
                     // Field parameter information is not available
                     accessState.hasUnresolvableAccess = true
                 } else {
-                    val entity: SContext = (PUVar(parameter.get._1, parameter.get._2), method)
+                    val entity: SContext = (pc, PUVar(parameter.get._1, parameter.get._2), method)
                     accessState.accessDependees = accessState.accessDependees :+ ps(entity, StringConstancyProperty.key)
                 }
         }
@@ -157,7 +157,7 @@ case class L1FieldReadInterpreter(
         } else if (accessState.hasDependees) {
             InterimResult.forUB(
                 InterpretationHandler.getEntity,
-                StringFlowFunction.ub,
+                StringFlowFunctionProperty.ub,
                 accessState.dependees.toSet,
                 continuation(accessState, state)
             )
@@ -174,7 +174,11 @@ case class L1FieldReadInterpreter(
                 trees = trees :+ StringTreeNode.lb
             }
 
-            computeFinalResult(ConstantResultFlow.forVariable(accessState.target, StringTreeNode.reduceMultiple(trees)))
+            computeFinalResult(StringFlowFunctionProperty.constForVariableAt(
+                state.pc,
+                accessState.target,
+                StringTreeNode.reduceMultiple(trees)
+            ))
         }
     }
 

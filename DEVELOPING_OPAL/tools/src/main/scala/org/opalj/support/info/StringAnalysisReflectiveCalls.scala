@@ -180,6 +180,7 @@ object StringAnalysisReflectiveCalls extends ProjectAnalysisApplication {
      * analysis using the property store, `ps`, to finally store it in the given `resultMap`.
      */
     private def processFunctionCall(
+        pc:        Int,
         ps:        PropertyStore,
         method:    Method,
         call:      Call[V],
@@ -196,11 +197,9 @@ object StringAnalysisReflectiveCalls extends ProjectAnalysisApplication {
                     call.descriptor.parameterTypes.zipWithIndex.foreach {
                         case (ft, index) =>
                             if (ft.toJava == "java.lang.String") {
-                                val e = (call.params(index).asVar.toPersistentForm, method)
+                                val e = (pc, call.params(index).asVar.toPersistentForm, method)
                                 ps.force(e, StringConstancyProperty.key)
-                                entityContext.append(
-                                    (e, buildFQMethodName(call.declaringClass, call.name))
-                                )
+                                entityContext.append((e, buildFQMethodName(call.declaringClass, call.name)))
                             }
                     }
                 }
@@ -244,17 +243,17 @@ object StringAnalysisReflectiveCalls extends ProjectAnalysisApplication {
             // Using the following switch speeds up the whole process
             (stmt.astID: @switch) match {
                 case Assignment.ASTID => stmt match {
-                        case Assignment(_, _, c: StaticFunctionCall[V]) =>
-                            processFunctionCall(ps, m, c, resultMap)
-                        case Assignment(_, _, c: VirtualFunctionCall[V]) =>
-                            processFunctionCall(ps, m, c, resultMap)
+                        case Assignment(pc, _, c: StaticFunctionCall[V]) =>
+                            processFunctionCall(pc, ps, m, c, resultMap)
+                        case Assignment(pc, _, c: VirtualFunctionCall[V]) =>
+                            processFunctionCall(pc, ps, m, c, resultMap)
                         case _ =>
                     }
                 case ExprStmt.ASTID => stmt match {
-                        case ExprStmt(_, c: StaticFunctionCall[V]) =>
-                            processFunctionCall(ps, m, c, resultMap)
-                        case ExprStmt(_, c: VirtualFunctionCall[V]) =>
-                            processFunctionCall(ps, m, c, resultMap)
+                        case ExprStmt(pc, c: StaticFunctionCall[V]) =>
+                            processFunctionCall(pc, ps, m, c, resultMap)
+                        case ExprStmt(pc, c: VirtualFunctionCall[V]) =>
+                            processFunctionCall(pc, ps, m, c, resultMap)
                         case _ =>
                     }
                 case _ =>

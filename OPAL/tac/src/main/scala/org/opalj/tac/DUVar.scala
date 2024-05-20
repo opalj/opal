@@ -185,7 +185,9 @@ class DVar[+Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/ 
         s"DVar(useSites=${useSites.mkString("{", ",", "}")},value=$value,origin=$origin)"
     }
 
-    override def toPersistentForm(implicit stmts: Array[Stmt[V]]): Nothing = throw new UnsupportedOperationException
+    override def toPersistentForm(
+        implicit stmts: Array[Stmt[V]]
+    ): PDVar[Value] = PDVar(value, usedBy.map(pcOfDefSite _))
 
 }
 

@@ -70,22 +70,23 @@ private[string] trait L0StringValueOfFunctionCallInterpreter extends AssignmentB
     def processStringValueOf(target: PV, call: E)(implicit
         state: InterpretationState
     ): ProperPropertyComputationResult = {
+        val pc = state.pc
         val pp = call.params.head.asVar.toPersistentForm(state.tac.stmts)
 
         val flowFunction: StringFlowFunction = if (call.descriptor.parameterType(0).toJava == "char") {
             (env: StringTreeEnvironment) =>
                 {
-                    env(pp) match {
+                    env(pc, pp) match {
                         case const: StringTreeConst if const.isIntConst =>
-                            env.update(target, StringTreeConst(const.string.toInt.toChar.toString))
+                            env.update(pc, target, StringTreeConst(const.string.toInt.toChar.toString))
                         case tree =>
-                            env.update(target, tree)
+                            env.update(pc, target, tree)
                     }
                 }
         } else {
-            (env: StringTreeEnvironment) => env.update(target, env(pp))
+            (env: StringTreeEnvironment) => env.update(pc, target, env(pc, pp))
         }
 
-        computeFinalResult(flowFunction)
+        computeFinalResult(Set(PDUWeb(pc, pp), PDUWeb(pc, target)), flowFunction)
     }
 }

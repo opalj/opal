@@ -35,6 +35,41 @@ abstract class PDUVar[+Value <: ValueInformation] {
     def toValueOriginForm(implicit pcToIndex: Array[Int]): DUVar[Value]
 }
 
+class PDVar[+Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/ ] private (
+    val value:  Value,
+    val usePCs: PCs
+) extends PDUVar[Value] {
+
+    def defPCs: Nothing = throw new UnsupportedOperationException
+
+    override def equals(other: Any): Boolean = {
+        other match {
+            case that: PDVar[_] => this.usePCs == that.usePCs
+            case _              => false
+        }
+    }
+
+    override def toString: String = {
+        s"PDVar(usePCs=${usePCs.mkString("{", ",", "}")},value=$value)"
+    }
+
+    def toValueOriginForm(implicit pcToIndex: Array[Int]): Nothing = throw new UnsupportedOperationException
+}
+
+object PDVar {
+
+    def apply(d: org.opalj.ai.ValuesDomain)(
+        value:  d.DomainValue,
+        usePCs: PCs
+    ): PDVar[d.DomainValue] = {
+        new PDVar[d.DomainValue](value, usePCs)
+    }
+
+    def apply[Value <: ValueInformation](value: Value, useSites: IntTrieSet): PDVar[Value] = new PDVar(value, useSites)
+
+    def unapply[Value <: ValueInformation](d: PDVar[Value]): Some[(Value, IntTrieSet)] = Some((d.value, d.usePCs))
+}
+
 class PUVar[+Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/ ] private (
     val value:  Value,
     val defPCs: PCs
@@ -50,7 +85,7 @@ class PUVar[+Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/
     }
 
     override def toString: String = {
-        s"PUVar(defSites=${defPCs.mkString("{", ",", "}")},value=$value)"
+        s"PUVar(defPCs=${defPCs.mkString("{", ",", "}")},value=$value)"
     }
 
     override def toValueOriginForm(
@@ -67,7 +102,7 @@ object PUVar {
         new PUVar[d.DomainValue](value, defPCs)
     }
 
-    def apply[Value <: ValueInformation](value: Value, defSites: IntTrieSet): PUVar[Value] = new PUVar(value, defSites)
+    def apply[Value <: ValueInformation](value: Value, defPCs: IntTrieSet): PUVar[Value] = new PUVar(value, defPCs)
 
-    def unapply[Value <: ValueInformation](u: UVar[Value]): Some[(Value, IntTrieSet)] = Some((u.value, u.defSites))
+    def unapply[Value <: ValueInformation](u: PUVar[Value]): Some[(Value, IntTrieSet)] = Some((u.value, u.defPCs))
 }

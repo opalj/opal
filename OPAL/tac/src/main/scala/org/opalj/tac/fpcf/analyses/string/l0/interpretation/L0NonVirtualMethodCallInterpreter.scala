@@ -8,7 +8,7 @@ package l0
 package interpretation
 
 import org.opalj.fpcf.ProperPropertyComputationResult
-import org.opalj.tac.fpcf.properties.string.IdentityFlow
+import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
 import org.opalj.tac.fpcf.properties.string.StringTreeEnvironment
 
 /**
@@ -21,20 +21,24 @@ object L0NonVirtualMethodCallInterpreter extends StringInterpreter {
     override def interpret(instr: T)(implicit state: InterpretationState): ProperPropertyComputationResult = {
         instr.name match {
             case "<init>" => interpretInit(instr)
-            case _        => computeFinalResult(IdentityFlow)
+            case _        => computeFinalResult(StringFlowFunctionProperty.identity)
         }
     }
 
     private def interpretInit(init: T)(implicit state: InterpretationState): ProperPropertyComputationResult = {
         init.params.size match {
             case 0 =>
-                computeFinalResult(IdentityFlow)
+                computeFinalResult(StringFlowFunctionProperty.identity)
             case _ =>
-                val targetVar = StringInterpreter.findUVarForDVar(init.receiver.asVar).toPersistentForm(state.tac.stmts)
+                val pc = state.pc
+                val targetVar = init.receiver.asVar.toPersistentForm(state.tac.stmts)
                 // Only StringBuffer and StringBuilder are interpreted which have constructors with <= 1 parameters
                 val paramVar = init.params.head.asVar.toPersistentForm(state.tac.stmts)
 
-                computeFinalResult((env: StringTreeEnvironment) => env.update(targetVar, env(paramVar)))
+                computeFinalResult(
+                    Set(PDUWeb(pc, targetVar), PDUWeb(pc, paramVar)),
+                    (env: StringTreeEnvironment) => env.update(pc, targetVar, env(pc, paramVar))
+                )
         }
     }
 }

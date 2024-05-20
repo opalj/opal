@@ -20,9 +20,7 @@ import org.opalj.br.fpcf.properties.string.StringTreeDynamicFloat
 import org.opalj.br.fpcf.properties.string.StringTreeDynamicInt
 import org.opalj.br.fpcf.properties.string.StringTreeNode
 import org.opalj.fpcf.ProperPropertyComputationResult
-import org.opalj.tac.fpcf.properties.string.ConstantResultFlow
-import org.opalj.tac.fpcf.properties.string.IdentityFlow
-import org.opalj.tac.fpcf.properties.string.StringFlowFunction
+import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
 import org.opalj.tac.fpcf.properties.string.StringTreeEnvironment
 import org.opalj.value.TheIntegerValue
 
@@ -43,9 +41,7 @@ case class L0VirtualFunctionCallInterpreter()
     override def interpretExpr(instr: T, call: E)(implicit
         state: InterpretationState
     ): ProperPropertyComputationResult = {
-        val at = Option.unless(!instr.isAssignment) {
-            StringInterpreter.findUVarForDVar(instr.asAssignment.targetVar.asVar).toPersistentForm(state.tac.stmts)
-        }
+        val at = Option.unless(!instr.isAssignment)(instr.asAssignment.targetVar.asVar.toPersistentForm(state.tac.stmts))
         val pt = call.receiver.asVar.toPersistentForm(state.tac.stmts)
 
         call.name match {
@@ -58,13 +54,21 @@ case class L0VirtualFunctionCallInterpreter()
                 call.descriptor.returnType match {
                     case obj: ObjectType if obj == ObjectType.String =>
                         if (at.isDefined) interpretArbitraryCall(at.get, call)
-                        else computeFinalResult(IdentityFlow)
+                        else computeFinalResult(StringFlowFunctionProperty.identity)
                     case _: IntLikeType =>
-                        computeFinalResult(ConstantResultFlow.forVariable(pt, StringTreeDynamicInt))
+                        computeFinalResult(StringFlowFunctionProperty.constForVariableAt(
+                            state.pc,
+                            pt,
+                            StringTreeDynamicInt
+                        ))
                     case FloatType | DoubleType =>
-                        computeFinalResult(ConstantResultFlow.forVariable(pt, StringTreeDynamicFloat))
+                        computeFinalResult(StringFlowFunctionProperty.constForVariableAt(
+                            state.pc,
+                            pt,
+                            StringTreeDynamicFloat
+                        ))
                     case _ =>
-                        computeFinalResult(IdentityFlow)
+                        computeFinalResult(StringFlowFunctionProperty.identity)
                 }
         }
     }
@@ -73,9 +77,12 @@ case class L0VirtualFunctionCallInterpreter()
         state: InterpretationState
     ): ProperPropertyComputationResult = {
         if (at.isDefined) {
-            computeFinalResult((env: StringTreeEnvironment) => env.update(at.get, env(pt)))
+            computeFinalResult(
+                Set(PDUWeb(state.pc, at.get), PDUWeb(state.pc, pt)),
+                (env: StringTreeEnvironment) => env.update(state.pc, at.get, env(state.pc, pt))
+            )
         } else {
-            computeFinalResult(IdentityFlow)
+            computeFinalResult(StringFlowFunctionProperty.identity)
         }
     }
 
@@ -83,7 +90,7 @@ case class L0VirtualFunctionCallInterpreter()
      * Processes calls to [[StringBuilder#replace]] or [[StringBuffer#replace]].
      */
     private def interpretReplaceCall(target: PV)(implicit state: InterpretationState): ProperPropertyComputationResult =
-        computeFinalResult(StringFlowFunction.lb(target))
+        computeFinalResult(StringFlowFunctionProperty.lb(state.pc, target))
 }
 
 private[string] trait L0ArbitraryVirtualFunctionCallInterpreter extends AssignmentLikeBasedStringInterpreter {
@@ -91,7 +98,7 @@ private[string] trait L0ArbitraryVirtualFunctionCallInterpreter extends Assignme
     protected def interpretArbitraryCall(target: PV, call: E)(implicit
         state: InterpretationState
     ): ProperPropertyComputationResult =
-        computeFinalResult(StringFlowFunction.lb(target))
+        computeFinalResult(StringFlowFunctionProperty.lb(state.pc, target))
 }
 
 /**
@@ -107,32 +114,35 @@ private[string] trait L0AppendCallInterpreter extends AssignmentLikeBasedStringI
         // .head because we want to evaluate only the first argument of append
         val paramVar = call.params.head.asVar.toPersistentForm(state.tac.stmts)
 
-        computeFinalResult((env: StringTreeEnvironment) => {
-            val valueState = env(paramVar)
+        computeFinalResult(
+            Set(PDUWeb(state.pc, paramVar), PDUWeb(state.pc, pt)) ++ at.map(PDUWeb(state.pc, _)),
+            (env: StringTreeEnvironment) => {
+                val valueState = env(state.pc, paramVar)
 
-            val transformedValueState = paramVar.value.computationalType match {
-                case ComputationalTypeInt =>
-                    if (call.descriptor.parameterType(0).isCharType && valueState.isInstanceOf[StringTreeConst]) {
-                        StringTreeConst(valueState.asInstanceOf[StringTreeConst].string.toInt.toChar.toString)
-                    } else {
+                val transformedValueState = paramVar.value.computationalType match {
+                    case ComputationalTypeInt =>
+                        if (call.descriptor.parameterType(0).isCharType && valueState.isInstanceOf[StringTreeConst]) {
+                            StringTreeConst(valueState.asInstanceOf[StringTreeConst].string.toInt.toChar.toString)
+                        } else {
+                            valueState
+                        }
+                    case ComputationalTypeFloat | ComputationalTypeDouble =>
+                        if (valueState.constancyLevel == StringConstancyLevel.CONSTANT) {
+                            valueState
+                        } else {
+                            StringTreeDynamicFloat
+                        }
+                    case _ =>
                         valueState
-                    }
-                case ComputationalTypeFloat | ComputationalTypeDouble =>
-                    if (valueState.constancyLevel == StringConstancyLevel.CONSTANT) {
-                        valueState
-                    } else {
-                        StringTreeDynamicFloat
-                    }
-                case _ =>
-                    valueState
-            }
+                }
 
-            var newEnv = env
-            if (at.isDefined) {
-                newEnv = newEnv.update(at.get, transformedValueState)
+                var newEnv = env
+                if (at.isDefined) {
+                    newEnv = newEnv.update(state.pc, at.get, transformedValueState)
+                }
+                newEnv.update(state.pc, pt, transformedValueState)
             }
-            newEnv.update(pt, transformedValueState)
-        })
+        )
     }
 }
 
@@ -147,45 +157,49 @@ private[string] trait L0SubstringCallInterpreter extends AssignmentLikeBasedStri
         state: InterpretationState
     ): ProperPropertyComputationResult = {
         if (at.isEmpty) {
-            return computeFinalResult(IdentityFlow);
+            return computeFinalResult(StringFlowFunctionProperty.identity);
         }
 
         val parameterCount = call.params.size
         parameterCount match {
             case 1 =>
                 call.params.head.asVar.value match {
-                    case intValue: TheIntegerValue =>
-                        computeFinalResult((env: StringTreeEnvironment) => {
-                            env(pt) match {
-                                case const: StringTreeConst =>
-                                    env.update(at.get, StringTreeConst(const.string.substring(intValue.value)))
-                                case _ =>
-                                    env.update(at.get, StringTreeNode.lb)
+                    case TheIntegerValue(intVal) =>
+                        computeFinalResult(
+                            Set(PDUWeb(state.pc, pt), PDUWeb(state.pc, at.get)),
+                            (env: StringTreeEnvironment) => {
+                                env(state.pc, pt) match {
+                                    case StringTreeConst(string) if string.length < intVal =>
+                                        env.update(state.pc, at.get, StringTreeConst(string.substring(intVal)))
+                                    case _ =>
+                                        env.update(state.pc, at.get, StringTreeNode.lb)
+                                }
                             }
-                        })
+                        )
                     case _ =>
-                        computeFinalResult(StringFlowFunction.noFlow(at.get))
+                        computeFinalResult(StringFlowFunctionProperty.noFlow(state.pc, at.get))
                 }
 
             case 2 =>
                 (call.params.head.asVar.value, call.params(1).asVar.value) match {
-                    case (firstIntValue: TheIntegerValue, secondIntValue: TheIntegerValue) =>
-                        computeFinalResult((env: StringTreeEnvironment) => {
-                            env(pt) match {
-                                case const: StringTreeConst =>
-                                    env.update(
-                                        at.get,
-                                        StringTreeConst(const.string.substring(
-                                            firstIntValue.value,
-                                            secondIntValue.value
-                                        ))
-                                    )
-                                case _ =>
-                                    env.update(at.get, StringTreeNode.lb)
+                    case (TheIntegerValue(firstIntVal), TheIntegerValue(secondIntVal)) =>
+                        computeFinalResult(
+                            Set(PDUWeb(state.pc, pt), PDUWeb(state.pc, at.get)),
+                            (env: StringTreeEnvironment) => {
+                                env(state.pc, pt) match {
+                                    case StringTreeConst(string) if string.length < secondIntVal =>
+                                        env.update(
+                                            state.pc,
+                                            at.get,
+                                            StringTreeConst(string.substring(firstIntVal, secondIntVal))
+                                        )
+                                    case _ =>
+                                        env.update(state.pc, at.get, StringTreeNode.lb)
+                                }
                             }
-                        })
+                        )
                     case _ =>
-                        computeFinalResult(StringFlowFunction.noFlow(at.get))
+                        computeFinalResult(StringFlowFunctionProperty.noFlow(state.pc, at.get))
                 }
 
             case _ => throw new IllegalStateException(

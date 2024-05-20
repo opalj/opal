@@ -36,7 +36,7 @@ import org.opalj.tac.fpcf.analyses.string.flowanalysis.Statement
 import org.opalj.tac.fpcf.analyses.string.flowanalysis.StructuralAnalysis
 import org.opalj.tac.fpcf.analyses.string.interpretation.InterpretationHandler
 import org.opalj.tac.fpcf.properties.TACAI
-import org.opalj.tac.fpcf.properties.string.StringFlowFunction
+import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
 import org.opalj.tac.fpcf.properties.string.StringTreeEnvironment
 
 /**
@@ -47,7 +47,7 @@ trait StringAnalysis extends FPCFAnalysis {
     val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
     def analyze(data: SContext): ProperPropertyComputationResult = {
-        val state = ComputationState(declaredMethods(data._2), data, ps(data._2, TACAI.key))
+        val state = ComputationState(declaredMethods(data._3), data, ps(data._3, TACAI.key))
 
         if (state.tacDependee.isRefinable) {
             InterimResult(
@@ -73,20 +73,6 @@ trait StringAnalysis extends FPCFAnalysis {
     private def determinePossibleStrings(implicit state: ComputationState): ProperPropertyComputationResult = {
         implicit val tac: TAC = state.tac
 
-        state.startEnv = StringTreeEnvironment(Map.empty.withDefault { pv: PV =>
-            val defPCs = pv.defPCs.toList.sorted
-            if (defPCs.head >= 0) {
-                StringTreeNeutralElement
-            } else {
-                val pc = defPCs.head
-                if (pc == -1 || pc <= ImmediateVMExceptionsOriginOffset) {
-                    StringTreeDynamicString
-                } else {
-                    StringTreeParameter.forParameterPC(pc)
-                }
-            }
-        })
-
         state.flowGraph = FlowGraph(tac.cfg)
         val (_, superFlowGraph, controlTree) =
             StructuralAnalysis.analyze(state.flowGraph, FlowGraph.entryFromCFG(tac.cfg))
@@ -95,7 +81,7 @@ trait StringAnalysis extends FPCFAnalysis {
 
         state.flowGraph.nodes.toOuter.foreach {
             case Statement(pc) if pc >= 0 =>
-                state.updateDependee(pc, propertyStore(MethodPC(pc, state.dm), StringFlowFunction.key))
+                state.updateDependee(pc, propertyStore(MethodPC(pc, state.dm), StringFlowFunctionProperty.key))
 
             case _ =>
         }
@@ -109,8 +95,8 @@ trait StringAnalysis extends FPCFAnalysis {
                 state.tacDependee = eps.asInstanceOf[FinalEP[Method, TACAI]]
                 determinePossibleStrings(state)
 
-            case InterimEUB(e: MethodPC) if eps.pk.equals(StringFlowFunction.key) =>
-                state.updateDependee(e.pc, eps.asInstanceOf[EOptionP[MethodPC, StringFlowFunction]])
+            case InterimEUB(e: MethodPC) if eps.pk.equals(StringFlowFunctionProperty.key) =>
+                state.updateDependee(e.pc, eps.asInstanceOf[EOptionP[MethodPC, StringFlowFunctionProperty]])
                 computeResults(state)
 
             case _ =>
@@ -137,13 +123,27 @@ trait StringAnalysis extends FPCFAnalysis {
     }
 
     private def computeNewUpperBound(state: ComputationState): StringConstancyProperty = {
+        val startEnv = StringTreeEnvironment(state.getWebs.map { web: PDUWeb =>
+            val defPCs = web.defPCs.toList.sorted
+            if (defPCs.head >= 0) {
+                (web, StringTreeNeutralElement)
+            } else {
+                val pc = defPCs.head
+                if (pc == -1 || pc <= ImmediateVMExceptionsOriginOffset) {
+                    (web, StringTreeDynamicString)
+                } else {
+                    (web, StringTreeParameter.forParameterPC(pc))
+                }
+            }
+        }.toMap)
+
         val resultEnv = DataFlowAnalysis.compute(
             state.controlTree,
             state.superFlowGraph,
             state.getFlowFunctionsByPC
-        )(state.startEnv)
+        )(startEnv)
 
-        StringConstancyProperty(StringConstancyInformation(resultEnv(state.entity._1)))
+        StringConstancyProperty(StringConstancyInformation(resultEnv(state.entity._1, state.entity._2)))
     }
 }
 
@@ -196,7 +196,7 @@ sealed trait StringAnalysisScheduler extends FPCFAnalysisScheduler {
 
     override def uses: Set[PropertyBounds] = Set(
         PropertyBounds.ub(TACAI),
-        PropertyBounds.ub(StringFlowFunction)
+        PropertyBounds.ub(StringFlowFunctionProperty)
     )
 
     override final type InitializationData = StringAnalysis
@@ -224,7 +224,7 @@ trait LazyStringAnalysis
 
 sealed trait StringFlowAnalysisScheduler extends FPCFAnalysisScheduler {
 
-    final def derivedProperty: PropertyBounds = PropertyBounds.lub(StringFlowFunction)
+    final def derivedProperty: PropertyBounds = PropertyBounds.lub(StringFlowFunctionProperty)
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(TACAI)
 
@@ -241,7 +241,7 @@ trait LazyStringFlowAnalysis
     extends StringFlowAnalysisScheduler with FPCFLazyAnalysisScheduler {
 
     override def register(p: SomeProject, ps: PropertyStore, initData: InitializationData): FPCFAnalysis = {
-        ps.registerLazyPropertyComputation(StringFlowFunction.key, initData.analyze)
+        ps.registerLazyPropertyComputation(StringFlowFunctionProperty.key, initData.analyze)
 
         initData
     }

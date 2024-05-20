@@ -8,7 +8,7 @@ package l0
 package interpretation
 
 import org.opalj.fpcf.ProperPropertyComputationResult
-import org.opalj.tac.fpcf.properties.string.IdentityFlow
+import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
 
 /**
  * @author Maximilian Rüsch
@@ -25,7 +25,7 @@ object L0VirtualMethodCallInterpreter extends StringInterpreter {
         instr.name match {
             // IMPROVE interpret argument for setLength
             case "setLength" => computeFinalLBFor(instr.receiver.asVar)
-            case _           => computeFinalResult(IdentityFlow)
+            case _           => computeFinalResult(StringFlowFunctionProperty.identity)
         }
     }
 }

@@ -24,7 +24,7 @@ package object string {
     /**
      * String analysis process a local variable within a particular context, i.e. the method in which it is used.
      */
-    type SContext = (SEntity, Method)
+    type SContext = (Int, SEntity, Method)
 
     /**
      * The entity used for requesting string constancy information for specific def sites of an entity. The def site

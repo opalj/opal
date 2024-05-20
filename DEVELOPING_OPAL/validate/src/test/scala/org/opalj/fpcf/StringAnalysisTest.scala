@@ -45,7 +45,7 @@ sealed abstract class StringAnalysisTest extends PropertiesTest {
      * Resolves all test methods for this [[level]] and below while taking overrides into account. For all test methods,
      * [[extractPUVars]] is called with their [[TACode]].
      */
-    def determineEntitiesToAnalyze(project: Project[URL]): Iterable[(SEntity, Method)] = {
+    def determineEntitiesToAnalyze(project: Project[URL]): Iterable[(Int, SEntity, Method)] = {
         val tacProvider = project.get(EagerDetachedTACAIKey)
         project.classHierarchy.allSuperclassesIterator(
             ObjectType(StringAnalysisTest.getAllowedFQTestMethodObjectTypeNameForLevel(level)),
@@ -61,8 +61,8 @@ sealed abstract class StringAnalysisTest extends PropertiesTest {
                     exists || StringAnalysisTest.isStringUsageAnnotation(a)
                 )
             }
-            .foldLeft(Seq.empty[(SEntity, Method)]) { (entities, m) =>
-                entities ++ extractPUVars(tacProvider(m)).map((_, m))
+            .foldLeft(Seq.empty[(Int, SEntity, Method)]) { (entities, m) =>
+                entities ++ extractPUVars(tacProvider(m)).map(e => (e._1, e._2, m))
             }
     }
 
@@ -72,25 +72,25 @@ sealed abstract class StringAnalysisTest extends PropertiesTest {
      *
      * @return Returns the arguments of the [[nameTestMethod]] as a PUVars list in the order in which they occurred.
      */
-    def extractPUVars(tac: TACode[TACMethodParameter, V]): List[SEntity] = {
+    def extractPUVars(tac: TACode[TACMethodParameter, V]): List[(Int, SEntity)] = {
         tac.cfg.code.instructions.filter {
             case VirtualMethodCall(_, declClass, _, name, _, _, _) =>
                 allowedFQTestMethodsClassNames.exists(_ == declClass.toJavaClass.getName) && name == nameTestMethod
             case _ => false
-        }.map(_.asVirtualMethodCall.params.head.asVar.toPersistentForm(tac.stmts)).toList
+        }.map { call => (call.pc, call.asVirtualMethodCall.params.head.asVar.toPersistentForm(tac.stmts)) }.toList
     }
 
     def determineEAS(
-        entities: Iterable[(SEntity, Method)],
+        entities: Iterable[(Int, SEntity, Method)],
         project:  Project[URL]
-    ): Iterable[((SEntity, Method), String => String, List[Annotation])] = {
-        val m2e = entities.groupBy(_._2).iterator.map(e => e._1 -> e._2.map(k => k._1)).toMap
+    ): Iterable[((Int, SEntity, Method), String => String, List[Annotation])] = {
+        val m2e = entities.groupBy(_._3).iterator.map(e => e._1 -> e._2.map(k => (k._1, k._2))).toMap
         // As entity, we need not the method but a tuple (PUVar, Method), thus this transformation
         methodsWithAnnotations(project).filter(am => m2e.contains(am._1)).flatMap { am =>
             m2e(am._1).zipWithIndex.map {
-                case (puVar, index) =>
+                case ((pc, puVar), index) =>
                     Tuple3(
-                        (puVar, am._1),
+                        (pc, puVar, am._1),
                         { s: String => s"${am._2(s)} (#$index)" },
                         List(StringAnalysisTest.getStringDefinitionsFromCollection(am._3, index))
                     )
@@ -162,9 +162,9 @@ class L0StringAnalysisTest extends StringAnalysisTest {
 
         val entities = determineEntitiesToAnalyze(as.project)
         val newEntities = entities
-            .filter(entity => entity._2.name.startsWith("simpleStringConcat2"))
+            .filter(entity => entity._3.name.startsWith("simpleStringConcat2"))
             // Currently broken L0 Tests
-            .filterNot(entity => entity._2.name.startsWith("unknownCharValue"))
+            .filterNot(entity => entity._3.name.startsWith("unknownCharValue"))
 
         it("can be executed without exceptions") {
             newEntities.foreach(as.propertyStore.force(_, StringConstancyProperty.key))
@@ -201,23 +201,23 @@ class L1StringAnalysisTest extends StringAnalysisTest {
 
         val entities = determineEntitiesToAnalyze(as.project)
             // L0 Tests
-            .filterNot(entity => entity._2.name == "simpleStringConcat") // Waits on string_concat and "substring"
-            .filterNot(entity => entity._2.name.startsWith("fromConstantAndFunctionCall")) // Waits on string_concat and "substring"
+            .filterNot(entity => entity._3.name == "simpleStringConcat") // Waits on string_concat and "substring"
+            .filterNot(entity => entity._3.name.startsWith("fromConstantAndFunctionCall")) // Waits on string_concat and "substring"
             // Currently broken L0 Tests
-            .filterNot(entity => entity._2.name.startsWith("unknownCharValue"))
+            .filterNot(entity => entity._3.name.startsWith("unknownCharValue"))
             // L1 Tests
-            .filterNot(entity => entity._2.name.startsWith("getStaticTest")) // Waits on string_concat and "substring"
-            .filterNot(entity => entity._2.name.startsWith("functionWithFunctionParameter")) // Waits on string_concat and "substring"
-            .filterNot(entity => entity._2.name.startsWith("knownHierarchyInstanceTest")) // Waits on string_concat and "substring"
+            .filterNot(entity => entity._3.name.startsWith("getStaticTest")) // Waits on string_concat and "substring"
+            .filterNot(entity => entity._3.name.startsWith("functionWithFunctionParameter")) // Waits on string_concat and "substring"
+            .filterNot(entity => entity._3.name.startsWith("knownHierarchyInstanceTest")) // Waits on string_concat and "substring"
             // Currently broken L1 Tests
-            .filterNot(entity => entity._2.name.startsWith("cyclicDependencyTest"))
-            .filterNot(entity => entity._2.name.startsWith("unknownHierarchyInstanceTest"))
-            .filterNot(entity => entity._2.name.startsWith("severalReturnValuesTest1"))
-            .filterNot(entity => entity._2.name.startsWith("severalReturnValuesTest2"))
-            .filterNot(entity => entity._2.name.startsWith("crissCrossExample"))
-            .filterNot(entity => entity._2.name.startsWith("directAppendConcatsWith2ndStringBuilder"))
-            .filterNot(entity => entity._2.name.startsWith("parameterRead"))
-            .filterNot(entity => entity._2.name.startsWith("fromStringArray"))
+            .filterNot(entity => entity._3.name.startsWith("cyclicDependencyTest"))
+            .filterNot(entity => entity._3.name.startsWith("unknownHierarchyInstanceTest"))
+            .filterNot(entity => entity._3.name.startsWith("severalReturnValuesTest1"))
+            .filterNot(entity => entity._3.name.startsWith("severalReturnValuesTest2"))
+            .filterNot(entity => entity._3.name.startsWith("crissCrossExample"))
+            .filterNot(entity => entity._3.name.startsWith("directAppendConcatsWith2ndStringBuilder"))
+            .filterNot(entity => entity._3.name.startsWith("parameterRead"))
+            .filterNot(entity => entity._3.name.startsWith("fromStringArray"))
         entities.foreach(as.propertyStore.force(_, StringConstancyProperty.key))
 
         as.propertyStore.waitOnPhaseCompletion()

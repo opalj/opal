@@ -16,7 +16,7 @@ import org.opalj.tac.fpcf.analyses.string.flowanalysis.FlowGraph
 import org.opalj.tac.fpcf.analyses.string.flowanalysis.SuperFlowGraph
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.string.StringFlowFunction
-import org.opalj.tac.fpcf.properties.string.StringTreeEnvironment
+import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
 
 /**
  * This class is to be used to store state information that are required at a later point in
@@ -32,27 +32,33 @@ case class ComputationState(dm: DefinedMethod, entity: SContext, var tacDependee
             throw new IllegalStateException("Cannot get a TAC from a TACAI with no or empty upper bound!")
     }
 
-    var startEnv: StringTreeEnvironment = _
     var flowGraph: FlowGraph = _
     var superFlowGraph: SuperFlowGraph = _
     var controlTree: ControlTree = _
 
-    private val pcToDependeeMapping: mutable.Map[Int, EOptionP[MethodPC, StringFlowFunction]] = mutable.Map.empty
+    private val pcToDependeeMapping: mutable.Map[Int, EOptionP[MethodPC, StringFlowFunctionProperty]] =
+        mutable.Map.empty
 
-    def updateDependee(pc: Int, dependee: EOptionP[MethodPC, StringFlowFunction]): Unit =
+    def updateDependee(pc: Int, dependee: EOptionP[MethodPC, StringFlowFunctionProperty]): Unit =
         pcToDependeeMapping.update(pc, dependee)
 
-    def dependees: Set[EOptionP[MethodPC, StringFlowFunction]] = pcToDependeeMapping.values.filter(_.isRefinable).toSet
+    def dependees: Set[EOptionP[MethodPC, StringFlowFunctionProperty]] =
+        pcToDependeeMapping.values.filter(_.isRefinable).toSet
 
     def hasDependees: Boolean = pcToDependeeMapping.valuesIterator.exists(_.isRefinable)
 
     def getFlowFunctionsByPC: Map[Int, StringFlowFunction] = pcToDependeeMapping.map { kv =>
         (
             kv._1,
-            if (kv._2.hasUBP) kv._2.ub
-            else StringFlowFunction.ub
+            if (kv._2.hasUBP) kv._2.ub.flow
+            else StringFlowFunctionProperty.ub.flow
         )
     }.toMap
+
+    def getWebs: Iterator[PDUWeb] = pcToDependeeMapping.valuesIterator.flatMap { v =>
+        if (v.hasUBP) v.ub.webs
+        else StringFlowFunctionProperty.ub.webs
+    }
 }
 
 case class InterpretationState(pc: Int, dm: DefinedMethod, var tacDependee: EOptionP[Method, TACAI]) {

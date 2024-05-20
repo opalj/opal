@@ -25,7 +25,7 @@ import org.opalj.tac.fpcf.analyses.string.interpretation.InterpretationHandler
 import org.opalj.tac.fpcf.analyses.string.l0.interpretation.L0FunctionCallInterpreter
 import org.opalj.tac.fpcf.analyses.string.l0.interpretation.L0VirtualFunctionCallInterpreter
 import org.opalj.tac.fpcf.properties.TACAI
-import org.opalj.tac.fpcf.properties.string.StringFlowFunction
+import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
 
 /**
  * Processes [[VirtualFunctionCall]]s similar to the [[L0VirtualFunctionCallInterpreter]] but handles arbitrary calls
@@ -80,7 +80,7 @@ class L1VirtualFunctionCallInterpreter(
                 depender.calleeDependee = eps.asInstanceOf[EOptionP[DefinedMethod, Callees]]
                 InterimResult.forUB(
                     InterpretationHandler.getEntity(state),
-                    StringFlowFunction.ub,
+                    StringFlowFunctionProperty.ub,
                     Set(depender.calleeDependee),
                     continuation(state, depender)
                 )

@@ -15,8 +15,7 @@ import org.opalj.fpcf.InterimResult
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.SomeEPS
 import org.opalj.tac.fpcf.properties.TACAI
-import org.opalj.tac.fpcf.properties.string.ConstantResultFlow
-import org.opalj.tac.fpcf.properties.string.StringFlowFunction
+import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
 
 /**
  * Processes expressions that are relevant in order to determine which value(s) the string value at a given def site
@@ -36,13 +35,13 @@ abstract class InterpretationHandler extends FPCFAnalysis {
         if (tacaiEOptP.isRefinable) {
             InterimResult.forUB(
                 InterpretationHandler.getEntity,
-                StringFlowFunction.ub,
+                StringFlowFunctionProperty.ub,
                 Set(state.tacDependee),
                 continuation(state)
             )
         } else if (tacaiEOptP.ub.tac.isEmpty) {
             // No TAC available, e.g., because the method has no body
-            StringInterpreter.computeFinalResult(ConstantResultFlow.forAll(StringTreeNode.lb))
+            StringInterpreter.computeFinalResult(StringFlowFunctionProperty.constForAll(StringTreeNode.lb))
         } else {
             processNew
         }
@@ -58,7 +57,7 @@ abstract class InterpretationHandler extends FPCFAnalysis {
             case _ =>
                 InterimResult.forUB(
                     InterpretationHandler.getEntity(state),
-                    StringFlowFunction.ub,
+                    StringFlowFunctionProperty.ub,
                     Set(state.tacDependee),
                     continuation(state)
                 )

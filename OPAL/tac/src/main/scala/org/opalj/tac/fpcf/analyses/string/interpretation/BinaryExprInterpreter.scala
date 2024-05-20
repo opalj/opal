@@ -11,8 +11,7 @@ import org.opalj.br.ComputationalTypeInt
 import org.opalj.br.fpcf.properties.string.StringTreeDynamicFloat
 import org.opalj.br.fpcf.properties.string.StringTreeDynamicInt
 import org.opalj.fpcf.ProperPropertyComputationResult
-import org.opalj.tac.fpcf.properties.string.ConstantResultFlow
-import org.opalj.tac.fpcf.properties.string.IdentityFlow
+import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
 
 /**
  * @author Maximilian Rüsch
@@ -27,15 +26,17 @@ object BinaryExprInterpreter extends AssignmentBasedStringInterpreter {
      * <li>[[ComputationalTypeInt]]
      * <li>[[ComputationalTypeFloat]]</li>
      * </li>
-     * For all other expressions, [[IdentityFlow]] will be returned.
+     * For all other expressions, [[StringFlowFunctionProperty.identity]] will be returned.
      */
     override def interpretExpr(target: PV, expr: E)(implicit
         state: InterpretationState
     ): ProperPropertyComputationResult = {
         computeFinalResult(expr.cTpe match {
-            case ComputationalTypeInt   => ConstantResultFlow.forVariable(target, StringTreeDynamicInt)
-            case ComputationalTypeFloat => ConstantResultFlow.forVariable(target, StringTreeDynamicFloat)
-            case _                      => IdentityFlow
+            case ComputationalTypeInt =>
+                StringFlowFunctionProperty.constForVariableAt(state.pc, target, StringTreeDynamicInt)
+            case ComputationalTypeFloat =>
+                StringFlowFunctionProperty.constForVariableAt(state.pc, target, StringTreeDynamicFloat)
+            case _ => StringFlowFunctionProperty.identity
         })
     }
 }

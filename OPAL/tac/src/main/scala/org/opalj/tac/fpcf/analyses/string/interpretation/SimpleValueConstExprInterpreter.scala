@@ -8,8 +8,7 @@ package interpretation
 
 import org.opalj.br.fpcf.properties.string.StringTreeConst
 import org.opalj.fpcf.ProperPropertyComputationResult
-import org.opalj.tac.fpcf.properties.string.ConstantResultFlow
-import org.opalj.tac.fpcf.properties.string.IdentityFlow
+import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
 
 /**
  * @author Maximilian Rüsch
@@ -22,12 +21,17 @@ object SimpleValueConstExprInterpreter extends AssignmentBasedStringInterpreter 
         state: InterpretationState
     ): ProperPropertyComputationResult = {
         computeFinalResult(expr match {
-            case ic: IntConst    => ConstantResultFlow.forVariable(target, StringTreeConst(ic.value.toString))
-            case fc: FloatConst  => ConstantResultFlow.forVariable(target, StringTreeConst(fc.value.toString))
-            case dc: DoubleConst => ConstantResultFlow.forVariable(target, StringTreeConst(dc.value.toString))
-            case lc: LongConst   => ConstantResultFlow.forVariable(target, StringTreeConst(lc.value.toString))
-            case sc: StringConst => ConstantResultFlow.forVariable(target, StringTreeConst(sc.value))
-            case _               => IdentityFlow
+            case ic: IntConst =>
+                StringFlowFunctionProperty.constForVariableAt(state.pc, target, StringTreeConst(ic.value.toString))
+            case fc: FloatConst =>
+                StringFlowFunctionProperty.constForVariableAt(state.pc, target, StringTreeConst(fc.value.toString))
+            case dc: DoubleConst =>
+                StringFlowFunctionProperty.constForVariableAt(state.pc, target, StringTreeConst(dc.value.toString))
+            case lc: LongConst =>
+                StringFlowFunctionProperty.constForVariableAt(state.pc, target, StringTreeConst(lc.value.toString))
+            case sc: StringConst =>
+                StringFlowFunctionProperty.constForVariableAt(state.pc, target, StringTreeConst(sc.value))
+            case _ => StringFlowFunctionProperty.identity
         })
     }
 }

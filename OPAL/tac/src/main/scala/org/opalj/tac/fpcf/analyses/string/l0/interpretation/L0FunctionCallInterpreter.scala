@@ -20,6 +20,7 @@ import org.opalj.fpcf.SomeEPS
 import org.opalj.tac.fpcf.analyses.string.interpretation.InterpretationHandler
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.string.StringFlowFunction
+import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
 import org.opalj.tac.fpcf.properties.string.StringTreeEnvironment
 
 /**
@@ -85,6 +86,7 @@ trait L0FunctionCallInterpreter
                     } else {
                         callState.returnDependees += m -> returns.map { ret =>
                             val entity: SContext = (
+                                ret.pc,
                                 ret.asInstanceOf[ReturnValue[V]].expr.asVar.toPersistentForm(calleeTac.get.stmts),
                                 m
                             )
@@ -102,15 +104,17 @@ trait L0FunctionCallInterpreter
         if (callState.hasDependees) {
             InterimResult.forUB(
                 InterpretationHandler.getEntity(callState.state),
-                StringFlowFunction.ub,
+                StringFlowFunctionProperty.ub,
                 callState.dependees.toSet,
                 continuation(callState)
             )
         } else {
+            val pc = callState.state.pc
             val parameters = callState.parameters.zipWithIndex.map(x => (x._2, x._1)).toMap
 
             val flowFunction: StringFlowFunction = (env: StringTreeEnvironment) =>
                 env.update(
+                    pc,
                     callState.target,
                     StringTreeNode.reduceMultiple {
                         callState.calleeMethods.map { m =>
@@ -118,14 +122,16 @@ trait L0FunctionCallInterpreter
                                 StringTreeNode.lb
                             } else {
                                 StringTreeNode.reduceMultiple(callState.returnDependees(m).map {
-                                    _.asFinal.p.sci.tree.replaceParameters(parameters.map { kv => (kv._1, env(kv._2)) })
+                                    _.asFinal.p.sci.tree.replaceParameters(parameters.map { kv =>
+                                        (kv._1, env(pc, kv._2))
+                                    })
                                 })
                             }
                         }
                     }
                 )
 
-            computeFinalResult(flowFunction)(callState.state)
+            computeFinalResult(PDUWeb(pc, callState.target), flowFunction)(callState.state)
         }
     }
 
@@ -137,7 +143,7 @@ trait L0FunctionCallInterpreter
 
             case EUBP(_, _: StringConstancyProperty) =>
                 val contextEPS = eps.asInstanceOf[EOptionP[SContext, StringConstancyProperty]]
-                callState.updateReturnDependee(contextEPS.e._2, contextEPS)
+                callState.updateReturnDependee(contextEPS.e._3, contextEPS)
                 tryComputeFinalResult(callState)
 
             case _ => throw new IllegalArgumentException(s"Encountered unknown eps: $eps")
