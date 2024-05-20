@@ -29,7 +29,7 @@ case class L0StaticFunctionCallInterpreter()(
 
     override type E = StaticFunctionCall[V]
 
-    override def interpretExpr(target: V, call: E)(implicit
+    override def interpretExpr(target: PV, call: E)(implicit
         state: InterpretationState
     ): ProperPropertyComputationResult = {
         call.name match {
@@ -47,7 +47,7 @@ private[string] trait L0ArbitraryStaticFunctionCallInterpreter
 
     override type E <: StaticFunctionCall[V]
 
-    def interpretArbitraryCall(target: V, call: E)(implicit
+    def interpretArbitraryCall(target: PV, call: E)(implicit
         state: InterpretationState
     ): ProperPropertyComputationResult = {
         val calleeMethod = call.resolveCallTarget(state.dm.definedMethod.classFile.thisType)
@@ -56,9 +56,8 @@ private[string] trait L0ArbitraryStaticFunctionCallInterpreter
         }
 
         val m = calleeMethod.value
-        val pt = target.toPersistentForm(state.tac.stmts)
         val params = getParametersForPC(state.pc).map(_.asVar.toPersistentForm(state.tac.stmts))
-        val callState = FunctionCallState(state, pt, Seq(m), params, Map((m, ps(m, TACAI.key))))
+        val callState = FunctionCallState(state, target, Seq(m), params, Map((m, ps(m, TACAI.key))))
 
         interpretArbitraryCallToFunctions(callState)
     }
@@ -68,8 +67,9 @@ private[string] trait L0StringValueOfFunctionCallInterpreter extends AssignmentB
 
     override type E <: StaticFunctionCall[V]
 
-    def processStringValueOf(target: V, call: E)(implicit state: InterpretationState): ProperPropertyComputationResult = {
-        val pt = target.toPersistentForm(state.tac.stmts)
+    def processStringValueOf(target: PV, call: E)(implicit
+        state: InterpretationState
+    ): ProperPropertyComputationResult = {
         val pp = call.params.head.asVar.toPersistentForm(state.tac.stmts)
 
         val flowFunction: StringFlowFunction = if (call.descriptor.parameterType(0).toJava == "char") {
@@ -77,13 +77,13 @@ private[string] trait L0StringValueOfFunctionCallInterpreter extends AssignmentB
                 {
                     env(pp) match {
                         case const: StringTreeConst if const.isIntConst =>
-                            env.update(pt, StringTreeConst(const.string.toInt.toChar.toString))
+                            env.update(target, StringTreeConst(const.string.toInt.toChar.toString))
                         case tree =>
-                            env.update(pt, tree)
+                            env.update(target, tree)
                     }
                 }
         } else {
-            (env: StringTreeEnvironment) => env.update(pt, env(pp))
+            (env: StringTreeEnvironment) => env.update(target, env(pp))
         }
 
         computeFinalResult(flowFunction)

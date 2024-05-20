@@ -17,6 +17,10 @@ class L0StringAnalysis(override val project: SomeProject) extends StringAnalysis
 
 object LazyL0StringAnalysis extends LazyStringAnalysis {
 
-    override def init(p: SomeProject, ps: PropertyStore): InitializationData =
-        (new L0StringAnalysis(p), L0InterpretationHandler()(p, ps))
+    override def init(p: SomeProject, ps: PropertyStore): InitializationData = new L0StringAnalysis(p)
+}
+
+object LazyL0StringFlowAnalysis extends LazyStringFlowAnalysis {
+
+    override def init(p: SomeProject, ps: PropertyStore): InitializationData = L0InterpretationHandler(p)
 }

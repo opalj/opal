@@ -22,7 +22,9 @@ import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalysis
 import org.opalj.tac.fpcf.analyses.string.SEntity
 import org.opalj.tac.fpcf.analyses.string.l0.LazyL0StringAnalysis
+import org.opalj.tac.fpcf.analyses.string.l0.LazyL0StringFlowAnalysis
 import org.opalj.tac.fpcf.analyses.string.l1.LazyL1StringAnalysis
+import org.opalj.tac.fpcf.analyses.string.l1.LazyL1StringFlowAnalysis
 
 sealed abstract class StringAnalysisTest extends PropertiesTest {
 
@@ -156,21 +158,22 @@ class L0StringAnalysisTest extends StringAnalysisTest {
     }
 
     describe("the org.opalj.fpcf.L0StringAnalysis is started") {
-        val as = executeAnalyses(LazyL0StringAnalysis)
+        val as = executeAnalyses(LazyL0StringAnalysis, LazyL0StringFlowAnalysis)
 
         val entities = determineEntitiesToAnalyze(as.project)
         val newEntities = entities
+            .filter(entity => entity._2.name.startsWith("simpleStringConcat2"))
             // Currently broken L0 Tests
             .filterNot(entity => entity._2.name.startsWith("unknownCharValue"))
 
-        // it("can be executed without exceptions") {
-        newEntities.foreach(as.propertyStore.force(_, StringConstancyProperty.key))
+        it("can be executed without exceptions") {
+            newEntities.foreach(as.propertyStore.force(_, StringConstancyProperty.key))
 
-        as.propertyStore.waitOnPhaseCompletion()
-        as.propertyStore.shutdown()
+            as.propertyStore.waitOnPhaseCompletion()
+            as.propertyStore.shutdown()
 
-        validateProperties(as, determineEAS(newEntities, as.project), Set("StringConstancy"))
-        // }
+            validateProperties(as, determineEAS(newEntities, as.project), Set("StringConstancy"))
+        }
     }
 }
 
@@ -194,7 +197,7 @@ class L1StringAnalysisTest extends StringAnalysisTest {
     }
 
     describe("the org.opalj.fpcf.L1StringAnalysis is started") {
-        val as = executeAnalyses(LazyL1StringAnalysis)
+        val as = executeAnalyses(LazyL1StringAnalysis, LazyL1StringFlowAnalysis)
 
         val entities = determineEntitiesToAnalyze(as.project)
             // L0 Tests

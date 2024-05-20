@@ -110,6 +110,19 @@ public class L0TestMethods {
     }
 
     @StringDefinitionsCollection(
+            value = "checks if a string value with append(s) is determined correctly",
+            stringDefinitions = {
+                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "java.lang.String")
+            }
+    )
+    public void simpleStringConcat2() {
+        String className1 = "java.lang.";
+        System.out.println(className1);
+        className1 += "String";
+        analyzeString(className1);
+    }
+
+    @StringDefinitionsCollection(
             value = "checks if the substring of a constant string value is determined correctly",
             stringDefinitions = {
                     @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "va."),

@@ -16,7 +16,6 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.fpcf.ProperPropertyComputationResult
-import org.opalj.fpcf.PropertyStore
 import org.opalj.tac.fpcf.analyses.string.interpretation.BinaryExprInterpreter
 import org.opalj.tac.fpcf.analyses.string.interpretation.InterpretationHandler
 import org.opalj.tac.fpcf.analyses.string.interpretation.SimpleValueConstExprInterpreter
@@ -31,10 +30,7 @@ import org.opalj.tac.fpcf.properties.string.IdentityFlow
  *
  * @author Maximilian Rüsch
  */
-class L1InterpretationHandler(
-    implicit val p:  SomeProject,
-    implicit val ps: PropertyStore
-) extends InterpretationHandler {
+class L1InterpretationHandler(implicit override val project: SomeProject) extends InterpretationHandler {
 
     val declaredFields: DeclaredFields = p.get(DeclaredFieldsKey)
     val fieldAccessInformation: FieldAccessInformation = p.get(FieldAccessInformationKey)
@@ -49,8 +45,8 @@ class L1InterpretationHandler(
         }
 
         state.tac.stmts(defSiteOpt.get) match {
-            case Assignment(_, target, expr: SimpleValueConst) =>
-                SimpleValueConstExprInterpreter.interpretExpr(target, expr)
+            case stmt @ Assignment(_, _, expr: SimpleValueConst) =>
+                SimpleValueConstExprInterpreter.interpretExpr(stmt, expr)
 
             // Currently unsupported
             case Assignment(_, target, _: ArrayExpr[V]) => StringInterpreter.computeFinalLBFor(target)
@@ -58,9 +54,9 @@ class L1InterpretationHandler(
 
             case Assignment(_, _, _: New) => StringInterpreter.computeFinalResult(IdentityFlow)
 
-            case Assignment(_, targetVar, expr: FieldRead[V]) =>
+            case stmt @ Assignment(_, targetVar, expr: FieldRead[V]) =>
                 L1FieldReadInterpreter(ps, fieldAccessInformation, p, declaredFields, contextProvider).interpretExpr(
-                    targetVar,
+                    stmt,
                     expr
                 )
             // Field reads without result usage are irrelevant
@@ -76,13 +72,13 @@ class L1InterpretationHandler(
             case stmt @ ExprStmt(_, expr: NonVirtualFunctionCall[V]) =>
                 L0NonVirtualFunctionCallInterpreter().interpretExpr(stmt, expr)
 
-            case Assignment(_, target, expr: StaticFunctionCall[V]) =>
-                L0StaticFunctionCallInterpreter().interpretExpr(target, expr)
+            case stmt @ Assignment(_, target, expr: StaticFunctionCall[V]) =>
+                L0StaticFunctionCallInterpreter().interpretExpr(stmt, expr)
             // Static function calls without return value usage are irrelevant
             case ExprStmt(_, _: StaticFunctionCall[V]) => StringInterpreter.computeFinalResult(IdentityFlow)
 
             // TODO: For binary expressions, use the underlying domain to retrieve the result of such expressions
-            case Assignment(_, target, expr: BinaryExpr[V]) => BinaryExprInterpreter.interpretExpr(target, expr)
+            case stmt @ Assignment(_, target, expr: BinaryExpr[V]) => BinaryExprInterpreter.interpretExpr(stmt, expr)
 
             case vmc: VirtualMethodCall[V] =>
                 L0VirtualMethodCallInterpreter.interpret(vmc)
@@ -99,6 +95,5 @@ object L1InterpretationHandler {
     def requiredProjectInformation: ProjectInformationKeys =
         Seq(DeclaredFieldsKey, FieldAccessInformationKey, ContextProviderKey)
 
-    def apply(project: SomeProject, ps: PropertyStore): L1InterpretationHandler =
-        new L1InterpretationHandler()(project, ps)
+    def apply(project: SomeProject): L1InterpretationHandler = new L1InterpretationHandler()(project)
 }

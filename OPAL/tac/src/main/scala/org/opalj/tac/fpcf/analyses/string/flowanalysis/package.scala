@@ -36,25 +36,32 @@ package object flowanalysis {
 
     object FlowGraph extends TypedGraphFactory[FlowGraphNode, DiEdge[FlowGraphNode]] {
 
+        private def mapInstrIndexToPC[V <: Var[V]](cfg: CFG[Stmt[V], TACStmts[V]])(index: Int): Int = {
+            if (index >= 0) cfg.code.instructions(index).pc
+            else index
+        }
+
         def apply[V <: Var[V]](cfg: CFG[Stmt[V], TACStmts[V]]): FlowGraph = {
+            val toPC = mapInstrIndexToPC(cfg) _
+
             val edges = cfg.allNodes.flatMap {
                 case bb: BasicBlock =>
-                    val firstNode = Statement(bb.startPC)
+                    val firstNode = Statement(toPC(bb.startPC))
                     var currentEdges = Seq.empty[DiEdge[FlowGraphNode]]
                     if (bb.startPC != bb.endPC) {
-                        Range.inclusive(bb.startPC, bb.endPC).tail.foreach { instrPC =>
+                        Range.inclusive(bb.startPC, bb.endPC).tail.foreach { instrIndex =>
                             currentEdges :+= DiEdge(
                                 currentEdges.lastOption.map(_.target).getOrElse(firstNode),
-                                Statement(instrPC)
+                                Statement(toPC(instrIndex))
                             )
                         }
                     }
 
                     val lastNode = if (currentEdges.nonEmpty) currentEdges.last.target
                     else firstNode
-                    currentEdges ++ bb.successors.map(s => DiEdge(lastNode, Statement(s.nodeId)))
+                    currentEdges ++ bb.successors.map(s => DiEdge(lastNode, Statement(toPC(s.nodeId))))
                 case n =>
-                    n.successors.map(s => DiEdge(Statement(n.nodeId), Statement(s.nodeId)))
+                    n.successors.map(s => DiEdge(Statement(toPC(n.nodeId)), Statement(toPC(s.nodeId))))
             }.toSet
             val g = Graph.from(edges)
 
@@ -80,7 +87,8 @@ package object flowanalysis {
             }
         }
 
-        def entryFromCFG[V <: Var[V]](cfg: CFG[Stmt[V], TACStmts[V]]): Statement = Statement(cfg.startBlock.nodeId)
+        def entryFromCFG[V <: Var[V]](cfg: CFG[Stmt[V], TACStmts[V]]): Statement =
+            Statement(mapInstrIndexToPC(cfg)(cfg.startBlock.nodeId))
 
         def toDot[N <: FlowGraphNode, E <: Edge[N]](graph: Graph[N, E]): String = {
             val root = DotRootGraph(

@@ -34,7 +34,7 @@ object StringFlowFunction extends StringFlowFunctionPropertyMetaInformation {
 
     override val key: PropertyKey[StringFlowFunction] = PropertyKey.create(propertyName)
 
-    def ub: StringFlowFunction = ConstantResultFlow.forAll(StringTreeNeutralElement)
+    def ub: StringFlowFunction = ConstantResultFlow.forAll(StringTreeNeutralElement) // TODO should this be the real bottom element?
     def ub(v:     PV): StringFlowFunction = ConstantResultFlow.forVariable(v, StringTreeNeutralElement)
     def lb(v:     PV): StringFlowFunction = ConstantResultFlow.forVariable(v, StringTreeDynamicString)
     def noFlow(v: PV): StringFlowFunction = ConstantResultFlow.forVariable(v, StringTreeInvalidElement)

@@ -11,7 +11,6 @@ import org.opalj.br.analyses.DeclaredFields
 import org.opalj.br.analyses.FieldAccessInformation
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.analyses.ContextProvider
-import org.opalj.br.fpcf.properties.string.StringConstancyInformation
 import org.opalj.br.fpcf.properties.string.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string.StringTreeDynamicString
 import org.opalj.br.fpcf.properties.string.StringTreeNode
@@ -95,12 +94,12 @@ case class L1FieldReadInterpreter(
 
     /**
      * Currently, fields are approximated using the following approach: If a field of a type not supported by the
-     * [[L1StringAnalysis]] is passed, [[StringConstancyInformation.lb]] will be produces. Otherwise, all write accesses
+     * [[L1StringAnalysis]] is passed, a flow function producing the LB will be produced. Otherwise, all write accesses
      * are considered and analyzed. If a field is not initialized within a constructor or the class itself, it will be
      * approximated using all write accesses as well as with the lower bound and "null" => in these cases fields are
      * [[org.opalj.br.fpcf.properties.string.StringConstancyLevel.DYNAMIC]].
      */
-    override def interpretExpr(target: V, fieldRead: E)(implicit
+    override def interpretExpr(target: PV, fieldRead: E)(implicit
         state: InterpretationState
     ): ProperPropertyComputationResult = {
         if (!StringAnalysis.isSupportedType(fieldRead.declaredFieldType)) {
@@ -114,16 +113,15 @@ case class L1FieldReadInterpreter(
             return computeFinalLBFor(target)
         }
 
-        val persistentTarget = target.toPersistentForm(state.tac.stmts)
         if (writeAccesses.isEmpty) {
             // No methods which write the field were found => Field could either be null or any value
             return computeFinalResult(ConstantResultFlow.forVariable(
-                persistentTarget,
+                target,
                 StringTreeOr.fromNodes(StringTreeNull, StringTreeDynamicString)
             ))
         }
 
-        implicit val accessState: FieldReadState = FieldReadState(persistentTarget)
+        implicit val accessState: FieldReadState = FieldReadState(target)
         writeAccesses.foreach {
             case (contextId, _, _, parameter) =>
                 val method = contextProvider.contextFromId(contextId).method.definedMethod

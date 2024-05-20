@@ -43,7 +43,9 @@ case class L0VirtualFunctionCallInterpreter()
     override def interpretExpr(instr: T, call: E)(implicit
         state: InterpretationState
     ): ProperPropertyComputationResult = {
-        val at = Option.unless(!instr.isAssignment)(instr.asAssignment.targetVar.asVar.toPersistentForm(state.tac.stmts))
+        val at = Option.unless(!instr.isAssignment) {
+            StringInterpreter.findUVarForDVar(instr.asAssignment.targetVar.asVar).toPersistentForm(state.tac.stmts)
+        }
         val pt = call.receiver.asVar.toPersistentForm(state.tac.stmts)
 
         call.name match {

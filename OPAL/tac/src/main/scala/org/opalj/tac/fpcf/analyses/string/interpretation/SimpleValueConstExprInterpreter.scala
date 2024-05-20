@@ -18,16 +18,15 @@ object SimpleValueConstExprInterpreter extends AssignmentBasedStringInterpreter 
 
     override type E = SimpleValueConst
 
-    override def interpretExpr(target: V, expr: E)(implicit
+    override def interpretExpr(target: PV, expr: E)(implicit
         state: InterpretationState
     ): ProperPropertyComputationResult = {
-        val pt = target.toPersistentForm(state.tac.stmts)
         computeFinalResult(expr match {
-            case ic: IntConst    => ConstantResultFlow.forVariable(pt, StringTreeConst(ic.value.toString))
-            case fc: FloatConst  => ConstantResultFlow.forVariable(pt, StringTreeConst(fc.value.toString))
-            case dc: DoubleConst => ConstantResultFlow.forVariable(pt, StringTreeConst(dc.value.toString))
-            case lc: LongConst   => ConstantResultFlow.forVariable(pt, StringTreeConst(lc.value.toString))
-            case sc: StringConst => ConstantResultFlow.forVariable(pt, StringTreeConst(sc.value))
+            case ic: IntConst    => ConstantResultFlow.forVariable(target, StringTreeConst(ic.value.toString))
+            case fc: FloatConst  => ConstantResultFlow.forVariable(target, StringTreeConst(fc.value.toString))
+            case dc: DoubleConst => ConstantResultFlow.forVariable(target, StringTreeConst(dc.value.toString))
+            case lc: LongConst   => ConstantResultFlow.forVariable(target, StringTreeConst(lc.value.toString))
+            case sc: StringConst => ConstantResultFlow.forVariable(target, StringTreeConst(sc.value))
             case _               => IdentityFlow
         })
     }

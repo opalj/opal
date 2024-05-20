@@ -30,7 +30,7 @@ object L0NonVirtualMethodCallInterpreter extends StringInterpreter {
             case 0 =>
                 computeFinalResult(IdentityFlow)
             case _ =>
-                val targetVar = init.receiver.asVar.toPersistentForm(state.tac.stmts)
+                val targetVar = StringInterpreter.findUVarForDVar(init.receiver.asVar).toPersistentForm(state.tac.stmts)
                 // Only StringBuffer and StringBuilder are interpreted which have constructors with <= 1 parameters
                 val paramVar = init.params.head.asVar.toPersistentForm(state.tac.stmts)
 

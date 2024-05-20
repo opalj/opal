@@ -29,13 +29,12 @@ object BinaryExprInterpreter extends AssignmentBasedStringInterpreter {
      * </li>
      * For all other expressions, [[IdentityFlow]] will be returned.
      */
-    override def interpretExpr(target: V, expr: E)(implicit
+    override def interpretExpr(target: PV, expr: E)(implicit
         state: InterpretationState
     ): ProperPropertyComputationResult = {
-        val pt = target.toPersistentForm(state.tac.stmts)
         computeFinalResult(expr.cTpe match {
-            case ComputationalTypeInt   => ConstantResultFlow.forVariable(pt, StringTreeDynamicInt)
-            case ComputationalTypeFloat => ConstantResultFlow.forVariable(pt, StringTreeDynamicFloat)
+            case ComputationalTypeInt   => ConstantResultFlow.forVariable(target, StringTreeDynamicInt)
+            case ComputationalTypeFloat => ConstantResultFlow.forVariable(target, StringTreeDynamicFloat)
             case _                      => IdentityFlow
         })
     }

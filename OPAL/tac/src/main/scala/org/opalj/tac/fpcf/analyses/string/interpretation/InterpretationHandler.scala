@@ -8,11 +8,11 @@ package interpretation
 
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
+import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.properties.string.StringTreeNode
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.InterimResult
 import org.opalj.fpcf.ProperPropertyComputationResult
-import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.SomeEPS
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.string.ConstantResultFlow
@@ -27,9 +27,7 @@ import org.opalj.tac.fpcf.properties.string.StringFlowFunction
  *
  * @author Maximilian Rüsch
  */
-abstract class InterpretationHandler {
-
-    def ps: PropertyStore
+abstract class InterpretationHandler extends FPCFAnalysis {
 
     def analyze(entity: MethodPC): ProperPropertyComputationResult = {
         val tacaiEOptP = ps(entity.dm.definedMethod, TACAI.key)
@@ -52,9 +50,9 @@ abstract class InterpretationHandler {
 
     private def continuation(state: InterpretationState)(eps: SomeEPS): ProperPropertyComputationResult = {
         eps match {
-            case finalEP: FinalEP[Method, TACAI] if
+            case finalEP: FinalEP[_, _] if
                     eps.pk.equals(TACAI.key) =>
-                state.tacDependee = finalEP
+                state.tacDependee = finalEP.asInstanceOf[FinalEP[Method, TACAI]]
                 processNew(state)
 
             case _ =>

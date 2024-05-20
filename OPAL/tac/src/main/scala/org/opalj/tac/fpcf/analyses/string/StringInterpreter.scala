@@ -45,6 +45,21 @@ object StringInterpreter {
 
     def computeFinalResult(sff: StringFlowFunction)(implicit state: InterpretationState): Result =
         Result(FinalEP(InterpretationHandler.getEntity(state), sff))
+
+    def findUVarForDVar(dVar: V)(implicit state: InterpretationState): V = {
+        state.tac.stmts(dVar.usedBy.head) match {
+            case Assignment(_, _, expr: Var[V]) => expr.asVar
+            case ExprStmt(_, expr: Var[V])      => expr.asVar
+
+            case Assignment(_, _, call: InstanceFunctionCall[V]) => call.receiver.asVar
+            case ExprStmt(_, call: InstanceFunctionCall[V])      => call.receiver.asVar
+
+            case ExprStmt(_, call: InstanceMethodCall[V]) => call.receiver.asVar
+
+            case _ =>
+                throw new IllegalArgumentException(s"Cannot determine uVar from $dVar")
+        }
+    }
 }
 
 trait ParameterEvaluatingStringInterpreter extends StringInterpreter {
@@ -76,8 +91,9 @@ trait AssignmentBasedStringInterpreter extends AssignmentLikeBasedStringInterpre
 
     override final def interpretExpr(instr: T, expr: E)(implicit
         state: InterpretationState
-    ): ProperPropertyComputationResult =
-        interpretExpr(instr.targetVar, expr)
+    ): ProperPropertyComputationResult = {
+        interpretExpr(StringInterpreter.findUVarForDVar(instr.targetVar).toPersistentForm(state.tac.stmts), expr)
+    }
 
-    def interpretExpr(target: V, expr: E)(implicit state: InterpretationState): ProperPropertyComputationResult
+    def interpretExpr(target: PV, expr: E)(implicit state: InterpretationState): ProperPropertyComputationResult
 }

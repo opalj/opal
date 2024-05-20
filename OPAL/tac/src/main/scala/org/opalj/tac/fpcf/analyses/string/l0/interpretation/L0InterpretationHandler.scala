@@ -9,7 +9,6 @@ package interpretation
 
 import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.ProperPropertyComputationResult
-import org.opalj.fpcf.PropertyStore
 import org.opalj.tac.fpcf.analyses.string.interpretation.BinaryExprInterpreter
 import org.opalj.tac.fpcf.analyses.string.interpretation.InterpretationHandler
 import org.opalj.tac.fpcf.analyses.string.interpretation.SimpleValueConstExprInterpreter
@@ -20,11 +19,7 @@ import org.opalj.tac.fpcf.properties.string.IdentityFlow
  *
  * @author Maximilian Rüsch
  */
-class L0InterpretationHandler()(
-    implicit
-    p:               SomeProject,
-    override val ps: PropertyStore
-) extends InterpretationHandler {
+class L0InterpretationHandler(implicit override val project: SomeProject) extends InterpretationHandler {
 
     override protected def processNew(implicit
         state: InterpretationState
@@ -35,9 +30,9 @@ class L0InterpretationHandler()(
         }
 
         state.tac.stmts(duSiteOpt.get) match {
-            case Assignment(_, target, expr: SimpleValueConst) =>
-                SimpleValueConstExprInterpreter.interpretExpr(target, expr)
-            case Assignment(_, target, expr: BinaryExpr[V]) => BinaryExprInterpreter.interpretExpr(target, expr)
+            case stmt @ Assignment(_, _, expr: SimpleValueConst) =>
+                SimpleValueConstExprInterpreter.interpretExpr(stmt, expr)
+            case stmt @ Assignment(_, _, expr: BinaryExpr[V]) => BinaryExprInterpreter.interpretExpr(stmt, expr)
 
             // Currently unsupported
             case Assignment(_, target, _: ArrayExpr[V]) => StringInterpreter.computeFinalLBFor(target)
@@ -56,8 +51,8 @@ class L0InterpretationHandler()(
             case stmt @ ExprStmt(_, expr: NonVirtualFunctionCall[V]) =>
                 L0NonVirtualFunctionCallInterpreter().interpretExpr(stmt, expr)
 
-            case Assignment(_, target, expr: StaticFunctionCall[V]) =>
-                L0StaticFunctionCallInterpreter().interpretExpr(target, expr)
+            case stmt @ Assignment(_, target, expr: StaticFunctionCall[V]) =>
+                L0StaticFunctionCallInterpreter().interpretExpr(stmt, expr)
             // Static function calls without return value usage are irrelevant
             case ExprStmt(_, _: StaticFunctionCall[V]) => StringInterpreter.computeFinalResult(IdentityFlow)
 
@@ -71,9 +66,5 @@ class L0InterpretationHandler()(
 
 object L0InterpretationHandler {
 
-    def apply()(
-        implicit
-        p:  SomeProject,
-        ps: PropertyStore
-    ): L0InterpretationHandler = new L0InterpretationHandler
+    def apply(project: SomeProject): L0InterpretationHandler = new L0InterpretationHandler()(project)
 }

@@ -8,7 +8,6 @@ package l1
 
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
@@ -28,12 +27,15 @@ object L1StringAnalysis {
 
 object LazyL1StringAnalysis extends LazyStringAnalysis {
 
+    override final def init(p: SomeProject, ps: PropertyStore): InitializationData = new L1StringAnalysis(p)
+}
+
+object LazyL1StringFlowAnalysis extends LazyStringFlowAnalysis {
+
     override final def uses: Set[PropertyBounds] = Set(PropertyBounds.ub(Callees)) ++ super.uses
 
-    override final def init(p: SomeProject, ps: PropertyStore): InitializationData =
-        (new L1StringAnalysis(p), L1InterpretationHandler(p, ps))
+    override final def init(p: SomeProject, ps: PropertyStore): InitializationData = L1InterpretationHandler(p)
 
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(ContextProviderKey) ++
-        L1InterpretationHandler.requiredProjectInformation ++
-        super.requiredProjectInformation
+    override def requiredProjectInformation: ProjectInformationKeys = super.requiredProjectInformation ++
+        L1InterpretationHandler.requiredProjectInformation
 }
