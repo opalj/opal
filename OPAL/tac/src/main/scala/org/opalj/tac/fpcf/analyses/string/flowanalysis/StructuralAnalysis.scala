@@ -75,9 +75,7 @@ object StructuralAnalysis {
                 (newGraph, newSuperGraph, newRegion)
             }
 
-            PostOrderTraversal.foreachInTraversalFrom[FlowGraphNode, FlowGraph](g, curEntry)(post.append) { (x, y) =>
-                x.nodeIds.head.compare(y.nodeIds.head)
-            }
+            PostOrderTraversal.foreachInTraversalFrom[FlowGraphNode, FlowGraph](g, curEntry)(post.append)
 
             while (g.order > 1 && postCtr < post.size) {
                 var n = post(postCtr)
@@ -301,6 +299,9 @@ object StructuralAnalysis {
 
 object PostOrderTraversal {
 
+    /**
+     * @note This function should be kept stable with regards to an ordering on the given graph nodes.
+     */
     private def foreachInTraversal[A, G <: Graph[A, DiEdge[A]]](
         graph:   G,
         toVisit: Seq[A],

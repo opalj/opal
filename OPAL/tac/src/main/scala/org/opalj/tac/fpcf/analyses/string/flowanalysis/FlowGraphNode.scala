@@ -21,8 +21,10 @@ case object WhileLoop extends CyclicRegionType
 case object NaturalLoop extends CyclicRegionType
 case object Improper extends CyclicRegionType
 
-sealed trait FlowGraphNode {
+sealed trait FlowGraphNode extends Ordered[FlowGraphNode] {
     def nodeIds: Set[Int]
+
+    override def compare(that: FlowGraphNode): Int = nodeIds.toList.min.compare(that.nodeIds.toList.min)
 }
 
 case class Region(regionType: RegionType, override val nodeIds: Set[Int], entry: FlowGraphNode) extends FlowGraphNode {

@@ -25,6 +25,10 @@ object DataFlowAnalysis {
         pipeThroughNode(controlTree, superFlowGraph, flowFunctionByPc)(startNode, startEnv)
     }
 
+    /**
+     * @note This function should be stable with regards to an ordering on the piped flow graph nodes, e.g. a proper
+     *       region should always be traversed in the same way.
+     */
     private def pipeThroughNode(
         controlTree:      ControlTree,
         superFlowGraph:   SuperFlowGraph,
@@ -53,7 +57,8 @@ object DataFlowAnalysis {
 
             case Region(IfThenElse, _, entry) =>
                 val entryNode = limitedFlowGraph.get(entry)
-                val branches = (entryNode.diSuccessors.head, entryNode.diSuccessors.tail.head)
+                val successors = entryNode.diSuccessors.map(_.outer).toList.sorted
+                val branches = (successors.head, successors.tail.head)
 
                 val envAfterEntry = pipe(entry, env)
                 val envAfterBranches = (pipe(branches._1, envAfterEntry), pipe(branches._2, envAfterEntry))
@@ -79,20 +84,25 @@ object DataFlowAnalysis {
             case Region(Proper, _, entry) =>
                 val entryNode = limitedFlowGraph.get(entry)
 
+                var sortedCurrentNodes = List(entryNode)
                 var currentNodeEnvs = Map((entryNode, pipe(entry, env)))
                 while (currentNodeEnvs.keys.exists(_.diSuccessors.nonEmpty)) {
-                    val nextNodeEnvs =
-                        currentNodeEnvs.flatMap[(limitedFlowGraph.NodeT, StringTreeEnvironment)] { nodeEnv =>
-                            if (nodeEnv._1.diSuccessors.isEmpty) {
-                                Iterable(nodeEnv)
-                            } else {
-                                nodeEnv._1.diSuccessors.map(successor => (successor, pipe(successor, nodeEnv._2)))
+                    val nextNodeEnvs = sortedCurrentNodes.flatMap { node =>
+                        if (node.diSuccessors.isEmpty) {
+                            Iterable((node, currentNodeEnvs(node)))
+                        } else {
+                            node.diSuccessors.toList.sortBy(_.outer).map { successor =>
+                                (successor, pipe(successor, currentNodeEnvs(node)))
                             }
                         }
+                    }
+                    sortedCurrentNodes = nextNodeEnvs.map(_._1).sortBy(_.outer)
                     currentNodeEnvs = nextNodeEnvs.groupMapReduce(_._1)(_._2) { (env, otherEnv) => env.join(otherEnv) }
                 }
 
-                currentNodeEnvs.valuesIterator.reduce { (env, otherEnv) => env.join(otherEnv) }
+                sortedCurrentNodes.foldLeft(StringTreeEnvironment(Map.empty)) { (env, nextNode) =>
+                    env.join(currentNodeEnvs(nextNode))
+                }
 
             case _ => env
         }

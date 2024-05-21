@@ -278,7 +278,7 @@ public class L0TestMethods {
     @StringDefinitionsCollection(
             value = "Switch statement with multiple relevant and multiple irrelevant cases",
             stringDefinitions = {
-                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "(a|ac|ab)")
+                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "(a|ab|ac)")
             })
     public void switchRelevantAndIrrelevant(int value) {
         StringBuilder sb = new StringBuilder("a");
@@ -300,7 +300,7 @@ public class L0TestMethods {
     @StringDefinitionsCollection(
             value = "Switch statement with multiple relevant and multiple irrelevant cases and a relevant default case",
             stringDefinitions = {
-                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "(ac|ab|ad|a)")
+                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "(a|ab|ac|ad)")
             })
     public void switchRelevantAndIrrelevantWithRelevantDefault(int value) {
         StringBuilder sb = new StringBuilder("a");
@@ -325,7 +325,7 @@ public class L0TestMethods {
     @StringDefinitionsCollection(
             value = "Switch statement with multiple relevant and multiple irrelevant cases and an irrelevant default case",
             stringDefinitions = {
-                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "(ac|ab|a)")
+                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "(a|ab|ac)")
             })
     public void switchRelevantAndIrrelevantWithIrrelevantDefault(int value) {
         StringBuilder sb = new StringBuilder("a");
@@ -370,7 +370,7 @@ public class L0TestMethods {
     @StringDefinitionsCollection(
             value = "Switch statement a relevant default case and a nested switch statement",
             stringDefinitions = {
-                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "(ab|af|a|ac|ad)")
+                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "(ab|a|af|ac|ad)")
             })
     public void switchNestedNoNestedDefault(int value, int value2) {
         StringBuilder sb = new StringBuilder("a");
@@ -496,7 +496,7 @@ public class L0TestMethods {
     @StringDefinitionsCollection(
             value = "if-else control structure which appends to a string builder multiple times",
             stringDefinitions = {
-                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "(axyz|abcd)")
+                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "(abcd|axyz)")
             })
     public void ifElseWithStringBuilder3() {
         StringBuilder sb = new StringBuilder("a");
@@ -740,8 +740,8 @@ public class L0TestMethods {
             // 'analyzeString' which are currently not filtered out
             stringDefinitions = {
                     @StringDefinitions(expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "File Content:.*"),
-                    @StringDefinitions(expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "(File Content:.*|File Content:)"),
-                    @StringDefinitions(expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "(File Content:.*|File Content:)")
+                    @StringDefinitions(expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "(File Content:|File Content:.*)"),
+                    @StringDefinitions(expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "(File Content:|File Content:.*)")
             })
     public void withException(String filename) {
         StringBuilder sb = new StringBuilder("File Content:");
@@ -760,8 +760,12 @@ public class L0TestMethods {
                     @StringDefinitions(expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "=====.*"),
                     // Exception case without own thrown exception
                     @StringDefinitions(expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "(==========|=====.*=====)"),
-                    // Checking the CFG reveals many edges that may lead to this hidden catch node
-                    @StringDefinitions(expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "(=====.*|==========|=====.*=====|=====)")
+                    // The following cases are detected:
+                    // 1. Code around Files.readAllBytes failing, throwing a non-exception Throwable -> no append
+                    // 2. Code around Files.readAllBytes failing, throwing an exception Throwable -> exception case append
+                    // 3. First append succeeds, throws no exception -> only first append
+                    // 4. First append is executed but throws an exception Throwable -> both appends
+                    @StringDefinitions(expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "(=====|==========|=====.*|=====.*=====)")
             })
     public void tryCatchFinally(String filename) {
         StringBuilder sb = new StringBuilder("=====");
@@ -819,7 +823,7 @@ public class L0TestMethods {
             stringDefinitions = {
                     @StringDefinitions(
                             expectedLevel = CONSTANT,
-                            expectedStrings = "(init_value:Hello, world!Goodbye|Goodbye)"
+                            expectedStrings = "(Goodbye|init_value:Hello, world!Goodbye)"
                     )
             })
     public void advancedClearExampleWithSetLength(int value) {
