@@ -1,0 +1,1 @@
+State Access is only possible from Native to Java. Java has no way of setting C state.
