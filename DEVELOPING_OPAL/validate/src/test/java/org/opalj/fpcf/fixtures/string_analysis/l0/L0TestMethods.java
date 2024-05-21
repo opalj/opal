@@ -449,9 +449,7 @@ public class L0TestMethods {
             stringDefinitions = {
                     @StringDefinitions(
                             expectedLevel = PARTIALLY_CONSTANT,
-                            expectedStrings = "(3.14|^-?\\d*\\.{0,1}\\d+$)2.71828",
-                            realisticLevel = DYNAMIC,
-                            realisticStrings = ".*"
+                            expectedStrings = "(3.142.71828|^-?\\d*\\.{0,1}\\d+$2.71828)"
                     )
             })
     public void ifElseWithStringBuilderWithFloatExpr() {
@@ -968,10 +966,7 @@ public class L0TestMethods {
             value = "checks if the case, where the value of a StringBuilder depends on the "
                     + "complex construction of a second StringBuilder is determined correctly.",
             stringDefinitions = {
-                    @StringDefinitions(
-                            expectedLevel = CONSTANT, expectedStrings = "java.lang.(Object|Runtime)",
-                            realisticLevel = DYNAMIC, realisticStrings = ".*"
-                    )
+                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "java.lang.(Object|Runtime)")
             })
     public void complexSecondStringBuilderRead(String className) {
         StringBuilder sbObj = new StringBuilder("Object");
@@ -993,10 +988,7 @@ public class L0TestMethods {
             value = "checks if the case, where the value of a StringBuilder depends on the "
                     + "simple construction of a second StringBuilder is determined correctly.",
             stringDefinitions = {
-                    @StringDefinitions(
-                            expectedLevel = CONSTANT, expectedStrings = "java.lang.(Object|Runtime)",
-                            realisticLevel = DYNAMIC, realisticStrings = ".*"
-                    )
+                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "(java.lang.Object|java.lang.Runtime)")
             })
     public void simpleSecondStringBuilderRead(String className) {
         StringBuilder sbObj = new StringBuilder("Object");
