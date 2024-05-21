@@ -87,6 +87,9 @@ class L1InterpretationHandler(implicit override val project: SomeProject) extend
             case nvmc: NonVirtualMethodCall[V] =>
                 L0NonVirtualMethodCallInterpreter.interpret(nvmc)
 
+            case Assignment(_, target, _) =>
+                StringInterpreter.computeFinalLBFor(target)
+
             case _ =>
                 StringInterpreter.computeFinalResult(StringFlowFunctionProperty.identity)
         }
