@@ -2,18 +2,33 @@
 
 void* globb;
 
-JNIEXPORT void JNICALL Java_org_opalj_fpcf_fixtures_xl_llvm_controlflow_intraprocedural_bidirectional_CallJavaFunctionFromNative_callMyJavaFunctionFromNative (
-JNIEnv *env, jobject obj, jobject x) {
-    jclass cls = (*env)->FindClass(env, "Lorg/opalj/fpcf/fixtures/xl/llvm/controlflow/intraprocedural/bidirectional/CallJavaFunctionFromNative;");
+
+// org/opalj/fpcf/fixtures/xl/llvm/controlflow/intraprocedural/interleaved/CallJavaFunctionFromNative
+JNIEXPORT void JNICALL Java_org_opalj_fpcf_fixtures_xl_llvm_controlflow_intraprocedural_interleaved_CallJavaFunctionFromNative_callMyJavaFunctionFromNative(JNIEnv* env, jobject jThis, jobject x) {
+    jclass cls = (*env)->FindClass(env, "Lorg/opalj/fpcf/fixtures/xl/llvm/controlflow/intraprocedural/interleaved/CallJavaFunctionFromNative;");
     jmethodID methodID = (*env)->GetMethodID(env, cls, "myJavaFunction", "(Ljava/lang/Object;)V");
 
     // Call the Java method with the provided argument
-    (*env)->CallVoidMethod(env, obj, methodID, x);
+    (*env)->CallVoidMethod(env, jThis, methodID, x);
 }
 
-JNIEXPORT void JNICALL Java_org_opalj_fpcf_fixtures_xl_llvm_controlflow_intraprocedural_bidirectional_CreateJavaInstanceFromNative_createInstanceAndCallMyFunctionFromNative(
-JNIEnv *env, jclass clsArg, jobject x) {
-    jclass cls = (*env)->FindClass(env, "Lorg/opalj/fpcf/fixtures/xl/llvm/controlflow/intraprocedural/bidirectional/CreateJavaInstanceFromNative;");
+
+void llvm_controlflow_interprocedural_interleaved_CallJavaFunctionFromNative_callMyJavaFunctionFromNative(JNIEnv* env, jobject jThis, jobject x){
+    jclass cls = (*env)->FindClass(env, "Lorg/opalj/fpcf/fixtures/xl/llvm/controlflow/interprocedural/interleaved/CallJavaFunctionFromNative;");
+    jmethodID methodID = (*env)->GetMethodID(env, cls, "myJavaFunction", "(Ljava/lang/Object;)V");
+
+    // Call the Java method with the provided argument
+    (*env)->CallVoidMethod(env, jThis, methodID, x);
+}
+// org/opalj/fpcf/fixtures/xl/llvm/controlflow/interprocedural/interleaved/CallJavaFunctionFromNative
+JNIEXPORT void JNICALL Java_org_opalj_fpcf_fixtures_xl_llvm_controlflow_interprocedural_interleaved_CallJavaFunctionFromNative_callMyJavaFunctionFromNative(JNIEnv* env, jobject jThis, jobject x){
+    llvm_controlflow_interprocedural_interleaved_CallJavaFunctionFromNative_callMyJavaFunctionFromNative(env, jThis, x);
+}
+
+
+// org/opalj/fpcf/fixtures/xl/llvm/controlflow/intraprocedural/interleaved/CreateJavaInstanceFromNative
+JNIEXPORT void JNICALL Java_org_opalj_fpcf_fixtures_xl_llvm_controlflow_intraprocedural_interleaved_CreateJavaInstanceFromNative_createInstanceAndCallMyFunctionFromNative(JNIEnv* env, jclass jThis, jobject x){
+    jclass cls = (*env)->FindClass(env, "Lorg/opalj/fpcf/fixtures/xl/llvm/controlflow/intraprocedural/interleaved/CreateJavaInstanceFromNative;");
     jmethodID constructor = (*env)->GetMethodID(env, cls, "<init>", "()V");
     jobject instance = (*env)->NewObject(env, cls, constructor);
     jmethodID methodID = (*env)->GetMethodID(env, cls, "myJavaFunction", "(Ljava/lang/Object;)V");
@@ -21,39 +36,100 @@ JNIEnv *env, jclass clsArg, jobject x) {
     (*env)->CallVoidMethod(env, instance, methodID, x);
 }
 
-JNIEXPORT jobject JNICALL Java_org_opalj_fpcf_fixtures_xl_llvm_controlflow_bidirectional_CallJavaFunctionFromNativeAndReturn_callMyJavaFunctionFromNativeAndReturn(
-JNIEnv *env, jobject obj, jobject x) {
+void llvm_controlflow_interprocedural_interleaved_CreateJavaInstanceFromNative_createInstanceAndCallMyFunctionFromNative(JNIEnv* env, jclass jThis, jobject x) {
+    jclass cls = (*env)->FindClass(env, "Lorg/opalj/fpcf/fixtures/xl/llvm/controlflow/interprocedural/interleaved/CreateJavaInstanceFromNative;");
+    jmethodID constructor = (*env)->GetMethodID(env, cls, "<init>", "()V");
+    jobject instance = (*env)->NewObject(env, cls, constructor);
+    jmethodID methodID = (*env)->GetMethodID(env, cls, "myJavaFunction", "(Ljava/lang/Object;)V");
+
+    (*env)->CallVoidMethod(env, instance, methodID, x);
+}
+// org/opalj/fpcf/fixtures/xl/llvm/controlflow/interprocedural/interleaved/CreateJavaInstanceFromNative
+JNIEXPORT void JNICALL Java_org_opalj_fpcf_fixtures_xl_llvm_controlflow_interprocedural_interleaved_CreateJavaInstanceFromNative_createInstanceAndCallMyFunctionFromNative(JNIEnv* env, jclass jThis, jobject x){
+    llvm_controlflow_interprocedural_interleaved_CreateJavaInstanceFromNative_createInstanceAndCallMyFunctionFromNative(env, jThis, x);
+}
+
+// org/opalj/fpcf/fixtures/xl/llvm/controlflow/intraprocedural/interleaved/CallJavaFunctionFromNativeAndReturn
+JNIEXPORT jobject JNICALL Java_org_opalj_fpcf_fixtures_xl_llvm_controlflow_intraprocedural_interleaved_CallJavaFunctionFromNativeAndReturn_callMyJavaFunctionFromNative(JNIEnv* env, jobject jThis, jobject x) {
     // Find the Java class and method
     //jclass cls = (*env)->GetObjectClass(env, obj);
-    jclass cls = (*env)->FindClass(env, "Lorg/opalj/fpcf/fixtures/xl/llvm/controlflow/bidirectional/CallJavaFunctionFromNativeAndReturn;");
+    jclass cls = (*env)->FindClass(env, "Lorg/opalj/fpcf/fixtures/xl/llvm/controlflow/intraprocedural/interleaved/CallJavaFunctionFromNativeAndReturn;");
     jmethodID methodID = (*env)->GetMethodID(env, cls, "myReturningJavaFunction", "(Ljava/lang/Object;)Ljava/lang/Object;");
 
     // Call the Java method with the provided argument
-    jobject result = (*env)->CallObjectMethod(env, obj, methodID, x);
+    jobject result = (*env)->CallObjectMethod(env, jThis, methodID, x);
     return result;
 }
 
-JNIEXPORT void JNICALL Java_org_opalj_fpcf_fixtures_xl_llvm_stateaccess_intraprocedural_unidirectional_WriteJavaFieldFromNative_setMyfield(
-JNIEnv *env, jobject jThis, jobject x) {
-    jclass cls = (*env)->FindClass(env, "Lorg/opalj/fpcf/fixtures/xl/llvm/stateaccess/unidirectional/WriteJavaFieldFromNative;");
+jobject llvm_controlflow_interprocedural_interleaved_CallJavaFunctionFromNativeAndReturn_callMyJavaFunctionFromNative(JNIEnv* env, jobject jThis, jobject x) {
+    jclass cls = (*env)->FindClass(env, "Lorg/opalj/fpcf/fixtures/xl/llvm/controlflow/interprocedural/interleaved/CallJavaFunctionFromNativeAndReturn;");
+    jmethodID methodID = (*env)->GetMethodID(env, cls, "myReturningJavaFunction", "(Ljava/lang/Object;)Ljava/lang/Object;");
+
+    // Call the Java method with the provided argument
+    jobject result = (*env)->CallObjectMethod(env, jThis, methodID, x);
+    return result;
+}
+// org/opalj/fpcf/fixtures/xl/llvm/controlflow/interprocedural/interleaved/CallJavaFunctionFromNativeAndReturn
+JNIEXPORT jobject JNICALL Java_org_opalj_fpcf_fixtures_xl_llvm_controlflow_interprocedural_interleaved_CallJavaFunctionFromNativeAndReturn_callMyJavaFunctionFromNative(JNIEnv* env, jobject jThis, jobject x) {
+    return llvm_controlflow_interprocedural_interleaved_CallJavaFunctionFromNativeAndReturn_callMyJavaFunctionFromNative(env, jThis, x);
+}
+
+
+
+// org/opalj/fpcf/fixtures/xl/llvm/stateaccess/intraprocedural/unidirectional/CAccessJava/WriteJavaFieldFromNative
+JNIEXPORT void JNICALL Java_org_opalj_fpcf_fixtures_xl_llvm_stateaccess_intraprocedural_unidirectional_CAccessJava_WriteJavaFieldFromNative_setMyfield(JNIEnv* env, jobject jThis, jobject x) {
+    jclass cls = (*env)->FindClass(env, "Lorg/opalj/fpcf/fixtures/xl/llvm/stateaccess/intraprocedural/unidirectional/CAccessJava/WriteJavaFieldFromNative;");
     jfieldID fieldID = (*env)->GetFieldID(env, cls, "myfield", "Ljava/lang/Object;");
     (*env)->SetObjectField(env, jThis, fieldID, x);
 }
 
-JNIEXPORT jobject JNICALL Java_org_opalj_fpcf_fixtures_xl_llvm_stateaccess_intraprocedural_unidirectional_ReadJavaFieldFromNative_getMyfield(
-JNIEnv *env, jobject jThis) {
-    jclass cls = (*env)->FindClass(env, "Lorg/opalj/fpcf/fixtures/xl/llvm/stateaccess/unidirectional/ReadJavaFieldFromNative;");
+
+void llvm_stateaccess_interprocedural_unidirectional_CAccessJava_WriteJavaFieldFromNative_setMyfield(JNIEnv* env, jobject jThis, jobject x) {
+    jclass cls = (*env)->FindClass(env, "Lorg/opalj/fpcf/fixtures/xl/llvm/stateaccess/interprocedural/unidirectional/CAccessJava/WriteJavaFieldFromNative;");
+    jfieldID fieldID = (*env)->GetFieldID(env, cls, "myfield", "Ljava/lang/Object;");
+    (*env)->SetObjectField(env, jThis, fieldID, x);
+}
+// org/opalj/fpcf/fixtures/xl/llvm/stateaccess/interprocedural/unidirectional/CAccessJava/WriteJavaFieldFromNative
+JNIEXPORT void JNICALL Java_org_opalj_fpcf_fixtures_xl_llvm_stateaccess_interprocedural_unidirectional_CAccessJava_WriteJavaFieldFromNative_setMyfield(JNIEnv* env, jobject jThis, jobject x) {
+    llvm_stateaccess_interprocedural_unidirectional_CAccessJava_WriteJavaFieldFromNative_setMyfield(env, jThis, x);
+}
+
+
+// org/opalj/fpcf/fixtures/xl/llvm/stateaccess/intraprocedural/unidirectional/CAccessJava/ReadJavaFieldFromNative
+JNIEXPORT jobject JNICALL Java_org_opalj_fpcf_fixtures_xl_llvm_stateaccess_intraprocedural_unidirectional_CAccessJava_ReadJavaFieldFromNative_getMyfield(JNIEnv* env, jobject jThis){
+    jclass cls = (*env)->FindClass(env, "Lorg/opalj/fpcf/fixtures/xl/llvm/stateaccess/intraprocedural/unidirectional/CAccessJava/ReadJavaFieldFromNative;");
     jfieldID fieldID = (*env)->GetFieldID(env, cls, "myfield", "Ljava/lang/Object;");
     return (*env)->GetObjectField(env, jThis, fieldID);
 }
-
-JNIEXPORT jobject JNICALL Java_org_opalj_fpcf_fixtures_xl_llvm_stateaccess_unidirectional_xxx_ReadJavaFieldFromNative_getMyfield(
-JNIEnv *env, jobject jThis) {
-    jclass cls = (*env)->FindClass(env, "Lorg/opalj/fpcf/fixtures/xl/llvm/stateaccess/unidirectional/xxx/ReadJavaFieldFromNative;");
+jobject llvm_stateaccess_interprocedural_unidirectional_CAccessJava_ReadJavaFieldFromNative_getMyfield(JNIEnv* env, jobject jThis) {
+    jclass cls = (*env)->FindClass(env, "Lorg/opalj/fpcf/fixtures/xl/llvm/stateaccess/interprocedural/unidirectional/CAccessJava/ReadJavaFieldFromNative;");
     jfieldID fieldID = (*env)->GetFieldID(env, cls, "myfield", "Ljava/lang/Object;");
     return (*env)->GetObjectField(env, jThis, fieldID);
 }
+// org/opalj/fpcf/fixtures/xl/llvm/stateaccess/interprocedural/unidirectional/CAccessJava/ReadJavaFieldFromNative
+JNIEXPORT jobject JNICALL Java_org_opalj_fpcf_fixtures_xl_llvm_stateaccess_interprocedural_unidirectional_CAccessJava_ReadJavaFieldFromNative_getMyfield(JNIEnv* env, jobject jThis){
+    return llvm_stateaccess_interprocedural_unidirectional_CAccessJava_ReadJavaFieldFromNative_getMyfield(env, jThis);
+}
 
+
+// org/opalj/fpcf/fixtures/xl/llvm/controlflow/interprocedural/unidirectional/NativeIdentityFunction
+JNIEXPORT jobject JNICALL Java_org_opalj_fpcf_fixtures_xl_llvm_controlflow_interprocedural_unidirectional_NativeIdentityFunction_identity(JNIEnv* env, jclass jThis, jobject x) {
+    // Simply return the input object as is
+    return x;
+}
+
+void* llvm_controlflow_intraprocedural_unidirectional_NativeIdentityFunction_identity(void* x) {
+    return x;
+}
+// org/opalj/fpcf/fixtures/xl/llvm/controlflow/intraprocedural/unidirectional/NativeIdentityFunction
+JNIEXPORT jobject JNICALL Java_org_opalj_fpcf_fixtures_xl_llvm_controlflow_intraprocedural_unidirectional_NativeIdentityFunction_identity(JNIEnv* env, jclass jThis, jobject x) {
+    void* xx = llvm_controlflow_intraprocedural_unidirectional_NativeIdentityFunction_identity(x);
+    return xx;
+}
+
+
+
+// unused
 void* nativeIdentityFunction(void* i) {
     return i;
 }
@@ -82,10 +158,3 @@ void setGlobb2() {
 char* xyx = "XYXYXY";
 globb = xyx;
 }
-JNIEXPORT jobject JNICALL Java_org_opalj_fpcf_fixtures_xl_llvm_controlflow_intraprocedural_bidirectional_unidirectional_NativeIdentityFunction_identity(
-JNIEnv *env, jclass clazz, jobject x) {
-    // Simply return the input object as is
-    void* xx = nativeIdentityFunction(x);
-    return xx;
-}
-
