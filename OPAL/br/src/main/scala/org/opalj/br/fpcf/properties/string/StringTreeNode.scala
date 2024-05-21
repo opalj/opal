@@ -89,7 +89,7 @@ object StringTreeConcat {
     def fromNodes(children: StringTreeNode*): StringTreeConcat = new StringTreeConcat(children)
 }
 
-case class StringTreeOr(override val children: Seq[StringTreeNode]) extends StringTreeNode {
+case class StringTreeOr private (override val children: Seq[StringTreeNode]) extends StringTreeNode {
 
     override def toRegex: String = {
         children.size match {

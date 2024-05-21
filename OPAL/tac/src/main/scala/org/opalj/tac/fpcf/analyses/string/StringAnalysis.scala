@@ -153,7 +153,7 @@ trait StringAnalysis extends FPCFAnalysis {
             state.getFlowFunctionsByPC
         )(startEnv)
 
-        StringConstancyProperty(StringConstancyInformation(resultEnv(state.entity._1, state.entity._2)))
+        StringConstancyProperty(StringConstancyInformation(resultEnv.mergeAllMatching(state.entity._1, state.entity._2)))
     }
 }
 

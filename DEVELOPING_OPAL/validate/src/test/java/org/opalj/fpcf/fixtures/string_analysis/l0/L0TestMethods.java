@@ -223,12 +223,7 @@ public class L0TestMethods {
     @StringDefinitionsCollection(
             value = "a simple case where multiple definition sites have to be considered",
             stringDefinitions = {
-                    @StringDefinitions(
-                            expectedLevel = CONSTANT,
-                            expectedStrings = "(java.lang.System|java.lang.Runtime)",
-                            realisticLevel = DYNAMIC,
-                            realisticStrings = ".*"
-                    )
+                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "(java.lang.System|java.lang.Runtime)")
             })
     public void multipleConstantDefSites(boolean cond) {
         String s;
@@ -248,7 +243,8 @@ public class L0TestMethods {
                             expectedLevel = DYNAMIC,
                             expectedStrings = "((java.lang.Object|.*)|.*|java.lang.System|java.lang..*)",
                             realisticLevel = DYNAMIC,
-                            realisticStrings = ".*"
+                            // Array values are currently not interpreted
+                            realisticStrings = "(.*|java.lang.System|java.lang..*)"
                     )
             })
     public void multipleDefSites(int value) {
@@ -1112,10 +1108,7 @@ public class L0TestMethods {
                     + "com.oracle.webservices.internal.api.message.BasePropertySet with two "
                     + "definition sites and one usage site",
             stringDefinitions = {
-                    @StringDefinitions(
-                            expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "(set.*|s.*)",
-                            realisticLevel = DYNAMIC, realisticStrings = ".*"
-                    ),
+                    @StringDefinitions(expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "(set.*|s.*)"),
             })
     public void twoDefinitionsOneUsage(String getName) throws ClassNotFoundException {
         String name = getName;
