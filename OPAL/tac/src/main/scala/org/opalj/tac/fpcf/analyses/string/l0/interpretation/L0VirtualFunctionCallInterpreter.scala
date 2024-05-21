@@ -171,7 +171,7 @@ private[string] trait L0SubstringCallInterpreter extends AssignmentLikeBasedStri
                             Set(PDUWeb(state.pc, pt), PDUWeb(state.pc, at.get)),
                             (env: StringTreeEnvironment) => {
                                 env(state.pc, pt) match {
-                                    case StringTreeConst(string) if string.length <= intVal =>
+                                    case StringTreeConst(string) if intVal <= string.length =>
                                         env.update(state.pc, at.get, StringTreeConst(string.substring(intVal)))
                                     case _ =>
                                         env.update(state.pc, at.get, StringTreeNode.lb)
@@ -189,7 +189,10 @@ private[string] trait L0SubstringCallInterpreter extends AssignmentLikeBasedStri
                             Set(PDUWeb(state.pc, pt), PDUWeb(state.pc, at.get)),
                             (env: StringTreeEnvironment) => {
                                 env(state.pc, pt) match {
-                                    case StringTreeConst(string) if string.length <= secondIntVal =>
+                                    case StringTreeConst(string)
+                                        if firstIntVal <= string.length
+                                            && secondIntVal <= string.length
+                                            && firstIntVal <= secondIntVal =>
                                         env.update(
                                             state.pc,
                                             at.get,
