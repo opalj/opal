@@ -205,7 +205,9 @@ public class L0TestMethods {
             stringDefinitions = {
                     @StringDefinitions(
                             expectedLevel = DYNAMIC,
-                            expectedStrings = "(java.lang.Object|.*|java.lang.Integer)"
+                            expectedStrings = "(java.lang.Object|.*|java.lang.Integer)",
+                            realisticLevel = DYNAMIC,
+                            realisticStrings = ".*"
                     )
             })
     public void arrayStaticAndVirtualFunctionCalls(int i) {
@@ -276,10 +278,7 @@ public class L0TestMethods {
     @StringDefinitionsCollection(
             value = "Switch statement with multiple relevant and multiple irrelevant cases",
             stringDefinitions = {
-                    @StringDefinitions(
-                            expectedLevel = CONSTANT, expectedStrings = "a(b|c)?",
-                            realisticLevel = DYNAMIC, realisticStrings = ".*"
-                    )
+                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "(a|ac|ab)")
             })
     public void switchRelevantAndIrrelevant(int value) {
         StringBuilder sb = new StringBuilder("a");
@@ -301,10 +300,7 @@ public class L0TestMethods {
     @StringDefinitionsCollection(
             value = "Switch statement with multiple relevant and multiple irrelevant cases and a relevant default case",
             stringDefinitions = {
-                    @StringDefinitions(
-                            expectedLevel = CONSTANT, expectedStrings = "a(b|c|d)?",
-                            realisticLevel = DYNAMIC, realisticStrings = ".*"
-                    )
+                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "(ac|ab|ad|a)")
             })
     public void switchRelevantAndIrrelevantWithRelevantDefault(int value) {
         StringBuilder sb = new StringBuilder("a");
@@ -329,10 +325,7 @@ public class L0TestMethods {
     @StringDefinitionsCollection(
             value = "Switch statement with multiple relevant and multiple irrelevant cases and an irrelevant default case",
             stringDefinitions = {
-                    @StringDefinitions(
-                            expectedLevel = CONSTANT, expectedStrings = "a(b|c)?",
-                            realisticLevel = DYNAMIC, realisticStrings = ".*"
-                    )
+                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "(ac|ab|a)")
             })
     public void switchRelevantAndIrrelevantWithIrrelevantDefault(int value) {
         StringBuilder sb = new StringBuilder("a");
@@ -356,10 +349,7 @@ public class L0TestMethods {
     @StringDefinitionsCollection(
             value = "Switch statement with multiple relevant and no irrelevant cases and a relevant default case",
             stringDefinitions = {
-                    @StringDefinitions(
-                            expectedLevel = CONSTANT, expectedStrings = "a(b|c|d)",
-                            realisticLevel = DYNAMIC, realisticStrings = ".*"
-                    )
+                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "(ab|ac|ad)")
             })
     public void switchRelevantWithRelevantDefault(int value) {
         StringBuilder sb = new StringBuilder("a");
@@ -380,10 +370,7 @@ public class L0TestMethods {
     @StringDefinitionsCollection(
             value = "Switch statement a relevant default case and a nested switch statement",
             stringDefinitions = {
-                    @StringDefinitions(
-                            expectedLevel = CONSTANT, expectedStrings = "a(b|(c|d)?|f)",
-                            realisticLevel = DYNAMIC, realisticStrings = ".*"
-                    )
+                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "(ab|af|a|ac|ad)")
             })
     public void switchNestedNoNestedDefault(int value, int value2) {
         StringBuilder sb = new StringBuilder("a");
@@ -411,10 +398,7 @@ public class L0TestMethods {
     @StringDefinitionsCollection(
             value = "Switch statement a relevant default case and a nested switch statement",
             stringDefinitions = {
-                    @StringDefinitions(
-                            expectedLevel = CONSTANT, expectedStrings = "a(b|(c|d|e)|f)",
-                            realisticLevel = DYNAMIC, realisticStrings = ".*"
-                    )
+                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "(ab|af|ac|ad|ae)")
             })
     public void switchNestedWithNestedDefault(int value, int value2) {
         StringBuilder sb = new StringBuilder("a");
@@ -445,14 +429,8 @@ public class L0TestMethods {
     @StringDefinitionsCollection(
             value = "if-else control structure which append to a string builder with an int expr and an int",
             stringDefinitions = {
-                    @StringDefinitions(
-                            expectedLevel = DYNAMIC, expectedStrings = "(x|^-?\\d+$)",
-                            realisticLevel = DYNAMIC, realisticStrings = ".*"
-                    ),
-                    @StringDefinitions(
-                            expectedLevel = CONSTANT, expectedStrings = "(42-42|x)",
-                            realisticLevel = DYNAMIC, realisticStrings = ".*"
-                    )
+                    @StringDefinitions(expectedLevel = DYNAMIC, expectedStrings = "(^-?\\d+$|x)"),
+                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "(x|42-42)")
             })
     public void ifElseWithStringBuilderWithIntExpr() {
         StringBuilder sb1 = new StringBuilder();
@@ -496,14 +474,8 @@ public class L0TestMethods {
     @StringDefinitionsCollection(
             value = "if-else control structure which append to a string builder",
             stringDefinitions = {
-                    @StringDefinitions(
-                            expectedLevel = CONSTANT, expectedStrings = "(a|b)",
-                            realisticLevel = DYNAMIC, realisticStrings = ".*"
-                    ),
-                    @StringDefinitions(
-                            expectedLevel = CONSTANT, expectedStrings = "a(b|c)",
-                            realisticLevel = DYNAMIC, realisticStrings = ".*"
-                    )
+                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "(a|b)"),
+                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "(ab|ac)")
             })
     public void ifElseWithStringBuilder1() {
         StringBuilder sb1;
@@ -522,12 +494,9 @@ public class L0TestMethods {
     }
 
     @StringDefinitionsCollection(
-            value = "if-else control structure which append to a string builder multiple times",
+            value = "if-else control structure which appends to a string builder multiple times",
             stringDefinitions = {
-                    @StringDefinitions(
-                            expectedLevel = CONSTANT, expectedStrings = "a(bcd|xyz)",
-                            realisticLevel = DYNAMIC, realisticStrings = ".*"
-                    )
+                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "(axyz|abcd)")
             })
     public void ifElseWithStringBuilder3() {
         StringBuilder sb = new StringBuilder("a");
@@ -547,10 +516,7 @@ public class L0TestMethods {
     @StringDefinitionsCollection(
             value = "if-else control structure which append to a string builder multiple times and a non used else if branch is present",
             stringDefinitions = {
-                    @StringDefinitions(
-                            expectedLevel = CONSTANT, expectedStrings = "a(bcd|xyz)?",
-                            realisticLevel = DYNAMIC, realisticStrings = ".*"
-                    )
+                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "(a|abcd|axyz)")
             })
     public void ifElseWithStringBuilder4() {
         StringBuilder sb = new StringBuilder("a");
@@ -624,10 +590,7 @@ public class L0TestMethods {
     @StringDefinitionsCollection(
             value = "if control structure without an else",
             stringDefinitions = {
-                    @StringDefinitions(
-                            expectedLevel = CONSTANT, expectedStrings = "a(b)?",
-                            realisticLevel = DYNAMIC, realisticStrings = ".*"
-                    )
+                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "(a|ab)")
             })
     public void ifWithoutElse() {
         StringBuilder sb = new StringBuilder("a");
@@ -776,18 +739,9 @@ public class L0TestMethods {
             // Multiple string definition values are necessary because the three-address code contains multiple calls to
             // 'analyzeString' which are currently not filtered out
             stringDefinitions = {
-                    @StringDefinitions(
-                            expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "File Content:(.*)?",
-                            realisticLevel = DYNAMIC, realisticStrings = ".*"
-                    ),
-                    @StringDefinitions(
-                            expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "File Content:(.*)?",
-                            realisticLevel = DYNAMIC, realisticStrings = ".*"
-                    ),
-                    @StringDefinitions(
-                            expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "File Content:(.*)?",
-                            realisticLevel = DYNAMIC, realisticStrings = ".*"
-                    )
+                    @StringDefinitions(expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "File Content:.*"),
+                    @StringDefinitions(expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "(File Content:.*|File Content:)"),
+                    @StringDefinitions(expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "(File Content:.*|File Content:)")
             })
     public void withException(String filename) {
         StringBuilder sb = new StringBuilder("File Content:");
@@ -803,18 +757,11 @@ public class L0TestMethods {
     @StringDefinitionsCollection(
             value = "case with a try-catch-finally exception",
             stringDefinitions = {
-                    @StringDefinitions(
-                            expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "=====(.*|=====)",
-                            realisticLevel = DYNAMIC, realisticStrings = ".*"
-                    ),
-                    @StringDefinitions(
-                            expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "=====(.*|=====)",
-                            realisticLevel = DYNAMIC, realisticStrings = ".*"
-                    ),
-                    @StringDefinitions(
-                            expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "=====(.*|=====)",
-                            realisticLevel = DYNAMIC, realisticStrings = ".*"
-                    )
+                    @StringDefinitions(expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "=====.*"),
+                    // Exception case without own thrown exception
+                    @StringDefinitions(expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "(==========|=====.*=====)"),
+                    // Checking the CFG reveals many edges that may lead to this hidden catch node
+                    @StringDefinitions(expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "(=====.*|==========|=====.*=====|=====)")
             })
     public void tryCatchFinally(String filename) {
         StringBuilder sb = new StringBuilder("=====");
@@ -831,18 +778,9 @@ public class L0TestMethods {
     @StringDefinitionsCollection(
             value = "case with a try-catch-finally throwable",
             stringDefinitions = {
-                    @StringDefinitions(
-                            expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "BOS:(.*|:EOS)",
-                            realisticLevel = DYNAMIC, realisticStrings = ".*"
-                    ),
-                    @StringDefinitions(
-                            expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "BOS:(.*|:EOS)",
-                            realisticLevel = DYNAMIC, realisticStrings = ".*"
-                    ),
-                    @StringDefinitions(
-                            expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "BOS:(.*|:EOS)",
-                            realisticLevel = DYNAMIC, realisticStrings = ".*"
-                    )
+                    @StringDefinitions(expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "BOS:.*"),
+                    @StringDefinitions(expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "(BOS::EOS|BOS:.*:EOS)"),
+                    @StringDefinitions(expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "(BOS::EOS|BOS:.*:EOS)")
             })
     public void tryCatchFinallyWithThrowable(String filename) {
         StringBuilder sb = new StringBuilder("BOS:");
@@ -881,9 +819,7 @@ public class L0TestMethods {
             stringDefinitions = {
                     @StringDefinitions(
                             expectedLevel = CONSTANT,
-                            expectedStrings = "(init_value:Hello, world!Goodbye|Goodbye)",
-                            realisticLevel = DYNAMIC,
-                            realisticStrings = ".*"
+                            expectedStrings = "(init_value:Hello, world!Goodbye|Goodbye)"
                     )
             })
     public void advancedClearExampleWithSetLength(int value) {
@@ -903,9 +839,7 @@ public class L0TestMethods {
                     @StringDefinitions(expectedLevel = DYNAMIC, expectedStrings = ".*"),
                     @StringDefinitions(
                             expectedLevel = PARTIALLY_CONSTANT,
-                            expectedStrings = "(init_value:Hello, world!Goodbye|.*Goodbye)",
-                            realisticLevel = DYNAMIC,
-                            realisticStrings = ".*"
+                            expectedStrings = "(.*Goodbye|init_value:Hello, world!Goodbye)"
                     )
             })
     public void replaceExamples(int value) {
@@ -1002,10 +936,7 @@ public class L0TestMethods {
     @StringDefinitionsCollection(
             value = "an example where in the condition of an 'if', a string is appended to a StringBuilder",
             stringDefinitions = {
-                    @StringDefinitions(
-                            expectedLevel = CONSTANT, expectedStrings = "java.lang.Runtime",
-                            realisticLevel = DYNAMIC, realisticStrings = ".*"
-                    )
+                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "java.lang.Runtime")
             })
     public void ifConditionAppendsToString(String className) {
         StringBuilder sb = new StringBuilder();
@@ -1122,14 +1053,8 @@ public class L0TestMethods {
     @StringDefinitionsCollection(
             value = "A case with a criss-cross append on two StringBuilders",
             stringDefinitions = {
-                    @StringDefinitions(
-                            expectedLevel = CONSTANT, expectedStrings = "Object(Runtime)?",
-                            realisticLevel = DYNAMIC, realisticStrings = ".*"
-                    ),
-                    @StringDefinitions(
-                            expectedLevel = CONSTANT, expectedStrings = "Runtime(Object)?",
-                            realisticLevel = DYNAMIC, realisticStrings = ".*"
-                    )
+                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "(Object|ObjectRuntime)"),
+                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "(RuntimeObject|Runtime)")
             })
     public void crissCrossExample(String className) {
         StringBuilder sbObj = new StringBuilder("Object");
