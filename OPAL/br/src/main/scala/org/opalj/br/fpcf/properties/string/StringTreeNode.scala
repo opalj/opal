@@ -6,7 +6,6 @@ package properties
 package string
 
 import scala.collection.immutable.Seq
-import scala.collection.mutable
 import scala.util.Try
 import scala.util.matching.Regex
 
@@ -111,19 +110,11 @@ case class StringTreeOr(override val children: Seq[StringTreeNode]) extends Stri
                     case orChild: StringTreeOr => newChildren :++= orChild.children
                     case child                 => newChildren :+= child
                 }
-                StringTreeOr(removeDuplicates(newChildren))
-        }
-    }
-
-    private def removeDuplicates(someChildren: Seq[StringTreeNode]): Seq[StringTreeNode] = {
-        val seen = mutable.HashSet.empty[String]
-        someChildren.flatMap {
-            case next @ StringTreeConst(string) =>
-                if (!seen.contains(string)) {
-                    seen += string
-                    Some(next)
-                } else None
-            case other => Some(other)
+                val distinctNewChildren = newChildren.distinct
+                distinctNewChildren.size match {
+                    case 1 => distinctNewChildren.head
+                    case _ => StringTreeOr(distinctNewChildren)
+                }
         }
     }
 
@@ -135,7 +126,7 @@ case class StringTreeOr(override val children: Seq[StringTreeNode]) extends Stri
 }
 
 object StringTreeOr {
-    def fromNodes(children: StringTreeNode*): StringTreeOr = new StringTreeOr(children)
+    def fromNodes(children: StringTreeNode*): StringTreeNode = new StringTreeOr(children).simplify
 }
 
 case class StringTreeCond(child: StringTreeNode) extends StringTreeNode {

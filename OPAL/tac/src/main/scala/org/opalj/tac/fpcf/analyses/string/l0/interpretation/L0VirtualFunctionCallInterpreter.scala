@@ -15,6 +15,7 @@ import org.opalj.br.FloatType
 import org.opalj.br.IntLikeType
 import org.opalj.br.ObjectType
 import org.opalj.br.fpcf.properties.string.StringConstancyLevel
+import org.opalj.br.fpcf.properties.string.StringTreeConcat
 import org.opalj.br.fpcf.properties.string.StringTreeConst
 import org.opalj.br.fpcf.properties.string.StringTreeDynamicFloat
 import org.opalj.br.fpcf.properties.string.StringTreeDynamicInt
@@ -136,11 +137,12 @@ private[string] trait L0AppendCallInterpreter extends AssignmentLikeBasedStringI
                         valueState
                 }
 
+                val appendedState = StringTreeConcat.fromNodes(env(state.pc, pt), transformedValueState)
                 var newEnv = env
                 if (at.isDefined) {
-                    newEnv = newEnv.update(state.pc, at.get, transformedValueState)
+                    newEnv = newEnv.update(state.pc, at.get, appendedState)
                 }
-                newEnv.update(state.pc, pt, transformedValueState)
+                newEnv.update(state.pc, pt, appendedState)
             }
         )
     }
@@ -169,7 +171,7 @@ private[string] trait L0SubstringCallInterpreter extends AssignmentLikeBasedStri
                             Set(PDUWeb(state.pc, pt), PDUWeb(state.pc, at.get)),
                             (env: StringTreeEnvironment) => {
                                 env(state.pc, pt) match {
-                                    case StringTreeConst(string) if string.length < intVal =>
+                                    case StringTreeConst(string) if string.length <= intVal =>
                                         env.update(state.pc, at.get, StringTreeConst(string.substring(intVal)))
                                     case _ =>
                                         env.update(state.pc, at.get, StringTreeNode.lb)
@@ -187,7 +189,7 @@ private[string] trait L0SubstringCallInterpreter extends AssignmentLikeBasedStri
                             Set(PDUWeb(state.pc, pt), PDUWeb(state.pc, at.get)),
                             (env: StringTreeEnvironment) => {
                                 env(state.pc, pt) match {
-                                    case StringTreeConst(string) if string.length < secondIntVal =>
+                                    case StringTreeConst(string) if string.length <= secondIntVal =>
                                         env.update(
                                             state.pc,
                                             at.get,
