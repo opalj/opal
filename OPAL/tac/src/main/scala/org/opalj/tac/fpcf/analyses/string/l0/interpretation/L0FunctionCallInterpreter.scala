@@ -131,7 +131,10 @@ trait L0FunctionCallInterpreter
                     }
                 )
 
-            computeFinalResult(PDUWeb(pc, callState.target), flowFunction)(callState.state)
+            computeFinalResult(
+                callState.parameters.map(PDUWeb(pc, _)).toSet + PDUWeb(pc, callState.target),
+                flowFunction
+            )(callState.state)
         }
     }
 

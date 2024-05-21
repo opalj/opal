@@ -58,7 +58,13 @@ case class ComputationState(dm: DefinedMethod, entity: SContext, var tacDependee
     def getWebs: Iterator[PDUWeb] = pcToDependeeMapping.valuesIterator.flatMap { v =>
         if (v.hasUBP) v.ub.webs
         else StringFlowFunctionProperty.ub.webs
-    }
+    }.foldLeft(Seq.empty[PDUWeb]) { (reducedWebs, web) =>
+        val index = reducedWebs.indexWhere(_.identifiesSameVarAs(web))
+        if (index == -1)
+            reducedWebs :+ web
+        else
+            reducedWebs.updated(index, reducedWebs(index).combine(web))
+    }.iterator
 }
 
 case class InterpretationState(pc: Int, dm: DefinedMethod, var tacDependee: EOptionP[Method, TACAI]) {

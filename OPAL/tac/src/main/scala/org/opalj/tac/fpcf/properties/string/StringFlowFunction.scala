@@ -21,7 +21,7 @@ sealed trait StringFlowFunctionPropertyMetaInformation extends PropertyMetaInfor
     final type Self = StringFlowFunctionProperty
 }
 
-case class StringFlowFunctionProperty private (
+case class StringFlowFunctionProperty(
     webs: Set[PDUWeb],
     flow: StringFlowFunction
 ) extends Property
@@ -36,21 +36,8 @@ object StringFlowFunctionProperty extends StringFlowFunctionPropertyMetaInformat
 
     override val key: PropertyKey[StringFlowFunctionProperty] = PropertyKey.create(propertyName)
 
-    def apply(webs: Set[PDUWeb], flow: StringFlowFunction): StringFlowFunctionProperty = {
-        new StringFlowFunctionProperty(
-            webs.foldLeft(Seq.empty[PDUWeb]) { (reducedWebs, web) =>
-                val index = reducedWebs.indexWhere(_.intersectsWith(web))
-                if (index == -1)
-                    reducedWebs :+ web
-                else
-                    reducedWebs.updated(index, reducedWebs(index).intersect(web))
-            }.toSet,
-            flow
-        )
-    }
-
     def apply(web: PDUWeb, flow: StringFlowFunction): StringFlowFunctionProperty =
-        new StringFlowFunctionProperty(Set(web), flow)
+        StringFlowFunctionProperty(Set(web), flow)
 
     def apply(pc: Int, pv: PV, flow: StringFlowFunction): StringFlowFunctionProperty =
         StringFlowFunctionProperty(PDUWeb(pc, pv), flow)

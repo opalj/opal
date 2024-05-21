@@ -162,9 +162,6 @@ class L0StringAnalysisTest extends StringAnalysisTest {
 
         val entities = determineEntitiesToAnalyze(as.project)
         val newEntities = entities
-            .filter(entity => entity._3.name.startsWith("simpleStringConcat2"))
-            // Currently broken L0 Tests
-            .filterNot(entity => entity._3.name.startsWith("unknownCharValue"))
 
         // it("can be executed without exceptions") {
         newEntities.foreach(as.propertyStore.force(_, StringConstancyProperty.key))

@@ -10,22 +10,15 @@ case class PDUWeb(
     usePCs: IntTrieSet
 ) {
     def containsVarAt(pc: Int, pv: PV): Boolean = pv match {
-        case PDVar(_, varUsePCs) => defPCs.contains(pc) && usePCs.intersect(varUsePCs).nonEmpty
-        case PUVar(_, varDefPCs) => usePCs.contains(pc) && defPCs.intersect(varDefPCs).nonEmpty
+        case PDVar(_, _)         => defPCs.contains(pc)
+        case PUVar(_, varDefPCs) => defPCs.intersect(varDefPCs).nonEmpty
     }
 
-    def intersectsWith(other: PDUWeb): Boolean = {
-        other.defPCs.intersect(defPCs).nonEmpty && other.usePCs.intersect(usePCs).nonEmpty
-    }
+    def identifiesSameVarAs(other: PDUWeb): Boolean = other.defPCs.intersect(defPCs).nonEmpty
 
-    def intersect(other: PDUWeb): PDUWeb = PDUWeb(other.defPCs.intersect(defPCs), other.usePCs.intersect(usePCs))
+    def combine(other: PDUWeb): PDUWeb = PDUWeb(other.defPCs ++ defPCs, other.usePCs ++ usePCs)
 
-    def size(): Int = defPCs.size + usePCs.size
-
-    def toValueOriginForm(implicit pcToIndex: Array[Int]): DUWeb = DUWeb(
-        valueOriginsOfPCs(defPCs, pcToIndex),
-        valueOriginsOfPCs(usePCs, pcToIndex)
-    )
+    def size: Int = defPCs.size + usePCs.size
 }
 
 object PDUWeb {
