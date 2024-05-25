@@ -22,9 +22,7 @@ import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalysis
 import org.opalj.tac.fpcf.analyses.string.SEntity
 import org.opalj.tac.fpcf.analyses.string.l0.LazyL0StringAnalysis
-import org.opalj.tac.fpcf.analyses.string.l0.LazyL0StringFlowAnalysis
 import org.opalj.tac.fpcf.analyses.string.l1.LazyL1StringAnalysis
-import org.opalj.tac.fpcf.analyses.string.l1.LazyL1StringFlowAnalysis
 
 sealed abstract class StringAnalysisTest extends PropertiesTest {
 
@@ -138,7 +136,7 @@ object StringAnalysisTest {
 }
 
 /**
- * Tests whether the [[org.opalj.tac.fpcf.analyses.string.l0.L0StringAnalysis]] works correctly with
+ * Tests whether the [[org.opalj.tac.fpcf.analyses.string.l0.LazyL0StringAnalysis]] works correctly with
  * respect to some well-defined tests.
  *
  * @author Maximilian Rüsch
@@ -158,7 +156,7 @@ class L0StringAnalysisTest extends StringAnalysisTest {
     }
 
     describe("the org.opalj.fpcf.L0StringAnalysis is started") {
-        val as = executeAnalyses(LazyL0StringAnalysis, LazyL0StringFlowAnalysis)
+        val as = executeAnalyses(LazyL0StringAnalysis.allRequiredAnalyses)
 
         val entities = determineEntitiesToAnalyze(as.project)
         val newEntities = entities
@@ -175,7 +173,7 @@ class L0StringAnalysisTest extends StringAnalysisTest {
 }
 
 /**
- * Tests whether the [[org.opalj.tac.fpcf.analyses.string.l1.L1StringAnalysis]] works correctly with
+ * Tests whether the [[org.opalj.tac.fpcf.analyses.string.l1.LazyL1StringAnalysis]] works correctly with
  * respect to some well-defined tests.
  *
  * @author Maximilian Rüsch
@@ -194,7 +192,7 @@ class L1StringAnalysisTest extends StringAnalysisTest {
     }
 
     describe("the org.opalj.fpcf.L1StringAnalysis is started") {
-        val as = executeAnalyses(LazyL1StringAnalysis, LazyL1StringFlowAnalysis)
+        val as = executeAnalyses(LazyL1StringAnalysis.allRequiredAnalyses)
 
         val entities = determineEntitiesToAnalyze(as.project)
             // L0 Tests

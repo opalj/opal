@@ -26,11 +26,5 @@ package object string {
      */
     type SContext = (Int, SEntity, Method)
 
-    /**
-     * The entity used for requesting string constancy information for specific def sites of an entity. The def site
-     * should be given as a [[org.opalj.br.PC]].
-     */
-    case class DUSiteEntity(pc: Int, dm: DefinedMethod, tac: TAC, entity: SEntity)
-
     case class MethodPC(pc: Int, dm: DefinedMethod)
 }

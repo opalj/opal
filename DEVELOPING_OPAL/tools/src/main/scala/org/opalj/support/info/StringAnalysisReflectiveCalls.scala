@@ -308,8 +308,9 @@ object StringAnalysisReflectiveCalls extends ProjectAnalysisApplication {
         val manager = project.get(FPCFAnalysesManagerKey)
         project.get(RTACallGraphKey)
 
-        implicit val (propertyStore, analyses) = manager.runAll(
-            if (runIntraproceduralAnalysis) LazyL0StringAnalysis else LazyL1StringAnalysis
+        implicit val (propertyStore, _) = manager.runAll(
+            if (runIntraproceduralAnalysis) LazyL0StringAnalysis.allRequiredAnalyses
+            else LazyL1StringAnalysis.allRequiredAnalyses
         )
 
         // Stores the obtained results for each supported reflective operation

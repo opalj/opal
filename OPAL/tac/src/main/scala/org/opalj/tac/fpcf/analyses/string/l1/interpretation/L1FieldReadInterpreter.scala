@@ -101,7 +101,7 @@ case class L1FieldReadInterpreter(
     override def interpretExpr(target: PV, fieldRead: E)(implicit
         state: InterpretationState
     ): ProperPropertyComputationResult = {
-        if (!StringAnalysis.isSupportedType(fieldRead.declaredFieldType)) {
+        if (!InterpretationHandler.isSupportedType(fieldRead.declaredFieldType)) {
             return computeFinalLBFor(target)
         }
 

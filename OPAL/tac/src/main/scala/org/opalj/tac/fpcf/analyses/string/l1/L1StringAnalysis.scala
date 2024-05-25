@@ -8,6 +8,7 @@ package l1
 
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.FPCFLazyAnalysisScheduler
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
@@ -16,8 +17,6 @@ import org.opalj.tac.fpcf.analyses.string.l1.interpretation.L1InterpretationHand
 /**
  * @author Maximilian Rüsch
  */
-class L1StringAnalysis(val project: SomeProject) extends StringAnalysis
-
 object L1StringAnalysis {
 
     private[l1] final val FieldWriteThresholdConfigKey = {
@@ -25,9 +24,13 @@ object L1StringAnalysis {
     }
 }
 
-object LazyL1StringAnalysis extends LazyStringAnalysis {
+object LazyL1StringAnalysis {
 
-    override final def init(p: SomeProject, ps: PropertyStore): InitializationData = new L1StringAnalysis(p)
+    def allRequiredAnalyses: Seq[FPCFLazyAnalysisScheduler] = Seq(
+        LazyStringAnalysis,
+        LazyMethodStringFlowAnalysis,
+        LazyL1StringFlowAnalysis
+    )
 }
 
 object LazyL1StringFlowAnalysis extends LazyStringFlowAnalysis {
