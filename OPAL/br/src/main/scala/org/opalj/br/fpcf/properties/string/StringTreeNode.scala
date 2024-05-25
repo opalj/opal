@@ -47,7 +47,9 @@ case class StringTreeRepetition(child: StringTreeNode) extends StringTreeNode {
 
     override def simplify: StringTreeNode = {
         val simplifiedChild = child.simplify
-        if (simplifiedChild.isNeutralElement)
+        if (simplifiedChild.isInvalidElement)
+            StringTreeInvalidElement
+        else if (simplifiedChild.isNeutralElement)
             StringTreeNeutralElement
         else
             StringTreeRepetition(simplifiedChild)
@@ -127,38 +129,6 @@ case class StringTreeOr private (override val children: Seq[StringTreeNode]) ext
 
 object StringTreeOr {
     def fromNodes(children: StringTreeNode*): StringTreeNode = new StringTreeOr(children).simplify
-}
-
-case class StringTreeCond(child: StringTreeNode) extends StringTreeNode {
-
-    override val children: Seq[StringTreeNode] = Seq(child)
-
-    override def toRegex: String = {
-        val childRegex = child.toRegex
-
-        // IMPROVE dont wrap and immediately unwrap in ()
-        val resultingRegex = if (childRegex.startsWith("(") && childRegex.endsWith(")")) {
-            s"(${childRegex.substring(1, childRegex.length - 1)})?"
-        } else {
-            s"($childRegex)?"
-        }
-
-        resultingRegex
-    }
-
-    override def simplify: StringTreeNode = {
-        child.simplify match {
-            case condNode: StringTreeCond             => condNode
-            case repetitionNode: StringTreeRepetition => repetitionNode
-            case node if node.isNeutralElement        => StringTreeNeutralElement
-            case node                                 => StringTreeCond(node)
-        }
-    }
-
-    override def constancyLevel: StringConstancyLevel.Value = child.constancyLevel
-
-    def replaceParameters(parameters: Map[Int, StringTreeNode]): StringTreeNode =
-        StringTreeCond(child.replaceParameters(parameters))
 }
 
 sealed trait SimpleStringTreeNode extends StringTreeNode {

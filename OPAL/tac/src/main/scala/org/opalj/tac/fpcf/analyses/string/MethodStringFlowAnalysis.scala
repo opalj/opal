@@ -22,10 +22,8 @@ import org.opalj.fpcf.InterimResult
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEPS
-import org.opalj.tac.fpcf.analyses.string.flowanalysis.CyclicRegionType
 import org.opalj.tac.fpcf.analyses.string.flowanalysis.DataFlowAnalysis
 import org.opalj.tac.fpcf.analyses.string.flowanalysis.FlowGraph
-import org.opalj.tac.fpcf.analyses.string.flowanalysis.Region
 import org.opalj.tac.fpcf.analyses.string.flowanalysis.Statement
 import org.opalj.tac.fpcf.analyses.string.flowanalysis.StructuralAnalysis
 import org.opalj.tac.fpcf.properties.TACAI
@@ -115,14 +113,6 @@ class MethodStringFlowAnalysis(override val project: SomeProject) extends FPCFAn
     }
 
     private def computeNewUpperBound(state: ComputationState): MethodStringFlow = {
-        if (state.controlTree.nodes.exists(n =>
-                n.outer.isInstanceOf[Region] &&
-                    n.outer.asInstanceOf[Region].regionType.isInstanceOf[CyclicRegionType]
-            )
-        ) {
-            return MethodStringFlow.lb;
-        }
-
         val startEnv = StringTreeEnvironment(state.getWebs.map { web: PDUWeb =>
             val defPCs = web.defPCs.toList.sorted
             if (defPCs.head >= 0) {

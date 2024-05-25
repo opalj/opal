@@ -6,6 +6,7 @@ package analyses
 package string
 package flowanalysis
 
+import org.opalj.br.fpcf.properties.string.StringTreeDynamicString
 import org.opalj.tac.fpcf.properties.string.StringFlowFunction
 import org.opalj.tac.fpcf.properties.string.StringTreeEnvironment
 
@@ -102,6 +103,66 @@ object DataFlowAnalysis {
 
                 sortedCurrentNodes.foldLeft(StringTreeEnvironment(Map.empty)) { (env, nextNode) =>
                     env.join(currentNodeEnvs(nextNode))
+                }
+
+            case Region(SelfLoop, _, entry) =>
+                val resultEnv = pipe(entry, env)
+                // Looped operations that modify environment contents are not supported here
+                if (resultEnv != env) env.updateAll(StringTreeDynamicString)
+                else env
+
+            case Region(WhileLoop, _, entry) =>
+                val entryNode = limitedFlowGraph.get(entry)
+                val envAfterEntry = pipe(entry, env)
+
+                var resultEnv = envAfterEntry
+                var currentNode = entryNode.diSuccessors.head
+                while (currentNode != entryNode) {
+                    resultEnv = pipe(currentNode.outer, resultEnv)
+                    currentNode = currentNode.diSuccessors.head
+                }
+
+                // Looped operations that modify environment contents are not supported here
+                if (resultEnv != envAfterEntry) envAfterEntry.updateAll(StringTreeDynamicString)
+                else envAfterEntry
+
+            case Region(NaturalLoop, _, entry) =>
+                val entryPredecessors = limitedFlowGraph.get(entry).diPredecessors
+                val removedBackEdgesGraph = limitedFlowGraph.filterNot(
+                    edgeP = edge =>
+                        edge.sources.toList.toSet.intersect(entryPredecessors).nonEmpty
+                            && edge.targets.contains(limitedFlowGraph.get(entry))
+                )
+                if (removedBackEdgesGraph.isCyclic) {
+                    env.updateAll(StringTreeDynamicString)
+                } else {
+                    // Handle resulting acyclic region
+                    val entryNode = removedBackEdgesGraph.get(entry)
+                    var sortedCurrentNodes = List(entryNode)
+                    var currentNodeEnvs = Map((entryNode, pipe(entry, env)))
+                    while (currentNodeEnvs.keys.exists(_.diSuccessors.nonEmpty)) {
+                        val nextNodeEnvs = sortedCurrentNodes.flatMap { node =>
+                            if (node.diSuccessors.isEmpty) {
+                                Iterable((node, currentNodeEnvs(node)))
+                            } else {
+                                node.diSuccessors.toList.sortBy(_.outer).map { successor =>
+                                    (successor, pipe(successor, currentNodeEnvs(node)))
+                                }
+                            }
+                        }
+                        sortedCurrentNodes = nextNodeEnvs.map(_._1).sortBy(_.outer)
+                        currentNodeEnvs = nextNodeEnvs.groupMapReduce(_._1)(_._2) { (env, otherEnv) =>
+                            env.join(otherEnv)
+                        }
+                    }
+
+                    val resultEnv = sortedCurrentNodes.foldLeft(StringTreeEnvironment(Map.empty)) { (env, nextNode) =>
+                        env.join(currentNodeEnvs(nextNode))
+                    }
+
+                    // Looped operations that modify string contents are not supported here
+                    if (resultEnv != env) env.updateAll(StringTreeDynamicString)
+                    else env
                 }
 
             case _ => env

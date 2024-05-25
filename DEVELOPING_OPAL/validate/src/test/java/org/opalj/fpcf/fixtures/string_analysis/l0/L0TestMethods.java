@@ -579,7 +579,7 @@ public class L0TestMethods {
                             expectedLevel = PARTIALLY_CONSTANT,
                             expectedStrings = "((x|^-?\\d+$))*yz",
                             realisticLevel = DYNAMIC,
-                            realisticStrings = ".*"
+                            realisticStrings = "(.*|.*yz)"
                     )
             })
     public void ifElseInLoopWithAppendAfterwards() {
@@ -634,7 +634,7 @@ public class L0TestMethods {
             stringDefinitions = {
                     @StringDefinitions(
                             expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "((x|^-?\\d+$))*yz",
-                            realisticLevel = DYNAMIC, realisticStrings = ".*"
+                            realisticLevel = DYNAMIC, realisticStrings = "(.*|.*yz)"
                     )
             })
     public void stringBufferExample() {
@@ -696,13 +696,13 @@ public class L0TestMethods {
             stringDefinitions = {
                     @StringDefinitions(
                             expectedLevel = CONSTANT, expectedStrings = "(iv1|iv2): ",
-                            realisticLevel = DYNAMIC, realisticStrings = ".*"
+                            realisticLevel = DYNAMIC, realisticStrings = "((iv1|iv2): |.*)"
                     ),
                     @StringDefinitions(
                             expectedLevel = PARTIALLY_CONSTANT,
                             expectedStrings = "(iv1|iv2): ((great!)?)*(.*)?",
                             realisticLevel = DYNAMIC,
-                            realisticStrings = ".*"
+                            realisticStrings = "(.*|.*.*)"
                     )
             })
     public void extensive(boolean cond) {
@@ -880,7 +880,7 @@ public class L0TestMethods {
                     ),
                     @StringDefinitions(
                             expectedLevel = CONSTANT, expectedStrings = "",
-                            realisticLevel = DYNAMIC, realisticStrings = ".*"
+                            realisticLevel = DYNAMIC, realisticStrings = "(.*|)"
                     ),
                     @StringDefinitions(
                             expectedLevel = DYNAMIC, expectedStrings = "((.*)?)*",
