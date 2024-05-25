@@ -183,6 +183,11 @@ class L1StringAnalysisTest extends StringAnalysisTest {
     override def level = 1
 
     override def init(p: Project[URL]): Unit = {
+        val domain = classOf[DefaultPerformInvocationsDomainWithCFGAndDefUse[_]]
+        p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
+            case None               => Set(domain)
+            case Some(requirements) => requirements + domain
+        }
         p.updateProjectInformationKeyInitializationData(FieldAccessInformationKey) {
             case None               => Seq(EagerFieldAccessInformationAnalysis)
             case Some(requirements) => requirements :+ EagerFieldAccessInformationAnalysis
@@ -195,24 +200,10 @@ class L1StringAnalysisTest extends StringAnalysisTest {
         val as = executeAnalyses(LazyL1StringAnalysis.allRequiredAnalyses)
 
         val entities = determineEntitiesToAnalyze(as.project)
-            // L0 Tests
-            .filterNot(entity => entity._3.name == "simpleStringConcat") // Waits on string_concat and "substring"
-            .filterNot(entity => entity._3.name.startsWith("fromConstantAndFunctionCall")) // Waits on string_concat and "substring"
-            // Currently broken L0 Tests
-            .filterNot(entity => entity._3.name.startsWith("unknownCharValue"))
-            // L1 Tests
-            .filterNot(entity => entity._3.name.startsWith("getStaticTest")) // Waits on string_concat and "substring"
-            .filterNot(entity => entity._3.name.startsWith("functionWithFunctionParameter")) // Waits on string_concat and "substring"
-            .filterNot(entity => entity._3.name.startsWith("knownHierarchyInstanceTest")) // Waits on string_concat and "substring"
             // Currently broken L1 Tests
             .filterNot(entity => entity._3.name.startsWith("cyclicDependencyTest"))
             .filterNot(entity => entity._3.name.startsWith("unknownHierarchyInstanceTest"))
-            .filterNot(entity => entity._3.name.startsWith("severalReturnValuesTest1"))
-            .filterNot(entity => entity._3.name.startsWith("severalReturnValuesTest2"))
             .filterNot(entity => entity._3.name.startsWith("crissCrossExample"))
-            .filterNot(entity => entity._3.name.startsWith("directAppendConcatsWith2ndStringBuilder"))
-            .filterNot(entity => entity._3.name.startsWith("parameterRead"))
-            .filterNot(entity => entity._3.name.startsWith("fromStringArray"))
         entities.foreach(as.propertyStore.force(_, StringConstancyProperty.key))
 
         as.propertyStore.waitOnPhaseCompletion()

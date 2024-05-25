@@ -60,10 +60,7 @@ public class L1TestMethods extends L0TestMethods {
     @StringDefinitionsCollection(
             value = "a case where a very simple non-virtual function call is interpreted",
             stringDefinitions = {
-                    @StringDefinitions(
-                            expectedLevel = CONSTANT,
-                            expectedStrings = "(java.lang.Runtime|java.lang.StringBuilder|ERROR)"
-                    )
+                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "java.lang.Runtime")
             })
     public void simpleNonVirtualFunctionCallTest(int i) {
         analyzeString(getRuntimeClassName());
@@ -72,12 +69,7 @@ public class L1TestMethods extends L0TestMethods {
     @StringDefinitionsCollection(
             value = "a case where a non-virtual function call inside an if statement is interpreted",
             stringDefinitions = {
-                    @StringDefinitions(
-                            expectedLevel = CONSTANT,
-                            expectedStrings = "(java.lang.Runtime|java.lang.StringBuilder|ERROR)",
-                            realisticLevel = DYNAMIC,
-                            realisticStrings = ".*"
-                    )
+                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "(java.lang.Runtime|java.lang.StringBuilder|ERROR)")
             })
     public void simpleNonVirtualFunctionCallTestWithIf(int i) {
         String s;
@@ -92,15 +84,9 @@ public class L1TestMethods extends L0TestMethods {
     }
 
     @StringDefinitionsCollection(
-            value = "a case where the initialization of a StringBuilder depends on > 1 non-virtual "
-                    + "function calls and a constant",
+            value = "a case where the initialization of a StringBuilder depends on > 1 non-virtual function calls and a constant",
             stringDefinitions = {
-                    @StringDefinitions(
-                            expectedLevel = CONSTANT,
-                            expectedStrings = "(java.lang.Runtime|java.lang.StringBuilder|ERROR)",
-                            realisticLevel = DYNAMIC,
-                            realisticStrings = ".*"
-                    )
+                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "(java.lang.Runtime|java.lang.StringBuilder|ERROR)")
             })
     public void initFromNonVirtualFunctionCallTest(int i) {
         String s;
@@ -191,30 +177,9 @@ public class L1TestMethods extends L0TestMethods {
     }
 
     @StringDefinitionsCollection(
-            value = "a case where the append value has more than one def site",
-            stringDefinitions = {
-                    @StringDefinitions(
-                            expectedLevel = CONSTANT, expectedStrings = "It is (great|not great)",
-                            realisticLevel = DYNAMIC, realisticStrings = ".*"
-                    )
-            })
-    public void appendWithTwoDefSites(int i) {
-        String s;
-        if (i > 0) {
-            s = "great";
-        } else {
-            s = "not great";
-        }
-        analyzeString(new StringBuilder("It is ").append(s).toString());
-    }
-
-    @StringDefinitionsCollection(
             value = "a case where the append value has more than one def site with a function call involved",
             stringDefinitions = {
-                    @StringDefinitions(
-                            expectedLevel = CONSTANT, expectedStrings = "It is (great|Hello, World)",
-                            realisticLevel = DYNAMIC, realisticStrings = ".*"
-                    )
+                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "(It is great|It is Hello, World)")
             })
     public void appendWithTwoDefSitesWithFuncCallTest(int i) {
         String s;
@@ -337,7 +302,10 @@ public class L1TestMethods extends L0TestMethods {
             stringDefinitions = {
                     @StringDefinitions(
                             expectedLevel = CONSTANT,
-                            expectedStrings = "(another value|some value|^null$)"
+                            expectedStrings = "(another value|some value|^null$)",
+                            // Contains a field write in the same method which cannot be captured by flow functions
+                            realisticLevel = DYNAMIC,
+                            realisticStrings = ".*"
                     )
             })
     public void fieldReadTest() {
@@ -482,14 +450,8 @@ public class L1TestMethods extends L0TestMethods {
     @StringDefinitionsCollection(
             value = "a case where a non-virtual and a static function have no return values at all",
             stringDefinitions = {
-                    @StringDefinitions(
-                            expectedLevel = DYNAMIC,
-                            expectedStrings = ".*"
-                    ),
-                    @StringDefinitions(
-                            expectedLevel = DYNAMIC,
-                            expectedStrings = ".*"
-                    )
+                    @StringDefinitions(expectedLevel = DYNAMIC, expectedStrings = ".*"),
+                    @StringDefinitions(expectedLevel = DYNAMIC, expectedStrings = ".*")
             })
     public void functionWithNoReturnValueTest1() {
         analyzeString(noReturnFunction1());
@@ -522,7 +484,12 @@ public class L1TestMethods extends L0TestMethods {
     @StringDefinitionsCollection(
             value = "a case where a String array field is read",
             stringDefinitions = {
-                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "(January|February|March|April)")
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT,
+                            expectedStrings = "(January|February|March|April)",
+                            realisticLevel = DYNAMIC,
+                            realisticStrings = ".*"
+                    )
             })
     public void getStringArrayField(int i) {
         analyzeString(monthNames[i]);

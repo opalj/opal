@@ -50,9 +50,6 @@ class L1InterpretationHandler(implicit override val project: SomeProject) extend
 
             // Currently unsupported
             case Assignment(_, target, _: ArrayExpr[V]) => StringInterpreter.computeFinalLBFor(target)
-            case Assignment(_, target, _: GetField[V])  => StringInterpreter.computeFinalLBFor(target)
-
-            case Assignment(_, _, _: New) => StringInterpreter.computeFinalResult(StringFlowFunctionProperty.identity)
 
             case stmt @ Assignment(_, _, expr: FieldRead[V]) =>
                 L1FieldReadInterpreter(ps, fieldAccessInformation, p, declaredFields, contextProvider).interpretExpr(
@@ -86,6 +83,9 @@ class L1InterpretationHandler(implicit override val project: SomeProject) extend
                 L0VirtualMethodCallInterpreter.interpret(vmc)
             case nvmc: NonVirtualMethodCall[V] =>
                 L0NonVirtualMethodCallInterpreter.interpret(nvmc)
+
+            case Assignment(_, _, _: New) =>
+                StringInterpreter.computeFinalResult(StringFlowFunctionProperty.identity)
 
             case Assignment(_, target, _) =>
                 StringInterpreter.computeFinalLBFor(target)

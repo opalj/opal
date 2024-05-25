@@ -236,6 +236,21 @@ public class L0TestMethods {
     }
 
     @StringDefinitionsCollection(
+            value = "a case where the append value has more than one def site",
+            stringDefinitions = {
+                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "It is (great|not great)")
+            })
+    public void appendWithTwoDefSites(int i) {
+        String s;
+        if (i > 0) {
+            s = "great";
+        } else {
+            s = "not great";
+        }
+        analyzeString(new StringBuilder("It is ").append(s).toString());
+    }
+
+    @StringDefinitionsCollection(
             value = "a more comprehensive case where multiple definition sites have to be "
                     + "considered each with a different string generation mechanism",
             stringDefinitions = {
