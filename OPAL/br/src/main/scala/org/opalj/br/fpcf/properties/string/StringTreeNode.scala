@@ -53,7 +53,7 @@ case class StringTreeRepetition(child: StringTreeNode) extends StringTreeNode {
             StringTreeRepetition(simplifiedChild)
     }
 
-    override def constancyLevel: StringConstancyLevel.Value = child.constancyLevel
+    override def constancyLevel: StringConstancyLevel.Value = StringConstancyLevel.DYNAMIC
 
     def replaceParameters(parameters: Map[Int, StringTreeNode]): StringTreeNode =
         StringTreeRepetition(child.replaceParameters(parameters))

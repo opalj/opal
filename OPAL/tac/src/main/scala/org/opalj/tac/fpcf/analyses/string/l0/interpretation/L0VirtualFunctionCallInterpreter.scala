@@ -89,8 +89,10 @@ case class L0VirtualFunctionCallInterpreter()
     /**
      * Processes calls to [[StringBuilder#replace]] or [[StringBuffer#replace]].
      */
-    private def interpretReplaceCall(target: PV)(implicit state: InterpretationState): ProperPropertyComputationResult =
+    private def interpretReplaceCall(target: PV)(implicit state: InterpretationState): ProperPropertyComputationResult = {
+        // Improve: Support fluent API by returning combined web for both assignment target and call target
         computeFinalResult(StringFlowFunctionProperty.lb(state.pc, target))
+    }
 }
 
 private[string] trait L0ArbitraryVirtualFunctionCallInterpreter extends AssignmentLikeBasedStringInterpreter {
@@ -114,8 +116,11 @@ private[string] trait L0AppendCallInterpreter extends AssignmentLikeBasedStringI
         // .head because we want to evaluate only the first argument of append
         val paramVar = call.params.head.asVar.toPersistentForm(state.tac.stmts)
 
+        val ptWeb = PDUWeb(state.pc, pt)
+        val combinedWeb = if (at.isDefined) ptWeb.combine(PDUWeb(state.pc, at.get)) else ptWeb
+
         computeFinalResult(
-            Set(PDUWeb(state.pc, paramVar), PDUWeb(state.pc, pt)) ++ at.map(PDUWeb(state.pc, _)),
+            Set(PDUWeb(state.pc, paramVar), combinedWeb),
             (env: StringTreeEnvironment) => {
                 val valueState = env(state.pc, paramVar)
 
@@ -136,12 +141,7 @@ private[string] trait L0AppendCallInterpreter extends AssignmentLikeBasedStringI
                         valueState
                 }
 
-                val appendedState = StringTreeConcat.fromNodes(env(state.pc, pt), transformedValueState)
-                var newEnv = env
-                if (at.isDefined) {
-                    newEnv = newEnv.update(state.pc, at.get, appendedState)
-                }
-                newEnv.update(state.pc, pt, appendedState)
+                env.update(combinedWeb, StringTreeConcat.fromNodes(env(state.pc, pt), transformedValueState))
             }
         )
     }

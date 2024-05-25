@@ -55,10 +55,10 @@ case class ComputationState(dm: DefinedMethod, entity: SContext, var tacDependee
         )
     }.toMap
 
-    def getWebs: Iterator[PDUWeb] = pcToDependeeMapping.valuesIterator.flatMap { v =>
+    def getWebs: Iterator[PDUWeb] = pcToDependeeMapping.values.flatMap { v =>
         if (v.hasUBP) v.ub.webs
         else StringFlowFunctionProperty.ub.webs
-    }.foldLeft(Seq.empty[PDUWeb]) { (reducedWebs, web) =>
+    }.toSeq.sortBy(_.defPCs.toList.min).foldLeft(Seq.empty[PDUWeb]) { (reducedWebs, web) =>
         val index = reducedWebs.indexWhere(_.identifiesSameVarAs(web))
         if (index == -1)
             reducedWebs :+ web
