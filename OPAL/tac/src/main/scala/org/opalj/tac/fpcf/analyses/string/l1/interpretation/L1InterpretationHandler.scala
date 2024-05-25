@@ -36,63 +36,56 @@ class L1InterpretationHandler(implicit override val project: SomeProject) extend
     val fieldAccessInformation: FieldAccessInformation = p.get(FieldAccessInformationKey)
     implicit val contextProvider: ContextProvider = p.get(ContextProviderKey)
 
-    override protected def processNew(implicit
+    override protected def processStatement(implicit
         state: InterpretationState
-    ): ProperPropertyComputationResult = {
-        val defSiteOpt = valueOriginOfPC(state.pc, state.tac.pcToIndex);
-        if (defSiteOpt.isEmpty) {
-            throw new IllegalArgumentException(s"Obtained a pc that does not represent a definition site: ${state.pc}")
-        }
+    ): PartialFunction[Stmt[V], ProperPropertyComputationResult] = {
+        case stmt @ Assignment(_, _, expr: SimpleValueConst) =>
+            SimpleValueConstExprInterpreter.interpretExpr(stmt, expr)
 
-        state.tac.stmts(defSiteOpt.get) match {
-            case stmt @ Assignment(_, _, expr: SimpleValueConst) =>
-                SimpleValueConstExprInterpreter.interpretExpr(stmt, expr)
+        // Currently unsupported
+        case Assignment(_, target, _: ArrayExpr[V]) => StringInterpreter.computeFinalLBFor(target)
 
-            // Currently unsupported
-            case Assignment(_, target, _: ArrayExpr[V]) => StringInterpreter.computeFinalLBFor(target)
+        case stmt @ Assignment(_, _, expr: FieldRead[V]) =>
+            L1FieldReadInterpreter(ps, fieldAccessInformation, p, declaredFields, contextProvider).interpretExpr(
+                stmt,
+                expr
+            )
+        // Field reads without result usage are irrelevant
+        case ExprStmt(_, _: FieldRead[V]) =>
+            StringInterpreter.computeFinalResult(StringFlowFunctionProperty.identity)
 
-            case stmt @ Assignment(_, _, expr: FieldRead[V]) =>
-                L1FieldReadInterpreter(ps, fieldAccessInformation, p, declaredFields, contextProvider).interpretExpr(
-                    stmt,
-                    expr
-                )
-            // Field reads without result usage are irrelevant
-            case ExprStmt(_, _: FieldRead[V]) =>
-                StringInterpreter.computeFinalResult(StringFlowFunctionProperty.identity)
+        case stmt @ Assignment(_, _, expr: VirtualFunctionCall[V]) =>
+            new L1VirtualFunctionCallInterpreter().interpretExpr(stmt, expr)
+        case stmt @ ExprStmt(_, expr: VirtualFunctionCall[V]) =>
+            new L1VirtualFunctionCallInterpreter().interpretExpr(stmt, expr)
 
-            case stmt @ Assignment(_, _, expr: VirtualFunctionCall[V]) =>
-                new L1VirtualFunctionCallInterpreter().interpretExpr(stmt, expr)
-            case stmt @ ExprStmt(_, expr: VirtualFunctionCall[V]) =>
-                new L1VirtualFunctionCallInterpreter().interpretExpr(stmt, expr)
+        case stmt @ Assignment(_, _, expr: NonVirtualFunctionCall[V]) =>
+            L0NonVirtualFunctionCallInterpreter().interpretExpr(stmt, expr)
+        case stmt @ ExprStmt(_, expr: NonVirtualFunctionCall[V]) =>
+            L0NonVirtualFunctionCallInterpreter().interpretExpr(stmt, expr)
 
-            case stmt @ Assignment(_, _, expr: NonVirtualFunctionCall[V]) =>
-                L0NonVirtualFunctionCallInterpreter().interpretExpr(stmt, expr)
-            case stmt @ ExprStmt(_, expr: NonVirtualFunctionCall[V]) =>
-                L0NonVirtualFunctionCallInterpreter().interpretExpr(stmt, expr)
+        case stmt @ Assignment(_, _, expr: StaticFunctionCall[V]) =>
+            L0StaticFunctionCallInterpreter().interpretExpr(stmt, expr)
+        // Static function calls without return value usage are irrelevant
+        case ExprStmt(_, _: StaticFunctionCall[V]) =>
+            StringInterpreter.computeFinalResult(StringFlowFunctionProperty.identity)
 
-            case stmt @ Assignment(_, _, expr: StaticFunctionCall[V]) =>
-                L0StaticFunctionCallInterpreter().interpretExpr(stmt, expr)
-            // Static function calls without return value usage are irrelevant
-            case ExprStmt(_, _: StaticFunctionCall[V]) =>
-                StringInterpreter.computeFinalResult(StringFlowFunctionProperty.identity)
+        // TODO: For binary expressions, use the underlying domain to retrieve the result of such expressions
+        case stmt @ Assignment(_, _, expr: BinaryExpr[V]) => BinaryExprInterpreter.interpretExpr(stmt, expr)
 
-            // TODO: For binary expressions, use the underlying domain to retrieve the result of such expressions
-            case stmt @ Assignment(_, _, expr: BinaryExpr[V]) => BinaryExprInterpreter.interpretExpr(stmt, expr)
+        case vmc: VirtualMethodCall[V] =>
+            L0VirtualMethodCallInterpreter.interpret(vmc)
+        case nvmc: NonVirtualMethodCall[V] =>
+            L0NonVirtualMethodCallInterpreter.interpret(nvmc)
 
-            case vmc: VirtualMethodCall[V] =>
-                L0VirtualMethodCallInterpreter.interpret(vmc)
-            case nvmc: NonVirtualMethodCall[V] =>
-                L0NonVirtualMethodCallInterpreter.interpret(nvmc)
+        case Assignment(_, _, _: New) =>
+            StringInterpreter.computeFinalResult(StringFlowFunctionProperty.identity)
 
-            case Assignment(_, _, _: New) =>
-                StringInterpreter.computeFinalResult(StringFlowFunctionProperty.identity)
+        case Assignment(_, target, _) =>
+            StringInterpreter.computeFinalLBFor(target)
 
-            case Assignment(_, target, _) =>
-                StringInterpreter.computeFinalLBFor(target)
-
-            case _ =>
-                StringInterpreter.computeFinalResult(StringFlowFunctionProperty.identity)
-        }
+        case _ =>
+            StringInterpreter.computeFinalResult(StringFlowFunctionProperty.identity)
     }
 }
 

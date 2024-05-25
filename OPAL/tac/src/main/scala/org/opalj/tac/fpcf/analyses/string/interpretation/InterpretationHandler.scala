@@ -44,7 +44,7 @@ abstract class InterpretationHandler extends FPCFAnalysis {
             // No TAC available, e.g., because the method has no body
             StringInterpreter.computeFinalResult(StringFlowFunctionProperty.constForAll(StringTreeNode.lb))
         } else {
-            processNew
+            processStatementForState
         }
     }
 
@@ -53,7 +53,7 @@ abstract class InterpretationHandler extends FPCFAnalysis {
             case finalEP: FinalEP[_, _] if
                     eps.pk.equals(TACAI.key) =>
                 state.tacDependee = finalEP.asInstanceOf[FinalEP[Method, TACAI]]
-                processNew(state)
+                processStatementForState(state)
 
             case _ =>
                 InterimResult.forUB(
@@ -65,7 +65,18 @@ abstract class InterpretationHandler extends FPCFAnalysis {
         }
     }
 
-    protected def processNew(implicit state: InterpretationState): ProperPropertyComputationResult
+    private def processStatementForState(implicit state: InterpretationState): ProperPropertyComputationResult = {
+        val defSiteOpt = valueOriginOfPC(state.pc, state.tac.pcToIndex);
+        if (defSiteOpt.isEmpty) {
+            throw new IllegalArgumentException(s"Obtained a pc that does not represent a definition site: ${state.pc}")
+        }
+
+        processStatement(state)(state.tac.stmts(defSiteOpt.get))
+    }
+
+    protected def processStatement(
+        implicit state: InterpretationState
+    ): PartialFunction[Stmt[V], ProperPropertyComputationResult]
 }
 
 object InterpretationHandler {
