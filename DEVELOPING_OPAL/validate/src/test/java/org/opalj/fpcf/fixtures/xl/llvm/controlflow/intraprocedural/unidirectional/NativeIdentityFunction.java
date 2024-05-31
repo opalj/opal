@@ -27,4 +27,8 @@ public class NativeIdentityFunction {
     }
 
     public static native Object identity(Object x);
+
+    static {
+        System.loadLibrary("native");
+    }
 }

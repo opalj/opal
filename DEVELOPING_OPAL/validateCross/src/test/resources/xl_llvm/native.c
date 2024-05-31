@@ -80,6 +80,25 @@ JNIEXPORT jobject JNICALL Java_org_opalj_fpcf_fixtures_xl_llvm_controlflow_inter
     return llvm_controlflow_interprocedural_interleaved_CallJavaFunctionFromNativeAndReturn_callMyJavaFunctionFromNative(env, jThis, x);
 }
 
+jobject llvm_controlflow_interprocedural_interleaved_CallJavaFunctionFromNativeAndReturn2_callMyJavaFunctionFromNative(JNIEnv* env, jobject jThis, jobject x) {
+    printf("llvm_controlflow_interprocedural_interleaved_CallJavaFunctionFromNativeAndReturn_callMyJavaFunctionFromNative");
+    jclass cls = (*env)->FindClass(env, "Lorg/opalj/fpcf/fixtures/xl/llvm/controlflow/interprocedural/interleaved/CallJavaFunctionFromNativeAndReturn2;");
+    jmethodID methodID1 = (*env)->GetMethodID(env, cls, "myReturningJavaFunction1", "(Ljava/lang/Object;)Ljava/lang/Object;");
+
+    // Call the Java method with the provided argument
+    jobject result1 = (*env)->CallObjectMethod(env, jThis, methodID1, x);
+
+    jmethodID methodID2 = (*env)->GetMethodID(env, cls, "myReturningJavaFunction2", "(Ljava/lang/Object;)Ljava/lang/Object;");
+
+    // Call the Java method with the provided argument
+    jobject result2 = (*env)->CallObjectMethod(env, jThis, methodID2, result1);
+
+    return result2;
+}
+// org/opalj/fpcf/fixtures/xl/llvm/controlflow/interprocedural/interleaved/CallJavaFunctionFromNativeAndReturn
+JNIEXPORT jobject JNICALL Java_org_opalj_fpcf_fixtures_xl_llvm_controlflow_interprocedural_interleaved_CallJavaFunctionFromNativeAndReturn2_callMyJavaFunctionFromNative(JNIEnv* env, jobject jThis, jobject x) {
+    return llvm_controlflow_interprocedural_interleaved_CallJavaFunctionFromNativeAndReturn2_callMyJavaFunctionFromNative(env, jThis, x);
+}
 
 
 // org/opalj/fpcf/fixtures/xl/llvm/stateaccess/intraprocedural/unidirectional/CAccessJava/WriteJavaFieldFromNative
@@ -139,6 +158,14 @@ JNIEXPORT jobject JNICALL Java_org_opalj_fpcf_fixtures_xl_llvm_controlflow_intra
     return xx;
 }
 
+JNIEXPORT jobject JNICALL Java_org_opalj_fpcf_fixtures_xl_llvm_controlflow_interprocedural_cyclic_CyclicRecursion_callDecrementFromNative(JNIEnv* env, jclass jThis, jobject x) {
+    jclass cls = (*env)->FindClass(env, "Lorg/opalj/fpcf/fixtures/xl/llvm/controlflow/interprocedural/cyclic/CyclicRecursion;");
+    jmethodID methodID = (*env)->GetMethodID(env, cls, "decrement", "(Lorg/opalj/fpcf/fixtures/xl/js/testpts/SimpleContainerClass;)Lorg/opalj/fpcf/fixtures/xl/js/testpts/SimpleContainerClass;");
+
+    // Call the Java method with the provided argument
+    jobject result = (*env)->CallObjectMethod(env, jThis, methodID, x);
+    return result;
+}
 
 
 // unused
