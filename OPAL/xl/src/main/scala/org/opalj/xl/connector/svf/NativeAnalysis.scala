@@ -39,13 +39,15 @@ import org.opalj.tac.fpcf.analyses.cg.TypeIteratorState
 import org.opalj.tac.fpcf.analyses.pointsto.PointsToAnalysisState
 import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.tac.fpcf.properties.cg.OnlyCallersWithUnknownContext
-
+object GlobalJNIMapping {
+  var mapping: Any = null
+}
 abstract class NativeAnalysis(
         final val project:            SomeProject,
         final override val apiMethod: DeclaredMethod
 ) extends PointsToAnalysisBase with APIBasedAnalysis {
 
-    case class SVFConnectorState(
+  case class SVFConnectorState(
             calleeContext:          ContextType,
             pc:                     Integer,
             project:                SomeProject,
@@ -54,7 +56,7 @@ abstract class NativeAnalysis(
             var svfModuleName:      String                               = ???,
             var connectorDependees: Set[EOptionP[Entity, Property]]      = Set.empty,
             var connectorResults:   Set[ProperPropertyComputationResult] = Set.empty[ProperPropertyComputationResult],
-            var javaJNIMapping:     Map[Long, PointsToSet]               = Map.empty,
+            var javaJNIMapping:     Map[Long, PointsToSet]               = GlobalJNIMapping.mapping.asInstanceOf[Map[Long, PointsToSet]],
             var oldEPS:             SomeEPS                              = null
     ) extends BaseAnalysisState with TypeIteratorState
 
@@ -151,9 +153,9 @@ abstract class NativeAnalysis(
                 var result: Long = -1
                 newPointsToSet.forNewestNElements(1) {
                     element =>
-                    {
-                        result = element.asInstanceOf[Long]
-                    }
+                        {
+                            result = element.asInstanceOf[Long]
+                        }
                 }
                 svfConnectorState.javaJNIMapping += result -> newPointsToSet
                 result
@@ -163,7 +165,9 @@ abstract class NativeAnalysis(
 
                 implicit val pointsToAnalysisState: PointsToAnalysisState[ElementType, PointsToSet, ContextType] =
                     new PointsToAnalysisState(NoContext.asInstanceOf[ContextType], null)
-
+                //val filter = getFilter(pc, checkForCast)
+                //val defSiteObject = getDefSite(svfConnectorState.pc)
+                //pointsToAnalysisState.includeSharedPointsToSet(defSiteObject, emptyPointsToSet, PointsToSetLike.noFilter)
                 var result: List[Long] = List.empty
 
                 for (l <- baseLongArray) {
@@ -332,11 +336,14 @@ abstract class NativeAnalysis(
         }
         for (f <- functionSelection) {
             val resultPTS = svfConnectorState.svfModule.processFunction(f, basePTS.toArray, parameterPointsToSets, listener)
-
-            resultPTS.foreach(l => {
-                val pointsToSet = svfConnectorState.javaJNIMapping(l)
-                pointsToAnalysisState.includeSharedPointsToSet(svfConnectorState.calleeContext, pointsToSet, PointsToSetLike.noFilter)
-            })
+            if (resultPTS.isEmpty) {
+                pointsToAnalysisState.includeSharedPointsToSet(svfConnectorState.calleeContext, emptyPointsToSet, PointsToSetLike.noFilter)
+            } else {
+                resultPTS.foreach(l => {
+                    val pointsToSet = svfConnectorState.javaJNIMapping(l)
+                    pointsToAnalysisState.includeSharedPointsToSet(svfConnectorState.calleeContext, pointsToSet, PointsToSetLike.noFilter)
+                })
+            }
         }
 
         Results(createResults ++ svfConnectorState.connectorResults, InterimPartialResult(svfConnectorState.connectorDependees, svfConnectorContinuation))
@@ -348,13 +355,17 @@ abstract class NativeAnalysis(
         pc:            Int,
         isDirect:      Boolean
     ): ProperPropertyComputationResult = {
-
+        if (GlobalJNIMapping.mapping == null) {
+          GlobalJNIMapping.mapping = Map[Long, PointsToSet]()
+        }
         implicit val svfConnectorState = SVFConnectorState(calleeContext, pc, project)
 
         svfjava.SVFJava.init()
 
         svfConnectorState.svfModule = SVFModule.createSVFModule(svfConnectorState.svfModuleName)
-        runSVF(svfConnectorState)
+        val result = runSVF(svfConnectorState)
+        GlobalJNIMapping.mapping = svfConnectorState.javaJNIMapping ++ GlobalJNIMapping.mapping.asInstanceOf[Map[Long, PointsToSet]]
+        result
     }
 
     def svfConnectorContinuation(eps: SomeEPS)(implicit svfConnectorState: SVFConnectorState): ProperPropertyComputationResult = {
@@ -363,7 +374,10 @@ abstract class NativeAnalysis(
             case UBP(_: PointsToSet @unchecked) =>
                 svfConnectorState.connectorDependees += eps
                 svfConnectorState.oldEPS = eps
-                runSVF(svfConnectorState)
+                svfConnectorState.javaJNIMapping = svfConnectorState.javaJNIMapping ++ GlobalJNIMapping.mapping.asInstanceOf[Map[Long, PointsToSet]]
+                val result = runSVF(svfConnectorState)
+                GlobalJNIMapping.mapping = svfConnectorState.javaJNIMapping ++ GlobalJNIMapping.mapping.asInstanceOf[Map[Long, PointsToSet]]
+                result
 
             case ep => Results()
         }
