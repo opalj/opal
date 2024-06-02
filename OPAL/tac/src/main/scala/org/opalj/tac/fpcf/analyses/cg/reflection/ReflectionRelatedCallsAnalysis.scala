@@ -6,10 +6,7 @@ package analyses
 package cg
 package reflection
 
-import scala.language.existentials
-
 import scala.collection.immutable.ArraySeq
-
 import org.opalj.br.ArrayType
 import org.opalj.br.BooleanType
 import org.opalj.br.ClassType
@@ -32,8 +29,10 @@ import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.cg.ForNameClasses
 import org.opalj.br.fpcf.properties.cg.LoadedClasses
+import org.opalj.br.fpcf.properties.string.StringConstancyProperty
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.UIDSet
+import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.EPS
@@ -56,6 +55,7 @@ import org.opalj.log.Warn
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.analyses.cg.reflection.MatcherUtil.retrieveSuitableMatcher
 import org.opalj.tac.fpcf.analyses.cg.reflection.MethodHandlesUtil.retrieveDescriptorBasedMethodMatcher
+import org.opalj.tac.fpcf.analyses.string.SContext
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.TheTACAI
 import org.opalj.value.ASObjectValue
@@ -198,30 +198,26 @@ class ClassForNameAnalysis private[analyses] (
         implicit val incompleteCallSites: IncompleteCallSites = new IncompleteCallSites {}
         implicit val state: State = new State(tac.stmts, loadedClassesUB(), callerContext, callPC)
 
-        val className = if (params.nonEmpty) params(classNameIndex) else None
-
-        if (className.isDefined) {
-            handleForName(className.get.asVar, callerContext, callPC, tac.stmts)
+        if (params.nonEmpty && params(classNameIndex).isDefined) {
+            handleForName(callPC, params(classNameIndex).get.asVar, callerContext, tac.stmts)
         } else {
             failure(callPC)
         }
 
-        returnResult(className.map(_.asVar).orNull, incompleteCallSites)
+        returnResult(incompleteCallSites)
     }
 
     private def returnResult(
-        className:           V,
         incompleteCallSites: IncompleteCallSites
     )(implicit state: State): ProperPropertyComputationResult = {
-        val iresults: IterableOnce[ProperPropertyComputationResult] =
-            incompleteCallSites.partialResults(state.callContext)
+        val incompleteResults = incompleteCallSites.partialResults(state.callContext)
         val forNameClassesResult =
             if (!state.hasFailed && state.hasOpenDependencies)
                 InterimResult.forUB(
                     (state.callContext, state.callPC),
                     ForNameClasses(state.forNameClasses),
                     state.dependees,
-                    c(className, state)
+                    continuation(state)
                 )
             else {
                 if (propertyStore((state.callContext, state.callPC), ForNameClasses.key).isFinal)
@@ -229,11 +225,10 @@ class ClassForNameAnalysis private[analyses] (
                 Result((state.callContext, state.callPC), ForNameClasses(state.forNameClasses))
             }
         val results = if (state.hasNewLoadedClasses) {
-            val r =
-                Iterator(forNameClassesResult, state.loadedClassesPartialResult) ++ iresults
+            val r = Iterator(forNameClassesResult, state.loadedClassesPartialResult) ++ incompleteResults
             state.reset()
             r
-        } else Iterator(forNameClassesResult) ++ iresults
+        } else Iterator(forNameClassesResult) ++ incompleteResults
         Results(results)
     }
 
@@ -241,66 +236,44 @@ class ClassForNameAnalysis private[analyses] (
      * Retrieves the current state of loaded classes and instantiated types from the property store.
      */
     private[this] def loadedClassesUB(): UIDSet[ClassType] = {
-        // the set of classes that are definitely loaded at this point in time
-        val loadedClassesEOptP = propertyStore(project, LoadedClasses.key)
-
-        // the upper bound for loaded classes, seen so far
-        val loadedClassesUB: UIDSet[ClassType] = loadedClassesEOptP match {
+        // the upper bound set of classes that are definitely loaded at this point in time
+        propertyStore(project, LoadedClasses.key) match {
             case eps: EPS[_, _] => eps.ub.classes
             case _              => UIDSet.empty
         }
-
-        loadedClassesUB
     }
 
     /**
-     * Adds classes that can be loaded by an invocation of Class.forName to the set of loaded
-     * classes.
+     * Adds classes that can be loaded by an invocation of Class.forName to the set of loaded classes.
      */
     private[this] def handleForName(
+        pc: Int,
         className:   V,
         callContext: ContextType,
-        pc:          Int,
         stmts:       Array[Stmt[V]]
-    )(implicit state: State, incompleteCallSites: IncompleteCallSites): Unit = {
-        val loadedClasses = TypesUtil
-            .getPossibleForNameClasses(className, callContext, pc.asInstanceOf[Entity], stmts, project, () => failure(pc))
-        state.addNewLoadedClasses(loadedClasses)
+    )(implicit state: State): Unit = {
+        val possibleClasses = TypesUtil.getPossibleForNameClasses(pc, className, callContext, stmts, project)
+        state.addNewLoadedClasses(possibleClasses)
     }
 
-    private[this] def c(
-        className: V,
-        state:     State
-    )(eps: SomeEPS): ProperPropertyComputationResult = {
-
-        // ensures, that we only add new vm reachable methods
+    private[this] def continuation(state: State)(eps: SomeEPS): ProperPropertyComputationResult = {
+        // ensures that we only add new vm reachable methods
         implicit val incompleteCallSites: IncompleteCallSites = new IncompleteCallSites {}
-        implicit val _state: State = state
 
-        AllocationsUtil.continuationForAllocation[Int, ContextType](
-            eps,
-            state.callContext,
-            _ => (className, state.stmts),
-            _.isInstanceOf[Int],
-            callPC => failure(callPC)
-        ) { (callPC, _, allocationIndex, stmts) =>
-            val classOpt = TypesUtil
-                .getPossibleForNameClass(allocationIndex, stmts, project, () => failure(callPC), onlyClassTypes = false)
-            if (classOpt.isDefined) state.addNewLoadedClasses(classOpt)
-        }
+        val scpUpdate = eps.asInstanceOf[EOptionP[SContext, StringConstancyProperty]]
+        val newRegex = scpUpdate.ub.sci.toRegex
 
+        state.addNewLoadedClasses(TypesUtil.getPossibleForNameClasses(newRegex, project))
         if (eps.isFinal) {
             state.removeDependee(eps.toEPK)
         } else {
             state.updateDependency(eps)
         }
 
-        returnResult(className, incompleteCallSites)
+        returnResult(incompleteCallSites)(state)
     }
 
-    private[this] def failure(
-        callPC: Int
-    )(implicit incompleteCallSites: IncompleteCallSites, state: State): Unit = {
+    private[this] def failure(callPC: Int)(implicit incompleteCallSites: IncompleteCallSites, state: State): Unit = {
         if (HighSoundnessMode.contains("class")) {
             state.addNewLoadedClasses(p.allClassFiles.iterator.map(_.thisType))
             state.hasFailed = true

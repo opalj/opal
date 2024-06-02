@@ -8,8 +8,11 @@ package reflection
 
 import org.opalj.br.ClassType
 import org.opalj.br.fpcf.properties.Context
+import org.opalj.br.fpcf.properties.string.StringConstancyProperty
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.UBP
+import org.opalj.tac.fpcf.analyses.string.SContext
 
 object StringUtil {
 
@@ -71,6 +74,28 @@ object StringUtil {
         }
 
         strings
+    }
+
+    /**
+     * Returns a regex that models all strings the given value might evaluate to
+     * Clients MUST handle dependencies where the depender is the given one and the dependee provides string constancy
+     * information.
+     */
+    def getPossibleStringsRegex(
+          pc: Int,
+          value: V,
+          context: Context,
+          stmts: Array[Stmt[V]]
+    )(
+          implicit
+          ps: PropertyStore
+    ): String = {
+        val entity: SContext = (pc, value.toPersistentForm(stmts), context.method.definedMethod)
+
+        ps(entity, StringConstancyProperty.key) match {
+            case UBP(ub) => ub.sci.toRegex
+            case _ => ""
+        }
     }
 
     def getString(stringDefSite: Int, stmts: Array[Stmt[V]]): Option[String] = {
