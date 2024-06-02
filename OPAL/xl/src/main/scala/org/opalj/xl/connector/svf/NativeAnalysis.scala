@@ -118,8 +118,13 @@ abstract class NativeAnalysis(
                         val pointsToSet = currentPointsTo("callFunction", context, PointsToSetLike.noFilter)
 
                         pointsToSet.forNewestNElements(pointsToSet.numElements) {
-                            element => resultListBuffer.addOne(element.asInstanceOf[Long])
+                            element =>
+                                {
+                                    resultListBuffer.addOne(element.asInstanceOf[Long])
+                                    svfConnectorState.javaJNIMapping += element.asInstanceOf[Long] -> pointsToSet
+                                }
                         }
+
                         val callFunctionDependeesMap = if (pointsToAnalysisState.hasDependees("callFunction"))
                             pointsToAnalysisState.dependeesOf("callFunction")
                         else
