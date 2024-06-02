@@ -170,11 +170,28 @@ JNIEXPORT jobject JNICALL Java_org_opalj_fpcf_fixtures_xl_llvm_controlflow_inter
 jobject myglobal;
 JNIEXPORT void JNICALL Java_org_opalj_fpcf_fixtures_xl_llvm_stateaccess_intraprocedural_bidirectional_WriteNativeGlobalVariable_setNativeGlobal(JNIEnv* env, jclass jThis, jobject x) {
     printf("Java_org_opalj_fpcf_fixtures_xl_llvm_stateaccess_intraprocedural_bidirectional_WriteNativeGlobalVariable_setNativeGlobal");
-    myglobal = x;
+    myglobal = (*env)->NewGlobalRef(env, x);
 }
 JNIEXPORT jobject JNICALL Java_org_opalj_fpcf_fixtures_xl_llvm_stateaccess_intraprocedural_bidirectional_WriteNativeGlobalVariable_getNativeGlobal(JNIEnv* env, jclass jThis) {
     printf("Java_org_opalj_fpcf_fixtures_xl_llvm_stateaccess_intraprocedural_bidirectional_WriteNativeGlobalVariable_getNativeGlobal");
     return myglobal;
+}
+
+jobject myglobal2;
+void org_opalj_fpcf_fixtures_xl_llvm_stateaccess_interprocedural_bidirectional_WriteNativeGlobalVariable_setNativeGlobal(jobject x){
+    myglobal2 = x;
+}
+JNIEXPORT void JNICALL Java_org_opalj_fpcf_fixtures_xl_llvm_stateaccess_interprocedural_bidirectional_WriteNativeGlobalVariable_setNativeGlobal(JNIEnv* env, jclass jThis, jobject x) {
+    printf("Java_org_opalj_fpcf_fixtures_xl_llvm_stateaccess_interprocedural_bidirectional_WriteNativeGlobalVariable_setNativeGlobal");
+    org_opalj_fpcf_fixtures_xl_llvm_stateaccess_interprocedural_bidirectional_WriteNativeGlobalVariable_setNativeGlobal((*env)->NewGlobalRef(env, x));
+}
+
+jobject org_opalj_fpcf_fixtures_xl_llvm_stateaccess_interprocedural_bidirectional_WriteNativeGlobalVariable_getNativeGlobal() {
+    return myglobal2;
+}
+JNIEXPORT jobject JNICALL Java_org_opalj_fpcf_fixtures_xl_llvm_stateaccess_interprocedural_bidirectional_WriteNativeGlobalVariable_getNativeGlobal(JNIEnv* env, jclass jThis) {
+    printf("Java_org_opalj_fpcf_fixtures_xl_llvm_stateaccess_interprocedural_bidirectional_WriteNativeGlobalVariable_getNativeGlobal");
+    return org_opalj_fpcf_fixtures_xl_llvm_stateaccess_interprocedural_bidirectional_WriteNativeGlobalVariable_getNativeGlobal();
 }
 
 // unused
