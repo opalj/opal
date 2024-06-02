@@ -167,6 +167,15 @@ JNIEXPORT jobject JNICALL Java_org_opalj_fpcf_fixtures_xl_llvm_controlflow_inter
     return result;
 }
 
+jobject myglobal;
+JNIEXPORT void JNICALL Java_org_opalj_fpcf_fixtures_xl_llvm_stateaccess_intraprocedural_bidirectional_WriteNativeGlobalVariable_setNativeGlobal(JNIEnv* env, jclass jThis, jobject x) {
+    printf("Java_org_opalj_fpcf_fixtures_xl_llvm_stateaccess_intraprocedural_bidirectional_WriteNativeGlobalVariable_setNativeGlobal");
+    myglobal = x;
+}
+JNIEXPORT jobject JNICALL Java_org_opalj_fpcf_fixtures_xl_llvm_stateaccess_intraprocedural_bidirectional_WriteNativeGlobalVariable_getNativeGlobal(JNIEnv* env, jclass jThis) {
+    printf("Java_org_opalj_fpcf_fixtures_xl_llvm_stateaccess_intraprocedural_bidirectional_WriteNativeGlobalVariable_getNativeGlobal");
+    return myglobal;
+}
 
 // unused
 void* nativeIdentityFunction(void* i) {
