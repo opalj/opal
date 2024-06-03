@@ -40,13 +40,16 @@ trait L0FunctionCallInterpreter
         calleeMethods:       Seq[Method],
         parameters:          Seq[PV],
         var tacDependees:    Map[Method, EOptionP[Method, TACAI]],
-        var returnDependees: Map[Method, Seq[EOptionP[SContext, StringConstancyProperty]]] = Map.empty
+        var returnDependees: Map[Method, Seq[EOptionP[VariableDefinition, StringConstancyProperty]]] = Map.empty
     ) {
         def pc: Int = state.pc
 
         var hasUnresolvableReturnValue: Map[Method, Boolean] = Map.empty.withDefaultValue(false)
 
-        def updateReturnDependee(method: Method, newDependee: EOptionP[SContext, StringConstancyProperty]): Unit = {
+        def updateReturnDependee(
+            method:      Method,
+            newDependee: EOptionP[VariableDefinition, StringConstancyProperty]
+        ): Unit = {
             returnDependees = returnDependees.updated(
                 method,
                 returnDependees(method).updated(
@@ -85,7 +88,7 @@ trait L0FunctionCallInterpreter
                         callState.hasUnresolvableReturnValue += m -> true
                     } else {
                         callState.returnDependees += m -> returns.map { ret =>
-                            val entity: SContext = (
+                            val entity = VariableDefinition(
                                 ret.pc,
                                 ret.asInstanceOf[ReturnValue[V]].expr.asVar.toPersistentForm(calleeTac.get.stmts),
                                 m
@@ -145,8 +148,8 @@ trait L0FunctionCallInterpreter
                 interpretArbitraryCallToFunctions(callState)
 
             case EUBP(_, _: StringConstancyProperty) =>
-                val contextEPS = eps.asInstanceOf[EOptionP[SContext, StringConstancyProperty]]
-                callState.updateReturnDependee(contextEPS.e._3, contextEPS)
+                val contextEPS = eps.asInstanceOf[EOptionP[VariableDefinition, StringConstancyProperty]]
+                callState.updateReturnDependee(contextEPS.e.m, contextEPS)
                 tryComputeFinalResult(callState)
 
             case _ => throw new IllegalArgumentException(s"Encountered unknown eps: $eps")

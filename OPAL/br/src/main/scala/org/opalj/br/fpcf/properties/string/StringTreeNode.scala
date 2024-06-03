@@ -22,6 +22,7 @@ sealed trait StringTreeNode {
 
     def constancyLevel: StringConstancyLevel.Value
 
+    def collectParameterIndices: Set[Int] = children.flatMap(_.collectParameterIndices).toSet
     def replaceParameters(parameters: Map[Int, StringTreeNode]): StringTreeNode
 
     def isNeutralElement: Boolean = false
@@ -56,6 +57,8 @@ case class StringTreeRepetition(child: StringTreeNode) extends StringTreeNode {
     }
 
     override def constancyLevel: StringConstancyLevel.Value = StringConstancyLevel.DYNAMIC
+
+    override def collectParameterIndices: Set[Int] = child.collectParameterIndices
 
     def replaceParameters(parameters: Map[Int, StringTreeNode]): StringTreeNode =
         StringTreeRepetition(child.replaceParameters(parameters))
@@ -128,7 +131,24 @@ case class StringTreeOr private (override val children: Seq[StringTreeNode]) ext
 }
 
 object StringTreeOr {
-    def fromNodes(children: StringTreeNode*): StringTreeNode = new StringTreeOr(children).simplify
+    def fromNodes(children: StringTreeNode*): StringTreeNode = {
+        val nonNeutralChildren = children.filterNot(_.isNeutralElement)
+        nonNeutralChildren.size match {
+            case 0 => StringTreeNeutralElement
+            case 1 => nonNeutralChildren.head
+            case _ =>
+                var newChildren = Seq.empty[StringTreeNode]
+                nonNeutralChildren.foreach {
+                    case orChild: StringTreeOr => newChildren :++= orChild.children
+                    case child                 => newChildren :+= child
+                }
+                val distinctNewChildren = newChildren.distinct
+                distinctNewChildren.size match {
+                    case 1 => distinctNewChildren.head
+                    case _ => StringTreeOr(distinctNewChildren)
+                }
+        }
+    }
 }
 
 sealed trait SimpleStringTreeNode extends StringTreeNode {
@@ -150,6 +170,8 @@ case class StringTreeConst(string: String) extends SimpleStringTreeNode {
 
 case class StringTreeParameter(index: Int) extends SimpleStringTreeNode {
     override def toRegex: String = ".*"
+
+    override def collectParameterIndices: Set[Int] = Set(index)
 
     override def replaceParameters(parameters: Map[Int, StringTreeNode]): StringTreeNode =
         parameters.getOrElse(index, this)

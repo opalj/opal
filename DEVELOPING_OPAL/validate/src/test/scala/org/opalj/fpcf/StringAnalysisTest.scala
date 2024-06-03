@@ -14,13 +14,13 @@ import org.opalj.br.analyses.FieldAccessInformationKey
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.properties.string.StringConstancyProperty
 import org.opalj.tac.EagerDetachedTACAIKey
+import org.opalj.tac.PV
 import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.TACode
 import org.opalj.tac.V
 import org.opalj.tac.VirtualMethodCall
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalysis
-import org.opalj.tac.fpcf.analyses.string.SEntity
 import org.opalj.tac.fpcf.analyses.string.l0.LazyL0StringAnalysis
 import org.opalj.tac.fpcf.analyses.string.l1.LazyL1StringAnalysis
 
@@ -43,7 +43,7 @@ sealed abstract class StringAnalysisTest extends PropertiesTest {
      * Resolves all test methods for this [[level]] and below while taking overrides into account. For all test methods,
      * [[extractPUVars]] is called with their [[TACode]].
      */
-    def determineEntitiesToAnalyze(project: Project[URL]): Iterable[(Int, SEntity, Method)] = {
+    def determineEntitiesToAnalyze(project: Project[URL]): Iterable[(Int, PV, Method)] = {
         val tacProvider = project.get(EagerDetachedTACAIKey)
         project.classHierarchy.allSuperclassesIterator(
             ObjectType(StringAnalysisTest.getAllowedFQTestMethodObjectTypeNameForLevel(level)),
@@ -59,7 +59,7 @@ sealed abstract class StringAnalysisTest extends PropertiesTest {
                     exists || StringAnalysisTest.isStringUsageAnnotation(a)
                 )
             }
-            .foldLeft(Seq.empty[(Int, SEntity, Method)]) { (entities, m) =>
+            .foldLeft(Seq.empty[(Int, PV, Method)]) { (entities, m) =>
                 entities ++ extractPUVars(tacProvider(m)).map(e => (e._1, e._2, m))
             }
     }
@@ -70,7 +70,7 @@ sealed abstract class StringAnalysisTest extends PropertiesTest {
      *
      * @return Returns the arguments of the [[nameTestMethod]] as a PUVars list in the order in which they occurred.
      */
-    def extractPUVars(tac: TACode[TACMethodParameter, V]): List[(Int, SEntity)] = {
+    def extractPUVars(tac: TACode[TACMethodParameter, V]): List[(Int, PV)] = {
         tac.cfg.code.instructions.filter {
             case VirtualMethodCall(_, declClass, _, name, _, _, _) =>
                 allowedFQTestMethodsClassNames.exists(_ == declClass.toJavaClass.getName) && name == nameTestMethod
@@ -79,9 +79,9 @@ sealed abstract class StringAnalysisTest extends PropertiesTest {
     }
 
     def determineEAS(
-        entities: Iterable[(Int, SEntity, Method)],
+        entities: Iterable[(Int, PV, Method)],
         project:  Project[URL]
-    ): Iterable[((Int, SEntity, Method), String => String, List[Annotation])] = {
+    ): Iterable[((Int, PV, Method), String => String, List[Annotation])] = {
         val m2e = entities.groupBy(_._3).iterator.map(e => e._1 -> e._2.map(k => (k._1, k._2))).toMap
         // As entity, we need not the method but a tuple (PUVar, Method), thus this transformation
         methodsWithAnnotations(project).filter(am => m2e.contains(am._1)).flatMap { am =>

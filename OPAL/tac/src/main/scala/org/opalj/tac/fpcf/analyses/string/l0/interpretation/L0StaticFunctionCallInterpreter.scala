@@ -14,6 +14,7 @@ import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyStore
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.string.StringFlowFunction
+import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
 import org.opalj.tac.fpcf.properties.string.StringTreeEnvironment
 
 /**
@@ -32,9 +33,17 @@ case class L0StaticFunctionCallInterpreter()(
     override def interpretExpr(target: PV, call: E)(implicit
         state: InterpretationState
     ): ProperPropertyComputationResult = {
+        if (call.name == "executePrivileged") {
+            System.out.println("FOUND A PRIVILEDGED EXECUTION!")
+        }
+
         call.name match {
             case "valueOf" if call.declaringClass == ObjectType.String => processStringValueOf(target, call)
-            case _                                                     => interpretArbitraryCall(target, call)
+            case "getProperty" if call.declaringClass == ObjectType("java/util/Properties") =>
+                System.out.println("TRACED STRING ANALYSIS FOR SYSTEM PROPERTY CALL!")
+                interpretArbitraryCall(target, call)
+            case _ if call.descriptor.returnType == ObjectType.String => interpretArbitraryCall(target, call)
+            case _                                                    => computeFinalResult(StringFlowFunctionProperty.identity)
         }
     }
 }
