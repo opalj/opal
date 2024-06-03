@@ -8,10 +8,12 @@ package string
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.FPCFLazyAnalysisScheduler
 import org.opalj.br.fpcf.properties.string.StringConstancyProperty
+import org.opalj.fpcf.Entity
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
 import org.opalj.tac.fpcf.analyses.string.interpretation.InterpretationHandler
@@ -28,9 +30,12 @@ sealed trait StringAnalysisScheduler extends FPCFAnalysisScheduler {
 
     override def uses: Set[PropertyBounds] = Set(PropertyBounds.ub(MethodStringFlow))
 
-    override final type InitializationData = StringAnalysis
+    override final type InitializationData = (ContextFreeStringAnalysis, ContextStringAnalysis)
 
-    override def init(p: SomeProject, ps: PropertyStore): InitializationData = new StringAnalysis(p)
+    override def init(p: SomeProject, ps: PropertyStore): InitializationData = (
+        new ContextFreeStringAnalysis(p),
+        new ContextStringAnalysis(p)
+    )
 
     override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
 
@@ -42,14 +47,23 @@ sealed trait StringAnalysisScheduler extends FPCFAnalysisScheduler {
 object LazyStringAnalysis
     extends StringAnalysisScheduler with FPCFLazyAnalysisScheduler {
 
-    override def register(p: SomeProject, ps: PropertyStore, analysis: InitializationData): FPCFAnalysis = {
-        ps.registerLazyPropertyComputation(StringConstancyProperty.key, analysis.analyze)
-        analysis
+    override def register(p: SomeProject, ps: PropertyStore, data: InitializationData): FPCFAnalysis = {
+        ps.registerLazyPropertyComputation(
+            StringConstancyProperty.key,
+            (entity: Entity) => {
+                entity match {
+                    case vd: VariableDefinition => data._1.analyze(vd)
+                    case vc: VariableContext    => data._2.analyze(vc)
+                    case e                      => throw new IllegalArgumentException(s"Cannot process entity $e")
+                }
+            }
+        )
+        data._1
     }
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 
-    override def requiredProjectInformation: ProjectInformationKeys = Seq.empty
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(ContextProviderKey)
 }
 
 sealed trait MethodStringFlowAnalysisScheduler extends FPCFAnalysisScheduler {

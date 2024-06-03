@@ -12,10 +12,14 @@ import scala.collection.mutable.ListBuffer
 import org.opalj.br.Method
 import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.DeclaredMethods
+import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.ReportableAnalysisResult
+import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
+import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.br.fpcf.properties.string.StringConstancyInformation
 import org.opalj.br.fpcf.properties.string.StringConstancyLevel
 import org.opalj.br.fpcf.properties.string.StringConstancyProperty
@@ -40,7 +44,7 @@ import org.opalj.tac.TACode
 import org.opalj.tac.V
 import org.opalj.tac.VirtualFunctionCall
 import org.opalj.tac.cg.RTACallGraphKey
-import org.opalj.tac.fpcf.analyses.string.SContext
+import org.opalj.tac.fpcf.analyses.string.VariableContext
 import org.opalj.tac.fpcf.analyses.string.l0.LazyL0StringAnalysis
 import org.opalj.tac.fpcf.analyses.string.l1.LazyL1StringAnalysis
 import org.opalj.tac.fpcf.properties.TACAI
@@ -109,7 +113,10 @@ object StringAnalysisReflectiveCalls extends ProjectAnalysisApplication {
      * analysis and the second element corresponds to the method name in which the entity occurred,
      * i.e., a value in [[relevantMethodNames]].
      */
-    private val entityContext = ListBuffer[(SContext, String)]()
+    private val entityContext = ListBuffer[(VariableContext, String)]()
+
+    private var declaredMethods: DeclaredMethods = _
+    private var contextProvider: ContextProvider = _
 
     /**
      * A list of fully-qualified method names that are to be skipped, e.g., because they make an
@@ -197,7 +204,8 @@ object StringAnalysisReflectiveCalls extends ProjectAnalysisApplication {
                     call.descriptor.parameterTypes.zipWithIndex.foreach {
                         case (ft, index) =>
                             if (ft.toJava == "java.lang.String") {
-                                val e = (pc, call.params(index).asVar.toPersistentForm, method)
+                                val context = contextProvider.newContext(declaredMethods(method))
+                                val e = VariableContext(pc, call.params(index).asVar.toPersistentForm, context)
                                 ps.force(e, StringConstancyProperty.key)
                                 entityContext.append((e, buildFQMethodName(call.declaringClass, call.name)))
                             }
@@ -307,6 +315,8 @@ object StringAnalysisReflectiveCalls extends ProjectAnalysisApplication {
 
         val manager = project.get(FPCFAnalysesManagerKey)
         project.get(RTACallGraphKey)
+        contextProvider = project.get(ContextProviderKey)
+        declaredMethods = project.get(DeclaredMethodsKey)
 
         implicit val (propertyStore, _) = manager.runAll(
             if (runIntraproceduralAnalysis) LazyL0StringAnalysis.allRequiredAnalyses

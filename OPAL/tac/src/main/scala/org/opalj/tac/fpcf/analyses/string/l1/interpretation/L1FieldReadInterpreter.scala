@@ -73,13 +73,13 @@ case class L1FieldReadInterpreter(
 
     private case class FieldReadState(
         target:                    PV,
-        var hasWriteInSameMethod:  Boolean                                          = false,
-        var hasInit:               Boolean                                          = false,
-        var hasUnresolvableAccess: Boolean                                          = false,
-        var accessDependees:       Seq[EOptionP[SContext, StringConstancyProperty]] = Seq.empty
+        var hasWriteInSameMethod:  Boolean                                                    = false,
+        var hasInit:               Boolean                                                    = false,
+        var hasUnresolvableAccess: Boolean                                                    = false,
+        var accessDependees:       Seq[EOptionP[VariableDefinition, StringConstancyProperty]] = Seq.empty
     ) {
 
-        def updateAccessDependee(newDependee: EOptionP[SContext, StringConstancyProperty]): Unit = {
+        def updateAccessDependee(newDependee: EOptionP[VariableDefinition, StringConstancyProperty]): Unit = {
             accessDependees = accessDependees.updated(
                 accessDependees.indexWhere(_.e == newDependee.e),
                 newDependee
@@ -138,7 +138,7 @@ case class L1FieldReadInterpreter(
                     // Field parameter information is not available
                     accessState.hasUnresolvableAccess = true
                 } else {
-                    val entity: SContext = (pc, PUVar(parameter.get._1, parameter.get._2), method)
+                    val entity = VariableDefinition(pc, PUVar(parameter.get._1, parameter.get._2), method)
                     accessState.accessDependees = accessState.accessDependees :+ ps(entity, StringConstancyProperty.key)
                 }
         }
@@ -188,7 +188,7 @@ case class L1FieldReadInterpreter(
     )(eps: SomeEPS): ProperPropertyComputationResult = {
         eps match {
             case UBP(_: StringConstancyProperty) =>
-                accessState.updateAccessDependee(eps.asInstanceOf[EOptionP[SContext, StringConstancyProperty]])
+                accessState.updateAccessDependee(eps.asInstanceOf[EOptionP[VariableDefinition, StringConstancyProperty]])
                 tryComputeFinalResult(accessState, state)
 
             case _ => throw new IllegalArgumentException(s"Encountered unknown eps: $eps")

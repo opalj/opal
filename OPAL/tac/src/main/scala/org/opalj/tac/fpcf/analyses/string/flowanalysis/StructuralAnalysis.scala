@@ -27,7 +27,7 @@ object StructuralAnalysis {
         var controlTree = Graph.empty[FlowGraphNode, DiEdge[FlowGraphNode]]
 
         var outerIterations = 0
-        while (g.order > 1 && outerIterations < 100) {
+        while (g.order > 1 && outerIterations < 10000) {
             // Find post order depth first traversal order for nodes
             var postCtr = 1
             val post = mutable.ListBuffer.empty[FlowGraphNode]
@@ -157,11 +157,14 @@ object StructuralAnalysis {
         } else {
             val graphWithoutN = graph.excl(n)
             graphWithoutN.nodes.outerIterable.exists { k =>
+                val edgeOpt = graph.find(DiEdge(k, n))
+
                 graphWithoutN.get(m).pathTo(
                     graphWithoutN.get(k)
                 ).isDefined &&
-                graph.edges.toOuter.contains(DiEdge(k, n)) &&
-                (k == n || domTree.strictlyDominates(indexedNodes.indexOf(n), indexedNodes.indexOf(k)))
+                    edgeOpt.isDefined &&
+                    graph.edges.contains(edgeOpt.get) &&
+                    (k == n || domTree.strictlyDominates(indexedNodes.indexOf(n), indexedNodes.indexOf(k)))
             }
         }
     }

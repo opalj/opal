@@ -15,20 +15,8 @@ import org.opalj.tac.fpcf.analyses.string.flowanalysis.ControlTree
 import org.opalj.tac.fpcf.analyses.string.flowanalysis.FlowGraph
 import org.opalj.tac.fpcf.analyses.string.flowanalysis.SuperFlowGraph
 import org.opalj.tac.fpcf.properties.TACAI
-import org.opalj.tac.fpcf.properties.string.MethodStringFlow
 import org.opalj.tac.fpcf.properties.string.StringFlowFunction
 import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
-
-/**
- * This class is to be used to store state information that are required at a later point in
- * time during the analysis, e.g., due to the fact that another analysis had to be triggered to
- * have all required information ready for a final result.
- */
-case class StringAnalysisState(entity: SContext, var stringFlowDependee: EOptionP[Method, MethodStringFlow]) {
-
-    def hasDependees: Boolean = stringFlowDependee.isRefinable
-    def dependees: Set[EOptionP[Method, MethodStringFlow]] = Set(stringFlowDependee)
-}
 
 /**
  * This class is to be used to store state information that are required at a later point in
