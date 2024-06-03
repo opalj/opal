@@ -100,6 +100,16 @@ abstract class NativeAnalysis(
                     // function parameters
                     val fps = formalParameters(declaredMethod)
                     var paramIndex = 0
+                    val baseFP = getFormalParameter(0, fps, context)
+                    val baseFilter = (t: ReferenceType) => classHierarchy.isSubtypeOf(t, objectType.asReferenceType)
+                    for (ptElement <- basePTS) {
+                      val parameterPointsToSet = svfConnectorState.javaJNIMapping(ptElement)
+                      pointsToAnalysisState.includeSharedPointsToSet(
+                        baseFP,
+                        parameterPointsToSet,
+                        baseFilter
+                      )
+                    }
 
                     for (argPTS <- argsPTSs) {
                         val paramType = declaredMethod.descriptor.parameterType(paramIndex)
