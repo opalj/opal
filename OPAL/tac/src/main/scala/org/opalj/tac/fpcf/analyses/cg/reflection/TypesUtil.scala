@@ -50,7 +50,7 @@ object TypesUtil {
         className: V,
         context:   Context,
         stmts:     Array[Stmt[V]],
-        project:   SomeProject,
+        project:   SomeProject
     )(implicit ps: PropertyStore): Set[ObjectType] = {
         val stringRegex = StringUtil.getPossibleStringsRegex(pc, className, context, stmts)
         getPossibleForNameClasses(stringRegex, project)
@@ -60,8 +60,8 @@ object TypesUtil {
      * Returns class that may be loaded by an invocation of Class.forName with the given String.
      */
     def getPossibleForNameClasses(
-        classNameRegex:   String,
-        project:          SomeProject,
+        classNameRegex: String,
+        project:        SomeProject
     ): Set[ObjectType] = {
         project.allClassFiles.filter(_.thisType.fqn.matches(classNameRegex)).map(_.thisType).toSet
     }
