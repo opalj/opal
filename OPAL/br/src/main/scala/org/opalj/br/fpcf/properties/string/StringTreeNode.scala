@@ -131,6 +131,15 @@ case class StringTreeOr private (override val children: Seq[StringTreeNode]) ext
 }
 
 object StringTreeOr {
+
+    def apply(children: Seq[StringTreeNode]): StringTreeNode = {
+        if (children.isEmpty) {
+            StringTreeNeutralElement
+        } else {
+            new StringTreeOr(children)
+        }
+    }
+
     def fromNodes(children: StringTreeNode*): StringTreeNode = {
         val nonNeutralChildren = children.filterNot(_.isNeutralElement)
         nonNeutralChildren.size match {

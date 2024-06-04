@@ -10,8 +10,10 @@ import org.opalj.br.Annotation
 import org.opalj.br.Annotations
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
+import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.FieldAccessInformationKey
 import org.opalj.br.analyses.Project
+import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.br.fpcf.properties.string.StringConstancyProperty
 import org.opalj.tac.EagerDetachedTACAIKey
 import org.opalj.tac.PV
@@ -21,6 +23,7 @@ import org.opalj.tac.V
 import org.opalj.tac.VirtualMethodCall
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalysis
+import org.opalj.tac.fpcf.analyses.string.VariableContext
 import org.opalj.tac.fpcf.analyses.string.l0.LazyL0StringAnalysis
 import org.opalj.tac.fpcf.analyses.string.l1.LazyL1StringAnalysis
 
@@ -43,8 +46,10 @@ sealed abstract class StringAnalysisTest extends PropertiesTest {
      * Resolves all test methods for this [[level]] and below while taking overrides into account. For all test methods,
      * [[extractPUVars]] is called with their [[TACode]].
      */
-    def determineEntitiesToAnalyze(project: Project[URL]): Iterable[(Int, PV, Method)] = {
+    def determineEntitiesToAnalyze(project: Project[URL]): Iterable[VariableContext] = {
         val tacProvider = project.get(EagerDetachedTACAIKey)
+        val declaredMethods = project.get(DeclaredMethodsKey)
+        val contextProvider = project.get(ContextProviderKey)
         project.classHierarchy.allSuperclassesIterator(
             ObjectType(StringAnalysisTest.getAllowedFQTestMethodObjectTypeNameForLevel(level)),
             reflexive = true
@@ -59,8 +64,10 @@ sealed abstract class StringAnalysisTest extends PropertiesTest {
                     exists || StringAnalysisTest.isStringUsageAnnotation(a)
                 )
             }
-            .foldLeft(Seq.empty[(Int, PV, Method)]) { (entities, m) =>
-                entities ++ extractPUVars(tacProvider(m)).map(e => (e._1, e._2, m))
+            .foldLeft(Seq.empty[VariableContext]) { (entities, m) =>
+                entities ++ extractPUVars(tacProvider(m)).map(e =>
+                    VariableContext(e._1, e._2, contextProvider.newContext(declaredMethods(m)))
+                )
             }
     }
 
@@ -79,16 +86,18 @@ sealed abstract class StringAnalysisTest extends PropertiesTest {
     }
 
     def determineEAS(
-        entities: Iterable[(Int, PV, Method)],
+        entities: Iterable[VariableContext],
         project:  Project[URL]
-    ): Iterable[((Int, PV, Method), String => String, List[Annotation])] = {
-        val m2e = entities.groupBy(_._3).iterator.map(e => e._1 -> e._2.map(k => (k._1, k._2))).toMap
+    ): Iterable[(VariableContext, String => String, List[Annotation])] = {
+        val m2e = entities.groupBy(_.context).iterator.map(e =>
+            e._1.method.definedMethod -> (e._1, e._2.map(k => (k.pc, k.pv)))
+        ).toMap
         // As entity, we need not the method but a tuple (PUVar, Method), thus this transformation
         methodsWithAnnotations(project).filter(am => m2e.contains(am._1)).flatMap { am =>
-            m2e(am._1).zipWithIndex.map {
+            m2e(am._1)._2.zipWithIndex.map {
                 case ((pc, puVar), index) =>
                     Tuple3(
-                        (pc, puVar, am._1),
+                        VariableContext(pc, puVar, m2e(am._1)._1),
                         { s: String => s"${am._2(s)} (#$index)" },
                         List(StringAnalysisTest.getStringDefinitionsFromCollection(am._3, index))
                     )
@@ -201,9 +210,9 @@ class L1StringAnalysisTest extends StringAnalysisTest {
 
         val entities = determineEntitiesToAnalyze(as.project)
             // Currently broken L1 Tests
-            .filterNot(entity => entity._3.name.startsWith("cyclicDependencyTest"))
-            .filterNot(entity => entity._3.name.startsWith("unknownHierarchyInstanceTest"))
-            .filterNot(entity => entity._3.name.startsWith("crissCrossExample"))
+            .filterNot(entity => entity.context.method.name.startsWith("cyclicDependencyTest"))
+            .filterNot(entity => entity.context.method.name.startsWith("unknownHierarchyInstanceTest"))
+            .filterNot(entity => entity.context.method.name.startsWith("crissCrossExample"))
         entities.foreach(as.propertyStore.force(_, StringConstancyProperty.key))
 
         as.propertyStore.waitOnPhaseCompletion()
