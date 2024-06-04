@@ -60,8 +60,8 @@ object TypesUtil {
      * Returns class that may be loaded by an invocation of Class.forName with the given String.
      */
     def getPossibleForNameClasses(
-        classNameRegex:   String,
-        project:          SomeProject,
+        classNameRegex: String,
+        project:        SomeProject,
     ): Set[ClassType] = {
         project.allClassFiles.filter(_.thisType.fqn.matches(classNameRegex)).map(_.thisType).toSet
     }

@@ -12,7 +12,7 @@ import org.opalj.br.fpcf.properties.string.StringConstancyProperty
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.UBP
-import org.opalj.tac.fpcf.analyses.string.SContext
+import org.opalj.tac.fpcf.analyses.string.VariableContext
 
 object StringUtil {
 
@@ -82,25 +82,21 @@ object StringUtil {
      * information.
      */
     def getPossibleStringsRegex(
-          pc: Int,
-          value: V,
-          context: Context,
-          stmts: Array[Stmt[V]]
+        pc:      Int,
+        value:   V,
+        context: Context,
+        stmts:   Array[Stmt[V]]
     )(
-          implicit
-          ps: PropertyStore
+        implicit ps: PropertyStore
     ): String = {
-        val entity: SContext = (pc, value.toPersistentForm(stmts), context.method.definedMethod)
-
-        ps(entity, StringConstancyProperty.key) match {
+        ps(VariableContext(pc, value.toPersistentForm(stmts), context), StringConstancyProperty.key) match {
             case UBP(ub) => ub.sci.toRegex
-            case _ => ""
+            case _       => ""
         }
     }
 
     def getString(stringDefSite: Int, stmts: Array[Stmt[V]]): Option[String] = {
-        val expr = stmts(stringDefSite).asAssignment.expr
-        expr match {
+        stmts(stringDefSite).asAssignment.expr match {
             case StringConst(_, v) => Some(v)
             case _                 => None
         }
