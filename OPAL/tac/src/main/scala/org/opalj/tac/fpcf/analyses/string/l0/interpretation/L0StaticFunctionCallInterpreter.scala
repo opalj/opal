@@ -43,7 +43,7 @@ case class L0StaticFunctionCallInterpreter()(
                 System.out.println("TRACED STRING ANALYSIS FOR SYSTEM PROPERTY CALL!")
                 interpretArbitraryCall(target, call)
             case _ if call.descriptor.returnType == ObjectType.String => interpretArbitraryCall(target, call)
-            case _                                                    => computeFinalResult(StringFlowFunctionProperty.identity)
+            case _                                                    => computeFinalResult(StringFlowFunctionProperty.lb(state.pc, target))
         }
     }
 }

@@ -13,6 +13,7 @@ import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.string.StringConstancyInformation
 import org.opalj.br.fpcf.properties.string.StringConstancyProperty
+import org.opalj.br.fpcf.properties.string.StringTreeNeutralElement
 import org.opalj.br.fpcf.properties.string.StringTreeNode
 import org.opalj.br.fpcf.properties.string.StringTreeOr
 import org.opalj.fpcf.Entity
@@ -85,25 +86,35 @@ private[string] case class ContextStringAnalysisState(
         }
     }
 
-    def currentUB: StringConstancyInformation = {
+    def currentSciUB: StringConstancyInformation = {
         if (_stringDependee.hasUBP) {
             val paramTrees = if (_discoveredUnknownTAC) {
                 stringTree.collectParameterIndices.map((_, StringTreeNode.lb)).toMap
             } else {
                 stringTree.collectParameterIndices.map { index =>
-                    val paramTree = StringTreeOr {
-                        _paramIndexToEntityMapping(index)
-                            .valuesIterator.map(_paramDependees)
-                            .filter(_.hasUBP).map(_.ub.sci.tree).toSeq
-                    }
+                    val paramOptions = _paramIndexToEntityMapping(index)
+                        .valuesIterator.map(_paramDependees)
+                        .filter(_.hasUBP).map(_.ub.sci.tree).toSeq
 
-                    (index, paramTree)
+                    val paramTree = if (paramOptions.nonEmpty) StringTreeOr(paramOptions)
+                    else StringTreeNeutralElement
+
+                    (index, paramTree.simplify)
                 }.toMap
             }
 
             StringConstancyInformation(stringTree.replaceParameters(paramTrees))
         } else {
             StringConstancyInformation.ub
+        }
+    }
+
+    def finalSci: StringConstancyInformation = {
+        if (_paramIndexToEntityMapping.valuesIterator.map(_.size).sum == 0) {
+            val paramTrees = stringTree.collectParameterIndices.map((_, StringTreeNode.lb)).toMap
+            StringConstancyInformation(stringTree.replaceParameters(paramTrees))
+        } else {
+            currentSciUB
         }
     }
 

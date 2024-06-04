@@ -880,7 +880,7 @@ public class L0TestMethods {
                     ),
                     @StringDefinitions(
                             expectedLevel = CONSTANT, expectedStrings = "",
-                            realisticLevel = DYNAMIC, realisticStrings = "(.*|)"
+                            realisticLevel = DYNAMIC, realisticStrings = ".*"
                     ),
                     @StringDefinitions(
                             expectedLevel = DYNAMIC, expectedStrings = "((.*)?)*",

@@ -125,7 +125,7 @@ class ContextStringAnalysis(override val project: SomeProject) extends FPCFAnaly
         newCallers: Callers
     )(implicit state: ContextStringAnalysisState): Unit = {
         newCallers.forNewCallerContexts(oldCallers, state.dm) { (_, callerContext, pc, _) =>
-            if (callerContext.method.hasSingleDefinedMethod) {
+            if (callerContext.hasContext && callerContext.method.hasSingleDefinedMethod) {
                 val callerMethod = callerContext.method.definedMethod
 
                 System.out.println(s"FOUND RELEVANT CALLER FOR PC ${state.entity.pc} IN ${state.entity.m} FOR ${state.entity.pv}")
@@ -175,12 +175,12 @@ class ContextStringAnalysis(override val project: SomeProject) extends FPCFAnaly
             InterimResult(
                 state.entity,
                 StringConstancyProperty.lb,
-                StringConstancyProperty(state.currentUB),
+                StringConstancyProperty(state.currentSciUB),
                 state.dependees,
                 continuation(state)
             )
         } else {
-            Result(state.entity, StringConstancyProperty(state.currentUB))
+            Result(state.entity, StringConstancyProperty(state.finalSci))
         }
     }
 }
