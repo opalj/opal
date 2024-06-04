@@ -175,6 +175,8 @@ case class StringTreeConst(string: String) extends SimpleStringTreeNode {
     override def constancyLevel: StringConstancyLevel.Value = StringConstancyLevel.CONSTANT
 
     def isIntConst: Boolean = Try(string.toInt).isSuccess
+
+    override def isNeutralElement: Boolean = string == ""
 }
 
 case class StringTreeParameter(index: Int) extends SimpleStringTreeNode {
