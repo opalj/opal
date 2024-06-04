@@ -169,6 +169,8 @@ class L0StringAnalysisTest extends StringAnalysisTest {
 
         val entities = determineEntitiesToAnalyze(as.project)
         val newEntities = entities
+        // .filter(entity => entity.context.method.name == "tryCatchFinally")
+        // .take(1)
 
         // it("can be executed without exceptions") {
         newEntities.foreach(as.propertyStore.force(_, StringConstancyProperty.key))
