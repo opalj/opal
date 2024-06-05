@@ -30,7 +30,6 @@ import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.string.MethodStringFlow
 import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
 import org.opalj.tac.fpcf.properties.string.StringTreeEnvironment
-import org.opalj.util.PerformanceEvaluation.time
 
 /**
  * @author Maximilian Rüsch
@@ -66,12 +65,8 @@ class MethodStringFlowAnalysis(override val project: SomeProject) extends FPCFAn
         implicit val tac: TAC = state.tac
 
         state.flowGraph = FlowGraph(tac.cfg)
-        System.out.println(s"[ANALYSIS] Starting FlowGraph structural for graph nodes ${state.flowGraph.order} and total size ${state.flowGraph.size} for method ${state.dm}")
-        val (_, superFlowGraph, controlTree) = time {
+        val (_, superFlowGraph, controlTree) =
             StructuralAnalysis.analyze(state.flowGraph, FlowGraph.entryFromCFG(tac.cfg))
-        } { t =>
-            System.out.println(s"[ANALYSIS] FlowGraph structural for graph nodes ${state.flowGraph.order} and total size ${state.flowGraph.size} took ${t.toSeconds} seconds!")
-        }
         state.superFlowGraph = superFlowGraph
         state.controlTree = controlTree
 
@@ -132,15 +127,10 @@ class MethodStringFlowAnalysis(override val project: SomeProject) extends FPCFAn
             }
         }.toMap)
 
-        System.out.println(s"[ANALYSIS] Starting DATA FLOW for ct nodes ${state.controlTree.order} and total size ${state.controlTree.size} for method ${state.dm}")
-        time {
-            MethodStringFlow(DataFlowAnalysis.compute(
-                state.controlTree,
-                state.superFlowGraph,
-                state.getFlowFunctionsByPC
-            )(startEnv))
-        } { t =>
-            System.out.println(s"[ANALYSIS] DATA FLOW for ct nodes ${state.controlTree.order} and total size ${state.controlTree.size} took ${t.toSeconds} seconds!")
-        }
+        MethodStringFlow(DataFlowAnalysis.compute(
+            state.controlTree,
+            state.superFlowGraph,
+            state.getFlowFunctionsByPC
+        )(startEnv))
     }
 }
