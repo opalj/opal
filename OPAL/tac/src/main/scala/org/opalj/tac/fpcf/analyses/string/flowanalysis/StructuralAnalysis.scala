@@ -156,16 +156,12 @@ object StructuralAnalysis {
         if (m == n) {
             false
         } else {
-            val graphWithoutN = graph.excl(n)
-            graphWithoutN.nodes.outerIterable.exists { k =>
-                val edgeOpt = graph.find(DiEdge(k, n))
-
-                graphWithoutN.get(m).pathTo(
-                    graphWithoutN.get(k)
-                ).isDefined &&
-                    edgeOpt.isDefined &&
-                    graph.edges.contains(edgeOpt.get) &&
-                    (k == n || domTree.strictlyDominates(indexedNodes.indexOf(n), indexedNodes.indexOf(k)))
+            val nonNFromMTraverser = graph.innerNodeTraverser(graph.get(m), subgraphNodes = _.outer != n)
+            graph.nodes.outerIterable.exists { k =>
+                k != n &&
+                graph.find(DiEdge(k, n)).isDefined &&
+                nonNFromMTraverser.pathTo(graph.get(k)).isDefined &&
+                domTree.strictlyDominates(indexedNodes.indexOf(n), indexedNodes.indexOf(k))
             }
         }
     }
