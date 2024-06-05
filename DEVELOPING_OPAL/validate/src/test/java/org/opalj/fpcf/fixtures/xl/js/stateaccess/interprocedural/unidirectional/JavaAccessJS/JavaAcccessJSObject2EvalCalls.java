@@ -14,13 +14,13 @@ import javax.script.ScriptException;
  *
  */
 public class JavaAcccessJSObject2EvalCalls {
-    @PointsToSet(variableDefinition = 39,
+    @PointsToSet(variableDefinition = 37,
             expectedJavaAllocSites = {
                     @JavaMethodContextAllocSite(
                             cf = JavaAcccessJSObject2EvalCalls.class,
                             methodName = "main",
                             methodDescriptor = "(java.lang.String[]): void",
-                            allocSiteLinenumber = 36,
+                            allocSiteLinenumber = 34,
                             allocatedType = "java.lang.Object")
 
             }
@@ -30,8 +30,7 @@ public class JavaAcccessJSObject2EvalCalls {
         ScriptEngineManager sem = new ScriptEngineManager();
         ScriptEngine se = sem.getEngineByName("JavaScript");
         se.put("instance", instance);
-        se.eval("var n = {'a':'b'};");
-        Object n = se.get("n");
+        O n = new O();
         Object myobject = new Object();
         System.out.println(myobject);
         setJSField(se, myobject, n);
@@ -46,13 +45,14 @@ public class JavaAcccessJSObject2EvalCalls {
         return getField;
     }
 
-    private static void setJSField(ScriptEngine se, Object fieldValue, Object jsObject) throws ScriptException {
+    private static void setJSField(ScriptEngine se, Object fieldValue, O jsObject) throws ScriptException {
         se.put("o", fieldValue);
         se.put("n2", jsObject);
         se.eval("n2.field = o;");
     }
 
-    class O{
-        Object field = new Object();
-    }
+
+}
+class O{
+    Object field = new Object();
 }
