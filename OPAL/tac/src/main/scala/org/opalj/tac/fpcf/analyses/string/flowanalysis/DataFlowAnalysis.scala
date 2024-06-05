@@ -96,8 +96,10 @@ object DataFlowAnalysis {
                         }
                     }
                 }
-                sortedCurrentNodes = nextNodeEnvs.map(_._1).sortBy(_.outer)
-                currentNodeEnvs = nextNodeEnvs.groupMapReduce(_._1)(_._2) { (env, otherEnv) => env.join(otherEnv) }
+                sortedCurrentNodes = nextNodeEnvs.map(_._1).distinct.sortBy(_.outer)
+                currentNodeEnvs = nextNodeEnvs.groupBy(_._1) map { kv =>
+                    (kv._1, kv._2.head._2.joinMany(kv._2.tail.map(_._2)))
+                }
             }
 
             sortedCurrentNodes.foldLeft(StringTreeEnvironment(Map.empty)) { (env, nextNode) =>

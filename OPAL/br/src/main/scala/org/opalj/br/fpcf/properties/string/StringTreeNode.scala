@@ -141,13 +141,13 @@ object StringTreeOr {
     }
 
     def fromNodes(children: StringTreeNode*): StringTreeNode = {
-        val nonNeutralChildren = children.filterNot(_.isNeutralElement)
-        nonNeutralChildren.size match {
+        val nonNeutralDistinctChildren = children.distinct.filterNot(_.isNeutralElement)
+        nonNeutralDistinctChildren.size match {
             case 0 => StringTreeNeutralElement
-            case 1 => nonNeutralChildren.head
+            case 1 => nonNeutralDistinctChildren.head
             case _ =>
                 var newChildren = Seq.empty[StringTreeNode]
-                nonNeutralChildren.foreach {
+                nonNeutralDistinctChildren.foreach {
                     case orChild: StringTreeOr => newChildren :++= orChild.children
                     case child                 => newChildren :+= child
                 }
