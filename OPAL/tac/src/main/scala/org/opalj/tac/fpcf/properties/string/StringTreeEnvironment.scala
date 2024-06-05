@@ -54,15 +54,26 @@ case class StringTreeEnvironment(private val map: Map[PDUWeb, StringTreeNode]) {
     def updateAll(value: StringTreeNode): StringTreeEnvironment = StringTreeEnvironment(map.map { kv => (kv._1, value) })
 
     def join(other: StringTreeEnvironment): StringTreeEnvironment = {
-        val result = (map.keySet ++ other.map.keys) map { web =>
-            (map.get(web), other.map.get(web)) match {
-                case (Some(value1), Some(value2)) => web -> StringTreeOr.fromNodes(value1, value2)
-                case (Some(value1), None)         => web -> value1
-                case (None, Some(value2))         => web -> value2
-                case (None, None)                 => throw new IllegalStateException("Found a key in a map that is not in the map!")
+        val (smallMap, bigMap) = if (map.size < other.map.size) (map, other.map) else (other.map, map)
+
+        StringTreeEnvironment {
+            bigMap.toList.concat(smallMap.toList).groupBy(_._1).map {
+                case (k, vs) if vs.take(2).size == 1 => (k, vs.head._2)
+                case (k, vs)                         => (k, StringTreeOr.fromNodes(vs.map(_._2): _*))
             }
         }
+    }
 
-        StringTreeEnvironment(result.toMap)
+    def joinMany(others: Iterable[StringTreeEnvironment]): StringTreeEnvironment = {
+        if (others.isEmpty) {
+            this
+        } else {
+            StringTreeEnvironment {
+                map.toList.concat(others.flatMap(_.map.toList)).groupBy(_._1).map {
+                    case (k, vs) if vs.take(2).size == 1 => (k, vs.head._2)
+                    case (k, vs)                         => (k, StringTreeOr.fromNodes(vs.map(_._2): _*))
+                }
+            }
+        }
     }
 }
