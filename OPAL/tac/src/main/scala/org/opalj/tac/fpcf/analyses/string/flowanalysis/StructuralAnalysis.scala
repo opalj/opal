@@ -75,12 +75,13 @@ object StructuralAnalysis {
                 (newGraph, newSuperGraph, newRegion)
             }
 
-            PostOrderTraversal.foreachInTraversalFrom[FlowGraphNode, FlowGraph](g, curEntry)(post.append)
+            PostOrderTraversal.foreachInTraversalFrom[FlowGraphNode, FlowGraph](g, curEntry) { post.append }
 
             while (g.order > 1 && postCtr < post.size) {
                 var n = post(postCtr)
 
-                val (newStartingNode, acyclicRegionOpt) = locateAcyclicRegion(g, n)
+                val gPost = post.map(g.get).reverse.asInstanceOf[mutable.ListBuffer[FlowGraph#NodeT]]
+                val (newStartingNode, acyclicRegionOpt) = locateAcyclicRegion(g, gPost, n)
                 n = newStartingNode
                 if (acyclicRegionOpt.isDefined) {
                     val (arType, nodes, entry) = acyclicRegionOpt.get
@@ -169,9 +170,10 @@ object StructuralAnalysis {
         }
     }
 
-    private def locateAcyclicRegion[A, G <: Graph[A, DiEdge[A]]](
-        graph:        G,
-        startingNode: A
+    private def locateAcyclicRegion[A <: FlowGraphNode, G <: Graph[A, DiEdge[A]]](
+        graph:              G,
+        postOrderTraversal: mutable.ListBuffer[G#NodeT],
+        startingNode:       A
     ): (A, Option[(AcyclicRegionType, Set[A], A)]) = {
         var nSet = Set.empty[graph.NodeT]
         var entry: graph.NodeT = graph.get(startingNode)
@@ -201,13 +203,24 @@ object StructuralAnalysis {
         def locateProperAcyclicInterval: Option[AcyclicRegionType] = {
             var currentNodeSet = Set(n)
             var currentSuccessors = n.diSuccessors
-            while (currentSuccessors.size > 1 && graph.filter(node => currentNodeSet.contains(node)).isAcyclic) {
+
+            def isStillAcyclic: Boolean = {
+                currentSuccessors.forall { node =>
+                    val postOrderIndex = postOrderTraversal.indexOf(node)
+
+                    node.diSuccessors.forall(successor => postOrderTraversal.indexOf(successor) >= postOrderIndex)
+                }
+            }
+
+            var stillAcyclic = isStillAcyclic
+            while (currentSuccessors.size > 1 && stillAcyclic) {
                 currentNodeSet = currentNodeSet ++ currentSuccessors
                 currentSuccessors = currentSuccessors.flatMap(node => node.diSuccessors)
+                stillAcyclic = isStillAcyclic
             }
 
             val allPredecessors = currentNodeSet.excl(n).flatMap(node => node.diPredecessors)
-            if (graph.filter(node => currentNodeSet.contains(node)).isCyclic) {
+            if (!stillAcyclic) {
                 None
             } else if (!allPredecessors.equals(currentNodeSet.diff(currentSuccessors))) {
                 None
@@ -302,24 +315,28 @@ object StructuralAnalysis {
 
 object PostOrderTraversal {
 
-    /**
-     * @note This function should be kept stable with regards to an ordering on the given graph nodes.
-     */
-    private def foreachInTraversal[A, G <: Graph[A, DiEdge[A]]](
-        graph:   G,
-        toVisit: Seq[A],
-        visited: Set[A]
-    )(nodeHandler: A => Unit)(implicit ordering: Ordering[A]): Unit = {
-        if (toVisit.nonEmpty) {
-            val next = toVisit.head
-            val nextSuccessors = (graph.get(next).diSuccessors.map(_.outer) -- visited -- toVisit).toList.sorted
-
-            foreachInTraversal(graph, nextSuccessors ++ toVisit.tail, visited + next)(nodeHandler)
-            nodeHandler(next)
-        }
-    }
-
+    /** @note This function should be kept stable with regards to an ordering on the given graph nodes. */
     def foreachInTraversalFrom[A, G <: Graph[A, DiEdge[A]]](graph: G, initial: A)(nodeHandler: A => Unit)(
         implicit ordering: Ordering[A]
-    ): Unit = foreachInTraversal(graph, Seq(initial), Set.empty)(nodeHandler)
+    ): Unit = {
+        var visited = Set.empty[A]
+
+        def foreachInTraversal(
+            graph: G,
+            node:  A
+        )(nodeHandler: A => Unit)(implicit ordering: Ordering[A]): Unit = {
+            visited = visited + node
+
+            for {
+                successor <- (graph.get(node).diSuccessors.map(_.outer) -- visited).toList.sorted
+                if !visited.contains(successor)
+            } {
+                foreachInTraversal(graph, successor)(nodeHandler)
+            }
+
+            nodeHandler(node)
+        }
+
+        foreachInTraversal(graph, initial)(nodeHandler)
+    }
 }
