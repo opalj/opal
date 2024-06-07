@@ -5,10 +5,11 @@ import org.opalj.ba.InsertionPosition
 import org.opalj.ba.LabeledCode
 import org.opalj.ba.toDA
 import org.opalj.bc.Assembler
-import org.opalj.bi.Java15Version
+import org.opalj.bi.{ACC_PUBLIC, Java15Version}
 import org.opalj.br.{IntegerType, MethodDescriptor, ObjectType, PCAndInstruction, VoidType}
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.{ALOAD, DUP, GETFIELD, GETSTATIC, INVOKESPECIAL, INVOKESTATIC, LDC, LoadFloat, LoadInt, MethodInvocationInstruction, NEW, POP, SIPUSH}
+import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.util.InMemoryClassLoader
 
 import java.io.{FileOutputStream, PrintWriter}
@@ -17,6 +18,7 @@ import java.nio.file.Files
 import java.nio.file.Paths
 import scala.collection.immutable.ArraySeq
 import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 /**
  * instrument possible def sites to log instance. TODO:
  */
@@ -25,15 +27,16 @@ object PTSTracerInstrumentation {
     def main(args: Array[String]): Unit = {
         import Console.RED
         import Console.RESET
-        if (args.length != 2) {
+        if (args.length != 3) {
             println("You have to specify the code that should be analyzed.")
             println("\t1: directory containing class files      e.g.  /home/julius/IdeaProjects/opal/DEVELOPING_OPAL/validate/target/scala-2.13/test-classes")
             println("\t2: destination of instrumented class files e.g /home/julius/IdeaProjects/opal/DEVELOPING_OPAL/validate/target/scala-2.13/instrumented")
+            println("\t3: classes to instrument prefix e.g org/opalj/fpcf/fixtures/xl/js")
             return ;
         }
         val inputClassPath = args(0)
         val outputClassPath = args(1)
-
+        val prefix = args(2)
         val file = new java.io.File(inputClassPath)
         if (!file.exists()) {
             println(RED+"[error] the file does not exist: "+inputClassPath+"."+RESET)
@@ -50,7 +53,10 @@ object PTSTracerInstrumentation {
       fw.write("<trace>\n<methods>\n")
       //implicit val ps: PropertyStore = project.get(PropertyStoreKey)
         //val tacai = (m: Method) => { val FinalP(taCode) = ps(m, TACAI.key); taCode.tac }
-        val classloaderScriptEngineJars = new URLClassLoader(
+      //System.load("/home/julius/IdeaProjects/opal/DEVELOPING_OPAL/validateCross/src/test/resources/xl_llvm/libnative.so")
+      //System newSystem = (System) Class.forName("my.system.System", true, myClassLoader).newInstance();
+
+      val classloaderScriptEngineJars = new URLClassLoader(
           Array(
             new URL("file:///home/julius/Downloads/asm-all-5.2.jar"),
             new URL("file:///home/julius/Downloads/nashorn-core-15.4.jar")
@@ -60,9 +66,10 @@ object PTSTracerInstrumentation {
         val ptsClassFile = PTSTracerInstrumentation.readFile(inputClassPath+"/org/opalj/fpcf/fixtures/PTSLogger.class")
 
         // TODO: copy all attributes etc.
-        val testCases = mutable.Set[(String, Array[Byte])]()
+        val testCases = ListBuffer[(String, Array[Byte])]()
+        val otherClasses = mutable.Set[(String, Array[Byte])]()
         var methodId = 1
-        for (cf <- project.allProjectClassFiles.filter(_.fqn.startsWith("org/opalj/fpcf/fixtures/xl/js/"))) {
+        for (cf <- project.allProjectClassFiles.filter(_.fqn.startsWith(prefix))) {
             var hasMain = false
             val newMethods =
                 for (m <- cf.methods) yield {
@@ -189,42 +196,67 @@ object PTSTracerInstrumentation {
                                 }
                             }
                             if (modified) {
+                              try {
                                 val (newCode, _) =
-                                    lCode.result( /*cf.version*/ Java15Version, m)( // We can use the default class hierarchy in this example
+                                  lCode.result(/*cf.version*/ Java15Version, m)( // We can use the default class hierarchy in this example
                                     // as we only instrument linear methods using linear code,
                                     // hence, we don't need to compute a new stack map table attribute!
-                                    )
+                                  )
                                 m.copy(body = Some(newCode))
+                              } catch {
+                                case BytecodeProcessingFailedException(msg) => {
+                                  print(msg)
+                                  print("ignoring, using uninstrumented method...")
+                                }
+                                  m.copy()
+                              }
                             } else {
                                 m.copy()
                             }
                     }
                 }
-
-            val newRawCF = Assembler(toDA(cf.copy(methods = newMethods)))
+            val newRawCF = Assembler(toDA(cf.copy(methods = newMethods, accessFlags = cf.accessFlags | ACC_PUBLIC.mask)))
             //val path = inputClassPath+"/"+cf.fqn+".class"
             //val in = () => new FileInputStream(path)
             val outputPath = Paths.get(outputClassPath+"/"+cf.fqn+".class")
             println(outputPath)
             outputPath.getParent.toFile.mkdirs()
             Files.write(outputPath, newRawCF) //, StandardOpenOption.TRUNCATE_EXISTING)
-            if (hasMain) testCases add (cf.thisType.toJava, newRawCF)
+
+            if (hasMain) {
+              if (cf.methods.exists(_.name.equals("<clinit>"))) {
+                testCases.insert(0, (cf.thisType.toJava, newRawCF))
+              } else {
+                testCases.append((cf.thisType.toJava, newRawCF))
+              }
+            } else {
+              otherClasses.add( (cf.thisType.toJava, newRawCF))
+            }
         }
       fw.write("</methods>\n")
       fw.write("<events>\n")
         fw.close()
       val ContainerClassType = ObjectType("org/opalj/fpcf/fixtures/xl/js/testpts/SimpleContainerClass")
       val ContainerClassTypeFile = PTSTracerInstrumentation.readFile(outputClassPath + "/org/opalj/fpcf/fixtures/xl/js/testpts/SimpleContainerClass.class")
+      Thread.currentThread().setContextClassLoader(classloaderScriptEngineJars);
+
+      val cl = new InMemoryClassLoader(testCases.toMap ++ otherClasses.toMap ++ Map(
+
+        (PTSLoggerType.toJava, ptsClassFile),
+        (ContainerClassType.toJava, ContainerClassTypeFile)
+      ), parent = classloaderScriptEngineJars)
+      Thread.currentThread().setContextClassLoader(cl);
+      //cl.loadClass("java.lang.System").getMethod("load", "".getClass).invoke(null, "/home/julius/IdeaProjects/opal/DEVELOPING_OPAL/validateCross/src/test/resources/xl_llvm/libnative.so");
 
       for ((className, code) <- testCases) {
 
             // cannot use inmemoryclassloader, because scriptengine will still use
-            val cl = new InMemoryClassLoader(Map(
-                (className, code),
-                (PTSLoggerType.toJava, ptsClassFile),
-                (ContainerClassType.toJava, ContainerClassTypeFile)
-            ), parent = classloaderScriptEngineJars)
-            Thread.currentThread().setContextClassLoader(cl);
+
+        //cl.loadClass("java.lang.System").getMethod("load", "".getClass).invoke(null, "/home/julius/IdeaProjects/opal/DEVELOPING_OPAL/validateCross/src/test/resources/xl_llvm/libnative.so");
+
+        //System.load("/home/julius/IdeaProjects/opal/DEVELOPING_OPAL/validateCross/src/test/resources/xl_llvm/libnative.so")
+
+
 
             val newClass = cl.findClass(className)
             println(newClass)
@@ -232,9 +264,11 @@ object PTSTracerInstrumentation {
             //val instance = newClass.getDeclaredConstructor().newInstance()
             val main = newClass.getMethod("main", (Array[String]().getClass()))
             if (main != null) {
+                val args : Array[String] = Array("/home/julius/Downloads/test.jpg", "/home/julius/Downloads/testout.jpg", "-custom")
                 try {
-                    main.invoke(null, Array[String]())
+                    main.invoke(null, args)
                 } catch {
+                    case e: Error => e.printStackTrace()
                     case e: Exception => e.printStackTrace()
                 }
             }
