@@ -14,7 +14,7 @@ import javax.script.ScriptException;
  *
  */
 public class JavaAcccessJSObject2EvalCalls {
-    @PointsToSet(variableDefinition = 40,
+    @PointsToSet(variableDefinition = 41,
             expectedJavaAllocSites = {
                     @JavaMethodContextAllocSite(
                             cf = JavaAcccessJSObject2EvalCalls.class,
@@ -37,7 +37,8 @@ public class JavaAcccessJSObject2EvalCalls {
         se.put("fieldVal", myobject);
         se.eval("n.field = fieldVal;");
         se.put("o2", n);
-        Object getField = se.eval("o2.field");
+        se.eval("var result = o2.field");
+        Object getField = se.get("result");
         System.out.println(getField);
     }
 
