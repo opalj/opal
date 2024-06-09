@@ -2,7 +2,7 @@
 package org.opalj
 package ce
 
-class FileLocator(var filenames : String[]){
+class fileLocator(var filenames : String[]) : Unit{
     def LocateConfigurationFiles(): Unit = {
 
     }
