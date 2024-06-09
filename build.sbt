@@ -444,6 +444,13 @@ lazy val `Tools` = (project in file("DEVELOPING_OPAL/tools"))
   .dependsOn(framework % "it->it;it->test;test->test;compile->compile")
   .configs(IntegrationTest)
 
+lazy val ce = (project in file("TOOLS/ce"))
+  .settings(buildSettings: _*)
+  .settings(
+    name := "ce",
+    Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - Configuration Explorer"),
+  )
+
 /** ***************************************************************************
  *
  * PROJECTS BELONGING TO THE OPAL ECOSYSTEM
