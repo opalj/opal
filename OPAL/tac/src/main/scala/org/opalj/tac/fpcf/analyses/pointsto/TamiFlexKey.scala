@@ -27,18 +27,18 @@ import org.opalj.log.OPALLogger
  * @author Florian Kuebler
  */
 class TamiFlexLogData(
-        private[this] val _classes: scala.collection.Map[
-            (String /*Caller*/, String /*Reflection Method*/, Int /*Line Number*/ ),
-            scala.collection.Set[ReferenceType]
-        ],
-        private[this] val _methods: scala.collection.Map[
-            (String /*Caller*/, String /*Reflection Method*/, Int /*Line Number*/ ),
-            scala.collection.Set[DeclaredMethod]
-        ],
-        private[this] val _fields: scala.collection.Map[
-            (String /*Caller*/, String /*Reflection Method*/, Int /*Line Number*/ ),
-            scala.collection.Set[Field]
-        ]
+    private[this] val _classes: scala.collection.Map[
+        (String /*Caller*/, String /*Reflection Method*/, Int /*Line Number*/ ),
+        scala.collection.Set[ReferenceType]
+    ],
+    private[this] val _methods: scala.collection.Map[
+        (String /*Caller*/, String /*Reflection Method*/, Int /*Line Number*/ ),
+        scala.collection.Set[DeclaredMethod]
+    ],
+    private[this] val _fields: scala.collection.Map[
+        (String /*Caller*/, String /*Reflection Method*/, Int /*Line Number*/ ),
+        scala.collection.Set[Field]
+    ]
 ) {
     private[this] def toMethodDesc(method: DeclaredMethod): String = {
         s"${method.declaringClassType.toJava}.${method.name}"

@@ -175,7 +175,7 @@ class ReturnValueFreshnessState(val context: Context) {
  * @author Dominik Helm
  */
 class ReturnValueFreshnessAnalysis private[analyses] (
-        final val project: SomeProject
+    final val project: SomeProject
 ) extends FPCFAnalysis {
 
     private[this] implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)

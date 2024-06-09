@@ -24,10 +24,10 @@ import org.opalj.log.OPALLogger.info
  * @author Michael Eichberg
  */
 case class ProjectConfiguration(
-        id:             String,
-        cp:             String,
-        libcp:          Option[String],
-        libcp_defaults: Option[String]
+    id:             String,
+    cp:             String,
+    libcp:          Option[String],
+    libcp_defaults: Option[String]
 ) {
 
     @volatile private[this] var theProjectStatistics: immutable.Map[String, Double] = immutable.Map.empty

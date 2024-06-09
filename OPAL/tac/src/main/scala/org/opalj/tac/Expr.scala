@@ -177,10 +177,10 @@ object InstanceOf { final val ASTID = -2 }
  * A comparison of two values.
  */
 case class Compare[+V <: Var[V]](
-        pc:        PC,
-        left:      Expr[V],
-        condition: RelationalOperator,
-        right:     Expr[V]
+    pc:        PC,
+    left:      Expr[V],
+    condition: RelationalOperator,
+    right:     Expr[V]
 ) extends Expr[V] {
     override final def isCompare: Boolean = true
     override final def asCompare: this.type = this
@@ -342,10 +342,10 @@ case class ClassConst(pc: PC, value: ReferenceType) extends SimpleValueConst {
 object ClassConst { final val ASTID = -12 }
 
 case class DynamicConst(
-        pc:              PC,
-        bootstrapMethod: BootstrapMethod,
-        name:            String,
-        descriptor:      FieldType
+    pc:              PC,
+    bootstrapMethod: BootstrapMethod,
+    name:            String,
+    descriptor:      FieldType
 ) extends SimpleValueConst {
     override final def isDynamicConst: Boolean = true
     override final def asDynamicConst: this.type = this
@@ -371,11 +371,11 @@ object NullExpr { final val ASTID = -13 }
  *              succeeds.
  */
 case class BinaryExpr[+V <: Var[V]](
-        pc:    PC,
-        cTpe:  ComputationalType,
-        op:    BinaryArithmeticOperator,
-        left:  Expr[V],
-        right: Expr[V]
+    pc:    PC,
+    cTpe:  ComputationalType,
+    op:    BinaryArithmeticOperator,
+    left:  Expr[V],
+    right: Expr[V]
 ) extends Expr[V] {
 
     override final def isValueExpression: Boolean = false
@@ -419,10 +419,10 @@ object BinaryExpr { final val ASTID = -14 }
  * @param cTpe The computational type of the result of the prefix expression.
  */
 case class PrefixExpr[+V <: Var[V]](
-        pc:      PC,
-        cTpe:    ComputationalType,
-        op:      UnaryArithmeticOperator,
-        operand: Expr[V]
+    pc:      PC,
+    cTpe:    ComputationalType,
+    op:      UnaryArithmeticOperator,
+    operand: Expr[V]
 ) extends Expr[V] {
 
     override final def isValueExpression: Boolean = false
@@ -454,9 +454,9 @@ case class PrefixExpr[+V <: Var[V]](
 object PrefixExpr { final val ASTID = -15 }
 
 case class PrimitiveTypecastExpr[+V <: Var[V]](
-        pc:        PC,
-        targetTpe: BaseType,
-        operand:   Expr[V]
+    pc:        PC,
+    targetTpe: BaseType,
+    operand:   Expr[V]
 ) extends Expr[V] {
 
     override final def isValueExpression: Boolean = false
@@ -657,11 +657,11 @@ abstract class FieldRead[+V <: Var[V]] extends Expr[V] {
 }
 
 case class GetField[+V <: Var[V]](
-        pc:                PC,
-        declaringClass:    ObjectType,
-        name:              String,
-        declaredFieldType: FieldType,
-        objRef:            Expr[V]
+    pc:                PC,
+    declaringClass:    ObjectType,
+    name:              String,
+    declaredFieldType: FieldType,
+    objRef:            Expr[V]
 ) extends FieldRead[V] {
 
     override final def isGetField: Boolean = true
@@ -706,10 +706,10 @@ case class GetField[+V <: Var[V]](
 object GetField { final val ASTID = -21 }
 
 case class GetStatic(
-        pc:                PC,
-        declaringClass:    ObjectType,
-        name:              String,
-        declaredFieldType: FieldType
+    pc:                PC,
+    declaringClass:    ObjectType,
+    name:              String,
+    declaredFieldType: FieldType
 ) extends FieldRead[Nothing] {
 
     override final def isGetStatic: Boolean = true
@@ -749,11 +749,11 @@ object GetStatic { final val ASTID = -22 }
  * @tparam V The type of the [[Var]]s.
  */
 case class InvokedynamicFunctionCall[+V <: Var[V]](
-        pc:              PC,
-        bootstrapMethod: BootstrapMethod,
-        name:            String,
-        descriptor:      MethodDescriptor,
-        params:          Seq[Expr[V]]
+    pc:              PC,
+    bootstrapMethod: BootstrapMethod,
+    name:            String,
+    descriptor:      MethodDescriptor,
+    params:          Seq[Expr[V]]
 ) extends Expr[V] {
 
     override final def asInvokedynamicFunctionCall: this.type = this
@@ -844,13 +844,13 @@ sealed abstract class InstanceFunctionCall[+V <: Var[V]] extends FunctionCall[V]
  * @tparam V The type of the Var used by this representation.
  */
 case class NonVirtualFunctionCall[+V <: Var[V]](
-        pc:             PC,
-        declaringClass: ObjectType,
-        isInterface:    Boolean,
-        name:           String,
-        descriptor:     MethodDescriptor,
-        receiver:       Expr[V],
-        params:         Seq[Expr[V]]
+    pc:             PC,
+    declaringClass: ObjectType,
+    isInterface:    Boolean,
+    name:           String,
+    descriptor:     MethodDescriptor,
+    receiver:       Expr[V],
+    params:         Seq[Expr[V]]
 ) extends InstanceFunctionCall[V] {
 
     override final def asNonVirtualFunctionCall: this.type = this
@@ -916,13 +916,13 @@ case class NonVirtualFunctionCall[+V <: Var[V]](
 object NonVirtualFunctionCall { final val ASTID = -24 }
 
 case class VirtualFunctionCall[+V <: Var[V]](
-        pc:             PC,
-        declaringClass: ReferenceType,
-        isInterface:    Boolean,
-        name:           String,
-        descriptor:     MethodDescriptor,
-        receiver:       Expr[V],
-        params:         Seq[Expr[V]]
+    pc:             PC,
+    declaringClass: ReferenceType,
+    isInterface:    Boolean,
+    name:           String,
+    descriptor:     MethodDescriptor,
+    receiver:       Expr[V],
+    params:         Seq[Expr[V]]
 ) extends InstanceFunctionCall[V]
     with VirtualCall[V] {
 
@@ -971,12 +971,12 @@ case class VirtualFunctionCall[+V <: Var[V]](
 object VirtualFunctionCall { final val ASTID = -25 }
 
 case class StaticFunctionCall[+V <: Var[V]](
-        pc:             PC,
-        declaringClass: ObjectType,
-        isInterface:    Boolean,
-        name:           String,
-        descriptor:     MethodDescriptor,
-        params:         Seq[Expr[V]]
+    pc:             PC,
+    declaringClass: ObjectType,
+    isInterface:    Boolean,
+    name:           String,
+    descriptor:     MethodDescriptor,
+    params:         Seq[Expr[V]]
 ) extends FunctionCall[V] {
 
     override final def allParams: Seq[Expr[V]] = params

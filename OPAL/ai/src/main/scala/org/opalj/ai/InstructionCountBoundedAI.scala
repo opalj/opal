@@ -25,8 +25,8 @@ import org.opalj.log.OPALLogger
  * @author Michael Eichberg
  */
 class InstructionCountBoundedAI[D <: Domain](
-        val maxEvaluationCount: Int,
-        IdentifyDeadVariables:  Boolean
+    val maxEvaluationCount: Int,
+    IdentifyDeadVariables:  Boolean
 ) extends AI[D](IdentifyDeadVariables) {
 
     /**
@@ -34,9 +34,9 @@ class InstructionCountBoundedAI[D <: Domain](
      *      before the evaluation of the method is automatically interrupted.
      */
     def this(
-            code:                  Code,
-            maxEvaluationFactor:   Double  = 1.5d,
-            identifyDeadVariables: Boolean = true
+        code:                  Code,
+        maxEvaluationFactor:   Double  = 1.5d,
+        identifyDeadVariables: Boolean = true
     )(implicit logContext: LogContext) = {
         this(
             InstructionCountBoundedAI.calculateMaxEvaluationCount(code, maxEvaluationFactor),

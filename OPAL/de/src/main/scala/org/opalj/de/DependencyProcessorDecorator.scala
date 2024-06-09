@@ -15,7 +15,7 @@ import br._
  * This class is thread-safe if the specified base dependency processor is also thread-safe.
  */
 class DependencyProcessorDecorator(
-        baseDependencyProcessor: DependencyProcessor
+    baseDependencyProcessor: DependencyProcessor
 ) extends DependencyProcessor {
 
     def processDependency(

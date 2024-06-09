@@ -370,7 +370,10 @@ case class TheShortValue(value: Short) extends IsShortValue {
 trait IsIntegerValue extends IsIntegerLikeValue[IntegerType] {
     override final def primitiveType: IntegerType = IntegerType
     override final def hasCategory2ComputationalType: Boolean = false
-    override def toCanonicalForm: ValueInformation = AnIntegerValue
+    override def toCanonicalForm: ValueInformation = {
+        if (constantValue.isDefined) TheIntegerValue(constantValue.get)
+        else AnIntegerValue
+    }
     override def asConstantInteger: Integer = constantValue.get // Expected to be overridden!
     def lowerBound: Int
     def upperBound: Int
@@ -714,10 +717,10 @@ trait IsMObjectValue extends IsBaseReferenceValue {
  * Represents an object value which is either null or properly initialized.
  */
 case class AProperMObjectValue(
-        override val isNull:    Answer,
-        override val isPrecise: Boolean,
-        upperTypeBound:         UIDSet[ObjectType],
-        leastUpperType:         Option[ReferenceType] // actually always Some[ObjectType]
+    override val isNull:    Answer,
+    override val isPrecise: Boolean,
+    upperTypeBound:         UIDSet[ObjectType],
+    leastUpperType:         Option[ReferenceType] // actually always Some[ObjectType]
 ) extends IsMObjectValue {
     override def toCanonicalForm: IsMObjectValue = this
     override def toString: String = {
@@ -796,9 +799,9 @@ trait IsSObjectValue extends IsSReferenceValue[ObjectType] {
  * Represents some object value which may be null and may even not be properly initialized yet.
  */
 case class ASObjectValue(
-        isNull:                 Answer,
-        override val isPrecise: Boolean,
-        theUpperTypeBound:      ObjectType
+    isNull:                 Answer,
+    override val isPrecise: Boolean,
+    theUpperTypeBound:      ObjectType
 ) extends IsSObjectValue {
     override def toCanonicalForm: IsSObjectValue = this
     override def toString: String = {
@@ -811,9 +814,9 @@ case class ASObjectValue(
  * Represents an object value which is either null or properly initialized.
  */
 case class AProperSObjectValue(
-        isNull:                 Answer,
-        override val isPrecise: Boolean,
-        theUpperTypeBound:      ObjectType
+    isNull:                 Answer,
+    override val isPrecise: Boolean,
+    theUpperTypeBound:      ObjectType
 ) extends IsSObjectValue {
     override def toCanonicalForm: IsSObjectValue = this
     override def toString: String = {
@@ -857,9 +860,9 @@ trait IsSArrayValue extends IsSReferenceValue[ArrayType] {
 }
 
 case class ASArrayValue(
-        override val isNull:    Answer,
-        override val isPrecise: Boolean,
-        theUpperTypeBound:      ArrayType
+    override val isNull:    Answer,
+    override val isPrecise: Boolean,
+    theUpperTypeBound:      ArrayType
 ) extends IsSArrayValue {
     override def toCanonicalForm: IsSArrayValue = this
     override def toString: String = {
@@ -870,8 +873,8 @@ case class ASArrayValue(
 }
 
 case class ASArrayWithLengthValue(
-        length:            Int,
-        theUpperTypeBound: ArrayType
+    length:            Int,
+    theUpperTypeBound: ArrayType
 ) extends IsSArrayValue {
     override def isNull: Answer = No
     override def isPrecise: Boolean = true
@@ -1054,11 +1057,11 @@ trait IsMultipleReferenceValue extends IsReferenceValue {
 }
 
 case class AMultipleReferenceValue(
-        baseValues:     Iterable[IsReferenceValue],
-        isNull:         Answer,
-        isPrecise:      Boolean,
-        upperTypeBound: UIDSet[_ <: ReferenceType],
-        leastUpperType: Option[ReferenceType] // None in case of "null"
+    baseValues:     Iterable[IsReferenceValue],
+    isNull:         Answer,
+    isPrecise:      Boolean,
+    upperTypeBound: UIDSet[_ <: ReferenceType],
+    leastUpperType: Option[ReferenceType] // None in case of "null"
 ) extends IsMultipleReferenceValue {
 
     assert((isNull.isYes && leastUpperType.isEmpty) || (isNull.isNoOrUnknown && leastUpperType.isDefined))

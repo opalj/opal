@@ -16,10 +16,10 @@ package br
  * @author Michael Eichberg
  */
 case class ExceptionHandler(
-        startPC:   Int,
-        endPC:     Int,
-        handlerPC: Int,
-        catchType: Option[ObjectType]
+    startPC:   Int,
+    endPC:     Int,
+    handlerPC: Int,
+    catchType: Option[ObjectType]
 ) {
     override def toString: String = {
         val exceptionType = catchType.map(_.toJava).getOrElse("<FINALLY>")

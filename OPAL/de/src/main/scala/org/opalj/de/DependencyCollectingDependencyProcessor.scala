@@ -24,7 +24,7 @@ import org.opalj.collection.asScala
  * @author Michael Eichberg
  */
 class DependencyCollectingDependencyProcessor(
-        val virtualSourceElementsCountHint: Option[Int]
+    val virtualSourceElementsCountHint: Option[Int]
 ) extends DependencyProcessor {
 
     private[this] val deps =

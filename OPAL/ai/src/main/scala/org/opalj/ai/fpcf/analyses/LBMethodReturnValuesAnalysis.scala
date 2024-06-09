@@ -38,7 +38,7 @@ import org.opalj.value.ValueInformation
  * @author Michael Eichberg
  */
 class LBMethodReturnValuesAnalysis private[analyses] (
-        val project: SomeProject
+    val project: SomeProject
 ) extends FPCFAnalysis { analysis =>
 
     /**
@@ -47,9 +47,9 @@ class LBMethodReturnValuesAnalysis private[analyses] (
      * @author Michael Eichberg
      */
     class MethodReturnValuesAnalysisDomain(
-            val ai:        InterruptableAI[MethodReturnValuesAnalysisDomain],
-            val method:    Method,
-            val dependees: EOptionPSet[Entity, Property]
+        val ai:        InterruptableAI[MethodReturnValuesAnalysisDomain],
+        val method:    Method,
+        val dependees: EOptionPSet[Entity, Property]
     ) extends CorrelationalDomain
         with domain.TheProject
         with domain.TheMethod

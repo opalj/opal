@@ -59,33 +59,33 @@ sealed trait InstanceFieldAccessMethodHandle extends FieldAccessMethodHandle
 sealed trait StaticFieldAccessMethodHandle extends FieldAccessMethodHandle
 
 case class GetFieldMethodHandle(
-        declaringClassType: ObjectType,
-        name:               String,
-        fieldType:          FieldType
+    declaringClassType: ObjectType,
+    name:               String,
+    fieldType:          FieldType
 ) extends FieldReadAccessMethodHandle with InstanceFieldAccessMethodHandle {
     override def referenceKind: ReferenceKind = REF_getField
 }
 
 case class GetStaticMethodHandle(
-        declaringClassType: ObjectType,
-        name:               String,
-        fieldType:          FieldType
+    declaringClassType: ObjectType,
+    name:               String,
+    fieldType:          FieldType
 ) extends FieldReadAccessMethodHandle with StaticFieldAccessMethodHandle {
     override def referenceKind: ReferenceKind = REF_getStatic
 }
 
 case class PutFieldMethodHandle(
-        declaringClassType: ObjectType,
-        name:               String,
-        fieldType:          FieldType
+    declaringClassType: ObjectType,
+    name:               String,
+    fieldType:          FieldType
 ) extends FieldWriteAccessMethodHandle with InstanceFieldAccessMethodHandle {
     override def referenceKind: ReferenceKind = REF_putField
 }
 
 case class PutStaticMethodHandle(
-        declaringClassType: ObjectType,
-        name:               String,
-        fieldType:          FieldType
+    declaringClassType: ObjectType,
+    name:               String,
+    fieldType:          FieldType
 ) extends FieldWriteAccessMethodHandle with StaticFieldAccessMethodHandle {
     override def referenceKind: ReferenceKind = REF_putStatic
 }
@@ -114,9 +114,9 @@ object MethodCallMethodHandle {
 }
 
 case class InvokeVirtualMethodHandle(
-        receiverType:     ReferenceType,
-        name:             String,
-        methodDescriptor: MethodDescriptor
+    receiverType:     ReferenceType,
+    name:             String,
+    methodDescriptor: MethodDescriptor
 ) extends MethodCallMethodHandle {
 
     override def opcodeOfUnderlyingInstruction: Opcode = instructions.INVOKEVIRTUAL.opcode
@@ -125,10 +125,10 @@ case class InvokeVirtualMethodHandle(
 }
 
 case class InvokeStaticMethodHandle(
-        receiverType:     ReferenceType,
-        isInterface:      Boolean,
-        name:             String,
-        methodDescriptor: MethodDescriptor
+    receiverType:     ReferenceType,
+    isInterface:      Boolean,
+    name:             String,
+    methodDescriptor: MethodDescriptor
 ) extends MethodCallMethodHandle {
 
     override def opcodeOfUnderlyingInstruction: Opcode = instructions.INVOKESTATIC.opcode
@@ -139,10 +139,10 @@ case class InvokeStaticMethodHandle(
 }
 
 case class InvokeSpecialMethodHandle(
-        receiverType:     ReferenceType,
-        isInterface:      Boolean,
-        name:             String,
-        methodDescriptor: MethodDescriptor
+    receiverType:     ReferenceType,
+    isInterface:      Boolean,
+    name:             String,
+    methodDescriptor: MethodDescriptor
 ) extends MethodCallMethodHandle {
 
     override def opcodeOfUnderlyingInstruction: Opcode = instructions.INVOKESPECIAL.opcode
@@ -151,8 +151,8 @@ case class InvokeSpecialMethodHandle(
 }
 
 case class NewInvokeSpecialMethodHandle(
-        receiverType:     ObjectType,
-        methodDescriptor: MethodDescriptor
+    receiverType:     ObjectType,
+    methodDescriptor: MethodDescriptor
 ) extends MethodCallMethodHandle {
 
     override final val name = "<init>"
@@ -163,9 +163,9 @@ case class NewInvokeSpecialMethodHandle(
 }
 
 case class InvokeInterfaceMethodHandle(
-        receiverType:     ReferenceType,
-        name:             String,
-        methodDescriptor: MethodDescriptor
+    receiverType:     ReferenceType,
+    name:             String,
+    methodDescriptor: MethodDescriptor
 ) extends MethodCallMethodHandle {
 
     override def opcodeOfUnderlyingInstruction: Opcode = instructions.INVOKEINTERFACE.opcode

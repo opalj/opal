@@ -42,10 +42,10 @@ class FanInFanOut(implicit hermes: HermesConfig) extends FeatureQuery {
     ///// ###############################################################
 
     case class FeatureConfiguration(
-            featureName:   String,
-            numCategories: Int,
-            categorySize:  Double,
-            offset:        Int
+        featureName:   String,
+        numCategories: Int,
+        categorySize:  Double,
+        offset:        Int
     ) {
 
         private[this] lazy val _maxFeatureIndex = numCategories - 1

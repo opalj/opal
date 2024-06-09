@@ -10,8 +10,8 @@ import scala.xml.Node
  * @author Dominik Helm
  */
 case class Record_attribute(
-        attribute_name_index: Constant_Pool_Index,
-        components:           RecordComponents // ArraySeq[Constant_Pool_Index]
+    attribute_name_index: Constant_Pool_Index,
+    components:           RecordComponents // ArraySeq[Constant_Pool_Index]
 ) extends Attribute {
 
     override final def attribute_length: Int = 2 + components.iterator.map(_.length).sum
@@ -26,9 +26,9 @@ case class Record_attribute(
 }
 
 case class RecordComponent(
-        name_index:       Constant_Pool_Index,
-        descriptor_index: Constant_Pool_Index,
-        attributes:       Attributes
+    name_index:       Constant_Pool_Index,
+    descriptor_index: Constant_Pool_Index,
+    attributes:       Attributes
 ) {
 
     def length: Int = 6 + attributes.iterator.map(_.size).sum

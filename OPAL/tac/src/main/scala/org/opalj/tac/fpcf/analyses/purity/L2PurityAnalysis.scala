@@ -112,12 +112,12 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
      * @param code The code of the currently analyzed method
      */
     class State(
-            val method:    Method,
-            val context:   Context,
-            val declClass: ObjectType,
-            var tac:       TACode[TACMethodParameter, V] = null,
-            var lbPurity:  Purity                        = CompileTimePure,
-            var ubPurity:  Purity                        = CompileTimePure
+        val method:    Method,
+        val context:   Context,
+        val declClass: ObjectType,
+        var tac:       TACode[TACMethodParameter, V] = null,
+        var lbPurity:  Purity                        = CompileTimePure,
+        var ubPurity:  Purity                        = CompileTimePure
     ) extends AnalysisState {
 
         var fieldLocalityDependees: Map[Field, (EOptionP[Field, FieldLocality], Set[(Expr[V], Purity)])] = Map.empty

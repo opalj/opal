@@ -49,7 +49,7 @@ object IFGT extends InstructionMetaInformation {
 }
 
 case class LabeledIFGT(
-        branchTarget: InstructionLabel
+    branchTarget: InstructionLabel
 ) extends LabeledSimpleConditionalBranchInstruction
     with IFGTLike {
 

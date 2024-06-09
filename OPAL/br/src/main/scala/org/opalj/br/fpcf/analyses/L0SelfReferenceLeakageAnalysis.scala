@@ -43,8 +43,8 @@ import org.opalj.log.OPALLogger.{debug => trace}
  * @author Michael Eichberg
  */
 class L0SelfReferenceLeakageAnalysis(
-        val project: SomeProject,
-        val debug:   Boolean
+    val project: SomeProject,
+    val debug:   Boolean
 ) extends FPCFAnalysis {
 
     val SelfReferenceLeakageKey = SelfReferenceLeakage.Key

@@ -17,14 +17,14 @@ import org.opalj.collection.immutable.UShortPair
  * @author Michael Eichberg
  */
 class CLASS[T](
-        version:         UShortPair,
-        accessModifiers: AccessModifier,
-        thisType:        String,
-        superclassType:  Option[String],
-        interfaceTypes:  ArraySeq[String],
-        fields:          FIELDS,
-        methods:         METHODS[T],
-        attributes:      ArraySeq[br.ClassFileAttributeBuilder]
+    version:         UShortPair,
+    accessModifiers: AccessModifier,
+    thisType:        String,
+    superclassType:  Option[String],
+    interfaceTypes:  ArraySeq[String],
+    fields:          FIELDS,
+    methods:         METHODS[T],
+    attributes:      ArraySeq[br.ClassFileAttributeBuilder]
 ) {
 
     /**

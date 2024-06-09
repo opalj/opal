@@ -11,8 +11,8 @@ import scala.xml.Node
  * @author Noorulla Sharief
  */
 case class SourceDebugExtension_attribute(
-        attribute_name_index: Constant_Pool_Index,
-        debug_extension:      Array[Byte]
+    attribute_name_index: Constant_Pool_Index,
+    debug_extension:      Array[Byte]
 ) extends Attribute {
 
     override final def attribute_length = debug_extension.length

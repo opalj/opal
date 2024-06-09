@@ -50,7 +50,7 @@ sealed trait MethodComplexityPropertyMetaInformation extends PropertyMetaInforma
  * @author Michael Eichberg
  */
 case class MethodComplexity(
-        value: Int
+    value: Int
 ) extends Property
     with MethodComplexityPropertyMetaInformation {
 

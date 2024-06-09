@@ -16,8 +16,8 @@ import org.opalj.util.PerformanceEvaluation.time
  * @author Michael Eichberg
  */
 case class Schedule[A](
-        batches:            List[PhaseConfiguration[A]],
-        initializationData: Map[ComputationSpecification[A], Any]
+    batches:            List[PhaseConfiguration[A]],
+    initializationData: Map[ComputationSpecification[A], Any]
 ) extends (
         (
             PropertyStore,

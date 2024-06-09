@@ -87,9 +87,9 @@ case object INCOMPLETE_INVOKEDYNAMIC extends INVOKEDYNAMIC {
  * @author Arne Lottmann
  */
 case class DEFAULT_INVOKEDYNAMIC(
-        bootstrapMethod:  BootstrapMethod,
-        name:             String,
-        methodDescriptor: MethodDescriptor
+    bootstrapMethod:  BootstrapMethod,
+    name:             String,
+    methodDescriptor: MethodDescriptor
 ) extends INVOKEDYNAMIC {
 
     override def toString: String = {

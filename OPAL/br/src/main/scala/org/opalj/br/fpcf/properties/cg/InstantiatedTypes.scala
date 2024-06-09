@@ -31,8 +31,8 @@ sealed trait InstantiatedTypesPropertyMetaInformation extends PropertyMetaInform
 }
 
 case class InstantiatedTypes private[properties] (
-        private val orderedTypes: List[ReferenceType],
-        types:                    UIDSet[ReferenceType]
+    private val orderedTypes: List[ReferenceType],
+    types:                    UIDSet[ReferenceType]
 ) extends OrderedProperty
     with InstantiatedTypesPropertyMetaInformation {
 

@@ -9,10 +9,10 @@ package instructions
  * @author Michael Eichberg
  */
 case class INVOKESTATIC(
-        declaringClass:   ObjectType, // a class or interface (Java 8) type
-        isInterface:      Boolean,
-        name:             String,
-        methodDescriptor: MethodDescriptor
+    declaringClass:   ObjectType, // a class or interface (Java 8) type
+    isInterface:      Boolean,
+    name:             String,
+    methodDescriptor: MethodDescriptor
 ) extends NonVirtualMethodInvocationInstruction {
 
     override final def isInvokeStatic: Boolean = true

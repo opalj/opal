@@ -5,7 +5,7 @@ There are also links to [related presentations](#related-presentations) below.
 
 ## Core Papers
 
-> [**Modular Collaborative Program Analysis in OPAL**](https://2020.esec-fse.org/details/fse-2020-papers/191")  
+> [**Modular Collaborative Program Analysis in OPAL**](https://2020.esec-fse.org/details/fse-2020-papers/191)  
 > ESEC/FSE 2020  
 > *Dominik Helm, Florian Kübler, Michael Reif, Michael Eichberg, Mira Mezini*
 > <details><summary>Abstract</summary>

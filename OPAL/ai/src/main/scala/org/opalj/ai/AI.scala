@@ -134,8 +134,8 @@ import org.opalj.log.Warn
  * @author Michael Eichberg
  */
 abstract class AI[D <: Domain](
-        final val IdentifyDeadVariables:           Boolean = true,
-        final val RegisterStoreMayThrowExceptions: Boolean = false
+    final val IdentifyDeadVariables:           Boolean = true,
+    final val RegisterStoreMayThrowExceptions: Boolean = false
 ) {
 
     type SomeLocals[V <: d.DomainValue forSome { val d: D }] = Option[IndexedSeq[V]]

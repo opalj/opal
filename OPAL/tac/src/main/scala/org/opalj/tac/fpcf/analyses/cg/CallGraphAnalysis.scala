@@ -54,7 +54,7 @@ import org.opalj.value.IsSObjectValue
  * @author Dominik Helm
  */
 class CallGraphAnalysis private[cg] (
-        override val project: SomeProject
+    override val project: SomeProject
 ) extends ReachableMethodAnalysis with TypeConsumerAnalysis {
     type LocalTypeInformation
 

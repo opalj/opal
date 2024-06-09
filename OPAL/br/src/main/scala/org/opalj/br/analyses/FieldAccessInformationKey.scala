@@ -19,15 +19,15 @@ import org.opalj.log.OPALLogger
 object FieldAccessInformationKey extends ProjectInformationKey[FieldAccessInformation, Seq[FPCFAnalysisScheduler]] {
 
     override def requirements(project: SomeProject): ProjectInformationKeys = {
-        val schedulers = project.getProjectInformationKeyInitializationData(this) match {
-            case Some(s) => s
-            case None =>
+        val schedulers = project.getOrCreateProjectInformationKeyInitializationData(
+            this, {
                 OPALLogger.warn(
                     "analysis configuration",
                     s"no field access information analysis configured, using SimpleFieldAccessInformationAnalysis as a fallback"
                 )(project.logContext)
                 Seq(EagerSimpleFieldAccessInformationAnalysis)
-        }
+            }
+        )
 
         schedulers.flatMap(_.requiredProjectInformation)
     }

@@ -38,13 +38,13 @@ import org.opalj.tac.fpcf.properties.TACAI
  * @param _calleeDependee Dependee for the callee property of the method.
  */
 final class TypePropagationState[ContextType <: Context](
-        override val callContext:                        ContextType,
-        val typeSetEntity:                               TypeSetEntity,
-        override protected[this] var _tacDependee:       EOptionP[Method, TACAI],
-        private[this] var _ownInstantiatedTypesDependee: EOptionP[TypeSetEntity, InstantiatedTypes],
-        private[this] var _calleeDependee:               EOptionP[DeclaredMethod, Callees],
-        private[this] var _readAccessDependee:           EOptionP[Method, MethodFieldReadAccessInformation],
-        private[this] var _writeAccessDependee:          EOptionP[Method, MethodFieldWriteAccessInformation]
+    override val callContext:                        ContextType,
+    val typeSetEntity:                               TypeSetEntity,
+    override protected[this] var _tacDependee:       EOptionP[Method, TACAI],
+    private[this] var _ownInstantiatedTypesDependee: EOptionP[TypeSetEntity, InstantiatedTypes],
+    private[this] var _calleeDependee:               EOptionP[DeclaredMethod, Callees],
+    private[this] var _readAccessDependee:           EOptionP[Method, MethodFieldReadAccessInformation],
+    private[this] var _writeAccessDependee:          EOptionP[Method, MethodFieldWriteAccessInformation]
 ) extends BaseAnalysisState with TACAIBasedAnalysisState[ContextType] {
 
     var methodWritesArrays: Boolean = false

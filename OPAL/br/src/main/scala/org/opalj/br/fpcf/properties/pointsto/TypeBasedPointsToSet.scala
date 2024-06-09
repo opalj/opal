@@ -25,8 +25,8 @@ sealed trait TypeBasedPointsToSetPropertyMetaInformation extends PropertyMetaInf
 }
 
 case class TypeBasedPointsToSet private[properties] (
-        private val orderedTypes: List[ReferenceType],
-        override val types:       UIDSet[ReferenceType]
+    private val orderedTypes: List[ReferenceType],
+    override val types:       UIDSet[ReferenceType]
 ) extends PointsToSetLike[ReferenceType, UIDSet[ReferenceType], TypeBasedPointsToSet]
     with OrderedProperty
     with TypeBasedPointsToSetPropertyMetaInformation {

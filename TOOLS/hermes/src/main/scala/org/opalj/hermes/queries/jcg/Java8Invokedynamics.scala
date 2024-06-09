@@ -37,7 +37,7 @@ import org.opalj.da
  * @author Michael Reif
  */
 class Java8Invokedynamics(
-        implicit val hermesConfig: HermesConfig
+    implicit val hermesConfig: HermesConfig
 ) extends DefaultFeatureQuery {
 
     override def featureIDs: Seq[String] =

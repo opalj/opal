@@ -39,8 +39,8 @@ final class NameBasedFieldMatcher(val possibleNames: Set[String]) extends FieldM
 }
 
 class ClassBasedFieldMatcher(
-        val possibleClasses:          Set[ObjectType],
-        val onlyFieldsExactlyInClass: Boolean
+    val possibleClasses:          Set[ObjectType],
+    val onlyFieldsExactlyInClass: Boolean
 ) extends FieldMatcher {
 
     // IMPROVE use a ProjectInformationKey or WeakHashMap to cache fields per class per project (for the contains check)

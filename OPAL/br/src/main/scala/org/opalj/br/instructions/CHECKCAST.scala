@@ -9,7 +9,7 @@ package instructions
  * @author Michael Eichberg
  */
 case class CHECKCAST(
-        referenceType: ReferenceType
+    referenceType: ReferenceType
 ) extends Instruction with ConstantLengthInstruction with NoLabels {
 
     override final def isCheckcast: Boolean = true

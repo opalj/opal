@@ -43,7 +43,7 @@ object GOTO_W extends InstructionMetaInformation {
 }
 
 case class LabeledGOTO_W(
-        branchTarget: InstructionLabel
+    branchTarget: InstructionLabel
 ) extends LabeledUnconditionalBranchInstruction with GOTO_WLike {
 
     override def resolveJumpTargets(currentPC: PC, pcs: Map[InstructionLabel, PC]): GOTO_W = {

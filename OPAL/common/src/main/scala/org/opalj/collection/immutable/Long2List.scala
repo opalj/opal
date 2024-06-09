@@ -197,8 +197,8 @@ abstract private[immutable] class Long2List1_4 extends Long2List {
 }
 
 private[immutable] final class Long2List1(
-        private[immutable] val v1:   Long,
-        private[immutable] val rest: Long2List4
+    private[immutable] val v1:   Long,
+    private[immutable] val rest: Long2List4
 ) extends Long2List1_4 { list =>
 
     override def isSingletonList: Boolean = rest == null
@@ -248,9 +248,9 @@ private[immutable] final class Long2List1(
 }
 
 private[immutable] final class Long2List2(
-        private[immutable] var v1:   Long,
-        private[immutable] var v2:   Long,
-        private[immutable] var rest: Long2List4
+    private[immutable] var v1:   Long,
+    private[immutable] var v2:   Long,
+    private[immutable] var rest: Long2List4
 ) extends Long2List1_4 { list =>
 
     override def isSingletonList: Boolean = false
@@ -297,10 +297,10 @@ private[immutable] final class Long2List2(
 }
 
 private[immutable] final class Long2List3(
-        private[immutable] var v1:   Long,
-        private[immutable] var v2:   Long,
-        private[immutable] var v3:   Long,
-        private[immutable] var rest: Long2List4
+    private[immutable] var v1:   Long,
+    private[immutable] var v2:   Long,
+    private[immutable] var v3:   Long,
+    private[immutable] var rest: Long2List4
 ) extends Long2List1_4 { list =>
 
     override def isSingletonList: Boolean = false
@@ -355,11 +355,11 @@ private[immutable] final class Long2List3(
 }
 
 private[immutable] final class Long2List4(
-        private[immutable] var v1:   Long,
-        private[immutable] var v2:   Long,
-        private[immutable] var v3:   Long,
-        private[immutable] var v4:   Long,
-        private[immutable] var rest: Long2List4
+    private[immutable] var v1:   Long,
+    private[immutable] var v2:   Long,
+    private[immutable] var v3:   Long,
+    private[immutable] var v4:   Long,
+    private[immutable] var rest: Long2List4
 ) extends Long2List1_4 { list =>
 
     override def isSingletonList: Boolean = false

@@ -33,11 +33,11 @@ object ConfiguredMethods {
 }
 
 case class ConfiguredMethodData(
-        cf:                String,
-        name:              String,
-        desc:              String,
-        pointsTo:          Option[Array[PointsToRelation]],
-        methodInvocations: Option[Array[MethodDescription]]
+    cf:                String,
+    name:              String,
+    desc:              String,
+    pointsTo:          Option[Array[PointsToRelation]],
+    methodInvocations: Option[Array[MethodDescription]]
 ) {
     def method(
         implicit declaredMethods: DeclaredMethods
@@ -156,11 +156,11 @@ case class ParameterDescription(cf: String, name: String, desc: String, index: I
 }
 
 case class AllocationSiteDescription(
-        cf:                  String,
-        name:                String,
-        desc:                String,
-        instantiatedType:    String,
-        arrayComponentTypes: scala.collection.Seq[String]
+    cf:                  String,
+    name:                String,
+    desc:                String,
+    instantiatedType:    String,
+    arrayComponentTypes: scala.collection.Seq[String]
 ) extends EntityDescription {
     def method(declaredMethods: DeclaredMethods): DeclaredMethod = {
         val classType = ObjectType(cf)

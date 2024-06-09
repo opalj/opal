@@ -13,5 +13,5 @@ package reader
  * @author Dominik Helm
  */
 class Java16FrameworkWithDynamicRewritingAndCaching(
-        cache: BytecodeInstructionsCache
+    cache: BytecodeInstructionsCache
 ) extends Java11FrameworkWithDynamicRewritingAndCaching(cache) with Java16LibraryFramework
