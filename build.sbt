@@ -336,6 +336,7 @@ lazy val `ThreeAddressCode` = (project in file("OPAL/tac"))
   )
   .dependsOn(ai % "it->it;it->test;test->test;compile->compile")
   .dependsOn(ifds % "it->it;it->test;test->test;compile->compile")
+  .dependsOn(ide % "it->it;it->test;test->test;compile->compile")
   .configs(IntegrationTest)
 
 lazy val ba = `BytecodeAssembler`
