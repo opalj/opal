@@ -2,11 +2,14 @@
 package org.opalj.ide.problem
 
 import org.opalj.fpcf.Entity
+import org.opalj.ide.solver.ICFG
 
 /**
  * Interface for modelling IDE problems
  */
-abstract class IDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Entity] {
+abstract class IDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Entity](
+        val icfg: ICFG[Statement, Callable]
+) {
     /**
      * The null fact to use. Also used to bootstrap the analysis at the entry points.
      */
