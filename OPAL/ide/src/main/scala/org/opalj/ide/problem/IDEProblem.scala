@@ -5,7 +5,7 @@ import org.opalj.fpcf.Entity
 import org.opalj.ide.solver.ICFG
 
 /**
- * Interface for modelling IDE problems
+ * Interface for modeling IDE problems
  */
 abstract class IDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Entity](
         val icfg: ICFG[Statement, Callable]
@@ -13,12 +13,12 @@ abstract class IDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Callabl
     /**
      * The null fact to use. Also used to bootstrap the analysis at the entry points.
      */
-    def nullFact: Fact
+    val nullFact: Fact
 
     /**
      * The lattice that orders the used values
      */
-    def lattice: MeetLattice[Value]
+    val lattice: MeetLattice[Value]
 
     /**
      * Generate a flow function for a normal flow

@@ -57,9 +57,9 @@ class FlowRecordingIDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Cal
 
     private var writer: Writer = null
 
-    override def nullFact: Fact = baseProblem.nullFact
+    override val nullFact: Fact = baseProblem.nullFact
 
-    override def lattice: MeetLattice[Value] = baseProblem.lattice
+    override val lattice: MeetLattice[Value] = baseProblem.lattice
 
     override def getNormalFlowFunction(source: Statement, target: Statement): FlowFunction[Fact] = {
         new RecodingFlowFunction(baseProblem.getNormalFlowFunction(source, target), source, target, "normal flow")
@@ -175,7 +175,7 @@ class FlowRecordingIDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Cal
         collectedFlows.clear()
         collectedEdgeFunctions.clear()
 
-        writer.write("digraph G {\nnodesep=\"2.0\";\nranksep=\"1.5\";\n")
+        writer.write("digraph G {\n\tnodesep=\"2.0\";\n\tranksep=\"1.5\";\n")
     }
 
     private def stringifyDotEdge(dotEdge: DotEdge): String = {
