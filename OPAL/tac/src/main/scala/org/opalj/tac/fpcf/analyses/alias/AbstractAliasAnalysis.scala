@@ -5,13 +5,7 @@ package fpcf
 package analyses
 package alias
 
-import scala.annotation.tailrec
-
-import org.opalj.br.ArrayType
-import org.opalj.br.BaseType
 import org.opalj.br.ClassHierarchy
-import org.opalj.br.ObjectType
-import org.opalj.br.ReferenceType
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.properties.alias.Alias
 import org.opalj.br.fpcf.properties.alias.AliasEntity
@@ -64,33 +58,13 @@ trait AbstractAliasAnalysis extends FPCFAnalysis {
         if (!context.element1.isReferenceType || !context.element2.isReferenceType)
             return false
 
-        if (context.element1.referenceType.isArrayType != context.element2.referenceType.isArrayType)
-            return false
+        val element1ReferenceType = context.element1.referenceType
+        val element2ReferenceType = context.element2.referenceType
 
-        val type1 = getObjectType(context.element1.referenceType)
-        val type2 = getObjectType(context.element2.referenceType)
-        implicit val classHierarchy: ClassHierarchy = project.classHierarchy
+        val classHierarchy: ClassHierarchy = project.classHierarchy
 
-        if (type1.isEmpty || type2.isEmpty)
-            return false
-
-        if (type1.get._2 != type2.get._2)
-            return false
-
-        if ((type1.get._1.isASubtypeOf(type2.get._1) || type2.get._1.isASubtypeOf(type1.get._1)).isNo)
-            return false
-
-        true
-    }
-
-    @tailrec
-    private[this] def getObjectType(refType: ReferenceType, arrayDepth: Int = 0): Option[(ObjectType, Int)] = {
-        refType match {
-            case ot: ObjectType                          => Some((ot, arrayDepth))
-            case ArrayType(_: BaseType)                  => None
-            case ArrayType(componentType: ReferenceType) => getObjectType(componentType, arrayDepth + 1)
-            case _                                       => None
-        }
+        classHierarchy.isSubtypeOf(element1ReferenceType, element2ReferenceType) ||
+            classHierarchy.isSubtypeOf(element2ReferenceType, element1ReferenceType)
     }
 
     /**
