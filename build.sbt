@@ -448,6 +448,8 @@ lazy val ce = (project in file("TOOLS/ce"))
   .settings(buildSettings: _*)
   .settings(
     name := "ce",
+    libraryDependencies ++= Dependencies.ce,
+    libraryDependencies += "com.typesafe" % "config" % "1.4.2",
     Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - Configuration Explorer"),
   )
 
