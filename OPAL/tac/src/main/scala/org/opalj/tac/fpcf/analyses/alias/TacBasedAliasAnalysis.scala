@@ -127,9 +127,9 @@ trait TacBasedAliasAnalysisState extends AliasAnalysisState {
      * Updates the TACAI for the given method.
      */
     private[alias] def updateTACAI(
-                                      m:     Method,
-                                      tacai: TACode[TACMethodParameter, V]
-                                  )(implicit context: AliasAnalysisContext): Unit = {
+        m:     Method,
+        tacai: TACode[TACMethodParameter, V]
+    )(implicit context: AliasAnalysisContext): Unit = {
 
         var anyMatch: Boolean = false
 
