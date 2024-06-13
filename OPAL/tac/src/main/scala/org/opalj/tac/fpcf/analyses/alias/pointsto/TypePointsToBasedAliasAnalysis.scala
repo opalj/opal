@@ -12,6 +12,8 @@ import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
 import org.opalj.tac.fpcf.analyses.alias.TacBasedAliasAnalysis
 import org.opalj.tac.fpcf.analyses.alias.TypeBasedAliasAnalysis
+import org.opalj.tac.fpcf.analyses.alias.TypeBasedAliasAnalysisState
+import org.opalj.tac.fpcf.analyses.alias.TypeBasedAliasSet
 import org.opalj.tac.fpcf.analyses.pointsto.AbstractPointsToAnalysis
 import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedAnalysis
 
@@ -69,3 +71,11 @@ object LazyTypePointsToBasedAliasAnalysisScheduler extends PointsToBasedAliasAna
         analysis
     }
 }
+
+/**
+ * The state class used by an [[TypePointsToBasedAliasAnalysis]].
+ *
+ * @see [[PointsToBasedAliasAnalysisState]]
+ */
+class TypePointsToBasedAliasAnalysisState extends TypeBasedAliasAnalysisState
+    with PointsToBasedAliasAnalysisState[ReferenceType, TypeBasedAliasSet] {}

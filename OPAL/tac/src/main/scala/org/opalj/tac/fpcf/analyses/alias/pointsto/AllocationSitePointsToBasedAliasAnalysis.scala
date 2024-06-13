@@ -13,12 +13,11 @@ import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.alias.Alias
 import org.opalj.br.fpcf.properties.alias.AliasSourceElement
-import org.opalj.br.fpcf.properties.pointsto
-import org.opalj.br.fpcf.properties.pointsto.AllocationSite
 import org.opalj.br.fpcf.properties.pointsto.longToAllocationSite
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
+import org.opalj.tac.fpcf.analyses.alias.AllocationSite
 import org.opalj.tac.fpcf.analyses.pointsto.AbstractPointsToAnalysis
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedAnalysis
 
@@ -37,14 +36,14 @@ class AllocationSitePointsToBasedAliasAnalysis(final val project: SomeProject)
     override protected[this] def handlePointsToSetElement(
         ase:            AliasSourceElement,
         pointsToEntity: Entity,
-        element:        pointsto.AllocationSite
+        element:        ElementType
     )(
         implicit
         state:   AnalysisState,
         context: AnalysisContext
     ): Unit = {
 
-        val encodedAllocationSite: AllocationSite = element
+        val encodedAllocationSite: ElementType = element
 
         val (allocContext, pc, _): (Context, PC, Int) = longToAllocationSite(encodedAllocationSite)
 
@@ -83,3 +82,11 @@ object LazyAllocationSitePointsToBasedAliasAnalysisScheduler extends PointsToBas
         analysis
     }
 }
+
+/**
+ * The state class used by an [[AllocationSitePointsToBasedAliasAnalysis]].
+ *
+ * @see [[PointsToBasedAliasAnalysisState]]
+ */
+class AllocationSitePointsToBasedAliasAnalysisState extends AllocationSiteBasedAliasAnalysisState
+    with PointsToBasedAliasAnalysisState[AllocationSite, AllocationSiteBasedAliasSet] {}
