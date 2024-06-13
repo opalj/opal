@@ -47,11 +47,6 @@ class IntraProceduralAliasAnalysis(final val project: SomeProject) extends Alloc
         state:   AnalysisState,
         context: AnalysisContext
     ): Unit = {
-        /*ase match {
-            case uVar: AliasUVar => handleUVar(uVar, tac.get)
-            case other: _ => handleOther(other)
-        }*/
-
         if (ase.isAliasUVar) handleUVar(ase.asAliasUVar, tac.get)
         else handleOther(ase)
     }
