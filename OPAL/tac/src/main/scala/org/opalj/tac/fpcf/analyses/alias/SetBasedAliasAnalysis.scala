@@ -8,11 +8,12 @@ import org.opalj.fpcf.ProperPropertyComputationResult
 
 trait SetBasedAliasAnalysis extends AbstractAliasAnalysis {
 
-    protected[this] type AliasSet <: AliasSetLike[_, AliasSet]
+    protected[this] type AliasElementType
+    protected[this] type AliasSet <: AliasSetLike[AliasElementType, AliasSet]
 
-    override protected[this] type AnalysisState <: SetBasedAliasAnalysisState[_, AliasSet]
+    override protected[this] type AnalysisState <: SetBasedAliasAnalysisState[AliasElementType, AliasSet]
 
-    protected[this] def createResult()(
+    override protected[this] def createResult()(
         implicit
         state:   AnalysisState,
         context: AnalysisContext
@@ -21,22 +22,30 @@ trait SetBasedAliasAnalysis extends AbstractAliasAnalysis {
         val pointsTo1 = state.pointsTo1
         val pointsTo2 = state.pointsTo2
 
-        val intersection = pointsTo1.intersection(pointsTo2)
+        if (pointsTo1.pointsToAny || pointsTo2.pointsToAny) return result(MayAlias)
 
-        if (intersection.isEmpty) {
-            return if (state.hasDependees) interimResult(NoAlias, MayAlias) else result(NoAlias)
-        } else if (!intersection.pointsToAny && checkMustAlias(intersection)) {
-            return if (state.hasDependees) interimResult(MustAlias, MayAlias) else result(MustAlias)
+        val intersections = pointsTo1.findTwoIntersections(pointsTo2)
+
+        intersections match {
+            case (None, None) /* no intersection */ =>
+                if (state.hasDependees) interimResult(NoAlias, MayAlias) else result(NoAlias)
+            case (Some(intersection), None) /* exactly one intersection */ if (checkMustAlias(intersection)) =>
+                if (state.hasDependees) interimResult(MustAlias, MayAlias) else result(MustAlias)
+            case _ /*  at least two intersections */ =>
+                result(MayAlias)
         }
-
-        result(MayAlias)
     }
 
     /**
-     * Checks if the given intersection of points-to sets can be a must alias.
-     * This method always returns false and should be overriden if more precise must alias checks can be performed
+     * Checks if the current analysis state allows for a [[MustAlias]] relation between the two elements. It assumes
+     * the the given element is the only intersection between the two points-to sets.
+     *
+     * This method always returns false and should be overriden if more precise must alias checks can be performed.
+     *
+     * @param intersectingElement The only between the two points-to sets.
+     * @return `true` if the two elements can be a [[MustAlias]], `false` otherwise.
      */
-    protected[this] def checkMustAlias(intersection: AliasSet)(implicit
+    protected[this] def checkMustAlias(intersectingElement: AliasElementType)(implicit
         state:   AnalysisState,
         context: AnalysisContext
     ): Boolean = false

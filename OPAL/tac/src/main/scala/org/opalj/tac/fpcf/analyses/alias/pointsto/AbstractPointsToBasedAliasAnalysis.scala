@@ -45,7 +45,7 @@ trait AbstractPointsToBasedAliasAnalysis extends TacBasedAliasAnalysis with Abst
     with SetBasedAliasAnalysis {
 
     override protected[this] type AnalysisContext = AliasAnalysisContext
-    override protected[this] type AnalysisState <: PointsToBasedAliasAnalysisState[_, AliasSet]
+    override protected[this] type AnalysisState <: PointsToBasedAliasAnalysisState[AliasElementType, AliasSet]
 
     override protected[this] def analyzeTAC()(implicit
         context: AnalysisContext,

@@ -10,7 +10,7 @@ trait AllocationSiteAndTacBasedAliasAnalysis extends AllocationSiteBasedAliasAna
 
     override protected[this] type AnalysisState <: AllocationSiteBasedAliasAnalysisState with TacBasedAliasAnalysisState
 
-    override protected[this] def checkMustAlias(intersection: AllocationSiteBasedAliasSet)(implicit
+    override protected[this] def checkMustAlias(intersectingElement: AliasElementType)(implicit
         state:   AnalysisState,
         context: AnalysisContext
     ): Boolean = {
@@ -18,10 +18,7 @@ trait AllocationSiteAndTacBasedAliasAnalysis extends AllocationSiteBasedAliasAna
         val pointsTo1 = state.pointsTo1
         val pointsTo2 = state.pointsTo2
 
-        if (intersection.size != 1 ||
-            pointsTo1.size != 1 ||
-            pointsTo2.size != 1
-        ) return false
+        if (pointsTo1.size != 1 || pointsTo2.size != 1) return false
 
         // they refer to the same allocation site but aren't necessarily the same object (e.g. if the allocation site
         // is inside a loop or a different method and is executed multiple times)
