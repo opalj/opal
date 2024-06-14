@@ -12,6 +12,7 @@ import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.ElementType.PARAMETER;
 import static java.lang.annotation.ElementType.TYPE_USE;
 
+
 @PropertyValidator(key = "AliasProperty", validator = MayAliasMatcher.class)
 @Documented
 @Target({TYPE_USE, PARAMETER, METHOD})

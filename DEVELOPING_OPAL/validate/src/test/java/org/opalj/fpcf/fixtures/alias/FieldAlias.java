@@ -1,13 +1,13 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.alias;
 
-import org.opalj.fpcf.properties.alias.line.MayAliasLine;
-import org.opalj.fpcf.properties.alias.line.NoAliasLine;
+import org.opalj.fpcf.properties.alias.MayAlias;
+import org.opalj.fpcf.properties.alias.NoAlias;
 
 
 public class FieldAlias {
 
-    @NoAliasLine(reason = "no alias for fields of different objects",
+    @NoAlias(reason = "no alias for fields of different objects",
             lineNumber = 20, fieldName = "field", fieldClass = FieldClass.class,
             secondLineNumber = 21, secondFieldName = "field2", secondFieldClass = FieldClass.class)
     public void differentObjectsSameFields() {
@@ -21,7 +21,7 @@ public class FieldAlias {
         fc2.field.hashCode();
     }
 
-    @NoAliasLine(reason = "no alias for different fields of the same object",
+    @NoAlias(reason = "no alias for different fields of the same object",
             lineNumber = 32, fieldName = "field", fieldClass = FieldClass.class,
             secondLineNumber = 33, secondFieldName = "field2", secondFieldClass = FieldClass.class)
     public void sameObjectDifferentField() {
@@ -33,7 +33,7 @@ public class FieldAlias {
         fc.field2.hashCode();
     }
 
-    @NoAliasLine(reason = "no alias for different fields of different objects",
+    @NoAlias(reason = "no alias for different fields of different objects",
             lineNumber = 46, fieldName = "field", fieldClass = FieldClass.class,
             secondLineNumber = 47, secondFieldName = "field2", secondFieldClass = FieldClass.class)
     public void differentObjectsDifferentFields() {
@@ -47,7 +47,7 @@ public class FieldAlias {
         fc2.field2.hashCode();
     }
 
-    @MayAliasLine(reason = "may alias for same fields of the same object",
+    @MayAlias(reason = "may alias for same fields of the same object",
             lineNumber = 57, fieldName = "field", fieldClass = FieldClass.class,
             secondLineNumber = 60, secondFieldName = "field", secondFieldClass = FieldClass.class)
     public void sameObjectSameField() {
@@ -60,7 +60,7 @@ public class FieldAlias {
         fc.field.hashCode();
     }
 
-    @MayAliasLine(reason = "may alias for same fields of the same object",
+    @MayAlias(reason = "may alias for same fields of the same object",
             lineNumber = 71, fieldName = "field", fieldClass = FieldClass.class,
             secondLineNumber = 72, secondFieldName = "field", secondFieldClass = FieldClass.class)
     public void sameObjectSameField2() {
@@ -73,17 +73,17 @@ public class FieldAlias {
     }
 
     public static void paramMayBeField(
-            @MayAliasLine(reason = "may alias with parameter and field",
+            @MayAlias(reason = "may alias with parameter and field",
                     lineNumber = 110, methodName = "main", fieldName = "field", fieldClass = FieldClass.class)
-            @NoAliasLine(reason = "no alias with parameter and field",
+            @NoAlias(reason = "no alias with parameter and field",
                     lineNumber = 111, methodName = "main", fieldName = "field2", fieldClass = FieldClass.class)
             Object o) {
     }
 
-    @MayAliasLine(reason = "may alias of field via parameter",
+    @MayAlias(reason = "may alias of field via parameter",
             lineNumber = 110,  methodName = "main", fieldName = "field", fieldClass = FieldClass.class,
             secondLineNumber = 111, secondMethodName = "main", secondFieldName = "field", secondFieldClass = FieldClass.class)
-    @NoAliasLine(reason = "no alias of field via parameter",
+    @NoAlias(reason = "no alias of field via parameter",
             lineNumber = 110,  methodName = "main", fieldName = "field", fieldClass = FieldClass.class,
             secondLineNumber = 111, secondMethodName = "main", secondFieldName = "field2", secondFieldClass = FieldClass.class)
     public static void fieldAliasViaParameter(FieldClass fc) {
@@ -91,7 +91,7 @@ public class FieldAlias {
         fc.field2.hashCode();
     }
 
-    @NoAliasLine(reason = "no alias of field via parameter",
+    @NoAlias(reason = "no alias of field via parameter",
             lineNumber = 110,methodName = "main", fieldName = "field", fieldClass = FieldClass.class,
             secondLineNumber = 111, secondMethodName = "main", secondFieldName = "field2", secondFieldClass = FieldClass.class)
     public static void noFieldAliasViaParameter(FieldClass fc) {

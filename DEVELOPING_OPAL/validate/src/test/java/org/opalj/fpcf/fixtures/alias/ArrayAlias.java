@@ -1,13 +1,13 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.alias;
 
-import org.opalj.fpcf.properties.alias.line.MayAliasLine;
-import org.opalj.fpcf.properties.alias.line.NoAliasLine;
+import org.opalj.fpcf.properties.alias.MayAlias;
+import org.opalj.fpcf.properties.alias.NoAlias;
 //import org.opalj.tac.fpcf.analyses.alias.AllocationSiteBasedAliasAnalysis;
 
 public class ArrayAlias {
 
-    @NoAliasLine(reason = "no alias with array and uVar that is not stored to array",
+    @NoAlias(reason = "no alias with array and uVar that is not stored to array",
             lineNumber = 20,
             secondLineNumber = 22,
             analyses = {/*AllocationSiteBasedAliasAnalysis.class*/})
@@ -22,10 +22,10 @@ public class ArrayAlias {
         arrObject.hashCode();
     }
 
-    @MayAliasLine(reason = "may alias with array and uVar that is stored to array",
+    @MayAlias(reason = "may alias with array and uVar that is stored to array",
             lineNumber = 41,
             secondLineNumber = 43)
-    @MayAliasLine(reason = "may alias with array and uVar that is stored to array",
+    @MayAlias(reason = "may alias with array and uVar that is stored to array",
             lineNumber = 45,
             secondLineNumber = 47)
     public static void storedToArrayDifferentIndices() {
@@ -47,10 +47,10 @@ public class ArrayAlias {
         arrObject2.hashCode();
     }
 
-    @MayAliasLine(reason = "may alias with array and uVar that is stored to array",
+    @MayAlias(reason = "may alias with array and uVar that is stored to array",
             lineNumber = 65,
             secondLineNumber = 67)
-    @MayAliasLine(reason = "may alias with array and uVar that is stored to array",
+    @MayAlias(reason = "may alias with array and uVar that is stored to array",
             lineNumber = 69,
             secondLineNumber = 71)
     public static void storedToArraySameIndex() {
@@ -71,19 +71,19 @@ public class ArrayAlias {
         arrObject2.hashCode();
     }
 
-    @MayAliasLine(reason = "may alias with Object[] and Object[]",
+    @MayAlias(reason = "may alias with Object[] and Object[]",
             lineNumber = 113,
             secondLineNumber = 114)
-    @MayAliasLine(reason = "may alias with Object[] and Object[][]",
+    @MayAlias(reason = "may alias with Object[] and Object[][]",
             lineNumber = 113,
             secondLineNumber = 115)
-    @MayAliasLine(reason = "may alias with Object[] and Object[][0]",
+    @MayAlias(reason = "may alias with Object[] and Object[][0]",
             lineNumber = 113,
             secondLineNumber = 117)
-    @MayAliasLine(reason = "may alias with Object[] and Integer[]",
+    @MayAlias(reason = "may alias with Object[] and Integer[]",
             lineNumber = 113,
             secondLineNumber = 118)
-    @NoAliasLine(reason = "may alias with Integer[] and String[]",
+    @NoAlias(reason = "may alias with Integer[] and String[]",
             lineNumber = 118,
             secondLineNumber = 119)
     public static void arraySubTypes() {
