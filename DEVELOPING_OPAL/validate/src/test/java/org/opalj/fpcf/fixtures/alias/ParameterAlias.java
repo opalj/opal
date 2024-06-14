@@ -5,8 +5,6 @@ import org.opalj.fpcf.properties.alias.MayAlias;
 import org.opalj.fpcf.properties.alias.NoAlias;
 import org.opalj.tac.fpcf.analyses.alias.AllocationSiteBasedAliasAnalysis;
 
-
-
 public class ParameterAlias {
 
     public static void main(String[] args) {
@@ -37,7 +35,7 @@ public class ParameterAlias {
         pa2.noAliasThisParamTwoMethods2();
     }
 
-    public static void noAliasWithLocal(@NoAlias(reason = "noAlias with uVar", lineNumber = 42, analyses = AllocationSiteBasedAliasAnalysis.class) Object o1) {
+    public static void noAliasWithLocal(@NoAlias(reason = "noAlias with uVar", lineNumber = 40, analyses = AllocationSiteBasedAliasAnalysis.class) Object o1) {
         Object o2 = new Object();
         o2.hashCode();
     }
@@ -45,7 +43,7 @@ public class ParameterAlias {
     public static void noAliasWithParam(@NoAlias(reason = "noAlias with other parameter", id = 0, analyses = AllocationSiteBasedAliasAnalysis.class) Object o1,
                                         @NoAlias(reason = "noAlias with other parameter", id = 0, analyses = AllocationSiteBasedAliasAnalysis.class) Object o2) {}
 
-    public static void mayAliasWithLocal(@MayAlias(reason = "mayAlias with uVar", lineNumber = 55) Object o1) {
+    public static void mayAliasWithLocal(@MayAlias(reason = "mayAlias with uVar", lineNumber = 53) Object o1) {
         Object o2 = new Object();
 
         if (Math.random() > 0.5) {
@@ -62,11 +60,11 @@ public class ParameterAlias {
                                           @MayAlias(reason = "mayAlias with other parameter 2", id = 2) Object o2) {}
 
     @MayAlias(reason = "may alias with this parameter and invoked uVar", thisParameter = true,
-            lineNumber = 30, methodName = "main")
+            lineNumber = 28, methodName = "main")
     public void mayAliasThisParam() {}
 
     @NoAlias(reason = "no alias with this parameter and invoked uVar", thisParameter = true,
-            lineNumber = 30, methodName = "main",
+            lineNumber = 28, methodName = "main",
             analyses = AllocationSiteBasedAliasAnalysis.class)
     public void noAliasThisParam() {}
 

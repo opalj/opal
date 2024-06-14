@@ -6,11 +6,9 @@ import org.opalj.fpcf.properties.alias.NoAlias;
 import org.opalj.tac.fpcf.analyses.alias.pointsto.AllocationSitePointsToBasedAliasAnalysis;
 import org.opalj.tac.fpcf.analyses.alias.pointsto.TypePointsToBasedAliasAnalysis;
 
-
-
 public class ReturnValueAlias {
 
-    @NoAlias(reason = "no Alias with local variable", lineNumber = 17, analyses = {AllocationSitePointsToBasedAliasAnalysis.class})
+    @NoAlias(reason = "no Alias with local variable", lineNumber = 15, analyses = {AllocationSitePointsToBasedAliasAnalysis.class})
     public static Object noAliasWithLocal() {
         Object o1 = new Object();
 
@@ -19,7 +17,7 @@ public class ReturnValueAlias {
         return new Object();
     }
 
-    @MayAlias(reason = "mayAlias with local variable", lineNumber = 31)
+    @MayAlias(reason = "mayAlias with local variable", lineNumber = 29)
     public static Object mayAliasWithLocal1() {
         Object o1 = new Object();
         Object o2 = new Object();
@@ -33,7 +31,7 @@ public class ReturnValueAlias {
         return o2;
     }
 
-    @MayAlias(reason = "mayAlias with local variable", lineNumber = 40)
+    @MayAlias(reason = "mayAlias with local variable", lineNumber = 38)
     public static Object mayAliasWithLocal2() {
         Object o1 = new Object();
 
