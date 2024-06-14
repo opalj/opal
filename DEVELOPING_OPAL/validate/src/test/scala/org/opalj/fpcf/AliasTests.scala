@@ -414,8 +414,8 @@ class AliasTests(final val callGraphKey: CallGraphKey) extends PropertiesTest {
             .get)
     }
 
-    private[this] def isLineAlias(a: AnnotationLike): Boolean = {
-        annotationName(a).endsWith("Line")
+    private[this] def isLineAlias(a: AnnotationLike)(implicit as: TestContext): Boolean = {
+        getIntValue(a, "id") == -1
     }
 
     private[this] def hasTwoLines(a: AnnotationLike)(implicit as: TestContext): Boolean = {
@@ -438,13 +438,10 @@ class AliasTests(final val callGraphKey: CallGraphKey) extends PropertiesTest {
      */
     private[this] def getAliasAnnotations(a: Iterable[AnnotationLike]): Iterable[AnnotationLike] = {
         a.filter(annotationName(_).contains("Alias"))
-            .filter(annotationName(_) != "AliasMethodID")
             .flatMap {
-                case a: AnnotationLike
-                    if annotationName(a).endsWith("Lines") || annotationName(a).endsWith("Aliases") =>
+                case a: AnnotationLike if annotationName(a).endsWith("Aliases") =>
                     val x = a.elementValuePairs.filter(_.name == "value")
                     x.head.value.asArrayValue.values.map(_.asAnnotationValue.annotation)
-
                 case a => Seq(a)
             }
     }

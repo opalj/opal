@@ -3,9 +3,9 @@ package org.opalj.fpcf.fixtures.alias;
 
 import org.opalj.fpcf.properties.alias.MayAlias;
 import org.opalj.fpcf.properties.alias.NoAlias;
-import org.opalj.fpcf.properties.alias.line.MayAliasLine;
-import org.opalj.fpcf.properties.alias.line.NoAliasLine;
 import org.opalj.tac.fpcf.analyses.alias.AllocationSiteBasedAliasAnalysis;
+
+
 
 public class ParameterAlias {
 
@@ -37,7 +37,7 @@ public class ParameterAlias {
         pa2.noAliasThisParamTwoMethods2();
     }
 
-    public static void noAliasWithLocal(@NoAliasLine(reason = "noAlias with uVar", lineNumber = 42, analyses = AllocationSiteBasedAliasAnalysis.class) Object o1) {
+    public static void noAliasWithLocal(@NoAlias(reason = "noAlias with uVar", lineNumber = 42, analyses = AllocationSiteBasedAliasAnalysis.class) Object o1) {
         Object o2 = new Object();
         o2.hashCode();
     }
@@ -45,7 +45,7 @@ public class ParameterAlias {
     public static void noAliasWithParam(@NoAlias(reason = "noAlias with other parameter", id = 0, analyses = AllocationSiteBasedAliasAnalysis.class) Object o1,
                                         @NoAlias(reason = "noAlias with other parameter", id = 0, analyses = AllocationSiteBasedAliasAnalysis.class) Object o2) {}
 
-    public static void mayAliasWithLocal(@MayAliasLine(reason = "mayAlias with uVar", lineNumber = 55) Object o1) {
+    public static void mayAliasWithLocal(@MayAlias(reason = "mayAlias with uVar", lineNumber = 55) Object o1) {
         Object o2 = new Object();
 
         if (Math.random() > 0.5) {
@@ -61,11 +61,11 @@ public class ParameterAlias {
     public static void mayAliasWithParam2(@MayAlias(reason = "mayAlias with other parameter 2", id = 2) Object o1,
                                           @MayAlias(reason = "mayAlias with other parameter 2", id = 2) Object o2) {}
 
-    @MayAliasLine(reason = "may alias with this parameter and invoked uVar", thisParameter = true,
+    @MayAlias(reason = "may alias with this parameter and invoked uVar", thisParameter = true,
             lineNumber = 30, methodName = "main")
     public void mayAliasThisParam() {}
 
-    @NoAliasLine(reason = "no alias with this parameter and invoked uVar", thisParameter = true,
+    @NoAlias(reason = "no alias with this parameter and invoked uVar", thisParameter = true,
             lineNumber = 30, methodName = "main",
             analyses = AllocationSiteBasedAliasAnalysis.class)
     public void noAliasThisParam() {}
