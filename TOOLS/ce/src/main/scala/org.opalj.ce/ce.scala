@@ -2,8 +2,7 @@
 package org.opalj
 package ce
 
-import com.typesafe.config.Config
-import com.typesafe.config.ConfigFactory
+import com.typesafe.config.{Config,ConfigFactory}
 
 /*
 *   Standalone configuration explorer
@@ -11,6 +10,18 @@ import com.typesafe.config.ConfigFactory
 */
 object ce {
     def main(args: Array[String]): Unit = {
-        print("Hello World")
+      println("Configuration Explorer Started")
+
+      // Load config with default filename for this application
+      val conf = this.LoadConfig()
+
+      val locator = new FileLocator(conf)
+      locator.getProjectRoot()
+    }
+
+    def LoadConfig() : Config = {
+      println("Loading configuration")
+      val conf = ConfigFactory.load("ce")
+      return conf
     }
 }
