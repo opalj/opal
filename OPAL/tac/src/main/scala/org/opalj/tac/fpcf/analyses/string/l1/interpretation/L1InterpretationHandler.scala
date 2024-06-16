@@ -54,6 +54,12 @@ class L1InterpretationHandler(implicit override val project: SomeProject) extend
         case ExprStmt(_, _: FieldRead[V]) =>
             StringInterpreter.computeFinalResult(StringFlowFunctionProperty.identity)
 
+        case stmt: FieldWriteAccessStmt[V] =>
+            StringInterpreter.computeFinalResult(StringFlowFunctionProperty.identityForVariableAt(
+                stmt.pc,
+                stmt.value.asVar.toPersistentForm(state.tac.stmts)
+            ))
+
         case stmt @ Assignment(_, _, expr: VirtualFunctionCall[V]) =>
             new L1VirtualFunctionCallInterpreter().interpretExpr(stmt, expr)
         case stmt @ ExprStmt(_, expr: VirtualFunctionCall[V]) =>
@@ -83,6 +89,12 @@ class L1InterpretationHandler(implicit override val project: SomeProject) extend
 
         case Assignment(_, target, _) =>
             StringInterpreter.computeFinalLBFor(target)
+
+        case ReturnValue(pc, expr) =>
+            StringInterpreter.computeFinalResult(StringFlowFunctionProperty.identityForVariableAt(
+                pc,
+                expr.asVar.toPersistentForm(state.tac.stmts)
+            ))
 
         case _ =>
             StringInterpreter.computeFinalResult(StringFlowFunctionProperty.identity)

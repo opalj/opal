@@ -57,6 +57,12 @@ class L0InterpretationHandler(implicit override val project: SomeProject) extend
         case Assignment(_, target, _) =>
             StringInterpreter.computeFinalLBFor(target)
 
+        case ReturnValue(pc, expr) =>
+            StringInterpreter.computeFinalResult(StringFlowFunctionProperty.identityForVariableAt(
+                pc,
+                expr.asVar.toPersistentForm(state.tac.stmts)
+            ))
+
         case _ =>
             StringInterpreter.computeFinalResult(StringFlowFunctionProperty.identity)
     }

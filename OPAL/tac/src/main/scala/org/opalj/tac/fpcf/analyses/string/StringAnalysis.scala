@@ -61,7 +61,8 @@ private[string] class ContextFreeStringAnalysis(override val project: SomeProjec
 
     private def computeNewUpperBound(state: ContextFreeStringAnalysisState): StringConstancyProperty = {
         StringConstancyProperty(state.stringFlowDependee match {
-            case UBP(methodStringFlow)       => StringConstancyInformation(methodStringFlow(state.entity.pc, state.entity.pv))
+            case UBP(methodStringFlow) =>
+                StringConstancyInformation(methodStringFlow(state.entity.pc, state.entity.pv).simplify)
             case _: EPK[_, MethodStringFlow] => StringConstancyInformation.ub
         })
     }

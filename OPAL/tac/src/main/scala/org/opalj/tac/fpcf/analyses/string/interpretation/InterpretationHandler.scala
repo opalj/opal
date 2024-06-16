@@ -50,9 +50,8 @@ abstract class InterpretationHandler extends FPCFAnalysis {
 
     private def continuation(state: InterpretationState)(eps: SomeEPS): ProperPropertyComputationResult = {
         eps match {
-            case finalEP: FinalEP[_, _] if
-                    eps.pk.equals(TACAI.key) =>
-                state.tacDependee = finalEP.asInstanceOf[FinalEP[Method, TACAI]]
+            case FinalEP(_, _) if eps.pk.equals(TACAI.key) =>
+                state.tacDependee = eps.asInstanceOf[FinalEP[Method, TACAI]]
                 processStatementForState(state)
 
             case _ =>

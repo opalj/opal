@@ -103,7 +103,7 @@ private[string] case class ContextStringAnalysisState(
                 }.toMap
             }
 
-            StringConstancyInformation(stringTree.replaceParameters(paramTrees))
+            StringConstancyInformation(stringTree.replaceParameters(paramTrees).simplify)
         } else {
             StringConstancyInformation.ub
         }
@@ -112,7 +112,7 @@ private[string] case class ContextStringAnalysisState(
     def finalSci: StringConstancyInformation = {
         if (_paramIndexToEntityMapping.valuesIterator.map(_.size).sum == 0) {
             val paramTrees = stringTree.collectParameterIndices.map((_, StringTreeNode.lb)).toMap
-            StringConstancyInformation(stringTree.replaceParameters(paramTrees))
+            StringConstancyInformation(stringTree.replaceParameters(paramTrees).simplify)
         } else {
             currentSciUB
         }

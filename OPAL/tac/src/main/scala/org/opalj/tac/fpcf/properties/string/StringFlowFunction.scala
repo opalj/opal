@@ -48,6 +48,10 @@ object StringFlowFunctionProperty extends StringFlowFunctionPropertyMetaInformat
     def identity: StringFlowFunctionProperty =
         StringFlowFunctionProperty(Set.empty[PDUWeb], IdentityFlow)
 
+    // Helps to register notable variable usage / definition which does not modify the current state
+    def identityForVariableAt(pc: Int, v: PV): StringFlowFunctionProperty =
+        StringFlowFunctionProperty(pc, v, IdentityFlow)
+
     def ub(pc: Int, v: PV): StringFlowFunctionProperty =
         constForVariableAt(pc, v, StringTreeNeutralElement)
 

@@ -77,10 +77,17 @@ case class StringTreeConcat(override val children: Seq[StringTreeNode]) extends 
     override def simplify: StringTreeNode = {
         // TODO neutral concat something is always neutral
         val nonNeutralChildren = children.map(_.simplify).filterNot(_.isNeutralElement)
-        if (nonNeutralChildren.isEmpty)
-            StringTreeNeutralElement
-        else
-            StringTreeConcat(nonNeutralChildren)
+        nonNeutralChildren.size match {
+            case 0 => StringTreeNeutralElement
+            case 1 => nonNeutralChildren.head
+            case _ =>
+                var newChildren = Seq.empty[StringTreeNode]
+                nonNeutralChildren.foreach {
+                    case concatChild: StringTreeConcat => newChildren :++= concatChild.children
+                    case child                         => newChildren :+= child
+                }
+                StringTreeConcat(newChildren)
+        }
     }
 
     override def constancyLevel: StringConstancyLevel.Value =

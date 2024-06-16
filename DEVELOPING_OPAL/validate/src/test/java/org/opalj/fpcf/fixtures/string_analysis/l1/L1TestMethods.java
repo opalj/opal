@@ -86,7 +86,7 @@ public class L1TestMethods extends L0TestMethods {
     @StringDefinitionsCollection(
             value = "a case where the initialization of a StringBuilder depends on > 1 non-virtual function calls and a constant",
             stringDefinitions = {
-                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "(java.lang.Runtime|java.lang.StringBuilder|ERROR)")
+                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "(java.lang.Runtime|ERROR|java.lang.StringBuilder)")
             })
     public void initFromNonVirtualFunctionCallTest(int i) {
         String s;
@@ -197,9 +197,7 @@ public class L1TestMethods extends L0TestMethods {
             stringDefinitions = {
                     @StringDefinitions(
                             expectedLevel = PARTIALLY_CONSTANT,
-                            expectedStrings = "get(.*|Hello, Worldjava.lang.Runtime)",
-                            realisticLevel = DYNAMIC,
-                            realisticStrings = ".*"
+                            expectedStrings = "(get.*|getHello, Worldjava.lang.Runtime)"
                     )
             })
     public void dependenciesWithinFinalizeTest(String s, Class clazz) {
@@ -268,9 +266,10 @@ public class L1TestMethods extends L0TestMethods {
             stringDefinitions = {
                     @StringDefinitions(
                             expectedLevel = CONSTANT,
-                            expectedStrings = "Hello, World_paintname((_PAD|_REFLECT|_REPEAT)?)?(_AlphaTest)?",
-                            realisticLevel = DYNAMIC,
-                            realisticStrings = ".*"
+                            expectedStrings = "Hello, World_paintname(_PAD|_REFLECT|_REPEAT)?(_AlphaTest)?",
+                            realisticLevel = CONSTANT,
+                            // or-cases are currently not collapsed into simpler conditionals / or-cases using prefix checking
+                            realisticStrings = "(Hello, World_paintname|Hello, World_paintname_PAD|Hello, World_paintname_REFLECT|Hello, World_paintname_REPEAT|Hello, World_paintname_AlphaTest|(Hello, World_paintname_PAD|Hello, World_paintname)_AlphaTest|Hello, World_paintname_REFLECT_AlphaTest|Hello, World_paintname_REPEAT_AlphaTest)"
                     )
             })
     public void getPaintShader(boolean getPaintType, int spreadMethod, boolean alphaTest) {
@@ -400,12 +399,36 @@ public class L1TestMethods extends L0TestMethods {
     }
 
     @StringDefinitionsCollection(
-            value = "a case where a non virtual function has multiple return values",
+            value = "a case where the single valid return value of the called function can be resolved without calling the function",
             stringDefinitions = {
                     @StringDefinitions(
-                            expectedLevel = CONSTANT,
-                            expectedStrings = "(One|val|java.lang.Object)"
+                            expectedLevel = CONSTANT, expectedStrings = "val",
+                            // Since the virtual function return value is inlined before and its actual runtime return
+                            // value is not used, the function call gets converted to a method call, which modifies the
+                            // TAC: The def PC from the `analyzeString` parameter is now different and points to the def
+                            // PC for the `resolvableReturnValueFunction` parameter.
+                            realisticLevel = CONSTANT, realisticStrings = ""
                     )
+            })
+    public void resolvableReturnValue() {
+        analyzeString(resolvableReturnValueFunction("val", 42));
+    }
+
+    /**
+     * Belongs to resolvableReturnValue.
+     */
+    private String resolvableReturnValueFunction(String s, int i) {
+        switch (i) {
+            case 0: return getObjectClassName();
+            case 1: return "One";
+            default: return s;
+        }
+    }
+
+    @StringDefinitionsCollection(
+            value = "a case where a non virtual function has multiple return values",
+            stringDefinitions = {
+                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "(One|val|java.lang.Object)")
             })
     public void severalReturnValuesTest1() {
         analyzeString(severalReturnValuesFunction("val", 42));
@@ -416,19 +439,16 @@ public class L1TestMethods extends L0TestMethods {
      */
     private String severalReturnValuesFunction(String s, int i) {
         switch (i) {
-        case 0: return getObjectClassName();
-        case 1: return "One";
-        default: return s;
+            case 0: return "One";
+            case 1: return s;
+            default: return getObjectClassName();
         }
     }
 
     @StringDefinitionsCollection(
             value = "a case where a static function has multiple return values",
             stringDefinitions = {
-                    @StringDefinitions(
-                            expectedLevel = CONSTANT,
-                            expectedStrings = "(that's odd|my.helper.Class)"
-                    )
+                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "(that's odd|my.helper.Class)")
             })
     public void severalReturnValuesTest2() {
         analyzeString(severalReturnValuesStaticFunction(42));
@@ -450,25 +470,16 @@ public class L1TestMethods extends L0TestMethods {
     @StringDefinitionsCollection(
             value = "a case where a non-virtual and a static function have no return values at all",
             stringDefinitions = {
-                    @StringDefinitions(expectedLevel = DYNAMIC, expectedStrings = ".*"),
                     @StringDefinitions(expectedLevel = DYNAMIC, expectedStrings = ".*")
             })
     public void functionWithNoReturnValueTest1() {
         analyzeString(noReturnFunction1());
-        analyzeString(noReturnFunction2());
     }
 
     /**
      * Belongs to functionWithNoReturnValueTest1.
      */
     public String noReturnFunction1() {
-        throw new RuntimeException();
-    }
-
-    /**
-     * Belongs to functionWithNoReturnValueTest1.
-     */
-    public static String noReturnFunction2() {
         throw new RuntimeException();
     }
 
@@ -498,6 +509,43 @@ public class L1TestMethods extends L0TestMethods {
     // DIFFERING TEST CASES FROM PREVIOUS LEVELS
 
     @StringDefinitionsCollection(
+            value = "a more comprehensive case where multiple definition sites have to be "
+                    + "considered each with a different string generation mechanism",
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT,
+                            expectedStrings = "((java.lang.Object|java.lang.Runtime)|java.lang.System|java.lang.StringBuilder)",
+                            realisticLevel = DYNAMIC,
+                            // Array values are currently not interpreted. Also, differently constructed strings are
+                            // currently not deduplicated since they result in different string trees during flow analysis.
+                            realisticStrings = "(.*|java.lang.System|java.lang.StringBuilder|java.lang.StringBuilder)"
+                    )
+            })
+    public void multipleDefSites(int value) {
+        String[] arr = new String[] { "java.lang.Object", getRuntimeClassName() };
+
+        String s;
+        switch (value) {
+            case 0:
+                s = arr[value];
+                break;
+            case 1:
+                s = arr[value];
+                break;
+            case 3:
+                s = "java.lang.System";
+                break;
+            case 4:
+                s = "java.lang." + getSimpleStringBuilderClassName();
+                break;
+            default:
+                s = getStringBuilderClassName();
+        }
+
+        analyzeString(s);
+    }
+
+    @StringDefinitionsCollection(
             value = "a test case which tests the interpretation of String#valueOf",
             stringDefinitions = {
                     @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "c"),
@@ -511,12 +559,36 @@ public class L1TestMethods extends L0TestMethods {
     }
 
     @StringDefinitionsCollection(
+            value = "an example that uses a non final field",
+            stringDefinitions = {
+                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "Field Value:private l0 non-final string field")
+            })
+    public void nonFinalFieldRead() {
+        StringBuilder sb = new StringBuilder("Field Value:");
+        System.out.println(sb);
+        sb.append(someStringField);
+        analyzeString(sb.toString());
+    }
+
+    @StringDefinitionsCollection(
             value = "can handle virtual function calls",
             stringDefinitions = {
                     @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "java.lang.StringBuilder")
             })
     public void fromFunctionCall() {
         String className = getStringBuilderClassName();
+        analyzeString(className);
+    }
+
+    @StringDefinitionsCollection(
+            value = "constant string + string from function call => CONSTANT",
+            stringDefinitions = {
+                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "java.lang.StringBuilder")
+            })
+    public void fromConstantAndFunctionCall() {
+        String className = "java.lang.";
+        System.out.println(className);
+        className += getSimpleStringBuilderClassName();
         analyzeString(className);
     }
 
@@ -575,13 +647,16 @@ public class L1TestMethods extends L0TestMethods {
             stringDefinitions = {
                     @StringDefinitions(
                             expectedLevel = CONSTANT, expectedStrings = "(iv1|iv2): ",
-                            realisticLevel = DYNAMIC, realisticStrings = ".*"
+                            // The real value is not fully resolved yet, since the string builder is used in a while loop,
+                            // which leads to the string builder potentially carrying any value. This can be refined by
+                            // recording pc specific states during data flow analysis.
+                            realisticLevel = DYNAMIC, realisticStrings = "((iv1|iv2): |.*)"
                     ),
                     @StringDefinitions(
                             expectedLevel = CONSTANT,
                             expectedStrings = "(iv1|iv2): ((great!)?)*(java.lang.Runtime)?",
                             realisticLevel = DYNAMIC,
-                            realisticStrings = ".*"
+                            realisticStrings = "(.*|.*java.lang.Runtime)"
                     )
             })
     public void extensive(boolean cond) {

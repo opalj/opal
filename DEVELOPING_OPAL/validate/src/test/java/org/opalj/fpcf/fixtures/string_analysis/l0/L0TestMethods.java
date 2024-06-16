@@ -59,7 +59,7 @@ import static org.opalj.fpcf.properties.string_analysis.StringConstancyLevel.*;
  */
 public class L0TestMethods {
 
-    private String someStringField = "";
+    protected String someStringField = "private l0 non-final string field";
     public static final String MY_CONSTANT = "mine";
 
     /**
