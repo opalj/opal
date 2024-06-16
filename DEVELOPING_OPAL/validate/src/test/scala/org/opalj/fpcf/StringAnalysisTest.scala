@@ -207,8 +207,6 @@ class L1StringAnalysisTest extends StringAnalysisTest {
         val entities = determineEntitiesToAnalyze(as.project)
             // Currently broken L1 Tests
             .filterNot(entity => entity.context.method.name.startsWith("cyclicDependencyTest"))
-            .filterNot(entity => entity.context.method.name.startsWith("unknownHierarchyInstanceTest"))
-            .filterNot(entity => entity.context.method.name.startsWith("crissCrossExample"))
         entities.foreach(as.propertyStore.force(_, StringConstancyProperty.key))
 
         as.propertyStore.waitOnPhaseCompletion()
