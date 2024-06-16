@@ -53,8 +53,6 @@ case class L0VirtualFunctionCallInterpreter()
                 interpretSubstringCall(at, pt, call)
             case _ =>
                 call.descriptor.returnType match {
-                    case obj: ObjectType if obj == ObjectType.String && at.isDefined =>
-                        interpretArbitraryCall(at.get, call)
                     case _: IntLikeType if at.isDefined =>
                         computeFinalResult(StringFlowFunctionProperty.constForVariableAt(
                             state.pc,
@@ -67,6 +65,8 @@ case class L0VirtualFunctionCallInterpreter()
                             at.get,
                             StringTreeDynamicFloat
                         ))
+                    case _ if at.isDefined =>
+                        interpretArbitraryCall(at.get, call)
                     case _ =>
                         computeFinalResult(StringFlowFunctionProperty.identity)
                 }
