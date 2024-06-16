@@ -76,7 +76,14 @@ class ContextStringAnalysis(override val project: SomeProject) extends FPCFAnaly
 
     def analyze(vc: VariableContext): ProperPropertyComputationResult = {
         val vdScp = ps(VariableDefinition(vc.pc, vc.pv, vc.m), StringConstancyProperty.key)
-        continuation(ContextStringAnalysisState(vc, vdScp))(vdScp.asInstanceOf[SomeEPS])
+
+        implicit val state: ContextStringAnalysisState = ContextStringAnalysisState(vc, vdScp)
+        if (vdScp.isEPK) {
+            state._stringDependee = vdScp
+            computeResults
+        } else {
+            continuation(state)(vdScp.asInstanceOf[SomeEPS])
+        }
     }
 
     private def continuation(state: ContextStringAnalysisState)(eps: SomeEPS): ProperPropertyComputationResult = {
@@ -111,6 +118,7 @@ class ContextStringAnalysis(override val project: SomeProject) extends FPCFAnaly
                 handleTACAI(m, tacai)
                 computeResults
 
+            // "Upwards" dependency
             case EUBP(_: VariableContext, _: StringConstancyProperty) =>
                 state.updateParamDependee(eps.asInstanceOf[EOptionP[VariableContext, StringConstancyProperty]])
                 computeResults
