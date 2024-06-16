@@ -137,16 +137,12 @@ class ContextStringAnalysis(override val project: SomeProject) extends FPCFAnaly
             if (callerContext.hasContext && callerContext.method.hasSingleDefinedMethod) {
                 val callerMethod = callerContext.method.definedMethod
 
-                System.out.println(s"FOUND RELEVANT CALLER FOR PC ${state.entity.pc} IN ${state.entity.m} FOR ${state.entity.pv}")
-
                 val tacEOptP = ps(callerMethod, TACAI.key)
                 state.registerTacaiDepender(tacEOptP, (callerContext, pc))
 
                 if (tacEOptP.hasUBP) {
                     handleTACAI(callerMethod, tacEOptP.ub)
                 }
-            } else {
-                System.out.println(s"NON-SDM FOUND FOR PC ${state.entity.pc} IN ${state.entity.m} FOR ${state.entity.pv}")
             }
         }
     }
