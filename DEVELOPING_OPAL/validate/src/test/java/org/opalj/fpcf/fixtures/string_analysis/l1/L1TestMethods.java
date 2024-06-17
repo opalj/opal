@@ -521,29 +521,7 @@ public class L1TestMethods extends L0TestMethods {
                             realisticStrings = "(.*|java.lang.System|java.lang.StringBuilder|java.lang.StringBuilder)"
                     )
             })
-    public void multipleDefSites(int value) {
-        String[] arr = new String[] { "java.lang.Object", getRuntimeClassName() };
-
-        String s;
-        switch (value) {
-            case 0:
-                s = arr[value];
-                break;
-            case 1:
-                s = arr[value];
-                break;
-            case 3:
-                s = "java.lang.System";
-                break;
-            case 4:
-                s = "java.lang." + getSimpleStringBuilderClassName();
-                break;
-            default:
-                s = getStringBuilderClassName();
-        }
-
-        analyzeString(s);
-    }
+    public void multipleDefSites(int value) {}
 
     @StringDefinitionsCollection(
             value = "a test case which tests the interpretation of String#valueOf",
@@ -552,45 +530,28 @@ public class L1TestMethods extends L0TestMethods {
                     @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "42.3"),
                     @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "java.lang.Runtime")
             })
-    public void valueOfTest() {
-        analyzeString(String.valueOf('c'));
-        analyzeString(String.valueOf((float) 42.3));
-        analyzeString(String.valueOf(getRuntimeClassName()));
-    }
+    public void valueOfTest() {}
 
     @StringDefinitionsCollection(
             value = "an example that uses a non final field",
             stringDefinitions = {
                     @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "Field Value:private l0 non-final string field")
             })
-    public void nonFinalFieldRead() {
-        StringBuilder sb = new StringBuilder("Field Value:");
-        System.out.println(sb);
-        sb.append(someStringField);
-        analyzeString(sb.toString());
-    }
+    public void nonFinalFieldRead() {}
 
     @StringDefinitionsCollection(
             value = "can handle virtual function calls",
             stringDefinitions = {
                     @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "java.lang.StringBuilder")
             })
-    public void fromFunctionCall() {
-        String className = getStringBuilderClassName();
-        analyzeString(className);
-    }
+    public void fromFunctionCall() {}
 
     @StringDefinitionsCollection(
             value = "constant string + string from function call => CONSTANT",
             stringDefinitions = {
                     @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "java.lang.StringBuilder")
             })
-    public void fromConstantAndFunctionCall() {
-        String className = "java.lang.";
-        System.out.println(className);
-        className += getSimpleStringBuilderClassName();
-        analyzeString(className);
-    }
+    public void fromConstantAndFunctionCall() {}
 
     @StringDefinitionsCollection(
             value = "Some comprehensive example for experimental purposes taken from the JDK and slightly modified",
@@ -602,45 +563,7 @@ public class L1TestMethods extends L0TestMethods {
                             realisticStrings = ".*"
                     ),
             })
-    protected void setDebugFlags(String[] var1) {
-        for(int var2 = 0; var2 < var1.length; ++var2) {
-            String var3 = var1[var2];
-
-            int randomValue = new Random().nextInt();
-            StringBuilder sb = new StringBuilder("Hello: ");
-            if (randomValue % 2 == 0) {
-                sb.append(getRuntimeClassName());
-            } else if (randomValue % 3 == 0) {
-                sb.append(getStringBuilderClassName());
-            } else if (randomValue % 4 == 0) {
-                sb.append(getSimpleStringBuilderClassName());
-            }
-
-            try {
-                Field var4 = this.getClass().getField(var3 + "DebugFlag");
-                int var5 = var4.getModifiers();
-                if (Modifier.isPublic(var5) && !Modifier.isStatic(var5) &&
-                        var4.getType() == Boolean.TYPE) {
-                    var4.setBoolean(this, true);
-                }
-            } catch (IndexOutOfBoundsException var90) {
-                System.out.println("Should never happen!");
-            } catch (Exception var6) {
-                int i = 10;
-                i += new Random().nextInt();
-                System.out.println("Some severe error occurred!" + i);
-            } finally {
-                int i = 10;
-                i += new Random().nextInt();
-                // TODO: Control structures in finally blocks are not handles correctly
-                // if (i % 2 == 0) {
-                //     System.out.println("Ready to analyze now in any case!" + i);
-                // }
-            }
-
-            analyzeString(sb.toString());
-        }
-    }
+    protected void setDebugFlags(String[] var1) {}
 
     @StringDefinitionsCollection(
             value = "an extensive example with many control structures",
@@ -659,31 +582,7 @@ public class L1TestMethods extends L0TestMethods {
                             realisticStrings = "(.*|.*java.lang.Runtime)"
                     )
             })
-    public void extensive(boolean cond) {
-        StringBuilder sb = new StringBuilder();
-        if (cond) {
-            sb.append("iv1");
-        } else {
-            sb.append("iv2");
-        }
-        System.out.println(sb);
-        sb.append(": ");
-
-        analyzeString(sb.toString());
-
-        Random random = new Random();
-        while (random.nextFloat() > 5.) {
-            if (random.nextInt() % 2 == 0) {
-                sb.append("great!");
-            }
-        }
-
-        if (sb.indexOf("great!") > -1) {
-            sb.append(getRuntimeClassName());
-        }
-
-        analyzeString(sb.toString());
-    }
+    public void extensive(boolean cond) {}
 
     private String getRuntimeClassName() {
         return "java.lang.Runtime";

@@ -45,8 +45,11 @@ sealed abstract class StringAnalysisTest extends PropertiesTest {
     /**
      * Resolves all test methods for this [[level]] and below while taking overrides into account. For all test methods,
      * [[extractPUVars]] is called with their [[TACode]].
+     *
+     * @return An [[Iterable]] containing the [[VariableContext]] to be analyzed and the method that has the relevant
+     *         annotations attached.
      */
-    def determineEntitiesToAnalyze(project: Project[URL]): Iterable[VariableContext] = {
+    def determineEntitiesToAnalyze(project: Project[URL]): Iterable[(VariableContext, Method)] = {
         val tacProvider = project.get(EagerDetachedTACAIKey)
         val declaredMethods = project.get(DeclaredMethodsKey)
         val contextProvider = project.get(ContextProviderKey)
@@ -56,17 +59,24 @@ sealed abstract class StringAnalysisTest extends PropertiesTest {
         )(project).toList
             .filter(_.thisType.packageName.startsWith("org/opalj/fpcf/fixtures/string_analysis/"))
             .sortBy { cf => cf.thisType.simpleName.substring(1, 2).toInt }
-            .foldRight(Seq.empty[Method]) { (cf, methods) =>
-                methods ++ cf.methods.filterNot(m => methods.exists(_.name == m.name))
+            .foldLeft(Map.empty[Method, Method]) { (implementationsToAnnotations, cf) =>
+                implementationsToAnnotations ++ cf.methods.map { m =>
+                    (
+                        implementationsToAnnotations.find(kv =>
+                            kv._1.name == m.name && kv._1.descriptor == m.descriptor
+                        ).map(_._1).getOrElse(m),
+                        m
+                    )
+                }
             }
             .filter {
-                _.runtimeInvisibleAnnotations.foldLeft(false)((exists, a) =>
+                _._1.runtimeInvisibleAnnotations.foldLeft(false)((exists, a) =>
                     exists || StringAnalysisTest.isStringUsageAnnotation(a)
                 )
             }
-            .foldLeft(Seq.empty[VariableContext]) { (entities, m) =>
-                entities ++ extractPUVars(tacProvider(m)).map(e =>
-                    VariableContext(e._1, e._2, contextProvider.newContext(declaredMethods(m)))
+            .foldLeft(Seq.empty[(VariableContext, Method)]) { (entities, m) =>
+                entities ++ extractPUVars(tacProvider(m._1)).map(e =>
+                    (VariableContext(e._1, e._2, contextProvider.newContext(declaredMethods(m._1))), m._2)
                 )
             }
     }
@@ -86,18 +96,18 @@ sealed abstract class StringAnalysisTest extends PropertiesTest {
     }
 
     def determineEAS(
-        entities: Iterable[VariableContext],
+        entities: Iterable[(VariableContext, Method)],
         project:  Project[URL]
     ): Iterable[(VariableContext, String => String, List[Annotation])] = {
-        val m2e = entities.groupBy(_.context).iterator.map(e =>
-            e._1.method.definedMethod -> (e._1, e._2.map(k => (k.pc, k.pv)))
+        val m2e = entities.groupBy(_._2).iterator.map(e =>
+            e._1 -> (e._1, e._2.map(k => k._1))
         ).toMap
         // As entity, we need not the method but a tuple (PUVar, Method), thus this transformation
         methodsWithAnnotations(project).filter(am => m2e.contains(am._1)).flatMap { am =>
             m2e(am._1)._2.zipWithIndex.map {
-                case ((pc, puVar), index) =>
+                case (vc, index) =>
                     Tuple3(
-                        VariableContext(pc, puVar, m2e(am._1)._1),
+                        vc,
                         { s: String => s"${am._2(s)} (#$index)" },
                         List(StringAnalysisTest.getStringDefinitionsFromCollection(am._3, index))
                     )
@@ -168,7 +178,7 @@ class L0StringAnalysisTest extends StringAnalysisTest {
         val as = executeAnalyses(LazyL0StringAnalysis.allRequiredAnalyses)
 
         val entities = determineEntitiesToAnalyze(as.project)
-        entities.foreach(as.propertyStore.force(_, StringConstancyProperty.key))
+        entities.foreach(entity => as.propertyStore.force(entity._1, StringConstancyProperty.key))
 
         as.propertyStore.waitOnPhaseCompletion()
         as.propertyStore.shutdown()
@@ -206,8 +216,8 @@ class L1StringAnalysisTest extends StringAnalysisTest {
 
         val entities = determineEntitiesToAnalyze(as.project)
             // Currently broken L1 Tests
-            .filterNot(entity => entity.context.method.name.startsWith("cyclicDependencyTest"))
-        entities.foreach(as.propertyStore.force(_, StringConstancyProperty.key))
+            .filterNot(entity => entity._2.name.startsWith("cyclicDependencyTest"))
+        entities.foreach(entity => as.propertyStore.force(entity._1, StringConstancyProperty.key))
 
         as.propertyStore.waitOnPhaseCompletion()
         as.propertyStore.shutdown()
