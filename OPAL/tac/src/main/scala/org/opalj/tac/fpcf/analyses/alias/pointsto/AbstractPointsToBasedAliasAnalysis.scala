@@ -6,8 +6,6 @@ package analyses
 package alias
 package pointsto
 
-import scala.collection.mutable.ArrayBuffer
-
 import org.opalj.br.Field
 import org.opalj.br.analyses.DeclaredFieldsKey
 import org.opalj.br.analyses.ProjectInformationKeys
@@ -25,8 +23,8 @@ import org.opalj.br.fpcf.properties.alias.AliasUVar
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
 import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
-import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.Entity
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.SomeEPS
@@ -38,6 +36,8 @@ import org.opalj.tac.fpcf.analyses.pointsto.AbstractPointsToBasedAnalysis
 import org.opalj.tac.fpcf.analyses.pointsto.toEntity
 import org.opalj.tac.fpcf.properties.TACAI
 
+import scala.collection.mutable.ArrayBuffer
+
 /**
  * A base trait for all alias analyses based on the points-to information.
  */
@@ -45,7 +45,7 @@ trait AbstractPointsToBasedAliasAnalysis extends TacBasedAliasAnalysis with Abst
     with SetBasedAliasAnalysis {
 
     override protected[this] type AnalysisContext = AliasAnalysisContext
-    override protected[this] type AnalysisState <: PointsToBasedAliasAnalysisState[AliasElementType, AliasSet]
+    override protected[this] type AnalysisState <: PointsToBasedAliasAnalysisState[AliasElementType, AliasSet, PointsToSet]
 
     override protected[this] def analyzeTAC()(implicit
         context: AnalysisContext,
@@ -131,16 +131,15 @@ trait AbstractPointsToBasedAliasAnalysis extends TacBasedAliasAnalysis with Abst
                 } else {
 
                     val fieldReferenceEntity = (field.fieldReference, pts.e)
-                    pts.ub.forNewestNElements(pts.ub.numElements - state.pointsToElementsHandled(
-                        field,
-                        fieldReferenceEntity
-                    )) {
-                        value =>
-                            {
-                                allocationSites += value
-                                state.incPointsToElementsHandled(field, fieldReferenceEntity)
-                            }
+                    pts.ub.forNewestNElements(
+                        pts.ub.numElements - state.oldPointsToSet(field, fieldReferenceEntity).map(_.numElements).getOrElse(0)
+                    ) {
+                        value => {
+                            allocationSites += value
+                        }
                     }
+
+                    state.setOldPointsToSet(field, fieldReferenceEntity, pts.ub)
                 }
             })
 
@@ -199,9 +198,12 @@ trait AbstractPointsToBasedAliasAnalysis extends TacBasedAliasAnalysis with Abst
         state:   AnalysisState,
         context: AnalysisContext
     ): Unit = {
-        pointsToSet.forNewestNElements(pointsToSet.numElements - state.pointsToElementsHandled(ase, pointsToEntity)) {
+        pointsToSet.forNewestNElements(
+            pointsToSet.numElements - state.oldPointsToSet(ase, pointsToEntity).map(_.numElements).getOrElse(0)
+        ) {
             element => handlePointsToSetElement(ase, pointsToEntity, element)
         }
+        state.setOldPointsToSet(ase, pointsToEntity, pointsToSet)
     }
 
     /**

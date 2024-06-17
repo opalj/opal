@@ -7,6 +7,7 @@ import org.opalj.br.fpcf.BasicFPCFLazyAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.properties.alias.Alias
 import org.opalj.br.fpcf.properties.alias.AliasSourceElement
+import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
@@ -40,7 +41,6 @@ class TypePointsToBasedAliasAnalysis(final val project: SomeProject)
         context: AnalysisContext
     ): Unit = {
         state.addPointsTo(ase, element)
-        state.incPointsToElementsHandled(ase, pointsToEntity)
     }
     /**
      * Creates the state to use for the computation.
@@ -78,4 +78,4 @@ object LazyTypePointsToBasedAliasAnalysisScheduler extends PointsToBasedAliasAna
  * @see [[PointsToBasedAliasAnalysisState]]
  */
 class TypePointsToBasedAliasAnalysisState extends TypeBasedAliasAnalysisState
-    with PointsToBasedAliasAnalysisState[ReferenceType, TypeBasedAliasSet] {}
+    with PointsToBasedAliasAnalysisState[ReferenceType, TypeBasedAliasSet, TypeBasedPointsToSet] {}

@@ -7,6 +7,7 @@ package alias
 package pointsto
 
 import org.opalj.br.fpcf.properties.alias.AliasSourceElement
+import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.Property
@@ -20,20 +21,20 @@ import org.opalj.tac.fpcf.analyses.alias.TacBasedAliasAnalysisState
  *
  * - The current dependees for each of the [[AliasSourceElement]].
  *
- * - The number of handled points-to elements for each [[AliasSourceElement]].
+ * - The last points-to set for a given points-to entity that has been completely handled for am [[AliasSourceElement]].
  *
  * - The current field dependees for each [[AliasSourceElement]]. A field dependee is a definition site of an uVar that is
  *  used to access the field.
  */
-trait PointsToBasedAliasAnalysisState[ElementType, AliasSet <: AliasSetLike[ElementType, AliasSet]]
+trait PointsToBasedAliasAnalysisState[ElementType, AliasSet <: AliasSetLike[ElementType, AliasSet], PointsToSet >: Null <: PointsToSetLike[_, _, PointsToSet]]
     extends TacBasedAliasAnalysisState
     with SetBasedAliasAnalysisState[ElementType, AliasSet] {
 
     private[this] var _element1Dependees = Set[Entity]()
     private[this] var _element2Dependees = Set[Entity]()
 
-    private[this] var _pointsToElementsHandledElement1: Map[Entity, Int] = Map.empty[Entity, Int]
-    private[this] var _pointsToElementsHandledElement2: Map[Entity, Int] = Map.empty[Entity, Int]
+    private[this] var _oldPointsToSets1: Map[Entity, PointsToSet] = Map.empty[Entity, PointsToSet]
+    private[this] var _oldPointsToSets2: Map[Entity, PointsToSet] = Map.empty[Entity, PointsToSet]
 
     private[this] var _field1Dependees = Set[Entity]()
     private[this] var _field2Dependees = Set[Entity]()
@@ -91,19 +92,20 @@ trait PointsToBasedAliasAnalysisState[ElementType, AliasSet <: AliasSetLike[Elem
     }
 
     /**
-     * @return The number of handled points-to elements of the given pointsTo entity for the given [[AliasSourceElement]].
+     * @return The most recent points-to set of the given points-to entity that has been completely handled for the given [[AliasSourceElement]].
      */
-    def pointsToElementsHandled(ase: AliasSourceElement, e: Entity)(implicit context: AliasAnalysisContext): Int = {
-        if (context.isElement1(ase)) _pointsToElementsHandledElement1.getOrElse(e, 0)
-        else _pointsToElementsHandledElement2.getOrElse(e, 0)
+    def oldPointsToSet(ase: AliasSourceElement, e: Entity)(implicit context: AliasAnalysisContext): Option[PointsToSet] = {
+        if (context.isElement1(ase)) _oldPointsToSets1.get(e)
+        else _oldPointsToSets2.get(e)
     }
 
     /**
-     * Increments the number of handled points-to elements of the given pointsTo entity for the given [[AliasSourceElement]] by one.
+     * Updates the points-to set of the given points-to entity that has been completely handled for the given [[AliasSourceElement]].
      */
-    def incPointsToElementsHandled(ase: AliasSourceElement, e: Entity)(implicit context: AliasAnalysisContext): Unit = {
-        if (context.isElement1(ase)) _pointsToElementsHandledElement1 += e -> (pointsToElementsHandled(ase, e) + 1)
-        else _pointsToElementsHandledElement2 += e -> (pointsToElementsHandled(ase, e) + 1)
+    def setOldPointsToSet(ase: AliasSourceElement, e: Entity, pointsToSet: PointsToSet)
+                              (implicit context: AliasAnalysisContext): Unit = {
+        if (context.isElement1(ase)) _oldPointsToSets1 += e -> pointsToSet
+        else _oldPointsToSets2 += e -> pointsToSet
     }
 
     /**

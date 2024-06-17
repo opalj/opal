@@ -13,6 +13,7 @@ import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.alias.Alias
 import org.opalj.br.fpcf.properties.alias.AliasSourceElement
+import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
 import org.opalj.br.fpcf.properties.pointsto.longToAllocationSite
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.PropertyBounds
@@ -48,7 +49,6 @@ class AllocationSitePointsToBasedAliasAnalysis(final val project: SomeProject)
         val (allocContext, pc, _): (Context, PC, Int) = longToAllocationSite(encodedAllocationSite)
 
         state.addPointsTo(ase, allocContext, pc)
-        state.incPointsToElementsHandled(ase, pointsToEntity)
     }
 
     /**
@@ -89,4 +89,4 @@ object LazyAllocationSitePointsToBasedAliasAnalysisScheduler extends PointsToBas
  * @see [[PointsToBasedAliasAnalysisState]]
  */
 class AllocationSitePointsToBasedAliasAnalysisState extends AllocationSiteBasedAliasAnalysisState
-    with PointsToBasedAliasAnalysisState[AllocationSite, AllocationSiteBasedAliasSet] {}
+    with PointsToBasedAliasAnalysisState[AllocationSite, AllocationSiteBasedAliasSet, AllocationSitePointsToSet] {}
