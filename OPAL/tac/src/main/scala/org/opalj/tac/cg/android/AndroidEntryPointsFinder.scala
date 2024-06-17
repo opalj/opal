@@ -4,14 +4,16 @@ package tac
 package cg
 package android
 
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.cg.EntryPointFinder
-import org.opalj.br.{Method, MethodDescriptor, ObjectType}
-
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.jdk.CollectionConverters._
 import scala.util.control.Exception.allCatch
+
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.cg.EntryPointFinder
+import org.opalj.br.Method
+import org.opalj.br.MethodDescriptor
+import org.opalj.br.ObjectType
 
 /**
  * The AndroidEntryPointFinder considers specific methods of app components as entry points.

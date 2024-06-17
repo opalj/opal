@@ -4,8 +4,11 @@ package tac
 package cg
 package android
 
-import org.opalj.br.{ClassFile, ObjectType}
-import org.opalj.br.analyses.{ProjectInformationKey, ProjectInformationKeys, SomeProject}
+import org.opalj.br.ClassFile
+import org.opalj.br.ObjectType
+import org.opalj.br.analyses.ProjectInformationKey
+import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.SomeProject
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer

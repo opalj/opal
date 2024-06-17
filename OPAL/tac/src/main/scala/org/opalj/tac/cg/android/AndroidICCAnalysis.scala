@@ -4,19 +4,40 @@ package tac
 package cg
 package android
 
-import org.opalj.br._
-import org.opalj.br.analyses.{DeclaredMethodsKey, ProjectInformationKeys, SomeProject}
-import org.opalj.br.fpcf.{BasicFPCFEagerAnalysisScheduler, FPCFAnalysis}
-import org.opalj.br.instructions.{INVOKESPECIAL, INVOKESTATIC, INVOKEVIRTUAL}
-import org.opalj.fpcf.{InterimPartialResult, NoResult, ProperPropertyComputationResult, PropertyBounds, PropertyComputationResult, PropertyStore, Results, SomeEPS, UBP}
-import org.opalj.tac.fpcf.analyses.cg.{IndirectCalls, V}
+import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
+import scala.io.BufferedSource
+import scala.io.Source
+
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
+import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.instructions.INVOKESPECIAL
+import org.opalj.br.instructions.INVOKESTATIC
+import org.opalj.br.instructions.INVOKEVIRTUAL
+import org.opalj.br.FieldTypes
+import org.opalj.fpcf.InterimPartialResult
+import org.opalj.fpcf.NoResult
+import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.PropertyBounds
+import org.opalj.fpcf.PropertyComputationResult
+import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.Results
+import org.opalj.fpcf.SomeEPS
+import org.opalj.fpcf.UBP
+import org.opalj.tac.fpcf.analyses.cg.IndirectCalls
+import org.opalj.tac.fpcf.analyses.cg.V
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.cg.{Callees, Callers}
 import org.opalj.value.ValueInformation
-
-import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
-import scala.io.{BufferedSource, Source}
+import org.opalj.br.ClassFile
+import org.opalj.br.Method
+import org.opalj.br.MethodDescriptor
+import org.opalj.br.ObjectType
+import org.opalj.br.ObjectVariableInfo
+import org.opalj.br.PCAndInstruction
 
 /**
  * An Analysis that can be used to construct call graphs for Android apps.
@@ -603,17 +624,17 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
 
     def getComponentType(
         name: String
-    ): String = {
+    ): Option[String] = {
         if (activityStartMethods.contains(name)) {
-            return activity;
+            return Some(activity);
         }
         if (serviceMethods.contains(name)) {
-            return service;
+            return Some(service);
         }
         if (broadcastReceiverStartMethods.contains(name)) {
-            return receiver;
+            return Some(receiver);
         }
-        undef
+        None
     }
 
     /**
@@ -1408,4 +1429,3 @@ object AndroidICCAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
         analysis
     }
 }
-
