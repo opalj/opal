@@ -26,10 +26,10 @@ object AndroidEntryPointsFinder extends EntryPointFinder {
     override def collectEntryPoints(project: SomeProject): Iterable[Method] = {
         val entryPoints = ArrayBuffer.empty[Method]
         val defaultEntryPoints = mutable.Map.empty[String, List[(String, Option[MethodDescriptor])]]
-        val defEntry = project.config.getConfig("org.opalj.tac.cg.android.AndroidEntryPointsFinder")
-        defEntry.root().entrySet().forEach { e =>
-            val d = e.getKey
-            val entryMethods = defEntry.getConfigList(d).asScala.map {
+        val defaultEntry = project.config.getConfig("org.opalj.tac.cg.android.AndroidEntryPointsFinder")
+        defaultEntry.root().entrySet().forEach { entry =>
+            val d = entry.getKey
+            val entryMethods = defaultEntry.getConfigList(d).asScala.map {
                 entry =>
                     (
                         entry.getString("name"),
@@ -46,25 +46,26 @@ object AndroidEntryPointsFinder extends EntryPointFinder {
     }
 
     def findEntryPoints(
-        ot:                  ObjectType,
+        objectType:          ObjectType,
         possibleEntryPoints: List[(String, Option[MethodDescriptor])],
         project:             SomeProject
     ): Set[Method] = {
         var entryPoints = Set.empty[Method]
         val classHierarchy = project.classHierarchy
-        classHierarchy.allSubclassTypes(ot, reflexive = true).flatMap(project.classFile).foreach { sc =>
-            for (pep <- possibleEntryPoints) {
-                if (pep._2.isEmpty) {
-                    for (m <- sc.findMethod(pep._1) if m.body.isDefined) {
-                        entryPoints += m
-                    }
-                } else {
-                    for (m <- sc.findMethod(pep._1, pep._2.get) if m.body.isDefined) {
-                        entryPoints += m
+        classHierarchy.allSubclassTypes(objectType, reflexive = true).flatMap(project.classFile).
+            foreach { subclassType =>
+                for (possibleEntryPoint <- possibleEntryPoints) {
+                    if (possibleEntryPoint._2.isEmpty) {
+                        for (method <- subclassType.findMethod(possibleEntryPoint._1) if method.body.isDefined) {
+                            entryPoints += method
+                        }
+                    } else {
+                        for (method <- subclassType.findMethod(possibleEntryPoint._1, possibleEntryPoint._2.get) if method.body.isDefined) {
+                            entryPoints += method
+                        }
                     }
                 }
             }
-        }
         entryPoints
     }
 }
