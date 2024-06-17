@@ -8,8 +8,8 @@ package pointsto
 
 import org.opalj.br.fpcf.properties.alias.AliasSourceElement
 import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
-import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.Entity
 import org.opalj.fpcf.Property
 import org.opalj.tac.fpcf.analyses.alias.AliasAnalysisContext
 import org.opalj.tac.fpcf.analyses.alias.TacBasedAliasAnalysisState
@@ -26,7 +26,10 @@ import org.opalj.tac.fpcf.analyses.alias.TacBasedAliasAnalysisState
  * - The current field dependees for each [[AliasSourceElement]]. A field dependee is a definition site of an uVar that is
  *  used to access the field.
  */
-trait PointsToBasedAliasAnalysisState[ElementType, AliasSet <: AliasSetLike[ElementType, AliasSet], PointsToSet >: Null <: PointsToSetLike[_, _, PointsToSet]]
+trait PointsToBasedAliasAnalysisState[ElementType, AliasSet <: AliasSetLike[
+    ElementType,
+    AliasSet
+], PointsToSet >: Null <: PointsToSetLike[_, _, PointsToSet]]
     extends TacBasedAliasAnalysisState
     with SetBasedAliasAnalysisState[ElementType, AliasSet] {
 
@@ -94,7 +97,9 @@ trait PointsToBasedAliasAnalysisState[ElementType, AliasSet <: AliasSetLike[Elem
     /**
      * @return The most recent points-to set of the given points-to entity that has been completely handled for the given [[AliasSourceElement]].
      */
-    def oldPointsToSet(ase: AliasSourceElement, e: Entity)(implicit context: AliasAnalysisContext): Option[PointsToSet] = {
+    def oldPointsToSet(ase: AliasSourceElement, e: Entity)(implicit
+        context: AliasAnalysisContext
+    ): Option[PointsToSet] = {
         if (context.isElement1(ase)) _oldPointsToSets1.get(e)
         else _oldPointsToSets2.get(e)
     }
@@ -102,8 +107,9 @@ trait PointsToBasedAliasAnalysisState[ElementType, AliasSet <: AliasSetLike[Elem
     /**
      * Updates the points-to set of the given points-to entity that has been completely handled for the given [[AliasSourceElement]].
      */
-    def setOldPointsToSet(ase: AliasSourceElement, e: Entity, pointsToSet: PointsToSet)
-                              (implicit context: AliasAnalysisContext): Unit = {
+    def setOldPointsToSet(ase: AliasSourceElement, e: Entity, pointsToSet: PointsToSet)(implicit
+        context: AliasAnalysisContext
+    ): Unit = {
         if (context.isElement1(ase)) _oldPointsToSets1 += e -> pointsToSet
         else _oldPointsToSets2 += e -> pointsToSet
     }
