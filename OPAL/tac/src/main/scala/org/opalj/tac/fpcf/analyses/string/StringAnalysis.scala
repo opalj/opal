@@ -61,7 +61,8 @@ private[string] class ContextFreeStringAnalysis(override val project: SomeProjec
 
     private def computeNewUpperBound(state: ContextFreeStringAnalysisState): StringConstancyProperty = {
         StringConstancyProperty(state.stringFlowDependee match {
-            case UBP(methodStringFlow)       => StringConstancyInformation(methodStringFlow(state.entity.pc, state.entity.pv))
+            case UBP(methodStringFlow) =>
+                StringConstancyInformation(methodStringFlow(state.entity.pc, state.entity.pv).simplify)
             case _: EPK[_, MethodStringFlow] => StringConstancyInformation.ub
         })
     }
@@ -76,7 +77,14 @@ class ContextStringAnalysis(override val project: SomeProject) extends FPCFAnaly
 
     def analyze(vc: VariableContext): ProperPropertyComputationResult = {
         val vdScp = ps(VariableDefinition(vc.pc, vc.pv, vc.m), StringConstancyProperty.key)
-        continuation(ContextStringAnalysisState(vc, vdScp))(vdScp.asInstanceOf[SomeEPS])
+
+        implicit val state: ContextStringAnalysisState = ContextStringAnalysisState(vc, vdScp)
+        if (vdScp.isEPK) {
+            state._stringDependee = vdScp
+            computeResults
+        } else {
+            continuation(state)(vdScp.asInstanceOf[SomeEPS])
+        }
     }
 
     private def continuation(state: ContextStringAnalysisState)(eps: SomeEPS): ProperPropertyComputationResult = {
@@ -111,6 +119,7 @@ class ContextStringAnalysis(override val project: SomeProject) extends FPCFAnaly
                 handleTACAI(m, tacai)
                 computeResults
 
+            // "Upwards" dependency
             case EUBP(_: VariableContext, _: StringConstancyProperty) =>
                 state.updateParamDependee(eps.asInstanceOf[EOptionP[VariableContext, StringConstancyProperty]])
                 computeResults
@@ -128,16 +137,12 @@ class ContextStringAnalysis(override val project: SomeProject) extends FPCFAnaly
             if (callerContext.hasContext && callerContext.method.hasSingleDefinedMethod) {
                 val callerMethod = callerContext.method.definedMethod
 
-                System.out.println(s"FOUND RELEVANT CALLER FOR PC ${state.entity.pc} IN ${state.entity.m} FOR ${state.entity.pv}")
-
                 val tacEOptP = ps(callerMethod, TACAI.key)
                 state.registerTacaiDepender(tacEOptP, (callerContext, pc))
 
                 if (tacEOptP.hasUBP) {
                     handleTACAI(callerMethod, tacEOptP.ub)
                 }
-            } else {
-                System.out.println(s"NON-SDM FOUND FOR PC ${state.entity.pc} IN ${state.entity.m} FOR ${state.entity.pv}")
             }
         }
     }

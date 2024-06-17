@@ -15,9 +15,9 @@ import org.opalj.br.fpcf.properties.string.StringTreeDynamicString
 import org.opalj.br.fpcf.properties.string.StringTreeNeutralElement
 import org.opalj.br.fpcf.properties.string.StringTreeParameter
 import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.EUBP
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.FinalP
-import org.opalj.fpcf.InterimEUB
 import org.opalj.fpcf.InterimResult
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.Result
@@ -86,12 +86,12 @@ class MethodStringFlowAnalysis(override val project: SomeProject) extends FPCFAn
                 state.tacDependee = eps.asInstanceOf[FinalEP[Method, TACAI]]
                 determinePossibleStrings(state)
 
-            case InterimEUB(e: MethodPC) if eps.pk.equals(StringFlowFunctionProperty.key) =>
+            case EUBP(e: MethodPC, _: StringFlowFunctionProperty) if eps.pk.equals(StringFlowFunctionProperty.key) =>
                 state.updateDependee(e.pc, eps.asInstanceOf[EOptionP[MethodPC, StringFlowFunctionProperty]])
                 computeResults(state)
 
             case _ =>
-                getInterimResult(state)
+                throw new IllegalArgumentException(s"Unknown EPS given in continuation: $eps")
         }
     }
 

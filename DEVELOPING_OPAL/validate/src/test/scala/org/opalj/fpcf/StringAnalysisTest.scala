@@ -168,18 +168,12 @@ class L0StringAnalysisTest extends StringAnalysisTest {
         val as = executeAnalyses(LazyL0StringAnalysis.allRequiredAnalyses)
 
         val entities = determineEntitiesToAnalyze(as.project)
-        val newEntities = entities
-        // .filter(entity => entity.context.method.name == "tryCatchFinally")
-        // .take(1)
-
-        // it("can be executed without exceptions") {
-        newEntities.foreach(as.propertyStore.force(_, StringConstancyProperty.key))
+        entities.foreach(as.propertyStore.force(_, StringConstancyProperty.key))
 
         as.propertyStore.waitOnPhaseCompletion()
         as.propertyStore.shutdown()
 
-        validateProperties(as, determineEAS(newEntities, as.project), Set("StringConstancy"))
-        // }
+        validateProperties(as, determineEAS(entities, as.project), Set("StringConstancy"))
     }
 }
 
@@ -213,8 +207,6 @@ class L1StringAnalysisTest extends StringAnalysisTest {
         val entities = determineEntitiesToAnalyze(as.project)
             // Currently broken L1 Tests
             .filterNot(entity => entity.context.method.name.startsWith("cyclicDependencyTest"))
-            .filterNot(entity => entity.context.method.name.startsWith("unknownHierarchyInstanceTest"))
-            .filterNot(entity => entity.context.method.name.startsWith("crissCrossExample"))
         entities.foreach(as.propertyStore.force(_, StringConstancyProperty.key))
 
         as.propertyStore.waitOnPhaseCompletion()

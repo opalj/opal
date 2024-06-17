@@ -42,8 +42,11 @@ case class L0StaticFunctionCallInterpreter()(
             case "getProperty" if call.declaringClass == ObjectType("java/util/Properties") =>
                 System.out.println("TRACED STRING ANALYSIS FOR SYSTEM PROPERTY CALL!")
                 interpretArbitraryCall(target, call)
-            case _ if call.descriptor.returnType == ObjectType.String => interpretArbitraryCall(target, call)
-            case _                                                    => computeFinalResult(StringFlowFunctionProperty.lb(state.pc, target))
+            case _
+                if call.descriptor.returnType == ObjectType.String ||
+                    call.descriptor.returnType == ObjectType.Object =>
+                interpretArbitraryCall(target, call)
+            case _ => computeFinalResult(StringFlowFunctionProperty.lb(state.pc, target))
         }
     }
 }
