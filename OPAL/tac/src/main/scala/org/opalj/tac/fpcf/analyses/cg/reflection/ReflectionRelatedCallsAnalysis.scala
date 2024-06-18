@@ -7,6 +7,7 @@ package cg
 package reflection
 
 import scala.collection.immutable.ArraySeq
+
 import org.opalj.br.ArrayType
 import org.opalj.br.BooleanType
 import org.opalj.br.ClassType
@@ -32,8 +33,8 @@ import org.opalj.br.fpcf.properties.cg.LoadedClasses
 import org.opalj.br.fpcf.properties.string.StringConstancyProperty
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.UIDSet
-import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.EPS
 import org.opalj.fpcf.FinalEP
@@ -55,7 +56,7 @@ import org.opalj.log.Warn
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.analyses.cg.reflection.MatcherUtil.retrieveSuitableMatcher
 import org.opalj.tac.fpcf.analyses.cg.reflection.MethodHandlesUtil.retrieveDescriptorBasedMethodMatcher
-import org.opalj.tac.fpcf.analyses.string.SContext
+import org.opalj.tac.fpcf.analyses.string.VariableContext
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.TheTACAI
 import org.opalj.value.ASObjectValue
@@ -247,7 +248,7 @@ class ClassForNameAnalysis private[analyses] (
      * Adds classes that can be loaded by an invocation of Class.forName to the set of loaded classes.
      */
     private[this] def handleForName(
-        pc: Int,
+        pc:          Int,
         className:   V,
         callContext: ContextType,
         stmts:       Array[Stmt[V]]
@@ -260,7 +261,7 @@ class ClassForNameAnalysis private[analyses] (
         // ensures that we only add new vm reachable methods
         implicit val incompleteCallSites: IncompleteCallSites = new IncompleteCallSites {}
 
-        val scpUpdate = eps.asInstanceOf[EOptionP[SContext, StringConstancyProperty]]
+        val scpUpdate = eps.asInstanceOf[EOptionP[VariableContext, StringConstancyProperty]]
         val newRegex = scpUpdate.ub.sci.toRegex
 
         state.addNewLoadedClasses(TypesUtil.getPossibleForNameClasses(newRegex, project))

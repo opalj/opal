@@ -87,11 +87,18 @@ object StringUtil {
         context: Context,
         stmts:   Array[Stmt[V]]
     )(
-        implicit ps: PropertyStore
-    ): String = {
-        ps(VariableContext(pc, value.toPersistentForm(stmts), context), StringConstancyProperty.key) match {
-            case UBP(ub) => ub.sci.toRegex
-            case _       => ""
+        implicit
+        ps:    PropertyStore,
+        state: TypeIteratorState
+    ): Option[String] = {
+        val stringEOptP = ps(VariableContext(pc, value.toPersistentForm(stmts), context), StringConstancyProperty.key)
+        if (stringEOptP.isRefinable) {
+            state.addDependency(pc.asInstanceOf[Entity], stringEOptP)
+        }
+
+        stringEOptP match {
+            case UBP(ub) => Some(ub.sci.toRegex)
+            case _       => None
         }
     }
 

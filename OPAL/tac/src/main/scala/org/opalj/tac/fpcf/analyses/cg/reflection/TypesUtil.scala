@@ -6,6 +6,8 @@ package analyses
 package cg
 package reflection
 
+import java.util.regex.PatternSyntaxException
+
 import org.opalj.br.BaseType
 import org.opalj.br.ClassType
 import org.opalj.br.MethodDescriptor
@@ -51,9 +53,13 @@ object TypesUtil {
         context:   Context,
         stmts:     Array[Stmt[V]],
         project:   SomeProject
-    )(implicit ps: PropertyStore): Set[ClassType] = {
+    )(
+        implicit
+        ps:    PropertyStore,
+        state: TypeIteratorState
+    ): Set[ClassType] = {
         val stringRegex = StringUtil.getPossibleStringsRegex(pc, className, context, stmts)
-        getPossibleForNameClasses(stringRegex, project)
+        stringRegex.map(getPossibleForNameClasses(_, project)).getOrElse(Set.empty)
     }
 
     /**
@@ -63,7 +69,15 @@ object TypesUtil {
         classNameRegex: String,
         project:        SomeProject,
     ): Set[ClassType] = {
-        project.allClassFiles.filter(_.thisType.fqn.matches(classNameRegex)).map(_.thisType).toSet
+        try {
+            project.allClassFiles.filter { cf =>
+                cf.thisType.fqn.matches(classNameRegex) || cf.thisType.toJava.matches(classNameRegex)
+            }.map(_.thisType).toSet
+        } catch {
+            case _: PatternSyntaxException =>
+                // Workaround for now to handle non-compatible regexes
+                Set.empty
+        }
     }
 
     @inline private[this] def referenceTypeFromFQN(fqn: String): Option[ReferenceType] = {
