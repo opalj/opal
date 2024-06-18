@@ -154,7 +154,7 @@ object DataFlowAnalysis {
                             }
                         }
                     }
-                    sortedCurrentNodes = nextNodeEnvs.map(_._1).sortBy(_.outer)
+                    sortedCurrentNodes = nextNodeEnvs.map(_._1).distinct.sortBy(_.outer)
                     currentNodeEnvs = nextNodeEnvs.groupMapReduce(_._1)(_._2) { (env, otherEnv) => env.join(otherEnv) }
                 }
 
