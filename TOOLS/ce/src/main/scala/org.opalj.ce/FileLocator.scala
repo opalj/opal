@@ -5,6 +5,7 @@ import com.typesafe.config.Config
 import java.nio.file.attribute.BasicFileAttributes
 import java.nio.file.{Files, Path, Paths}
 import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 import scala.jdk.CollectionConverters._
 
 class FileLocator(var config: Config)  {
@@ -29,17 +30,20 @@ class FileLocator(var config: Config)  {
       projectNames
     }
 
-    def SearchFiles() : Unit = {
+    def SearchFiles() : mutable.Buffer[Path] = {
       val projectNames = this.getConfigurationFilenames
       val projectRoot = Paths.get(this.getProjectRoot)
+      val foundFiles = ListBuffer[Path]()
 
       Files.walkFileTree(projectRoot, new java.nio.file.SimpleFileVisitor[Path]() {
         override def visitFile(file: Path, attrs: BasicFileAttributes): java.nio.file.FileVisitResult = {
           if (projectNames.contains(file.getFileName.toString)) {
+            foundFiles += file
             println(s"Found file: ${file.toString}")
           }
           java.nio.file.FileVisitResult.CONTINUE
         }
       })
+      foundFiles
     }
 }
