@@ -1,6 +1,5 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj
-package ce
+package org.opalj.ce
 
 import com.typesafe.config.Config
 import java.nio.file.attribute.BasicFileAttributes
@@ -14,25 +13,25 @@ class FileLocator(var config: Config)  {
 
     }
 
-    def getProjectRoot() : String = {
+    def getProjectRoot: String = {
       val projectRoot = this.config.getString("user.dir")
       println("Searching in the following directory: " + projectRoot)
-      return projectRoot
+      projectRoot
     }
 
-    def getConfigurationFilenames() : mutable.Buffer[String] = {
+    def getConfigurationFilenames : mutable.Buffer[String] = {
       val projectNames = this.config.getStringList("org.opalj.ce.configurationFilenames").asScala
 
       println("Loaded the following Filenames: ")
       for (filename <- projectNames) {
         println(filename)
       }
-      return projectNames
+      projectNames
     }
 
     def SearchFiles() : Unit = {
-      val projectNames = this.getConfigurationFilenames()
-      val projectRoot = Paths.get(this.getProjectRoot())
+      val projectNames = this.getConfigurationFilenames
+      val projectRoot = Paths.get(this.getProjectRoot)
 
       Files.walkFileTree(projectRoot, new java.nio.file.SimpleFileVisitor[Path]() {
         override def visitFile(file: Path, attrs: BasicFileAttributes): java.nio.file.FileVisitResult = {

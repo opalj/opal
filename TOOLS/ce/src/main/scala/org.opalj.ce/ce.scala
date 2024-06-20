@@ -1,6 +1,5 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj
-package ce
+package org.opalj.ce
 
 import com.typesafe.config.{Config,ConfigFactory}
 
@@ -21,7 +20,6 @@ object ce {
 
     def LoadConfig() : Config = {
       println("Loading configuration")
-      val conf = ConfigFactory.load("ce")
-      return conf
+      return ConfigFactory.load("ce")
     }
 }
