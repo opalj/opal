@@ -16,7 +16,7 @@ object ce {
       val conf = this.LoadConfig()
 
       val locator = new FileLocator(conf)
-      locator.getProjectRoot()
+      locator.SearchFiles()
     }
 
     def LoadConfig() : Config = {
