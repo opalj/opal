@@ -33,19 +33,6 @@ class LinearConstantPropagationProblem(project: SomeProject)
     ) {
     private val identityEdgeFunction = new IdentityEdgeFunction[LinearConstantPropagationValue]
 
-    /**
-     * @return all methods from the project class files that can be called from outside
-     */
-    def getEntryPoints: Set[Method] = {
-        icfg.getCallablesCallableFromOutside
-            .filter { method =>
-                val packageOfEntryPoint = method.classFile.thisType.packageName
-                project.allProjectClassFiles.exists { classFile =>
-                    packageOfEntryPoint.startsWith(classFile.thisType.packageName)
-                }
-            }
-    }
-
     override val nullFact: LinearConstantPropagationFact =
         NullFact
 

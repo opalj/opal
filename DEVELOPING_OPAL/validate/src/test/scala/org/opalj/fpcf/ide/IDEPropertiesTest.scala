@@ -1,0 +1,47 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
+package org.opalj.fpcf.ide
+
+import java.net.URL
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigValueFactory
+import org.opalj.ai.domain.l2
+import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
+import org.opalj.br.Method
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
+import org.opalj.fpcf.PropertiesTest
+import org.opalj.ide.ConfigKeyDebugLog
+import org.opalj.ide.ConfigKeyTraceLog
+import org.opalj.tac.cg.RTACallGraphKey
+import org.opalj.tac.fpcf.analyses.ide.solver.JavaICFG
+
+class IDEPropertiesTest extends PropertiesTest {
+    override def withRT: Boolean = true
+
+    override def createConfig(): Config = {
+        super.createConfig()
+            .withValue(
+                InitialInstantiatedTypesKey.ConfigKeyPrefix + "AllInstantiatedTypesFinder.projectClassesOnly",
+                ConfigValueFactory.fromAnyRef(false)
+            )
+            .withValue(ConfigKeyDebugLog, ConfigValueFactory.fromAnyRef(true))
+            .withValue(ConfigKeyTraceLog, ConfigValueFactory.fromAnyRef(false))
+    }
+
+    override def init(p: Project[URL]): Unit = {
+        p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey)(_ =>
+            Set[Class[? <: AnyRef]](classOf[l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[URL]])
+        )
+        p.get(RTACallGraphKey)
+    }
+
+    def getEntryPointsByICFG(icfg: JavaICFG, project: Project[URL]): Set[Method] = {
+        icfg.getCallablesCallableFromOutside
+            .filter { method =>
+                val packageOfEntryPoint = method.classFile.thisType.packageName
+                project.allProjectClassFiles.exists { classFile =>
+                    packageOfEntryPoint.startsWith(classFile.thisType.packageName)
+                }
+            }
+    }
+}
