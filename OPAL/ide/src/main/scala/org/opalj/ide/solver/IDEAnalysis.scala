@@ -324,7 +324,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
 
             val rs = icfg.getNextStatements(n) // IDE P1 line 14
             rs.foreach { r =>
-                val d3s = problem.getCallToReturnFlowFunction(n, r).compute(d2)
+                val d3s = problem.getCallToReturnFlowFunction(n, q, r).compute(d2)
 
                 logTrace(s"generated the following d3s=$d3s for return-site statement r=${icfg.stringifyStatement(r)}")
 

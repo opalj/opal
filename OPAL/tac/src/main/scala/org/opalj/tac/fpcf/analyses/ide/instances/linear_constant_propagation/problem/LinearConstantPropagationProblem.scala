@@ -7,6 +7,7 @@ import org.opalj.BinaryArithmeticOperators
 import org.opalj.ai.domain.l1.DefaultIntegerRangeValues
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
+import org.opalj.fpcf.PropertyStore
 import org.opalj.ide.problem.EdgeFunction
 import org.opalj.ide.problem.FlowFunction
 import org.opalj.ide.problem.IdentityEdgeFunction
@@ -42,7 +43,7 @@ class LinearConstantPropagationProblem(project: SomeProject)
     override def getNormalFlowFunction(
         source: JavaStatement,
         target: JavaStatement
-    ): FlowFunction[LinearConstantPropagationFact] = {
+    )(implicit propertyStore: PropertyStore): FlowFunction[LinearConstantPropagationFact] = {
         (sourceFact: LinearConstantPropagationFact) =>
             {
                 source.stmt.astID match {
@@ -129,7 +130,7 @@ class LinearConstantPropagationProblem(project: SomeProject)
         callSite:    JavaStatement,
         calleeEntry: JavaStatement,
         callee:      Method
-    ): FlowFunction[LinearConstantPropagationFact] = {
+    )(implicit propertyStore: PropertyStore): FlowFunction[LinearConstantPropagationFact] = {
         (sourceFact: LinearConstantPropagationFact) =>
             {
                 /* Only propagate to callees that return integers */
@@ -186,7 +187,7 @@ class LinearConstantPropagationProblem(project: SomeProject)
         calleeExit: JavaStatement,
         callee:     Method,
         returnSite: JavaStatement
-    ): FlowFunction[LinearConstantPropagationFact] = {
+    )(implicit propertyStore: PropertyStore): FlowFunction[LinearConstantPropagationFact] = {
         (sourceFact: LinearConstantPropagationFact) =>
             {
                 /* Only propagate to return site if callee returns an integer */
@@ -221,8 +222,9 @@ class LinearConstantPropagationProblem(project: SomeProject)
 
     override def getCallToReturnFlowFunction(
         callSite:   JavaStatement,
+        callee:     Method,
         returnSite: JavaStatement
-    ): FlowFunction[LinearConstantPropagationFact] = {
+    )(implicit propertyStore: PropertyStore): FlowFunction[LinearConstantPropagationFact] = {
         (sourceFact: LinearConstantPropagationFact) =>
             {
                 immutable.Set(sourceFact)
@@ -234,7 +236,7 @@ class LinearConstantPropagationProblem(project: SomeProject)
         sourceFact: LinearConstantPropagationFact,
         target:     JavaStatement,
         targetFact: LinearConstantPropagationFact
-    ): EdgeFunction[LinearConstantPropagationValue] = {
+    )(implicit propertyStore: PropertyStore): EdgeFunction[LinearConstantPropagationValue] = {
         if (sourceFact == targetFact) {
             /* Simply propagates a fact through the method */
             return identityEdgeFunction
@@ -343,7 +345,7 @@ class LinearConstantPropagationProblem(project: SomeProject)
         calleeEntry:     JavaStatement,
         calleeEntryFact: LinearConstantPropagationFact,
         callee:          Method
-    ): EdgeFunction[LinearConstantPropagationValue] = identityEdgeFunction
+    )(implicit propertyStore: PropertyStore): EdgeFunction[LinearConstantPropagationValue] = identityEdgeFunction
 
     override def getReturnEdgeFunction(
         calleeExit:     JavaStatement,
@@ -351,12 +353,12 @@ class LinearConstantPropagationProblem(project: SomeProject)
         callee:         Method,
         returnSite:     JavaStatement,
         returnSiteFact: LinearConstantPropagationFact
-    ): EdgeFunction[LinearConstantPropagationValue] = identityEdgeFunction
+    )(implicit propertyStore: PropertyStore): EdgeFunction[LinearConstantPropagationValue] = identityEdgeFunction
 
     override def getCallToReturnEdgeFunction(
         callSite:       JavaStatement,
         callSiteFact:   LinearConstantPropagationFact,
         returnSite:     JavaStatement,
         returnSiteFact: LinearConstantPropagationFact
-    ): EdgeFunction[LinearConstantPropagationValue] = identityEdgeFunction
+    )(implicit propertyStore: PropertyStore): EdgeFunction[LinearConstantPropagationValue] = identityEdgeFunction
 }

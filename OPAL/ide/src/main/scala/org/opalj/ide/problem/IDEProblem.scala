@@ -2,6 +2,7 @@
 package org.opalj.ide.problem
 
 import org.opalj.fpcf.Entity
+import org.opalj.fpcf.PropertyStore
 import org.opalj.ide.solver.ICFG
 
 /**
@@ -25,7 +26,9 @@ abstract class IDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Callabl
      * @param source where the normal flow starts
      * @param target where the normal flow ends
      */
-    def getNormalFlowFunction(source: Statement, target: Statement): FlowFunction[Fact]
+    def getNormalFlowFunction(source: Statement, target: Statement)(
+        implicit propertyStore: PropertyStore
+    ): FlowFunction[Fact]
 
     /**
      * Generate a flow function for a call flow
@@ -33,7 +36,9 @@ abstract class IDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Callabl
      * @param calleeEntry where the callable starts (the statement which the callable is started with)
      * @param callee the callable that is called
      */
-    def getCallFlowFunction(callSite: Statement, calleeEntry: Statement, callee: Callable): FlowFunction[Fact]
+    def getCallFlowFunction(callSite: Statement, calleeEntry: Statement, callee: Callable)(
+        implicit propertyStore: PropertyStore
+    ): FlowFunction[Fact]
 
     /**
      * Generate a flow function for a return flow
@@ -41,14 +46,19 @@ abstract class IDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Callabl
      * @param callee the callable that is returned from
      * @param returnSite where the return flow ends (e.g. the next statement after the call in the callers code)
      */
-    def getReturnFlowFunction(calleeExit: Statement, callee: Callable, returnSite: Statement): FlowFunction[Fact]
+    def getReturnFlowFunction(calleeExit: Statement, callee: Callable, returnSite: Statement)(
+        implicit propertyStore: PropertyStore
+    ): FlowFunction[Fact]
 
     /**
      * Generate a flow function for a call-to-return flow
      * @param callSite where the call-to-return flow starts (always a call statement)
+     * @param callee the callable this flow is about
      * @param returnSite where the call-to-return flow ends (e.g. the next statement after the call)
      */
-    def getCallToReturnFlowFunction(callSite: Statement, returnSite: Statement): FlowFunction[Fact]
+    def getCallToReturnFlowFunction(callSite: Statement, callee: Callable, returnSite: Statement)(
+        implicit propertyStore: PropertyStore
+    ): FlowFunction[Fact]
 
     /**
      * Generate an edge function for a normal flow
@@ -62,7 +72,7 @@ abstract class IDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Callabl
         sourceFact: Fact,
         target:     Statement,
         targetFact: Fact
-    ): EdgeFunction[Value]
+    )(implicit propertyStore: PropertyStore): EdgeFunction[Value]
 
     /**
      * Generate an edge function for a call flow
@@ -78,7 +88,7 @@ abstract class IDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Callabl
         calleeEntry:     Statement,
         calleeEntryFact: Fact,
         callee:          Callable
-    ): EdgeFunction[Value]
+    )(implicit propertyStore: PropertyStore): EdgeFunction[Value]
 
     /**
      * Generate an edge function for a return flow
@@ -94,7 +104,7 @@ abstract class IDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Callabl
         callee:         Callable,
         returnSite:     Statement,
         returnSiteFact: Fact
-    ): EdgeFunction[Value]
+    )(implicit propertyStore: PropertyStore): EdgeFunction[Value]
 
     /**
      * Generate an edge function for a call-to-return flow
@@ -108,5 +118,5 @@ abstract class IDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Callabl
         callSiteFact:   Fact,
         returnSite:     Statement,
         returnSiteFact: Fact
-    ): EdgeFunction[Value]
+    )(implicit propertyStore: PropertyStore): EdgeFunction[Value]
 }
