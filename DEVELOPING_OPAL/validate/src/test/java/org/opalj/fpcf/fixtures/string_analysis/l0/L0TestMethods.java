@@ -34,7 +34,7 @@ import static org.opalj.fpcf.properties.string_analysis.StringConstancyLevel.*;
  * options (but definitely one of these values).
  * </li>
  * <li>
- * Brackets ("(" and "(") are used for nesting and grouping string expressions.
+ * Brackets ("(" and ")") are used for nesting and grouping string expressions.
  * </li>
  * <li>
  * The string "^-?\d+$" represents (positive and negative) integer numbers. This RegExp has been taken
@@ -55,7 +55,7 @@ import static org.opalj.fpcf.properties.string_analysis.StringConstancyLevel.*;
  * <i>analyzeString</i> method with the variable to be analyzed. It is legal to have multiple
  * calls to <i>analyzeString</i> within the same test method.
  *
- * @author Patrick Mell
+ * @author Maximilian Rüsch
  */
 public class L0TestMethods {
 
@@ -72,6 +72,9 @@ public class L0TestMethods {
      * @param s Some string which is to be analyzed.
      */
     public void analyzeString(String s) {
+    }
+
+    public void analyzeString(StringBuilder sb) {
     }
 
     @StringDefinitionsCollection(
@@ -156,6 +159,39 @@ public class L0TestMethods {
         StringBuilder sb = new StringBuilder("java");
         sb.append(".").append("lang").append(".").append("String");
         analyzeString(sb.toString());
+    }
+
+    @StringDefinitionsCollection(
+            value = "tests support for passing a string builder into String.valueOf and directly as the analyzed string",
+            stringDefinitions = {
+                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "SomeOther"),
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT,
+                            expectedStrings = "SomeOther",
+                            realisticLevel = CONSTANT,
+                            realisticStrings = "(Some|SomeOther)"
+                    )
+            })
+    public void stringValueOfWithStringBuilder() {
+        StringBuilder sb = new StringBuilder("Some");
+        sb.append("Other");
+        analyzeString(String.valueOf(sb));
+
+        analyzeString(sb);
+    }
+
+    @StringDefinitionsCollection(
+            value = "tests support for passing a string builder into String.valueOf and directly as the analyzed string",
+            stringDefinitions = {
+                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "Some"),
+                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "Other")
+            })
+    public void stringBuilderBufferInitArguments() {
+        StringBuilder sb = new StringBuilder("Some");
+        analyzeString(sb.toString());
+
+        StringBuffer sb2 = new StringBuffer("Other");
+        analyzeString(sb2.toString());
     }
 
     @StringDefinitionsCollection(
@@ -248,6 +284,22 @@ public class L0TestMethods {
             s = "not great";
         }
         analyzeString(new StringBuilder("It is ").append(s).toString());
+    }
+
+    @StringDefinitionsCollection(
+            value = "a set of tests that test compatibility with ternary operators",
+            stringDefinitions = {
+                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "(Some|SomeOther)"),
+                    @StringDefinitions(expectedLevel = DYNAMIC, expectedStrings = "(.*|Some)"),
+                    @StringDefinitions(expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "(SomeOther|Some.*)")
+            })
+    public void ternaryOperators(boolean flag, String param) {
+        String s1 = "Some";
+        String s2 = s1 + "Other";
+
+        analyzeString(flag ? s1 : s2);
+        analyzeString(flag ? s1 : param);
+        analyzeString(flag ? s1 + param : s2);
     }
 
     @StringDefinitionsCollection(
