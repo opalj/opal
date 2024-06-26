@@ -37,25 +37,26 @@ case class LinearCombinationEdgeFunction(a: Int, b: Int)
 
     override def meetWith(
         otherEdgeFunction: EdgeFunction[LinearConstantPropagationValue]
-    ): EdgeFunction[LinearConstantPropagationValue] = otherEdgeFunction match {
-        case LinearCombinationEdgeFunction(a2, b2) if a2 == a && b2 == b => this
-        case LinearCombinationEdgeFunction(_, _)                         => VariableValueEdgeFunction
+    ): EdgeFunction[LinearConstantPropagationValue] = {
+        otherEdgeFunction match {
+            case LinearCombinationEdgeFunction(a2, b2) if a2 == a && b2 == b => this
+            case LinearCombinationEdgeFunction(_, _)                         => VariableValueEdgeFunction
 
-        case VariableValueEdgeFunction => otherEdgeFunction
+            case VariableValueEdgeFunction => otherEdgeFunction
 
-        case IdentityEdgeFunction() => this
-        case AllTopEdgeFunction(_)  => this
+            case IdentityEdgeFunction() => this
+            case AllTopEdgeFunction(_)  => this
 
-        case _ =>
-            throw new UnsupportedOperationException(s"Meeting $this with $otherEdgeFunction is not implemented!")
+            case _ =>
+                throw new UnsupportedOperationException(s"Meeting $this with $otherEdgeFunction is not implemented!")
+        }
     }
 
     override def equalTo(otherEdgeFunction: EdgeFunction[LinearConstantPropagationValue]): Boolean = {
         otherEdgeFunction == this ||
         (otherEdgeFunction match {
-            case otherLinearCombinationEdgeFunction: LinearCombinationEdgeFunction =>
-                otherLinearCombinationEdgeFunction.a == a && otherLinearCombinationEdgeFunction.b == b
-            case _ => false
+            case LinearCombinationEdgeFunction(a2, b2) => a == a2 && b == b2
+            case _                                     => false
         })
     }
 }
@@ -66,9 +67,11 @@ case class LinearCombinationEdgeFunction(a: Int, b: Int)
 object VariableValueEdgeFunction extends AllBottomEdgeFunction[LinearConstantPropagationValue](VariableValue) {
     override def composeWith(
         secondEdgeFunction: EdgeFunction[LinearConstantPropagationValue]
-    ): EdgeFunction[LinearConstantPropagationValue] = secondEdgeFunction match {
-        case LinearCombinationEdgeFunction(0, _) => secondEdgeFunction
-        case LinearCombinationEdgeFunction(_, _) => this
-        case _                                   => this
+    ): EdgeFunction[LinearConstantPropagationValue] = {
+        secondEdgeFunction match {
+            case LinearCombinationEdgeFunction(0, _) => secondEdgeFunction
+            case LinearCombinationEdgeFunction(_, _) => this
+            case _                                   => this
+        }
     }
 }
