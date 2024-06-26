@@ -4,6 +4,8 @@ package org.opalj.fpcf.fixtures.string_analysis.l1;
 import org.opalj.fpcf.fixtures.string_analysis.l1.hierarchies.GreetingService;
 import org.opalj.fpcf.fixtures.string_analysis.l1.hierarchies.HelloGreeting;
 import org.opalj.fpcf.fixtures.string_analysis.l0.L0TestMethods;
+import org.opalj.fpcf.properties.string_analysis.AllowedDomainLevels;
+import org.opalj.fpcf.properties.string_analysis.DomainLevel;
 import org.opalj.fpcf.properties.string_analysis.StringDefinitions;
 import org.opalj.fpcf.properties.string_analysis.StringDefinitionsCollection;
 
@@ -398,12 +400,14 @@ public class L1TestMethods extends L0TestMethods {
         }
     }
 
+    // On L1, this test is equivalent to the `severalReturnValuesTest1`
+    @AllowedDomainLevels(DomainLevel.L2)
     @StringDefinitionsCollection(
             value = "a case where the single valid return value of the called function can be resolved without calling the function",
             stringDefinitions = {
                     @StringDefinitions(
                             expectedLevel = CONSTANT, expectedStrings = "val",
-                            // Since the virtual function return value is inlined before and its actual runtime return
+                            // Since the virtual function return value is inlined in L2 and its actual runtime return
                             // value is not used, the function call gets converted to a method call, which modifies the
                             // TAC: The def PC from the `analyzeString` parameter is now different and points to the def
                             // PC for the `resolvableReturnValueFunction` parameter.

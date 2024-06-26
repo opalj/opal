@@ -4,6 +4,7 @@ package fpcf
 
 import java.net.URL
 
+import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
 import org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.Annotation
@@ -15,6 +16,7 @@ import org.opalj.br.analyses.FieldAccessInformationKey
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.br.fpcf.properties.string.StringConstancyProperty
+import org.opalj.fpcf.properties.string_analysis.DomainLevel
 import org.opalj.tac.EagerDetachedTACAIKey
 import org.opalj.tac.PV
 import org.opalj.tac.TACMethodParameter
@@ -33,6 +35,24 @@ sealed abstract class StringAnalysisTest extends PropertiesTest {
     val nameTestMethod: String = "analyzeString"
 
     def level: Int
+    def domainLevel: DomainLevel
+
+    override final def init(p: Project[URL]): Unit = {
+        val domain = domainLevel match {
+            case DomainLevel.L1 => classOf[DefaultDomainWithCFGAndDefUse[_]]
+            case DomainLevel.L2 => classOf[DefaultPerformInvocationsDomainWithCFGAndDefUse[_]]
+        }
+        p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
+            case None               => Set(domain)
+            case Some(requirements) => requirements + domain
+        }
+
+        initBeforeCallGraph(p)
+
+        p.get(RTACallGraphKey)
+    }
+
+    def initBeforeCallGraph(p: Project[URL]): Unit = {}
 
     override def fixtureProjectPackage: List[String] = {
         StringAnalysisTest.getFixtureProjectPackages(level).toList
@@ -74,6 +94,12 @@ sealed abstract class StringAnalysisTest extends PropertiesTest {
                     exists || StringAnalysisTest.isStringUsageAnnotation(a)
                 )
             }
+            .filter {
+                _._1.runtimeInvisibleAnnotations.forall { a =>
+                    val r = isAllowedDomainLevel(a)
+                    r.isEmpty || r.get
+                }
+            }
             .foldLeft(Seq.empty[(VariableContext, Method)]) { (entities, m) =>
                 entities ++ extractPUVars(tacProvider(m._1)).map(e =>
                     (VariableContext(e._1, e._2, contextProvider.newContext(declaredMethods(m._1))), m._2)
@@ -114,6 +140,15 @@ sealed abstract class StringAnalysisTest extends PropertiesTest {
             }
         }
     }
+
+    def isAllowedDomainLevel(a: Annotation): Option[Boolean] = {
+        if (a.annotationType.toJava != "org.opalj.fpcf.properties.string_analysis.AllowedDomainLevels") None
+        else Some {
+            a.elementValuePairs.head.value.asArrayValue.values.exists { v =>
+                DomainLevel.valueOf(v.asEnumValue.constName) == domainLevel
+            }
+        }
+    }
 }
 
 object StringAnalysisTest {
@@ -138,7 +173,7 @@ object StringAnalysisTest {
      * @return True if the `a` is of type StringDefinitions and false otherwise.
      */
     def isStringUsageAnnotation(a: Annotation): Boolean =
-        a.annotationType.toJavaClass.getName == "org.opalj.fpcf.properties.string_analysis.StringDefinitionsCollection"
+        a.annotationType.toJava == "org.opalj.fpcf.properties.string_analysis.StringDefinitionsCollection"
 
     /**
      * Extracts a `StringDefinitions` annotation from a `StringDefinitionsCollection` annotation.
@@ -150,8 +185,16 @@ object StringAnalysisTest {
      *              get.
      * @return Returns the desired `StringDefinitions` annotation.
      */
-    def getStringDefinitionsFromCollection(a: Annotations, index: Int): Annotation =
-        a.head.elementValuePairs(1).value.asArrayValue.values(index).asAnnotationValue.annotation
+    def getStringDefinitionsFromCollection(a: Annotations, index: Int): Annotation = {
+        val collectionOpt = a.find(isStringUsageAnnotation)
+        if (collectionOpt.isEmpty) {
+            throw new IllegalArgumentException(
+                "Tried to collect string definitions from method that does not define them!"
+            )
+        }
+
+        collectionOpt.get.elementValuePairs(1).value.asArrayValue.values(index).asAnnotationValue.annotation
+    }
 }
 
 /**
@@ -160,31 +203,37 @@ object StringAnalysisTest {
  *
  * @author Maximilian Rüsch
  */
-class L0StringAnalysisTest extends StringAnalysisTest {
+sealed abstract class L0StringAnalysisTest extends StringAnalysisTest {
 
-    override def level = 0
+    override final def level = 0
 
-    override def init(p: Project[URL]): Unit = {
-        val domain = classOf[DefaultPerformInvocationsDomainWithCFGAndDefUse[_]]
-        p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
-            case None               => Set(domain)
-            case Some(requirements) => requirements + domain
+    final def runL0Tests(): Unit = {
+        describe("the org.opalj.fpcf.L0StringAnalysis is started") {
+            val as = executeAnalyses(LazyL0StringAnalysis.allRequiredAnalyses)
+
+            val entities = determineEntitiesToAnalyze(as.project)
+            entities.foreach(entity => as.propertyStore.force(entity._1, StringConstancyProperty.key))
+
+            as.propertyStore.waitOnPhaseCompletion()
+            as.propertyStore.shutdown()
+
+            validateProperties(as, determineEAS(entities, as.project), Set("StringConstancy"))
         }
-
-        p.get(RTACallGraphKey)
     }
+}
 
-    describe("the org.opalj.fpcf.L0StringAnalysis is started") {
-        val as = executeAnalyses(LazyL0StringAnalysis.allRequiredAnalyses)
+class L0StringAnalysisWithL1DefaultDomainTest extends L0StringAnalysisTest {
 
-        val entities = determineEntitiesToAnalyze(as.project)
-        entities.foreach(entity => as.propertyStore.force(entity._1, StringConstancyProperty.key))
+    override def domainLevel: DomainLevel = DomainLevel.L1
 
-        as.propertyStore.waitOnPhaseCompletion()
-        as.propertyStore.shutdown()
+    describe("using the l1 default domain") { runL0Tests() }
+}
 
-        validateProperties(as, determineEAS(entities, as.project), Set("StringConstancy"))
-    }
+class L0StringAnalysisWithL2DefaultDomainTest extends L0StringAnalysisTest {
+
+    override def domainLevel: DomainLevel = DomainLevel.L2
+
+    describe("using the l2 default domain") { runL0Tests() }
 }
 
 /**
@@ -193,35 +242,44 @@ class L0StringAnalysisTest extends StringAnalysisTest {
  *
  * @author Maximilian Rüsch
  */
-class L1StringAnalysisTest extends StringAnalysisTest {
+sealed abstract class L1StringAnalysisTest extends StringAnalysisTest {
 
     override def level = 1
 
-    override def init(p: Project[URL]): Unit = {
-        val domain = classOf[DefaultPerformInvocationsDomainWithCFGAndDefUse[_]]
-        p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
-            case None               => Set(domain)
-            case Some(requirements) => requirements + domain
-        }
+    override def initBeforeCallGraph(p: Project[URL]): Unit = {
         p.updateProjectInformationKeyInitializationData(FieldAccessInformationKey) {
             case None               => Seq(EagerFieldAccessInformationAnalysis)
             case Some(requirements) => requirements :+ EagerFieldAccessInformationAnalysis
         }
-
-        p.get(RTACallGraphKey)
     }
 
-    describe("the org.opalj.fpcf.L1StringAnalysis is started") {
-        val as = executeAnalyses(LazyL1StringAnalysis.allRequiredAnalyses)
+    final def runL1Tests(): Unit = {
+        describe("the org.opalj.fpcf.L1StringAnalysis is started") {
+            val as = executeAnalyses(LazyL1StringAnalysis.allRequiredAnalyses)
 
-        val entities = determineEntitiesToAnalyze(as.project)
-            // Currently broken L1 Tests
-            .filterNot(entity => entity._2.name.startsWith("cyclicDependencyTest"))
-        entities.foreach(entity => as.propertyStore.force(entity._1, StringConstancyProperty.key))
+            val entities = determineEntitiesToAnalyze(as.project)
+                // Currently broken L1 Tests
+                .filterNot(entity => entity._2.name.startsWith("cyclicDependencyTest"))
+            entities.foreach(entity => as.propertyStore.force(entity._1, StringConstancyProperty.key))
 
-        as.propertyStore.waitOnPhaseCompletion()
-        as.propertyStore.shutdown()
+            as.propertyStore.waitOnPhaseCompletion()
+            as.propertyStore.shutdown()
 
-        validateProperties(as, determineEAS(entities, as.project), Set("StringConstancy"))
+            validateProperties(as, determineEAS(entities, as.project), Set("StringConstancy"))
+        }
     }
+}
+
+class L1StringAnalysisWithL1DefaultDomainTest extends L1StringAnalysisTest {
+
+    override def domainLevel: DomainLevel = DomainLevel.L1
+
+    describe("using the l1 default domain") { runL1Tests() }
+}
+
+class L1StringAnalysisWithL2DefaultDomainTest extends L1StringAnalysisTest {
+
+    override def domainLevel: DomainLevel = DomainLevel.L2
+
+    describe("using the l2 default domain") { runL1Tests() }
 }
