@@ -29,14 +29,6 @@ class StringConstancyProperty(
         s"Level: $level, Possible Strings: ${stringConstancyInformation.toRegex}"
     }
 
-    /**
-     * @return Returns `true` if the [[stringConstancyInformation]] contained in this instance is
-     *         the neutral element (see [[StringConstancyInformation.isTheNeutralElement]]).
-     */
-    def isTheNeutralElement: Boolean = {
-        stringConstancyInformation.isTheNeutralElement
-    }
-
     override def hashCode(): Int = stringConstancyInformation.hashCode()
 
     override def equals(o: Any): Boolean = o match {

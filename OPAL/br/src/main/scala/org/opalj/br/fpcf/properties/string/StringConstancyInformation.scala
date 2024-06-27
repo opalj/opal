@@ -10,7 +10,6 @@ package string
  */
 case class StringConstancyInformation(tree: StringTreeNode) {
 
-    final def isTheNeutralElement: Boolean = tree.isNeutralElement
     final def constancyLevel: StringConstancyLevel.Value = tree.constancyLevel
     final def toRegex: String = tree.toRegex
 }
