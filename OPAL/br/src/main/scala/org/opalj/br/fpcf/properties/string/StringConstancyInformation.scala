@@ -16,6 +16,6 @@ case class StringConstancyInformation(tree: StringTreeNode) {
 
 object StringConstancyInformation {
 
-    def lb: StringConstancyInformation = StringConstancyInformation(StringTreeDynamicString)
-    def ub: StringConstancyInformation = StringConstancyInformation(StringTreeNeutralElement)
+    def lb: StringConstancyInformation = StringConstancyInformation(StringTreeNode.lb)
+    def ub: StringConstancyInformation = StringConstancyInformation(StringTreeNode.ub)
 }

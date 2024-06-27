@@ -5,9 +5,7 @@ package fpcf
 package properties
 package string
 
-import org.opalj.br.fpcf.properties.string.StringTreeDynamicString
 import org.opalj.br.fpcf.properties.string.StringTreeInvalidElement
-import org.opalj.br.fpcf.properties.string.StringTreeNeutralElement
 import org.opalj.br.fpcf.properties.string.StringTreeNode
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyKey
@@ -43,7 +41,7 @@ object StringFlowFunctionProperty extends StringFlowFunctionPropertyMetaInformat
         StringFlowFunctionProperty(PDUWeb(pc, pv), flow)
 
     // TODO should this be the real bottom element?
-    def ub: StringFlowFunctionProperty = constForAll(StringTreeNeutralElement)
+    def ub: StringFlowFunctionProperty = constForAll(StringTreeInvalidElement)
 
     def identity: StringFlowFunctionProperty =
         StringFlowFunctionProperty(Set.empty[PDUWeb], IdentityFlow)
@@ -52,11 +50,8 @@ object StringFlowFunctionProperty extends StringFlowFunctionPropertyMetaInformat
     def identityForVariableAt(pc: Int, v: PV): StringFlowFunctionProperty =
         StringFlowFunctionProperty(pc, v, IdentityFlow)
 
-    def ub(pc: Int, v: PV): StringFlowFunctionProperty =
-        constForVariableAt(pc, v, StringTreeNeutralElement)
-
     def lb(pc: Int, v: PV): StringFlowFunctionProperty =
-        constForVariableAt(pc, v, StringTreeDynamicString)
+        constForVariableAt(pc, v, StringTreeNode.lb)
 
     def noFlow(pc: Int, v: PV): StringFlowFunctionProperty =
         constForVariableAt(pc, v, StringTreeInvalidElement)

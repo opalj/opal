@@ -25,19 +25,20 @@ sealed trait StringTreeNode {
     def collectParameterIndices: Set[Int] = children.flatMap(_.collectParameterIndices).toSet
     def replaceParameters(parameters: Map[Int, StringTreeNode]): StringTreeNode
 
-    def isNeutralElement: Boolean = false
-    def isInvalidElement: Boolean = false
+    def isEmpty: Boolean = false
+    def isInvalid: Boolean = false
 }
 
 object StringTreeNode {
 
     def reduceMultiple(trees: Seq[StringTreeNode]): StringTreeNode = {
         if (trees.size == 1) trees.head
-        else if (trees.exists(_.isInvalidElement)) StringTreeInvalidElement
+        else if (trees.exists(_.isInvalid)) StringTreeInvalidElement
         else StringTreeOr(trees)
     }
 
     def lb: StringTreeNode = StringTreeDynamicString
+    def ub: StringTreeNode = StringTreeInvalidElement
 }
 
 case class StringTreeRepetition(child: StringTreeNode) extends StringTreeNode {
@@ -48,10 +49,10 @@ case class StringTreeRepetition(child: StringTreeNode) extends StringTreeNode {
 
     override def simplify: StringTreeNode = {
         val simplifiedChild = child.simplify
-        if (simplifiedChild.isInvalidElement)
+        if (simplifiedChild.isInvalid)
             StringTreeInvalidElement
-        else if (simplifiedChild.isNeutralElement)
-            StringTreeNeutralElement
+        else if (simplifiedChild.isEmpty)
+            StringTreeEmptyConst
         else
             StringTreeRepetition(simplifiedChild)
     }
@@ -68,25 +69,28 @@ case class StringTreeConcat(override val children: Seq[StringTreeNode]) extends 
 
     override def toRegex: String = {
         children.size match {
-            case 0 => StringTreeNeutralElement.toRegex
+            case 0 => throw new IllegalStateException("Tried to convert StringTreeConcat with no children to a regex!")
             case 1 => children.head.toRegex
             case _ => s"${children.map(_.toRegex).reduceLeft((o, n) => s"$o$n")}"
         }
     }
 
     override def simplify: StringTreeNode = {
-        // TODO neutral concat something is always neutral
-        val nonNeutralChildren = children.map(_.simplify).filterNot(_.isNeutralElement)
-        nonNeutralChildren.size match {
-            case 0 => StringTreeNeutralElement
-            case 1 => nonNeutralChildren.head
-            case _ =>
-                var newChildren = Seq.empty[StringTreeNode]
-                nonNeutralChildren.foreach {
-                    case concatChild: StringTreeConcat => newChildren :++= concatChild.children
-                    case child                         => newChildren :+= child
-                }
-                StringTreeConcat(newChildren)
+        val nonEmptyChildren = children.map(_.simplify).filterNot(_.isEmpty)
+        if (nonEmptyChildren.exists(_.isInvalid)) {
+            StringTreeInvalidElement
+        } else {
+            nonEmptyChildren.size match {
+                case 0 => StringTreeEmptyConst
+                case 1 => nonEmptyChildren.head
+                case _ =>
+                    var newChildren = Seq.empty[StringTreeNode]
+                    nonEmptyChildren.foreach {
+                        case concatChild: StringTreeConcat => newChildren :++= concatChild.children
+                        case child                         => newChildren :+= child
+                    }
+                    StringTreeConcat(newChildren)
+            }
         }
     }
 
@@ -98,7 +102,13 @@ case class StringTreeConcat(override val children: Seq[StringTreeNode]) extends 
 }
 
 object StringTreeConcat {
-    def fromNodes(children: StringTreeNode*): StringTreeConcat = new StringTreeConcat(children)
+    def fromNodes(children: StringTreeNode*): StringTreeNode = {
+        if (children.isEmpty || children.exists(_.isInvalid)) {
+            StringTreeInvalidElement
+        } else {
+            new StringTreeConcat(children)
+        }
+    }
 }
 
 case class StringTreeOr private (override val children: Seq[StringTreeNode]) extends StringTreeNode {
@@ -112,13 +122,13 @@ case class StringTreeOr private (override val children: Seq[StringTreeNode]) ext
     }
 
     override def simplify: StringTreeNode = {
-        val nonNeutralChildren = children.map(_.simplify).filterNot(_.isNeutralElement)
-        nonNeutralChildren.size match {
-            case 0 => StringTreeNeutralElement
-            case 1 => nonNeutralChildren.head
+        val nonEmptyChildren = children.map(_.simplify).filterNot(_.isEmpty).filterNot(_.isInvalid)
+        nonEmptyChildren.size match {
+            case 0 => StringTreeInvalidElement
+            case 1 => nonEmptyChildren.head
             case _ =>
                 var newChildren = Seq.empty[StringTreeNode]
-                nonNeutralChildren.foreach {
+                nonEmptyChildren.foreach {
                     case orChild: StringTreeOr => newChildren :++= orChild.children
                     case child                 => newChildren :+= child
                 }
@@ -141,16 +151,16 @@ object StringTreeOr {
 
     def apply(children: Seq[StringTreeNode]): StringTreeNode = {
         if (children.isEmpty) {
-            StringTreeNeutralElement
+            StringTreeInvalidElement
         } else {
             new StringTreeOr(children)
         }
     }
 
     def fromNodes(children: StringTreeNode*): StringTreeNode = {
-        val nonNeutralDistinctChildren = children.distinct.filterNot(_.isNeutralElement)
+        val nonNeutralDistinctChildren = children.distinct.filterNot(_.isEmpty)
         nonNeutralDistinctChildren.size match {
-            case 0 => StringTreeNeutralElement
+            case 0 => StringTreeInvalidElement
             case 1 => nonNeutralDistinctChildren.head
             case _ =>
                 var newChildren = Seq.empty[StringTreeNode]
@@ -183,7 +193,12 @@ case class StringTreeConst(string: String) extends SimpleStringTreeNode {
 
     def isIntConst: Boolean = Try(string.toInt).isSuccess
 
-    override def isNeutralElement: Boolean = string == ""
+    override def isEmpty: Boolean = string == ""
+}
+
+object StringTreeEmptyConst extends StringTreeConst("") {
+
+    override def isEmpty: Boolean = true
 }
 
 case class StringTreeParameter(index: Int) extends SimpleStringTreeNode {
@@ -208,20 +223,12 @@ object StringTreeParameter {
     }
 }
 
-object StringTreeNeutralElement extends SimpleStringTreeNode {
-    override def toRegex: String = ""
-
-    override def constancyLevel: StringConstancyLevel.Value = StringConstancyLevel.CONSTANT
-
-    override def isNeutralElement: Boolean = true
-}
-
 object StringTreeInvalidElement extends SimpleStringTreeNode {
     override def toRegex: String = throw new UnsupportedOperationException()
 
     override def constancyLevel: StringConstancyLevel.Value = StringConstancyLevel.CONSTANT
 
-    override def isInvalidElement: Boolean = true
+    override def isInvalid: Boolean = true
 }
 
 object StringTreeNull extends SimpleStringTreeNode {

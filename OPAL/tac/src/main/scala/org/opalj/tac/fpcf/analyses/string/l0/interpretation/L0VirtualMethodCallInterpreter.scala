@@ -8,7 +8,7 @@ package l0
 package interpretation
 
 import org.opalj.br.fpcf.properties.string.StringTreeConst
-import org.opalj.br.fpcf.properties.string.StringTreeNeutralElement
+import org.opalj.br.fpcf.properties.string.StringTreeEmptyConst
 import org.opalj.br.fpcf.properties.string.StringTreeNode
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
@@ -36,7 +36,7 @@ object L0VirtualMethodCallInterpreter extends StringInterpreter {
                         computeFinalResult(StringFlowFunctionProperty.constForVariableAt(
                             state.pc,
                             pReceiver,
-                            StringTreeNeutralElement
+                            StringTreeEmptyConst
                         ))
 
                     case TheIntegerValue(intVal) =>

@@ -410,8 +410,9 @@ public class L1TestMethods extends L0TestMethods {
                             // Since the virtual function return value is inlined in L2 and its actual runtime return
                             // value is not used, the function call gets converted to a method call, which modifies the
                             // TAC: The def PC from the `analyzeString` parameter is now different and points to the def
-                            // PC for the `resolvableReturnValueFunction` parameter.
-                            realisticLevel = CONSTANT, realisticStrings = ""
+                            // PC for the `resolvableReturnValueFunction` parameter. This results in no string flow being
+                            // detected since the def and use sites are now inconsistent.
+                            realisticLevel = INVALID, realisticStrings = StringDefinitions.INVALID_FLOW
                     )
             })
     public void resolvableReturnValue() {

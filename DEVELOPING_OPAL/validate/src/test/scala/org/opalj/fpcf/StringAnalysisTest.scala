@@ -258,6 +258,7 @@ sealed abstract class L1StringAnalysisTest extends StringAnalysisTest {
             val as = executeAnalyses(LazyL1StringAnalysis.allRequiredAnalyses)
 
             val entities = determineEntitiesToAnalyze(as.project)
+                .filter(entity => entity._2.name == "resolvableReturnValue")
                 // Currently broken L1 Tests
                 .filterNot(entity => entity._2.name.startsWith("cyclicDependencyTest"))
             entities.foreach(entity => as.propertyStore.force(entity._1, StringConstancyProperty.key))

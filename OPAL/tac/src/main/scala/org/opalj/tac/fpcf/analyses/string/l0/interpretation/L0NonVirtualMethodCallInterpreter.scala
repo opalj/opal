@@ -7,6 +7,7 @@ package string
 package l0
 package interpretation
 
+import org.opalj.br.fpcf.properties.string.StringTreeEmptyConst
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
 import org.opalj.tac.fpcf.properties.string.StringTreeEnvironment
@@ -26,12 +27,12 @@ object L0NonVirtualMethodCallInterpreter extends StringInterpreter {
     }
 
     private def interpretInit(init: T)(implicit state: InterpretationState): ProperPropertyComputationResult = {
+        val pc = state.pc
+        val targetVar = init.receiver.asVar.toPersistentForm(state.tac.stmts)
         init.params.size match {
             case 0 =>
-                computeFinalResult(StringFlowFunctionProperty.identity)
+                computeFinalResult(StringFlowFunctionProperty.constForVariableAt(pc, targetVar, StringTreeEmptyConst))
             case _ =>
-                val pc = state.pc
-                val targetVar = init.receiver.asVar.toPersistentForm(state.tac.stmts)
                 // Only StringBuffer and StringBuilder are interpreted which have constructors with <= 1 parameters
                 val paramVar = init.params.head.asVar.toPersistentForm(state.tac.stmts)
 

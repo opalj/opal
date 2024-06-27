@@ -12,7 +12,7 @@ import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.properties.string.StringTreeDynamicString
-import org.opalj.br.fpcf.properties.string.StringTreeNeutralElement
+import org.opalj.br.fpcf.properties.string.StringTreeInvalidElement
 import org.opalj.br.fpcf.properties.string.StringTreeParameter
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EUBP
@@ -116,7 +116,7 @@ class MethodStringFlowAnalysis(override val project: SomeProject) extends FPCFAn
         val startEnv = StringTreeEnvironment(state.getWebs.map { web: PDUWeb =>
             val defPCs = web.defPCs.toList.sorted
             if (defPCs.head >= 0) {
-                (web, StringTreeNeutralElement)
+                (web, StringTreeInvalidElement)
             } else {
                 val pc = defPCs.head
                 if (pc == -1 || pc <= ImmediateVMExceptionsOriginOffset) {

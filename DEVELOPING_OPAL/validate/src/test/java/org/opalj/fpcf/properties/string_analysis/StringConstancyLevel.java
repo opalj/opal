@@ -14,7 +14,9 @@ public enum StringConstancyLevel {
     PARTIALLY_CONSTANT("partially_constant"),
     DYNAMIC("dynamic"),
     // Added to enable leaving a string constancy level of a string definition unspecified
-    UNSPECIFIED("unspecified");
+    UNSPECIFIED("unspecified"),
+    // Added to enable specifying allowed invalid flow
+    INVALID("invalid");
 
     private final String value;
 

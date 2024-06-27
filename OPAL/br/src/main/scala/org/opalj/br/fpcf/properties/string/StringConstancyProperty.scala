@@ -26,7 +26,11 @@ class StringConstancyProperty(
 
     override def toString: String = {
         val level = stringConstancyInformation.constancyLevel.toString.toLowerCase
-        s"Level: $level, Possible Strings: ${stringConstancyInformation.toRegex}"
+        val strings = if (stringConstancyInformation.tree.simplify.isInvalid) {
+            "No possible strings - Invalid Flow"
+        } else stringConstancyInformation.toRegex
+
+        s"Level: $level, Possible Strings: $strings"
     }
 
     override def hashCode(): Int = stringConstancyInformation.hashCode()
