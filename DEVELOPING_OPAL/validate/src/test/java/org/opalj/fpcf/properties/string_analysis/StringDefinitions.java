@@ -26,6 +26,7 @@ import java.lang.annotation.*;
 public @interface StringDefinitions {
 
     String NO_STRINGS = "N/A";
+    String INVALID_FLOW = "<INVALID_FLOW>";
 
     /**
      * This value determines the expected level of freedom for a local variable to

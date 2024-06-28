@@ -13,7 +13,6 @@ import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.string.StringConstancyInformation
 import org.opalj.br.fpcf.properties.string.StringConstancyProperty
-import org.opalj.br.fpcf.properties.string.StringTreeNeutralElement
 import org.opalj.br.fpcf.properties.string.StringTreeNode
 import org.opalj.br.fpcf.properties.string.StringTreeOr
 import org.opalj.fpcf.Entity
@@ -97,7 +96,7 @@ private[string] case class ContextStringAnalysisState(
                         .filter(_.hasUBP).map(_.ub.sci.tree).toSeq
 
                     val paramTree = if (paramOptions.nonEmpty) StringTreeOr(paramOptions)
-                    else StringTreeNeutralElement
+                    else StringTreeNode.ub
 
                     (index, paramTree.simplify)
                 }.toMap

@@ -5,8 +5,6 @@ package fpcf
 package properties
 package string
 
-import org.opalj.br.fpcf.properties.string.StringTreeDynamicString
-import org.opalj.br.fpcf.properties.string.StringTreeNeutralElement
 import org.opalj.br.fpcf.properties.string.StringTreeNode
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyKey
@@ -34,16 +32,16 @@ object MethodStringFlow extends MethodStringFlowPropertyMetaInformation {
 
     override val key: PropertyKey[MethodStringFlow] = PropertyKey.create(propertyName)
 
-    def ub: MethodStringFlow = AllNeutralMethodStringFlow
-    def lb: MethodStringFlow = AllDynamicMethodStringFlow
+    def ub: MethodStringFlow = AllUBMethodStringFlow
+    def lb: MethodStringFlow = AllLBMethodStringFlow
 }
 
-object AllNeutralMethodStringFlow extends MethodStringFlow(StringTreeEnvironment(Map.empty)) {
+private object AllUBMethodStringFlow extends MethodStringFlow(StringTreeEnvironment(Map.empty)) {
 
-    override def apply(pc: Int, pv: PV): StringTreeNode = StringTreeNeutralElement
+    override def apply(pc: Int, pv: PV): StringTreeNode = StringTreeNode.ub
 }
 
-object AllDynamicMethodStringFlow extends MethodStringFlow(StringTreeEnvironment(Map.empty)) {
+private object AllLBMethodStringFlow extends MethodStringFlow(StringTreeEnvironment(Map.empty)) {
 
-    override def apply(pc: Int, pv: PV): StringTreeNode = StringTreeDynamicString
+    override def apply(pc: Int, pv: PV): StringTreeNode = StringTreeNode.lb
 }

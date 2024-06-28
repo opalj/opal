@@ -63,7 +63,8 @@ private[string] class ContextFreeStringAnalysis(override val project: SomeProjec
         StringConstancyProperty(state.stringFlowDependee match {
             case UBP(methodStringFlow) =>
                 StringConstancyInformation(methodStringFlow(state.entity.pc, state.entity.pv).simplify)
-            case _: EPK[_, MethodStringFlow] => StringConstancyInformation.ub
+            case _: EPK[_, MethodStringFlow] =>
+                StringConstancyInformation.ub
         })
     }
 }
