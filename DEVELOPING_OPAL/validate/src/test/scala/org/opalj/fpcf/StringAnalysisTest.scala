@@ -255,10 +255,9 @@ sealed abstract class L1StringAnalysisTest extends StringAnalysisTest {
 
     final def runL1Tests(): Unit = {
         describe("the org.opalj.fpcf.L1StringAnalysis is started") {
-            val as = executeAnalyses(LazyL1StringAnalysis.allRequiredAnalyses)
+            val as = executeAnalyses(LazyL1StringAnalysis.allRequiredAnalyses :+ EagerFieldAccessInformationAnalysis)
 
             val entities = determineEntitiesToAnalyze(as.project)
-                .filter(entity => entity._2.name == "resolvableReturnValue")
                 // Currently broken L1 Tests
                 .filterNot(entity => entity._2.name.startsWith("cyclicDependencyTest"))
             entities.foreach(entity => as.propertyStore.force(entity._1, StringConstancyProperty.key))

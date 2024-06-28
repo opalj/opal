@@ -7,10 +7,13 @@ package string
 package l1
 package interpretation
 
+import scala.collection.mutable.ListBuffer
+
+import org.opalj.br.DeclaredField
 import org.opalj.br.analyses.DeclaredFields
-import org.opalj.br.analyses.FieldAccessInformation
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.analyses.ContextProvider
+import org.opalj.br.fpcf.properties.fieldaccess.FieldWriteAccessInformation
 import org.opalj.br.fpcf.properties.string.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string.StringTreeDynamicString
 import org.opalj.br.fpcf.properties.string.StringTreeNode
@@ -32,13 +35,12 @@ import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
 
 /**
  * Responsible for processing direct reads to fields (see [[FieldRead]]) by analyzing the write accesses to these fields
- * via the [[FieldAccessInformation]].
+ * via the [[FieldWriteAccessInformation]].
  *
  * @author Maximilian Rüsch
  */
 case class L1FieldReadInterpreter(
     ps:                           PropertyStore,
-    fieldAccessInformation:       FieldAccessInformation,
     project:                      SomeProject,
     implicit val declaredFields:  DeclaredFields,
     implicit val contextProvider: ContextProvider
@@ -72,11 +74,15 @@ case class L1FieldReadInterpreter(
     }
 
     private case class FieldReadState(
-        target:                    PV,
-        var hasWriteInSameMethod:  Boolean                                                    = false,
-        var hasInit:               Boolean                                                    = false,
-        var hasUnresolvableAccess: Boolean                                                    = false,
-        var accessDependees:       Seq[EOptionP[VariableDefinition, StringConstancyProperty]] = Seq.empty
+        target:                        PV,
+        var fieldAccessDependee:       EOptionP[DeclaredField, FieldWriteAccessInformation],
+        var seenDirectFieldAccesses:   Int                                                        = 0,
+        var seenIndirectFieldAccesses: Int                                                        = 0,
+        var hasWriteInSameMethod:      Boolean                                                    = false,
+        var hasInit:                   Boolean                                                    = false,
+        var hasUnresolvableAccess:     Boolean                                                    = false,
+        var accessDependees:           Seq[EOptionP[VariableDefinition, StringConstancyProperty]] = Seq.empty,
+        previousResults:               ListBuffer[StringTreeNode]                                 = ListBuffer.empty
     ) {
 
         def updateAccessDependee(newDependee: EOptionP[VariableDefinition, StringConstancyProperty]): Unit = {
@@ -86,9 +92,9 @@ case class L1FieldReadInterpreter(
             )
         }
 
-        def hasDependees: Boolean = accessDependees.exists(_.isRefinable)
+        def hasDependees: Boolean = fieldAccessDependee.isRefinable || accessDependees.exists(_.isRefinable)
 
-        def dependees: Iterable[SomeEOptionP] = accessDependees.filter(_.isRefinable)
+        def dependees: Iterable[SomeEOptionP] = fieldAccessDependee +: accessDependees.filter(_.isRefinable)
     }
 
     /**
@@ -105,24 +111,46 @@ case class L1FieldReadInterpreter(
             return computeFinalLBFor(target)
         }
 
-        val definedField =
-            declaredFields(fieldRead.declaringClass, fieldRead.name, fieldRead.declaredFieldType).asDefinedField
-        val writeAccesses = fieldAccessInformation.writeAccesses(definedField.definedField).toSeq
-        if (writeAccesses.length > fieldWriteThreshold) {
-            return computeFinalLBFor(target)
+        val field = declaredFields(fieldRead.declaringClass, fieldRead.name, fieldRead.declaredFieldType)
+        val fieldAccessEOptP = ps(field, FieldWriteAccessInformation.key)
+
+        implicit val accessState: FieldReadState = FieldReadState(target, fieldAccessEOptP)
+        if (fieldAccessEOptP.hasUBP) {
+            handleFieldAccessInformation(fieldAccessEOptP.ub)
+        } else {
+            accessState.previousResults.prepend(StringTreeNode.ub)
+            InterimResult.forUB(
+                InterpretationHandler.getEntity,
+                StringFlowFunctionProperty.ub,
+                accessState.dependees.toSet,
+                continuation(accessState, state)
+            )
         }
 
-        if (writeAccesses.isEmpty) {
+        tryComputeFinalResult
+    }
+
+    private def handleFieldAccessInformation(accessInformation: FieldWriteAccessInformation)(
+        implicit
+        accessState: FieldReadState,
+        state:       InterpretationState
+    ): ProperPropertyComputationResult = {
+        if (accessInformation.accesses.length > fieldWriteThreshold) {
+            return computeFinalResult(computeUBWithNewTree(StringTreeDynamicString))
+        }
+
+        if (accessState.fieldAccessDependee.isFinal && accessInformation.accesses.isEmpty) {
             // No methods which write the field were found => Field could either be null or any value
-            return computeFinalResult(StringFlowFunctionProperty.constForVariableAt(
-                state.pc,
-                target,
-                StringTreeOr.fromNodes(StringTreeNull, StringTreeDynamicString)
-            ))
+            return computeFinalResult(computeUBWithNewTree(StringTreeOr.fromNodes(
+                StringTreeDynamicString,
+                StringTreeNull
+            )))
         }
 
-        implicit val accessState: FieldReadState = FieldReadState(target)
-        writeAccesses.foreach {
+        accessInformation.getNewestAccesses(
+            accessInformation.numDirectAccesses - accessState.seenDirectFieldAccesses,
+            accessInformation.numIndirectAccesses - accessState.seenIndirectFieldAccesses
+        ).foreach {
             case (contextId, pc, _, parameter) =>
                 val method = contextProvider.contextFromId(contextId).method.definedMethod
 
@@ -143,6 +171,9 @@ case class L1FieldReadInterpreter(
                 }
         }
 
+        accessState.seenDirectFieldAccesses = accessInformation.numDirectAccesses
+        accessState.seenIndirectFieldAccesses = accessInformation.numIndirectAccesses
+
         tryComputeFinalResult
     }
 
@@ -153,20 +184,13 @@ case class L1FieldReadInterpreter(
         if (accessState.hasWriteInSameMethod) {
             // We cannot handle writes to a field that is read in the same method at the moment as the flow functions do
             // not capture field state. This can be improved upon in the future.
-            computeFinalLBFor(accessState.target)
-        } else if (accessState.hasDependees) {
-            InterimResult.forUB(
-                InterpretationHandler.getEntity,
-                StringFlowFunctionProperty.ub,
-                accessState.dependees.toSet,
-                continuation(accessState, state)
-            )
+            computeFinalResult(computeUBWithNewTree(StringTreeDynamicString))
         } else {
-            var trees = accessState.accessDependees.map(_.asFinal.p.sci.tree)
+            var trees = accessState.accessDependees.map(_.ub.sci.tree)
             // No init is present => append a `null` element to indicate that the field might be null; this behavior
             // could be refined by only setting the null element if no statement is guaranteed to be executed prior
             // to the field read
-            if (!accessState.hasInit) {
+            if (accessState.fieldAccessDependee.isFinal && !accessState.hasInit) {
                 trees = trees :+ StringTreeNull
             }
             // If an access could not be resolved, append a dynamic element
@@ -174,11 +198,16 @@ case class L1FieldReadInterpreter(
                 trees = trees :+ StringTreeNode.lb
             }
 
-            computeFinalResult(StringFlowFunctionProperty.constForVariableAt(
-                state.pc,
-                accessState.target,
-                StringTreeNode.reduceMultiple(trees)
-            ))
+            if (accessState.hasDependees) {
+                InterimResult.forUB(
+                    InterpretationHandler.getEntity,
+                    computeUBWithNewTree(StringTreeNode.reduceMultiple(trees)),
+                    accessState.dependees.toSet,
+                    continuation(accessState, state)
+                )
+            } else {
+                computeFinalResult(computeUBWithNewTree(StringTreeNode.reduceMultiple(trees)))
+            }
         }
     }
 
@@ -187,11 +216,29 @@ case class L1FieldReadInterpreter(
         state:       InterpretationState
     )(eps: SomeEPS): ProperPropertyComputationResult = {
         eps match {
+            case UBP(ub: FieldWriteAccessInformation) =>
+                accessState.fieldAccessDependee = eps.asInstanceOf[EOptionP[DeclaredField, FieldWriteAccessInformation]]
+                handleFieldAccessInformation(ub)(accessState, state)
+
             case UBP(_: StringConstancyProperty) =>
                 accessState.updateAccessDependee(eps.asInstanceOf[EOptionP[VariableDefinition, StringConstancyProperty]])
                 tryComputeFinalResult(accessState, state)
 
             case _ => throw new IllegalArgumentException(s"Encountered unknown eps: $eps")
         }
+    }
+
+    private def computeUBWithNewTree(newTree: StringTreeNode)(
+        implicit
+        accessState: FieldReadState,
+        state:       InterpretationState
+    ): StringFlowFunctionProperty = {
+        accessState.previousResults.prepend(newTree)
+
+        StringFlowFunctionProperty.constForVariableAt(
+            state.pc,
+            accessState.target,
+            StringTreeOr(accessState.previousResults.toSeq)
+        )
     }
 }
