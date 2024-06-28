@@ -9,8 +9,6 @@ package interpretation
 
 import org.opalj.br.analyses.DeclaredFields
 import org.opalj.br.analyses.DeclaredFieldsKey
-import org.opalj.br.analyses.FieldAccessInformation
-import org.opalj.br.analyses.FieldAccessInformationKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.ContextProviderKey
@@ -33,7 +31,6 @@ import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
 class L1InterpretationHandler(implicit override val project: SomeProject) extends InterpretationHandler {
 
     val declaredFields: DeclaredFields = p.get(DeclaredFieldsKey)
-    val fieldAccessInformation: FieldAccessInformation = p.get(FieldAccessInformationKey)
     implicit val contextProvider: ContextProvider = p.get(ContextProviderKey)
 
     override protected def processStatement(implicit
@@ -46,10 +43,7 @@ class L1InterpretationHandler(implicit override val project: SomeProject) extend
         case Assignment(_, target, _: ArrayExpr[V]) => StringInterpreter.computeFinalLBFor(target)
 
         case stmt @ Assignment(_, _, expr: FieldRead[V]) =>
-            L1FieldReadInterpreter(ps, fieldAccessInformation, p, declaredFields, contextProvider).interpretExpr(
-                stmt,
-                expr
-            )
+            L1FieldReadInterpreter(ps, p, declaredFields, contextProvider).interpretExpr(stmt, expr)
         // Field reads without result usage are irrelevant
         case ExprStmt(_, _: FieldRead[V]) =>
             StringInterpreter.computeFinalResult(StringFlowFunctionProperty.identity)
@@ -103,8 +97,7 @@ class L1InterpretationHandler(implicit override val project: SomeProject) extend
 
 object L1InterpretationHandler {
 
-    def requiredProjectInformation: ProjectInformationKeys =
-        Seq(DeclaredFieldsKey, FieldAccessInformationKey, ContextProviderKey)
+    def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredFieldsKey, ContextProviderKey)
 
     def apply(project: SomeProject): L1InterpretationHandler = new L1InterpretationHandler()(project)
 }
