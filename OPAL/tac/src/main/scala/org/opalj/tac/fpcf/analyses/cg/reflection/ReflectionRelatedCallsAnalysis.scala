@@ -262,9 +262,11 @@ class ClassForNameAnalysis private[analyses] (
         implicit val incompleteCallSites: IncompleteCallSites = new IncompleteCallSites {}
 
         val scpUpdate = eps.asInstanceOf[EOptionP[VariableContext, StringConstancyProperty]]
-        val newRegex = scpUpdate.ub.sci.toRegex
+        if (!scpUpdate.ub.sci.tree.isInvalid) {
+            val newRegex = scpUpdate.ub.sci.toRegex
+            state.addNewLoadedClasses(TypesUtil.getPossibleForNameClasses(newRegex, project))
+        }
 
-        state.addNewLoadedClasses(TypesUtil.getPossibleForNameClasses(newRegex, project))
         if (eps.isFinal) {
             state.removeDependee(eps.toEPK)
         } else {
