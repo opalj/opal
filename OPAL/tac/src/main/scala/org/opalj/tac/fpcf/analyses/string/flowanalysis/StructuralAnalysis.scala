@@ -44,8 +44,7 @@ object StructuralAnalysis {
                 var newSuperGraph: SuperFlowGraph = currentSuperGraph
 
                 // Compact
-                newGraph = newGraph.incl(newRegion)
-                newSuperGraph = newSuperGraph.incl(newRegion)
+                // Note that adding the new region to the graph and superGraph is done anyways since we add edges later
                 val maxPost = post.indexOf(subNodes.maxBy(post.indexOf))
                 post(maxPost) = newRegion
                 // Removing old regions from the graph is done later
@@ -53,24 +52,21 @@ object StructuralAnalysis {
                 postCtr = post.indexOf(newRegion)
 
                 // Replace edges
-                for {
-                    e <- newGraph.edges
-                } {
-                    val source: FlowGraphNode = e.outer.source
-                    val target: FlowGraphNode = e.outer.target
-
-                    if (!subNodes.contains(source) && subNodes.contains(target)) {
-                        newGraph += DiEdge(source, newRegion)
-                        newSuperGraph += DiEdge(source, newRegion)
-                        newSuperGraph -= DiEdge(source, target)
-                    } else if (subNodes.contains(source) && !subNodes.contains(target)) {
-                        newGraph += DiEdge(newRegion, target)
-                        newSuperGraph += DiEdge(newRegion, target)
-                        newSuperGraph -= DiEdge(source, target)
-                    }
+                val incomingEdges = currentGraph.edges.filter { e =>
+                    !subNodes.contains(e.outer.source) && subNodes.contains(e.outer.target)
                 }
+                val outgoingEdges = currentGraph.edges.filter { e =>
+                    subNodes.contains(e.outer.source) && !subNodes.contains(e.outer.target)
+                }
+
+                newGraph ++= incomingEdges.map(e => DiEdge(e.outer.source, newRegion))
+                    .concat(outgoingEdges.map(e => DiEdge(newRegion, e.outer.target)))
                 newGraph = newGraph.removedAll(subNodes, Set.empty)
-                newSuperGraph = newSuperGraph.incl(DiHyperEdge(OneOrMore(newRegion), OneOrMore.from(subNodes).get))
+
+                newSuperGraph ++= incomingEdges.map(e => DiEdge(e.outer.source, newRegion))
+                    .concat(outgoingEdges.map(e => DiEdge(newRegion, e.outer.target)))
+                newSuperGraph --= incomingEdges.concat(outgoingEdges).map(e => DiEdge(e.outer.source, e.outer.target))
+                    .concat(Seq(DiHyperEdge(OneOrMore(newRegion), OneOrMore.from(subNodes).get)))
 
                 (newGraph, newSuperGraph, newRegion)
             }
@@ -80,8 +76,8 @@ object StructuralAnalysis {
             while (g.order > 1 && postCtr < post.size) {
                 var n = post(postCtr)
 
-                val gPost = post.map(g.get).reverse.asInstanceOf[mutable.ListBuffer[FlowGraph#NodeT]]
-                val (newStartingNode, acyclicRegionOpt) = locateAcyclicRegion(g, gPost, n)
+                val gPostMap = post.reverse.zipWithIndex.map(ni => (g.get(ni._1), ni._2)).toMap
+                val (newStartingNode, acyclicRegionOpt) = locateAcyclicRegion(g, gPostMap, n)
                 n = newStartingNode
                 if (acyclicRegionOpt.isDefined) {
                     val (arType, nodes, entry) = acyclicRegionOpt.get
@@ -89,11 +85,7 @@ object StructuralAnalysis {
                     val (newGraph, newSuperGraph, newRegion) = replace(g, sg, nodes, entry, arType)
                     g = newGraph
                     sg = newSuperGraph
-                    for {
-                        node <- nodes
-                    } {
-                        controlTree = controlTree.incl(DiEdge(newRegion, node))
-                    }
+                    controlTree = controlTree.concat(nodes.map(node => DiEdge(newRegion, node)))
 
                     if (nodes.contains(curEntry)) {
                         curEntry = newRegion
@@ -128,11 +120,7 @@ object StructuralAnalysis {
                         val (newGraph, newSuperGraph, newRegion) = replace(g, sg, nodes, entry, crType)
                         g = newGraph
                         sg = newSuperGraph
-                        for {
-                            node <- nodes
-                        } {
-                            controlTree = controlTree.incl(DiEdge(newRegion, node))
-                        }
+                        controlTree = controlTree.concat(nodes.map(node => DiEdge(newRegion, node)))
 
                         if (nodes.contains(curEntry)) {
                             curEntry = newRegion
@@ -156,19 +144,21 @@ object StructuralAnalysis {
         if (m == n) {
             false
         } else {
-            val nonNFromMTraverser = graph.innerNodeTraverser(graph.get(m), subgraphNodes = _.outer != n)
-            graph.nodes.outerIterable.exists { k =>
-                k != n &&
-                graph.find(DiEdge(k, n)).isDefined &&
-                nonNFromMTraverser.pathTo(graph.get(k)).isDefined &&
-                domTree.strictlyDominates(indexedNodes.indexOf(n), indexedNodes.indexOf(k))
+            val innerN = graph.get(n)
+            val nonNFromMTraverser = graph.innerNodeTraverser(graph.get(m), subgraphNodes = _ != innerN)
+            val predecessorsOfN = innerN.diPredecessors
+            graph.nodes.exists { innerK =>
+                innerK != innerN &&
+                predecessorsOfN.contains(innerK) &&
+                domTree.strictlyDominates(indexedNodes.indexOf(n), indexedNodes.indexOf(innerK.outer)) &&
+                nonNFromMTraverser.pathTo(innerK).isDefined
             }
         }
     }
 
     private def locateAcyclicRegion[A <: FlowGraphNode, G <: Graph[A, DiEdge[A]]](
         graph:              G,
-        postOrderTraversal: mutable.ListBuffer[G#NodeT],
+        postOrderTraversal: Map[G#NodeT, Int],
         startingNode:       A
     ): (A, Option[(AcyclicRegionType, Set[A], A)]) = {
         var nSet = Set.empty[graph.NodeT]
@@ -202,9 +192,9 @@ object StructuralAnalysis {
 
             def isStillAcyclic: Boolean = {
                 currentSuccessors.forall { node =>
-                    val postOrderIndex = postOrderTraversal.indexOf(node)
+                    val postOrderIndex = postOrderTraversal(node)
 
-                    node.diSuccessors.forall(successor => postOrderTraversal.indexOf(successor) >= postOrderIndex)
+                    node.diSuccessors.forall(successor => postOrderTraversal(successor) >= postOrderIndex)
                 }
             }
 
@@ -302,6 +292,8 @@ object StructuralAnalysis {
 
             if (enteringNodes.size > 1) {
                 throw new IllegalStateException("Found more than one entering node for a natural loop!")
+            } else if (enteringNodes.isEmpty) {
+                throw new IllegalStateException("Found more no entering node for a natural loop!")
             }
 
             Some((NaturalLoop, reachUnder, enteringNodes.head))
