@@ -152,6 +152,8 @@ object StringTreeOr {
     def apply(children: Seq[StringTreeNode]): StringTreeNode = {
         if (children.isEmpty) {
             StringTreeInvalidElement
+        } else if (children.take(2).size == 1) {
+            children.head
         } else {
             new StringTreeOr(children)
         }
