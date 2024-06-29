@@ -110,7 +110,7 @@ public class L1TestMethods extends L0TestMethods {
                     @StringDefinitions(expectedLevel = DYNAMIC, expectedStrings = ".*"),
             })
     public void staticMethodOutOfScopeTest() {
-        analyzeString(System.getProperty("os.version"));
+        analyzeString(System.clearProperty("os.version"));
     }
 
     @StringDefinitionsCollection(
@@ -146,7 +146,7 @@ public class L1TestMethods extends L0TestMethods {
         StringBuilder sb = new StringBuilder("classname:");
         sb.append(getSimpleStringBuilderClassName());
         sb.append(",osname:");
-        sb.append(System.getProperty("os.name:"));
+        sb.append(System.clearProperty("os.name:"));
         analyzeString(sb.toString());
     }
 
