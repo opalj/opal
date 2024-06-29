@@ -6,7 +6,6 @@ package analyses
 package string
 package interpretation
 
-import org.opalj.br.DefinedMethod
 import org.opalj.br.FieldType
 import org.opalj.br.Method
 import org.opalj.br.fpcf.FPCFAnalysis
@@ -80,11 +79,7 @@ abstract class InterpretationHandler extends FPCFAnalysis {
 
 object InterpretationHandler {
 
-    def getEntity(implicit state: InterpretationState): MethodPC = getEntity(state.pc, state.dm)
-
-    def getEntity(pc: Int)(implicit state: InterpretationState): MethodPC = getEntity(pc, state.dm)
-
-    def getEntity(pc: Int, dm: DefinedMethod): MethodPC = MethodPC(pc, dm)
+    def getEntity(implicit state: InterpretationState): MethodPC = MethodPC(state.pc, state.dm)
 
     /**
      * This function checks whether a given type is a supported primitive type. Supported currently
