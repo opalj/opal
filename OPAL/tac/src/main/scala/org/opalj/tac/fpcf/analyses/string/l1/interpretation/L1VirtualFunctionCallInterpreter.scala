@@ -9,6 +9,8 @@ package interpretation
 
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
+import org.opalj.br.ObjectType
+import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.cg.Callees
@@ -21,6 +23,7 @@ import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
 import org.opalj.tac.fpcf.analyses.string.interpretation.InterpretationHandler
 import org.opalj.tac.fpcf.analyses.string.l0.interpretation.L0FunctionCallInterpreter
+import org.opalj.tac.fpcf.analyses.string.l0.interpretation.L0SystemPropertiesInterpreter
 import org.opalj.tac.fpcf.analyses.string.l0.interpretation.L0VirtualFunctionCallInterpreter
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
@@ -33,9 +36,11 @@ import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
  */
 class L1VirtualFunctionCallInterpreter(
     implicit val ps:              PropertyStore,
-    implicit val contextProvider: ContextProvider
+    implicit val contextProvider: ContextProvider,
+    implicit val project:         SomeProject
 ) extends L0VirtualFunctionCallInterpreter
     with StringInterpreter
+    with L0SystemPropertiesInterpreter
     with L1ArbitraryVirtualFunctionCallInterpreter {
 
     override type E = VirtualFunctionCall[V]
@@ -43,7 +48,11 @@ class L1VirtualFunctionCallInterpreter(
     override protected def interpretArbitraryCall(target: PV, call: E)(
         implicit state: InterpretationState
     ): ProperPropertyComputationResult = {
-        interpretArbitraryCallWithCallees(target)
+        if (call.name == "getProperty" && call.declaringClass == ObjectType("java/util/Properties")) {
+            interpretGetSystemPropertiesCall(target)
+        } else {
+            interpretArbitraryCallWithCallees(target)
+        }
     }
 }
 

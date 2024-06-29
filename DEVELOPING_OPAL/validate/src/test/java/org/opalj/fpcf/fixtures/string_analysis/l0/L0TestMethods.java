@@ -1263,6 +1263,17 @@ public class L0TestMethods {
         analyzeString(StringProvider.getFQClassNameWithStringBuilder("java.lang", "Integer"));
     }
 
+    @StringDefinitionsCollection(
+            value = "tests that the string analysis neatly integrates with the system properties analysis",
+            stringDefinitions = {
+                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "some.test.value")
+            })
+    public void systemPropertiesIntegrationTest() {
+        System.setProperty("some.test.property", "some.test.value");
+        String s = System.getProperty("some.test.property");
+        analyzeString(s);
+    }
+
     private String getRuntimeClassName() {
         return "java.lang.Runtime";
     }

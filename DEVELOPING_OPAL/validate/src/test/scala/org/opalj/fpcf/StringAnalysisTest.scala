@@ -28,6 +28,7 @@ import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalys
 import org.opalj.tac.fpcf.analyses.string.VariableContext
 import org.opalj.tac.fpcf.analyses.string.l0.LazyL0StringAnalysis
 import org.opalj.tac.fpcf.analyses.string.l1.LazyL1StringAnalysis
+import org.opalj.tac.fpcf.analyses.systemproperties.EagerSystemPropertiesAnalysisScheduler
 
 sealed abstract class StringAnalysisTest extends PropertiesTest {
 
@@ -209,7 +210,10 @@ sealed abstract class L0StringAnalysisTest extends StringAnalysisTest {
 
     final def runL0Tests(): Unit = {
         describe("the org.opalj.fpcf.L0StringAnalysis is started") {
-            val as = executeAnalyses(LazyL0StringAnalysis.allRequiredAnalyses)
+            val as = executeAnalyses(
+                LazyL0StringAnalysis.allRequiredAnalyses :+
+                    EagerSystemPropertiesAnalysisScheduler
+            )
 
             val entities = determineEntitiesToAnalyze(as.project)
             entities.foreach(entity => as.propertyStore.force(entity._1, StringConstancyProperty.key))
@@ -255,7 +259,11 @@ sealed abstract class L1StringAnalysisTest extends StringAnalysisTest {
 
     final def runL1Tests(): Unit = {
         describe("the org.opalj.fpcf.L1StringAnalysis is started") {
-            val as = executeAnalyses(LazyL1StringAnalysis.allRequiredAnalyses :+ EagerFieldAccessInformationAnalysis)
+            val as = executeAnalyses(
+                LazyL1StringAnalysis.allRequiredAnalyses :+
+                    EagerFieldAccessInformationAnalysis :+
+                    EagerSystemPropertiesAnalysisScheduler
+            )
 
             val entities = determineEntitiesToAnalyze(as.project)
                 // Currently broken L1 Tests

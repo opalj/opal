@@ -22,11 +22,13 @@ import org.opalj.tac.fpcf.properties.string.StringTreeEnvironment
  */
 case class L0StaticFunctionCallInterpreter()(
     implicit
-    override val p:  SomeProject,
-    override val ps: PropertyStore
+    override val p:       SomeProject,
+    override val ps:      PropertyStore,
+    override val project: SomeProject
 ) extends AssignmentBasedStringInterpreter
     with L0ArbitraryStaticFunctionCallInterpreter
-    with L0StringValueOfFunctionCallInterpreter {
+    with L0StringValueOfFunctionCallInterpreter
+    with L0SystemPropertiesInterpreter {
 
     override type E = StaticFunctionCall[V]
 
@@ -34,6 +36,8 @@ case class L0StaticFunctionCallInterpreter()(
         state: InterpretationState
     ): ProperPropertyComputationResult = {
         call.name match {
+            case "getProperty" if call.declaringClass == ObjectType.System =>
+                interpretGetSystemPropertiesCall(target)
             case "valueOf" if call.declaringClass == ObjectType.String => processStringValueOf(target, call)
             case _
                 if call.descriptor.returnType == ObjectType.String ||
