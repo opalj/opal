@@ -22,26 +22,23 @@ import org.opalj.tac.fpcf.properties.string.StringTreeEnvironment
  */
 case class L0StaticFunctionCallInterpreter()(
     implicit
-    override val p:  SomeProject,
-    override val ps: PropertyStore
+    override val p:       SomeProject,
+    override val ps:      PropertyStore,
+    override val project: SomeProject
 ) extends AssignmentBasedStringInterpreter
     with L0ArbitraryStaticFunctionCallInterpreter
-    with L0StringValueOfFunctionCallInterpreter {
+    with L0StringValueOfFunctionCallInterpreter
+    with L0SystemPropertiesInterpreter {
 
     override type E = StaticFunctionCall[V]
 
     override def interpretExpr(target: PV, call: E)(implicit
         state: InterpretationState
     ): ProperPropertyComputationResult = {
-        if (call.name == "executePrivileged") {
-            System.out.println("FOUND A PRIVILEDGED EXECUTION!")
-        }
-
         call.name match {
+            case "getProperty" if call.declaringClass == ObjectType.System =>
+                interpretGetSystemPropertiesCall(target)
             case "valueOf" if call.declaringClass == ObjectType.String => processStringValueOf(target, call)
-            case "getProperty" if call.declaringClass == ObjectType("java/util/Properties") =>
-                System.out.println("TRACED STRING ANALYSIS FOR SYSTEM PROPERTY CALL!")
-                interpretArbitraryCall(target, call)
             case _
                 if call.descriptor.returnType == ObjectType.String ||
                     call.descriptor.returnType == ObjectType.Object =>
@@ -58,6 +55,7 @@ private[string] trait L0ArbitraryStaticFunctionCallInterpreter
     implicit val p: SomeProject
 
     override type E <: StaticFunctionCall[V]
+    override type CallState = FunctionCallState
 
     def interpretArbitraryCall(target: PV, call: E)(implicit
         state: InterpretationState
@@ -69,9 +67,9 @@ private[string] trait L0ArbitraryStaticFunctionCallInterpreter
 
         val m = calleeMethod.value
         val params = getParametersForPC(state.pc).map(_.asVar.toPersistentForm(state.tac.stmts))
-        val callState = FunctionCallState(state, target, Seq(m), params, Map((m, ps(m, TACAI.key))))
+        val callState = new FunctionCallState(target, params, Seq(m), Map((m, ps(m, TACAI.key))))
 
-        interpretArbitraryCallToFunctions(callState)
+        interpretArbitraryCallToFunctions(state, callState)
     }
 }
 

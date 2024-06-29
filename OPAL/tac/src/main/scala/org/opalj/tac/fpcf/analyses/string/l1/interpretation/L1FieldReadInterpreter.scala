@@ -94,7 +94,12 @@ case class L1FieldReadInterpreter(
 
         def hasDependees: Boolean = fieldAccessDependee.isRefinable || accessDependees.exists(_.isRefinable)
 
-        def dependees: Iterable[SomeEOptionP] = fieldAccessDependee +: accessDependees.filter(_.isRefinable)
+        def dependees: Iterable[SomeEOptionP] = {
+            val dependees = accessDependees.filter(_.isRefinable)
+
+            if (fieldAccessDependee.isRefinable) fieldAccessDependee +: dependees
+            else dependees
+        }
     }
 
     /**
@@ -117,6 +122,8 @@ case class L1FieldReadInterpreter(
         implicit val accessState: FieldReadState = FieldReadState(target, fieldAccessEOptP)
         if (fieldAccessEOptP.hasUBP) {
             handleFieldAccessInformation(fieldAccessEOptP.ub)
+
+            tryComputeFinalResult
         } else {
             accessState.previousResults.prepend(StringTreeNode.ub)
             InterimResult.forUB(
@@ -126,8 +133,6 @@ case class L1FieldReadInterpreter(
                 continuation(accessState, state)
             )
         }
-
-        tryComputeFinalResult
     }
 
     private def handleFieldAccessInformation(accessInformation: FieldWriteAccessInformation)(
@@ -186,7 +191,10 @@ case class L1FieldReadInterpreter(
             // not capture field state. This can be improved upon in the future.
             computeFinalResult(computeUBWithNewTree(StringTreeDynamicString))
         } else {
-            var trees = accessState.accessDependees.map(_.ub.sci.tree)
+            var trees = accessState.accessDependees.map { ad =>
+                if (ad.hasUBP) ad.ub.sci.tree
+                else StringTreeNode.ub
+            }
             // No init is present => append a `null` element to indicate that the field might be null; this behavior
             // could be refined by only setting the null element if no statement is guaranteed to be executed prior
             // to the field read
@@ -201,12 +209,12 @@ case class L1FieldReadInterpreter(
             if (accessState.hasDependees) {
                 InterimResult.forUB(
                     InterpretationHandler.getEntity,
-                    computeUBWithNewTree(StringTreeNode.reduceMultiple(trees)),
+                    computeUBWithNewTree(StringTreeOr(trees)),
                     accessState.dependees.toSet,
                     continuation(accessState, state)
                 )
             } else {
-                computeFinalResult(computeUBWithNewTree(StringTreeNode.reduceMultiple(trees)))
+                computeFinalResult(computeUBWithNewTree(StringTreeOr(trees)))
             }
         }
     }

@@ -40,7 +40,6 @@ object StringFlowFunctionProperty extends StringFlowFunctionPropertyMetaInformat
     def apply(pc: Int, pv: PV, flow: StringFlowFunction): StringFlowFunctionProperty =
         StringFlowFunctionProperty(PDUWeb(pc, pv), flow)
 
-    // TODO should this be the real bottom element?
     def ub: StringFlowFunctionProperty = constForAll(StringTreeInvalidElement)
 
     def identity: StringFlowFunctionProperty =

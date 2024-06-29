@@ -25,6 +25,7 @@ case class L0NonVirtualFunctionCallInterpreter()(
 
     override type T = AssignmentLikeStmt[V]
     override type E = NonVirtualFunctionCall[V]
+    override type CallState = FunctionCallState
 
     override def interpretExpr(instr: T, expr: E)(implicit
         state: InterpretationState
@@ -37,8 +38,8 @@ case class L0NonVirtualFunctionCallInterpreter()(
 
         val m = calleeMethod.value
         val params = getParametersForPC(state.pc).map(_.asVar.toPersistentForm(state.tac.stmts))
-        val callState = FunctionCallState(state, target, Seq(m), params, Map((m, ps(m, TACAI.key))))
+        val callState = new FunctionCallState(target, params, Seq(m), Map((m, ps(m, TACAI.key))))
 
-        interpretArbitraryCallToFunctions(callState)
+        interpretArbitraryCallToFunctions(state, callState)
     }
 }
