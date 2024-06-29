@@ -81,10 +81,10 @@ trait L0FunctionCallInterpreter
     ): ProperPropertyComputationResult = {
         callState.calleeMethods.foreach { m =>
             val tacEOptP = callState.tacDependees(m)
-            if (tacEOptP.isFinal) {
-                val calleeTac = tacEOptP.asFinal.p.tac
+            if (tacEOptP.hasUBP) {
+                val calleeTac = tacEOptP.ub.tac
                 if (calleeTac.isEmpty) {
-                    // When the tac ep is final but we still do not have a callee tac, we cannot infer arbitrary call values at all
+                    // When we do not have a callee tac, we cannot infer arbitrary call return values at all
                     callState.hasUnresolvableReturnValue += m -> true
                 } else {
                     val returns = calleeTac.get.stmts.toIndexedSeq.filter(stmt => stmt.isInstanceOf[ReturnValue[V]])
@@ -119,12 +119,14 @@ trait L0FunctionCallInterpreter
                     callState.calleeMethods.map { m =>
                         if (callState.hasUnresolvableReturnValue(m)) {
                             StringTreeNode.lb
-                        } else {
+                        } else if (callState.returnDependees.contains(m)) {
                             StringTreeOr(callState.returnDependees(m).map { rd =>
                                 if (rd.hasUBP) {
                                     rd.ub.sci.tree.replaceParameters(parameters.map { kv => (kv._1, env(pc, kv._2)) })
                                 } else StringTreeNode.ub
                             })
+                        } else {
+                            StringTreeNode.ub
                         }
                     }
                 }
