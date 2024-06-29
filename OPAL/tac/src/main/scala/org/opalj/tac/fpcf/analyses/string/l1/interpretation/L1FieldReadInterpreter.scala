@@ -209,12 +209,12 @@ case class L1FieldReadInterpreter(
             if (accessState.hasDependees) {
                 InterimResult.forUB(
                     InterpretationHandler.getEntity,
-                    computeUBWithNewTree(StringTreeNode.reduceMultiple(trees)),
+                    computeUBWithNewTree(StringTreeOr(trees)),
                     accessState.dependees.toSet,
                     continuation(accessState, state)
                 )
             } else {
-                computeFinalResult(computeUBWithNewTree(StringTreeNode.reduceMultiple(trees)))
+                computeFinalResult(computeUBWithNewTree(StringTreeOr(trees)))
             }
         }
     }

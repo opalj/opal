@@ -475,7 +475,7 @@ public class L1TestMethods extends L0TestMethods {
     @StringDefinitionsCollection(
             value = "a case where a non-virtual and a static function have no return values at all",
             stringDefinitions = {
-                    @StringDefinitions(expectedLevel = DYNAMIC, expectedStrings = ".*")
+                    @StringDefinitions(expectedLevel = INVALID, expectedStrings = StringDefinitions.INVALID_FLOW)
             })
     public void functionWithNoReturnValueTest1() {
         analyzeString(noReturnFunction1());

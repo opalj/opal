@@ -31,12 +31,6 @@ sealed trait StringTreeNode {
 
 object StringTreeNode {
 
-    def reduceMultiple(trees: Seq[StringTreeNode]): StringTreeNode = {
-        if (trees.size == 1) trees.head
-        else if (trees.exists(_.isInvalid)) StringTreeInvalidElement
-        else StringTreeOr(trees)
-    }
-
     def lb: StringTreeNode = StringTreeDynamicString
     def ub: StringTreeNode = StringTreeInvalidElement
 }
