@@ -61,6 +61,7 @@ private[string] case class ContextStringAnalysisState(
         mutable.Map.empty.withDefaultValue(mutable.Map.empty)
     private val _paramDependees: mutable.Map[VariableContext, EOptionP[VariableContext, StringConstancyProperty]] =
         mutable.Map.empty
+    private val _invalidParamReferences: mutable.Map[Method, Set[Int]] = mutable.Map.empty
 
     def registerParameterDependee(
         index:    Int,
@@ -84,6 +85,9 @@ private[string] case class ContextStringAnalysisState(
             _paramDependees.remove(dependee.e)
         }
     }
+    def registerInvalidParamReference(index: Int, m: Method): Unit = {
+        _invalidParamReferences.updateWith(m)(ov => Some(ov.getOrElse(Set.empty) + index))
+    }
 
     def currentSciUB: StringConstancyInformation = {
         if (_stringDependee.hasUBP) {
@@ -91,14 +95,17 @@ private[string] case class ContextStringAnalysisState(
                 stringTree.collectParameterIndices.map((_, StringTreeNode.lb)).toMap
             } else {
                 stringTree.collectParameterIndices.map { index =>
-                    val paramOptions = _paramIndexToEntityMapping(index)
-                        .valuesIterator.map(_paramDependees)
-                        .filter(_.hasUBP).map(_.ub.sci.tree).toSeq
+                    val paramOptions = _paramIndexToEntityMapping(index).keysIterator.flatMap { m =>
+                        if (_invalidParamReferences.contains(m)) {
+                            Some(StringTreeNode.ub)
+                        } else {
+                            val dependee = _paramDependees(_paramIndexToEntityMapping(index)(m))
+                            if (dependee.hasUBP) Some(dependee.ub.sci.tree)
+                            else None
+                        }
+                    }.toSeq
 
-                    val paramTree = if (paramOptions.nonEmpty) StringTreeOr(paramOptions)
-                    else StringTreeNode.ub
-
-                    (index, paramTree.simplify)
+                    (index, StringTreeOr(paramOptions).simplify)
                 }.toMap
             }
 

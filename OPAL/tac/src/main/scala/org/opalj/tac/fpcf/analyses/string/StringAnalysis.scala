@@ -23,6 +23,7 @@ import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
+import org.opalj.log.OPALLogger
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.string.MethodStringFlow
 
@@ -166,12 +167,21 @@ class ContextStringAnalysis(override val project: SomeProject) extends FPCFAnaly
             for {
                 index <- state.stringTree.collectParameterIndices
             } {
-                val paramVC = VariableContext(
-                    pc,
-                    callExpr.params(index).asVar.toPersistentForm(tac.stmts),
-                    callerContext
-                )
-                state.registerParameterDependee(index, m, ps(paramVC, StringConstancyProperty.key))
+                if (index >= callExpr.params.size) {
+                    OPALLogger.warn(
+                        "string analysis",
+                        s"Found parameter reference $index with insufficient parameters during analysis of call: "
+                            + s"${state.entity.m.toJava} in method ${m.toJava}"
+                    )
+                    state.registerInvalidParamReference(index, m)
+                } else {
+                    val paramVC = VariableContext(
+                        pc,
+                        callExpr.params(index).asVar.toPersistentForm(tac.stmts),
+                        callerContext
+                    )
+                    state.registerParameterDependee(index, m, ps(paramVC, StringConstancyProperty.key))
+                }
             }
         }
     }
