@@ -94,7 +94,12 @@ case class L1FieldReadInterpreter(
 
         def hasDependees: Boolean = fieldAccessDependee.isRefinable || accessDependees.exists(_.isRefinable)
 
-        def dependees: Iterable[SomeEOptionP] = fieldAccessDependee +: accessDependees.filter(_.isRefinable)
+        def dependees: Iterable[SomeEOptionP] = {
+            val dependees = accessDependees.filter(_.isRefinable)
+
+            if (fieldAccessDependee.isRefinable) fieldAccessDependee +: dependees
+            else dependees
+        }
     }
 
     /**
