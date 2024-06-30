@@ -95,7 +95,7 @@ object StructuralAnalysis {
                     val indexOf = indexedNodes.zipWithIndex.toMap
                     val domTree = DominatorTree(
                         indexOf(g.get(curEntry)),
-                        g.get(curEntry).diPredecessors.nonEmpty,
+                        g.get(curEntry).hasPredecessors,
                         index => { f => indexedNodes(index).diSuccessors.foreach(ds => f(indexOf(ds))) },
                         index => { f => indexedNodes(index).diPredecessors.foreach(ds => f(indexOf(ds))) },
                         indexedNodes.size - 1
@@ -104,7 +104,8 @@ object StructuralAnalysis {
                     var reachUnder = Set(n)
                     for {
                         m <- g.nodes.outerIterator
-                        if !controlTree.contains(m) || controlTree.get(m).diPredecessors.isEmpty
+                        innerM = controlTree.find(m)
+                        if innerM.isEmpty || !innerM.get.hasPredecessors
                         if StructuralAnalysis.pathBack[FlowGraphNode, FlowGraph](g, indexOf, domTree)(m, n)
                     } {
                         reachUnder = reachUnder.incl(m)
