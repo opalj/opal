@@ -91,16 +91,13 @@ object StructuralAnalysis {
                         curEntry = newRegion
                     }
                 } else {
-                    val indexedNodes = g.nodes.outerIterable.toList
+                    val indexedNodes = g.nodes.toIndexedSeq
+                    val indexOf = indexedNodes.zipWithIndex.toMap
                     val domTree = DominatorTree(
-                        indexedNodes.indexOf(curEntry),
+                        indexOf(g.get(curEntry)),
                         g.get(curEntry).diPredecessors.nonEmpty,
-                        index => { f =>
-                            g.get(indexedNodes(index)).diSuccessors.foreach(ds => f(indexedNodes.indexOf(ds.outer)))
-                        },
-                        index => { f =>
-                            g.get(indexedNodes(index)).diPredecessors.foreach(ds => f(indexedNodes.indexOf(ds.outer)))
-                        },
+                        index => { f => indexedNodes(index).diSuccessors.foreach(ds => f(indexOf(ds))) },
+                        index => { f => indexedNodes(index).diPredecessors.foreach(ds => f(indexOf(ds))) },
                         indexedNodes.size - 1
                     )
 
@@ -108,7 +105,7 @@ object StructuralAnalysis {
                     for {
                         m <- g.nodes.outerIterator
                         if !controlTree.contains(m) || controlTree.get(m).diPredecessors.isEmpty
-                        if StructuralAnalysis.pathBack(g, indexedNodes, domTree)(m, n)
+                        if StructuralAnalysis.pathBack[FlowGraphNode, FlowGraph](g, indexOf, domTree)(m, n)
                     } {
                         reachUnder = reachUnder.incl(m)
                     }
@@ -137,7 +134,7 @@ object StructuralAnalysis {
         (g, sg, controlTree)
     }
 
-    private def pathBack[A, G <: Graph[A, DiEdge[A]]](graph: G, indexedNodes: Seq[A], domTree: DominatorTree)(
+    private def pathBack[A, G <: Graph[A, DiEdge[A]]](graph: G, indexOf: Map[G#NodeT, Int], domTree: DominatorTree)(
         m: A,
         n: A
     ): Boolean = {
@@ -150,7 +147,7 @@ object StructuralAnalysis {
             graph.nodes.exists { innerK =>
                 innerK != innerN &&
                 predecessorsOfN.contains(innerK) &&
-                domTree.strictlyDominates(indexedNodes.indexOf(n), indexedNodes.indexOf(innerK.outer)) &&
+                domTree.strictlyDominates(indexOf(innerN), indexOf(innerK)) &&
                 nonNFromMTraverser.pathTo(innerK).isDefined
             }
         }
