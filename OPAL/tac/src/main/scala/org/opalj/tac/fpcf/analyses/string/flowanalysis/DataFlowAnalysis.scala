@@ -39,21 +39,23 @@ object DataFlowAnalysis {
         env:  StringTreeEnvironment
     ): StringTreeEnvironment = {
         val pipe = pipeThroughNode(controlTree, superFlowGraph, flowFunctionByPc) _
-        val childNodes = controlTree.get(node).diSuccessors.map(_.outer)
-        val limitedFlowGraph = superFlowGraph.filter(n => childNodes.contains(n.outer))
+        val innerChildNodes = controlTree.get(node).diSuccessors.map(n => superFlowGraph.get(n.outer))
 
         def processBlock(entry: FlowGraphNode): StringTreeEnvironment = {
             var currentEnv = env
-            var currentNode = limitedFlowGraph.get(entry)
-            while (currentNode.diSuccessors.nonEmpty) {
+            for {
+                currentNode <- superFlowGraph.innerNodeTraverser(
+                    superFlowGraph.get(entry),
+                    subgraphNodes = innerChildNodes.contains
+                )
+            } {
                 currentEnv = pipe(currentNode.outer, currentEnv)
-                currentNode = currentNode.diSuccessors.head
             }
-
-            pipe(currentNode, currentEnv)
+            currentEnv
         }
 
         def processIfThenElse(entry: FlowGraphNode): StringTreeEnvironment = {
+            val limitedFlowGraph = superFlowGraph.filter(innerChildNodes.contains)
             val entryNode = limitedFlowGraph.get(entry)
             val successors = entryNode.diSuccessors.map(_.outer).toList.sorted
             val branches = (successors.head, successors.tail.head)
@@ -65,6 +67,7 @@ object DataFlowAnalysis {
         }
 
         def processIfThen(entry: FlowGraphNode): StringTreeEnvironment = {
+            val limitedFlowGraph = superFlowGraph.filter(innerChildNodes.contains)
             val entryNode = limitedFlowGraph.get(entry)
             val (yesBranch, noBranch) = if (entryNode.diSuccessors.head.diSuccessors.nonEmpty) {
                 (entryNode.diSuccessors.head, entryNode.diSuccessors.tail.head)
@@ -82,6 +85,7 @@ object DataFlowAnalysis {
         }
 
         def processProper(entry: FlowGraphNode): StringTreeEnvironment = {
+            val limitedFlowGraph = superFlowGraph.filter(innerChildNodes.contains)
             val entryNode = limitedFlowGraph.get(entry)
 
             var sortedCurrentNodes = List(entryNode)
@@ -115,6 +119,7 @@ object DataFlowAnalysis {
         }
 
         def processWhileLoop(entry: FlowGraphNode): StringTreeEnvironment = {
+            val limitedFlowGraph = superFlowGraph.filter(innerChildNodes.contains)
             val entryNode = limitedFlowGraph.get(entry)
             val envAfterEntry = pipe(entry, env)
 
@@ -131,6 +136,7 @@ object DataFlowAnalysis {
         }
 
         def processNaturalLoop(entry: FlowGraphNode): StringTreeEnvironment = {
+            val limitedFlowGraph = superFlowGraph.filter(innerChildNodes.contains)
             val entryPredecessors = limitedFlowGraph.get(entry).diPredecessors
             val removedBackEdgesGraph = limitedFlowGraph.filterNot(
                 edgeP = edge =>
