@@ -293,7 +293,7 @@ object StructuralAnalysis {
             if (enteringNodes.size > 1) {
                 throw new IllegalStateException("Found more than one entering node for a natural loop!")
             } else if (enteringNodes.isEmpty) {
-                throw new IllegalStateException("Found more no entering node for a natural loop!")
+                throw new IllegalStateException("Found no entering node for a natural loop!")
             }
 
             Some((NaturalLoop, reachUnder, enteringNodes.head))

@@ -66,7 +66,7 @@ class MethodStringFlowAnalysis(override val project: SomeProject) extends FPCFAn
 
         state.flowGraph = FlowGraph(tac.cfg)
         val (_, superFlowGraph, controlTree) =
-            StructuralAnalysis.analyze(state.flowGraph, FlowGraph.entryFromCFG(tac.cfg))
+            StructuralAnalysis.analyze(state.flowGraph, FlowGraph.entry)
         state.superFlowGraph = superFlowGraph
         state.controlTree = controlTree
 

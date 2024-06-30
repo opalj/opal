@@ -36,6 +36,8 @@ package object flowanalysis {
 
     object FlowGraph extends TypedGraphFactory[FlowGraphNode, DiEdge[FlowGraphNode]] {
 
+        def entry: FlowGraphNode = GlobalEntry
+
         private def mapInstrIndexToPC[V <: Var[V]](cfg: CFG[Stmt[V], TACStmts[V]])(index: Int): Int = {
             if (index >= 0) cfg.code.instructions(index).pc
             else index
@@ -63,7 +65,7 @@ package object flowanalysis {
                 case n =>
                     n.successors.map(s => DiEdge(Statement(toPC(n.nodeId)), Statement(toPC(s.nodeId))))
             }.toSet
-            val g = Graph.from(edges)
+            val g = Graph.from(edges + DiEdge(entry, entryFromCFG(cfg)))
 
             val normalReturnNode = Statement(cfg.normalReturnNode.nodeId)
             val abnormalReturnNode = Statement(cfg.abnormalReturnNode.nodeId)
@@ -87,7 +89,7 @@ package object flowanalysis {
             }
         }
 
-        def entryFromCFG[V <: Var[V]](cfg: CFG[Stmt[V], TACStmts[V]]): Statement =
+        private[this] def entryFromCFG[V <: Var[V]](cfg: CFG[Stmt[V], TACStmts[V]]): Statement =
             Statement(mapInstrIndexToPC(cfg)(cfg.startBlock.nodeId))
 
         def toDot[N <: FlowGraphNode, E <: Edge[N]](graph: Graph[N, E]): String = {
