@@ -20,14 +20,16 @@ import scalax.collection.immutable.Graph
  */
 object StructuralAnalysis {
 
+    private final val maxIterations = 1000
+
     def analyze(graph: FlowGraph, entry: FlowGraphNode): (FlowGraph, SuperFlowGraph, ControlTree) = {
         var g = graph
         var sg = graph.asInstanceOf[SuperFlowGraph]
         var curEntry = entry
         var controlTree = Graph.empty[FlowGraphNode, DiEdge[FlowGraphNode]]
 
-        var outerIterations = 0
-        while (g.order > 1 && outerIterations < 10000) {
+        var iterations = 0
+        while (g.order > 1 && iterations < maxIterations) {
             // Find post order depth first traversal order for nodes
             var postCtr = 1
             val post = mutable.ListBuffer.empty[FlowGraphNode]
@@ -76,8 +78,17 @@ object StructuralAnalysis {
             while (g.order > 1 && postCtr < post.size) {
                 var n = post(postCtr)
 
+                val indexedNodes = g.nodes.toIndexedSeq
+                val indexOf = indexedNodes.zipWithIndex.toMap
+                val domTree = DominatorTree(
+                    indexOf(g.get(curEntry)),
+                    g.get(curEntry).hasPredecessors,
+                    index => { f => indexedNodes(index).diSuccessors.foreach(ds => f(indexOf(ds))) },
+                    index => { f => indexedNodes(index).diPredecessors.foreach(ds => f(indexOf(ds))) },
+                    indexedNodes.size - 1
+                )
                 val gPostMap = post.reverse.zipWithIndex.map(ni => (g.get(ni._1), ni._2)).toMap
-                val (newStartingNode, acyclicRegionOpt) = locateAcyclicRegion(g, gPostMap, n)
+                val (newStartingNode, acyclicRegionOpt) = locateAcyclicRegion(g, gPostMap, n, indexedNodes, domTree)
                 n = newStartingNode
                 if (acyclicRegionOpt.isDefined) {
                     val (arType, nodes, entry) = acyclicRegionOpt.get
@@ -91,16 +102,6 @@ object StructuralAnalysis {
                         curEntry = newRegion
                     }
                 } else {
-                    val indexedNodes = g.nodes.toIndexedSeq
-                    val indexOf = indexedNodes.zipWithIndex.toMap
-                    val domTree = DominatorTree(
-                        indexOf(g.get(curEntry)),
-                        g.get(curEntry).hasPredecessors,
-                        index => { f => indexedNodes(index).diSuccessors.foreach(ds => f(indexOf(ds))) },
-                        index => { f => indexedNodes(index).diPredecessors.foreach(ds => f(indexOf(ds))) },
-                        indexedNodes.size - 1
-                    )
-
                     var reachUnder = Set(n)
                     for {
                         m <- g.nodes.outerIterator
@@ -129,7 +130,11 @@ object StructuralAnalysis {
                 }
             }
 
-            outerIterations += 1
+            iterations += 1
+        }
+
+        if (iterations >= maxIterations) {
+            throw new IllegalStateException(s"Could not reduce tree in $maxIterations iterations!")
         }
 
         (g, sg, controlTree)
@@ -157,7 +162,9 @@ object StructuralAnalysis {
     private def locateAcyclicRegion[A <: FlowGraphNode, G <: Graph[A, DiEdge[A]]](
         graph:              G,
         postOrderTraversal: Map[G#NodeT, Int],
-        startingNode:       A
+        startingNode:       A,
+        indexedNodes:       IndexedSeq[G#NodeT],
+        domTree:            DominatorTree
     ): (A, Option[(AcyclicRegionType, Set[A], A)]) = {
         var nSet = Set.empty[graph.NodeT]
         var entry: graph.NodeT = graph.get(startingNode)
@@ -184,32 +191,37 @@ object StructuralAnalysis {
             entry = n
         }
 
-        def locateProperAcyclicInterval: Option[AcyclicRegionType] = {
-            var currentNodeSet = Set(n)
-            var currentSuccessors = n.diSuccessors
-
-            def isStillAcyclic: Boolean = {
-                currentSuccessors.forall { node =>
-                    val postOrderIndex = postOrderTraversal(node)
-
-                    node.diSuccessors.forall(successor => postOrderTraversal(successor) >= postOrderIndex)
+        def isAcyclic(nodes: Set[graph.NodeT]): Boolean = {
+            nodes.forall { node =>
+                val postOrderIndex = postOrderTraversal(node)
+                node.diSuccessors.forall { successor =>
+                    !nodes.contains(successor) || postOrderTraversal(successor) >= postOrderIndex
                 }
             }
+        }
 
-            var stillAcyclic = isStillAcyclic
-            while (currentSuccessors.size > 1 && stillAcyclic) {
-                currentNodeSet = currentNodeSet ++ currentSuccessors
-                currentSuccessors = currentSuccessors.flatMap(node => node.diSuccessors)
-                stillAcyclic = isStillAcyclic
+        def locateProperAcyclicInterval: Option[AcyclicRegionType] = {
+            val zippedImmediateDominators = domTree.immediateDominators.zipWithIndex;
+            var accumulatedDominatedIndexes = Set.empty[Int];
+            var newDominatedIndexes = Set(indexedNodes.indexOf(n))
+            while (newDominatedIndexes.nonEmpty) {
+                accumulatedDominatedIndexes = accumulatedDominatedIndexes.union(newDominatedIndexes)
+                newDominatedIndexes = newDominatedIndexes
+                    .flatMap(ndi => zippedImmediateDominators.filter(ndi == _._1).map(_._2))
+                    .diff(accumulatedDominatedIndexes)
             }
 
-            val allPredecessors = currentNodeSet.excl(n).flatMap(node => node.diPredecessors)
-            if (!stillAcyclic) {
-                None
-            } else if (!allPredecessors.equals(currentNodeSet.diff(currentSuccessors))) {
+            val dominatedNodes = accumulatedDominatedIndexes.map(indexedNodes).asInstanceOf[Set[graph.NodeT]]
+            if (dominatedNodes.size == 1 ||
+                !isAcyclic(dominatedNodes) ||
+                // Check if no dominated node is reached from an non-dominated node
+                !dominatedNodes.excl(n).forall(_.diPredecessors.subsetOf(dominatedNodes)) ||
+                // Check if all dominated nodes agree on a single successor outside the set (if it exists)
+                dominatedNodes.flatMap(node => node.diSuccessors.diff(dominatedNodes)).size > 1
+            ) {
                 None
             } else {
-                nSet = currentNodeSet ++ currentSuccessors
+                nSet = dominatedNodes
                 entry = n
 
                 Some(Proper)
@@ -220,7 +232,7 @@ object StructuralAnalysis {
         val rType = if (nSet.size > 1) {
             // Condition is added to ensure chosen bb does not contain any self loops or other cyclic stuff
             // IMPROVE weaken to allow back edges from the "last" nSet member to the first to enable reductions to self loops
-            if (graph.filter(nSet.contains(_)).isAcyclic)
+            if (isAcyclic(nSet))
                 Some(Block)
             else
                 None
