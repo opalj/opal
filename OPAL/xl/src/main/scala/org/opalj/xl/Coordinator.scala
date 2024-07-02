@@ -4,6 +4,10 @@ package xl
 
 import java.net.URL
 
+import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedLibraryPointsToAnalysisScheduler
+
+//import com.typesafe.config.Config
+//import com.typesafe.config.ConfigFactory
 import org.opalj.xl.connector.svf.AllocationSiteBasedSVFConnectorDetectorScheduler
 
 import org.opalj.fpcf.FinalEP
@@ -75,9 +79,8 @@ object Coordinator extends AnalysisApplication with OneStepAnalysis[URL, Reporta
 
         analyses ++= AllocationSiteBasedPointsToCallGraphKey.allCallGraphAnalyses(project)
         analyses ++= Iterable(
-            //AllocationSiteBasedScriptEngineDetectorScheduler,
-            AllocationSiteBasedSVFConnectorDetectorScheduler, //EagerSvfConnector
-        //   AllocationSiteBasedTriggeredTajsConnectorScheduler
+            AllocationSiteBasedLibraryPointsToAnalysisScheduler,
+            AllocationSiteBasedSVFConnectorDetectorScheduler
         )
 
         val (propertyStore, _) = project.get(FPCFAnalysesManagerKey).runAll(analyses)
