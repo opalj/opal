@@ -1,4 +1,4 @@
-package org.opalj.fpcf.fixtures.xl.llvm.controlflow.bidirectional;
+package org.opalj.fpcf.fixtures.xl.llvm.controlflow.interprocedural.interleaved;
 
 import org.opalj.fpcf.properties.pts.JavaMethodContextAllocSite;
 import org.opalj.fpcf.properties.pts.PointsToSet;
@@ -6,17 +6,19 @@ import org.opalj.fpcf.properties.pts.PointsToSet;
 import javax.script.ScriptException;
 
 /**
- * Native identity function called, String passed, return value should be string.
+ * Java Function Called from native.
  */
 public class CallJavaFunctionFromNative {
 
     public static void main(String args[]) throws ScriptException, NoSuchMethodException {
         Object o = new Object();
         CallJavaFunctionFromNative tb = new CallJavaFunctionFromNative();
-        tb.callMyFunctionFromNative(o);
+        tb.callMyJavaFunctionFromNative(o);
     }
-
-    public native void callMyFunctionFromNative(Object x);
+    public void f(Object x) {
+        callMyJavaFunctionFromNative(x);
+    }
+    public native void callMyJavaFunctionFromNative(Object x);
 
     @PointsToSet(parameterIndex = 0,
             expectedJavaAllocSites = {
@@ -25,7 +27,7 @@ public class CallJavaFunctionFromNative {
                             methodName = "main",
                             methodDescriptor = "(java.lang.String[]): void",
                             allocSiteLinenumber = 14,
-                            allocatedType = "java.lang.String")
+                            allocatedType = "java.lang.Object")
             }
     )
     public void myJavaFunction(Object x) {

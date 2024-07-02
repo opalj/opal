@@ -3,7 +3,7 @@ package org.opalj
 package fpcf
 package analyses
 
-import org.opalj.br.{DefinedMethod, ObjectType}
+import org.opalj.br.{ArrayType, DefinedMethod, ObjectType}
 import org.opalj.br.analyses.{BasicReport, Project, ProjectAnalysisApplication, VirtualFormalParameter}
 import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
 import org.opalj.br.fpcf.{FPCFAnalysesManagerKey, FPCFAnalysisScheduler, PropertyStoreKey}
@@ -18,6 +18,7 @@ import org.opalj.tac.fpcf.analyses.cg.xta.{TypePropagationAnalysisScheduler, XTA
 import org.opalj.tac.fpcf.analyses.pointsto.longToAllocationSite
 import org.opalj.xl.javaanalyses.detector.scriptengine.AllocationSiteBasedScriptEngineDetectorScheduler
 import org.opalj.xl.connector.AllocationSiteBasedTriggeredTajsConnectorScheduler
+import org.opalj.xl.connector.svf.AllocationSiteBasedSVFConnectorDetectorScheduler
 
 import java.net.URL
 import scala.collection.mutable
@@ -249,7 +250,7 @@ object GroundTruthParser {
         pts._3 match {
           case Some(as) => for (allocSiteId <- as.elements.iterator) {
             val (ctx, allocSitePC, typeId) = longToAllocationSite(allocSiteId)
-            val objClass = ObjectType.lookup(typeId).toJava
+            val objClass : String = if (typeId >= 0) ObjectType.lookup(typeId).toJava else ArrayType.lookup(typeId).toJava
             testData add DefsiteData(objClass, allocSiteId, allocSitePC, methodSignature, pts._2)
             println("<pointsto method=\"" + methodSignature + "\" pc=\"" + pts._2 + "\" type=\"" + objClass + "\" allocSiteId=\"" + allocSiteId + "\" allocSitePc=\"" + allocSitePC + "\" />")
           }
@@ -259,7 +260,10 @@ object GroundTruthParser {
     }
     val (allocSiteToInstanceIds, instanceIdToAllocSite): (Map[Long, Set[Int]], Map[Int, Option[Long]]) = generateMapping(groundTruthData.toSet, testData.toSet)
     val results = mutable.Map[Int, MethodResult]()
-    for ((method, testPTS) <- testData.groupBy(_.defsiteMethodSignature).filter(m => !m._1.contains("$string_concat$"))) {
+
+    val methodsAndPTSs = testData.groupBy(_.defsiteMethodSignature)
+
+    for ((method, testPTS) <- methodsAndPTSs.filter(m => !m._1.contains("$string_concat$"))) {
       val truePositiveData = mutable.Set.empty[TruePositive]
       val falsePositiveData = mutable.Set.empty[FalsePositive]
       val falseNegativeData = mutable.Set.empty[FalseNegative]
@@ -331,8 +335,47 @@ object GroundTruthParser {
         instanceIdsToAllocSiteForMethod
       ))
     }
-    results.toMap
+
+    for ((methodId, groundTruthMethod) <- groundTruth.methods) {
+      if (!results.contains(methodId) && !groundTruthMethod.signature.contains("$string_concat$")){
+        val method = groundTruthMethod.signature
+        //val method = project.allMethods.find(_.signature.toJava == groundTruthMethod.signature).get
+        val falseNegativeData = mutable.Set.empty[FalseNegative]
+        for ((pc, instancesAtPc) <- groundTruthMethod.pcToInstances) {
+          for ((allocation, instances) <- instancesAtPc.groupBy(inst => inst.allocation)) {
+            falseNegativeData += FalseNegative(method, pc, instances)
+
+          }
+        }
+        for ((param, instancesAtParam) <- groundTruthMethod.paramToInstances) {
+          for ((allocation, instances) <- instancesAtParam.groupBy(inst => inst.allocation)) {
+            falseNegativeData += FalseNegative(method, -2 - param, instances)
+
+          }
+        }
+
+        val filteredFalseNegativeData = falseNegativeData.filter(!ignoreFalseNegative(_)).toSet
+        val allocSiteToInstanceIdsForMethod = mutable.Map[Long, Set[Instance]]()
+        val instanceIdsToAllocSiteForMethod = mutable.Map[Set[Instance], Option[Long]]()
+        results put (methodId, MethodResult(
+          method,
+          1,
+          0,
+          0,
+          0,
+          filteredFalseNegativeData.size,
+          Set.empty,
+          Set.empty,
+          filteredFalseNegativeData.toSet,
+          allocSiteToInstanceIdsForMethod,
+          instanceIdsToAllocSiteForMethod
+        ))
+      }
+    }
+    results.filter(result => !result._2.method.contains("<init>")).toMap
   }
+
+
 
   def printTotalPrecisionRecall(results: Map[Int, MethodResult]): (Int, Int, Int, Double, Double) = {
     val truePositive = results.values.map(_.truePositive).sum
@@ -369,6 +412,7 @@ object ComparePTS {
     for ((id) <-  evalWithoutTAJS.keys.toList.sorted) {
         val resultWithoutTAJS = evalWithoutTAJS(id)
         val resultWithTAJS = evalWithTAJS(id)
+
       if (resultWithoutTAJS.falseNegative + resultWithoutTAJS.falsePositive + resultWithoutTAJS.truePositive > 0) {
 
         print(id)
@@ -432,6 +476,7 @@ class PointsToAnalysisRunner extends ProjectAnalysisApplication {
     val TAJSAnalyses = Iterable(
       AllocationSiteBasedScriptEngineDetectorScheduler,
       AllocationSiteBasedTriggeredTajsConnectorScheduler,
+      AllocationSiteBasedSVFConnectorDetectorScheduler
     )
     var analyses: List[FPCFAnalysisScheduler] = List(LazyTACAIProvider)
 
@@ -460,17 +505,19 @@ class PointsToAnalysisRunner extends ProjectAnalysisApplication {
     var results = ""
     for (m <- definedMethods) {
       val dm = m.definedMethod
-      val defsitesInMethod = ps1.entities(propertyFilter = _.e.isInstanceOf[DefinitionSite]).map(_.asInstanceOf[DefinitionSite]).filter(_.method == dm).toSet
-      val ptsInMethod = defsitesInMethod.toArray.map(defsite => (m, defsite.pc, ps1.properties(defsite).map(_.toFinalEP.p).find(_.isInstanceOf[AllocationSitePointsToSet]).map(_.asInstanceOf[AllocationSitePointsToSet])))
+      if (dm.body.nonEmpty) {
+        val defsitesInMethod = ps1.entities(propertyFilter = _.e.isInstanceOf[DefinitionSite]).map(_.asInstanceOf[DefinitionSite]).filter(_.method == dm).toSet
+        val ptsInMethod = defsitesInMethod.toArray.map(defsite => (m, defsite.pc, ps1.properties(defsite).map(_.toFinalEP.p).find(_.isInstanceOf[AllocationSitePointsToSet]).map(_.asInstanceOf[AllocationSitePointsToSet])))
 
-      pts ++= ptsInMethod
-      results += m.name + "\n"
+        pts ++= ptsInMethod
+        results += m.name + "\n"
 
 
-      val params = ps1.entities(propertyFilter = _.e.isInstanceOf[VirtualFormalParameter]).map(_.asInstanceOf[VirtualFormalParameter]).filter(_.method == m).toList
+        val params = ps1.entities(propertyFilter = _.e.isInstanceOf[VirtualFormalParameter]).map(_.asInstanceOf[VirtualFormalParameter]).filter(_.method == m).toList
 
-      val ptsInMethodParams = params.toArray.map(param => (m, param.origin , ps1.properties(param).map(_.toFinalEP.p).find(_.isInstanceOf[AllocationSitePointsToSet]).map(_.asInstanceOf[AllocationSitePointsToSet])))
-      pts ++= ptsInMethodParams
+        val ptsInMethodParams = params.toArray.map(param => (m, param.origin , ps1.properties(param).map(_.toFinalEP.p).find(_.isInstanceOf[AllocationSitePointsToSet]).map(_.asInstanceOf[AllocationSitePointsToSet])))
+        pts ++= ptsInMethodParams
+      }
 
     }
 

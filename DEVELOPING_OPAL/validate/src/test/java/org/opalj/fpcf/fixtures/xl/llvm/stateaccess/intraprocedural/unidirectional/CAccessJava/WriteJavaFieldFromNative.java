@@ -1,4 +1,4 @@
-package org.opalj.fpcf.fixtures.xl.llvm.stateaccess.unidirectional;
+package org.opalj.fpcf.fixtures.xl.llvm.stateaccess.intraprocedural.unidirectional.CAccessJava;
 
 import org.opalj.fpcf.properties.pts.JavaMethodContextAllocSite;
 import org.opalj.fpcf.properties.pts.PointsToSet;
@@ -10,7 +10,7 @@ import javax.script.ScriptException;
  */
 public class WriteJavaFieldFromNative {
     Object myfield;
-    @PointsToSet(parameterIndex = 0,
+    @PointsToSet(variableDefinition = 27,
             expectedJavaAllocSites = {
                     @JavaMethodContextAllocSite(
                             cf = WriteJavaFieldFromNative.class,

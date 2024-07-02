@@ -1,6 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 import com.typesafe.sbt.SbtScalariform
 import com.typesafe.sbt.SbtScalariform.ScalariformKeys
+import sbt.Keys.libraryDependencies
 import sbt.Test
 import scalariform.formatter.preferences._
 import sbtassembly.AssemblyPlugin.autoImport._
@@ -36,6 +37,7 @@ ScalacConfiguration.globalScalacOptions
 
 ThisBuild / resolvers += Resolver.jcenterRepo
 ThisBuild / resolvers += "Typesafe Repo" at "https://repo.typesafe.com/typesafe/releases/"
+ThisBuild / resolvers += Resolver.mavenLocal
 
 // OPAL already parallelizes most tests/analyses internally!
 ThisBuild / parallelExecution := false
@@ -333,6 +335,8 @@ lazy val `XLanguage` = (project in file("OPAL/xl"))
         name := "Cross Language",
         libraryDependencies += "dk.brics.tajs" % "XLTAJSprivate" % "1.0.1" from "https://www.brics.dk/TAJS/dist/tajs-all.jar",
         Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - Cross Language"),
+        libraryDependencies += "tud" % "svf_xl" % "1.0.0-SNAPSHOT",
+      Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - Cross Language"),
         run / fork := true
     )
     .dependsOn(tac % "it->it;it->test;test->test;compile->compile")

@@ -12,13 +12,13 @@ import javax.script.ScriptException;
  * reference in java field stored in javascript field (from java, using eval).
 */
 public class JSJavaJavaJSSimple {
-    @PointsToSet(variableDefinition = 39,
+    @PointsToSet(variableDefinition = 40,
             expectedJavaAllocSites = {
                     @JavaMethodContextAllocSite(
                             cf = JSJavaJavaJSSimple.class,
                             methodName = "main",
                             methodDescriptor = "(java.lang.String[]): void",
-                            allocSiteLinenumber = 29,
+                            allocSiteLinenumber = 30,
                             allocatedType = "java.lang.Object")
             }
     )
