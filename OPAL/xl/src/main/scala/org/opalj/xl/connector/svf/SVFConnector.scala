@@ -60,7 +60,7 @@ abstract class SVFConnector( final val project: SomeProject) extends PointsToAna
 
     def process(project: SomeProject): PropertyComputationResult = {
 
-        val analyses = project.allMethods.find(_.isNative).map(method => {
+        val analyses = project.allMethods.filter(_.isNative).map(method => {
             new NativeAnalysis(project, declaredMethods(method)) with PointsToBase
         })
         Results(analyses.map(_.registerAPIMethod()))
@@ -68,7 +68,7 @@ abstract class SVFConnector( final val project: SomeProject) extends PointsToAna
 
 }
 
-trait ScriptEngineDetectorScheduler extends BasicFPCFEagerAnalysisScheduler {
+trait SVFConnectorScheduler extends BasicFPCFEagerAnalysisScheduler {
     def propertyKind: PropertyMetaInformation
 
     def createAnalysis: SomeProject => SVFConnector
@@ -89,13 +89,13 @@ trait ScriptEngineDetectorScheduler extends BasicFPCFEagerAnalysisScheduler {
     }
 }
 
-object TypeBasedSVFConnectorScheduler extends ScriptEngineDetectorScheduler {
+object TypeBasedSVFConnectorScheduler extends SVFConnectorScheduler {
     override val propertyKind: PropertyMetaInformation = TypeBasedPointsToSet
     override val createAnalysis: SomeProject => SVFConnector =
         new SVFConnector(_) with TypeBasedAnalysis
 }
 
-object AllocationSiteBasedSVFConnectorDetectorScheduler extends ScriptEngineDetectorScheduler {
+object AllocationSiteBasedSVFConnectorDetectorScheduler extends SVFConnectorScheduler {
     override val propertyKind: PropertyMetaInformation = AllocationSitePointsToSet
     override val createAnalysis: SomeProject => SVFConnector =
         new SVFConnector(_) with AllocationSiteBasedAnalysis
