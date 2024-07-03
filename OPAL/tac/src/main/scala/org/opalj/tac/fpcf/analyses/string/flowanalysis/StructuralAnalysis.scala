@@ -317,24 +317,23 @@ object PostOrderTraversal {
     def foreachInTraversalFrom[A, G <: Graph[A, DiEdge[A]]](graph: G, initial: A)(nodeHandler: A => Unit)(
         implicit ordering: Ordering[A]
     ): Unit = {
-        var visited = Set.empty[A]
+        implicit val innerOrdering: Ordering[graph.NodeT] = ordering.on(_.outer)
+        var visited = Set.empty[graph.NodeT]
 
         def foreachInTraversal(
-            graph: G,
-            node:  A
-        )(nodeHandler: A => Unit)(implicit ordering: Ordering[A]): Unit = {
+            node: graph.NodeT
+        )(nodeHandler: A => Unit): Unit = {
             visited = visited + node
 
             for {
-                successor <- (graph.get(node).diSuccessors.map(_.outer) -- visited).toList.sorted
-                if !visited.contains(successor)
+                successor <- (node.diSuccessors -- visited).toList.sorted
             } {
-                foreachInTraversal(graph, successor)(nodeHandler)
+                foreachInTraversal(successor)(nodeHandler)
             }
 
-            nodeHandler(node)
+            nodeHandler(node.outer)
         }
 
-        foreachInTraversal(graph, initial)(nodeHandler)
+        foreachInTraversal(graph.get(initial))(nodeHandler)
     }
 }
