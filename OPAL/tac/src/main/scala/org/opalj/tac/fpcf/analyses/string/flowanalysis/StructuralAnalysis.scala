@@ -28,6 +28,9 @@ object StructuralAnalysis {
         var curEntry = entry
         var controlTree = Graph.empty[FlowGraphNode, DiEdge[FlowGraphNode]]
 
+        var (indexedNodes, indexOf, immediateDominators, allDominators) = computeDominators(g, entry)
+        def strictlyDominates(n: FlowGraphNode, w: FlowGraphNode): Boolean = n != w && allDominators(w).contains(n)
+
         var iterations = 0
         while (g.order > 1 && iterations < maxIterations) {
             // Find post order depth first traversal order for nodes
@@ -70,6 +73,25 @@ object StructuralAnalysis {
                 newSuperGraph --= incomingEdges.concat(outgoingEdges).map(e => DiEdge(e.outer.source, e.outer.target))
                     .concat(Seq(DiHyperEdge(OneOrMore(newRegion), OneOrMore.from(subNodes).get)))
 
+                // Update dominator data
+                indexedNodes = indexedNodes.filterNot(subNodes.contains).appended(newRegion)
+                indexOf = indexedNodes.zipWithIndex.toMap
+
+                val commonDominators = subNodes.map(allDominators).reduce(_.intersect(_))
+                allDominators.subtractAll(subNodes).update(newRegion, commonDominators)
+                allDominators = allDominators.map(kv =>
+                    (
+                        kv._1, {
+                            val intersection = kv._2.intersect(subNodes.toSeq)
+                            if (intersection.nonEmpty) {
+                                val index = kv._2.indexWhere(intersection.contains)
+                                kv._2.patch(index, Seq(newRegion), intersection.size)
+                            } else kv._2
+                        }
+                    )
+                )
+                immediateDominators = allDominators.map(kv => (kv._1, kv._2.head))
+
                 (newGraph, newSuperGraph, newRegion)
             }
 
@@ -78,17 +100,14 @@ object StructuralAnalysis {
             while (g.order > 1 && postCtr < post.size) {
                 var n = post(postCtr)
 
-                val indexedNodes = g.nodes.toIndexedSeq
-                val indexOf = indexedNodes.zipWithIndex.toMap
-                val domTree = DominatorTree(
-                    indexOf(g.get(curEntry)),
-                    g.get(curEntry).hasPredecessors,
-                    index => { f => indexedNodes(index).diSuccessors.foreach(ds => f(indexOf(ds))) },
-                    index => { f => indexedNodes(index).diPredecessors.foreach(ds => f(indexOf(ds))) },
-                    indexedNodes.size - 1
-                )
                 val gPostMap = post.reverse.zipWithIndex.map(ni => (g.get(ni._1), ni._2)).toMap
-                val (newStartingNode, acyclicRegionOpt) = locateAcyclicRegion(g, gPostMap, n, indexedNodes, domTree)
+                val (newStartingNode, acyclicRegionOpt) = locateAcyclicRegion(
+                    g,
+                    gPostMap,
+                    indexedNodes,
+                    indexOf,
+                    immediateDominators.map(kv => (indexOf(kv._1), indexOf(kv._2))).toMap
+                )(n)
                 n = newStartingNode
                 if (acyclicRegionOpt.isDefined) {
                     val (arType, nodes, entry) = acyclicRegionOpt.get
@@ -107,7 +126,7 @@ object StructuralAnalysis {
                         m <- g.nodes.outerIterator
                         innerM = controlTree.find(m)
                         if innerM.isEmpty || !innerM.get.hasPredecessors
-                        if StructuralAnalysis.pathBack[FlowGraphNode, FlowGraph](g, indexOf, domTree)(m, n)
+                        if StructuralAnalysis.pathBack[FlowGraphNode, FlowGraph](g, strictlyDominates)(m, n)
                     } {
                         reachUnder = reachUnder.incl(m)
                     }
@@ -140,7 +159,43 @@ object StructuralAnalysis {
         (g, sg, controlTree)
     }
 
-    private def pathBack[A, G <: Graph[A, DiEdge[A]]](graph: G, indexOf: Map[G#NodeT, Int], domTree: DominatorTree)(
+    private def computeDominators[A, G <: Graph[A, DiEdge[A]]](
+        graph: G,
+        entry: A
+    ): (IndexedSeq[A], Map[A, Int], mutable.Map[A, A], mutable.Map[A, Seq[A]]) = {
+        val indexedNodes = graph.nodes.toIndexedSeq
+        val indexOf = indexedNodes.zipWithIndex.toMap
+        val domTree = DominatorTree(
+            indexOf(graph.get(entry)),
+            graph.get(entry).hasPredecessors,
+            index => { f => indexedNodes(index).diSuccessors.foreach(ds => f(indexOf(ds))) },
+            index => { f => indexedNodes(index).diPredecessors.foreach(ds => f(indexOf(ds))) },
+            indexedNodes.size - 1
+        )
+        val outerIndexedNodes = indexedNodes.map(_.outer)
+        val immediateDominators = mutable.Map.from {
+            domTree.immediateDominators.zipWithIndex.map(iDomWithIndex => {
+                (outerIndexedNodes(iDomWithIndex._2), outerIndexedNodes(iDomWithIndex._1))
+            })
+        }
+        immediateDominators.update(entry, entry)
+
+        def getAllDominators(n: A): Seq[A] = {
+            val builder = Seq.newBuilder[A]
+            var c = n
+            while (c != entry) {
+                builder.addOne(c)
+                c = immediateDominators(c)
+            }
+            builder.addOne(entry)
+            builder.result()
+        }
+        val allDominators = immediateDominators.map(kv => (kv._1, getAllDominators(kv._2)))
+
+        (outerIndexedNodes, indexOf.map(kv => (kv._1.outer, kv._2)), immediateDominators, allDominators)
+    }
+
+    private def pathBack[A, G <: Graph[A, DiEdge[A]]](graph: G, strictlyDominates: (A, A) => Boolean)(
         m: A,
         n: A
     ): Boolean = {
@@ -153,19 +208,19 @@ object StructuralAnalysis {
             graph.nodes.exists { innerK =>
                 innerK != innerN &&
                 predecessorsOfN.contains(innerK) &&
-                domTree.strictlyDominates(indexOf(innerN), indexOf(innerK)) &&
+                strictlyDominates(n, innerK.outer) &&
                 nonNFromMTraverser.pathTo(innerK).isDefined
             }
         }
     }
 
     private def locateAcyclicRegion[A <: FlowGraphNode, G <: Graph[A, DiEdge[A]]](
-        graph:              G,
-        postOrderTraversal: Map[G#NodeT, Int],
-        startingNode:       A,
-        indexedNodes:       IndexedSeq[G#NodeT],
-        domTree:            DominatorTree
-    ): (A, Option[(AcyclicRegionType, Set[A], A)]) = {
+        graph:               G,
+        postOrderTraversal:  Map[G#NodeT, Int],
+        indexedNodes:        IndexedSeq[A],
+        indexOf:             Map[A, Int],
+        immediateDominators: Map[Int, Int]
+    )(startingNode: A): (A, Option[(AcyclicRegionType, Set[A], A)]) = {
         var nSet = Set.empty[graph.NodeT]
         var entry: graph.NodeT = graph.get(startingNode)
 
@@ -201,9 +256,9 @@ object StructuralAnalysis {
         }
 
         def locateProperAcyclicInterval: Option[AcyclicRegionType] = {
-            val zippedImmediateDominators = domTree.immediateDominators.zipWithIndex;
+            val zippedImmediateDominators = immediateDominators.map[(Int, Int)](kv => (kv._2, kv._1));
             var accumulatedDominatedIndexes = Set.empty[Int];
-            var newDominatedIndexes = Set(indexedNodes.indexOf(n))
+            var newDominatedIndexes = Set(indexOf(n))
             while (newDominatedIndexes.nonEmpty) {
                 accumulatedDominatedIndexes = accumulatedDominatedIndexes.union(newDominatedIndexes)
                 newDominatedIndexes = newDominatedIndexes
@@ -211,7 +266,7 @@ object StructuralAnalysis {
                     .diff(accumulatedDominatedIndexes)
             }
 
-            val dominatedNodes = accumulatedDominatedIndexes.map(indexedNodes).asInstanceOf[Set[graph.NodeT]]
+            val dominatedNodes = accumulatedDominatedIndexes.map(di => graph.get(indexedNodes(di)))
             if (dominatedNodes.size == 1 ||
                 !isAcyclic(dominatedNodes) ||
                 // Check if no dominated node is reached from an non-dominated node
