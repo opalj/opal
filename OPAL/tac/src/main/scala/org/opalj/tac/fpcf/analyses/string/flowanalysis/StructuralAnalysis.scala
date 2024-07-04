@@ -23,8 +23,8 @@ object StructuralAnalysis {
     private final val maxIterations = 1000
 
     def analyze(graph: FlowGraph, entry: FlowGraphNode): (FlowGraph, SuperFlowGraph, ControlTree) = {
-        var g = graph
-        var sg = graph.asInstanceOf[SuperFlowGraph]
+        var g: FlowGraph = graph
+        var sg: SuperFlowGraph = graph.asInstanceOf[SuperFlowGraph]
         var curEntry = entry
         var controlTree = Graph.empty[FlowGraphNode, DiEdge[FlowGraphNode]]
 
@@ -52,16 +52,10 @@ object StructuralAnalysis {
             var postCtr = 1
             val post = mutable.ListBuffer.empty[FlowGraphNode]
 
-            def replace(
-                currentGraph:      FlowGraph,
-                currentSuperGraph: SuperFlowGraph,
-                subNodes:          Set[FlowGraphNode],
-                entry:             FlowGraphNode,
-                regionType:        RegionType
-            ): (FlowGraph, SuperFlowGraph, Region) = {
+            def replace(subNodes: Set[FlowGraphNode], entry: FlowGraphNode, regionType: RegionType): Unit = {
                 val newRegion = Region(regionType, subNodes.flatMap(_.nodeIds), entry)
-                var newGraph: FlowGraph = currentGraph
-                var newSuperGraph: SuperFlowGraph = currentSuperGraph
+                var newGraph: FlowGraph = g
+                var newSuperGraph: SuperFlowGraph = sg
 
                 // Compact
                 // Note that adding the new region to the graph and superGraph is done anyways since we add edges later
@@ -77,10 +71,10 @@ object StructuralAnalysis {
                 knownPartOfNoCycle.subtractAll(subNodes)
 
                 // Replace edges
-                val incomingEdges = currentGraph.edges.filter { e =>
+                val incomingEdges = g.edges.toSet[FlowGraph#EdgeT].filter { e =>
                     !subNodes.contains(e.outer.source) && subNodes.contains(e.outer.target)
                 }
-                val outgoingEdges = currentGraph.edges.filter { e =>
+                val outgoingEdges = g.edges.toSet[FlowGraph#EdgeT].filter { e =>
                     subNodes.contains(e.outer.source) && !subNodes.contains(e.outer.target)
                 }
 
@@ -112,7 +106,13 @@ object StructuralAnalysis {
                 )
                 immediateDominators = allDominators.map(kv => (kv._1, kv._2.head))
 
-                (newGraph, newSuperGraph, newRegion)
+                // Update graph state
+                g = newGraph
+                sg = newSuperGraph
+                controlTree = controlTree.concat(subNodes.map(node => DiEdge(newRegion, node)))
+                if (subNodes.contains(curEntry)) {
+                    curEntry = newRegion
+                }
             }
 
             PostOrderTraversal.foreachInTraversalFrom[FlowGraphNode, FlowGraph](g, curEntry) { post.append }
@@ -125,15 +125,7 @@ object StructuralAnalysis {
                 n = newStartingNode
                 if (acyclicRegionOpt.isDefined) {
                     val (arType, nodes, entry) = acyclicRegionOpt.get
-
-                    val (newGraph, newSuperGraph, newRegion) = replace(g, sg, nodes, entry, arType)
-                    g = newGraph
-                    sg = newSuperGraph
-                    controlTree = controlTree.concat(nodes.map(node => DiEdge(newRegion, node)))
-
-                    if (nodes.contains(curEntry)) {
-                        curEntry = newRegion
-                    }
+                    replace(nodes, entry, arType)
                 } else if (inCycle(g, n)) {
                     var reachUnder = Set(n)
                     for {
@@ -149,15 +141,7 @@ object StructuralAnalysis {
                     val cyclicRegionOpt = locateCyclicRegion(g, n, reachUnder)
                     if (cyclicRegionOpt.isDefined) {
                         val (crType, nodes, entry) = cyclicRegionOpt.get
-
-                        val (newGraph, newSuperGraph, newRegion) = replace(g, sg, nodes, entry, crType)
-                        g = newGraph
-                        sg = newSuperGraph
-                        controlTree = controlTree.concat(nodes.map(node => DiEdge(newRegion, node)))
-
-                        if (nodes.contains(curEntry)) {
-                            curEntry = newRegion
-                        }
+                        replace(nodes, entry, crType)
                     } else {
                         postCtr += 1
                     }
