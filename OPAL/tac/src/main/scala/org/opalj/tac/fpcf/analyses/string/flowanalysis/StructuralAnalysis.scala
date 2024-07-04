@@ -31,6 +31,21 @@ object StructuralAnalysis {
         var (indexedNodes, indexOf, immediateDominators, allDominators) = computeDominators(g, entry)
         def strictlyDominates(n: FlowGraphNode, w: FlowGraphNode): Boolean = n != w && allDominators(w).contains(n)
 
+        val knownPartOfNoCycle = mutable.Set.empty[FlowGraphNode]
+        def inCycle(gg: FlowGraph, n: FlowGraphNode): Boolean = {
+            if (knownPartOfNoCycle.contains(n)) {
+                false
+            } else {
+                val cycleOpt = gg.findCycleContaining(gg.get(n))
+                if (cycleOpt.isDefined) {
+                    true
+                } else {
+                    knownPartOfNoCycle.add(n)
+                    false
+                }
+            }
+        }
+
         var iterations = 0
         while (g.order > 1 && iterations < maxIterations) {
             // Find post order depth first traversal order for nodes
@@ -55,6 +70,11 @@ object StructuralAnalysis {
                 // Removing old regions from the graph is done later
                 post.filterInPlace(r => !subNodes.contains(r))
                 postCtr = post.indexOf(newRegion)
+
+                if (subNodes.forall(knownPartOfNoCycle.contains)) {
+                    knownPartOfNoCycle.add(newRegion)
+                }
+                knownPartOfNoCycle.subtractAll(subNodes)
 
                 // Replace edges
                 val incomingEdges = currentGraph.edges.filter { e =>
@@ -114,7 +134,7 @@ object StructuralAnalysis {
                     if (nodes.contains(curEntry)) {
                         curEntry = newRegion
                     }
-                } else {
+                } else if (inCycle(g, n)) {
                     var reachUnder = Set(n)
                     for {
                         m <- g.nodes.outerIterator
@@ -141,6 +161,8 @@ object StructuralAnalysis {
                     } else {
                         postCtr += 1
                     }
+                } else {
+                    postCtr += 1
                 }
             }
 
