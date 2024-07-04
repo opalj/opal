@@ -101,13 +101,7 @@ object StructuralAnalysis {
                 var n = post(postCtr)
 
                 val gPostMap = post.reverse.zipWithIndex.map(ni => (g.get(ni._1), ni._2)).toMap
-                val (newStartingNode, acyclicRegionOpt) = locateAcyclicRegion(
-                    g,
-                    gPostMap,
-                    indexedNodes,
-                    indexOf,
-                    immediateDominators.map(kv => (indexOf(kv._1), indexOf(kv._2))).toMap
-                )(n)
+                val (newStartingNode, acyclicRegionOpt) = locateAcyclicRegion(g, gPostMap, allDominators)(n)
                 n = newStartingNode
                 if (acyclicRegionOpt.isDefined) {
                     val (arType, nodes, entry) = acyclicRegionOpt.get
@@ -217,9 +211,7 @@ object StructuralAnalysis {
     private def locateAcyclicRegion[A <: FlowGraphNode, G <: Graph[A, DiEdge[A]]](
         graph:               G,
         postOrderTraversal:  Map[G#NodeT, Int],
-        indexedNodes:        IndexedSeq[A],
-        indexOf:             Map[A, Int],
-        immediateDominators: Map[Int, Int]
+        allDominators: mutable.Map[A, Seq[A]]
     )(startingNode: A): (A, Option[(AcyclicRegionType, Set[A], A)]) = {
         var nSet = Set.empty[graph.NodeT]
         var entry: graph.NodeT = graph.get(startingNode)
@@ -256,17 +248,7 @@ object StructuralAnalysis {
         }
 
         def locateProperAcyclicInterval: Option[AcyclicRegionType] = {
-            val zippedImmediateDominators = immediateDominators.map[(Int, Int)](kv => (kv._2, kv._1));
-            var accumulatedDominatedIndexes = Set.empty[Int];
-            var newDominatedIndexes = Set(indexOf(n))
-            while (newDominatedIndexes.nonEmpty) {
-                accumulatedDominatedIndexes = accumulatedDominatedIndexes.union(newDominatedIndexes)
-                newDominatedIndexes = newDominatedIndexes
-                    .flatMap(ndi => zippedImmediateDominators.filter(ndi == _._1).map(_._2))
-                    .diff(accumulatedDominatedIndexes)
-            }
-
-            val dominatedNodes = accumulatedDominatedIndexes.map(di => graph.get(indexedNodes(di)))
+            val dominatedNodes = allDominators.filter(_._2.contains(n.outer)).map(kv => graph.get(kv._1)).toSet ++ Set(n)
             if (dominatedNodes.size == 1 ||
                 !isAcyclic(dominatedNodes) ||
                 // Check if no dominated node is reached from an non-dominated node
