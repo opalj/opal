@@ -118,6 +118,7 @@ object StructuralAnalysis {
                     var reachUnder = Set(n)
                     for {
                         m <- g.nodes.outerIterator
+                        if m != n
                         innerM = controlTree.find(m)
                         if innerM.isEmpty || !innerM.get.hasPredecessors
                         if StructuralAnalysis.pathBack[FlowGraphNode, FlowGraph](g, strictlyDominates)(m, n)
@@ -193,25 +194,21 @@ object StructuralAnalysis {
         m: A,
         n: A
     ): Boolean = {
-        if (m == n) {
-            false
-        } else {
-            val innerN = graph.get(n)
-            val nonNFromMTraverser = graph.innerNodeTraverser(graph.get(m), subgraphNodes = _ != innerN)
-            val predecessorsOfN = innerN.diPredecessors
-            graph.nodes.exists { innerK =>
-                innerK != innerN &&
-                predecessorsOfN.contains(innerK) &&
-                strictlyDominates(n, innerK.outer) &&
-                nonNFromMTraverser.pathTo(innerK).isDefined
-            }
+        val innerN = graph.get(n)
+        val nonNFromMTraverser = graph.innerNodeTraverser(graph.get(m), subgraphNodes = _ != innerN)
+        val predecessorsOfN = innerN.diPredecessors
+        graph.nodes.exists { innerK =>
+            innerK.outer != n &&
+            predecessorsOfN.contains(innerK) &&
+            strictlyDominates(n, innerK.outer) &&
+            nonNFromMTraverser.pathTo(innerK).isDefined
         }
     }
 
     private def locateAcyclicRegion[A <: FlowGraphNode, G <: Graph[A, DiEdge[A]]](
-        graph:               G,
-        postOrderTraversal:  Map[G#NodeT, Int],
-        allDominators: mutable.Map[A, Seq[A]]
+        graph:              G,
+        postOrderTraversal: Map[G#NodeT, Int],
+        allDominators:      mutable.Map[A, Seq[A]]
     )(startingNode: A): (A, Option[(AcyclicRegionType, Set[A], A)]) = {
         var nSet = Set.empty[graph.NodeT]
         var entry: graph.NodeT = graph.get(startingNode)
