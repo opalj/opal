@@ -10,6 +10,8 @@ import scala.collection.mutable
 
 import org.opalj.graphs.DominatorTree
 
+import scalax.collection.GraphTraversal.DepthFirst
+import scalax.collection.GraphTraversal.Parameters
 import scalax.collection.OneOrMore
 import scalax.collection.OuterEdge
 import scalax.collection.edges.DiEdge
@@ -125,7 +127,11 @@ object StructuralAnalysis {
                 }
             }
 
-            PostOrderTraversal.foreachInTraversalFrom[FlowGraphNode, MFlowGraph](g, curEntry) { post.append }
+            val ordering = g.NodeOrdering((in1, in2) => in1.compare(in2))
+            g.innerNodeDownUpTraverser(g.get(curEntry), Parameters(DepthFirst), ordering = ordering).foreach {
+                case (down, in) if !down => post.append(in.outer)
+                case _                   =>
+            }
 
             while (g.order > 1 && postCtr < post.size) {
                 var n = post(postCtr)
@@ -364,29 +370,5 @@ object StructuralAnalysis {
 
             Some((NaturalLoop, reachUnder, enteringNodes.head))
         }
-    }
-}
-
-object PostOrderTraversal {
-
-    /** @note This function should be kept stable with regards to an ordering on the given graph nodes. */
-    def foreachInTraversalFrom[A, G <: MutableGraph[A, DiEdge[A]]](graph: G, initial: A)(nodeHandler: A => Unit)(
-        implicit ordering: Ordering[A]
-    ): Unit = {
-        var visited = Set.empty[graph.NodeT]
-
-        def foreachInTraversal(node: graph.NodeT)(nodeHandler: A => Unit): Unit = {
-            visited = visited + node
-
-            for {
-                successor <- (node.diSuccessors -- visited).toList.sorted(ordering.on((in: graph.NodeT) => in.outer))
-            } {
-                foreachInTraversal(successor)(nodeHandler)
-            }
-
-            nodeHandler(node.outer)
-        }
-
-        foreachInTraversal(graph.get(initial))(nodeHandler)
     }
 }
