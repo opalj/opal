@@ -106,11 +106,11 @@ object StructuralAnalysis {
                 allDominators = allDominators.map(kv =>
                     (
                         kv._1, {
-                            val intersection = kv._2.intersect(subNodes.toSeq)
-                            if (intersection.nonEmpty) {
-                                val index = kv._2.indexWhere(intersection.contains)
-                                kv._2.patch(index, Seq(newRegion), intersection.size)
-                            } else kv._2
+                            val index = kv._2.indexWhere(subNodes.contains)
+                            if (index != -1)
+                                kv._2.patch(index, Seq(newRegion), kv._2.lastIndexWhere(subNodes.contains) - index + 1)
+                            else
+                                kv._2
                         }
                     )
                 )
