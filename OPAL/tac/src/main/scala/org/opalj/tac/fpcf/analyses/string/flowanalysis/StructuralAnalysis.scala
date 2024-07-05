@@ -11,9 +11,12 @@ import scala.collection.mutable
 import org.opalj.graphs.DominatorTree
 
 import scalax.collection.OneOrMore
+import scalax.collection.OuterEdge
 import scalax.collection.edges.DiEdge
+import scalax.collection.generic.Edge
 import scalax.collection.hyperedges.DiHyperEdge
 import scalax.collection.immutable.Graph
+import scalax.collection.mutable.{Graph => MutableGraph}
 
 /**
  * @author Maximilian Rüsch
@@ -22,11 +25,33 @@ object StructuralAnalysis {
 
     private final val maxIterations = 1000
 
+    private type MFlowGraph = MutableGraph[FlowGraphNode, DiEdge[FlowGraphNode]]
+    private type MControlTree = MutableGraph[FlowGraphNode, DiEdge[FlowGraphNode]]
+    private type MSuperFlowGraph = MutableGraph[FlowGraphNode, Edge[FlowGraphNode]]
+
     def analyze(graph: FlowGraph, entry: FlowGraphNode): (FlowGraph, SuperFlowGraph, ControlTree) = {
-        var g = graph
-        var sg = graph.asInstanceOf[SuperFlowGraph]
+        val g: MFlowGraph = MutableGraph.from(graph.edges.outerIterable)
+        val sg: MSuperFlowGraph = MutableGraph.from(graph.edges.outerIterable).asInstanceOf[MSuperFlowGraph]
         var curEntry = entry
-        var controlTree = Graph.empty[FlowGraphNode, DiEdge[FlowGraphNode]]
+        val controlTree: MControlTree = MutableGraph.empty[FlowGraphNode, DiEdge[FlowGraphNode]]
+
+        var (indexedNodes, indexOf, immediateDominators, allDominators) = computeDominators(g, entry)
+        def strictlyDominates(n: FlowGraphNode, w: FlowGraphNode): Boolean = n != w && allDominators(w).contains(n)
+
+        val knownPartOfNoCycle = mutable.Set.empty[FlowGraphNode]
+        def inCycle(n: FlowGraphNode): Boolean = {
+            if (knownPartOfNoCycle.contains(n)) {
+                false
+            } else {
+                val cycleOpt = g.findCycleContaining(g.get(n))
+                if (cycleOpt.isDefined) {
+                    true
+                } else {
+                    knownPartOfNoCycle.add(n)
+                    false
+                }
+            }
+        }
 
         var iterations = 0
         while (g.order > 1 && iterations < maxIterations) {
@@ -34,16 +59,8 @@ object StructuralAnalysis {
             var postCtr = 1
             val post = mutable.ListBuffer.empty[FlowGraphNode]
 
-            def replace(
-                currentGraph:      FlowGraph,
-                currentSuperGraph: SuperFlowGraph,
-                subNodes:          Set[FlowGraphNode],
-                entry:             FlowGraphNode,
-                regionType:        RegionType
-            ): (FlowGraph, SuperFlowGraph, Region) = {
+            def replace(subNodes: Set[FlowGraphNode], entry: FlowGraphNode, regionType: RegionType): Unit = {
                 val newRegion = Region(regionType, subNodes.flatMap(_.nodeIds), entry)
-                var newGraph: FlowGraph = currentGraph
-                var newSuperGraph: SuperFlowGraph = currentSuperGraph
 
                 // Compact
                 // Note that adding the new region to the graph and superGraph is done anyways since we add edges later
@@ -53,80 +70,95 @@ object StructuralAnalysis {
                 post.filterInPlace(r => !subNodes.contains(r))
                 postCtr = post.indexOf(newRegion)
 
+                if (subNodes.forall(knownPartOfNoCycle.contains)) {
+                    knownPartOfNoCycle.add(newRegion)
+                }
+                knownPartOfNoCycle.subtractAll(subNodes)
+
                 // Replace edges
-                val incomingEdges = currentGraph.edges.filter { e =>
+                val incomingEdges = g.edges.filter { e =>
                     !subNodes.contains(e.outer.source) && subNodes.contains(e.outer.target)
                 }
-                val outgoingEdges = currentGraph.edges.filter { e =>
+                val outgoingEdges = g.edges.filter { e =>
                     subNodes.contains(e.outer.source) && !subNodes.contains(e.outer.target)
                 }
 
-                newGraph ++= incomingEdges.map(e => DiEdge(e.outer.source, newRegion))
-                    .concat(outgoingEdges.map(e => DiEdge(newRegion, e.outer.target)))
-                newGraph = newGraph.removedAll(subNodes, Set.empty)
+                val newRegionEdges = incomingEdges.map { e =>
+                    OuterEdge[FlowGraphNode, DiEdge[FlowGraphNode]](DiEdge(e.outer.source, newRegion))
+                }.concat(outgoingEdges.map { e =>
+                    OuterEdge[FlowGraphNode, DiEdge[FlowGraphNode]](DiEdge(newRegion, e.outer.target))
+                })
+                g.addAll(newRegionEdges)
+                g.removeAll(subNodes, Set.empty)
 
-                newSuperGraph ++= incomingEdges.map(e => DiEdge(e.outer.source, newRegion))
-                    .concat(outgoingEdges.map(e => DiEdge(newRegion, e.outer.target)))
-                newSuperGraph --= incomingEdges.concat(outgoingEdges).map(e => DiEdge(e.outer.source, e.outer.target))
-                    .concat(Seq(DiHyperEdge(OneOrMore(newRegion), OneOrMore.from(subNodes).get)))
+                sg.addAll(newRegionEdges)
+                sg.removeAll {
+                    incomingEdges.concat(outgoingEdges).map(e => DiEdge(e.outer.source, e.outer.target))
+                        .concat(Seq(DiHyperEdge(OneOrMore(newRegion), OneOrMore.from(subNodes).get)))
+                }
 
-                (newGraph, newSuperGraph, newRegion)
+                // Update dominator data
+                indexedNodes = indexedNodes.filterNot(subNodes.contains).appended(newRegion)
+                indexOf = indexedNodes.zipWithIndex.toMap
+
+                val commonDominators = subNodes.map(allDominators).reduce(_.intersect(_))
+                allDominators.subtractAll(subNodes).update(newRegion, commonDominators)
+                allDominators = allDominators.map(kv =>
+                    (
+                        kv._1, {
+                            val index = kv._2.indexWhere(subNodes.contains)
+                            if (index != -1)
+                                kv._2.patch(index, Seq(newRegion), kv._2.lastIndexWhere(subNodes.contains) - index + 1)
+                            else
+                                kv._2
+                        }
+                    )
+                )
+                immediateDominators = allDominators.map(kv => (kv._1, kv._2.head))
+
+                // Update remaining graph state
+                controlTree.addAll(subNodes.map(node =>
+                    OuterEdge[FlowGraphNode, DiEdge[FlowGraphNode]](DiEdge(newRegion, node))
+                ))
+                if (subNodes.contains(curEntry)) {
+                    curEntry = newRegion
+                }
             }
 
-            PostOrderTraversal.foreachInTraversalFrom[FlowGraphNode, FlowGraph](g, curEntry) { post.append }
+            PostOrderTraversal.foreachInTraversalFrom[FlowGraphNode, MFlowGraph](g, curEntry) { post.append }
 
             while (g.order > 1 && postCtr < post.size) {
                 var n = post(postCtr)
 
-                val indexedNodes = g.nodes.toIndexedSeq
-                val indexOf = indexedNodes.zipWithIndex.toMap
-                val domTree = DominatorTree(
-                    indexOf(g.get(curEntry)),
-                    g.get(curEntry).hasPredecessors,
-                    index => { f => indexedNodes(index).diSuccessors.foreach(ds => f(indexOf(ds))) },
-                    index => { f => indexedNodes(index).diPredecessors.foreach(ds => f(indexOf(ds))) },
-                    indexedNodes.size - 1
-                )
-                val gPostMap = post.reverse.zipWithIndex.map(ni => (g.get(ni._1), ni._2)).toMap
-                val (newStartingNode, acyclicRegionOpt) = locateAcyclicRegion(g, gPostMap, n, indexedNodes, domTree)
+                val gPostMap =
+                    post.reverse.zipWithIndex.map(ni => (g.get(ni._1).asInstanceOf[MFlowGraph#NodeT], ni._2)).toMap
+                val (newStartingNode, acyclicRegionOpt) =
+                    locateAcyclicRegion[FlowGraphNode, MFlowGraph](g, gPostMap, allDominators)(n)
                 n = newStartingNode
                 if (acyclicRegionOpt.isDefined) {
                     val (arType, nodes, entry) = acyclicRegionOpt.get
-
-                    val (newGraph, newSuperGraph, newRegion) = replace(g, sg, nodes, entry, arType)
-                    g = newGraph
-                    sg = newSuperGraph
-                    controlTree = controlTree.concat(nodes.map(node => DiEdge(newRegion, node)))
-
-                    if (nodes.contains(curEntry)) {
-                        curEntry = newRegion
-                    }
-                } else {
+                    replace(nodes, entry, arType)
+                } else if (inCycle(n)) {
                     var reachUnder = Set(n)
                     for {
                         m <- g.nodes.outerIterator
+                        if m != n
                         innerM = controlTree.find(m)
                         if innerM.isEmpty || !innerM.get.hasPredecessors
-                        if StructuralAnalysis.pathBack[FlowGraphNode, FlowGraph](g, indexOf, domTree)(m, n)
+                        if StructuralAnalysis.pathBack[FlowGraphNode, MFlowGraph](g, strictlyDominates)(m, n)
                     } {
                         reachUnder = reachUnder.incl(m)
                     }
 
-                    val cyclicRegionOpt = locateCyclicRegion(g, n, reachUnder)
+                    val cyclicRegionOpt = locateCyclicRegion[FlowGraphNode, MFlowGraph](g, n, reachUnder)
                     if (cyclicRegionOpt.isDefined) {
                         val (crType, nodes, entry) = cyclicRegionOpt.get
-
-                        val (newGraph, newSuperGraph, newRegion) = replace(g, sg, nodes, entry, crType)
-                        g = newGraph
-                        sg = newSuperGraph
-                        controlTree = controlTree.concat(nodes.map(node => DiEdge(newRegion, node)))
-
-                        if (nodes.contains(curEntry)) {
-                            curEntry = newRegion
-                        }
+                        replace(nodes, entry, crType)
                     } else {
                         postCtr += 1
                     }
+                } else {
+                    postCtr += 1
                 }
             }
 
@@ -137,35 +169,69 @@ object StructuralAnalysis {
             throw new IllegalStateException(s"Could not reduce tree in $maxIterations iterations!")
         }
 
-        (g, sg, controlTree)
+        (
+            Graph.from(g.edges.outerIterable),
+            Graph.from(sg.edges.outerIterable),
+            Graph.from(controlTree.edges.outerIterable)
+        )
     }
 
-    private def pathBack[A, G <: Graph[A, DiEdge[A]]](graph: G, indexOf: Map[G#NodeT, Int], domTree: DominatorTree)(
+    private def computeDominators[A, G <: MutableGraph[A, DiEdge[A]]](
+        graph: G,
+        entry: A
+    ): (IndexedSeq[A], Map[A, Int], mutable.Map[A, A], mutable.Map[A, Seq[A]]) = {
+        val indexedNodes = graph.nodes.toIndexedSeq
+        val indexOf = indexedNodes.zipWithIndex.toMap
+        val domTree = DominatorTree(
+            indexOf(graph.get(entry)),
+            graph.get(entry).hasPredecessors,
+            index => { f => indexedNodes(index).diSuccessors.foreach(ds => f(indexOf(ds))) },
+            index => { f => indexedNodes(index).diPredecessors.foreach(ds => f(indexOf(ds))) },
+            indexedNodes.size - 1
+        )
+        val outerIndexedNodes = indexedNodes.map(_.outer)
+        val immediateDominators = mutable.Map.from {
+            domTree.immediateDominators.zipWithIndex.map(iDomWithIndex => {
+                (outerIndexedNodes(iDomWithIndex._2), outerIndexedNodes(iDomWithIndex._1))
+            })
+        }
+        immediateDominators.update(entry, entry)
+
+        def getAllDominators(n: A): Seq[A] = {
+            val builder = Seq.newBuilder[A]
+            var c = n
+            while (c != entry) {
+                builder.addOne(c)
+                c = immediateDominators(c)
+            }
+            builder.addOne(entry)
+            builder.result()
+        }
+        val allDominators = immediateDominators.map(kv => (kv._1, getAllDominators(kv._2)))
+
+        (outerIndexedNodes, indexOf.map(kv => (kv._1.outer, kv._2)), immediateDominators, allDominators)
+    }
+
+    private def pathBack[A, G <: MutableGraph[A, DiEdge[A]]](graph: G, strictlyDominates: (A, A) => Boolean)(
         m: A,
         n: A
     ): Boolean = {
-        if (m == n) {
-            false
-        } else {
-            val innerN = graph.get(n)
-            val nonNFromMTraverser = graph.innerNodeTraverser(graph.get(m), subgraphNodes = _ != innerN)
-            val predecessorsOfN = innerN.diPredecessors
-            graph.nodes.exists { innerK =>
-                innerK != innerN &&
-                predecessorsOfN.contains(innerK) &&
-                domTree.strictlyDominates(indexOf(innerN), indexOf(innerK)) &&
-                nonNFromMTraverser.pathTo(innerK).isDefined
-            }
+        val innerN = graph.get(n)
+        val nonNFromMTraverser = graph.innerNodeTraverser(graph.get(m), subgraphNodes = _ != innerN)
+        val predecessorsOfN = innerN.diPredecessors
+        graph.nodes.exists { innerK =>
+            innerK.outer != n &&
+            predecessorsOfN.contains(innerK) &&
+            strictlyDominates(n, innerK.outer) &&
+            nonNFromMTraverser.pathTo(innerK).isDefined
         }
     }
 
-    private def locateAcyclicRegion[A <: FlowGraphNode, G <: Graph[A, DiEdge[A]]](
+    private def locateAcyclicRegion[A <: FlowGraphNode, G <: MutableGraph[A, DiEdge[A]]](
         graph:              G,
         postOrderTraversal: Map[G#NodeT, Int],
-        startingNode:       A,
-        indexedNodes:       IndexedSeq[G#NodeT],
-        domTree:            DominatorTree
-    ): (A, Option[(AcyclicRegionType, Set[A], A)]) = {
+        allDominators:      mutable.Map[A, Seq[A]]
+    )(startingNode: A): (A, Option[(AcyclicRegionType, Set[A], A)]) = {
         var nSet = Set.empty[graph.NodeT]
         var entry: graph.NodeT = graph.get(startingNode)
 
@@ -201,17 +267,7 @@ object StructuralAnalysis {
         }
 
         def locateProperAcyclicInterval: Option[AcyclicRegionType] = {
-            val zippedImmediateDominators = domTree.immediateDominators.zipWithIndex;
-            var accumulatedDominatedIndexes = Set.empty[Int];
-            var newDominatedIndexes = Set(indexedNodes.indexOf(n))
-            while (newDominatedIndexes.nonEmpty) {
-                accumulatedDominatedIndexes = accumulatedDominatedIndexes.union(newDominatedIndexes)
-                newDominatedIndexes = newDominatedIndexes
-                    .flatMap(ndi => zippedImmediateDominators.filter(ndi == _._1).map(_._2))
-                    .diff(accumulatedDominatedIndexes)
-            }
-
-            val dominatedNodes = accumulatedDominatedIndexes.map(indexedNodes).asInstanceOf[Set[graph.NodeT]]
+            val dominatedNodes = allDominators.filter(_._2.contains(n.outer)).map(kv => graph.get(kv._1)).toSet ++ Set(n)
             if (dominatedNodes.size == 1 ||
                 !isAcyclic(dominatedNodes) ||
                 // Check if no dominated node is reached from an non-dominated node
@@ -274,7 +330,7 @@ object StructuralAnalysis {
         (n.outer, rType.map((_, nSet.map(_.outer), entry)))
     }
 
-    private def locateCyclicRegion[A, G <: Graph[A, DiEdge[A]]](
+    private def locateCyclicRegion[A, G <: MutableGraph[A, DiEdge[A]]](
         graph:        G,
         startingNode: A,
         reachUnder:   Set[A]
@@ -314,27 +370,23 @@ object StructuralAnalysis {
 object PostOrderTraversal {
 
     /** @note This function should be kept stable with regards to an ordering on the given graph nodes. */
-    def foreachInTraversalFrom[A, G <: Graph[A, DiEdge[A]]](graph: G, initial: A)(nodeHandler: A => Unit)(
+    def foreachInTraversalFrom[A, G <: MutableGraph[A, DiEdge[A]]](graph: G, initial: A)(nodeHandler: A => Unit)(
         implicit ordering: Ordering[A]
     ): Unit = {
-        var visited = Set.empty[A]
+        var visited = Set.empty[graph.NodeT]
 
-        def foreachInTraversal(
-            graph: G,
-            node:  A
-        )(nodeHandler: A => Unit)(implicit ordering: Ordering[A]): Unit = {
+        def foreachInTraversal(node: graph.NodeT)(nodeHandler: A => Unit): Unit = {
             visited = visited + node
 
             for {
-                successor <- (graph.get(node).diSuccessors.map(_.outer) -- visited).toList.sorted
-                if !visited.contains(successor)
+                successor <- (node.diSuccessors -- visited).toList.sorted(ordering.on((in: graph.NodeT) => in.outer))
             } {
-                foreachInTraversal(graph, successor)(nodeHandler)
+                foreachInTraversal(successor)(nodeHandler)
             }
 
-            nodeHandler(node)
+            nodeHandler(node.outer)
         }
 
-        foreachInTraversal(graph, initial)(nodeHandler)
+        foreachInTraversal(graph.get(initial))(nodeHandler)
     }
 }
