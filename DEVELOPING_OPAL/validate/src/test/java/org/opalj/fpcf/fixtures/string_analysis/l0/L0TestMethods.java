@@ -363,7 +363,7 @@ public class L0TestMethods {
     @StringDefinitionsCollection(
             value = "Switch statement with multiple relevant and multiple irrelevant cases and a relevant default case",
             stringDefinitions = {
-                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "(a|ab|ac|ad)")
+                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "(ab|ac|a|ad)")
             })
     public void switchRelevantAndIrrelevantWithRelevantDefault(int value) {
         StringBuilder sb = new StringBuilder("a");
@@ -433,7 +433,7 @@ public class L0TestMethods {
     @StringDefinitionsCollection(
             value = "Switch statement a relevant default case and a nested switch statement",
             stringDefinitions = {
-                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "(ab|a|af|ac|ad)")
+                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "(ab|ac|a|ad|af)")
             })
     public void switchNestedNoNestedDefault(int value, int value2) {
         StringBuilder sb = new StringBuilder("a");
@@ -461,7 +461,7 @@ public class L0TestMethods {
     @StringDefinitionsCollection(
             value = "Switch statement a relevant default case and a nested switch statement",
             stringDefinitions = {
-                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "(ab|af|ac|ad|ae)")
+                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "(ab|ac|ad|ae|af)")
             })
     public void switchNestedWithNestedDefault(int value, int value2) {
         StringBuilder sb = new StringBuilder("a");
@@ -492,8 +492,8 @@ public class L0TestMethods {
     @StringDefinitionsCollection(
             value = "if-else control structure which append to a string builder with an int expr and an int",
             stringDefinitions = {
-                    @StringDefinitions(expectedLevel = DYNAMIC, expectedStrings = "(^-?\\d+$|x)"),
-                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "(x|42-42)")
+                    @StringDefinitions(expectedLevel = DYNAMIC, expectedStrings = "(x|^-?\\d+$)"),
+                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "(42-42|x)")
             })
     public void ifElseWithStringBuilderWithIntExpr() {
         StringBuilder sb1 = new StringBuilder();
@@ -577,7 +577,7 @@ public class L0TestMethods {
     @StringDefinitionsCollection(
             value = "if-else control structure which append to a string builder multiple times and a non used else if branch is present",
             stringDefinitions = {
-                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "(a|abcd|axyz)")
+                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "(abcd|a|axyz)")
             })
     public void ifElseWithStringBuilder4() {
         StringBuilder sb = new StringBuilder("a");
@@ -822,11 +822,11 @@ public class L0TestMethods {
                     // Exception case without own thrown exception
                     @StringDefinitions(expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "(==========|=====.*=====)"),
                     // The following cases are detected:
-                    // 1. Code around Files.readAllBytes failing, throwing a non-exception Throwable -> no append
-                    // 2. Code around Files.readAllBytes failing, throwing an exception Throwable -> exception case append
-                    // 3. First append succeeds, throws no exception -> only first append
-                    // 4. First append is executed but throws an exception Throwable -> both appends
-                    @StringDefinitions(expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "(=====|==========|=====.*|=====.*=====)")
+                    // 1. Code around Files.readAllBytes failing, throwing a non-exception Throwable -> no append (Pos 3)
+                    // 2. Code around Files.readAllBytes failing, throwing an exception Throwable -> exception case append (Pos 1)
+                    // 3. First append succeeds, throws no exception -> only first append (Pos 4)
+                    // 4. First append is executed but throws an exception Throwable -> both appends (Pos 2)
+                    @StringDefinitions(expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "(==========|=====.*=====|=====|=====.*)")
             })
     public void tryCatchFinally(String filename) {
         StringBuilder sb = new StringBuilder("=====");
@@ -932,7 +932,7 @@ public class L0TestMethods {
                     ),
                     @StringDefinitions(
                             expectedLevel = CONSTANT, expectedStrings = "",
-                            realisticLevel = DYNAMIC, realisticStrings = ".*"
+                            realisticLevel = DYNAMIC, realisticStrings = "(.*|)"
                     ),
                     @StringDefinitions(
                             expectedLevel = DYNAMIC, expectedStrings = "((.*)?)*",
