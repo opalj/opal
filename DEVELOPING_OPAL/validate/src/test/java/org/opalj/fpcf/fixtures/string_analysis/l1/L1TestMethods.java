@@ -88,7 +88,7 @@ public class L1TestMethods extends L0TestMethods {
     @StringDefinitionsCollection(
             value = "a case where the initialization of a StringBuilder depends on > 1 non-virtual function calls and a constant",
             stringDefinitions = {
-                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "(java.lang.Runtime|ERROR|java.lang.StringBuilder)")
+                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "(java.lang.Runtime|java.lang.StringBuilder|ERROR)")
             })
     public void initFromNonVirtualFunctionCallTest(int i) {
         String s;
@@ -181,7 +181,7 @@ public class L1TestMethods extends L0TestMethods {
     @StringDefinitionsCollection(
             value = "a case where the append value has more than one def site with a function call involved",
             stringDefinitions = {
-                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "(It is great|It is Hello, World)")
+                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "It is (great|Hello, World)")
             })
     public void appendWithTwoDefSitesWithFuncCallTest(int i) {
         String s;
@@ -271,7 +271,7 @@ public class L1TestMethods extends L0TestMethods {
                             expectedStrings = "Hello, World_paintname(_PAD|_REFLECT|_REPEAT)?(_AlphaTest)?",
                             realisticLevel = CONSTANT,
                             // or-cases are currently not collapsed into simpler conditionals / or-cases using prefix checking
-                            realisticStrings = "(Hello, World_paintname|Hello, World_paintname_PAD|Hello, World_paintname_REFLECT|Hello, World_paintname_REPEAT|Hello, World_paintname_AlphaTest|(Hello, World_paintname_PAD|Hello, World_paintname)_AlphaTest|Hello, World_paintname_REFLECT_AlphaTest|Hello, World_paintname_REPEAT_AlphaTest)"
+                            realisticStrings = "(Hello, World_paintname|Hello, World_paintname_PAD|Hello, World_paintname_REFLECT|Hello, World_paintname_REPEAT|(Hello, World_paintname|Hello, World_paintname_PAD|Hello, World_paintname_REFLECT|Hello, World_paintname_REPEAT)_AlphaTest)"
                     )
             })
     public void getPaintShader(boolean getPaintType, int spreadMethod, boolean alphaTest) {

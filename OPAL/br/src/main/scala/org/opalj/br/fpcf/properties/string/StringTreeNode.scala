@@ -116,13 +116,13 @@ case class StringTreeOr private (override val children: Seq[StringTreeNode]) ext
     }
 
     override def simplify: StringTreeNode = {
-        val nonEmptyChildren = children.map(_.simplify).filterNot(_.isEmpty).filterNot(_.isInvalid)
-        nonEmptyChildren.size match {
+        val validChildren = children.map(_.simplify).filterNot(_.isInvalid)
+        validChildren.size match {
             case 0 => StringTreeInvalidElement
-            case 1 => nonEmptyChildren.head
+            case 1 => validChildren.head
             case _ =>
                 var newChildren = Seq.empty[StringTreeNode]
-                nonEmptyChildren.foreach {
+                validChildren.foreach {
                     case orChild: StringTreeOr => newChildren :++= orChild.children
                     case child                 => newChildren :+= child
                 }
@@ -154,13 +154,13 @@ object StringTreeOr {
     }
 
     def fromNodes(children: StringTreeNode*): StringTreeNode = {
-        val nonNeutralDistinctChildren = children.distinct.filterNot(_.isEmpty)
-        nonNeutralDistinctChildren.size match {
+        val validDistinctChildren = children.filterNot(_.isInvalid).distinct
+        validDistinctChildren.size match {
             case 0 => StringTreeInvalidElement
-            case 1 => nonNeutralDistinctChildren.head
+            case 1 => validDistinctChildren.head
             case _ =>
                 var newChildren = Seq.empty[StringTreeNode]
-                nonNeutralDistinctChildren.foreach {
+                validDistinctChildren.foreach {
                     case orChild: StringTreeOr => newChildren :++= orChild.children
                     case child                 => newChildren :+= child
                 }

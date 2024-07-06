@@ -6,9 +6,16 @@ package analyses
 package string
 package flowanalysis
 
+import scala.collection.mutable
+
 import org.opalj.br.fpcf.properties.string.StringTreeDynamicString
 import org.opalj.tac.fpcf.properties.string.StringFlowFunction
 import org.opalj.tac.fpcf.properties.string.StringTreeEnvironment
+
+import scalax.collection.GraphTraversal.BreadthFirst
+import scalax.collection.GraphTraversal.Parameters
+import scalax.collection.generic.Edge
+import scalax.collection.immutable.Graph
 
 object DataFlowAnalysis {
 
@@ -84,27 +91,26 @@ object DataFlowAnalysis {
             envAfterBranches._1.join(envAfterBranches._2)
         }
 
-        def processProper(entry: FlowGraphNode): StringTreeEnvironment = {
-            val limitedFlowGraph = superFlowGraph.filter(innerChildNodes.contains)
-            val entryNode = limitedFlowGraph.get(entry)
+        def handleProperSubregion[A <: FlowGraphNode, G <: Graph[A, Edge[A]]](g: G, entry: A): StringTreeEnvironment = {
+            val entryNode = g.get(entry)
+            val ordering = g.NodeOrdering((in1, in2) => in1.compare(in2))
+            val traverser = entryNode.innerNodeTraverser(Parameters(BreadthFirst)).withOrdering(ordering)
+            // We know that the graph is acyclic here, so we can be sure that the topological sort never fails
+            val sortedNodes = traverser.topologicalSort().toOption.get.toSeq
 
-            var sortedCurrentNodes = List(entryNode)
-            var currentNodeEnvs = Map((entryNode, pipe(entry, env)))
-            var finishedNodeAlternatives = Seq.empty[StringTreeEnvironment]
-            while (currentNodeEnvs.nonEmpty) {
-                val nextNodeEnvs = sortedCurrentNodes.flatMap { node =>
-                    node.diSuccessors.map { successor => (successor, pipe(successor, currentNodeEnvs(node))) }
+            val currentNodeEnvs = mutable.Map((entryNode, pipe(entry, env)))
+            for { currentNode <- sortedNodes.filter(_ != entryNode) } {
+                val previousEnvs = currentNode.diPredecessors.toList.sortBy(_.outer).map { dp =>
+                    pipe(currentNode.outer, currentNodeEnvs(dp))
                 }
-
-                finishedNodeAlternatives ++= nextNodeEnvs.filterNot(_._1.hasSuccessors).sortBy(_._1.outer).map(_._2)
-                val unfinishedNextNodeEnvs = nextNodeEnvs.filter(_._1.hasSuccessors)
-                sortedCurrentNodes = unfinishedNextNodeEnvs.map(_._1).distinct.sortBy(_.outer)
-                currentNodeEnvs = unfinishedNextNodeEnvs.groupBy(_._1) map { kv =>
-                    (kv._1, kv._2.head._2.joinMany(kv._2.tail.map(_._2)))
-                }
+                currentNodeEnvs.update(currentNode, previousEnvs.head.joinMany(previousEnvs.tail))
             }
 
-            finishedNodeAlternatives.foldLeft(StringTreeEnvironment(Map.empty)) { (env, nextEnv) => env.join(nextEnv) }
+            currentNodeEnvs(sortedNodes.last)
+        }
+
+        def processProper(entry: FlowGraphNode): StringTreeEnvironment = {
+            handleProperSubregion(superFlowGraph.filter(innerChildNodes.contains), entry)
         }
 
         def processSelfLoop(entry: FlowGraphNode): StringTreeEnvironment = {
@@ -143,27 +149,7 @@ object DataFlowAnalysis {
                 env.updateAll(StringTreeDynamicString)
             } else {
                 // Handle resulting acyclic region
-                val entryNode = removedBackEdgesGraph.get(entry)
-                var sortedCurrentNodes = List(entryNode)
-                var currentNodeEnvs = Map((entryNode, pipe(entry, env)))
-                var finishedNodeAlternatives = Seq.empty[StringTreeEnvironment]
-                while (currentNodeEnvs.nonEmpty) {
-                    val nextNodeEnvs = sortedCurrentNodes.flatMap { node =>
-                        node.diSuccessors.map { successor => (successor, pipe(successor, currentNodeEnvs(node))) }
-                    }
-
-                    finishedNodeAlternatives ++= nextNodeEnvs.filterNot(_._1.hasSuccessors).sortBy(_._1.outer).map(_._2)
-                    val unfinishedNextNodeEnvs = nextNodeEnvs.filter(_._1.hasSuccessors)
-                    sortedCurrentNodes = unfinishedNextNodeEnvs.map(_._1).distinct.sortBy(_.outer)
-                    currentNodeEnvs = unfinishedNextNodeEnvs.groupBy(_._1) map { kv =>
-                        (kv._1, kv._2.head._2.joinMany(kv._2.tail.map(_._2)))
-                    }
-                }
-
-                val resultEnv = finishedNodeAlternatives.foldLeft(StringTreeEnvironment(Map.empty)) {
-                    (env, nextEnv) => env.join(nextEnv)
-                }
-
+                val resultEnv = handleProperSubregion(removedBackEdgesGraph, entry)
                 // Looped operations that modify string contents are not supported here
                 if (resultEnv != env) env.updateAll(StringTreeDynamicString)
                 else env
