@@ -90,25 +90,21 @@ object DataFlowAnalysis {
 
             var sortedCurrentNodes = List(entryNode)
             var currentNodeEnvs = Map((entryNode, pipe(entry, env)))
-            while (currentNodeEnvs.keys.exists(_.diSuccessors.nonEmpty)) {
+            var finishedNodeAlternatives = Seq.empty[StringTreeEnvironment]
+            while (currentNodeEnvs.nonEmpty) {
                 val nextNodeEnvs = sortedCurrentNodes.flatMap { node =>
-                    if (node.diSuccessors.isEmpty) {
-                        Iterable((node, currentNodeEnvs(node)))
-                    } else {
-                        node.diSuccessors.toList.sortBy(_.outer).map { successor =>
-                            (successor, pipe(successor, currentNodeEnvs(node)))
-                        }
-                    }
+                    node.diSuccessors.map { successor => (successor, pipe(successor, currentNodeEnvs(node))) }
                 }
-                sortedCurrentNodes = nextNodeEnvs.map(_._1).distinct.sortBy(_.outer)
-                currentNodeEnvs = nextNodeEnvs.groupBy(_._1) map { kv =>
+
+                finishedNodeAlternatives ++= nextNodeEnvs.filterNot(_._1.hasSuccessors).sortBy(_._1.outer).map(_._2)
+                val unfinishedNextNodeEnvs = nextNodeEnvs.filter(_._1.hasSuccessors)
+                sortedCurrentNodes = unfinishedNextNodeEnvs.map(_._1).distinct.sortBy(_.outer)
+                currentNodeEnvs = unfinishedNextNodeEnvs.groupBy(_._1) map { kv =>
                     (kv._1, kv._2.head._2.joinMany(kv._2.tail.map(_._2)))
                 }
             }
 
-            sortedCurrentNodes.foldLeft(StringTreeEnvironment(Map.empty)) { (env, nextNode) =>
-                env.join(currentNodeEnvs(nextNode))
-            }
+            finishedNodeAlternatives.foldLeft(StringTreeEnvironment(Map.empty)) { (env, nextEnv) => env.join(nextEnv) }
         }
 
         def processSelfLoop(entry: FlowGraphNode): StringTreeEnvironment = {
@@ -150,22 +146,22 @@ object DataFlowAnalysis {
                 val entryNode = removedBackEdgesGraph.get(entry)
                 var sortedCurrentNodes = List(entryNode)
                 var currentNodeEnvs = Map((entryNode, pipe(entry, env)))
-                while (currentNodeEnvs.keys.exists(_.diSuccessors.nonEmpty)) {
+                var finishedNodeAlternatives = Seq.empty[StringTreeEnvironment]
+                while (currentNodeEnvs.nonEmpty) {
                     val nextNodeEnvs = sortedCurrentNodes.flatMap { node =>
-                        if (node.diSuccessors.isEmpty) {
-                            Iterable((node, currentNodeEnvs(node)))
-                        } else {
-                            node.diSuccessors.toList.sortBy(_.outer).map { successor =>
-                                (successor, pipe(successor, currentNodeEnvs(node)))
-                            }
-                        }
+                        node.diSuccessors.map { successor => (successor, pipe(successor, currentNodeEnvs(node))) }
                     }
-                    sortedCurrentNodes = nextNodeEnvs.map(_._1).distinct.sortBy(_.outer)
-                    currentNodeEnvs = nextNodeEnvs.groupMapReduce(_._1)(_._2) { (env, otherEnv) => env.join(otherEnv) }
+
+                    finishedNodeAlternatives ++= nextNodeEnvs.filterNot(_._1.hasSuccessors).sortBy(_._1.outer).map(_._2)
+                    val unfinishedNextNodeEnvs = nextNodeEnvs.filter(_._1.hasSuccessors)
+                    sortedCurrentNodes = unfinishedNextNodeEnvs.map(_._1).distinct.sortBy(_.outer)
+                    currentNodeEnvs = unfinishedNextNodeEnvs.groupBy(_._1) map { kv =>
+                        (kv._1, kv._2.head._2.joinMany(kv._2.tail.map(_._2)))
+                    }
                 }
 
-                val resultEnv = sortedCurrentNodes.foldLeft(StringTreeEnvironment(Map.empty)) { (env, nextNode) =>
-                    env.join(currentNodeEnvs(nextNode))
+                val resultEnv = finishedNodeAlternatives.foldLeft(StringTreeEnvironment(Map.empty)) {
+                    (env, nextEnv) => env.join(nextEnv)
                 }
 
                 // Looped operations that modify string contents are not supported here
