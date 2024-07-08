@@ -98,7 +98,7 @@ object StringUtil {
 
         stringEOptP match {
             case UBP(ub) if !ub.sci.tree.isInvalid => Some(ub.sci.toRegex)
-            case _       => None
+            case _                                 => None
         }
     }
 
