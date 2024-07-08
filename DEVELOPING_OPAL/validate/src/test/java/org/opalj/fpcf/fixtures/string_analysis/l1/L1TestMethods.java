@@ -218,7 +218,7 @@ public class L1TestMethods extends L0TestMethods {
     @StringDefinitionsCollection(
             value = "a function parameter being analyzed on its own",
             stringDefinitions = {
-                    @StringDefinitions(expectedLevel = DYNAMIC, expectedStrings = ".*")
+                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "(Hello, World|my.helper.Class)")
             })
     public String callerWithFunctionParameterTest(String s, float i) {
         analyzeString(s);
@@ -235,11 +235,18 @@ public class L1TestMethods extends L0TestMethods {
         analyzeString(s);
     }
 
+    public void belongsToSomeTestCaseAnotherTime() {
+        callerWithFunctionParameterTest(belongsToTheSameTestCaseAnotherTime(), 900);
+    }
+
     /**
      * Necessary for the callerWithFunctionParameterTest.
      */
     public static String belongsToTheSameTestCase() {
         return getHelloWorld();
+    }
+    public static String belongsToTheSameTestCaseAnotherTime() {
+        return getHelperClass();
     }
 
     @StringDefinitionsCollection(

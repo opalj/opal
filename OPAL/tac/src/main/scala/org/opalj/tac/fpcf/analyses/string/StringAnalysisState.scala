@@ -57,7 +57,7 @@ private[string] case class ContextStringAnalysisState(
 
     // Parameter StringConstancy
     private val _entityToParamIndexMapping: mutable.Map[VariableContext, (Int, Method)] = mutable.Map.empty
-    private val _paramIndexToEntityMapping: mutable.Map[Int, mutable.Map[Method, VariableContext]] =
+    private val _paramIndexToEntityMapping: mutable.Map[Int, mutable.Map[Method, Seq[VariableContext]]] =
         mutable.Map.empty.withDefaultValue(mutable.Map.empty)
     private val _paramDependees: mutable.Map[VariableContext, EOptionP[VariableContext, StringConstancyProperty]] =
         mutable.Map.empty
@@ -68,22 +68,16 @@ private[string] case class ContextStringAnalysisState(
         m:        Method,
         dependee: EOptionP[VariableContext, StringConstancyProperty]
     ): Unit = {
-        val previousParameterEntity = _paramIndexToEntityMapping(index).put(m, dependee.e)
-        if (previousParameterEntity.isDefined) {
-            _entityToParamIndexMapping.remove(previousParameterEntity.get)
+        if (!_paramIndexToEntityMapping.contains(index)) {
+            _paramIndexToEntityMapping(index) = mutable.Map.empty
         }
 
+        _paramIndexToEntityMapping(index).put(m, Seq(dependee.e))
         _entityToParamIndexMapping(dependee.e) = (index, m)
         _paramDependees(dependee.e) = dependee
     }
     def updateParamDependee(dependee: EOptionP[VariableContext, StringConstancyProperty]): Unit = {
-        if (_entityToParamIndexMapping.contains(dependee.e)) {
-            _paramDependees(dependee.e) = dependee
-        } else {
-            // When there is no parameter index for the dependee entity we lost track of it and do not need it anymore.
-            // Ensure no update is registered and the dependees are cleared from this EOptionP.
-            _paramDependees.remove(dependee.e)
-        }
+        _paramDependees(dependee.e) = dependee
     }
     def registerInvalidParamReference(index: Int, m: Method): Unit = {
         _invalidParamReferences.updateWith(m)(ov => Some(ov.getOrElse(Set.empty) + index))
@@ -95,15 +89,19 @@ private[string] case class ContextStringAnalysisState(
                 stringTree.collectParameterIndices.map((_, StringTreeNode.lb)).toMap
             } else {
                 stringTree.collectParameterIndices.map { index =>
-                    val paramOptions = _paramIndexToEntityMapping(index).keysIterator.flatMap { m =>
-                        if (_invalidParamReferences.contains(m)) {
-                            Some(StringTreeNode.ub)
-                        } else {
-                            val dependee = _paramDependees(_paramIndexToEntityMapping(index)(m))
-                            if (dependee.hasUBP) Some(dependee.ub.sci.tree)
-                            else None
+                    val paramOptions = _paramIndexToEntityMapping(index).keys.toSeq
+                        .sortBy(_.fullyQualifiedSignature)
+                        .flatMap { m =>
+                            if (_invalidParamReferences.contains(m)) {
+                                Some(StringTreeNode.ub)
+                            } else {
+                                _paramIndexToEntityMapping(index)(m)
+                                    .sortBy(_.pc)
+                                    .map(_paramDependees)
+                                    .filter(_.hasUBP)
+                                    .map(_.ub.sci.tree)
+                            }
                         }
-                    }.toSeq
 
                     (index, StringTreeOr(paramOptions).simplify)
                 }.toMap
