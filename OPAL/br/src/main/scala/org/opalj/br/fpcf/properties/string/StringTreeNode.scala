@@ -99,8 +99,10 @@ object StringTreeConcat {
     def fromNodes(children: StringTreeNode*): StringTreeNode = {
         if (children.isEmpty || children.exists(_.isInvalid)) {
             StringTreeInvalidElement
+        } else if (children.forall(_.isEmpty)) {
+            StringTreeEmptyConst
         } else {
-            new StringTreeConcat(children)
+            new StringTreeConcat(children.filterNot(_.isEmpty))
         }
     }
 }

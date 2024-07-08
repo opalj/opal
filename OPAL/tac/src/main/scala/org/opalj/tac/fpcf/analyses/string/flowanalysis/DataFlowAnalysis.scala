@@ -91,10 +91,16 @@ object DataFlowAnalysis {
             envAfterBranches._1.join(envAfterBranches._2)
         }
 
-        def handleProperSubregion[A <: FlowGraphNode, G <: Graph[A, Edge[A]]](g: G, entry: A): StringTreeEnvironment = {
+        def handleProperSubregion[A <: FlowGraphNode, G <: Graph[A, Edge[A]]](
+            g:          G,
+            innerNodes: Set[G#NodeT],
+            entry:      A
+        ): StringTreeEnvironment = {
             val entryNode = g.get(entry)
             val ordering = g.NodeOrdering((in1, in2) => in1.compare(in2))
-            val traverser = entryNode.innerNodeTraverser(Parameters(BreadthFirst)).withOrdering(ordering)
+            val traverser = entryNode.innerNodeTraverser(Parameters(BreadthFirst))
+                .withOrdering(ordering)
+                .withSubgraph(nodes = innerNodes.contains)
             // We know that the graph is acyclic here, so we can be sure that the topological sort never fails
             val sortedNodes = traverser.topologicalSort().toOption.get.toSeq
 
@@ -110,7 +116,7 @@ object DataFlowAnalysis {
         }
 
         def processProper(entry: FlowGraphNode): StringTreeEnvironment = {
-            handleProperSubregion(superFlowGraph.filter(innerChildNodes.contains), entry)
+            handleProperSubregion[FlowGraphNode, superFlowGraph.type](superFlowGraph, innerChildNodes, entry)
         }
 
         def processSelfLoop(entry: FlowGraphNode): StringTreeEnvironment = {
@@ -149,7 +155,11 @@ object DataFlowAnalysis {
                 env.updateAll(StringTreeDynamicString)
             } else {
                 // Handle resulting acyclic region
-                val resultEnv = handleProperSubregion(removedBackEdgesGraph, entry)
+                val resultEnv = handleProperSubregion[FlowGraphNode, removedBackEdgesGraph.type](
+                    removedBackEdgesGraph,
+                    removedBackEdgesGraph.nodes.toSet,
+                    entry
+                )
                 // Looped operations that modify string contents are not supported here
                 if (resultEnv != env) env.updateAll(StringTreeDynamicString)
                 else env

@@ -59,11 +59,12 @@ case class ComputationState(entity: Method, dm: DefinedMethod, var tacDependee: 
         if (v.hasUBP) v.ub.webs
         else StringFlowFunctionProperty.ub.webs
     }.toSeq.sortBy(_.defPCs.toList.min).foldLeft(Seq.empty[PDUWeb]) { (reducedWebs, web) =>
-        val index = reducedWebs.indexWhere(_.identifiesSameVarAs(web))
-        if (index == -1)
+        val mappedWebs = reducedWebs.map(w => (w, w.identifiesSameVarAs(web)))
+        if (!mappedWebs.exists(_._2)) {
             reducedWebs :+ web
-        else
-            reducedWebs.updated(index, reducedWebs(index).combine(web))
+        } else {
+            mappedWebs.filterNot(_._2).map(_._1) :+ mappedWebs.filter(_._2).map(_._1).reduce(_.combine(_)).combine(web)
+        }
     }.iterator
 }
 
