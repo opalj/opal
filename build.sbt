@@ -1,10 +1,5 @@
-/* BSD 2-Clause License - see OPAL/LICENSE for details. */
-import com.typesafe.sbt.SbtScalariform
-import com.typesafe.sbt.SbtScalariform.ScalariformKeys
-import sbt.Keys.libraryDependencies
 import sbt.Test
-import scalariform.formatter.preferences._
-import sbtassembly.AssemblyPlugin.autoImport._
+import sbtassembly.AssemblyPlugin.autoImport.*
 import sbtunidoc.ScalaUnidocPlugin
 
 name := "OPAL Library"
@@ -37,6 +32,7 @@ ScalacConfiguration.globalScalacOptions
 
 ThisBuild / resolvers += Resolver.jcenterRepo
 ThisBuild / resolvers += "Typesafe Repo" at "https://repo.typesafe.com/typesafe/releases/"
+ThisBuild / resolvers += "Eclipse Staging" at "https://repo.eclipse.org/content/repositories/eclipse-staging/"
 ThisBuild / resolvers += Resolver.mavenLocal
 
 // OPAL already parallelizes most tests/analyses internally!
@@ -83,16 +79,17 @@ ThisBuild / javaOptions ++= Seq(
 
 addCommandAlias(
   "compileAll",
-  "; copyResources ; scalastyle ; " +
-    "test:compile ; test:scalastyle ; " +
-    "it:scalariformFormat ; it:scalastyle ; it:compile "
+    "; copyResources ; " +
+    "OPAL / scalafmt ; OPAL / headerCheck ; " +
+    "OPAL / Test / scalafmt ; OPAL / Test / headerCheck ; OPAL / Test / compile ; " +
+    "OPAL/ IntegrationTest/ scalafmt ; OPAL / IntegrationTest / headerCheck ; OPAL / IntegrationTest / compile "
 )
 
 addCommandAlias("buildAll", "; compileAll ; unidoc ;  publishLocal ")
 
 addCommandAlias(
   "cleanAll",
-  "; clean ; cleanCache ; cleanLocal ; test:clean ; it:clean ; cleanFiles"
+  "; clean ; cleanCache ; cleanLocal ; OPAL / Test / clean ; OPAL / IntegrationTest / clean ; cleanFiles"
 )
 
 addCommandAlias("cleanBuild", "; project OPAL ; cleanAll ; buildAll ")
@@ -114,10 +111,9 @@ lazy val IntegrationTest = config("it") extend Test
 // Default settings without scoverage
 lazy val buildSettings =
   Defaults.coreDefaultSettings ++
-    scalariformSettings ++
     PublishingOverwrite.onSnapshotOverwriteSettings ++
     Seq(libraryDependencies ++= Dependencies.testlibs) ++
-    Seq(Defaults.itSettings: _*) ++
+    Seq(inConfig(IntegrationTest)(Defaults.testSettings): _*) ++
     Seq(
       unmanagedSourceDirectories
         .withRank(KeyRanks.Invisible) := (Compile / scalaSource).value :: Nil
@@ -141,15 +137,17 @@ lazy val buildSettings =
       case PathList("META-INF", "native-image", xs @ _, "jnijavacpp", "jni-config.json") => MergeStrategy.discard
       case PathList("META-INF", "native-image", xs @ _, "jnijavacpp", "reflect-config.json") => MergeStrategy.discard
       case other => (assembly / assemblyMergeStrategy).value(other)
-    })
+    }) ++
+      Seq(
+          headerLicense := Some(HeaderLicense.Custom("BSD 2-Clause License - see OPAL/LICENSE for details.")),
+          headerEmptyLine := false,
+          headerMappings :=
+              headerMappings.value ++ Seq(
+                  (HeaderFileType.scala -> LicenseHeaderConfig.defaultHeader),
+                  (HeaderFileType.java -> LicenseHeaderConfig.defaultHeader)
+              )
+      )
 
-lazy val scalariformSettings = scalariformItSettings ++
-  Seq(ScalariformKeys.preferences := baseDirectory(getScalariformPreferences).value)
-
-def getScalariformPreferences(dir: File) = {
-  val formatterPreferencesFile = "Scalariform Formatter Preferences.properties"
-  PreferencesImporterExporter.loadPreferences(file(formatterPreferencesFile).getPath)
-}
 
 /*******************************************************************************
  *
@@ -161,6 +159,7 @@ lazy val `OPAL` = (project in file("."))
 //  .configure(_.copy(id = "OPAL"))
   .settings(Defaults.coreDefaultSettings ++ Seq(publishArtifact := false): _*)
   .enablePlugins(ScalaUnidocPlugin)
+  .disablePlugins(HeaderPlugin) // The root project has no sources and no configured license header
   .settings(
     ScalaUnidoc / unidoc / unidocProjectFilter := inAnyProject -- inProjects(
       hermes,
@@ -544,7 +543,7 @@ compile := {
 lazy val runProjectDependencyGeneration =  ThisBuild / taskKey[Unit] ("Regenerates the Project Dependencies Graphics")
 
 runProjectDependencyGeneration := {
-  import scala.sys.process._
+  import scala.sys.process.*
   val s: TaskStreams = streams.value
   val uid = "id -u".!!.stripSuffix("\n")
   val gid = "id -g".!!.stripSuffix("\n")

@@ -12,7 +12,7 @@ case class CHECKCAST(
         referenceType: ReferenceType
 ) extends Instruction with ConstantLengthInstruction with NoLabels {
 
-    final override def isCheckcast: Boolean = true
+    override final def isCheckcast: Boolean = true
 
     final def opcode: Opcode = CHECKCAST.opcode
 
@@ -53,16 +53,14 @@ case class CHECKCAST(
         if (regularSuccessorsOnly)
             List(indexOfNextInstruction(currentPC))
         else
-            Instruction.nextInstructionOrExceptionHandler(
-                this, currentPC, ObjectType.ClassCastException
-            )
+            Instruction.nextInstructionOrExceptionHandler(this, currentPC, ObjectType.ClassCastException)
     }
 
     final def expressionResult: Stack.type = Stack
 
-    override def toString: String = "CHECKCAST("+referenceType.toJava+")"
+    override def toString: String = "CHECKCAST(" + referenceType.toJava + ")"
 
-    final override def toString(currentPC: Int): String = toString()
+    override final def toString(currentPC: Int): String = toString()
 
 }
 

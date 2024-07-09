@@ -4,9 +4,9 @@ package ai
 package domain
 
 import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br._
@@ -67,14 +67,16 @@ class MethodsWithLoopsTest extends AnyFlatSpec with Matchers {
             with IgnoreSynchronization
 
         val method = findMethod("endless")
-        /*val result =*/ BaseAI(method, MostBasicDomain)
+        /*val result =*/
+        BaseAI(method, MostBasicDomain)
         // if we reach this point, everything is OK
     }
 
 }
+
 object MethodsWithLoopsTest {
 
-    val classFiles = ClassFiles(locateTestResources("ai.jar", "bi"))
+    val classFiles = ClassFiles(locateTestResources("ai-9.jar", "bi"))
 
     val classFile = classFiles.map(_._1).find(_.thisType.fqn == "ai/MethodsWithLoops").get
 }

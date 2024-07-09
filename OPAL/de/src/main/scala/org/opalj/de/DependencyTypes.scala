@@ -54,7 +54,7 @@ object DependencyTypes extends Enumeration(0 /* <= value of first enumeration va
     val RETURN_TYPE_OF_CALLED_METHOD = Value("the method CALLS a METHOD that RETURNS a value with TYPE")
 
     // annotation related dependency types
-    //val ANNOTATED_WITH = Value("the class, field, method, type parameter, local variable, ... is ANNOTATED WITH")
+    // val ANNOTATED_WITH = Value("the class, field, method, type parameter, local variable, ... is ANNOTATED WITH")
     val ANNOTATED_WITH = Value("the element is ANNOTATED WITH")
     val PARAMETER_ANNOTATED_WITH = Value("the method's parameter is ANNOTATED WITH")
 

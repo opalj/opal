@@ -2,11 +2,11 @@
 package org.opalj
 package ai
 
-import org.opalj.br.Type
-import org.opalj.br.ReferenceType
-import org.opalj.br.ObjectType
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.MethodHandle
+import org.opalj.br.ObjectType
+import org.opalj.br.ReferenceType
+import org.opalj.br.Type
 
 /**
  * Definition of factory methods to create `ReferenceValues`.

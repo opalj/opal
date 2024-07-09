@@ -1,5 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf
+package org.opalj
+package fpcf
 
 import org.opalj.collection.ForeachRefIterator
 
@@ -74,6 +75,7 @@ case class Result(finalEP: FinalEP[Entity, Property]) extends FinalPropertyCompu
         s"Result($e@${System.identityHashCode(e).toHexString},p=$p)"
     }
 }
+
 object Result {
 
     def apply(e: Entity, p: Property): Result = Result(FinalEP(e, p))
@@ -141,7 +143,7 @@ object MultiResult { private[fpcf] final val id = 2 }
  */
 final class InterimResult[P >: Null <: Property] private (
         val eps:       InterimEP[Entity, P],
-        val dependees: Set[SomeEOptionP], //IMPROVE: require EOptionPSets?
+        val dependees: Set[SomeEOptionP], // IMPROVE: require EOptionPSets?
         val c:         ProperOnUpdateContinuation
 ) extends ProperPropertyComputationResult { result =>
 
@@ -150,7 +152,7 @@ final class InterimResult[P >: Null <: Property] private (
     if (PropertyStore.Debug) { // TODO move to generic handleResult method ...
         if (dependees.isEmpty) {
             throw new IllegalArgumentException(
-                s"intermediate result without dependencies: $this"+
+                s"intermediate result without dependencies: $this" +
                     " (use PartialResults for collaboratively computed results)"
             )
         }
@@ -162,15 +164,15 @@ final class InterimResult[P >: Null <: Property] private (
 
         if (dependees.exists(eOptP => eOptP.e == eps.e && eOptP.pk == result.key)) {
             throw new IllegalArgumentException(
-                s"intermediate result with an illegal self-dependency: "+this
+                s"intermediate result with an illegal self-dependency: " + this
             )
         }
     }
 
     private[fpcf] def id: Int = InterimResult.id
 
-    private[fpcf] override def isInterimResult: Boolean = true
-    private[fpcf] override def asInterimResult: InterimResult[P] = this
+    override private[fpcf] def isInterimResult: Boolean = true
+    override private[fpcf] def asInterimResult: InterimResult[P] = this
 
     override def hashCode: Int = eps.e.hashCode * 17 + dependees.hashCode
 
@@ -291,11 +293,12 @@ sealed abstract class Results extends ProperPropertyComputationResult {
 
     private[fpcf] final def id = Results.id
 
-    private[fpcf] final override def asResults: Results = this
+    override private[fpcf] final def asResults: Results = this
 
     def foreach(f: ProperPropertyComputationResult => Unit): Unit
 
 }
+
 object Results {
 
     private[fpcf] final val id = 5
@@ -390,7 +393,7 @@ object PartialResult { private[fpcf] final val id = 6 }
  */
 case class InterimPartialResult[SE >: Null <: Property](
         us:        Iterable[SomePartialResult], // can be empty!
-        dependees: Set[SomeEOptionP], //IMPROVE: require EOptionPSets?
+        dependees: Set[SomeEOptionP], // IMPROVE: require EOptionPSets?
         c:         OnUpdateContinuation
 ) extends ProperPropertyComputationResult {
 
@@ -402,6 +405,7 @@ case class InterimPartialResult[SE >: Null <: Property](
     private[fpcf] final def id = InterimPartialResult.id
 
 }
+
 object InterimPartialResult {
 
     private[fpcf] final val id = 8
@@ -437,4 +441,3 @@ object InterimPartialResult {
         new InterimPartialResult[SE](List(pruc), dependees, c)
     }
 }
-

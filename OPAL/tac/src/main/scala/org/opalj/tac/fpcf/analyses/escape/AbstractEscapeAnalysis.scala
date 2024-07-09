@@ -7,27 +7,27 @@ package escape
 
 import scala.annotation.switch
 
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.InterimResult
-import org.opalj.fpcf.ProperPropertyComputationResult
-import org.opalj.fpcf.Result
-import org.opalj.fpcf.SomeEPS
-import org.opalj.fpcf.UBP
 import org.opalj.br.Method
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.analyses.VirtualFormalParameters
 import org.opalj.br.analyses.VirtualFormalParametersKey
+import org.opalj.br.fpcf.ContextProviderKey
+import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.analyses.ContextProvider
+import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.EscapeViaReturn
 import org.opalj.br.fpcf.properties.EscapeViaStaticField
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.GlobalEscape
 import org.opalj.br.fpcf.properties.NoEscape
-import org.opalj.tac.cg.TypeIteratorKey
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.InterimResult
+import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.Result
+import org.opalj.fpcf.SomeEPS
+import org.opalj.fpcf.UBP
 import org.opalj.tac.common.DefinitionSiteLike
-import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
@@ -279,7 +279,8 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
      * will be called.
      */
     protected[this] def handleExpression(
-        expr: Expr[V], hasAssignment: Boolean
+        expr:          Expr[V],
+        hasAssignment: Boolean
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
         (expr.astID: @switch) match {
             case NonVirtualFunctionCall.ASTID =>
@@ -302,7 +303,8 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
      * $JustIntraProcedural
      */
     protected[this] def handleVirtualFunctionCall(
-        call: VirtualFunctionCall[V], hasAssignment: Boolean
+        call:          VirtualFunctionCall[V],
+        hasAssignment: Boolean
     )(implicit context: AnalysisContext, state: AnalysisState): Unit
 
     /**
@@ -312,7 +314,8 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
      * $JustIntraProcedural
      */
     protected[this] def handleStaticFunctionCall(
-        call: StaticFunctionCall[V], hasAssignment: Boolean
+        call:          StaticFunctionCall[V],
+        hasAssignment: Boolean
     )(implicit context: AnalysisContext, state: AnalysisState): Unit
 
     /**
@@ -322,7 +325,8 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
      * $JustIntraProcedural
      */
     protected[this] def handleNonVirtualFunctionCall(
-        call: NonVirtualFunctionCall[V], hasAssignment: Boolean
+        call:          NonVirtualFunctionCall[V],
+        hasAssignment: Boolean
     )(implicit context: AnalysisContext, state: AnalysisState): Unit
 
     /**
@@ -368,8 +372,10 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
         } else {
             InterimResult(
                 context.entity,
-                GlobalEscape, state.mostRestrictiveProperty,
-                state.dependees, c
+                GlobalEscape,
+                state.mostRestrictiveProperty,
+                state.dependees,
+                c
             )
         }
     }
@@ -394,13 +400,7 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
                     state.updateTACAI(ub.tac.get)
                     analyzeTAC()
                 } else {
-                    InterimResult(
-                        context.entity,
-                        GlobalEscape,
-                        state.mostRestrictiveProperty,
-                        state.dependees,
-                        c
-                    )
+                    InterimResult(context.entity, GlobalEscape, state.mostRestrictiveProperty, state.dependees, c)
                 }
             case _ =>
                 throw new UnknownError(s"unhandled escape property (${someEPS.ub} for ${someEPS.e}")
@@ -439,7 +439,7 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
     }
 
     protected[this] implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
-    protected[this] implicit val typeIterator: TypeIterator = project.get(TypeIteratorKey)
+    protected[this] implicit val contextProvider: ContextProvider = project.get(ContextProviderKey)
 
     protected[this] def createContext(
         entity:       (Context, Entity),

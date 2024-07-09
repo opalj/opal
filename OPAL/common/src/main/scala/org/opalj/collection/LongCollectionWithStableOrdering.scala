@@ -1,5 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.collection
+package org.opalj
+package collection
 
 /**
  * Can be mixed in if the iteration order is always that same independent of the insertion order.

@@ -1,29 +1,30 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.support.debug
+package org.opalj
+package support
+package debug
 
-import java.util.Date
 import java.net.URL
+import java.util.Date
 
-import org.opalj.io.writeAndOpen
-import org.opalj.graphs.toDot
-
-import org.opalj.br.Method
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.Project
-import org.opalj.ai.InterpretationFailedException
 import org.opalj.ai.AI
-import org.opalj.ai.Domain
-import org.opalj.ai.MultiTracer
-import org.opalj.ai.BaseAI
-import org.opalj.ai.util
 import org.opalj.ai.AITracer
-import org.opalj.ai.domain.l0.BaseDomain
-import org.opalj.ai.domain.TheCode
-import org.opalj.ai.util.XHTML
+import org.opalj.ai.BaseAI
+import org.opalj.ai.Domain
+import org.opalj.ai.InterpretationFailedException
+import org.opalj.ai.MultiTracer
 import org.opalj.ai.common.XHTML.dump
 import org.opalj.ai.common.XHTML.dumpAIState
 import org.opalj.ai.domain.RecordCFG
 import org.opalj.ai.domain.RecordDefUse
+import org.opalj.ai.domain.TheCode
+import org.opalj.ai.domain.l0.BaseDomain
+import org.opalj.ai.util
+import org.opalj.ai.util.XHTML
+import org.opalj.br.Method
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.SomeProject
+import org.opalj.graphs.toDot
+import org.opalj.io.writeAndOpen
 
 /**
  * A small basic framework that facilitates the abstract interpretation of a
@@ -38,7 +39,7 @@ object InterpretMethod {
         override def isInterrupted: Boolean = Thread.interrupted()
 
         val consoleTracer: AITracer = new ConsoleTracer { override val printOIDs = true }
-        //new ConsoleEvaluationTracer {}
+        // new ConsoleEvaluationTracer {}
 
         val xHTMLTracer: XHTMLTracer = new XHTMLTracer {}
 
@@ -72,7 +73,7 @@ object InterpretMethod {
 
         if (args.length < 3 || args.length > 5) {
             printUsage(Some("wrong number of parameters"))
-            return ;
+            return;
         }
         var remainingArgs = args.toList
         val fileName = remainingArgs.head; remainingArgs = remainingArgs.tail
@@ -97,10 +98,11 @@ object InterpretMethod {
         }
         val doIdentifyDeadVariables = {
             if (remainingArgs.nonEmpty && remainingArgs.head.startsWith("-identifyDeadVariables=")) {
-                val result = (
-                    remainingArgs.head == "-identifyDeadVariables=true" ||
-                    remainingArgs.head == "-identifyDeadVariables=1"
-                )
+                val result =
+                    (
+                        remainingArgs.head == "-identifyDeadVariables=true" ||
+                            remainingArgs.head == "-identifyDeadVariables=1"
+                    )
                 remainingArgs = remainingArgs.tail
                 result
             } else
@@ -108,7 +110,7 @@ object InterpretMethod {
         }
         if (remainingArgs.nonEmpty) {
             printUsage(Some(remainingArgs.mkString("unexpected arguments: ", ", ", "")))
-            return ;
+            return;
         }
 
         def createDomain[Source: reflect.ClassTag](project: SomeProject, method: Method): Domain = {
@@ -124,8 +126,8 @@ object InterpretMethod {
 
         val file = new java.io.File(fileName)
         if (!file.exists()) {
-            println(RED+"[error] The file does not exist: "+fileName+"."+RESET)
-            return ;
+            println(RED + "[error] The file does not exist: " + fileName + "." + RESET)
+            return;
         }
 
         val project =
@@ -133,15 +135,15 @@ object InterpretMethod {
                 Project(file)
             } catch {
                 case e: Exception =>
-                    println(RED+"[error] Cannot process file: "+e.getMessage+"."+RESET)
-                    return ;
+                    println(RED + "[error] Cannot process file: " + e.getMessage + "." + RESET)
+                    return;
             }
 
         val classFile = {
             val fqn = className.replace('.', '/')
             project.allClassFiles.find(_.fqn == fqn).getOrElse {
-                println(RED+"[error] Cannot find the class: "+className+"."+RESET)
-                return ;
+                println(RED + "[error] Cannot find the class: " + className + "." + RESET)
+                return;
             }
         }
 
@@ -152,21 +154,21 @@ object InterpretMethod {
                 else
                     classFile.methods.find(_.name == methodName)
             ) match {
-                    case Some(method) =>
-                        if (method.body.isDefined)
-                            method
-                        else {
-                            println(RED+
-                                "[error] The method: "+methodName+" does not have a body"+RESET)
-                            return ;
-                        }
-                    case None =>
-                        println(RED+
-                            "[error] Cannot find the method: "+methodName+"."+RESET +
-                            classFile.methods.map(m => m.descriptor.toJava(m.name)).toSet.
-                            toSeq.sorted.mkString(" Candidates: ", ", ", "."))
-                        return ;
-                }
+                case Some(method) =>
+                    if (method.body.isDefined)
+                        method
+                    else {
+                        println(RED +
+                            "[error] The method: " + methodName + " does not have a body" + RESET)
+                        return;
+                    }
+                case None =>
+                    println(RED +
+                        "[error] Cannot find the method: " + methodName + "." + RESET +
+                        classFile.methods.map(m => m.descriptor.toJava(m.name)).toSet
+                            .toSeq.sorted.mkString(" Candidates: ", ", ", "."))
+                    return;
+            }
 
         var ai: AI[Domain] = null;
         try {
@@ -177,11 +179,11 @@ object InterpretMethod {
                 } else {
                     val body = method.body.get
                     println("Starting abstract interpretation of: ")
-                    println("\t"+classFile.thisType.toJava+"{")
-                    println("\t\t"+method.signatureToJava(true)+
-                        "[instructions="+body.instructions.size+
-                        "; #max_stack="+body.maxStack+
-                        "; #locals="+body.maxLocals+"]")
+                    println("\t" + classFile.thisType.toJava + "{")
+                    println("\t\t" + method.signatureToJava(true) +
+                        "[instructions=" + body.instructions.size +
+                        "; #max_stack=" + body.maxStack +
+                        "; #locals=" + body.maxLocals + "]")
                     println("\t}")
                     ai = new BaseAI(doIdentifyDeadVariables)
                     val result = ai(method, createDomain(project, method))
@@ -195,20 +197,20 @@ object InterpretMethod {
 
                 val cfgAsDotGraph = toDot(Set(cfgDomain.cfgAsGraph()), ranksep = "0.3").toString
                 val cfgFile = writeAndOpen(cfgAsDotGraph, "AICFG", ".gv")
-                println("AI CFG: "+cfgFile)
+                println("AI CFG: " + cfgFile)
 
                 val domAsDot = cfgDomain.dominatorTree.toDot(evaluatedInstructions.contains)
                 val domFile = writeAndOpen(domAsDot, "DominatorTreeOfTheAICFG", ".gv")
-                println("AI CFG - Dominator tree: "+domFile)
+                println("AI CFG - Dominator tree: " + domFile)
 
                 val postDomAsDot = cfgDomain.postDominatorTree.toDot(evaluatedInstructions.contains)
                 val postDomFile = writeAndOpen(postDomAsDot, "PostDominatorTreeOfTheAICFG", ".gv")
-                println("AI CFG - Post-Dominator tree: "+postDomFile)
+                println("AI CFG - Post-Dominator tree: " + postDomFile)
 
                 val cdg = cfgDomain.pdtBasedControlDependencies
                 val rdfAsDotGraph = cdg.toDot(evaluatedInstructions.contains)
                 val rdfFile = writeAndOpen(rdfAsDotGraph, "ReverseDominanceFrontiersOfAICFG", ".gv")
-                println("AI CFG - Reverse Dominance Frontiers: "+rdfFile)
+                println("AI CFG - Reverse Dominance Frontiers: " + rdfFile)
             }
 
             if (result.domain.isInstanceOf[RecordDefUse]) {
@@ -225,23 +227,21 @@ object InterpretMethod {
                     Some(method),
                     method.body.get,
                     Some(
-                        s"Analyzed: ${new Date}<br>Domain: ${domainClass.getName}<br>"+
+                        s"Analyzed: ${new Date}<br>Domain: ${domainClass.getName}<br>" +
                             (
                                 if (doIdentifyDeadVariables)
                                     "<b>Dead Variables Identification</b><br>"
                                 else
                                     "<u>Dead Variables are not filtered</u>.<br>"
                             ) +
-                                XHTML.instructionsToXHTML("PCs where paths join", result.cfJoins) +
-                                (
-                                    if (result.subroutinePCs.nonEmpty) {
-                                        XHTML.instructionsToXHTML(
-                                            "Subroutine instructions", result.subroutinePCs
-                                        )
-                                    } else {
-                                        ""
-                                    }
-                                ) + XHTML.evaluatedInstructionsToXHTML(result.evaluatedPCs)
+                            XHTML.instructionsToXHTML("PCs where paths join", result.cfJoins) +
+                            (
+                                if (result.subroutinePCs.nonEmpty) {
+                                    XHTML.instructionsToXHTML("Subroutine instructions", result.subroutinePCs)
+                                } else {
+                                    ""
+                                }
+                            ) + XHTML.evaluatedInstructionsToXHTML(result.evaluatedPCs)
                     ),
                     result.domain
                 )(result.cfJoins, result.operandsArray, result.localsArray),
@@ -250,7 +250,6 @@ object InterpretMethod {
             )
         } catch {
             case ife: InterpretationFailedException =>
-
                 ai match {
                     case ai: IMAI => ai.xHTMLTracer.result(null);
                     case _        => /*nothing to do*/
@@ -260,16 +259,16 @@ object InterpretMethod {
                     val domain = ife.domain
                     val parameters =
                         if (nested) {
-                            ife.localsArray(0).toSeq.reverse.
-                                filter(_ != null).map(_.toString).
-                                mkString("Parameters:<i>", ", ", "</i><br>")
+                            ife.localsArray(0).toSeq.reverse
+                                .filter(_ != null).map(_.toString)
+                                .mkString("Parameters:<i>", ", ", "</i><br>")
                         } else
                             ""
 
                     val aiState =
-                        s"<p><i>${domain.getClass.getName}</i><b>( ${domain.toString} )</b></p>"+
-                            parameters+
-                            "Current instruction: "+ife.pc+"<br>"+
+                        s"<p><i>${domain.getClass.getName}</i><b>( ${domain.toString} )</b></p>" +
+                            parameters +
+                            "Current instruction: " + ife.pc + "<br>" +
                             XHTML.evaluatedInstructionsToXHTML(ife.evaluatedPCs) + {
                                 if (ife.worklist.nonEmpty)
                                     ife.worklist.mkString("Remaining worklist:\n<br>", ", ", "<br>")
@@ -279,16 +278,14 @@ object InterpretMethod {
 
                     val metaInformation = ife.cause match {
                         case ife: InterpretationFailedException =>
-                            aiState + ife.cause.
-                                getStackTrace.
-                                mkString("\n<ul><li>", "</li>\n<li>", "</li></ul>\n")+
-                                "<div style='margin-left:5em'>"+causeToString(ife, true)+"</div>"
+                            aiState + ife.cause.getStackTrace.mkString("\n<ul><li>", "</li>\n<li>", "</li></ul>\n") +
+                                "<div style='margin-left:5em'>" + causeToString(ife, true) + "</div>"
                         case e: Throwable =>
                             val message = e.getMessage()
                             if (message != null)
-                                aiState+"<br>Underlying cause: "+util.XHTML.htmlify(message)
+                                aiState + "<br>Underlying cause: " + util.XHTML.htmlify(message)
                             else
-                                aiState+"<br>Underlying cause: <NULL>"
+                                aiState + "<br>Underlying cause: <NULL>"
                         case _ =>
                             aiState
                     }
@@ -306,8 +303,11 @@ object InterpretMethod {
                 val resultHeader = Some(causeToString(ife, false))
                 val evaluationDump =
                     dump(
-                        Some(classFile), Some(method), method.body.get,
-                        resultHeader, ife.domain
+                        Some(classFile),
+                        Some(method),
+                        method.body.get,
+                        resultHeader,
+                        ife.domain
                     )(ife.cfJoins, ife.operandsArray, ife.localsArray)
                 writeAndOpen(evaluationDump, "StateOfCrashedAbstractInterpretation", ".html")
                 throw ife

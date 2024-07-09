@@ -33,7 +33,7 @@ trait UIDValue extends UID {
      * Two objects with a unique id are considered equal if they have the same unique id;
      * all other properties will be ignored!
      */
-    final override def equals(other: Any): Boolean = {
+    override final def equals(other: Any): Boolean = {
         other match {
             case that: UID => (this eq that) || this.id == that.id
             case _         => false
@@ -45,7 +45,7 @@ trait UIDValue extends UID {
     /**
      * The unique id.
      */
-    final override def hashCode: Int = id
+    override final def hashCode: Int = id
 
 }
 

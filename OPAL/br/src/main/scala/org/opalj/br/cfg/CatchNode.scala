@@ -1,8 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.br.cfg
-
-import org.opalj.br.ObjectType
-import org.opalj.br.ExceptionHandler
+package org.opalj
+package br
+package cfg
 
 /**
  * This node represents an exception handler.
@@ -36,11 +35,12 @@ final class CatchNode(
     def this(handler: ExceptionHandler, index: Int) =
         this(index, handler.startPC, handler.endPC, handler.handlerPC, handler.catchType)
 
-    final override def nodeId: Int = {
+    override final def nodeId: Int = {
         // OLD: the offset is required to ensure that catch node ids do not collide with basic
         // OLD: block ids (even if the index is zero!)
         // OLD: 0xFFFFFF + startPC + (index << 16)
-        /*-1==normal exit, -2==abnormal exit*/ -3 - index
+        /*-1==normal exit, -2==abnormal exit*/
+        -3 - index
     }
 
     def copy(
@@ -53,14 +53,14 @@ final class CatchNode(
         new CatchNode(index, startPC, endPC, handlerPC, catchType)
     }
 
-    final override def isBasicBlock: Boolean = false
-    final override def isExitNode: Boolean = false
-    final override def isAbnormalReturnExitNode: Boolean = false
-    final override def isNormalReturnExitNode: Boolean = false
-    final override def isStartOfSubroutine: Boolean = false
+    override final def isBasicBlock: Boolean = false
+    override final def isExitNode: Boolean = false
+    override final def isAbnormalReturnExitNode: Boolean = false
+    override final def isNormalReturnExitNode: Boolean = false
+    override final def isStartOfSubroutine: Boolean = false
 
-    final override def isCatchNode: Boolean = true
-    final override def asCatchNode: this.type = this
+    override final def isCatchNode: Boolean = true
+    override final def asCatchNode: this.type = this
 
     //
     // FOR DEBUGGING/VISUALIZATION PURPOSES

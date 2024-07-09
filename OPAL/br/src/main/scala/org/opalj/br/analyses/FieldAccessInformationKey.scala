@@ -3,29 +3,51 @@ package org.opalj
 package br
 package analyses
 
-import org.opalj.concurrent.defaultIsInterrupted
+import org.opalj.br.fpcf.FPCFAnalysesManagerKey
+import org.opalj.br.fpcf.FPCFAnalysisScheduler
+import org.opalj.br.fpcf.analyses.EagerSimpleFieldAccessInformationAnalysis
+import org.opalj.log.OPALLogger
 
 /**
- * The ''key'' object to get global field access information.
+ * The ''key'' object to get global field access information. Runs the [[EagerSimpleFieldAccessInformationAnalysis]] if
+ * no analyses were given in the initialization data.
  *
  * @example To get the index use the [[Project]]'s `get` method and pass in `this` object.
  *
- * @author Michael Eichberg
+ * @author Maximilian Rüsch
  */
-object FieldAccessInformationKey extends ProjectInformationKey[FieldAccessInformation, Nothing] {
+object FieldAccessInformationKey extends ProjectInformationKey[FieldAccessInformation, Seq[FPCFAnalysisScheduler]] {
 
-    /**
-     * The [[FieldAccessInformationAnalysis]] has no special prerequisites.
-     *
-     * @return `Nil`.
-     */
-    override def requirements(project: SomeProject): Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
+    override def requirements(project: SomeProject): ProjectInformationKeys = {
+        val schedulers = project.getProjectInformationKeyInitializationData(this) match {
+            case Some(s) => s
+            case None =>
+                OPALLogger.warn(
+                    "analysis configuration",
+                    s"no field access information analysis configured, using SimpleFieldAccessInformationAnalysis as a fallback"
+                )(project.logContext)
+                Seq(EagerSimpleFieldAccessInformationAnalysis)
+        }
+
+        schedulers.flatMap(_.requiredProjectInformation)
+    }
 
     /**
      * Computes the field access information.
      */
     override def compute(project: SomeProject): FieldAccessInformation = {
-        FieldAccessInformationAnalysis.doAnalyze(project, defaultIsInterrupted)
+        val schedulers = project.getProjectInformationKeyInitializationData(this) match {
+            case Some(s) => s
+            case None =>
+                OPALLogger.error(
+                    "analysis configuration",
+                    s"no field access information analysis configured even though requirements were run"
+                )(project.logContext)
+                throw new IllegalStateException()
+        }
+
+        project.get(FPCFAnalysesManagerKey).runAll(schedulers)._1.waitOnPhaseCompletion()
+
+        FieldAccessInformation(project)
     }
 }
-

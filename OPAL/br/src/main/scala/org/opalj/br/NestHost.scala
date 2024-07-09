@@ -9,7 +9,7 @@ package br
  */
 case class NestHost(hostClassType: ObjectType) extends Attribute {
 
-    final override def kindId: Int = NestHost.KindId
+    override final def kindId: Int = NestHost.KindId
 
     override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = {
         this == other

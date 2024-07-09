@@ -5,8 +5,8 @@ package de
 import java.util.concurrent.{ConcurrentHashMap => CMap}
 import scala.collection.mutable.Set
 
-import org.opalj.collection.asScala
 import org.opalj.br._
+import org.opalj.collection.asScala
 
 /**
  * Collects all dependencies extracted by a [[DependencyExtractor]].

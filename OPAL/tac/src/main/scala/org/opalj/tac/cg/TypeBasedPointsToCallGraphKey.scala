@@ -7,16 +7,19 @@ import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
+import org.opalj.br.fpcf.analyses.SimpleContextProvider
 import org.opalj.br.fpcf.properties.SimpleContextsKey
 import org.opalj.tac.common.DefinitionSitesKey
-import org.opalj.tac.fpcf.analyses.cg.SimpleContextProvider
 import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 import org.opalj.tac.fpcf.analyses.cg.TypesBasedPointsToTypeIterator
+import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalysis
+import org.opalj.tac.fpcf.analyses.fieldaccess.reflection.ReflectionRelatedFieldAccessesAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedArraycopyPointsToAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedPointsToAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedConfiguredMethodsPointsToAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedLibraryPointsToAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedNewInstanceAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedPointsToAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedSerializationAllocationsAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedTamiFlexPointsToAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedUnsafePointsToAnalysisScheduler
 
@@ -48,7 +51,10 @@ object TypeBasedPointsToCallGraphKey extends CallGraphKey {
             TypeBasedTamiFlexPointsToAnalysisScheduler,
             TypeBasedArraycopyPointsToAnalysisScheduler,
             TypeBasedUnsafePointsToAnalysisScheduler,
-            TypeBasedNewInstanceAnalysisScheduler
+            TypeBasedNewInstanceAnalysisScheduler,
+            EagerFieldAccessInformationAnalysis,
+            TypeBasedSerializationAllocationsAnalysisScheduler,
+            ReflectionRelatedFieldAccessesAnalysisScheduler
         ) ::: (if (isLibrary) List(TypeBasedLibraryPointsToAnalysisScheduler) else Nil)
     }
 

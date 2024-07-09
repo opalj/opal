@@ -49,7 +49,7 @@ abstract class TypesSet /*extends Set[(ObjectType,...)]*/ {
      */
     def types: (Set[ObjectType], Set[ObjectType]) = (concreteTypes, upperTypeBounds)
 
-    final override def equals(other: Any): Boolean = {
+    override final def equals(other: Any): Boolean = {
 
         other match {
             case that: TypesSet =>
@@ -58,7 +58,7 @@ abstract class TypesSet /*extends Set[(ObjectType,...)]*/ {
         }
     }
 
-    final override lazy val hashCode: Int = {
+    override final lazy val hashCode: Int = {
         concreteTypes.hashCode() * 111 + upperTypeBounds.hashCode()
     }
 
@@ -98,14 +98,14 @@ case object EmptyTypesSet extends TypesSet {
 
 }
 
-case class TheTypes( final val concreteTypes: Set[ObjectType]) extends TypesSet {
+case class TheTypes(final val concreteTypes: Set[ObjectType]) extends TypesSet {
 
-    final override def upperTypeBounds = Set.empty
+    override final def upperTypeBounds = Set.empty
 
 }
 
-case class UpperTypeBounds( final val upperTypeBounds: Set[ObjectType]) extends TypesSet {
+case class UpperTypeBounds(final val upperTypeBounds: Set[ObjectType]) extends TypesSet {
 
-    final override def concreteTypes = Set.empty
+    override final def concreteTypes = Set.empty
 
 }

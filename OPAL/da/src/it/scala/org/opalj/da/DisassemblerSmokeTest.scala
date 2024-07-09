@@ -2,13 +2,14 @@
 package org.opalj
 package da
 
-import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.matchers.should.Matchers
-
 import java.net.URL
 import java.util.concurrent.atomic.AtomicInteger
+
+import org.junit.runner.RunWith
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
+
 import org.opalj.bi.TestResources
 import org.opalj.concurrent.OPALHTBoundedExecutionContextTaskSupport
 import org.opalj.util.PerformanceEvaluation
@@ -103,7 +104,7 @@ class DisassemblerSmokeTest extends AnyFunSpec with Matchers {
                                 ).seq.flatten
                             } { t =>
                                 info(
-                                    s"transformation of ${transformationCounter.get} class files "+
+                                    s"transformation of ${transformationCounter.get} class files " +
                                         s"in $packageName (parallelized) took ${t.toSeconds}"
                                 )
                             }

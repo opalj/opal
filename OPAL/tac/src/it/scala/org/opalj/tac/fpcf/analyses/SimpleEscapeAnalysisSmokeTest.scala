@@ -9,15 +9,15 @@ import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
 
-import org.opalj.util.Nanoseconds
-import org.opalj.util.PerformanceEvaluation.time
+import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
 import org.opalj.br.TestSupport.allBIProjects
 import org.opalj.br.TestSupport.createJREProject
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.PropertyStoreKey
-import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
 import org.opalj.tac.fpcf.analyses.escape.EagerSimpleEscapeAnalysis
+import org.opalj.util.Nanoseconds
+import org.opalj.util.PerformanceEvaluation.time
 
 /**
  * Tests that the [[org.opalj.tac.fpcf.analyses.escape.EagerSimpleEscapeAnalysis]] does not

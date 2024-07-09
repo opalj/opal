@@ -3,6 +3,7 @@ package org.opalj
 package br
 
 import scala.annotation.switch
+
 import scala.collection.Seq
 import scala.collection.immutable.ArraySeq
 import scala.math.Ordered
@@ -52,7 +53,7 @@ sealed abstract class MethodDescriptor
     def toJVMDescriptor: String = {
         parameterTypes.iterator
             .map[String](_.toJVMTypeName)
-            .mkString("(", "", ")"+returnType.toJVMTypeName)
+            .mkString("(", "", ")" + returnType.toJVMTypeName)
     }
 
     def value: this.type = this
@@ -95,7 +96,6 @@ sealed abstract class MethodDescriptor
      * @return `true` iff a parameter – except of the last one – is a computational type category
      *        2 value; i.e., is a long or double value. If all values are category 1 values, then
      *        the parameters are store in the first n registers/local variables.
-     *
      */
     def hasComputationalTypeCategory2ValueInInit: Boolean
 
@@ -114,12 +114,12 @@ sealed abstract class MethodDescriptor
     }
 
     def toUMLNotation: String = {
-        "("+{
+        "(" + {
             if (parameterTypes.isEmpty)
                 ""
             else
-                parameterTypes.tail.foldLeft(parameterTypes.head.toJava)(_+", "+_.toJava)
-        }+"): "+returnType.toJava
+                parameterTypes.tail.foldLeft(parameterTypes.head.toJava)(_ + ", " + _.toJava)
+        } + "): " + returnType.toJava
     }
 
     override def <(other: MethodDescriptor): Boolean = {
@@ -127,8 +127,7 @@ sealed abstract class MethodDescriptor
         val otherParametersCount = other.parametersCount
 
         (thisParametersCount < otherParametersCount) || (
-            thisParametersCount == otherParametersCount &&
-            {
+            thisParametersCount == otherParametersCount && {
                 var i = 0
                 val iMax = this.parametersCount
                 while (i < iMax) {
@@ -144,7 +143,7 @@ sealed abstract class MethodDescriptor
         )
     }
 
-    override def toString: String = "MethodDescriptor("+toUMLNotation+")"
+    override def toString: String = "MethodDescriptor(" + toUMLNotation + ")"
 }
 
 //
@@ -301,8 +300,8 @@ private final class TwoArgumentsMethodDescriptor(
 
     override def equalParameters(other: MethodDescriptor): Boolean = {
         (other.parametersCount == 2) &&
-            (other.parameterType(0) == firstParameterType) &&
-            (other.parameterType(1) == secondParameterType)
+        (other.parameterType(0) == firstParameterType) &&
+        (other.parameterType(1) == secondParameterType)
     }
 
     override lazy val hashCode: Int = {
@@ -373,8 +372,7 @@ private final class MultiArgumentsMethodDescriptor(
         other match {
             case that: MethodDescriptor =>
                 (this.returnType eq that.returnType) &&
-                    this.parametersCount == that.parametersCount &&
-                    {
+                    this.parametersCount == that.parametersCount && {
                         var i = parametersCount
                         while (i > 0) {
                             i = i - 1

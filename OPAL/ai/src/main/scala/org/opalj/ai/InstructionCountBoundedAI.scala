@@ -2,9 +2,9 @@
 package org.opalj
 package ai
 
-import org.opalj.log.OPALLogger
-import org.opalj.log.LogContext
 import org.opalj.br.Code
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
 
 /**
  * An abstract interpreter that interrupts itself after the evaluation of
@@ -34,9 +34,9 @@ class InstructionCountBoundedAI[D <: Domain](
      *      before the evaluation of the method is automatically interrupted.
      */
     def this(
-        code:                  Code,
-        maxEvaluationFactor:   Double  = 1.5d,
-        identifyDeadVariables: Boolean = true
+            code:                  Code,
+            maxEvaluationFactor:   Double  = 1.5d,
+            identifyDeadVariables: Boolean = true
     )(implicit logContext: LogContext) = {
         this(
             InstructionCountBoundedAI.calculateMaxEvaluationCount(code, maxEvaluationFactor),
@@ -61,6 +61,7 @@ class InstructionCountBoundedAI[D <: Domain](
     }
 
 }
+
 /**
  * Defines common helper methods.
  *
@@ -77,8 +78,7 @@ object InstructionCountBoundedAI {
         code:                Code,
         maxEvaluationFactor: Double
     )(
-        implicit
-        logContext: LogContext
+        implicit logContext: LogContext
     ): Int = {
         if (maxEvaluationFactor == Double.PositiveInfinity)
             return Int.MaxValue
@@ -97,32 +97,34 @@ object InstructionCountBoundedAI {
         upperBound = upperBound * Math.log(code.exceptionHandlers.size + 2 * Math.E)
 
         // to accommodate for analysis specific factors
-        upperBound = (
-            upperBound * maxEvaluationFactor +
-            // we want to guarantee a certain minimum length if we raise the
-            // evaluation factor
-            (maxEvaluationFactor * 250.0d)
-        )
+        upperBound =
+            (
+                upperBound * maxEvaluationFactor +
+                    // we want to guarantee a certain minimum length if we raise the
+                    // evaluation factor
+                    (maxEvaluationFactor * 250.0d)
+            )
         if (upperBound == java.lang.Double.POSITIVE_INFINITY ||
-            upperBound >= Int.MaxValue.toDouble) {
+            upperBound >= Int.MaxValue.toDouble
+        ) {
             upperBound = Int.MaxValue
             OPALLogger.warn(
                 "analysis configuration",
-                "effectively unbounded evaluation"+
-                    "; instructions size="+code.instructions.size+
-                    "; exception handlers="+code.exceptionHandlers.size+
-                    "; maxEvaluationFactor="+maxEvaluationFactor
+                "effectively unbounded evaluation" +
+                    "; instructions size=" + code.instructions.size +
+                    "; exception handlers=" + code.exceptionHandlers.size +
+                    "; maxEvaluationFactor=" + maxEvaluationFactor
             )
         }
 
         if (upperBound > 1000000.0d) {
             OPALLogger.warn(
                 "analysis configuration",
-                "evaluation (up to: "+upperBound.toInt+
-                    " instructions) may take execessively long"+
-                    "; instructions size="+code.instructions.size+
-                    "; exception handlers="+code.exceptionHandlers.size+
-                    "; maxEvaluationFactor="+maxEvaluationFactor
+                "evaluation (up to: " + upperBound.toInt +
+                    " instructions) may take execessively long" +
+                    "; instructions size=" + code.instructions.size +
+                    "; exception handlers=" + code.exceptionHandlers.size +
+                    "; maxEvaluationFactor=" + maxEvaluationFactor
             )
         }
 

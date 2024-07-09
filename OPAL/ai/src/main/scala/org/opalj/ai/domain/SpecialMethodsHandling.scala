@@ -3,15 +3,15 @@ package org.opalj
 package ai
 package domain
 
-import org.opalj.br.MethodDescriptor
-import org.opalj.br.ObjectType
-import org.opalj.br.VoidType
-import org.opalj.br.IntegerType
+import scala.collection.immutable.ArraySeq
+
 import org.opalj.ai.Configuration
 import org.opalj.ai.IntegerValuesDomain
 import org.opalj.ai.ReferenceValuesDomain
-
-import scala.collection.immutable.ArraySeq
+import org.opalj.br.IntegerType
+import org.opalj.br.MethodDescriptor
+import org.opalj.br.ObjectType
+import org.opalj.br.VoidType
 
 /**
  * Hard-codes some part of the semantics of some very high-profile (native) methods of the JDK
@@ -39,9 +39,10 @@ trait SpecialMethodsHandling extends MethodCallsHandling {
     ): MethodCallResult = {
 
         if (!(
-            (declaringType eq ObjectType.System) &&
-            name == "arraycopy" && descriptor == SystemArraycopyDescriptor
-        )) {
+                (declaringType eq ObjectType.System) &&
+                    name == "arraycopy" && descriptor == SystemArraycopyDescriptor
+            )
+        ) {
             return super.invokestatic(pc, declaringType, isInterface, name, descriptor, operands);
         }
 
@@ -72,7 +73,8 @@ trait SpecialMethodsHandling extends MethodCallsHandling {
             )
         if (intIsSomeValueInRange(pc, sourcePos, 0, Int.MaxValue).isNo ||
             intIsSomeValueInRange(pc, destPos, 0, Int.MaxValue).isNo ||
-            intIsSomeValueInRange(pc, length, 0, Int.MaxValue).isNo)
+            intIsSomeValueInRange(pc, length, 0, Int.MaxValue).isNo
+        )
             ThrowsException(exceptions);
         else
             MethodCallResult(exceptions)

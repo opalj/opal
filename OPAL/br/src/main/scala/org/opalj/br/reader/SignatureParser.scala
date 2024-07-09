@@ -31,7 +31,7 @@ object SignatureParser {
         def parseClassSignature(signature: String): ClassSignature = {
             val cs = parseAll(classSignatureParser, signature)
             if (cs.isEmpty)
-                throw new IllegalArgumentException("invalid class signature: "+signature)
+                throw new IllegalArgumentException("invalid class signature: " + signature)
             else
                 cs.get
         }
@@ -39,7 +39,7 @@ object SignatureParser {
         def parseFieldTypeSignature(signature: String): FieldTypeSignature = {
             val fts = parseAll(fieldTypeSignatureParser, signature)
             if (fts.isEmpty)
-                throw new IllegalArgumentException("invalid field type signature: "+signature)
+                throw new IllegalArgumentException("invalid field type signature: " + signature)
             else
                 fts.get
         }
@@ -47,7 +47,7 @@ object SignatureParser {
         def parseMethodTypeSignature(signature: String): MethodTypeSignature = {
             val mts = parseAll(methodTypeSignatureParser, signature)
             if (mts.isEmpty)
-                throw new IllegalArgumentException("invalid method type signature: "+signature)
+                throw new IllegalArgumentException("invalid method type signature: " + signature)
             else
                 mts.get
         }

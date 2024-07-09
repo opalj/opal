@@ -25,15 +25,15 @@ sealed abstract class TypeAnnotationTarget {
 sealed abstract class TypeAnnotationTargetInCode extends TypeAnnotationTarget
 
 sealed abstract class TypeAnnotationTargetInClassDeclaration extends TypeAnnotationTarget {
-    final override def remapPCs(codeSize: Int, f: PC => PC): Some[TypeAnnotationTarget] = Some(this)
+    override final def remapPCs(codeSize: Int, f: PC => PC): Some[TypeAnnotationTarget] = Some(this)
 }
 
 sealed abstract class TypeAnnotationTargetInFieldDeclaration extends TypeAnnotationTarget {
-    final override def remapPCs(codeSize: Int, f: PC => PC): Some[TypeAnnotationTarget] = Some(this)
+    override final def remapPCs(codeSize: Int, f: PC => PC): Some[TypeAnnotationTarget] = Some(this)
 }
 
 sealed abstract class TypeAnnotationTargetInMetodDeclaration extends TypeAnnotationTarget {
-    final override def remapPCs(codeSize: Int, f: PC => PC): Some[TypeAnnotationTarget] = Some(this)
+    override final def remapPCs(codeSize: Int, f: PC => PC): Some[TypeAnnotationTarget] = Some(this)
 }
 
 /**
@@ -359,23 +359,24 @@ case class TAOnNestedType(
 ) extends TypeAnnotationPath
 
 case object TADeeperInArrayType extends TypeAnnotationPathElement {
-    final override def kindId: Int = KindId
+    override final def kindId: Int = KindId
     final val KindId = 0
 }
 
 case object TADeeperInNestedType extends TypeAnnotationPathElement {
-    final override def kindId: Int = KindId
+    override final def kindId: Int = KindId
     final val KindId = 1
 }
 
 case object TAOnBoundOfWildcardType extends TypeAnnotationPathElement {
-    final override def kindId: Int = KindId
+    override final def kindId: Int = KindId
     final val KindId = 2
 }
 
 case class TAOnTypeArgument(index: Int) extends TypeAnnotationPathElement {
-    final override def kindId: Int = TAOnTypeArgument.KindId
+    override final def kindId: Int = TAOnTypeArgument.KindId
 }
+
 object TAOnTypeArgument {
     final val KindId = 3
 }

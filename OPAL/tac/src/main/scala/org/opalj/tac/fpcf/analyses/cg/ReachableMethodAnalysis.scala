@@ -5,6 +5,13 @@ package fpcf
 package analyses
 package cg
 
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.Method
+import org.opalj.br.analyses.DeclaredMethods
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.cg.NoCallers
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPS
 import org.opalj.fpcf.FinalP
@@ -15,13 +22,6 @@ import org.opalj.fpcf.PropertyComputationResult
 import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.analyses.DeclaredMethods
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.DeclaredMethod
-import org.opalj.br.Method
-import org.opalj.tac.fpcf.properties.cg.Callers
-import org.opalj.tac.fpcf.properties.cg.NoCallers
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
@@ -85,7 +85,9 @@ trait ReachableMethodAnalysis extends FPCFAnalysis with TypeConsumerAnalysis {
     }
 
     private[this] def processMethod(
-        eOptP: EOptionP[DeclaredMethod, Callers], seen: Callers, tacEP: EPS[Method, TACAI]
+        eOptP: EOptionP[DeclaredMethod, Callers],
+        seen:  Callers,
+        tacEP: EPS[Method, TACAI]
     ): ProperPropertyComputationResult = {
         var results: List[ProperPropertyComputationResult] = Nil
         eOptP.ub.forNewCalleeContexts(seen, eOptP.e) { calleeContext =>
@@ -102,7 +104,8 @@ trait ReachableMethodAnalysis extends FPCFAnalysis with TypeConsumerAnalysis {
     }
 
     def processMethod(
-        callContext: ContextType, tacEP: EPS[Method, TACAI]
+        callContext: ContextType,
+        tacEP:       EPS[Method, TACAI]
     ): ProperPropertyComputationResult
 
     protected def continuationForTAC(
@@ -121,7 +124,8 @@ trait ReachableMethodAnalysis extends FPCFAnalysis with TypeConsumerAnalysis {
     }
 
     private[this] def continuationForCallers(
-        oldCallers: Callers, tacEP: EPS[Method, TACAI]
+        oldCallers: Callers,
+        tacEP:      EPS[Method, TACAI]
     )(
         update: SomeEPS
     ): ProperPropertyComputationResult = {

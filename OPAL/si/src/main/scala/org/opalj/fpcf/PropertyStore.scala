@@ -2,21 +2,20 @@
 package org.opalj
 package fpcf
 
-import java.util.concurrent.ConcurrentHashMap
 import java.util.{Arrays => JArrays}
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.RejectedExecutionException
-
-import scala.util.control.ControlThrowable
 import scala.collection.mutable
+import scala.util.control.ControlThrowable
 
+import org.opalj.collection.IntIterator
+import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPKId
+import org.opalj.fpcf.PropertyKind.SupportedPropertyKinds
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
-import org.opalj.log.OPALLogger.info
 import org.opalj.log.OPALLogger.{debug => trace}
 import org.opalj.log.OPALLogger.error
-import org.opalj.collection.IntIterator
-import org.opalj.fpcf.PropertyKind.SupportedPropertyKinds
-import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPKId
+import org.opalj.log.OPALLogger.info
 
 /**
  * A property store manages the execution of computations of properties related to concrete
@@ -347,10 +346,16 @@ abstract class PropertyStore {
     /**
      * The set of transformers that will only be executed when required.
      */
-    protected[this] final val transformersByTargetPK: Array[( /*source*/ PropertyKey[Property], (Entity, Property) => FinalEP[Entity, Property])] = {
+    protected[this] final val transformersByTargetPK: Array[(
+        /*source*/ PropertyKey[Property],
+        (Entity, Property) => FinalEP[Entity, Property]
+    )] = {
         new Array(PropertyKind.SupportedPropertyKinds)
     }
-    protected[this] final val transformersBySourcePK: Array[( /*target*/ PropertyKey[Property], (Entity, Property) => FinalEP[Entity, Property])] = {
+    protected[this] final val transformersBySourcePK: Array[(
+        /*target*/ PropertyKey[Property],
+        (Entity, Property) => FinalEP[Entity, Property]
+    )] = {
         new Array(PropertyKind.SupportedPropertyKinds)
     }
 
@@ -389,7 +394,7 @@ abstract class PropertyStore {
      */
     final def hasProperty(epk: SomeEPK): Boolean = hasProperty(epk.e, epk.pk)
 
-    /** See `hasProperty(SomeEPK)` for details. **/
+    /** See `hasProperty(SomeEPK)` for details. */
     def hasProperty(e: Entity, pk: PropertyKind): Boolean
 
     /**
@@ -433,7 +438,6 @@ abstract class PropertyStore {
     def entitiesWithLB[P <: Property](lb: P): Iterator[Entity]
 
     /**
-     *
      * @note Only to be called when the store is quiescent.
      * @note Does not trigger lazy property computations.
      */
@@ -594,16 +598,12 @@ abstract class PropertyStore {
             }
         }
         JArrays.fill(this.propertyKindsComputedInThisPhase, false)
-        propertyKindsComputedInThisPhase foreach { pk =>
-            this.propertyKindsComputedInThisPhase(pk.id) = true
-        }
+        propertyKindsComputedInThisPhase foreach { pk => this.propertyKindsComputedInThisPhase(pk.id) = true }
 
         // Step 2
         // Set the "propertyKindsComputedInLaterPhase" array to the specified values.
         JArrays.fill(this.propertyKindsComputedInLaterPhase, false)
-        propertyKindsComputedInLaterPhase foreach { pk =>
-            this.propertyKindsComputedInLaterPhase(pk.id) = true
-        }
+        propertyKindsComputedInLaterPhase foreach { pk => this.propertyKindsComputedInLaterPhase(pk.id) = true }
 
         // Step 3
         // Collect the information about which interim results should be suppressed.
@@ -955,7 +955,7 @@ abstract class PropertyStore {
         doTerminate = true
         shutdown()
         if (!suppressError) {
-            val storeId = "PropertyStore@"+System.identityHashCode(this).toHexString
+            val storeId = "PropertyStore@" + System.identityHashCode(this).toHexString
             error(
                 "analysis progress",
                 s"$storeId: shutting down computations due to failing analysis",
@@ -971,7 +971,7 @@ abstract class PropertyStore {
             if (exception != t
                 && !t.isInstanceOf[InterruptedException]
                 && !t.isInstanceOf[RejectedExecutionException] // <= used, e.g., by a ForkJoinPool
-                ) {
+            ) {
                 exception.addSuppressed(t)
             }
         } else {
@@ -995,7 +995,8 @@ abstract class PropertyStore {
         throw t;
     }
 
-    @inline /*visibility should be package and subclasses*/ def handleExceptions[U](f: => U): U = {
+    @inline /*visibility should be package and subclasses*/
+    def handleExceptions[U](f: => U): U = {
         if (exception != null) throw exception;
 
         try {
@@ -1030,7 +1031,6 @@ object PropertyStore {
 
     /**
      * Determines if new `PropertyStore` instances run with debugging or without debugging.
-     *
      */
     def updateDebug(newDebug: Boolean): Unit = {
         implicit val logContext: LogContext = GlobalLogContext

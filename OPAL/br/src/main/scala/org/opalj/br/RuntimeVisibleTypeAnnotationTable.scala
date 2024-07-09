@@ -20,6 +20,7 @@ case class RuntimeVisibleTypeAnnotationTable(
     }
 
 }
+
 object RuntimeVisibleTypeAnnotationTable {
 
     final val KindId = 27

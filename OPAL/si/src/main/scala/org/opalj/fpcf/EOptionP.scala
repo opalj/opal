@@ -174,10 +174,10 @@ object EOptionP {
  */
 sealed trait EPS[+E <: Entity, +P <: Property] extends EOptionP[E, P] {
 
-    final override def isEPK: Boolean = false
+    override final def isEPK: Boolean = false
     def asEPK: EPK[E, P] = throw new ClassCastException();
 
-    final override def toEPK: EPK[E, P] = EPK(e, pk)
+    override final def toEPK: EPK[E, P] = EPK(e, pk)
 
     /**
      * Creates a [[FinalP]] object using the current ub if the ub is available. If the ub
@@ -195,10 +195,10 @@ sealed trait EPS[+E <: Entity, +P <: Property] extends EOptionP[E, P] {
      */
     override def toFinalELBP: FinalEP[E, P] = FinalEP(e, lb)
 
-    final override def isEPS: Boolean = true
-    final override def asEPS: EPS[E, P] = this
+    override final def isEPS: Boolean = true
+    override final def asEPS: EPS[E, P] = this
 
-    final override def toEPS: Option[EPS[E, P]] = Some(this)
+    override final def toEPS: Option[EPS[E, P]] = Some(this)
 }
 
 /**
@@ -507,7 +507,7 @@ sealed trait InterimEP[+E <: Entity, +P <: Property] extends EPS[E, P] {
             }
         } catch {
             case t: Throwable =>
-                val m = s"$e: illegal update oldLB: $lb vs. newLB=$eps.lb "+
+                val m = s"$e: illegal update oldLB: $lb vs. newLB=$eps.lb " +
                     newDependees.mkString("newDependees={", ", ", "}; cause=") + t.getMessage
                 throw new IllegalArgumentException(m, t)
         }

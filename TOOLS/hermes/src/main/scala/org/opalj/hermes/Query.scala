@@ -2,8 +2,8 @@
 package org.opalj
 package hermes
 
-import org.opalj.log.OPALLogger.error
 import org.opalj.log.GlobalLogContext
+import org.opalj.log.OPALLogger.error
 
 /**
  * Container for feature queries.

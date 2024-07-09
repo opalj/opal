@@ -4,13 +4,13 @@ package ai
 
 import scala.annotation.switch
 
-import org.opalj.collection.immutable.IntArraySet
-import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.collection.mutable.FixedSizeBitSet
-import org.opalj.collection.BitSet
 import org.opalj.br.Code
 import org.opalj.br.LiveVariables
 import org.opalj.br.PC
+import org.opalj.collection.BitSet
+import org.opalj.collection.immutable.IntArraySet
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.collection.mutable.FixedSizeBitSet
 import org.opalj.collection.mutable.IntArrayStack
 
 /**
@@ -71,7 +71,7 @@ sealed abstract class AIResult {
         val evaluatedInstructions = FixedSizeBitSet.create(code.instructions.length)
         evaluatedPCs foreach { pc => if (pc >= 0) evaluatedInstructions += pc }
         evaluatedInstructions
-        */
+         */
         val evaluatedInstructions = FixedSizeBitSet.create(code.instructions.length)
         evaluatedPCs.foldLeft(evaluatedInstructions) { (evaluatedInstructions, pc) =>
             if (pc >= 0) evaluatedInstructions += pc else evaluatedInstructions
@@ -180,7 +180,7 @@ sealed abstract class AIAborted extends AIResult {
     def continueInterpretation(ai: AI[_ >: domain.type]): AIResult
 
     override def stateToString: String = {
-        "The abstract interpretation was aborted:\n"+super.stateToString
+        "The abstract interpretation was aborted:\n" + super.stateToString
     }
 }
 
@@ -208,7 +208,7 @@ sealed abstract class AICompleted extends AIResult {
     def restartInterpretation(ai: AI[_ >: domain.type]): AIResult
 
     override def stateToString: String = {
-        "The abstract interpretation succeeded:\n"+super.stateToString
+        "The abstract interpretation succeeded:\n" + super.stateToString
     }
 }
 
@@ -253,7 +253,7 @@ object AIResultBuilder { builder =>
         theSubroutinesWereEvaluated:         Boolean,
         theOperandsArray:                    theDomain.OperandsArray,
         theLocalsArray:                      theDomain.LocalsArray,
-        theMemoryLayoutBeforeSubroutineCall: List[(Int /*PC*/ , theDomain.OperandsArray, theDomain.LocalsArray)], // IMPROVE Use explicit data structure for storing the state to avoid (Un)Boxing
+        theMemoryLayoutBeforeSubroutineCall: List[(Int /*PC*/, theDomain.OperandsArray, theDomain.LocalsArray)], // IMPROVE Use explicit data structure for storing the state to avoid (Un)Boxing
         theSubroutinesOperandsArray:         theDomain.OperandsArray,
         theSubroutinesLocalsArray:           theDomain.LocalsArray
     ): AIAborted { val domain: theDomain.type } = {
@@ -268,17 +268,26 @@ object AIResultBuilder { builder =>
             val subroutinesWereEvaluated: Boolean = theSubroutinesWereEvaluated
             val operandsArray: theDomain.OperandsArray = theOperandsArray
             val localsArray: theDomain.LocalsArray = theLocalsArray
-            val memoryLayoutBeforeSubroutineCall: List[(Int /*PC*/ , theDomain.OperandsArray, theDomain.LocalsArray)] = theMemoryLayoutBeforeSubroutineCall
+            val memoryLayoutBeforeSubroutineCall: List[(Int /*PC*/, theDomain.OperandsArray, theDomain.LocalsArray)] =
+                theMemoryLayoutBeforeSubroutineCall
             val subroutinesOperandsArray: theDomain.OperandsArray = theSubroutinesOperandsArray
             val subroutinesLocalsArray: theDomain.LocalsArray = theSubroutinesLocalsArray
 
             def continueInterpretation(ai: AI[_ >: domain.type]): AIResult = {
                 ai.continueInterpretation(
-                    code, cfJoins, liveVariables, domain
+                    code,
+                    cfJoins,
+                    liveVariables,
+                    domain
                 )(
-                    worklist, evaluatedPCs, subroutinesWereEvaluated,
-                    operandsArray, localsArray,
-                    memoryLayoutBeforeSubroutineCall, subroutinesOperandsArray, subroutinesLocalsArray
+                    worklist,
+                    evaluatedPCs,
+                    subroutinesWereEvaluated,
+                    operandsArray,
+                    localsArray,
+                    memoryLayoutBeforeSubroutineCall,
+                    subroutinesOperandsArray,
+                    subroutinesLocalsArray
                 )
             }
         }
@@ -310,7 +319,8 @@ object AIResultBuilder { builder =>
             val subroutinesWereEvaluated: Boolean = theSubroutinesWereEvaluated
             val operandsArray: theDomain.OperandsArray = theOperandsArray
             val localsArray: theDomain.LocalsArray = theLocalsArray
-            val memoryLayoutBeforeSubroutineCall: List[(Int /*PC*/ , theDomain.OperandsArray, theDomain.LocalsArray)] = Nil
+            val memoryLayoutBeforeSubroutineCall: List[(Int /*PC*/, theDomain.OperandsArray, theDomain.LocalsArray)] =
+                Nil
             val subroutinesOperandsArray: theDomain.OperandsArray = null
             val subroutinesLocalsArray: theDomain.LocalsArray = null
 
@@ -337,11 +347,19 @@ object AIResultBuilder { builder =>
                 }
 
                 ai.continueInterpretation(
-                    code, cfJoins, liveVariables, domain
+                    code,
+                    cfJoins,
+                    liveVariables,
+                    domain
                 )(
-                    AI.initialWorkList, evaluatedPCs, subroutinesWereEvaluated,
-                    operandsArray, localsArray,
-                    Nil, subroutinesOperandsArray, subroutinesLocalsArray
+                    AI.initialWorkList,
+                    evaluatedPCs,
+                    subroutinesWereEvaluated,
+                    operandsArray,
+                    localsArray,
+                    Nil,
+                    subroutinesOperandsArray,
+                    subroutinesLocalsArray
                 )
             }
         }

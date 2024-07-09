@@ -4,14 +4,14 @@ package ai
 package fpcf
 package properties
 
+import org.opalj.br.Method
+import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.FallbackReason
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStore
 import org.opalj.value.ValueInformation
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.Method
 
 sealed trait MethodReturnValuePropertyMetaInformation extends PropertyMetaInformation {
 
@@ -22,7 +22,7 @@ trait MethodReturnValue extends Property with MethodReturnValuePropertyMetaInfor
 
     def returnValue: Option[ValueInformation]
 
-    final override def key: PropertyKey[MethodReturnValue] = MethodReturnValue.key
+    override final def key: PropertyKey[MethodReturnValue] = MethodReturnValue.key
 
 }
 
@@ -44,6 +44,7 @@ case class TheMethodReturnValue(theReturnValue: ValueInformation) extends Method
     override def returnValue: Option[ValueInformation] = Some(theReturnValue)
 
 }
+
 // Used for methods which throw an exception.
 case object NoMethodReturnValue extends MethodReturnValue {
 

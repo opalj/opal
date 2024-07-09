@@ -2,9 +2,9 @@
 package org.opalj
 package br
 
+import org.junit.runner.RunWith
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatestplus.junit.JUnitRunner
-import org.junit.runner.RunWith
 
 @RunWith(classOf[JUnitRunner])
 class TypeTest extends AnyFunSpec {

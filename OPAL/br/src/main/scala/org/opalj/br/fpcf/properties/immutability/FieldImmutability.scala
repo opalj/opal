@@ -58,7 +58,7 @@ case class DependentlyImmutableField(parameters: SortedSet[String]) extends Fiel
 
     override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
         if (other == TransitivelyImmutableField) {
-            throw new IllegalArgumentException(s"$e"+
+            throw new IllegalArgumentException(s"$e" +
                 s": impossible refinement: $other => $this");
         }
     }

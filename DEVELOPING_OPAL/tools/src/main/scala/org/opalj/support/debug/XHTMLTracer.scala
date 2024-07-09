@@ -1,9 +1,18 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.support.debug
+package org.opalj
+package support
+package debug
 
 import scala.xml.Node
 
-import org.opalj.io.writeAndOpen
+import org.opalj.ai.AIResult
+import org.opalj.ai.AITracer
+import org.opalj.ai.Domain
+import org.opalj.ai.Locals
+import org.opalj.ai.Operands
+import org.opalj.ai.Update
+import org.opalj.ai.common.XHTML.dumpLocals
+import org.opalj.ai.common.XHTML.dumpStack
 import org.opalj.br.Code
 import org.opalj.br.instructions.CHECKCAST
 import org.opalj.br.instructions.FieldAccess
@@ -11,15 +20,8 @@ import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.LoadString
 import org.opalj.br.instructions.NEW
 import org.opalj.br.instructions.NonVirtualMethodInvocationInstruction
-import org.opalj.ai.Domain
-import org.opalj.ai.Update
-import org.opalj.ai.AIResult
-import org.opalj.ai.AITracer
-import org.opalj.ai.Locals
-import org.opalj.ai.Operands
-import org.opalj.ai.common.XHTML.dumpLocals
-import org.opalj.ai.common.XHTML.dumpStack
 import org.opalj.collection.mutable.IntArrayStack
+import org.opalj.io.writeAndOpen
 
 case class FlowEntity(
         pc:          Int,
@@ -61,28 +63,28 @@ trait XHTMLTracer extends AITracer {
         pc:          Int,
         instruction: Instruction
     ): xml.Node = {
-        val openDialog = "$( \"#dialog"+flowId+"\" ).dialog(\"open\");"
+        val openDialog = "$( \"#dialog" + flowId + "\" ).dialog(\"open\");"
         val instructionAsString =
             instruction match {
                 case NEW(objectType) =>
-                    "new …"+objectType.simpleName;
+                    "new …" + objectType.simpleName;
                 case CHECKCAST(referenceType) =>
-                    "checkcast "+referenceType.toJava;
+                    "checkcast " + referenceType.toJava;
                 case LoadString(s) if s.size < 5 =>
-                    "Load \""+s+"\"";
+                    "Load \"" + s + "\"";
                 case LoadString(s) =>
-                    "Load \""+s.substring(0, 4)+"…\""
+                    "Load \"" + s.substring(0, 4) + "…\""
                 case fieldAccess: FieldAccess =>
-                    fieldAccess.mnemonic+" "+fieldAccess.name
+                    fieldAccess.mnemonic + " " + fieldAccess.name
                 case invoke: NonVirtualMethodInvocationInstruction =>
                     val declaringClass = invoke.declaringClass.toJava
-                    "…"+declaringClass.substring(declaringClass.lastIndexOf('.') + 1)+" "+
-                        invoke.name+"(…)"
+                    "…" + declaringClass.substring(declaringClass.lastIndexOf('.') + 1) + " " +
+                        invoke.name + "(…)"
                 case _ => instruction.toString(pc)
             }
 
-        <span onclick={ openDialog } title={ instruction.toString(pc) }>
-            { instructionAsString }
+        <span onclick={openDialog} title={instruction.toString(pc)}>
+            {instructionAsString}
         </span>
     }
 
@@ -116,19 +118,19 @@ trait XHTMLTracer extends AITracer {
                 path <- inOrderFlow
                 entity <- path
             } yield {
-                xml.Unparsed("$(function() { $( \"#dialog"+entity.flowId+"\" ).dialog({autoOpen:false}); });\n")
+                xml.Unparsed("$(function() { $( \"#dialog" + entity.flowId + "\" ).dialog({autoOpen:false}); });\n")
             })
         val dialogs: Iterable[Node] =
             (for {
                 (path, index) <- inOrderFlow.zipWithIndex
                 flowEntity <- path
             } yield {
-                val dialogId = "dialog"+flowEntity.flowId
-                <div id={ dialogId } title={ s"${(index + 1)} - ${flowEntity.pc} (${flowEntity.instruction.mnemonic})" }>
+                val dialogId = "dialog" + flowEntity.flowId
+                <div id={dialogId} title={s"${(index + 1)} - ${flowEntity.pc} (${flowEntity.instruction.mnemonic})"}>
                     <b>Stack</b><br/>
-                    { dumpStack(flowEntity.operands)(Some(idsLookup)) }
+                    {dumpStack(flowEntity.operands)(Some(idsLookup))}
                     <b>Locals</b><br/>
-                    { dumpLocals(flowEntity.locals)(Some(idsLookup)) }
+                    {dumpLocals(flowEntity.locals)(Some(idsLookup))}
                 </div>
             })
         def row(pc: Int) =
@@ -136,9 +138,7 @@ trait XHTMLTracer extends AITracer {
                 val flowEntity = path.find(_.pc == pc)
                 <td>
                     {
-                        flowEntity.
-                            map(fe => instructionToNode(fe.flowId, pc, fe.instruction)).
-                            getOrElse(xml.Text(" "))
+                        flowEntity.map(fe => instructionToNode(fe.flowId, pc, fe.instruction)).getOrElse(xml.Text(" "))
                     }
                 </td>
             })
@@ -146,20 +146,20 @@ trait XHTMLTracer extends AITracer {
         val flowTable =
             for ((pc, rowIndex) <- pcsToRowIndex) yield {
                 <tr>
-                    <td>{ if (cfJoins.contains(pc)) "⇶ " else "" } <b>{ pc }</b></td>
-                    { row(pc) }
+                    <td>{if (cfJoins.contains(pc)) "⇶ " else ""} <b>{pc}</b></td>
+                    {row(pc)}
                 </tr>
             }
 
         <html lang="en">
             <head>
                 <meta charset="utf-8"/>
-                <title>{ title+" (Paths: "+pathsCount+"; Flow Nodes: "+FlowEntity.lastFlowId+")" }</title>
+                <title>{title + " (Paths: " + pathsCount + "; Flow Nodes: " + FlowEntity.lastFlowId + ")"}</title>
                 <link rel="stylesheet" href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css"/>
                 <script src="http://code.jquery.com/jquery-1.9.1.js"></script>
                 <script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
                 <script>
-                    { dialogSetup }
+                    {dialogSetup}
                 </script>
                 <style>
                     table {{
@@ -209,13 +209,13 @@ trait XHTMLTracer extends AITracer {
                 <table>
                     <thead><tr>
                                <td>PC&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
-                               { (1 to inOrderFlow.size).map(index => <td>{ index }</td>) }
+                               {(1 to inOrderFlow.size).map(index => <td>{index}</td>)}
                            </tr></thead>
                     <tbody>
-                        { flowTable }
+                        {flowTable}
                     </tbody>
                 </table>
-                { dialogs }
+                {dialogs}
                 <script>
                     $('tbody tr').hover(function(){{
             $(this).find('td').addClass('hovered');
@@ -224,7 +224,7 @@ trait XHTMLTracer extends AITracer {
         }});
         function filter(selector, query) {{
             $(selector).each(function() {{
-                ($(this).text().search(new RegExp(query, 'i')){ xml.Unparsed("<") }
+                ($(this).text().search(new RegExp(query, 'i')){xml.Unparsed("<")}
                     0) ? $(this).show().addClass('visible') : $(this).hide().removeClass('visible');
             }});
         }};
@@ -262,7 +262,7 @@ trait XHTMLTracer extends AITracer {
         alreadyEvaluated:                 IntArrayStack,
         operandsArray:                    domain.OperandsArray,
         localsArray:                      domain.LocalsArray,
-        memoryLayoutBeforeSubroutineCall: List[(Int /*PC*/ , domain.OperandsArray, domain.LocalsArray)]
+        memoryLayoutBeforeSubroutineCall: List[(Int /*PC*/, domain.OperandsArray, domain.LocalsArray)]
     ): Unit = {
         if ((this.code eq code) || (this.code == null))
             this.code = code
@@ -347,7 +347,9 @@ trait XHTMLTracer extends AITracer {
     override def jumpToSubroutine(
         domain: Domain
     )(
-        pc: Int, target: Int, nestingLevel: Int
+        pc:           Int,
+        target:       Int,
+        nestingLevel: Int
     ): Unit = { /* ignored */ }
 
     override def returnFromSubroutine(
@@ -361,8 +363,10 @@ trait XHTMLTracer extends AITracer {
     override def abruptSubroutineTermination(
         domain: Domain
     )(
-        details:  String,
-        sourcePC: Int, targetPC: Int, jumpToSubroutineId: Int,
+        details:                    String,
+        sourcePC:                   Int,
+        targetPC:                   Int,
+        jumpToSubroutineId:         Int,
         terminatedSubroutinesCount: Int,
         forceScheduling:            Boolean,
         oldWorklist:                List[Int /*PC*/ ],
@@ -382,9 +386,11 @@ trait XHTMLTracer extends AITracer {
     ): Unit = { /*ignored*/ }
 
     override def domainMessage(
-        domain: Domain,
-        source: Class[_], typeID: String,
-        pc: Option[Int], message: => String
+        domain:  Domain,
+        source:  Class[_],
+        typeID:  String,
+        pc:      Option[Int],
+        message: => String
     ): Unit = { /*EMPTY*/ }
 
     def result(result: AIResult): Unit = {

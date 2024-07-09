@@ -25,4 +25,3 @@ trait ConstantValue_attributeBinding
         cp(constantValueIndex).asConstantFieldValue(cp)
     }
 }
-

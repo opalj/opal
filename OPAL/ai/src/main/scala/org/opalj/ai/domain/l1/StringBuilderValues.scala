@@ -38,12 +38,13 @@ import org.opalj.br.ObjectType
  * @author Michael Eichberg
  */
 trait StringBuilderValues extends StringValues {
-    domain: Domain with CorrelationalDomainSupport with Configuration with IntegerValuesDomain with TypedValuesFactory =>
+    domain: Domain with CorrelationalDomainSupport with Configuration with IntegerValuesDomain
+        with TypedValuesFactory =>
 
     // TODO Move concrete class to DefaultBindingClass...
     protected class StringBuilderValue(
             val origin:      ValueOrigin,
-            val builderType: ObjectType /*either StringBuilder oder StringBuffer*/ ,
+            val builderType: ObjectType /*either StringBuilder oder StringBuffer*/,
             val builder:     JStringBuilder,
             val refId:       RefId
     ) extends SObjectValue {
@@ -52,9 +53,9 @@ trait StringBuilderValues extends StringValues {
         assert(builder != null)
         assert((builderType eq ObjectType.StringBuffer) || (builderType eq ObjectType.StringBuilder))
 
-        final override def isNull: No.type = No
-        final override def isPrecise: Boolean = true
-        final override def theUpperTypeBound: ObjectType = builderType
+        override final def isNull: No.type = No
+        override final def isPrecise: Boolean = true
+        override final def theUpperTypeBound: ObjectType = builderType
 
         override def doJoinWithNonNullValueWithSameOrigin(
             joinPC: Int,

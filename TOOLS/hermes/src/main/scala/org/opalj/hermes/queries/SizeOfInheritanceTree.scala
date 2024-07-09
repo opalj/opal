@@ -3,12 +3,11 @@ package org.opalj
 package hermes
 package queries
 
+import org.opalj.br.analyses.Project
+import org.opalj.da.ClassFile
 import org.opalj.hermes.Feature
 import org.opalj.hermes.FeatureQuery
 import org.opalj.hermes.ProjectConfiguration
-
-import org.opalj.da.ClassFile
-import org.opalj.br.analyses.Project
 
 /**
  * Computes the size of the inheritance tree for each class of a project and then assigns the
@@ -68,7 +67,7 @@ class SizeOfInheritanceTree(implicit hermes: HermesConfig) extends FeatureQuery 
             if (classCount != 0) {
                 sumOfSizeOfInheritanceTrees.toDouble / classCount.toDouble
             } else {
-                0D
+                0d
             }
         )
 

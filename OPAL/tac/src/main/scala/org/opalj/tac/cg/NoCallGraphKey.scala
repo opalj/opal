@@ -3,15 +3,15 @@ package org.opalj
 package tac
 package cg
 
-import org.opalj.fpcf.PropertyStore
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.PropertyStoreKey
-import org.opalj.br.fpcf.properties.SimpleContextsKey
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
+import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.br.fpcf.properties.SimpleContextsKey
+import org.opalj.br.fpcf.properties.cg.OnlyCallersWithUnknownContext
+import org.opalj.fpcf.PropertyStore
 import org.opalj.tac.fpcf.analyses.cg.CHATypeIterator
-import org.opalj.tac.fpcf.properties.cg.OnlyCallersWithUnknownContext
 
 /**
  * Pseudo CallGraphKey that can be used to declare methods reachable without computing a call graph.
@@ -34,8 +34,6 @@ object NoCallGraphKey extends CallGraphKey {
     override protected def runAnalyses(project: SomeProject, ps: PropertyStore): Unit = {
         val methods = project.getProjectInformationKeyInitializationData(this).getOrElse(project.allMethods)
 
-        methods.foreach { method =>
-            ps.set(method, OnlyCallersWithUnknownContext)
-        }
+        methods.foreach { method => ps.set(method, OnlyCallersWithUnknownContext) }
     }
 }

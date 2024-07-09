@@ -4,12 +4,12 @@ package br
 
 import java.net.URL
 
-import org.opalj.br.instructions._
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
-import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.util.Nanoseconds
 import org.opalj.br.analyses.ProjectAnalysisApplication
+import org.opalj.br.instructions._
+import org.opalj.util.Nanoseconds
+import org.opalj.util.PerformanceEvaluation.time
 
 /**
  * Counts the number of static and virtual method calls.
@@ -44,9 +44,9 @@ object VirtualAndStaticMethodCalls extends ProjectAnalysisApplication {
         } { t => executionTime = t }
 
         BasicReport(
-            "The sequential analysis took: "+executionTime.toSeconds+"\n"+
-                "\tNumber of invokestatic/invokespecial instructions: "+staticCalls+"\n"+
-                "\tNumber of invokeinterface/invokevirtual instructions: "+virtualCalls
+            "The sequential analysis took: " + executionTime.toSeconds + "\n" +
+                "\tNumber of invokestatic/invokespecial instructions: " + staticCalls + "\n" +
+                "\tNumber of invokeinterface/invokevirtual instructions: " + virtualCalls
         )
     }
 }

@@ -67,7 +67,9 @@ class Parameters[P <: AnyRef](
 
     override def toString: String = {
         val parametersWithIndex = parameters.iterator.zipWithIndex
-        val parametersTxt = parametersWithIndex.filter(_._1 ne null).map { e => val (p, i) = e; s"$i: $p" }
+        val parametersTxt = parametersWithIndex.filter(_._1 ne null).map { e =>
+            val (p, i) = e; s"$i: $p"
+        }
         parametersTxt.mkString(s"Parameters(\n\t", ",\n\t", "\n)")
     }
 }

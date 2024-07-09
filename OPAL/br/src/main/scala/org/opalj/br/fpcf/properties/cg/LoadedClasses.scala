@@ -1,11 +1,10 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
-package tac
+package br
 package fpcf
 package properties
 package cg
 
-import org.opalj.log.OPALLogger
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.FallbackReason
@@ -14,7 +13,7 @@ import org.opalj.fpcf.PropertyIsNotDerivedByPreviouslyExecutedAnalysis
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStore
-import org.opalj.br.ObjectType
+import org.opalj.log.OPALLogger
 
 sealed trait LoadedClassesMetaInformation extends PropertyMetaInformation {
     final type Self = LoadedClasses
@@ -78,13 +77,14 @@ object LoadedClasses extends LoadedClassesMetaInformation {
         val name = "opalj.LoadedClasses"
         PropertyKey.create(
             name,
-            (ps: PropertyStore, reason: FallbackReason, _: Entity) => reason match {
-                case PropertyIsNotDerivedByPreviouslyExecutedAnalysis =>
-                    OPALLogger.error("call graph analysis", "there was no class loaded")(ps.logContext)
-                    NoLoadedClasses
-                case _ =>
-                    throw new IllegalStateException(s"analysis required for property: $name")
-            }
+            (ps: PropertyStore, reason: FallbackReason, _: Entity) =>
+                reason match {
+                    case PropertyIsNotDerivedByPreviouslyExecutedAnalysis =>
+                        OPALLogger.error("call graph analysis", "there was no class loaded")(ps.logContext)
+                        NoLoadedClasses
+                    case _ =>
+                        throw new IllegalStateException(s"analysis required for property: $name")
+                }
         )
     }
 }

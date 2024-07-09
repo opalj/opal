@@ -2,15 +2,15 @@
 package org.opalj
 package tac
 
-import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.value.ValueInformation
-import org.opalj.br.ComputationalType
-import org.opalj.br.ComputationalTypeReturnAddress
 import org.opalj.ai.ValueOrigin
 import org.opalj.ai.isImmediateVMException
 import org.opalj.ai.isMethodExternalExceptionOrigin
 import org.opalj.ai.pcOfImmediateVMException
 import org.opalj.ai.pcOfMethodExternalException
+import org.opalj.br.ComputationalType
+import org.opalj.br.ComputationalTypeReturnAddress
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.value.ValueInformation
 
 /**
  * Identifies a variable which has a single static definition/initialization site.
@@ -46,8 +46,7 @@ abstract class DUVar[+Value <: ValueInformation] extends Var[DUVar[Value]] {
     def definedBy: IntTrieSet
 
     override def toCanonicalForm(
-        implicit
-        ev: DUVar[Value] <:< DUVar[ValueInformation]
+        implicit ev: DUVar[Value] <:< DUVar[ValueInformation]
     ): DUVar[ValueInformation]
 
 }
@@ -89,13 +88,13 @@ object DefSites {
     def toString(defSites: IntTrieSet): Iterator[String] = {
         defSites.iterator.map { defSite =>
             if (isImmediateVMException(defSite))
-                "exception[VM]@"+pcOfImmediateVMException(defSite)
+                "exception[VM]@" + pcOfImmediateVMException(defSite)
             else if (isMethodExternalExceptionOrigin(defSite))
-                "exception@"+pcOfMethodExternalException(defSite)
+                "exception@" + pcOfMethodExternalException(defSite)
             else if (defSite < 0) {
-                "param"+(-defSite - 1).toHexString
+                "param" + (-defSite - 1).toHexString
             } else {
-                "lv"+defSite.toHexString
+                "lv" + defSite.toHexString
             }
         }
     }
@@ -109,7 +108,6 @@ object DefSites {
  * has the given origin. Initially, the pc of the underlying bytecode instruction is used.
  *
  * @param value The value information.
- *
  */
 class DVar[+Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/ ] private (
         private[tac] var origin:   ValueOrigin,
@@ -148,7 +146,7 @@ class DVar[+Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/ 
      * DVars additionally remap self-uses (which don't make sense, but can be a result
      * of the transformation of exception handlers) to uses of the next statement.
      */
-    private[tac] override def remapIndexes(
+    override private[tac] def remapIndexes(
         pcToIndex:                    Array[Int],
         isIndexOfCaughtExceptionStmt: Int => Boolean
     ): Unit = {
@@ -174,8 +172,7 @@ class DVar[+Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/ 
     }
 
     override def toCanonicalForm(
-        implicit
-        ev: DUVar[Value] <:< DUVar[ValueInformation]
+        implicit ev: DUVar[Value] <:< DUVar[ValueInformation]
     ): DVar[ValueInformation] = {
         new DVar(origin, value.toCanonicalForm, useSites)
     }
@@ -193,7 +190,9 @@ object DVar {
     def apply(
         d: org.opalj.ai.ValuesDomain
     )(
-        origin: ValueOrigin, value: d.DomainValue, useSites: IntTrieSet
+        origin:   ValueOrigin,
+        value:    d.DomainValue,
+        useSites: IntTrieSet
     ): DVar[d.DomainValue] = {
 
         assert(useSites != null, s"no uses (null) for $origin: $value")
@@ -233,7 +232,7 @@ class UVar[+Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/ 
 
     final def isSideEffectFree: Boolean = true
 
-    private[tac] override def remapIndexes(
+    override private[tac] def remapIndexes(
         pcToIndex:                    Array[Int],
         isIndexOfCaughtExceptionStmt: Int => Boolean
     ): Unit = {
@@ -252,8 +251,7 @@ class UVar[+Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/ 
     }
 
     override def toCanonicalForm(
-        implicit
-        ev: DUVar[Value] <:< DUVar[ValueInformation]
+        implicit ev: DUVar[Value] <:< DUVar[ValueInformation]
     ): UVar[ValueInformation] = {
         new UVar(value.toCanonicalForm, defSites)
     }
@@ -278,7 +276,8 @@ object UVar {
     def apply(
         d: org.opalj.ai.ValuesDomain
     )(
-        value: d.DomainValue, defSites: IntTrieSet
+        value:    d.DomainValue,
+        defSites: IntTrieSet
     ): UVar[d.DomainValue] = {
         new UVar[d.DomainValue](value, defSites)
     }

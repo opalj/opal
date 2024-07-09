@@ -12,14 +12,16 @@ import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory
 
-import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.util.Seconds
-import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.fpcf.ComputationSpecification
-import org.opalj.fpcf.FinalEP
-import org.opalj.fpcf.FinalP
-import org.opalj.fpcf.PropertyStore
-import org.opalj.bytecode.JRELibraryFolder
+import org.opalj.ai.Domain
+import org.opalj.ai.domain
+import org.opalj.ai.domain.RecordDefUse
+import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.DefinedMethod
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.Project.JavaClassFileReader
+import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
@@ -28,7 +30,12 @@ import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
 import org.opalj.br.fpcf.analyses.LazyL0PurityAnalysis
 import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
+import org.opalj.br.fpcf.analyses.immutability.EagerClassImmutabilityAnalysis
+import org.opalj.br.fpcf.analyses.immutability.EagerTypeImmutabilityAnalysis
+import org.opalj.br.fpcf.analyses.immutability.LazyClassImmutabilityAnalysis
+import org.opalj.br.fpcf.analyses.immutability.LazyTypeImmutabilityAnalysis
 import org.opalj.br.fpcf.properties.CompileTimePure
+import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.ContextuallyPure
 import org.opalj.br.fpcf.properties.ContextuallySideEffectFree
 import org.opalj.br.fpcf.properties.DContextuallyPure
@@ -39,30 +46,21 @@ import org.opalj.br.fpcf.properties.ImpureByAnalysis
 import org.opalj.br.fpcf.properties.ImpureByLackOfInformation
 import org.opalj.br.fpcf.properties.Pure
 import org.opalj.br.fpcf.properties.SideEffectFree
-import org.opalj.br.DeclaredMethod
-import org.opalj.br.DefinedMethod
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.Project.JavaClassFileReader
-import org.opalj.tac.fpcf.properties.cg.Callers
-import org.opalj.tac.fpcf.properties.cg.NoCallers
-import org.opalj.ai.Domain
-import org.opalj.ai.domain
-import org.opalj.ai.domain.RecordDefUse
-import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
-import org.opalj.br.fpcf.analyses.immutability.EagerClassImmutabilityAnalysis
-import org.opalj.br.fpcf.analyses.immutability.EagerTypeImmutabilityAnalysis
-import org.opalj.br.fpcf.analyses.immutability.LazyClassImmutabilityAnalysis
-import org.opalj.br.fpcf.analyses.immutability.LazyTypeImmutabilityAnalysis
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.cg.NoCallers
+import org.opalj.bytecode.JRELibraryFolder
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.fpcf.ComputationSpecification
+import org.opalj.fpcf.FinalEP
+import org.opalj.fpcf.FinalP
+import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.PropertyStoreContext
 import org.opalj.fpcf.seq.PKESequentialPropertyStore
 import org.opalj.log.LogContext
-import org.opalj.br.fpcf.properties.Context
-import org.opalj.tac.cg.CallGraphKey
 import org.opalj.tac.cg.AllocationSiteBasedPointsToCallGraphKey
+import org.opalj.tac.cg.CallGraphKey
 import org.opalj.tac.cg.CHACallGraphKey
 import org.opalj.tac.cg.RTACallGraphKey
-import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.analyses.LazyFieldImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
@@ -80,6 +78,9 @@ import org.opalj.tac.fpcf.analyses.purity.L2PurityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.LazyL1PurityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.SystemOutLoggingAllExceptionRater
+import org.opalj.util.PerformanceEvaluation.time
+import org.opalj.util.Seconds
+
 /**
  * Executes a purity analysis (L2 by default) along with necessary supporting analysis.
  *
@@ -87,37 +88,49 @@ import org.opalj.tac.fpcf.analyses.purity.SystemOutLoggingAllExceptionRater
  */
 object Purity {
 
-    //OPALLogger.updateLogger(GlobalLogContext, DevNullLogger)
+    // OPALLogger.updateLogger(GlobalLogContext, DevNullLogger)
 
     def usage: String = {
-        "Usage: java …PurityAnalysisEvaluation \n"+
-            "-cp <JAR file/Folder containing class files> OR -JDK\n"+
-            "[-projectDir <directory with project class files relative to cp>]\n"+
-            "[-libDir <directory with library class files relative to cp>]\n"+
-            "[-analysis <L0|L1|L2> (Default: L2, the most precise analysis configuration)]\n"+
-            "[-fieldAssignability <none|L0|L1|L2> (Default: Depends on analysis level)]\n"+
-            "[-escape <none|L0|L1> (Default: L1, the most precise configuration)]\n"+
-            "[-domain <class name of the abstract interpretation domain>]\n"+
-            "[-rater <class name of the rater for domain-specific actions>]\n"+
-            "[-callGraph <CHA|RTA|PointsTo> (Default: RTA)]\n"+
-            "[-eager] (supporting analyses are executed eagerly)\n"+
-            "[-noJDK] (do not analyze any JDK methods)\n"+
-            "[-individual] (reports the purity result for each method)\n"+
-            "[-closedWorld] (uses closed world assumption, i.e. no class can be extended)\n"+
-            "[-library] (assumes that the target is a library)\n"+
-            "[-debug] (enable debug output from PropertyStore)\n"+
-            "[-multi] (analyzes multiple projects in the subdirectories of -cp)\n"+
-            "[-eval <path to evaluation directory>]\n"+
-            "[-packages <colon separated list of packages, e.g. java/util:javax>]\n"+
-            "[-j <number of threads to be used> (0 for the sequential implementation)]\n"+
-            "[-analysisName <analysisName which defines the analysis within the results file>]\n"+
-            "[-schedulingStrategy <schedulingStrategy which defines the analysis within the results file>]\n"+
+        "Usage: java …PurityAnalysisEvaluation \n" +
+            "-cp <JAR file/Folder containing class files> OR -JDK\n" +
+            "[-projectDir <directory with project class files relative to cp>]\n" +
+            "[-libDir <directory with library class files relative to cp>]\n" +
+            "[-analysis <L0|L1|L2> (Default: L2, the most precise analysis configuration)]\n" +
+            "[-fieldAssignability <none|L0|L1|L2> (Default: Depends on analysis level)]\n" +
+            "[-escape <none|L0|L1> (Default: L1, the most precise configuration)]\n" +
+            "[-domain <class name of the abstract interpretation domain>]\n" +
+            "[-rater <class name of the rater for domain-specific actions>]\n" +
+            "[-callGraph <CHA|RTA|PointsTo> (Default: RTA)]\n" +
+            "[-eager] (supporting analyses are executed eagerly)\n" +
+            "[-noJDK] (do not analyze any JDK methods)\n" +
+            "[-individual] (reports the purity result for each method)\n" +
+            "[-closedWorld] (uses closed world assumption, i.e. no class can be extended)\n" +
+            "[-library] (assumes that the target is a library)\n" +
+            "[-debug] (enable debug output from PropertyStore)\n" +
+            "[-multi] (analyzes multiple projects in the subdirectories of -cp)\n" +
+            "[-eval <path to evaluation directory>]\n" +
+            "[-packages <colon separated list of packages, e.g. java/util:javax>]\n" +
+            "[-j <number of threads to be used> (0 for the sequential implementation)]\n" +
+            "[-analysisName <analysisName which defines the analysis within the results file>]\n" +
+            "[-schedulingStrategy <schedulingStrategy which defines the analysis within the results file>]\n" +
             "Example:\n\tjava …PurityAnalysisEvaluation -JDK -individual -closedWorld"
     }
 
-    val JDKPackages = List("java/", "javax", "javafx", "jdk", "sun", "oracle", "com/sun",
-        "netscape", "org/ietf/jgss", "org/jcp/xml/dsig/internal", "org/omg", "org/w3c/dom",
-        "org/xml/sax")
+    val JDKPackages = List(
+        "java/",
+        "javax",
+        "javafx",
+        "jdk",
+        "sun",
+        "oracle",
+        "com/sun",
+        "netscape",
+        "org/ietf/jgss",
+        "org/jcp/xml/dsig/internal",
+        "org/omg",
+        "org/w3c/dom",
+        "org/xml/sax"
+    )
 
     def evaluate(
         cp:                    File,
@@ -246,8 +259,8 @@ object Purity {
                 case FinalEP(m: DeclaredMethod, c: Callers) if c ne NoCallers => m
             }.toSet
 
-        val typeIterator = project.get(TypeIteratorKey)
-        val analyzedContexts = projMethods.filter(reachableMethods.contains).map(typeIterator.newContext(_))
+        val contextProvider = project.get(ContextProviderKey)
+        val analyzedContexts = projMethods.filter(reachableMethods.contains).map(contextProvider.newContext(_))
 
         time {
             val analyses = analysis :: support
@@ -279,20 +292,41 @@ object Purity {
             !dm.definedMethod.isStatic && p.size == 1 && p.head == 0
         }
 
-        val compileTimePure = projectEntitiesWithPurity.collect { case FinalEP(Context(m: DefinedMethod), CompileTimePure) => m }
+        val compileTimePure =
+            projectEntitiesWithPurity.collect { case FinalEP(Context(m: DefinedMethod), CompileTimePure) => m }
         val pure = projectEntitiesWithPurity.collect { case FinalEP(Context(m: DefinedMethod), Pure) => m }
-        val sideEffectFree = projectEntitiesWithPurity.collect { case FinalEP(Context(m: DefinedMethod), SideEffectFree) => m }
-        val externallyPure = projectEntitiesWithPurity.collect { case FinalEP(Context(m: DefinedMethod), ContextuallyPure(p)) if isExternal(m, p) => m }
-        val externallySideEffectFree = projectEntitiesWithPurity.collect { case FinalEP(Context(m: DefinedMethod), ContextuallySideEffectFree(p)) if isExternal(m, p) => m }
-        val contextuallyPure = projectEntitiesWithPurity.collect { case FinalEP(Context(m: DefinedMethod), ContextuallyPure(p)) if !isExternal(m, p) => (m, p) }
-        val contextuallySideEffectFree = projectEntitiesWithPurity.collect { case FinalEP(Context(m: DefinedMethod), ContextuallySideEffectFree(p)) if !isExternal(m, p) => (m, p) }
+        val sideEffectFree =
+            projectEntitiesWithPurity.collect { case FinalEP(Context(m: DefinedMethod), SideEffectFree) => m }
+        val externallyPure = projectEntitiesWithPurity.collect {
+            case FinalEP(Context(m: DefinedMethod), ContextuallyPure(p)) if isExternal(m, p) => m
+        }
+        val externallySideEffectFree = projectEntitiesWithPurity.collect {
+            case FinalEP(Context(m: DefinedMethod), ContextuallySideEffectFree(p)) if isExternal(m, p) => m
+        }
+        val contextuallyPure = projectEntitiesWithPurity.collect {
+            case FinalEP(Context(m: DefinedMethod), ContextuallyPure(p)) if !isExternal(m, p) => (m, p)
+        }
+        val contextuallySideEffectFree = projectEntitiesWithPurity.collect {
+            case FinalEP(Context(m: DefinedMethod), ContextuallySideEffectFree(p)) if !isExternal(m, p) => (m, p)
+        }
         val dPure = projectEntitiesWithPurity.collect { case FinalEP(Context(m: DefinedMethod), DPure) => m }
-        val dSideEffectFree = projectEntitiesWithPurity.collect { case FinalEP(Context(m: DefinedMethod), DSideEffectFree) => m }
-        val dExternallyPure = projectEntitiesWithPurity.collect { case FinalEP(Context(m: DefinedMethod), DContextuallyPure(p)) if isExternal(m, p) => m }
-        val dExternallySideEffectFree = projectEntitiesWithPurity.collect { case FinalEP(Context(m: DefinedMethod), DContextuallySideEffectFree(p)) if isExternal(m, p) => m }
-        val dContextuallyPure = projectEntitiesWithPurity.collect { case FinalEP(Context(m: DefinedMethod), DContextuallyPure(p)) if !isExternal(m, p) => (m, p) }
-        val dContextuallySideEffectFree = projectEntitiesWithPurity.collect { case FinalEP(Context(m: DefinedMethod), DContextuallySideEffectFree(p)) if !isExternal(m, p) => (m, p) }
-        val lbImpure = projectEntitiesWithPurity.collect { case FinalEP(Context(m: DefinedMethod), ImpureByAnalysis) => m }
+        val dSideEffectFree =
+            projectEntitiesWithPurity.collect { case FinalEP(Context(m: DefinedMethod), DSideEffectFree) => m }
+        val dExternallyPure = projectEntitiesWithPurity.collect {
+            case FinalEP(Context(m: DefinedMethod), DContextuallyPure(p)) if isExternal(m, p) => m
+        }
+        val dExternallySideEffectFree = projectEntitiesWithPurity.collect {
+            case FinalEP(Context(m: DefinedMethod), DContextuallySideEffectFree(p)) if isExternal(m, p) => m
+        }
+        val dContextuallyPure = projectEntitiesWithPurity.collect {
+            case FinalEP(Context(m: DefinedMethod), DContextuallyPure(p)) if !isExternal(m, p) => (m, p)
+        }
+        val dContextuallySideEffectFree = projectEntitiesWithPurity.collect {
+            case FinalEP(Context(m: DefinedMethod), DContextuallySideEffectFree(p)) if !isExternal(m, p) => (m, p)
+        }
+        val lbImpure = projectEntitiesWithPurity.collect { case FinalEP(Context(m: DefinedMethod), ImpureByAnalysis) =>
+            m
+        }
 
         if (projectEvalDir.isDefined) {
 
@@ -305,32 +339,32 @@ object Purity {
                 if (newFile) {
                     output.createNewFile()
                     outputWriter.println(
-                        "analysisName;project time;propertyStore time;"+
-                            "callGraph time;analysis time; total time;"+
-                            "compile time pure;pure;domain-specific pure;"+
-                            "side-effect free;domain-specific side-effect free;"+
-                            "externally pure;domain-specific externally pure;"+
-                            "externally side-effect free; domain-specific externally side-effect "+
-                            "free;contextually pure;domain-specific contextually pure;"+
-                            "contextually side-effect free;domain-specific contextually "+
+                        "analysisName;project time;propertyStore time;" +
+                            "callGraph time;analysis time; total time;" +
+                            "compile time pure;pure;domain-specific pure;" +
+                            "side-effect free;domain-specific side-effect free;" +
+                            "externally pure;domain-specific externally pure;" +
+                            "externally side-effect free; domain-specific externally side-effect " +
+                            "free;contextually pure;domain-specific contextually pure;" +
+                            "contextually side-effect free;domain-specific contextually " +
                             "side-effect free;impure;count"
                     )
                 }
                 val totalTime = projectTime + propertyStoreTime + callGraphTime + analysisTime
                 outputWriter.println(
-                    s"${configurationName.get};${projectTime.toString(false)};"+
-                        s"${propertyStoreTime.toString(false)};"+
-                        s"${callGraphTime.toString(false)};"+
-                        s"${analysisTime.toString(false)};"+
-                        s"${totalTime.toString(false)};"+
-                        s"${compileTimePure.size};${pure.size};${dPure.size};"+
-                        s"${sideEffectFree.size};${dSideEffectFree.size};"+
-                        s"${externallyPure.size};${dExternallyPure.size};"+
-                        s"${contextuallyPure.size};${dContextuallyPure.size};"+
-                        s"${externallySideEffectFree.size};"+
-                        s"${dExternallySideEffectFree.size};"+
-                        s"${contextuallySideEffectFree.size};"+
-                        s"${dContextuallySideEffectFree.size};"+
+                    s"${configurationName.get};${projectTime.toString(false)};" +
+                        s"${propertyStoreTime.toString(false)};" +
+                        s"${callGraphTime.toString(false)};" +
+                        s"${analysisTime.toString(false)};" +
+                        s"${totalTime.toString(false)};" +
+                        s"${compileTimePure.size};${pure.size};${dPure.size};" +
+                        s"${sideEffectFree.size};${dSideEffectFree.size};" +
+                        s"${externallyPure.size};${dExternallyPure.size};" +
+                        s"${contextuallyPure.size};${dContextuallyPure.size};" +
+                        s"${externallySideEffectFree.size};" +
+                        s"${dExternallySideEffectFree.size};" +
+                        s"${contextuallySideEffectFree.size};" +
+                        s"${dContextuallySideEffectFree.size};" +
                         s"${lbImpure.size};${projectEntitiesWithPurity.size}"
                 )
             } finally {
@@ -346,26 +380,26 @@ object Purity {
                 if (resultsNew) {
                     results.createNewFile()
                     if (!individual)
-                        resultsWriter.println("analysisName;compile time pure;pure;"+
-                            "domain-specific pure;side-effect free;"+
-                            "domain-specific side-effect free;externally pure;"+
-                            "domain-specific externally pure;externally side-effect free;"+
-                            "domain-specific externally side-effect free;"+
-                            "contextually pure;domain-specific contextually pure;"+
-                            "contextually side-effect free;domain-specific contextually "+
+                        resultsWriter.println("analysisName;compile time pure;pure;" +
+                            "domain-specific pure;side-effect free;" +
+                            "domain-specific side-effect free;externally pure;" +
+                            "domain-specific externally pure;externally side-effect free;" +
+                            "domain-specific externally side-effect free;" +
+                            "contextually pure;domain-specific contextually pure;" +
+                            "contextually side-effect free;domain-specific contextually " +
                             "side-effect free;impure;count")
                 }
 
                 if (!individual) {
                     resultsWriter.println(
-                        s"${configurationName.get};${compileTimePure.size};${pure.size};${dPure.size};"+
-                            s"${sideEffectFree.size};${dSideEffectFree.size};"+
-                            s"${externallyPure.size};${dExternallyPure.size};"+
-                            s"${contextuallyPure.size};${dContextuallyPure.size};"+
-                            s"${externallySideEffectFree.size};"+
-                            s"${dExternallySideEffectFree.size};"+
-                            s"${contextuallySideEffectFree.size};"+
-                            s"${dContextuallySideEffectFree.size};"+
+                        s"${configurationName.get};${compileTimePure.size};${pure.size};${dPure.size};" +
+                            s"${sideEffectFree.size};${dSideEffectFree.size};" +
+                            s"${externallyPure.size};${dExternallyPure.size};" +
+                            s"${contextuallyPure.size};${dContextuallyPure.size};" +
+                            s"${externallySideEffectFree.size};" +
+                            s"${dExternallySideEffectFree.size};" +
+                            s"${contextuallySideEffectFree.size};" +
+                            s"${dContextuallySideEffectFree.size};" +
                             s"${lbImpure.size};${projectEntitiesWithPurity.size}"
                     )
                 } else {
@@ -394,7 +428,9 @@ object Purity {
                         resultsWriter.println(s"${m.definedMethod.toJava} => externally side-effect free")
                     }
                     for (m <- dExternallySideEffectFree) {
-                        resultsWriter.println(s"${m.definedMethod.toJava} => domain-specific externally side-effect free")
+                        resultsWriter.println(
+                            s"${m.definedMethod.toJava} => domain-specific externally side-effect free"
+                        )
                     }
                     for ((m, p) <- contextuallyPure) {
                         resultsWriter.println(s"${m.definedMethod.toJava} => contextually pure: $p")
@@ -406,7 +442,9 @@ object Purity {
                         resultsWriter.println(s"${m.definedMethod.toJava} => contextually side-effect free: $p")
                     }
                     for ((m, p) <- dContextuallySideEffectFree) {
-                        resultsWriter.println(s"${m.definedMethod.toJava} => domain-specific contextually side-effect free: $p")
+                        resultsWriter.println(
+                            s"${m.definedMethod.toJava} => domain-specific contextually side-effect free: $p"
+                        )
                     }
                     for (m <- lbImpure) {
                         resultsWriter.println(s"${m.definedMethod.toJava} => impure")
@@ -417,22 +455,22 @@ object Purity {
             }
         } else {
             val result =
-                ps.toString(false)+
-                    "\ncompile-time pure:                     "+compileTimePure.size+
-                    "\nAt least pure:                         "+pure.size+
-                    "\nAt least domain-specficic pure:        "+dPure.size+
-                    "\nAt least side-effect free:             "+sideEffectFree.size+
-                    "\nAt least d-s side effect free:         "+dSideEffectFree.size+
-                    "\nAt least externally pure:              "+externallyPure.size+
-                    "\nAt least d-s externally pure:          "+dExternallyPure.size+
-                    "\nAt least externally side-effect free:  "+externallySideEffectFree.size+
-                    "\nAt least d-s ext. side-effect free:    "+dExternallySideEffectFree.size+
-                    "\nAt least contextually pure:            "+contextuallyPure.size+
-                    "\nAt least d-s contextually pure:        "+dContextuallyPure.size+
-                    "\nAt least contextually side-effect free:"+contextuallySideEffectFree.size+
-                    "\nAt least d-s cont. side-effect free:   "+dContextuallySideEffectFree.size+
-                    "\nImpure:                                "+lbImpure.size+
-                    "\nTotal:                                 "+projectEntitiesWithPurity.size
+                ps.toString(false) +
+                    "\ncompile-time pure:                     " + compileTimePure.size +
+                    "\nAt least pure:                         " + pure.size +
+                    "\nAt least domain-specficic pure:        " + dPure.size +
+                    "\nAt least side-effect free:             " + sideEffectFree.size +
+                    "\nAt least d-s side effect free:         " + dSideEffectFree.size +
+                    "\nAt least externally pure:              " + externallyPure.size +
+                    "\nAt least d-s externally pure:          " + dExternallyPure.size +
+                    "\nAt least externally side-effect free:  " + externallySideEffectFree.size +
+                    "\nAt least d-s ext. side-effect free:    " + dExternallySideEffectFree.size +
+                    "\nAt least contextually pure:            " + contextuallyPure.size +
+                    "\nAt least d-s contextually pure:        " + dContextuallyPure.size +
+                    "\nAt least contextually side-effect free:" + contextuallySideEffectFree.size +
+                    "\nAt least d-s cont. side-effect free:   " + dContextuallySideEffectFree.size +
+                    "\nImpure:                                " + lbImpure.size +
+                    "\nTotal:                                 " + projectEntitiesWithPurity.size
             Console.println(result)
             Console.println(s"Call-graph time: $callGraphTime")
             Console.println(s"Analysis time: $analysisTime")
@@ -517,7 +555,7 @@ object Purity {
         if (cp eq null) {
             Console.println("no classpath given (use -cp <classpath> or -JDK)")
             Console.println(usage)
-            return ;
+            return;
         }
 
         var support: List[FPCFAnalysisScheduler] = Nil
@@ -539,7 +577,7 @@ object Purity {
             case Some(a) =>
                 Console.println(s"unknown analysis: $a")
                 Console.println(usage)
-                return ;
+                return;
         }
 
         if (eager) {
@@ -562,17 +600,17 @@ object Purity {
             case Some(a) =>
                 Console.println(s"unknown escape analysis: $a")
                 Console.println(usage)
-                return ;
+                return;
         }
 
         fieldAssignabilityAnalysisName match {
             case Some("L0") if eager => support ::= EagerL0FieldAssignabilityAnalysis
 
-            case Some("L0")          => support ::= LazyL0FieldAssignabilityAnalysis
+            case Some("L0") => support ::= LazyL0FieldAssignabilityAnalysis
 
             case Some("L1") if eager => support ::= EagerL1FieldAssignabilityAnalysis
 
-            case Some("L1")          => support ::= LazyL1FieldAssignabilityAnalysis
+            case Some("L1") => support ::= LazyL1FieldAssignabilityAnalysis
 
             case Some("L2") if eager =>
                 support ::= EagerL2FieldAssignabilityAnalysis
@@ -583,15 +621,15 @@ object Purity {
             case Some("none") =>
 
             case None => analysis match {
-                case LazyL0PurityAnalysis => support ::= LazyL0FieldAssignabilityAnalysis
-                case LazyL1PurityAnalysis => support ::= LazyL1FieldAssignabilityAnalysis
-                case LazyL2PurityAnalysis => support ::= LazyL1FieldAssignabilityAnalysis
-            }
+                    case LazyL0PurityAnalysis => support ::= LazyL0FieldAssignabilityAnalysis
+                    case LazyL1PurityAnalysis => support ::= LazyL1FieldAssignabilityAnalysis
+                    case LazyL2PurityAnalysis => support ::= LazyL1FieldAssignabilityAnalysis
+                }
 
             case Some(a) =>
                 Console.println(s"unknown field assignability analysis: $a")
                 Console.println(usage)
-                return ;
+                return;
         }
 
         val d =
@@ -617,7 +655,7 @@ object Purity {
             case Some(a) =>
                 Console.println(s"unknown call graph analysis: $a")
                 Console.println(usage)
-                return ;
+                return;
         }
 
         if (evaluationDir.isDefined && !evaluationDir.get.exists()) evaluationDir.get.mkdir
@@ -672,7 +710,7 @@ object Purity {
                     packages
                 )
             }
-        }(t => println("evaluation time: "+t.toSeconds))
+        }(t => println("evaluation time: " + t.toSeconds))
 
         val end = Calendar.getInstance()
         Console.println(end.getTime)

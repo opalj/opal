@@ -1,5 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.bytecode
+package org.opalj
+package bytecode
 
 /**
  * Indicates that the processing of a class file failed. The reason is either a bug in the

@@ -4,12 +4,13 @@ package org.opalj
 import org.opalj.ai.AIResult
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
-import org.opalj.br.ExceptionHandlers
 import org.opalj.br.ExceptionHandler
+import org.opalj.br.ExceptionHandlers
 import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.cfg.CFG
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.graphs.Node
+import org.opalj.value.ValueInformation
 
 /**
  * Common definitions related to the definition and processing of three address code.
@@ -17,6 +18,8 @@ import org.opalj.graphs.Node
  * @author Michael Eichberg
  */
 package object tac {
+
+    type V = DUVar[ValueInformation]
 
     /**
      * Identifies the implicit `this` reference in the 3-address code representation.
@@ -65,8 +68,7 @@ package object tac {
         oldEH:      ExceptionHandler,
         newIndexes: Array[Int]
     )(
-        implicit
-        aiResult: AIResult { val domain: Domain with RecordDefUse }
+        implicit aiResult: AIResult { val domain: Domain with RecordDefUse }
     ): (Int, Int) = {
         val oldStartPC = oldEH.startPC
         var newStartIndex = newIndexes(oldStartPC)
@@ -92,7 +94,7 @@ package object tac {
                43 =>   // DEAD (38 always throws an exception)
                46 =>   N/A
                48 =>   return
-            */
+             */
 
             var lastPC = oldEH.endPC
             do {
@@ -147,8 +149,7 @@ package object tac {
     def updateExceptionHandlers(
         newIndexes: Array[Int]
     )(
-        implicit
-        aiResult: AIResult { val domain: Domain with RecordDefUse }
+        implicit aiResult: AIResult { val domain: Domain with RecordDefUse }
     ): ExceptionHandlers = {
         val code = aiResult.code
         val exceptionHandlers = code.exceptionHandlers

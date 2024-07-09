@@ -16,4 +16,3 @@ trait NoSourceElementsVisitor extends SourceElementsVisitor[Unit] {
 
     override def visit(classFile: ClassFile, field: Field): Unit = { /* EMPTY */ }
 }
-

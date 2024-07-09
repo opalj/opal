@@ -12,12 +12,12 @@ abstract class BitwiseInstruction
     extends AlwaysSucceedingStackBasedBinaryArithmeticInstruction
     with InstructionMetaInformation {
 
-    final override def jvmExceptions: List[ObjectType] = Nil
+    override final def jvmExceptions: List[ObjectType] = Nil
 
     final def mayThrowExceptions: Boolean = false
 
-    final override def stackSlotsChange: Int = -computationalType.operandSize
+    override final def stackSlotsChange: Int = -computationalType.operandSize
 
-    final override def isShiftInstruction: Boolean = false
+    override final def isShiftInstruction: Boolean = false
 
 }

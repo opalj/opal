@@ -4,41 +4,41 @@ package tac
 package fpcf
 package analyses
 
-import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.collection.immutable.EmptyIntTrieSet
-import org.opalj.value.IsNullValue
-import org.opalj.value.IsPrimitiveValue
-import org.opalj.value.IsReferenceValue
-import org.opalj.value.ValueInformation
-import org.opalj.br.BaseType
-import org.opalj.br.BooleanType
-import org.opalj.br.ByteType
-import org.opalj.br.CharType
-import org.opalj.br.ClassHierarchy
-import org.opalj.br.DoubleType
-import org.opalj.br.FieldType
-import org.opalj.br.FloatType
-import org.opalj.br.IntegerType
-import org.opalj.br.LongType
-import org.opalj.br.NumericType
-import org.opalj.br.ObjectType
-import org.opalj.br.ObjectType.primitiveType
-import org.opalj.br.PCs
-import org.opalj.br.ReferenceType
-import org.opalj.br.ShortType
+import org.opalj.ai.ImmediateVMExceptionsOriginOffset
+import org.opalj.ai.MethodExternalExceptionsOriginOffset
 import org.opalj.ai.ValueOrigin
-import org.opalj.ai.pcOfImmediateVMException
-import org.opalj.ai.pcOfMethodExternalException
 import org.opalj.ai.ValueOriginForImmediateVMException
 import org.opalj.ai.ValueOriginForMethodExternalException
-import org.opalj.ai.MethodExternalExceptionsOriginOffset
-import org.opalj.ai.ImmediateVMExceptionsOriginOffset
-import org.opalj.ai.isMethodExternalExceptionOrigin
 import org.opalj.ai.isImmediateVMException
+import org.opalj.ai.isMethodExternalExceptionOrigin
+import org.opalj.ai.pcOfImmediateVMException
+import org.opalj.ai.pcOfMethodExternalException
+import org.opalj.br.ComputationalTypeReference
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.ObjectType
+import org.opalj.br.PCs
+import org.opalj.br.ReferenceType
+import org.opalj.br.instructions.ACONST_NULL
+import org.opalj.br.instructions.LoadClass
+import org.opalj.br.instructions.LoadClass_W
+import org.opalj.br.instructions.LoadConstantInstruction
+import org.opalj.br.instructions.LoadDynamic
+import org.opalj.br.instructions.LoadDynamic_W
+import org.opalj.br.instructions.LoadMethodHandle
+import org.opalj.br.instructions.LoadMethodHandle_W
+import org.opalj.br.instructions.LoadMethodType
+import org.opalj.br.instructions.LoadMethodType_W
+import org.opalj.br.instructions.LoadString
+import org.opalj.br.instructions.LoadString_W
+import org.opalj.collection.immutable.EmptyIntTrieSet
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.collection.immutable.UIDSet
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger.logOnce
+import org.opalj.log.Warn
+import org.opalj.value.ValueInformation
 
 package object cg {
-
-    type V = DUVar[ValueInformation]
 
     /**
      * A persistent representation (using pcs instead of TAC value origins) for a UVar.
@@ -46,8 +46,7 @@ package object cg {
     final def persistentUVar(
         value: V
     )(
-        implicit
-        stmts: Array[Stmt[V]]
+        implicit stmts: Array[Stmt[V]]
     ): Some[(ValueInformation, IntTrieSet)] = {
         Some((value.value, value.definedBy.map(pcOfDefSite _)))
     }
@@ -87,48 +86,37 @@ package object cg {
         UVar(defSites._1, valueOriginsOfPCs(defSites._2, pcToIndex))
     }
 
-    final def isTypeCompatible(
-        formal: FieldType, actual: ValueInformation, forCallReceiver: Boolean = false
-    )(implicit classHierarchy: ClassHierarchy): Boolean = (formal, actual) match {
-        // the actual type is null and the declared type is a ref type
-        case (_: ReferenceType, _: IsNullValue) =>
-            // TODO here we would need the declared type information
-            !forCallReceiver
-        // declared type and actual type are reference types and assignable
-        case (pType: ReferenceType, v: IsReferenceValue) =>
-            v.isValueASubtypeOf(pType).isNotNo
-
-        case (_: BooleanType, IsPrimitiveValue(v)) =>
-            v eq BooleanType
-
-        // declared type and actual type are base types and the same type
-        case (pType: NumericType, IsPrimitiveValue(v)) =>
-            (v eq pType) || v.isNumericType && pType.asNumericType.isWiderThan(v.asNumericType)
-
-        // the actual type is null and the declared type is a base type
-        case (_: BaseType, _: IsNullValue) =>
-            false
-
-        // declared type is base type, actual type might be a boxed value
-        case (pType: BaseType, v: IsReferenceValue) =>
-            v.asReferenceValue.isValueASubtypeOf(pType.WrapperType).isNotNo ||
-                (pType match {
-                    case BooleanType | ByteType | CharType => false
-                    case nt: NumericType =>
-                        Seq(ByteType, CharType, ShortType, IntegerType, LongType, FloatType, DoubleType).exists { tpe =>
-                            nt.isWiderThan(tpe) && v.asReferenceValue.isValueASubtypeOf(tpe.WrapperType).isNotNo
+    private[cg] def getLoadConstantTypes(
+        method: DeclaredMethod
+    )(implicit logContext: LogContext): UIDSet[ReferenceType] = {
+        var constantTypes = UIDSet.empty[ReferenceType]
+        if (method.hasSingleDefinedMethod || method.hasMultipleDefinedMethods) {
+            method.foreachDefinedMethod { m =>
+                for {
+                    code <- m.body
+                    inst <- code.instructions
+                } {
+                    if ((inst ne null) && inst.isLoadConstantInstruction &&
+                        inst.asInstanceOf[LoadConstantInstruction[_]].computationalType ==
+                            ComputationalTypeReference
+                    ) {
+                        inst match {
+                            case _: LoadClass | _: LoadClass_W               => constantTypes += ObjectType.Class
+                            case _: LoadMethodHandle | _: LoadMethodHandle_W => constantTypes += ObjectType.MethodHandle
+                            case _: LoadMethodType | _: LoadMethodType_W     => constantTypes += ObjectType.MethodType
+                            case _: LoadString | _: LoadString_W             => constantTypes += ObjectType.String
+                            case _: LoadDynamic =>
+                                constantTypes += inst.asInstanceOf[LoadDynamic].descriptor.asReferenceType
+                            case _: LoadDynamic_W =>
+                                constantTypes += inst.asInstanceOf[LoadDynamic_W].descriptor.asReferenceType
+                            case ACONST_NULL =>
+                            case _ =>
+                                logOnce(Warn("unknown load constant instruction"))
                         }
-                })
-
-        // actual type is base type, declared type might be a boxed type
-        case (pType: ObjectType, IsPrimitiveValue(v)) if !forCallReceiver =>
-            primitiveType(pType) match {
-                case Some(BooleanType)     => v.isBooleanType
-                case Some(nt: NumericType) => v.isNumericType && nt.isWiderThan(v.asNumericType)
-                case _                     => false
+                    }
+                }
             }
-
-        case _ =>
-            false
+        }
+        constantTypes
     }
 }

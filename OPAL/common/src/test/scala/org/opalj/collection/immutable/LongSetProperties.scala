@@ -1,12 +1,13 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.collection
+package org.opalj
+package collection
 package immutable
 
 import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
-import org.scalacheck.Properties
 import org.scalacheck.Prop.forAll
 import org.scalacheck.Prop.propBoolean
+import org.scalacheck.Properties
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Generic Tests for `LongSet`s.
@@ -55,22 +56,24 @@ abstract class LongSetProperties(typeName: String) extends Properties(typeName) 
         oLongSet eq updatedOLongSet
     }
 
-    property("equals and hashCode: two sets which are definitively equal (the same values are added in the same order) equal have to have the same hash code") = forAll { (sLongSet: Set[Long]) =>
-        val sLongListSet = sLongSet.toList
-        val oLongSet1 = sLongListSet.foldLeft(empty())(_ + _)
-        val oLongSet2 = sLongListSet.foldLeft(empty())(_ + _)
-
-        (oLongSet1 == oLongSet2) :| s"equals:\n$oLongSet1\n\tvs.\n$oLongSet2" &&
-            (oLongSet1.hashCode == oLongSet2.hashCode) :| "hashCode"
-    }
-
-    property("equals and hashCode: two sets which are definitively not equal should not be equal") = forAll { (sLongSet: Set[Long]) =>
-        sLongSet.nonEmpty ==> {
+    property("equals and hashCode: two sets which are definitively equal (the same values are added in the same order) equal have to have the same hash code") =
+        forAll { (sLongSet: Set[Long]) =>
             val sLongListSet = sLongSet.toList
             val oLongSet1 = sLongListSet.foldLeft(empty())(_ + _)
-            val oLongSet2 = sLongListSet.tail.foldLeft(empty())(_ + _)
+            val oLongSet2 = sLongListSet.foldLeft(empty())(_ + _)
 
-            (oLongSet1 != oLongSet2) :| s"equals:\n$oLongSet1\n\tvs.\n$oLongSet2"
+            (oLongSet1 == oLongSet2) :| s"equals:\n$oLongSet1\n\tvs.\n$oLongSet2" &&
+                (oLongSet1.hashCode == oLongSet2.hashCode) :| "hashCode"
         }
-    }
+
+    property("equals and hashCode: two sets which are definitively not equal should not be equal") =
+        forAll { (sLongSet: Set[Long]) =>
+            sLongSet.nonEmpty ==> {
+                val sLongListSet = sLongSet.toList
+                val oLongSet1 = sLongListSet.foldLeft(empty())(_ + _)
+                val oLongSet2 = sLongListSet.tail.foldLeft(empty())(_ + _)
+
+                (oLongSet1 != oLongSet2) :| s"equals:\n$oLongSet1\n\tvs.\n$oLongSet2"
+            }
+        }
 }

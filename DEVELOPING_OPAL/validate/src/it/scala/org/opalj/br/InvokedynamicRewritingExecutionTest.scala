@@ -2,27 +2,27 @@
 package org.opalj
 package br
 
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.matchers.should.Matchers
+import java.io.ByteArrayOutputStream
+import java.io.File
+import java.io.PrintStream
 import java.net.URL
 import java.net.URLClassLoader
-import java.io.File
-import java.io.ByteArrayOutputStream
-import java.io.PrintStream
 import java.nio.file.Files
+
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
 import com.typesafe.config.Config
 
-import org.opalj.bytecode.RTJar
+import org.opalj.ba.ProjectBasedInMemoryClassLoader
+import org.opalj.bc.Assembler
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.bi.isCurrentJREAtLeastJava10
 import org.opalj.bi.isCurrentJREAtLeastJava16
 import org.opalj.br.analyses.Project
 import org.opalj.br.reader.InvokedynamicRewriting
-import org.opalj.ba.ProjectBasedInMemoryClassLoader
-import org.opalj.bc.Assembler
+import org.opalj.bytecode.RTJar
 import org.opalj.io.JARsFileFilter
-
 import org.opalj.util.InMemoryClassLoader
 
 /**
@@ -96,7 +96,8 @@ class InvokedynamicRewritingExecutionTest extends AnyFunSpec with Matchers {
                 "simpleLambdaAdd",
                 Array(classOf[Int], classOf[Int]),
                 Array(Int.box(2), Int.box(2)),
-                Some(Array.empty), Some(Array.empty)
+                Some(Array.empty),
+                Some(Array.empty)
             )
         }
 
@@ -302,7 +303,8 @@ class InvokedynamicRewritingExecutionTest extends AnyFunSpec with Matchers {
                     fixtureClassLoader,
                     testClassType,
                     "toString",
-                    Array.empty, Array.empty,
+                    Array.empty,
+                    Array.empty,
                     Some(Array(classOf[Int], classOf[Object])),
                     Some(Array(Int.box(42), "foo"))
                 )
@@ -346,12 +348,13 @@ class InvokedynamicRewritingExecutionTest extends AnyFunSpec with Matchers {
 
             it("should provide hashCode as expected") {
                 validateMethod(
-                    Int.box(Integer.hashCode(42) * 31+"foo".hashCode),
+                    Int.box(Integer.hashCode(42) * 31 + "foo".hashCode),
                     inMemoryClassLoader,
                     fixtureClassLoader,
                     testClassType,
                     "hashCode",
-                    Array.empty, Array.empty,
+                    Array.empty,
+                    Array.empty,
                     Some(Array(classOf[Int], classOf[Object])),
                     Some(Array(Int.box(42), "foo"))
                 )
@@ -365,11 +368,8 @@ class InvokedynamicRewritingExecutionTest extends AnyFunSpec with Matchers {
             val resources = locateTestResources("classfiles/OPAL-MultiJar-SNAPSHOT-01-04-2018.jar", "bi")
             val p = JavaFixtureProject(resources)
             val opalDependencies =
-                locateTestResources(
-                    "classfiles/OPAL-MultiJar-SNAPSHOT-01-04-2018-dependencies/", "bi"
-                ).
-                    listFiles(JARsFileFilter).
-                    map(_.toURI.toURL)
+                locateTestResources("classfiles/OPAL-MultiJar-SNAPSHOT-01-04-2018-dependencies/", "bi")
+                    .listFiles(JARsFileFilter).map(_.toURI.toURL)
 
             // Otherwise, the hermes resources are not included and hermes won't find
             // HermesCLI.txt for example
@@ -393,10 +393,15 @@ class InvokedynamicRewritingExecutionTest extends AnyFunSpec with Matchers {
             tempFile.delete()
 
             info("Starting Hermes...")
-            m.invoke(null, Array(
-                "-config", "DEVELOPING_OPAL/validate/src/it/resources/hermes-test-fixtures.json",
-                "-statistics", tempFile.getAbsolutePath
-            ))
+            m.invoke(
+                null,
+                Array(
+                    "-config",
+                    "DEVELOPING_OPAL/validate/src/it/resources/hermes-test-fixtures.json",
+                    "-statistics",
+                    tempFile.getAbsolutePath
+                )
+            )
 
             assert(tempFile.exists())
             assert(tempFile.length() > 0)

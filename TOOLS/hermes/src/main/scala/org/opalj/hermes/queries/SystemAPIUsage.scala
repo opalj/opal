@@ -1,5 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.hermes
+package org.opalj
+package hermes
 package queries
 
 import org.opalj.br.ObjectType
@@ -49,7 +50,6 @@ class SystemAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery {
         val ProcessBuilder = ObjectType("java/lang/ProcessBuilder")
 
         List(
-
             // PROCESS
 
             APIFeatureGroup(
@@ -106,7 +106,8 @@ class SystemAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery {
                     InstanceAPIMethod(Sound.TargetDataLine, "start"),
                     InstanceAPIMethod(Sound.SourceDataLine, "start"),
                     InstanceAPIMethod(Sound.MediaPlayer, "play")
-                ), "Sound"
+                ),
+                "Sound"
             ),
 
             // NETWORK

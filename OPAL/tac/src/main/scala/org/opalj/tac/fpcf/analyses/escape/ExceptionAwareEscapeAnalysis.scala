@@ -5,11 +5,11 @@ package fpcf
 package analyses
 package escape
 
-import org.opalj.tac.common.DefinitionSiteLike
 import org.opalj.br.DefinedMethod
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.EscapeViaAbnormalReturn
+import org.opalj.tac.common.DefinitionSiteLike
 
 /**
  * Handling for exceptions, that are allocated within the current method.

@@ -5,9 +5,9 @@ package cp
 
 import org.opalj.bi.AttributeParent
 import org.opalj.bi.AttributesParent
+import org.opalj.bi.ConstantPoolTags
 import org.opalj.br.reader.SignatureParser
 import org.opalj.bytecode.BytecodeProcessingFailedException
-import org.opalj.bi.ConstantPoolTags
 
 /**
  * Represents a constant string value.

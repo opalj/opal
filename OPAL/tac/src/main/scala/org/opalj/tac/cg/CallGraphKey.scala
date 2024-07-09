@@ -7,23 +7,25 @@ import scala.reflect.runtime.universe.runtimeMirror
 
 import scala.jdk.CollectionConverters._
 
-import org.opalj.log.LogContext
-import org.opalj.log.OPALLogger
-import org.opalj.log.OPALLogger.error
-import org.opalj.fpcf.PropertyStore
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.ProjectInformationKey
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.cg.InitialEntryPointsKey
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.analyses.cg.CallBySignatureKey
-import org.opalj.br.analyses.cg.IsOverridableMethodKey
-import org.opalj.br.fpcf.FPCFAnalysesManagerKey
-import org.opalj.br.fpcf.FPCFAnalysisScheduler
-import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.ai.domain.RecordCFG
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.ProjectInformationKey
+import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.cg.CallBySignatureKey
+import org.opalj.br.analyses.cg.InitialEntryPointsKey
+import org.opalj.br.analyses.cg.IsOverridableMethodKey
+import org.opalj.br.fpcf.ContextProviderKey
+import org.opalj.br.fpcf.FPCFAnalysesManagerKey
+import org.opalj.br.fpcf.FPCFAnalysisScheduler
+import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.br.fpcf.analyses.ContextProvider
+import org.opalj.fpcf.PropertyStore
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
+import org.opalj.log.OPALLogger.error
 import org.opalj.tac.fpcf.analyses.LazyTACAIProvider
 import org.opalj.tac.fpcf.analyses.cg.CallGraphAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.TypeIterator
@@ -57,19 +59,27 @@ trait CallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
             case Some(requirements) => requirements ++ requiredDomains
         }
 
-        project.updateProjectInformationKeyInitializationData(TypeIteratorKey) {
-            case Some(typeIterator: TypeIterator) if typeIterator ne this.typeIterator =>
+        project.updateProjectInformationKeyInitializationData(ContextProviderKey) {
+            case Some(typeIterator: TypeIterator) =>
+                if (typeIterator ne this.typeIterator) {
+                    implicit val logContext: LogContext = project.logContext
+                    OPALLogger.error(
+                        "analysis configuration",
+                        s"must not configure multiple type iterators"
+                    )
+                    throw new IllegalArgumentException()
+                }
+                this.typeIterator
+            case Some(_: ContextProvider) =>
                 implicit val logContext: LogContext = project.logContext
                 OPALLogger.error(
                     "analysis configuration",
-                    s"must not configure multiple type iterators"
+                    "a context provider has already been established"
                 )
-                throw new IllegalArgumentException()
-            case Some(_) => () => this.typeIterator
-            case None => () => {
+                throw new IllegalStateException()
+            case None =>
                 this.typeIterator = getTypeIterator(project)
                 this.typeIterator
-            }
         }
 
         Seq(
@@ -155,7 +165,8 @@ trait CallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
     private[this] def requiresCallBySignatureKey(p: SomeProject): ProjectInformationKeys = {
         val config = p.config
         if (config.hasPath(CallBySignatureConfigKey)
-            && config.getBoolean(CallBySignatureConfigKey)) {
+            && config.getBoolean(CallBySignatureConfigKey)
+        ) {
             return Seq(CallBySignatureKey);
         }
         Seq.empty

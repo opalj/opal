@@ -2,8 +2,8 @@
 package org.opalj
 package tac
 
-import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.Project
 
 /**
  * Prints the 3-address code for all methods of all classes found in the given jar/folder.
@@ -21,7 +21,7 @@ object PrintTAC {
             if m.body.isDefined
         } {
             val tac = tacProvider(m)
-            println(m.toJava(ToTxt(tac).mkString("\n", "\n", "\n"))+"\n\n")
+            println(m.toJava(ToTxt(tac).mkString("\n", "\n", "\n")) + "\n\n")
         }
 
         BasicReport("Done.")

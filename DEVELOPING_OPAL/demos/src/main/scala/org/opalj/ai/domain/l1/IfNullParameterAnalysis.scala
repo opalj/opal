@@ -9,13 +9,14 @@ import scala.Console.BLUE
 import scala.Console.RESET
 import scala.collection.Set
 import scala.collection.immutable.LongMap
+
 import org.opalj.ai.Domain
 import org.opalj.ai.InterruptableAI
 import org.opalj.ai.domain
 import org.opalj.br.ClassFile
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.util.PerformanceEvaluation.time
 
 import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParallelizable
@@ -49,7 +50,7 @@ object IfNullParameterAnalysis extends ProjectAnalysisApplication {
         "Identifies methods that are sensitive to parameters that are \"null\""
 
     override def description: String =
-        "Identifies methods that exhibit different behavior w.r.t. "+
+        "Identifies methods that exhibit different behavior w.r.t. " +
             "the number and kind of thrown exceptions if a parameter is \"null\"."
 
     override def doAnalyze(
@@ -89,7 +90,8 @@ object IfNullParameterAnalysis extends ProjectAnalysisApplication {
                 val domain1 =
                     new DefaultDomain(theProject, method) with domain.RecordAllThrownExceptions
                 ai.performInterpretation(method.body.get, domain1)(
-                    ai.initialOperands(method, domain1), ai.initialLocals(method, domain1)(None)
+                    ai.initialOperands(method, domain1),
+                    ai.initialLocals(method, domain1)(None)
                 )
 
                 // 2. Interpretation under the assumption that all values are non-null
@@ -97,7 +99,8 @@ object IfNullParameterAnalysis extends ProjectAnalysisApplication {
                     new DefaultDomain(theProject, method) with domain.RecordAllThrownExceptions
                 val nonNullLocals = setToNonNull(domain2)(ai.initialLocals(method, domain2)(None))
                 ai.performInterpretation(method.body.get, domain2)(
-                    ai.initialOperands(method, domain2), nonNullLocals
+                    ai.initialOperands(method, domain2),
+                    nonNullLocals
                 )
 
                 // Let's calculate the diff. The basic idea is to iterate over
@@ -117,7 +120,8 @@ object IfNullParameterAnalysis extends ProjectAnalysisApplication {
                                     // We need to keep the original location, otherwise
                                     // the correlation analysis would miserably fail!
                                     ex.asInstanceOf[domain2.DomainSingleOriginReferenceValue].origin
-                                ).asInstanceOf[domain1.ExceptionValue]).toSet[domain1.DomainReferenceValue]
+                                ).asInstanceOf[domain1.ExceptionValue]
+                            ).toSet[domain1.DomainReferenceValue]
                         val diff =
                             d1thrownException.diff(adaptedD2ThrownException) ++
                                 adaptedD2ThrownException.diff(d1thrownException)
@@ -131,12 +135,12 @@ object IfNullParameterAnalysis extends ProjectAnalysisApplication {
                 }
 
                 (
-                    classFile, //<= only used for sorting purposes
+                    classFile, // <= only used for sorting purposes
                     BLUE + method.toJava + RESET,
                     result ++ d2ThrownExceptions
                 )
             }
-        } { t => println("Analysis time "+t.toSeconds) }
+        } { t => println("Analysis time " + t.toSeconds) }
 
         val methodsWithDifferences = methodsWithDifferentExceptions.filter(_._3.nonEmpty).seq.toSeq
         BasicReport(
@@ -144,8 +148,8 @@ object IfNullParameterAnalysis extends ProjectAnalysisApplication {
                 val (cf1: ClassFile, _, _) = l
                 val (cf2: ClassFile, _, _) = r
                 cf1.thisType.toString < cf2.thisType.toString
-            }.map(e => (e._2, e._3)).mkString("\n\n")+
-                "Number of findings: "+methodsWithDifferences.size
+            }.map(e => (e._2, e._3)).mkString("\n\n") +
+                "Number of findings: " + methodsWithDifferences.size
         )
     }
 

@@ -5,9 +5,9 @@ package fpcf
 package analyses
 package pointsto
 
-import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
+import org.opalj.fpcf.PropertyMetaInformation
 
 /**
  * An andersen-style points-to analysis, i.e. points-to sets are modeled as subsets.

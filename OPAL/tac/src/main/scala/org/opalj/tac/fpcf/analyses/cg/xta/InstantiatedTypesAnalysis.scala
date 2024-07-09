@@ -6,7 +6,16 @@ package analyses
 package cg
 package xta
 
-import org.opalj.br._
+import scala.collection.mutable.ArrayBuffer
+
+import org.opalj.br.ArrayType
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.Field
+import org.opalj.br.ObjectType
+import org.opalj.br.PCAndInstruction
+import org.opalj.br.ReferenceType
+import org.opalj.br.Type
+import org.opalj.br.analyses.DeclaredFieldsKey
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
@@ -14,10 +23,13 @@ import org.opalj.br.analyses.cg.ClosedPackagesKey
 import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
 import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
+import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.tac.fpcf.properties.cg.Callers
-import org.opalj.tac.fpcf.properties.cg.InstantiatedTypes
-import org.opalj.tac.fpcf.properties.cg.NoCallers
+import org.opalj.br.fpcf.analyses.ContextProvider
+import org.opalj.br.fpcf.properties.Context
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
+import org.opalj.br.fpcf.properties.cg.NoCallers
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.NEW
 import org.opalj.collection.immutable.UIDSet
@@ -37,10 +49,6 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
-import org.opalj.br.fpcf.properties.Context
-import org.opalj.tac.cg.TypeIteratorKey
-
-import scala.collection.mutable.ArrayBuffer
 
 /**
  * Marks types as instantiated if their constructor is invoked. Constructors invoked by subclass
@@ -50,7 +58,6 @@ import scala.collection.mutable.ArrayBuffer
  * This analysis is adapted from the RTA version. Instead of adding the instantiations to the type
  * set of the Project, they are added to the type set of the calling method. Which entity the type
  * is attached to depends on the call graph variant used.
- *
  *
  * TODO: Refactor this and the rta version in order to provide a common base-class.
  *
@@ -62,12 +69,9 @@ class InstantiatedTypesAnalysis private[analyses] (
         val setEntitySelector: TypeSetEntitySelector
 ) extends FPCFAnalysis {
 
-    private[this] implicit val typeIterator: TypeIterator = project.get(TypeIteratorKey)
+    private[this] implicit val contextProvider: ContextProvider = project.get(ContextProviderKey)
 
     def analyze(declaredMethod: DeclaredMethod): PropertyComputationResult = {
-        // only constructors may initialize a class
-        if (declaredMethod.name != "<init>")
-            return NoResult;
 
         val callersEOptP = propertyStore(declaredMethod, Callers.key)
 
@@ -88,26 +92,35 @@ class InstantiatedTypesAnalysis private[analyses] (
         }
 
         val declaredType = declaredMethod.declaringClassType.asObjectType
+        val loadConstantTypes = getLoadConstantTypes(declaredMethod)
+
+        val instantiatedTypes = PartialResult[TypeSetEntity, InstantiatedTypes](
+            declaredMethod,
+            InstantiatedTypes.key,
+            InstantiatedTypes.update(declaredMethod, loadConstantTypes)
+        )
 
         val cfOpt = project.classFile(declaredType)
 
-        // abstract classes can never be instantiated
-        cfOpt.foreach { cf =>
-            if (cf.isAbstract)
+        // only constructors may initialize a class; abstract classes can never be instantiated
+        if (declaredMethod.name != "<init>" || cfOpt.isDefined && cfOpt.get.isAbstract) {
+            if (loadConstantTypes.isEmpty)
                 return NoResult;
+            else
+                return Results(instantiatedTypes)
         }
 
-        processCallers(declaredMethod, declaredType, callersEOptP, callersUB, null)
+        processCallers(declaredMethod, declaredType, ArrayBuffer(instantiatedTypes), callersEOptP, callersUB, null)
     }
 
     private[this] def processCallers(
         declaredMethod: DeclaredMethod,
         declaredType:   ObjectType,
+        partialResults: ArrayBuffer[PartialResult[TypeSetEntity, InstantiatedTypes]],
         callersEOptP:   EOptionP[DeclaredMethod, Callers],
         callersUB:      Callers,
         seenCallers:    Callers
     ): PropertyComputationResult = {
-        val partialResults = ArrayBuffer.empty[PartialResult[TypeSetEntity, InstantiatedTypes]]
         callersUB.forNewCallerContexts(seenCallers, callersEOptP.e) {
             (_, callerContext, _, isDirect) =>
                 processCaller(declaredMethod, declaredType, callerContext, isDirect, partialResults)
@@ -136,7 +149,7 @@ class InstantiatedTypesAnalysis private[analyses] (
         // a constructor is called from an unknown context, there could be an initialization.
         if (!callContext.hasContext) {
             partialResults += partialResult(declaredType, ExternalWorld)
-            return ;
+            return;
         }
 
         val caller = callContext.method
@@ -144,20 +157,20 @@ class InstantiatedTypesAnalysis private[analyses] (
         // indirect calls, e.g. via reflection, are to be treated as instantiations as well
         if (!isDirect) {
             partialResults += partialResult(declaredType, caller)
-            return ;
+            return;
         }
 
         // a constructor is called by a non-constructor method, there will be an initialization.
         if (caller.name != "<init>") {
             partialResults += partialResult(declaredType, caller)
-            return ;
+            return;
         }
 
         // the constructor is called from another constructor. it is only an new instantiated
         // type if it was no super call. Thus the caller must be a subtype
         if (!classHierarchy.isSubtypeOf(caller.declaringClassType, declaredType)) {
             partialResults += partialResult(declaredType, caller)
-            return ;
+            return;
         }
 
         // actually it must be the direct subtype! -- we did the first check to return early
@@ -165,7 +178,7 @@ class InstantiatedTypesAnalysis private[analyses] (
             cf.superclassType.foreach { supertype =>
                 if (supertype != declaredType) {
                     partialResults += partialResult(declaredType, caller)
-                    return ;
+                    return;
                 }
             }
         }
@@ -173,7 +186,7 @@ class InstantiatedTypesAnalysis private[analyses] (
         // if the caller is not available, we have to assume that it was no super call
         if (!caller.hasSingleDefinedMethod) {
             partialResults += partialResult(declaredType, caller)
-            return ;
+            return;
         }
 
         val callerMethod = caller.definedMethod
@@ -181,7 +194,7 @@ class InstantiatedTypesAnalysis private[analyses] (
         // if the caller has no body, we have to assume that it was no super call
         if (callerMethod.body.isEmpty) {
             partialResults += partialResult(declaredType, caller)
-            return ;
+            return;
         }
 
         val supercall = INVOKESPECIAL(
@@ -200,7 +213,7 @@ class InstantiatedTypesAnalysis private[analyses] (
         // there can be only one super call, so there must be an explicit call
         if (pcsOfSuperCalls.size > 1) {
             partialResults += partialResult(declaredType, caller)
-            return ;
+            return;
         }
 
         // there is exactly the current call as potential super call, it still might no super
@@ -208,9 +221,8 @@ class InstantiatedTypesAnalysis private[analyses] (
         // there must either be a new of the `declaredType` or it is a super call.
         val newInstr = NEW(declaredType)
         val hasNew = callerMethod.body.get.exists(pcInst => pcInst.instruction == newInstr)
-        if (hasNew) {
+        if (hasNew)
             partialResults += partialResult(declaredType, caller)
-        }
     }
 
     private[this] def continuation(
@@ -219,7 +231,7 @@ class InstantiatedTypesAnalysis private[analyses] (
         seenCallers:    Callers
     )(someEPS: SomeEPS): PropertyComputationResult = {
         val eps = someEPS.asInstanceOf[EPS[DeclaredMethod, Callers]]
-        processCallers(declaredMethod, declaredType, eps, eps.ub, seenCallers)
+        processCallers(declaredMethod, declaredType, ArrayBuffer.empty, eps, eps.ub, seenCallers)
     }
 
     private def partialResult(
@@ -256,7 +268,10 @@ class InstantiatedTypesAnalysisScheduler(
 ) extends BasicFPCFTriggeredAnalysisScheduler {
 
     override def requiredProjectInformation: ProjectInformationKeys = Seq(
-        TypeIteratorKey, ClosedPackagesKey, DeclaredMethodsKey, InitialEntryPointsKey,
+        ContextProviderKey,
+        ClosedPackagesKey,
+        DeclaredMethodsKey,
+        InitialEntryPointsKey,
         InitialInstantiatedTypesKey
     )
 
@@ -284,9 +299,9 @@ class InstantiatedTypesAnalysisScheduler(
     def assignInitialTypeSets(p: SomeProject, ps: PropertyStore): Unit = {
         val packageIsClosed = p.get(ClosedPackagesKey)
         val declaredMethods = p.get(DeclaredMethodsKey)
+        val declaredFields = p.get(DeclaredFieldsKey)
         val entryPoints = p.get(InitialEntryPointsKey)
-        val initialInstantiatedTypes =
-            UIDSet[ReferenceType](p.get(InitialInstantiatedTypesKey).toSeq: _*)
+        val initialInstantiatedTypes = UIDSet[ReferenceType](p.get(InitialInstantiatedTypesKey).toSeq: _*)
 
         // While processing entry points and fields, we keep track of all array types we see, as
         // well as subtypes and lower-dimensional types. These types also need to be
@@ -317,10 +332,10 @@ class InstantiatedTypesAnalysisScheduler(
 
         // For each method which is also an entry point, we assume that the caller has passed all subtypes of the
         // method's parameter types to the method.
-        for (
+        for {
             ep <- entryPoints;
             dm = declaredMethods(ep)
-        ) {
+        } {
             val typeFilters = UIDSet.newBuilder[ReferenceType]
             val arrayTypeAssignments = UIDSet.newBuilder[ArrayType]
 
@@ -346,7 +361,8 @@ class InstantiatedTypesAnalysisScheduler(
 
             // Initial assignments of ObjectTypes
             val objectTypeAssignments = initialInstantiatedTypes.filter(iit =>
-                typeFilterSet.exists(tf => classHierarchy.isSubtypeOf(iit, tf)))
+                typeFilterSet.exists(tf => classHierarchy.isSubtypeOf(iit, tf))
+            )
 
             val initialAssignment = objectTypeAssignments ++ arrayTypeAssignments.result()
 
@@ -359,31 +375,31 @@ class InstantiatedTypesAnalysisScheduler(
         @inline def fieldIsRelevant(f: Field): Boolean = {
             // Only fields which are ArrayType or ObjectType are relevant.
             f.fieldType.isReferenceType &&
-                // If the field is an ArrayType, then the array's element type must be an ObjectType.
-                // In other words: We don't care about arrays of primitive types (e.g. int[]) which
-                // do not have to be pre-initialized.
-                (!f.fieldType.isArrayType || f.fieldType.asArrayType.elementType.isObjectType)
+            // If the field is an ArrayType, then the array's element type must be an ObjectType.
+            // In other words: We don't care about arrays of primitive types (e.g. int[]) which
+            // do not have to be pre-initialized.
+            (!f.fieldType.isArrayType || f.fieldType.asArrayType.elementType.isObjectType)
         }
 
         // Returns true if a field can be written by the user of a library containing that field.
         def fieldIsAccessible(f: Field): Boolean = {
             // Public fields can always be accessed.
             f.isPublic ||
-                // Protected fields can only be accessed by subclasses. In that case, the library
-                // user can create a subclass of the type containing the field and add a setter method.
-                // This only applies if the field's type can be extended in the first place.
-                (f.isProtected && !f.classFile.isEffectivelyFinal) ||
-                // If the field is package private, it can only be written if the package is
-                // open for modification. In that case, the library user can put a method
-                // writing that field into the field's type's namespace.
-                (f.isPackagePrivate && !packageIsClosed(f.classFile.thisType.packageName))
+            // Protected fields can only be accessed by subclasses. In that case, the library
+            // user can create a subclass of the type containing the field and add a setter method.
+            // This only applies if the field's type can be extended in the first place.
+            (f.isProtected && !f.classFile.isEffectivelyFinal) ||
+            // If the field is package private, it can only be written if the package is
+            // open for modification. In that case, the library user can put a method
+            // writing that field into the field's type's namespace.
+            (f.isPackagePrivate && !packageIsClosed(f.classFile.thisType.packageName))
         }
 
-        for (
+        for {
             iit <- initialInstantiatedTypes;
             // Only object types should be initially instantiated.
             ot = iit.asObjectType
-        ) {
+        } {
             // Assign initial types to all accessible fields.
             p.classFile(ot) match {
                 case Some(cf) =>
@@ -414,7 +430,7 @@ class InstantiatedTypesAnalysisScheduler(
                             }.result()
                         }
 
-                        val fieldSetEntity = selectSetEntity(f)
+                        val fieldSetEntity = selectSetEntity(declaredFields(f))
                         initialize(fieldSetEntity, initialAssignments)
                     }
                 case None =>
@@ -431,7 +447,7 @@ class InstantiatedTypesAnalysisScheduler(
         def initializeArrayType(at: ArrayType): Unit = {
             // If this type has already been initialized, we skip it.
             if (initializedArrayTypes.contains(at)) {
-                return ;
+                return;
             }
 
             initializedArrayTypes.add(at)

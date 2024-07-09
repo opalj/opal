@@ -7,33 +7,31 @@ package cg
 
 import java.io.File
 import java.io.FileInputStream
-
-import scala.collection.mutable.ArrayBuffer
-
 import play.api.libs.json.Json
 import play.api.libs.json.Reads
 import play.api.libs.json.Writes
+import scala.collection.mutable.ArrayBuffer
 
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.FieldType
+import org.opalj.br.MethodDescriptor
+import org.opalj.br.PCAndInstruction
+import org.opalj.br.analyses.DeclaredMethods
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
+import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.properties.SimpleContexts
+import org.opalj.br.fpcf.properties.SimpleContextsKey
+import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.instructions.Instruction
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyComputationResult
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.DeclaredMethod
-import org.opalj.br.analyses.DeclaredMethods
-import org.opalj.br.FieldType
-import org.opalj.br.MethodDescriptor
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.PCAndInstruction
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.fpcf.properties.SimpleContextsKey
-import org.opalj.br.fpcf.properties.SimpleContexts
-import org.opalj.tac.fpcf.properties.cg.Callees
-import org.opalj.tac.fpcf.properties.cg.Callers
-import org.opalj.br.instructions.Instruction
 
 /**
  * Representation of all Methods that are reachable in the represented call graph.
@@ -73,7 +71,10 @@ object ReachableMethodDescription {
  * contains the set of computed target methods (`targets`).
  */
 case class CallSiteDescription(
-        declaredTarget: MethodDesc, line: Int, pc: Option[Int], targets: List[MethodDesc]
+        declaredTarget: MethodDesc,
+        line:           Int,
+        pc:             Option[Int],
+        targets:        List[MethodDesc]
 )
 
 object CallSiteDescription {
@@ -130,15 +131,15 @@ private class CallGraphDeserializer private[analyses] (
 
     def analyze(p: SomeProject): PropertyComputationResult = {
         val results = ArrayBuffer.empty[ProperPropertyComputationResult]
-        for (
+        for {
             (methodDesc, callSites) <- data
-        ) {
+        } {
             val calls = new DirectCalls()
             val method = methodDesc.toDeclaredMethod
-            for (
+            for {
                 x <- callSites.groupBy(cs => (cs.declaredTarget, cs.line)).values;
                 (CallSiteDescription(declaredTgtDesc, line, pcOpt, tgts), index) <- x.zipWithIndex
-            ) {
+            } {
 
                 val pc = if (pcOpt.isDefined)
                     pcOpt.get
@@ -158,7 +159,10 @@ private class CallGraphDeserializer private[analyses] (
     }
 
     private[this] def getPCFromLineNumber(
-        dm: DeclaredMethod, lineNumber: Int, declaredTgt: DeclaredMethod, index: Int
+        dm:          DeclaredMethod,
+        lineNumber:  Int,
+        declaredTgt: DeclaredMethod,
+        index:       Int
     ): Int = {
         if (!dm.hasSingleDefinedMethod)
             return 0;

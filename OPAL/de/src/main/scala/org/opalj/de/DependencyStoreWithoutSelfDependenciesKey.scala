@@ -2,8 +2,8 @@
 package org.opalj
 package de
 
-import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.ProjectInformationKey
+import org.opalj.br.analyses.SomeProject
 
 /**
  * Key that can be used to get a `DependencyStore` that contains all dependencies

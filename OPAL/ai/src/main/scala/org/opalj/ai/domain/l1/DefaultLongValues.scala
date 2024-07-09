@@ -79,7 +79,7 @@ trait DefaultLongValues extends DefaultSpecialDomainValuesBinding with LongValue
 
         override def hashCode: Int = (value ^ (value >>> 32)).toInt
 
-        override def toString: String = "long ="+value
+        override def toString: String = "long =" + value
     }
 
     //

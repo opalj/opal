@@ -2,10 +2,11 @@
 package org.opalj
 package fpcf
 
+import java.net.URL
+
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 
-import java.net.URL
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
@@ -14,6 +15,7 @@ import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
+import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalysis
 import org.opalj.tac.fpcf.analyses.fieldassignability.EagerL0FieldAssignabilityAnalysis
 import org.opalj.tac.fpcf.analyses.fieldassignability.EagerL1FieldAssignabilityAnalysis
 import org.opalj.tac.fpcf.analyses.fieldassignability.EagerL2FieldAssignabilityAnalysis
@@ -64,7 +66,8 @@ class FieldAssignabilityTests extends PropertiesTest {
                 LazyL0CompileTimeConstancyAnalysis,
                 LazyInterProceduralEscapeAnalysis,
                 LazyReturnValueFreshnessAnalysis,
-                LazyFieldLocalityAnalysis
+                LazyFieldLocalityAnalysis,
+                EagerFieldAccessInformationAnalysis
             )
         )
         as.propertyStore.shutdown()
@@ -81,7 +84,8 @@ class FieldAssignabilityTests extends PropertiesTest {
                 LazyL0CompileTimeConstancyAnalysis,
                 LazyInterProceduralEscapeAnalysis,
                 LazyReturnValueFreshnessAnalysis,
-                LazyFieldLocalityAnalysis
+                LazyFieldLocalityAnalysis,
+                EagerFieldAccessInformationAnalysis
             )
         )
         as.propertyStore.shutdown()
@@ -98,7 +102,8 @@ class FieldAssignabilityTests extends PropertiesTest {
                 LazyL0CompileTimeConstancyAnalysis,
                 LazyInterProceduralEscapeAnalysis,
                 LazyReturnValueFreshnessAnalysis,
-                LazyFieldLocalityAnalysis
+                LazyFieldLocalityAnalysis,
+                EagerFieldAccessInformationAnalysis
             )
         )
         as.propertyStore.shutdown()

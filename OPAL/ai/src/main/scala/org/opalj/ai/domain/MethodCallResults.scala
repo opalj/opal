@@ -62,4 +62,3 @@ trait MethodCallResults { domain: ValuesDomain =>
     def thrownExceptions(target: TargetDomain, callerPC: Int): target.ExceptionValues
 
 }
-

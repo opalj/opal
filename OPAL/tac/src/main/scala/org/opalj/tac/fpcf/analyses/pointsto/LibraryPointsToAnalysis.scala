@@ -5,6 +5,24 @@ package fpcf
 package analyses
 package pointsto
 
+import org.opalj.br.ArrayType
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.Field
+import org.opalj.br.ReferenceType
+import org.opalj.br.Type
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.VirtualFormalParametersKey
+import org.opalj.br.analyses.cg.ClosedPackagesKey
+import org.opalj.br.analyses.cg.InitialEntryPointsKey
+import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
+import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.FPCFEagerAnalysisScheduler
+import org.opalj.br.fpcf.properties.NoContext
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
+import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EPK
@@ -15,25 +33,6 @@ import org.opalj.fpcf.PropertyComputationResult
 import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.UBP
-import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
-import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
-import org.opalj.br.Field
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.ArrayType
-import org.opalj.br.ReferenceType
-import org.opalj.br.analyses.cg.ClosedPackagesKey
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
-import org.opalj.br.Type
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.cg.InitialEntryPointsKey
-import org.opalj.br.DeclaredMethod
-import org.opalj.br.analyses.VirtualFormalParametersKey
-import org.opalj.br.fpcf.properties.NoContext
-import org.opalj.br.fpcf.FPCFEagerAnalysisScheduler
-import org.opalj.tac.cg.TypeIteratorKey
-import org.opalj.tac.fpcf.properties.cg.Callers
 
 /**
  * Provides initial points to sets for the parameters of entry point methods, fields and arrays as
@@ -44,7 +43,7 @@ import org.opalj.tac.fpcf.properties.cg.Callers
  *
  * @author Dominik Helm
  */
-abstract class LibraryPointsToAnalysis( final val project: SomeProject)
+abstract class LibraryPointsToAnalysis(final val project: SomeProject)
     extends PointsToAnalysisBase {
 
     def analyze(declaredMethod: DeclaredMethod): PropertyComputationResult = {
@@ -70,9 +69,7 @@ abstract class LibraryPointsToAnalysis( final val project: SomeProject)
         }
 
         def initialize(param: Entity, types: UIDSet[ReferenceType]): Unit = {
-            val pts = types.foldLeft(emptyPointsToSet) { (all, tpe) =>
-                all.included(createExternalAllocation(tpe))
-            }
+            val pts = types.foldLeft(emptyPointsToSet) { (all, tpe) => all.included(createExternalAllocation(tpe)) }
             ps.preInitialize(param, pointsToPropertyKey) {
                 case UBP(oldPts) =>
                     InterimEUBP(param, oldPts.included(pts))
@@ -88,10 +85,10 @@ abstract class LibraryPointsToAnalysis( final val project: SomeProject)
 
         // For each method which is also an entry point, we assume that the caller has passed all
         // subtypes of the method's parameter types to the method.
-        for (
+        for {
             ep <- entryPoints;
             dm = declaredMethods(ep)
-        ) {
+        } {
             val fps = formalParameters(dm)
             val context = typeIterator.newContext(dm)
 
@@ -106,7 +103,8 @@ abstract class LibraryPointsToAnalysis( final val project: SomeProject)
 
                 if (pt.isObjectType) {
                     val validTypes = initialInstantiatedTypes.filter(iit =>
-                        classHierarchy.isSubtypeOf(iit, pt.asObjectType))
+                        classHierarchy.isSubtypeOf(iit, pt.asObjectType)
+                    )
                     initialize(fp, validTypes)
                 } else if (isRelevantArrayType(pt)) {
                     seenArrayTypes += pt.asArrayType
@@ -124,31 +122,31 @@ abstract class LibraryPointsToAnalysis( final val project: SomeProject)
         @inline def fieldIsRelevant(f: Field): Boolean = {
             // Only fields which are ArrayType or ObjectType are relevant.
             f.fieldType.isReferenceType &&
-                // If the field is an ArrayType, then the array's element type must be an ObjectType.
-                // In other words: We don't care about arrays of primitive types (e.g. int[]) which
-                // do not have to be pre-initialized.
-                (!f.fieldType.isArrayType || f.fieldType.asArrayType.elementType.isObjectType)
+            // If the field is an ArrayType, then the array's element type must be an ObjectType.
+            // In other words: We don't care about arrays of primitive types (e.g. int[]) which
+            // do not have to be pre-initialized.
+            (!f.fieldType.isArrayType || f.fieldType.asArrayType.elementType.isObjectType)
         }
 
         // Returns true if a field can be written by the user of a library containing that field.
         def fieldIsAccessible(f: Field): Boolean = {
             // Public fields can always be accessed.
             f.isPublic ||
-                // Protected fields can only be accessed by subclasses. In that case, the library
-                // user can create a subclass of the type containing the field and add a setter method.
-                // This only applies if the field's type can be extended in the first place.
-                (f.isProtected && !f.classFile.isEffectivelyFinal) ||
-                // If the field is package private, it can only be written if the package is
-                // open for modification. In that case, the library user can put a method
-                // writing that field into the field's type's namespace.
-                (f.isPackagePrivate && !packageIsClosed(f.classFile.thisType.packageName))
+            // Protected fields can only be accessed by subclasses. In that case, the library
+            // user can create a subclass of the type containing the field and add a setter method.
+            // This only applies if the field's type can be extended in the first place.
+            (f.isProtected && !f.classFile.isEffectivelyFinal) ||
+            // If the field is package private, it can only be written if the package is
+            // open for modification. In that case, the library user can put a method
+            // writing that field into the field's type's namespace.
+            (f.isPackagePrivate && !packageIsClosed(f.classFile.thisType.packageName))
         }
 
-        for (
+        for {
             iit <- initialInstantiatedTypes;
             // Only object types should be initially instantiated.
             ot = iit.asObjectType
-        ) {
+        } {
             // Assign initial types to all accessible fields.
             p.classFile(ot) match {
                 case Some(cf) =>
@@ -176,10 +174,11 @@ abstract class LibraryPointsToAnalysis( final val project: SomeProject)
                             }
                         }
 
-                        if (f.isStatic) initialize(f, initialAssignments)
+                        val declaredField = declaredFields(f)
+                        if (f.isStatic) initialize(declaredField, initialAssignments)
                         else {
                             createExternalAllocation(cf.thisType).forNewestNElements(1) { as =>
-                                initialize((as, f), initialAssignments)
+                                initialize((as, declaredField), initialAssignments)
                             }
                         }
                     }
@@ -197,7 +196,7 @@ abstract class LibraryPointsToAnalysis( final val project: SomeProject)
         def initializeArrayType(at: ArrayType): Unit = {
             // If this type has already been initialized, we skip it.
             if (initializedArrayTypes.contains(at)) {
-                return ;
+                return;
             }
 
             initializedArrayTypes.add(at)
@@ -238,11 +237,9 @@ trait LibraryPointsToAnalysisScheduler extends FPCFEagerAnalysisScheduler {
     val propertyKind: PropertyMetaInformation
     val createAnalysis: SomeProject => LibraryPointsToAnalysis
 
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(
-        TypeIteratorKey,
-        ClosedPackagesKey, DeclaredMethodsKey, InitialEntryPointsKey, VirtualFormalParametersKey,
-        InitialInstantiatedTypesKey
-    )
+    override def requiredProjectInformation: ProjectInformationKeys =
+        AbstractPointsToBasedAnalysis.requiredProjectInformation :++
+            Seq(DeclaredMethodsKey, ClosedPackagesKey, InitialEntryPointsKey, InitialInstantiatedTypesKey)
 
     override type InitializationData = LibraryPointsToAnalysis
 

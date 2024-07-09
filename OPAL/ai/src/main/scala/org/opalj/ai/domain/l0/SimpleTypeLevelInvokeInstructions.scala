@@ -4,10 +4,10 @@ package ai
 package domain
 package l0
 
-import org.opalj.br.ObjectType
-import org.opalj.br.ReferenceType
 import org.opalj.br.BootstrapMethod
 import org.opalj.br.MethodDescriptor
+import org.opalj.br.ObjectType
+import org.opalj.br.ReferenceType
 
 /**
  * Most basic handling of method invocations that determines the value that is
@@ -51,7 +51,8 @@ trait SimpleTypeLevelInvokeInstructions extends MethodCallsDomain {
         }
     }
 
-    /*override*/ def invokevirtual(
+    /*override*/
+    def invokevirtual(
         pc:               Int,
         declaringClass:   ReferenceType,
         name:             String,
@@ -61,7 +62,8 @@ trait SimpleTypeLevelInvokeInstructions extends MethodCallsDomain {
         handleInstanceBasedInvoke(pc, methodDescriptor, operands)
     }
 
-    /*override*/ def invokeinterface(
+    /*override*/
+    def invokeinterface(
         pc:               Int,
         declaringClass:   ObjectType,
         name:             String,
@@ -71,7 +73,8 @@ trait SimpleTypeLevelInvokeInstructions extends MethodCallsDomain {
         handleInstanceBasedInvoke(pc, methodDescriptor, operands)
     }
 
-    /*override*/ def invokespecial(
+    /*override*/
+    def invokespecial(
         pc:               Int,
         declaringClass:   ObjectType,
         isInterface:      Boolean,
@@ -82,7 +85,8 @@ trait SimpleTypeLevelInvokeInstructions extends MethodCallsDomain {
         handleInstanceBasedInvoke(pc, methodDescriptor, operands)
     }
 
-    /*override*/ def invokestatic(
+    /*override*/
+    def invokestatic(
         pc:               Int,
         declaringClass:   ObjectType,
         isInterface:      Boolean,
@@ -97,7 +101,8 @@ trait SimpleTypeLevelInvokeInstructions extends MethodCallsDomain {
             ComputedValue(TypedValue(pc, returnType))
     }
 
-    /*override*/ def invokedynamic(
+    /*override*/
+    def invokedynamic(
         pc:               Int,
         bootstrapMethod:  BootstrapMethod,
         name:             String,

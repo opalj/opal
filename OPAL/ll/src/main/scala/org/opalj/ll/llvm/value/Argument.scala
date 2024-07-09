@@ -4,11 +4,12 @@ package ll
 package llvm
 package value
 
+import org.opalj.ll.llvm.value
+
 import org.bytedeco.llvm.LLVM.LLVMValueRef
 import org.bytedeco.llvm.global.LLVM.LLVMArgumentValueKind
 import org.bytedeco.llvm.global.LLVM.LLVMGetParamParent
 import org.bytedeco.llvm.global.LLVM.LLVMGetValueKind
-import org.opalj.ll.llvm.value
 
 /**
  * Represents an argument to a LLVM function.

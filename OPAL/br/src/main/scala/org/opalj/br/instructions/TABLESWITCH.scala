@@ -3,11 +3,11 @@ package org.opalj
 package br
 package instructions
 
+import scala.collection.immutable.ArraySeq
+
 import org.opalj.collection.IntIterator
 import org.opalj.collection.immutable.IntArraySet
 import org.opalj.collection.immutable.IntArraySet1
-
-import scala.collection.immutable.ArraySeq
 
 /**
  * Access jump table by index and jump.
@@ -22,11 +22,11 @@ trait TABLESWITCHLike extends CompoundConditionalBranchInstructionLike {
     /** The largest '''case''' value. `high` &geq; `low` */
     def high: Int
 
-    final override def opcode: Opcode = TABLESWITCH.opcode
+    override final def opcode: Opcode = TABLESWITCH.opcode
 
-    final override def mnemonic: String = "tableswitch"
+    override final def mnemonic: String = "tableswitch"
 
-    final override def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean): Int = {
+    override final def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean): Int = {
         currentPC + 1 + (3 - (currentPC % 4)) + 12 + (high - low + 1) * 4
     }
 
@@ -39,9 +39,9 @@ case class TABLESWITCH(
         jumpOffsets:   ArraySeq[Int]
 ) extends CompoundConditionalBranchInstruction with TABLESWITCHLike {
 
-    final override def asTABLESWITCH: this.type = this
+    override final def asTABLESWITCH: this.type = this
 
-    final override def indexOfNextInstruction(currentPC: Int)(implicit code: Code): Int = {
+    override final def indexOfNextInstruction(currentPC: Int)(implicit code: Code): Int = {
         indexOfNextInstruction(currentPC, false)
     }
 
@@ -90,7 +90,7 @@ case class TABLESWITCH(
         pcs
     }
 
-    final override def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
+    override final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
         val paddingOffset = (thisPC % 4) - (otherPC % 4)
 
         code.instructions(otherPC) match {
@@ -113,14 +113,14 @@ case class TABLESWITCH(
     }
 
     override def toString: String = {
-        s"TABLESWITCH($low -> $high; "+
-            (low to high).zip(jumpOffsets).map(e => s"${e._1}⤼${e._2}").mkString(",")+
-            ";default⤼"+defaultOffset+
+        s"TABLESWITCH($low -> $high; " +
+            (low to high).zip(jumpOffsets).map(e => s"${e._1}⤼${e._2}").mkString(",") +
+            ";default⤼" + defaultOffset +
             ")"
     }
 
     override def toString(pc: PC): String = {
-        s"TABLESWITCH($low -> $high; "+
+        s"TABLESWITCH($low -> $high; " +
             (low to high).zip(jumpOffsets).map { keyOffset =>
                 val (key, offset) = keyOffset
                 s"$key=${pc + offset}${if (offset >= 0) "↓" else "↑"}"
@@ -144,7 +144,6 @@ object TABLESWITCH extends InstructionMetaInformation {
      *
      * @param branchTargets The first target is chosen when the branch value has the value `low`.
      *                      The second target is chosen if the value is `low+1` etc.
-     *
      */
     def apply(
         defaultBranchTarget: InstructionLabel,
@@ -210,6 +209,6 @@ case class LabeledTABLESWITCH(
         (low to high).zip(jumpTargets).map { keyOffset =>
             val (key, target) = keyOffset
             s"$key=$target"
-        }.mkString("TABLESWITCH(", ", ", "; ifNoMatch="+defaultBranchTarget+")")
+        }.mkString("TABLESWITCH(", ", ", "; ifNoMatch=" + defaultBranchTarget + ")")
     }
 }

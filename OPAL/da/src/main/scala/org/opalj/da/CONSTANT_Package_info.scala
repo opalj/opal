@@ -1,5 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.da
+package org.opalj
+package da
 
 import scala.xml.Node
 import scala.xml.NodeSeq
@@ -14,17 +15,17 @@ import org.opalj.bi.ConstantPoolTags
  */
 case class CONSTANT_Package_info(name_index: Constant_Pool_Index) extends Constant_Pool_Entry {
 
-    override def size: Int = 1 + 2
+    override final def size: Int = 1 + 2
 
     override def Constant_Type_Value: ConstantPoolTag = ConstantPoolTags.CONSTANT_Package
 
     override def asCPNode(implicit cp: Constant_Pool): Node = {
         <span class="cp_entry">
             CONSTANT_Package_info(name_index=
-            { name_index }
+            {name_index}
             &laquo;
             <span class="cp_ref">
-                { cp(name_index).asCPNode }
+                {cp(name_index).asCPNode}
             </span>
             &raquo;
             )

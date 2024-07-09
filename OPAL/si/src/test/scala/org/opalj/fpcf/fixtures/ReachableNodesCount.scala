@@ -1,5 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf
+package org.opalj
+package fpcf
 package fixtures
 
 /**
@@ -30,6 +31,7 @@ case class ReachableNodesCount(value: Int) extends OrderedProperty {
 object NoNodesReachable extends ReachableNodesCount(0) {
     override def toString: String = "NoNodesReachable"
 }
+
 object TooManyNodesReachable extends ReachableNodesCount(64) {
     override def toString: String = "TooManyNodesReachable"
 }

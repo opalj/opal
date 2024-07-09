@@ -3,7 +3,6 @@ package org.opalj
 package br
 
 import org.junit.runner.RunWith
-
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
@@ -64,10 +63,12 @@ class TypeRelationTest extends AnyFunSpec with Matchers {
             }
 
             Seq(IntegerType, LongType, FloatType, DoubleType) foreach (t =>
-                assert(!ShortType.isWiderThan(t)))
+                assert(!ShortType.isWiderThan(t))
+            )
 
             Seq(LongType, FloatType, DoubleType) foreach (t =>
-                assert(!IntegerType.isWiderThan(t)))
+                assert(!IntegerType.isWiderThan(t))
+            )
 
             Seq(FloatType, DoubleType) foreach (t => assert(!LongType.isWiderThan(t)))
 

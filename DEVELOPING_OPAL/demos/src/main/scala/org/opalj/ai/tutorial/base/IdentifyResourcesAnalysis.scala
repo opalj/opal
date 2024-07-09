@@ -1,11 +1,21 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.ai.tutorial.base
+package org.opalj
+package ai
+package tutorial
+package base
 
 import java.net.URL
-import org.opalj.br._
-import org.opalj.br.analyses._
-import org.opalj.br.instructions._
-import org.opalj.ai._
+
+import org.opalj.br.Method
+import org.opalj.br.ObjectType
+import org.opalj.br.PC
+import org.opalj.br.PCAndInstruction
+import org.opalj.br.SingleArgumentMethodDescriptor
+import org.opalj.br.VoidType
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.ProjectAnalysisApplication
+import org.opalj.br.instructions.INVOKESPECIAL
 
 import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParallelizable
 
@@ -32,11 +42,13 @@ object IdentifyResourcesAnalysis extends ProjectAnalysisApplication {
                 val pcs =
                     m.body.get.collectWithIndex {
                         case PCAndInstruction(
-                            pc,
-                            INVOKESPECIAL(
-                                ObjectType("java/io/File"), false /* = isInterface*/ ,
-                                "<init>",
-                                SingleArgumentMethodDescriptor((ObjectType.String, VoidType)))
+                                pc,
+                                INVOKESPECIAL(
+                                    ObjectType("java/io/File"),
+                                    false /* = isInterface*/,
+                                    "<init>",
+                                    SingleArgumentMethodDescriptor((ObjectType.String, VoidType))
+                                )
                             ) => pc
                     }
                 (m, pcs)
@@ -81,8 +93,7 @@ object IdentifyResourcesAnalysis extends ProjectAnalysisApplication {
         }
 
         BasicReport(
-            callSitesWithConstantStringParameter.map(callSiteToString).
-                mkString("Methods:\n", "\n", ".\n")
+            callSitesWithConstantStringParameter.map(callSiteToString).mkString("Methods:\n", "\n", ".\n")
         )
     }
 }

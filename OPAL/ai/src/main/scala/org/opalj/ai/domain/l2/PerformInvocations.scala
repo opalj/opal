@@ -4,14 +4,14 @@ package ai
 package domain
 package l2
 
-import org.opalj.log.OPALLogger
-import org.opalj.log.Warn
-import org.opalj.log.Error
 import org.opalj.br.Method
-import org.opalj.br.VoidType
+import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
-import org.opalj.br.MethodDescriptor
+import org.opalj.br.VoidType
+import org.opalj.log.Error
+import org.opalj.log.OPALLogger
+import org.opalj.log.Warn
 
 /**
  * Mix in this trait if methods that are called by `invokeXYZ` instructions should
@@ -91,9 +91,11 @@ trait PerformInvocations extends MethodCallsHandling {
                 } else {
                     val returnedValue =
                         domain.returnedValueRemapped(
-                            callingDomain, callerPC
+                            callingDomain,
+                            callerPC
                         )(
-                            originalOperands, passedParameters
+                            originalOperands,
+                            passedParameters
                         )
                     if (thrownExceptions.nonEmpty) {
                         ComputedValueOrException(returnedValue.get, thrownExceptions)
@@ -105,9 +107,11 @@ trait PerformInvocations extends MethodCallsHandling {
         } else {
             val returnedValue =
                 calledMethodDomain.returnedValueRemapped(
-                    callingDomain, callerPC
+                    callingDomain,
+                    callerPC
                 )(
-                    originalOperands, passedParameters
+                    originalOperands,
+                    passedParameters
                 )
             val exceptions = callingDomain.getPotentialExceptions(callerPC)
 
@@ -138,7 +142,7 @@ trait PerformInvocations extends MethodCallsHandling {
 
         assert(
             method.body.isDefined,
-            s"${project.source(method.classFile.thisType)} - the method: "+
+            s"${project.source(method.classFile.thisType)} - the method: " +
                 s"${method.toJava} does not have a body (is the project self-consistent?)"
         )
 
@@ -160,12 +164,14 @@ trait PerformInvocations extends MethodCallsHandling {
     ): MethodCallResult = {
 
         if (project.libraryClassFilesAreInterfacesOnly &&
-            project.isLibraryType(method.classFile.thisType))
+            project.isLibraryType(method.classFile.thisType)
+        )
             return fallback();
 
         if (method.isAbstract) {
             OPALLogger.logOnce(Error(
-                "project configuration", "resolved method is abstract: "+method.classFile
+                "project configuration",
+                "resolved method is abstract: " + method.classFile
             ))
             fallback()
         } else if (!method.isNative) {
@@ -205,8 +211,8 @@ trait PerformInvocations extends MethodCallsHandling {
             case _ =>
                 OPALLogger.logOnce(Warn(
                     "project configuration",
-                    "method reference cannot be resolved: "+
-                        declaringClass.toJava+"{ (static?) "+descriptor.toJava(name)+"}"
+                    "method reference cannot be resolved: " +
+                        declaringClass.toJava + "{ (static?) " + descriptor.toJava(name) + "}"
                 ))
                 fallback()
         }
@@ -227,24 +233,32 @@ trait PerformInvocations extends MethodCallsHandling {
     ): MethodCallResult = {
         val receiver = operands(descriptor.parametersCount)
         receiver match {
-            case DomainReferenceValueTag(refValue) if refValue.isPrecise &&
-                refValue.isNull.isNo && // IMPROVE support the case that null is unknown
-                refValue.upperTypeBound.isSingletonSet &&
-                refValue.upperTypeBound.head.isObjectType =>
-
+            case DomainReferenceValueTag(refValue)
+                if refValue.isPrecise &&
+                    refValue.isNull.isNo && // IMPROVE support the case that null is unknown
+                    refValue.upperTypeBound.isSingletonSet &&
+                    refValue.upperTypeBound.head.isObjectType =>
                 val receiverClass = refValue.upperTypeBound.head.asObjectType
                 classHierarchy.isInterface(receiverClass) match {
                     case Yes =>
                         doInvokeNonVirtual(
                             pc,
-                            receiverClass, true, name, descriptor,
-                            operands, fallback
+                            receiverClass,
+                            true,
+                            name,
+                            descriptor,
+                            operands,
+                            fallback
                         )
                     case No =>
                         doInvokeNonVirtual(
                             pc,
-                            receiverClass, false, name, descriptor,
-                            operands, fallback
+                            receiverClass,
+                            false,
+                            name,
+                            descriptor,
+                            operands,
+                            fallback
                         )
                     case Unknown =>
                         fallback()
@@ -255,7 +269,9 @@ trait PerformInvocations extends MethodCallsHandling {
                     if (isInterface)
                         if (declaringClass.isObjectType)
                             project.resolveInterfaceMethodReference(
-                                declaringClass.asObjectType, name, descriptor
+                                declaringClass.asObjectType,
+                                name,
+                                descriptor
                             )
                         else None
                     else

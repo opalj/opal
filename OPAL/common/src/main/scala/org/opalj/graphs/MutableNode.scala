@@ -39,4 +39,3 @@ trait MutableNode[I, N <: Node] extends Node {
     def removeChild(node: N): Unit
 
 }
-

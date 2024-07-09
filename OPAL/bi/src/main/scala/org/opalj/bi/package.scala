@@ -2,17 +2,16 @@
 package org.opalj
 
 import java.lang.Integer.parseInt
-
 import scala.io.Source
 
+import org.opalj.collection.immutable.UShortPair
 import org.opalj.io.process
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
-import org.opalj.log.Warn
 import org.opalj.log.OPALLogger
-import org.opalj.log.OPALLogger.info
 import org.opalj.log.OPALLogger.error
-import org.opalj.collection.immutable.UShortPair
+import org.opalj.log.OPALLogger.info
+import org.opalj.log.Warn
 
 /**
  * Implementation of a library for parsing Java bytecode and creating arbitrary
@@ -58,13 +57,13 @@ package object bi {
      * class file.
      */
     def jdkVersion(majorVersion: Int): String = {
-        // 63 == 19, 62 == 18, 61 == 17, 60 == 16, 59 == 15, 58 == 14, 57 == 13, 56 == 12, 55 == 11,
-        // 54 == 10, 53 == 9, 52 == 8, 51 == 7, 50 == 6, 49 == 5.0, 48 == 1.4, 47 == 1.3, 46 == 1.2,
-        // 45 == 1.1/1.0.2
+        // 65 == 21, 64 == 20, 63 == 19, 62 == 18, 61 == 17, 60 == 16, 59 == 15, 58 == 14, 57 == 13,
+        // 56 == 12, 55 == 11, 54 == 10, 53 == 9, 52 == 8, 51 == 7, 50 == 6, 49 == 5.0, 48 == 1.4,
+        // 47 == 1.3, 46 == 1.2, 45 == 1.1/1.0.2
         if (majorVersion >= 49) {
-            "Java "+(majorVersion - 44)
+            "Java " + (majorVersion - 44)
         } else if (majorVersion > 45) {
-            "Java 2 Platform version 1."+(majorVersion - 44)
+            "Java 2 Platform version 1." + (majorVersion - 44)
         } else {
             "JDK 1.1 (JDK 1.0.2)"
         }
@@ -103,17 +102,21 @@ package object bi {
     final val Java18Version = UShortPair(0, Java18MajorVersion)
     final val Java19MajorVersion = 63
     final val Java19Version = UShortPair(0, Java19MajorVersion)
+    final val Java20MajorVersion = 64
+    final val Java20Version = UShortPair(0, Java20MajorVersion)
+    final val Java21MajorVersion = 65
+    final val Java21Version = UShortPair(0, Java21MajorVersion)
 
     /**
      * The latest major version supported by OPAL; this constant is adapted whenever a new version
      * is supported.
      */
-    final val LatestSupportedJavaMajorVersion = Java19MajorVersion
+    final val LatestSupportedJavaMajorVersion = Java21MajorVersion
     /**
      * The latest version supported by OPAL; this constant is adapted whenever a new version
      * is supported.
      */
-    final val LatestSupportedJavaVersion = Java19Version
+    final val LatestSupportedJavaVersion = Java21Version
 
     /**
      * Returns `true` if the current JRE is at least Java 8 or a newer version.

@@ -23,7 +23,7 @@ case class ElementValuePair(
         val name = cp(element_name_index).toString(cp)
 
         <li class="element_value_pair">
-            { Seq(<span class="element_name">{ name }</span>, Text("="), element_value.toXHTML) }
+            {Seq(<span class="element_name">{name}</span>, Text("="), element_value.toXHTML)}
         </li>
     }
 

@@ -5,14 +5,14 @@ package domain
 package l1
 
 import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 
-import org.opalj.br.ObjectType
+import org.opalj.ai.domain.l1.IntegerRangeValues.AbsoluteMaxCardinalityOfIntegerRanges
 import org.opalj.br.ArrayType
 import org.opalj.br.IntegerType
-import org.opalj.ai.domain.l1.IntegerRangeValues.AbsoluteMaxCardinalityOfIntegerRanges
+import org.opalj.br.ObjectType
 
 /**
  * Tests the IntegerRanges Domain.
@@ -3294,7 +3294,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
     describe("using IntegerRangeValues") {
 
-        val aiProject = org.opalj.br.TestSupport.biProject("ai.jar")
+        val aiProject = org.opalj.br.TestSupport.biProject("ai-9.jar")
         val IntegerValues = aiProject.classFile(ObjectType("ai/domain/IntegerValuesFrenzy")).get
 
         describe("when we have multiple loops that reuse the same local variable") {
@@ -3326,16 +3326,18 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
             it("it should be able to adapt (<) the bounds of an IntegerRange value in the presences of aliasing and calculate the correct summary value") {
                 val domain = new JoinResultsIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
                 val method = IntegerValues.findMethod("aliasingMax5").head
-                /*val result =*/ BaseAI(method, domain)
+                /*val result =*/
+                BaseAI(method, domain)
                 domain.returnedValue should be(Some(domain.IntegerRange(Int.MinValue, 5)))
             }
 
             it("it should be able to adapt (<) the bounds of an IntegerRange value in the presences of aliasing") {
                 val domain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
                 val method = IntegerValues.findMethod("aliasingMax5").head
-                /*val result =*/ BaseAI(method, domain)
+                /*val result =*/
+                BaseAI(method, domain)
                 if (domain.allReturnedValues.size != 2)
-                    fail("expected two results; found: "+domain.allReturnedValues)
+                    fail("expected two results; found: " + domain.allReturnedValues)
 
                 val summary = domain.summarize(-1, domain.allReturnedValues.values)
                 summary should be(domain.IntegerRange(Int.MinValue, 5))
@@ -3344,9 +3346,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
             it("it should be able to adapt (<=) the bounds of an IntegerRange value in the presences of aliasing") {
                 val domain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
                 val method = IntegerValues.findMethod("aliasingMax6").head
-                /*val result =*/ BaseAI(method, domain)
+                /*val result =*/
+                BaseAI(method, domain)
                 if (domain.allReturnedValues.size != 2)
-                    fail("expected two results; found: "+domain.allReturnedValues)
+                    fail("expected two results; found: " + domain.allReturnedValues)
 
                 val summary = domain.summarize(-1, domain.allReturnedValues.values)
                 summary should be(domain.IntegerRange(Int.MinValue, 6))
@@ -3355,9 +3358,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
             it("it should be able to adapt (>=) the bounds of an IntegerRange value in the presences of aliasing") {
                 val domain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
                 val method = IntegerValues.findMethod("aliasingMinM1").head
-                /*val result =*/ BaseAI(method, domain)
+                /*val result =*/
+                BaseAI(method, domain)
                 if (domain.allReturnedValues.size != 2)
-                    fail("expected two results; found: "+domain.allReturnedValues)
+                    fail("expected two results; found: " + domain.allReturnedValues)
 
                 val summary = domain.summarize(-1, domain.allReturnedValues.values)
                 summary should be(domain.IntegerRange(-1, Int.MaxValue))
@@ -3366,9 +3370,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
             it("it should be able to adapt (>) the bounds of an IntegerRange value in the presences of aliasing") {
                 val domain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
                 val method = IntegerValues.findMethod("aliasingMin0").head
-                /*val result =*/ BaseAI(method, domain)
+                /*val result =*/
+                BaseAI(method, domain)
                 if (domain.allReturnedValues.size != 2)
-                    fail("expected two results; found: "+domain.allReturnedValues)
+                    fail("expected two results; found: " + domain.allReturnedValues)
 
                 val summary = domain.summarize(-1, domain.allReturnedValues.values)
                 summary should be(domain.IntegerRange(0, Int.MaxValue))
@@ -3377,9 +3382,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
             it("it should be able to collect a switch statement's cases and use that information to calculate a result") {
                 val domain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
                 val method = IntegerValues.findMethod("someSwitch").head
-                /*val result =*/ BaseAI(method, domain)
+                /*val result =*/
+                BaseAI(method, domain)
                 if (domain.allReturnedValues.size != 1)
-                    fail("expected one result; found: "+domain.allReturnedValues)
+                    fail("expected one result; found: " + domain.allReturnedValues)
 
                 domain.allReturnedValues.head._2 should be(domain.IntegerRange(0, 8))
             }
@@ -3387,9 +3393,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
             it("it should be able to detect contradicting conditions") {
                 val domain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
                 val method = IntegerValues.findMethod("someComparisonThatReturns5").head
-                /*val result =*/ BaseAI(method, domain)
+                /*val result =*/
+                BaseAI(method, domain)
                 if (domain.allReturnedValues.size != 2)
-                    fail("expected one result; found: "+domain.allReturnedValues)
+                    fail("expected one result; found: " + domain.allReturnedValues)
 
                 val summary = domain.summarize(-1, domain.allReturnedValues.values)
                 summary should be(domain.IntegerRange(5, 5))
@@ -3400,7 +3407,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val method = IntegerValues.findMethod("array10").head
                 val result = BaseAI(method, domain)
                 if (domain.allReturnedValues.size != 1)
-                    fail("expected one result; found: "+domain.allReturnedValues)
+                    fail("expected one result; found: " + domain.allReturnedValues)
 
                 // we don't know the size of the array
                 domain.allReturnedValues.head._2 abstractsOver (
@@ -3424,7 +3431,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 result.operandsArray(62) should be(null)
                 result.operandsArray(65) should be(null)
                 result.operandsArray(68) should be(null)
-                //...
+                // ...
                 result.operandsArray(89) should be(null)
 
             }
@@ -3630,8 +3637,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
 class DefaultIntegerRangesTestDomain(
         override val maxCardinalityOfIntegerRanges: Long = -(Int.MinValue.toLong) + Int.MaxValue
-)
-    extends CorrelationalDomain
+) extends CorrelationalDomain
     with DefaultSpecialDomainValuesBinding
     with ThrowAllPotentialExceptionsConfiguration
     with l0.DefaultTypeLevelLongValues
@@ -3651,8 +3657,7 @@ class DefaultIntegerRangesTestDomain(
 
 class JoinResultsIntegerRangesTestDomain(
         override val maxCardinalityOfIntegerRanges: Long = -(Int.MinValue.toLong) + Int.MaxValue
-)
-    extends CorrelationalDomain
+) extends CorrelationalDomain
     with DefaultSpecialDomainValuesBinding
     with ThrowAllPotentialExceptionsConfiguration
     with l0.DefaultTypeLevelLongValues

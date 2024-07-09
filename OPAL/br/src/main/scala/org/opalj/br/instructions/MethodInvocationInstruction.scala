@@ -11,10 +11,11 @@ package instructions
  */
 abstract class MethodInvocationInstruction extends InvocationInstruction {
 
-    final override def isMethodInvocationInstruction: Boolean = true
-    final override def asMethodInvocationInstruction: MethodInvocationInstruction = this
+    override final def isMethodInvocationInstruction: Boolean = true
+    override final def asMethodInvocationInstruction: MethodInvocationInstruction = this
 
-    /* abstract */ def declaringClass: ReferenceType
+    /* abstract */
+    def declaringClass: ReferenceType
 
     def isInterfaceCall: Boolean
 
@@ -32,7 +33,8 @@ abstract class MethodInvocationInstruction extends InvocationInstruction {
      * call resolution has to take place. I.e., if the underlying instruction is an
      * invokevirtual or an invokeinterface instruction.
      */
-    /* abstract */ def isVirtualMethodCall: Boolean
+    /* abstract */
+    def isVirtualMethodCall: Boolean
 
     def asVirtualMethod: VirtualMethod = VirtualMethod(declaringClass, name, methodDescriptor)
 

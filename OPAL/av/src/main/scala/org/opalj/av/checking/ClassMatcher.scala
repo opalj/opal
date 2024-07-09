@@ -4,11 +4,12 @@ package av
 package checking
 
 import scala.util.matching.Regex
+
+import org.opalj.bi.AccessFlagsMatcher
 import org.opalj.br.ClassFile
 import org.opalj.br.VirtualSourceElement
 import org.opalj.br.VirtualSourceElement.asVirtualSourceElements
 import org.opalj.br.analyses.SomeProject
-import org.opalj.bi.AccessFlagsMatcher
 
 /**
  * A class matcher matches classes defined by the respective classes.

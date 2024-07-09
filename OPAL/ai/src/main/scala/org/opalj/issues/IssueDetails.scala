@@ -2,13 +2,13 @@
 package org.opalj
 package issues
 
-import scala.xml.Node
 import scala.xml.Group
+import scala.xml.Node
 
 import org.opalj.br.ClassFile
+import org.opalj.br.Code
 import org.opalj.br.Method
 import org.opalj.br.PC
-import org.opalj.br.Code
 import org.opalj.br.instructions.Instruction
 
 trait ClassComprehension {
@@ -57,12 +57,14 @@ object PCLineComprehension {
     final def line(pc: PC)(implicit code: Code): Option[Int] = code.lineNumber(pc)
 
     final def pcLineToString(pc: PC)(implicit code: Code) = {
-        "pc="+pc + line(pc).map(" line="+_).getOrElse("")
+        "pc=" + pc + line(pc).map(" line=" + _).getOrElse("")
     }
 
     def pcNode(classFileFQN: String, methodJVMSignature: String, pc: PC): Node = {
-        <span class="program_counter" data-class={ classFileFQN } data-method={ methodJVMSignature } data-pc={ pc.toString } data-show="bytecode">
-            pc={ pc.toString }
+        <span class="program_counter" data-class={classFileFQN} data-method={methodJVMSignature} data-pc={
+            pc.toString
+        } data-show="bytecode">
+            pc={pc.toString}
         </span>
     }
 
@@ -73,8 +75,10 @@ object PCLineComprehension {
         line:               Option[Int]
     ): Node = {
         line.map { line =>
-            <span class="line_number" data-class={ classFileFQN } data-method={ methodJVMSignature } data-line={ line.toString } data-pc={ pc.toString } data-show="sourcecode">
-                line={ line.toString }
+            <span class="line_number" data-class={classFileFQN} data-method={methodJVMSignature} data-line={
+                line.toString
+            } data-pc={pc.toString} data-show="sourcecode">
+                line={line.toString}
             </span>
         }.getOrElse(Group(Nil))
     }

@@ -2,16 +2,16 @@
 package org.opalj
 package ai
 
-import org.opalj.br.Type
 import org.opalj.br.BooleanType
 import org.opalj.br.ByteType
 import org.opalj.br.CharType
-import org.opalj.br.ShortType
-import org.opalj.br.IntegerType
-import org.opalj.br.LongType
-import org.opalj.br.FloatType
 import org.opalj.br.DoubleType
 import org.opalj.br.FieldType
+import org.opalj.br.FloatType
+import org.opalj.br.IntegerType
+import org.opalj.br.LongType
+import org.opalj.br.ShortType
+import org.opalj.br.Type
 import org.opalj.br.VoidType
 
 /**

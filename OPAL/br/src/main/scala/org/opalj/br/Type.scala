@@ -5,11 +5,10 @@ package br
 import scala.annotation.tailrec
 
 import java.lang.ref.WeakReference
-import java.util.WeakHashMap
 import java.util.{Arrays => JArrays}
+import java.util.WeakHashMap
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantReadWriteLock
-
 import scala.collection.SortedSet
 import scala.math.Ordered
 
@@ -142,42 +141,42 @@ sealed trait Type extends UIDValue with Ordered[Type] {
 
     @throws[ClassCastException]("if this type is not a reference type")
     def asReferenceType: ReferenceType = {
-        throw new ClassCastException(this.toJava+" cannot be cast to a ReferenceType");
+        throw new ClassCastException(this.toJava + " cannot be cast to a ReferenceType");
     }
 
     @throws[ClassCastException]("if this type is not an array type")
     def asArrayType: ArrayType = {
-        throw new ClassCastException(this.toJava+" cannot be cast to an ArrayType");
+        throw new ClassCastException(this.toJava + " cannot be cast to an ArrayType");
     }
 
     @throws[ClassCastException]("if this type is not an object type")
     def asObjectType: ObjectType = {
-        throw new ClassCastException(this.toJava+" cannot be cast to an ObjectType");
+        throw new ClassCastException(this.toJava + " cannot be cast to an ObjectType");
     }
 
     @throws[ClassCastException]("if this type is not a base type")
     def asBaseType: BaseType = {
-        throw new ClassCastException(getClass.getSimpleName+" cannot be cast to a BaseType");
+        throw new ClassCastException(getClass.getSimpleName + " cannot be cast to a BaseType");
     }
 
     @throws[ClassCastException]("if this type is not a field type")
     def asFieldType: FieldType = {
-        throw new ClassCastException(getClass.getSimpleName+" cannot be cast to a FieldType");
+        throw new ClassCastException(getClass.getSimpleName + " cannot be cast to a FieldType");
     }
 
     @throws[ClassCastException]("if this is not a numeric type")
     def asNumericType: NumericType = {
-        throw new ClassCastException(getClass.getSimpleName+" cannot be cast to a NumericType");
+        throw new ClassCastException(getClass.getSimpleName + " cannot be cast to a NumericType");
     }
 
     @throws[ClassCastException]("if this is not an int like type")
     def asIntLikeType: IntLikeType = {
-        throw new ClassCastException(getClass.getSimpleName+" cannot be cast to an IntLikeType");
+        throw new ClassCastException(getClass.getSimpleName + " cannot be cast to an IntLikeType");
     }
 
     @throws[ClassCastException]("if this is not a boolean type")
     def asBooleanType: BooleanType = {
-        throw new ClassCastException(getClass.getSimpleName+" cannot be cast to an IntLikeType");
+        throw new ClassCastException(getClass.getSimpleName + " cannot be cast to an IntLikeType");
     }
 
     /**
@@ -244,8 +243,8 @@ sealed trait Type extends UIDValue with Ordered[Type] {
             1
     }
 
-    override def <(other: Type): Boolean = this.id < other.id
-    override def >(other: Type): Boolean = this.id > other.id
+    override def <(other:  Type): Boolean = this.id < other.id
+    override def >(other:  Type): Boolean = this.id > other.id
     override def >=(other: Type): Boolean = this.id >= other.id
     override def <=(other: Type): Boolean = this.id <= other.id
 
@@ -287,20 +286,20 @@ object ReturnType {
  */
 sealed abstract class VoidType private () extends Type with ReturnTypeSignature {
 
-    final override def toJVMSignature: String = toJVMTypeName
+    override final def toJVMSignature: String = toJVMTypeName
 
     final val id = Int.MinValue
 
     final def WrapperType: ObjectType = ObjectType.Void
 
-    final override def isVoidType: Boolean = true
+    override final def isVoidType: Boolean = true
 
-    final override def computationalType: ComputationalType =
+    override final def computationalType: ComputationalType =
         throw new UnsupportedOperationException("void does not have a computational type")
 
-    final override def operandSize: Int = 0
+    override final def operandSize: Int = 0
 
-    final override def accept[T](sv: SignatureVisitor[T]): T = sv.visit(this)
+    override final def accept[T](sv: SignatureVisitor[T]): T = sv.visit(this)
 
     override def toJava: String = "void"
 
@@ -324,9 +323,9 @@ case object VoidType extends VoidType
  */
 sealed trait FieldType extends Type {
 
-    final override def isFieldType: Boolean = true
+    override final def isFieldType: Boolean = true
 
-    final override def asFieldType: this.type = this
+    override final def asFieldType: this.type = this
 
     /**
      * Returns the sequence of instructions that adapts values of `this` type to values
@@ -339,6 +338,7 @@ sealed trait FieldType extends Type {
     @throws[IllegalArgumentException]("if a(n) (un)boxing to the targetType is not possible")
     def adapt[T](targetType: Type)(implicit typeConversionFactory: TypeConversionFactory[T]): T
 }
+
 /**
  * Factory to parse field type (descriptors) to get field type objects.
  */
@@ -359,20 +359,20 @@ object FieldType {
             case 'Z' => BooleanType
             case 'L' => ObjectType(ft.substring(1, ft.length - 1))
             case '[' => ArrayType(FieldType(ft.substring(1)))
-            case _   => throw new IllegalArgumentException(ft+" is not a valid field type descriptor")
+            case _   => throw new IllegalArgumentException(ft + " is not a valid field type descriptor")
         }
     }
 }
 
 sealed abstract class ReferenceType extends FieldType {
 
-    final override def isReferenceType: Boolean = true
+    override final def isReferenceType: Boolean = true
 
-    final override def asReferenceType: ReferenceType = this
+    override final def asReferenceType: ReferenceType = this
 
-    final override def computationalType: ComputationalType = ComputationalTypeReference
+    override final def computationalType: ComputationalType = ComputationalTypeReference
 
-    final override def operandSize: Int = 1
+    override final def operandSize: Int = 1
 
     /**
      * Returns the most precise object type that represents this reference type. In
@@ -388,6 +388,7 @@ sealed abstract class ReferenceType extends FieldType {
     def id: Int
 
 }
+
 /**
  * Factory to create instances of `ReferenceType`.
  */
@@ -434,11 +435,11 @@ sealed trait BaseType extends FieldType with TypeSignature {
 
     type JType <: AnyVal
 
-    final override def isBaseType: Boolean = true
+    override final def isBaseType: Boolean = true
 
-    final override def asBaseType: this.type = this
+    override final def asBaseType: this.type = this
 
-    final override def toJVMSignature: String = toJVMTypeName
+    override final def toJVMSignature: String = toJVMTypeName
 
     /**
      * The atype value of the base type. The atype value uniquely identifies a base
@@ -450,11 +451,10 @@ sealed trait BaseType extends FieldType with TypeSignature {
 
     def boxValue[T](implicit typeConversionFactory: TypeConversionFactory[T]): T
 
-    final override def adapt[T](
+    override final def adapt[T](
         targetType: Type
     )(
-        implicit
-        typeConversionFactory: TypeConversionFactory[T]
+        implicit typeConversionFactory: TypeConversionFactory[T]
     ): T = {
         if ((targetType eq WrapperType) || (targetType eq ObjectType.Object)) {
             boxValue
@@ -478,8 +478,13 @@ object BaseType {
      */
     final val baseTypes: SortedSet[BaseType] =
         SortedSet[BaseType](
-            BooleanType,
-            ByteType, CharType, ShortType, IntegerType, // <= "IntLike" values
+            BooleanType, //
+
+            ByteType,
+            CharType,
+            ShortType,
+            IntegerType, // <= "IntLike" values
+
             LongType,
             FloatType,
             DoubleType
@@ -503,8 +508,7 @@ sealed abstract class NumericType protected () extends BaseType {
     def convertTo[T](
         targetType: NumericType
     )(
-        implicit
-        typeConversionFactory: TypeConversionFactory[T]
+        implicit typeConversionFactory: TypeConversionFactory[T]
     ): T
 
     /**
@@ -540,9 +544,9 @@ sealed abstract class NumericType protected () extends BaseType {
 /** All values which are stored in a value with computational type integer. */
 sealed trait CTIntType extends Type {
 
-    final override def computationalType: ComputationalType = ComputationalTypeInt
+    override final def computationalType: ComputationalType = ComputationalTypeInt
 
-    final override def operandSize: Int = 1
+    override final def operandSize: Int = 1
 
 }
 
@@ -575,7 +579,7 @@ sealed abstract class IntLikeType protected () extends NumericType with CTIntTyp
 
 sealed abstract class ByteType private () extends IntLikeType {
 
-    final override type JType = Byte
+    override final type JType = Byte
 
     final val atype = 8
 
@@ -583,7 +587,7 @@ sealed abstract class ByteType private () extends IntLikeType {
 
     final val WrapperType = ObjectType.Byte
 
-    final override def isByteType: Boolean = true
+    override final def isByteType: Boolean = true
 
     def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
@@ -602,8 +606,7 @@ sealed abstract class ByteType private () extends IntLikeType {
     override def convertTo[T](
         targetType: NumericType
     )(
-        implicit
-        typeConversionFactory: TypeConversionFactory[T]
+        implicit typeConversionFactory: TypeConversionFactory[T]
     ): T = {
         import typeConversionFactory._
         (targetType.id: @scala.annotation.switch) match {
@@ -626,7 +629,7 @@ case object ByteType extends ByteType
 
 sealed abstract class CharType private () extends IntLikeType {
 
-    final override type JType = Char
+    override final type JType = Char
 
     final val atype = 5
 
@@ -634,9 +637,9 @@ sealed abstract class CharType private () extends IntLikeType {
 
     final val WrapperType = ObjectType.Character
 
-    final override def isCharType: Boolean = true
+    override final def isCharType: Boolean = true
 
-    final override def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
+    override final def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
     def toJava: String = "char"
 
@@ -653,8 +656,7 @@ sealed abstract class CharType private () extends IntLikeType {
     override def convertTo[T](
         targetType: NumericType
     )(
-        implicit
-        typeConversionFactory: TypeConversionFactory[T]
+        implicit typeConversionFactory: TypeConversionFactory[T]
     ): T = {
         import typeConversionFactory._
         (targetType.id: @scala.annotation.switch) match {
@@ -676,15 +678,15 @@ case object CharType extends CharType
 
 sealed abstract class DoubleType private () extends NumericType {
 
-    final override type JType = Double
+    override final type JType = Double
 
-    final override def isDoubleType: Boolean = true
+    override final def isDoubleType: Boolean = true
 
-    final override def computationalType: ComputationalType = ComputationalTypeDouble
+    override final def computationalType: ComputationalType = ComputationalTypeDouble
 
-    final override def operandSize: Int = 2
+    override final def operandSize: Int = 2
 
-    final override def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
+    override final def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
     final val atype = 7
 
@@ -708,8 +710,7 @@ sealed abstract class DoubleType private () extends NumericType {
     override def convertTo[T](
         targetType: NumericType
     )(
-        implicit
-        typeConversionFactory: TypeConversionFactory[T]
+        implicit typeConversionFactory: TypeConversionFactory[T]
     ): T = {
         import typeConversionFactory._
         (targetType.id: @scala.annotation.switch) match {
@@ -724,8 +725,7 @@ sealed abstract class DoubleType private () extends NumericType {
     }
 
     override def boxValue[T](
-        implicit
-        typeConversionFactory: TypeConversionFactory[T]
+        implicit typeConversionFactory: TypeConversionFactory[T]
     ): T = { typeConversionFactory.PrimitiveDoubleToLangDouble }
 
 }
@@ -733,7 +733,7 @@ case object DoubleType extends DoubleType
 
 sealed abstract class FloatType private () extends NumericType {
 
-    final override type JType = Float
+    override final type JType = Float
 
     final val atype = 6
 
@@ -741,13 +741,13 @@ sealed abstract class FloatType private () extends NumericType {
 
     final val WrapperType = ObjectType.Float
 
-    final override def isFloatType: Boolean = true
+    override final def isFloatType: Boolean = true
 
-    final override def computationalType: ComputationalType = ComputationalTypeFloat
+    override final def computationalType: ComputationalType = ComputationalTypeFloat
 
-    final override def operandSize: Int = 1
+    override final def operandSize: Int = 1
 
-    final override def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
+    override final def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
     def toJava: String = "float"
 
@@ -765,8 +765,7 @@ sealed abstract class FloatType private () extends NumericType {
     override def convertTo[T](
         targetType: NumericType
     )(
-        implicit
-        typeConversionFactory: TypeConversionFactory[T]
+        implicit typeConversionFactory: TypeConversionFactory[T]
     ): T = {
         import typeConversionFactory._
         (targetType.id: @scala.annotation.switch) match {
@@ -789,7 +788,7 @@ case object FloatType extends FloatType
 
 sealed abstract class ShortType private () extends IntLikeType {
 
-    final override type JType = Short
+    override final type JType = Short
 
     final val atype = 9
 
@@ -797,9 +796,9 @@ sealed abstract class ShortType private () extends IntLikeType {
 
     final val WrapperType = ObjectType.Short
 
-    final override def isShortType: Boolean = true
+    override final def isShortType: Boolean = true
 
-    final override def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
+    override final def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
     def toJava: String = "short"
 
@@ -816,8 +815,7 @@ sealed abstract class ShortType private () extends IntLikeType {
     override def convertTo[T](
         targetType: NumericType
     )(
-        implicit
-        typeConversionFactory: TypeConversionFactory[T]
+        implicit typeConversionFactory: TypeConversionFactory[T]
     ): T = {
         import typeConversionFactory._
         (targetType.id: @scala.annotation.switch) match {
@@ -840,7 +838,7 @@ case object ShortType extends ShortType
 
 sealed abstract class IntegerType private () extends IntLikeType {
 
-    final override type JType = Int
+    override final type JType = Int
 
     final val atype = 10
 
@@ -848,9 +846,9 @@ sealed abstract class IntegerType private () extends IntLikeType {
 
     final val WrapperType = ObjectType.Integer
 
-    final override def isIntegerType: Boolean = true
+    override final def isIntegerType: Boolean = true
 
-    final override def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
+    override final def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
     def toJava: String = "int"
 
@@ -871,8 +869,7 @@ sealed abstract class IntegerType private () extends IntLikeType {
     override def convertTo[T](
         targetType: NumericType
     )(
-        implicit
-        typeConversionFactory: TypeConversionFactory[T]
+        implicit typeConversionFactory: TypeConversionFactory[T]
     ): T = {
         import typeConversionFactory._
         (targetType.id: @scala.annotation.switch) match {
@@ -895,7 +892,7 @@ case object IntegerType extends IntegerType
 
 sealed abstract class LongType private () extends NumericType {
 
-    final override type JType = Long
+    override final type JType = Long
 
     final val atype = 11
 
@@ -903,13 +900,13 @@ sealed abstract class LongType private () extends NumericType {
 
     final val WrapperType = ObjectType.Long
 
-    final override def isLongType: Boolean = true
+    override final def isLongType: Boolean = true
 
-    final override def computationalType: ComputationalType = ComputationalTypeLong
+    override final def computationalType: ComputationalType = ComputationalTypeLong
 
-    final override def operandSize: Int = 2
+    override final def operandSize: Int = 2
 
-    final override def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
+    override final def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
     def toJava: String = "long"
 
@@ -927,8 +924,7 @@ sealed abstract class LongType private () extends NumericType {
     override def convertTo[T](
         targetType: NumericType
     )(
-        implicit
-        typeConversionFactory: TypeConversionFactory[T]
+        implicit typeConversionFactory: TypeConversionFactory[T]
     ): T = {
         import typeConversionFactory._
         (targetType.id: @scala.annotation.switch) match {
@@ -958,7 +954,7 @@ case object LongType extends LongType
  */
 sealed abstract class BooleanType private () extends BaseType with CTIntType {
 
-    final override type JType = Boolean
+    override final type JType = Boolean
 
     final val atype = 4
 
@@ -966,11 +962,11 @@ sealed abstract class BooleanType private () extends BaseType with CTIntType {
 
     final val WrapperType = ObjectType.Boolean
 
-    final override def isBooleanType: Boolean = true
+    override final def isBooleanType: Boolean = true
 
-    final override def asBooleanType: BooleanType = this
+    override final def asBooleanType: BooleanType = this
 
-    final override def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
+    override final def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
     final val toJava /*: String*/ = "boolean"
 
@@ -1036,8 +1032,7 @@ final class ObjectType private ( // DO NOT MAKE THIS A CASE CLASS!
     override def adapt[T](
         targetType: Type
     )(
-        implicit
-        typeConversionFactory: TypeConversionFactory[T]
+        implicit typeConversionFactory: TypeConversionFactory[T]
     ): T = {
         ObjectType.unboxValue(targetType)
     }
@@ -1052,9 +1047,10 @@ final class ObjectType private ( // DO NOT MAKE THIS A CASE CLASS!
 
     // The default equals and hashCode methods are a perfect fit.
 
-    override def toString: String = "ObjectType("+fqn+")"
+    override def toString: String = "ObjectType(" + fqn + ")"
 
 }
+
 /**
  * Defines factory and extractor methods for `ObjectType`s.
  *
@@ -1129,9 +1125,7 @@ object ObjectType {
             objectTypes = JArrays.copyOf(objectTypes, highestPredefinedTypeId + 1)
 
             // Refill the cache using the objectTypes array
-            objectTypes.foreach { ot =>
-                cache.put(ot.fqn, new WeakReference[ObjectType](ot))
-            }
+            objectTypes.foreach { ot => cache.put(ot.fqn, new WeakReference[ObjectType](ot)) }
 
             // Reset ID counter to highest id in the cache
             nextId.set(highestPredefinedTypeId + 1)
@@ -1315,6 +1309,7 @@ object ObjectType {
     final val RuntimeException = ObjectType("java/lang/RuntimeException")
 
     final val Thread = ObjectType("java/lang/Thread")
+    final val ThreadGroup = ObjectType("java/lang/ThreadGroup")
     final val Runnable = ObjectType("java/lang/Runnable")
 
     // Types related to the invokedynamic instruction
@@ -1401,8 +1396,7 @@ object ObjectType {
     def unboxValue[T](
         wrapperType: Type
     )(
-        implicit
-        typeConversionFactory: TypeConversionFactory[T]
+        implicit typeConversionFactory: TypeConversionFactory[T]
     ): T = {
         typeConversionFactory.unboxValue(wrapperType)
     }
@@ -1533,26 +1527,25 @@ final class ArrayType private ( // DO NOT MAKE THIS A CASE CLASS!
         }
     }
 
-    override def toJava: String = componentType.toJava+"[]"
+    override def toJava: String = componentType.toJava + "[]"
 
-    override def toBinaryJavaName: String = "["+componentType.toBinaryJavaName
+    override def toBinaryJavaName: String = "[" + componentType.toBinaryJavaName
 
-    override def toJVMTypeName: String = "["+componentType.toJVMTypeName
+    override def toJVMTypeName: String = "[" + componentType.toJVMTypeName
 
     override def toJavaClass: java.lang.Class[_] = java.lang.Class.forName(toBinaryJavaName)
 
     override def adapt[T](
         targetType: Type
     )(
-        implicit
-        typeConversionFactory: TypeConversionFactory[T]
+        implicit typeConversionFactory: TypeConversionFactory[T]
     ): T = {
         throw new UnsupportedOperationException("adaptation of array values is not supported")
     }
 
     // The default equals and hashCode methods are a perfect fit.
 
-    override def toString: String = "ArrayType("+componentType.toString+")"
+    override def toString: String = "ArrayType(" + componentType.toString + ")"
 }
 
 /**

@@ -7,6 +7,21 @@ package cg
 package rta
 
 import scala.language.existentials
+
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.ObjectType
+import org.opalj.br.ReferenceType
+import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
+import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
+import org.opalj.br.fpcf.ContextProviderKey
+import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.analyses.ContextProvider
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
+import org.opalj.br.fpcf.properties.cg.NoCallers
+import org.opalj.br.instructions.NEW
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
@@ -23,19 +38,6 @@ import org.opalj.fpcf.PropertyComputationResult
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.SomeEPS
-import org.opalj.br.DeclaredMethod
-import org.opalj.br.ObjectType
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
-import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.tac.fpcf.properties.cg.Callers
-import org.opalj.tac.fpcf.properties.cg.InstantiatedTypes
-import org.opalj.tac.fpcf.properties.cg.NoCallers
-import org.opalj.br.instructions.NEW
-import org.opalj.br.ReferenceType
-import org.opalj.tac.cg.TypeIteratorKey
 
 /**
  * Marks types as instantiated if their constructor is invoked. Constructors invoked by subclass
@@ -49,21 +51,9 @@ class InstantiatedTypesAnalysis private[analyses] (
         final val project: SomeProject
 ) extends FPCFAnalysis {
 
-    private[this] implicit val typeIterator: TypeIterator = project.get(TypeIteratorKey)
+    private[this] implicit val contextProvider: ContextProvider = project.get(ContextProviderKey)
 
     def analyze(declaredMethod: DeclaredMethod): PropertyComputationResult = {
-        // only constructors may initialize a class
-        if (declaredMethod.name != "<init>")
-            return NoResult;
-
-        val declaredType = declaredMethod.declaringClassType
-
-        val cfOpt = project.classFile(declaredType)
-
-        // abstract classes can never be instantiated
-        if (cfOpt.isDefined && cfOpt.get.isAbstract)
-            return NoResult;
-
         val callersEOptP = propertyStore(declaredMethod, Callers.key)
 
         val callersUB: Callers = (callersEOptP: @unchecked) match {
@@ -82,46 +72,62 @@ class InstantiatedTypesAnalysis private[analyses] (
             // the method is reachable, so we analyze it!
         }
 
+        val declaredType = declaredMethod.declaringClassType
+        val instantiatedTypes = getLoadConstantTypes(declaredMethod)
+
+        val cfOpt = project.classFile(declaredType)
+
+        // only constructors may initialize a class; abstract classes can never be instantiated
+        if (declaredMethod.name != "<init>" || cfOpt.isDefined && cfOpt.get.isAbstract) {
+            if (instantiatedTypes.isEmpty)
+                return NoResult;
+            else
+                return partialResult(instantiatedTypes)
+        }
+
         // the set of types that are definitely initialized at this point in time
         val instantiatedTypesEOptP = propertyStore(project, InstantiatedTypes.key)
         val instantiatedTypesUB: UIDSet[ReferenceType] = getInstantiatedTypesUB(instantiatedTypesEOptP)
 
-        // if the current type is already instantiated, no work is left
-        if (instantiatedTypesUB.contains(declaredType))
+        val newInstantiatedTypes = instantiatedTypes.diff(instantiatedTypesUB)
+
+        // if the current type and all constants' types are already instantiated, no work is left
+        if (instantiatedTypesUB.contains(declaredType) && newInstantiatedTypes.isEmpty)
             return NoResult;
 
-        processCallers(declaredMethod, declaredType, callersEOptP, callersUB, null)
+        processCallers(declaredMethod, declaredType, newInstantiatedTypes, callersEOptP, callersUB, null)
     }
 
     private[this] def processCallers(
-        declaredMethod: DeclaredMethod,
-        declaredType:   ObjectType,
-        callersEOptP:   EOptionP[DeclaredMethod, Callers],
-        callersUB:      Callers,
-        seenCallers:    Callers
+        declaredMethod:    DeclaredMethod,
+        declaredType:      ObjectType,
+        instantiatedTypes: UIDSet[ReferenceType],
+        callersEOptP:      EOptionP[DeclaredMethod, Callers],
+        callersUB:         Callers,
+        seenCallers:       Callers
     ): PropertyComputationResult = {
         callersUB.forNewCallerContexts(seenCallers, callersEOptP.e) {
             (_, callerContext, _, isDirect) =>
                 // unknown or VM level calls always have to be treated as instantiations
                 if (!callerContext.hasContext) {
-                    return partialResult(declaredType);
+                    return partialResult(instantiatedTypes + declaredType);
                 }
 
                 // indirect calls, e.g. via reflection, are to be treated as instantiations as well
                 if (!isDirect) {
-                    return partialResult(declaredType);
+                    return partialResult(instantiatedTypes + declaredType);
                 }
 
                 val caller = callerContext.method
 
                 // a constructor is called by a non-constructor method, there will be an initialization.
                 if (caller.name != "<init>") {
-                    return partialResult(declaredType);
+                    return partialResult(instantiatedTypes + declaredType);
                 }
 
                 // if the caller is not available, we have to assume that it was no super call
                 if (!caller.hasSingleDefinedMethod) {
-                    return partialResult(declaredType);
+                    return partialResult(instantiatedTypes + declaredType);
                 }
 
                 // the constructor is called from another constructor. it is only an new instantiated
@@ -129,7 +135,7 @@ class InstantiatedTypesAnalysis private[analyses] (
                 project.classFile(caller.declaringClassType).foreach { cf =>
                     cf.superclassType.foreach { supertype =>
                         if (supertype != declaredType)
-                            return partialResult(declaredType);
+                            return partialResult(instantiatedTypes + declaredType);
                     }
                 }
 
@@ -140,35 +146,39 @@ class InstantiatedTypesAnalysis private[analyses] (
                 val newInstr = NEW(declaredType)
                 val hasNew = body.exists(pcInst => pcInst.instruction == newInstr)
                 if (hasNew)
-                    return partialResult(declaredType);
+                    return partialResult(instantiatedTypes + declaredType);
         }
 
         if (callersEOptP.isFinal) {
-            NoResult
+            if (instantiatedTypes.isEmpty)
+                NoResult
+            else
+                partialResult(instantiatedTypes)
         } else {
             InterimPartialResult(
                 Set(callersEOptP),
-                continuation(declaredMethod, declaredType, callersUB)
+                continuation(declaredMethod, declaredType, instantiatedTypes, callersUB)
             )
         }
     }
 
     private[this] def continuation(
-        declaredMethod: DeclaredMethod,
-        declaredType:   ObjectType,
-        seenCallers:    Callers
+        declaredMethod:    DeclaredMethod,
+        declaredType:      ObjectType,
+        instantiatedTypes: UIDSet[ReferenceType],
+        seenCallers:       Callers
     )(someEPS: SomeEPS): PropertyComputationResult = {
         val eps = someEPS.asInstanceOf[EPS[DeclaredMethod, Callers]]
-        processCallers(declaredMethod, declaredType, eps, eps.ub, seenCallers)
+        processCallers(declaredMethod, declaredType, instantiatedTypes, eps, eps.ub, seenCallers)
     }
 
     private[this] def partialResult(
-        declaredType: ObjectType
+        instantiatedTypes: UIDSet[ReferenceType]
     ): PartialResult[SomeProject, InstantiatedTypes] = {
         PartialResult[SomeProject, InstantiatedTypes](
             project,
             InstantiatedTypes.key,
-            InstantiatedTypesAnalysis.update(project, UIDSet(declaredType))
+            InstantiatedTypesAnalysis.update(project, instantiatedTypes)
         )
     }
 
@@ -207,7 +217,7 @@ object InstantiatedTypesAnalysis {
 
 object InstantiatedTypesAnalysisScheduler extends BasicFPCFTriggeredAnalysisScheduler {
 
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(TypeIteratorKey)
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(ContextProviderKey)
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
         InstantiatedTypes,

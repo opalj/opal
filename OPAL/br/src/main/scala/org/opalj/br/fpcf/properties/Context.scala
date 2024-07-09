@@ -6,13 +6,13 @@ package properties
 
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantReadWriteLock
+import scala.collection.mutable
+
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
-
-import scala.collection.mutable
 
 /**
  * Provides the context in which a method was invoked or an object was allocated.
@@ -97,9 +97,7 @@ class SimpleContexts private[properties] (declaredMethods: DeclaredMethods) {
                     }
                 } else {
                     val newContext = SimpleContext(method)
-                    val newMap = java.util.Arrays.copyOf(
-                        id2Context, Math.max(declaredMethods._UNSAFE_size, id + 1)
-                    )
+                    val newMap = java.util.Arrays.copyOf(id2Context, Math.max(declaredMethods._UNSAFE_size, id + 1))
                     newMap(id) = newContext
                     id2Context = newMap
                     newContext

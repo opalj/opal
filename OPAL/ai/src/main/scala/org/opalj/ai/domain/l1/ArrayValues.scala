@@ -33,7 +33,6 @@ trait ArrayValues extends l1.ReferenceValues {
     /**
      * Represents some (multi-dimensional) array where the (initialized) dimensions have
      * the given size.
-     *
      */
     // NOTE THAT WE CANNOT STORE SIZE INFORMATION FOR AlL DIMENSIONS BEYOND THE FIRST ONE;
     // WE ARE NOT TRACKING THE ESCAPE STATE!
@@ -46,11 +45,11 @@ trait ArrayValues extends l1.ReferenceValues {
 
         assert(length.get >= 0, "impossible length")
 
-        final override def length: Option[Int] = Some(theLength)
+        override final def length: Option[Int] = Some(theLength)
 
-        final override def isNull: No.type = No
+        override final def isNull: No.type = No
 
-        final override def isPrecise: Boolean = true
+        override final def isPrecise: Boolean = true
 
         override def updateRefId(
             refId:  RefId,
@@ -158,9 +157,7 @@ trait ArrayValues extends l1.ReferenceValues {
         length:    DomainValue,
         arrayType: ArrayType
     ): DomainArrayValue = {
-        this.intValue(length) { length =>
-            InitializedArrayValue(pc, arrayType, length)
-        } {
+        this.intValue(length) { length => InitializedArrayValue(pc, arrayType, length) } {
             super.NewArray(pc, length, arrayType)
         }
     }
@@ -174,9 +171,7 @@ trait ArrayValues extends l1.ReferenceValues {
         lengths:   Operands,
         arrayType: ArrayType
     ): DomainArrayValue = {
-        intValue(lengths.last) { length =>
-            InitializedArrayValue(pc, arrayType, length)
-        } {
+        intValue(lengths.last) { length => InitializedArrayValue(pc, arrayType, length) } {
             super.NewArray(pc, lengths, arrayType)
         }
     }

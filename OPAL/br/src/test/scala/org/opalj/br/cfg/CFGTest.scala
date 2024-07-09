@@ -2,10 +2,10 @@
 package org.opalj.br
 package cfg
 
+import java.net.URL
+
 import org.junit.runner.RunWith
 import org.scalatestplus.junit.JUnitRunner
-
-import java.net.URL
 
 import org.opalj.br.TestSupport.biProject
 import org.opalj.br.analyses.Project

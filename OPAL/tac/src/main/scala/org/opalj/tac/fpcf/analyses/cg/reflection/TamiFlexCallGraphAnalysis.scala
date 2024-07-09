@@ -6,15 +6,8 @@ package analyses
 package cg
 package reflection
 
-import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.fpcf.ProperPropertyComputationResult
-import org.opalj.fpcf.PropertyBounds
-import org.opalj.fpcf.PropertyComputationResult
-import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.Results
-import org.opalj.value.ValueInformation
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.FPCFAnalysis
+import scala.collection.immutable.ArraySeq
+
 import org.opalj.br.ArrayType
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.MethodDescriptor
@@ -22,19 +15,27 @@ import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
-import org.opalj.tac.fpcf.properties.cg.Callees
-import org.opalj.tac.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.PropertyBounds
+import org.opalj.fpcf.PropertyComputationResult
+import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.Results
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.analyses.pointsto.TamiFlexKey
 import org.opalj.tac.fpcf.properties.TACAI
-
-import scala.collection.immutable.ArraySeq
+import org.opalj.value.ValueInformation
 
 /**
  * Adds the specified calls from the tamiflex.log to the call graph.
  * TODO: Merge with reflection analysis
  * TODO: Also handle class-forName -> Loaded classes
+ *
  * @author Florian Kuebler
  */
 class TamiFlexCallGraphAnalysis private[analyses] (
@@ -53,9 +54,7 @@ class TamiFlexCallGraphAnalysis private[analyses] (
                     "",
                     ObjectType.Method,
                     "invoke",
-                    MethodDescriptor.apply(
-                        ArraySeq(ObjectType.Object, ArrayType.ArrayOfObject), ObjectType.Object
-                    )
+                    MethodDescriptor.apply(ArraySeq(ObjectType.Object, ArrayType.ArrayOfObject), ObjectType.Object)
                 ),
                 "Method.invoke"
             ),
@@ -92,7 +91,7 @@ class TamiFlexMethodInvokeAnalysis private[analyses] (
         val key:                String
 ) extends TACAIBasedAPIBasedAnalysis with TypeConsumerAnalysis {
 
-    final private[this] val tamiFlexLogData = project.get(TamiFlexKey)
+    private[this] final val tamiFlexLogData = project.get(TamiFlexKey)
 
     override def processNewCaller(
         calleeContext:   ContextType,
@@ -124,7 +123,7 @@ class TamiFlexMethodInvokeAnalysis private[analyses] (
         val line = context.method.definedMethod.body.flatMap(b => b.lineNumber(pc)).getOrElse(-1)
         val targets = tamiFlexLogData.methods(context.method, key, line)
         if (targets.isEmpty)
-            return ;
+            return;
 
         val (methodInvokeReceiver, methodInvokeActualParamsOpt) = if (methodParams.size == 2) { // Method.invoke
             // TODO we should probably match the method receiver information (e.g. points-to) to

@@ -1,15 +1,16 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf
+package org.opalj
+package fpcf
 
 import java.net.URL
 
-import org.opalj.br.analyses.Project
-import org.opalj.br.AnnotationLike
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.VirtualFormalParameter
-import org.opalj.br.fpcf.properties.SimpleContextsKey
 import org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
+import org.opalj.br.AnnotationLike
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.VirtualFormalParameter
+import org.opalj.br.fpcf.properties.SimpleContextsKey
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.fpcf.analyses.escape.EagerInterProceduralEscapeAnalysis
@@ -40,7 +41,8 @@ class EscapeAnalysisTests extends PropertiesTest {
     }
 
     private[this] def mapEntities(
-        p: Project[URL], es: Iterable[(Entity, String => String, Iterable[AnnotationLike])]
+        p:  Project[URL],
+        es: Iterable[(Entity, String => String, Iterable[AnnotationLike])]
     ): Iterable[(Entity, String => String, Iterable[AnnotationLike])] = {
         val declaredMethods = p.get(DeclaredMethodsKey)
         val simpleContexts = p.get(SimpleContextsKey)

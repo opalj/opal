@@ -4,7 +4,6 @@ package br
 
 import java.net.URL
 import java.util.concurrent.ConcurrentLinkedQueue
-
 import scala.jdk.CollectionConverters._
 
 import org.opalj.br.analyses.BasicReport
@@ -32,7 +31,7 @@ object ShowLocalVariableTypeTables extends ProjectAnalysisApplication {
             val lvtt = m.body.get.localVariableTypeTable
             if (lvtt.nonEmpty)
                 messages.add(
-                    Console.BOLD + Console.BLUE + m.toJava + Console.RESET+" "+
+                    Console.BOLD + Console.BLUE + m.toJava + Console.RESET + " " +
                         lvtt.mkString("LocalVariableTypeTable: ", ",", "")
                 )
         }

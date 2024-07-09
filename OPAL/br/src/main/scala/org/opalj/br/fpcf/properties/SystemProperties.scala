@@ -4,13 +4,13 @@ package br
 package fpcf
 package properties
 
+import org.opalj.fpcf.Entity
 import org.opalj.fpcf.FallbackReason
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyIsNotDerivedByPreviouslyExecutedAnalysis
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.Entity
 
 /**
  * TODO Documentation
@@ -32,12 +32,13 @@ object SystemProperties extends SystemPropertiesPropertyMetaInformation {
     final val key: PropertyKey[SystemProperties] = {
         PropertyKey.create(
             Name,
-            (_: PropertyStore, reason: FallbackReason, _: Entity) => reason match {
-                case PropertyIsNotDerivedByPreviouslyExecutedAnalysis =>
-                    new SystemProperties(Map.empty)
-                case _ =>
-                    throw new IllegalStateException(s"analysis required for property: $Name")
-            }
+            (_: PropertyStore, reason: FallbackReason, _: Entity) =>
+                reason match {
+                    case PropertyIsNotDerivedByPreviouslyExecutedAnalysis =>
+                        new SystemProperties(Map.empty)
+                    case _ =>
+                        throw new IllegalStateException(s"analysis required for property: $Name")
+                }
         )
     }
 }

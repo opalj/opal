@@ -3,6 +3,7 @@ package org.opalj.br
 package cfg
 
 import scala.collection.mutable
+
 import org.opalj.graphs.Node
 
 /**
@@ -59,7 +60,7 @@ trait CFGNode extends Node {
     // MANAGING SUCCESSORS
     //
 
-    final override def hasSuccessors: Boolean = _successors.nonEmpty
+    override final def hasSuccessors: Boolean = _successors.nonEmpty
 
     /**
      * Returns `true` if the last instruction of this basic block throws/may throw an exception;
@@ -69,7 +70,7 @@ trait CFGNode extends Node {
         _successors.exists(successor => successor.isCatchNode || successor.isAbnormalReturnExitNode)
     }
 
-    final override def foreachSuccessor(f: Node => Unit): Unit = _successors foreach f
+    override final def foreachSuccessor(f: Node => Unit): Unit = _successors foreach f
 
     private[this] var _successors: Set[CFGNode] = Set.empty
 
@@ -92,9 +93,9 @@ trait CFGNode extends Node {
 
     private[cfg] def reachable(reachable: mutable.Set[CFGNode]): Unit = {
         // the following
-        //_successors.
-        //filterNot(reachable.contains).
-        //foreach { d => reachable += d; d.reachable(reachable) }
+        // _successors.
+        // filterNot(reachable.contains).
+        // foreach { d => reachable += d; d.reachable(reachable) }
 
         var remainingSuccessors = this._successors
         while (remainingSuccessors.nonEmpty) {

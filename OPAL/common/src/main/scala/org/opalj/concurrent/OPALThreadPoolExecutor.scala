@@ -3,13 +3,13 @@ package org
 package opalj
 package concurrent
 
-import java.util.concurrent.ThreadFactory
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.LinkedBlockingQueue
-import java.util.concurrent.ThreadPoolExecutor
 import java.util.concurrent.{Future => JFuture}
-import java.util.concurrent.ExecutionException
 import java.util.concurrent.CancellationException
+import java.util.concurrent.ExecutionException
+import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.ThreadFactory
+import java.util.concurrent.ThreadPoolExecutor
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicLong
 
 /**
@@ -28,23 +28,25 @@ class OPALBoundedThreadPoolExecutor(
         n:         Int,
         val group: ThreadGroup
 ) extends ThreadPoolExecutor(
-    n, n,
-    60L, TimeUnit.SECONDS,
-    new LinkedBlockingQueue[Runnable](), // this is a fixed size pool
-    new ThreadFactory {
+        n,
+        n,
+        60L,
+        TimeUnit.SECONDS,
+        new LinkedBlockingQueue[Runnable](), // this is a fixed size pool
+        new ThreadFactory {
 
-        val nextID = new AtomicLong(0L)
+            val nextID = new AtomicLong(0L)
 
-        def newThread(r: Runnable): Thread = {
-            val id = s"${nextID.incrementAndGet()}"
-            val name = group.getName + s" - Thread $id"
-            val t = new Thread(group, r, name)
-            t.setDaemon(true)
-            t.setUncaughtExceptionHandler(UncaughtExceptionHandler)
-            t
+            def newThread(r: Runnable): Thread = {
+                val id = s"${nextID.incrementAndGet()}"
+                val name = group.getName + s" - Thread $id"
+                val t = new Thread(group, r, name)
+                t.setDaemon(true)
+                t.setUncaughtExceptionHandler(UncaughtExceptionHandler)
+                t
+            }
         }
-    }
-) {
+    ) {
 
     override def afterExecute(r: Runnable, t: Throwable): Unit = {
         super.afterExecute(r, t)

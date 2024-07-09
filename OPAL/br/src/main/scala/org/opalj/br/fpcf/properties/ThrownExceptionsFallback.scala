@@ -4,12 +4,6 @@ package br
 package fpcf
 package properties
 
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.FallbackReason
-import org.opalj.fpcf.PropertyComputation
-import org.opalj.fpcf.PropertyComputationResult
-import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.Result
 import org.opalj.br.analyses.Project
 import org.opalj.br.collection.mutable.{TypesSet => BRMutableTypesSet}
 import org.opalj.br.fpcf.properties.ThrownExceptions.MethodBodyIsNotAvailable
@@ -50,6 +44,12 @@ import org.opalj.br.instructions.MONITOREXIT
 import org.opalj.br.instructions.PUTFIELD
 import org.opalj.br.instructions.RETURN
 import org.opalj.br.instructions.StackManagementInstruction
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.FallbackReason
+import org.opalj.fpcf.PropertyComputation
+import org.opalj.fpcf.PropertyComputationResult
+import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.Result
 
 /**
  * A very straight forward flow-insensitive analysis which can successfully analyze methods
@@ -90,7 +90,7 @@ object ThrownExceptionsFallback extends ((PropertyStore, FallbackReason, Entity)
             return MethodBodyIsNotAvailable;
 
         //
-        //... when we reach this point the method is non-empty
+        // ... when we reach this point the method is non-empty
         //
         val code = body.get
         val cfJoins = code.cfJoins
@@ -120,11 +120,12 @@ object ThrownExceptionsFallback extends ((PropertyStore, FallbackReason, Entity)
                 case INVOKESPECIAL.opcode =>
                     val INVOKESPECIAL(declaringClass, _, name, descriptor) = instruction
                     if ((declaringClass eq ObjectType.Object) && (
-                        (name == "<init>" && descriptor == MethodDescriptor.NoArgsAndReturnVoid) ||
-                        (name == "hashCode" && descriptor == MethodDescriptor.JustReturnsInteger) ||
-                        (name == "equals" && descriptor == ObjectEqualsMethodDescriptor) ||
-                        (name == "toString" && descriptor == MethodDescriptor.JustReturnsString)
-                    )) {
+                            (name == "<init>" && descriptor == MethodDescriptor.NoArgsAndReturnVoid) ||
+                            (name == "hashCode" && descriptor == MethodDescriptor.JustReturnsInteger) ||
+                            (name == "equals" && descriptor == ObjectEqualsMethodDescriptor) ||
+                            (name == "toString" && descriptor == MethodDescriptor.JustReturnsString)
+                        )
+                    ) {
                         true
                     } else {
                         result = ThrownExceptions.AnalysisLimitation
@@ -158,9 +159,9 @@ object ThrownExceptionsFallback extends ((PropertyStore, FallbackReason, Entity)
                     isFieldAccessed = true
                     fieldAccessMayThrowNullPointerException ||=
                         isStaticMethod || // <= the receiver is some object
-                        isLocalVariable0Updated || // <= we don't know the receiver object at all
-                        cfJoins.contains(pc) || // <= we cannot locally decide who is the receiver
-                        instructions(code.pcOfPreviousInstruction(pc)) != ALOAD_0 // <= the receiver may be null..
+                            isLocalVariable0Updated || // <= we don't know the receiver object at all
+                            cfJoins.contains(pc) || // <= we cannot locally decide who is the receiver
+                            instructions(code.pcOfPreviousInstruction(pc)) != ALOAD_0 // <= the receiver may be null..
                     true
 
                 case PUTFIELD.opcode =>
@@ -241,7 +242,8 @@ object ThrownExceptionsFallback extends ((PropertyStore, FallbackReason, Entity)
             return result;
         }
         if (fieldAccessMayThrowNullPointerException ||
-            (isFieldAccessed && isLocalVariable0Updated)) {
+            (isFieldAccessed && isLocalVariable0Updated)
+        ) {
             exceptions += ObjectType.NullPointerException
         }
         if (isSynchronizationUsed) {

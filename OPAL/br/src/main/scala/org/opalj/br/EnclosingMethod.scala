@@ -25,6 +25,7 @@ case class EnclosingMethod(
     override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = this == other
 
 }
+
 object EnclosingMethod {
 
     final val KindId = 10

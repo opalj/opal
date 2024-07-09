@@ -27,4 +27,3 @@ object ProjectIndexKey extends ProjectInformationKey[ProjectIndex, Nothing] {
     override def compute(project: SomeProject): ProjectIndex = ProjectIndex(project)
 
 }
-

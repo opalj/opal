@@ -8,9 +8,10 @@ package instructions
  */
 trait LConstInstruction extends LoadConstantInstruction[Long] with ImplicitValue {
 
-    final override def computationalType = ComputationalTypeLong
+    override final def computationalType = ComputationalTypeLong
 
 }
+
 object LConstInstruction {
 
     def unapply(instr: LConstInstruction): Option[Long] = Some(instr.value)

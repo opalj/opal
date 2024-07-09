@@ -20,7 +20,9 @@ class DynamicProxy(implicit hermes: HermesConfig) extends APIFeatureQuery {
 
         List(
             StaticAPIMethod(
-                ObjectType("java/lang/reflect/Proxy"), "newProxyInstance", featureID = "DP1"
+                ObjectType("java/lang/reflect/Proxy"),
+                "newProxyInstance",
+                featureID = "DP1"
             )
         )
     }

@@ -3,13 +3,13 @@ package org.opalj
 package br
 package reader
 
-import org.opalj.bi.reader.AnnotationsReader
-import org.opalj.bi.reader.RuntimeInvisibleAnnotations_attributeReader
-import org.opalj.bi.reader.RuntimeVisibleAnnotations_attributeReader
-import org.opalj.bi.reader.RuntimeInvisibleParameterAnnotations_attributeReader
-import org.opalj.bi.reader.RuntimeVisibleParameterAnnotations_attributeReader
-import org.opalj.bi.reader.ParametersAnnotationsReader
 import org.opalj.bi.reader.AnnotationDefault_attributeReader
+import org.opalj.bi.reader.AnnotationsReader
+import org.opalj.bi.reader.ParametersAnnotationsReader
+import org.opalj.bi.reader.RuntimeInvisibleAnnotations_attributeReader
+import org.opalj.bi.reader.RuntimeInvisibleParameterAnnotations_attributeReader
+import org.opalj.bi.reader.RuntimeVisibleAnnotations_attributeReader
+import org.opalj.bi.reader.RuntimeVisibleParameterAnnotations_attributeReader
 
 /**
  * Factory methods to create representations of the attributes related to
@@ -89,4 +89,3 @@ trait AnnotationAttributesBinding
     }
 
 }
-

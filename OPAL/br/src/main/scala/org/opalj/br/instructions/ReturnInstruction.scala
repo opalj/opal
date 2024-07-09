@@ -4,6 +4,7 @@ package br
 package instructions
 
 import scala.annotation.switch
+
 import org.opalj.collection.immutable.IntTrieSet
 
 /**
@@ -17,9 +18,9 @@ abstract class ReturnInstruction
     with ConstantLengthInstruction
     with NoLabels {
 
-    final override def isReturnInstruction: Boolean = true
+    override final def isReturnInstruction: Boolean = true
 
-    final override def asReturnInstruction: ReturnInstruction = this
+    override final def asReturnInstruction: ReturnInstruction = this
 
     /**
      * @see [[ReturnInstruction$.jvmExceptions]]
@@ -62,7 +63,7 @@ abstract class ReturnInstruction
 
     final def expressionResult: NoExpression.type = NoExpression
 
-    final override def toString(currentPC: Int): String = toString()
+    override final def toString(currentPC: Int): String = toString()
 }
 
 /**
@@ -105,6 +106,7 @@ object ReturnInstruction {
         }
 
 }
+
 /**
  * Defines extractor methods related to return instructions.
  *

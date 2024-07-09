@@ -49,7 +49,7 @@ trait DefaultIntegerValues extends DefaultSpecialDomainValuesBinding with Intege
     /**
      * Factory method to create a new instance of [[AnIntegerValue]].
      */
-    //def AnIntegerValue(): AnIntegerValue.type = AnIntegerValue
+    // def AnIntegerValue(): AnIntegerValue.type = AnIntegerValue
 
     /**
      * Represents a specific integer value in the range [`lowerBound`,`upperBound`].
@@ -93,7 +93,7 @@ trait DefaultIntegerValues extends DefaultSpecialDomainValuesBinding with Intege
             }
         }
 
-        override def toString: String = "int = "+value
+        override def toString: String = "int = " + value
 
     }
 

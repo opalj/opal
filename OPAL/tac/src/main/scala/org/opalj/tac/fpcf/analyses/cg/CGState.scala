@@ -7,10 +7,10 @@ package cg
 
 import scala.collection.mutable
 
-import org.opalj.fpcf.EOptionP
 import org.opalj.br.Method
 import org.opalj.br.ReferenceType
 import org.opalj.br.fpcf.properties.Context
+import org.opalj.fpcf.EOptionP
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
@@ -31,9 +31,7 @@ class CGState[ContextType <: Context](
 
     def addCallSite(callSite: CallSite, receiver: V, cbsTargets: Set[ReferenceType]): Unit = {
         if (_virtualCallSites.contains(callSite))
-            _virtualCallSites.put(
-                callSite, (receiver, _virtualCallSites(callSite)._2 ++ cbsTargets)
-            )
+            _virtualCallSites.put(callSite, (receiver, _virtualCallSites(callSite)._2 ++ cbsTargets))
         else
             _virtualCallSites.put(callSite, (receiver, cbsTargets))
     }

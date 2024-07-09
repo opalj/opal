@@ -8,26 +8,32 @@ package pointsto
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
-import org.opalj.log.LogContext
-import org.opalj.log.OPALLogger
-import org.opalj.log.Warn
+import org.opalj.br.ArrayType
+import org.opalj.br.DeclaredField
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.Method
+import org.opalj.br.ReferenceType
+import org.opalj.br.fpcf.properties.Context
+import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.cg.NoCallees
+import org.opalj.br.fpcf.properties.fieldaccess.MethodFieldAccessInformation
+import org.opalj.br.fpcf.properties.fieldaccess.MethodFieldReadAccessInformation
+import org.opalj.br.fpcf.properties.fieldaccess.MethodFieldWriteAccessInformation
+import org.opalj.br.fpcf.properties.fieldaccess.NoMethodFieldReadAccessInformation
+import org.opalj.br.fpcf.properties.fieldaccess.NoMethodFieldWriteAccessInformation
+import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.Property
+import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.SomeEPK
-import org.opalj.br.Method
-import org.opalj.tac.fpcf.properties.cg.Callees
-import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
-import org.opalj.tac.fpcf.properties.cg.NoCallees
-import org.opalj.br.ArrayType
-import org.opalj.br.DeclaredMethod
-import org.opalj.br.Field
-import org.opalj.br.ReferenceType
-import org.opalj.br.fpcf.properties.Context
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
+import org.opalj.log.Warn
 import org.opalj.tac.fpcf.analyses.cg.BaseAnalysisState
 import org.opalj.tac.fpcf.properties.TACAI
 
@@ -37,30 +43,32 @@ import org.opalj.tac.fpcf.properties.TACAI
  *
  * @author Florian Kuebler
  */
-class PointsToAnalysisState[ElementType, PointsToSet <: PointsToSetLike[ElementType, _, PointsToSet], ContextType <: Context](
+class PointsToAnalysisState[
+    ElementType,
+    PointsToSet <: PointsToSetLike[ElementType, _, PointsToSet],
+    ContextType <: Context
+](
         override val callContext:                  ContextType,
         override protected[this] var _tacDependee: EOptionP[Method, TACAI]
 ) extends BaseAnalysisState with TACAIBasedAnalysisState[ContextType] {
 
-    private[this] val getFields: ArrayBuffer[(Entity, Option[Field], ReferenceType => Boolean)] =
+    private[this] val getFields: ArrayBuffer[(Entity, Option[DeclaredField], ReferenceType => Boolean)] =
         ArrayBuffer.empty
-    private[this] val putFields: ArrayBuffer[(IntTrieSet, Option[Field])] = ArrayBuffer.empty
+    private[this] val putFields: ArrayBuffer[(IntTrieSet, Option[DeclaredField])] = ArrayBuffer.empty
 
-    def addGetFieldEntity(fakeEntity: (Entity, Option[Field], ReferenceType => Boolean)): Unit = {
+    def addGetFieldEntity(fakeEntity: (Entity, Option[DeclaredField], ReferenceType => Boolean)): Unit = {
         getFields += fakeEntity
     }
 
-    def getFieldsIterator: Iterator[(Entity, Option[Field], ReferenceType => Boolean)] =
-        getFields.iterator
+    def getFieldsIterator: Iterator[(Entity, Option[DeclaredField], ReferenceType => Boolean)] = getFields.iterator
 
-    def addPutFieldEntity(fakeEntity: (IntTrieSet, Option[Field])): Unit = {
+    def addPutFieldEntity(fakeEntity: (IntTrieSet, Option[DeclaredField])): Unit = {
         putFields += fakeEntity
     }
 
-    def putFieldsIterator: Iterator[(IntTrieSet, Option[Field])] = putFields.iterator
+    def putFieldsIterator: Iterator[(IntTrieSet, Option[DeclaredField])] = putFields.iterator
 
-    private[this] val arrayLoads: ArrayBuffer[(Entity, ArrayType, ReferenceType => Boolean)] =
-        ArrayBuffer.empty
+    private[this] val arrayLoads: ArrayBuffer[(Entity, ArrayType, ReferenceType => Boolean)] = ArrayBuffer.empty
     private[this] val arrayStores: ArrayBuffer[(IntTrieSet, ArrayType)] = ArrayBuffer.empty
 
     def addArrayLoadEntity(
@@ -115,7 +123,9 @@ class PointsToAnalysisState[ElementType, PointsToSet <: PointsToSetLike[ElementT
     }
 
     def includeSharedPointsToSets(
-        e: Entity, pointsToSets: Iterator[PointsToSet], typeFilter: ReferenceType => Boolean
+        e:            Entity,
+        pointsToSets: Iterator[PointsToSet],
+        typeFilter:   ReferenceType => Boolean
     ): Unit = {
         pointsToSets.foreach(pointsToSet => includeSharedPointsToSet(e, pointsToSet, typeFilter))
     }
@@ -147,7 +157,9 @@ class PointsToAnalysisState[ElementType, PointsToSet <: PointsToSetLike[ElementT
 
         assert(
             !_dependerToDependees.contains(depender) ||
-                !_dependerToDependees(depender).exists(other => other._1.e == dependee.e && other._1.pk.id == dependee.pk.id)
+            !_dependerToDependees(depender).exists(other =>
+                other._1.e == dependee.e && other._1.pk.id == dependee.pk.id
+            )
         )
         assert(!_dependees.contains(dependeeEPK) || _dependees(dependeeEPK) == dependee)
         if (_dependerToDependees.contains(depender)) {
@@ -171,7 +183,7 @@ class PointsToAnalysisState[ElementType, PointsToSet <: PointsToSetLike[ElementT
     // IMPROVE: potentially inefficient exists check
     final def hasDependency(depender: Entity, dependee: SomeEPK): Boolean = {
         _dependerToDependees.contains(depender) &&
-            _dependerToDependees(depender).exists(other => other._1.e == dependee.e && other._1.pk.id == dependee.pk.id)
+        _dependerToDependees(depender).exists(other => other._1.e == dependee.e && other._1.pk.id == dependee.pk.id)
     }
 
     // IMPROVE: make it efficient
@@ -205,6 +217,64 @@ class PointsToAnalysisState[ElementType, PointsToSet <: PointsToSetLike[ElementT
     }
 
     def calleesDependee: EOptionP[DeclaredMethod, Callees] = _calleesDependee.get
+
+    private[this] def accesses[P <: MethodFieldAccessInformation[P]](
+        ps:                 PropertyStore,
+        dependee:           Option[EOptionP[Method, P]],
+        setDependee:        EOptionP[Method, P] => Unit,
+        key:                PropertyKey[P],
+        noAccessesProperty: P
+    ): P = {
+        val accessesProperty = if (dependee.isDefined) {
+            dependee.get
+        } else {
+            val writeAccessesProperty = ps(callContext.method.asDefinedMethod.definedMethod, key)
+            setDependee(writeAccessesProperty)
+            writeAccessesProperty
+        }
+
+        if (accessesProperty.isEPK) noAccessesProperty
+        else accessesProperty.ub
+    }
+
+    private[this] var _readAccessesDependee: Option[EOptionP[Method, MethodFieldReadAccessInformation]] = None
+    private[this] var _writeAccessesDependee: Option[EOptionP[Method, MethodFieldWriteAccessInformation]] = None
+
+    def readAccesses(ps: PropertyStore): MethodFieldReadAccessInformation = accesses(
+        ps,
+        _readAccessesDependee,
+        setReadAccessDependee,
+        MethodFieldReadAccessInformation.key,
+        NoMethodFieldReadAccessInformation
+    )
+
+    def hasReadAccessDependee: Boolean = {
+        _readAccessesDependee.nonEmpty && _readAccessesDependee.get.isRefinable
+    }
+
+    def setReadAccessDependee(dependee: EOptionP[Method, MethodFieldReadAccessInformation]): Unit = {
+        _readAccessesDependee = Some(dependee)
+    }
+
+    def readAccessDependee: EOptionP[Method, MethodFieldReadAccessInformation] = _readAccessesDependee.get
+
+    def writeAccesses(ps: PropertyStore): MethodFieldWriteAccessInformation = accesses(
+        ps,
+        _writeAccessesDependee,
+        setWriteAccessDependee,
+        MethodFieldWriteAccessInformation.key,
+        NoMethodFieldWriteAccessInformation
+    )
+
+    def hasWriteAccessDependee: Boolean = {
+        _writeAccessesDependee.nonEmpty && _writeAccessesDependee.get.isRefinable
+    }
+
+    def setWriteAccessDependee(dependee: EOptionP[Method, MethodFieldWriteAccessInformation]): Unit = {
+        _writeAccessesDependee = Some(dependee)
+    }
+
+    def writeAccessDependee: EOptionP[Method, MethodFieldWriteAccessInformation] = _writeAccessesDependee.get
 
     override def hasOpenDependencies: Boolean = {
         hasCalleesDepenedee || super.hasOpenDependencies

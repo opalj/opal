@@ -8,6 +8,7 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.properties.SimpleContextsKey
+import org.opalj.tac.fpcf.analyses.cg.PropagationBasedTypeIterator
 import org.opalj.tac.fpcf.analyses.cg.rta.ConfiguredNativeMethodsInstantiatedTypesAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.ArrayInstantiationsAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.CTASetEntitySelector
@@ -18,7 +19,8 @@ import org.opalj.tac.fpcf.analyses.cg.xta.MTASetEntitySelector
 import org.opalj.tac.fpcf.analyses.cg.xta.TypePropagationAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.TypeSetEntitySelector
 import org.opalj.tac.fpcf.analyses.cg.xta.XTASetEntitySelector
-import org.opalj.tac.fpcf.analyses.cg.PropagationBasedTypeIterator
+import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalysis
+import org.opalj.tac.fpcf.analyses.fieldaccess.reflection.ReflectionRelatedFieldAccessesAnalysisScheduler
 
 /**
  * A [[org.opalj.br.analyses.ProjectInformationKey]] to compute a [[CallGraph]] based on Tip and
@@ -59,7 +61,9 @@ trait PropagationBasedCallGraphKey extends CallGraphKey {
             new InstantiatedTypesAnalysisScheduler(theTypeSetEntitySelector),
             new ArrayInstantiationsAnalysisScheduler(theTypeSetEntitySelector),
             new TypePropagationAnalysisScheduler(theTypeSetEntitySelector),
-            ConfiguredNativeMethodsInstantiatedTypesAnalysisScheduler
+            ConfiguredNativeMethodsInstantiatedTypesAnalysisScheduler,
+            EagerFieldAccessInformationAnalysis,
+            ReflectionRelatedFieldAccessesAnalysisScheduler
         ) ::: (if (isLibrary) List(LibraryInstantiatedTypesBasedEntryPointsAnalysis) else Nil)
     }
 

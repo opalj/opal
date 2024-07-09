@@ -22,27 +22,26 @@ import java.util.jar.JarEntry
 import java.util.jar.JarInputStream
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
-
 import scala.collection.immutable.ArraySeq
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Await
-import scala.concurrent.duration.Duration
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.concurrent.duration.Duration
 import scala.jdk.CollectionConverters._
 import scala.util.control.ControlThrowable
 
-import org.apache.commons.text.similarity.LevenshteinDistance
-import org.opalj.control.fillArrayOfInt
-import org.opalj.io.process
-
-import org.opalj.log.OPALLogger.error
-import org.opalj.log.OPALLogger.info
+import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.concurrent.BoundedExecutionContext
 import org.opalj.concurrent.NumberOfThreadsForIOBoundTasks
-import org.opalj.concurrent.parForeachSeqElement
 import org.opalj.concurrent.Tasks
-import org.opalj.bytecode.BytecodeProcessingFailedException
+import org.opalj.concurrent.parForeachSeqElement
+import org.opalj.control.fillArrayOfInt
+import org.opalj.io.process
+import org.opalj.log.OPALLogger.error
+import org.opalj.log.OPALLogger.info
+
+import org.apache.commons.text.similarity.LevenshteinDistance
 
 /**
  * Implements the template method to read in a Java class file. Additionally,
@@ -240,8 +239,8 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
         val major_version = in.readUnsignedShort
 
         def unsupportedVersion =
-            s"unsupported class file version: $major_version.$minor_version"+
-                " (Supported: 45(Java 1.1) <= version <= "+
+            s"unsupported class file version: $major_version.$minor_version" +
+                " (Supported: 45(Java 1.1) <= version <= " +
                 s"$LatestSupportedJavaMajorVersion(${jdkVersion(LatestSupportedJavaMajorVersion)}))"
 
         // let's make sure that we support this class file's version
@@ -249,9 +248,10 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
             throw BytecodeProcessingFailedException(unsupportedVersion)
 
         if (major_version > LatestSupportedJavaMajorVersion || (
-            major_version == LatestSupportedJavaMajorVersion
-            && minor_version > LatestSupportedJavaVersion.minor
-        )) {
+                major_version == LatestSupportedJavaMajorVersion
+                && minor_version > LatestSupportedJavaVersion.minor
+            )
+        ) {
             // Just log an error message for newer version, we might still be able to handle the
             // class if it doesn't use any features introduced in an unsupported version
             error("class file reader", unsupportedVersion)
@@ -271,10 +271,14 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
 
         var classFile = ClassFile(
             cp,
-            minor_version, major_version,
+            minor_version,
+            major_version,
             access_flags,
-            this_class, super_class, interfaces,
-            fields, methods,
+            this_class,
+            super_class,
+            interfaces,
+            fields,
+            methods,
             attributes
         )
 
@@ -283,9 +287,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
         classFile = applyDeferredActions(cp, classFile)
 
         // Perform general transformations on class files.
-        classFilePostProcessors.foldLeft(List(classFile)) { (classFiles, postProcessor) =>
-            postProcessor(classFiles)
-        }
+        classFilePostProcessors.foldLeft(List(classFile)) { (classFiles, postProcessor) => postProcessor(classFiles) }
     }
 
     //
@@ -335,9 +337,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
     }
 
     protected[this] def ClassFile(jarFile: ZipFile, jarEntry: ZipEntry): List[ClassFile] = {
-        process(jarFile.getInputStream(jarEntry)) { in =>
-            ClassFile(new DataInputStream(new BufferedInputStream(in)))
-        }
+        process(jarFile.getInputStream(jarEntry)) { in => ClassFile(new DataInputStream(new BufferedInputStream(in))) }
     }
 
     /**
@@ -622,7 +622,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
             val classFiles = ArrayBuffer.empty[File]
             def collectFiles(files: Array[File]): Unit = {
                 if (files eq null)
-                    return ;
+                    return;
 
                 files foreach { file =>
                     val filename = file.getName
@@ -718,7 +718,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
         files:              Iterable[File],
         progressReporter:   File => Unit,
         classFileProcessor: ((ClassFile, URL)) => Unit,
-        exceptionHandler:   ExceptionHandler           = defaultExceptionHandler
+        exceptionHandler:   ExceptionHandler = defaultExceptionHandler
     ): Unit = {
         val ts = Tasks[File] { (tasks: Tasks[File], file: File) =>
             if (file.isFile && file.length() > 0) {
@@ -726,7 +726,8 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
 
                 if (isClassFileRepository(filename, None)) {
                     if (!filename.endsWith("-javadoc.jar") &&
-                        !filename.endsWith("-sources.jar")) {
+                        !filename.endsWith("-sources.jar")
+                    ) {
                         progressReporter(file)
                         processJar(file, exceptionHandler).foreach(classFileProcessor)
                     }
@@ -764,7 +765,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
         progressReporter: File => Unit,
         classFileFilter:  ClassFile => Boolean,
         className:        ClassFile => String,
-        exceptionHandler: ExceptionHandler     = defaultExceptionHandler
+        exceptionHandler: ExceptionHandler = defaultExceptionHandler
     ): Either[(ClassFile, URL), Set[String]] = {
         var classNames = Set.empty[String]
         files.filter(_.exists()) foreach { file =>
@@ -773,7 +774,8 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
                 (
                     if (isClassFileRepository(filename, None)) {
                         if (!filename.endsWith("-javadoc.jar") &&
-                            !filename.endsWith("-sources.jar")) {
+                            !filename.endsWith("-sources.jar")
+                        ) {
                             progressReporter(file)
                             processJar(file, exceptionHandler)
                         } else {
@@ -786,23 +788,21 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
                         Nil
                     }
                 ) filter { cfSource =>
-                        val (cf, _) = cfSource
-                        classNames += className(cf)
-                        classFileFilter(cf)
-                    } foreach { e => return Left(e); }
+                    val (cf, _) = cfSource
+                    classNames += className(cf)
+                    classFileFilter(cf)
+                } foreach { e => return Left(e); }
             } else if (file.isDirectory) {
                 file.listFiles { (dir: File, name: String) =>
                     dir.isDirectory || isClassFileRepository(file.toString, None)
                 } foreach { f =>
-                    findClassFile(
-                        List(f), progressReporter, classFileFilter, className, exceptionHandler
-                    ) match {
-                            case Left(cf) =>
-                                return Left(cf);
-                            case Right(moreClassNames) =>
-                                classNames ++= moreClassNames
-                            /*nothing else to do... let's continue*/
-                        }
+                    findClassFile(List(f), progressReporter, classFileFilter, className, exceptionHandler) match {
+                        case Left(cf) =>
+                            return Left(cf);
+                        case Right(moreClassNames) =>
+                            classNames ++= moreClassNames
+                        /*nothing else to do... let's continue*/
+                    }
                 }
             }
         }

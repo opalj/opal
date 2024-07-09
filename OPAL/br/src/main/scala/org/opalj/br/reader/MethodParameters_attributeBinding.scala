@@ -3,9 +3,9 @@ package org.opalj
 package br
 package reader
 
-import org.opalj.bi.reader.MethodParameters_attributeReader
-
 import scala.reflect.ClassTag
+
+import org.opalj.bi.reader.MethodParameters_attributeReader
 
 /**
  * Implements the factory methods to create method parameter tables and their entries.

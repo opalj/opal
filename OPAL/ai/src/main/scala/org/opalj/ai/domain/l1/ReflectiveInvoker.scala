@@ -63,28 +63,26 @@ trait ReflectiveInvoker extends DefaultJavaObjectToDomainValueConversion with As
                 }
                 val jParameterClassTypes = descriptor.parameterTypes map (_.toJavaClass)
                 val method =
-                    declaringClass.toJavaClass.getDeclaredMethod(
-                        name, jParameterClassTypes: _*
-                    )
+                    declaringClass.toJavaClass.getDeclaredMethod(name, jParameterClassTypes: _*)
                 (method, jReceiver, jOperands)
             } catch {
                 case e: ClassNotFoundException =>
                     if (warnOnFailedReflectiveCalls)
                         Console.println(
-                            Console.YELLOW+
-                                "[warn] calling the method \""+descriptor.toJava(name)+"\" is not possible ("+
-                                e.getMessage+
-                                ") class is not found on the JVM's classpath."+
+                            Console.YELLOW +
+                                "[warn] calling the method \"" + descriptor.toJava(name) + "\" is not possible (" +
+                                e.getMessage +
+                                ") class is not found on the JVM's classpath." +
                                 Console.RESET
                         )
                     return None; /* <------- EARLY RETURN FROM METHOD */
                 case _: NoSuchMethodException =>
                     if (warnOnFailedReflectiveCalls)
                         Console.println(
-                            Console.YELLOW+
-                                "[warn] the method \""+descriptor.toJava(name)+
-                                "\" is not defined by the class on the JVM's class path: "+
-                                declaringClass.toJava+"."+
+                            Console.YELLOW +
+                                "[warn] the method \"" + descriptor.toJava(name) +
+                                "\" is not defined by the class on the JVM's class path: " +
+                                declaringClass.toJava + "." +
                                 Console.RESET
                         )
                     return None; /* <------- EARLY RETURN FROM METHOD */

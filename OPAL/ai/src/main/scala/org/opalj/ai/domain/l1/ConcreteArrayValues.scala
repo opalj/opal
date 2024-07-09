@@ -6,10 +6,10 @@ package l1
 
 import scala.reflect.ClassTag
 
-import org.opalj.log.OPALLogger
-import org.opalj.log.Warn
 import org.opalj.br.ArrayType
 import org.opalj.br.ObjectType
+import org.opalj.log.OPALLogger
+import org.opalj.log.Warn
 
 /**
  * Enables the tracking of various properties related to arrays.
@@ -65,7 +65,7 @@ trait ConcreteArrayValues
     protected def isEffectivelyImmutable(objectType: ObjectType): Boolean = {
         objectType.id match {
             case ObjectType.ObjectId | ObjectType.StringId | ObjectType.ClassId => true
-            case _ => false
+            case _                                                              => false
         }
     }
 
@@ -131,17 +131,17 @@ trait ConcreteArrayValues
             val values: Array[DomainValue],
             refId:      RefId
     ) extends ArrayValue(origin, isNull = No, isPrecise = true, theType, refId) { ... }
-    */
+     */
 
     protected trait ConcreteArrayValue extends ArrayValue { this: DomainConcreteArrayValue =>
 
         def values: Array[DomainValue]
 
-        final override def isNull: No.type = No
+        override final def isNull: No.type = No
 
-        final override def isPrecise: Boolean = true
+        override final def isPrecise: Boolean = true
 
-        final override def length: Some[Int] = Some(values.length)
+        override final def length: Some[Int] = Some(values.length)
 
         override def doLoad(
             loadPC:              Int,
@@ -158,9 +158,7 @@ trait ConcreteArrayValues
                 );
             }
 
-            intValue[ArrayLoadResult](index) { index =>
-                ComputedValue(values(index))
-            } {
+            intValue[ArrayLoadResult](index) { index => ComputedValue(values(index)) } {
                 // This handles the case that we know that the index is not precise
                 // but it is still known to be valid.
                 super.doLoad(loadPC, index, potentialExceptions)
@@ -266,7 +264,6 @@ trait ConcreteArrayValues
          * @note After adaptation of the array value, the array is usually passed to another
          *       method - in this case it is the responsibility of the caller to
          *       ensure that the (abstraction of the) contents of the array remains valid.
-         *
          */
         override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue = {
             val adaptedValue = target match {
@@ -337,8 +334,8 @@ trait ConcreteArrayValues
         )
 
         if (size >= 256) {
-            val message = s"tracking very large arrays (${arrayType.toJava}) "+
-                "usually incurrs significant overhead without increasing "+
+            val message = s"tracking very large arrays (${arrayType.toJava}) " +
+                "usually incurrs significant overhead without increasing " +
                 "the precision of the analysis"
             OPALLogger.logOnce(Warn("analysis configuration", message))
         }
@@ -348,7 +345,8 @@ trait ConcreteArrayValues
                 pc * ConcreteArrayValues.MaxPossibleArraySize
         }
         val array: Array[DomainValue] = new Array[DomainValue](size)
-        var i = 0; while (i < size) {
+        var i = 0
+        while (i < size) {
             // We initialize each element with a new instance and also
             // assign each value with a unique PC.
             array(i) = DefaultValue(virtualOrigin + i, arrayType.componentType)
@@ -363,9 +361,7 @@ trait ConcreteArrayValues
         counts:    Operands,
         arrayType: ArrayType
     ): DomainArrayValue = {
-        intValue(counts.last) { length =>
-            InitializedArrayValue(origin, arrayType, length)
-        } {
+        intValue(counts.last) { length => InitializedArrayValue(origin, arrayType, length) } {
             super.NewArray(origin, counts, arrayType)
         }
     }

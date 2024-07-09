@@ -6,8 +6,8 @@ import scala.collection.Set
 
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.ReferenceType
 import org.opalj.br.ObjectType
+import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.ProjectLike
 import org.opalj.value.ValueInformation
 
@@ -62,4 +62,3 @@ object Call {
         Some((call.declaringClass, call.isInterface, call.name, call.descriptor))
     }
 }
-

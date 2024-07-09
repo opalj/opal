@@ -27,4 +27,3 @@ trait Unknown_attributeBinding
     }
 
 }
-

@@ -6,7 +6,6 @@ package l0
 
 import scala.reflect.ClassTag
 
-import org.opalj.collection.immutable.UIDSet
 import org.opalj.br.ArrayType
 import org.opalj.br.ClassHierarchy
 import org.opalj.br.Method
@@ -16,6 +15,7 @@ import org.opalj.br.UninitializedThisVariableInfo
 import org.opalj.br.UninitializedVariableInfo
 import org.opalj.br.VerificationTypeInfo
 import org.opalj.br.analyses.SomeProject
+import org.opalj.collection.immutable.UIDSet
 
 /**
  * Concrete domain that can be used to compute the information required to compute the
@@ -93,13 +93,13 @@ final class TypeCheckingDomain(
 
         override def isPrecise: Boolean = {
             origin != -1 /* "-1" means that we are talking about "uninitialized this" */ ||
-                classHierarchy.isKnownToBeFinal(theUpperTypeBound)
+            classHierarchy.isKnownToBeFinal(theUpperTypeBound)
         }
 
         // joins of an uninitialized value with null results in an illegal value
         override def isNull: Answer = No
 
-        final override def verificationTypeInfo: VerificationTypeInfo = {
+        override final def verificationTypeInfo: VerificationTypeInfo = {
             if (origin == -1)
                 UninitializedThisVariableInfo
             else

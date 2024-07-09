@@ -1,21 +1,23 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.support.info
+package org.opalj
+package support
+package info
 
 import java.net.URL
 
-import org.opalj.log.OPALLogger
-import org.opalj.util.PerformanceEvaluation
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.EPS
-import org.opalj.br.fpcf.FPCFAnalysesManagerKey
-import org.opalj.br.Method
-import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.ProjectAnalysisApplication
-import org.opalj.br.analyses.Project
-import org.opalj.br.ClassHierarchy
-import org.opalj.br.Field
 import org.opalj.ai.fpcf.properties.FieldValue
 import org.opalj.ai.fpcf.properties.MethodReturnValue
+import org.opalj.br.ClassHierarchy
+import org.opalj.br.Field
+import org.opalj.br.Method
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.ProjectAnalysisApplication
+import org.opalj.br.fpcf.FPCFAnalysesManagerKey
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EPS
+import org.opalj.log.OPALLogger
+import org.opalj.util.PerformanceEvaluation
 
 /**
  * Computes information regarding the values stored in fields and returned by methods.
@@ -64,7 +66,7 @@ object Values extends ProjectAnalysisApplication {
                     }
                 }
                 // we are deriving more precise lower bounds => eps.lb
-                .map(eps => eps.e.asInstanceOf[Field].toJava(" => "+eps.lb.value.toString))
+                .map(eps => eps.e.asInstanceOf[Field].toJava(" => " + eps.lb.value.toString))
                 .sorted
                 .mkString("Field Values:\n\t", "\n\t", s"\n(Overall: ${fieldValues.size})")
 
@@ -88,14 +90,14 @@ object Values extends ProjectAnalysisApplication {
                     }
                 }
                 // we are deriving more precise lower bounds => eps.lb
-                .map(eps => eps.e.asInstanceOf[Method].toJava(" => "+eps.lb.returnValue))
+                .map(eps => eps.e.asInstanceOf[Method].toJava(" => " + eps.lb.returnValue))
                 .sorted
                 .mkString(
                     "Method Return Values:\n\t",
                     "\n\t",
                     s"\n(Overall: ${methodReturnValues.size}/$objectValuesReturningMethodsCount)"
                 )
-        BasicReport(mFields+"\n\n"+mMethods)
+        BasicReport(mFields + "\n\n" + mMethods)
 
     }
 }

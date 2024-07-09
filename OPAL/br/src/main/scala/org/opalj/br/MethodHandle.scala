@@ -20,7 +20,7 @@ import org.opalj.bi.ReferenceKind
  */
 sealed abstract class MethodHandle extends ConstantValue[MethodHandle] {
 
-    final override def value: this.type = this
+    override final def value: this.type = this
 
     /**
      * Returns `ObjectType.MethodHandle`;
@@ -54,11 +54,15 @@ sealed abstract class FieldReadAccessMethodHandle extends FieldAccessMethodHandl
 
 sealed abstract class FieldWriteAccessMethodHandle extends FieldAccessMethodHandle
 
+sealed trait InstanceFieldAccessMethodHandle extends FieldAccessMethodHandle
+
+sealed trait StaticFieldAccessMethodHandle extends FieldAccessMethodHandle
+
 case class GetFieldMethodHandle(
         declaringClassType: ObjectType,
         name:               String,
         fieldType:          FieldType
-) extends FieldReadAccessMethodHandle {
+) extends FieldReadAccessMethodHandle with InstanceFieldAccessMethodHandle {
     override def referenceKind: ReferenceKind = REF_getField
 }
 
@@ -66,7 +70,7 @@ case class GetStaticMethodHandle(
         declaringClassType: ObjectType,
         name:               String,
         fieldType:          FieldType
-) extends FieldReadAccessMethodHandle {
+) extends FieldReadAccessMethodHandle with StaticFieldAccessMethodHandle {
     override def referenceKind: ReferenceKind = REF_getStatic
 }
 
@@ -74,7 +78,7 @@ case class PutFieldMethodHandle(
         declaringClassType: ObjectType,
         name:               String,
         fieldType:          FieldType
-) extends FieldWriteAccessMethodHandle {
+) extends FieldWriteAccessMethodHandle with InstanceFieldAccessMethodHandle {
     override def referenceKind: ReferenceKind = REF_putField
 }
 
@@ -82,7 +86,7 @@ case class PutStaticMethodHandle(
         declaringClassType: ObjectType,
         name:               String,
         fieldType:          FieldType
-) extends FieldWriteAccessMethodHandle {
+) extends FieldWriteAccessMethodHandle with StaticFieldAccessMethodHandle {
     override def referenceKind: ReferenceKind = REF_putStatic
 }
 
@@ -129,7 +133,7 @@ case class InvokeStaticMethodHandle(
 
     override def opcodeOfUnderlyingInstruction: Opcode = instructions.INVOKESTATIC.opcode
 
-    final override def isInvokeStaticMethodHandle: Boolean = true
+    override final def isInvokeStaticMethodHandle: Boolean = true
 
     override def referenceKind: ReferenceKind = REF_invokeStatic
 }
@@ -151,7 +155,7 @@ case class NewInvokeSpecialMethodHandle(
         methodDescriptor: MethodDescriptor
 ) extends MethodCallMethodHandle {
 
-    final override val name = "<init>"
+    override final val name = "<init>"
 
     override def opcodeOfUnderlyingInstruction: Opcode = instructions.INVOKESPECIAL.opcode
 

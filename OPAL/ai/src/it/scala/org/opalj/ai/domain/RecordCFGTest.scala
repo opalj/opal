@@ -4,25 +4,24 @@ package ai
 package domain
 
 import java.net.URL
-
 import scala.collection.mutable
 import scala.jdk.CollectionConverters._
 
 import org.junit.runner.RunWith
-import org.opalj.graphs.ControlDependencies
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
 
-import org.opalj.util.PerformanceEvaluation
-import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.br.analyses.Project
-import org.opalj.br.reader.BytecodeInstructionsCache
-import org.opalj.br.reader.Java8FrameworkWithCaching
 import org.opalj.br.Method
+import org.opalj.br.TestSupport.createJREProject
+import org.opalj.br.analyses.Project
 import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.cfg.CFGFactory
-import org.opalj.br.TestSupport.createJREProject
+import org.opalj.br.reader.BytecodeInstructionsCache
+import org.opalj.br.reader.Java8FrameworkWithCaching
+import org.opalj.graphs.ControlDependencies
+import org.opalj.util.PerformanceEvaluation
+import org.opalj.util.PerformanceEvaluation.time
 
 /**
  * Tests if we are able to compute the CFG as well as the dominator/post-dominator tree for
@@ -92,24 +91,23 @@ class RecordCFGTest extends AnyFunSpec with Matchers {
 
                 val pcs = new mutable.BitSet(method.body.size)
                 bbAICFG.allBBs.foreach { bbAI =>
-
                     assert(bbAI.startPC <= bbAI.endPC, s"${bbAI.startPC}> ${bbAI.endPC}")
 
                     if (!pcs.add(bbAI.startPC))
                         fail(
-                            s"the (start) pc ${bbAI.startPC} "+
+                            s"the (start) pc ${bbAI.startPC} " +
                                 "was already used by some other basic block"
                         )
                     if (bbAI.endPC != bbAI.startPC) {
                         if (!pcs.add(bbAI.endPC))
-                            fail(s"the bb's (end) pc ${bbAI.endPC} ($bbAI) "+
+                            fail(s"the bb's (end) pc ${bbAI.endPC} ($bbAI) " +
                                 "was already used by some other basic block")
                     }
 
                     val bbBR = bbBRCFG.bb(bbAI.startPC)
                     if (bbBR.isStartOfSubroutine != bbAI.isStartOfSubroutine) {
                         fail(
-                            s"inconsistent: bbBR.isStartOfSubroutine(${bbBR.isStartOfSubroutine})"+
+                            s"inconsistent: bbBR.isStartOfSubroutine(${bbBR.isStartOfSubroutine})" +
                                 s" and bbAI.isStartOfSubroutine (${bbAI.isStartOfSubroutine})"
                         )
                     }
@@ -118,7 +116,7 @@ class RecordCFGTest extends AnyFunSpec with Matchers {
                     allAIPredecessors.foreach { predecessorBB =>
                         if (!allBRPredecessors.exists { p => p.endPC == predecessorBB.endPC })
                             fail(
-                                s"the aibb ($bbAI) has different predecessors than the brbb ($bbBR):"+
+                                s"the aibb ($bbAI) has different predecessors than the brbb ($bbBR):" +
                                     allAIPredecessors.mkString("ai:{", ",", "} vs. ") +
                                     allBRPredecessors.mkString("br:{", ",", "}")
                             )
@@ -126,7 +124,6 @@ class RecordCFGTest extends AnyFunSpec with Matchers {
                 }
 
                 evaluatedInstructions.iterator.foreach { pc =>
-
                     domain.foreachSuccessorOf(pc) { succPC =>
                         domain.predecessorsOf(succPC).contains(pc) should be(true)
                     }
@@ -155,16 +152,18 @@ class RecordCFGTest extends AnyFunSpec with Matchers {
                 evaluatedInstructions.iterator.foreach { pc =>
                     if (pc != dt.startNode &&
                         (dt.dom(pc) != dt.startNode) &&
-                        !evaluatedInstructions.contains(dt.dom(pc))) {
+                        !evaluatedInstructions.contains(dt.dom(pc))
+                    ) {
                         fail(
-                            s"the dominator instruction ${dt.dom(pc)} of instruction $pc "+
-                                s"was not evaluated (dominator tree start node: ${dt.startNode}); "+
+                            s"the dominator instruction ${dt.dom(pc)} of instruction $pc " +
+                                s"was not evaluated (dominator tree start node: ${dt.startNode}); " +
                                 s"code size=${method.body.get.instructions.length}."
                         )
                     }
                     if (pc != postDT.startNode &&
                         postDT.dom(pc) != postDT.startNode &&
-                        !evaluatedInstructions.contains(postDT.dom(pc))) {
+                        !evaluatedInstructions.contains(postDT.dom(pc))
+                    ) {
                         fail(s"the post-dominator ${postDT.dom(pc)} of $pc was not evaluated")
                     }
                     try {
@@ -192,9 +191,9 @@ class RecordCFGTest extends AnyFunSpec with Matchers {
                 val location =
                     if (root.getStackTrace() != null && root.getStackTrace().length > 0) {
                         root.getStackTrace().take(5).map { stackTraceElement =>
-                            stackTraceElement.getClassName+
-                                " { "+
-                                stackTraceElement.getMethodName+":"+stackTraceElement.getLineNumber+
+                            stackTraceElement.getClassName +
+                                " { " +
+                                stackTraceElement.getMethodName + ":" + stackTraceElement.getLineNumber +
                                 " }"
                         }.mkString("; ")
                     } else {
@@ -220,25 +219,26 @@ class RecordCFGTest extends AnyFunSpec with Matchers {
                 val project = projectFactory()
                 time {
                     analyzeProject(projectName, project)
-                } { t => info("the analysis took (real time):                            "+t.toSeconds) }
+                } { t => info("the analysis took (real time):                            " + t.toSeconds) }
 
                 import DominatorsPerformanceEvaluation.getTime
-                info("performing AI took (CPU time):                            "+getTime(Symbol("AI")).toSeconds)
-                info("computing dominator information took (CPU time):          "+getTime(Symbol("Dominators")).toSeconds)
+                info("performing AI took (CPU time):                            " + getTime(Symbol("AI")).toSeconds)
+                info("computing dominator information took (CPU time):          " +
+                    getTime(Symbol("Dominators")).toSeconds)
 
                 val postDominatorsTime = getTime(Symbol("PostDominators")).toSeconds
-                info("computing post-dominator information took (CPU time):     "+postDominatorsTime)
+                info("computing post-dominator information took (CPU time):     " + postDominatorsTime)
 
                 val cdgTime = getTime(Symbol("ControlDependencies")).toSeconds
-                info("computing control dependency information took (CPU time): "+cdgTime)
+                info("computing control dependency information took (CPU time): " + cdgTime)
                 val cdgQueryTime = getTime(Symbol("QueryingControlDependencies")).toSeconds
-                info("querying control dependency information took (CPU time):  "+cdgQueryTime)
+                info("querying control dependency information took (CPU time):  " + cdgQueryTime)
 
                 val bbAICFGTime = getTime(Symbol("BasicBlocksBasedAICFG")).toSeconds
-                info("constructing the AI based CFGs took (CPU time):           "+bbAICFGTime)
+                info("constructing the AI based CFGs took (CPU time):           " + bbAICFGTime)
 
                 val bbBRCFGTime = getTime(Symbol("BasicBlocksBasedBRCFG")).toSeconds
-                info("constructing the BR based CFGs took (CPU time):           "+bbBRCFGTime)
+                info("constructing the BR based CFGs took (CPU time):           " + bbBRCFGTime)
             }
         }
 
