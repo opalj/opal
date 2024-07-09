@@ -386,7 +386,7 @@ abstract class NativeAnalysis(
 
     println(s"result:::: $parameterPointsToSets")
 
-    val javaFunctionFullName = ("Java/"+javaDeclaredMethod.declaringClassType.fqn+"/"+javaDeclaredMethod.name).replace("/", "_")
+    val javaFunctionFullName = ("Java/"+javaDeclaredMethod.declaringClassType.fqn.replace("_", "_1")+"/"+javaDeclaredMethod.name).replace("/", "_")
 
     var functionSelection = functions.filter(_.equals(javaFunctionFullName))
     if (functionSelection.isEmpty) {
