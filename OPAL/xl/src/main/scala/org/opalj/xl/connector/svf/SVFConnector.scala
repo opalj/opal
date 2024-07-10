@@ -22,7 +22,7 @@ import org.opalj.tac.fpcf.analyses.pointsto.AbstractPointsToBasedAnalysis
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedAnalysis
 import org.opalj.tac.fpcf.analyses.pointsto.PointsToAnalysisBase
 import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedAnalysis
-import org.opalj.tac.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.cg.Callees
 
 abstract class SVFConnector( final val project: SomeProject) extends PointsToAnalysisBase {
     self =>

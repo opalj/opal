@@ -31,7 +31,7 @@ import org.opalj.tac.fpcf.analyses.pointsto.PointsToAnalysisBase
 import org.opalj.tac.fpcf.analyses.APIBasedAnalysis
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedAnalysis
 import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedAnalysis
-import org.opalj.tac.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.xl.detector.CrossLanguageInteraction
 import org.opalj.xl.utility.Language
 import ScriptEngineDetector.engineManager

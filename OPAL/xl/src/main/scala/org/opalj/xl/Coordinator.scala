@@ -4,6 +4,8 @@ package xl
 
 import java.net.URL
 
+import org.opalj.fpcf.PropertyStoreContext
+import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedLibraryPointsToAnalysisScheduler
 
 //import com.typesafe.config.Config
@@ -48,12 +50,13 @@ import org.opalj.br.fpcf.FPCFAnalysisScheduler
 //import org.opalj.br.fpcf.properties.pointsto
 import org.opalj.tac.DUVar
 import org.opalj.tac.cg.AllocationSiteBasedPointsToCallGraphKey
-import org.opalj.tac.cg.TypeIteratorKey
+//import org.opalj.tac.cg.TypeIteratorKey
 //import org.opalj.tac.common.DefinitionSite
 //import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.analyses.LazyTACAIProvider
 import org.opalj.tac.fpcf.analyses.cg.AllocationSitesPointsToTypeIterator
 //import org.opalj.tac.ComputeTACAIKey
+import org.opalj.br.fpcf.ContextProviderKey
 
 object Coordinator extends AnalysisApplication with OneStepAnalysis[URL, ReportableAnalysisResult] {
 
@@ -73,9 +76,16 @@ object Coordinator extends AnalysisApplication with OneStepAnalysis[URL, Reporta
 
         var analyses: List[FPCFAnalysisScheduler] = List(LazyTACAIProvider)
 
-        project.updateProjectInformationKeyInitializationData(TypeIteratorKey) {
-            case _ => () => new AllocationSitesPointsToTypeIterator(project)
+        project.updateProjectInformationKeyInitializationData(ContextProviderKey) {
+            case _ => new AllocationSitesPointsToTypeIterator(project)
         }
+        implicit val logContext: LogContext = project.logContext
+        project.getOrCreateProjectInformationKeyInitializationData(
+            PropertyStoreKey,
+            (context: List[PropertyStoreContext[AnyRef]]) => {
+                    org.opalj.fpcf.seq.PKESequentialPropertyStore(context: _*)
+            }
+        )
 
         analyses ++= AllocationSiteBasedPointsToCallGraphKey.allCallGraphAnalyses(project)
         analyses ++= Iterable(

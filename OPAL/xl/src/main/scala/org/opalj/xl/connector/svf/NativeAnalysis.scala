@@ -4,9 +4,13 @@ package xl
 package connector
 package svf
 
+import java.util.Calendar
+
 import scala.collection.mutable.ListBuffer
+
 import svfjava.SVFAnalysisListener
 import svfjava.SVFModule
+
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
@@ -34,8 +38,8 @@ import org.opalj.tac.fpcf.analyses.pointsto.{ArrayEntity, PointsToAnalysisBase, 
 import org.opalj.tac.fpcf.analyses.APIBasedAnalysis
 import org.opalj.tac.fpcf.analyses.cg.BaseAnalysisState
 import org.opalj.tac.fpcf.analyses.cg.TypeIteratorState
-import org.opalj.tac.fpcf.properties.cg.Callers
-import org.opalj.tac.fpcf.properties.cg.OnlyCallersWithUnknownContext
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.cg.OnlyCallersWithUnknownContext
 
 abstract class NativeAnalysis(
                                final val project:            SomeProject,
@@ -51,18 +55,19 @@ abstract class NativeAnalysis(
                                 var svfModuleName:      String                               = System.getenv("LLVM_LIB_PATH"),
                                 var connectorDependees: Set[EOptionP[Entity, Property]]      = Set.empty,
                                 var connectorResults:   Set[ProperPropertyComputationResult] = Set.empty[ProperPropertyComputationResult],
-                                var javaJNITranslator:  SVFTranslator[PointsToSet]           = new SVFTranslator[PointsToSet](),
-                                var oldEPS:             SomeEPS                              = null
+                                var javaJNITranslator:  SVFTranslator[PointsToSet]           = new SVFTranslator[PointsToSet]()
+                            //    var oldEPS:             SomeEPS                              = null
                               ) extends BaseAnalysisState with TypeIteratorState
 
-  def runSVF(implicit svfConnectorState: SVFConnectorState): ProperPropertyComputationResult = {
-
+  def runSVF(implicit svfConnectorState: SVFConnectorState): ProperPropertyComputationResult = this.synchronized{
+    println("run SVF")
     implicit val pointsToAnalysisState: PointsToAnalysisState[ElementType, PointsToSet, ContextType] =
       new PointsToAnalysisState(NoContext.asInstanceOf[ContextType], null)
 
     println("run SVF")
 
     val listener = new SVFAnalysisListener() {
+
       override def nativeToJavaCallDetected(basePTS: Array[Long], className: String, methodName: String, methodSignature: String, argsPTSs: Array[Array[Long]]): Array[Long] = {
         val objectType = ObjectType(className.replace(";", "").substring(1))
         var possibleMethods = Iterable.empty[Method]
@@ -82,8 +87,8 @@ abstract class NativeAnalysis(
           possibleMethods ++= project.allMethods.filter(method => method.name.equals(methodName) && method.signature.descriptor.toJVMDescriptor.equals(methodSignature))
         }
         if (!project.instanceMethods.contains(objectType)) {
-          // throw new RuntimeException("unknown method; "+className)
-          return Array()
+          throw new RuntimeException("unknown method; "+className)
+          //return Array()
         }
         possibleMethods = project.instanceMethods(objectType).filter(_.name == methodName).map(_.method)
 
@@ -92,7 +97,7 @@ abstract class NativeAnalysis(
 
         val resultListBuffer: ListBuffer[Long] = new ListBuffer[Long]
         possibleMethods.foreach(method => {
-
+            println(s"method: $method")
           val declaredMethod = declaredMethods(method)
           val context = typeIterator.newContext(declaredMethod)
 
@@ -180,6 +185,7 @@ abstract class NativeAnalysis(
           }
         }
         svfConnectorState.javaJNITranslator.addPTS(result, newPointsToSet)
+          assert(result>0)
         result
       }
 
@@ -242,6 +248,8 @@ abstract class NativeAnalysis(
 
           svfConnectorState.connectorResults ++= createResults
         }
+          result.foreach(id => assert(id!=0))
+          //result = 3 :: result
         result.toArray
       }
 
@@ -397,17 +405,24 @@ abstract class NativeAnalysis(
       throw new RuntimeException("native function not found :"+javaFunctionFullName)
     }
     for (f <- functionSelection) {
+        println("x1")
       val resultPTS = svfConnectorState.svfModule.processFunction(f, basePTS.toArray, parameterPointsToSets, listener)
+        println("x2")
       if (resultPTS.isEmpty) {
+          println("i1")
         pointsToAnalysisState.includeSharedPointsToSet(svfConnectorState.calleeContext, emptyPointsToSet, PointsToSetLike.noFilter)
       } else {
+          println("i2")
         resultPTS.foreach(l => {
+            println("i3")
           val pointsToSet = svfConnectorState.javaJNITranslator.getPTS(l)
+            println("i4")
           pointsToAnalysisState.includeSharedPointsToSet(svfConnectorState.calleeContext, pointsToSet, PointsToSetLike.noFilter)
+            println("i5")
         })
       }
     }
-
+      println("i6")
     Results(createResults ++ svfConnectorState.connectorResults, InterimPartialResult(svfConnectorState.connectorDependees, svfConnectorContinuation))
   }
 
@@ -416,27 +431,36 @@ abstract class NativeAnalysis(
                        callerContext: ContextType,
                        pc:            Int,
                        isDirect:      Boolean
-                     ): ProperPropertyComputationResult = {
+                     ): ProperPropertyComputationResult = this.synchronized{
     if (GlobalJNIMapping.mapping == null) {
       GlobalJNIMapping.mapping = Map[Long, PointsToSet]()
     }
     implicit val svfConnectorState = SVFConnectorState(calleeContext, pc, project)
-
+      println(Calendar.getInstance().getTime())
+      println(s"caller Context: $callerContext")
+      println(s"callee Context: $calleeContext")
+      println("call svf init")
     svfjava.SVFJava.init()
-
+        println(s"call create svf module: ${svfConnectorState.svfModuleName}")
     svfConnectorState.svfModule = SVFModule.createSVFModule(svfConnectorState.svfModuleName)
+      println("call run svf")
     runSVF(svfConnectorState)
   }
 
-  def svfConnectorContinuation(eps: SomeEPS)(implicit svfConnectorState: SVFConnectorState): ProperPropertyComputationResult = {
+  def svfConnectorContinuation(eps: SomeEPS)(implicit svfConnectorState: SVFConnectorState): ProperPropertyComputationResult = this.synchronized{
+      println("entered native analysis continuation.")
     svfConnectorState.connectorDependees = svfConnectorState.connectorDependees.filter(dependee => dependee.e != eps.e)
     eps match {
       case UBP(_: PointsToSet @unchecked) =>
         svfConnectorState.connectorDependees += eps
-        svfConnectorState.oldEPS = eps
+       // svfConnectorState.oldEPS = eps
+          println("i8_2")
+          svfjava.SVFJava.init()
         runSVF(svfConnectorState)
 
-      case ep => Results()
+      case _ =>
+          println("returns empty result")
+          Results()
     }
   }
 }

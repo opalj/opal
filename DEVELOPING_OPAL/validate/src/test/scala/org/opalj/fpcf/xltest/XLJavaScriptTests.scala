@@ -127,7 +127,7 @@ class XLJavaScriptTests extends PropertiesTest {
 
     override def init(p: Project[URL]): Unit = {
 
-        p.updateProjectInformationKeyInitializationData(TypeIteratorKey) {
+        p.updateProjectInformationKeyInitializationData(ContextProviderKey) {
             case _ => () => new AllocationSitesPointsToTypeIterator(p)
         }
     }

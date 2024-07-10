@@ -75,11 +75,11 @@ import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedAnalysis
 import org.opalj.tac.fpcf.analyses.pointsto.PointsToAnalysisBase
 import org.opalj.tac.fpcf.analyses.pointsto.PointsToAnalysisState
 import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedAnalysis
-import org.opalj.tac.fpcf.analyses.pointsto.longToAllocationSite
-import org.opalj.tac.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.pointsto.longToAllocationSite
+import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.tac.fpcf.properties.TheTACAI
-import org.opalj.tac.fpcf.properties.cg.Callers
-import org.opalj.tac.fpcf.properties.cg.OnlyCallersWithUnknownContext
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.cg.OnlyCallersWithUnknownContext
 
 abstract class TajsConnector(override val project: SomeProject) extends FPCFAnalysis with PointsToAnalysisBase {
     self =>
